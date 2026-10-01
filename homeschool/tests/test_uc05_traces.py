@@ -18,13 +18,20 @@ Acceptance criteria
 4. A trace created from a block inherits the block's date, subject and items as
    defaults.
 5. Traces are ``mail.thread``: attachments and comments are tracked.
+6. A file linked to a trace or a material while it still has no record (``res_id = 0``,
+   uploaded before the record was saved) is **stamped** with the record's model and id
+   on create and on write (``attachment_ids``; the material's ``pdf_attachment_id`` too);
+   the 19.0.5.0.0 migration stamps the rows already there, and is idempotent.
 """
+import importlib.util
 import os
 import shutil
 import tempfile
 from datetime import date
 
+from odoo import fields
 from odoo.exceptions import ValidationError
+from odoo.modules.module import get_module_path
 from odoo.tools.misc import mute_logger
 
 from .common import HomeschoolCase
@@ -104,3 +111,64 @@ class TestTraces(HomeschoolCase):
         self.assertEqual(trace.code, "TR-2026-01-20-a")
         self.assertIn(trace, block.trace_ids)
         self.assertTrue(trace.message_ids is not None, "mail.thread")
+
+    # ------------------------------------------------------------------
+    # 6. files uploaded before the record: stamped on link
+    # ------------------------------------------------------------------
+    def _orphan(self, name, res_model="homeschool.trace"):
+        """An attachment as the binary widgets create it before the record is saved."""
+        return self.env["ir.attachment"].create({"name": name, "raw": b"%PDF-1.4 " + name.encode(), "res_model": res_model, "res_id": 0})
+
+    def test_orphan_attachments_stamped_on_trace_create_and_write(self):
+        a = self._orphan("a.pdf")
+        b = self._orphan("b.pdf", res_model=False)
+        trace = self.Trace.create({"name": "Stamped", "student_id": self.student.id, "attachment_ids": [fields.Command.set([a.id])]})
+        self.assertEqual((a.res_model, a.res_id), ("homeschool.trace", trace.id))
+        trace.write({"attachment_ids": [fields.Command.link(b.id)]})
+        self.assertEqual((b.res_model, b.res_id), ("homeschool.trace", trace.id))
+        # a file that already belongs to another record is left alone
+        other = self.Trace.create({"name": "Other", "student_id": self.student.id})
+        theirs = self.env["ir.attachment"].create({"name": "theirs.pdf", "raw": b"x", "res_model": "homeschool.trace", "res_id": other.id})
+        trace.write({"attachment_ids": [fields.Command.link(theirs.id)]})
+        self.assertEqual((theirs.res_model, theirs.res_id), ("homeschool.trace", other.id))
+        # a write without attachment_ids changes nothing
+        c = self._orphan("c.pdf")
+        trace.write({"name": "Renamed"})
+        self.assertEqual(c.res_id, 0)
+
+    def test_orphan_attachments_stamped_on_material(self):
+        Material = self.env["homeschool.material"]
+        a = self._orphan("fiche.pdf", res_model="homeschool.material")
+        pdf = self._orphan("main.pdf", res_model=False)
+        material = Material.create({"name": "Fiche", "attachment_ids": [fields.Command.set([a.id])], "pdf_attachment_id": pdf.id})
+        self.assertEqual((a.res_model, a.res_id), ("homeschool.material", material.id))
+        self.assertEqual((pdf.res_model, pdf.res_id), ("homeschool.material", material.id))
+        b = self._orphan("later.pdf", res_model="homeschool.material")
+        material.write({"pdf_attachment_id": b.id})
+        self.assertEqual((b.res_model, b.res_id), ("homeschool.material", material.id))
+
+    def test_migration_stamps_existing_rows(self):
+        path = os.path.join(get_module_path("homeschool"), "migrations", "19.0.5.0.0", "post-migrate.py")
+        spec = importlib.util.spec_from_file_location("homeschool_post_migrate_19_0_5_0_0", path)
+        migration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(migration)
+        trace = self.Trace.create({"name": "Old", "student_id": self.student.id})
+        material = self.env["homeschool.material"].create({"name": "Old fiche"})
+        a, b, pdf = self._orphan("a.pdf"), self._orphan("b.pdf", res_model="homeschool.material"), self._orphan("pdf.pdf", res_model=False)
+        # linked before 19.0.5.0.0: straight into the relation tables, no stamping
+        self.env.cr.execute("INSERT INTO homeschool_trace_attachment_rel (trace_id, attachment_id) VALUES (%s, %s)", (trace.id, a.id))
+        self.env.cr.execute("INSERT INTO homeschool_material_attachment_rel (material_id, attachment_id) VALUES (%s, %s)", (material.id, b.id))
+        self.env.cr.execute("UPDATE homeschool_material SET pdf_attachment_id = %s WHERE id = %s", (pdf.id, material.id))
+        untouched = self.env["ir.attachment"].create({"name": "mine.pdf", "raw": b"x", "res_model": "homeschool.trace", "res_id": trace.id})
+        self.env.cr.execute("INSERT INTO homeschool_trace_attachment_rel (trace_id, attachment_id) VALUES (%s, %s)", (trace.id, untouched.id))
+        self.env.invalidate_all()
+        self.assertEqual(migration.stamp_orphan_attachments(self.env.cr), 3)
+        self.env.invalidate_all()
+        self.assertEqual((a.res_model, a.res_id), ("homeschool.trace", trace.id))
+        self.assertEqual((b.res_model, b.res_id), ("homeschool.material", material.id))
+        self.assertEqual((pdf.res_model, pdf.res_id), ("homeschool.material", material.id))
+        self.assertEqual((untouched.res_model, untouched.res_id), ("homeschool.trace", trace.id))
+        # idempotent
+        self.assertEqual(migration.stamp_orphan_attachments(self.env.cr), 0)
+        migration.migrate(self.env.cr, "19.0.4.0.0")
+        self.assertEqual(migration.stamp_orphan_attachments(self.env.cr), 0)

@@ -1,0 +1,137 @@
+// Task 1540 (epic #1535) — the clinic sign-in kiosk on the Fit Crew brand
+// tokens (sc_tokens.scss: .o_sc_kiosk_body gets the palette, the self-hosted
+// Teko / DM Sans and the light theme). Formerly the inline <style> of
+// clinic_kiosk_layout; loaded through web.assets_frontend, which the kiosk
+// layout includes CSS-ONLY (t-js="false"). Everything scoped under
+// .o_sc_kiosk_body: nothing here touches another page.
+
+.o_sc_kiosk_body {
+    min-height: 100vh;
+    background: var(--sc-bg);
+    color: var(--sc-fg);
+    font-family: var(--sc-font-text);
+
+    .o_sc_kiosk {
+        max-width: 34rem;
+        margin: 0 auto;
+        padding-top: calc(2rem + env(safe-area-inset-top, 0px));
+        padding-right: calc(1.25rem + env(safe-area-inset-right, 0px));
+        padding-bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
+        padding-left: calc(1.25rem + env(safe-area-inset-left, 0px));
+    }
+
+    .o_sc_kiosk_brand {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1rem;
+
+        img {
+            width: 64px;
+            height: 64px;
+        }
+    }
+
+    h1,
+    h2,
+    .h2,
+    .h3,
+    .h4 {
+        font-family: var(--sc-font-title);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--sc-fg);
+    }
+
+    .text-muted {
+        color: var(--sc-fg-2) !important;
+    }
+
+    .form-control {
+        font-size: 1.5rem;
+        padding: 0.9rem 1rem;
+        min-height: 3.75rem;
+        border-radius: var(--sc-radius-md);
+        border-color: var(--sc-line);
+        background: var(--sc-surface);
+        color: var(--sc-fg);
+
+        &:focus {
+            border-color: var(--sc-accent);
+            box-shadow: 0 0 0 3px rgba(164, 199, 84, 0.45);
+        }
+    }
+
+    .form-label {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--sc-fg-2);
+    }
+
+    .btn-lg {
+        font-size: 1.5rem;
+        padding: 1rem 1.5rem;
+        min-height: 4.25rem;
+        border-radius: var(--sc-radius-md);
+        font-weight: 600;
+    }
+
+    .btn-primary {
+        background: var(--sc-accent);
+        border-color: var(--sc-accent);
+        color: var(--sc-accent-fg);
+
+        &:hover,
+        &:focus,
+        &:active {
+            background: var(--sc-forest);
+            border-color: var(--sc-neon);
+            color: var(--sc-accent-fg);
+        }
+    }
+
+    .btn-outline-secondary {
+        border-color: var(--sc-line);
+        color: var(--sc-fg);
+    }
+
+    a {
+        color: var(--sc-secondary);
+    }
+
+    .alert-warning {
+        border-radius: var(--sc-radius-md);
+    }
+
+    .o_sc_kiosk_result {
+        font-size: 1.5rem;
+
+        .o_sc_kiosk_icon {
+            font-size: 5rem;
+            line-height: 1;
+        }
+    }
+
+    .o_sc_kiosk_code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 4.5rem;
+        font-weight: 700;
+        letter-spacing: 0.75rem;
+        line-height: 1.2;
+        text-indent: 0.75rem; // re-center: tracking pads the right
+        color: var(--sc-forest);
+    }
+
+    .o_sc_kiosk_policy summary {
+        cursor: pointer;
+        font-weight: 600;
+        min-height: 2.75rem;
+        display: list-item;
+    }
+
+    .o_sc_kiosk_lang {
+        min-height: 2.75rem;
+        display: inline-flex;
+        align-items: center;
+    }
+}

@@ -172,6 +172,32 @@ VISIBILITY_REGISTRY = {
     'team.request_add': {'include': STAFF},
     'team.activities': {'include': STAFF},
     'team.pending_removals': {'include': TP},
+    # Task 1539 (P2) — players, injuries, notes, documents, activities. Same
+    # rule: each key is ALSO gated in the template by the controller's
+    # existing server-side value (the legacy page's ``is_treatment_prof`` /
+    # ``can_*`` flags), and the save route refuses the field server-side
+    # (SAVE_REGISTRY per-role allowlists, controllers/app_shell.py).
+    'injury.internal_notes': {'include': TP, 'model': 'sports.patient.injury',
+                              'field': 'internal_notes'},
+    'players.create': {'include': TP},
+    'players.add_to_team': {'include': TP},
+    'patient.status.edit': {'include': TP},
+    'patient.training.edit': {'include': TP},
+    'patient.edit.tp_fields': {'include': TP},
+    'patient.contacts.tab': {'include': TP},
+    'patient.notes.tab': {'include': TP},
+    'patient.activities.tab': {'include': STAFF},
+    'patient.remove': {'include': TP},
+    'patient.request_removal': {'include': STAFF},
+    'injury.stage.edit': {'include': TP},
+    'injury.visibility.edit': {'include': TP},
+    'injury.tp_fields': {'include': TP},
+    'injury.delete': {'include': TP},
+    'injury.all_stages': {'include': TP},
+    'documents.upload': {'include': TP},
+    'documents.delete': {'include': TP},
+    'notes.add': {'include': TP},
+    'activities.reassign': {'include': STAFF},
 }
 
 

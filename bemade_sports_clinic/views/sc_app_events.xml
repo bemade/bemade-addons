@@ -1,0 +1,428 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1540 (epic #1535, P3) — events on the portal app shell: list,
+    calendar, detail (with the assigned therapist's timesheets), create /
+    edit forms; plus the shared timesheet card + sheets (also used by
+    /my/sc/timesheets, sc_app_tools.xml).
+
+    Every form posts to the SAME route and field names as today's pages
+    (CSRF token in each, task 1540 made those routes check it). The calendar
+    is the shared sc_calendar component (FullCalendar from the
+    web.fullcalendar_lib bundle, never a raw <script src>), fed by the
+    unchanged /my/events/calendar/data. Form behaviours (team / staff CSV,
+    venue creation through scFetch) live in static/src/js/sc_events.js.
+    No inline script / style.
+-->
+<odoo>
+
+    <!-- The events segments (upcoming · past · calendar). Variables: active. -->
+    <template id="sc_event_segments" name="App shell: events segments">
+        <t t-call="bemade_sports_clinic.sc_page_tabs">
+            <t t-set="tabs" t-value="sc_event_segments"/>
+        </t>
+    </template>
+
+    <!-- /my/events (shell) -->
+    <template id="sc_app_events" name="Sports Clinic App: events">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title" t-value="sc_nav_labels['events']"/>
+            <t t-set="sc_active_nav" t-value="'events'"/>
+            <t t-set="sc_parent_url" t-value="'/my/app/more'"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['more'], '/my/app/more')]"/>
+            <t t-if="can_edit">
+                <t t-set="sc_create_label">New event</t>
+                <t t-set="sc_primary_action" t-value="{'url': '/my/event/create', 'label': sc_create_label, 'key': 'events.create'}"/>
+            </t>
+            <t t-call="bemade_sports_clinic.sc_event_segments">
+                <t t-set="active" t-value="sc_event_segment"/>
+            </t>
+            <div class="o_sc_chips" data-sc-section="events.types">
+                <t t-foreach="sc_event_chips" t-as="chip">
+                    <a t-att-href="chip[2]" t-attf-class="o_sc_chip #{'o_sc_chip_mauve' if chip[3] else 'o_sc_chip_ghost'}"
+                       t-att-aria-pressed="'true' if chip[3] else 'false'" t-att-data-sc-event-type="chip[0] or 'all'" t-out="chip[1]"/>
+                </t>
+            </div>
+            <div t-if="sc_event_rows" class="o_sc_list" data-sc-section="events.list">
+                <t t-foreach="sc_event_rows" t-as="row">
+                    <t t-call="bemade_sports_clinic.sc_entity_row">
+                        <t t-set="href" t-value="row['url']"/>
+                        <t t-set="lead_icon" t-value="'calendar'"/>
+                        <t t-set="title" t-value="row['title']"/>
+                        <t t-set="subtitle" t-value="row['subtitle']"/>
+                        <t t-set="row_attrs" t-value="{'data-sc-event-id': row['id']}"/>
+                        <span t-if="row['cancelled']" class="o_sc_chip o_sc_chip_red">Cancelled</span>
+                        <span t-elif="row['kind']" class="o_sc_chip o_sc_chip_ghost" t-out="row['kind']"/>
+                    </t>
+                </t>
+            </div>
+            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-set="message">No events found.</t>
+            </t>
+            <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_sc_pager">
+                <t t-call="portal.pager"/>
+            </div>
+        </t>
+    </template>
+
+    <!--
+        The shared calendar (FullCalendar in an OWL component). Variable:
+        props (JSON: feedUrl, params, locale, detailKeys).
+    -->
+    <template id="sc_calendar" name="App shell: calendar">
+        <div class="o_sc_calendar_wrap" data-sc-section="calendar">
+            <owl-component name="bemade_sports_clinic.sc_calendar" t-att-props="props">
+                <p class="o_sc_empty">Loading…</p>
+            </owl-component>
+        </div>
+    </template>
+
+    <!-- /my/events/calendar (shell) -->
+    <template id="sc_app_events_calendar" name="Sports Clinic App: events calendar">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title" t-value="sc_nav_labels['events']"/>
+            <t t-set="sc_active_nav" t-value="'events'"/>
+            <t t-set="sc_parent_url" t-value="'/my/app/more'"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['more'], '/my/app/more')]"/>
+            <t t-call="bemade_sports_clinic.sc_event_segments">
+                <t t-set="active" t-value="'calendar'"/>
+            </t>
+            <t t-call="bemade_sports_clinic.sc_calendar">
+                <t t-set="props" t-value="sc_calendar_props"/>
+            </t>
+        </t>
+    </template>
+
+    <!--
+        Timesheet card. Variables: row (AppShellMixin._sc_timesheet_row),
+        show_event (link to the event).
+    -->
+    <template id="sc_timesheet_card" name="App shell: timesheet card">
+        <article class="o_sc_card o_sc_timesheet" t-att-data-sc-timesheet-id="row['id']" t-att-data-sc-state="row['state']">
+            <div class="o_sc_card_head">
+                <div>
+                    <a t-if="show_event" t-att-href="row['event_url']" class="o_sc_row_title" t-out="row['title']"/>
+                    <strong t-else="" t-out="row['when']"/>
+                    <p class="o_sc_meta">
+                        <t t-if="show_event"><t t-out="row['when']"/> · </t>
+                        <t t-out="row['subtitle']"/>
+                    </p>
+                </div>
+                <span t-attf-class="o_sc_chip #{'o_sc_chip_green' if row['state'] == 'invoiced' else 'o_sc_chip_ghost'}" t-out="row['state_label']"/>
+            </div>
+            <dl class="o_sc_kv">
+                <t t-foreach="row['lines']" t-as="line">
+                    <dt t-out="line[0]"/>
+                    <dd t-out="line[1]"/>
+                </t>
+            </dl>
+            <div t-if="row['editable']" class="o_sc_card_actions">
+                <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" t-att-data-sc-sheet-open="'sc_ts_edit_%s' % row['id']"
+                        data-sc-action="timesheet.edit">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                    <span>Edit</span>
+                </button>
+                <button type="button" class="o_sc_btn o_sc_btn_danger o_sc_btn_sm" t-att-data-sc-sheet-open="'sc_ts_delete_%s' % row['id']"
+                        data-sc-action="timesheet.delete">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'trash'"/></t>
+                    <span>Delete</span>
+                </button>
+            </div>
+            <p t-elif="row['state'] == 'invoiced'" class="o_sc_meta">Invoiced (read-only)</p>
+        </article>
+    </template>
+
+    <!-- The four datetime fields of a timesheet. Variables: prefix, values. -->
+    <template id="sc_timesheet_fields" name="App shell: timesheet fields">
+        <div class="o_sc_field">
+            <label class="o_sc_field_label" t-att-for="'%s_travel_start' % prefix">Travel Start</label>
+            <input type="datetime-local" class="o_sc_input" name="travel_start" t-att-id="'%s_travel_start' % prefix" t-att-value="values.get('travel_start') or ''"/>
+        </div>
+        <div class="o_sc_field">
+            <label class="o_sc_field_label" t-att-for="'%s_coverage_start' % prefix">Coverage Start</label>
+            <input type="datetime-local" class="o_sc_input" name="coverage_start" t-att-id="'%s_coverage_start' % prefix" t-att-value="values.get('coverage_start') or ''"/>
+        </div>
+        <div class="o_sc_field">
+            <label class="o_sc_field_label" t-att-for="'%s_coverage_end' % prefix">Coverage End</label>
+            <input type="datetime-local" class="o_sc_input" name="coverage_end" t-att-id="'%s_coverage_end' % prefix" t-att-value="values.get('coverage_end') or ''"/>
+        </div>
+        <div class="o_sc_field">
+            <label class="o_sc_field_label" t-att-for="'%s_travel_end' % prefix">Travel End</label>
+            <input type="datetime-local" class="o_sc_input" name="travel_end" t-att-id="'%s_travel_end' % prefix" t-att-value="values.get('travel_end') or ''"/>
+        </div>
+    </template>
+
+    <!-- Edit / delete sheets of editable timesheets. Variables: rows, return_url. -->
+    <template id="sc_timesheet_sheets" name="App shell: timesheet sheets">
+        <t t-foreach="rows" t-as="row">
+            <t t-if="row['editable']">
+                <t t-call="bemade_sports_clinic.sc_sheet">
+                    <t t-set="sheet_id" t-value="'sc_ts_edit_%s' % row['id']"/>
+                    <t t-set="title">Edit Timesheet</t>
+                    <t t-set="lazy_url" t-value="False"/>
+                    <form t-att-action="'/my/sc/timesheet/%s/edit' % row['id']" method="post" class="o_sc_form" data-sc-form="timesheet.edit">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="return_url" t-att-value="return_url"/>
+                        <t t-call="bemade_sports_clinic.sc_timesheet_fields">
+                            <t t-set="prefix" t-value="'sc_ts_%s' % row['id']"/>
+                            <t t-set="values" t-value="row['inputs']"/>
+                        </t>
+                        <div class="o_sc_form_actions">
+                            <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                            <button type="submit" class="o_sc_btn o_sc_btn_primary">Save</button>
+                        </div>
+                    </form>
+                </t>
+                <t t-call="bemade_sports_clinic.sc_confirm_sheet">
+                    <t t-set="sheet_id" t-value="'sc_ts_delete_%s' % row['id']"/>
+                    <t t-set="title">Delete Timesheet</t>
+                    <t t-set="message">Delete this timesheet? This cannot be undone from the portal.</t>
+                    <t t-set="action" t-value="'/my/sc/timesheet/%s/delete' % row['id']"/>
+                    <t t-set="hidden" t-value="{'return_url': return_url}"/>
+                    <t t-set="confirm_label">Delete</t>
+                    <t t-set="danger" t-value="True"/>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- /my/event/<id> (shell) -->
+    <template id="sc_app_event" name="Sports Clinic App: event">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title" t-value="event.name"/>
+            <t t-set="sc_context" t-value="sc_nav_labels['events']"/>
+            <t t-set="sc_active_nav" t-value="'events'"/>
+            <t t-set="sc_parent_url" t-value="return_url or '/my/events'"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['events'], return_url or '/my/events')]"/>
+            <t t-if="can_add_timesheet">
+                <t t-set="sc_ts_label">Add My Timesheet</t>
+                <t t-set="sc_primary_action" t-value="{'sheet': 'sc_ts_add_sheet', 'label': sc_ts_label, 'key': 'timesheet.add', 'icon': 'timesheet'}"/>
+            </t>
+            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+
+            <div class="o_sc_card o_sc_hero" data-sc-section="event.hero">
+                <div class="o_sc_chips">
+                    <span class="o_sc_chip o_sc_chip_ghost" t-out="sc_event_kind"/>
+                    <span t-attf-class="o_sc_chip #{'o_sc_chip_red' if event_sudo.state == 'cancelled' else 'o_sc_chip_ghost'}" t-out="sc_event_state"/>
+                </div>
+                <dl class="o_sc_kv">
+                    <dt>When</dt><dd t-out="sc_event_when or '—'"/>
+                    <t t-if="sc_event_therapist_when"><dt>Therapist</dt><dd t-out="sc_event_therapist_when"/></t>
+                    <dt>Teams</dt><dd t-out="sc_event_teams or '—'"/>
+                    <dt>Venue</dt><dd t-out="event_sudo.venue_id.name or '—'"/>
+                    <t t-if="event_sudo.partner_id"><dt>Organization</dt><dd t-out="event_sudo.partner_id.name"/></t>
+                    <dt>Assigned Staff</dt><dd t-out="', '.join(s['name'] for s in assigned_staff) or '—'"/>
+                </dl>
+                <p t-if="sc_event_description" class="o_sc_pre" t-out="sc_event_description"/>
+                <div class="o_sc_actions_row">
+                    <a t-if="sc_can_activities" t-attf-href="/my/event/activities?event_id=#{event.id}" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
+                       data-sc-action="event.activities">
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'activities'"/></t>
+                        <span>Activities</span>
+                    </a>
+                    <a t-if="can_edit" t-att-href="('/my/event/%s/edit' % event.id) + (('?return_url=%s' % return_url) if return_url else '')"
+                       class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-action="event.edit">
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                        <span>Edit Event</span>
+                    </a>
+                    <button t-if="sc_can_cancel" type="button" class="o_sc_btn o_sc_btn_danger o_sc_btn_sm"
+                            data-sc-sheet-open="sc_event_cancel_sheet" data-sc-action="event.cancel">Cancel Event</button>
+                </div>
+            </div>
+
+            <section t-if="can_view_timesheets" class="o_sc_section" data-sc-section="event.timesheets">
+                <t t-call="bemade_sports_clinic.sc_section_header">
+                    <t t-set="title">My Timesheets</t>
+                </t>
+                <t t-call="bemade_sports_clinic.sc_banner" t-if="missing_count and show_all_timesheets">
+                    <t t-set="tone" t-value="'warn'"/>
+                    <t t-out="missing_names"/>
+                </t>
+                <div t-if="sc_timesheet_rows" class="o_sc_list">
+                    <t t-foreach="sc_timesheet_rows" t-as="row">
+                        <t t-call="bemade_sports_clinic.sc_timesheet_card"/>
+                    </t>
+                </div>
+                <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                    <t t-set="message">No timesheets yet.</t>
+                </t>
+                <t t-call="bemade_sports_clinic.sc_timesheet_sheets">
+                    <t t-set="rows" t-value="sc_timesheet_rows"/>
+                    <t t-set="return_url" t-value="event_return_url"/>
+                </t>
+            </section>
+
+            <t t-if="can_add_timesheet" t-call="bemade_sports_clinic.sc_sheet">
+                <t t-set="sheet_id" t-value="'sc_ts_add_sheet'"/>
+                <t t-set="title">Add My Timesheet</t>
+                <t t-set="lazy_url" t-value="False"/>
+                <form t-attf-action="/my/event/#{event.id}/timesheet/add" method="post" class="o_sc_form" data-sc-form="timesheet.add">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="return_url" t-att-value="return_url or ''"/>
+                    <t t-call="bemade_sports_clinic.sc_banner">
+                        <span>Did you use personal material for this event? Report it so the client can be re-invoiced.</span>
+                        <a t-att-href="material_report_mailto">Report material used</a>
+                    </t>
+                    <t t-call="bemade_sports_clinic.sc_timesheet_fields">
+                        <t t-set="prefix" t-value="'sc_ts_add'"/>
+                        <t t-set="values" t-value="{'travel_start': ts_travel_start_local, 'coverage_start': ts_coverage_start_local, 'coverage_end': ts_coverage_end_local, 'travel_end': ts_travel_end_local}"/>
+                    </t>
+                    <div class="o_sc_form_actions">
+                        <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                        <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="timesheet.add.submit">Add Timesheet</button>
+                    </div>
+                </form>
+            </t>
+
+            <t t-if="sc_can_cancel" t-call="bemade_sports_clinic.sc_sheet">
+                <t t-set="sheet_id" t-value="'sc_event_cancel_sheet'"/>
+                <t t-set="title">Cancel Event</t>
+                <t t-set="lazy_url" t-value="False"/>
+                <form t-attf-action="/my/event/#{event.id}/cancel" method="post" class="o_sc_form" data-sc-form="event.cancel">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="return_url" t-att-value="return_url or ''"/>
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" for="sc_event_cancel_reason">Reason for cancellation</label>
+                        <textarea id="sc_event_cancel_reason" name="cancel_reason" class="o_sc_input o_sc_textarea" rows="3" required="required"/>
+                    </div>
+                    <div class="o_sc_form_actions">
+                        <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Back</button>
+                        <button type="submit" class="o_sc_btn o_sc_btn_danger">Cancel Event</button>
+                    </div>
+                </form>
+            </t>
+        </t>
+    </template>
+
+    <!-- /my/event/create and /my/event/<id>/edit (shell) -->
+    <template id="sc_app_event_form" name="Sports Clinic App: event form">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-if="sc_form_mode == 'edit'">
+                <t t-set="sc_title">Edit Event</t>
+                <t t-set="sc_context" t-value="event.name"/>
+            </t>
+            <t t-else="">
+                <t t-set="sc_title">New event</t>
+                <t t-set="sc_context" t-value="sc_nav_labels['events']"/>
+            </t>
+            <t t-set="sc_active_nav" t-value="'events'"/>
+            <t t-set="sc_parent_url" t-value="sc_form['cancel_url']"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['events'], '/my/events')]"/>
+            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+
+            <form t-att-action="sc_form['action']" method="post" class="o_sc_form" data-sc-form="event.form" data-sc-event-form="1">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="return_url" t-att-value="sc_form['return_url']"/>
+                <input type="hidden" name="description_format" value="text"/>
+                <input type="hidden" name="team_ids" t-att-value="','.join(str(i) for i in sc_form['team_ids'])" data-sc-csv-of="sc_team"/>
+                <input type="hidden" name="assigned_staff_ids" t-att-value="','.join(str(i) for i in sc_form['staff_ids'])" data-sc-csv-of="sc_staff"/>
+                <section class="o_sc_card o_sc_fields" data-sc-section="event.form.main">
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" for="sc_event_name">Event Name</label>
+                        <input type="text" id="sc_event_name" name="name" class="o_sc_input" required="required" t-att-value="sc_form['name']"/>
+                    </div>
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" for="sc_event_type">Event Type</label>
+                        <select id="sc_event_type" name="event_type" class="o_sc_input o_sc_select">
+                            <t t-foreach="sc_event_types" t-as="opt">
+                                <option t-att-value="opt[0]" t-att-selected="'selected' if opt[0] == sc_form['event_type'] else None" t-out="opt[1]"/>
+                            </t>
+                        </select>
+                    </div>
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" for="sc_event_venue">Venue</label>
+                        <div class="o_sc_inline_form">
+                            <select id="sc_event_venue" name="venue_id" class="o_sc_input o_sc_select" data-sc-venue-select="1">
+                                <option value="">To be determined</option>
+                                <t t-foreach="venues" t-as="venue">
+                                    <option t-att-value="venue.id" t-att-selected="'selected' if venue.id == sc_form['venue_id'] else None" t-out="venue.name"/>
+                                </t>
+                            </select>
+                            <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-sheet-open="sc_venue_sheet"
+                                    data-sc-action="venue.new">New venue</button>
+                        </div>
+                    </div>
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" for="sc_event_description">Description</label>
+                        <textarea id="sc_event_description" name="description" class="o_sc_input o_sc_textarea" rows="3" t-out="sc_form['description']"/>
+                    </div>
+                </section>
+                <section class="o_sc_card o_sc_fields" data-sc-section="event.form.times">
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" for="sc_event_date_start">Event Start</label>
+                        <input type="datetime-local" id="sc_event_date_start" name="date_start" class="o_sc_input" required="required" t-att-value="sc_form['date_start']"/>
+                    </div>
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" for="sc_event_date_end">Event End</label>
+                        <input type="datetime-local" id="sc_event_date_end" name="date_end" class="o_sc_input" required="required" t-att-value="sc_form['date_end']"/>
+                    </div>
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" for="sc_event_therapist_start">Therapist Start</label>
+                        <input type="datetime-local" id="sc_event_therapist_start" name="therapist_start" class="o_sc_input" t-att-value="sc_form['therapist_start']"/>
+                    </div>
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" for="sc_event_therapist_end">Therapist End</label>
+                        <input type="datetime-local" id="sc_event_therapist_end" name="therapist_end" class="o_sc_input" t-att-value="sc_form['therapist_end']"/>
+                    </div>
+                </section>
+                <section class="o_sc_card o_sc_fields" data-sc-section="event.form.teams">
+                    <h2 class="o_sc_section_header"><span>Teams</span></h2>
+                    <t t-foreach="teams" t-as="team">
+                        <label class="o_sc_check">
+                            <input type="checkbox" name="sc_team" t-att-value="team.id"
+                                   t-att-checked="'checked' if team.id in sc_form['team_ids'] else None"/>
+                            <span t-out="team.name"/>
+                        </label>
+                    </t>
+                </section>
+                <section class="o_sc_card o_sc_fields" data-sc-section="event.form.staff">
+                    <h2 class="o_sc_section_header"><span>Assigned Staff</span></h2>
+                    <t t-foreach="treatment_professionals" t-as="tp">
+                        <label class="o_sc_check">
+                            <input type="checkbox" name="sc_staff" t-att-value="tp.id"
+                                   t-att-checked="'checked' if tp.id in sc_form['staff_ids'] else None"/>
+                            <span t-out="tp.name"/>
+                        </label>
+                    </t>
+                </section>
+                <div class="o_sc_form_actions">
+                    <a t-att-href="sc_form['cancel_url']" class="o_sc_btn o_sc_btn_ghost">Cancel</a>
+                    <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="event.save">
+                        <t t-if="sc_form_mode == 'edit'">Save Changes</t>
+                        <t t-else="">Create Event</t>
+                    </button>
+                </div>
+            </form>
+
+            <t t-call="bemade_sports_clinic.sc_sheet">
+                <t t-set="sheet_id" t-value="'sc_venue_sheet'"/>
+                <t t-set="title">New venue</t>
+                <t t-set="lazy_url" t-value="False"/>
+                <form action="/my/venue/create" method="post" class="o_sc_form" data-sc-venue-form="1">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" for="sc_venue_name">Venue Name</label>
+                        <input type="text" id="sc_venue_name" name="name" class="o_sc_input" required="required"/>
+                    </div>
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" for="sc_venue_street">Street</label>
+                        <input type="text" id="sc_venue_street" name="street" class="o_sc_input"/>
+                    </div>
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" for="sc_venue_city">City</label>
+                        <input type="text" id="sc_venue_city" name="city" class="o_sc_input"/>
+                    </div>
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" for="sc_venue_zip">ZIP</label>
+                        <input type="text" id="sc_venue_zip" name="zip" class="o_sc_input"/>
+                    </div>
+                    <p class="o_sc_field_message o_sc_field_error" data-sc-venue-error="1" hidden="hidden"/>
+                    <div class="o_sc_form_actions">
+                        <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                        <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="venue.save">Save Venue</button>
+                    </div>
+                </form>
+            </t>
+        </t>
+    </template>
+
+</odoo>

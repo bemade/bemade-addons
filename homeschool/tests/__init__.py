@@ -15,4 +15,5 @@ from . import (
     test_uc13_reading,
     test_uc14_submissions,
     test_uc15_journal_api,
+    test_uc16_i18n,
 )

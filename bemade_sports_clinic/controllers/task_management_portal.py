@@ -4,7 +4,9 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from .access_control_mixin import AccessControlMixin
+from .app_shell import AppShellMixin
 from datetime import date, timedelta
+from urllib.parse import quote
 
 _logger = logging.getLogger(__name__)
 
@@ -23,7 +25,7 @@ def _append_query(url, extra):
     return f'{base}{sep}{extra}' + (f'#{frag}' if frag else '')
 
 
-class TaskManagementPortal(CustomerPortal, AccessControlMixin):
+class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     """Controller for task management functionality in the portal"""
 
     # Access control methods now inherited from AccessControlMixin
@@ -78,12 +80,12 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         template renders a single list view without the global dashboard tabs.
         """
         user = request.env.user
-        partner = user.partner_id
-        
-        team_staff_rels = partner.team_staff_rel_ids
-        
-        team_ids = team_staff_rels.mapped('team_id.id')
-        
+
+        # Team scope (task 1577 review, 2026-09-29): every team for a clinic
+        # administrator, the staffed teams for everyone else — the same rule
+        # as the other lists; never a bare search([]) for a non-admin.
+        scope_teams = self._activity_scope_teams()
+
         # Build search domain with team-based filtering
         # Record rules provide broad CRUD access, controller enforces team-based security
         
@@ -96,15 +98,15 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             '&', '&',
             ('res_model', '=', 'sports.patient'),
             ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
+            ('res_id', 'in', scope_teams.mapped('patient_ids.id') or [0]),
             '&', '&',
             ('res_model', '=', 'sports.team'),
             ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0]),
+            ('res_id', 'in', scope_teams.ids or [0]),
             '&', '&',
             ('res_model', '=', 'sports.event'),
             ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.event_ids.id') or [0])
+            ('res_id', 'in', scope_teams.mapped('event_ids.id') or [0])
         ]
         
         # Activities are scoped strictly by the team-based access domain. We used to
@@ -192,8 +194,75 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             'simplified': bool(simplified),
         }
         
-        return request.render('bemade_sports_clinic.portal_my_activities', values)
-    
+        # Task 1539: the app shell (switch on) or today's template (off) —
+        # also for the /my/team/activities and /my/event/activities wrappers.
+        if self._sc_app_shell_active():
+            values.update(self._sc_activities_values(values))
+        return self._sc_render('bemade_sports_clinic.portal_my_activities',
+                               'bemade_sports_clinic.sc_app_activities', values)
+
+    def _sc_activities_values(self, values):
+        env = request.env
+        today = fields.Date.context_today(env.user)
+        activities = values['activities']
+        overdue = activities.filtered(lambda a: a.date_deadline < today)
+        due_today = activities.filtered(lambda a: a.date_deadline == today)
+        planned = activities.filtered(lambda a: a.date_deadline > today)
+        tab = request.params.get('tab')
+        keys = ('all', 'overdue', 'today', 'planned')
+        base = request.httprequest.path
+        args = {k: v for k, v in request.httprequest.args.items()
+                if k not in ('tab', 'success', 'error')}
+        query = '&'.join('%s=%s' % (k, quote(str(v), safe='')) for k, v in args.items())
+        sep = '?' + query + '&' if query else '?'
+        labels = {
+            'all': env._("All (%(count)s)", count=len(activities)),
+            'overdue': env._("Overdue (%(count)s)", count=len(overdue)),
+            'today': env._("Today (%(count)s)", count=len(due_today)),
+            'planned': env._("Planned (%(count)s)", count=len(planned)),
+        }
+        context_title = ''
+        if values.get('context_patient'):
+            context_title = values['context_patient'].name
+        elif values.get('context_team'):
+            context_title = values['context_team'].name
+        elif values.get('context_event'):
+            context_title = values['context_event'].display_name
+        return {
+            'today_date': today,
+            'sc_activity_groups': {
+                'all': activities, 'overdue': overdue, 'today': due_today, 'planned': planned},
+            'sc_activity_tabs': [(key, labels[key], '%s%stab=%s' % (base, sep, key)) for key in keys],
+            'sc_activity_active_tab': tab if tab in keys else 'all',
+            'sc_activities_return': base + ('?' + query if query else ''),
+            'sc_add_activity_url': (
+                '/my/activity/create?model=%s&res_id=%s&return_url=%s' % (
+                    quote(values['context_model'], safe=''),
+                    quote(str(values['context_res_id']), safe=''),
+                    quote(base + ('?' + query if query else ''), safe=''))
+                if values.get('context_model') and values.get('context_res_id') else False),
+            'sc_context_title': context_title,
+            'sc_flash': self._sc_activity_flash(),
+        }
+
+    @staticmethod
+    def _sc_activity_flash():
+        env = request.env
+        params = request.params
+        return {
+            'success': {
+                'activity_created': env._("Activity created successfully."),
+                'activity_updated': env._("Activity updated."),
+                'activity_reassigned': env._("Activity reassigned."),
+                'activity_done': env._("Activity marked as done."),
+                'activity_cancelled': env._("Activity cancelled."),
+            }.get(params.get('success')),
+            'error': {
+                'missing_fields': env._("Please fill in all required fields."),
+                'invalid_user': env._("You cannot assign this activity to that user."),
+            }.get(params.get('error')),
+        }
+
     @http.route(['/my/activity/create'], type='http', auth='user', website=True)
     def create_activity_form(self, model=None, res_id=None, **kw):
         """Display form to create a new activity"""
@@ -265,8 +334,8 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             raw_return_url = raw_return_url.replace('&amp;', '&')
         if not raw_return_url or raw_return_url in ('None', 'none', 'null', 'NULL'):
             raw_return_url = None
-        if raw_return_url and not str(raw_return_url).startswith('/'):
-            raw_return_url = None
+        # Task 1544: same-site paths only (was: any '/…', incl. '//host').
+        raw_return_url = self._safe_return_url(raw_return_url, None)
     
         values = {
             'activity_types': activity_types,
@@ -285,7 +354,27 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             'today': date.today().strftime('%Y-%m-%d'),
         }
         
-        return request.render('bemade_sports_clinic.portal_create_activity', values)
+        # Task 1539: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_activity_form_values(values))
+        return self._sc_render('bemade_sports_clinic.portal_create_activity',
+                               'bemade_sports_clinic.sc_app_activity_form', values)
+
+    @staticmethod
+    def _sc_activity_form_values(values):
+        """The advisory « no access to this team » ids (task 1402) for the
+        shell's assignee select (sc_activities.js)."""
+        access = values.get('assignee_team_access') or {}
+        # The create and edit pages share the template: the keys only one
+        # of them provides default to False (QWeb raises on unknown names).
+        for key in ('activity', 'record_name', 'model', 'res_id', 'return_url', 'team_id',
+                    'clinic_event', 'default_activity_type_id', 'default_user_id',
+                    'assignable_users', 'available_users'):
+            values.setdefault(key, False)
+        return {
+            'sc_no_access_ids': ' '.join(str(uid) for uid, ok in access.items() if not ok),
+            'sc_flash': TaskManagementPortal._sc_activity_flash(),
+        }
 
     @http.route(['/my/player/activities'], type='http', auth='user', website=True)
     def view_player_activities(self, player_id=None, team_id=None, **kw):
@@ -305,7 +394,10 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         url = f'/my/player?player_id={patient.id}'
         if team_id:
             try:
-                team = self._check_team_access(team_id, check_staff=True)
+                # Task 1577 review: a clinic admin's team context is kept
+                # on any team; everyone else still needs a staff row.
+                team = self._check_team_access(
+                    team_id, check_staff=not self._is_clinic_admin())
                 if team:
                     url += f'&team_id={team.id}'
             except UserError:
@@ -319,7 +411,10 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         if not team_id:
             return request.redirect('/my/teams')
 
-        team = self._check_team_access(team_id, check_staff=True)  # raises AccessError -> 403
+        # raises AccessError -> 403. Task 1577 review: a clinic admin opens
+        # the activities of ANY team; everyone else needs a staff row.
+        team = self._check_team_access(
+            team_id, check_staff=not self._is_clinic_admin())
         return self.view_activities(model='sports.team', res_id=team.id, simplified=True)
 
     @http.route(['/my/injury/activities'], type='http', auth='user', website=True)
@@ -339,7 +434,10 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         url = f'/my/player?player_id={injury.patient_id.id}'
         if team_id:
             try:
-                team = self._check_team_access(team_id, check_staff=True)
+                # Task 1577 review: a clinic admin's team context is kept
+                # on any team; everyone else still needs a staff row.
+                team = self._check_team_access(
+                    team_id, check_staff=not self._is_clinic_admin())
                 if team:
                     url += f'&team_id={team.id}'
             except UserError:
@@ -357,7 +455,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
 
         return self.view_activities(model='sports.event', res_id=event.id, simplified=True)
     
-    @http.route(['/my/activity/save'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/activity/save'], type='http', auth='user', website=True, methods=['POST'])
     def create_activity_submit(self, **post):
         """Process form submission to create a new activity"""
         model = post.get('model')
@@ -381,9 +479,8 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
                 val = val.replace('&amp;', '&')
             if not val or val in ('None', 'none', 'null', 'NULL'):
                 return default
-            if not str(val).startswith('/'):
-                return default
-            return val
+            # Task 1544: same-site paths only (was: any '/…', incl. '//host').
+            return self._safe_return_url(val, default)
 
         default_return_url = '/my/activities'
         if model == 'sports.patient':
@@ -448,7 +545,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
 
         return request.redirect(_append_query(return_url, 'success=activity_created'))
     
-    @http.route(['/my/activity/update'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/activity/update'], type='http', auth='user', website=True, methods=['POST'])
     def update_activity(self, **post):
         """Update an existing activity"""
         activity_id = post.get('activity_id')
@@ -474,18 +571,18 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             if activity.res_model == 'sports.patient':
                 patient = request.env['sports.patient'].browse(activity.res_id)
                 if patient.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     patient_teams = patient.team_ids
                     has_access = bool(user_teams & patient_teams)
             elif activity.res_model == 'sports.team':
                 team = request.env['sports.team'].browse(activity.res_id)
                 if team.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     has_access = bool(user_teams & team)
             elif activity.res_model == 'sports.event':
                 event = request.env['sports.event'].browse(activity.res_id)
                 if event.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     has_access = bool(user_teams & event.team_ids)
         
         if not has_access:
@@ -522,10 +619,20 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             activity.sudo().write(update_vals)
         
         # Redirect to activities page or return URL
-        return_url = post.get('return_url', '/my/activities')
+        return_url = self._safe_return_url(post.get('return_url'), '/my/activities')
         return request.redirect(_append_query(return_url, 'success=activity_updated'))
     
-    @http.route(['/my/activity/complete'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    def _sc_activity_done_redirect(self, post, success):
+        """Where complete / cancel / reschedule land. Today's modals post no
+        ``return_url`` and keep landing on /my/activities exactly as before;
+        the app shell's sheets (task 1539) post the page they were opened
+        from (same-site paths only, task 1544) and get a confirmation."""
+        return_url = self._safe_return_url(post.get('return_url'), None)
+        if not return_url:
+            return request.redirect('/my/activities')
+        return request.redirect(_append_query(return_url, 'success=%s' % success))
+
+    @http.route(['/my/activity/complete'], type='http', auth='user', website=True, methods=['POST'])
     def complete_activity(self, **post):
         """Mark an activity as done"""
         activity_id = post.get('activity_id')
@@ -543,9 +650,9 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         
         # Mark the activity as done
         activity.action_feedback(feedback=feedback)
-        return request.redirect('/my/activities')
+        return self._sc_activity_done_redirect(post, 'activity_done')
 
-    @http.route(['/my/activity/cancel'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/activity/cancel'], type='http', auth='user', website=True, methods=['POST'])
     def cancel_activity(self, **post):
         """Cancel (delete) an activity."""
         activity_id = post.get('activity_id')
@@ -567,24 +674,24 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             if activity.res_model == 'sports.patient':
                 patient = request.env['sports.patient'].browse(activity.res_id)
                 if patient.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     has_access = bool(user_teams & patient.team_ids)
             elif activity.res_model == 'sports.team':
                 team = request.env['sports.team'].browse(activity.res_id)
                 if team.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     has_access = bool(user_teams & team)
             elif activity.res_model == 'sports.event':
                 event = request.env['sports.event'].browse(activity.res_id)
                 if event.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     has_access = bool(user_teams & event.team_ids)
 
         if not has_access:
             return request.redirect('/my/activities')
 
         activity.unlink()
-        return request.redirect('/my/activities')
+        return self._sc_activity_done_redirect(post, 'activity_cancelled')
     
     @http.route(['/my/activity/reschedule'], type='http', auth='user', website=True, methods=['POST'])
     def reschedule_activity(self, **post):
@@ -608,9 +715,9 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         activity.write({'date_deadline': new_deadline})
         
         # Redirect to activities page
-        return request.redirect('/my/activities')
+        return self._sc_activity_done_redirect(post, 'activity_updated')
     
-    @http.route(['/my/activity/reassign'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/activity/reassign'], type='http', auth='user', website=True, methods=['POST'])
     def reassign_activity(self, **post):
         """Reassign an activity to a different user"""
         activity_id = post.get('activity_id')
@@ -644,19 +751,19 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         if activity.res_model == 'sports.patient':
             patient = request.env['sports.patient'].browse(activity.res_id)
             if patient.exists():
-                user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                user_teams = self._activity_scope_teams()
                 patient_teams = patient.team_ids
                 has_access = bool(user_teams & patient_teams)
         elif activity.res_model == 'sports.team':
             team = request.env['sports.team'].browse(activity.res_id)
             if team.exists():
-                user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                user_teams = self._activity_scope_teams()
                 has_access = team in user_teams
 
         elif activity.res_model == 'sports.event':
             event = request.env['sports.event'].browse(activity.res_id)
             if event.exists():
-                user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                user_teams = self._activity_scope_teams()
                 has_access = bool(user_teams & event.team_ids)
                 
         if not has_access:
@@ -672,7 +779,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
         activity.sudo().write({'user_id': new_user.id})
         
         # Determine return URL based on context
-        return_url = post.get('return_url', '/my/activities')
+        return_url = self._safe_return_url(post.get('return_url'), '/my/activities')
         return request.redirect(_append_query(return_url, 'success=activity_reassigned'))
 
     @http.route(['/my/activity/<int:activity_id>/edit'], type='http', auth='user', website=True)
@@ -698,18 +805,18 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
                 patient = request.env['sports.patient'].browse(activity.res_id)
                 if patient.exists():
                     # Check if user is staff on any of the patient's teams
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     patient_teams = patient.team_ids
                     has_access = bool(user_teams & patient_teams)
             elif activity.res_model == 'sports.team':
                 team = request.env['sports.team'].browse(activity.res_id)
                 if team.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     has_access = bool(user_teams & team)
             elif activity.res_model == 'sports.event':
                 event = request.env['sports.event'].browse(activity.res_id)
                 if event.exists():
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     has_access = bool(user_teams & event.team_ids)
         if not has_access:
             raise request.not_found()
@@ -742,7 +849,11 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             'today': date.today().strftime('%Y-%m-%d'),
         }
         
-        return request.render('bemade_sports_clinic.portal_edit_activity', values)
+        # Task 1539: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_activity_form_values(values))
+        return self._sc_render('bemade_sports_clinic.portal_edit_activity',
+                               'bemade_sports_clinic.sc_app_activity_form', values)
 
     @http.route(['/my/activity/<int:activity_id>'], type='http', auth='user', website=True)
     def view_activity_detail(self, activity_id, **kw):
@@ -767,7 +878,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
                 patient = request.env['sports.patient'].browse(activity.res_id)
                 if patient.exists():
                     # Check if user is staff on any of the patient's teams
-                    user_teams = partner.team_staff_rel_ids.mapped('team_id')
+                    user_teams = self._activity_scope_teams()
                     patient_teams = patient.team_ids
                     has_access = bool(user_teams & patient_teams)
         
@@ -819,150 +930,19 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin):
             'context_event': context_event,
         }
         
-        return request.render('bemade_sports_clinic.portal_activity_detail', values)
-    
-    @http.route(['/my/messages'], type='http', auth='user', website=True)
-    def view_messages(self, model=None, res_id=None, **kw):
-        """Display list of messages accessible to the current user through team relationships"""
-        user = request.env.user
-        partner = user.partner_id
-        
-        team_staff_rels = partner.team_staff_rel_ids
-        
-        # Build team-based access domain for security filtering
-        team_access_domain = [
-            '|', '|',
-            '&', '&',
-            ('model', '=', 'sports.patient'),
-            ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
-            '&', '&',
-            ('model', '=', 'sports.patient.injury'),
-            ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.injury_ids.id') or [0]),
-            '&', '&',
-            ('model', '=', 'sports.team'),
-            ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0])
-        ]
-        
-        # Combine with model/res_id filtering if specified
-        if model:
-            domain = [
-                '&',
-                ('model', '=', model),
-            ] + team_access_domain
-
-            if res_id:
-                domain = [
-                    '&',
-                    ('res_id', '=', int(res_id)),
-                ] + domain
-
-        else:
-            domain = team_access_domain
-        
-        # Search for messages with team-based access control
-        messages = request.env['mail.message'].search(domain, order='date desc')
-        
-        # Group messages by model
-        patient_messages = messages.filtered(lambda m: m.model == 'sports.patient')
-        injury_messages = messages.filtered(lambda m: m.model == 'sports.patient.injury')
-        team_messages = messages.filtered(lambda m: m.model == 'sports.team')
-        
-        values = {
-            'messages': messages,
-            'patient_messages': patient_messages,
-            'injury_messages': injury_messages,
-            'team_messages': team_messages,
-            'page_name': 'messages',
-        }
-        
-        return request.render('bemade_sports_clinic.portal_my_messages', values)
-    
-    @http.route(['/my/attachments'], type='http', auth='user', website=True)
-    def view_attachments(self, model=None, res_id=None, **kw):
-        """Display list of attachments accessible to the current user through team relationships"""
-        user = request.env.user
-        partner = user.partner_id
-        
-        team_staff_rels = partner.team_staff_rel_ids
-        
-        # Build team-based access domain for security filtering
-        # Include both direct attachments on sports models and activity attachments
-        team_access_domain = [
-            '|', '|', '|',
-            # Direct attachments on sports models
-            '&', '&',
-            ('res_model', '=', 'sports.patient'),
-            ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
-            '&', '&',
-            ('res_model', '=', 'sports.patient.injury'),
-            ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.injury_ids.id') or [0]),
-            '&', '&',
-            ('res_model', '=', 'sports.team'),
-            ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0]),
-            # Attachments on activities related to sports models
-            '&', '&',
-            ('res_model', '=', 'mail.activity'),
-            ('res_id', '!=', False),
-            ('res_id', 'in', self._get_accessible_activity_ids(team_staff_rels) or [0])
-        ]
-        
-        # Combine with model/res_id filtering if specified
-        if model:
-            domain = [
-                '&',
-                ('res_model', '=', model),
-            ] + team_access_domain
-
-            if res_id:
-                domain = [
-                    '&',
-                    ('res_id', '=', int(res_id)),
-                ] + domain
-
-        else:
-            domain = team_access_domain
-        
-        # Search for attachments with team-based access control
-        attachments = request.env['ir.attachment'].search(domain, order='create_date desc')
-        
-        # Group attachments by model
-        patient_attachments = attachments.filtered(lambda a: a.res_model == 'sports.patient')
-        injury_attachments = attachments.filtered(lambda a: a.res_model == 'sports.patient.injury')
-        team_attachments = attachments.filtered(lambda a: a.res_model == 'sports.team')
-        activity_attachments = attachments.filtered(lambda a: a.res_model == 'mail.activity')
-        
-        values = {
-            'attachments': attachments,
-            'patient_attachments': patient_attachments,
-            'injury_attachments': injury_attachments,
-            'team_attachments': team_attachments,
-            'activity_attachments': activity_attachments,
-            'page_name': 'attachments',
-        }
-        
-        return request.render('bemade_sports_clinic.portal_my_attachments', values)
-    
-    def _get_accessible_activity_ids(self, team_staff_rels):
-        """Get IDs of activities accessible through team relationships"""
-        # Build the same domain used in view_activities (task 1409: no
-        # injury branch — activities live on patients and teams)
-        team_access_domain = [
-            '|',
-            '&', '&',
-            ('res_model', '=', 'sports.patient'),
-            ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
-            '&', '&',
-            ('res_model', '=', 'sports.team'),
-            ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0])
-        ]
-        
-        activities = request.env['mail.activity'].search(team_access_domain)
-        return activities.ids
+        # Task 1539: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            related_url = False
+            if context_patient:
+                related_url = '/my/player?player_id=%s' % context_patient.id
+            elif context_team:
+                related_url = '/my/team?team_id=%s' % context_team.id
+            elif context_event:
+                related_url = '/my/event/%s' % context_event.id
+            values.update({
+                'sc_related_url': related_url,
+                'today_date': fields.Date.context_today(request.env.user),
+                'sc_flash': self._sc_activity_flash(),
+            })
+        return self._sc_render('bemade_sports_clinic.portal_activity_detail',
+                               'bemade_sports_clinic.sc_app_activity_detail', values)

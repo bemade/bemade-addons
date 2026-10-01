@@ -56,12 +56,15 @@ class TestCovTaskManagementPortal(PortalCovCommon):
         self._login_tp()
         self.assertEqual(self.url_open(f'/my/activity/{self.act_player.id}/edit').status_code, 200)
 
-    def test_view_messages(self):
+    def test_dead_messages_and_attachments_pages_are_gone(self):
+        """Task 1540: /my/messages and /my/attachments (unlinked, no group
+        check, unbounded searches) were deleted."""
         self._login_tp()
-        resp = self.url_open(f'/my/messages?model=sports.patient&res_id={self.player.id}')
-        self.assertEqual(resp.status_code, 200)
-
-    def test_view_attachments(self):
-        self._login_tp()
-        resp = self.url_open(f'/my/attachments?model=sports.patient&res_id={self.player.id}')
-        self.assertEqual(resp.status_code, 200)
+        for url in ('/my/messages', '/my/attachments',
+                    f'/my/messages?model=sports.patient&res_id={self.player.id}',
+                    f'/my/attachments?model=sports.patient&res_id={self.player.id}'):
+            self.assertEqual(self.url_open(url).status_code, 404, url)
+        View = self.env['ir.ui.view']
+        self.assertFalse(View.search([('key', 'in', (
+            'bemade_sports_clinic.portal_my_messages',
+            'bemade_sports_clinic.portal_my_attachments'))]))

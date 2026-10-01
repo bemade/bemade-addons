@@ -8,9 +8,9 @@
     _sc_render). Today's portal_my_team_players and the shared legacy
     partials (portal_patient_card, dashboard_change_items, activity_list_table,
     the digest templates) are NOT modified: the recent-changes rows and the
-    digest-history sheet lazy-load the SAME fragment routes, and the
-    Activities tab t-calls the legacy partials unchanged inside a
-    .o_sc_legacy wrapper (restyled with the shell tokens; their rework is P2).
+    digest-history sheet lazy-load the SAME fragment routes. Task 1539: the
+    Activities tab uses the shell's activity list and sheets
+    (sc_app_activities.xml) instead of the legacy partials.
 
     Sections and actions ask the registry (sc_can) AND the controller's
     existing server-side value — see VISIBILITY_REGISTRY in
@@ -331,24 +331,35 @@
             </section>
 
             <!-- ============================ Activities =========================== -->
-            <!-- Today's partials, unchanged (P2 reworks them), in a token-restyled
-                 wrapper. -->
+            <!-- Task 1539: the shell's activity list + sheets (the legacy
+                 partials stay for the legacy page). -->
             <section t-if="sc_show_activities" class="o_sc_tab_panel" data-sc-tab-panel="activities" role="tabpanel"
                      t-att-hidden="None if sc_active_tab == 'activities' else 'hidden'">
-                <div class="o_sc_legacy">
+                <t t-set="sc_team_activities_return" t-value="'/my/team?team_id=%s&amp;tab=activities' % team.id"/>
+                <div class="o_sc_actions_row">
+                    <button type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm" data-sc-sheet-open="sc_activity_add_sheet"
+                            data-sc-action="activity.add">
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                        <span>Add Activity</span>
+                    </button>
+                </div>
+                <t t-set="today_date" t-value="datetime.datetime.strptime(today, '%Y-%m-%d').date()"/>
+                <t t-call="bemade_sports_clinic.sc_activity_list">
+                    <t t-set="activities" t-value="team_activities"/>
+                    <t t-set="show_assignee" t-value="True"/>
+                    <t t-set="can_reassign" t-value="sc_can('activities.reassign')"/>
+                    <t t-set="empty_message">No activities found</t>
+                </t>
+                <t t-call="bemade_sports_clinic.sc_activity_sheets">
+                    <t t-set="return_url" t-value="sc_team_activities_return"/>
+                    <t t-set="can_reassign" t-value="sc_can('activities.reassign')"/>
+                </t>
+                <t t-call="bemade_sports_clinic.sc_activity_add_sheet">
                     <t t-set="add_model" t-value="'sports.team'"/>
                     <t t-set="add_res_id" t-value="team.id"/>
-                    <t t-set="add_return_url" t-value="'/my/team?team_id=%s&amp;tab=activities' % team.id"/>
-                    <t t-call="bemade_sports_clinic.portal_activity_add_header"/>
-                    <t t-set="today_date" t-value="datetime.datetime.strptime(today, '%Y-%m-%d').date()"/>
-                    <t t-set="context_model" t-value="'sports.team'"/>
-                    <t t-set="context_res_id" t-value="team.id"/>
-                    <t t-set="reassign_return_url" t-value="'/my/team?team_id=%s&amp;tab=activities' % team.id"/>
-                    <t t-call="bemade_sports_clinic.activity_list_table">
-                        <t t-set="filtered_activities" t-value="team_activities"/>
-                        <t t-set="show_assignee" t-value="True"/>
-                    </t>
-                </div>
+                    <t t-set="add_return_url" t-value="sc_team_activities_return"/>
+                    <t t-set="add_team_id" t-value="False"/>
+                </t>
             </section>
 
             <!-- Coach: « Demander un ajout » — the existing request route. -->

@@ -103,6 +103,7 @@ class HomeschoolPortalCase(HttpCase):
         cls.trace_inst = Trace.create({
             "name": "Kingston poster", "student_id": cls.student.id, "date": date(2026, 2, 20),
             "diffusion": "institutional", "student_comment": "I drew the fort.",
+            "subject_ids": [Command.set([cls.fle.id, cls.math.id])],
         })
         cls.att_linked = Attachment.create({
             "name": "poster.pdf", "raw": b"%PDF-1.4 poster\n", "res_model": "homeschool.trace", "res_id": cls.trace_inst.id,

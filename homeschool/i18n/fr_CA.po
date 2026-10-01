@@ -1,0 +1,3144 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+#	* homeschool
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-28 20:00+0000\n"
+"PO-Revision-Date: 2026-09-28 20:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr_CA\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/trace.py:0
+msgid "%s: a trace must be validated before it becomes institutional."
+msgstr "%s : une trace doit être validée avant de devenir institutionnelle."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item__year_level
+msgid "'cycle', '5e', '6e', '5e-6e'…"
+msgstr "« cycle », « 5e », « 6e », « 5e-6e »…"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_day__weekday
+msgid "0 = Monday."
+msgstr "0 = lundi."
+
+#. module: homeschool
+#: model:ir.model.constraint,message:homeschool.constraint_homeschool_block_duration_positive
+msgid "A block's planned duration cannot be negative."
+msgstr "La durée prévue d'un bloc ne peut pas être négative."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/journal_api.py:0
+msgid "A date is required (YYYY-MM-DD)."
+msgstr "Une date est requise (AAAA-MM-JJ)."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_deliverable__when
+msgid ""
+"A moment of the day as written on the paper list: '9 h', 'after lunch', "
+"'bonus'."
+msgstr ""
+"Un moment de la journée tel qu'écrit sur la liste papier : « 9 h », « après "
+"dîner », « bonus »."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_reading_entry__question
+msgid "A question about today's reading."
+msgstr "Une question sur la lecture du jour."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_indicator_value__value
+msgid ""
+"A skipped indicator has no row at all — never write a zero that was not "
+"said."
+msgstr ""
+"Un indicateur sauté n'a aucune ligne — ne jamais écrire un zéro qui n'a pas "
+"été dit."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/journal_api.py:0
+msgid ""
+"A value is required: a skipped indicator has no row, never a zero that was "
+"not said."
+msgstr ""
+"Une valeur est requise : un indicateur sauté n'a pas de ligne, jamais un "
+"zéro qui n'a pas été dit."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_reading_entry__word1
+msgid "A word met today."
+msgstr "Un mot rencontré aujourd'hui."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__message_needaction
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__message_needaction
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__message_needaction
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__message_needaction
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__message_needaction
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__message_needaction
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__message_needaction
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__message_needaction
+msgid "Action Needed"
+msgstr "Action requise"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__active
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__active
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__active
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__active
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__active
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__active
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_subject__active
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_year__active
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__state__active
+msgid "Active"
+msgstr "Actif"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_list
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_list
+msgid "Actual"
+msgstr "Réel"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__minutes_total
+msgid "Actual (min)"
+msgstr "Réel (min)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__actual_minutes
+msgid "Actual Minutes"
+msgstr "Minutes réelles"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
+msgid "Actuals (end of day)"
+msgstr "Réel (fin de journée)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__actuals_recorded
+msgid "Actuals Recorded"
+msgstr "Réel noté"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__adult_missing
+msgid "Actuals entered without adult minutes: honest blank, to fill."
+msgstr "Réel saisi sans les minutes adulte : un blanc honnête, à remplir."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__adjustment
+msgid "Adjustment for next week (within the plan's envelope)"
+msgstr "Ajustement pour la semaine prochaine (dans l'enveloppe du plan)"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_list
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_list
+msgid "Adult"
+msgstr "Adulte"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__adult_minutes
+msgid "Adult Minutes"
+msgstr "Minutes adulte"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__adult_missing
+msgid "Adult Missing"
+msgstr "Adulte manquant"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__adult_recorded
+msgid "Adult Recorded"
+msgstr "Adulte noté"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_search
+msgid "Adult minutes missing"
+msgstr "Minutes adulte manquantes"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__minutes_adult_present
+msgid "Adult present (min)"
+msgstr "Adulte présent (min)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__adult_hours
+msgid "Adult-present hours (week)"
+msgstr "Heures de présence adulte (semaine)"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/block.py:0
+msgid "Adult-present minutes cannot exceed the block's total minutes."
+msgstr ""
+"Les minutes de présence adulte ne peuvent pas dépasser les minutes totales "
+"du bloc."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__alternative
+msgid "Alternative"
+msgstr "Alternative"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__alternative_group
+msgid "Alternative Group"
+msgstr "Groupe d'alternatives"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/journal_api.py:0
+msgid "An attachment needs a name and its base64 content (data_b64)."
+msgstr "Une pièce jointe a besoin d'un nom et de son contenu en base64 (data_b64)."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/trace.py:0
+msgid "An institutional trace cannot reference internal-only items: %s"
+msgstr "Une trace institutionnelle ne peut pas référencer des items internes : %s"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/item.py:0
+msgid "An item cannot be its own ancestor."
+msgstr "Un item ne peut pas être son propre ancêtre."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/item.py:0
+msgid "An item cannot require itself."
+msgstr "Un item ne peut pas se requérir lui-même."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__anchored
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__anchored
+msgid "Anchored"
+msgstr "Ancré"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__anchors
+msgid "Anchors"
+msgstr "Ancrages"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__answer
+msgid "Answer"
+msgstr "Réponse"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_week_wizard__date
+msgid "Any date in the week to generate."
+msgstr "N'importe quelle date de la semaine à générer."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__artifact_path
+msgid "Artifact Path"
+msgstr "Chemin de l'artéfact"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_journal_form
+msgid "As it was — a clean journal is a false journal."
+msgstr "Tel quel — un journal propre est un journal faux."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__message_attachment_count
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__message_attachment_count
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__message_attachment_count
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__message_attachment_count
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__message_attachment_count
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__message_attachment_count
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__message_attachment_count
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__message_attachment_count
+msgid "Attachment Count"
+msgstr "Nombre de pièces jointes"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__author
+msgid "Author"
+msgstr "Auteur"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_dependency__basis
+msgid "Basis"
+msgstr "Base"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__porte
+msgid "Bears on"
+msgstr "Porte sur"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_reading_book_search
+msgid "Being read"
+msgstr "En cours de lecture"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__birthdate
+msgid "Birthdate"
+msgstr "Date de naissance"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block__kind__bloc
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__kind__bloc
+msgid "Bloc"
+msgstr "Bloc"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__block_id
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
+msgid "Block"
+msgstr "Bloc"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/block.py:0
+msgid ""
+"Block '%(name)s' is anchored at %(fixed).2f but the previous block ends at "
+"%(end).2f."
+msgstr ""
+"Le bloc « %(name)s » est ancré à %(fixed).2f mais le bloc précédent se "
+"termine à %(end).2f."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__block_count
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__block_count
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__block_count
+msgid "Block Count"
+msgstr "Nombre de blocs"
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_block
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__block_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__block_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__block_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__block_ids
+#: model:ir.ui.menu,name:homeschool.menu_blocks
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_calendar
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_list
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_form
+msgid "Blocks"
+msgstr "Blocs"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_project_form
+msgid "Blocks and traces"
+msgstr "Blocs et traces"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__bonus
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block__kind__bonus
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__kind__bonus
+#: model_terms:ir.ui.view,arch_db:homeschool.view_deliverable_search
+msgid "Bonus"
+msgstr "Bonus"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__book_id
+#: model_terms:ir.ui.view,arch_db:homeschool.view_reading_book_form
+msgid "Book"
+msgstr "Livre"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_reading_book_list
+msgid "Books"
+msgstr "Livres"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__cadence_raw
+msgid "Cadence Raw"
+msgstr "Cadence (brute)"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_week_wizard_form
+msgid "Cancel"
+msgstr "Annuler"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__state__candidate
+msgid "Candidate"
+msgstr "Candidat"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__child_ids
+msgid "Child"
+msgstr "Enfant"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__code
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__code
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__code
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__item_code
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__code
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_subject__code
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__code
+msgid "Code"
+msgstr "Code"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__color
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_subject__color
+msgid "Color"
+msgstr "Couleur"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_dependency__from_item_id
+msgid "Comes first"
+msgstr "Vient avant"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_subject__csv_keys
+msgid ""
+"Comma-separated keys under which this subject appears in the family CSV "
+"files (e.g. 'francais' for FLE). Used by the importer and the exporter."
+msgstr ""
+"Clés, séparées par des virgules, sous lesquelles cette matière apparaît dans "
+"les fichiers CSV de la famille (p. ex. « francais » pour FLE). Utilisées par "
+"l'import et l'export."
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_res_company
+msgid "Companies"
+msgstr "Sociétés"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_company_mixin__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__company_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_year__company_id
+msgid "Company"
+msgstr "Famille"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__competence
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_search
+msgid "Competence"
+msgstr "Compétence"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__computed
+msgid "Computed"
+msgstr "Calculé"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_indicator__computed
+msgid ""
+"Computed from records (e.g. adult-present hours per week); values are "
+"recorded on demand."
+msgstr ""
+"Calculé à partir des enregistrements (p. ex. heures de présence adulte par "
+"semaine) ; les valeurs sont notées sur demande."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__status_computed
+msgid "Computed status"
+msgstr "Statut calculé"
+
+#. module: homeschool
+#: model:ir.ui.menu,name:homeschool.menu_config
+msgid "Configuration"
+msgstr "Configuration"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__priorite__core
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_search
+msgid "Core"
+msgstr "Noyau"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__noyau
+msgid "Core (noyau)"
+msgstr "Noyau"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__corrections
+msgid "Corrections"
+msgstr "Corrections"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__corrections_html
+msgid "Corrections Html"
+msgstr "Corrections (HTML)"
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_item_coverage
+#: model:ir.ui.menu,name:homeschool.menu_coverage
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_graph
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_pivot
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_search
+msgid "Coverage"
+msgstr "Couverture"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_form
+msgid "Coverage (current family)"
+msgstr "Couverture (famille courante)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__coverage_computed
+msgid "Coverage Computed"
+msgstr "Couverture calculée"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__coverage_date
+msgid "Coverage Date"
+msgstr "Date de couverture"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__coverage_note
+msgid "Coverage Note"
+msgstr "Note de couverture"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__coverage_override
+msgid "Coverage Override"
+msgstr "Couverture forcée"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__coverage_status
+msgid "Coverage Status"
+msgstr "Statut de couverture"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__coverage_ids
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_form
+msgid "Coverage by family"
+msgstr "Couverture par famille"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__covered_by_ids
+msgid "Covered by (internal items)"
+msgstr "Couvert par (items internes)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__covers_ids
+msgid "Covers (PDA items evidenced)"
+msgstr "Couvre (items de la PDA attestés)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__covers_basis
+msgid "Covers Basis"
+msgstr "Base de la couverture"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__covers_refs
+msgid "Covers Refs"
+msgstr "Réf. couvertes"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_dependency__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_subject__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_week_wizard__create_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_year__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_dependency__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_subject__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_week_wizard__create_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_year__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__csv_key
+msgid "Csv Key"
+msgstr "Clé CSV"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_subject__csv_keys
+msgid "Csv Keys"
+msgstr "Clés CSV"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__csv_sequence
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__csv_sequence
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__csv_sequence
+msgid "Csv Sequence"
+msgstr "Ordre CSV"
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_item
+#: model:ir.ui.menu,name:homeschool.menu_curriculum
+#: model_terms:ir.ui.view,arch_db:homeschool.view_project_form
+msgid "Curriculum"
+msgstr "Programme"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_item
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_form
+msgid "Curriculum item"
+msgstr "Item du programme"
+
+#. module: homeschool
+#: model:ir.model.constraint,message:homeschool.constraint_homeschool_item_code_unique
+msgid "Curriculum item codes must be unique."
+msgstr "Les codes d'items du programme doivent être uniques."
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_item_coverage
+msgid "Curriculum item coverage (per family)"
+msgstr "Couverture d'un item du programme (par famille)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__item_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__item_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__item_ids
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_list
+msgid "Curriculum items"
+msgstr "Items du programme"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__cycle
+msgid "Cycle"
+msgstr "Cycle"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_indicator__period__daily
+msgid "Daily"
+msgstr "Quotidienne"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_week_wizard__date
+msgid "Date"
+msgstr "Date"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_year__date_end
+msgid "Date End"
+msgstr "Date de fin"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_year__date_start
+msgid "Date Start"
+msgstr "Date de début"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item_coverage__date
+msgid "Date of the last manual coverage update (from coverage.csv)."
+msgstr ""
+"Date de la dernière mise à jour manuelle de la couverture (depuis "
+"coverage.csv)."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item__coverage_date
+msgid ""
+"Date of the last manual coverage update of the current family (from "
+"coverage.csv)."
+msgstr ""
+"Date de la dernière mise à jour manuelle de la couverture de la famille "
+"courante (depuis coverage.csv)."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_journal__corrections
+msgid ""
+"Dated corrections appended to a past entry. Past entries are never edited in"
+" place."
+msgstr ""
+"Corrections datées ajoutées à une entrée passée. Les entrées passées ne sont "
+"jamais réécrites."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__day_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__day_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__day_id
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_search
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_form
+#: model_terms:ir.ui.view,arch_db:homeschool.view_deliverable_search
+msgid "Day"
+msgstr "Journée"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__is_off
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_day__journal_state__off
+msgid "Day off"
+msgstr "Journée sans école"
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_day
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__day_ids
+#: model:ir.ui.menu,name:homeschool.menu_days
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_list
+msgid "Days"
+msgstr "Journées"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__days_without_journal
+msgid "Days Without Journal"
+msgstr "Jours sans journal"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__debrief
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block__kind__debrief
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__kind__debrief
+msgid "Debrief"
+msgstr "Retour"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_form
+msgid "Debrief / note"
+msgstr "Retour / note"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__debrief_html
+msgid "Debrief Html"
+msgstr "Retour (HTML)"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__priorite__differable
+msgid "Deferrable"
+msgstr "Reportable"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_deliverable_form
+msgid "Deliverable"
+msgstr "Livrable"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_deliverable
+msgid "Deliverable (liste du jour)"
+msgstr "Livrable (liste du jour)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__deliverable_count
+msgid "Deliverable Count"
+msgstr "Nombre de livrables"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__deliverable_done_count
+msgid "Deliverable Done Count"
+msgstr "Nombre de livrables faits"
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_deliverable
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__deliverable_ids
+#: model:ir.ui.menu,name:homeschool.menu_deliverables
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_list
+#: model_terms:ir.ui.view,arch_db:homeschool.view_deliverable_list
+msgid "Deliverables"
+msgstr "Livrables"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_form
+msgid "Deliverables (liste du jour)"
+msgstr "Livrables (liste du jour)"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_form
+msgid "Dependencies and covers"
+msgstr "Dépendances et couvertures"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__description
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__description
+#: model_terms:ir.ui.view,arch_db:homeschool.view_project_form
+msgid "Description"
+msgstr "Description"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__description_html
+msgid "Description Html"
+msgstr "Description (HTML)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__detail
+msgid "Detail"
+msgstr "Détail"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__diffusion
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__diffusion
+#: model_terms:ir.ui.view,arch_db:homeschool.view_trace_search
+msgid "Diffusion"
+msgstr "Diffusion"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__direction
+msgid "Direction"
+msgstr "Sens"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_attachment_mixin__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_company_mixin__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_exporter__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_importer__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_dependency__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal_api__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_markdown_mixin__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_subject__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_week_wizard__display_name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_year__display_name
+#: model:ir.model.fields,field_description:homeschool.field_res_company__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item__covers_refs
+msgid ""
+"Document references this internal item covers (e.g. PA-1.3) — not items, "
+"kept as text."
+msgstr ""
+"Références de documents que cet item interne couvre (p. ex. PA-1.3) — pas "
+"des items, gardées en texte."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__domaine
+msgid "Domaine"
+msgstr "Domaine"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__done
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block__status__done
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_day__journal_state__done
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__state__done
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_search
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_list
+#: model_terms:ir.ui.view,arch_db:homeschool.view_deliverable_search
+msgid "Done"
+msgstr "Fait"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__done_at
+msgid "Done At"
+msgstr "Fait le"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__done_by
+msgid "Done By"
+msgstr "Fait par"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__answer_dose
+msgid "Dose kept?"
+msgstr "Dose tenue?"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__duration_hours
+msgid "Duration Hours"
+msgstr "Durée (heures)"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block_template__student_id
+msgid "Empty = default grid for every student of the family."
+msgstr "Vide = grille par défaut pour tous les élèves de la famille."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__end_time
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__end_time
+msgid "End Time"
+msgstr "Fin"
+
+#. module: homeschool
+#: model:homeschool.subject,name:homeschool.subject_ang
+msgid "English"
+msgstr "Anglais"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__priorite__enrichissement
+msgid "Enrichment"
+msgstr "Enrichissement"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__entry_ids
+#: model_terms:ir.ui.view,arch_db:homeschool.view_reading_book_form
+msgid "Entries"
+msgstr "Entrées"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__entry_count
+msgid "Entry Count"
+msgstr "Nombre d'entrées"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__evening_before
+msgid "Evening Before"
+msgstr "La veille"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__evening_before_html
+msgid "Evening Before Html"
+msgstr "La veille (HTML)"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_form
+msgid "Evidence"
+msgstr "Preuves"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__evidence_refs
+msgid "Evidence Refs"
+msgstr "Réf. des preuves"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__coverage_computed__evidenced
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__coverage_override__evidenced
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__coverage_status__evidenced
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item_coverage__override__evidenced
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item_coverage__status__evidenced
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item_coverage__status_computed__evidenced
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_search
+msgid "Evidenced"
+msgstr "Attesté"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_material__kind__exercise
+msgid "Exercise"
+msgstr "Exercice"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__exposition
+msgid "Exposition"
+msgstr "Exposition"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__fallback
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
+msgid "Fallback"
+msgstr "Repli"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__fallback_html
+msgid "Fallback Html"
+msgstr "Repli (HTML)"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item__in_registry
+msgid ""
+"False for PDA nodes known from deps-nodes.csv but not selected in the family"
+" registry (kept inactive so dependency edges resolve)."
+msgstr ""
+"Faux pour les nœuds de la PDA connus de deps-nodes.csv mais non retenus au "
+"registre de la famille (gardés inactifs pour que les liens de dépendance se "
+"résolvent)."
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_exporter
+msgid "Family repository exporter"
+msgstr "Export vers le dépôt de la famille"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_importer
+msgid "Family repository importer"
+msgstr "Import depuis le dépôt de la famille"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_company_mixin
+msgid "Family-owned record"
+msgstr "Enregistrement d'une famille"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_material__kind__fiche
+msgid "Fiche"
+msgstr "Fiche"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__attachment_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__attachment_ids
+#: model_terms:ir.ui.view,arch_db:homeschool.view_trace_form
+msgid "Files"
+msgstr "Fichiers"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__finished
+#: model_terms:ir.ui.view,arch_db:homeschool.view_reading_book_search
+msgid "Finished"
+msgstr "Terminé"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__start_fixed
+msgid "Fixed start time (hours), when anchored."
+msgstr "Heure de début fixe (en heures), lorsque ancré."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__message_follower_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__message_follower_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__message_follower_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__message_follower_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__message_follower_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__message_follower_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__message_follower_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__message_follower_ids
+msgid "Followers"
+msgstr "Abonnés"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__message_partner_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__message_partner_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__message_partner_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__message_partner_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__message_partner_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__message_partner_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__message_partner_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Abonnés (contacts)"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_journal__indicator_notes
+msgid ""
+"Free text: conflicts, withdrawal, spontaneous engagement, recovery delay — "
+"tallied at the weekly review."
+msgstr ""
+"Texte libre : conflits, retrait, engagement spontané, délai de récupération "
+"— comptés à la revue de la semaine."
+
+#. module: homeschool
+#: model:homeschool.subject,name:homeschool.subject_fle
+msgid "French"
+msgstr "Français"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__weekday__4
+msgid "Friday"
+msgstr "Vendredi"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/deliverable.py:0
+msgid ""
+"From the portal, a deliverable can only be ticked or unticked (not "
+"%(fields)s)."
+msgstr ""
+"Depuis le portail, un livrable ne peut qu'être coché ou décoché (pas "
+"%(fields)s)."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/reading.py:0
+msgid ""
+"From the portal, a reading entry cannot be moved or re-signed (%(fields)s)."
+msgstr ""
+"Depuis le portail, une entrée du carnet ne peut être ni déplacée ni resignée "
+"(%(fields)s)."
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_week_wizard_form
+msgid "Generate"
+msgstr "Générer"
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_week_wizard
+#: model:ir.ui.menu,name:homeschool.menu_week_wizard
+#: model_terms:ir.ui.view,arch_db:homeschool.view_week_wizard_form
+msgid "Generate a week"
+msgstr "Générer une semaine"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_week_wizard
+msgid "Generate a week's blocks from the templates"
+msgstr "Générer les blocs d'une semaine à partir des gabarits"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__has_message
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__has_message
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__has_message
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__has_message
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__has_message
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__has_message
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__has_message
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__has_message
+msgid "Has Message"
+msgstr "A un message"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_indicator__direction__up
+msgid "Higher is better"
+msgstr "Hausse souhaitée"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_student
+msgid "Home-schooled student"
+msgstr "Élève instruit à la maison"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_res_company__homeschool_student_ids
+msgid "Home-schooled students"
+msgstr "Élèves instruits à la maison"
+
+#. module: homeschool
+#: model:ir.module.category,name:homeschool.module_category_homeschool
+#: model:ir.ui.menu,name:homeschool.menu_root
+#: model:res.groups.privilege,name:homeschool.privilege_homeschool
+msgid "Homeschool"
+msgstr "École à la maison"
+
+#. module: homeschool
+#: model:ir.actions.server,name:homeschool.ir_cron_export_repository_ir_actions_server
+msgid "Homeschool: nightly export to the family repository"
+msgstr "École à la maison : export nocturne vers le dépôt de la famille"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__html_source_path
+msgid "Html Source Path"
+msgstr "Chemin de la source HTML"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_attachment_mixin__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_company_mixin__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_exporter__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_importer__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_dependency__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal_api__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_markdown_mixin__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_subject__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_week_wizard__id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_year__id
+#: model:ir.model.fields,field_description:homeschool.field_res_company__id
+msgid "ID"
+msgstr "ID"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__message_needaction
+#: model:ir.model.fields,help:homeschool.field_homeschool_day__message_needaction
+#: model:ir.model.fields,help:homeschool.field_homeschool_material__message_needaction
+#: model:ir.model.fields,help:homeschool.field_homeschool_project__message_needaction
+#: model:ir.model.fields,help:homeschool.field_homeschool_reading_book__message_needaction
+#: model:ir.model.fields,help:homeschool.field_homeschool_review__message_needaction
+#: model:ir.model.fields,help:homeschool.field_homeschool_student__message_needaction
+#: model:ir.model.fields,help:homeschool.field_homeschool_trace__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si coché, de nouveaux messages demandent votre attention."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__message_has_error
+#: model:ir.model.fields,help:homeschool.field_homeschool_day__message_has_error
+#: model:ir.model.fields,help:homeschool.field_homeschool_material__message_has_error
+#: model:ir.model.fields,help:homeschool.field_homeschool_project__message_has_error
+#: model:ir.model.fields,help:homeschool.field_homeschool_reading_book__message_has_error
+#: model:ir.model.fields,help:homeschool.field_homeschool_review__message_has_error
+#: model:ir.model.fields,help:homeschool.field_homeschool_student__message_has_error
+#: model:ir.model.fields,help:homeschool.field_homeschool_trace__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si coché, certains messages ont une erreur de livraison."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__in_registry
+msgid "In Registry"
+msgstr "Au registre"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__coverage_computed__in_progress
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__coverage_override__in_progress
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__coverage_status__in_progress
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item_coverage__override__in_progress
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item_coverage__status__in_progress
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item_coverage__status_computed__in_progress
+msgid "In progress"
+msgstr "En cours"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_day__journal_state__incomplete
+msgid "Incomplete"
+msgstr "Incomplet"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__indicator_id
+#: model_terms:ir.ui.view,arch_db:homeschool.view_indicator_form
+msgid "Indicator"
+msgstr "Indicateur"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__indicator_notes
+msgid "Indicator Notes"
+msgstr "Notes d'indicateurs"
+
+#. module: homeschool
+#: model:ir.model.constraint,message:homeschool.constraint_homeschool_indicator_code_unique
+msgid "Indicator codes must be unique within a family."
+msgstr "Les codes d'indicateurs doivent être uniques dans une famille."
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_indicator
+msgid "Indicator definition"
+msgstr "Définition d'indicateur"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_indicator_value
+msgid "Indicator value"
+msgstr "Valeur d'indicateur"
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_indicator_value
+#: model:ir.ui.menu,name:homeschool.menu_indicator_values
+msgid "Indicator values"
+msgstr "Valeurs d'indicateurs"
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_indicator
+#: model:ir.ui.menu,name:homeschool.menu_indicators
+msgid "Indicators"
+msgstr "Indicateurs"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__missing_indicator_ids
+msgid "Indicators without a value this week"
+msgstr "Indicateurs sans valeur cette semaine"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_material__diffusion__institutional
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_trace__diffusion__institutional
+#: model_terms:ir.ui.view,arch_db:homeschool.view_trace_search
+msgid "Institutional"
+msgstr "Institutionnelle"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__intention
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
+msgid "Intention"
+msgstr "Intention"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__intention_html
+msgid "Intention Html"
+msgstr "Intention (HTML)"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_project__anchors
+msgid "Interest anchors (free text / emoji)."
+msgstr "Ancrages d'intérêt (texte libre / émojis)."
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__kind__internal
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_material__diffusion__internal
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_trace__diffusion__internal
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_search
+msgid "Internal"
+msgstr "Interne"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__message_is_follower
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__message_is_follower
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__message_is_follower
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__message_is_follower
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__message_is_follower
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__message_is_follower
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__message_is_follower
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__message_is_follower
+msgid "Is Follower"
+msgstr "Est abonné"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__iso_week
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__iso_week
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__iso_week
+msgid "Iso Week"
+msgstr "Semaine ISO"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__item_id
+msgid "Item"
+msgstr "Item"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__item_codes
+msgid "Item Codes"
+msgstr "Codes des items"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_trace__item_codes
+msgid ""
+"Item codes in the order of the family CSV (kept for byte-identical exports)."
+msgstr ""
+"Codes des items dans l'ordre du CSV de la famille (gardés pour des exports "
+"identiques à l'octet près)."
+
+#. module: homeschool
+#: model:ir.ui.menu,name:homeschool.menu_items
+msgid "Items"
+msgstr "Items"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__item_ids
+msgid "Items (own)"
+msgstr "Items (propres)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__all_item_ids
+msgid "Items (with blocks and traces)"
+msgstr "Items (avec blocs et traces)"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_review__kind__january
+msgid "January"
+msgstr "Janvier"
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_journal
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__journal_ids
+#: model:ir.ui.menu,name:homeschool.menu_journal
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_form
+#: model_terms:ir.ui.view,arch_db:homeschool.view_journal_form
+msgid "Journal"
+msgstr "Journal"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_journal_api
+msgid "Journal API (RPC entry points of the household's journal tool)"
+msgstr "API du journal (points d'entrée RPC de l'outil de journal de la maison)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__journal_state
+msgid "Journal State"
+msgstr "État du journal"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_search
+msgid "Journal incomplete"
+msgstr "Journal incomplet"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_review__kind__june
+msgid "June"
+msgstr "Juin"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__kind
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__kind
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__kind
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__kind
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__kind
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__kind
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_search
+msgid "Kind"
+msgstr "Type"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__name
+msgid "Label"
+msgstr "Libellé"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__last_evidence_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__last_evidence_date
+msgid "Last Evidence Date"
+msgstr "Dernière preuve le"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_dependency__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_subject__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_week_wizard__write_uid
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_year__write_uid
+msgid "Last Updated by"
+msgstr "Dernière mise à jour par"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_dependency__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_subject__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_week_wizard__write_date
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_year__write_date
+msgid "Last Updated on"
+msgstr "Dernière mise à jour le"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__date
+msgid "Last manual update"
+msgstr "Dernière mise à jour manuelle"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_trace
+msgid "Learning trace (portfolio artifact)"
+msgstr "Trace d'apprentissage (artefact du portfolio)"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
+msgid "Links"
+msgstr "Liens"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_indicator__direction__down
+msgid "Lower is better"
+msgstr "Baisse souhaitée"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__m1
+msgid "M1"
+msgstr "M1"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__m2
+msgid "M2"
+msgstr "M2"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__m3
+msgid "M3"
+msgstr "M3"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__m4
+msgid "M4"
+msgstr "M4"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__m5
+msgid "M5"
+msgstr "M5"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__m6
+msgid "M6"
+msgstr "M6"
+
+#. module: homeschool
+#: model:res.groups,name:homeschool.group_homeschool_manager
+msgid "Manager"
+msgstr "Gestionnaire"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__override
+msgid "Manual status"
+msgstr "Statut manuel"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item__coverage_override
+msgid ""
+"Manual status of the current family; wins over the computed one when set."
+msgstr ""
+"Statut manuel de la famille courante ; l'emporte sur le statut calculé "
+"lorsqu'il est renseigné."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item_coverage__override
+msgid "Manual status; wins over the computed one when set."
+msgstr "Statut manuel ; l'emporte sur le statut calculé lorsqu'il est renseigné."
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
+msgid "Mark done"
+msgstr "Marquer fait"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_form
+#: model_terms:ir.ui.view,arch_db:homeschool.view_project_form
+#: model_terms:ir.ui.view,arch_db:homeschool.view_trace_form
+msgid "Markdown"
+msgstr "Markdown"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_markdown_mixin
+msgid "Markdown rendering mixin"
+msgstr "Mixin de rendu Markdown"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__fallback
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__intention
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__note
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__steps
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__success
+#: model:ir.model.fields,help:homeschool.field_homeschool_day__debrief
+#: model:ir.model.fields,help:homeschool.field_homeschool_day__note
+#: model:ir.model.fields,help:homeschool.field_homeschool_journal__notes
+#: model:ir.model.fields,help:homeschool.field_homeschool_journal__went_badly
+#: model:ir.model.fields,help:homeschool.field_homeschool_project__description
+#: model:ir.model.fields,help:homeschool.field_homeschool_review__notes
+msgid "Markdown."
+msgstr "Markdown."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_journal__went_well
+msgid "Markdown. As it was — a clean journal is a false journal."
+msgstr "Markdown. Tel quel — un journal propre est un journal faux."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_trace__note
+msgid "Markdown. The parent's note on the trace."
+msgstr "Markdown. La note du parent sur la trace."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_day__evening_before
+msgid "Markdown: the 'evening before' checklist."
+msgstr "Markdown : la liste « la veille »."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_day__opening
+msgid "Markdown: the opening plan (what we do, why, the choice offered)."
+msgstr "Markdown : le plan d'ouverture (ce qu'on fait, pourquoi, le choix offert)."
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_material
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__material_ids
+#: model:ir.ui.menu,name:homeschool.menu_material
+#: model_terms:ir.ui.view,arch_db:homeschool.view_material_form
+msgid "Material"
+msgstr "Matériel"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__material_ids
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_form
+msgid "Material of the day"
+msgstr "Matériel du jour"
+
+#. module: homeschool
+#: model:homeschool.subject,name:homeschool.subject_math
+msgid "Mathematics"
+msgstr "Mathématiques"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__message_has_error
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__message_has_error
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__message_has_error
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__message_has_error
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__message_has_error
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__message_has_error
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__message_has_error
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__message_has_error
+msgid "Message Delivery error"
+msgstr "Erreur de livraison du message"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__message_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__message_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__message_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__message_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__message_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__message_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__message_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__message_ids
+msgid "Messages"
+msgstr "Messages"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__kind__mini_project
+msgid "Mini-project"
+msgstr "Mini-projet"
+
+#. module: homeschool
+#: model:ir.model.constraint,message:homeschool.constraint_homeschool_block_actuals_positive
+msgid "Minutes cannot be negative."
+msgstr "Les minutes ne peuvent pas être négatives."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_dependency__mode
+msgid "Mode"
+msgstr "Mode"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__weekday__0
+msgid "Monday"
+msgstr "Lundi"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_indicator__period__monthly
+msgid "Monthly"
+msgstr "Mensuelle"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_subject__name
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_year__name
+msgid "Name"
+msgstr "Nom"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/trace.py:0
+msgid "New"
+msgstr "Nouvelle"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/day.py:0
+msgid "New day"
+msgstr "Nouvelle journée"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__student_vote__down
+msgid "No"
+msgstr "Non"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_review__answer_dose
+msgid "No adjustment before the 6-week review."
+msgstr "Aucun ajustement avant la revue des 6 semaines."
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__student_vote__none
+msgid "No answer"
+msgstr "Sans réponse"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/exporter.py:0
+msgid "No repository path configured (homeschool.repo_path)."
+msgstr "Aucun chemin de dépôt configuré (homeschool.repo_path)."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/exporter.py:0
+#: code:addons/homeschool/models/journal_api.py:0
+msgid "No student with id %s."
+msgstr "Aucun élève avec l'id %s."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/journal_api.py:0
+msgid "Not a number: %s"
+msgstr "Pas un nombre : %s"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__coverage_computed__not_started
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__coverage_override__not_started
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__coverage_status__not_started
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item_coverage__override__not_started
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item_coverage__status__not_started
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item_coverage__status_computed__not_started
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_search
+msgid "Not started"
+msgstr "Non commencé"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_day__journal_state__future
+msgid "Not yet"
+msgstr "Pas encore"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__note
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__note
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__note
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__note
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__note
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__note
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_dependency__note
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__note
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__note
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_year__note
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_form
+#: model_terms:ir.ui.view,arch_db:homeschool.view_reading_book_form
+#: model_terms:ir.ui.view,arch_db:homeschool.view_trace_form
+msgid "Note"
+msgstr "Note"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__note_html
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__note_html
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__note_html
+msgid "Note Html"
+msgstr "Note (HTML)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__notes
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__notes
+msgid "Notes"
+msgstr "Notes"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__notes_html
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__notes_html
+msgid "Notes Html"
+msgstr "Notes (HTML)"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/journal_api.py:0
+msgid "Nothing to write: the note is empty."
+msgstr "Rien à écrire : la note est vide."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__noyau_raw
+msgid "Noyau Raw"
+msgstr "Noyau (brut)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__message_needaction_counter
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__message_needaction_counter
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__message_needaction_counter
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__message_needaction_counter
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__message_needaction_counter
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__message_needaction_counter
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__message_needaction_counter
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Nombre d'actions"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__message_has_error_counter
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__message_has_error_counter
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__message_has_error_counter
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__message_has_error_counter
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__message_has_error_counter
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__message_has_error_counter
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__message_has_error_counter
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__message_has_error_counter
+msgid "Number of errors"
+msgstr "Nombre d'erreurs"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__message_needaction_counter
+#: model:ir.model.fields,help:homeschool.field_homeschool_day__message_needaction_counter
+#: model:ir.model.fields,help:homeschool.field_homeschool_material__message_needaction_counter
+#: model:ir.model.fields,help:homeschool.field_homeschool_project__message_needaction_counter
+#: model:ir.model.fields,help:homeschool.field_homeschool_reading_book__message_needaction_counter
+#: model:ir.model.fields,help:homeschool.field_homeschool_review__message_needaction_counter
+#: model:ir.model.fields,help:homeschool.field_homeschool_student__message_needaction_counter
+#: model:ir.model.fields,help:homeschool.field_homeschool_trace__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Nombre de messages demandant une action"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__message_has_error_counter
+#: model:ir.model.fields,help:homeschool.field_homeschool_day__message_has_error_counter
+#: model:ir.model.fields,help:homeschool.field_homeschool_material__message_has_error_counter
+#: model:ir.model.fields,help:homeschool.field_homeschool_project__message_has_error_counter
+#: model:ir.model.fields,help:homeschool.field_homeschool_reading_book__message_has_error_counter
+#: model:ir.model.fields,help:homeschool.field_homeschool_review__message_has_error_counter
+#: model:ir.model.fields,help:homeschool.field_homeschool_student__message_has_error_counter
+#: model:ir.model.fields,help:homeschool.field_homeschool_trace__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Nombre de messages en erreur de livraison"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__off_reason
+msgid "Off Reason"
+msgstr "Motif de la journée sans école"
+
+#. module: homeschool
+#: model:ir.model.constraint,message:homeschool.constraint_homeschool_item_coverage_item_company_unique
+msgid "One coverage row per item and family."
+msgstr "Une ligne de couverture par item et par famille."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/trace.py:0
+msgid "Only a homeschool manager can validate a trace."
+msgstr "Seul le parent gestionnaire peut valider une trace."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/exporter.py:0
+msgid "Only a homeschool manager may export the records."
+msgstr ""
+"Seul un gestionnaire de l'école à la maison peut exporter les "
+"enregistrements."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/journal_api.py:0
+msgid "Only a homeschool manager may write the journal."
+msgstr "Seul un gestionnaire de l'école à la maison peut écrire le journal."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/trace.py:0
+msgid ""
+"Only the parent may change %(fields)s on a trace: it waits for his "
+"validation."
+msgstr ""
+"Seul le parent peut modifier %(fields)s sur une trace : elle attend sa "
+"validation."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__opening
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block__kind__opening
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__kind__opening
+msgid "Opening"
+msgstr "Ouverture"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_form
+msgid "Opening / evening before"
+msgstr "Ouverture / la veille"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__opening_html
+msgid "Opening Html"
+msgstr "Ouverture (HTML)"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_deliverable__bonus
+msgid "Optional extra: not counted against the day."
+msgstr "Extra facultatif : ne compte pas dans la journée."
+
+#. module: homeschool
+#: model:homeschool.subject,name:homeschool.subject_other
+msgid "Other"
+msgstr "Autre"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__kind__outing
+msgid "Outing"
+msgstr "Sortie"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__kind__pda
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_search
+msgid "PDA"
+msgstr "PDA"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__pdf_attachment_id
+msgid "PDF"
+msgstr "PDF"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__page
+msgid "Page"
+msgstr "Page"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__parent_id
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_trace__submitted_by__parent
+msgid "Parent"
+msgstr "Parent"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_journal
+msgid "Parent's daily journal"
+msgstr "Journal quotidien du parent"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_trace__validated
+msgid ""
+"Parent-created traces are validated; a trace submitted by the student or a "
+"resource user is not until the parent validates it. A non-validated trace "
+"cannot be institutional."
+msgstr ""
+"Les traces créées par le parent sont validées ; une trace déposée par "
+"l'élève ou par une personne-ressource ne l'est pas tant que le parent ne l'a "
+"pas validée. Une trace non validée ne peut pas être institutionnelle."
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__state__parked
+msgid "Parked"
+msgstr "Mis de côté"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block__status__partial
+msgid "Partial"
+msgstr "Partiel"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__partner_id
+msgid "Partner"
+msgstr "Contact"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_material__html_source_path
+msgid ""
+"Path of the HTML source in the family repository (e.g. "
+"materiel/fiches/x.html)."
+msgstr ""
+"Chemin de la source HTML dans le dépôt de la famille (p. ex. "
+"materiel/fiches/x.html)."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_material__pdf_path
+msgid ""
+"Path of the PDF in the family repository, when imported from the inventory."
+msgstr "Chemin du PDF dans le dépôt de la famille, lorsqu'il vient de l'inventaire."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_trace__artifact_path
+msgid "Path of the artifact in the family repository."
+msgstr "Chemin de l'artéfact dans le dépôt de la famille."
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block__kind__pause
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__kind__pause
+msgid "Pause"
+msgstr "Pause"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__pdf_path
+msgid "Pdf Path"
+msgstr "Chemin du PDF"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__period
+msgid "Period"
+msgstr "Période"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_indicator__period__periodic
+msgid "Periodic"
+msgstr "Périodique"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__state__pilot
+msgid "Pilot"
+msgstr "Pilote"
+
+#. module: homeschool
+#: model:ir.ui.menu,name:homeschool.menu_plan
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
+msgid "Plan"
+msgstr "Planifier"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block__status__planned
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__coverage_computed__planned
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__coverage_override__planned
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__coverage_status__planned
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item_coverage__override__planned
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item_coverage__status__planned
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item_coverage__status_computed__planned
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_list
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_search
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_list
+msgid "Planned"
+msgstr "Prévu"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__duration_planned
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__duration_planned
+msgid "Planned (min)"
+msgstr "Prévu (min)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__planned_minutes
+msgid "Planned Minutes"
+msgstr "Minutes prévues"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__duration_hours
+msgid "Planned duration in hours (calendar view)."
+msgstr "Durée prévue en heures (vue calendrier)."
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_block
+msgid "Planning block"
+msgstr "Bloc de planification"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_student_form
+msgid "Portal"
+msgstr "Portail"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__user_id
+msgid "Portal user"
+msgstr "Utilisateur du portail"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_student__resource_user_ids
+msgid ""
+"Portal users (outside teachers) who see this student's days, blocks, "
+"institutional traces and material."
+msgstr ""
+"Utilisateurs du portail (enseignants de l'extérieur) qui voient les "
+"journées, les blocs, les traces et le matériel institutionnels de cet élève."
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_material__kind__poster
+msgid "Poster"
+msgstr "Affiche"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_item_dependency
+msgid "Prerequisite edge between curriculum items"
+msgstr "Lien de prérequis entre items du programme"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__priorite
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_search
+msgid "Priority"
+msgstr "Priorité"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__project_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__project_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__project_id
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__kind__project
+#: model_terms:ir.ui.view,arch_db:homeschool.view_project_form
+msgid "Project"
+msgstr "Projet"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__project_codes
+msgid "Project Codes"
+msgstr "Codes des projets"
+
+#. module: homeschool
+#: model:ir.model.constraint,message:homeschool.constraint_homeschool_project_code_unique
+msgid "Project codes must be unique within a family."
+msgstr "Les codes de projets doivent être uniques dans une famille."
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_project
+msgid "Project or mini-project carrying curriculum content"
+msgstr "Projet ou mini-projet porteur de contenu du programme"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__projection
+msgid "Projection"
+msgstr "Projection"
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_project
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block__kind__projects
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__kind__projects
+#: model:ir.ui.menu,name:homeschool.menu_projects
+msgid "Projects"
+msgstr "Projets"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item_dependency__basis
+msgid "Provenance tag of the edge ([P], [C]…)."
+msgstr "Étiquette de provenance du lien ([P], [C]…)."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__question
+msgid "Question"
+msgstr "Question"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item__project_codes
+msgid "Raw 'projets' column from the CSV."
+msgstr "Colonne « projets » brute du CSV."
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block__kind__reading
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__kind__reading
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_material__kind__reading
+msgid "Reading"
+msgstr "Lecture"
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_reading_entry
+#: model_terms:ir.ui.view,arch_db:homeschool.view_reading_entry_list
+msgid "Reading entries"
+msgstr "Entrées du carnet"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_reading_entry_form
+msgid "Reading entry"
+msgstr "Entrée du carnet"
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_reading_book
+#: model:ir.ui.menu,name:homeschool.menu_reading
+msgid "Reading log"
+msgstr "Carnet de lecture"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_reading_book
+msgid "Reading log: book"
+msgstr "Carnet de lecture : livre"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_reading_entry
+msgid "Reading log: entry"
+msgstr "Carnet de lecture : entrée"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_review_form
+msgid "Record adult hours (R1-ADULTE)"
+msgstr "Noter les heures adulte (R1-ADULTE)"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_attachment_mixin
+msgid "Record carrying files"
+msgstr "Enregistrement porteur de fichiers"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item__source_ref
+msgid "Reference of the source document, verbatim (e.g. 'PDA-US-2009 p.8-9')."
+msgstr "Référence du document source, telle quelle (p. ex. « PDA-US-2009 p.8-9 »)."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/exporter.py:0
+msgid "Refusing to write outside the repository: %s"
+msgstr "Refus d'écrire hors du dépôt : %s"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__priorite__reinvest
+msgid "Reinvestment"
+msgstr "Réinvestissement"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
+#: model_terms:ir.ui.view,arch_db:homeschool.view_project_form
+msgid "Rendered"
+msgstr "Rendu"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_journal__corrections_html
+msgid "Rendered from the Markdown field 'corrections'."
+msgstr "Rendu du champ Markdown « corrections »."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_day__debrief_html
+msgid "Rendered from the Markdown field 'debrief'."
+msgstr "Rendu du champ Markdown « debrief »."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_project__description_html
+msgid "Rendered from the Markdown field 'description'."
+msgstr "Rendu du champ Markdown « description »."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_day__evening_before_html
+msgid "Rendered from the Markdown field 'evening_before'."
+msgstr "Rendu du champ Markdown « evening_before »."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__fallback_html
+msgid "Rendered from the Markdown field 'fallback'."
+msgstr "Rendu du champ Markdown « fallback »."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__intention_html
+msgid "Rendered from the Markdown field 'intention'."
+msgstr "Rendu du champ Markdown « intention »."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__note_html
+#: model:ir.model.fields,help:homeschool.field_homeschool_day__note_html
+#: model:ir.model.fields,help:homeschool.field_homeschool_trace__note_html
+msgid "Rendered from the Markdown field 'note'."
+msgstr "Rendu du champ Markdown « note »."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_journal__notes_html
+#: model:ir.model.fields,help:homeschool.field_homeschool_review__notes_html
+msgid "Rendered from the Markdown field 'notes'."
+msgstr "Rendu du champ Markdown « notes »."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_day__opening_html
+msgid "Rendered from the Markdown field 'opening'."
+msgstr "Rendu du champ Markdown « opening »."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__steps_html
+msgid "Rendered from the Markdown field 'steps'."
+msgstr "Rendu du champ Markdown « steps »."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__success_html
+msgid "Rendered from the Markdown field 'success'."
+msgstr "Rendu du champ Markdown « success »."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_journal__went_badly_html
+msgid "Rendered from the Markdown field 'went_badly'."
+msgstr "Rendu du champ Markdown « went_badly »."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_journal__went_well_html
+msgid "Rendered from the Markdown field 'went_well'."
+msgstr "Rendu du champ Markdown « went_well »."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__required_by_ids
+msgid "Required by"
+msgstr "Requis par"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__requires_ids
+msgid "Requires"
+msgstr "Requiert"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_trace__submitted_by__resource
+msgid "Resource"
+msgstr "Personne-ressource"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__resource_user_ids
+msgid "Resource users"
+msgstr "Personnes-ressources"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/student.py:0
+msgid ""
+"Resource users must be portal users; %(names)s are internal users. Give an "
+"internal user the Homeschool manager group and a company instead."
+msgstr ""
+"Les personnes-ressources doivent être des utilisateurs du portail ; "
+"%(names)s sont des utilisateurs internes. Donnez plutôt à un utilisateur "
+"interne le groupe Gestionnaire de l'école à la maison et une famille."
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block__kind__ressource
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__kind__ressource
+msgid "Ressource"
+msgstr "Ressource"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_review_form
+msgid "Review"
+msgstr "Revue"
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_review
+#: model:ir.ui.menu,name:homeschool.menu_reviews
+msgid "Reviews"
+msgstr "Revues"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item__csv_sequence
+msgid "Row order in the family CSV (kept so exports stay diffable)."
+msgstr ""
+"Ordre des lignes dans le CSV de la famille (gardé pour que les exports "
+"restent comparables)."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_indicator__csv_sequence
+#: model:ir.model.fields,help:homeschool.field_homeschool_project__csv_sequence
+msgid "Row order in the family CSV."
+msgstr "Ordre des lignes dans le CSV de la famille."
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__weekday__5
+msgid "Saturday"
+msgstr "Samedi"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_day
+msgid "School day"
+msgstr "Journée d'école"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_year
+msgid "School year"
+msgstr "Année scolaire"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__year_ids
+#: model_terms:ir.ui.view,arch_db:homeschool.view_student_form
+msgid "School years"
+msgstr "Années scolaires"
+
+#. module: homeschool
+#: model:homeschool.subject,name:homeschool.subject_st
+msgid "Science and technology"
+msgstr "Science et technologie"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__season
+msgid "Season"
+msgstr "Saison"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__section
+msgid "Section"
+msgstr "Section"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_item__kind__section
+msgid "Section node"
+msgstr "Nœud de section"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item__kind
+msgid ""
+"Section nodes are synthetic parents created for codes used as prefixes "
+"(covers, dependencies)."
+msgstr ""
+"Les nœuds de section sont des parents synthétiques créés pour les codes "
+"utilisés comme préfixes (couvertures, dépendances)."
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
+msgid "Segment 1 · French — the text"
+msgstr "Segment 1 · Français — le texte"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__sens_raw
+msgid "Sens Raw"
+msgstr "Sens (brut)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__sequence
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__sequence
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__sequence
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__sequence
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_subject__sequence
+msgid "Sequence"
+msgstr "Séquence"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_subject__code
+msgid "Short code used in exports (FLE, MATH, ANG, ST, US…)."
+msgstr "Code court utilisé dans les exports (FLE, MATH, ANG, ST, US…)."
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_review__kind__six_weeks
+msgid "Six weeks"
+msgstr "Six semaines"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block__status__skipped
+msgid "Skipped"
+msgstr "Sauté"
+
+#. module: homeschool
+#: model:homeschool.subject,name:homeschool.subject_us
+msgid "Social studies"
+msgstr "Univers social"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__source
+msgid "Source"
+msgstr "Source"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__source_ref
+msgid "Source Ref"
+msgstr "Réf. source"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_indicator__direction__stable
+msgid "Stable"
+msgstr "Stable"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item__code
+#: model:ir.model.fields,help:homeschool.field_homeschool_item_coverage__item_code
+msgid "Stable id (PDA id or internal id), e.g. FLE-E-SYN-C-E.2.a.i."
+msgstr "Identifiant stable (id de la PDA ou id interne), p. ex. FLE-E-SYN-C-E.2.a.i."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_project__code
+msgid "Stable id, e.g. P-3D, MP-11."
+msgstr "Identifiant stable, p. ex. P-3D, MP-11."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__start_datetime
+msgid "Start Datetime"
+msgstr "Début (date et heure)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__start_fixed
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__start_fixed
+msgid "Start Fixed"
+msgstr "Heure fixe"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__start_time
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__start_time
+msgid "Start Time"
+msgstr "Début"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__anchored
+msgid "Start at a fixed time instead of after the previous block."
+msgstr "Commencer à une heure fixe plutôt qu'après le bloc précédent."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__started
+msgid "Started"
+msgstr "Commencé"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__state
+msgid "State"
+msgstr "État"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__status
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__status
+msgid "Status"
+msgstr "Statut"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__statut_3e
+msgid "Status cycle 3"
+msgstr "Statut 3e cycle"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__steps
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
+msgid "Steps"
+msgstr "Étapes"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__steps_html
+msgid "Steps Html"
+msgstr "Étapes (HTML)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__stop_datetime
+msgid "Stop Datetime"
+msgstr "Fin (date et heure)"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_form
+msgid "Structure"
+msgstr "Structure"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__student_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__student_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__student_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__student_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__student_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__student_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__student_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__student_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__student_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__student_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__student_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_week_wizard__student_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_year__student_id
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_trace__submitted_by__student
+#: model_terms:ir.ui.view,arch_db:homeschool.view_deliverable_search
+#: model_terms:ir.ui.view,arch_db:homeschool.view_reading_book_search
+#: model_terms:ir.ui.view,arch_db:homeschool.view_student_form
+msgid "Student"
+msgstr "Élève"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__student_comment
+msgid "Student Comment"
+msgstr "Dans les mots de l'élève"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__student_reason
+msgid "Student Reason"
+msgstr "Pourquoi (l'élève)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__student_vote
+msgid "Student Vote"
+msgstr "Vote de l'élève"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_trace_form
+msgid "Student's comment"
+msgstr "Commentaire de l'élève"
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_student
+#: model:ir.ui.menu,name:homeschool.menu_students
+msgid "Students"
+msgstr "Élèves"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__subject_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__subject_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__subject_id
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__subject_ids
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_search
+#: model_terms:ir.ui.view,arch_db:homeschool.view_item_search
+#: model_terms:ir.ui.view,arch_db:homeschool.view_trace_search
+msgid "Subject"
+msgstr "Matière"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_subject
+msgid "Subject (matière)"
+msgstr "Matière"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__subject_codes
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__subject_codes
+msgid "Subject Codes"
+msgstr "Codes des matières"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_trace__subject_codes
+msgid ""
+"Subject codes in the order of the family CSV (kept for byte-identical "
+"exports)."
+msgstr ""
+"Codes des matières dans l'ordre du CSV de la famille (gardés pour des "
+"exports identiques à l'octet près)."
+
+#. module: homeschool
+#: model:ir.model.constraint,message:homeschool.constraint_homeschool_subject_code_unique
+msgid "Subject codes must be unique."
+msgstr "Les codes de matières doivent être uniques."
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_subject
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__subject_ids
+#: model:ir.ui.menu,name:homeschool.menu_subjects
+msgid "Subjects"
+msgstr "Matières"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__submitted_by
+msgid "Submitted By"
+msgstr "Déposée par"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_trace_search
+msgid "Submitted by"
+msgstr "Déposée par"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
+msgid "Success"
+msgstr "Réussite"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__success_html
+msgid "Success Html"
+msgstr "Critères de réussite (HTML)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__success
+msgid "Success criteria"
+msgstr "Critères de réussite"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__weekday__6
+msgid "Sunday"
+msgstr "Dimanche"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__annee_cible
+msgid "Target year"
+msgstr "Année cible"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_material
+msgid "Teaching material (fiche, worksheet, poster…)"
+msgstr "Matériel pédagogique (fiche, feuille d'exercices, affiche…)"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__csv_key
+msgid ""
+"The 'block' key of the family hours.csv row this block came from (kept for "
+"diffable exports)."
+msgstr ""
+"La clé « block » de la ligne de hours.csv de la famille d'où vient ce bloc "
+"(gardée pour des exports comparables)."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_indicator__cadence_raw
+msgid "The 'cadence' value of the family CSV, verbatim."
+msgstr "La valeur « cadence » du CSV de la famille, telle quelle."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__subject_codes
+msgid ""
+"The 'matieres' column of the family hours.csv row (several subjects), kept "
+"for exports."
+msgstr ""
+"La colonne « matieres » de la ligne de hours.csv de la famille (plusieurs "
+"matières), gardée pour les exports."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item__noyau_raw
+msgid "The 'noyau' column verbatim (0/1/blank), kept for diffable exports."
+msgstr ""
+"La colonne « noyau » telle quelle (0/1/vide), gardée pour des exports "
+"comparables."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_indicator__sens_raw
+msgid "The 'sens' value of the family CSV, verbatim."
+msgstr "La valeur « sens » du CSV de la famille, telle quelle."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_reading_entry__weekly_page
+msgid "The Friday page: what the week's reading was about."
+msgstr "La page du vendredi : de quoi parlait la lecture de la semaine."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/journal_api.py:0
+msgid "The attachment is not valid base64: %s"
+msgstr "La pièce jointe n'est pas du base64 valide : %s"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_block_template__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_company_mixin__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_day__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_deliverable__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_indicator__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_indicator_value__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_item_coverage__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_journal__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_material__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_project__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_reading_book__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_reading_entry__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_review__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_student__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_trace__company_id
+#: model:ir.model.fields,help:homeschool.field_homeschool_year__company_id
+msgid "The family this record belongs to."
+msgstr "La famille à laquelle cet enregistrement appartient."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item_coverage__block_ids
+msgid "The family's blocks targeting this item."
+msgstr "Les blocs de la famille qui visent cet item."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item_coverage__evidence_refs
+msgid "The family's trace codes on this item, as written to coverage.csv."
+msgstr ""
+"Les codes des traces de la famille sur cet item, tels qu'écrits dans "
+"coverage.csv."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_item_coverage__trace_ids
+msgid "The family's traces evidencing this item."
+msgstr "Les traces de la famille qui attestent cet item."
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/trace.py:0
+msgid ""
+"The note on a trace belongs to the parent: it cannot be written from the "
+"portal."
+msgstr ""
+"La note d'une trace appartient au parent : elle ne peut pas être écrite "
+"depuis le portail."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_project__carries
+msgid "The notions this project carries 'by the side'."
+msgstr "Les notions que ce projet porte « par la bande »."
+
+#. module: homeschool
+#: model:res.groups,comment:homeschool.group_homeschool_manager
+msgid ""
+"The parent running the school: full access to every homeschool record, "
+"including the journal and the indicators."
+msgstr ""
+"Le parent qui fait l'école : accès complet à tous les enregistrements de "
+"l'école à la maison, y compris le journal et les indicateurs."
+
+#. module: homeschool
+#: model:ir.model.constraint,message:homeschool.constraint_homeschool_year_date_order
+msgid "The school year must end after it starts."
+msgstr "L'année scolaire doit se terminer après son début."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_reading_entry__answer
+msgid "The student's answer."
+msgstr "La réponse de l'élève."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_student__user_id
+msgid "The student's own portal login, if any."
+msgstr "Le compte du portail de l'élève lui-même, s'il en a un."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_trace__student_comment
+msgid ""
+"The student's own words about this work — portfolio content, never journal."
+msgstr ""
+"Les mots de l'élève lui-même sur ce travail — contenu du portfolio, jamais "
+"du journal."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_project__student_reason
+msgid "The student's own words, verbatim."
+msgstr "Les mots de l'élève lui-même, tels quels."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_res_company__homeschool_student_ids
+msgid ""
+"The students of this family. Used by the portal record rules: a portal user "
+"reaches the institutional traces and material of the companies whose "
+"students he is attached to."
+msgstr ""
+"Les élèves de cette famille. Utilisé par les règles d'accès du portail : un "
+"utilisateur du portail atteint les traces et le matériel institutionnels des "
+"familles dont il suit les élèves."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_dependency__to_item_id
+msgid "Then"
+msgstr "Puis"
+
+#. module: homeschool
+#: model:ir.model.constraint,message:homeschool.constraint_homeschool_day_student_date_unique
+msgid "There is already a day for this student on that date."
+msgstr "Il y a déjà une journée pour cet élève à cette date."
+
+#. module: homeschool
+#: model:ir.model.constraint,message:homeschool.constraint_homeschool_journal_day_unique
+msgid "There is already a journal entry for that day."
+msgstr "Il y a déjà une entrée de journal pour cette journée."
+
+#. module: homeschool
+#: model:ir.model.constraint,message:homeschool.constraint_homeschool_reading_entry_book_date_unique
+msgid "There is already an entry for this book on that day."
+msgstr "Il y a déjà une entrée pour ce livre ce jour-là."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block_template__alternative
+msgid ""
+"This block is an alternative to the blocks sharing its alternative group; "
+"only the first group member is generated."
+msgstr ""
+"Ce bloc est une alternative aux blocs qui partagent son groupe "
+"d'alternatives ; seul le premier membre du groupe est généré."
+
+#. module: homeschool
+#: model:ir.model.constraint,message:homeschool.constraint_homeschool_indicator_value_indicator_date_unique
+msgid "This indicator already has a value on that date."
+msgstr "Cet indicateur a déjà une valeur à cette date."
+
+#. module: homeschool
+#: model:ir.model.constraint,message:homeschool.constraint_homeschool_item_dependency_edge_unique
+msgid "This prerequisite edge already exists."
+msgstr "Ce lien de prérequis existe déjà."
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_search
+msgid "This week"
+msgstr "Cette semaine"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__threshold
+msgid "Threshold"
+msgstr "Seuil"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__weekday__3
+msgid "Thursday"
+msgstr "Jeudi"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_book__title
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__name
+#: model_terms:ir.ui.view,arch_db:homeschool.view_reading_book_form
+msgid "Title"
+msgstr "Titre"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_deliverable_search
+msgid "To do"
+msgstr "À faire"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_trace_search
+msgid "To validate (à valider)"
+msgstr "À valider"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_deliverable_search
+msgid "Today"
+msgstr "Aujourd'hui"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/trace.py:0
+msgid "Too many traces on %s."
+msgstr "Trop de traces le %s."
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_trace_form
+msgid "Trace"
+msgstr "Trace"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__trace_count
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__trace_count
+msgid "Trace Count"
+msgstr "Nombre de traces"
+
+#. module: homeschool
+#: model:ir.model.constraint,message:homeschool.constraint_homeschool_trace_code_unique
+msgid "Trace codes must be unique within a family."
+msgstr "Les codes de traces doivent être uniques dans une famille."
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_trace
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__trace_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__trace_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item_coverage__trace_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__trace_ids
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_student__trace_ids
+#: model:ir.ui.menu,name:homeschool.menu_traces
+msgid "Traces"
+msgstr "Traces"
+
+#. module: homeschool
+#: model:ir.ui.menu,name:homeschool.menu_track
+msgid "Track"
+msgstr "Suivre"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__kind__transversal
+msgid "Transversal"
+msgstr "Transversal"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__actuals_recorded
+msgid "True once actual minutes were entered for this block."
+msgstr "Vrai dès que les minutes réelles ont été saisies pour ce bloc."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__adult_recorded
+msgid "True once adult-present minutes were entered (even 0)."
+msgstr "Vrai dès que les minutes de présence adulte ont été saisies (même 0)."
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__weekday__1
+msgid "Tuesday"
+msgstr "Mardi"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__unit
+msgid "Unit"
+msgstr "Unité"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/exporter.py:0
+msgid "Unknown export file(s): %s"
+msgstr "Fichier(s) d'export inconnu(s) : %s"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/journal_api.py:0
+msgid "Unknown indicator %(code)s for this family."
+msgstr "Indicateur %(code)s inconnu pour cette famille."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_material__block_ids
+msgid "Used in blocks"
+msgstr "Utilisé dans les blocs"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_trace_form
+msgid "Validate"
+msgstr "Valider"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__validated
+msgid "Validated"
+msgstr "Validée"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__validated_at
+msgid "Validated At"
+msgstr "Validée le"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_trace__validated_by
+msgid "Validated By"
+msgstr "Validée par"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_trace_form
+msgid "Validation"
+msgstr "Validation"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator_value__value
+msgid "Value"
+msgstr "Valeur"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_indicator__value_ids
+msgid "Values"
+msgstr "Valeurs"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__answer_cap
+msgid "Visible cap respected?"
+msgstr "Plafond visible respecté?"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_block_template__weekday__2
+msgid "Wednesday"
+msgstr "Mercredi"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_day_search
+msgid "Week"
+msgstr "Semaine"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_review__answer_recorded
+msgid "Week recorded as it was?"
+msgstr "Semaine notée telle quelle?"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block_template__weekday
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_day__weekday
+msgid "Weekday"
+msgstr "Jour de la semaine"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_block_template
+msgid "Weekday block template (the household grid)"
+msgstr "Gabarit de bloc par jour de semaine (la grille de la maison)"
+
+#. module: homeschool
+#: model:ir.actions.act_window,name:homeschool.action_block_template
+#: model:ir.ui.menu,name:homeschool.menu_templates
+msgid "Weekday templates"
+msgstr "Gabarits par jour de semaine"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_indicator__period__weekly
+msgid "Weekly"
+msgstr "Hebdomadaire"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_review__kind__weekly
+msgid "Weekly (Sunday)"
+msgstr "Hebdomadaire (dimanche)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__weekly_page
+msgid "Weekly Page"
+msgstr "La page du vendredi"
+
+#. module: homeschool
+#: model:ir.model,name:homeschool.model_homeschool_review
+msgid "Weekly or periodic review"
+msgstr "Revue hebdomadaire ou périodique"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__went_badly_html
+msgid "Went Badly Html"
+msgstr "Ce qui a mal été (HTML)"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__went_well_html
+msgid "Went Well Html"
+msgstr "Ce qui a marché (HTML)"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_deliverable__detail
+#: model_terms:ir.ui.view,arch_db:homeschool.view_deliverable_form
+msgid "What exactly, how much, where it goes."
+msgstr "Quoi exactement, combien, où ça va."
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_deliverable_form
+msgid "What is expected"
+msgstr "Ce qui est attendu"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_project__carries
+msgid "What it carries"
+msgstr "Ce qu'il porte"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__went_badly
+msgid "What went badly"
+msgstr "Ce qui a mal été"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__went_well
+msgid "What worked"
+msgstr "Ce qui a marché"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_deliverable__when
+msgid "When"
+msgstr "Quand"
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_day__start_time
+msgid "When the first block starts (hours, e.g. 9.0)."
+msgstr "Heure de début du premier bloc (en heures, p. ex. 9.0)."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_reading_book__finished
+msgid "When the student finished it; empty while reading."
+msgstr "Quand l'élève l'a terminé ; vide tant qu'il le lit."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_reading_book__started
+msgid "When the student started the book."
+msgstr "Quand l'élève a commencé le livre."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_indicator__porte
+msgid "Which need / objective the indicator bears on (e.g. 'R1 / D5')."
+msgstr "Le besoin ou l'objectif sur lequel porte l'indicateur (p. ex. « R1 / D5 »)."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_trace__submitted_by
+msgid ""
+"Who handed the trace in. A trace submitted from the portal (student, "
+"resource) waits for the parent's validation before it can leave the house."
+msgstr ""
+"Qui a déposé la trace. Une trace déposée depuis le portail (élève, "
+"personne-ressource) attend la validation du parent avant de pouvoir sortir "
+"de la maison."
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__word1
+msgid "Word 1"
+msgstr "Mot 1"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__word2
+msgid "Word 2"
+msgstr "Mot 2"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_material__kind__worksheet
+msgid "Worksheet"
+msgstr "Feuille d'exercices"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_reading_entry__written_by
+msgid "Written By"
+msgstr "Écrit par"
+
+#. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_item__year_level
+msgid "Year"
+msgstr "Année"
+
+#. module: homeschool
+#: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__student_vote__up
+msgid "Yes"
+msgstr "Oui"
+
+#. module: homeschool
+#. odoo-python
+#: code:addons/homeschool/models/trace.py:0
+msgid ""
+"You can only submit a trace for your own student or for a student you are "
+"attached to."
+msgstr ""
+"Vous ne pouvez déposer une trace que pour votre propre élève ou pour un "
+"élève auquel vous êtes rattaché."
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_kanban
+msgid "min"
+msgstr "min"
+
+#. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_project_kanban
+msgid "· vote:"
+msgstr "· vote :"

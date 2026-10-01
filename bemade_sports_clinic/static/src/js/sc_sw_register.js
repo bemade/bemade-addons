@@ -2,11 +2,15 @@
  * Task 1542 (epic #1535) — installable app: service worker registration,
  * the kill switch and the « Installer l'application » page.
  *
- * - Inside the app shell: register /my/service-worker.js (scope /my/).
+ * - Inside the app shell: register /my/service-worker.js with scope "/"
+ *   (task 1543: the whole origin, so language-prefixed pages such as
+ *   /en/my/team are in the app too).
  * - Anywhere else (this bundle loads on every frontend page): if the device
- *   still holds a /my/ registration, ask the server for the worker; a 404
- *   means the system switch is OFF -> unregister it (the kill switch). A
- *   buggy or retired worker can therefore never stay stuck on a phone.
+ *   still holds ANY registration of this worker script — the new "/" one or
+ *   an old /my/ one from P1b (task 1542) — ask the server for the worker; a
+ *   404 means the system switch is OFF -> unregister them all (the kill
+ *   switch). A buggy or retired worker can therefore never stay stuck on a
+ *   phone.
  * - Install page: « L'application est installée » in standalone mode; the
  *   browser's own install prompt button when the browser offers it
  *   (Android / Chrome / Edge). No banner anywhere.
@@ -17,21 +21,27 @@
     "use strict";
 
     var SW_URL = "/my/service-worker.js";
-    var SCOPE = "/my/";
+    var SCOPE = "/";
 
     function mark(state) {
         document.documentElement.setAttribute("data-sc-sw", state);
     }
 
+    // Every registration running OUR script, whatever its scope (task 1543:
+    // P1b devices may still hold a /my/ one next to the new "/" one).
+    function isMine(reg) {
+        return [reg.active, reg.waiting, reg.installing].some(function (worker) {
+            try {
+                return Boolean(worker) && new URL(worker.scriptURL).pathname === SW_URL;
+            } catch (_err) {
+                return false;
+            }
+        });
+    }
+
     function myRegistrations() {
         return navigator.serviceWorker.getRegistrations().then(function (regs) {
-            return regs.filter(function (reg) {
-                try {
-                    return new URL(reg.scope).pathname === SCOPE;
-                } catch (_err) {
-                    return false;
-                }
-            });
+            return regs.filter(isMine);
         });
     }
 

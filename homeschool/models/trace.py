@@ -8,12 +8,24 @@ from .material import DIFFUSION
 from .markdown_mixin import markdown_html_field
 
 
+# what a portal user (student, resource) may never touch on a trace, even his own pending one:
+# the parent validates, decides what leaves the house, keeps his note, and the trace stays
+# the record it was submitted as
+PORTAL_LOCKED_FIELDS = (
+    "validated", "validated_by", "validated_at", "diffusion", "note", "student_id", "submitted_by",
+    "company_id", "code",
+)
+
+
 class Trace(models.Model):
     _name = "homeschool.trace"
     _description = "Learning trace (portfolio artifact)"
-    _inherit = ["mail.thread", "homeschool.markdown.mixin", "homeschool.company.mixin"]
+    _inherit = ["mail.thread", "homeschool.markdown.mixin", "homeschool.company.mixin", "homeschool.attachment.mixin"]
     _order = "date desc, code desc"
     _markdown_fields = ("note",)
+    # a portal user comments a trace he can read (the outside teacher on an institutional
+    # trace): posting needs read access, not write
+    _mail_post_access = "read"
 
     code = fields.Char(required=True, index=True, copy=False, default=lambda self: self.env._("New"))
     name = fields.Char(required=True, string="Title")
@@ -118,9 +130,27 @@ class Trace(models.Model):
             "You can only submit a trace for your own student or for a student you are attached to."
         ))
 
+    def _is_manager(self):
+        return self.env.su or self.env.user.has_group("homeschool.group_homeschool_manager")
+
+    def _check_portal_vals(self, vals):
+        """A portal user edits the body of his own pending trace (title, files, his own
+        words, items…) and nothing the parent owns: AccessError on any locked field."""
+        if self._is_manager():
+            return
+        locked = [name for name in PORTAL_LOCKED_FIELDS if name in vals]
+        if locked:
+            raise AccessError(self.env._(
+                "Only the parent may change %(fields)s on a trace: it waits for his validation.",
+                fields=", ".join(locked),
+            ))
+
     def _guard_portal_submission(self, vals):
         """A trace created from the portal is always internal and pending, and says who
-        submitted it; the submitter cannot pretend otherwise."""
+        submitted it; the submitter cannot pretend otherwise. The parent's note is never
+        his to write."""
+        if vals.get("note"):
+            raise AccessError(self.env._("The note on a trace belongs to the parent: it cannot be written from the portal."))
         student = self.env["homeschool.student"].browse(vals.get("student_id") or [])
         vals["submitted_by"] = self._portal_submitted_by(student)
         vals["diffusion"] = "internal"
@@ -175,6 +205,7 @@ class Trace(models.Model):
         return True
 
     def write(self, vals):
+        self._check_portal_vals(vals)
         result = super().write(vals)
         if "item_ids" in vals or "company_id" in vals:
             self._ensure_item_coverage()

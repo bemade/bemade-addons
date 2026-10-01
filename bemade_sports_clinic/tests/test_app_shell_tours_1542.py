@@ -15,7 +15,8 @@ Acceptance criteria covered here (AC6, with AC1 / AC3 / AC5 in a browser):
   history row was created; logout clears the device drafts.
 * UC-B5 (AC5) The install page renders its per-device steps.
 * UC-B6 (AC1) Kill switch: a service worker registered while the switch is
-  on unregisters itself once the switch is off.
+  on unregisters itself once the switch is off — task 1543: the new "/"
+  registration AND an old P1b "/my/" one of the same script.
 
 Visual layout, both themes at both widths, a real install and real offline
 behaviour stay UNVERIFIED here — the dev-review click-through covers them.

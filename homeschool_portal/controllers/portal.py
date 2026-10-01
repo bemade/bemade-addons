@@ -5,15 +5,10 @@ Every page starts by resolving the student from the URL against the user's relat
 him (his own student, or a student he is attached to as a resource user); an unrelated
 or unknown student is a 404. Records are then searched **as the portal user**, so the
 record rules of ``homeschool`` decide what is listed; writes (tick, reading entry,
-submitted trace) run as the user too, so the core access lines and model guards apply.
-
-``sudo()`` appears in three narrow places, each after that ownership check and each a
-gap of the core module recorded as a follow-up: the student record itself (no portal
-access line on ``homeschool.student``), the files attached to a trace the user has just
-created (a portal user cannot create an attachment on a record he cannot write), and
-the pass-through that serves a file of a trace or material the user can read (a file
-uploaded in the backend before its record was saved keeps ``res_id = 0`` and the stock
-``/web/content`` refuses it to portal users).
+submitted trace and its files) run as the user too, so the core access lines, rules and
+model guards apply. Nothing here runs as superuser: the student record, the subjects,
+the files of a trace or a material all come back through the core's own portal access
+(``homeschool`` 19.0.5.0.0 and later — a file follows the record it is linked to).
 """
 from datetime import date, timedelta
 
@@ -21,6 +16,7 @@ from werkzeug.exceptions import Forbidden, NotFound
 from werkzeug.utils import secure_filename
 
 from odoo import fields, http
+from odoo.exceptions import AccessError
 from odoo.fields import Command
 from odoo.http import request
 
@@ -71,15 +67,21 @@ class HomeschoolPortal(CustomerPortal):
 
     def _portal_students(self):
         """The students the user may see: his own, or the ones he follows as a resource
-        user. ``homeschool.student`` has no portal access line (core follow-up): the
-        search runs as superuser with the ownership domain as its only filter and the
-        records are used read-only, for their name and company."""
-        return request.env["homeschool.student"].sudo().search(self._portal_student_domain(), order="name, id")
+        user — searched as the user (the core's portal rule on ``homeschool.student``
+        says the same thing; the domain here keeps the pages explicit). A user with no
+        read access on students at all (an internal user outside the homeschool groups,
+        on an instance where other apps share the portal) simply sees none: the portal
+        home must never fail for him."""
+        Student = request.env["homeschool.student"]
+        if not Student.has_access("read"):
+            return Student.browse()
+        return Student.search(self._portal_student_domain(), order="name, id")
 
     def _portal_student(self, student_id):
-        student = request.env["homeschool.student"].sudo().search(
-            [("id", "=", student_id)] + self._portal_student_domain(), limit=1
-        )
+        Student = request.env["homeschool.student"]
+        if not Student.has_access("read"):
+            raise NotFound()
+        student = Student.search([("id", "=", student_id)] + self._portal_student_domain(), limit=1)
         if not student:
             raise NotFound()
         return student
@@ -101,39 +103,22 @@ class HomeschoolPortal(CustomerPortal):
         return values
 
     @staticmethod
-    def _m2o_names(records, field):
-        """{record id: display name of its many2one} without reading the comodel as the
-        user (the portal has no access line on subjects): ``read()`` resolves many2one
-        names as superuser, on purpose."""
-        if not records:
-            return {}
-        return {row["id"]: (row[field] or (0, ""))[1] for row in records.read([field])}
-
-    def _kind_labels(self):
+    def _kind_labels():
+        """The block kinds as the core names them, in the user's language."""
         env = request.env
-        return {
-            "opening": env._("Opening"),
-            "bloc": env._("Bloc"),
-            "pause": env._("Pause"),
-            "reading": env._("Reading"),
-            "projects": env._("Projects"),
-            "ressource": env._("Ressource"),
-            "debrief": env._("Debrief"),
-            "bonus": env._("Bonus"),
-        }
+        return dict(env["homeschool.block"]._fields["kind"]._description_selection(env))
 
     def _attachment_rows(self, record, field="attachment_ids"):
-        """Name and size of the files of a trace or a material the user can read. The
-        record was fetched as the user; the attachments themselves are read as superuser
-        because a file uploaded before its record existed keeps ``res_id = 0`` and is
-        otherwise invisible to a portal user (core follow-up)."""
+        """Name and size of the files of a trace or a material the user can read, read as
+        the user: the core stamps every linked file with its record, so a file follows
+        the access of its trace or material."""
         env = request.env
         return [
             {
                 "id": att.id, "name": att.name, "mimetype": att.mimetype, "size": att.file_size,
                 "size_label": env._("(%(kb).1f KB)", kb=att.file_size / 1024.0) if att.file_size else "",
             }
-            for att in record.sudo()[field]
+            for att in record[field]
         ]
 
     # ------------------------------------------------------------------
@@ -196,7 +181,6 @@ class HomeschoolPortal(CustomerPortal):
             "deliverables": deliverables,
             "materials": materials,
             "material_files": {m.id: self._attachment_rows(m) for m in materials},
-            "subject_names": self._m2o_names(blocks, "subject_id"),
             "kind_labels": self._kind_labels(),
             "fmt_hour": _fmt_hour,
             "iso_week": iso_week_label(day_date),
@@ -258,7 +242,6 @@ class HomeschoolPortal(CustomerPortal):
             "prev_week": iso_week_label(monday - timedelta(days=7)),
             "next_week": iso_week_label(monday + timedelta(days=7)),
             "columns": columns,
-            "subject_names": self._m2o_names(blocks, "subject_id"),
             "kind_labels": self._kind_labels(),
             "fmt_hour": _fmt_hour,
         })
@@ -367,21 +350,20 @@ class HomeschoolPortal(CustomerPortal):
         return errors
 
     def _attach_submitted_files(self, trace, uploads):
-        """Attach the uploaded files to the trace the user has just created. A portal user
-        cannot create an attachment on a record he cannot write, nor link it: both run as
-        superuser, on a trace whose creator is the user (checked here), and nothing else."""
+        """Attach the uploaded files to the trace the user has just created — as the user:
+        he may write his own pending trace (core rule), so he may create attachments on it
+        and link them (Odoo's attachment access follows the record's write access)."""
         if not uploads:
             return
         if trace.create_uid != request.env.user or trace.validated:
             raise Forbidden()
-        Attachment = request.env["ir.attachment"].sudo()
-        attachments = Attachment.create([{
+        attachments = request.env["ir.attachment"].create([{
             "name": secure_filename(upload.filename) or "file",
             "raw": upload.read(),
             "res_model": "homeschool.trace",
             "res_id": trace.id,
         } for upload in uploads])
-        trace.sudo().write({"attachment_ids": [Command.link(att.id) for att in attachments]})
+        trace.write({"attachment_ids": [Command.link(att.id) for att in attachments]})
 
     # ------------------------------------------------------------------
     # files of traces and material
@@ -405,10 +387,14 @@ class HomeschoolPortal(CustomerPortal):
         student = self._portal_student(student_id)
         if not self._attachment_reachable(student, attachment_id):
             raise NotFound()
-        attachment = request.env["ir.attachment"].sudo().browse(attachment_id).exists()
+        attachment = request.env["ir.attachment"].browse(attachment_id).exists()
         if not attachment:
             raise NotFound()
-        stream = request.env["ir.binary"]._get_stream_from(attachment, "raw")
+        try:
+            stream = request.env["ir.binary"]._get_stream_from(attachment, "raw")
+        except AccessError:
+            # a file the core has not stamped with its record (never after 19.0.5.0.0)
+            raise NotFound()
         return stream.get_response(as_attachment=True)
 
     # ------------------------------------------------------------------
