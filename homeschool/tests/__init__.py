@@ -18,4 +18,5 @@ from . import (
     test_uc16_i18n,
     test_uc17_block_journal,
     test_uc18_log_plan,
+    test_uc19_close_day,
 )

@@ -4,6 +4,7 @@ from datetime import timedelta
 from odoo import api, fields, models
 from odoo.tools import format_date
 
+from .block import NO_HOURS_KINDS
 from .markdown_mixin import markdown_html_field
 
 JOURNAL_STATES = [
@@ -106,8 +107,11 @@ class Day(models.Model):
             rec.material_ids = rec.block_ids.material_ids
 
     @api.depends("date", "is_off", "block_ids.status", "block_ids.kind", "block_ids.minutes_total",
-                 "block_ids.actuals_recorded", "journal_ids")
+                 "block_ids.actuals_recorded", "block_ids.adult_recorded", "journal_ids")
     def _compute_journal_state(self):
+        """``incomplete`` while an hour-bearing, non-skipped block lacks its minutes or its
+        adult-present minutes, or while the day has no journal entry — the same rule as the
+        journal API's ``status``. ``NO_HOURS_KINDS`` blocks never count."""
         today = fields.Date.context_today(self)
         for rec in self:
             if rec.is_off:
@@ -115,10 +119,21 @@ class Day(models.Model):
             elif rec.date and rec.date > today:
                 rec.journal_state = "future"
             else:
-                pending = rec.block_ids.filtered(
-                    lambda b: b.kind != "pause" and b.status != "skipped" and not b.actuals_recorded
-                )
-                rec.journal_state = "incomplete" if (pending or not rec.journal_ids) else "done"
+                rec.journal_state = "incomplete" if (rec._pending_blocks() or not rec.journal_ids) else "done"
+
+    def _pending_blocks(self):
+        """The hour-bearing blocks of the day still waiting for their minutes or their
+        adult-present minutes (skipped ones excepted)."""
+        self.ensure_one()
+        return self.block_ids.filtered(
+            lambda b: b.kind not in NO_HOURS_KINDS and b.status != "skipped"
+            and not (b.actuals_recorded and b.adult_recorded)
+        )
+
+    def action_open_close_wizard(self):
+        """« Fermer la journée »: the wizard on this day, first hour-bearing block."""
+        self.ensure_one()
+        return self.env["homeschool.close.day.wizard"].create({"day_id": self.id})._reopen()
 
     def action_recompute_times(self):
         self.block_ids._compute_times()

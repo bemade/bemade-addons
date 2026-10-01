@@ -40,6 +40,13 @@ class TestI18n(HomeschoolCase):
             self.assertEqual(self.fr[model]._fields["plan_key"]._description_string(self.fr), "Clé du plan")
         self.assertEqual(self.fr.ref("homeschool.action_report_day_list").name, "Ma liste du jour")
         self.assertEqual(self.env.ref("homeschool.action_report_day_list").name, "Day's list")
+        Wizard = self.fr["homeschool.close.day.wizard"]
+        self.assertEqual(Wizard._fields["minutes_total"]._description_string(self.fr), "Réel (min)")
+        self.assertEqual(Wizard._fields["minutes_adult_present"]._description_string(self.fr), "Adulte présent (min)")
+        self.assertEqual(Wizard._fields["adult_missing_names"]._description_string(self.fr), "Blocs sans minutes adulte")
+        self.assertEqual(dict(Wizard._fields["status"]._description_selection(self.fr))["skipped"], "Sauté")
+        self.assertEqual(self.fr.ref("homeschool.menu_close_day").name, "Fermer la journée")
+        self.assertEqual(self.fr.ref("homeschool.action_close_day_wizard").name, "Fermer la journée")
         # english untouched
         self.assertEqual(self.Trace._fields["name"]._description_string(self.env), "Title")
         self.assertEqual(dict(self.Block._fields["kind"]._description_selection(self.env))["reading"], "Reading")

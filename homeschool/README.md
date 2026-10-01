@@ -18,8 +18,11 @@ the instance never runs `git`, holds no repository key and never writes to a clo
   (`tracking/hours.csv`, `tracking/traces.csv`, `tracking/indicateurs.csv`,
   `tracking/indicateurs-definitions.csv`, `tracking/coverage.csv`,
   `plan/curriculum/pda-items.csv`, `plan/curriculum/items-internes.csv`,
-  `plan/curriculum/projets.csv`), or the `files=` subset (an unknown name is a
-  `UserError`). Portal and plain internal users get `AccessError`.
+  `plan/curriculum/projets.csv`) **followed by the rendered journal week files**
+  (`tracking/journal/<ISO>/<ISO>.md`, one per ISO week holding a day of the student —
+  dynamic paths, see « The week file is rendered » below), or the `files=` subset (an
+  unknown name is a `UserError`; a week path is accepted). Portal and plain internal
+  users get `AccessError`.
 - Newline handling is the **server's** job on request: the texts use `\n`; pass
   `newline="\r\n"` to get CRLF texts. The client writes each text verbatim
   (`open(path, "w", encoding="utf-8", newline="")`) — one call per line-ending
@@ -169,6 +172,80 @@ and name and takes the key).
   The template is written in French on purpose (the household's paper); the model labels
   stay English with their fr_CA terms.
 
+## « Fermer la journée » (close the day)
+
+From the day form's header (**Close the day**) or *Track › Close the day* (today's day of
+the company's single student), `homeschool.close.day.wizard` walks the day's
+**hour-bearing** blocks — `bloc`, `reading`, `projects`, `ressource`, `bonus`, in
+`(sequence, id)` order — one screen at a time: the block's plan (intention, success
+criteria, planned minutes) stays visible while the owner types the actual minutes, the
+adult-present minutes, the status (done / partial / skipped) and the block's own journal
+(what worked, what went badly, note). `opening`, `pause` and `debrief`
+(`homeschool.block.NO_HOURS_KINDS`) get no screen: they are set `done` when the day is
+finished and never count as pending.
+
+- **Minutes are never pre-filled.** The two inputs are text fields, blank on a planned
+  block (an Integer field reads `0` when empty and the client would show « 0 »); a blank
+  stays a blank (`actuals_recorded` / `adult_recorded` false), a typed `0` is a value,
+  anything but digits is refused. A block already holding minutes shows them.
+- **Next** writes the block at once and moves on; **Skip this block** writes `skipped` and
+  nothing else; **Previous** writes nothing. Closing the dialog loses only the current
+  screen. The three texts are written only when they changed — on a past day they land
+  under the block's `corrections` (the freeze), and an unchanged pre-loaded text never
+  produces a correction line.
+- The last screen is the day's `homeschool.journal` entry (pre-loaded when it exists):
+  **Finish** creates it (at least one line is required — an empty entry is a false
+  journal) or writes what changed (a past day's under `corrections`), sets `done` on the
+  no-hours blocks still planned, and closes.
+- A blank adult field keeps the day **Incomplete**: the last screen names those blocks
+  (« Blocs sans minutes adulte : … ») and still lets the owner finish. `journal_state`
+  now agrees with the journal API's `status`: `done` once every hour-bearing, non-skipped
+  block has both its minutes and its adult-present minutes and the entry exists.
+
+## The week file is rendered (`tracking/journal/<ISO>/<ISO>.md`)
+
+`export_journal_weeks(student)` renders the household's week file from the records for
+every ISO week holding at least one day with blocks, a journal entry or a day off; the
+nightly export (`export_texts`, `export_all`) returns those files after the CSVs, so the
+hand-written week file is **replaced** by the rendered one from the first export after
+this ships (git keeps the old text). The format, kept importable by `import_journal`:
+
+```
+# Semaine N · 2026-W02 (lun. 5 janv. → dim. 11 janv.)
+
+## Revue de la semaine                              ← only when a weekly homeschool.review exists
+- **Dose tenue ? :** …  (Plafond visible respecté ?, Semaine notée telle quelle ?,
+  Ajustement pour la semaine prochaine, Notes — empty answers omitted)
+
+## Jours
+
+### 2026-01-05
+- Blocs : `bloc-math` P1 Math — clocks · 50/45 · done — note · ✓ what worked · ✗ what went badly
+- Blocs : `lecture` Reading · 20/– · done              ← one line per recorded block, sequence order:
+                                                        hours key, name, total/adult minutes (– = blank), status, hours.csv notes cell
+- Ce qui a marché : …                                 ← one bullet per line of the entry's field
+- Ce qui a mal été : …
+- a free note                                         ← the entry's `notes`, bullets as they are
+- Indicateurs : …                                     ← `indicator_notes`
+- Corrections :                                       ← the entry's dated corrections, verbatim, indented
+  - **2026-01-08** (What worked): …
+
+### 2026-01-07 — pas d'école (Storm)                  ← a day off
+```
+
+« Semaine N » counts calendar weeks from the Monday of the week holding the start of the
+student's latest `homeschool.year` begun by that week's Sunday; without one, from the week
+of the first day of his records. Dates are French (`fr_CA`) whatever the user's language;
+the file is French by design and carries no translatable term.
+
+On the way back, `import_journal` reads `Ce qui a marché` / `Ce qui a mal été` /
+`Indicateurs :` into the entry's fields, keeps any other bullet in `notes`, ignores the
+`Blocs :` lines (`hours.csv` is the blocks' record) and `Corrections :` (append-only on the
+live record, never re-imported), accepts the day-off suffix on the heading, and creates no
+entry for a section without journal bullets (a day off, blocks only). Render → import into a
+fresh family (with `hours.csv`) → render is identical (UC-11); a free-text `notes` line
+without a leading `- ` is normalized to a bullet by the first export.
+
 ## The block's own journal
 
 Besides its `note`, a block carries `went_well` / `went_badly` (Markdown, rendered on the
@@ -253,5 +330,5 @@ Odoo drops a translation equal to its source at export time.
 
 ## Tests
 
-`odoo-dev test homeschool` — use cases UC-01..UC-16, synthetic fixtures only (this
+`odoo-dev test homeschool` — use cases UC-01..UC-19, synthetic fixtures only (this
 repository is public: never household data).

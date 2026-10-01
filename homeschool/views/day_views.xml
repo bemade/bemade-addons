@@ -6,7 +6,8 @@
         <field name="arch" type="xml">
             <form string="Day">
                 <header>
-                    <button name="%(homeschool.action_report_day_list)d" type="action" string="Print the day's list" class="btn-primary" icon="fa-print"/>
+                    <button name="action_open_close_wizard" type="object" string="Close the day" class="btn-primary" icon="fa-check-square-o" invisible="journal_state == 'future'"/>
+                    <button name="%(homeschool.action_report_day_list)d" type="action" string="Print the day's list" class="btn-secondary" icon="fa-print"/>
                 </header>
                 <sheet>
                     <div class="oe_title">

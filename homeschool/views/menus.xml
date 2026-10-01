@@ -11,6 +11,7 @@
     <menuitem id="menu_deliverables" name="Deliverables" parent="menu_plan" action="action_deliverable" sequence="25"/>
 
     <menuitem id="menu_track" name="Track" parent="menu_root" sequence="20"/>
+    <menuitem id="menu_close_day" name="Close the day" parent="menu_track" action="action_close_day_wizard" sequence="5"/>
     <menuitem id="menu_journal" name="Journal" parent="menu_track" action="action_journal" sequence="10"/>
     <menuitem id="menu_traces" name="Traces" parent="menu_track" action="action_trace" sequence="20"/>
     <menuitem id="menu_reading" name="Reading log" parent="menu_track" action="action_reading_book" sequence="25"/>

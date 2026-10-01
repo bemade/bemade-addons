@@ -17,6 +17,10 @@ BLOCK_KINDS = [
     ("bonus", "Bonus"),
 ]
 
+# Kinds that carry no hours of their own: they get no screen in « Fermer la journée », are
+# set done when the day closes, and never count as pending (nor as missing adult minutes).
+NO_HOURS_KINDS = ("opening", "pause", "debrief")
+
 BLOCK_STATUS = [
     ("planned", "Planned"),
     ("done", "Done"),
@@ -144,7 +148,7 @@ class Block(models.Model):
     @api.depends("actuals_recorded", "adult_recorded", "kind", "status")
     def _compute_adult_missing(self):
         for rec in self:
-            rec.adult_missing = bool(rec.actuals_recorded and not rec.adult_recorded and rec.kind != "pause" and rec.status != "skipped")
+            rec.adult_missing = bool(rec.actuals_recorded and not rec.adult_recorded and rec.kind not in NO_HOURS_KINDS and rec.status != "skipped")
 
     @api.constrains("minutes_total", "minutes_adult_present", "adult_recorded")
     def _check_adult_bounded(self):

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Homeschool",
-    "version": "19.0.7.0.0",
+    "version": "19.0.8.0.0",
     "category": "Education",
     "summary": "Plan, teach and track a home-schooled child: curriculum items, "
     "days built from movable blocks, material, traces (portfolio), indicators, journal.",
@@ -73,6 +73,17 @@ What it models
   values; weekly and periodic **reviews** with their answers.
 * **Journal** — the parent's blunt daily view (what worked, what went badly,
   notes). A separate model on purpose: it never appears in any portal.
+* **« Fermer la journée »** — from the day form (or Track › Close the day for
+  today), a wizard walks the day's hour-bearing blocks one screen at a time —
+  minutes, adult-present minutes (never pre-filled: a blank is honest, a zero is
+  a value), status, what worked / went badly / note — writing each block as soon
+  as Next is clicked, then ends on the day's journal entry. Opening, pause and
+  debrief get no screen and never hold the day open; a blank adult field keeps
+  the day *Incomplete* and the final screen names the blocks concerned.
+* **The week file is rendered from the records**: the nightly export returns
+  ``tracking/journal/<ISO>/<ISO>.md`` for every week holding a day (« Semaine N »,
+  the weekly review, one section per day with the recorded blocks, the entry's
+  bullets and the dated corrections), importable back identically.
 
 Coverage of the curriculum is computed from traces and blocks, per subject
 and per item, with the evidence one click away.
@@ -154,6 +165,7 @@ Conventions
         "report/day_list_report.xml",
         "views/block_views.xml",
         "views/day_views.xml",
+        "views/close_day_wizard_views.xml",
         "views/deliverable_views.xml",
         "views/reading_views.xml",
         "views/item_views.xml",

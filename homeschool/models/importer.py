@@ -562,7 +562,10 @@ class RepositoryImporter(models.AbstractModel):
     # ------------------------------------------------------------------
     # UC-08 journal week files
     # ------------------------------------------------------------------
-    _DAY_HEADING = re.compile(r"^###\s+(\d{4}-\d{2}-\d{2})\s*$", re.M)
+    # ``### 2026-01-07`` or, for a day off, ``### 2026-01-07 — pas d'école (raison)``
+    _DAY_HEADING = re.compile(r"^###\s+(\d{4}-\d{2}-\d{2})(?:\s+—[^\n]*)?\s*$", re.M)
+    _IGNORED_BULLET = re.compile(r"^(blocs|corrections)\s*:")
+    _INDICATORS_BULLET = re.compile(r"^indicateurs\s*:")
 
     @api.model
     def _parse_bullets(self, body):
@@ -572,21 +575,30 @@ class RepositoryImporter(models.AbstractModel):
     @api.model
     def _journal_vals(self, bullets):
         """Classify the bullets of one day the way the week files are written: ``Ce qui a
-        marché`` → ``went_well``, ``Ce qui a mal été`` → ``went_badly`` (the text after the
-        colon), anything else stays a ``- `` bullet in ``notes``. Empty fields are ``False``."""
-        well, badly, other = [], [], []
+        marché`` → ``went_well``, ``Ce qui a mal été`` → ``went_badly``, ``Indicateurs`` →
+        ``indicator_notes`` (the text after the colon); ``Blocs :`` lines (the rendered
+        blocks — ``hours.csv`` is their record) and ``Corrections :`` (append-only on the live
+        record, never re-imported) are ignored; anything else stays a ``- `` bullet in
+        ``notes``. Empty fields are ``False``."""
+        well, badly, indicators, other = [], [], [], []
+        after_colon = lambda b: b.split(":", 1)[1].strip() if ":" in b else b
         for b in bullets:
             low = b.lower()
             if low.startswith("ce qui a marché"):
-                well.append(b.split(":", 1)[1].strip() if ":" in b else b)
+                well.append(after_colon(b))
             elif low.startswith("ce qui a mal été"):
-                badly.append(b.split(":", 1)[1].strip() if ":" in b else b)
+                badly.append(after_colon(b))
+            elif self._INDICATORS_BULLET.match(low):
+                indicators.append(after_colon(b))
+            elif self._IGNORED_BULLET.match(low):
+                continue
             else:
                 other.append(b)
         return {
             "went_well": "\n".join(well) or False,
             "went_badly": "\n".join(badly) or False,
             "notes": "\n".join("- " + o for o in other) or False,
+            "indicator_notes": "\n".join(indicators) or False,
         }
 
     @api.model
@@ -622,6 +634,8 @@ class RepositoryImporter(models.AbstractModel):
             for i in range(1, len(parts) - 1, 2):
                 d = fields.Date.to_date(parts[i])
                 bullets = self._parse_bullets(parts[i + 1].strip())
+                if not any(self._journal_vals(bullets).values()):
+                    continue  # a day off, or blocks only: nothing of the entry to import
                 entry, created = self._apply_journal_day(student, d, bullets)
                 if created:
                     n += 1
