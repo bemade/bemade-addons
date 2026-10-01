@@ -80,7 +80,7 @@ get a conversation off your list are kept strictly apart:
 
 - **Handled** is per user: it sets `is_handled` on the caller's own
   `mail.conversation.member` row ("remove from my list"). Nobody else's list
-  and not the conversation's `state` change. It is durable: message posts, the
+  and not the conversation's `state` are affected. It is durable: message posts, the
   snooze cron, state changes and other users' actions never clear it; only the
   user who set it can undo it ("Back to my list").
 - **Done** is team-level: `state = 'done'`. Anybody may reopen it.
