@@ -25,6 +25,11 @@ class MailConversationTeam(models.Model):
         "res.users",
         string="Default Assignee",
     )
+    quiet_email_ingest = fields.Boolean(
+        default=False,
+        help="Default for new conversations of this team: messages arriving "
+        "by email are recorded without in-app alerts.",
+    )
     inbox_transport_ids = fields.Many2many(
         "conversation.transport",
         "mail_conversation_team_transport_rel",

@@ -15,6 +15,7 @@
                     <group>
                         <field name="active" />
                         <field name="default_user_id" />
+                        <field name="quiet_email_ingest" />
                         <field name="member_ids" widget="many2many_tags" />
                         <field name="inbox_transport_ids" widget="many2many_tags" />
                     </group>
