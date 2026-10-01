@@ -36,9 +36,12 @@ def float_to_time(value):
 class Block(models.Model):
     _name = "homeschool.block"
     _description = "Planning block"
-    _inherit = ["mail.thread", "homeschool.markdown.mixin"]
+    _inherit = ["mail.thread", "homeschool.markdown.mixin", "homeschool.frozen.mixin"]
     _order = "day_id, sequence, id"
-    _markdown_fields = ("intention", "steps", "success", "fallback", "note")
+    _markdown_fields = ("intention", "steps", "success", "fallback", "note", "went_well", "went_badly", "corrections")
+    # The block's own journal: from the next day on these are corrected, never rewritten.
+    # Minutes and status stay editable (closing yesterday late is normal).
+    _frozen_fields = ("went_well", "went_badly", "note")
     _check_company_auto = True
 
     day_id = fields.Many2one("homeschool.day", required=True, ondelete="cascade", index=True, tracking=True)
@@ -68,6 +71,12 @@ class Block(models.Model):
     fallback_html = markdown_html_field("fallback")
     note = fields.Text(help="Markdown.")
     note_html = markdown_html_field("note")
+    went_well = fields.Text(string="What worked", help="Markdown. As it was — a clean journal is a false journal.")
+    went_well_html = markdown_html_field("went_well")
+    went_badly = fields.Text(string="What went badly", help="Markdown.")
+    went_badly_html = markdown_html_field("went_badly")
+    corrections = fields.Text(help="Dated corrections appended to a past block. Past blocks' texts are never edited in place.")
+    corrections_html = markdown_html_field("corrections")
 
     item_ids = fields.Many2many("homeschool.item", "homeschool_block_item_rel", "block_id", "item_id", string="Curriculum items")
     material_ids = fields.Many2many("homeschool.material", "homeschool_block_material_rel", "block_id", "material_id", string="Material", check_company=True)

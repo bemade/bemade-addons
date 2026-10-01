@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Homeschool",
-    "version": "19.0.5.0.0",
+    "version": "19.0.6.0.0",
     "category": "Education",
     "summary": "Plan, teach and track a home-schooled child: curriculum items, "
     "days built from movable blocks, material, traces (portfolio), indicators, journal.",
@@ -34,8 +34,10 @@ What it models
   subject, a planned duration, a sequence within its day, intention, steps,
   success criteria and fallback in Markdown, the curriculum items and
   material it targets, the project it serves, and — filled in at the end of
-  the day — the **actual minutes and adult-present minutes** and a status
-  (planned, done, partial, skipped, moved). Start times are computed from
+  the day — the **actual minutes and adult-present minutes**, a status
+  (planned, done, partial, skipped, moved) and the block's own journal (what
+  worked, what went badly, note — frozen from the next day on: a later change
+  is appended as a dated correction). Start times are computed from
   the day's start and the preceding blocks (pauses are blocks too); a block
   may anchor itself to a fixed time (reading at 14:00) and the computation
   resumes from there. Blocks are moved between days and reordered within a

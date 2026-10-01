@@ -299,8 +299,10 @@ class RepositoryImporter(models.AbstractModel):
         """One ``hours.csv`` row (a dict of the CSV columns, all strings) → the student's day
         (created as needed) and its block. The ``block`` key gives the kind and subject
         (aliases first), a ``journee`` marker with no minutes marks the day off, an existing
-        block with the same name and kind is updated in place, else one is created. Problems
-        go to ``log``; ``unknown_keys`` (a set) reports an unknown subject key once per run.
+        block with the same name and kind is updated in place, else the first **planned**
+        block of the day with the same kind and subject and no actuals yet is closed (title
+        replaced, planned minutes and sequence kept), else one is created. Problems go to
+        ``log``; ``unknown_keys`` (a set) reports an unknown subject key once per run.
         Returns ``(day, block)`` — ``block`` is empty for a day-off marker. Shared by the CSV
         import and the journal API: the mapping lives here and nowhere else."""
         Day = self.env["homeschool.day"]
@@ -340,13 +342,26 @@ class RepositoryImporter(models.AbstractModel):
             "minutes_total": int(r["minutes_total"]) if (r.get("minutes_total") or "").strip() else False,
             "minutes_adult_present": int(r["minutes_adult_present"]) if (r.get("minutes_adult_present") or "").strip() else False,
         }
+        # the row is the record of the day's hours, like the CSV it mirrors: its note is
+        # written in place even on a past day (journal_force_edit, as the journal import)
         existing = day.block_ids.filtered(lambda b: b.name == name and b.kind == kind)
         if existing:
             block = existing[0]
-            block.write(vals)
-        else:
-            block = Block.create(vals)
-        return day, block
+            block.with_context(journal_force_edit=True).write(vals)
+            return day, block
+        planned = day.block_ids.filtered(
+            lambda b: b.kind == kind and b.subject_id == subject and b.status == "planned"
+            and not b.actuals_recorded and not b.adult_recorded
+        ).sorted(lambda b: (b.sequence, b.id))
+        if planned:
+            # the evening's row closes the planned block: the activity replaces the title,
+            # the plan (intention, steps, planned minutes, sequence) stays
+            block = planned[0]
+            log.append("hours.csv %s/%s: closed planned block %d «%s»" % (r["date"].strip(), block_key, block.id, block.name))
+            closing = {k: v for k, v in vals.items() if k not in ("duration_planned", "sequence")}
+            block.with_context(journal_force_edit=True).write(closing)
+            return day, block
+        return day, Block.create(vals)
 
     @api.model
     def import_hours(self, repo_path, student, aliases=None):

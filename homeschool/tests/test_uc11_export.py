@@ -14,7 +14,9 @@ Acceptance criteria
    path is absent); this is the migration gate. On the synthetic fixture the round trip
    is asserted here.
 3. ``hours.csv`` rows are derived from blocks with actual minutes: ``block`` column
-   from kind + subject (inverse of UC-04 §6), ``activity`` from name, ``notes`` from note.
+   from kind + subject (inverse of UC-04 §6), ``activity`` from name, ``notes`` from note —
+   with the block's ``went_well`` (``✓ …``) and ``went_badly`` (``✗ …``) folded in after
+   it, ``·``-separated; a block with only a note exports exactly as before.
    A day off always yields its ``journee`` marker row (reason, ``0,0``, note) *before*
    whatever blocks were recorded on it — a day off with a bonus exports two rows.
 4. Markdown is exported as-is (no HTML) so ``report.py check`` (name spelling,
@@ -91,6 +93,21 @@ class TestExport(HomeschoolCase):
         self.assertEqual(out[1], "2026-03-02,bloc-fle,Segment 1 French,FLE,45,45,fine really")
         self.assertEqual(out[2], "2026-03-02,lecture,Reading,FLE,20,,", "adult minutes blank = not recorded")
         self.assertEqual(len(out), 3, "planned-only blocks are not hours")
+
+    def test_hours_notes_fold_the_block_journal(self):
+        day = self.make_day(date(2026, 3, 3))
+        self.make_block(day, "All three", 45, 1, subject_id=self.fle.id, minutes_total=45, minutes_adult_present=45, status="done",
+                        note="n", went_well="w\nmore", went_badly="b")
+        self.make_block(day, "Note only", 45, 2, subject_id=self.math.id, minutes_total=45, minutes_adult_present=45, status="done", note="just a note")
+        self.make_block(day, "Badly only", 20, 3, kind="reading", subject_id=self.fle.id, minutes_total=20, minutes_adult_present=0, went_badly="meh")
+        self.make_block(day, "Nothing", 20, 4, kind="pause", minutes_total=20, minutes_adult_present=0)
+        out = self.env["homeschool.exporter"].export_hours(self.student).splitlines()
+        self.assertEqual(out[1:], [
+            "2026-03-03,bloc-fle,All three,FLE,45,45,n · ✓ w more · ✗ b",
+            "2026-03-03,bloc-math,Note only,MATH,45,45,just a note",
+            "2026-03-03,lecture,Badly only,FLE,20,0,✗ meh",
+            "2026-03-03,pause,Nothing,,20,0,",
+        ])
 
     def test_off_day_with_block_exports_marker_and_block(self):
         day = self.make_day(date(2026, 3, 4), is_off=True, off_reason="Storm", note="roads closed")

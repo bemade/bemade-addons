@@ -92,9 +92,17 @@ class RepositoryExporter(models.AbstractModel):
                 block.subject_codes or block.subject_id.code or "",
                 block.minutes_total if block.actuals_recorded else "",
                 block.minutes_adult_present if block.adult_recorded else "",
-                (block.note or "").replace("\n", " "),
+                self._block_notes(block),
             ])
         return rows
+
+    @api.model
+    def _block_notes(self, block):
+        """The ``notes`` cell of a block: its note, then its own journal folded in
+        (``✓ what worked``, ``✗ what went badly``), ``·``-separated, newlines flattened.
+        A block with only a note exports as it always did."""
+        parts = [block.note or "", "✓ " + block.went_well if block.went_well else "", "✗ " + block.went_badly if block.went_badly else ""]
+        return " · ".join(p.replace("\n", " ") for p in parts if p)
 
     @api.model
     def export_hours(self, student):

@@ -42,7 +42,11 @@ repository is expected to take them as-is.
   blocks in their sequence. A **day off** always yields its `journee` marker row first
   (`<date>,journee,<reason>,,0,0,<note>`), then whatever blocks were recorded on it (a
   bonus on a day off is two rows). The `block` key and the `matieres` column of an
-  imported row are kept verbatim.
+  imported row are kept verbatim. The `notes` cell is the block's note followed by its
+  own journal, folded in: `<note> · ✓ <what worked> · ✗ <what went badly>` (empty parts
+  dropped, newlines flattened) — a block with only a note exports as it always did. The
+  importer does not split the cell back: a re-import lands the whole string in `note`
+  (the file is the nightly snapshot, never re-imported in practice).
 - `tracking/traces.csv` — validated traces only, ordered by (date, code); `matieres` and
   `pda_ids` are `;`-joined.
 - `tracking/indicateurs.csv` — **derived**: values sorted by (date, code), whatever order
@@ -87,9 +91,15 @@ on the same model and method works too.)
 - `log_hours(student_id, date, block, activity, matieres, minutes_total, minutes_adult_present, notes="", aliases=None)`
   — one `hours.csv` row: the block key gives kind and subject (`aliases` = `{"teacher":
   ["ressource", null]}` for household keys), `journee` with no minutes marks the day off,
-  an existing block with the same name and kind is updated. Minutes `null` = not recorded
-  (blank), `0` is a value. Returns `{"day_id", "block_id", "log"}` (`block_id` `null` for a
-  day-off marker; `log` holds the importer's warnings, e.g. an unknown subject key).
+  an existing block with the same name and kind is updated; else the first **planned**
+  block of the day with the same kind and subject and no actuals yet (lowest sequence)
+  is closed — the activity replaces its title, minutes and `done` are written, the plan
+  (intention, steps, planned minutes, sequence) is kept, and `log` says
+  `closed planned block <id> «<title>»`; else a new block is created. A second call with
+  another text on a day with no planned block left creates a new block. Minutes `null` =
+  not recorded (blank), `0` is a value. Returns `{"day_id", "block_id", "log"}`
+  (`block_id` `null` for a day-off marker; `log` holds the importer's warnings, e.g. an
+  unknown subject key, and the planned-block closing above).
 - `log_note(student_id, date, text)` — appends to the day's journal entry with the
   week-file classification (`Ce qui a marché : …` → what worked, `Ce qui a mal été : …` →
   what went badly, anything else a `- ` bullet in notes); `text` may hold several `- `
@@ -109,6 +119,18 @@ on the same model and method works too.)
 - `status(student_id, date)` → `{"day_id", "hours_rows", "adult_missing", "journal_entry",
   "done"}` with the household rule: `done` when rows exist (the `journee` marker counts),
   no block lacks adult-present minutes and a journal entry exists.
+
+## The block's own journal
+
+Besides its `note`, a block carries `went_well` / `went_badly` (Markdown, rendered on the
+« Rendered » page) on its « Block journal » page — the parent's blunt view of that block,
+next to the day-level `homeschool.journal`. The three texts share the journal's **past-day
+freeze**: from the next day on, a change to any of them is appended under `corrections` as
+`- **<today>** (<label>): <text>` and the field itself is never rewritten (`append_note`
+behaves the same; `journal_force_edit` in the context bypasses the freeze for imports and
+repairs — the hours row written by `log_hours` / `import_hours` is such a case). Minutes and
+`status` stay freely editable: closing yesterday late is normal. The export folds the two
+texts into the `notes` cell of `hours.csv` (above).
 
 ## Several families, one curriculum
 

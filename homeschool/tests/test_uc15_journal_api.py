@@ -12,7 +12,11 @@ Acceptance criteria
    row does through ``import_hours``: same day, same block (kind/subject from the key,
    ``journee`` marker → day off, an existing block with the same name and kind is updated).
    Logging the fixture rows one by one then exporting yields ``HOURS_CSV`` byte for byte —
-   the same text the CSV import round-trips to (UC-11).
+   the same text the CSV import round-trips to (UC-11). With no exact match, the row
+   **closes the first planned block** of the day with the same kind and subject and no
+   actuals yet (lowest sequence first): the activity replaces its title, the actuals and
+   ``done`` are written, ``duration_planned`` and ``sequence`` are kept, and the log says
+   so; a planned block of another subject is never touched (a new block is created).
 2. ``log_note(student_id, date, text)`` classifies the bullet like the week-file import
    (``Ce qui a marché`` → ``went_well``, ``Ce qui a mal été`` → ``went_badly``, anything
    else → a ``- `` bullet in ``notes``) and is append-only: today's entry grows in place;
@@ -122,6 +126,70 @@ class TestJournalAPI(HomeschoolCase):
         matieres_as_list = self.api.log_hours(self.student.id, d, "projets", "Kite", ["ST", "MATH"], 30, 30)
         block = self.Block.browse(matieres_as_list["block_id"])
         self.assertEqual((block.kind, block.subject_id, block.subject_codes), ("projects", self.st, "ST;MATH"))
+
+    def test_log_hours_closes_the_planned_block(self):
+        day = self.make_day(self.today)
+        opening = self.make_block(day, "Opening", 10, 1, kind="opening")
+        planned = self.make_block(day, "P1 Math — fractions", 45, 2, subject_id=self.math.id,
+                                  intention="fractions on the number line")
+        r = self.api.log_hours(self.student.id, self.today, "bloc-math", "Fractions, number line", "MATH", 50, 45)
+        self.assertEqual(r["block_id"], planned.id, "the planned MATH block is closed, not duplicated")
+        self.assertEqual(day.block_count, 2)
+        self.assertEqual((planned.name, planned.status, planned.minutes_total, planned.minutes_adult_present),
+                         ("Fractions, number line", "done", 50, 45), "the activity replaces the title")
+        self.assertEqual((planned.duration_planned, planned.sequence), (45, 2), "the plan is the plan")
+        self.assertEqual(planned.intention, "fractions on the number line")
+        self.assertEqual((planned.csv_key, planned.subject_codes), ("bloc-math", "MATH"))
+        self.assertEqual(r["log"], ["hours.csv %s/bloc-math: closed planned block %d «P1 Math — fractions»"
+                                    % (fields.Date.to_string(self.today), planned.id)])
+        self.assertEqual(opening.status, "planned", "another kind is never touched")
+        # the block is no longer planned: the same key with yet another text creates a new block
+        r2 = self.api.log_hours(self.student.id, self.today, "bloc-math", "Fractions again", "MATH", 20, 20)
+        self.assertNotEqual(r2["block_id"], planned.id)
+        self.assertEqual(day.block_count, 3)
+        self.assertEqual(r2["log"], [])
+
+    def test_log_hours_closes_planned_blocks_in_sequence(self):
+        day = self.make_day(self.today)
+        second = self.make_block(day, "P2 Math", 30, 5, subject_id=self.math.id)
+        first = self.make_block(day, "P1 Math", 45, 2, subject_id=self.math.id)
+        a = self.api.log_hours(self.student.id, self.today, "bloc-math", "Geometry", "MATH", 45, 45)
+        self.assertEqual(a["block_id"], first.id, "the lowest sequence is closed first")
+        self.assertEqual(second.status, "planned")
+        b = self.api.log_hours(self.student.id, self.today, "bloc-math", "Mental math", "MATH", 30, 30)
+        self.assertEqual(b["block_id"], second.id, "the next call closes the next one")
+        self.assertEqual((second.name, second.status, second.sequence), ("Mental math", "done", 5))
+        self.assertEqual(day.block_count, 2)
+
+    def test_log_hours_never_closes_another_subject(self):
+        day = self.make_day(self.today)
+        planned_fle = self.make_block(day, "P1 French", 45, 1, subject_id=self.fle.id)
+        r = self.api.log_hours(self.student.id, self.today, "bloc-math", "Fractions", "MATH", 50, 45)
+        self.assertNotEqual(r["block_id"], planned_fle.id)
+        self.assertEqual((planned_fle.name, planned_fle.status), ("P1 French", "planned"))
+        self.assertEqual(day.block_count, 2, "a new block is created")
+        self.assertEqual(r["log"], [])
+        # a planned block already holding actuals is not a candidate either
+        done_math = self.make_block(day, "P2 Math", 45, 3, subject_id=self.math.id, minutes_total=45)
+        r2 = self.api.log_hours(self.student.id, self.today, "bloc-math", "More math", "MATH", 10, 10)
+        self.assertNotEqual(r2["block_id"], done_math.id)
+        self.assertEqual(done_math.minutes_total, 45)
+        # subject-less key and subject-less planned block: they match
+        bonus = self.make_block(day, "Free project time", 30, 9, kind="projects")
+        r3 = self.api.log_hours(self.student.id, self.today, "projets", "Kite", "", 30, 30)
+        self.assertEqual(r3["block_id"], bonus.id)
+        self.assertEqual(bonus.name, "Kite")
+
+    def test_log_hours_exact_name_wins_over_the_fallback(self):
+        day = self.make_day(self.today)
+        planned = self.make_block(day, "P1 Math", 45, 1, subject_id=self.math.id)
+        exact = self.make_block(day, "Segment 2 Math", 45, 2, subject_id=self.math.id, minutes_total=40, minutes_adult_present=40, status="done")
+        r = self.api.log_hours(self.student.id, self.today, "bloc-math", "Segment 2 Math", "MATH", 45, 45)
+        self.assertEqual(r["block_id"], exact.id, "same name and kind: updated in place, the planned block is left alone")
+        self.assertEqual((exact.minutes_total, exact.minutes_adult_present), (45, 45))
+        self.assertEqual((planned.name, planned.status), ("P1 Math", "planned"))
+        self.assertEqual(day.block_count, 2)
+        self.assertEqual(r["log"], [])
 
     # ------------------------------------------------------------------
     # 2. log_note

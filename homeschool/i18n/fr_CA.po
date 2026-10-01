@@ -318,6 +318,11 @@ msgid "Block Count"
 msgstr "Nombre de blocs"
 
 #. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
+msgid "Block journal"
+msgstr "Journal du bloc"
+
+#. module: homeschool
 #: model:ir.actions.act_window,name:homeschool.action_block
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_day__block_ids
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_item__block_ids
@@ -474,11 +479,14 @@ msgid "Core (noyau)"
 msgstr "Noyau"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__corrections
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__corrections
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
 msgid "Corrections"
 msgstr "Corrections"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__corrections_html
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__corrections_html
 msgid "Corrections Html"
 msgstr "Corrections (HTML)"
@@ -692,6 +700,15 @@ msgid ""
 msgstr ""
 "Date de la dernière mise à jour manuelle de la couverture de la famille "
 "courante (depuis coverage.csv)."
+
+#. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__corrections
+msgid ""
+"Dated corrections appended to a past block. Past blocks' texts are never "
+"edited in place."
+msgstr ""
+"Corrections datées ajoutées à un bloc passé. Les textes des blocs passés ne "
+"sont jamais réécrits."
 
 #. module: homeschool
 #: model:ir.model.fields,help:homeschool.field_homeschool_journal__corrections
@@ -1549,11 +1566,17 @@ msgid "Markdown rendering mixin"
 msgstr "Mixin de rendu Markdown"
 
 #. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
+msgid "Markdown — as it was"
+msgstr "Markdown — tel quel"
+
+#. module: homeschool
 #: model:ir.model.fields,help:homeschool.field_homeschool_block__fallback
 #: model:ir.model.fields,help:homeschool.field_homeschool_block__intention
 #: model:ir.model.fields,help:homeschool.field_homeschool_block__note
 #: model:ir.model.fields,help:homeschool.field_homeschool_block__steps
 #: model:ir.model.fields,help:homeschool.field_homeschool_block__success
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__went_badly
 #: model:ir.model.fields,help:homeschool.field_homeschool_day__debrief
 #: model:ir.model.fields,help:homeschool.field_homeschool_day__note
 #: model:ir.model.fields,help:homeschool.field_homeschool_journal__notes
@@ -1564,6 +1587,7 @@ msgid "Markdown."
 msgstr "Markdown."
 
 #. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__went_well
 #: model:ir.model.fields,help:homeschool.field_homeschool_journal__went_well
 msgid "Markdown. As it was — a clean journal is a false journal."
 msgstr "Markdown. Tel quel — un journal propre est un journal faux."
@@ -2190,6 +2214,7 @@ msgid "Rendered"
 msgstr "Rendu"
 
 #. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__corrections_html
 #: model:ir.model.fields,help:homeschool.field_homeschool_journal__corrections_html
 msgid "Rendered from the Markdown field 'corrections'."
 msgstr "Rendu du champ Markdown « corrections »."
@@ -2248,11 +2273,13 @@ msgid "Rendered from the Markdown field 'success'."
 msgstr "Rendu du champ Markdown « success »."
 
 #. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__went_badly_html
 #: model:ir.model.fields,help:homeschool.field_homeschool_journal__went_badly_html
 msgid "Rendered from the Markdown field 'went_badly'."
 msgstr "Rendu du champ Markdown « went_badly »."
 
 #. module: homeschool
+#: model:ir.model.fields,help:homeschool.field_homeschool_block__went_well_html
 #: model:ir.model.fields,help:homeschool.field_homeschool_journal__went_well_html
 msgid "Rendered from the Markdown field 'went_well'."
 msgstr "Rendu du champ Markdown « went_well »."
@@ -3023,11 +3050,13 @@ msgid "Weekly or periodic review"
 msgstr "Revue hebdomadaire ou périodique"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__went_badly_html
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__went_badly_html
 msgid "Went Badly Html"
 msgstr "Ce qui a mal été (HTML)"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__went_well_html
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__went_well_html
 msgid "Went Well Html"
 msgstr "Ce qui a marché (HTML)"
@@ -3049,12 +3078,16 @@ msgid "What it carries"
 msgstr "Ce qu'il porte"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__went_badly
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__went_badly
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
 msgid "What went badly"
 msgstr "Ce qui a mal été"
 
 #. module: homeschool
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_block__went_well
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_journal__went_well
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
 msgid "What worked"
 msgstr "Ce qui a marché"
 
