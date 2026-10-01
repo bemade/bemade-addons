@@ -27,6 +27,12 @@ _ENVELOPE_CACHE = LRU(512)
 
 DEFAULT_PAGE_SIZE = 25
 
+# One LIST response line, e.g. b'(\\HasNoChildren \\Trash) "/" "[Gmail]/Trash"':
+# attribute flags, hierarchy delimiter (or NIL), then the mailbox name.
+_LIST_RESPONSE_RE = re.compile(
+    r'\((?P<flags>[^)]*)\)\s+(?:"(?:[^"\\]|\\.)*"|NIL)\s+(?P<name>.+)$'
+)
+
 # The UID in a FETCH response line, e.g. b'12 (UID 227398 BODY[...] {345}'.
 _UID_RESPONSE_RE = re.compile(rb"UID\s+(\d+)")
 
@@ -85,6 +91,21 @@ class ConversationTransport(models.Model):
         "mail themselves (Gmail does; a generic IMAP/SMTP account does "
         "not, and without this an unfiled reply would exist nowhere at "
         "all).",
+    )
+    imap_archive_folder = fields.Char(
+        string="Archive Folder",
+        help="Folder the Archive action moves a message to. Leave blank to "
+        "use the folder the server advertises as its Archive (RFC 6154 "
+        "SPECIAL-USE), falling back to the provider's default name. Set it "
+        "to override that, e.g. for a mailbox with a non-standard name. "
+        "Gmail archives by removing the Inbox label and ignores this.",
+    )
+    imap_trash_folder = fields.Char(
+        string="Trash Folder",
+        help="Folder the Delete action moves a message to (never a "
+        "permanent delete). Leave blank to use the folder the server "
+        "advertises as its Trash (RFC 6154 SPECIAL-USE), falling back to "
+        "the provider's default name. Set it to override that.",
     )
 
     # ------------------------------------------------------------
@@ -209,10 +230,11 @@ class ConversationTransport(models.Model):
             connection.conversation_exists = self._imap_select(connection)
             yield connection
         finally:
-            try:
-                connection.close()
-            except Exception:  # noqa: BLE001 - best-effort cleanup
-                _logger.debug("IMAP close failed (ignored)", exc_info=True)
+            # Deliberately NO ``connection.close()``: CLOSE silently
+            # EXPUNGEs every \Deleted message in the selected folder
+            # (RFC 3501), which would permanently destroy mail another
+            # client had only flagged. LOGOUT alone ends the session
+            # without touching any message.
             try:
                 connection.logout()
             except Exception:  # noqa: BLE001 - best-effort cleanup
@@ -456,7 +478,7 @@ class ConversationTransport(models.Model):
             return cached
         uid = self._imap_uid_for_external_id(external_id)
         with self._imap_connection() as connection:
-            typ, data = connection.uid("fetch", uid, "(RFC822)")
+            typ, data = connection.uid("fetch", uid, "(BODY.PEEK[])")
             if typ != "OK" or not data or data[0] is None:
                 raise UserError(
                     self.env._(
@@ -827,6 +849,177 @@ class ConversationTransport(models.Model):
             and self._email_message_is_mine(m, conversation)
         ).sorted("id")
         return previous[-1:].message_id if previous else False
+
+    # ------------------------------------------------------------
+    # Mailbox writes: archive / trash / mark read (task #4193).
+    #
+    # Hard rules: never a bare EXPUNGE, never ``\\Deleted`` + implicit
+    # expunge, never CLOSE (see ``_imap_connection``). Trash is a MOVE to
+    # the Trash folder, so it is always recoverable. Archive/trash target
+    # folders resolve: explicit field, then RFC 6154 SPECIAL-USE discovery,
+    # then the provider's default name.
+    # ------------------------------------------------------------
+
+    def _email_default_archive_folder(self):
+        """Fallback Archive folder name when neither the field nor the
+        server's SPECIAL-USE advertisement names one. Overridable per
+        provider (guarded on ``provider``)."""
+        self.ensure_one()
+        return "Archive"
+
+    def _email_default_trash_folder(self):
+        """Fallback Trash folder name; see ``_email_default_archive_folder``."""
+        self.ensure_one()
+        return "Trash"
+
+    def _imap_special_use_folder(self, connection, flag):
+        """The server's own name for the folder carrying the RFC 6154
+        SPECIAL-USE attribute ``flag`` (``\\Archive``, ``\\Trash``, ...),
+        from ``LIST "" "*"``; None if there is none or ``LIST`` fails.
+        This is what makes a localised folder (fr_CA ``Corbeille``) work
+        without any configuration."""
+        self.ensure_one()
+        try:
+            typ, data = connection.list('""', '"*"')
+        except Exception:  # noqa: BLE001 - discovery is best-effort
+            _logger.debug("IMAP LIST failed (ignored)", exc_info=True)
+            return None
+        if typ != "OK":
+            return None
+        wanted = flag.lower()
+        for line in data or []:
+            if not isinstance(line, bytes):
+                continue
+            match = _LIST_RESPONSE_RE.match(line.decode("utf-8", "replace"))
+            if not match:
+                continue
+            flags = match.group("flags").lower().split()
+            if wanted in flags:
+                name = match.group("name").strip()
+                if name.startswith('"') and name.endswith('"') and len(name) >= 2:
+                    name = re.sub(r"\\(.)", r"\1", name[1:-1])
+                return name
+        return None
+
+    def _email_archive_folder(self, connection):
+        self.ensure_one()
+        return (
+            (self.imap_archive_folder or "").strip()
+            or self._imap_special_use_folder(connection, "\\Archive")
+            or self._email_default_archive_folder()
+        )
+
+    def _email_trash_folder(self, connection):
+        self.ensure_one()
+        return (
+            (self.imap_trash_folder or "").strip()
+            or self._imap_special_use_folder(connection, "\\Trash")
+            or self._email_default_trash_folder()
+        )
+
+    def _imap_command_failed(self, folder, detail=None):
+        return UserError(
+            self.env._(
+                "The mailbox action failed on folder %(folder)s of "
+                "%(transport)s%(detail)s.",
+                folder=folder,
+                transport=self.display_name,
+                detail=": %s" % detail if detail else "",
+            )
+        )
+
+    @staticmethod
+    def _imap_response_text(data):
+        parts = []
+        for item in data or []:
+            if isinstance(item, bytes):
+                parts.append(item.decode("utf-8", "replace"))
+        return " ".join(parts)
+
+    def _imap_move(self, connection, uid, folder):
+        """``UID MOVE`` (RFC 6851) the message to ``folder``. A server
+        without MOVE is refused: the only alternative, COPY + ``\\Deleted``,
+        relies on an expunge, which this stack never issues."""
+        self.ensure_one()
+        capabilities = {
+            c.decode() if isinstance(c, bytes) else str(c)
+            for c in getattr(connection, "capabilities", ())
+        }
+        if "MOVE" not in {c.upper() for c in capabilities}:
+            raise UserError(
+                self.env._(
+                    "%(transport)s's mail server does not support the IMAP "
+                    "MOVE command, so messages cannot be archived or "
+                    "deleted from Odoo.",
+                    transport=self.display_name,
+                )
+            )
+        try:
+            typ, data = connection.uid("MOVE", uid, self._imap_quote_mailbox(folder))
+        except imaplib.IMAP4.error as exc:
+            raise self._imap_command_failed(folder, str(exc)) from exc
+        if typ != "OK":
+            raise self._imap_command_failed(folder, self._imap_response_text(data))
+
+    def _imap_invalidate_cache(self, external_id):
+        """Forget a message's cached envelope + stub after it has moved."""
+        self.ensure_one()
+        _ENVELOPE_CACHE.pop((self.id, external_id), None)
+        _ENVELOPE_CACHE.pop(("stub", self.id, external_id), None)
+
+    def _email_archive_message(self, connection, uid):
+        """Take the message ``uid`` (in the selected browse folder) out of
+        that folder, keeping it retrievable. Generic IMAP: MOVE it to the
+        Archive folder. A provider with its own archive semantics (Gmail)
+        overrides this, guarded on ``provider``."""
+        self.ensure_one()
+        self._imap_move(connection, uid, self._email_archive_folder(connection))
+
+    def _imap_audit(self, action, external_id):
+        _logger.info(
+            "Mailbox %s by %s on transport %s (id %s): UID %s",
+            action,
+            self.env.user.login,
+            self.display_name,
+            self.id,
+            external_id,
+        )
+
+    def _archive_remote(self, external_id):
+        self.ensure_one()
+        if not self._is_email_transport():
+            return super()._archive_remote(external_id)
+        uid = self._imap_uid_for_external_id(external_id)
+        with self._imap_connection() as connection:
+            self._email_archive_message(connection, uid)
+        self._imap_invalidate_cache(external_id)
+        self._imap_audit("archive", external_id)
+        return True
+
+    def _trash_remote(self, external_id):
+        self.ensure_one()
+        if not self._is_email_transport():
+            return super()._trash_remote(external_id)
+        uid = self._imap_uid_for_external_id(external_id)
+        with self._imap_connection() as connection:
+            self._imap_move(connection, uid, self._email_trash_folder(connection))
+        self._imap_invalidate_cache(external_id)
+        self._imap_audit("trash", external_id)
+        return True
+
+    def _mark_read_remote(self, external_id):
+        self.ensure_one()
+        if not self._is_email_transport():
+            return super()._mark_read_remote(external_id)
+        uid = self._imap_uid_for_external_id(external_id)
+        with self._imap_connection() as connection:
+            typ, data = connection.uid("STORE", uid, "+FLAGS.SILENT", "(\\Seen)")
+            if typ != "OK":
+                raise self._imap_command_failed(
+                    self.imap_folder or "INBOX", self._imap_response_text(data)
+                )
+        self._imap_audit("mark-read", external_id)
+        return True
 
     def _subscribe_push(self):
         self.ensure_one()
