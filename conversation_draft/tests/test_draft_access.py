@@ -42,6 +42,13 @@ class TestDraftAccess(DraftCommon):
         with self.assertRaises(AccessError):
             draft.recipient_ids.with_user(self.user_c).check_access("read")
 
+    def test_discard_follows_the_conversation(self):
+        draft = self._open_draft(self.user_a)
+        with self.assertRaises(AccessError):
+            draft.with_user(self.user_c).action_discard()
+        self.env.invalidate_all()
+        self.assertEqual(draft.state, "draft")
+
     def test_collaboration_bus_channel_is_gated(self):
         draft = self._open_draft(self.user_a)
         name = f"editor_collaboration:mail.conversation.draft:body:{draft.id}"

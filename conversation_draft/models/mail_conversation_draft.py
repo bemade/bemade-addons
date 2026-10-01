@@ -300,6 +300,7 @@ class MailConversationDraft(models.Model):
         )
 
     def action_discard(self):
+        self.check_access("write")
         for draft in self:
             if not self._cas_state(
                 self.env.cr,
