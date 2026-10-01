@@ -21,6 +21,7 @@
                         <group>
                             <field name="tag_ids" widget="many2many_tags" />
                             <field name="primary_transport_id" />
+                            <field name="quiet_email_ingest" />
                         </group>
                     </group>
                     <notebook>

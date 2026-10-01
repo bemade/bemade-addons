@@ -65,6 +65,15 @@ class MailConversation(models.Model):
         help="Soft default transport for this conversation's outbound "
         "replies; individual messages may carry their own transport_id.",
     )
+    quiet_email_ingest = fields.Boolean(
+        compute="_compute_quiet_email_ingest",
+        store=True,
+        readonly=False,
+        tracking=True,
+        help="Messages arriving by email are recorded on the conversation "
+        "without in-app alerts (no inbox entry, pop-up or push). Seeded "
+        "from the team's default; changing the team re-seeds it.",
+    )
     link_ids = fields.One2many(
         "mail.conversation.link",
         "conversation_id",
@@ -181,6 +190,79 @@ class MailConversation(models.Model):
         if waiting and self._triage_message_kind(message) == "inbound":
             waiting.write({"state": "open"})
         return res
+
+    @api.depends("team_id")
+    def _compute_quiet_email_ingest(self):
+        for conversation in self:
+            conversation.quiet_email_ingest = conversation.team_id.quiet_email_ingest
+
+    # ------------------------------------------------------------
+    # Notification scope. This model is opted into
+    # ``mail_notification_scope`` by shipped data, so only internal users are
+    # ever notified, in-app. On top of that:
+    #  * quiet email ingest drops even the in-app alerts for email-originated
+    #    posts;
+    #  * moving to Done clears everyone's unread inbox entries.
+    # ------------------------------------------------------------
+
+    def _notify_get_recipients(self, message, msg_vals=False, **kwargs):
+        recipients_data = super()._notify_get_recipients(
+            message, msg_vals=msg_vals, **kwargs
+        )
+        if not self.quiet_email_ingest:
+            return recipients_data
+        message_type = (
+            msg_vals["message_type"]
+            if msg_vals and "message_type" in msg_vals
+            else message.sudo().message_type
+        )
+        if message_type == "email":
+            return []
+        return recipients_data
+
+    def write(self, vals):
+        newly_done = self.browse()
+        if vals.get("state") == "done":
+            newly_done = self.filtered(lambda c: c.state != "done")
+        result = super().write(vals)
+        if newly_done:
+            newly_done._clear_needaction_notifications()
+        return result
+
+    def _clear_needaction_notifications(self):
+        """Mark every partner's unread inbox notifications on the messages
+        this conversation owns as read. Linked records' and
+        reference-imported messages (other ``model``/``res_id``) are left
+        alone.
+        """
+        notifications = (
+            self.env["mail.notification"]
+            .sudo()
+            .search(
+                [
+                    ("mail_message_id.model", "=", self._name),
+                    ("mail_message_id.res_id", "in", self.ids),
+                    ("is_read", "=", False),
+                ]
+            )
+        )
+        if not notifications:
+            return
+        notifications.write({"is_read": True})
+        for partner in notifications.res_partner_id:
+            user = partner.user_ids[:1]
+            if not user:
+                continue
+            message_ids = notifications.filtered(
+                lambda n, partner=partner: n.res_partner_id == partner
+            ).mail_message_id.ids
+            user._bus_send(
+                "mail.message/mark_as_read",
+                {
+                    "message_ids": message_ids,
+                    "needaction_inbox_counter": partner._get_needaction_count(),
+                },
+            )
 
     # ------------------------------------------------------------
     # Mail Alias Mixin

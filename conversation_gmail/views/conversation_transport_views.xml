@@ -15,6 +15,11 @@
           invisible="provider != 'gmail'"
         >
                     <field name="imap_folder" />
+                    <!-- Blank = discover Gmail's Trash via SPECIAL-USE (it
+                         is localised, e.g. [Gmail]/Corbeille), else
+                         [Gmail]/Trash. Archive is a label removal and
+                         needs no folder; Sent is filed by Gmail itself. -->
+                    <field name="imap_trash_folder" />
                     <!-- Both blank (the common case) uses the
                          instance-wide Client ID/Secret configured under
                          Settings > General Settings > Emails > "Use a

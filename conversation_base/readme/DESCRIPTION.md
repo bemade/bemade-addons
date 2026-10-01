@@ -80,3 +80,15 @@ model. Those are delivered by later epics.
   resurfaces lapsed per-user snoozes (clears `snooze_until` and `is_handled`
   only), and four shared saved filters (Unread, Unanswered, Oldest unanswered
   first, Mine) are seeded.
+
+## Notification safety
+
+- `mail.conversation` is opted into `mail_notification_scope` by shipped
+  `noupdate` data: only internal users are ever notified, and only in-app.
+  External followers and participants are never emailed by Odoo's
+  notification pipeline; outbound delivery stays on the transport's `_send`.
+- `quiet_email_ingest` (on the conversation, seeded from the team default):
+  messages that arrive by email are recorded without any in-app alert, which
+  also suppresses the desktop pop-up and web push.
+- Moving a conversation to Done (or archiving it) marks every user's unread
+  inbox notifications on its messages as read.

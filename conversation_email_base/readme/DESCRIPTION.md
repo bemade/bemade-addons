@@ -102,7 +102,7 @@ itself and means the same thing for every provider.
   transport -- **not** its `external_id`, which on an IMAP capture is the
   per-mailbox UID and threads nowhere.
 - Connection handling: `_imap_connection()`/`_smtp_connection()` are
-  context managers that log in, yield, and always log out/close in a
+  context managers that log in, yield, and always log out in a
   `finally` -- no socket is ever held between two separate requests. Every
   connection carries a socket timeout (`_email_socket_timeout()`, 30s):
   imaplib and smtplib default to none at all, so an unresponsive mail
@@ -111,6 +111,19 @@ itself and means the same thing for every provider.
   included, which turns a slow mailbox into a container restart. A
   small per-process LRU cache (`_ENVELOPE_CACHE`) avoids re-parsing the
   same message across nearby page views without needing a live connection.
+- Mailbox writes (`_archive_remote`, `_trash_remote`,
+  `_mark_read_remote`): archive and trash are `UID MOVE`s, mark read is
+  `UID STORE +FLAGS.SILENT (\Seen)`. The target folder resolves in order:
+  the transport's `imap_archive_folder` / `imap_trash_folder` field, then
+  RFC 6154 SPECIAL-USE discovery (`\Archive`, `\Trash` from `LIST`), then
+  the provider's default name (`Archive` / `Trash`). A provider with its own
+  archive semantics overrides `_email_archive_message`. A server without
+  `MOVE` is refused with a clear error; there is no COPY + `\Deleted`
+  fallback.
+- **No EXPUNGE, no CLOSE.** Nothing in this engine ever issues `EXPUNGE`,
+  and `_imap_connection()` ends with `LOGOUT` only -- `CLOSE` would silently
+  expunge any message another client had flagged `\Deleted`. The body
+  fetch uses `BODY.PEEK[]`, so opening a message never sets `\Seen`.
 
 ## Testing note
 
