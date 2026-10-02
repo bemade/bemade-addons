@@ -1,0 +1,11 @@
+{
+  "stepsFile": "../../static/tests/tours/conversation_triage_tour.steps.js",
+  "startPath": "/odoo/action-conversation_base.mail_conversation_action",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "voice": "fr_FR-siwis-medium",
+  "title": "Trier vos conversations depuis la liste de triage",
+  "introNarration": "Dans cette démonstration, nous voyons comment traiter votre boîte de conversations : repérer les messages non lus, les masquer, les terminer, les reporter, les assigner, et agir sur plusieurs conversations à la fois.",
+  "outroTitle": "À vous de jouer",
+  "outroNarration": "Votre liste se vide à mesure que vous la traitez, et rien n'est perdu : vous pouvez toujours retrouver une conversation masquée, reportée ou terminée."
+}
