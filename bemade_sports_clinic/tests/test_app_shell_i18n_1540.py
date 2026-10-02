@@ -28,8 +28,9 @@ class TestAppShellI18n1540(TestAppShellI18n1538):
     def setUpClass(cls):
         super().setUpClass()
         now = fields.Datetime.now()
-        day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        start = max(day_start, min(now, day_start + timedelta(hours=21)))
+        # The clinic list's « today » is the *user's* local day, which is not
+        # the UTC day late in the evening. ``now`` is always inside it.
+        start = now
         cls.clinic = cls.env['sports.event'].create({
             'name': 'FR 1540 Clinic', 'event_type': 'clinic',
             'team_ids': [Command.set([cls.team_a.id])],

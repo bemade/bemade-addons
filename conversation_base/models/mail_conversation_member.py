@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class MailConversationMember(models.Model):
@@ -25,9 +25,24 @@ class MailConversationMember(models.Model):
     )
     is_handled = fields.Boolean()
     unread = fields.Boolean()
-    snooze_until = fields.Datetime()
+    snooze_until = fields.Datetime(index="btree_not_null")
 
     _conversation_user_uniq = models.Constraint(
         "UNIQUE(conversation_id, user_id)",
         "This user is already a member of this conversation.",
     )
+
+    @api.model
+    def _cron_resurface_snoozed(self):
+        """Resurface lapsed snoozes: clear the timer and the handled
+        checkmark. Leaves ``unread`` and the conversation ``state``
+        untouched; idempotent.
+        """
+        lapsed = self.search(
+            [
+                ("snooze_until", "!=", False),
+                ("snooze_until", "<=", fields.Datetime.now()),
+            ]
+        )
+        lapsed.write({"snooze_until": False, "is_handled": False})
+        return True

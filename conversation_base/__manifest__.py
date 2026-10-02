@@ -36,6 +36,8 @@
         "views/mail_conversation_views.xml",
         "views/mail_conversation_team_views.xml",
         "views/conversation_transport_views.xml",
+        "data/ir_cron_data.xml",
+        "data/ir_filters_data.xml",
     ],
     "installable": True,
     "application": False,

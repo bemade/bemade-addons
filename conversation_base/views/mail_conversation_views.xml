@@ -90,6 +90,16 @@
           domain="[('state', '=', 'open')]"
         />
                 <filter
+          name="filter_unanswered"
+          string="Unanswered"
+          domain="[('unanswered', '=', True)]"
+        />
+                <filter
+          name="filter_unassigned"
+          string="Unassigned"
+          domain="[('unassigned', '=', True)]"
+        />
+                <filter
           name="filter_my"
           string="My Conversations"
           domain="[('user_id', '=', uid)]"

@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.46.0",
+    'version': "19.0.1.46.1",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -116,7 +116,7 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
     "license": "LGPL-3",
     "depends": [
         "mail",  # Required for mail.activity functionality
-        "portal", 
+        "portal",
         "contacts",
         "base_setup",  # For res.config.settings base view inheritance
         "phone_validation",  # For phone number formatting in patient contacts

@@ -4,6 +4,11 @@ from . import test_conversation_capture
 from . import test_conversation_gateway
 from . import test_conversation_actions
 from . import test_mime
+from . import test_triage_facets
+from . import test_triage_order
+from . import test_snooze_cron
+from . import test_waiting_reopen
+from . import test_triage_saved_filters
 from . import test_notification_scope
 from . import test_notification_quiet_done
 from . import test_notification_scope_regression
