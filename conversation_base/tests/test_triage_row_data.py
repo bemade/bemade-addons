@@ -1,4 +1,4 @@
-# Acceptance criteria (task #4332, slice 04b):
+# Acceptance criteria (triage list):
 #   * The snippet is the plain text of the newest real-activity message,
 #     whitespace-collapsed and shortened; tracking noise does not replace it.
 #   * The channel is the transport's provider, "internal" without one.

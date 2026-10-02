@@ -1,4 +1,4 @@
-# Acceptance criteria (task #4332, slice 04b):
+# Acceptance criteria (triage list):
 #   * A member row is created on demand, at most one per (conversation,
 #     user).
 #   * An inbound message marks the assignee, the team's internal members and

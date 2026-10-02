@@ -1,4 +1,4 @@
-# Acceptance criteria (task #4332, slice 04b):
+# Acceptance criteria (triage list):
 #   * The triage list's default facets (My list + Open) show exactly the
 #     open conversations the current user has neither hidden nor snoozed,
 #     newest activity first.

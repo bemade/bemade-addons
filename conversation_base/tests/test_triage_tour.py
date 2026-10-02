@@ -1,4 +1,4 @@
-# Acceptance criteria (task #4332, slice 04b, AC21): a browser tour drives
+# Acceptance criteria (AC21): a browser tour drives
 # the triage list (row content, Mark read, Hide/Unhide, Done/Reopen,
 # Snooze, Assign, a bulk Done on a subset, opening a row), and the
 # server-side state it leaves behind matches.
