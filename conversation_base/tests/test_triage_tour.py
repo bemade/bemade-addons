@@ -3,6 +3,10 @@
 # Snooze, Assign, a bulk Done on a subset, opening a row), and the
 # server-side state it leaves behind matches.
 
+from datetime import timedelta
+
+from markupsafe import Markup
+
 from odoo import Command, fields
 from odoo.addons.mail.tests.common import mail_new_test_user
 from odoo.tests import HttpCase, tagged
@@ -42,7 +46,8 @@ class TestConversationTriageTour(HttpCase):
                 .create({"name": "%s conversation" % name, "team_id": team.id})
             )
             conv.message_post(
-                body="<p>Snippet for %s</p>" % name,
+                body=Markup("<p>Snippet for %s</p>" % name),
+                date=fields.Datetime.now() - timedelta(hours=3),
                 author_id=customer.id,
                 message_type="comment",
                 subtype_xmlid="mail.mt_comment",

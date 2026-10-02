@@ -104,7 +104,11 @@ export class ConversationRelativeTimeField extends Component {
 
   get value() {
     const value = this.props.record.data[this.props.name];
-    return value ? deserializeDateTime(value) : false;
+    if (!value) {
+      return false;
+    }
+    // Record.data already holds a luxon DateTime; only strings need parsing.
+    return typeof value === "string" ? deserializeDateTime(value) : value;
   }
 
   get relative() {
