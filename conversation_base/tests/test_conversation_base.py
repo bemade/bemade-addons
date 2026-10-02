@@ -264,7 +264,6 @@ class TestConversationBase(TransactionCase):
             "mail_conversation_participant_conversation_partner_uniq",
             "mail_conversation_participant_conversation_email_uniq",
             "mail_conversation_tag_name_uniq",
-            "mail_conversation_team_name_uniq",
         ]
         self.env.cr.execute(
             "SELECT conname FROM pg_constraint WHERE contype = 'u' "
@@ -276,3 +275,13 @@ class TestConversationBase(TransactionCase):
         self.assertFalse(
             missing, f"missing UNIQUE constraints in the database: {missing}"
         )
+        # The team name is translatable (jsonb), so its uniqueness is a
+        # unique expression index on the source (en_US) value.
+        self.env.cr.execute(
+            "SELECT indexdef FROM pg_indexes "
+            "WHERE indexname = 'mail_conversation_team_name_source_uniq'"
+        )
+        row = self.env.cr.fetchone()
+        self.assertTrue(row, "missing unique index on team source name")
+        self.assertIn("UNIQUE", row[0])
+        self.assertIn("en_US", row[0])

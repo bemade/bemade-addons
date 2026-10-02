@@ -12,3 +12,4 @@ from . import test_triage_saved_filters
 from . import test_notification_scope
 from . import test_notification_quiet_done
 from . import test_notification_scope_regression
+from . import test_conversation_team_translation
