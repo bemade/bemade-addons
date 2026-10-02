@@ -68,7 +68,7 @@
                     <notebook>
                         <page string="Sections">
                             <field name="section_ids" context="{'default_job_aid_id': id}">
-                                <list editable="bottom" decoration-info="face == 'verso'">
+                                <list editable="bottom" open_form_view="True" decoration-info="face == 'verso'">
                                     <field name="sequence" widget="handle"/>
                                     <field name="face"/>
                                     <field name="kind"/>

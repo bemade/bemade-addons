@@ -94,7 +94,7 @@ class CbetImportWizard(models.TransientModel):
                 files[kind + ("_EN" if en else "")] = name
 
         def read(name):
-            return zf.read(name).decode("utf-8") if name else None
+            return zf.read(name).decode("utf-8-sig") if name else None
 
         def loader_for(dirs):
             def load(rel):

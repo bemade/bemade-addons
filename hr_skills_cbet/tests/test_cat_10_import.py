@@ -509,6 +509,22 @@ class TestCatImportWizard(CbetCommon):
         with self.assertRaises(UserError):
             wiz.action_import()
 
+    def test_wizard_archive_reads_bom_prefixed_files(self):
+        from .test_cat_12_procedure import PROCEDURE
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as z:
+            z.writestr("vault/a/FICHE_XIM-01.md", "\ufeff" + FICHE)
+            z.writestr("vault/a/EVALUATION_XIM-01.md", EVAL)
+            z.writestr("vault/a/PROCEDURE_XIM-01.md", "\ufeff" + PROCEDURE)
+        wiz = self.env["cbet.import.wizard"].create({
+            "import_mode": "archive", "archive_file": base64.b64encode(buf.getvalue()),
+            "archive_filename": "vault.zip"})
+        wiz.action_import()
+        comp = self.env["cbet.competency"].search([("code", "=", "XIM-01")])
+        self.assertEqual(len(comp), 1)
+        self.assertNotIn("Procédure — Compétence exemple d'import", comp.procedure_body)  # H1 dropped
+        self.assertIn("<h2>Objectif</h2>", comp.procedure_body)
+
     def test_wizard_archive_resilient_to_bad_pair(self):
         # One broken pair (no code in the FICHE body) is reported but does not
         # stop the valid ones from importing.

@@ -318,13 +318,12 @@ class CbetCompetencyImport(models.Model):
     def _parse_duration_hours(self, text):
         """'~45 min', '1 h 30', '90 min incluant…' → hours; 0.0 when unreadable."""
         text = _clean_inline(text or "")
-        m = DURATION_H_RE.search(text)
-        if m:
-            hours = float(m.group(1).replace(",", "."))
-            return hours + (int(m.group(2)) / 60.0 if m.group(2) else 0.0)
-        m = DURATION_MIN_RE.search(text)
-        if m:
-            return int(m.group(1)) / 60.0
+        mh, mm = DURATION_H_RE.search(text), DURATION_MIN_RE.search(text)
+        if mh and (not mm or mh.start() <= mm.start()):
+            hours = float(mh.group(1).replace(",", "."))
+            return hours + (int(mh.group(2)) / 60.0 if mh.group(2) else 0.0)
+        if mm:
+            return int(mm.group(1)) / 60.0
         return 0.0
 
     @api.model
@@ -412,6 +411,10 @@ class CbetCompetencyImport(models.Model):
             # The template's optional "Mode opératoire" row has no field of
             # its own; it is the method's sequence, so it rides with it.
             method = (method + " — " + mode).strip(" —")
+        quiz = _clean_inline(_kv(protocol_rows, "quiz"))
+        if quiz:
+            # Same for the optional "Quiz de récupération" row.
+            method = (method + " — Quiz : " + quiz).strip(" —")
         return {
             "code": code, "name": name, "prerequisites": prereqs,
             "subtitle": subtitle,
@@ -449,7 +452,7 @@ class CbetCompetencyImport(models.Model):
                 "difficulty": self._parse_difficulty(
                     _kv(_kv_rows(sections.get(13, [])), "difficult")),
                 "learning_time": scalar(13, "temps", "time", "learning"),
-                "common_pitfalls": scalar(13, "pièges", "pieges", "pitfall"),
+                "common_pitfalls": scalar(13, "pièges", "pieges", "pitfall", "trap"),
             },
         }
 
@@ -775,6 +778,12 @@ class CbetCompetencyImport(models.Model):
         Parser warnings go to *warnings* (a list of (code, message)) when given.
         Returns (competency, prerequisite_specs).
         """
+        # The English edition is the source value and must land in en_US no
+        # matter which language the importing user works in: a plain write
+        # stores a translated field in the context language, so a French
+        # manager would otherwise put the English into fr_CA (then overwrite
+        # it with the French) and en_US would never see the English.
+        self = self.with_context(lang=self._content_langs()[0])
         warnings = warnings if warnings is not None else []
         fiche = self._parse_fiche_md(fiche_md or "")
         parsed = self._parse_evaluation_md(eval_md or "")
@@ -868,7 +877,8 @@ class CbetCompetencyImport(models.Model):
         bodies_fr = {f: fiche.get(f) or "" for f in FICHE_BODIES}
         bodies_en = {f: (fiche_en or {}).get(f) or "" for f in FICHE_BODIES}
         self.write({f: (bodies_en.get(f) or fr) or False for f, fr in bodies_fr.items()})
-        _set_body_translations(self, french, {f: fr or False for f, fr in bodies_fr.items()})
+        _set_body_translations(self, french, {f: (fr or bodies_en.get(f)) or False
+                                              for f, fr in bodies_fr.items()})
 
     def _write_imported_bodies(self, content):
         """Write the procedure / demo-notes bodies that were supplied."""
@@ -878,7 +888,7 @@ class CbetCompetencyImport(models.Model):
         _source, french = self._content_langs()
         self.write({f: (content["bodies_en"].get(f) or fr) or False
                     for f, fr in content["bodies"].items()})
-        _set_body_translations(self, french, {f: fr or False
+        _set_body_translations(self, french, {f: (fr or content["bodies_en"].get(f)) or False
                                               for f, fr in content["bodies"].items()})
 
     @api.model
@@ -1002,8 +1012,8 @@ class CbetCompetencyImport(models.Model):
                         "note_html": s_en["note_html"] or s_fr["note_html"] or False,
                     })
                     _set_translations(section, french, {"name": s_fr["name"] or False})
-                    _set_body_translations(section, french,
-                                           {"note_html": s_fr["note_html"] or False})
+                    _set_body_translations(section, french, {
+                        "note_html": (s_fr["note_html"] or s_en["note_html"]) or False})
                     lines = self.env["cbet.job.aid.line"].create([
                         {"section_id": section.id, "sequence": (i + 1) * 10,
                          "icon_id": icons[l_fr["icon"]].id if l_fr["icon"] else False,
@@ -1086,6 +1096,7 @@ class CbetCompetencyImport(models.Model):
     def _analyze_markdown(self, fiche_md, eval_md, docs=None):
         """Parse the documents WITHOUT writing anything — for dry runs.
         Returns a report dict (no side effects)."""
+        self = self.with_context(lang=self._content_langs()[0])
         fiche = self._parse_fiche_md(fiche_md or "")
         parsed = self._parse_evaluation_md(eval_md or "")
         code = fiche["code"]

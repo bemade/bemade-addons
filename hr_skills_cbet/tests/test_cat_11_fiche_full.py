@@ -486,6 +486,51 @@ class TestCatFicheFull(CbetCommon):
         self.assertEqual(comp.validity_months, 18)
         self.assertEqual(comp.difficulty, "medium")
 
+    def test_import_under_a_french_user_still_puts_the_english_in_en_us(self):
+        fr = self._fr()
+        Comp = self.env["cbet.competency"].with_context(lang=fr)
+        comp, _ = Comp._import_markdown(FICHE_FULL, EVAL, FICHE_FULL_EN)
+        self.assertIn("<h3>Glossary / terminology</h3>", comp.with_context(lang="en_US").knowledge_body)
+        self.assertIn("<h3>Glossaire / terminologie</h3>", comp.with_context(lang=fr).knowledge_body)
+        self.assertEqual(comp.with_context(lang="en_US").protocol_min_evaluator_qualification,
+                         "Designated trainer.")
+        self.assertEqual(comp.with_context(lang=fr).protocol_min_evaluator_qualification,
+                         "Formateur désigné.")
+        # a corrected English edition, re-imported by the same French user, lands in en_US
+        Comp._import_markdown(FICHE_FULL, EVAL,
+                              FICHE_FULL_EN.replace("Designated trainer.", "Certified trainer."))
+        self.assertEqual(comp.with_context(lang="en_US").protocol_min_evaluator_qualification,
+                         "Certified trainer.")
+        self.assertEqual(comp.with_context(lang=fr).protocol_min_evaluator_qualification,
+                         "Formateur désigné.")
+
+    def test_quiz_row_rides_with_the_method_and_traps_are_pitfalls(self):
+        md = (
+            "# Fiche de compétence — Q\n\n## Identification\n\n| Champ | Valeur |\n| --- | --- |\n"
+            "| **Code** | `XIQ-01` |\n| **Nom** | Q |\n\n"
+            "## 9. Protocole d'évaluation\n\n| Élément | Détail |\n| --- | --- |\n"
+            "| **Méthode** | Démonstration. |\n| **Quiz de récupération** | Oral, 5 questions. |\n\n"
+            "## 13. Méta — pour le formateur\n\n| Élément | Valeur |\n| --- | --- |\n"
+            "| Frequent traps | Mixing up the two reading points. |\n"
+        )
+        fiche = self.env["cbet.competency"]._parse_fiche_md(md)
+        self.assertEqual(fiche["protocol"]["method"], "Démonstration. — Quiz : Oral, 5 questions.")
+        self.assertEqual(fiche["meta"]["common_pitfalls"], "Mixing up the two reading points.")
+
+    def test_duration_takes_the_leading_figure(self):
+        parse = self.env["cbet.competency"]._parse_duration_hours
+        self.assertEqual(parse("~30 min (puis 8 h de pratique)"), 0.5)
+        self.assertEqual(parse("1 h 30"), 1.5)
+        self.assertAlmostEqual(parse("~20–30 min."), 20 / 60)   # a range reads its lower bound
+
+    def test_empty_french_body_keeps_the_english(self):
+        fr = self._fr()
+        comp = self.env["cbet.competency"].create({"code": "XIE-01", "name": "E"})
+        comp._write_imported_fiche({"validity": {}, "protocol": {}},
+                                   {"safety_block": "<p>Gloves at all times.</p>"})
+        self.assertIn("Gloves", comp.with_context(lang="en_US").safety_block)
+        self.assertIn("Gloves", comp.with_context(lang=fr).safety_block)
+
     def test_without_english_the_french_fills_both_languages(self):
         fr = self._fr()
         comp, _ = self.env["cbet.competency"]._import_markdown(FICHE_FULL, EVAL)
