@@ -103,6 +103,8 @@ $fn$
 
 
 def fts_drop_objects(cr):
+    # Identifiers are module constants, never user input.
+    # pylint: disable=sql-injection
     cr.execute(f"DROP INDEX IF EXISTS {INDEX_NAME}")
     cr.execute(f"DROP FUNCTION IF EXISTS {FUNC_TSV}(text, text)")
     cr.execute(f"DROP FUNCTION IF EXISTS {FUNC_FOLD}(text)")
@@ -132,11 +134,14 @@ class ConversationSearchBackendFts(models.AbstractModel):
     # Index lifecycle
     # ------------------------------------------------------------------
     def init(self):
-        super().init()
+        res = super().init()
         self._fts_ensure_index()
+        return res
 
     @api.model
     def _fts_ensure_index(self):
+        # Identifiers are module constants, never user input.
+        # pylint: disable=sql-injection
         cr = self.env.cr
         # Read the OLD stamp before overwriting it.
         cr.execute(
@@ -257,6 +262,7 @@ class ConversationSearchBackendFts(models.AbstractModel):
 
     @api.model
     def _rebuild_index_fts(self):
+        # pylint: disable=sql-injection
         self._fts_ensure_index()
         self.env.cr.execute(f"REINDEX INDEX {INDEX_NAME}")
         return True

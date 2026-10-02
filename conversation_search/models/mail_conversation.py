@@ -27,7 +27,6 @@ class MailConversation(models.Model):
     _inherit = "mail.conversation"
 
     message_content = fields.Char(
-        string="Message Content",
         compute="_compute_message_content",
         search="_search_message_content_field",
         help="Search-only field: matches conversations having at least one "

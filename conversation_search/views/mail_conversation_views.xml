@@ -3,7 +3,10 @@
     <record id="mail_conversation_view_search" model="ir.ui.view">
         <field name="name">mail.conversation.view.search.message.content</field>
         <field name="model">mail.conversation</field>
-        <field name="inherit_id" ref="conversation_base.mail_conversation_view_search" />
+        <field
+      name="inherit_id"
+      ref="conversation_base.mail_conversation_view_search"
+    />
         <field name="arch" type="xml">
             <field name="name" position="after">
                 <field name="message_content" string="Message Content" />

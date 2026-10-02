@@ -73,7 +73,7 @@ class TestAccessInvariants(ConversationSearchCase):
         )
 
     def test_uninstall_hook_cleans_up(self):
-        from odoo.addons.conversation_search.hooks import uninstall_hook
+        from ..hooks import uninstall_hook
 
         self.env["ir.config_parameter"].sudo().set_param(
             "conversation_search.backend", "fts"
