@@ -32,6 +32,7 @@ class CbetJobAid(models.Model):
              "competency's only card.",
     )
     name = fields.Char(compute="_compute_name", store=True)
+    code = fields.Char(related="competency_id.code", string="Code")
     sequence = fields.Integer(default=10)
     section_ids = fields.One2many("cbet.job.aid.section", "job_aid_id", copy=True)
     section_count = fields.Integer(compute="_compute_section_count")

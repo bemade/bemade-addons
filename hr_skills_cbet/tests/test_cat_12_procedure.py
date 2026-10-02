@@ -9,6 +9,8 @@ AC3: English edition = source value, French = translation; re-import of the
 """
 import base64
 
+import re
+
 from odoo.tests.common import tagged
 
 from .common import CbetCommon
@@ -95,6 +97,25 @@ class TestCatProcedure(CbetCommon):
         # no archive → image left as-is, with a warning
         self.assertIn('src="images/banc.png"', html)
         self.assertEqual(parsed["warnings"], ["image not found in archive: images/banc.png"])
+
+    def test_callout_inside_a_list_item_keeps_the_list_and_drops_the_marker(self):
+        md = (
+            "# Procédure — X\n\n## Étapes\n\n"
+            "1. **Rétrolavage** : inverser le débit.\n"
+            "2. **Saumurage** : injecter la saumure.\n"
+            "     > ℹ️ **Unité** : lecture au salomètre.\n"
+            "     > Cible 30 %.\n"
+            "3. **Rinçage lent**.\n"
+        )
+        html = self.env["cbet.competency"]._parse_procedure_md(md)["html"]
+        self.assertEqual(html.count("<li>"), 3)          # one list, three items
+        self.assertNotIn("&gt;", html)
+        self.assertNotIn(">", re.sub(r"<[^>]+>", "", html))   # no stray quote marker
+        self.assertIn("ℹ️ <strong>Unité</strong> : lecture au salomètre.", html)
+        self.assertIn("Cible 30 %.", html)
+        # a top-level blockquote is still a blockquote
+        top = self.env["cbet.competency"]._parse_procedure_md("# P\n\n> ➡️ Note.\n")["html"]
+        self.assertIn("<blockquote", top)
 
     def test_images_are_inlined_from_the_archive(self):
         def loader(path):

@@ -204,6 +204,33 @@ class TestCatJobAid(CbetCommon):
         self.assertFalse(verso[0]["note_html"])
         self.assertFalse(recto[0]["note_html"])
 
+    def test_tokens_inside_headings_and_lines_never_survive_as_text(self):
+        md = JOB_AID.replace(
+            "## 2. Pointer les composantes\n- [ ] **Réservoir** pointé\n- [ ] :act-eau: Cheminement suivi",
+            "## 2. Pointer — :sev-securite: sécuriser :act-photo:\n"
+            "- [ ] **Réservoir** pointé · :act-inspection: aucun média dans le tube\n"
+            "- [ ] :act-eau: Cheminement suivi :sev-critique: sans toucher")
+        parsed = self.env["cbet.competency"]._parse_job_aid_md(md)
+        self.assertEqual(parsed["warnings"], [])
+        icons = self.env["cbet.icon"]._by_token()
+        phase = parsed["verso"][1]
+        # the first token of a heading is the section icon; the rest become emoji
+        self.assertEqual(phase["icon"], "sev-securite")
+        self.assertEqual(phase["name"], "2. Pointer — sécuriser %s" % icons["act-photo"].emoji)
+        # a token inside a line's text is replaced by its emoji
+        self.assertEqual(phase["lines"][0], {
+            "icon": None,
+            "text": "Réservoir pointé · %s aucun média dans le tube" % icons["act-inspection"].emoji})
+        self.assertEqual(phase["lines"][1], {
+            "icon": "act-eau",
+            "text": "Cheminement suivi %s sans toucher" % icons["sev-critique"].emoji})
+        # an unknown inline token warns and is dropped
+        parsed = self.env["cbet.competency"]._parse_job_aid_md(
+            JOB_AID.replace("- [ ] **Réservoir** pointé", "- [ ] **Réservoir** :x-y: pointé"))
+        self.assertEqual(parsed["verso"][1]["lines"][0], {"icon": None, "text": "Réservoir pointé"})
+        self.assertEqual(parsed["warnings"],
+                         ["unknown icon token :x-y: in '2. Pointer les composantes'"])
+
     def test_variant_comes_from_the_meta_comment(self):
         parsed = self.env["cbet.competency"]._parse_job_aid_md(JOB_AID_VARIANT)
         self.assertEqual(parsed["variant"], "BANC")

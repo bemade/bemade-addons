@@ -61,6 +61,9 @@ IMG_RE = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 # Job aids.
 TOKEN_RE = re.compile(r":([a-z]+-[a-z0-9-]+):")
 LEADING_TOKEN_RE = re.compile(r"^\s*:([a-z]+-[a-z0-9-]+):\s*")
+# A ">" callout indented under a list item: markdown2 leaves the marker in the
+# text, so the marker is dropped and the line stays the item's continuation.
+NESTED_QUOTE_RE = re.compile(r"^([ \t]{2,})>[ \t]?", re.M)
 RECTO_RE = re.compile(r"<!--\s*=*\s*RECTO\s*=*\s*-->")
 VERSO_RE = re.compile(r"<!--\s*=*\s*VERSO\s*=*\s*-->")
 META_RE = re.compile(r"<!--\s*job-aid\s*\|(.*?)-->", re.S)
@@ -109,13 +112,13 @@ FICHE_SCALARS = {
     "recert_modality": ("validity", "recert_modality"),
     "recert_early_trigger": ("validity", "recert_early_trigger"),
     "learning_time": ("meta", "learning_time"),
+    "field_frequency": ("meta", "field_frequency"),
     "common_pitfalls": ("meta", "common_pitfalls"),
 }
 FICHE_BODIES = ("execution_context", "knowledge_body", "safety_block", "tools_materials",
                 "documents_required", "evidence_required", "references_body")
 FICHE_PLAIN = {
     "protocol_duration": ("protocol", "duration"),
-    "field_frequency": ("meta", "field_frequency"),
     "difficulty": ("meta", "difficulty"),
 }
 DOC_BODIES = {"PROCEDURE": "procedure_body", "NOTES_DEMO": "demo_notes_body"}
@@ -282,6 +285,7 @@ def _md_to_html(md):
         return ""
     md = HTML_COMMENT_RE.sub("", md)
     md = PAGE_BREAK_RE.sub("", md)
+    md = NESTED_QUOTE_RE.sub(r"\1", md)
     md = CHECKBOX_RE.sub(
         lambda m: m.group(1) + ("☑ " if m.group(2).lower() == "x" else "☐ "), md)
     html = markdown2.markdown(md, extras=MD_EXTRAS)
@@ -555,7 +559,12 @@ class CbetCompetencyImport(models.Model):
         set of known tokens; it defaults to the catalog.
         """
         md = md or ""
-        known = set(icons) if icons is not None else set(self.env["cbet.icon"]._by_token())
+        if icons is None:
+            known = {t: i.emoji or "" for t, i in self.env["cbet.icon"]._by_token().items()}
+        elif isinstance(icons, dict):
+            known = dict(icons)
+        else:
+            known = dict.fromkeys(icons, "")
         warnings, variant = [], None
         meta = META_RE.search(md)
         if meta:
@@ -587,15 +596,28 @@ class CbetCompetencyImport(models.Model):
             current["note_html"] = _md_to_html(note)
             sections.append(current)
 
-        def icon_of(text, where):
-            m = LEADING_TOKEN_RE.match(text)
+        def icon_of(text, where, anywhere=False):
+            """A leading token (anywhere in the text for a heading) becomes
+            the icon; any other token inside the text is replaced by its
+            emoji so no ``:token:`` survives."""
+            m = LEADING_TOKEN_RE.match(text) or (anywhere and TOKEN_RE.search(text))
             if not m:
-                return None, text
+                return None, inline_tokens(text, where)
             token = m.group(1)
+            rest = (text[:m.start()] + " " + text[m.end():]).strip()
             if token not in known:
                 warnings.append("unknown icon token :%s: in '%s'" % (token, where))
-                return None, text[m.end():]
-            return token, text[m.end():]
+                token = None
+            return token, inline_tokens(rest, where)
+
+        def inline_tokens(text, where):
+            def repl(m):
+                token = m.group(1)
+                if token not in known:
+                    warnings.append("unknown icon token :%s: in '%s'" % (token, where))
+                    return ""
+                return known[token]
+            return re.sub(r"[ \t]{2,}", " ", TOKEN_RE.sub(repl, text))
 
         def add_line(text):
             icon, rest = icon_of(text, current["name"])
@@ -610,13 +632,9 @@ class CbetCompetencyImport(models.Model):
             if h2:
                 close()
                 table, paragraph = [], []
-                icon, title = LEADING_TOKEN_RE.match(h2.group(1)), h2.group(1)
-                token = icon.group(1) if icon else None
-                if token and token not in known:
-                    warnings.append("unknown icon token :%s: in heading '%s'"
-                                    % (token, _clean_inline(title)))
-                    token = None
-                name = _clean_inline(title[icon.end():] if icon else title)
+                token, name = icon_of(h2.group(1), "heading '%s'" % _clean_inline(
+                    TOKEN_RE.sub("", h2.group(1))), anywhere=True)
+                name = _clean_inline(name)
                 current = {"kind": self._job_aid_kind(face, token, name), "icon": token,
                            "name": name, "lines": [], "note_html": ""}
                 continue
@@ -823,8 +841,6 @@ class CbetCompetencyImport(models.Model):
             for key in path:
                 value = value.get(key) if isinstance(value, dict) else None
             if field == "difficulty":
-                vals[field] = value or False
-            elif field == "field_frequency":
                 vals[field] = value or False
             else:
                 vals[field] = value or 0.0

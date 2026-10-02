@@ -77,7 +77,7 @@ class CbetCompetency(models.Model):
     has_job_aid = fields.Boolean(compute="_compute_has_documents", store=True)
     has_demo_notes = fields.Boolean(compute="_compute_has_documents", store=True)
     # Trainer metadata (§13).
-    field_frequency = fields.Char()
+    field_frequency = fields.Char(translate=True)
     difficulty = fields.Selection(
         [("low", "Low"), ("medium", "Medium"), ("high", "High")],
     )

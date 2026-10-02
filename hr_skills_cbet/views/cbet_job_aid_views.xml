@@ -6,6 +6,7 @@
         <field name="arch" type="xml">
             <list>
                 <field name="sequence" widget="handle"/>
+                <field name="code"/>
                 <field name="competency_id"/>
                 <field name="variant"/>
                 <field name="section_count"/>

@@ -478,6 +478,8 @@ class TestCatFicheFull(CbetCommon):
         self.assertEqual(fr_.recert_modality, "Démonstration de reconnaissance sur banc.")
         self.assertEqual(en.learning_time, "~1 h demo + supervised practice.")
         self.assertEqual(fr_.learning_time, "~1 h démo + pratique supervisée.")
+        self.assertEqual(en.field_frequency, "Fundamental prerequisite of the Example domain.")
+        self.assertEqual(fr_.field_frequency, "Prérequis fondamental du domaine Exemple.")
         self.assertIn("Confusing the two reading points", en.common_pitfalls)
         self.assertIn("Confondre les deux points", fr_.common_pitfalls)
         # The structured values are language-independent.
