@@ -5,3 +5,4 @@ from . import test_draft_defaults
 from . import test_draft_comments
 from . import test_draft_access
 from . import test_draft_template
+from . import test_draft_triage_view
