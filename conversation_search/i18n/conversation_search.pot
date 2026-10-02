@@ -1,0 +1,36 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* conversation_search
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: conversation_search
+#: model:ir.model,name:conversation_search.model_conversation_search_backend
+msgid "Conversation Search Backend"
+msgstr ""
+
+#. module: conversation_search
+#: model:ir.model,name:conversation_search.model_mail_conversation
+msgid "Conversation"
+msgstr ""
+
+#. module: conversation_search
+#: model:ir.model.fields,field_description:conversation_search.field_mail_conversation__message_content
+#: model_terms:ir.ui.view,arch_db:conversation_search.mail_conversation_view_search
+msgid "Message Content"
+msgstr ""
+
+#. module: conversation_search
+#: model:ir.model.fields,help:conversation_search.field_mail_conversation__message_content
+msgid ""
+"Search-only field: matches conversations having at least one message "
+"(subject or body text) containing the typed words. Supports quoted "
+"\"phrases\", OR and -exclusion. Case and accent insensitive."
+msgstr ""
