@@ -12,6 +12,10 @@ class TriageCommon(TransactionCase):
         cls.internal_user = mail_new_test_user(
             cls.env, login="triage_internal", groups="base.group_user"
         )
+        cls.colleague = mail_new_test_user(
+            cls.env, login="triage_colleague", groups="base.group_user"
+        )
+        cls.team = cls.env["mail.conversation.team"].create({"name": "Triage Team"})
         cls.external = cls.env["res.partner"].create(
             {"name": "Ext Customer", "email": "ext.customer@example.com"}
         )
@@ -54,3 +58,13 @@ class TriageCommon(TransactionCase):
     def _set_dates(self, messages_dates):
         for message, date in messages_dates:
             message.date = date
+
+    def _member(self, conv, user):
+        return self.env["mail.conversation.member"].search(
+            [("conversation_id", "=", conv.id), ("user_id", "=", user.id)]
+        )
+
+    def _note(self, conv, user=None):
+        return conv.with_user(user or self.internal_user).message_post(
+            body="<p>note</p>", subtype_xmlid="mail.mt_note"
+        )

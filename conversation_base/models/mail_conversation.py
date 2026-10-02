@@ -3,7 +3,11 @@ import ast
 from markupsafe import Markup
 
 from odoo import _, api, fields, models, tools
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, MissingError, UserError
+from odoo.tools.mail import html_to_inner_content
+
+SNIPPET_LENGTH = 160
+TRIAGE_LIST_LIMIT = 3
 
 
 class MailConversation(models.Model):
@@ -117,6 +121,49 @@ class MailConversation(models.Model):
         help="Date of the first inbound message after the last answer.",
     )
 
+    last_message_snippet = fields.Char(
+        compute="_compute_triage_message_state",
+        store=True,
+        help="Plain-text preview of the newest message that is real "
+        "activity (same classification as the other triage facets).",
+    )
+
+    # Row data for the triage list. Non-stored: they depend on who is
+    # looking (access rights) or on other models' live state.
+    triage_channel = fields.Char(
+        compute="_compute_triage_channel",
+        help="Provider of the transport the conversation last used; "
+        "'internal' when there is none.",
+    )
+    triage_participants = fields.Json(compute="_compute_triage_participants")
+    triage_links = fields.Json(compute="_compute_triage_links")
+
+    # Per-user state, read off the current user's member row.
+    my_unread = fields.Boolean(
+        compute="_compute_my_state",
+        search="_search_my_unread",
+        string="Unread by me",
+    )
+    my_snoozed = fields.Boolean(
+        compute="_compute_my_state",
+        search="_search_my_snoozed",
+        string="Snoozed by me",
+    )
+    my_hidden = fields.Boolean(
+        compute="_compute_my_state",
+        search="_search_my_hidden",
+        string="Hidden by me",
+    )
+    my_in_list = fields.Boolean(
+        compute="_compute_my_state",
+        search="_search_my_in_list",
+        string="In my list",
+    )
+    my_snooze_until = fields.Datetime(
+        compute="_compute_my_state",
+        string="Snoozed until",
+    )
+
     # ------------------------------------------------------------
     # Triage facets
     # ------------------------------------------------------------
@@ -183,13 +230,227 @@ class MailConversation(models.Model):
                     stretch.append(message)
             rec.unanswered = bool(stretch)
             rec.unanswered_since = stretch[0].date if stretch else False
+            rec.last_message_snippet = (
+                rec._triage_snippet(entries[-1][0]) if entries else False
+            )
+
+    @api.model
+    def _triage_snippet(self, message):
+        """Whitespace-collapsed plain text of ``message``'s body, cut to
+        about ``SNIPPET_LENGTH`` characters."""
+        text = html_to_inner_content(message.sudo().body or "")
+        text = " ".join(text.split())
+        if len(text) > SNIPPET_LENGTH:
+            text = text[:SNIPPET_LENGTH].rstrip() + "\u2026"
+        return text or False
 
     def _message_post_after_hook(self, message, msg_values):
         res = super()._message_post_after_hook(message, msg_values)
         waiting = self.filtered(lambda r: r.state == "waiting")
-        if waiting and self._triage_message_kind(message) == "inbound":
+        kind = self._triage_message_kind(message)
+        if waiting and kind == "inbound":
             waiting.write({"state": "open"})
+        if kind == "inbound":
+            self._triage_mark_unread_for_inbound()
         return res
+
+    def _triage_unread_recipients(self):
+        """Users who should see this conversation as unread after an
+        inbound message: the assignee, the team's internal members and
+        everyone who already has a member row."""
+        self.ensure_one()
+        conversation = self.sudo()
+        users = conversation.user_id | conversation.team_id.member_ids
+        users = users.filtered(lambda u: u.active and not u.share)
+        return users | conversation.member_ids.user_id
+
+    def _triage_mark_unread_for_inbound(self):
+        """Flag the conversation unread for its recipients. Touches only
+        ``unread``: ``is_handled``, ``snooze_until`` and the conversation
+        ``state`` are never changed, so a hidden conversation stays hidden
+        but can be found again through the Unread filter."""
+        Member = self.env["mail.conversation.member"].sudo()
+        for conversation in self:
+            users = conversation._triage_unread_recipients()
+            if not users:
+                continue
+            members = Member._get_or_create_for(conversation, users)
+            members.filtered(lambda m: not m.unread).write({"unread": True})
+
+    # ------------------------------------------------------------
+    # Row data for the triage list
+    # ------------------------------------------------------------
+
+    @api.depends("primary_transport_id.provider", "message_ids.transport_id")
+    def _compute_triage_channel(self):
+        for rec in self:
+            conversation = rec.sudo()
+            message = self.env["mail.message"].sudo().search(
+                [
+                    ("model", "=", rec._name),
+                    ("res_id", "=", rec.id),
+                    ("transport_id", "!=", False),
+                ],
+                order="id desc",
+                limit=1,
+            )
+            transport = message.transport_id or conversation.primary_transport_id
+            rec.triage_channel = transport.provider or "internal"
+
+    @api.depends("participant_ids", "participant_ids.partner_id")
+    def _compute_triage_participants(self):
+        for rec in self:
+            participants = rec.participant_ids
+            items = []
+            for participant in participants[:TRIAGE_LIST_LIMIT]:
+                name = participant.partner_id.display_name or participant.email or ""
+                items.append(
+                    {
+                        "partner_id": participant.partner_id.id or False,
+                        "name": name,
+                        "email": participant.email or False,
+                        "initials": self._triage_initials(name),
+                    }
+                )
+            rec.triage_participants = {
+                "items": items,
+                "extra": max(len(participants) - TRIAGE_LIST_LIMIT, 0),
+            }
+
+    @api.model
+    def _triage_initials(self, name):
+        words = [w for w in (name or "").replace("@", " ").replace(".", " ").split() if w]
+        return "".join(w[0] for w in words[:2]).upper() or "?"
+
+    @api.depends("link_ids")
+    def _compute_triage_links(self):
+        for rec in self:
+            items = []
+            extra = 0
+            for link in rec.link_ids:
+                item = rec._triage_link_item(link)
+                if not item:
+                    continue
+                if len(items) < TRIAGE_LIST_LIMIT:
+                    items.append(item)
+                else:
+                    extra += 1
+            rec.triage_links = {"items": items, "extra": extra}
+
+    def _triage_link_item(self, link):
+        """One chip for ``link`` or ``None``. The linked record's name is
+        only disclosed when the current user can read it; nothing here
+        may raise."""
+        try:
+            link = link.sudo()
+            if link.res_model not in self.env:
+                return None
+            record = self.env[link.res_model].browse(link.res_id).exists()
+            if not record:
+                return None
+            if record.has_access("read"):
+                return {
+                    "res_model": link.res_model,
+                    "res_id": link.res_id,
+                    "name": record.display_name,
+                    "restricted": False,
+                }
+            return {
+                "res_model": link.res_model,
+                "res_id": link.res_id,
+                "name": False,
+                "restricted": True,
+            }
+        except (AccessError, MissingError):
+            return {
+                "res_model": False,
+                "res_id": False,
+                "name": False,
+                "restricted": True,
+            }
+
+    # ------------------------------------------------------------
+    # Per-user state (the current user's member row)
+    # ------------------------------------------------------------
+
+    @api.depends_context("uid")
+    @api.depends(
+        "member_ids.user_id",
+        "member_ids.is_handled",
+        "member_ids.unread",
+        "member_ids.snooze_until",
+    )
+    def _compute_my_state(self):
+        now = fields.Datetime.now()
+        for rec in self:
+            member = rec.sudo().member_ids.filtered(lambda m: m.user_id == self.env.user)[:1]
+            snoozed = bool(
+                member and member.snooze_until and member.snooze_until > now
+            )
+            rec.my_unread = bool(member and member.unread)
+            rec.my_snoozed = snoozed
+            rec.my_hidden = bool(member and member.is_handled and not snoozed)
+            rec.my_snooze_until = member.snooze_until if snoozed else False
+            rec.my_in_list = not (member and (member.is_handled or snoozed))
+
+    def _my_member_domain(self, *conditions):
+        return [
+            (
+                "member_ids",
+                "any",
+                [("user_id", "=", self.env.uid), *conditions],
+            )
+        ]
+
+    def _search_flag(self, operator, value, positive, negative):
+        """Domain for a boolean search: ``positive`` when the comparison
+        asks for True, ``negative`` otherwise."""
+        if operator not in ("=", "!="):
+            raise UserError(_("Unsupported search operator."))
+        return positive if (operator == "=") == bool(value) else negative
+
+    def _search_my_unread(self, operator, value):
+        match = self._my_member_domain(("unread", "=", True))
+        return self._search_flag(
+            operator, value, match, [("member_ids", "not any", match[0][2])]
+        )
+
+    def _search_my_snoozed(self, operator, value):
+        match = self._my_member_domain(("snooze_until", ">", fields.Datetime.now()))
+        return self._search_flag(
+            operator, value, match, [("member_ids", "not any", match[0][2])]
+        )
+
+    def _search_my_hidden(self, operator, value):
+        now = fields.Datetime.now()
+        hidden = [
+            ("user_id", "=", self.env.uid),
+            ("is_handled", "=", True),
+            "|",
+            ("snooze_until", "=", False),
+            ("snooze_until", "<=", now),
+        ]
+        return self._search_flag(
+            operator,
+            value,
+            [("member_ids", "any", hidden)],
+            [("member_ids", "not any", hidden)],
+        )
+
+    def _search_my_in_list(self, operator, value):
+        now = fields.Datetime.now()
+        out = [
+            ("user_id", "=", self.env.uid),
+            "|",
+            ("is_handled", "=", True),
+            ("snooze_until", ">", now),
+        ]
+        return self._search_flag(
+            operator,
+            value,
+            [("member_ids", "not any", out)],
+            [("member_ids", "any", out)],
+        )
 
     @api.depends("team_id")
     def _compute_quiet_email_ingest(self):
@@ -691,3 +952,86 @@ class MailConversation(models.Model):
         """
         self.write({"state": "done"})
         return True
+
+    # ------------------------------------------------------------
+    # Triage actions. Each one works on a selection (any number of
+    # records) and either touches only the current user's member row or,
+    # for Done / Reopen / Assign, the conversation's team-level fields
+    # through the ordinary write path.
+    # ------------------------------------------------------------
+
+    def _triage_my_members(self):
+        self.check_access("read")
+        return self.env["mail.conversation.member"]._get_or_create_for(
+            self, self.env.user
+        )
+
+    def action_triage_hide(self):
+        """Take the conversations off *my* list. Nobody else is affected."""
+        self._triage_my_members().write({"is_handled": True, "snooze_until": False})
+        return True
+
+    def action_triage_unhide(self):
+        self._triage_my_members().write({"is_handled": False, "snooze_until": False})
+        return True
+
+    def action_triage_snooze(self, until):
+        """Take the conversations off *my* list until ``until``; the
+        resurface cron clears both flags once it has passed."""
+        if isinstance(until, str):
+            until = fields.Datetime.to_datetime(until)
+        if not until or until <= fields.Datetime.now():
+            raise UserError(_("Pick a snooze time in the future."))
+        self._triage_my_members().write({"is_handled": True, "snooze_until": until})
+        return True
+
+    def action_triage_unsnooze(self):
+        self._triage_my_members().write({"is_handled": False, "snooze_until": False})
+        return True
+
+    def action_triage_mark_read(self):
+        self._triage_my_members().write({"unread": False})
+        return True
+
+    def action_triage_mark_unread(self):
+        self._triage_my_members().write({"unread": True})
+        return True
+
+    def action_triage_done(self):
+        """Close the conversations for everyone."""
+        self.check_access("write")
+        self.write({"state": "done"})
+        return True
+
+    def action_triage_reopen(self):
+        self.check_access("write")
+        self.write({"state": "open"})
+        return True
+
+    def action_triage_assign_me(self):
+        self.check_access("write")
+        for conversation in self:
+            conversation.action_reassign(user=self.env.user)
+        return True
+
+    def _triage_wizard_action(self, model, name):
+        self.check_access("read")
+        return {
+            "type": "ir.actions.act_window",
+            "name": name,
+            "res_model": model,
+            "view_mode": "form",
+            "views": [(False, "form")],
+            "target": "new",
+            "context": {"default_conversation_ids": self.ids},
+        }
+
+    def action_triage_open_snooze_wizard(self):
+        return self._triage_wizard_action(
+            "mail.conversation.triage.snooze", _("Snooze")
+        )
+
+    def action_triage_open_assign_wizard(self):
+        return self._triage_wizard_action(
+            "mail.conversation.triage.assign", _("Assign")
+        )
