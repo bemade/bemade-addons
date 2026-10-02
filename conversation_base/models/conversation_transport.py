@@ -149,12 +149,13 @@ class ConversationTransport(models.Model):
         self.ensure_one()
         raise NotImplementedError
 
-    def _send(self, conversation, message, recipients=None):
+    def _send(self, conversation, message, recipients=None, cc=None, bcc=None):
         """Send ``message`` (an already-posted ``mail.message`` on
         ``conversation``) out over this transport, to the explicit
         ``recipients`` (list of email strings) when given, else the
         recipients computed from ``message``/``conversation``
-        participants. This is the *only* place external email is ever
+        participants. ``cc``/``bcc`` (lists of email strings) are optional
+        extra recipients; Bcc must never be disclosed to the others. This is the *only* place external email is ever
         produced for a conversation message -- never Odoo's notification
         pipeline."""
         self.ensure_one()

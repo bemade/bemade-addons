@@ -61,6 +61,41 @@ class TestConversationActions(TransactionCase):
         # pipeline must not have produced any mail.mail of its own.
         self.assertEqual(self._outgoing_mail_ids(), before_mail_ids)
 
+    def test_action_reply_forwards_cc_bcc_subject_and_attachments(self):
+        attachment = self.env["ir.attachment"].create(
+            {"name": "a.txt", "raw": b"hello", "res_model": "mail.conversation"}
+        )
+        with patch.object(
+            type(self.sendable_transport),
+            "_send",
+            return_value="ext-cc",
+            autospec=True,
+        ) as mocked_send:
+            message = self.conversation.action_reply(
+                "<p>Body</p>",
+                recipients=["to@example.com"],
+                subject="Custom subject",
+                cc=["cc@example.com"],
+                bcc=["bcc@example.com"],
+                attachment_ids=attachment.ids,
+            )
+        kwargs = mocked_send.call_args.kwargs
+        self.assertEqual(kwargs["cc"], ["cc@example.com"])
+        self.assertEqual(kwargs["bcc"], ["bcc@example.com"])
+        self.assertEqual(message.subject, "Custom subject")
+        self.assertEqual(message.attachment_ids, attachment)
+
+    def test_action_reply_without_cc_bcc_keeps_the_old_send_call_shape(self):
+        with patch.object(
+            type(self.sendable_transport),
+            "_send",
+            return_value="ext-plain",
+            autospec=True,
+        ) as mocked_send:
+            self.conversation.action_reply("<p>Hi</p>", recipients=["a@example.com"])
+        self.assertNotIn("cc", mocked_send.call_args.kwargs)
+        self.assertNotIn("bcc", mocked_send.call_args.kwargs)
+
     def test_action_reply_requires_sendable_transport(self):
         from odoo.exceptions import UserError
 

@@ -654,7 +654,7 @@ class ConversationTransport(models.Model):
                 return candidate
         return self.env["mail.message"]
 
-    def _send(self, conversation, message, recipients=None):
+    def _send(self, conversation, message, recipients=None, cc=None, bcc=None):
         """Send an already-posted ``mail.message``: a thin wrapper that
         derives plain values from the record and hands them to
         ``_send_raw``. The message's OWN Message-Id goes on the wire
@@ -663,7 +663,9 @@ class ConversationTransport(models.Model):
         ``mail.message`` already stores."""
         self.ensure_one()
         if not self._is_email_transport():
-            return super()._send(conversation, message, recipients=recipients)
+            return super()._send(
+                conversation, message, recipients=recipients, cc=cc, bcc=bcc
+            )
         to_emails = recipients or self._imap_default_recipients(conversation)
         if not to_emails:
             raise UserError(
@@ -676,6 +678,8 @@ class ConversationTransport(models.Model):
             subject=message.subject or conversation.name,
             body=message.body or "",
             to_emails=to_emails,
+            cc=cc,
+            bcc=bcc,
             in_reply_to=self._imap_reply_headers(conversation, message),
             attachments=self._email_attachment_payloads(message.attachment_ids),
             message_id=message.message_id,

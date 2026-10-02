@@ -18,18 +18,23 @@
 #    DEALINGS IN THE SOFTWARE.
 #
 {
-    "name": "Conversation Email Base",
-    "version": "19.0.1.2.0",
+    "name": "Conversation Draft",
+    "version": "19.0.1.0.1",
     "category": "Discuss",
-    "summary": "Shared IMAP/SMTP engine for email conversation transport "
-    "providers (browse/fetch/normalize/match/send).",
+    "summary": "Shared, collaboratively edited reply drafts on a conversation.",
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
     "depends": [
         "conversation_base",
+        "html_editor",
     ],
-    "data": [],
+    "data": [
+        "security/ir.model.access.csv",
+        "views/mail_conversation_draft_views.xml",
+        "wizards/mail_conversation_draft_template_views.xml",
+        "views/mail_conversation_views.xml",
+    ],
     "installable": True,
     "application": False,
     "auto_install": False,
