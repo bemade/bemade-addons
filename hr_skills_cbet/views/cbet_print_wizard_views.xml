@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_cbet_print_wizard_form" model="ir.ui.view">
+        <field name="name">cbet.print.wizard.form</field>
+        <field name="model">cbet.print.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Print documents">
+                <group>
+                    <field name="competency_ids" widget="many2many_tags"
+                           options="{'no_create': True}"/>
+                    <field name="lang" widget="radio" options="{'horizontal': true}"/>
+                </group>
+                <group string="Documents">
+                    <group>
+                        <field name="print_fiche"/>
+                        <field name="print_procedure"/>
+                    </group>
+                    <group>
+                        <field name="print_job_aid"/>
+                        <field name="print_demo_notes"/>
+                    </group>
+                </group>
+                <div class="text-muted">
+                    <div>One PDF per document; several documents download as a zip.</div>
+                    <div>Draft competencies print with a DRAFT watermark.</div>
+                </div>
+                <footer>
+                    <button name="action_print" type="object" string="Print"
+                            class="btn-primary" data-hotkey="q"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel" data-hotkey="x"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_cbet_print_wizard" model="ir.actions.act_window">
+        <field name="name">Print documents</field>
+        <field name="res_model">cbet.print.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_cbet_competency"/>
+        <field name="binding_type">action</field>
+        <field name="binding_view_types">list,form</field>
+    </record>
+</odoo>

@@ -75,9 +75,17 @@
                             class="btn-primary" invisible="state == 'published'"/>
                     <button name="action_reset_to_draft" type="object" string="Reset to draft"
                             invisible="state == 'draft'"/>
+                    <button name="%(action_cbet_print_wizard)d" type="action"
+                            string="Print documents" icon="fa-print"/>
                     <field name="state" widget="statusbar"/>
                 </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_job_aids" type="object" class="oe_stat_button"
+                                icon="fa-file-text-o">
+                            <field name="job_aid_count" widget="statinfo" string="Job aids"/>
+                        </button>
+                    </div>
                     <div class="oe_title">
                         <h1><field name="code" placeholder="XXX-NN"/></h1>
                         <h2><field name="name" placeholder="Competency name"/></h2>

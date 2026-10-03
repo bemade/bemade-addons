@@ -1,4 +1,5 @@
 from . import res_config_settings
+from . import ir_actions_report
 from . import cbet_domain
 from . import cbet_icon
 from . import cbet_competency

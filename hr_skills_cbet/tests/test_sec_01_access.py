@@ -66,3 +66,22 @@ class TestSecAccess(CbetCommon):
             {"token": "xtest-manager", "name": "Manager icon"}))
         aid.with_user(self.manager).write({"variant": "A"})
         self.assertEqual(aid.variant, "A")
+
+
+@tagged("post_install", "-at_install")
+class TestFrenchLocales(CbetCommon):
+    """The module's French ships as a generic ``fr.po`` so every French locale
+    (fr_FR on Durpro, fr_CA elsewhere, fr_BE …) gets the translated UI — Odoo
+    loads ``fr.po`` then ``<locale>.po`` and never another locale's file."""
+
+    def _label(self, lang):
+        self.env["res.lang"]._activate_lang(lang)
+        self.env["ir.module.module"].search([("name", "=", "hr_skills_cbet")])._update_translations(lang)
+        return self.env["cbet.competency"].with_context(lang=lang).fields_get(
+            ["validity_months"], ["string"])["validity_months"]["string"]
+
+    def test_fr_FR_and_fr_CA_both_get_the_french_labels(self):
+        for lang in ("fr_FR", "fr_CA"):
+            label = self._label(lang)
+            self.assertNotEqual(label, "Certification validity (months)", lang)
+            self.assertIn("mois", label, lang)

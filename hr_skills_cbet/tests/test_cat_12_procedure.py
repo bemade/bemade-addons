@@ -117,6 +117,23 @@ class TestCatProcedure(CbetCommon):
         top = self.env["cbet.competency"]._parse_procedure_md("# P\n\n> ➡️ Note.\n")["html"]
         self.assertIn("<blockquote", top)
 
+    def test_callout_after_a_table_is_a_paragraph_not_a_code_block(self):
+        md = (
+            "# Procédure — X\n\n## Étapes\n\n"
+            "16. **Ordonner** les cycles :\n\n"
+            "    | # | Cycle |\n    | - | ----- |\n    | 1 | Rétrolavage |\n\n"
+            "     > ℹ️ **Cible** : au moins 30 % au salomètre.\n"
+            "     > Toujours préciser l'unité.\n\n"
+            "17. **Clore** la visite.\n"
+        )
+        html = self.env["cbet.competency"]._parse_procedure_md(md)["html"]
+        self.assertNotIn("<pre>", html)
+        self.assertIn("ℹ️ <strong>Cible</strong> : au moins 30 % au salomètre.", html)
+        self.assertIn("<table>", html)
+        # a genuine code block (ASCII diagram) is left alone
+        diagram = "# P\n\n## Montage\n\n    Bac --- Canne --- Aspirateur\n    |         |\n"
+        self.assertIn("<pre>", self.env["cbet.competency"]._parse_procedure_md(diagram)["html"])
+
     def test_images_are_inlined_from_the_archive(self):
         def loader(path):
             return PNG if path == "images/banc.png" else None

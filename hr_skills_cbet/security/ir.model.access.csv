@@ -49,3 +49,4 @@ access_cbet_job_aid_section_user,cbet.job.aid.section user,model_cbet_job_aid_se
 access_cbet_job_aid_section_manager,cbet.job.aid.section manager,model_cbet_job_aid_section,hr_skills_cbet.group_cbet_manager,1,1,1,1
 access_cbet_job_aid_line_user,cbet.job.aid.line user,model_cbet_job_aid_line,hr_skills_cbet.group_cbet_user,1,0,0,0
 access_cbet_job_aid_line_manager,cbet.job.aid.line manager,model_cbet_job_aid_line,hr_skills_cbet.group_cbet_manager,1,1,1,1
+access_cbet_print_wizard,cbet.print.wizard user,model_cbet_print_wizard,hr_skills_cbet.group_cbet_user,1,1,1,1
