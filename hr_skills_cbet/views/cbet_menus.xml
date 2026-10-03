@@ -42,4 +42,6 @@
               groups="hr_skills_cbet.group_cbet_manager"/>
     <menuitem id="menu_cbet_icons" name="Icons" parent="menu_cbet_configuration"
               action="action_cbet_icon" sequence="10"/>
+    <menuitem id="menu_cbet_icon_legend" name="Icon legend" parent="menu_cbet_configuration"
+              action="action_report_cbet_icon_legend" sequence="11"/>
 </odoo>

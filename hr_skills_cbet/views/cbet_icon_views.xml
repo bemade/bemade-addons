@@ -5,6 +5,7 @@
         <field name="model">cbet.icon</field>
         <field name="arch" type="xml">
             <list>
+                <field name="svg" widget="image" string="SVG"/>
                 <field name="emoji"/>
                 <field name="token"/>
                 <field name="name"/>
@@ -32,6 +33,7 @@
                             <field name="iso_ref"/>
                             <field name="svg" filename="svg_filename"/>
                             <field name="svg_filename" invisible="1"/>
+                            <field name="svg" widget="image" string="Preview" readonly="1"/>
                             <field name="active" widget="boolean_toggle"/>
                         </group>
                     </group>

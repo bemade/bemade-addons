@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-03 01:21+0000\n"
-"PO-Revision-Date: 2026-10-03 01:21+0000\n"
+"POT-Creation-Date: 2026-10-03 16:26+0000\n"
+"PO-Revision-Date: 2026-10-03 16:26+0000\n"
 "Last-Translator: Bemade Inc. <denis@bemade.org>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -781,6 +781,7 @@ msgstr "Difficulté"
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_ir_actions_report__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_report_hr_skills_cbet_report_cbet_demo_notes__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_report_hr_skills_cbet_report_cbet_fiche__display_name
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_report_hr_skills_cbet_report_cbet_icon_legend__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_report_hr_skills_cbet_report_cbet_job_aid__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_report_hr_skills_cbet_report_cbet_procedure__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_res_company__display_name
@@ -844,6 +845,7 @@ msgstr "Déclencheur de recertification anticipée"
 
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_icon__emoji
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.report_cbet_icon_legend
 msgid "Emoji"
 msgstr "Émoji"
 
@@ -1215,6 +1217,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_ir_actions_report__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_report_hr_skills_cbet_report_cbet_demo_notes__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_report_hr_skills_cbet_report_cbet_fiche__id
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_report_hr_skills_cbet_report_cbet_icon_legend__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_report_hr_skills_cbet_report_cbet_job_aid__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_report_hr_skills_cbet_report_cbet_procedure__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_res_company__id
@@ -1224,6 +1227,7 @@ msgstr ""
 
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_icon__iso_ref
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.report_cbet_icon_legend
 msgid "ISO reference"
 msgstr "Référence ISO"
 
@@ -1232,6 +1236,7 @@ msgstr "Référence ISO"
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_evaluation__activity_exception_icon
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_line__icon_id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_section__icon_id
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.report_cbet_icon_legend
 msgid "Icon"
 msgstr "Icône"
 
@@ -1595,6 +1600,7 @@ msgstr "S.O."
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid__name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_section__name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_standard__name
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.report_cbet_icon_legend
 msgid "Name"
 msgstr "Nom"
 
@@ -2134,6 +2140,7 @@ msgstr "STOP — escalader"
 
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_icon__svg
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_icon_list
 msgid "SVG"
 msgstr "SVG"
 
@@ -2521,6 +2528,7 @@ msgstr "À revoir"
 
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_icon__token
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.report_cbet_icon_legend
 msgid "Token"
 msgstr "Jeton"
 
@@ -3225,20 +3233,48 @@ msgid "Job aid count"
 msgstr "Nombre d'aides-mémoire"
 
 #. module: hr_skills_cbet
-#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_certification__activity_calendar_event_id
-#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_evaluation__activity_calendar_event_id
-msgid "Next Activity Calendar Event"
-msgstr ""
-
-#. module: hr_skills_cbet
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_print_wizard_form
 msgid "One PDF per document; several documents download as a zip."
 msgstr "Un PDF par document ; plusieurs documents sont téléchargés en zip."
 
 #. module: hr_skills_cbet
-#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_certification__rating_ids
-#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__rating_ids
-#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_evaluation__rating_ids
-#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_qualification__rating_ids
-msgid "Ratings"
+#: model:ir.actions.report,print_report_name:hr_skills_cbet.action_report_cbet_icon_legend
+msgid "'icon_legend'"
+msgstr "'legende_pictogrammes'"
+
+#. module: hr_skills_cbet
+#: model:ir.model,name:hr_skills_cbet.model_report_hr_skills_cbet_report_cbet_icon_legend
+msgid "CBET job-aid icon legend report"
+msgstr "Rapport légende des pictogrammes des aides-mémoire CBET"
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.report_cbet_icon_legend
+msgid ""
+"Each pictogram is shown at 10 mm and at the size printed on the job aids (5 "
+"mm)."
 msgstr ""
+"Chaque pictogramme est montré à 10 mm et à la taille imprimée sur les aides-"
+"mémoire (5 mm)."
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.report_cbet_icon_legend
+msgid "Field job aids"
+msgstr "Aides-mémoire terrain"
+
+#. module: hr_skills_cbet
+#: model:ir.actions.report,name:hr_skills_cbet.action_report_cbet_icon_legend
+#: model:ir.ui.menu,name:hr_skills_cbet.menu_cbet_icon_legend
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.report_cbet_icon_legend
+msgid "Icon legend"
+msgstr "Légende des pictogrammes"
+
+#. module: hr_skills_cbet
+#. odoo-python
+#: code:addons/hr_skills_cbet/report/cbet_icon_legend_report.py:0
+msgid "Other"
+msgstr "Autre"
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_icon_form
+msgid "Preview"
+msgstr "Aperçu"
