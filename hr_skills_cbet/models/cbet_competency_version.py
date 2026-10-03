@@ -22,6 +22,7 @@ class CbetCompetencyVersion(models.Model):
 
     def _snapshot_payload(self, competency):
         return {
+            "lang": competency.env.lang or "en_US",
             "code": competency.code,
             "name": competency.name,
             "kind": competency.kind,

@@ -10,37 +10,58 @@
                 <field name="competency_id"/>
                 <field name="variant"/>
                 <field name="section_count"/>
+                <field name="competency_state" widget="badge" string="State"
+                       decoration-success="competency_state == 'published'"/>
             </list>
         </field>
     </record>
 
+    <!-- A section (recto block or verso phase) with its lines inline: the
+         one2many-in-one2many is edited here, opened from the job aid's lists. -->
     <record id="view_cbet_job_aid_section_form" model="ir.ui.view">
         <field name="name">cbet.job.aid.section.form</field>
         <field name="model">cbet.job.aid.section</field>
         <field name="arch" type="xml">
             <form>
                 <sheet>
+                    <field name="can_edit" invisible="1"/>
+                    <div class="alert alert-info" role="status" invisible="can_edit">
+                        This competency is published: its job aids are frozen. Ask a CBET Manager to reset it to draft before editing.
+                    </div>
                     <group>
                         <group>
-                            <field name="face"/>
-                            <field name="kind"/>
-                            <field name="icon_id"/>
+                            <field name="face" readonly="not can_edit"/>
+                            <field name="kind" readonly="not can_edit"/>
+                            <field name="icon_id" options="{'no_create': True, 'no_open': True}" readonly="not can_edit"/>
                         </group>
                         <group>
-                            <field name="name"/>
-                            <field name="sequence"/>
+                            <field name="name" readonly="not can_edit"/>
+                            <field name="sequence" readonly="not can_edit"/>
                         </group>
                     </group>
                     <separator string="Lines"/>
-                    <field name="line_ids">
+                    <field name="line_ids" readonly="not can_edit">
                         <list editable="bottom">
                             <field name="sequence" widget="handle"/>
-                            <field name="icon_id"/>
+                            <field name="icon_id" options="{'no_create': True, 'no_open': True}"/>
                             <field name="text"/>
                         </list>
                     </field>
                     <separator string="Reference table / note"/>
-                    <field name="note_html"/>
+                    <field name="note_html" readonly="not can_edit" nolabel="1"
+                           placeholder="Optional block printed under the lines…"/>
+                    <separator string="Revisions" invisible="not revision_ids"/>
+                    <field name="revision_ids" readonly="1" invisible="not revision_ids"
+                           context="{'form_view_ref': 'hr_skills_cbet.view_cbet_content_revision_form'}">
+                        <list>
+                            <field name="date"/>
+                            <field name="user_id"/>
+                            <field name="lang_name"/>
+                            <button name="action_restore" type="object" string="Restore"
+                                    icon="fa-undo" title="Restore"
+                                    confirm="Restore this previous note? The current note is kept as a revision."/>
+                        </list>
+                    </field>
                 </sheet>
             </form>
         </field>
@@ -52,32 +73,66 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="%(action_report_cbet_job_aid)d" type="action"
-                            string="Print" icon="fa-print"/>
+                    <button name="action_preview_pdf" type="object"
+                            string="Preview PDF" icon="fa-file-pdf-o" class="btn-primary"/>
+                    <button name="action_open_variant_wizard" type="object"
+                            string="Duplicate as variant" icon="fa-clone"
+                            invisible="not can_edit"/>
+                    <field name="competency_state" widget="statusbar"/>
                 </header>
                 <sheet>
+                    <field name="can_edit" invisible="1"/>
+                    <div class="alert alert-info mb-3" role="status"
+                         invisible="can_edit or competency_state != 'published'">
+                        The competency is published: this job aid is frozen until a CBET
+                        Manager resets it to draft.
+                    </div>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
                     <group>
                         <group>
-                            <field name="competency_id"/>
-                            <field name="variant"/>
+                            <field name="competency_id" readonly="not can_edit"/>
+                            <field name="variant" readonly="not can_edit"/>
                         </group>
                         <group>
-                            <field name="sequence"/>
-                            <field name="active" widget="boolean_toggle"/>
+                            <field name="sequence" readonly="not can_edit"/>
+                            <field name="active" widget="boolean_toggle" readonly="not can_edit"/>
                         </group>
                     </group>
                     <notebook>
-                        <page string="Sections">
-                            <field name="section_ids" context="{'default_job_aid_id': id}">
-                                <list editable="bottom" open_form_view="True" decoration-info="face == 'verso'">
+                        <page string="Recto" name="recto">
+                            <div class="text-muted mb-2">
+                                The front of the card: PPE, tools, STOP, data to record, photos…
+                                Open a block (arrow) to edit its lines and reference note.
+                            </div>
+                            <field name="recto_section_ids" readonly="not can_edit"
+                                   context="{'default_job_aid_id': id, 'default_face': 'recto', 'default_kind': 'custom'}">
+                                <list editable="bottom" open_form_view="True">
                                     <field name="sequence" widget="handle"/>
-                                    <field name="face"/>
+                                    <field name="face" column_invisible="1"/>
                                     <field name="kind"/>
-                                    <field name="icon_id"/>
+                                    <field name="icon_id" options="{'no_create': True, 'no_open': True}"/>
                                     <field name="name"/>
+                                    <field name="line_preview"/>
+                                    <field name="line_count"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Verso" name="verso">
+                            <div class="text-muted mb-2">
+                                The back of the card: the procedure phases with their checklist
+                                lines. Open a phase (arrow) to edit its lines.
+                            </div>
+                            <field name="verso_section_ids" readonly="not can_edit"
+                                   context="{'default_job_aid_id': id, 'default_face': 'verso', 'default_kind': 'phase'}">
+                                <list editable="bottom" open_form_view="True">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="face" column_invisible="1"/>
+                                    <field name="kind"/>
+                                    <field name="icon_id" options="{'no_create': True, 'no_open': True}"/>
+                                    <field name="name"/>
+                                    <field name="line_preview"/>
                                     <field name="line_count"/>
                                 </list>
                             </field>

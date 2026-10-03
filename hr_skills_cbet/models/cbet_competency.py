@@ -1,9 +1,26 @@
 import re
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 
 CODE_RE = re.compile(r"^[A-Za-z]{2,4}-\d{1,3}$")
+
+# The document bodies — whole html documents per language (UC-CAT-08).
+BODY_FIELDS = (
+    "execution_context",
+    "knowledge_body",
+    "safety_block",
+    "tools_materials",
+    "documents_required",
+    "evidence_required",
+    "references_body",
+    "procedure_body",
+    "demo_notes_body",
+)
+# What a CBET Trainer may change on a draft competency: the content, not the
+# structure (criteria, questions, protocol, policy, lifecycle).
+CONTENT_FIELDS = frozenset(BODY_FIELDS) | {"subtitle", "job_aid_ids"}
+MANAGER_GROUP = "hr_skills_cbet.group_cbet_manager"
 
 
 class CbetCompetency(models.Model):
@@ -12,7 +29,8 @@ class CbetCompetency(models.Model):
     _name = "cbet.competency"
     _description = "CBET Competency"
     _order = "domain_id, code"
-    _inherit = ["mail.thread"]
+    _inherit = ["cbet.content.revision.mixin", "mail.thread"]
+    _revision_fields = BODY_FIELDS
 
     code = fields.Char(required=True, tracking=True)
     name = fields.Char(required=True, translate=True, tracking=True)
@@ -77,6 +95,24 @@ class CbetCompetency(models.Model):
     has_procedure = fields.Boolean(compute="_compute_has_documents", store=True)
     has_job_aid = fields.Boolean(compute="_compute_has_documents", store=True)
     has_demo_notes = fields.Boolean(compute="_compute_has_documents", store=True)
+    # Authoring (UC-CAT-08).
+    revision_ids = fields.One2many(
+        "cbet.content.revision", "competency_id", string="Revisions", readonly=True,
+    )
+    revision_count = fields.Integer(compute="_compute_revision_count")
+    translation_status = fields.Selection(
+        [
+            ("none", "No content"),
+            ("missing", "Translation missing"),
+            ("done", "Translated"),
+        ],
+        compute="_compute_translation_status",
+        search="_search_translation_status",
+        help="Translation missing: at least one document body is the same in "
+             "French and in English (the English edition was never written).",
+    )
+    can_edit_structure = fields.Boolean(compute="_compute_can_edit")
+    can_edit_content = fields.Boolean(compute="_compute_can_edit")
     # Trainer metadata (§13).
     field_frequency = fields.Char(translate=True)
     difficulty = fields.Selection(
@@ -174,6 +210,103 @@ class CbetCompetency(models.Model):
             action["res_id"] = self.job_aid_ids.id
         return action
 
+    @api.depends("revision_ids")
+    def _compute_revision_count(self):
+        for comp in self:
+            comp.revision_count = len(comp.revision_ids)
+
+    @api.depends("state")
+    @api.depends_context("uid")
+    def _compute_can_edit(self):
+        manager = self.env.user.has_group(MANAGER_GROUP)
+        trainer = manager or self.env.user.has_group("hr_skills_cbet.group_cbet_trainer")
+        for comp in self:
+            comp.can_edit_structure = manager
+            comp.can_edit_content = manager or (trainer and comp.state == "draft")
+
+    # ------------------------------------------------------------------
+    # UC-CAT-08 — translation status (whole-document bodies, see test_cat_17).
+    # ------------------------------------------------------------------
+    @api.model
+    def _french_langs(self):
+        return [code for code, _name in self.env["res.lang"].get_installed()
+                if code.startswith("fr")]
+
+    def _untranslated_bodies(self):
+        """The body fields whose French edition is the English one (or that
+        have no French at all), in any installed French language."""
+        self.ensure_one()
+        en = self.with_context(lang="en_US")
+        missing = set()
+        for lang in self._french_langs():
+            fr = self.with_context(lang=lang)
+            for fname in BODY_FIELDS:
+                value_en = en[fname] or ""
+                if value_en and (fr[fname] or "") == value_en:
+                    missing.add(fname)
+        return sorted(missing)
+
+    @api.depends(*BODY_FIELDS)
+    def _compute_translation_status(self):
+        for comp in self:
+            en = comp.with_context(lang="en_US")
+            if not any(en[f] for f in BODY_FIELDS):
+                comp.translation_status = "none"
+            elif comp._untranslated_bodies():
+                comp.translation_status = "missing"
+            else:
+                comp.translation_status = "done"
+
+    def _search_translation_status(self, operator, value):
+        if operator not in ("=", "!=", "in", "not in"):
+            raise UserError(self.env._("Unsupported operator on translation status."))
+        wanted = {value} if isinstance(value, str) or not value else set(value)
+        matching = self.with_context(active_test=False).search([]).filtered(
+            lambda c: c.translation_status in wanted)
+        if operator in ("!=", "not in"):
+            return [("id", "not in", matching.ids)]
+        return [("id", "in", matching.ids)]
+
+    # ------------------------------------------------------------------
+    # UC-CAT-08 — trainer rights: content of a draft only.
+    # ------------------------------------------------------------------
+    def _revision_link_vals(self):
+        self.ensure_one()
+        return {"competency_id": self.id}
+
+    def _cbet_check_content_write(self, vals):
+        if self.env.su or self.env.user.has_group(MANAGER_GROUP):
+            return
+        structure = sorted(set(vals) - CONTENT_FIELDS)
+        if structure:
+            labels = [self._fields[f]._description_string(self.env) if f in self._fields else f
+                      for f in structure]
+            raise AccessError(self.env._(
+                "Only a CBET Manager can change %(fields)s. A CBET Trainer edits "
+                "the documents (sheet, procedure, job aids, demonstration notes) "
+                "of a draft competency.", fields=", ".join(labels)))
+        published = self.filtered(lambda c: c.state != "draft")
+        if published:
+            raise AccessError(self.env._(
+                "%(codes)s is published: its documents are frozen. Ask a CBET "
+                "Manager to reset it to draft before editing.",
+                codes=", ".join(published.mapped("code"))))
+
+    # ------------------------------------------------------------------
+    # UC-CAT-08 — preview the documents (T2 reports, draft watermark included).
+    # ------------------------------------------------------------------
+    def _preview(self, xmlid):
+        return self.env.ref(xmlid).report_action(self)
+
+    def action_preview_fiche(self):
+        return self._preview("hr_skills_cbet.action_report_cbet_fiche")
+
+    def action_preview_procedure(self):
+        return self._preview("hr_skills_cbet.action_report_cbet_procedure")
+
+    def action_preview_demo_notes(self):
+        return self._preview("hr_skills_cbet.action_report_cbet_demo_notes")
+
     @api.model_create_multi
     def create(self, vals_list):
         comps = super().create(vals_list)
@@ -218,8 +351,97 @@ class CbetCompetency(models.Model):
         except (ValueError, AttributeError):
             return "1.0"
 
+    def action_open_publish_wizard(self):
+        """The Publish button: a confirmation listing what changed since the
+        last published version (UC-CAT-08 AC5)."""
+        self.ensure_one()
+        if not self.env.user.has_group(MANAGER_GROUP):
+            raise UserError(self.env._("Only a CBET Manager can publish competencies."))
+        return {
+            "type": "ir.actions.act_window",
+            "name": self.env._("Publish %s", self.code),
+            "res_model": "cbet.publish.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {"default_competency_id": self.id},
+        }
+
+    @api.model
+    def _strip_ids(self, value):
+        """The snapshot payload without the record ids, for comparisons."""
+        if isinstance(value, dict):
+            return {k: self._strip_ids(v) for k, v in value.items() if k != "id"}
+        if isinstance(value, list):
+            return [self._strip_ids(v) for v in value]
+        return value
+
+    def _document_changes(self):
+        """What changed since the last published version, per document —
+        counts only: [{"label", "changed", "total"}]. ``None`` when the
+        competency was never published. The live payload is read in the
+        language the snapshot was taken in (a snapshot from before 1.11
+        carries no language: the user's language is used, and a key the old
+        snapshot never had is not counted as a change)."""
+        self.ensure_one()
+        last = self.version_ids.sorted(lambda v: (v.publish_date, v.id))[-1:]
+        if not last:
+            return None
+        old = self._strip_ids(last.snapshot or {})
+        if old.get("lang"):
+            langs = [old["lang"]]
+        else:
+            # A snapshot from before 1.11 does not say which language it was
+            # taken in: try the user's and the source language and keep the
+            # reading with the fewest changes, so a French reviewer is not
+            # told that every section of an English snapshot changed.
+            langs = list(dict.fromkeys([self.env.lang or "en_US", "en_US"]))
+        return min((self._document_changes_in(old, lang) for lang in langs),
+                   key=lambda rows: sum(r["changed"] for r in rows))
+
+    def _document_changes_in(self, old, lang):
+        """``_document_changes`` for one language of the live payload."""
+        Version = self.env["cbet.competency.version"].with_context(lang=lang)
+        new = self._strip_ids(Version._snapshot_payload(self.with_context(lang=lang)))
+        _ = self.env._
+
+        def norm(value):
+            if isinstance(value, dict):
+                return {k: norm(v) for k, v in value.items() if k != "lang"}
+            if isinstance(value, list):
+                return [norm(v) for v in value]
+            return value or None
+
+        def changed_keys(keys):
+            return sum(1 for k in keys if k in old and norm(old.get(k)) != norm(new.get(k)))
+
+        fiche_keys = ("subtitle", "execution_context", "knowledge_body", "safety_block",
+                      "tools_materials", "documents_required", "evidence_required",
+                      "references_body", "protocol", "validity", "meta", "prerequisites")
+        old_aids = {a.get("variant") or "": a for a in old.get("job_aids", [])}
+        new_aids = {a.get("variant") or "": a for a in new.get("job_aids", [])}
+        aids_changed = (0 if "job_aids" not in old else
+                        sum(1 for v in set(old_aids) | set(new_aids)
+                            if norm(old_aids.get(v)) != norm(new_aids.get(v))))
+        old_crit = [c for u in old.get("units", []) for c in u.get("criteria", [])]
+        new_crit = [c for u in new.get("units", []) for c in u.get("criteria", [])]
+        crit_changed = sum(1 for a, b in zip(old_crit, new_crit) if a != b) \
+            + abs(len(old_crit) - len(new_crit))
+        old_q, new_q = old.get("questions", []), new.get("questions", [])
+        q_changed = sum(1 for a, b in zip(old_q, new_q) if a != b) + abs(len(old_q) - len(new_q))
+        return [
+            {"label": _("Competency sheet"), "changed": changed_keys(fiche_keys),
+             "total": len(fiche_keys)},
+            {"label": _("Procedure"), "changed": changed_keys(("procedure_body",)), "total": 1},
+            {"label": _("Job aids"), "changed": aids_changed,
+             "total": max(len(old_aids), len(new_aids))},
+            {"label": _("Demonstration notes"), "changed": changed_keys(("demo_notes_body",)),
+             "total": 1},
+            {"label": _("Criteria and questions"), "changed": crit_changed + q_changed,
+             "total": len(new_crit) + len(new_q)},
+        ]
+
     def action_publish(self):
-        if not self.env.user.has_group("hr_skills_cbet.group_cbet_manager"):
+        if not self.env.user.has_group(MANAGER_GROUP):
             raise UserError(self.env._("Only a CBET Manager can publish competencies."))
         for comp in self:
             comp.version = comp._bump_version()
@@ -229,7 +451,7 @@ class CbetCompetency(models.Model):
         return True
 
     def action_reset_to_draft(self):
-        if not self.env.user.has_group("hr_skills_cbet.group_cbet_manager"):
+        if not self.env.user.has_group(MANAGER_GROUP):
             raise UserError(self.env._("Only a CBET Manager can change competency state."))
         self.state = "draft"
         return True

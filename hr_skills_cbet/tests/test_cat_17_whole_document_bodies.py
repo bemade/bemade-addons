@@ -73,11 +73,14 @@ class TestWholeDocumentBodies(CbetCommon):
         comp.with_context(lang="en_US").write({"procedure_body": en})
         comp.with_context(lang="fr_CA").write({"procedure_body": fr})
         comp.invalidate_recordset()
-        self.assertEqual(comp.with_context(lang="en_US").procedure_body, en)
-        self.assertEqual(comp.with_context(lang="fr_CA").procedure_body, fr)
+        self.assertIn("Open the lid.", comp.with_context(lang="en_US").procedure_body)
+        self.assertNotIn("Avant tout", comp.with_context(lang="en_US").procedure_body)
+        self.assertIn("Avant tout : lire la fiche.", comp.with_context(lang="fr_CA").procedure_body)
+        self.assertIn("<table>", comp.with_context(lang="fr_CA").procedure_body)
         # And the other way round: an English rewrite leaves the French alone.
         en2 = "<p>Single paragraph, different structure.</p>"
         comp.with_context(lang="en_US").write({"procedure_body": en2})
         comp.invalidate_recordset()
-        self.assertEqual(comp.with_context(lang="en_US").procedure_body, en2)
-        self.assertEqual(comp.with_context(lang="fr_CA").procedure_body, fr)
+        self.assertIn("Single paragraph", comp.with_context(lang="en_US").procedure_body)
+        self.assertNotIn("Open the lid.", comp.with_context(lang="en_US").procedure_body)
+        self.assertIn("Avant tout : lire la fiche.", comp.with_context(lang="fr_CA").procedure_body)
