@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="conversation_draft.ConversationDraftFlagField">
+        <span
+      t-if="props.record.data[props.name]"
+      class="o_conversation_draft_flag badge text-bg-warning"
+    >
+            <i class="fa fa-pencil me-1" role="img" />
+            <t t-out="label" />
+        </span>
+    </t>
+</templates>

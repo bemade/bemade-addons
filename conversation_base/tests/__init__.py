@@ -12,3 +12,7 @@ from . import test_triage_saved_filters
 from . import test_notification_scope
 from . import test_notification_quiet_done
 from . import test_notification_scope_regression
+from . import test_triage_members
+from . import test_triage_actions
+from . import test_triage_row_data
+from . import test_triage_tour
