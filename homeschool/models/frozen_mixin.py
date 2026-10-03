@@ -28,11 +28,13 @@ class FrozenMixin(models.AbstractModel):
             return super().write(vals)
         rest = {k: v for k, v in vals.items() if k not in self._frozen_fields}
         today = fields.Date.to_string(fields.Date.context_today(self))
+        # the label in the writer's language — the web client sends it, an API call usually not
+        lang_env = self.env if self.env.lang else self.with_context(lang=self.env.user.lang).env
         for rec in self:
             if rec._is_past():
                 lines = [rec.corrections or ""]
                 for field_name, value in frozen.items():
-                    label = self._fields[field_name].string
+                    label = self._fields[field_name]._description_string(lang_env)
                     lines.append("- **%s** (%s): %s" % (today, label, value or ""))
                 super(FrozenMixin, rec).write(dict(rest, corrections="\n".join(lines).strip()))
             else:

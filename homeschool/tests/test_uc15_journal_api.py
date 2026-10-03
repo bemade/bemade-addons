@@ -149,6 +149,29 @@ class TestJournalAPI(HomeschoolCase):
         self.assertEqual(day.block_count, 3)
         self.assertEqual(r2["log"], [])
 
+    def test_log_hours_exact_name_keeps_the_plan(self):
+        """The evening row titled exactly like the planned block (the prep tool's title) closes it
+        in place: planned minutes, sequence and the block's own note stay — only the actuals and
+        the status are the row's."""
+        day = self.make_day(self.today)
+        self.make_block(day, "Opening", 10, 1, kind="opening")
+        planned = self.make_block(day, "P1 Math — fractions", 45, 2, subject_id=self.math.id, note="planned note")
+        later = self.make_block(day, "P2 French", 35, 3, subject_id=self.fle.id)
+        r = self.api.log_hours(self.student.id, self.today, "bloc-math", "P1 Math — fractions", "MATH", 50, 45)
+        self.assertEqual((r["block_id"], r["log"], day.block_count), (planned.id, [], 3))
+        self.assertEqual((planned.status, planned.minutes_total, planned.minutes_adult_present), ("done", 50, 45))
+        self.assertEqual((planned.duration_planned, planned.sequence), (45, 2), "an exact title never moves the block")
+        self.assertEqual(planned.note, "planned note", "an empty row note does not erase the block's note")
+        self.assertEqual(day.block_ids.sorted(lambda b: (b.sequence, b.id))[-1], later, "the day's order is intact")
+        # the planned fallback keeps the note the same way
+        r2 = self.api.log_hours(self.student.id, self.today, "bloc-fle", "The sentence", "FLE", 30, 30)
+        self.assertEqual(r2["block_id"], later.id)
+        later.write({"note": "typed before the evening"})
+        r3 = self.api.log_hours(self.student.id, self.today, "bloc-fle", "The sentence", "FLE", 35, 35)
+        self.assertEqual((r3["block_id"], later.minutes_total, later.note), (later.id, 35, "typed before the evening"))
+        r4 = self.api.log_hours(self.student.id, self.today, "bloc-fle", "The sentence", "FLE", 35, 35, notes="now a note")
+        self.assertEqual((r4["block_id"], later.note), (later.id, "now a note"), "a row note is still written")
+
     def test_log_hours_closes_planned_blocks_in_sequence(self):
         day = self.make_day(self.today)
         second = self.make_block(day, "P2 Math", 30, 5, subject_id=self.math.id)

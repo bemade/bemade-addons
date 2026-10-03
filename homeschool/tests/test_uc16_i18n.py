@@ -12,6 +12,7 @@ Acceptance criteria
 """
 from datetime import date
 
+from odoo import fields
 from odoo.exceptions import AccessError
 from odoo.tools.misc import mute_logger
 
@@ -38,6 +39,16 @@ class TestI18n(HomeschoolCase):
         # english untouched
         self.assertEqual(self.Trace._fields["name"]._description_string(self.env), "Title")
         self.assertEqual(dict(self.Block._fields["kind"]._description_selection(self.env))["reading"], "Reading")
+
+    def test_correction_label_in_the_users_language(self):
+        """A correction line names the field in the writer's language."""
+        from datetime import timedelta
+        today = fields.Date.context_today(self.Day)
+        day = self.make_day(today - timedelta(days=1))
+        block = self.make_block(day, "Hier", 45, 1, subject_id=self.math.id, went_well="original")
+        block.with_context(lang="fr_CA").write({"went_well": "ajouté le lendemain"})
+        self.assertEqual(block.went_well, "original")
+        self.assertEqual(block.corrections, "- **%s** (Ce qui a marché): ajouté le lendemain" % fields.Date.to_string(today))
 
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_rule")
     def test_python_message(self):

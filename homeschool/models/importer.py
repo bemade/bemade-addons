@@ -344,10 +344,14 @@ class RepositoryImporter(models.AbstractModel):
         }
         # the row is the record of the day's hours, like the CSV it mirrors: its note is
         # written in place even on a past day (journal_force_edit, as the journal import)
+        # on a block that already exists (same title, or the planned one below) the row
+        # never touches the plan: planned minutes and sequence stay, and an empty note
+        # does not erase a note already on the block
+        update = {k: v for k, v in vals.items() if k not in ("duration_planned", "sequence") and not (k == "note" and v is False)}
         existing = day.block_ids.filtered(lambda b: b.name == name and b.kind == kind)
         if existing:
             block = existing[0]
-            block.with_context(journal_force_edit=True).write(vals)
+            block.with_context(journal_force_edit=True).write(update)
             return day, block
         planned = day.block_ids.filtered(
             lambda b: b.kind == kind and b.subject_id == subject and b.status == "planned"
@@ -358,8 +362,7 @@ class RepositoryImporter(models.AbstractModel):
             # the plan (intention, steps, planned minutes, sequence) stays
             block = planned[0]
             log.append("hours.csv %s/%s: closed planned block %d «%s»" % (r["date"].strip(), block_key, block.id, block.name))
-            closing = {k: v for k, v in vals.items() if k not in ("duration_planned", "sequence")}
-            block.with_context(journal_force_edit=True).write(closing)
+            block.with_context(journal_force_edit=True).write(update)
             return day, block
         return day, Block.create(vals)
 
