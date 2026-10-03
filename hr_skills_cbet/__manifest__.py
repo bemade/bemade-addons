@@ -1,6 +1,6 @@
 {
     "name": "CBET / TWI Competency & Certification Engine",
-    "version": "19.0.1.8.0",
+    "version": "19.0.1.9.0",
     "category": "Human Resources/Skills Management",
     "license": "LGPL-3",
     "author": "Bemade Inc.",
@@ -30,8 +30,11 @@ Within Industry (TWI) engine extending the Odoo 19.0 hr / hr_skills stack.
 - Certifications and validity: time-limited competency certifications with an
   expiry engine and activity nudges; qualification-level early warning rides
   the native hr.employee.skill cron.
-- Reports: a printable evaluation grid and an employees-by-competencies
-  training matrix.
+- Reports: a printable evaluation grid, an employees-by-competencies
+  training matrix, and the four training documents printed from the live
+  competency as Letter PDFs — competency sheet (14 sections), procedure,
+  recto/verso field job aid and trainer demonstration notes — in French or
+  English through the "Print documents" wizard, watermarked while in draft.
 - Content model: the full competency fiche (context, knowledge, safety,
   tools, documents, evidence, references, protocol, validity, trainer meta),
   the operational procedure, structured recto/verso field job aids (one per
@@ -52,9 +55,12 @@ Content-agnostic; competency content is seeded separately.
         "security/cbet_record_rules.xml",
         "data/cbet_cron.xml",
         "data/cbet_icon_data.xml",
+        "data/report_paperformat.xml",
         "report/cbet_evaluation_report.xml",
+        "report/cbet_document_reports.xml",
         "views/cbet_domain_views.xml",
         "views/cbet_icon_views.xml",
+        "views/cbet_print_wizard_views.xml",
         "views/cbet_job_aid_views.xml",
         "views/cbet_competency_views.xml",
         "views/cbet_standard_views.xml",

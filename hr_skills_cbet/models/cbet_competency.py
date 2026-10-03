@@ -73,6 +73,7 @@ class CbetCompetency(models.Model):
     job_aid_ids = fields.One2many(
         "cbet.job.aid", "competency_id", string="Job aids", copy=True,
     )
+    job_aid_count = fields.Integer(string="Job aid count", compute="_compute_job_aid_count")
     has_procedure = fields.Boolean(compute="_compute_has_documents", store=True)
     has_job_aid = fields.Boolean(compute="_compute_has_documents", store=True)
     has_demo_notes = fields.Boolean(compute="_compute_has_documents", store=True)
@@ -156,6 +157,22 @@ class CbetCompetency(models.Model):
             comp.has_procedure = bool(comp.procedure_body)
             comp.has_job_aid = bool(comp.job_aid_ids)
             comp.has_demo_notes = bool(comp.demo_notes_body)
+
+    @api.depends("job_aid_ids")
+    def _compute_job_aid_count(self):
+        for comp in self:
+            comp.job_aid_count = len(comp.job_aid_ids)
+
+    def action_view_job_aids(self):
+        self.ensure_one()
+        action = self.env["ir.actions.act_window"]._for_xml_id("hr_skills_cbet.action_cbet_job_aid")
+        action["domain"] = [("competency_id", "=", self.id)]
+        action["context"] = {"default_competency_id": self.id}
+        if len(self.job_aid_ids) == 1:
+            action["view_mode"] = "form"
+            action["views"] = [(False, "form")]
+            action["res_id"] = self.job_aid_ids.id
+        return action
 
     @api.model_create_multi
     def create(self, vals_list):

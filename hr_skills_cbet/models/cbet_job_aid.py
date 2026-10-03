@@ -46,6 +46,11 @@ class CbetJobAid(models.Model):
                 name += " [%s]" % aid.variant
             aid.name = name.strip(" —")
 
+    def _face_sections(self, face):
+        """The sections of one face, in print order."""
+        self.ensure_one()
+        return self.section_ids.filtered(lambda s: s.face == face)
+
     @api.depends("section_ids")
     def _compute_section_count(self):
         for aid in self:

@@ -29,3 +29,7 @@ from . import test_val_01_expiry
 from . import test_rpt_01_grid
 from . import test_rpt_04_matrix
 from . import test_sec_01_access
+from . import test_rpt_02_job_aid
+from . import test_rpt_03_fiche
+from . import test_rpt_06_procedure_notes
+from . import test_rpt_07_print_wizard

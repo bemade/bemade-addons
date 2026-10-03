@@ -51,6 +51,10 @@
         <field name="model">cbet.job.aid</field>
         <field name="arch" type="xml">
             <form>
+                <header>
+                    <button name="%(action_report_cbet_job_aid)d" type="action"
+                            string="Print" icon="fa-print"/>
+                </header>
                 <sheet>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
