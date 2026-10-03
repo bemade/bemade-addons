@@ -1,6 +1,7 @@
 import base64
 import mimetypes
 import re
+from html import unescape as _html_unescape
 
 import markdown2
 
@@ -64,6 +65,12 @@ LEADING_TOKEN_RE = re.compile(r"^\s*:([a-z]+-[a-z0-9-]+):\s*")
 # A ">" callout indented under a list item: markdown2 leaves the marker in the
 # text, so the marker is dropped and the line stays the item's continuation.
 NESTED_QUOTE_RE = re.compile(r"^([ \t]{2,})>[ \t]?", re.M)
+# After the marker is dropped, an indented callout that follows a table (not a
+# list item) is 4+ spaces of plain text, which markdown2 renders as a code
+# block. Such a block is recognisable by its leading callout glyph and is
+# re-rendered as a paragraph; real code/ASCII blocks never start with one.
+CALLOUT_CODE_RE = re.compile(
+    r"<pre><code>((?:ℹ️|ℹ|⚠️|⚠|📌|👉|➡️|🔒|🗓️|📖)\s.*?)</code></pre>", re.S)
 RECTO_RE = re.compile(r"<!--\s*=*\s*RECTO\s*=*\s*-->")
 VERSO_RE = re.compile(r"<!--\s*=*\s*VERSO\s*=*\s*-->")
 META_RE = re.compile(r"<!--\s*job-aid\s*\|(.*?)-->", re.S)
@@ -289,6 +296,9 @@ def _md_to_html(md):
     md = CHECKBOX_RE.sub(
         lambda m: m.group(1) + ("☑ " if m.group(2).lower() == "x" else "☐ "), md)
     html = markdown2.markdown(md, extras=MD_EXTRAS)
+    html = CALLOUT_CODE_RE.sub(
+        lambda m: markdown2.markdown(_html_unescape(m.group(1)).strip(), extras=MD_EXTRAS),
+        html)
     html = html_sanitize(
         html, silent=True, sanitize_tags=True, sanitize_attributes=True,
         sanitize_style=False, sanitize_form=True, strip_style=False, strip_classes=False)
