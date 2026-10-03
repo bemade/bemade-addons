@@ -127,6 +127,21 @@ class TestCatIcons(CbetCommon):
         out, _type = self.env["ir.actions.report"]._render_qweb_pdf(LEGEND, self.icons.ids)
         self.assertTrue(out.startswith(b"%PDF") or b"cbet-legend" in out)
 
+    def test_uploaded_svg_keeps_an_image_mimetype(self):
+        import base64
+        svg = b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24"/></svg>'
+        icon = self.icons[0].with_user(self.manager)
+        icon.write({"svg": base64.b64encode(svg)})
+        att = self.env["ir.attachment"].sudo().search([
+            ("res_model", "=", "cbet.icon"), ("res_field", "=", "svg"), ("res_id", "=", icon.id)])
+        self.assertEqual(att.mimetype, "image/svg+xml")
+        created = self.env["cbet.icon"].with_user(self.manager).create({
+            "token": "act-test-upload", "name": "Upload", "category": "act",
+            "svg": base64.b64encode(svg)})
+        att = self.env["ir.attachment"].sudo().search([
+            ("res_model", "=", "cbet.icon"), ("res_field", "=", "svg"), ("res_id", "=", created.id)])
+        self.assertEqual(att.mimetype, "image/svg+xml")
+
     def test_job_aid_prints_svg_not_emoji(self):
         comp = self._make_full_competency("XIC-01")
         aid = self._make_job_aid(comp)

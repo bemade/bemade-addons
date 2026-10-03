@@ -16,7 +16,8 @@ legend (`static/description/icons.html` is the contact sheet).
   (`#005BBB`) with a white simplified pictogram.
 - Every icon must stay legible printed in black and white at 5 mm: bold simple
   shapes, no detail, no text, no fonts, no raster, no external references, no
-  `<style>`, no ids, explicit `fill`/`stroke` (no CSS variables, no
+  `<style>`, one `id` per file (`t`, the title — never inline several icons
+  into one document), explicit `fill`/`stroke` (no CSS variables, no
   `currentColor`), at most 2 KB per file.
 
 ## Licence
