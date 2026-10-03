@@ -40,6 +40,9 @@
                 <field name="domain_id"/>
                 <field name="kind"/>
                 <field name="version"/>
+                <field name="translation_status" widget="badge" optional="show"
+                       decoration-warning="translation_status == 'missing'"
+                       decoration-success="translation_status == 'done'"/>
                 <field name="state" widget="badge"
                        decoration-success="state == 'published'"/>
             </list>
@@ -56,6 +59,9 @@
                 <field name="domain_id"/>
                 <filter name="published" string="Published" domain="[('state','=','published')]"/>
                 <filter name="draft" string="Draft" domain="[('state','=','draft')]"/>
+                <separator/>
+                <filter name="translation_missing" string="Translation missing"
+                        domain="[('translation_status','=','missing')]"/>
                 <group>
                     <filter name="group_domain" string="Domain" context="{'group_by': 'domain_id'}"/>
                     <filter name="group_kind" string="Kind" context="{'group_by': 'kind'}"/>
@@ -71,39 +77,127 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_publish" type="object" string="Publish"
-                            class="btn-primary" invisible="state == 'published'"/>
+                    <button name="action_open_publish_wizard" type="object" string="Publish"
+                            class="btn-primary"
+                            invisible="state == 'published' or not can_edit_structure"/>
                     <button name="action_reset_to_draft" type="object" string="Reset to draft"
-                            invisible="state == 'draft'"/>
+                            invisible="state == 'draft' or not can_edit_structure"/>
                     <button name="%(action_cbet_print_wizard)d" type="action"
                             string="Print documents" icon="fa-print"/>
                     <field name="state" widget="statusbar"/>
                 </header>
                 <sheet>
+                    <field name="can_edit_structure" invisible="1"/>
+                    <field name="can_edit_content" invisible="1"/>
                     <div class="oe_button_box" name="button_box">
                         <button name="action_view_job_aids" type="object" class="oe_stat_button"
                                 icon="fa-file-text-o">
                             <field name="job_aid_count" widget="statinfo" string="Job aids"/>
                         </button>
                     </div>
+                    <div class="alert alert-info mb-3" role="status"
+                         invisible="can_edit_content or state != 'published'">
+                        This competency is published: its documents are frozen. A CBET Manager
+                        can reset it to draft to let trainers edit again.
+                    </div>
                     <div class="oe_title">
-                        <h1><field name="code" placeholder="XXX-NN"/></h1>
-                        <h2><field name="name" placeholder="Competency name"/></h2>
+                        <h1><field name="code" placeholder="XXX-NN" readonly="not can_edit_structure"/></h1>
+                        <h2><field name="name" placeholder="Competency name" readonly="not can_edit_structure"/></h2>
+                        <h3><field name="subtitle" placeholder="Subtitle — the classification line of the sheet"
+                                   readonly="not can_edit_content"/></h3>
                     </div>
                     <group>
                         <group>
-                            <field name="domain_id"/>
-                            <field name="kind"/>
+                            <field name="domain_id" readonly="not can_edit_structure"/>
+                            <field name="kind" readonly="not can_edit_structure"/>
+                            <field name="translation_status" widget="badge"
+                                   decoration-warning="translation_status == 'missing'"
+                                   decoration-success="translation_status == 'done'"/>
                         </group>
                         <group>
                             <field name="version" readonly="1"/>
                             <field name="publish_date" readonly="1"/>
-                            <field name="active" widget="boolean_toggle"/>
+                            <field name="active" widget="boolean_toggle" readonly="not can_edit_structure"/>
                         </group>
                     </group>
                     <notebook>
-                        <page string="Units &amp; Criteria">
-                            <field name="unit_ids" context="{'default_competency_id': id}">
+                        <!-- UC-CAT-08: the four documents first, in fiche order. -->
+                        <page string="Sheet" name="fiche">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">
+                                    §2 Prerequisites, §7 Procedure, §8 Criteria, §9–§10 Protocol and
+                                    §12 Validity are edited on their own tabs.
+                                </span>
+                                <button name="action_preview_fiche" type="object" string="Preview PDF"
+                                        icon="fa-file-pdf-o" class="btn btn-secondary"/>
+                            </div>
+                            <separator string="§1 Execution context"/>
+                            <field name="execution_context" nolabel="1" readonly="not can_edit_content"/>
+                            <separator string="§3 Underlying knowledge"/>
+                            <field name="knowledge_body" nolabel="1" readonly="not can_edit_content"/>
+                            <separator string="§4 Safety"/>
+                            <field name="safety_block" nolabel="1" readonly="not can_edit_content"/>
+                            <separator string="§5 Tools &amp; materials"/>
+                            <field name="tools_materials" nolabel="1" readonly="not can_edit_content"/>
+                            <separator string="§6 Documents required on site"/>
+                            <field name="documents_required" nolabel="1" readonly="not can_edit_content"/>
+                            <separator string="§11 Evidence to retain"/>
+                            <field name="evidence_required" nolabel="1" readonly="not can_edit_content"/>
+                            <separator string="§13 Trainer meta"/>
+                            <group>
+                                <group>
+                                    <field name="field_frequency" readonly="not can_edit_structure"/>
+                                    <field name="difficulty" readonly="not can_edit_structure"/>
+                                </group>
+                                <group>
+                                    <field name="learning_time" readonly="not can_edit_structure"/>
+                                </group>
+                            </group>
+                            <separator string="§13 Common pitfalls"/>
+                            <field name="common_pitfalls" nolabel="1" readonly="not can_edit_structure"/>
+                            <separator string="§14 References"/>
+                            <field name="references_body" nolabel="1" readonly="not can_edit_content"/>
+                        </page>
+                        <page string="Procedure" name="procedure">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">§7 — the operational procedure, one whole document per language.</span>
+                                <button name="action_preview_procedure" type="object" string="Preview PDF"
+                                        icon="fa-file-pdf-o" class="btn btn-secondary"/>
+                            </div>
+                            <field name="procedure_body" nolabel="1" readonly="not can_edit_content"
+                                   placeholder="Write the procedure here…"/>
+                        </page>
+                        <page string="Job aids" name="job_aids">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">
+                                    One recto/verso card per equipment variant. Open a card to edit its
+                                    blocks and lines, preview it or duplicate it as a variant.
+                                </span>
+                            </div>
+                            <field name="job_aid_ids" context="{'default_competency_id': id}"
+                                   readonly="not can_edit_content">
+                                <list>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="variant"/>
+                                    <field name="section_count"/>
+                                    <button name="action_preview_pdf" type="object" string="Preview PDF"
+                                            icon="fa-file-pdf-o" title="Preview PDF"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Demonstration notes" name="demo_notes">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">The trainer's demonstration notes, without the per-session log.</span>
+                                <button name="action_preview_demo_notes" type="object" string="Preview PDF"
+                                        icon="fa-file-pdf-o" class="btn btn-secondary"/>
+                            </div>
+                            <field name="demo_notes_body" nolabel="1" readonly="not can_edit_content"
+                                   placeholder="Write the demonstration notes here…"/>
+                        </page>
+                        <page string="Units &amp; Criteria" name="units">
+                            <field name="unit_ids" context="{'default_competency_id': id}"
+                                   readonly="not can_edit_structure">
                                 <list>
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
@@ -112,8 +206,8 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Part B — Questions">
-                            <field name="question_ids">
+                        <page string="Part B — Questions" name="questions">
+                            <field name="question_ids" readonly="not can_edit_structure">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
                                     <field name="text"/>
@@ -123,85 +217,58 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Prerequisites">
-                            <field name="prerequisite_ids">
+                        <page string="Prerequisites" name="prerequisites">
+                            <field name="prerequisite_ids" readonly="not can_edit_structure">
                                 <list editable="bottom">
                                     <field name="prerequisite_id"/>
                                     <field name="prereq_type"/>
                                 </list>
                             </field>
                         </page>
-                        <page string="Protocol &amp; Policy">
+                        <page string="Protocol &amp; Policy" name="protocol">
                             <group>
                                 <group string="Protocol">
-                                    <field name="protocol_method"/>
-                                    <field name="protocol_place"/>
-                                    <field name="protocol_duration"/>
-                                    <field name="protocol_start_conditions"/>
-                                    <field name="protocol_support"/>
-                                    <field name="protocol_verbalization"/>
-                                    <field name="protocol_min_evaluator_qualification"/>
-                                    <field name="evaluator_independence"/>
-                                    <field name="designated_trainer_ids" widget="many2many_tags"/>
+                                    <field name="protocol_method" readonly="not can_edit_structure"/>
+                                    <field name="protocol_place" readonly="not can_edit_structure"/>
+                                    <field name="protocol_duration" readonly="not can_edit_structure"/>
+                                    <field name="protocol_start_conditions" readonly="not can_edit_structure"/>
+                                    <field name="protocol_support" readonly="not can_edit_structure"/>
+                                    <field name="protocol_verbalization" readonly="not can_edit_structure"/>
+                                    <field name="protocol_min_evaluator_qualification" readonly="not can_edit_structure"/>
+                                    <field name="evaluator_independence" readonly="not can_edit_structure"/>
+                                    <field name="designated_trainer_ids" widget="many2many_tags"
+                                           readonly="not can_edit_structure"/>
                                 </group>
                                 <group string="Validity &amp; scoring">
-                                    <field name="pass_threshold"/>
-                                    <field name="validity_months"/>
-                                    <field name="reprise_deadline_days"/>
-                                    <field name="maintenance_condition"/>
-                                    <field name="recert_modality"/>
-                                    <field name="recert_early_trigger"/>
+                                    <field name="pass_threshold" readonly="not can_edit_structure"/>
+                                    <field name="validity_months" readonly="not can_edit_structure"/>
+                                    <field name="reprise_deadline_days" readonly="not can_edit_structure"/>
+                                    <field name="maintenance_condition" readonly="not can_edit_structure"/>
+                                    <field name="recert_modality" readonly="not can_edit_structure"/>
+                                    <field name="recert_early_trigger" readonly="not can_edit_structure"/>
                                 </group>
                             </group>
                         </page>
-                        <page string="Content">
-                            <group>
-                                <group string="§13 Trainer meta">
-                                    <field name="field_frequency"/>
-                                    <field name="difficulty"/>
-                                    <field name="learning_time"/>
-                                </group>
-                                <group>
-                                    <field name="subtitle"/>
-                                </group>
-                            </group>
-                            <separator string="§1 Execution context"/>
-                            <field name="execution_context"/>
-                            <separator string="§3 Underlying knowledge"/>
-                            <field name="knowledge_body"/>
-                            <separator string="§4 Safety"/>
-                            <field name="safety_block"/>
-                            <separator string="§5 Tools &amp; materials"/>
-                            <field name="tools_materials"/>
-                            <separator string="§6 Documents required on site"/>
-                            <field name="documents_required"/>
-                            <separator string="§11 Evidence to retain"/>
-                            <field name="evidence_required"/>
-                            <separator string="§13 Common pitfalls"/>
-                            <field name="common_pitfalls"/>
-                            <separator string="§14 References"/>
-                            <field name="references_body"/>
-                        </page>
-                        <page string="Documents">
-                            <group>
-                                <field name="has_procedure"/>
-                                <field name="has_job_aid"/>
-                                <field name="has_demo_notes"/>
-                            </group>
-                            <separator string="Procedure"/>
-                            <field name="procedure_body"/>
-                            <separator string="Job aids"/>
-                            <field name="job_aid_ids" context="{'default_competency_id': id}">
+                        <page string="Revisions" name="revisions">
+                            <div class="text-muted mb-2">
+                                The previous content of a document body, kept each time it is changed
+                                (the last 50 per document and language). Restore writes it back in
+                                that language only.
+                            </div>
+                            <field name="revision_ids" readonly="1"
+                                   context="{'form_view_ref': 'hr_skills_cbet.view_cbet_content_revision_form'}">
                                 <list>
-                                    <field name="sequence" widget="handle"/>
-                                    <field name="variant"/>
-                                    <field name="section_count"/>
+                                    <field name="date"/>
+                                    <field name="user_id"/>
+                                    <field name="field_label"/>
+                                    <field name="lang_name"/>
+                                    <button name="action_restore" type="object" string="Restore"
+                                            icon="fa-undo" title="Restore"
+                                            confirm="Restore this previous content? The current content is kept as a revision."/>
                                 </list>
                             </field>
-                            <separator string="Trainer demonstration notes"/>
-                            <field name="demo_notes_body"/>
                         </page>
-                        <page string="Versions">
+                        <page string="Versions" name="versions">
                             <field name="version_ids" readonly="1">
                                 <list>
                                     <field name="version"/>

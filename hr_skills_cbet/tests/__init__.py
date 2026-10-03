@@ -12,6 +12,7 @@ from . import test_cat_12_procedure
 from . import test_cat_13_job_aid
 from . import test_cat_14_demo_notes
 from . import test_cat_15_icons
+from . import test_cat_16_authoring
 from . import test_cat_17_whole_document_bodies
 from . import test_std_01_standard
 from . import test_std_02_qualification

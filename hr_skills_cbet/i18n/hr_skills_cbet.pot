@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-03 16:26+0000\n"
-"PO-Revision-Date: 2026-10-03 16:26+0000\n"
+"POT-Creation-Date: 2026-10-03 17:52+0000\n"
+"PO-Revision-Date: 2026-10-03 17:52+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -28,6 +28,28 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_qualification__percent_complete
 msgid "% complete"
+msgstr ""
+
+#. module: hr_skills_cbet
+#. odoo-python
+#: code:addons/hr_skills_cbet/wizard/cbet_publish_wizard.py:0
+msgid "%(changed)s of %(total)s changed"
+msgstr ""
+
+#. module: hr_skills_cbet
+#. odoo-python
+#: code:addons/hr_skills_cbet/models/cbet_competency.py:0
+msgid ""
+"%(codes)s is published: its documents are frozen. Ask a CBET Manager to "
+"reset it to draft before editing."
+msgstr ""
+
+#. module: hr_skills_cbet
+#. odoo-python
+#: code:addons/hr_skills_cbet/models/cbet_job_aid.py:0
+msgid ""
+"%(codes)s is published: its job aids are frozen. Ask a CBET Manager to reset"
+" it to draft before editing."
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -156,6 +178,38 @@ msgstr ""
 #. odoo-python
 #: code:addons/hr_skills_cbet/report/cbet_document_report.py:0
 msgid "9. Assessment protocol"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
+msgid ""
+"<span class=\"text-muted\">\n"
+"                                    One recto/verso card per equipment variant. Open a card to edit its\n"
+"                                    blocks and lines, preview it or duplicate it as a variant.\n"
+"                                </span>"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
+msgid ""
+"<span class=\"text-muted\">\n"
+"                                    §2 Prerequisites, §7 Procedure, §8 Criteria, §9–§10 Protocol and\n"
+"                                    §12 Validity are edited on their own tabs.\n"
+"                                </span>"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
+msgid ""
+"<span class=\"text-muted\">The trainer's demonstration notes, without the "
+"per-session log.</span>"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
+msgid ""
+"<span class=\"text-muted\">§7 — the operational procedure, one whole "
+"document per language.</span>"
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -387,6 +441,16 @@ msgid "CBET Competency Published Version"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model,name:hr_skills_cbet.model_cbet_content_revision
+msgid "CBET Content Revision"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model,name:hr_skills_cbet.model_cbet_content_revision_mixin
+msgid "CBET Content Revision Mixin"
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model:ir.model,name:hr_skills_cbet.model_cbet_criterion_result
 msgid "CBET Criterion Result (Part A)"
 msgstr ""
@@ -537,7 +601,24 @@ msgid "CIP pump"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid__can_edit
+msgid "Can Edit"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__can_edit_content
+msgid "Can Edit Content"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__can_edit_structure
+msgid "Can Edit Structure"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_variant_wizard_form
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_print_wizard_form
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_publish_wizard_form
 msgid "Cancel"
 msgstr ""
 
@@ -621,6 +702,22 @@ msgid "Certifications"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision__user_id
+msgid "Changed by"
+msgstr ""
+
+#. module: hr_skills_cbet
+#. odoo-python
+#: code:addons/hr_skills_cbet/wizard/cbet_publish_wizard.py:0
+msgid "Changed since version %s:"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_publish_wizard__changes_html
+msgid "Changes Html"
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model:cbet.icon,name:hr_skills_cbet.icon_item_produit_chimique
 msgid "Chemical (cleaner / sanitiser)"
 msgstr ""
@@ -667,13 +764,16 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_certification__competency_id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency_version__competency_id
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision__competency_id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_criterion__competency_id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_employee_competency_status__competency_id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_evaluation__competency_id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_evaluation_unit__competency_id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid__competency_id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_section__competency_id
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_variant_wizard__competency_id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_prerequisite__competency_id
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_publish_wizard__competency_id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_question__competency_id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_standard_line__competency_id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_training_line__competency_id
@@ -721,6 +821,8 @@ msgid "Competency name"
 msgstr ""
 
 #. module: hr_skills_cbet
+#. odoo-python
+#: code:addons/hr_skills_cbet/models/cbet_competency.py:0
 #: model:ir.actions.report,name:hr_skills_cbet.action_report_cbet_fiche
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_print_wizard__print_fiche
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.report_cbet_fiche
@@ -785,11 +887,6 @@ msgid "Consumable / item"
 msgstr ""
 
 #. module: hr_skills_cbet
-#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
-msgid "Content"
-msgstr ""
-
-#. module: hr_skills_cbet
 #: model:ir.model.fields.selection,name:hr_skills_cbet.selection__cbet_import_wizard__import_mode__archive
 msgid "Content vault (.zip)"
 msgstr ""
@@ -803,6 +900,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_certification__create_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__create_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency_version__create_uid
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision__create_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_criterion__create_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_criterion_result__create_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_domain__create_uid
@@ -814,8 +912,10 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid__create_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_line__create_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_section__create_uid
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_variant_wizard__create_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_prerequisite__create_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_print_wizard__create_uid
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_publish_wizard__create_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_qualification__create_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_question__create_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_question_result__create_uid
@@ -829,6 +929,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_certification__create_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__create_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency_version__create_date
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision__create_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_criterion__create_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_criterion_result__create_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_domain__create_date
@@ -840,8 +941,10 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid__create_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_line__create_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_section__create_date
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_variant_wizard__create_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_prerequisite__create_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_print_wizard__create_date
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_publish_wizard__create_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_qualification__create_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_question__create_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_question_result__create_date
@@ -854,6 +957,12 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_unit_form
 msgid "Criteria"
+msgstr ""
+
+#. module: hr_skills_cbet
+#. odoo-python
+#: code:addons/hr_skills_cbet/models/cbet_competency.py:0
+msgid "Criteria and questions"
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -896,6 +1005,7 @@ msgid "Data to record"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision__date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_evaluation__date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_evaluation_session__date
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.report_cbet_demo_notes
@@ -934,9 +1044,11 @@ msgstr ""
 
 #. module: hr_skills_cbet
 #. odoo-python
+#: code:addons/hr_skills_cbet/models/cbet_competency.py:0
 #: code:addons/hr_skills_cbet/report/cbet_document_report.py:0
 #: model:ir.actions.report,name:hr_skills_cbet.action_report_cbet_demo_notes
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_print_wizard__print_demo_notes
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
 msgid "Demonstration notes"
 msgstr ""
 
@@ -959,6 +1071,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_certification__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency_version__display_name
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision__display_name
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision_mixin__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_criterion__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_criterion_result__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_document_report__display_name
@@ -972,8 +1086,10 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_line__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_section__display_name
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_variant_wizard__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_prerequisite__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_print_wizard__display_name
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_publish_wizard__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_qualification__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_question__display_name
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_question_result__display_name
@@ -992,7 +1108,6 @@ msgid "Display Name"
 msgstr ""
 
 #. module: hr_skills_cbet
-#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_print_wizard_form
 msgid "Documents"
 msgstr ""
@@ -1034,6 +1149,24 @@ msgid "Dry run"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_variant_wizard_form
+msgid "Duplicate"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model,name:hr_skills_cbet.model_cbet_job_aid_variant_wizard
+msgid "Duplicate a job aid as a variant"
+msgstr ""
+
+#. module: hr_skills_cbet
+#. odoo-python
+#: code:addons/hr_skills_cbet/models/cbet_job_aid.py:0
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_form
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_variant_wizard_form
+msgid "Duplicate as variant"
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_import_wizard__evaluation_text
 msgid "EVALUATION markdown"
 msgstr ""
@@ -1059,7 +1192,6 @@ msgstr ""
 
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_icon__emoji
-#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.report_cbet_icon_legend
 msgid "Emoji"
 msgstr ""
 
@@ -1081,6 +1213,11 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_evaluation__equipment_serial
 msgid "Equipment Serial"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,help:hr_skills_cbet.field_cbet_job_aid_variant_wizard__variant
+msgid "Equipment family the new card is specific to (e.g. RO)."
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -1273,6 +1410,16 @@ msgid "Field Frequency"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision__field_label
+msgid "Field Label"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision__field_name
+msgid "Field Name"
+msgstr ""
+
+#. module: hr_skills_cbet
 #. odoo-python
 #: code:addons/hr_skills_cbet/report/cbet_document_report.py:0
 msgid "Field frequency"
@@ -1296,6 +1443,17 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_evaluation_form
 msgid "Final decision"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_publish_wizard__first_publication
+msgid "First Publication"
+msgstr ""
+
+#. module: hr_skills_cbet
+#. odoo-python
+#: code:addons/hr_skills_cbet/wizard/cbet_publish_wizard.py:0
+msgid "First publication: every document is frozen as version %s."
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -1424,6 +1582,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_certification__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency_version__id
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision__id
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision_mixin__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_criterion__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_criterion_result__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_document_report__id
@@ -1437,8 +1597,10 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_line__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_section__id
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_variant_wizard__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_prerequisite__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_print_wizard__id
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_publish_wizard__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_qualification__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_question__id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_question_result__id
@@ -1633,6 +1795,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/hr_skills_cbet/report/cbet_document_report.py:0
 #: model:ir.actions.report,name:hr_skills_cbet.action_report_cbet_job_aid
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_variant_wizard__job_aid_id
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_print_wizard__print_job_aid
 msgid "Job aid"
 msgstr ""
@@ -1643,6 +1806,13 @@ msgid "Job aid count"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision__section_id
+msgid "Job aid section"
+msgstr ""
+
+#. module: hr_skills_cbet
+#. odoo-python
+#: code:addons/hr_skills_cbet/models/cbet_competency.py:0
 #: model:ir.actions.act_window,name:hr_skills_cbet.action_cbet_job_aid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__job_aid_ids
 #: model:ir.ui.menu,name:hr_skills_cbet.menu_cbet_job_aids
@@ -1658,14 +1828,21 @@ msgid "Kind"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision__lang
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_print_wizard__lang
 msgid "Language"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision__lang_name
+msgid "Language name"
 msgstr ""
 
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_certification__write_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__write_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency_version__write_uid
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision__write_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_criterion__write_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_criterion_result__write_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_domain__write_uid
@@ -1677,8 +1854,10 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid__write_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_line__write_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_section__write_uid
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_variant_wizard__write_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_prerequisite__write_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_print_wizard__write_uid
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_publish_wizard__write_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_qualification__write_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_question__write_uid
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_question_result__write_uid
@@ -1692,6 +1871,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_certification__write_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__write_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency_version__write_date
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision__write_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_criterion__write_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_criterion_result__write_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_domain__write_date
@@ -1703,8 +1883,10 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid__write_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_line__write_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_section__write_date
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_variant_wizard__write_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_prerequisite__write_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_print_wizard__write_date
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_publish_wizard__write_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_qualification__write_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_question__write_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_question_result__write_date
@@ -1736,6 +1918,7 @@ msgid "Line Type"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_section__line_preview
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_section_form
 msgid "Lines"
 msgstr ""
@@ -1894,6 +2077,11 @@ msgid "Next Activity Type"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_publish_wizard__next_version
+msgid "Next Version"
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model:cbet.icon,name:hr_skills_cbet.icon_epi_nitrile
 msgid "Nitrile gloves (chemical)"
 msgstr ""
@@ -1902,6 +2090,11 @@ msgstr ""
 #. odoo-python
 #: code:addons/hr_skills_cbet/models/cbet_import.py:0
 msgid "No competency code found in the FICHE markdown."
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields.selection,name:hr_skills_cbet.selection__cbet_competency__translation_status__none
+msgid "No content"
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -1917,6 +2110,12 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.report_cbet_demo_notes
 msgid "Notes"
+msgstr ""
+
+#. module: hr_skills_cbet
+#. odoo-python
+#: code:addons/hr_skills_cbet/wizard/cbet_publish_wizard.py:0
+msgid "Nothing changed since version %s."
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -1972,6 +2171,15 @@ msgstr ""
 #. module: hr_skills_cbet
 #. odoo-python
 #: code:addons/hr_skills_cbet/models/cbet_competency.py:0
+msgid ""
+"Only a CBET Manager can change %(fields)s. A CBET Trainer edits the "
+"documents (sheet, procedure, job aids, demonstration notes) of a draft "
+"competency."
+msgstr ""
+
+#. module: hr_skills_cbet
+#. odoo-python
+#: code:addons/hr_skills_cbet/models/cbet_competency.py:0
 msgid "Only a CBET Manager can change competency state."
 msgstr ""
 
@@ -2005,6 +2213,11 @@ msgstr ""
 msgid ""
 "Optional English edition of the fiche. Supplied, it becomes the source-"
 "language text and the French is kept as its translation."
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_section_form
+msgid "Optional block printed under the lines…"
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -2174,7 +2387,18 @@ msgid "Preview"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_form
+msgid "Preview PDF"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_content_revision__previous_html
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_content_revision_form
+msgid "Previous content"
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_print_wizard_form
 msgid "Print"
 msgstr ""
@@ -2198,6 +2422,7 @@ msgstr ""
 
 #. module: hr_skills_cbet
 #. odoo-python
+#: code:addons/hr_skills_cbet/models/cbet_competency.py:0
 #: code:addons/hr_skills_cbet/report/cbet_document_report.py:0
 #: model:ir.actions.report,name:hr_skills_cbet.action_report_cbet_procedure
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__procedure_body
@@ -2254,7 +2479,14 @@ msgstr ""
 
 #. module: hr_skills_cbet
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_publish_wizard_form
 msgid "Publish"
+msgstr ""
+
+#. module: hr_skills_cbet
+#. odoo-python
+#: code:addons/hr_skills_cbet/models/cbet_competency.py:0
+msgid "Publish %s"
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -2264,9 +2496,21 @@ msgid "Publish Date"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model,name:hr_skills_cbet.model_cbet_publish_wizard
+msgid "Publish a competency"
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model:ir.model.fields.selection,name:hr_skills_cbet.selection__cbet_competency__state__published
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_search
 msgid "Published"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_publish_wizard_form
+msgid ""
+"Publishing freezes the documents, criteria and protocol as this version;\n"
+"                    evaluations pin the version they are run against."
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -2349,7 +2593,13 @@ msgstr ""
 
 #. module: hr_skills_cbet
 #: model:ir.model.fields.selection,name:hr_skills_cbet.selection__cbet_job_aid_section__face__recto
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_form
 msgid "Recto"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid__recto_section_ids
+msgid "Recto blocks"
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -2414,6 +2664,25 @@ msgid "Responsible User"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_content_revision_form
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_section_form
+msgid "Restore"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_content_revision_form
+msgid ""
+"Restore this previous content? The current content is kept as a revision."
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_section_form
+msgid "Restore this previous note? The current note is kept as a revision."
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_criterion_result__result
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_question_result__result
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.report_cbet_evaluation
@@ -2454,6 +2723,19 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_evaluation__reprise_child_ids
 msgid "Retakes"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__revision_count
+msgid "Revision Count"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__revision_ids
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_section__revision_ids
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_section_form
+msgid "Revisions"
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -2532,11 +2814,6 @@ msgid "Section Count"
 msgstr ""
 
 #. module: hr_skills_cbet
-#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_form
-msgid "Sections"
-msgstr ""
-
-#. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_evaluation__security_critical_ok
 msgid "Security Critical Ok"
 msgstr ""
@@ -2587,8 +2864,20 @@ msgid "Set a decision before completing."
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,help:hr_skills_cbet.field_cbet_content_revision__section_id
+msgid ""
+"Set when the revision is a job-aid section note; empty for a competency "
+"body."
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model:ir.model.fields.selection,name:hr_skills_cbet.selection__cbet_icon__category__sev
 msgid "Severity"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
+msgid "Sheet"
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -2678,8 +2967,10 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_employee_competency_status__state
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_evaluation__state
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_import_wizard__state
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid__competency_state
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_qualification__state
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_search
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_list
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_qualification_search
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_status_search
 msgid "State"
@@ -2703,6 +2994,11 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__subtitle
 msgid "Subtitle"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
+msgid "Subtitle — the classification line of the sheet"
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -2780,6 +3076,20 @@ msgid "The auto-created default unit for single-unit competencies."
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_form
+msgid ""
+"The back of the card: the procedure phases with their checklist\n"
+"                                lines. Open a phase (arrow) to edit its lines."
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_variant_wizard_form
+msgid ""
+"The blocks, phases and lines of this card are copied into a new card for\n"
+"                    the given equipment variant, on the same competency."
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model:ir.model.fields,help:hr_skills_cbet.field_cbet_competency__subtitle
 msgid ""
 "The classification line under the fiche title (e.g. recognition competency, "
@@ -2794,9 +3104,31 @@ msgid ""
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_form
+msgid ""
+"The competency is published: this job aid is frozen until a CBET\n"
+"                        Manager resets it to draft."
+msgstr ""
+
+#. module: hr_skills_cbet
 #. odoo-python
 #: code:addons/hr_skills_cbet/models/cbet_evaluation.py:0
 msgid "The evaluator cannot be the candidate."
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_form
+msgid ""
+"The front of the card: PPE, tools, STOP, data to record, photos…\n"
+"                                Open a block (arrow) to edit its lines and reference note."
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
+msgid ""
+"The previous content of a document body, kept each time it is changed\n"
+"                                (the last 50 per document and language). Restore writes it back in\n"
+"                                that language only."
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -2818,6 +3150,13 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model:cbet.icon,name:hr_skills_cbet.icon_outil_thermometre
 msgid "Thermometer"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
+msgid ""
+"This competency is published: its documents are frozen. A CBET Manager\n"
+"                        can reset it to draft to let trainers edit again."
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -2886,7 +3225,6 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__demo_notes_body
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.report_cbet_demo_notes
-#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
 msgid "Trainer demonstration notes"
 msgstr ""
 
@@ -2916,6 +3254,29 @@ msgstr ""
 #: model:ir.ui.menu,name:hr_skills_cbet.menu_cbet_matrix
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_status_pivot
 msgid "Training matrix"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields.selection,name:hr_skills_cbet.selection__cbet_competency__translation_status__done
+msgid "Translated"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__translation_status
+msgid "Translation Status"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields.selection,name:hr_skills_cbet.selection__cbet_competency__translation_status__missing
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_search
+msgid "Translation missing"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,help:hr_skills_cbet.field_cbet_competency__translation_status
+msgid ""
+"Translation missing: at least one document body is the same in French and in"
+" English (the English edition was never written)."
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -2963,6 +3324,12 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_evaluation_form
 msgid "Unlock"
+msgstr ""
+
+#. module: hr_skills_cbet
+#. odoo-python
+#: code:addons/hr_skills_cbet/models/cbet_competency.py:0
+msgid "Unsupported operator on translation status."
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -3021,6 +3388,7 @@ msgstr ""
 
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid__variant
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_variant_wizard__variant
 msgid "Variant"
 msgstr ""
 
@@ -3048,6 +3416,7 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__version
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency_version__version
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_publish_wizard__current_version
 msgid "Version"
 msgstr ""
 
@@ -3063,7 +3432,13 @@ msgstr ""
 
 #. module: hr_skills_cbet
 #: model:ir.model.fields.selection,name:hr_skills_cbet.selection__cbet_job_aid_section__face__verso
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_form
 msgid "Verso"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid__verso_section_ids
+msgid "Verso phases"
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -3109,12 +3484,27 @@ msgstr ""
 
 #. module: hr_skills_cbet
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
+msgid "Write the demonstration notes here…"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
+msgid "Write the procedure here…"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
 msgid "XXX-NN"
 msgstr ""
 
 #. module: hr_skills_cbet
 #: model:ir.model.fields,help:hr_skills_cbet.field_cbet_icon__iso_ref
 msgid "e.g. \"ISO 7010 M004\""
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_variant_wizard_form
+msgid "e.g. RO"
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -3131,6 +3521,12 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model:cbet.icon,name:hr_skills_cbet.icon_outil_ph_metre
 msgid "pH meter"
+msgstr ""
+
+#. module: hr_skills_cbet
+#. odoo-python
+#: code:addons/hr_skills_cbet/wizard/cbet_publish_wizard.py:0
+msgid "unchanged"
 msgstr ""
 
 #. module: hr_skills_cbet
