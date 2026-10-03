@@ -92,15 +92,16 @@ class CbetIcon(models.Model):
         from the viewBox when it lacks them.
         """
         self.ensure_one()
-        if not self.svg:
+        svg = self.with_context(bin_size=False).svg
+        if not svg:
             return False
-        svg = self.svg if isinstance(self.svg, bytes) else self.svg.encode()
+        svg = svg if isinstance(svg, bytes) else svg.encode()
         try:
             raw = base64.b64decode(svg).decode("utf-8")
         except (ValueError, UnicodeDecodeError):
             return "data:image/svg+xml;base64," + svg.decode()
         root = SVG_ROOT_RE.search(raw)
-        if root and not re.search(r"""\swidth\s*=""", root.group(0)):
+        if root and not re.search(r"""\s(?:width|height)\s*=""", root.group(0)):
             box = VIEWBOX_RE.search(root.group(0))
             if box:
                 tag = root.group(0)[:-1].rstrip("/") + ' width="%s" height="%s"%s>' % (

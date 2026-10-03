@@ -80,6 +80,7 @@
             .cbet-subtitle { font-style: italic; color: #333; }
             .cbet-meta td { border: 0; padding: 1pt 8pt 1pt 0; font-size: 9pt; }
             .cbet-meta strong { color: #555; }
+            .cbet-kv td { white-space: pre-line; }
             .cbet-kv td.cbet-k { width: 32%; font-weight: bold; background: #f7f7f7; }
             .cbet-na { color: #777; font-style: italic; }
             .cbet-crit .c-num { width: 5%; } .cbet-crit .c-type { width: 9%; }
@@ -341,7 +342,7 @@
                         <t t-call="hr_skills_cbet.cbet_document_watermark"/>
                         <!-- Recto -->
                         <div class="cbet-kind">Field job aid</div>
-                        <h1><span t-field="o.name"/></h1>
+                        <h1><span t-field="comp.code"/> — <span t-field="comp.name"/><t t-if="o.variant"> [<t t-out="o.variant"/>]</t></h1>
                         <table class="cbet-meta">
                             <tr>
                                 <td><strong>Version</strong> <span t-field="comp.version"/></td>

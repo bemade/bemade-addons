@@ -94,6 +94,20 @@ class TestRptPrintWizard(CbetCommon):
             self.assertIn("8. Critères de performance mesurables", html)
             self.assertNotIn("8. Measurable performance criteria", html)
 
+    def test_zip_entry_names_are_safe_and_download_closes_the_dialog(self):
+        aid = self.env["cbet.job.aid"].search(
+            [("competency_id", "=", self.comp.id), ("variant", "=", "RO")], limit=1)
+        aid.variant = "RO / UF:test"
+        wiz = self._wizard(self.comp, print_fiche=True, print_job_aid=True,
+                           print_procedure=False, print_demo_notes=False)
+        action = wiz.action_print()
+        self.assertEqual(action["target"], "download")
+        att = self._attachment(action)
+        self.assertEqual((att.res_model, att.res_id), ("cbet.print.wizard", wiz.id))
+        names = zipfile.ZipFile(io.BytesIO(att.raw)).namelist()
+        self.assertIn("job_aid_XPR-01_RO _ UF_test_v1.0.pdf", names)
+        self.assertTrue(all("/" not in n and ":" not in n for n in names), names)
+
     def test_nothing_selected_raises(self):
         wiz = self._wizard(self.comp, print_fiche=False, print_procedure=False,
                            print_job_aid=False, print_demo_notes=False)

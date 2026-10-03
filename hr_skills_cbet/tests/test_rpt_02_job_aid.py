@@ -78,11 +78,20 @@ class TestRptJobAid(CbetCommon):
     def test_variant_in_title_and_file_name(self):
         ro = self._make_job_aid(self.comp, variant="RO")
         html = self._render(REPORT, ro)
-        self.assertIn("Read the synthetic bench [RO]", html)
+        self.assertIn("XPR-01</span> — <span>Read the synthetic bench</span> [RO]", html)
         report = self.env.ref(REPORT)
         Report = self.env["ir.actions.report"]
         self.assertEqual(Report._cbet_print_name(report, ro), "job_aid_XPR-01_RO_v1.0")
         self.assertEqual(Report._cbet_print_name(report, self.aid), "job_aid_XPR-01_v1.0")
+
+    def test_title_follows_the_print_language(self):
+        self.env["res.lang"]._activate_lang("fr_CA")
+        self.comp.with_context(lang="fr_CA").write({"name": "Nom français"})
+        html_en = self._render(REPORT, self.aid, lang="en_US")
+        html_fr = self._render(REPORT, self.aid, lang="fr_CA")
+        self.assertIn("Nom français", html_fr)
+        self.assertNotIn("Nom français", html_en)
+        self.assertIn(self.comp.with_context(lang="en_US").name, html_en)
 
     def test_draft_watermark_follows_competency_state(self):
         self.assertNotIn(WATERMARK, self._render(REPORT, self.aid))

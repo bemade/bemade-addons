@@ -1,10 +1,18 @@
 import io
+import re
 import zipfile
 
 from odoo import Command, api, fields, models
 from odoo.exceptions import UserError
 
 # (flag field, report xml id, "one per competency" or "one per job aid")
+
+def _safe_name(name):
+    """A file name safe inside a zip and on every OS (no path separators or
+    reserved characters — a job-aid variant is free text)."""
+    return re.sub(r'[\\/:*?"<>|]+', "_", name or "").strip() or "document"
+
+
 DOCUMENT_KINDS = [
     ("print_fiche", "hr_skills_cbet.action_report_cbet_fiche", "competency"),
     ("print_procedure", "hr_skills_cbet.action_report_cbet_procedure", "competency"),
@@ -62,7 +70,7 @@ class CbetPrintWizard(models.TransientModel):
         def render(xmlid, record):
             report = self.env.ref(xmlid)
             pdf, _type = Report._render_qweb_pdf(xmlid, record.ids)
-            docs.append((Report._cbet_print_name(report, record) + ".pdf", pdf))
+            docs.append((_safe_name(Report._cbet_print_name(report, record)) + ".pdf", pdf))
 
         for comp in comps:
             for flag, xmlid, per in DOCUMENT_KINDS:
@@ -101,13 +109,14 @@ class CbetPrintWizard(models.TransientModel):
                 name = "%s_v%s_documents.zip" % (comp.code, comp.version)
             else:
                 name = "cbet_documents.zip"
-        # No res_model: the attachment stays private to its creator (and the
-        # administrators) and outlives the transient wizard record.
+        # Linked to the wizard row so the transient vacuum removes it with the
+        # wizard; until then its creator can read it through the wizard's ACL.
         attachment = self.env["ir.attachment"].create({
-            "name": name, "raw": data, "mimetype": mimetype,
+            "name": _safe_name(name), "raw": data, "mimetype": mimetype,
+            "res_model": self._name, "res_id": self.id,
         })
         return {
             "type": "ir.actions.act_url",
             "url": "/web/content/%d?download=true" % attachment.id,
-            "target": "self",
+            "target": "download",
         }
