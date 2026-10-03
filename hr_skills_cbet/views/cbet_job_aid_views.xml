@@ -24,19 +24,23 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
+                    <field name="can_edit" invisible="1"/>
+                    <div class="alert alert-info" role="status" invisible="can_edit">
+                        This competency is published: its job aids are frozen. Ask a CBET Manager to reset it to draft before editing.
+                    </div>
                     <group>
                         <group>
-                            <field name="face"/>
-                            <field name="kind"/>
-                            <field name="icon_id" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="face" readonly="not can_edit"/>
+                            <field name="kind" readonly="not can_edit"/>
+                            <field name="icon_id" options="{'no_create': True, 'no_open': True}" readonly="not can_edit"/>
                         </group>
                         <group>
-                            <field name="name"/>
-                            <field name="sequence"/>
+                            <field name="name" readonly="not can_edit"/>
+                            <field name="sequence" readonly="not can_edit"/>
                         </group>
                     </group>
                     <separator string="Lines"/>
-                    <field name="line_ids">
+                    <field name="line_ids" readonly="not can_edit">
                         <list editable="bottom">
                             <field name="sequence" widget="handle"/>
                             <field name="icon_id" options="{'no_create': True, 'no_open': True}"/>
@@ -44,7 +48,7 @@
                         </list>
                     </field>
                     <separator string="Reference table / note"/>
-                    <field name="note_html" nolabel="1"
+                    <field name="note_html" readonly="not can_edit" nolabel="1"
                            placeholder="Optional block printed under the lines…"/>
                     <separator string="Revisions" invisible="not revision_ids"/>
                     <field name="revision_ids" readonly="1" invisible="not revision_ids"

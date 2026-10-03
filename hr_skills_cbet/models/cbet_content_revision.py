@@ -1,4 +1,5 @@
 from odoo import api, fields, models
+from odoo.tools.mail import html_sanitize
 
 REVISIONS_PER_FIELD = 50
 
@@ -33,7 +34,7 @@ class CbetContentRevision(models.Model):
     lang = fields.Char(string="Language", required=True, readonly=True)
     lang_name = fields.Char(compute="_compute_lang_name", string="Language name")
     previous_html = fields.Html(
-        string="Previous content", sanitize=False, readonly=True,
+        string="Previous content", sanitize=False, readonly=True, prefetch=False,
     )
     user_id = fields.Many2one(
         "res.users", string="Changed by", readonly=True, default=lambda self: self.env.user,
@@ -94,6 +95,19 @@ class CbetContentRevisionMixin(models.AbstractModel):
     _description = "CBET Content Revision Mixin"
     _revision_fields = ()
 
+    @staticmethod
+    def _sanitize_body(value):
+        """The document bodies are ``sanitize=False`` fields (one whole document
+        per language), so Odoo does not clean them itself. Trainers write them
+        from the editor and the translate dialog, so everything is passed
+        through the same sanitizer the importer uses — scripts, event handlers
+        and forms never reach the stored html that Managers render raw."""
+        if not value or not isinstance(value, str):
+            return value
+        return html_sanitize(
+            value, silent=True, sanitize_tags=True, sanitize_attributes=True,
+            sanitize_style=False, sanitize_form=True, strip_style=False, strip_classes=False)
+
     def _revision_link_vals(self):
         """The ``cbet.content.revision`` columns binding a revision to self."""
         self.ensure_one()
@@ -138,6 +152,8 @@ class CbetContentRevisionMixin(models.AbstractModel):
     def write(self, vals):
         self._cbet_check_content_write(vals)
         changed = [f for f in self._revision_fields if f in vals]
+        if changed:
+            vals = dict(vals, **{f: self._sanitize_body(vals[f]) for f in changed})
         before = self._stored_before(changed, [self.env.lang or "en_US"]) if changed else {}
         res = super().write(vals)
         if before:
@@ -148,6 +164,7 @@ class CbetContentRevisionMixin(models.AbstractModel):
         self._cbet_check_content_write({field_name: True})
         before = {}
         if field_name in self._revision_fields and translations:
+            translations = {lang: self._sanitize_body(v) for lang, v in translations.items()}
             before = self._stored_before([field_name], list(translations))
         res = super()._update_field_translations(
             field_name, translations, digest=digest, source_lang=source_lang)

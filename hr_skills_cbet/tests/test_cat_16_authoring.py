@@ -229,6 +229,76 @@ class TestCatAuthoring(CbetCommon):
                          "<p>fr v1</p>")
         self.assertIn(latest, comp.revision_ids)
 
+    def test_bodies_are_sanitized_on_the_way_in(self):
+        comp = self._draft("XAU-31")
+        evil = '<p>ok</p><img src="x" onerror="alert(1)"><script>alert(2)</script><a href="javascript:alert(3)">x</a>'
+        comp.with_user(self.trainer).write({"procedure_body": evil})
+        comp.invalidate_recordset()
+        body = comp.procedure_body
+        self.assertIn("<p>ok</p>", body)
+        for bad in ("onerror", "<script", "javascript:"):
+            self.assertNotIn(bad, body)
+        # the translate dialog path too
+        comp.with_user(self.trainer).update_field_translations(
+            "procedure_body", {self.fr: evil})
+        comp.invalidate_recordset()
+        for bad in ("onerror", "<script", "javascript:"):
+            self.assertNotIn(bad, comp.with_context(lang=self.fr).procedure_body)
+        # and a job-aid section note
+        section = comp.job_aid_ids[0].section_ids[0]
+        section.with_user(self.trainer).write({"note_html": evil})
+        section.invalidate_recordset()
+        self.assertNotIn("onerror", section.note_html)
+
+    def test_trainer_cannot_touch_the_revision_history(self):
+        comp = self._draft("XAU-32")
+        comp.with_user(self.trainer).write({"procedure_body": "<p>v1</p>"})
+        comp.with_user(self.trainer).write({"procedure_body": "<p>v2</p>"})
+        rev = self._revisions(comp, "procedure_body", "en_US")[0]
+        self.assertTrue(rev.with_user(self.trainer).read(["previous_html"]))
+        with self.assertRaises(AccessError), mute_logger("odoo.addons.base.models.ir_rule", "odoo.addons.base.models.ir_model"):
+            rev.with_user(self.trainer).write({"previous_html": "<p>forged</p>"})
+        with self.assertRaises(AccessError), mute_logger("odoo.addons.base.models.ir_model"):
+            rev.with_user(self.trainer).unlink()
+        with self.assertRaises(AccessError), mute_logger("odoo.addons.base.models.ir_model"):
+            self.env["cbet.content.revision"].with_user(self.trainer).create({
+                "competency_id": comp.id, "field_name": "state", "lang": "en_US",
+                "previous_html": "published"})
+
+    def test_reparenting_into_a_published_competency_is_refused(self):
+        draft, published = self._draft("XAU-33"), self._make_full_competency("XAU-34")
+        aid = draft.job_aid_ids[0]
+        section = aid.section_ids[0]
+        line = section.line_ids[0]
+        pub_aid = published.job_aid_ids[0] if published.job_aid_ids else self._make_job_aid(
+            published.with_user(self.manager))
+        with self.assertRaises(AccessError):
+            aid.with_user(self.trainer).write({"competency_id": published.id})
+        with self.assertRaises(AccessError):
+            section.with_user(self.trainer).write({"job_aid_id": pub_aid.id})
+        with self.assertRaises(AccessError):
+            line.with_user(self.trainer).write({"section_id": pub_aid.section_ids[0].id})
+        with self.assertRaises(AccessError):
+            self.env["cbet.job.aid.variant.wizard"].with_user(self.trainer).create(
+                {"job_aid_id": pub_aid.id, "variant": "X"}).action_duplicate()
+
+    def test_publish_diff_ignores_keys_a_legacy_snapshot_never_had(self):
+        comp = self._make_full_competency("XAU-35")
+        version = comp.version_ids[:1]
+        legacy = {k: v for k, v in version.snapshot.items()
+                  if k in ("code", "name", "kind", "pass_threshold", "validity_months",
+                           "reprise_deadline_days", "protocol", "units", "questions")}
+        version.sudo().write({"snapshot": legacy})
+        comp.invalidate_recordset()
+        changes = {c["label"]: c for c in comp._document_changes()}
+        self.assertEqual(sum(c["changed"] for c in changes.values()), 0,
+                         "keys the old snapshot never had are not changes")
+        # a snapshot taken in French is compared in French, whatever the reviewer's language
+        comp.with_user(self.manager).action_reset_to_draft()
+        comp.with_user(self.manager).with_context(lang=self.fr).action_publish()
+        self.assertEqual(comp.version_ids.sorted("id")[-1].snapshot["lang"], self.fr)
+        self.assertEqual(sum(c["changed"] for c in comp.with_context(lang="en_US")._document_changes()), 0)
+
     def test_restore_writes_back_that_language_only(self):
         comp = self._make_competency("XAU-11")
         en = comp.with_context(lang="en_US")

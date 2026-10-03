@@ -379,26 +379,37 @@ class CbetCompetency(models.Model):
         """What changed since the last published version, per document —
         counts only: [{"label", "changed", "total"}]. ``None`` when the
         competency was never published. The live payload is read in the
-        user's language, like the snapshot was when it was taken."""
+        language the snapshot was taken in (a snapshot from before 1.11
+        carries no language: the user's language is used, and a key the old
+        snapshot never had is not counted as a change)."""
         self.ensure_one()
         last = self.version_ids.sorted(lambda v: (v.publish_date, v.id))[-1:]
         if not last:
             return None
-        Version = self.env["cbet.competency.version"]
         old = self._strip_ids(last.snapshot or {})
-        new = self._strip_ids(Version._snapshot_payload(self))
+        lang = old.get("lang") or self.env.lang or "en_US"
+        Version = self.env["cbet.competency.version"].with_context(lang=lang)
+        new = self._strip_ids(Version._snapshot_payload(self.with_context(lang=lang)))
         _ = self.env._
 
+        def norm(value):
+            if isinstance(value, dict):
+                return {k: norm(v) for k, v in value.items() if k != "lang"}
+            if isinstance(value, list):
+                return [norm(v) for v in value]
+            return value or None
+
         def changed_keys(keys):
-            return sum(1 for k in keys if old.get(k) != new.get(k))
+            return sum(1 for k in keys if k in old and norm(old.get(k)) != norm(new.get(k)))
 
         fiche_keys = ("subtitle", "execution_context", "knowledge_body", "safety_block",
                       "tools_materials", "documents_required", "evidence_required",
                       "references_body", "protocol", "validity", "meta", "prerequisites")
         old_aids = {a.get("variant") or "": a for a in old.get("job_aids", [])}
         new_aids = {a.get("variant") or "": a for a in new.get("job_aids", [])}
-        aids_changed = sum(1 for v in set(old_aids) | set(new_aids)
-                           if old_aids.get(v) != new_aids.get(v))
+        aids_changed = (0 if "job_aids" not in old else
+                        sum(1 for v in set(old_aids) | set(new_aids)
+                            if norm(old_aids.get(v)) != norm(new_aids.get(v))))
         old_crit = [c for u in old.get("units", []) for c in u.get("criteria", [])]
         new_crit = [c for u in new.get("units", []) for c in u.get("criteria", [])]
         crit_changed = sum(1 for a, b in zip(old_crit, new_crit) if a != b) \

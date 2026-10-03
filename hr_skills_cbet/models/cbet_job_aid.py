@@ -173,6 +173,7 @@ class CbetJobAidSection(models.Model):
     )
     # Whole-document per language (sanitize=False keeps Odoo from switching the
     # field to term-based translation); the importer sanitizes what it writes.
+    can_edit = fields.Boolean(related="job_aid_id.can_edit")
     note_html = fields.Html(
         string="Reference table / note", translate=True, sanitize=False,
         help="Free block printed under the lines — the reference tables some "
