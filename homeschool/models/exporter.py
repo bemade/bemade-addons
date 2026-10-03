@@ -10,6 +10,9 @@ import csv
 import io
 import logging
 import os
+from datetime import timedelta
+
+from babel.dates import format_date as babel_format_date
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError
@@ -39,6 +42,14 @@ def _newline_of(path):
 
 def _date(d):
     return fields.Date.to_string(d) if d else ""
+
+
+def _lines(text):
+    """The non-empty lines of a text, stripped."""
+    return [l.strip() for l in (text or "").splitlines() if l.strip()]
+
+
+JOURNAL_WEEK_PREFIX = "tracking/journal/"
 
 
 _logger = logging.getLogger(__name__)
@@ -92,9 +103,17 @@ class RepositoryExporter(models.AbstractModel):
                 block.subject_codes or block.subject_id.code or "",
                 block.minutes_total if block.actuals_recorded else "",
                 block.minutes_adult_present if block.adult_recorded else "",
-                (block.note or "").replace("\n", " "),
+                self._block_notes(block),
             ])
         return rows
+
+    @api.model
+    def _block_notes(self, block):
+        """The ``notes`` cell of a block: its note, then its own journal folded in
+        (``✓ what worked``, ``✗ what went badly``), ``·``-separated, newlines flattened.
+        A block with only a note exports as it always did."""
+        parts = [block.note or "", "✓ " + block.went_well if block.went_well else "", "✗ " + block.went_badly if block.went_badly else ""]
+        return " · ".join(p.replace("\n", " ") for p in parts if p)
 
     @api.model
     def export_hours(self, student):
@@ -208,6 +227,85 @@ class RepositoryExporter(models.AbstractModel):
         return _csv(header, rows)
 
     # ------------------------------------------------------------------
+    # tracking/journal/<ISO>/<ISO>.md — the week file, rendered (UC-19)
+    # ------------------------------------------------------------------
+    @api.model
+    def _week_number(self, student, monday, first_day):
+        """« Semaine N »: calendar weeks counted from the Monday of the week holding the
+        start of the student's school year (the latest ``homeschool.year`` started by the
+        week's Sunday); without one, from the week of the first day of his records."""
+        years = student.year_ids.filtered(lambda y: y.date_start <= monday + timedelta(days=6)).sorted("date_start")
+        start = years[-1].date_start if years else first_day
+        start_monday = start - timedelta(days=start.weekday())
+        return (monday - start_monday).days // 7 + 1
+
+    @api.model
+    def _journal_block_line(self, block):
+        """``- Blocs : `bloc-math` P1 Math · 50/45 · done — note · ✓ … · ✗ …`` — the hours
+        key, the name, total/adult minutes (``–`` when not recorded), the status, the
+        ``hours.csv`` notes cell."""
+        total = str(block.minutes_total) if block.actuals_recorded else "–"
+        adult = str(block.minutes_adult_present) if block.adult_recorded else "–"
+        line = "- Blocs : `%s` %s · %s/%s · %s" % (block.csv_key or self._block_key(block), block.name, total, adult, block.status)
+        notes = self._block_notes(block)
+        return line + (" — " + notes if notes else "")
+
+    @api.model
+    def _render_journal_week(self, student, iso_week, days, first_day):
+        monday = days[0].date - timedelta(days=days[0].date.weekday())
+        sunday = monday + timedelta(days=6)
+        fr = lambda d: babel_format_date(d, "EEE d MMM", locale="fr_CA")
+        lines = ["# Semaine %d · %s (%s → %s)" % (self._week_number(student, monday, first_day), iso_week, fr(monday), fr(sunday)), ""]
+        review = self.env["homeschool.review"].search(
+            [("student_id", "=", student.id), ("kind", "=", "weekly"), ("iso_week", "=", iso_week)], order="date desc", limit=1)
+        if review:
+            lines += ["## Revue de la semaine", ""]
+            for label, value in (("Dose tenue ?", review.answer_dose), ("Plafond visible respecté ?", review.answer_cap),
+                                 ("Semaine notée telle quelle ?", review.answer_recorded),
+                                 ("Ajustement pour la semaine prochaine", review.adjustment), ("Notes", review.notes)):
+                if value:
+                    lines.append("- **%s :** %s" % (label, " ".join(_lines(value))))
+            lines.append("")
+        lines += ["## Jours", ""]
+        for day in days:
+            heading = "### %s" % _date(day.date)
+            if day.is_off:
+                heading += " — pas d'école" + (" (%s)" % day.off_reason if day.off_reason else "")
+            lines.append(heading)
+            recorded = day.block_ids.filtered(lambda b: b.actuals_recorded or b.adult_recorded)
+            for block in recorded.sorted(lambda b: (b.sequence, b.id)):
+                lines.append(self._journal_block_line(block))
+            entry = day.journal_ids[:1]
+            if entry:
+                lines += ["- Ce qui a marché : " + l for l in _lines(entry.went_well)]
+                lines += ["- Ce qui a mal été : " + l for l in _lines(entry.went_badly)]
+                lines += [l if l.startswith("- ") else "- " + l for l in _lines(entry.notes)]
+                lines += ["- Indicateurs : " + l for l in _lines(entry.indicator_notes)]
+                if entry.corrections:
+                    lines.append("- Corrections :")
+                    lines += ["  " + l for l in _lines(entry.corrections)]
+            lines.append("")
+        return "\n".join(lines).rstrip("\n") + "\n"
+
+    @api.model
+    def export_journal_weeks(self, student):
+        """``{"tracking/journal/<ISO>/<ISO>.md": text}`` for every ISO week holding at least
+        one day of the student that has blocks, a journal entry or is a day off — the
+        household's week file, rendered from the records (French headings, importable by
+        ``import_journal``: the ``- Blocs :`` lines and the corrections are ignored on the
+        way back, the entry's bullets are re-read as written)."""
+        days = self.env["homeschool.day"].search([("student_id", "=", student.id)], order="date, id")
+        days = days.filtered(lambda d: d.block_ids or d.journal_ids or d.is_off)
+        if not days:
+            return {}
+        first_day = days[0].date
+        texts = {}
+        for iso_week, week_days in days.grouped("iso_week").items():
+            texts["%s%s/%s.md" % (JOURNAL_WEEK_PREFIX, iso_week, iso_week)] = self._render_journal_week(
+                student, iso_week, week_days.sorted("date"), first_day)
+        return dict(sorted(texts.items()))
+
+    # ------------------------------------------------------------------
     # writing files
     # ------------------------------------------------------------------
     @api.model
@@ -231,13 +329,10 @@ class RepositoryExporter(models.AbstractModel):
         of files written. Refuses any target outside the repository path; never runs git."""
         root = self._repo_path(repo_path, student.company_id)
         written = []
-        for rel, method in self.FILES.items():
-            if files and rel not in files:
-                continue
+        for rel, text in self._texts(student, files).items():
             target = os.path.realpath(os.path.join(root, rel))
             if not target.startswith(root + os.sep):
                 raise UserError(self.env._("Refusing to write outside the repository: %s", target))
-            text = getattr(self, method)(student)
             newline = _newline_of(target)
             if newline != "\n":
                 text = text.replace("\n", newline)
@@ -259,17 +354,23 @@ class RepositoryExporter(models.AbstractModel):
         student = self.env["homeschool.student"].browse(student_id).exists()
         if not student:
             raise UserError(self.env._("No student with id %s.", student_id))
-        selected = list(files) if files else list(self.FILES)
-        unknown = [rel for rel in selected if rel not in self.FILES]
+        texts = self._texts(student, files)
+        if newline != "\n":
+            texts = {rel: text.replace("\n", newline) for rel, text in texts.items()}
+        return texts
+
+    @api.model
+    def _texts(self, student, files=None):
+        """``{relative_path: text}`` of :attr:`FILES` followed by the rendered journal week
+        files (dynamic paths), or the ``files`` subset — an unknown name is a ``UserError``."""
+        weeks = {}
+        if not files or any(rel.startswith(JOURNAL_WEEK_PREFIX) for rel in files):
+            weeks = self.export_journal_weeks(student)
+        selected = list(files) if files else list(self.FILES) + list(weeks)
+        unknown = [rel for rel in selected if rel not in self.FILES and rel not in weeks]
         if unknown:
             raise UserError(self.env._("Unknown export file(s): %s", ", ".join(unknown)))
-        texts = {}
-        for rel in selected:
-            text = getattr(self, self.FILES[rel])(student)
-            if newline != "\n":
-                text = text.replace("\n", newline)
-            texts[rel] = text
-        return texts
+        return {rel: (weeks[rel] if rel in weeks else getattr(self, self.FILES[rel])(student)) for rel in selected}
 
     @api.model
     def cron_export(self):

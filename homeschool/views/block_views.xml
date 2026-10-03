@@ -17,6 +17,7 @@
                         <group>
                             <field name="day_id"/>
                             <field name="sequence"/>
+                            <field name="plan_key"/>
                             <field name="kind"/>
                             <field name="subject_id"/>
                             <field name="project_id"/>
@@ -55,6 +56,10 @@
                             <h4>Steps</h4><field name="steps_html"/>
                             <h4>Success</h4><field name="success_html"/>
                             <h4>Fallback</h4><field name="fallback_html"/>
+                            <h4>What worked</h4><field name="went_well_html"/>
+                            <h4>What went badly</h4><field name="went_badly_html"/>
+                            <h4>Note</h4><field name="note_html"/>
+                            <div invisible="not corrections"><h4>Corrections</h4><field name="corrections_html"/></div>
                         </page>
                         <page string="Links">
                             <group>
@@ -65,8 +70,13 @@
                                 </field>
                             </group>
                         </page>
-                        <page string="Note">
-                            <field name="note" placeholder="Markdown"/>
+                        <page string="Block journal">
+                            <group>
+                                <field name="went_well" placeholder="Markdown — as it was"/>
+                                <field name="went_badly" placeholder="Markdown"/>
+                                <field name="note" placeholder="Markdown"/>
+                                <field name="corrections" readonly="1" invisible="not corrections"/>
+                            </group>
                         </page>
                     </notebook>
                 </sheet>
@@ -169,6 +179,7 @@
                 <field name="student_id"/>
                 <field name="weekday"/>
                 <field name="sequence" widget="handle"/>
+                <field name="plan_key" optional="hide"/>
                 <field name="kind"/>
                 <field name="subject_id"/>
                 <field name="name"/>

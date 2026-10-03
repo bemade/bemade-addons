@@ -16,6 +16,7 @@ class Deliverable(models.Model):
     company_id = fields.Many2one(related="day_id.company_id", store=True, index=True)
     date = fields.Date(related="day_id.date", store=True)
     sequence = fields.Integer(default=10)
+    plan_key = fields.Char(index=True, help="Stable key of this deliverable in the day's plan (replays of log_plan match on it).")
     name = fields.Char(required=True)
     detail = fields.Text(help="What exactly, how much, where it goes.")
     when = fields.Char(help="A moment of the day as written on the paper list: '9 h', 'after lunch', 'bonus'.")

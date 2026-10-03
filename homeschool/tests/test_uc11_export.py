@@ -14,7 +14,9 @@ Acceptance criteria
    path is absent); this is the migration gate. On the synthetic fixture the round trip
    is asserted here.
 3. ``hours.csv`` rows are derived from blocks with actual minutes: ``block`` column
-   from kind + subject (inverse of UC-04 §6), ``activity`` from name, ``notes`` from note.
+   from kind + subject (inverse of UC-04 §6), ``activity`` from name, ``notes`` from note —
+   with the block's ``went_well`` (``✓ …``) and ``went_badly`` (``✗ …``) folded in after
+   it, ``·``-separated; a block with only a note exports exactly as before.
    A day off always yields its ``journee`` marker row (reason, ``0,0``, note) *before*
    whatever blocks were recorded on it — a day off with a bonus exports two rows.
 4. Markdown is exported as-is (no HTML) so ``report.py check`` (name spelling,
@@ -33,11 +35,20 @@ Acceptance criteria
    under another company's; the file layout of the one-student case is unchanged.
    Family-owned rows (traces, hours, indicators, projects) of company B never appear in
    company A's files; the shared curriculum files are identical for both.
+8. The journal week files are **rendered from the records**: ``export_journal_weeks(student)``
+   returns ``{"tracking/journal/<ISO>/<ISO>.md": text}`` for every ISO week holding a day of
+   the student (blocks, an entry, or a day off), in the household's French format (a
+   « Semaine N » heading, the weekly review when one exists, ``## Jours``, one ``### date``
+   section per day with the recorded blocks as ``- Blocs :`` lines, the entry's bullets with
+   the import prefixes, dated corrections). ``export_texts`` merges those dynamic paths
+   after ``FILES`` (and accepts them in ``files=``); the rendered file is importable by
+   ``import_journal`` and a render → import → render round trip is identical.
 """
 import os
 import tempfile
 from datetime import date
 
+from odoo import fields
 from odoo.exceptions import AccessError, UserError
 from odoo.tools.misc import mute_logger
 
@@ -92,6 +103,21 @@ class TestExport(HomeschoolCase):
         self.assertEqual(out[2], "2026-03-02,lecture,Reading,FLE,20,,", "adult minutes blank = not recorded")
         self.assertEqual(len(out), 3, "planned-only blocks are not hours")
 
+    def test_hours_notes_fold_the_block_journal(self):
+        day = self.make_day(date(2026, 3, 3))
+        self.make_block(day, "All three", 45, 1, subject_id=self.fle.id, minutes_total=45, minutes_adult_present=45, status="done",
+                        note="n", went_well="w\nmore", went_badly="b")
+        self.make_block(day, "Note only", 45, 2, subject_id=self.math.id, minutes_total=45, minutes_adult_present=45, status="done", note="just a note")
+        self.make_block(day, "Badly only", 20, 3, kind="reading", subject_id=self.fle.id, minutes_total=20, minutes_adult_present=0, went_badly="meh")
+        self.make_block(day, "Nothing", 20, 4, kind="pause", minutes_total=20, minutes_adult_present=0)
+        out = self.env["homeschool.exporter"].export_hours(self.student).splitlines()
+        self.assertEqual(out[1:], [
+            "2026-03-03,bloc-fle,All three,FLE,45,45,n · ✓ w more · ✗ b",
+            "2026-03-03,bloc-math,Note only,MATH,45,45,just a note",
+            "2026-03-03,lecture,Badly only,FLE,20,0,✗ meh",
+            "2026-03-03,pause,Nothing,,20,0,",
+        ])
+
     def test_off_day_with_block_exports_marker_and_block(self):
         day = self.make_day(date(2026, 3, 4), is_off=True, off_reason="Storm", note="roads closed")
         self.make_block(day, "Snow fort geometry", 30, 1, kind="bonus", subject_id=self.math.id,
@@ -129,7 +155,9 @@ class TestExport(HomeschoolCase):
         self._import_all()
         Exporter = self.env["homeschool.exporter"].with_user(self.manager_user())
         texts = Exporter.export_texts(self.student.id)
-        self.assertEqual(set(texts), set(Exporter.FILES), "one text per exported file")
+        self.assertTrue(set(texts) >= set(Exporter.FILES), "one text per exported file")
+        self.assertEqual({k for k in texts if k not in Exporter.FILES}, {"tracking/journal/2026-W02/2026-W02.md", "tracking/journal/2026-W03/2026-W03.md"},
+                         "plus one rendered file per ISO week holding a day")
         with tempfile.TemporaryDirectory() as out:
             Exporter.export_all(self.student, out)
             for rel, text in texts.items():
@@ -272,3 +300,116 @@ class TestExport(HomeschoolCase):
         self.assertEqual(Exporter.export_indicator_values(self.student_b), INDIC_VALUES_CSV)
         self.assertEqual(Exporter.export_coverage(self.student_b), Exporter.export_coverage(self.student),
                          "the same repository imported twice: the same coverage.csv for each family")
+
+
+    # ------------------------------------------------------------------
+    # 8. the rendered journal week file
+    # ------------------------------------------------------------------
+    def _week_fixture(self, student=None):
+        """An invented week 2026-W02 for ``student``: Monday with two recorded blocks and a
+        full entry, Wednesday off, a weekly review. Returns the Monday's day."""
+        student = student or self.student
+        env = self.env(context=dict(self.env.context, allowed_company_ids=student.company_id.ids))
+        Day = env["homeschool.day"]
+        monday = Day.create({"student_id": student.id, "date": date(2026, 1, 5)})
+        env["homeschool.block"].create({"day_id": monday.id, "name": "P1 Math — clocks", "sequence": 1, "subject_id": self.math.id,
+                                        "duration_planned": 45, "minutes_total": 50, "minutes_adult_present": 45, "status": "done",
+                                        "note": "stopwatch", "went_well": "clicked", "went_badly": "long"})
+        env["homeschool.block"].create({"day_id": monday.id, "name": "Reading", "sequence": 2, "kind": "reading", "subject_id": self.fle.id,
+                                        "duration_planned": 20, "minutes_total": 20, "status": "done"})
+        env["homeschool.block"].create({"day_id": monday.id, "name": "Pause", "sequence": 3, "kind": "pause", "duration_planned": 15})
+        env["homeschool.block"].create({"day_id": monday.id, "name": "Planned only", "sequence": 4, "subject_id": self.st.id})
+        env["homeschool.journal"].create({"day_id": monday.id, "went_well": "the clocks\nthe reading", "went_badly": "the fight",
+                                          "notes": "- a note\n- another", "indicator_notes": "R3-CONFLITS 1"})
+        Day.create({"student_id": student.id, "date": date(2026, 1, 7), "is_off": True, "off_reason": "Storm"})
+        env["homeschool.review"].create({"student_id": student.id, "kind": "weekly", "date": date(2026, 1, 11),
+                                         "answer_dose": "yes", "adjustment": "none\nreally"})
+        return monday
+
+    def test_journal_week_render(self):
+        monday = self._week_fixture()
+        texts = self.env["homeschool.exporter"].export_journal_weeks(self.student)
+        self.assertEqual(list(texts), ["tracking/journal/2026-W02/2026-W02.md"], "a week with no day of the student has no file")
+        lines = texts["tracking/journal/2026-W02/2026-W02.md"].splitlines()
+        # 2025-09-01 (the year's start, a Monday) → 2026-01-05 is the 19th calendar week of the year
+        self.assertEqual(lines[0], "# Semaine 19 · 2026-W02 (lun. 5 janv. → dim. 11 janv.)")
+        self.assertIn("## Revue de la semaine", lines)
+        self.assertIn("- **Dose tenue ? :** yes", lines)
+        self.assertIn("- **Ajustement pour la semaine prochaine :** none really", lines)
+        self.assertNotIn("- **Plafond visible respecté ? :** ", "\n".join(lines), "empty answers are not rendered")
+        self.assertIn("## Jours", lines)
+        day_start = lines.index("### 2026-01-05")
+        self.assertEqual(lines[day_start + 1:day_start + 10], [
+            "- Blocs : `bloc-math` P1 Math — clocks · 50/45 · done — stopwatch · ✓ clicked · ✗ long",
+            "- Blocs : `lecture` Reading · 20/– · done",
+            "- Ce qui a marché : the clocks",
+            "- Ce qui a marché : the reading",
+            "- Ce qui a mal été : the fight",
+            "- a note",
+            "- another",
+            "- Indicateurs : R3-CONFLITS 1",
+            "",
+        ])
+        self.assertIn("### 2026-01-07 — pas d'école (Storm)", lines)
+        self.assertLess(lines.index("## Revue de la semaine"), lines.index("## Jours"), "the review is in the preamble the importer ignores")
+        # a dated correction on the entry (a past day) renders verbatim under « Corrections »
+        monday.journal_ids.write({"went_well": "late"})
+        today = self.env["homeschool.day"]._fields["date"].to_string(fields.Date.context_today(monday))
+        text = self.env["homeschool.exporter"].export_journal_weeks(self.student)["tracking/journal/2026-W02/2026-W02.md"]
+        self.assertIn("- Corrections :\n  - **%s** (What worked): late\n" % today, text)
+        self.assertNotIn("- Ce qui a marché : late", text, "the frozen field itself is unchanged")
+
+    def test_journal_week_roundtrip_identity(self):
+        self._week_fixture()
+        Exporter = self.env["homeschool.exporter"]
+        Importer = self.env["homeschool.importer"]
+        rel = "tracking/journal/2026-W02/2026-W02.md"
+        first = Exporter.export_journal_weeks(self.student)[rel]
+        with tempfile.TemporaryDirectory() as repo:
+            os.makedirs(os.path.join(repo, "tracking", "journal", "2026-W02"))
+            with open(os.path.join(repo, "tracking", "hours.csv"), "w", encoding="utf-8") as fh:
+                fh.write(Exporter.export_hours(self.student))
+            with open(os.path.join(repo, rel), "w", encoding="utf-8") as fh:
+                fh.write(first)
+            # a fresh family: the hours and the week file, then the same render
+            Importer.import_hours(repo, self.student_b)
+            log = Importer.import_journal(repo, self.student_b)
+        self.assertIn("journal: 1 new entries", log, "the day off and the Blocs lines create no entry")
+        entry = self.env["homeschool.journal"].search([("student_id", "=", self.student_b.id)])
+        self.assertEqual(len(entry), 1)
+        self.assertEqual((entry.went_well, entry.went_badly, entry.notes, entry.indicator_notes),
+                         ("the clocks\nthe reading", "the fight", "- a note\n- another", "R3-CONFLITS 1"))
+        self.env["homeschool.review"].with_company(self.company_b).create({
+            "student_id": self.student_b.id, "kind": "weekly", "date": date(2026, 1, 11), "answer_dose": "yes", "adjustment": "none\nreally"})
+        second = Exporter.export_journal_weeks(self.student_b)
+        self.assertEqual(second[rel], first)
+        self.assertEqual(second[rel].splitlines()[0], "# Semaine 19 · 2026-W02 (lun. 5 janv. → dim. 11 janv.)")
+
+    def test_journal_week_number_without_a_year(self):
+        """No school year covering the week: N counts from the first day of the student's records."""
+        self._week_fixture(self.student_b)
+        self.year_b.active = False
+        self.env["homeschool.day"].with_company(self.company_b).create({"student_id": self.student_b.id, "date": date(2025, 12, 17), "is_off": True})
+        texts = self.env["homeschool.exporter"].export_journal_weeks(self.student_b)
+        self.assertEqual(sorted(texts), ["tracking/journal/2025-W51/2025-W51.md", "tracking/journal/2026-W02/2026-W02.md"])
+        self.assertTrue(texts["tracking/journal/2025-W51/2025-W51.md"].startswith("# Semaine 1 · 2025-W51 (lun. 15 déc. → dim. 21 déc.)"))
+        self.assertTrue(texts["tracking/journal/2026-W02/2026-W02.md"].startswith("# Semaine 4 · 2026-W02"))
+
+    def test_export_texts_week_files(self):
+        self._import_all()
+        Exporter = self.env["homeschool.exporter"].with_user(self.manager_user())
+        rel = "tracking/journal/2026-W02/2026-W02.md"
+        texts = Exporter.export_texts(self.student.id, files=[rel])
+        self.assertEqual(list(texts), [rel])
+        self.assertTrue(texts[rel].startswith("# Semaine 19 · 2026-W02"))
+        self.assertIn("- Ce qui a marché : French went fine.", texts[rel])
+        self.assertIn("- Blocs : `bloc-fle` Segment 1 French · 45/45 · done", texts[rel])
+        crlf = Exporter.export_texts(self.student.id, files=[rel], newline="\r\n")[rel]
+        self.assertEqual(crlf, texts[rel].replace("\n", "\r\n"))
+        with self.assertRaises(UserError):
+            Exporter.export_texts(self.student.id, files=["tracking/journal/2030-W01/2030-W01.md"])
+        with tempfile.TemporaryDirectory() as out:
+            written = Exporter.export_all(self.student, out)
+            self.assertIn(rel, written)
+            with open(os.path.join(out, rel), encoding="utf-8", newline="") as fh:
+                self.assertEqual(fh.read(), texts[rel])

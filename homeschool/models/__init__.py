@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from . import markdown_mixin
+from . import frozen_mixin
 from . import res_company
 from . import company_mixin
 from . import attachment_mixin

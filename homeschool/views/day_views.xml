@@ -5,6 +5,10 @@
         <field name="model">homeschool.day</field>
         <field name="arch" type="xml">
             <form string="Day">
+                <header>
+                    <button name="action_open_close_wizard" type="object" string="Close the day" class="btn-primary" icon="fa-check-square-o" invisible="journal_state == 'future'"/>
+                    <button name="%(homeschool.action_report_day_list)d" type="action" string="Print the day's list" class="btn-secondary" icon="fa-print"/>
+                </header>
                 <sheet>
                     <div class="oe_title">
                         <h1><field name="display_name"/></h1>
@@ -32,6 +36,7 @@
                             <field name="block_ids" context="{'default_day_id': id}">
                                 <list editable="bottom" default_order="sequence">
                                     <field name="sequence" widget="handle"/>
+                                    <field name="plan_key" optional="hide"/>
                                     <field name="start_time" widget="float_time"/>
                                     <field name="kind"/>
                                     <field name="subject_id"/>
@@ -51,6 +56,7 @@
                             <field name="deliverable_ids" context="{'default_day_id': id}">
                                 <list editable="bottom" default_order="sequence">
                                     <field name="sequence" widget="handle"/>
+                                    <field name="plan_key" optional="hide"/>
                                     <field name="when"/>
                                     <field name="name"/>
                                     <field name="detail"/>
