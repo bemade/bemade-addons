@@ -3,8 +3,8 @@
 AC1: page 1 prints the recto blocks in order (icon + name, lines), then a page
      break, then the verso checklist with one ☐ per line; reference tables
      (note_html) print under their section.
-AC2: a line's icon prints as the catalog SVG when the icon has one, else as
-     the emoji text.
+AC2: a line's icon prints as the catalog SVG (shipped with the module), else
+     as the emoji text when the icon has none.
 AC3: a variant job aid carries its variant in the title and in the file name.
 AC4: the draft watermark follows the competency's state.
 """
@@ -52,8 +52,14 @@ class TestRptJobAid(CbetCommon):
 
     def test_icon_emoji_fallback_then_svg(self):
         icons = self.env["cbet.icon"]._by_token()
-        goggles = icons["epi-lunettes"]
-        self.assertFalse(goggles.svg)
+        goggles, stop = icons["epi-lunettes"], icons["sev-stop"]
+        # The catalog ships its SVG set: the job aid prints pictograms.
+        self.assertTrue(goggles.svg)
+        html = self._render(REPORT, self.aid)
+        self.assertIn(goggles._svg_data_uri(), html)
+        self.assertNotIn('class="cbet-icon-emoji"', html)
+        # Without an SVG the emoji stand-in is printed.
+        (goggles + stop).svg = False
         html = self._render(REPORT, self.aid)
         self.assertIn(goggles.emoji, html)
         self.assertNotIn("data:image/svg+xml;base64,", html)

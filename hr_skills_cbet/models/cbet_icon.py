@@ -1,7 +1,7 @@
 import base64
 import re
 
-from odoo import api, fields, models
+from odoo import SUPERUSER_ID, api, fields, models
 from odoo.exceptions import ValidationError
 
 TOKEN_RE = re.compile(r"^[a-z]+-[a-z0-9-]+$")
@@ -52,12 +52,33 @@ class CbetIcon(models.Model):
         for vals in vals_list:
             if vals.get("token"):
                 vals["token"] = self._normalize_token(vals["token"])
-        return super().create(vals_list)
+        icons = super().create(vals_list)
+        icons._fix_svg_mimetype()
+        return icons
 
     def write(self, vals):
         if vals.get("token"):
             vals = dict(vals, token=self._normalize_token(vals["token"]))
-        return super().write(vals)
+        res = super().write(vals)
+        if vals.get("svg"):
+            self._fix_svg_mimetype()
+        return res
+
+    def _fix_svg_mimetype(self):
+        """An SVG uploaded through the form by a user who may not write
+        ``ir.ui.view`` is stored by Odoo as ``text/plain`` (its XML-attachment
+        rule), and ``/web/image`` then refuses to serve it as an image, so the
+        list/form preview shows a broken picture. The shipped icons load as
+        superuser and are fine; this restores the mimetype for uploads."""
+        self.flush_recordset(["svg"])   # the attachment is written on flush
+        # ir.attachment re-checks the *real* user's rights on ir.ui.view even
+        # under sudo(), so the write has to come from the superuser itself.
+        attachments = self.env["ir.attachment"].with_user(SUPERUSER_ID).search([
+            ("res_model", "=", self._name), ("res_field", "=", "svg"),
+            ("res_id", "in", self.ids), ("mimetype", "!=", "image/svg+xml"),
+        ])
+        if attachments:
+            attachments.write({"mimetype": "image/svg+xml"})
 
     @api.model
     def _normalize_token(self, token):
