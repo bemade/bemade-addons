@@ -387,7 +387,19 @@ class CbetCompetency(models.Model):
         if not last:
             return None
         old = self._strip_ids(last.snapshot or {})
-        lang = old.get("lang") or self.env.lang or "en_US"
+        if old.get("lang"):
+            langs = [old["lang"]]
+        else:
+            # A snapshot from before 1.11 does not say which language it was
+            # taken in: try the user's and the source language and keep the
+            # reading with the fewest changes, so a French reviewer is not
+            # told that every section of an English snapshot changed.
+            langs = list(dict.fromkeys([self.env.lang or "en_US", "en_US"]))
+        return min((self._document_changes_in(old, lang) for lang in langs),
+                   key=lambda rows: sum(r["changed"] for r in rows))
+
+    def _document_changes_in(self, old, lang):
+        """``_document_changes`` for one language of the live payload."""
         Version = self.env["cbet.competency.version"].with_context(lang=lang)
         new = self._strip_ids(Version._snapshot_payload(self.with_context(lang=lang)))
         _ = self.env._

@@ -293,6 +293,11 @@ class TestCatAuthoring(CbetCommon):
         changes = {c["label"]: c for c in comp._document_changes()}
         self.assertEqual(sum(c["changed"] for c in changes.values()), 0,
                          "keys the old snapshot never had are not changes")
+        # a 1.8–1.10 snapshot (body keys, no language) taken in English, reviewed in French
+        version = comp.version_ids.sorted("id")[-1]
+        version.sudo().write({"snapshot": {k: v for k, v in version.snapshot.items() if k != "lang"}})
+        comp.invalidate_recordset()
+        self.assertEqual(sum(c["changed"] for c in comp.with_context(lang=self.fr)._document_changes()), 0)
         # a snapshot taken in French is compared in French, whatever the reviewer's language
         comp.with_user(self.manager).action_reset_to_draft()
         comp.with_user(self.manager).with_context(lang=self.fr).action_publish()
