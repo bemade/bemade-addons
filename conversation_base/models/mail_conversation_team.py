@@ -12,7 +12,7 @@ class MailConversationTeam(models.Model):
     _description = "Conversation Team"
     _order = "name"
 
-    name = fields.Char(required=True)
+    name = fields.Char(required=True, translate=True)
     active = fields.Boolean(default=True)
     member_ids = fields.Many2many(
         "res.users",
@@ -45,6 +45,8 @@ class MailConversationTeam(models.Model):
         string="Conversations",
     )
 
-    _name_uniq = models.Constraint(
-        "UNIQUE(name)", "A team with this name already exists."
+    # ``name`` is translatable (jsonb): uniqueness applies to the source
+    # (en_US) value only, whatever language a record is created in.
+    _name_source_uniq = models.UniqueIndex(
+        "((name->>'en_US'))", "A team with this name already exists."
     )

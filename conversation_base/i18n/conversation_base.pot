@@ -1,0 +1,1033 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* conversation_base
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-02 18:39+0000\n"
+"PO-Revision-Date: 2026-10-02 18:39+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/conversation_transport.py:0
+msgid "%(transport)s cannot be browsed as an inbox."
+msgstr ""
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/conversation_transport.py:0
+msgid "%(transport)s does not allow mailbox actions."
+msgstr ""
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/conversation_transport.py:0
+msgid "%(transport)s does not support mailbox actions."
+msgstr ""
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/mail_conversation.py:0
+msgid "(no subject)"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__alias_defaults
+msgid ""
+"A Python dictionary that will be evaluated to provide default values when "
+"creating new records for this alias."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.constraint,message:conversation_base.constraint_mail_conversation_tag_name_uniq
+msgid "A tag with this name already exists."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.constraint,message:conversation_base.constraint_mail_conversation_team_name_source_uniq
+msgid "A team with this name already exists."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_conversation_transport__login
+msgid "Account address/login on the remote transport."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__message_needaction
+msgid "Action Needed"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__active
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__active
+msgid "Active"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__activity_ids
+msgid "Activities"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__activity_state
+msgid "Activity State"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__activity_type_icon
+msgid "Activity Type Icon"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__alias_id
+msgid "Alias"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__alias_contact
+msgid "Alias Contact Security"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__alias_domain_id
+msgid "Alias Domain"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__alias_domain
+msgid "Alias Domain Name"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__alias_full_name
+msgid "Alias Email"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__alias_name
+msgid "Alias Name"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__alias_status
+msgid "Alias Status"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__alias_status
+msgid "Alias status assessed on the last message received."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__alias_model_id
+msgid "Aliased Model"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_conversation_transport__mailbox_writable
+msgid ""
+"Allow users of this account to archive, trash or mark messages read on the "
+"REAL mailbox from the inbox viewer "
+"(_archive_remote/_trash_remote/_mark_read_remote). Off by default: mailbox "
+"writes must be enabled explicitly per account, shared accounts included."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_conversation_transport__archive_on_capture
+msgid ""
+"Also archive the source message in the real mailbox once it has been filed "
+"in Odoo (new conversation, added to a conversation, linked to a record, or a"
+" filed reply). Off by default. A transport whose provider cannot archive "
+"reports a warning."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__unanswered
+msgid ""
+"An inbound message arrived after the last answer. Independent of the "
+"conversation state."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__archive_on_capture
+msgid "Archive After Filing"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__artifact_only
+msgid "Artifact Only"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__user_id
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
+msgid "Assignee"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__message_attachment_count
+msgid "Attachment Count"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__browsable
+msgid "Browsable"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_conversation_transport__browsable
+msgid ""
+"Can list/paginate a remote mailbox for the in-Odoo inbox viewer "
+"(browse_page/_browse). The viewer surface only appears for browsable "
+"transports."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_conversation_transport__sendable
+msgid ""
+"Can send outbound messages (_send). The composer only offers send for "
+"sendable transports."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_conversation_transport__pushable
+msgid ""
+"Can subscribe to push/webhook notifications instead of polling "
+"(_subscribe_push)."
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.conversation_transport_view_form
+msgid "Capabilities"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_participant__role__cc
+msgid "Cc"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_tag__color
+msgid "Color"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model,name:conversation_base.model_mail_conversation
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_link__conversation_id
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_member__conversation_id
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__conversation_id
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_form
+msgid "Conversation"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model,name:conversation_base.model_mail_conversation_link
+msgid "Conversation Link"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model,name:conversation_base.model_mail_conversation_member
+msgid "Conversation Member"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model,name:conversation_base.model_mail_conversation_participant
+msgid "Conversation Participant"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model,name:conversation_base.model_mail_conversation_tag
+msgid "Conversation Tag"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model,name:conversation_base.model_mail_conversation_team
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_team_view_form
+msgid "Conversation Team"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.actions.act_window,name:conversation_base.mail_conversation_team_action
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_team_view_list
+msgid "Conversation Teams"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model,name:conversation_base.model_conversation_transport
+msgid "Conversation Transport"
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_form
+msgid "Conversation subject..."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.actions.act_window,name:conversation_base.mail_conversation_action
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__conversation_ids
+#: model:ir.ui.menu,name:conversation_base.menu_mail_conversation
+#: model:ir.ui.menu,name:conversation_base.menu_mail_conversation_root
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list
+msgid "Conversations"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.actions.server,name:conversation_base.ir_cron_conversation_resurface_snoozed_ir_actions_server
+msgid "Conversations: resurface snoozed"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__create_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__create_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_link__create_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_member__create_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__create_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_tag__create_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__create_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__create_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_link__create_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_member__create_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__create_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_tag__create_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__alias_bounced_content
+msgid "Custom Bounced Message"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__unanswered_since
+msgid "Date of the first inbound message after the last answer."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__last_message_date
+msgid ""
+"Date of the newest message that is real activity (tracking noise excluded), "
+"or the creation date if there is none."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__default_user_id
+msgid "Default Assignee"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__alias_defaults
+msgid "Default Values"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation_team__quiet_email_ingest
+msgid ""
+"Default for new conversations of this team: messages arriving by email are "
+"recorded without in-app alerts."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_link__reason__direct
+msgid "Direct"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__display_name
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__display_name
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_link__display_name
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_member__display_name
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__display_name
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_tag__display_name
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__display_name
+#: model:ir.model.fields,field_description:conversation_base.field_mail_message__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation__state__done
+msgid "Done"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__email
+msgid "Email"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__alias_email
+msgid "Email Alias"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__email_normalized
+msgid "Email Normalized"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__alias_domain
+msgid "Email domain e.g. 'example.com' in 'odoo@example.com'"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_mail__external_id
+#: model:ir.model.fields,field_description:conversation_base.field_mail_message__external_id
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_participant__kind__external
+msgid "External"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__default_file_in_odoo
+msgid "File Replies in Odoo by Default"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__message_follower_ids
+msgid "Followers"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__message_partner_ids
+msgid "Followers (Partners)"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__activity_type_icon
+msgid "Font awesome icon e.g. fa-tasks"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__has_message
+msgid "Has Message"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__id
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__id
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_link__id
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_member__id
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__id
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_tag__id
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__id
+#: model:ir.model.fields,field_description:conversation_base.field_mail_message__id
+msgid "ID"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__alias_parent_thread_id
+msgid ""
+"ID of the parent record holding the alias (example: project holding the task"
+" creation alias)"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__activity_exception_icon
+msgid "Icon"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__alias_bounced_content
+msgid ""
+"If set, this content will automatically be sent out to unauthorized users "
+"instead of the default message."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__inbox_transport_ids
+msgid "Inbox Transports"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_participant__kind__internal
+msgid "Internal"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__message_is_follower
+msgid "Is Follower"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_member__is_handled
+msgid "Is Handled"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__kind
+msgid "Kind"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__write_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__write_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_link__write_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_member__write_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__write_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_tag__write_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__write_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__write_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_link__write_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_member__write_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__write_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_tag__write_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__link_ids
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_form
+msgid "Linked Records"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__alias_incoming_local
+msgid "Local-part based incoming detection"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__login
+msgid "Login"
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.conversation_transport_view_form
+msgid "Mail Account"
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.conversation_transport_view_list
+msgid "Mail Accounts"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__mailbox_writable
+msgid "Mailbox Writable"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_link__reason__manual
+msgid "Manual"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__member_ids
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__member_ids
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_form
+msgid "Members"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model,name:conversation_base.model_mail_message
+msgid "Message"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__message_has_error
+msgid "Message Delivery error"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__quiet_email_ingest
+msgid ""
+"Messages arriving by email are recorded on the conversation without in-app "
+"alerts (no inbox entry, pop-up or push). Seeded from the team's default; "
+"changing the team re-seeds it."
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.conversation_transport_view_search
+msgid "My Accounts"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
+msgid "My Conversations"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__name
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__name
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_tag__name
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__name
+msgid "Name"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_mail__external_id
+#: model:ir.model.fields,help:conversation_base.field_mail_message__external_id
+msgid ""
+"Native id of this message on its transport (e.g. Gmail/Graph message id, "
+"WhatsApp wamid, IMAP UID), used for correlation."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__last_message_date
+msgid "Newest Activity"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__activity_summary
+msgid "Next Activity Summary"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__activity_type_id
+msgid "Next Activity Type"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__unassigned
+msgid "No assignee. A team alone does not count as assigned."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation_participant__email_normalized
+msgid ""
+"Normalized email, used as the bare-email match/dedup key. NULL (not an empty"
+" string) when the participant has no address, so that the plain "
+"unique(conversation_id, email_normalized) constraint lets partner-only "
+"participants coexist freely (Postgres treats NULLs as distinct) while still "
+"deduping non-null emails per conversation."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__message_needaction_counter
+msgid "Number of Actions"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__message_has_error_counter
+msgid "Number of errors"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation__state__open
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
+msgid "Open"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__alias_force_thread_id
+msgid ""
+"Optional ID of a thread (record) to which all incoming messages will be "
+"attached, even if they did not reply to it. If set, this will disable the "
+"creation of new records completely."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation_participant__partner_id
+msgid ""
+"Optional: a bare email address without a matching partner is a valid "
+"participant on its own."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__user_id
+msgid "Owner"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__alias_parent_model_id
+msgid "Parent Model"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__alias_parent_thread_id
+msgid "Parent Record Thread ID"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__alias_parent_model_id
+msgid ""
+"Parent model holding the alias. The model holding the alias reference is not"
+" necessarily the model given by alias_model_id (example: project "
+"(parent_model) and task (model))"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__participant_ids
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_form
+msgid "Participants"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__partner_id
+msgid "Partner"
+msgstr ""
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/mail_conversation.py:0
+msgid "Pick a record to link this captured item to."
+msgstr ""
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/mail_conversation.py:0
+msgid "Pick an existing conversation to add this item to."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__alias_contact
+msgid ""
+"Policy to post a message on the document using the mailgateway.\n"
+"- everyone: everyone can post\n"
+"- partners: only authenticated partners\n"
+"- followers: only followers of the related document or members of following channels\n"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__primary_transport_id
+msgid "Primary Transport"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__provider
+#: model_terms:ir.ui.view,arch_db:conversation_base.conversation_transport_view_search
+msgid "Provider"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__pushable
+msgid "Pushable"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__quiet_email_ingest
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__quiet_email_ingest
+msgid "Quiet Email Ingest"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_link__reason
+msgid "Reason"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__alias_force_thread_id
+msgid "Record Thread ID"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_link__reason__reference
+msgid "Reference"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_link__res_id
+msgid "Related Record ID"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_participant__role__requester
+msgid "Requester"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_link__res_model
+msgid "Res Model"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__activity_user_id
+msgid "Responsible User"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__role
+msgid "Role"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__searchable
+msgid "Searchable"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__sendable
+msgid "Sendable"
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.conversation_transport_view_search
+msgid "Shared Accounts"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_member__snooze_until
+msgid "Snooze Until"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation__state__snoozed
+msgid "Snoozed"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__primary_transport_id
+msgid ""
+"Soft default transport for this conversation's outbound replies; individual "
+"messages may carry their own transport_id."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__state
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
+msgid "State"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_conversation_transport__searchable
+msgid ""
+"Supports server-side search of the remote mailbox (_search_remote) beyond "
+"simple pagination."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__tag_ids
+msgid "Tags"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__team_id
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
+msgid "Team"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.ui.menu,name:conversation_base.menu_mail_conversation_team
+msgid "Teams"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_mail__transport_id
+#: model:ir.model.fields,help:conversation_base.field_mail_message__transport_id
+msgid ""
+"The channel this message was sent/received over. Falsy for internal notes."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_conversation_transport__provider
+msgid ""
+"The concrete transport implementation providing this connection (generic "
+"IMAP/SMTP, Gmail OAuth, ...). This base module defines no options itself -- "
+"each opt-in provider module (conversation_imap, conversation_gmail, ...) "
+"registers its own via selection_add, so the dropdown only ever offers a "
+"provider that is actually installed and implemented."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__name
+msgid ""
+"The conversation's subject/title, used for triage. There is deliberately no "
+"separate 'subject' field: per-message subjects stay native on mail.message."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__alias_model_id
+msgid ""
+"The model (Odoo Document Kind) to which this alias corresponds. Any incoming"
+" email that does not reply to an existing record will cause the creation of "
+"a new record of this model (e.g. a Project Task)"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__alias_name
+msgid ""
+"The name of the email alias, e.g. 'jobs' if you want to catch emails for "
+"<jobs@example.odoo.com>"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_conversation_transport__user_id
+msgid ""
+"The user this personal mail-account connection belongs to. Falsy = a "
+"shared/team-level transport identity."
+msgstr ""
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/mail_conversation.py:0
+msgid "This conversation has no sendable transport configured."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.constraint,message:conversation_base.constraint_mail_conversation_link_conversation_record_uniq
+msgid "This conversation is already linked to this record."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.constraint,message:conversation_base.constraint_mail_conversation_participant_conversation_email_uniq
+msgid "This email address is already a participant on this conversation."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.constraint,message:conversation_base.constraint_mail_conversation_participant_conversation_partner_uniq
+msgid "This partner is already a participant on this conversation."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_conversation_transport__artifact_only
+msgid ""
+"This transport only ever produces read-only artifacts (e.g. an imported "
+"attachment) -- no live browse/search/send capability, so the other flags "
+"stay False by design."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.constraint,message:conversation_base.constraint_mail_conversation_member_conversation_user_uniq
+msgid "This user is already a member of this conversation."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_participant__role__to
+msgid "To"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_mail__transport_id
+#: model:ir.model.fields,field_description:conversation_base.field_mail_message__transport_id
+msgid "Transport"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation_team__inbox_transport_ids
+msgid ""
+"Transports this team monitors (forward-compatibility for later epics; not "
+"enforced here)."
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.conversation_transport_view_form
+msgid "Triage"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__unanswered
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
+msgid "Unanswered"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__unanswered_since
+msgid "Unanswered Since"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__unassigned
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
+msgid "Unassigned"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_member__unread
+msgid "Unread"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_member__user_id
+msgid "User"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation__state__waiting
+msgid "Waiting"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_participant__role__watcher
+msgid "Watcher"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_conversation_transport__default_file_in_odoo
+msgid ""
+"Whether the composer pre-selects 'file this exchange into a conversation' "
+"for this account. Off by default, and deliberately: a personal mailbox's "
+"traffic must not land in the shared hub unless a human says so each time. "
+"Turn it on for a shared or team mailbox, where filing is the point."
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.conversation_transport_view_form
+msgid "e.g. Support Inbox"
+msgstr ""
