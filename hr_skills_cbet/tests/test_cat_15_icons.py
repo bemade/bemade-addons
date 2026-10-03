@@ -88,6 +88,10 @@ class TestCatIcons(CbetCommon):
             self.assertIn(icon.token, html)
             self.assertIn(icon._svg_data_uri(), html)
         self.assertNotIn('class="cbet-icon-emoji"', html)
+        # the emoji stand-ins are catalog data, not print material: wkhtmltopdf
+        # draws most of them as boxes, so the legend does not print them
+        self.assertNotIn("<th>Emoji</th>", html)
+        self.assertNotIn('class="c-emoji"', html)
         labels = dict(self.icons._fields["category"]._description_selection(self.env))
         positions = [html.index("<h2>%s</h2>" % labels[c]) for c in ("epi", "sev", "act", "outil", "item", "comp")]
         self.assertEqual(positions, sorted(positions))
