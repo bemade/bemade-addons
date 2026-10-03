@@ -802,3 +802,63 @@ class TestRecomputeCaldavIds(TransactionCase, CaldavTestCommon):
 
         # UID should remain the same
         self.assertEqual(event.caldav_uid, original_uid)
+
+
+@tagged("post_install", "-at_install")
+class TestCaldavRecurrenceIdLocalTime(TransactionCase):
+    """caldav_recurrence_id names the slot an occurrence holds in its series.
+
+    Odoo expands a series on the event's local clock and the series is pushed
+    with a local DTSTART, so the slot is the local time of the series on the
+    occurrence's local date -- not the UTC time of the first occurrence, which
+    is an hour off once daylight saving time changes, and on the wrong day for
+    an evening event whose UTC date is the next day.
+    """
+
+    def _series(self, start, stop, count):
+        return (
+            self.env["calendar.event"]
+            .with_context(caldav_no_sync=True)
+            .create(
+                {
+                    "name": "Series",
+                    "start": datetime.fromisoformat(start),
+                    "stop": datetime.fromisoformat(stop),
+                    "event_tz": "America/Toronto",
+                    "recurrency": True,
+                    "rrule_type": "weekly",
+                    "fri": True,
+                    "end_type": "count",
+                    "count": count,
+                }
+            )
+        )
+
+    def test_following_occurrences_are_their_own_slot(self):
+        cases = (
+            # Fri 13:30 Toronto, across the November DST change.
+            ("2026-10-02 17:30:00", "2026-10-02 18:30:00", 8),
+            # Fri 21:00 Toronto: Saturday in UTC, across the same change.
+            ("2026-10-03 01:00:00", "2026-10-03 02:00:00", 8),
+        )
+        for start, stop, count in cases:
+            with self.subTest(start=start):
+                occurrences = self._series(start, stop, count).recurrence_id.calendar_event_ids
+                self.assertEqual(len(occurrences), count)
+                for event in occurrences:
+                    self.assertEqual(event.caldav_recurrence_id, event.start)
+
+    def test_moved_occurrence_keeps_its_slot(self):
+        base = self._series("2026-10-02 17:30:00", "2026-10-02 18:30:00", 8)
+        nov_13 = base.recurrence_id.calendar_event_ids.filtered(
+            lambda e: e.start.date() == datetime(2026, 11, 13).date()
+        )
+        nov_13.with_context(caldav_no_sync=True).write(
+            {
+                "start": datetime(2026, 11, 11, 20, 0),
+                "stop": datetime(2026, 11, 11, 21, 0),
+                "recurrence_update": "self_only",
+            }
+        )
+        # 13:30 EST on Nov 13.
+        self.assertEqual(nov_13.caldav_recurrence_id, datetime(2026, 11, 13, 18, 30))

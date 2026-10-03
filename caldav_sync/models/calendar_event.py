@@ -136,20 +136,30 @@ class CalendarEvent(models.Model):
         for event in self:
             if event.recurrence_id:
                 event.caldav_uid = event.recurrence_id.caldav_uid
-                time = event.recurrence_id.dtstart.time()
-                date = event.start.date()
-                event.caldav_recurrence_id = datetime(
-                    date.year,
-                    date.month,
-                    date.day,
-                    time.hour,
-                    time.minute,
-                    time.second,
-                )
+                event.caldav_recurrence_id = event._get_series_slot()
             else:
                 if not self.env.context.get("caldav_keep_ids"):
                     event.caldav_uid = uuid.uuid4()
                 event.caldav_recurrence_id = False
+
+    def _get_series_slot(self) -> datetime:
+        """The UTC start of the slot this event holds in its series: the
+        series' time of day on the event's date.
+
+        Odoo expands a series on the local clock and the series is pushed with
+        a local DTSTART, so both are taken on that clock. In UTC the time of
+        day moves with daylight saving time, and an evening event's date can
+        be the next day.
+        """
+        self.ensure_one()
+        recurrence = self.recurrence_id
+        if self.allday:
+            return datetime.combine(self.start.date(), recurrence.dtstart.time())
+        tz = timezone(recurrence.event_tz or self.event_tz or "UTC")
+        local_time = utc.localize(recurrence.dtstart).astimezone(tz).time()
+        local_date = utc.localize(self.start).astimezone(tz).date()
+        slot = tz.localize(datetime.combine(local_date, local_time))
+        return slot.astimezone(utc).replace(tzinfo=None)
 
     @api.depends("name", "description", "partner_ids", "location", "videocall_location")
     def _compute_differs_from_base_event(self):
