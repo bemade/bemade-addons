@@ -44,16 +44,44 @@ class CbetCompetency(models.Model):
         "cbet.competency.version", "competency_id", string="Version History"
     )
 
-    # Catalog content (UC-CAT-02 AC3).
-    execution_context = fields.Html(translate=True)
-    safety_block = fields.Html(translate=True)
-    tools_materials = fields.Html(translate=True)
-    # Trainer metadata.
-    field_frequency = fields.Char()
+    # Catalog content (UC-CAT-02 AC3) — the fiche, section by section. The
+    # html bodies are whole documents per language: sanitize=False keeps Odoo
+    # from switching them to term-based translation (which would rebuild one
+    # language from the other's structure); the importer sanitizes what it
+    # writes.
+    subtitle = fields.Char(
+        translate=True,
+        help="The classification line under the fiche title (e.g. recognition "
+             "competency, demonstrated on real equipment).",
+    )
+    execution_context = fields.Html(translate=True, sanitize=False, string="§1 Execution context")
+    knowledge_body = fields.Html(translate=True, sanitize=False, string="§3 Underlying knowledge")
+    safety_block = fields.Html(translate=True, sanitize=False, string="§4 Safety")
+    tools_materials = fields.Html(translate=True, sanitize=False, string="§5 Tools and materials")
+    documents_required = fields.Html(
+        translate=True, sanitize=False, string="§6 Documents required on site")
+    evidence_required = fields.Html(
+        translate=True, sanitize=False, string="§11 Evidence to retain")
+    references_body = fields.Html(translate=True, sanitize=False, string="§14 References")
+    # The operational documents (one rich-text body per language each).
+    procedure_body = fields.Html(translate=True, sanitize=False, string="Procedure")
+    demo_notes_body = fields.Html(
+        translate=True, sanitize=False, string="Trainer demonstration notes",
+        help="Everything of the trainer's demo notes except the per-session "
+             "log, which is kept on training lines.",
+    )
+    job_aid_ids = fields.One2many(
+        "cbet.job.aid", "competency_id", string="Job aids", copy=True,
+    )
+    has_procedure = fields.Boolean(compute="_compute_has_documents", store=True)
+    has_job_aid = fields.Boolean(compute="_compute_has_documents", store=True)
+    has_demo_notes = fields.Boolean(compute="_compute_has_documents", store=True)
+    # Trainer metadata (§13).
+    field_frequency = fields.Char(translate=True)
     difficulty = fields.Selection(
         [("low", "Low"), ("medium", "Medium"), ("high", "High")],
     )
-    learning_time = fields.Char()
+    learning_time = fields.Char(translate=True)
     common_pitfalls = fields.Text(translate=True)
 
     # Children.
@@ -86,10 +114,18 @@ class CbetCompetency(models.Model):
     protocol_place = fields.Char(translate=True)
     protocol_duration = fields.Float(string="Protocol duration (hours)")
     protocol_support = fields.Char(string="Allowed support", translate=True)
+    protocol_start_conditions = fields.Text(string="Starting conditions", translate=True)
+    protocol_verbalization = fields.Text(string="Required verbalization", translate=True)
     protocol_min_evaluator_qualification = fields.Char(
+        translate=True,
         help="Minimum qualification an evaluator must hold to evaluate this "
              "competency (policy value, set per competency).",
     )
+    evaluator_independence = fields.Char(translate=True)
+    # Validity and recertification (§12), beside validity_months.
+    maintenance_condition = fields.Text(translate=True)
+    recert_modality = fields.Text(string="Recertification modality", translate=True)
+    recert_early_trigger = fields.Text(string="Early recertification trigger", translate=True)
     designated_trainer_ids = fields.Many2many(
         "res.users",
         string="Designated trainers",
@@ -113,6 +149,13 @@ class CbetCompetency(models.Model):
                 raise ValidationError(
                     self.env._("A competency with code %s already exists "
                                "(codes are case-insensitive).", comp.code))
+
+    @api.depends("procedure_body", "demo_notes_body", "job_aid_ids", "job_aid_ids.active")
+    def _compute_has_documents(self):
+        for comp in self:
+            comp.has_procedure = bool(comp.procedure_body)
+            comp.has_job_aid = bool(comp.job_aid_ids)
+            comp.has_demo_notes = bool(comp.demo_notes_body)
 
     @api.model_create_multi
     def create(self, vals_list):

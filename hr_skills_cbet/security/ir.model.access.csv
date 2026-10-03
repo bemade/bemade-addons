@@ -41,3 +41,11 @@ access_cbet_q_result_manager,cbet.question.result manager,model_cbet_question_re
 access_cbet_status_user,cbet.employee.competency.status user,model_cbet_employee_competency_status,hr_skills_cbet.group_cbet_user,1,0,0,0
 access_cbet_status_hr,cbet.employee.competency.status hr,model_cbet_employee_competency_status,hr.group_hr_user,1,0,0,0
 access_cbet_import_wizard,cbet.import.wizard manager,model_cbet_import_wizard,hr_skills_cbet.group_cbet_manager,1,1,1,1
+access_cbet_icon_user,cbet.icon user,model_cbet_icon,hr_skills_cbet.group_cbet_user,1,0,0,0
+access_cbet_icon_manager,cbet.icon manager,model_cbet_icon,hr_skills_cbet.group_cbet_manager,1,1,1,1
+access_cbet_job_aid_user,cbet.job.aid user,model_cbet_job_aid,hr_skills_cbet.group_cbet_user,1,0,0,0
+access_cbet_job_aid_manager,cbet.job.aid manager,model_cbet_job_aid,hr_skills_cbet.group_cbet_manager,1,1,1,1
+access_cbet_job_aid_section_user,cbet.job.aid.section user,model_cbet_job_aid_section,hr_skills_cbet.group_cbet_user,1,0,0,0
+access_cbet_job_aid_section_manager,cbet.job.aid.section manager,model_cbet_job_aid_section,hr_skills_cbet.group_cbet_manager,1,1,1,1
+access_cbet_job_aid_line_user,cbet.job.aid.line user,model_cbet_job_aid_line,hr_skills_cbet.group_cbet_user,1,0,0,0
+access_cbet_job_aid_line_manager,cbet.job.aid.line manager,model_cbet_job_aid_line,hr_skills_cbet.group_cbet_manager,1,1,1,1
