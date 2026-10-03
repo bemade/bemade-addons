@@ -32,8 +32,8 @@ class CloseDayWizard(models.TransientModel):
     block_kind = fields.Selection(related="block_id.kind")
     block_subject_id = fields.Many2one(related="block_id.subject_id")
     block_duration_planned = fields.Integer(related="block_id.duration_planned")
-    block_intention_html = fields.Html(related="block_id.intention_html", sanitize=False)
-    block_success_html = fields.Html(related="block_id.success_html", sanitize=False)
+    block_intention_html = fields.Html(related="block_id.intention_html", string="Intention", sanitize=False)
+    block_success_html = fields.Html(related="block_id.success_html", string="Success criteria", sanitize=False)
     block_status_was = fields.Selection(related="block_id.status", string="Status before")
 
     # the block screen — pre-loaded from the block when it already holds values

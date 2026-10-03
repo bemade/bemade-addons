@@ -1383,13 +1383,13 @@ msgstr "Institutionnelle"
 
 #. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block__intention
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_day_wizard__block_intention_html
 #: model_terms:ir.ui.view,arch_db:homeschool.view_block_form
 msgid "Intention"
 msgstr "Intention"
 
 #. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block__intention_html
-#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_day_wizard__block_intention_html
 msgid "Intention Html"
 msgstr "Intention (HTML)"
 
@@ -2790,12 +2790,12 @@ msgstr "Réussite"
 
 #. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block__success_html
-#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_day_wizard__block_success_html
 msgid "Success Html"
 msgstr "Critères de réussite (HTML)"
 
 #. module: homeschool
 #: model:ir.model.fields,field_description:homeschool.field_homeschool_block__success
+#: model:ir.model.fields,field_description:homeschool.field_homeschool_close_day_wizard__block_success_html
 msgid "Success criteria"
 msgstr "Critères de réussite"
 

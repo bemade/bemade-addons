@@ -45,6 +45,8 @@ class TestI18n(HomeschoolCase):
         self.assertEqual(Wizard._fields["minutes_adult_present"]._description_string(self.fr), "Adulte présent (min)")
         self.assertEqual(Wizard._fields["adult_missing_names"]._description_string(self.fr), "Blocs sans minutes adulte")
         self.assertEqual(dict(Wizard._fields["status"]._description_selection(self.fr))["skipped"], "Sauté")
+        self.assertEqual(Wizard._fields["block_intention_html"]._description_string(self.fr), "Intention")
+        self.assertEqual(Wizard._fields["block_success_html"]._description_string(self.fr), "Critères de réussite")
         self.assertEqual(self.fr.ref("homeschool.menu_close_day").name, "Fermer la journée")
         self.assertEqual(self.fr.ref("homeschool.action_close_day_wizard").name, "Fermer la journée")
         # english untouched
