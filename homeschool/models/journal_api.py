@@ -17,6 +17,11 @@ import binascii
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError
+from odoo.fields import Command
+
+from .block import BLOCK_KINDS
+
+PLAN_DAY_TEXTS = ("opening", "evening_before", "debrief", "note")
 
 def _cell(value):
     """A CSV cell for ``value``: a list joins with ``;``, ``None`` is blank, else text."""
@@ -182,6 +187,218 @@ class JournalAPI(models.AbstractModel):
         if not value_rec:
             raise UserError(self.env._("Unknown indicator %(code)s for this family.", code=row["id"]))
         return {"value_id": value_rec.id, "created": created}
+
+    # ------------------------------------------------------------------
+    # plan (UC-18): the day's plan lives in Odoo
+    # ------------------------------------------------------------------
+    @api.model
+    def _plan_rows(self, plan, kind, date_str):
+        """The ``blocks`` or ``deliverables`` rows of a plan, validated before anything is
+        written: a list of dicts, each with a non-empty, unique ``key`` and a ``name``; a
+        block's ``kind`` must be one of the block kinds. ``None`` when the key is absent
+        from the plan (that part of the day is left untouched)."""
+        if kind not in plan:
+            return None
+        rows = plan.get(kind)
+        if not isinstance(rows, (list, tuple)) or any(not isinstance(r, dict) for r in rows):
+            raise UserError(self.env._("Plan %(date)s: %(part)s must be a list of objects.", date=date_str, part=kind))
+        seen = set()
+        kinds = {k for k, _label in BLOCK_KINDS}
+        for i, row in enumerate(rows):
+            key = str(row.get("key") or "").strip()
+            if not key:
+                raise UserError(self.env._("Plan %(date)s: %(part)s #%(n)d has no key.", date=date_str, part=kind, n=i + 1))
+            if key in seen:
+                raise UserError(self.env._("Plan %(date)s: duplicate %(part)s key %(key)s.", date=date_str, part=kind, key=key))
+            seen.add(key)
+            if not str(row.get("name") or "").strip():
+                raise UserError(self.env._("Plan %(date)s/%(key)s: a name is required.", date=date_str, key=key))
+            if kind == "blocks" and (row.get("kind") or "bloc") not in kinds:
+                raise UserError(self.env._("Plan %(date)s/%(key)s: unknown block kind %(kind)s.", date=date_str, key=key, kind=row.get("kind")))
+        return rows
+
+    @api.model
+    def _plan_block_vals(self, student, row, index, date_str, log):
+        """The block values of one plan row; unknown subject, items, material and project go
+        to ``log`` and the block is written without them."""
+        key = str(row["key"]).strip()
+        Subject = self.env["homeschool.subject"]
+        Item = self.env["homeschool.item"]
+        Material = self.env["homeschool.material"]
+        Project = self.env["homeschool.project"]
+        company = student.company_id
+        subject = Subject.browse()
+        subject_code = str(row.get("subject") or "").strip()
+        if subject_code:
+            subject = Subject._by_csv_key(subject_code, create=False)
+            if not subject:
+                log.append("plan %s/%s: unknown subject %r" % (date_str, key, subject_code))
+        items = Item.browse()
+        for code in row.get("items") or []:
+            code = str(code).strip()
+            item = Item._by_code(code) if code else Item.browse()
+            if item:
+                items |= item
+            else:
+                log.append("plan %s/%s: unknown item %r" % (date_str, key, code))
+        materials = Material.browse()
+        for path in row.get("materials") or []:
+            path = str(path).strip()
+            mat = Material.search([("pdf_path", "=", path), ("company_id", "=", company.id)], limit=1) if path else Material.browse()
+            if not mat and path:
+                mat = Material.search([("html_source_path", "=", path), ("company_id", "=", company.id)], limit=1)
+            if mat:
+                materials |= mat
+            else:
+                log.append("plan %s/%s: unknown material %r" % (date_str, key, path))
+        project = Project.browse()
+        project_code = str(row.get("project") or "").strip()
+        if project_code:
+            project = Project._by_code(project_code, company)
+            if not project:
+                log.append("plan %s/%s: unknown project %r" % (date_str, key, project_code))
+
+        def text(name):
+            value = row.get(name)
+            return str(value) if value else False
+
+        return {
+            "plan_key": key,
+            "sequence": int(row.get("sequence", 10 * (index + 1))),
+            "kind": row.get("kind") or "bloc",
+            "subject_id": subject.id or False,
+            "name": str(row["name"]).strip(),
+            "duration_planned": int(row.get("duration_planned", 45) or 0),
+            "anchored": bool(row.get("anchored")),
+            "start_fixed": float(row.get("start_fixed") or 0.0),
+            "intention": text("intention"),
+            "steps": text("steps"),
+            "success": text("success"),
+            "fallback": text("fallback"),
+            "item_ids": [Command.set(items.ids)],
+            "material_ids": [Command.set(materials.ids)],
+            "project_id": project.id or False,
+        }
+
+    @api.model
+    def _plan_deliverable_vals(self, row, index):
+        return {
+            "plan_key": str(row["key"]).strip(),
+            "sequence": int(row.get("sequence", 10 * (index + 1))),
+            "when": str(row["when"]).strip() if row.get("when") else False,
+            "name": str(row["name"]).strip(),
+            "detail": str(row["detail"]) if row.get("detail") else False,
+            "bonus": bool(row.get("bonus")),
+        }
+
+    @api.model
+    def _plan_sync(self, day, records, rows, is_closed, label, make_vals, date_str, log):
+        """Match ``rows`` (validated plan rows) to ``records`` (the day's blocks or
+        deliverables): by ``plan_key`` first, else a keyless record with the same exact
+        ``(kind, name)`` (blocks) / ``name`` (deliverables). An open match is updated in
+        place and a closed one left as it is (its key is stamped if it had none, so the next
+        replay finds it by key); a row without a match is created; an open record absent
+        from the rows is deleted. Returns ``({key: id}, deleted_count)``."""
+        by_key = {rec.plan_key: rec for rec in records if rec.plan_key}
+        matched = {}
+        claimed = records.browse()
+        for row in rows:
+            key = str(row["key"]).strip()
+            rec = by_key.get(key)
+            if rec is not None:
+                matched[key] = rec
+                claimed |= rec
+        for row in rows:
+            key = str(row["key"]).strip()
+            if key in matched:
+                continue
+            name = str(row["name"]).strip()
+            kind = row.get("kind") or "bloc"
+            for rec in (records - claimed).filtered(lambda r: not r.plan_key and r.name == name):
+                if label == "block" and rec.kind != kind:
+                    continue
+                matched[key] = rec
+                claimed |= rec
+                break
+        result = {}
+        for index, row in enumerate(rows):
+            key = str(row["key"]).strip()
+            vals = make_vals(row, index)
+            rec = matched.get(key)
+            if rec is None:
+                rec = records.create(dict(vals, day_id=day.id))
+            elif is_closed(rec):
+                if not rec.plan_key:
+                    rec.write({"plan_key": key})
+                log.append("plan %s/%s: %s %d already %s, kept" % (date_str, key, label, rec.id, "done" if label == "deliverable" else "closed"))
+            else:
+                rec.write(vals)
+            result[key] = rec.id
+        deleted = 0
+        for rec in (records - claimed).sorted(lambda r: (r.sequence, r.id)):
+            if is_closed(rec):
+                continue
+            log.append("plan %s/%s: deleted %s %d «%s»" % (
+                date_str, rec.plan_key or "-", "planned block" if label == "block" else label, rec.id, rec.name))
+            rec.unlink()
+            deleted += 1
+        return result, deleted
+
+    @api.model
+    def log_plan(self, student_id, date, plan):
+        """The whole plan of one day, written in one idempotent call — Odoo is the source of
+        the plan. ``plan`` is one dict: the day's scalars (``start_time``, ``is_off``,
+        ``off_reason``, ``opening``, ``evening_before``, ``debrief``, ``note`` — each written
+        only when its key is present), ``blocks`` and ``deliverables`` (lists of dicts, each
+        with a stable ``key``; absent → that part of the day is left untouched, ``[]`` → the
+        planned lines are removed). A block: ``key, sequence, kind, subject`` (code or csv
+        key), ``name, duration_planned, anchored, start_fixed, intention, steps, success,
+        fallback, items`` (codes), ``materials`` (repository paths), ``project`` (code). A
+        deliverable: ``key, sequence, when, name, detail, bonus``. Replay rules: a block is
+        matched by ``plan_key`` (else by exact kind and name when it has no key, then it
+        takes the key); a matched block that is still ``planned`` with no actuals is updated
+        in place; a closed one (any other status, or actuals recorded) is never overwritten
+        and never deleted; planned, actual-less blocks absent from the payload are deleted.
+        Same for deliverables with ``done`` as the closed test. ``is_off`` true marks the day
+        off and leaves blocks and deliverables alone. Unknown subject / item / material /
+        project codes are logged, never raised; a duplicate or missing key is a ``UserError``
+        before anything is written. Returns ``{"day_id", "block_ids": {key: id},
+        "deliverable_ids": {key: id}, "deleted", "log"}``."""
+        student = self._student(student_id)
+        d = self._date(date)
+        date_str = fields.Date.to_string(d)
+        if not isinstance(plan, dict):
+            raise UserError(self.env._("Plan %(date)s: the plan must be a JSON object.", date=date_str))
+        block_rows = self._plan_rows(plan, "blocks", date_str)
+        deliverable_rows = self._plan_rows(plan, "deliverables", date_str)
+        log = []
+        day = self.env["homeschool.day"]._get_or_create(student, d)
+        day_vals = {}
+        if "start_time" in plan:
+            day_vals["start_time"] = float(plan.get("start_time") or 0.0)
+        if "is_off" in plan:
+            day_vals["is_off"] = bool(plan.get("is_off"))
+        if "off_reason" in plan:
+            day_vals["off_reason"] = str(plan["off_reason"]) if plan.get("off_reason") else False
+        for name in PLAN_DAY_TEXTS:
+            if name in plan:
+                day_vals[name] = str(plan[name]) if plan.get(name) else False
+        if day_vals:
+            day.write(day_vals)
+        block_ids, deliverable_ids, deleted = {}, {}, 0
+        if not day.is_off:
+            if block_rows is not None:
+                block_ids, n = self._plan_sync(
+                    day, day.block_ids, block_rows,
+                    lambda b: b.status != "planned" or b.actuals_recorded or b.adult_recorded,
+                    "block", lambda row, i: self._plan_block_vals(student, row, i, date_str, log), date_str, log)
+                deleted += n
+            if deliverable_rows is not None:
+                deliverable_ids, n = self._plan_sync(
+                    day, day.deliverable_ids, deliverable_rows, lambda x: x.done,
+                    "deliverable", self._plan_deliverable_vals, date_str, log)
+                deleted += n
+        return {"day_id": day.id, "block_ids": block_ids, "deliverable_ids": deliverable_ids, "deleted": deleted, "log": log}
 
     # ------------------------------------------------------------------
     # status

@@ -18,6 +18,7 @@ class BlockTemplate(models.Model):
     student_id = fields.Many2one("homeschool.student", ondelete="cascade", check_company=True, help="Empty = default grid for every student of the family.")
     weekday = fields.Selection(WEEKDAYS, required=True)
     sequence = fields.Integer(default=10)
+    plan_key = fields.Char(help="Copied to the generated block: the key a log_plan replay matches it on (e.g. p1, pause1).")
     kind = fields.Selection(BLOCK_KINDS, required=True, default="bloc")
     subject_id = fields.Many2one("homeschool.subject")
     name = fields.Char(required=True)
@@ -49,6 +50,7 @@ class BlockTemplate(models.Model):
         self.ensure_one()
         return {
             "sequence": self.sequence,
+            "plan_key": self.plan_key or False,
             "kind": self.kind,
             "subject_id": self.subject_id.id,
             "name": self.name,

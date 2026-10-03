@@ -6,6 +6,7 @@
         <field name="arch" type="xml">
             <list string="Deliverables" editable="bottom" default_order="date desc, sequence" decoration-success="done" decoration-muted="bonus">
                 <field name="sequence" widget="handle"/>
+                <field name="plan_key" optional="hide"/>
                 <field name="day_id"/>
                 <field name="date" optional="hide"/>
                 <field name="student_id" optional="show"/>
@@ -28,7 +29,7 @@
                 <sheet>
                     <div class="oe_title"><h1><field name="name" placeholder="What is expected"/></h1></div>
                     <group>
-                        <group><field name="day_id"/><field name="student_id"/><field name="when"/><field name="sequence"/><field name="bonus"/></group>
+                        <group><field name="day_id"/><field name="student_id"/><field name="when"/><field name="sequence"/><field name="plan_key"/><field name="bonus"/></group>
                         <group><field name="done"/><field name="done_at"/><field name="done_by"/><field name="company_id" groups="base.group_multi_company"/></group>
                     </group>
                     <field name="detail" placeholder="What exactly, how much, where it goes."/>

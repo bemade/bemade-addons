@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="conversation_base.ConversationParticipantsField">
+        <span class="o_conversation_participants d-inline-flex align-items-center">
+            <t t-foreach="payload.items" t-as="item" t-key="item_index">
+                <img
+          t-if="item.partner_id"
+          class="o_conversation_avatar rounded-circle me-1"
+          t-att-src="avatarUrl(item)"
+          t-att-title="item.name"
+          t-att-alt="item.name"
+        />
+                <span
+          t-else=""
+          class="o_conversation_avatar o_conversation_initials rounded-circle me-1"
+          t-att-title="item.email or item.name"
+          t-out="item.initials"
+        />
+            </t>
+            <span t-if="payload.extra" class="o_conversation_extra text-muted">+<t
+          t-out="payload.extra"
+        /></span>
+        </span>
+    </t>
+
+    <t t-name="conversation_base.ConversationLinksField">
+        <span class="o_conversation_links d-inline-flex flex-wrap gap-1">
+            <t t-foreach="payload.items" t-as="item" t-key="item_index">
+                <span
+          t-if="item.restricted"
+          class="o_conversation_link badge text-bg-light text-muted"
+        >Restricted record</span>
+                <a
+          t-else=""
+          href="#"
+          class="o_conversation_link badge text-bg-info"
+          t-on-click="(ev) => this.openLink(ev, item)"
+          t-out="item.name"
+        />
+            </t>
+            <span t-if="payload.extra" class="o_conversation_extra text-muted">+<t
+          t-out="payload.extra"
+        /></span>
+        </span>
+    </t>
+
+    <t t-name="conversation_base.ConversationChannelField">
+        <i
+      t-attf-class="o_conversation_channel fa {{icon}}"
+      t-att-title="title"
+      role="img"
+      t-att-aria-label="title"
+    />
+    </t>
+
+    <t t-name="conversation_base.ConversationRelativeTimeField">
+        <span
+      class="o_conversation_time text-nowrap"
+      t-att-title="full"
+      t-out="relative"
+    />
+    </t>
+</templates>

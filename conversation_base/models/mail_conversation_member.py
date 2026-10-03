@@ -33,6 +33,26 @@ class MailConversationMember(models.Model):
     )
 
     @api.model
+    def _get_or_create_for(self, conversations, users):
+        """Member rows for every (conversation, user) pair, creating the
+        missing ones. Respects the unique constraint by looking first.
+        """
+        existing = self.search(
+            [
+                ("conversation_id", "in", conversations.ids),
+                ("user_id", "in", users.ids),
+            ]
+        )
+        have = {(m.conversation_id.id, m.user_id.id) for m in existing}
+        missing = [
+            {"conversation_id": conversation.id, "user_id": user.id}
+            for conversation in conversations
+            for user in users
+            if (conversation.id, user.id) not in have
+        ]
+        return existing | self.create(missing) if missing else existing
+
+    @api.model
     def _cron_resurface_snoozed(self):
         """Resurface lapsed snoozes: clear the timer and the handled
         checkmark. Leaves ``unread`` and the conversation ``state``

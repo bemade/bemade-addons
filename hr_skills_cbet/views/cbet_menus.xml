@@ -12,6 +12,8 @@
               action="action_cbet_domain" sequence="20"/>
     <menuitem id="menu_cbet_standards" name="Standards" parent="menu_cbet_catalog"
               action="action_cbet_standard" sequence="30"/>
+    <menuitem id="menu_cbet_job_aids" name="Job aids" parent="menu_cbet_catalog"
+              action="action_cbet_job_aid" sequence="40"/>
 
     <!-- Evaluations -->
     <menuitem id="menu_cbet_evaluations" name="Evaluations" parent="menu_cbet_root" sequence="20"/>
@@ -34,4 +36,10 @@
     <menuitem id="menu_cbet_reporting" name="Reporting" parent="menu_cbet_root" sequence="40"/>
     <menuitem id="menu_cbet_matrix" name="Training matrix" parent="menu_cbet_reporting"
               action="action_cbet_status" sequence="10"/>
+
+    <!-- Configuration -->
+    <menuitem id="menu_cbet_configuration" name="Configuration" parent="menu_cbet_root" sequence="90"
+              groups="hr_skills_cbet.group_cbet_manager"/>
+    <menuitem id="menu_cbet_icons" name="Icons" parent="menu_cbet_configuration"
+              action="action_cbet_icon" sequence="10"/>
 </odoo>

@@ -17,6 +17,10 @@ BLOCK_KINDS = [
     ("bonus", "Bonus"),
 ]
 
+# Kinds that carry no hours of their own: they get no screen in « Fermer la journée », are
+# set done when the day closes, and never count as pending (nor as missing adult minutes).
+NO_HOURS_KINDS = ("opening", "pause", "debrief")
+
 BLOCK_STATUS = [
     ("planned", "Planned"),
     ("done", "Done"),
@@ -36,9 +40,12 @@ def float_to_time(value):
 class Block(models.Model):
     _name = "homeschool.block"
     _description = "Planning block"
-    _inherit = ["mail.thread", "homeschool.markdown.mixin"]
+    _inherit = ["mail.thread", "homeschool.markdown.mixin", "homeschool.frozen.mixin"]
     _order = "day_id, sequence, id"
-    _markdown_fields = ("intention", "steps", "success", "fallback", "note")
+    _markdown_fields = ("intention", "steps", "success", "fallback", "note", "went_well", "went_badly", "corrections")
+    # The block's own journal: from the next day on these are corrected, never rewritten.
+    # Minutes and status stay editable (closing yesterday late is normal).
+    _frozen_fields = ("went_well", "went_badly", "note")
     _check_company_auto = True
 
     day_id = fields.Many2one("homeschool.day", required=True, ondelete="cascade", index=True, tracking=True)
@@ -46,6 +53,7 @@ class Block(models.Model):
     company_id = fields.Many2one(related="day_id.company_id", store=True, index=True)
     date = fields.Date(related="day_id.date", store=True)
     sequence = fields.Integer(default=10, tracking=True)
+    plan_key = fields.Char(index=True, help="Stable key of this block in the day's plan (replays of log_plan match on it).")
     kind = fields.Selection(BLOCK_KINDS, required=True, default="bloc")
     subject_id = fields.Many2one("homeschool.subject", ondelete="restrict")
     name = fields.Char(required=True)
@@ -68,6 +76,12 @@ class Block(models.Model):
     fallback_html = markdown_html_field("fallback")
     note = fields.Text(help="Markdown.")
     note_html = markdown_html_field("note")
+    went_well = fields.Text(string="What worked", help="Markdown. As it was — a clean journal is a false journal.")
+    went_well_html = markdown_html_field("went_well")
+    went_badly = fields.Text(string="What went badly", help="Markdown.")
+    went_badly_html = markdown_html_field("went_badly")
+    corrections = fields.Text(help="Dated corrections appended to a past block. Past blocks' texts are never edited in place.")
+    corrections_html = markdown_html_field("corrections")
 
     item_ids = fields.Many2many("homeschool.item", "homeschool_block_item_rel", "block_id", "item_id", string="Curriculum items")
     material_ids = fields.Many2many("homeschool.material", "homeschool_block_material_rel", "block_id", "material_id", string="Material", check_company=True)
@@ -134,7 +148,7 @@ class Block(models.Model):
     @api.depends("actuals_recorded", "adult_recorded", "kind", "status")
     def _compute_adult_missing(self):
         for rec in self:
-            rec.adult_missing = bool(rec.actuals_recorded and not rec.adult_recorded and rec.kind != "pause" and rec.status != "skipped")
+            rec.adult_missing = bool(rec.actuals_recorded and not rec.adult_recorded and rec.kind not in NO_HOURS_KINDS and rec.status != "skipped")
 
     @api.constrains("minutes_total", "minutes_adult_present", "adult_recorded")
     def _check_adult_bounded(self):

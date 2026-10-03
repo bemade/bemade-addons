@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_close_day_wizard_form" model="ir.ui.view">
+        <field name="name">homeschool.close.day.wizard.form</field>
+        <field name="model">homeschool.close.day.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Close the day">
+                <field name="step" invisible="1"/>
+                <field name="index" invisible="1"/>
+                <field name="total" invisible="1"/>
+                <field name="block_id" invisible="1"/>
+                <group>
+                    <field name="day_id" readonly="1"/>
+                </group>
+                <div invisible="step != 'block'">
+                    <div class="oe_title">
+                        <h2><field name="title" readonly="1" nolabel="1"/></h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="block_kind"/>
+                            <field name="block_subject_id"/>
+                            <field name="block_duration_planned"/>
+                            <field name="block_status_was"/>
+                        </group>
+                        <group>
+                            <field name="block_intention_html"/>
+                            <field name="block_success_html"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Actuals">
+                            <label for="minutes_total"/>
+                            <div class="o_row">
+                                <field name="minutes_total" placeholder="min"/>
+                                <span class="text-muted"><field name="planned_label" readonly="1" nolabel="1"/></span>
+                            </div>
+                            <field name="minutes_adult_present" placeholder="min"/>
+                            <field name="status" widget="radio" options="{'horizontal': true}"/>
+                        </group>
+                        <group string="Block journal">
+                            <field name="went_well" placeholder="Markdown"/>
+                            <field name="went_badly" placeholder="Markdown"/>
+                            <field name="note" placeholder="Markdown"/>
+                        </group>
+                    </group>
+                </div>
+                <div invisible="step != 'journal'">
+                    <div class="alert alert-warning" role="alert" invisible="not adult_missing_names">
+                        <strong>Blocks without adult minutes:</strong>
+                        <field name="adult_missing_names" readonly="1" nolabel="1" class="oe_inline"/>
+                        <div>The day stays incomplete until they are filled; you can still finish and fill them later.</div>
+                    </div>
+                    <group string="Journal of the day">
+                        <field name="went_well_day" placeholder="Markdown"/>
+                        <field name="went_badly_day" placeholder="Markdown"/>
+                        <field name="notes_day" placeholder="Markdown"/>
+                        <field name="indicator_notes_day"/>
+                    </group>
+                    <p class="text-muted">Closing this window with × loses what is typed on this screen only; every Next already saved its block.</p>
+                </div>
+                <footer>
+                    <button name="action_previous" type="object" string="Previous" invisible="index == 0"/>
+                    <button name="action_skip" type="object" string="Skip this block" invisible="step != 'block'"/>
+                    <button name="action_next" type="object" string="Next" class="btn-primary" invisible="step != 'block'"/>
+                    <button name="action_finish" type="object" string="Finish" class="btn-primary" invisible="step != 'journal'"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_close_day_wizard" model="ir.actions.server">
+        <field name="name">Close the day</field>
+        <field name="model_id" ref="model_homeschool_close_day_wizard"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_today()</field>
+    </record>
+</odoo>

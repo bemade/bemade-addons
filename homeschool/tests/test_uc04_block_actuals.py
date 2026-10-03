@@ -10,9 +10,11 @@ Acceptance criteria
    honest; a guess is not).
 3. A **bonus** block (unplanned session, an unplanned science session, say) is
    created at journal time with kind ``bonus``, its minutes, subject and note.
-4. ``homeschool.day.journal_state`` is computed: ``incomplete`` when any non-pause,
-   non-skipped block of a past or current day lacks ``minutes_total``, or when the
-   day has no journal entry; ``done`` otherwise. (Replaces ``journal.py status``.)
+4. ``homeschool.day.journal_state`` is computed: ``incomplete`` when any hour-bearing
+   (not ``opening`` / ``pause`` / ``debrief`` — ``NO_HOURS_KINDS``), non-skipped block of a
+   past or current day lacks its minutes or its adult-present minutes, or when the day
+   has no journal entry; ``done`` otherwise. (Replaces ``journal.py status``; agrees
+   with the journal API's ``status``.)
 5. The weekly adult-presence rollup (sum of ``minutes_adult_present`` per ISO week,
    in hours) is available through ``read_group`` and equals what
    ``report.py hours`` computes from ``hours.csv`` for the same rows.
@@ -87,6 +89,23 @@ class TestBlockActuals(HomeschoolCase):
         self.assertEqual(future.journal_state, "future")
         off = self.make_day(self.today - timedelta(days=1), is_off=True)
         self.assertEqual(off.journal_state, "off")
+
+    def test_no_hours_kinds_never_pending(self):
+        opening = self.make_block(self.day, "Opening", 10, 0, kind="opening")
+        debrief = self.make_block(self.day, "Debrief", 10, 9, kind="debrief")
+        self.s1.write({"minutes_total": 45, "minutes_adult_present": 45})
+        self.s2.write({"status": "skipped"})
+        self.env["homeschool.journal"].create({"day_id": self.day.id, "went_well": "fine"})
+        self.assertEqual(self.day.journal_state, "done", "opening and debrief without minutes never count as pending")
+        opening.write({"minutes_total": 10})
+        self.assertFalse(opening.adult_missing, "a no-hours kind is never flagged for adult minutes")
+        self.assertFalse(debrief.adult_missing)
+        # a blank adult field on an hour-bearing block keeps the day incomplete (the API's rule)
+        self.s1.write({"minutes_adult_present": False})
+        self.assertFalse(self.s1.adult_recorded)
+        self.assertEqual(self.day.journal_state, "incomplete")
+        self.s1.write({"minutes_adult_present": 0})
+        self.assertEqual(self.day.journal_state, "done")
 
     def test_weekly_adult_rollup(self):
         monday = date(2026, 1, 12)

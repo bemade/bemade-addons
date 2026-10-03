@@ -299,8 +299,10 @@ class RepositoryImporter(models.AbstractModel):
         """One ``hours.csv`` row (a dict of the CSV columns, all strings) → the student's day
         (created as needed) and its block. The ``block`` key gives the kind and subject
         (aliases first), a ``journee`` marker with no minutes marks the day off, an existing
-        block with the same name and kind is updated in place, else one is created. Problems
-        go to ``log``; ``unknown_keys`` (a set) reports an unknown subject key once per run.
+        block with the same name and kind is updated in place, else the first **planned**
+        block of the day with the same kind and subject and no actuals yet is closed (title
+        replaced, planned minutes and sequence kept), else one is created. Problems go to
+        ``log``; ``unknown_keys`` (a set) reports an unknown subject key once per run.
         Returns ``(day, block)`` — ``block`` is empty for a day-off marker. Shared by the CSV
         import and the journal API: the mapping lives here and nowhere else."""
         Day = self.env["homeschool.day"]
@@ -340,13 +342,29 @@ class RepositoryImporter(models.AbstractModel):
             "minutes_total": int(r["minutes_total"]) if (r.get("minutes_total") or "").strip() else False,
             "minutes_adult_present": int(r["minutes_adult_present"]) if (r.get("minutes_adult_present") or "").strip() else False,
         }
+        # the row is the record of the day's hours, like the CSV it mirrors: its note is
+        # written in place even on a past day (journal_force_edit, as the journal import)
+        # on a block that already exists (same title, or the planned one below) the row
+        # never touches the plan: planned minutes and sequence stay, and an empty note
+        # does not erase a note already on the block
+        update = {k: v for k, v in vals.items() if k not in ("duration_planned", "sequence") and not (k == "note" and v is False)}
         existing = day.block_ids.filtered(lambda b: b.name == name and b.kind == kind)
         if existing:
             block = existing[0]
-            block.write(vals)
-        else:
-            block = Block.create(vals)
-        return day, block
+            block.with_context(journal_force_edit=True).write(update)
+            return day, block
+        planned = day.block_ids.filtered(
+            lambda b: b.kind == kind and b.subject_id == subject and b.status == "planned"
+            and not b.actuals_recorded and not b.adult_recorded
+        ).sorted(lambda b: (b.sequence, b.id))
+        if planned:
+            # the evening's row closes the planned block: the activity replaces the title,
+            # the plan (intention, steps, planned minutes, sequence) stays
+            block = planned[0]
+            log.append("hours.csv %s/%s: closed planned block %d «%s»" % (r["date"].strip(), block_key, block.id, block.name))
+            block.with_context(journal_force_edit=True).write(update)
+            return day, block
+        return day, Block.create(vals)
 
     @api.model
     def import_hours(self, repo_path, student, aliases=None):
@@ -544,7 +562,10 @@ class RepositoryImporter(models.AbstractModel):
     # ------------------------------------------------------------------
     # UC-08 journal week files
     # ------------------------------------------------------------------
-    _DAY_HEADING = re.compile(r"^###\s+(\d{4}-\d{2}-\d{2})\s*$", re.M)
+    # ``### 2026-01-07`` or, for a day off, ``### 2026-01-07 — pas d'école (raison)``
+    _DAY_HEADING = re.compile(r"^###\s+(\d{4}-\d{2}-\d{2})(?:\s+—[^\n]*)?\s*$", re.M)
+    _IGNORED_BULLET = re.compile(r"^(blocs|corrections)\s*:")
+    _INDICATORS_BULLET = re.compile(r"^indicateurs\s*:")
 
     @api.model
     def _parse_bullets(self, body):
@@ -554,21 +575,30 @@ class RepositoryImporter(models.AbstractModel):
     @api.model
     def _journal_vals(self, bullets):
         """Classify the bullets of one day the way the week files are written: ``Ce qui a
-        marché`` → ``went_well``, ``Ce qui a mal été`` → ``went_badly`` (the text after the
-        colon), anything else stays a ``- `` bullet in ``notes``. Empty fields are ``False``."""
-        well, badly, other = [], [], []
+        marché`` → ``went_well``, ``Ce qui a mal été`` → ``went_badly``, ``Indicateurs`` →
+        ``indicator_notes`` (the text after the colon); ``Blocs :`` lines (the rendered
+        blocks — ``hours.csv`` is their record) and ``Corrections :`` (append-only on the live
+        record, never re-imported) are ignored; anything else stays a ``- `` bullet in
+        ``notes``. Empty fields are ``False``."""
+        well, badly, indicators, other = [], [], [], []
+        after_colon = lambda b: b.split(":", 1)[1].strip() if ":" in b else b
         for b in bullets:
             low = b.lower()
             if low.startswith("ce qui a marché"):
-                well.append(b.split(":", 1)[1].strip() if ":" in b else b)
+                well.append(after_colon(b))
             elif low.startswith("ce qui a mal été"):
-                badly.append(b.split(":", 1)[1].strip() if ":" in b else b)
+                badly.append(after_colon(b))
+            elif self._INDICATORS_BULLET.match(low):
+                indicators.append(after_colon(b))
+            elif self._IGNORED_BULLET.match(low):
+                continue
             else:
                 other.append(b)
         return {
             "went_well": "\n".join(well) or False,
             "went_badly": "\n".join(badly) or False,
             "notes": "\n".join("- " + o for o in other) or False,
+            "indicator_notes": "\n".join(indicators) or False,
         }
 
     @api.model
@@ -604,6 +634,8 @@ class RepositoryImporter(models.AbstractModel):
             for i in range(1, len(parts) - 1, 2):
                 d = fields.Date.to_date(parts[i])
                 bullets = self._parse_bullets(parts[i + 1].strip())
+                if not any(self._journal_vals(bullets).values()):
+                    continue  # a day off, or blocks only: nothing of the entry to import
                 entry, created = self._apply_journal_day(student, d, bullets)
                 if created:
                     n += 1
