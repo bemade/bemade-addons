@@ -4,6 +4,9 @@ AC1: everything after the H1 is stored EXCEPT the per-session log table
      ("Notes du formateur (par session)" / "Trainer's notes (per session)"),
      which belongs to training lines.
 AC2: EN = source, FR = translation; no-op / draft rules as for the procedure.
+AC3: the authoring preamble (competency link, "Format : TWI…" line, note to
+     the trainer) is dropped: the body starts at the Identification section,
+     in both languages.
 """
 from odoo.tests.common import tagged
 
@@ -113,3 +116,45 @@ class TestCatDemoNotes(CbetCommon):
                                 "Confondre les trois points de lecture.")
         again, _ = Comp._import_markdown(FICHE, EVAL, docs={"NOTES_DEMO": changed})
         self.assertEqual(again.state, "draft")
+
+
+NOTES_PREAMBLE_EN = """# Trainer demonstration notes — Import example competency
+
+> Competency: [`XIM-01`](FICHE_XIM-01_EN.md)
+> Format: **TWI Job Instruction** — Prepare / Present / Try out / Follow up.
+>
+> Document intended for the **trainer**. A guided walk on the bench,
+> no intervention.
+
+---
+
+## Identification
+
+| Field | Value |
+| --- | --- |
+| **Target competency** | `XIM-01` — Import example competency |
+
+## Step 1 — Prepare (10 min)
+
+- [ ] **Bench accessible**, in its starting state.
+"""
+
+
+@tagged("post_install", "-at_install")
+class TestCatDemoNotesPreamble(CbetCommon):
+    def test_body_starts_at_identification(self):
+        Comp = self.env["cbet.competency"]
+        for md, gone in ((NOTES, ("Compétence :", "Format :", "TWI")),
+                         (NOTES_PREAMBLE_EN, ("Competency:", "Format:", "TWI", "intended for"))):
+            html = Comp._parse_demo_notes_md(md)["html"]
+            self.assertTrue(html.startswith("<h2>Identification</h2>"), html[:80])
+            self.assertNotIn("FICHE_XIM-01", html)
+            for text in gone:
+                self.assertNotIn(text, html)
+        en = Comp._parse_demo_notes_md(NOTES_PREAMBLE_EN)["html"]
+        self.assertIn("Bench accessible", en)
+        self.assertIn("Target competency", en)
+
+    def test_notes_without_identification_keep_their_body(self):
+        html = self.env["cbet.competency"]._parse_demo_notes_md(NOTES_EN)["html"]
+        self.assertTrue(html.startswith("<h2>Step 1 — Prepare (10 min)</h2>"), html[:80])
