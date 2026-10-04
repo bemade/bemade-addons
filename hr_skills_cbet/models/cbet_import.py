@@ -1,4 +1,5 @@
 import base64
+import logging
 import mimetypes
 import re
 from html import unescape as _html_unescape
@@ -9,10 +10,18 @@ from odoo import api, models
 from odoo.exceptions import UserError
 from odoo.tools.mail import html_sanitize
 
-# UC-CAT-10 — markdown import. Parses the TTP vault documents — FICHE
+_logger = logging.getLogger(__name__)
+
+# UC-CAT-10 — markdown import. Parses a markdown content archive — FICHE
 # (§-structured), EVALUATION (Part A / Part B tables), PROCEDURE, JOB_AID and
-# NOTES_DEMO — into draft competency records, so the vault can be loaded once
-# and retired.
+# NOTES_DEMO — into draft competency records: an initial load, after which the
+# content is authored in Odoo. A re-import never overwrites a competency edited
+# in Odoo since its last import unless explicitly told to (see
+# ``_import_markdown``).
+
+
+class _KeepNothing(Exception):
+    """Rolls back a trial import that would have changed edited content."""
 
 TYPE_BY_EMOJI = {"\U0001f512": "security", "⚠": "critical", "▫": "standard"}
 
@@ -63,12 +72,12 @@ IMG_RE = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 TOKEN_RE = re.compile(r":([a-z]+-[a-z0-9-]+):")
 LEADING_TOKEN_RE = re.compile(r"^\s*:([a-z]+-[a-z0-9-]+):\s*")
 
-# The vault documents open with authoring notes (competency link, sources,
+# The archive documents open with authoring notes (competency link, sources,
 # see-also, "TWI format", note to the trainer…) between the H1 and the first
 # section; in Odoo they are noise and are dropped on import. A demo note loses
 # its whole preamble. A procedure loses only the authoring paragraphs below
 # (AUTHORING_RE, plus the source list that follows them); every other preamble
-# paragraph — scope, applicability, Durpro practice, field decisions — is kept
+# paragraph — scope, applicability, site practice, field decisions — is kept
 # under the Objective, so nothing field-relevant can be dropped by omission.
 IDENTIFICATION_RE = re.compile(r"^##\s+Identification\b", re.I)
 QUOTE_PREFIX_RE = re.compile(r"^\s*(?:>\s?)+")
@@ -817,7 +826,7 @@ class CbetCompetencyImport(models.Model):
         so an fr_FR-only database is not left reading English.
         """
         french = self.env["res.lang"].search(
-            [("code", "=like", "fr%")]).mapped("code")
+            [("code", "=like", "fr%"), ("active", "=", True)]).mapped("code")
         return "en_US", french
 
     @api.model
@@ -889,8 +898,8 @@ class CbetCompetencyImport(models.Model):
 
     @api.model
     def _import_markdown(self, fiche_md, eval_md, fiche_en_md=None, eval_en_md=None,
-                         docs=None, warnings=None):
-        """Create/update a competency from its vault documents.
+                         docs=None, warnings=None, overwrite_edited=False, skipped=None):
+        """Create/update a competency from its markdown documents.
 
         *fiche_en_md* and *eval_en_md* are the optional English editions
         (``FICHE_XXX-NN_EN.md``, ``EVALUATION_XXX-NN_EN.md``). *docs* carries
@@ -903,11 +912,19 @@ class CbetCompetencyImport(models.Model):
         languages hold the same string.
 
         Idempotent by code: identical markdown is a true no-op, so re-importing
-        the vault does not churn rows. Change detection reads the *French*,
+        the same archive does not churn rows. Change detection reads the *French*,
         because that is the source of record: revising the French sends a
         published competency back to draft (a Manager re-publishes, which bumps
         the version and freezes a fresh snapshot, UC-CAT-09), while supplying or
         correcting an English translation is applied in place.
+
+        Import guard: a competency whose content no longer matches the
+        fingerprint stamped by its last import (or that carries none — created
+        by hand) was edited in Odoo, and the import leaves it alone: nothing is
+        written, it is not sent back to draft, and (code, message) is appended
+        to *skipped*; the prerequisite specs come back empty so the second pass
+        does not relink them either. *overwrite_edited* lifts the guard. Every
+        competency the import creates, updates or finds identical is stamped.
 
         Parser warnings go to *warnings* (a list of (code, message)) when given.
         Returns (competency, prerequisite_specs).
@@ -919,6 +936,7 @@ class CbetCompetencyImport(models.Model):
         # it with the French) and en_US would never see the English.
         self = self.with_context(lang=self._content_langs()[0])
         warnings = warnings if warnings is not None else []
+        skipped = skipped if skipped is not None else []
         fiche = self._parse_fiche_md(fiche_md or "")
         parsed = self._parse_evaluation_md(eval_md or "")
         fiche_en = self._parse_fiche_md(fiche_en_md) if fiche_en_md else None
@@ -946,18 +964,40 @@ class CbetCompetencyImport(models.Model):
             comp._write_imported_fiche(fiche, fiche_en)
             comp._write_imported_bodies(content)
             comp._write_imported_job_aids(content["job_aids"], rebuild=True)
+            comp._stamp_import()
             return comp, fiche["prerequisites"]
 
+        guarded = not overwrite_edited and comp._edited_since_import()
         if not comp._imported_content_differs(name_fr, kind, domain, parsed, fiche, content):
             # Nothing changed in the source language; still let a newly supplied
             # or corrected English text land, since that is a translation.
-            comp.write({"name": name_en})
-            _set_translations(comp, french, {"name": name_fr})
-            comp._apply_english_grid(parsed_en)
-            comp._write_imported_fiche(fiche, fiche_en)
-            comp._write_imported_bodies(content)
-            comp._write_imported_job_aids(content["job_aids"], rebuild=False)
+            def refresh_translation():
+                comp.write({"name": name_en})
+                _set_translations(comp, french, {"name": name_fr})
+                comp._apply_english_grid(parsed_en)
+                comp._write_imported_fiche(fiche, fiche_en)
+                comp._write_imported_bodies(content)
+                comp._write_imported_job_aids(content["job_aids"], rebuild=False)
+
+            if not guarded:
+                refresh_translation()
+            else:
+                # Edited in Odoo: the English refresh could still overwrite an
+                # English edit. Try it, and keep it only when it changes nothing.
+                before = comp._content_fingerprint()
+                try:
+                    with self.env.cr.savepoint():
+                        refresh_translation()
+                        if comp._content_fingerprint() != before:
+                            raise _KeepNothing()
+                except _KeepNothing:
+                    self.env.invalidate_all()
+                    return self._skip_edited(comp, skipped)
+            comp._stamp_import()
             return comp, fiche["prerequisites"]
+
+        if guarded:
+            return self._skip_edited(comp, skipped)
 
         was_published = comp.state == "published"
         comp.write(vals)
@@ -973,7 +1013,18 @@ class CbetCompetencyImport(models.Model):
                 "competency went back to draft. Version %s still describes what "
                 "was published; re-publish to issue a new version.",
                 comp.version))
+        comp._stamp_import()
         return comp, fiche["prerequisites"]
+
+    @api.model
+    def _skip_edited(self, comp, skipped):
+        """Leave an edited competency alone and say so."""
+        if not self.env.context.get("cbet_import_trial"):
+            _logger.warning("%s: edited in Odoo since its last import — skipped", comp.code)
+        skipped.append((comp.code, self.env._(
+            "%(code)s: edited in Odoo since its last import — skipped (tick "
+            "'Overwrite competencies edited in Odoo' to replace them)", code=comp.code)))
+        return comp, []
 
     @api.model
     def _fiche_plain_vals(self, fiche):
@@ -1227,9 +1278,14 @@ class CbetCompetencyImport(models.Model):
             })
 
     @api.model
-    def _analyze_markdown(self, fiche_md, eval_md, docs=None):
+    def _analyze_markdown(self, fiche_md, eval_md, docs=None, overwrite_edited=False):
         """Parse the documents WITHOUT writing anything — for dry runs.
-        Returns a report dict (no side effects)."""
+        Returns a report dict (no side effects).
+
+        ``skip`` is True when the import would leave the competency alone
+        because it was edited in Odoo since its last import. For such a
+        competency the import itself is tried and rolled back, so the dry run
+        gives exactly the decision the import will take."""
         self = self.with_context(lang=self._content_langs()[0])
         fiche = self._parse_fiche_md(fiche_md or "")
         parsed = self._parse_evaluation_md(eval_md or "")
@@ -1241,7 +1297,7 @@ class CbetCompetencyImport(models.Model):
             "n_questions": len(parsed["questions"]),
             "n_essential": sum(1 for q in parsed["questions"] if q["essential"]),
             "prereqs": fiche["prerequisites"], "kind": None,
-            "domain_code": None, "exists": False,
+            "domain_code": None, "exists": False, "skip": False,
             "has_procedure": bool(docs.get("PROCEDURE")),
             "has_procedure_en": bool(docs.get("PROCEDURE_EN")),
             "has_notes": bool(docs.get("NOTES_DEMO")),
@@ -1258,7 +1314,8 @@ class CbetCompetencyImport(models.Model):
             return rep
         rep["kind"] = "procedural" if parsed["criteria"] else "theoretical"
         rep["domain_code"] = code.split("-")[0]
-        rep["exists"] = bool(self.search_count([("code", "=ilike", code)]))
+        comp = self.search([("code", "=ilike", code)], limit=1)
+        rep["exists"] = bool(comp)
         if not parsed["criteria"] and not parsed["questions"]:
             rep["warnings"].append("no criteria and no questions parsed")
         elif not parsed["questions"]:
@@ -1270,14 +1327,34 @@ class CbetCompetencyImport(models.Model):
         doc_warnings = []
         self._parse_documents(code, docs, doc_warnings)
         rep["warnings"] += [w for _c, w in doc_warnings]
+        if comp and not overwrite_edited and comp._edited_since_import():
+            skipped = []
+            try:
+                with self.env.cr.savepoint():
+                    self.with_context(cbet_import_trial=True)._import_markdown(
+                        fiche_md, eval_md, docs.get("FICHE_EN"), docs.get("EVALUATION_EN"),
+                        docs=docs, skipped=skipped)
+                    raise _KeepNothing()
+            except _KeepNothing:
+                self.env.invalidate_all()
+            rep["skip"] = bool(skipped)
         return rep
 
     @api.model
     def _link_prerequisites(self, code, prereq_specs):
         """Second-pass: create prerequisite edges once all competencies exist."""
         comp = self.search([("code", "=ilike", code)], limit=1)
-        if not comp:
+        if not comp or not prereq_specs:
             return
+        # The edges are part of the content fingerprint: an import that was in
+        # step with the stamp stays in step after linking them.
+        in_step = not comp._edited_since_import()
+        self._add_prerequisite_edges(comp, prereq_specs)
+        if in_step:
+            comp._stamp_import()
+
+    @api.model
+    def _add_prerequisite_edges(self, comp, prereq_specs):
         Edge = self.env["cbet.prerequisite"]
         for spec in prereq_specs:
             target = self.search([("code", "=ilike", spec["code"])], limit=1)

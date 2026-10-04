@@ -1,6 +1,6 @@
 {
     "name": "CBET / TWI Competency & Certification Engine",
-    "version": "19.0.1.13.0",
+    "version": "19.0.1.14.0",
     "category": "Human Resources/Skills Management",
     "license": "LGPL-3",
     "author": "Bemade Inc.",
@@ -41,8 +41,10 @@ Within Industry (TWI) engine extending the Odoo 19.0 hr / hr_skills stack.
   the operational procedure, structured recto/verso field job aids (one per
   equipment variant, with an icon catalog shipping its own SVG pictogram
   set) and the trainer's demonstration
-  notes — all loaded from the markdown vault by the import wizard, with their
-  English editions as translations.
+  notes — with their English editions as translations. An import wizard
+  gives an initial load from a markdown archive; content is then authored in
+  Odoo, and a re-import never overwrites a competency edited in Odoo since its
+  last import unless explicitly told to.
 - In-Odoo authoring: the competency form is the work surface for the four
   documents (sheet, procedure, job aids, demonstration notes) with a PDF
   preview per document, a structured recto/verso job-aid editor with

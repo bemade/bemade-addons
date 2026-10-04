@@ -34,8 +34,13 @@
                         picked up when present. An English edition is used as the
                         source-language text, with the French kept as its translation.
                         Competencies are created as drafts; re-importing the same code
-                        updates it.
+                        updates it, except a competency edited in Odoo since its last
+                        import, which is left alone unless you tick the box below.
                     </div>
+                </group>
+                <!-- Import guard: both modes -->
+                <group invisible="state == 'done'">
+                    <field name="overwrite_edited"/>
                 </group>
                 <!-- Result -->
                 <group invisible="state != 'done'">

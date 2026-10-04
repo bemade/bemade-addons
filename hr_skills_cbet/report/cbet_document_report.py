@@ -28,7 +28,7 @@ WATERMARK_URI = "data:image/svg+xml;base64," + base64.b64encode(WATERMARK_SVG.en
 # characters per line of the 187 mm text column, and the printed heights in
 # mm of a recto item, of one extra wrapped line, of a verso check item (the
 # box sets the floor) and of a section heading. Measured on real prints of
-# the TTP vault (19.0.1.12.0, paperformat_cbet_job_aid prints at nominal
+# the reference content (19.0.1.12.0, paperformat_cbet_job_aid prints at nominal
 # size); the CSS in cbet_job_aid_style mirrors these sizes.
 JOB_AID_SIZE_CLASSES = (
     ("l", {"pt": 13, "chars": 80, "column_chars": 36, "item": 7.1, "line": 5.8, "check": 8.1,

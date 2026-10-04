@@ -1,3 +1,5 @@
+import hashlib
+import json
 import re
 
 from odoo import api, fields, models
@@ -163,6 +165,17 @@ class CbetCompetency(models.Model):
     maintenance_condition = fields.Text(translate=True)
     recert_modality = fields.Text(string="Recertification modality", translate=True)
     recert_early_trigger = fields.Text(string="Early recertification trigger", translate=True)
+    # Import guard (19.0.1.14.0): the content fingerprint as it stood right
+    # after the last markdown import. A later import compares it with the live
+    # fingerprint, so it never overwrites a competency edited in Odoo since.
+    import_fingerprint = fields.Char(
+        readonly=True, copy=False,
+        help="Fingerprint of the content as it stood after the last markdown "
+             "import. When the content no longer matches it, the competency was "
+             "edited in Odoo and an import leaves it alone unless told to "
+             "overwrite it.")
+    imported_on = fields.Datetime(
+        string="Last imported on", readonly=True, copy=False)
     designated_trainer_ids = fields.Many2many(
         "res.users",
         string="Designated trainers",
@@ -374,6 +387,42 @@ class CbetCompetency(models.Model):
         if isinstance(value, list):
             return [self._strip_ids(v) for v in value]
         return value
+
+    def _content_fingerprint(self):
+        """A stable digest of the competency's content, in every language.
+
+        The published-snapshot payload (name, kind, protocol, validity, meta,
+        fiche and document bodies, criteria, questions, job aids,
+        prerequisites) read in the source language and in each active French
+        locale — minus the record ids and the reading language, so recreated
+        rows and the caller's language do not count as a change. Nothing that
+        publishing or a plain import bookkeeping write touches is in it.
+        """
+        self.ensure_one()
+        source, french = self._content_langs()
+        Version = self.env["cbet.competency.version"]
+        payload = {}
+        for lang in dict.fromkeys([source] + list(french)):
+            reading = self._strip_ids(Version.with_context(lang=lang)._snapshot_payload(
+                self.with_context(lang=lang)))
+            reading.pop("lang", None)
+            payload[lang] = reading
+        blob = json.dumps(payload, sort_keys=True, ensure_ascii=False, default=str)
+        return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+    def _edited_since_import(self):
+        """True when the content no longer matches the last import's stamp —
+        or when there is no stamp at all (created or never imported here)."""
+        self.ensure_one()
+        return (not self.import_fingerprint
+                or self.import_fingerprint != self._content_fingerprint())
+
+    def _stamp_import(self):
+        """Record the current content as the last imported state."""
+        now = fields.Datetime.now()
+        for comp in self:
+            comp.sudo().write({"import_fingerprint": comp._content_fingerprint(),
+                               "imported_on": now})
 
     def _document_changes(self):
         """What changed since the last published version, per document —
