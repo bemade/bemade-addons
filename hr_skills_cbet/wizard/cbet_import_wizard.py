@@ -23,6 +23,8 @@ class CbetImportWizard(models.TransientModel):
     procedures, job aids (incl. variants) and demo notes, with their English
     editions and the images the procedures reference. Imports create draft
     competencies (idempotent by code); prerequisites link in a second pass.
+    The import is an initial load: once content is authored in Odoo, a
+    competency edited there is skipped unless ``overwrite_edited`` is ticked.
     """
 
     _name = "cbet.import.wizard"
@@ -45,6 +47,12 @@ class CbetImportWizard(models.TransientModel):
              "French, so a mismatched translation cannot pair the wrong rows.")
     archive_file = fields.Binary("Vault archive (.zip)")
     archive_filename = fields.Char()
+    overwrite_edited = fields.Boolean(
+        "Overwrite competencies edited in Odoo",
+        help="Off (recommended): a competency whose content was edited in Odoo "
+             "since its last import is skipped and named in the log. On: the "
+             "import replaces those edits with the markdown content; the revision "
+             "history keeps the replaced bodies.")
 
     state = fields.Selection([("input", "Input"), ("done", "Done")], default="input")
     was_dry_run = fields.Boolean(readonly=True)
@@ -161,14 +169,20 @@ class CbetImportWizard(models.TransientModel):
 
     def _do_import(self, entries, skipped, raise_errors=False):
         Comp = self.env["cbet.competency"]
-        ok, errors, prereq_by_code, warnings = [], [], {}, []
+        ok, errors, prereq_by_code, warnings, edited = [], [], {}, [], []
         translated = grids = 0
         coverage = []
+        imported = Comp
         for label, docs in entries:
             try:
+                n_edited = len(edited)
                 comp, prereqs = Comp._import_markdown(
                     docs.get("FICHE"), docs.get("EVALUATION"), docs.get("FICHE_EN"),
-                    docs.get("EVALUATION_EN"), docs=docs, warnings=warnings)
+                    docs.get("EVALUATION_EN"), docs=docs, warnings=warnings,
+                    overwrite_edited=self.overwrite_edited, skipped=edited)
+                if len(edited) > n_edited:
+                    continue
+                imported |= comp
                 prereq_by_code[comp.code] = prereqs
                 ok.append((comp.code, len(comp.criterion_ids), len(comp.question_ids)))
                 translated += bool(docs.get("FICHE_EN"))
@@ -186,6 +200,9 @@ class CbetImportWizard(models.TransientModel):
         for code, specs in prereq_by_code.items():
             Comp._link_prerequisites(code, specs)
         edges = self.env["cbet.prerequisite"].search_count([]) - edges_before
+        # What this import wrote (or found identical) is now the last imported
+        # state: from here on, any edit in Odoo is detected.
+        imported._stamp_import()
 
         lines = ["Imported %s competencies." % len(ok),
                  "  criteria: %s   questions: %s   prerequisite edges: +%s" % (
@@ -198,6 +215,9 @@ class CbetImportWizard(models.TransientModel):
             lines.append("  " + ", ".join(sorted(c for c, _c, _q in ok)))
         if skipped:
             lines.append("  skipped (%s): %s" % (len(skipped), ", ".join(c for c, _r in skipped)))
+        if edited:
+            lines.append("  edited in Odoo, left alone (%s):" % len(edited))
+            lines += ["    %s" % m for _c, m in edited]
         if warnings:
             lines.append("  warnings (%s):" % len(warnings))
             lines += ["    %s: %s" % (c, w) for c, w in warnings]
@@ -208,7 +228,8 @@ class CbetImportWizard(models.TransientModel):
 
     def _dry_run(self, entries, skipped):
         Comp = self.env["cbet.competency"]
-        reports = [dict(Comp._analyze_markdown(docs.get("FICHE"), docs.get("EVALUATION"), docs),
+        reports = [dict(Comp._analyze_markdown(docs.get("FICHE"), docs.get("EVALUATION"), docs,
+                                               overwrite_edited=self.overwrite_edited),
                         label=label, has_en=bool(docs.get("FICHE_EN")),
                         has_grid_en=bool(docs.get("EVALUATION_EN")))
                    for label, docs in entries]
@@ -224,10 +245,12 @@ class CbetImportWizard(models.TransientModel):
         new_domains = sorted({r["domain_code"] for r in good} - db_domains)
 
         creates = [r for r in good if not r["exists"]]
-        updates = [r for r in good if r["exists"]]
+        updates = [r for r in good if r["exists"] and not r["skip"]]
+        edited = [r for r in good if r["skip"]]
         lines = [
             "DRY RUN — nothing was changed.",
-            "  competencies: %s  (create: %s, update: %s)" % (len(good), len(creates), len(updates)),
+            "  competencies: %s  (create: %s, update: %s, skip (edited in Odoo): %s)" % (
+                len(good), len(creates), len(updates), len(edited)),
             "  criteria: %s   questions: %s (essential %s)   prerequisite edges: %s" % (
                 sum(r["n_criteria"] for r in good), sum(r["n_questions"] for r in good),
                 sum(r["n_essential"] for r in good), sum(len(r["prereqs"]) for r in good)),
@@ -239,6 +262,9 @@ class CbetImportWizard(models.TransientModel):
         lines += self._coverage_lines(
             [(r["has_procedure"], r["has_procedure_en"], r["has_notes"], r["has_notes_en"],
               r["n_job_aids"], r["n_job_aids_en"]) for r in good], len(good))
+        if edited:
+            lines.append("  edited in Odoo since their last import, would be left alone "
+                         "(%s): %s" % (len(edited), ", ".join(sorted(r["code"] for r in edited))))
         if new_domains:
             lines.append("  new domains: %s" % ", ".join(new_domains))
         if skipped:
@@ -262,7 +288,7 @@ class CbetImportWizard(models.TransientModel):
                 len(r["prereqs"]), r["n_sections"],
                 "yes" if r["has_procedure"] else "-", r["n_job_aids"] or "-",
                 "yes" if r["has_notes"] else "-",
-                "update" if r["exists"] else "new"))
+                "skip (edited in Odoo)" if r["skip"] else "update" if r["exists"] else "new"))
         return len(good), "\n".join(lines)
 
     def action_view_competencies(self):

@@ -38,6 +38,14 @@ msgstr ""
 
 #. module: hr_skills_cbet
 #. odoo-python
+#: code:addons/hr_skills_cbet/models/cbet_import.py:0
+msgid ""
+"%(code)s: edited in Odoo since its last import — skipped (tick 'Overwrite "
+"competencies edited in Odoo' to replace them)"
+msgstr ""
+
+#. module: hr_skills_cbet
+#. odoo-python
 #: code:addons/hr_skills_cbet/models/cbet_competency.py:0
 msgid ""
 "%(codes)s is published: its documents are frozen. Ask a CBET Manager to "
@@ -1447,6 +1455,14 @@ msgid "Final decision"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,help:hr_skills_cbet.field_cbet_competency__import_fingerprint
+msgid ""
+"Fingerprint of the content as it stood after the last markdown import. When "
+"the content no longer matches it, the competency was edited in Odoo and an "
+"import leaves it alone unless told to overwrite it."
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_publish_wizard__first_publication
 msgid "First Publication"
 msgstr ""
@@ -1690,6 +1706,11 @@ msgid "Import"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__import_fingerprint
+msgid "Import Fingerprint"
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_import_wizard__import_mode
 msgid "Import Mode"
 msgstr ""
@@ -1895,6 +1916,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_standard_line__write_date
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_training_line__write_date
 msgid "Last Updated on"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__imported_on
+msgid "Last imported on"
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -2176,6 +2202,15 @@ msgid "O-ring"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model:ir.model.fields,help:hr_skills_cbet.field_cbet_import_wizard__overwrite_edited
+msgid ""
+"Off (recommended): a competency whose content was edited in Odoo since its "
+"last import is skipped and named in the log. On: the import replaces those "
+"edits with the markdown content; the revision history keeps the replaced "
+"bodies."
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_print_wizard_form
 msgid "One PDF per document; several documents download as a zip."
 msgstr ""
@@ -2276,6 +2311,11 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__pass_threshold
 msgid "Overall pass threshold (%)"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_import_wizard__overwrite_edited
+msgid "Overwrite competencies edited in Odoo"
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -3376,7 +3416,8 @@ msgid ""
 "                        picked up when present. An English edition is used as the\n"
 "                        source-language text, with the French kept as its translation.\n"
 "                        Competencies are created as drafts; re-importing the same code\n"
-"                        updates it."
+"                        updates it, except a competency edited in Odoo since its last\n"
+"                        import, which is left alone unless you tick the box below."
 msgstr ""
 
 #. module: hr_skills_cbet

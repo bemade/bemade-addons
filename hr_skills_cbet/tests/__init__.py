@@ -35,3 +35,4 @@ from . import test_rpt_02_job_aid
 from . import test_rpt_03_fiche
 from . import test_rpt_06_procedure_notes
 from . import test_rpt_07_print_wizard
+from . import test_cat_18_import_guard
