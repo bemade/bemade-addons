@@ -1,5 +1,6 @@
 import base64
 import math
+import re
 
 import lxml.html
 from lxml import etree
@@ -118,7 +119,7 @@ class CbetDocumentReport(models.AbstractModel):
         if is_html_empty(html):
             return 0
         html = str(html)
-        blocks = sum(html.count(tag) for tag in ("<tr", "<li", "<p", "<h1", "<h2", "<h3"))
+        blocks = len(re.findall(r"<(?:tr|li|p|h[1-3])\b", html))
         text = html_to_inner_content(html)
         return max(1, blocks, math.ceil(len(text) / chars))
 

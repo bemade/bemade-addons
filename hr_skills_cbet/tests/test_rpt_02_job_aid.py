@@ -122,7 +122,7 @@ class TestRptJobAid(CbetCommon):
         # The frame prints in French too, with the same minimal content.
         self.assertIn('class="header cbet-ja-header"', fr)
         self.assertIn('class="footer cbet-ja-footer"', fr)
-        self.assertIn(self.env.company.name, fr)
+        self.assertIn('class="cbet-ja-logo"', fr)
 
     # ------------------------------------------------------- field card frame
     def _letterhead_company(self):
@@ -141,6 +141,14 @@ class TestRptJobAid(CbetCommon):
         })
         return self.env.company
 
+    def test_company_without_logo_prints_its_name(self):
+        company = self._letterhead_company()
+        company.logo = False
+        header = self._render(REPORT, self.aid).split(
+            'class="header cbet-ja-header"', 1)[1].split('class="article', 1)[0]
+        self.assertNotIn("<img", header)
+        self.assertIn("Synthetic Water Inc.", header)
+
     def test_frame_is_logo_name_and_identity_only(self):
         company = self._letterhead_company()
         html = self._render(REPORT, self.aid)
@@ -154,7 +162,8 @@ class TestRptJobAid(CbetCommon):
         header = html.split('class="header cbet-ja-header"', 1)[1].split('class="article', 1)[0]
         self.assertIn('<img', header)
         self.assertIn("data:image/png;base64,", header)
-        self.assertIn("Synthetic Water Inc.", header)
+        # the logo is the wordmark: no company name next to it
+        self.assertNotIn("Synthetic Water Inc.", header)
         self.assertIn("XPR-01", header)
         self.assertIn("Read the synthetic bench", header)
         self.assertIn("v1.0", header)
@@ -165,8 +174,12 @@ class TestRptJobAid(CbetCommon):
         footer = html.split('class="footer cbet-ja-footer"', 1)[1].split("</div>", 1)[0]
         self.assertIn("XPR-01", footer)
         self.assertIn("v1.0", footer)
-        self.assertIn('<span class="page"', footer)
-        self.assertIn('<span class="topage"', footer)
+        # the page counter is filled by wkhtmltopdf only: printed in the PDF,
+        # left out of the html preview (where it would read "Page  / ")
+        self.assertNotIn('<span class="topage"', footer)
+        arch = self.env.ref("hr_skills_cbet.cbet_job_aid_layout").arch
+        self.assertIn("report_type == 'pdf'", arch)
+        self.assertIn('class="topage"', arch)
         # Nothing of the letterhead anywhere in the document.
         for noise in (company.street, company.city, company.zip, company.phone,
                       company.email, company.website, company.vat,

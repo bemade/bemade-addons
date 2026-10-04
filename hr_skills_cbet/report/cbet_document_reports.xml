@@ -346,8 +346,9 @@
                 <tr>
                     <td style="width: 34%; padding: 0 0 2mm; white-space: nowrap; overflow: hidden; vertical-align: middle; text-align: left; border: 0;">
                         <img t-if="company.logo" class="cbet-ja-logo" t-att-src="image_data_uri(company.logo)" alt="Logo"
-                             style="height: 7mm; width: auto; max-width: 30mm; vertical-align: middle; margin-right: 3mm;"/>
-                        <span class="cbet-ja-company" style="font-weight: bold; vertical-align: middle;" t-out="company.name"/>
+                             style="max-height: 7mm; max-width: 30mm; height: auto; width: auto; vertical-align: middle; margin-right: 3mm;"/>
+                        <!-- The logo is the wordmark: the name prints only for a company without one. -->
+                        <span t-else="" class="cbet-ja-company" style="font-weight: bold; vertical-align: middle;" t-out="company.name"/>
                     </td>
                     <!-- A long title is cut with an ellipsis; the variant and
                          version keep their own cell so they always print. -->
@@ -369,7 +370,7 @@
             <span class="cbet-ja-footer-code" t-out="comp.code"/>
             <t t-if="o.variant"> [<span t-out="o.variant"/>]</t>
             · <span class="cbet-ja-footer-version" t-out="'v%s' % comp.version"/>
-            · <span>Page</span> <span class="page"/> / <span class="topage"/>
+            <t t-if="report_type == 'pdf'">· <span>Page</span> <span class="page"/> / <span class="topage"/></t>
         </div>
     </template>
 
