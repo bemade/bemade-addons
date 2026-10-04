@@ -9,11 +9,13 @@ AC3: English edition = source value, French = translation; re-import of the
 AC4: the authoring preamble (everything between the H1 and the first ``##``
      heading — competency link, sources, see-also…) is dropped, in both
      languages; the body starts at the Objective section.
-AC5: scope notes of the preamble (🎯 / 🛑 / **Portée / **Hors scope /
-     **Hors portée / **Frontière de portée / **Aucune intervention, and
-     **Scope / **Out of scope / **Scope boundary / **No intervention) are
-     kept, as a blockquote right after the Objective section's first
-     paragraph (directly under the heading when it has none).
+AC5: only the AUTHORING paragraphs of the preamble are dropped (competency
+     link, sources and the list under them, see-also, reference standards,
+     used-by, compléments, to-confirm notes, notes about the vault's files);
+     every other preamble paragraph — scope, applicability, Durpro practice,
+     field decisions, terminology — is kept, as a blockquote right after the
+     Objective section's first paragraph (directly under the heading when it
+     has none).
 AC6: a procedure without scope notes simply loses its preamble; one without
      a preamble is unchanged.
 AC7: a scope note that shares its paragraph with other preamble lines (no
@@ -323,6 +325,45 @@ class TestCatProcedurePreamble(CbetCommon):
         en = self._html(md.replace("⚠️ **Frontière de portée** :", "⚠️ **Scope boundary**:"))
         self.assertIn("<strong>Scope boundary</strong>", en)
         self.assertNotIn("Sources", en)
+
+    def test_unmarked_field_paragraphs_are_kept_authoring_notes_dropped(self):
+        md = ("# Procédure — X\n\n"
+              "> Compétence : [`XIM-06`](FICHE_XIM-06.md)\n"
+              "> **Sources** :\n"
+              "> - `[web: https://example.invalid/a]`\n"
+              ">   — manuel du fabricant A\n"
+              "> - `[web: https://example.invalid/b]`\n"
+              ">\n"
+              "> **Applicabilité** : bancs **A** et **B**.\n"
+              ">\n"
+              "> **Pratique Durpro** : échantillon de **100 mL**.\n"
+              ">\n"
+              "> 📖 **Terminologie** : le terme canonique des kits est « siège ».\n"
+              ">\n"
+              "> **Ancrage manuel** :\n"
+              "> - **Fréquence** : au moins une fois par trimestre.\n"
+              ">\n"
+              "> ℹ️ Les manuels sont déposés dans `_sources/bancs/`.\n"
+              ">\n"
+              "> **À confirmer / compléter** : familles concernées.\n"
+              ">\n"
+              "> **Compléments** : [`JOB_AID_XIM-06.md`](JOB_AID_XIM-06.md).\n"
+              ">\n"
+              "> Document opérationnel détaillé. Le job aid terrain en est la version courte.\n\n"
+              "---\n\n## Objectif\n\nVérifier le banc.\n\n## Étapes\n\n1. Mesurer.\n")
+        html = self._html(md)
+        self.assertTrue(html.startswith("<h2>Objectif</h2>"), html[:80])
+        quote = html[html.index("<blockquote"):html.index("</blockquote>")]
+        for kept in ("<strong>Applicabilité</strong>", "<strong>Pratique Durpro</strong>",
+                     "<strong>Terminologie</strong>", "<strong>Ancrage manuel</strong>",
+                     "au moins une fois par trimestre"):
+            self.assertIn(kept, quote)
+        for gone in ("Compétence :", "Sources", "example.invalid", "manuel du fabricant",
+                     "_sources/", "À confirmer", "Compléments", "JOB_AID_XIM-06",
+                     "Document opérationnel"):
+            self.assertNotIn(gone, html)
+        self.assertTrue(html.index("Vérifier le banc.") < html.index("<blockquote")
+                        < html.index("<h2>Étapes</h2>"))
 
     def test_import_cleans_both_languages(self):
         self.env["res.lang"]._activate_lang("fr_CA")

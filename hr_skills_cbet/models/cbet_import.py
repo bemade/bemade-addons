@@ -65,9 +65,11 @@ LEADING_TOKEN_RE = re.compile(r"^\s*:([a-z]+-[a-z0-9-]+):\s*")
 
 # The vault documents open with authoring notes (competency link, sources,
 # see-also, "TWI format", note to the trainer…) between the H1 and the first
-# section; in Odoo they are noise and are dropped on import. Only the scope
-# notes of a procedure survive: a preamble paragraph is one when it starts,
-# after the quote marker and an optional emoji, with one of these markers.
+# section; in Odoo they are noise and are dropped on import. A demo note loses
+# its whole preamble. A procedure loses only the authoring paragraphs below
+# (AUTHORING_RE, plus the source list that follows them); every other preamble
+# paragraph — scope, applicability, Durpro practice, field decisions — is kept
+# under the Objective, so nothing field-relevant can be dropped by omission.
 IDENTIFICATION_RE = re.compile(r"^##\s+Identification\b", re.I)
 QUOTE_PREFIX_RE = re.compile(r"^\s*(?:>\s?)+")
 RULE_RE = re.compile(r"^\s*(?:-{3,}|\*{3,}|_{3,})\s*$")
@@ -75,6 +77,22 @@ SCOPE_NOTE_RE = re.compile(
     r"^(?:[^\w\s*`\[]+\s*)?(?:🎯|🛑|\*\*\s*(?:Portée|Hors scope|Hors portée"
     r"|Frontière de portée|Aucune intervention|Scope boundary|Scope|Out of scope"
     r"|No intervention))", re.I)
+AUTHORING_RE = re.compile(
+    r"^(?:[^\w\s*`\[]+\s*)?(?:\*\*\s*)?(?:Comp[ée]tences?(?: associ[ée]e)?|(?:Associated )?[Cc]ompetency"
+    r"|Sources?|Voir aussi|See also|Standards? de r[ée]f[ée]rence|Reference standards?"
+    r"|Compl[ée]ments|Complements|Utilis[ée]e par|Used by|Format"
+    r"|[ÀA] confirmer(?: / compl[ée]ter)?|To confirm(?: / complete)?"
+    r"|Reference sources|Sources de r[ée]f[ée]rence)\b[^\n]{0,40}?:", re.I)
+# Notes about the vault itself: where a file is filed, or the old document set
+# ("Document opérationnel détaillé. Le job aid terrain … en est la version …").
+VAULT_NOTE_RE = re.compile(
+    r"_sources/|_archives/|\[archive:|^(?:[^\w\s*`\[]+\s*)?(?:Document opérationnel détaillé"
+    r"|Detailed operational document)", re.I)
+# A bullet item or its indented continuation ("- …", "* …", "  — …"), not a
+# bold label ("**Applicabilité** :" also starts with "*").
+LIST_LINE_RE = re.compile(r"^(?:\s*[-*+]\s|\s{2,}\S|\s*\[)")
+# A paragraph that is nothing but a link back to a vault file.
+VAULT_LINK_RE = re.compile(r"^\s*\[[^\]]*\]\([^)]*\.md\)\s*[—–-]?", re.I)
 # Preamble notes are not always separated by a blank ">" line: a line opening
 # with a label ("**Sources** :", "**Voir aussi :**", "Compétence :") or a scope
 # marker starts a new paragraph of its own.
@@ -340,6 +358,23 @@ def _is_scope_note(paragraph):
     return bool(SCOPE_NOTE_RE.match(paragraph[0].strip()))
 
 
+def _kept_preamble_paragraphs(paragraphs):
+    """The procedure preamble minus its authoring paragraphs: a paragraph opening
+    with an authoring label (or a bare vault link) is dropped, and so is a
+    bullet list that directly follows one (its source / see-also items)."""
+    kept, previous_dropped = [], False
+    for paragraph in paragraphs:
+        first = paragraph[0].strip()
+        is_list = all(LIST_LINE_RE.match(ln) for ln in paragraph)
+        if (AUTHORING_RE.match(first) or VAULT_LINK_RE.match(first)
+                or VAULT_NOTE_RE.search(" ".join(paragraph)) or (previous_dropped and is_list)):
+            previous_dropped = True
+            continue
+        previous_dropped = False
+        kept.append(paragraph)
+    return kept
+
+
 def _insert_after_first_paragraph(rest, block):
     """*rest* starts with a heading: *block* goes after the first paragraph
     under it, or directly under the heading when a heading/rule/end comes first."""
@@ -361,7 +396,7 @@ def _strip_procedure_preamble(body):
     if not preamble:
         return body
     block = []
-    for paragraph in filter(_is_scope_note, _preamble_paragraphs(preamble)):
+    for paragraph in _kept_preamble_paragraphs(_preamble_paragraphs(preamble)):
         if block:
             block.append(">")
         block.extend("> " + ln for ln in paragraph)
