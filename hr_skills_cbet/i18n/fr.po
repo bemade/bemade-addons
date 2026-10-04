@@ -3717,3 +3717,31 @@ msgstr "Outils et matériel"
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
 msgid "§6 Documents required on site"
 msgstr "§6 Documents requis sur place"
+
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.cbet_job_aid_layout
+msgid "Logo"
+msgstr "Logo"
+
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_certification__activity_calendar_event_id
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_evaluation__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
+msgstr "Évènement du calendrier de l'activité suivante"
+
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_certification__rating_ids
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__rating_ids
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_evaluation__rating_ids
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_qualification__rating_ids
+msgid "Ratings"
+msgstr "Évaluations"
+
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_section_form
+msgid ""
+"This competency is published: its job aids are frozen. Ask a CBET Manager to"
+" reset it to draft before editing."
+msgstr ""
+"Cette compétence est publiée : ses aides-mémoire sont figés. Demandez à un "
+"gestionnaire CBET de la remettre en brouillon avant de la modifier."
+
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.cbet_job_aid_layout
+msgid "· <span>Page</span> <span class=\"page\"/> / <span class=\"topage\"/>"
+msgstr "· <span>Page</span> <span class=\"page\"/> / <span class=\"topage\"/>"

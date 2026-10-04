@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Letter (Québec) paper format shared by the four training documents.
+    <!-- Letter (Québec) paper format shared by the three reading documents
+         (fiche, procedure, demonstration notes) and the icon legend.
          The company header of web.external_layout prints in the top margin,
          so the top keeps room for it; the sides follow the vault's 0.5 in. -->
     <record id="paperformat_cbet_letter" model="report.paperformat">
@@ -14,6 +15,29 @@
         <field name="margin_right">12.7</field>
         <field name="header_line" eval="False"/>
         <field name="header_spacing">40</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <!-- The field job aid prints as a card with its own one-line frame
+         (hr_skills_cbet.cbet_job_aid_layout), not the company letterhead.
+         wkhtmltopdf draws the header from (margin_top - header_spacing) down,
+         so the one-line header sits at 10 mm from the edge with 12 mm of room
+         and the content starts at 22 mm; 10 mm gutters everywhere else, the
+         footer line in the bottom margin. Smart shrinking is off so that the
+         card's typography prints at its nominal size (with it, wkhtmltopdf
+         scales the page by ~0.84 and a 13 pt body comes out at 11 pt). -->
+    <record id="paperformat_cbet_job_aid" model="report.paperformat">
+        <field name="name">CBET job aid (Letter)</field>
+        <field name="default" eval="False"/>
+        <field name="format">Letter</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">22</field>
+        <field name="margin_bottom">16</field>
+        <field name="margin_left">10</field>
+        <field name="margin_right">10</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">12</field>
+        <field name="disable_shrinking" eval="True"/>
         <field name="dpi">90</field>
     </record>
 </odoo>
