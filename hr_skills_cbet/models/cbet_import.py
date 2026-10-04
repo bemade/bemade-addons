@@ -62,6 +62,43 @@ IMG_RE = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 # Job aids.
 TOKEN_RE = re.compile(r":([a-z]+-[a-z0-9-]+):")
 LEADING_TOKEN_RE = re.compile(r"^\s*:([a-z]+-[a-z0-9-]+):\s*")
+
+# The vault documents open with authoring notes (competency link, sources,
+# see-also, "TWI format", note to the trainer…) between the H1 and the first
+# section; in Odoo they are noise and are dropped on import. A demo note loses
+# its whole preamble. A procedure loses only the authoring paragraphs below
+# (AUTHORING_RE, plus the source list that follows them); every other preamble
+# paragraph — scope, applicability, Durpro practice, field decisions — is kept
+# under the Objective, so nothing field-relevant can be dropped by omission.
+IDENTIFICATION_RE = re.compile(r"^##\s+Identification\b", re.I)
+QUOTE_PREFIX_RE = re.compile(r"^\s*(?:>\s?)+")
+RULE_RE = re.compile(r"^\s*(?:-{3,}|\*{3,}|_{3,})\s*$")
+SCOPE_NOTE_RE = re.compile(
+    r"^(?:[^\w\s*`\[]+\s*)?(?:🎯|🛑|\*\*\s*(?:Portée|Hors scope|Hors portée"
+    r"|Frontière de portée|Aucune intervention|Scope boundary|Scope|Out of scope"
+    r"|No intervention))", re.I)
+AUTHORING_RE = re.compile(
+    r"^(?:[^\w\s*`\[]+\s*)?(?:\*\*\s*)?(?:Comp[ée]tences?(?: associ[ée]e)?|(?:Associated )?[Cc]ompetency"
+    r"|Sources?|Voir aussi|See also|Standards? de r[ée]f[ée]rence|Reference standards?"
+    r"|Compl[ée]ments|Complements|Utilis[ée]e par|Used by|Format"
+    r"|[ÀA] confirmer(?: / compl[ée]ter)?|To confirm(?: / complete)?"
+    r"|Reference sources|Sources de r[ée]f[ée]rence)\b[^\n]{0,40}?:", re.I)
+# Notes about the vault itself: where a file is filed, or the old document set
+# ("Document opérationnel détaillé. Le job aid terrain … en est la version …").
+VAULT_NOTE_RE = re.compile(
+    r"_sources/|_archives/|\[archive:|^(?:[^\w\s*`\[]+\s*)?(?:Document opérationnel détaillé"
+    r"|Detailed operational document)", re.I)
+# A bullet item or its indented continuation ("- …", "* …", "  — …"), not a
+# bold label ("**Applicabilité** :" also starts with "*").
+LIST_LINE_RE = re.compile(r"^(?:\s*[-*+]\s|\s{2,}\S|\s*\[)")
+# A paragraph that is nothing but a link back to a vault file.
+VAULT_LINK_RE = re.compile(r"^\s*\[[^\]]*\]\([^)]*\.md\)\s*[—–-]?", re.I)
+# Preamble notes are not always separated by a blank ">" line: a line opening
+# with a label ("**Sources** :", "**Voir aussi :**", "Compétence :") or a scope
+# marker starts a new paragraph of its own.
+PREAMBLE_LABEL_RE = re.compile(
+    r"^(?:[^\w\s*`\[]+\s*)?(?:\*\*[^*]{1,60}?\*\*\s*:|\*\*[^*]{1,60}?:\s*\*\*"
+    r"|(?:Compétence(?: associée)?|(?:Associated )?[Cc]ompetency|Format)\s?:)")
 # A ">" callout indented under a list item: markdown2 leaves the marker in the
 # text, so the marker is dropped and the line stays the item's continuation.
 NESTED_QUOTE_RE = re.compile(r"^([ \t]{2,})>[ \t]?", re.M)
@@ -284,6 +321,88 @@ def _after_h1(md):
         if H1_RE.match(ln):
             return "\n".join(lines[i + 1:])
     return md
+
+
+def _split_preamble(body, heading_re=H2_RE):
+    """(preamble lines, rest lines) around the first heading matching
+    *heading_re*; no such heading → no preamble, the body is left whole."""
+    lines = body.splitlines()
+    for i, ln in enumerate(lines):
+        if heading_re.match(ln):
+            return lines[:i], lines[i:]
+    return [], lines
+
+
+def _preamble_paragraphs(lines):
+    """Paragraphs of a preamble, quote markers stripped: blank lines and blank
+    ``>`` lines separate them, so does a line opening with a label or a scope
+    marker; horizontal rules are dropped."""
+    paragraphs, current = [], []
+    for ln in lines:
+        text = QUOTE_PREFIX_RE.sub("", ln).rstrip()
+        if not text.strip() or RULE_RE.match(text):
+            if current:
+                paragraphs.append(current)
+            current = []
+            continue
+        if current and (SCOPE_NOTE_RE.match(text.strip()) or PREAMBLE_LABEL_RE.match(text.strip())):
+            paragraphs.append(current)
+            current = []
+        current.append(text)
+    if current:
+        paragraphs.append(current)
+    return paragraphs
+
+
+def _is_scope_note(paragraph):
+    return bool(SCOPE_NOTE_RE.match(paragraph[0].strip()))
+
+
+def _kept_preamble_paragraphs(paragraphs):
+    """The procedure preamble minus its authoring paragraphs: a paragraph opening
+    with an authoring label (or a bare vault link) is dropped, and so is a
+    bullet list that directly follows one (its source / see-also items)."""
+    kept, previous_dropped = [], False
+    for paragraph in paragraphs:
+        first = paragraph[0].strip()
+        is_list = all(LIST_LINE_RE.match(ln) for ln in paragraph)
+        if (AUTHORING_RE.match(first) or VAULT_LINK_RE.match(first)
+                or VAULT_NOTE_RE.search(" ".join(paragraph)) or (previous_dropped and is_list)):
+            previous_dropped = True
+            continue
+        previous_dropped = False
+        kept.append(paragraph)
+    return kept
+
+
+def _insert_after_first_paragraph(rest, block):
+    """*rest* starts with a heading: *block* goes after the first paragraph
+    under it, or directly under the heading when a heading/rule/end comes first."""
+    i = 1
+    while i < len(rest) and not rest[i].strip():
+        i += 1
+    if i < len(rest) and not (rest[i].lstrip().startswith("#") or RULE_RE.match(rest[i])):
+        while i < len(rest) and rest[i].strip():
+            i += 1
+    else:
+        i = 1
+    return rest[:i] + [""] + block + [""] + rest[i:]
+
+
+def _strip_procedure_preamble(body):
+    """Drop the authoring preamble of a procedure, keeping its scope notes as a
+    blockquote right after the first section's first paragraph."""
+    preamble, rest = _split_preamble(body)
+    if not preamble:
+        return body
+    block = []
+    for paragraph in _kept_preamble_paragraphs(_preamble_paragraphs(preamble)):
+        if block:
+            block.append(">")
+        block.extend("> " + ln for ln in paragraph)
+    if block:
+        rest = _insert_after_first_paragraph(rest, block)
+    return "\n".join(rest)
 
 
 def _md_to_html(md):
@@ -545,18 +664,23 @@ class CbetCompetencyImport(models.Model):
 
     @api.model
     def _parse_procedure_md(self, md, image_loader=None):
-        """PROCEDURE → {html, warnings}: everything after the H1, images inlined
-        as data URIs when *image_loader(relative_path)* returns their bytes."""
+        """PROCEDURE → {html, warnings}: everything after the H1 but the
+        authoring preamble (scope notes kept under the Objective), images
+        inlined as data URIs when *image_loader(relative_path)* returns their
+        bytes."""
         warnings = []
-        body = _inline_images(_after_h1(md or ""), image_loader, warnings)
+        body = _strip_procedure_preamble(_after_h1(md or ""))
+        body = _inline_images(body, image_loader, warnings)
         return {"html": _md_to_html(body), "warnings": warnings}
 
     @api.model
     def _parse_demo_notes_md(self, md):
-        """NOTES_DEMO → {html, warnings}: everything after the H1 except the
-        per-session log section, which belongs to training lines."""
+        """NOTES_DEMO → {html, warnings}: from the Identification section on
+        (the authoring preamble is dropped), except the per-session log
+        section, which belongs to training lines."""
         kept, skipping = [], False
-        for ln in _after_h1(md or "").splitlines():
+        _preamble, rest = _split_preamble(_after_h1(md or ""), IDENTIFICATION_RE)
+        for ln in rest:
             if re.match(r"^##\s", ln):
                 skipping = bool(LOG_SECTION_RE.search(ln))
             if not skipping:
