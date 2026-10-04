@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-03 17:52+0000\n"
-"PO-Revision-Date: 2026-10-03 17:52+0000\n"
+"POT-Creation-Date: 2026-10-04 00:00+0000\n"
+"PO-Revision-Date: 2026-10-04 00:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -602,6 +602,7 @@ msgstr ""
 
 #. module: hr_skills_cbet
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid__can_edit
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_job_aid_section__can_edit
 msgid "Can Edit"
 msgstr ""
 
@@ -1935,6 +1936,11 @@ msgid "Lockout / tagout (LOTO)"
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.cbet_job_aid_layout
+msgid "Logo"
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model:ir.model.fields.selection,name:hr_skills_cbet.selection__cbet_competency__difficulty__low
 msgid "Low"
 msgstr ""
@@ -2056,6 +2062,12 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_standard__name
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.report_cbet_icon_legend
 msgid "Name"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_certification__activity_calendar_event_id
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_evaluation__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -2556,6 +2568,14 @@ msgstr ""
 #. module: hr_skills_cbet
 #: model:cbet.icon,name:hr_skills_cbet.icon_item_membrane
 msgid "RO membrane"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_certification__rating_ids
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__rating_ids
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_evaluation__rating_ids
+#: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_qualification__rating_ids
+msgid "Ratings"
 msgstr ""
 
 #. module: hr_skills_cbet
@@ -3160,6 +3180,13 @@ msgid ""
 msgstr ""
 
 #. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_job_aid_section_form
+msgid ""
+"This competency is published: its job aids are frozen. Ask a CBET Manager to"
+" reset it to draft before editing."
+msgstr ""
+
+#. module: hr_skills_cbet
 #: model:ir.model.constraint,message:hr_skills_cbet.constraint_cbet_qualification_emp_std_uniq
 msgid "This employee already has a qualification record for this standard."
 msgstr ""
@@ -3589,4 +3616,9 @@ msgstr ""
 #: model:ir.model.fields,field_description:hr_skills_cbet.field_cbet_competency__documents_required
 #: model_terms:ir.ui.view,arch_db:hr_skills_cbet.view_cbet_competency_form
 msgid "§6 Documents required on site"
+msgstr ""
+
+#. module: hr_skills_cbet
+#: model_terms:ir.ui.view,arch_db:hr_skills_cbet.cbet_job_aid_layout
+msgid "· <span>Page</span> <span class=\"page\"/> / <span class=\"topage\"/>"
 msgstr ""
