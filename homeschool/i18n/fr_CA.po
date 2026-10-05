@@ -1819,6 +1819,11 @@ msgid "Next"
 msgstr "Suivant"
 
 #. module: homeschool
+#: model_terms:ir.ui.view,arch_db:homeschool.view_block_search
+msgid "Next week"
+msgstr "Semaine prochaine"
+
+#. module: homeschool
 #: model:ir.model.fields.selection,name:homeschool.selection__homeschool_project__student_vote__down
 msgid "No"
 msgstr "Non"
