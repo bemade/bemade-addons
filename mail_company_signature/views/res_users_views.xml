@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_users_form" model="ir.ui.view">
+        <field name="name">res.users.form.company.signature</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form" />
+        <field name="arch" type="xml">
+            <field name="signature" position="attributes">
+                <attribute name="readonly">company_signature_enforced</attribute>
+            </field>
+            <field name="signature" position="before">
+                <field name="company_signature_enforced" invisible="1" />
+            </field>
+            <field name="signature" position="after">
+                <div
+          class="text-muted"
+          colspan="2"
+          invisible="not company_signature_enforced"
+        >
+                    This signature is generated from the company template and cannot be edited.
+                </div>
+                <field
+          name="personal_signature_backup"
+          readonly="1"
+          groups="base.group_system"
+          invisible="not personal_signature_backup"
+        />
+                <button
+          name="action_restore_personal_signature"
+          type="object"
+          string="Restore personal signature"
+          groups="base.group_system"
+          invisible="company_signature_enforced or not personal_signature_backup"
+        />
+            </field>
+        </field>
+    </record>
+    <record id="view_users_form_simple_modif" model="ir.ui.view">
+        <field name="name">res.users.preferences.form.company.signature</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form_simple_modif" />
+        <field name="arch" type="xml">
+            <field name="signature" position="attributes">
+                <attribute name="readonly">company_signature_enforced</attribute>
+            </field>
+            <field name="signature" position="before">
+                <field name="company_signature_enforced" invisible="1" />
+            </field>
+            <field name="signature" position="after">
+                <div
+          class="text-muted"
+          colspan="2"
+          invisible="not company_signature_enforced"
+        >
+                    This signature is generated from the company template and cannot be edited.
+                </div>
+            </field>
+        </field>
+    </record>
+</odoo>
