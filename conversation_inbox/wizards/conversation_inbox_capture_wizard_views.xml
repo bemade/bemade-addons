@@ -17,6 +17,7 @@
                 <group invisible="mode != 'link'">
                     <field name="res_model_id" required="mode == 'link'" />
                     <field name="res_id" required="mode == 'link'" />
+                    <field name="res_display_name" invisible="not res_display_name" />
                 </group>
                 <group string="Assign (optional)">
                     <field name="user_id" />

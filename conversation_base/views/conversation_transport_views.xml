@@ -36,6 +36,7 @@
                         </group>
                         <group name="triage" string="Triage">
                             <field name="default_file_in_odoo" />
+                            <field name="record_link_mode" invisible="not user_id" />
                             <field name="archive_on_capture" />
                         </group>
                     </group>

@@ -157,13 +157,16 @@ export class ConversationInboxAction extends Component {
   }
 
   async onCapture(item, mode) {
-    await this.action.doAction({
-      type: "ir.actions.act_window",
-      res_model: "conversation.inbox.capture.wizard",
-      views: [[false, "form"]],
-      target: "new",
-      context: this._wizardContext(item, {default_mode: mode}),
-    });
+    try {
+      const result = await this.orm.call(
+        "conversation.inbox.capture.wizard",
+        "action_open_for_item",
+        [this.state.transportId, item.external_id, item.subject, mode]
+      );
+      await this.action.doAction(result);
+    } catch (error) {
+      this.notification.add(this._errorMessage(error), {type: "danger"});
+    }
   }
 
   async onReassign(item) {
