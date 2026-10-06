@@ -97,6 +97,11 @@ registry.category("web_tour.tours").add("mail_company_signature_full_composer", 
       run: "click",
     },
     {
+      content: "Reopen the inline composer (the draft is restored in it)",
+      trigger: ".o-mail-Chatter-sendMessage",
+      run: "click",
+    },
+    {
       content: "Reopen the full composer from the restored draft",
       trigger: "[name='open-full-composer']",
       run: "click",

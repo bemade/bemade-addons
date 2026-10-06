@@ -20,7 +20,18 @@ class TestCompanySignatureUI(HttpCase):
                 "email": "sig_tour@example.com",
                 "company_id": company.id,
                 "company_ids": [(6, 0, company.ids)],
-                "group_ids": [(6, 0, cls.env.ref("base.group_user").ids)],
+                # group_partner_manager: plain internal users cannot write
+                # res.partner, which disables the chatter "Send message" button
+                "group_ids": [
+                    (
+                        6,
+                        0,
+                        (
+                            cls.env.ref("base.group_user")
+                            | cls.env.ref("base.group_partner_manager")
+                        ).ids,
+                    )
+                ],
             }
         )
         cls.env["hr.employee"].sudo().search([("user_id", "=", cls.user.id)]).unlink()
@@ -37,6 +48,36 @@ class TestCompanySignatureUI(HttpCase):
         cls.partner = cls.env["res.partner"].create(
             {"name": "Client Sig", "email": "client.sig@example.com"}
         )
+        cls._grant_partner_form_read_access()
+
+    @classmethod
+    def _grant_partner_form_read_access(cls):
+        """Let the minimal tour user read every model related to res.partner.
+
+        In a database where many addons are installed, other addons add
+        relational fields to the res.partner form whose comodel is restricted
+        to their own groups. web_read then fails with an AccessError for a
+        plain internal user, so the form (and its chatter) never renders and
+        the tours time out on their first step. The tours test the composer,
+        not those addons' ACLs, so grant the user group read access to the
+        related models.
+        """
+        group = cls.env.ref("base.group_user")
+        user_env = cls.env(user=cls.user)
+        for field in cls.env["res.partner"]._fields.values():
+            comodel = getattr(field, "comodel_name", None)
+            if not comodel or comodel not in cls.env:
+                continue
+            if user_env[comodel].has_access("read"):
+                continue
+            cls.env["ir.model.access"].create(
+                {
+                    "name": "mail_company_signature tour read %s" % comodel,
+                    "model_id": cls.env["ir.model"]._get_id(comodel),
+                    "group_id": group.id,
+                    "perm_read": True,
+                }
+            )
 
     def _tour(self, name):
         self.start_tour(
@@ -82,4 +123,8 @@ class TestCompanySignatureUI(HttpCase):
             [("model", "=", "res.partner"), ("res_id", "=", self.partner.id)]
         )
         self.assertEqual(len(mails), 1)
-        self.assertEqual(mails.body_html.count(PHONE), 1)
+        # The notification layout also repeats the start of the body in a
+        # hidden preheader, so count signature blocks, not phone occurrences.
+        body = mails.body_html
+        self.assertEqual(body.count('class="o-signature-container"'), 1)
+        self.assertIn(PHONE, body.split('class="o-signature-container"')[1])
