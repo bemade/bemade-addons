@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Search",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Discuss",
     "summary": "Full-text search over conversation messages behind a "
     "pluggable search-backend interface.",
