@@ -59,3 +59,62 @@ class TestMimeCorrelationCandidates(TransactionCase):
     def test_no_headers_returns_empty_set(self):
         message = _parse("Content-Type: text/plain\n\nbody")
         self.assertEqual(mime.correlation_candidates(message), set())
+
+
+class TestOdooHeaderCandidates(TransactionCase):
+    def test_candidates_order_and_sources(self):
+        found = mime.odoo_header_candidates(
+            "<own@x>",
+            "<a-openerp-7-sale.order@h1>",
+            "<r1@x> <r2-openerp-9-res.partner@h2>",
+            "project.task-5",
+        )
+        self.assertEqual(
+            [(c["source"], c["msgid"], c["tattoo"]) for c in found],
+            [
+                ("in_reply_to", "<a-openerp-7-sale.order@h1>", ("sale.order", 7)),
+                ("references", "<r2-openerp-9-res.partner@h2>", ("res.partner", 9)),
+                ("references", "<r1@x>", None),
+                ("message_id", "<own@x>", None),
+                ("x_odoo_objects", None, ("project.task", 5)),
+            ],
+        )
+
+    def test_x_odoo_objects_items_not_merged(self):
+        found = mime.odoo_header_candidates(
+            "", "", "", "sale.order-1,res.partner-2 project.task-3"
+        )
+        self.assertEqual(
+            [c["tattoo"] for c in found],
+            [("sale.order", 1), ("res.partner", 2), ("project.task", 3)],
+        )
+
+    def test_references_folded_and_capped(self):
+        ids = ["<id%d@x>" % i for i in range(40)]
+        ids[39] = "<id39\n @x>"
+        refs = "\r\n\t".join(ids)
+        found = mime.odoo_header_candidates("", "", refs, "")
+        self.assertEqual(len(found), 32)
+        self.assertEqual(found[0]["msgid"], "<id39@x>")
+        self.assertEqual(found[-1]["msgid"], "<id8@x>")
+
+    def test_non_numeric_tags_are_candidates_without_tattoo(self):
+        tags = ("reply_to", "private", "message-notify", "loop-detection-bounce-email")
+        refs = " ".join("<1-openerp-%s@h>" % t for t in tags)
+        found = mime.odoo_header_candidates("", "", refs, "")
+        self.assertEqual(len(found), 4)
+        self.assertTrue(all(c["tattoo"] is None for c in found))
+
+    def test_malformed_never_raises(self):
+        self.assertEqual(mime.odoo_header_candidates(None, None, None, None), [])
+        self.assertEqual(mime.odoo_header_candidates("", "", "", ""), [])
+        self.assertEqual(mime.odoo_header_candidates("", "", "garbage <<>>", ""), [])
+        for bad in ("sale.order-", "-5", "Sale Order-x"):
+            self.assertEqual(mime.odoo_header_candidates("", "", "", bad), [])
+
+    def test_dedup_keeps_first_position(self):
+        found = mime.odoo_header_candidates(
+            "", "<a@x>", "<b@x> <a@x>", ""
+        )
+        self.assertEqual([c["msgid"] for c in found], ["<a@x>", "<b@x>"])
+        self.assertEqual(found[0]["source"], "in_reply_to")

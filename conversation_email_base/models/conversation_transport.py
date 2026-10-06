@@ -588,6 +588,7 @@ class ConversationTransport(models.Model):
             "attachments": mime.extract_attachments(message),
             "in_reply_to": (message.get("In-Reply-To") or "").strip(),
             "references": (message.get("References") or "").strip(),
+            "x_odoo_objects": (message.get("X-Odoo-Objects") or "").strip(),
         }
 
     def _email_message_is_mine(self, message, conversation):

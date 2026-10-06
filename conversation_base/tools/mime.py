@@ -6,9 +6,10 @@ modules can import them without depending on each other -- only on
 ``conversation_base``, which they already do.
 """
 
+import re
 from email.utils import getaddresses, parsedate_to_datetime
 
-from odoo.tools.mail import html_sanitize, plaintext2html
+from odoo.tools.mail import html_sanitize, plaintext2html, unfold_references
 
 
 def addresses(header_value):
@@ -139,4 +140,65 @@ def correlation_candidates(message):
         candidates.add(in_reply_to)
     references = (message.get("References") or "").split()
     candidates.update(ref.strip() for ref in references if ref.strip())
+    return candidates
+
+
+_TATTOO_RE = re.compile(r"-openerp-(\d+)-([a-z][\w.]*)@")
+_OBJECTS_ITEM_RE = re.compile(r"^([a-z][\w.]*)-(\d+)$")
+_MAX_REFERENCES = 32
+
+
+def parse_odoo_tattoo(msgid):
+    """An Odoo-minted Message-Id (``<...-openerp-{res_id}-{model}@host>``)
+    -> ``(model, res_id)``, or ``None`` when it has no numeric record
+    reference (``-openerp-reply_to@``, ``-openerp-private@``, ...)."""
+    match = _TATTOO_RE.search(msgid or "")
+    if not match:
+        return None
+    return match.group(2), int(match.group(1))
+
+
+def odoo_header_candidates(message_id, in_reply_to, references, x_odoo_objects):
+    """Header values -> ordered, de-duplicated candidates that may tie an
+    inbound mail back to an Odoo record. Pure, header-only, bounded
+    (References capped to the newest 32 ids); never raises.
+
+    Each candidate is ``{"source", "msgid", "tattoo"}``: ``source`` is one
+    of ``in_reply_to`` / ``references`` / ``message_id`` /
+    ``x_odoo_objects``; ``msgid`` the RFC id (``None`` for an
+    ``X-Odoo-Objects`` item, which carries none); ``tattoo`` the parsed
+    ``(model, res_id)`` or ``None``. Order: In-Reply-To, References newest
+    first, the message's own Message-Id, then X-Odoo-Objects.
+    """
+    candidates = []
+    seen = set()
+
+    def add(source, msgid, tattoo):
+        # Message-id candidates dedupe on the id alone (first position
+        # wins); X-Odoo-Objects items have no id, so their key carries
+        # the source and tattoo and they are never merged together.
+        key = msgid or (source, tattoo)
+        if key in seen:
+            return
+        seen.add(key)
+        candidates.append({"source": source, "msgid": msgid, "tattoo": tattoo})
+
+    try:
+        for msgid in unfold_references(in_reply_to or ""):
+            add("in_reply_to", msgid, parse_odoo_tattoo(msgid))
+        refs = unfold_references(references or "")[-_MAX_REFERENCES:]
+        for msgid in reversed(refs):
+            add("references", msgid, parse_odoo_tattoo(msgid))
+        for msgid in unfold_references(message_id or ""):
+            add("message_id", msgid, parse_odoo_tattoo(msgid))
+        for item in re.split(r"[,\s]+", (x_odoo_objects or "").strip()):
+            match = _OBJECTS_ITEM_RE.match(item)
+            if match:
+                add(
+                    "x_odoo_objects",
+                    None,
+                    (match.group(1), int(match.group(2))),
+                )
+    except Exception:  # noqa: BLE001 - malformed headers never raise
+        pass
     return candidates

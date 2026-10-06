@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Inbox",
-    "version": "19.0.1.1.0",
+    "version": "19.0.1.2.0",
     "category": "Discuss",
     "summary": "In-Odoo GTD inbox/triage viewer for browsable conversation "
     "transports (ingest-on-action, not an email client).",
