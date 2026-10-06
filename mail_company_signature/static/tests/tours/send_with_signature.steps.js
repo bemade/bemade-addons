@@ -4,7 +4,8 @@ export default [
     title: "Open a contact",
     narration:
       "Open any contact, for example one of your customers, from the Contacts list.",
-    selector: ".o_kanban_record",
+    selector: ".o_kanban_record, .o_data_row",
+    containsText: "Jean Gagnon",
     action: "click",
     videoOnly: true,
   },
