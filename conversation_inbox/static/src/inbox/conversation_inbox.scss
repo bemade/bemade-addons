@@ -1,0 +1,16 @@
+// An email body is rendered as (server-sanitized) HTML inside the card.
+// Keep whatever it does inside its own box: a wide table or image scrolls
+// horizontally here instead of widening the page, and paint/layout
+// containment clips anything that would still try to escape the card.
+.o_conversation_inbox_body {
+  max-width: 100%;
+  min-width: 0;
+  overflow: auto;
+  overflow-wrap: break-word;
+  contain: layout paint;
+
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+}

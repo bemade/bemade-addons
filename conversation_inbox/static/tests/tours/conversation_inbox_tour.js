@@ -16,7 +16,8 @@
  * So the steps below deliberately favour *wiring* over presentation:
  *
  *  - the client action mounts and browse_page's rows reach the DOM;
- *  - expanding a row round-trips fetch_envelope and renders the body;
+ *  - expanding a row round-trips fetch_envelope and renders the body as
+ *    HTML (a real paragraph, not its escaped source);
  *  - Next/Previous actually page (the sequence-window paging behind them
  *    is what made a real mailbox usable);
  *  - each triage button opens its dialog -- the dead-button class of bug;
@@ -38,6 +39,23 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
     {
       content: "The inbox client action mounts",
       trigger: ".o_conversation_inbox",
+    },
+    {
+      // The viewer opens on the first browsable account; another module
+      // may have created one in the same database. Switch only if needed,
+      // so the usual case does not reload the page under the next steps.
+      content: "Use the tour's own account",
+      trigger: ".o_conversation_inbox",
+      run() {
+        const select = document.querySelector("#o_conversation_inbox_transport");
+        const option =
+          select &&
+          [...select.options].find((opt) => opt.textContent.trim() === "Tour Mailbox");
+        if (option && !option.selected) {
+          select.value = option.value;
+          select.dispatchEvent(new Event("change", {bubbles: true}));
+        }
+      },
     },
     {
       content: "browse_page's first page reached the DOM",
@@ -69,8 +87,11 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
     // Expanding round-trips fetch_envelope.
     // --------------------------------------------------------------
     {
-      content: "The envelope body rendered",
-      trigger: ".o_conversation_inbox_body:contains('the quote you asked for')",
+      // A rendered paragraph, not its escaped source: matching the text
+      // alone also passed while the body was shown as raw HTML.
+      content: "The envelope body rendered as HTML",
+      trigger:
+        ".o_conversation_inbox_body:not(:contains('<p>')) p:contains('the quote you asked for')",
     },
     {
       content: "Attachment names are listed without being ingested",
@@ -200,7 +221,7 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
     },
     {
       content: "B's body is shown",
-      trigger: ".o_conversation_inbox_body:contains('the quote you asked for')",
+      trigger: ".o_conversation_inbox_body p:contains('the quote you asked for')",
     },
     {
       content: "Delete B asks for confirmation",

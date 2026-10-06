@@ -1,6 +1,6 @@
 /** @odoo-module */
 
-import {Component, onWillStart, useState} from "@odoo/owl";
+import {Component, markup, onWillStart, useState} from "@odoo/owl";
 import {ConfirmationDialog} from "@web/core/confirmation_dialog/confirmation_dialog";
 import {_t} from "@web/core/l10n/translation";
 import {registry} from "@web/core/registry";
@@ -139,7 +139,11 @@ export class ConversationInboxAction extends Component {
         this.state.transportId,
         item.external_id,
       ]);
-      this.state.expandedBody = envelope.body || "";
+      // The body is the only envelope field rendered as HTML, and only
+      // because fetch_envelope returns it through conversation_base's
+      // strict display sanitizer (tools/display.py). Subject, sender,
+      // date and attachment names stay plain text that t-esc escapes.
+      this.state.expandedBody = markup(envelope.body || "");
       this.state.expandedAttachments = envelope.attachments || [];
     } catch (error) {
       this.notification.add(this._errorMessage(error), {type: "danger"});
