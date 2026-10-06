@@ -105,6 +105,15 @@ class TestCompanySignatureUI(HttpCase):
         self.assertEqual(len(mails), 1)
         self.assertEqual(mails.body_html.count(PHONE), 1)
 
+    def test_send_flow(self):
+        """Demo flow (steps file shared with the client video)."""
+        self._tour("mail_company_signature_send_flow")
+        message = self._message("Hello inline")
+        self.assertTrue(message.email_add_signature)
+        mails = self._mails(message)
+        self.assertEqual(len(mails), 1)
+        self.assertEqual(mails.body_html.count(PHONE), 1)
+
     def test_inline_remove(self):
         self._tour("mail_company_signature_inline_remove")
         message = self._message("No sig")
