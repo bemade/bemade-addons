@@ -3,7 +3,7 @@ import logging
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
-from ..tools import mime
+from ..tools import display, mime
 
 _logger = logging.getLogger(__name__)
 
@@ -341,7 +341,14 @@ class ConversationTransport(models.Model):
                 )
             )
         raw = transport._fetch(external_id)
-        return transport._normalize(raw)
+        stub = transport._normalize(raw)
+        # The viewer renders the body as HTML: whatever the provider's
+        # _normalize produced, the browser only ever gets the strict
+        # display profile (see tools/display.py). Every other key stays
+        # plain data that the client escapes.
+        if isinstance(stub, dict) and "body" in stub:
+            stub = dict(stub, body=display.sanitize_display_html(stub["body"]))
+        return stub
 
     def _mailbox_action(self, hook, external_id):
         """Gate + dispatch one mailbox write (AC5): the transport must be
