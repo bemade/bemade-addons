@@ -1,6 +1,6 @@
 {
     "name": "Data Cleaning - Fuzzy Deduplication",
-    "version": "19.0.1.0.3",
+    "version": "19.0.1.0.4",
     "category": "Productivity/Data Cleaning",
     "summary": "Find near-duplicate contacts that exact-match deduplication misses",
     "description": """
