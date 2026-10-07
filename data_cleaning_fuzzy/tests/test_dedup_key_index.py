@@ -72,10 +72,47 @@ class TestDedupKeyIndex(TransactionCase):
         and that is exactly what this asserts. An expression mismatch (e.g.
         the index built over unaccent(dedup_key)) fails here.
         """
-        self.env.cr.execute("SET LOCAL enable_seqscan = off")
-        self.env.cr.execute("SET LOCAL pg_trgm.similarity_threshold = 0.55")
-        self.env.cr.execute(
-            "EXPLAIN SELECT id FROM res_partner WHERE dedup_key % 'northwind'"
+        cr = self.env.cr
+        # Pin the planner so only our GIN index can serve the query. A GIN
+        # index is only ever used through a bitmap scan, so that path is
+        # switched on explicitly rather than trusting the server default.
+        for setting, value in (
+            ("enable_seqscan", "off"),
+            ("enable_indexscan", "off"),
+            ("enable_indexonlyscan", "off"),
+            ("enable_bitmapscan", "on"),
+        ):
+            cr.execute(f"SET LOCAL {setting} = {value}")
+        cr.execute("SET LOCAL pg_trgm.similarity_threshold = 0.55")
+        cr.execute("EXPLAIN SELECT id FROM res_partner WHERE dedup_key % 'northwind'")
+        plan = "\n".join(row[0] for row in cr.fetchall())
+        if "res_partner_dedup_key_trgm_idx" not in plan:
+            self.fail(
+                "trigram index not used for `%%`.\nplan:\n%s\ndiagnostics: %s"
+                % (plan, self._planner_diagnostics())
+            )
+
+    def _planner_diagnostics(self):
+        """Server facts that decide whether the index is usable, for a failure message."""
+        cr = self.env.cr
+        cr.execute("SHOW server_version")
+        facts = {"server_version": cr.fetchone()[0]}
+        cr.execute(
+            "SELECT indisvalid, indisready FROM pg_index "
+            "WHERE indexrelid = 'res_partner_dedup_key_trgm_idx'::regclass"
         )
-        plan = "\n".join(row[0] for row in self.env.cr.fetchall())
-        self.assertIn("res_partner_dedup_key_trgm_idx", plan)
+        facts["index_valid_ready"] = cr.fetchone()
+        cr.execute(
+            "SELECT e.extversion, n.nspname FROM pg_extension e "
+            "JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = 'pg_trgm'"
+        )
+        facts["pg_trgm_version_schema"] = cr.fetchone()
+        cr.execute(
+            "SELECT oprnamespace::regnamespace::text, oprleft::regtype::text, "
+            "oprright::regtype::text FROM pg_operator "
+            "WHERE oprname = '%' AND oprleft = 'text'::regtype"
+        )
+        facts["text_percent_operators"] = cr.fetchall()
+        cr.execute("SHOW search_path")
+        facts["search_path"] = cr.fetchone()[0]
+        return facts
