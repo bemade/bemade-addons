@@ -46,29 +46,61 @@ class ResPartner(models.Model):
         return SQL("%s, %s", rank_sql, sql) if sql else rank_sql
 
     def _sale_usage_rank_order_sql(self, slot):
+        """ORDER BY terms for ``slot``'s dropdown, most relevant first.
+
+        Address slots with a customer contact: what that contact used and
+        what its company owns come before any other company's partners; then
+        the slot's preferred partners; then uses with the contact; then uses
+        overall.
+        """
         self.env["sale.order"].flush_model([slot, "partner_id"])
-        self.flush_model([SLOT_RANKS[slot]])
-        rank_sql = SQL("%s DESC", SQL.identifier(self._table, SLOT_RANKS[slot]))
+        self.flush_model([SLOT_RANKS[slot], "type", "commercial_partner_id"])
+        partner_id = SQL.identifier(self._table, "id")
         contact_id = self.env.context.get("default_parent_id")
-        if slot == "partner_id" or not isinstance(contact_id, int) or not contact_id:
-            return rank_sql
-        return SQL(
-            "(SELECT count(*) FROM sale_order so"
-            " WHERE so.%s = %s AND so.partner_id = %s) DESC, %s",
-            SQL.identifier(slot), SQL.identifier(self._table, "id"), contact_id, rank_sql,
+        contact = (
+            self.browse(contact_id).exists()
+            if slot != "partner_id" and isinstance(contact_id, int) and contact_id
+            else self.browse()
         )
+        terms = []
+        if contact:
+            used_with_contact = SQL(
+                "(SELECT count(*) FROM sale_order so WHERE so.%s = %s AND so.partner_id = %s)",
+                SQL.identifier(slot), partner_id, contact.id,
+            )
+            terms.append(SQL(
+                "(%s = %s OR %s > 0) DESC",
+                SQL.identifier(self._table, "commercial_partner_id"),
+                contact.commercial_partner_id.id,
+                used_with_contact,
+            ))
+        if (eligible := self._sale_usage_eligible_sql(slot, self._table)) is not None:
+            terms.append(SQL("(%s) IS TRUE DESC", eligible))
+        if contact:
+            terms.append(SQL("%s DESC", used_with_contact))
+        terms.append(SQL("%s DESC", SQL.identifier(self._table, SLOT_RANKS[slot])))
+        return SQL(", ").join(terms)
+
+    def _sale_usage_eligible_sql(self, slot, alias):
+        """The partners ``slot`` prefers, as an SQL condition on ``alias``.
+
+        They come first in the slot's dropdown, and only they become its
+        default. None (here) means every partner. Override per slot.
+        """
+        return None
 
     def _sale_usage_default_address(self, slot):
         """The address this customer contact uses most in ``slot``.
 
         First among the addresses on this contact's own orders, then among
         the addresses of its company on anyone's orders. Ties go to the most
-        recent order; archived addresses are skipped. Empty when neither
+        recent order; archived addresses, and any the slot does not prefer
+        (``_sale_usage_eligible_sql``), are skipped. Empty when neither
         has a used address.
         """
         self.ensure_one()
         self.env["sale.order"].flush_model([slot, "partner_id"])
-        self.flush_model(["active", "commercial_partner_id"])
+        self.flush_model(["active", "commercial_partner_id", "type"])
         for scope in (
             SQL("so.partner_id = %s", self.id),
             SQL("a.commercial_partner_id = %s", self.commercial_partner_id.id),
@@ -78,12 +110,13 @@ class ResPartner(models.Model):
                 SELECT so.%(slot)s
                   FROM sale_order so
                   JOIN res_partner a ON a.id = so.%(slot)s
-                 WHERE a.active AND %(scope)s
+                 WHERE a.active AND %(scope)s AND %(eligible)s
                  GROUP BY so.%(slot)s
                  ORDER BY count(*) DESC, max(so.id) DESC
                  LIMIT 1
                 """,
                 slot=SQL.identifier(slot), scope=scope,
+                eligible=self._sale_usage_eligible_sql(slot, "a") or SQL("TRUE"),
             ))
             if row := self.env.cr.fetchone():
                 return self.browse(row[0])

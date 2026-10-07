@@ -68,6 +68,11 @@ class TestAddressDefaults(SalePartnerUsageRankCase):
     def test_core_fallback(self):
         """AC 3"""
         self._order(self.jason, self.acme_site_a, self.acme_billing)
+        # An invoice address of Globex's own, so Odoo's choice is not Gina
+        # herself (which a stricter rule elsewhere may replace).
+        self.env["res.partner"].create({
+            "name": "Globex Payables", "type": "invoice", "parent_id": self.globex.id,
+        })
         expected = self.gina.address_get(["delivery", "invoice"])
         shipping, invoice = self._defaults(self.gina)
         self.assertEqual(shipping.id, expected["delivery"])

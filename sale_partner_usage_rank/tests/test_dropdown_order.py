@@ -12,7 +12,9 @@ Acceptance criteria:
 1. Customer slot: matches come by ``sale_contact_rank`` descending; ties and
    never-used partners keep the standard partner order.
 2. Delivery Address slot, contact given: addresses used with that contact
-   come first, most uses first; then by ``sale_shipping_rank`` descending.
+   and addresses of the contact's company come first, before any other
+   company's, however much those are used; among them, uses with the contact
+   first, then ``sale_shipping_rank`` descending.
 3. Invoice Address slot: same as 2, with ``sale_invoice_rank``.
 4. Address slot, no contact yet: ordered by the slot's rank alone.
 5. Ranking reorders but never filters: the matched set is the same as
@@ -73,6 +75,18 @@ class TestDropdownOrder(SalePartnerUsageRankCase):
         self.assertEqual(
             self._suggest(self.sites, "partner_shipping_id", self.jason),
             [self.acme_site_b.id, self.acme_site_a.id, self.globex_site.id, self.zulu_site.id],
+        )
+
+    def test_shipping_slot_own_company_first(self):
+        """AC 2: the contact's company before busier sites elsewhere."""
+        for _i in range(5):
+            self._order(self.mary, self.globex_site)
+        self._order(self.mary, self.zulu_site)
+        self._order(self.jason, self.zulu_site)
+        self._order(self.mary, self.acme_site_b)
+        self.assertEqual(
+            self._suggest(self.sites, "partner_shipping_id", self.jason),
+            [self.zulu_site.id, self.acme_site_b.id, self.acme_site_a.id, self.globex_site.id],
         )
 
     def test_invoice_slot_contact_then_rank(self):
