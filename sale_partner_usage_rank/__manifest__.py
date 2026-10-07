@@ -38,10 +38,15 @@ Dropdown order
 On the sales order form:
 
 - **Customer** suggestions come most-used first (``sale_contact_rank``).
-- **Delivery Address** and **Invoice Address** suggestions come first by how
-  often each address was used with the order's current customer contact,
-  then by how often it was used overall (``sale_shipping_rank`` /
+- **Delivery Address** and **Invoice Address** suggestions start with the
+  addresses of the order's customer contact's company and any address that
+  contact has used, before other companies' addresses; within each group,
+  by uses with that contact, then by uses overall (``sale_shipping_rank`` /
   ``sale_invoice_rank``).
+
+A module can make a slot prefer some partners
+(``res.partner._sale_usage_eligible_sql``): they come first within each
+group, and only they become the slot's default.
 
 Ties, and partners never used, keep Odoo's usual order. Ranking only
 reorders what the search finds: what matches a search, and match quality
