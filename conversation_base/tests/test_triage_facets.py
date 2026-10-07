@@ -20,11 +20,10 @@ class TestTriageFacets(TriageCommon):
         empty = self.Conversation.create({"name": "empty"})
         self.assertFalse(empty.unanswered)
         self.assertFalse(empty.unanswered_since)
-        # create_date is only known after the INSERT, so the compute may
-        # fall back to "now": equal to within a second.
-        self.assertLessEqual(
-            abs(empty.last_message_date - empty.create_date), timedelta(seconds=1)
-        )
+        # The only message is the creation log, dated by the wall clock when
+        # it was posted. Not create_date: that is the transaction timestamp,
+        # which a long test transaction (slow CI) drifts away from.
+        self.assertEqual(empty.last_message_date, empty.message_ids.date)
         conv = self._inbound()
         message = conv.message_ids.filtered(lambda m: m.external_id)
         self.assertTrue(conv.unanswered)
