@@ -34,7 +34,7 @@ Absolute timings are not asserted -- they are hardware-dependent and flaky.
 Plan shape is the stable signal.
 """
 
-from odoo.tests.common import TransactionCase
+from odoo.tests.common import TransactionCase, tagged
 
 
 class TestDedupKeyIndex(TransactionCase):
@@ -59,6 +59,20 @@ class TestDedupKeyIndex(TransactionCase):
         indexdef = self._index_def()
         self.assertIsNotNone(indexdef)
         self.assertNotIn("unaccent", indexdef.lower())
+
+
+@tagged("post_install", "-at_install")
+class TestDedupKeyIndexPlanner(TransactionCase):
+    """Post-install: the planner ignores the index inside its creating transaction.
+
+    Building an index on a table with broken HOT chains sets
+    ``pg_index.indcheckxmin``, and the planner then skips the index for any
+    transaction that is not newer than the one that built it. ``res_partner``
+    is updated during install, so a single-pass install (where at_install
+    tests run in the install transaction) sees a sequential scan even with
+    seqscan disabled. Production queries run long after that transaction
+    commits, which is the state post_install tests see.
+    """
 
     def test_index_is_usable_for_similarity_operator(self):
         """Criterion 3 - the planner can drive the `%` operator off our index.
@@ -98,10 +112,10 @@ class TestDedupKeyIndex(TransactionCase):
         cr.execute("SHOW server_version")
         facts = {"server_version": cr.fetchone()[0]}
         cr.execute(
-            "SELECT indisvalid, indisready FROM pg_index "
+            "SELECT indisvalid, indisready, indcheckxmin FROM pg_index "
             "WHERE indexrelid = 'res_partner_dedup_key_trgm_idx'::regclass"
         )
-        facts["index_valid_ready"] = cr.fetchone()
+        facts["index_valid_ready_checkxmin"] = cr.fetchone()
         cr.execute(
             "SELECT e.extversion, n.nspname FROM pg_extension e "
             "JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = 'pg_trgm'"
