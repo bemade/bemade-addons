@@ -34,7 +34,9 @@ Absolute timings are not asserted -- they are hardware-dependent and flaky.
 Plan shape is the stable signal.
 """
 
-from odoo.tests.common import TransactionCase, tagged
+import re
+
+from odoo.tests.common import TransactionCase
 
 
 class TestDedupKeyIndex(TransactionCase):
@@ -60,34 +62,38 @@ class TestDedupKeyIndex(TransactionCase):
         self.assertIsNotNone(indexdef)
         self.assertNotIn("unaccent", indexdef.lower())
 
-
-@tagged("post_install", "-at_install")
-class TestDedupKeyIndexPlanner(TransactionCase):
-    """Post-install: the planner ignores the index inside its creating transaction.
-
-    Building an index on a table with broken HOT chains sets
-    ``pg_index.indcheckxmin``, and the planner then skips the index for any
-    transaction that is not newer than the one that built it. ``res_partner``
-    is updated during install, so a single-pass install (where at_install
-    tests run in the install transaction) sees a sequential scan even with
-    seqscan disabled. Production queries run long after that transaction
-    commits, which is the state post_install tests see.
-    """
-
     def test_index_is_usable_for_similarity_operator(self):
         """Criterion 3 - the planner can drive the `%` operator off our index.
 
-        Deliberately a single-sided lookup rather than the self-join the pass
-        actually runs. Plan choice is cost-based: on a small table the planner
-        correctly prefers to drive the self-join off the primary key and apply
-        `%` as a filter, so asserting the self-join's plan shape would be a
-        row-count-dependent flake. The property criterion 2 exists to protect
-        is that the index is *usable* for `%` against the bare column at all,
-        and that is exactly what this asserts. An expression mismatch (e.g.
-        the index built over unaccent(dedup_key)) fails here.
+        The real index is recreated on an empty temp table and the plan is
+        taken there. The planner skips an index flagged
+        ``pg_index.indcheckxmin`` (set when it is built over broken HOT chains,
+        as on res_partner during install) until every transaction older than
+        its build has ended, cluster-wide. Planning against res_partner
+        therefore depends on what else the database server is running. The
+        probe has no such history, and the indexed expression and operator
+        class still come from the real definition, so an expression mismatch
+        (e.g. an index over unaccent(dedup_key)) still fails here.
+
+        A single-sided lookup rather than the self-join the pass runs: on a
+        small table the planner rightly drives the self-join off the primary
+        key, so that plan shape would be a row-count-dependent flake.
         """
+        indexdef = self._index_def()
+        self.assertIsNotNone(indexdef, "trigram index on dedup_key is missing")
+        probe_def, count = re.subn(
+            r"^CREATE INDEX \S+ ON \S+ ",
+            "CREATE INDEX dedup_probe_idx ON dedup_probe ",
+            indexdef,
+        )
+        self.assertEqual(count, 1, indexdef)
         cr = self.env.cr
-        # Pin the planner so only our GIN index can serve the query. A GIN
+        cr.execute(
+            "CREATE TEMP TABLE dedup_probe ON COMMIT DROP AS "
+            "SELECT dedup_key FROM res_partner WITH NO DATA"
+        )
+        cr.execute(probe_def)
+        # Pin the planner so only the GIN index can serve the query. A GIN
         # index is only ever used through a bitmap scan, so that path is
         # switched on explicitly rather than trusting the server default.
         for setting, value in (
@@ -97,36 +103,8 @@ class TestDedupKeyIndexPlanner(TransactionCase):
             ("enable_bitmapscan", "on"),
         ):
             cr.execute(f"SET LOCAL {setting} = {value}")
-        cr.execute("SET LOCAL pg_trgm.similarity_threshold = 0.55")
-        cr.execute("EXPLAIN SELECT id FROM res_partner WHERE dedup_key % 'northwind'")
+        cr.execute("EXPLAIN SELECT 1 FROM dedup_probe WHERE dedup_key % 'northwind'")
         plan = "\n".join(row[0] for row in cr.fetchall())
-        if "res_partner_dedup_key_trgm_idx" not in plan:
-            self.fail(
-                "trigram index not used for `%%`.\nplan:\n%s\ndiagnostics: %s"
-                % (plan, self._planner_diagnostics())
-            )
-
-    def _planner_diagnostics(self):
-        """Server facts that decide whether the index is usable, for a failure message."""
-        cr = self.env.cr
-        cr.execute("SHOW server_version")
-        facts = {"server_version": cr.fetchone()[0]}
-        cr.execute(
-            "SELECT indisvalid, indisready, indcheckxmin FROM pg_index "
-            "WHERE indexrelid = 'res_partner_dedup_key_trgm_idx'::regclass"
+        self.assertIn(
+            "dedup_probe_idx", plan, f"index not used for `%`:\n{indexdef}\n{plan}"
         )
-        facts["index_valid_ready_checkxmin"] = cr.fetchone()
-        cr.execute(
-            "SELECT e.extversion, n.nspname FROM pg_extension e "
-            "JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = 'pg_trgm'"
-        )
-        facts["pg_trgm_version_schema"] = cr.fetchone()
-        cr.execute(
-            "SELECT oprnamespace::regnamespace::text, oprleft::regtype::text, "
-            "oprright::regtype::text FROM pg_operator "
-            "WHERE oprname = '%' AND oprleft = 'text'::regtype"
-        )
-        facts["text_percent_operators"] = cr.fetchall()
-        cr.execute("SHOW search_path")
-        facts["search_path"] = cr.fetchone()[0]
-        return facts
