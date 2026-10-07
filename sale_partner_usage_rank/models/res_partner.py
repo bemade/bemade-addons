@@ -58,6 +58,37 @@ class ResPartner(models.Model):
             SQL.identifier(slot), SQL.identifier(self._table, "id"), contact_id, rank_sql,
         )
 
+    def _sale_usage_default_address(self, slot):
+        """The address this customer contact uses most in ``slot``.
+
+        First among the addresses on this contact's own orders, then among
+        the addresses of its company on anyone's orders. Ties go to the most
+        recent order; archived addresses are skipped. Empty when neither
+        has a used address.
+        """
+        self.ensure_one()
+        self.env["sale.order"].flush_model([slot, "partner_id"])
+        self.flush_model(["active", "commercial_partner_id"])
+        for scope in (
+            SQL("so.partner_id = %s", self.id),
+            SQL("a.commercial_partner_id = %s", self.commercial_partner_id.id),
+        ):
+            self.env.cr.execute(SQL(
+                """
+                SELECT so.%(slot)s
+                  FROM sale_order so
+                  JOIN res_partner a ON a.id = so.%(slot)s
+                 WHERE a.active AND %(scope)s
+                 GROUP BY so.%(slot)s
+                 ORDER BY count(*) DESC, max(so.id) DESC
+                 LIMIT 1
+                """,
+                slot=SQL.identifier(slot), scope=scope,
+            ))
+            if row := self.env.cr.fetchone():
+                return self.browse(row[0])
+        return self.browse()
+
     def _recount_sale_usage_ranks(self):
         """Set the three counters of these partners to their actual counts.
 
