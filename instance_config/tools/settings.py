@@ -15,7 +15,6 @@ payoff is that it extends itself: install an app tomorrow and its settings are
 covered without a line of new code here.
 """
 
-
 from .handler import Handler, register
 
 #: Fields on the transient itself, never configuration.

@@ -77,7 +77,7 @@ def write(env, document, dry_run=False, descriptors=None):
     re-runnable phase. Everything else is one savepoint -- a failure partway
     leaves the instance as it was.
     """
-    _check_version(document)
+    _check_version(env, document)
     document = to_canonical(document)      # readable and canonical both accepted
     source = SecretSource.from_spec(
         os.environ.get(SECRETS_ENV)
@@ -152,10 +152,10 @@ def _discard_cache(env):
     env.registry.clear_all_caches()
 
 
-def _check_version(document):
+def _check_version(env, document):
     version = document.get("version")
     if version != SCHEMA_VERSION:
-        raise UserError(_(
+        raise UserError(env._(
             "Unsupported document version %(found)r; this loader understands "
             "version %(known)s.", found=version, known=SCHEMA_VERSION,
         ))
