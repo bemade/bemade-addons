@@ -144,6 +144,14 @@ class TestSettingsHandler(InstanceConfigCase):
             % report.changes,
         )
 
+    def test_empty_recordset_normalises_to_false(self):
+        """An empty recordset from default_get is the same as an unset value."""
+        from ..tools.settings import _normalise
+        empty = self.env["res.partner"]
+        self.assertEqual(_normalise(empty), _normalise(False))
+        partner = self.env.user.partner_id
+        self.assertEqual(_normalise(partner), partner.id)
+
     def test_unknown_field_in_document_is_reported(self):
         """AC-8: applying to the wrong instance must not look like success."""
         report = Report()
