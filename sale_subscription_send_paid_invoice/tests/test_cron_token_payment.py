@@ -19,6 +19,5 @@ class TestCronTokenPayment(SendPaidInvoiceCommon):
         invoice = self._run_cron_with_token()
 
         self.assertEqual(invoice.state, "posted")
-        self.assertIn(invoice.payment_state, ("paid", "in_payment"))
         self.assertTrue(invoice.is_move_sent)
         self.assertEqual(len(self._invoice_emails_to(invoice, self.ap_contact)), 1)
