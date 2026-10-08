@@ -13,7 +13,6 @@ lines per model, never one per field. Adding a model needs no Python.
 
 import yaml
 
-from odoo import _
 from odoo.exceptions import UserError
 import base64
 
@@ -246,12 +245,19 @@ class RecordHandler(Handler):
         return key_of(record.env, record, self.registry.get(record._name).key)
 
     def _gap_once(self, report, field, message):
+        """Record a gap the first time `field` hits it.
+
+        `message` is a callable returning the text, so the translation is
+        only performed for the first record: translating eagerly logs a
+        "no translation language detected" warning per record whenever no
+        language is in context (install, tests). The message is translated with
+        `env._`, which falls back to en_US instead of logging."""
         seen = getattr(self, "_gaps_reported", None)
         if seen is None:
             seen = self._gaps_reported = set()
         if field not in seen:
             seen.add(field)
-            report.gap(self.domain, message)
+            report.gap(self.domain, message())
 
     def _emit_value(self, env, record, name, report):
         field = record._fields[name]
@@ -269,7 +275,7 @@ class RecordHandler(Handler):
                 # database. Refuse, and make the gap visible -- once per
                 # field, not once per record, or a model with a hundred rows
                 # buries the report.
-                self._gap_once(report, name, _(
+                self._gap_once(report, name, lambda: env._(
                     "%(field)s references %(model)s, which has no descriptor; "
                     "cannot express it as a natural key.",
                     field=name, model=field.comodel_name,
@@ -279,7 +285,7 @@ class RecordHandler(Handler):
         if field.type in ("many2many",):
             target = self.registry.get(field.comodel_name)
             if target is None:
-                self._gap_once(report, name, _(
+                self._gap_once(report, name, lambda: env._(
                     "%(field)s references %(model)s, which has no descriptor.",
                     field=name, model=field.comodel_name,
                 ))
@@ -348,7 +354,7 @@ class RecordHandler(Handler):
                 report.skip(self.domain, f"{existing[self.descriptor.key]}.{name}",
                             RULE_SECRET_KEPT)
                 return None
-            raise UserError(_(
+            raise UserError(env._(
                 "%(model)s.%(field)s needs secret %(path)s, which could not be "
                 "resolved, and there is no existing value to keep.",
                 model=self.descriptor.model, field=name, path=value.path,
@@ -374,7 +380,7 @@ class RecordHandler(Handler):
                 else:
                     missing.append(item)
             if missing:
-                raise UserError(_(
+                raise UserError(env._(
                     "%(model)s.%(field)s refers to %(target)s %(missing)r, "
                     "which do not exist.",
                     model=self.descriptor.model, field=name,
@@ -391,7 +397,7 @@ class RecordHandler(Handler):
             found = find_by_key(env, field.comodel_name, target.key, value, scope,
                                 target.fallback_key)
             if not found:
-                raise UserError(_(
+                raise UserError(env._(
                     "%(model)s.%(field)s refers to %(target)s %(value)r, "
                     "which does not exist.",
                     model=self.descriptor.model, field=name,
@@ -430,7 +436,7 @@ class RecordHandler(Handler):
         for entry in data:
             identifier = entry.get(key)
             if not identifier:
-                raise UserError(_(
+                raise UserError(env._(
                     "A %(model)s entry has no %(key)s; records are matched on "
                     "their natural key, never on position.",
                     model=self.descriptor.model, key=key,
@@ -473,7 +479,7 @@ class RecordHandler(Handler):
                     self.forward.append((identifier, name, value))
                     continue
                 if name not in model._fields:
-                    report.gap(self.domain, _(
+                    report.gap(self.domain, env._(
                         "field %(field)s does not exist on %(model)s",
                         field=name, model=self.descriptor.model))
                     continue
@@ -516,7 +522,7 @@ class RecordHandler(Handler):
                 # not configuration drift, and not worth a warning per apply.
                 continue
             if identity and identity not in seen:
-                report.gap(self.domain, _(
+                report.gap(self.domain, env._(
                     "%(model)s %(key)r exists on this instance but is not in "
                     "the document; left untouched.",
                     model=self.descriptor.model, key=identity))

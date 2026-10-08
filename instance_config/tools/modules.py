@@ -46,7 +46,6 @@ one of its dependencies. Worth knowing, because it means this handler has to
 re-assert on every apply, but does not have to fight a losing battle.
 """
 
-from odoo import _
 from odoo.modules import module as module_lib
 
 from .handler import Handler, register
@@ -116,7 +115,7 @@ class ModulesHandler(Handler):
                 # Distinguished from "exists but not installed": a name absent
                 # from the addons path is a typo or a missing repo, not a
                 # configuration choice.
-                report.gap(self.domain, _(
+                report.gap(self.domain, env._(
                     "module %(name)s is not in the addons path", name=name))
                 continue
             present = module.state in PRESENT
@@ -138,7 +137,7 @@ class ModulesHandler(Handler):
         if to_remove:
             to_remove.button_uninstall()
 
-        report.gap(self.domain, _(
+        report.gap(self.domain, env._(
             "%(count)s module(s) marked; a registry update (restart or "
             "'odoo -u') is required to carry it out.",
             count=len(to_install) + len(to_remove),

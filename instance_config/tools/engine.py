@@ -90,7 +90,7 @@ def write(env, document, dry_run=False, descriptors=None):
             # A section nothing can apply is a GAP, never a silent skip: a
             # document describing configuration this instance cannot express
             # must not look as though it applied.
-            report.gap(key, _("no handler for section %(key)r", key=key))
+            report.gap(key, env._("no handler for section %(key)r", key=key))
 
     try:
         with env.cr.savepoint():
