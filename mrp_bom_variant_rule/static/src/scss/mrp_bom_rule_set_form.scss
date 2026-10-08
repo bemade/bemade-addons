@@ -1,0 +1,6 @@
+// The ruleset form is a table of rules, not a record with a few fields: the
+// default sheet width truncates the rule columns long before the screen
+// runs out. Let this one form use the whole width.
+.o_mrp_bom_rule_set_form .o_form_sheet_bg {
+    max-width: none;
+}

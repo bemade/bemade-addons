@@ -53,3 +53,45 @@ class TestCatPublication(CbetCommon):
         c.criterion_ids[0].text = "Changed"
         self.assertEqual(
             c.version_ids.snapshot["units"][0]["criteria"][0]["text"], "Original")
+
+    def test_snapshot_carries_the_documents(self):
+        # The published version freezes the fiche sections, the procedure, the
+        # job aids and the demo notes it was published with — not only the grid.
+        c = self._make_competency("TST-93", procedure_body="<p>Step one</p>",
+                                  demo_notes_body="<p>Show, then ask</p>",
+                                  knowledge_body="<p>Theory</p>", subtitle="Recognition",
+                                  protocol_start_conditions="Bench ready",
+                                  maintenance_condition="3 jobs a year")
+        self._add_criteria(c, [("standard", "Do")])
+        pre = self._make_competency("TST-94")
+        self.env["cbet.prerequisite"].create(
+            {"competency_id": c.id, "prerequisite_id": pre.id, "prereq_type": "recommande"})
+        icon = self.env["cbet.icon"].search([("token", "=", "epi-lunettes")])
+        aid = self.env["cbet.job.aid"].create({"competency_id": c.id, "variant": "RO"})
+        section = self.env["cbet.job.aid.section"].create({
+            "job_aid_id": aid.id, "face": "recto", "kind": "ppe", "icon_id": icon.id,
+            "name": "PPE", "note_html": "<p>note</p>"})
+        self.env["cbet.job.aid.line"].create(
+            {"section_id": section.id, "icon_id": icon.id, "text": "goggles"})
+
+        c.with_user(self.manager).action_publish()
+        snap = c.version_ids.snapshot
+        self.assertEqual(snap["procedure_body"], "<p>Step one</p>")
+        self.assertEqual(snap["demo_notes_body"], "<p>Show, then ask</p>")
+        self.assertEqual(snap["knowledge_body"], "<p>Theory</p>")
+        self.assertEqual(snap["subtitle"], "Recognition")
+        self.assertEqual(snap["protocol"]["start_conditions"], "Bench ready")
+        self.assertEqual(snap["validity"]["maintenance_condition"], "3 jobs a year")
+        self.assertEqual(snap["prerequisites"], [{"code": "TST-94", "type": "recommande"}])
+        self.assertEqual(snap["job_aids"], [{
+            "id": aid.id, "variant": "RO",
+            "sections": [{"face": "recto", "kind": "ppe", "icon": "epi-lunettes",
+                          "name": "PPE", "note_html": "<p>note</p>",
+                          "lines": [{"icon": "epi-lunettes", "text": "goggles"}]}],
+        }])
+        # frozen against later edits
+        c.procedure_body = "<p>Step two</p>"
+        section.line_ids.text = "shoes"
+        snap = c.version_ids.snapshot
+        self.assertEqual(snap["procedure_body"], "<p>Step one</p>")
+        self.assertEqual(snap["job_aids"][0]["sections"][0]["lines"][0]["text"], "goggles")

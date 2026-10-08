@@ -1,5 +1,7 @@
 from odoo import models, fields, api, _, Command
 from odoo.tools import format_datetime
+
+from . import sc_app_roles
 from datetime import time, timedelta
 import logging
 
@@ -78,6 +80,41 @@ class User(models.Model):
         string="Portal Teams Sort",
         copy=False,
     )
+    # Task 1421: sticky sort choice for the portal team roster tab (same
+    # contract as teams_sort_mode: written only by the portal controller on an
+    # explicit ?sort= change, self-writable). Unset = the default status order.
+    roster_sort_mode = fields.Selection(
+        selection=[
+            ("status", "Status, then name"),
+            ("number", "Jersey number"),
+        ],
+        string="Portal Roster Sort",
+        copy=False,
+    )
+
+    # Task 1538: portal app shell preferences (self-writable; set from
+    # « Plus › Apparence / Navigation » and the app-bar theme toggle through
+    # /my/app/pref, which accepts these two fields only).
+    sc_nav_mode = fields.Selection(
+        selection=[
+            ("back", "Back + context"),
+            ("crumbs", "Breadcrumbs"),
+        ],
+        string="Portal App Navigation",
+        default="back",
+        required=True,
+        copy=False,
+    )
+    sc_theme = fields.Selection(
+        selection=[
+            ("dark", "Dark"),
+            ("light", "Light"),
+        ],
+        string="Portal App Theme",
+        default="dark",
+        required=True,
+        copy=False,
+    )
 
     @property
     def SELF_READABLE_FIELDS(self):
@@ -85,6 +122,9 @@ class User(models.Model):
             "digest_daily_enabled",
             "digest_send_when_empty",
             "teams_sort_mode",
+            "roster_sort_mode",
+            "sc_nav_mode",
+            "sc_theme",
         ]
 
     @property
@@ -93,7 +133,38 @@ class User(models.Model):
             "digest_daily_enabled",
             "digest_send_when_empty",
             "teams_sort_mode",
+            "roster_sort_mode",
+            "sc_nav_mode",
+            "sc_theme",
         ]
+
+    def _sc_app_roles(self):
+        """The user's portal-app role SET (task 1538) — see
+        ``models/sc_app_roles.py`` for the model and the registries.
+
+        Resolved from group membership and from the staff rows the user's
+        partner holds (sudo: a portal user cannot read every staff row, and
+        only the role keys leave this method)."""
+        self.ensure_one()
+        roles = set()
+        for role, xmlids in sc_app_roles.ROLE_GROUPS.items():
+            if any(self.has_group(xmlid) for xmlid in xmlids):
+                roles.add(role)
+        wanted = {
+            staff_role
+            for staff_roles in sc_app_roles.ROLE_STAFF_ROLES.values()
+            for staff_role in staff_roles
+        }
+        held = set()
+        if wanted and self.partner_id:
+            held = set(self.env["sports.team.staff"].sudo().search([
+                ("partner_id", "=", self.partner_id.id),
+                ("role", "in", sorted(wanted)),
+            ]).mapped("role"))
+        for role, staff_roles in sc_app_roles.ROLE_STAFF_ROLES.items():
+            if held & set(staff_roles):
+                roles.add(role)
+        return frozenset(roles)
 
     def _compute_accessible_team_ids(self):
         for rec in self:
@@ -148,7 +219,10 @@ class User(models.Model):
                 if portal_group.id in new_groups and portal_group.id not in old_groups:
                     # Portal access was just granted - reconcile ALL portal groups
                     # (treatment professional *and* team coach) for this user.
-                    staff_records = self.env['sports.team.staff'].search([
+                    # Task 1536: sudo — this bookkeeping runs for any caller
+                    # allowed to edit users (base.group_user has no ACL on
+                    # sports.team.staff); the rows describe the edited user.
+                    staff_records = self.env['sports.team.staff'].sudo().search([
                         ('partner_id', '=', user.partner_id.id)
                     ])
                     if staff_records:
@@ -158,7 +232,7 @@ class User(models.Model):
                 self.mapped('partner_id')._sports_clinic_purge_archived_staff()
             if 'active' in vals:
                 # Task 1415: organization lines re-evaluate eligibility.
-                self.env['sports.organization.staff']._sync_for_partners(
+                self.env['sports.organization.staff'].sudo()._sync_for_partners(
                     self.mapped('partner_id'))
 
             return result
@@ -172,7 +246,7 @@ class User(models.Model):
             self.mapped('partner_id')._sports_clinic_purge_archived_staff()
         if 'active' in vals:
             # Task 1415: organization lines re-evaluate eligibility.
-            self.env['sports.organization.staff']._sync_for_partners(
+            self.env['sports.organization.staff'].sudo()._sync_for_partners(
                 self.mapped('partner_id'))
         return res
     
@@ -195,7 +269,9 @@ class User(models.Model):
             if portal_group.id in user.group_ids.ids:
                 # User was created with portal access - reconcile ALL portal groups
                 # (treatment professional *and* team coach) for this user.
-                staff_records = self.env['sports.team.staff'].search([
+                # Task 1536: sudo — see write(); the caller may hold no clinic
+                # group at all (other addons' tests create portal users).
+                staff_records = self.env['sports.team.staff'].sudo().search([
                     ('partner_id', '=', user.partner_id.id)
                 ])
                 if staff_records:
@@ -371,7 +447,9 @@ class User(models.Model):
 
     def _digest_build_for_user(self, now, cutoff, base_url):
         """Return ``(team_lines, events)`` for this user: role-scoped per-team
-        summaries (most-active first) and the deduped 7d upcoming-event union.
+        summaries (most-active first) and the deduped upcoming-event union
+        (window = ``sports.team._dashboard_upcoming_events_days``, default 14
+        days, task 1533 — read through ``dashboard_upcoming_event_ids``).
 
         Only eligible staff lines are included: silent_notifications and
         archived/revoked access are dropped (``_is_follower_eligible``); the
@@ -435,7 +513,8 @@ class User(models.Model):
             self._digest_line_has_content(line) for line in team_lines
         )
 
-    def _digest_fallback_body(self, team_lines, events, window_hours=None):
+    def _digest_fallback_body(self, team_lines, events, window_hours=None,
+                              events_days=None):
         """PHI-free bilingual HTML body used when the mail template is missing
         or fails to render. Counts + deltas + team/event names + links only —
         never a player name or clinical detail.
@@ -443,11 +522,14 @@ class User(models.Model):
         ``window_hours`` (task 1392) is the current dashboard activity window the
         change counts cover; it is surfaced in a header line and the count labels
         so a reader knows the coverage even though the backlinked live dashboard
-        may have drifted by click time."""
+        may have drifted by click time. ``events_days`` (task 1533) is the
+        upcoming-events window the event list covers, same idea."""
         from markupsafe import Markup, escape
 
         if window_hours is None:
             window_hours = self.env["sports.patient"]._dashboard_window_hours()
+        if events_days is None:
+            events_days = self.env["sports.team"]._dashboard_upcoming_events_days()
 
         parts = [
             Markup("<p>%s</p>")
@@ -544,7 +626,11 @@ class User(models.Model):
         if events:
             ev_lines = [
                 Markup("<p><strong>%s</strong></p>")
-                % escape(_("Upcoming events (7d) / Événements à venir (7 j):"))
+                % escape(_(
+                    "Upcoming events (next %(days)s days) / "
+                    "Événements à venir (%(days)s prochains jours):",
+                    days=events_days,
+                ))
             ]
             ev_items = []
             for ev in events:
@@ -588,15 +674,19 @@ class User(models.Model):
         )
         return Markup("").join(parts)
 
-    def _digest_send_one(self, team_lines, events, lang, template, window_hours=None):
+    def _digest_send_one(self, team_lines, events, lang, template, window_hours=None,
+                         events_days=None):
         """Render and deliver the morning briefing to this user's partner.
 
         ``window_hours`` (task 1392) is the current dashboard activity window the
         change counts cover; it is threaded into the template context and the
-        fallback body so the briefing states its coverage."""
+        fallback body so the briefing states its coverage. ``events_days``
+        (task 1533) does the same for the upcoming-events window."""
         self.ensure_one()
         if window_hours is None:
             window_hours = self.env["sports.patient"]._dashboard_window_hours()
+        if events_days is None:
+            events_days = self.env["sports.team"]._dashboard_upcoming_events_days()
         partner = self.partner_id
         body = None
         if template:
@@ -606,6 +696,7 @@ class User(models.Model):
                     digest_teams=team_lines,
                     digest_events=events,
                     digest_window_hours=window_hours,
+                    digest_events_days=events_days,
                 )
                 body = tmpl._render_field("body_html", partner.ids).get(partner.id)
             except Exception:  # pragma: no cover - render guard
@@ -616,7 +707,7 @@ class User(models.Model):
                 body = None
         if not body:
             body = self.with_context(lang=lang)._digest_fallback_body(
-                team_lines, events, window_hours
+                team_lines, events, window_hours, events_days
             )
         subject = self.with_context(lang=lang).env._(
             "FitCrew — daily briefing / sommaire quotidien"
@@ -665,6 +756,8 @@ class User(models.Model):
         # Read from the SAME helper the counts use so label and counts can never
         # disagree, even if an admin widened the window mid-run.
         window_hours = self.env["sports.patient"]._dashboard_window_hours()
+        # Task 1533: same for the upcoming-events window the event list covers.
+        events_days = self.env["sports.team"]._dashboard_upcoming_events_days()
         cutoff = self.env["sports.patient"]._dashboard_window_cutoff()
         base_url = (
             self.env["ir.config_parameter"].sudo().get_param("web.base.url") or ""
@@ -700,7 +793,8 @@ class User(models.Model):
                 if has_content or user.digest_send_when_empty:
                     lang = user.partner_id.lang or user.lang or default_lang
                     user._digest_send_one(
-                        team_lines, events, lang, template, window_hours
+                        team_lines, events, lang, template, window_hours,
+                        events_days,
                     )
                 # Record the daily decision (sent OR suppressed-empty) so the
                 # briefing fires at most once per user per local date.

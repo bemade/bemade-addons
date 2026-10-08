@@ -1,7 +1,12 @@
 """Task 1411 — clinic dossier: injury notes (external + TP-only internal) and
-the training recommendation editable in place, the patient's TP notes shown
-read-only, light-red active-injury cards, and a quick edit of the match /
-practice statuses.
+the training recommendation editable in place, light-red active-injury
+cards, and a quick edit of the match / practice statuses.
+
+Task 1430 removed the read-only "Player notes" (team_info_notes) block that
+1411 had added to the dossier panel: the notes stay on the full player edit
+page and in the backend form only. The rendering test below asserts the
+absence, and test_player_edit_page_still_shows_notes_1430 the regression on
+the player page.
 
 Covered here (HttpCase round-trips, synthetic fixtures — this addon's
 repository is public):
@@ -128,7 +133,9 @@ class TestClinicDossier1411(HttpCase):
     # ==================================================================
     # dossier rendering
     # ==================================================================
-    def test_dossier_renders_injury_cards_for_tp(self):
+    def test_dossier_renders_injury_cards_for_tp_without_player_notes(self):
+        """1411 rendering, with the 1430 change: the patient's team_info_notes
+        are NOT rendered in the dossier panel although the fixture sets them."""
         self.authenticate('cd.tp@example.com', 'cd-tp')
         html = self.url_open(self.dossier_url).text
         self.assertIn('id="clinic-injury-%s"' % self.injury.id, html)
@@ -140,17 +147,32 @@ class TestClinicDossier1411(HttpCase):
         self.assertIn('name="partial" value="1"', html)
         self.assertIn('value="%s"' % self.injury_return_url, html)
         self.assertIn('action="/my/injury/save"', html)
-        # Patient block: quick status form + recommendation + read-only notes.
+        # Patient block: quick status form + recommendation.
         self.assertIn('action="%s"' % self.quick_url, html)
         self.assertIn('name="match_status"', html)
         self.assertIn('name="practice_status"', html)
         self.assertRegex(html, r'<textarea name="training_recommendation"[^>]*>\s*Synthetic rec v1\s*</textarea>')
-        self.assertIn('Synthetic player notes', html)
-        self.assertIn('id="clinic-player-notes"', html)
+        # Task 1430: the player notes block is gone from the dossier panel —
+        # neither the container, the heading nor the notes text renders,
+        # even though the fixture patient has team_info_notes set.
+        self.assertTrue(self.patient.sudo().team_info_notes)
+        self.assertNotIn('id="clinic-player-notes"', html)
+        self.assertNotIn('Player notes', html)
+        self.assertNotIn('Synthetic player notes', html)
         # Return URL of the quick forms: same clinic, same patient, dossier anchor.
         self.assertIn('value="%s#clinic-dossier"' % self.dossier_url, html)
         # No inline status error without one.
         self.assertNotIn('Invalid status combination', html)
+
+    def test_player_edit_page_still_shows_notes_1430(self):
+        """Task 1430 regression: the notes were removed from the clinic panel
+        ONLY — the full player edit page still renders the team_info_notes
+        textarea pre-filled with the same text for a treatment professional."""
+        self.authenticate('cd.tp@example.com', 'cd-tp')
+        html = self.url_open('/my/player/edit?patient_id=%s' % self.patient.id).text
+        self.assertRegex(
+            html,
+            r'<textarea name="team_info_notes"[^>]*>\s*Synthetic player notes\s*</textarea>')
 
     def test_dossier_shows_inline_error_and_refused_pair(self):
         self.authenticate('cd.tp@example.com', 'cd-tp')

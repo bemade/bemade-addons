@@ -314,3 +314,23 @@ class TestPatientMergeConflicts(TransactionCase):
         self.assertNotIn('2025-11-06', info)
         self.assertFalse(wizard.has_conflicts,
                          "rule-resolved fields must not be reported")
+
+    def test_jersey_number_conflict_reported(self):
+        """Task 1421: two records with DIFFERENT jersey numbers surface as a
+        conflict (destination wins); identical or source-only numbers do not."""
+        dst = self._patient('Alexandre', jersey_number='12')
+        src = self._patient('Alex', jersey_number='7')
+
+        wizard = self._wizard(dst | src, dst)
+
+        self.assertTrue(wizard.has_conflicts, "differing jersey numbers must be flagged")
+        self.assertIn('Jersey Number', wizard.conflict_info)
+        self.assertIn('12', wizard.conflict_info)
+        self.assertIn('7', wizard.conflict_info)
+
+        same = self._patient('Sacha', jersey_number='12')
+        self.assertFalse(self._wizard(dst | same, dst).has_conflicts,
+                         "identical numbers are not a conflict")
+        blank = self._patient('Blank')
+        self.assertFalse(self._wizard(blank | src, blank).has_conflicts,
+                         "a source-only number fills the blank, no conflict")

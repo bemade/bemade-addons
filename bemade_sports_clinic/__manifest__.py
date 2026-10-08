@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.40.1",
+    'version': "19.0.1.46.1",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -78,6 +78,37 @@ does not do:
 - server logs carry record ids only, never names or dates of birth;
 - failed attempts are rate-limited per device (10 per minute, then a
   5-minute lockout) and device registration per IP.
+
+Portal app shell (preview)
+--------------------------
+A new Fit Crew app shell for the portal (brand colours and type, phone
+bottom tabs, laptop left rail, dark theme by default, per-user navigation
+mode and theme) behind the system switch Settings > Sports Clinic Portal >
+New Portal App (``bemade_sports_clinic.app_shell_enabled``). Switch off
+(the default) leaves today's portal unchanged. Menus, sections and fields
+are shown from a declarative, multi-role registry
+(``models/sc_app_roles.py``): a user holds a set of roles and every entry
+declares the roles it includes and excludes; security stays in the access
+rules.
+
+P1b adds the team page on the shell (dashboard, players and activities
+tabs), a device draft for the team announcement (« Publier » unchanged), the
+server autosave pattern (``/my/app/save``, not used live yet), and the
+installable app: a ``/my/``-scoped web manifest and service worker (network
+first; no team or player page is ever cached — offline shows a data-free
+page), with « Plus › Installer l'application ». With the switch off, the
+manifest and the service worker answer 404 and any installed worker
+unregisters itself.
+
+P3 puts the therapist surfaces on the shell: the clinic list and clinic
+page, whose waiting list is a LIVE component (20 s poll of
+``/my/clinic/<id>/worklist/data``, status / confirm / remove / reorder
+applied at once through CSRF-checked JSON routes, rolled back on failure),
+events with a shared calendar component (FullCalendar from Odoo's lazy
+bundle), timesheets, the notepad and the daily digests; the portal bookings
+pages join through the ``bemade_sports_clinic_bookings`` glue addon. The
+sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
+(SIL OFL 1.1) from its own CSS-only bundle — no off-domain request.
     """,
     "category": "Services/Medical",
     "author": "Bemade Inc.",
@@ -85,7 +116,7 @@ does not do:
     "license": "LGPL-3",
     "depends": [
         "mail",  # Required for mail.activity functionality
-        "portal", 
+        "portal",
         "contacts",
         "base_setup",  # For res.config.settings base view inheritance
         "phone_validation",  # For phone number formatting in patient contacts
@@ -98,6 +129,10 @@ does not do:
     "external_dependencies": {
         "python": [
             "pytz",  # For timezone handling in injury tracking
+            # Task 1536: staff phone auto-format (sports.team.staff._phone_format
+            # / phone_validation) needs the optional lib; declaring it makes the
+            # addon CI (manifestoo list-external-dependencies) install it.
+            "phonenumbers",
         ],
     },
     "data": [
@@ -156,8 +191,6 @@ does not do:
         "views/res_config_settings_views.xml",
         "views/sports_event_views.xml",
         "views/portal_activity_detail_template.xml",
-        "views/portal_messages_template.xml",
-        "views/portal_attachments_template.xml",
         "views/portal_event_detail_template.xml",
         "views/portal_event_edit_template.xml",
         "views/portal_event_create_template.xml",
@@ -184,6 +217,21 @@ does not do:
         "views/team_role_mass_assign_wizard_views.xml",
         "views/patient_merge_wizard_views.xml",
         "views/res_users_views.xml",
+        # Task 1538: the portal app shell (behind the app_shell_enabled
+        # switch) — components, layout, then the pages that t-call them.
+        "views/sc_components.xml",
+        "views/sc_app_layout.xml",
+        "views/sc_app_pages.xml",
+        # Task 1542: team page, install page, offline page.
+        "views/sc_app_team.xml",
+        # Task 1539: P2 — players, injuries, notes, documents, activities.
+        "views/sc_app_activities.xml",
+        "views/sc_app_players.xml",
+        "views/sc_app_injury.xml",
+        # Task 1540: P3 — clinic (list, page, live waiting list).
+        "views/sc_app_clinic.xml",
+        "views/sc_app_events.xml",
+        "views/sc_app_tools.xml",
     ],
     "demo": [
         "data/demo/sports_clinic_demo_data.xml",
@@ -244,6 +292,63 @@ does not do:
             # Progressive enhancement — the plain select posts without it.
             "bemade_sports_clinic/static/src/scss/portal_widgets.scss",
             "bemade_sports_clinic/static/src/js/portal_patient_combo.js",
+            # Task 1538: portal app shell (tokens + components are scoped
+            # under .o_sc_app — inert outside the shell; the JS only acts on
+            # data-sc-pref forms inside it). Not duplicated in the lazy list.
+            "bemade_sports_clinic/static/src/scss/sc_tokens.scss",
+            "bemade_sports_clinic/static/src/scss/sc_components.scss",
+            "bemade_sports_clinic/static/src/js/sc_app_shell.js",
+            # Task 1542: P1b — page styles, the one fetch helper, the device
+            # draft store, page behaviours (tabs / sheets / lazy rows /
+            # toast), the service worker registration + kill switch, and the
+            # addon's first OWL public component (same bundle as core's
+            # portal.signature_form). assets_frontend ONLY: the lazy bundle
+            # includes this one, listing them there too would bind twice.
+            "bemade_sports_clinic/static/src/scss/sc_pages.scss",
+            # Task 1539: P2 page / component styles.
+            "bemade_sports_clinic/static/src/scss/sc_p2.scss",
+            "bemade_sports_clinic/static/src/js/sc_fetch.js",
+            "bemade_sports_clinic/static/src/js/sc_draft_store.js",
+            "bemade_sports_clinic/static/src/js/sc_app_ui.js",
+            "bemade_sports_clinic/static/src/js/sc_sw_register.js",
+            "bemade_sports_clinic/static/src/js/sc_autosave_field.js",
+            "bemade_sports_clinic/static/src/js/sc_autosave_field.xml",
+            # Task 1539: the shell's activity sheets (replaces, in the shell
+            # only, the legacy activity partials' inline scripts).
+            "bemade_sports_clinic/static/src/js/sc_activities.js",
+            # Task 1540: P3 styles, the live clinic waiting list.
+            "bemade_sports_clinic/static/src/scss/sc_p3.scss",
+            "bemade_sports_clinic/static/src/js/sc_clinic_worklist.js",
+            "bemade_sports_clinic/static/src/js/sc_clinic_worklist.xml",
+            # Review 2026-09-29: live counters (the home's clinics-today chip).
+            "bemade_sports_clinic/static/src/js/sc_live_count.js",
+            # Task 1540: the shared calendar (FullCalendar lazy-loaded from
+            # web.fullcalendar_lib) and the event form behaviours.
+            "bemade_sports_clinic/static/src/js/sc_calendar.js",
+            "bemade_sports_clinic/static/src/js/sc_calendar.xml",
+            "bemade_sports_clinic/static/src/js/sc_events.js",
+        ],
+        # Task 1540: the sign-in kiosk's OWN stylesheet bundle, included
+        # CSS-ONLY by clinic_kiosk_layout (t-js="false"). Not
+        # web.assets_frontend: with `website` installed that bundle may
+        # @import the website's Google Fonts — the kiosk must make NO
+        # off-domain request (its iPad is URL-filtered). Bootstrap + Font
+        # Awesome (same origin) + the brand tokens / self-hosted fonts.
+        "bemade_sports_clinic.assets_kiosk": [
+            ("include", "web._assets_helpers"),
+            ("include", "web._assets_frontend_helpers"),
+            "web/static/src/scss/pre_variables.scss",
+            "web/static/lib/bootstrap/scss/_variables.scss",
+            "web/static/lib/bootstrap/scss/_variables-dark.scss",
+            "web/static/lib/bootstrap/scss/_maps.scss",
+            ("include", "web._assets_bootstrap_frontend"),
+            "web/static/src/libs/fontawesome/css/font-awesome.css",
+            "bemade_sports_clinic/static/src/scss/sc_tokens.scss",
+            "bemade_sports_clinic/static/src/scss/sc_kiosk.scss",
+        ],
+        # Task 1542: the addon's first browser tours.
+        "web.assets_tests": [
+            "bemade_sports_clinic/static/tests/tours/**/*",
         ],
         # Also load in lazy bundle since many website widgets initialize lazily
         "web.assets_frontend_lazy": [

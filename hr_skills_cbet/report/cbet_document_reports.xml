@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- UC-RPT-02/03/06 — the four training documents printed from the live
+         competency: the competency sheet (fiche), the procedure, the field job
+         aid (recto/verso) and the trainer's demonstration notes. Same pattern
+         as the evaluation grid: web.external_layout + inline CSS, no bundle —
+         except the job aid, a field card printed in its own minimal frame
+         (cbet_job_aid_layout: one-line header and footer, no letterhead). -->
+
+    <record id="action_report_cbet_fiche" model="ir.actions.report">
+        <field name="name">Competency sheet</field>
+        <field name="model">cbet.competency</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_skills_cbet.report_cbet_fiche</field>
+        <field name="report_file">hr_skills_cbet.report_cbet_fiche</field>
+        <field name="print_report_name">'fiche_%s_v%s' % (object.code, object.version)</field>
+        <field name="paperformat_id" ref="paperformat_cbet_letter"/>
+        <field name="binding_model_id" ref="model_cbet_competency"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_cbet_procedure" model="ir.actions.report">
+        <field name="name">Procedure</field>
+        <field name="model">cbet.competency</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_skills_cbet.report_cbet_procedure</field>
+        <field name="report_file">hr_skills_cbet.report_cbet_procedure</field>
+        <field name="print_report_name">'procedure_%s_v%s' % (object.code, object.version)</field>
+        <field name="paperformat_id" ref="paperformat_cbet_letter"/>
+        <field name="binding_model_id" ref="model_cbet_competency"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_cbet_demo_notes" model="ir.actions.report">
+        <field name="name">Demonstration notes</field>
+        <field name="model">cbet.competency</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_skills_cbet.report_cbet_demo_notes</field>
+        <field name="report_file">hr_skills_cbet.report_cbet_demo_notes</field>
+        <field name="print_report_name">'demo_notes_%s_v%s' % (object.code, object.version)</field>
+        <field name="paperformat_id" ref="paperformat_cbet_letter"/>
+        <field name="binding_model_id" ref="model_cbet_competency"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_cbet_job_aid" model="ir.actions.report">
+        <field name="name">Job aid</field>
+        <field name="model">cbet.job.aid</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_skills_cbet.report_cbet_job_aid</field>
+        <field name="report_file">hr_skills_cbet.report_cbet_job_aid</field>
+        <field name="print_report_name">'job_aid_%s%s_v%s' % (object.code, object.variant and '_' + object.variant or '', object.competency_id.version)</field>
+        <field name="paperformat_id" ref="paperformat_cbet_job_aid"/>
+        <field name="binding_model_id" ref="model_cbet_job_aid"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- ============================ shared pieces ============================ -->
+
+    <template id="cbet_document_style">
+        <style>
+            .cbet-doc { font-size: 10pt; line-height: 1.3; position: relative; }
+            .cbet-doc h1 { font-size: 16pt; margin: 0 0 4pt; }
+            .cbet-doc h2 { font-size: 12.5pt; margin: 10pt 0 3pt; padding-bottom: 1pt;
+                           border-bottom: 1px solid #ccc; page-break-after: avoid; }
+            .cbet-doc h3 { font-size: 11pt; margin: 6pt 0 2pt; page-break-after: avoid; }
+            .cbet-doc p { margin: 2pt 0; }
+            .cbet-doc ul, .cbet-doc ol { margin: 2pt 0; padding-left: 16pt; }
+            .cbet-doc li { margin: 1.5pt 0; }
+            .cbet-doc blockquote { margin: 3pt 0; padding-left: 8pt; border-left: 2px solid #bbb;
+                                   color: #333; font-size: 9.5pt; }
+            .cbet-doc img { max-width: 100%; height: auto; }
+            .cbet-doc table { border-collapse: collapse; width: 100%; table-layout: fixed;
+                              font-size: 9.5pt; margin: 3pt 0; }
+            .cbet-doc th, .cbet-doc td { border: 1px solid #bbb; padding: 1.5pt 4pt;
+                                         vertical-align: top; text-align: left;
+                                         word-wrap: break-word; }
+            .cbet-doc tr { page-break-inside: avoid; }
+            .cbet-doc code { font-size: 9.5pt; background: #f2f2f2; padding: 0 2px; }
+            .cbet-kind { font-size: 9pt; text-transform: uppercase; letter-spacing: 1px;
+                         color: #666; }
+            .cbet-subtitle { font-style: italic; color: #333; }
+            .cbet-meta td { border: 0; padding: 1pt 8pt 1pt 0; font-size: 9pt; }
+            .cbet-meta strong { color: #555; }
+            .cbet-kv td { white-space: pre-line; }
+            .cbet-kv td.cbet-k { width: 32%; font-weight: bold; background: #f7f7f7; }
+            .cbet-na { color: #777; font-style: italic; }
+            .cbet-crit .c-num { width: 5%; } .cbet-crit .c-type { width: 9%; }
+            .cbet-crit .c-text { width: 44%; } .cbet-crit .c-meth { width: 24%; }
+            .cbet-crit .c-tol { width: 18%; }
+            .cbet-prereq .c-code { width: 15%; } .cbet-prereq .c-type { width: 20%; }
+            .cbet-log td { height: 26pt; }
+            .cbet-log .c-date { width: 18%; } .cbet-log .c-tech { width: 27%; }
+            .cbet-icon { height: 5mm; width: 5mm; vertical-align: middle; margin-right: 2pt; }
+            .cbet-icon-emoji { margin-right: 2pt; }
+            .cbet-jobaid ul.cbet-check { list-style: none; padding-left: 2pt; }
+            .cbet-jobaid .cbet-inline { margin: 2pt 0 4pt; }
+            /* Painted over the text (a negative z-index layer is dropped by
+               wkhtmltopdf); the stamp is light enough to read through. */
+            .cbet-watermark { position: absolute; top: 0; bottom: 0; left: 0; right: 0;
+                              background-repeat: repeat; background-size: 95mm 70mm; }
+        </style>
+    </template>
+
+    <!-- Drafts print as such; `comp` is the competency behind the document.
+         The stamp is a tiled background painted behind the whole document. -->
+    <template id="cbet_document_watermark">
+        <div t-if="comp.state != 'published'" class="cbet-watermark"
+             t-attf-style="background-image: url('#{watermark_uri}');"/>
+    </template>
+
+    <!-- Identity block: code, name, subtitle, domain, kind, state, version, date. -->
+    <template id="cbet_document_header">
+        <div class="cbet-header">
+            <div class="cbet-kind"><t t-out="doc_kind"/></div>
+            <h1><span t-field="comp.code"/> — <span t-field="comp.name"/></h1>
+            <p t-if="comp.subtitle" class="cbet-subtitle"><span t-field="comp.subtitle"/></p>
+            <table class="cbet-meta">
+                <tr>
+                    <td><strong>Domain</strong> <span t-field="comp.domain_id"/></td>
+                    <td><strong>Kind</strong> <span t-field="comp.kind"/></td>
+                    <td><strong>Status</strong> <span t-field="comp.state"/></td>
+                    <td><strong>Version</strong> <span t-field="comp.version"/></td>
+                    <td><strong>Published</strong>
+                        <span t-if="comp.publish_date" t-field="comp.publish_date"/>
+                        <t t-else="">—</t></td>
+                </tr>
+            </table>
+        </div>
+    </template>
+
+    <!-- A stored html body, or the N/A marker when it is empty. -->
+    <template id="cbet_html_section">
+        <div t-if="not is_html_empty(body)" class="cbet-body" t-out="body"/>
+        <p t-else="" class="cbet-na"><t t-out="na"/></p>
+    </template>
+
+    <!-- A label/value table (rows from the report helpers), or the N/A marker. -->
+    <template id="cbet_kv_section">
+        <table t-if="rows" class="cbet-kv">
+            <tr t-foreach="rows" t-as="row">
+                <td class="cbet-k"><t t-out="row[0]"/></td>
+                <td><t t-if="row[1]" t-out="row[1]"/><t t-else="">—</t></td>
+            </tr>
+        </table>
+        <p t-else="" class="cbet-na"><t t-out="na"/></p>
+    </template>
+
+    <!-- A catalog icon: the SVG when it exists, the emoji otherwise. -->
+    <template id="cbet_icon">
+        <t t-if="icon">
+            <img t-if="icon.svg" class="cbet-icon" t-att-src="icon._svg_data_uri()" t-att-alt="icon.name"/>
+            <span t-else="" class="cbet-icon-emoji" t-out="icon.emoji"/>
+        </t>
+    </template>
+
+    <!-- =============================== fiche =============================== -->
+
+    <template id="report_cbet_fiche">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="comp" t-value="o"/>
+                <t t-call="web.external_layout">
+                    <div class="page cbet-doc">
+                        <t t-call="hr_skills_cbet.cbet_document_style"/>
+                        <t t-call="hr_skills_cbet.cbet_document_watermark"/>
+                        <t t-set="doc_kind">Competency sheet</t>
+                        <t t-call="hr_skills_cbet.cbet_document_header"/>
+
+                        <h2><t t-out="titles[1]"/></h2>
+                        <t t-call="hr_skills_cbet.cbet_html_section">
+                            <t t-set="body" t-value="o.execution_context"/>
+                        </t>
+
+                        <h2><t t-out="titles[2]"/></h2>
+                        <table t-if="o.prerequisite_ids" class="cbet-prereq">
+                            <thead><tr><th class="c-code">Code</th><th>Prerequisite competency</th>
+                                <th class="c-type">Required?</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="o.prerequisite_ids" t-as="edge">
+                                    <td><span t-field="edge.prerequisite_id.code"/></td>
+                                    <td><span t-field="edge.prerequisite_id.name"/></td>
+                                    <td><span t-field="edge.prereq_type"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p t-else="" class="cbet-na"><t t-out="na"/></p>
+
+                        <h2><t t-out="titles[3]"/></h2>
+                        <t t-call="hr_skills_cbet.cbet_html_section">
+                            <t t-set="body" t-value="o.knowledge_body"/>
+                        </t>
+
+                        <h2><t t-out="titles[4]"/></h2>
+                        <t t-call="hr_skills_cbet.cbet_html_section">
+                            <t t-set="body" t-value="o.safety_block"/>
+                        </t>
+
+                        <h2><t t-out="titles[5]"/></h2>
+                        <t t-call="hr_skills_cbet.cbet_html_section">
+                            <t t-set="body" t-value="o.tools_materials"/>
+                        </t>
+
+                        <h2><t t-out="titles[6]"/></h2>
+                        <t t-call="hr_skills_cbet.cbet_html_section">
+                            <t t-set="body" t-value="o.documents_required"/>
+                        </t>
+
+                        <h2><t t-out="titles[7]"/></h2>
+                        <p>Generated documents:</p>
+                        <table class="cbet-kv">
+                            <tr t-foreach="fmt._documents_rows(o)" t-as="row">
+                                <td class="cbet-k"><t t-out="row[0]"/></td>
+                                <td><t t-out="row[1]"/></td>
+                            </tr>
+                        </table>
+
+                        <h2><t t-out="titles[8]"/></h2>
+                        <t t-if="o.criterion_ids">
+                            <t t-foreach="o.unit_ids" t-as="unit">
+                                <h3 t-if="len(o.unit_ids) > 1">
+                                    <span t-field="unit.name"/>
+                                    <small t-if="not unit.required">(optional)</small>
+                                </h3>
+                                <table t-if="unit.criterion_ids" class="cbet-crit">
+                                    <thead><tr><th class="c-num">#</th><th class="c-type">Type</th>
+                                        <th class="c-text">Criterion</th><th class="c-meth">Verification method</th>
+                                        <th class="c-tol">Tolerance</th></tr></thead>
+                                    <tbody>
+                                        <tr t-foreach="unit.criterion_ids" t-as="crit">
+                                            <td><t t-out="crit_index + 1"/></td>
+                                            <td><span t-field="crit.criterion_type"/></td>
+                                            <td><span t-field="crit.text"/></td>
+                                            <td><span t-field="crit.verification_method"/></td>
+                                            <td><span t-field="crit.tolerance"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </t>
+                            <p><t t-out="fmt._pass_rule(o)"/></p>
+                        </t>
+                        <p t-else="" class="cbet-na"><t t-out="na"/></p>
+
+                        <h2><t t-out="titles[9]"/></h2>
+                        <t t-call="hr_skills_cbet.cbet_kv_section">
+                            <t t-set="rows" t-value="fmt._protocol_rows(o)"/>
+                        </t>
+
+                        <h2><t t-out="titles[10]"/></h2>
+                        <t t-call="hr_skills_cbet.cbet_kv_section">
+                            <t t-set="rows" t-value="fmt._evaluator_rows(o)"/>
+                        </t>
+
+                        <h2><t t-out="titles[11]"/></h2>
+                        <t t-call="hr_skills_cbet.cbet_html_section">
+                            <t t-set="body" t-value="o.evidence_required"/>
+                        </t>
+
+                        <h2><t t-out="titles[12]"/></h2>
+                        <t t-call="hr_skills_cbet.cbet_kv_section">
+                            <t t-set="rows" t-value="fmt._validity_rows(o)"/>
+                        </t>
+
+                        <h2><t t-out="titles[13]"/></h2>
+                        <t t-call="hr_skills_cbet.cbet_kv_section">
+                            <t t-set="rows" t-value="fmt._meta_rows(o)"/>
+                        </t>
+
+                        <h2><t t-out="titles[14]"/></h2>
+                        <t t-call="hr_skills_cbet.cbet_html_section">
+                            <t t-set="body" t-value="o.references_body"/>
+                        </t>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- ============================= procedure ============================= -->
+
+    <template id="report_cbet_procedure">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="comp" t-value="o"/>
+                <t t-call="web.external_layout">
+                    <div class="page cbet-doc">
+                        <t t-call="hr_skills_cbet.cbet_document_style"/>
+                        <t t-call="hr_skills_cbet.cbet_document_watermark"/>
+                        <t t-set="doc_kind">Procedure</t>
+                        <t t-call="hr_skills_cbet.cbet_document_header"/>
+                        <div class="mt-3"/>
+                        <t t-call="hr_skills_cbet.cbet_html_section">
+                            <t t-set="body" t-value="o.procedure_body"/>
+                        </t>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- ============================ demo notes ============================= -->
+
+    <template id="report_cbet_demo_notes">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="comp" t-value="o"/>
+                <t t-call="web.external_layout">
+                    <div class="page cbet-doc">
+                        <t t-call="hr_skills_cbet.cbet_document_style"/>
+                        <t t-call="hr_skills_cbet.cbet_document_watermark"/>
+                        <t t-set="doc_kind">Trainer demonstration notes</t>
+                        <t t-call="hr_skills_cbet.cbet_document_header"/>
+                        <div class="mt-3"/>
+                        <t t-call="hr_skills_cbet.cbet_html_section">
+                            <t t-set="body" t-value="o.demo_notes_body"/>
+                        </t>
+                        <!-- The per-session log lives on training lines, not in
+                             the body: the printed copy ends with a blank one. -->
+                        <h2>Trainer's notes (per session)</h2>
+                        <table class="cbet-log">
+                            <thead><tr><th class="c-date">Date</th><th class="c-tech">Technician</th>
+                                <th>Notes</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="log_rows" t-as="i" class="cbet-log-row">
+                                    <td/><td/><td/>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- ============================== job aid ============================== -->
+
+    <!-- The card's own page frame (no web.external_layout): Odoo's PDF
+         pipeline lifts div.header / div.footer out of the html and prints
+         them with wkhtmltopdf in the paper format's top/bottom margins, so
+         each carries its own inline style (the article's <style> never
+         reaches them). One line each: logo + company name, card identity;
+         code, version and the page counter. -->
+    <template id="cbet_job_aid_layout">
+        <div class="header cbet-ja-header" style="font-family: Helvetica, Arial, sans-serif; font-size: 10pt; line-height: 1.2; color: #222; margin: 0; padding: 0;">
+            <table style="width: 100%; border-collapse: collapse; table-layout: fixed; margin: 0; border-bottom: 1.5px solid #333;">
+                <tr>
+                    <td style="width: 34%; padding: 0 0 2mm; white-space: nowrap; overflow: hidden; vertical-align: middle; text-align: left; border: 0;">
+                        <img t-if="company.logo" class="cbet-ja-logo" t-att-src="image_data_uri(company.logo)" alt="Logo"
+                             style="max-height: 7mm; max-width: 30mm; height: auto; width: auto; vertical-align: middle; margin-right: 3mm;"/>
+                        <!-- The logo is the wordmark: the name prints only for a company without one. -->
+                        <span t-else="" class="cbet-ja-company" style="font-weight: bold; vertical-align: middle;" t-out="company.name"/>
+                    </td>
+                    <!-- A long title is cut with an ellipsis; the variant and
+                         version keep their own cell so they always print. -->
+                    <td style="padding: 0 0 2mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; text-align: right; border: 0;">
+                        <strong t-out="comp.code"/> — <span t-out="comp.name"/>
+                    </td>
+                    <td class="cbet-ja-identity" t-attf-style="width: #{'26%' if o.variant else '8%'}; padding: 0 0 2mm 2mm; white-space: nowrap; vertical-align: middle; text-align: right; border: 0; color: #555;">
+                        <t t-if="o.variant"><span style="color: #222;">[<span t-out="o.variant"/>]</span> · </t><span t-out="'v%s' % comp.version"/>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="article cbet-ja-article"
+             t-att-data-oe-model="o._name" t-att-data-oe-id="o.id"
+             t-att-data-oe-lang="o.env.context.get('lang')">
+            <t t-out="0"/>
+        </div>
+        <div class="footer cbet-ja-footer" style="font-family: Helvetica, Arial, sans-serif; font-size: 9pt; line-height: 1.2; color: #555; text-align: center; padding-top: 2mm; border-top: 0.75px solid #999;">
+            <span class="cbet-ja-footer-code" t-out="comp.code"/>
+            <t t-if="o.variant"> [<span t-out="o.variant"/>]</t>
+            · <span class="cbet-ja-footer-version" t-out="'v%s' % comp.version"/>
+            <t t-if="report_type == 'pdf'">· <span>Page</span> <span class="page"/> / <span class="topage"/></t>
+        </div>
+    </template>
+
+    <!-- Field-card typography. The size class (cbet-ja-l / -m / -s / -xs,
+         the largest in which both faces fit their page — see
+         cbet.document.report._job_aid_size_class) sets the body size
+         (13 / 12 / 11 / 10 pt); headings stay at 16 pt with an 8 mm
+         pictogram, items carry a 6 mm one and the verso a 7 mm check box,
+         scaled down a notch in the two small classes. -->
+    <template id="cbet_job_aid_style">
+        <style>
+            .cbet-ja { font-family: Lato, Helvetica, Arial, sans-serif; line-height: 1.25; }
+            .cbet-ja-l { font-size: 13pt; }
+            .cbet-ja-m { font-size: 12pt; }
+            .cbet-ja-s { font-size: 11pt; }
+            .cbet-ja-xs { font-size: 10pt; }
+            .cbet-ja h1 { font-size: 20pt; line-height: 1.15; margin: 0 0 3pt; }
+            .cbet-ja-xs h1 { font-size: 17pt; }
+            .cbet-ja .cbet-kind { font-size: 10pt; margin-bottom: 1pt; }
+            .cbet-ja .cbet-meta { margin: 0 0 3pt; }
+            .cbet-ja .cbet-meta td { font-size: 10pt; padding: 0 10pt 0 0; }
+            .cbet-ja h2 { font-size: 16pt; line-height: 1.2; margin: 8pt 0 3pt; padding-bottom: 1.5pt;
+                          border-bottom: 1.5px solid #888; page-break-after: avoid; }
+            .cbet-ja-s h2 { margin: 7pt 0 3pt; }
+            .cbet-ja-xs h2 { font-size: 14pt; margin: 6pt 0 2pt; }
+            .cbet-ja h2 .cbet-icon { height: 8mm; width: 8mm; margin-right: 6pt; }
+            .cbet-ja-xs h2 .cbet-icon { height: 6.5mm; width: 6.5mm; margin-right: 4pt; }
+            .cbet-ja h2 .cbet-icon-emoji { font-size: 16pt; margin-right: 6pt; }
+            .cbet-ja ul.cbet-items, .cbet-ja ul.cbet-check { list-style: none; margin: 0; padding: 0; }
+            .cbet-ja ul.cbet-2col:after { content: ""; display: table; clear: both; }
+            .cbet-ja ul.cbet-2col li.cbet-item { float: left; width: 50%; -webkit-box-sizing: border-box; box-sizing: border-box; }
+            .cbet-ja li.cbet-item { position: relative; margin: 0; padding: 1.5pt 3pt 1.5pt 9mm; page-break-inside: avoid; }
+            .cbet-ja li .cbet-icon { position: absolute; left: 0; top: 0.5pt; height: 6mm; width: 6mm; margin: 0; }
+            .cbet-ja-s li .cbet-icon { height: 5.5mm; width: 5.5mm; }
+            .cbet-ja-xs li .cbet-icon { height: 5mm; width: 5mm; }
+            .cbet-ja li .cbet-icon-emoji { position: absolute; left: 0; top: 0; }
+            .cbet-ja li.cbet-check-item { position: relative; margin: 0; padding: 1pt 0 1pt 10mm; min-height: 7.2mm;
+                                          page-break-inside: avoid; }
+            .cbet-ja-s li.cbet-check-item { min-height: 6.2mm; padding-left: 9mm; }
+            .cbet-ja-xs li.cbet-check-item { min-height: 5.7mm; padding-left: 8mm; }
+            .cbet-ja li.cbet-check-item.cbet-has-icon { padding-left: 19mm; }
+            .cbet-ja-s li.cbet-check-item.cbet-has-icon { padding-left: 17mm; }
+            .cbet-ja-xs li.cbet-check-item.cbet-has-icon { padding-left: 15mm; }
+            .cbet-ja li.cbet-check-item .cbet-icon, .cbet-ja li.cbet-check-item .cbet-icon-emoji { left: 9.5mm; }
+            .cbet-ja-s li.cbet-check-item .cbet-icon, .cbet-ja-s li.cbet-check-item .cbet-icon-emoji { left: 8.5mm; }
+            .cbet-ja-xs li.cbet-check-item .cbet-icon, .cbet-ja-xs li.cbet-check-item .cbet-icon-emoji { left: 7.5mm; }
+            .cbet-ja .cbet-box { position: absolute; left: 0; top: 0.5pt; display: block; width: 7mm; height: 7mm;
+                                 border: 1.5px solid #333; border-radius: 1px; }
+            .cbet-ja-s .cbet-box { width: 6mm; height: 6mm; }
+            .cbet-ja-xs .cbet-box { width: 5.5mm; height: 5.5mm; }
+            .cbet-ja .cbet-note { margin: 3pt 0 2pt; }
+            .cbet-ja .cbet-note table { font-size: inherit; margin: 2pt 0; }
+            .cbet-ja .cbet-note th, .cbet-ja .cbet-note td { padding: 2pt 5pt; }
+            .cbet-ja .cbet-note p { margin: 2pt 0; }
+            .cbet-ja .cbet-stop h2 { color: #b00000; border-bottom-color: #b00000; }
+        </style>
+    </template>
+
+    <template id="report_cbet_job_aid">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="comp" t-value="o.competency_id"/>
+                <t t-set="company" t-value="res_company"/>
+                <t t-set="size_class" t-value="fmt._job_aid_size_class(o)"/>
+                <t t-call="hr_skills_cbet.cbet_job_aid_layout">
+                    <div t-attf-class="page cbet-doc cbet-jobaid cbet-ja cbet-ja-#{size_class}">
+                        <t t-call="hr_skills_cbet.cbet_document_style"/>
+                        <t t-call="hr_skills_cbet.cbet_job_aid_style"/>
+                        <t t-call="hr_skills_cbet.cbet_document_watermark"/>
+                        <!-- Recto -->
+                        <div class="cbet-kind">Field job aid</div>
+                        <h1><span t-field="comp.code"/> — <span t-field="comp.name"/><t t-if="o.variant"> [<t t-out="o.variant"/>]</t></h1>
+                        <table class="cbet-meta">
+                            <tr>
+                                <td><strong>Version</strong> <span t-field="comp.version"/></td>
+                                <td><strong>Published</strong>
+                                    <span t-if="comp.publish_date" t-field="comp.publish_date"/>
+                                    <t t-else="">—</t></td>
+                                <td t-if="o.variant"><strong>Variant</strong> <span t-field="o.variant"/></td>
+                            </tr>
+                        </table>
+                        <t t-foreach="o._face_sections('recto')" t-as="s">
+                            <div t-attf-class="cbet-section cbet-#{s.kind}">
+                                <h2>
+                                    <t t-call="hr_skills_cbet.cbet_icon"><t t-set="icon" t-value="s.icon_id"/></t>
+                                    <span t-field="s.name"/>
+                                </h2>
+                                <!-- One item per line, the pictogram hanging in the gutter;
+                                     a block of several short items in two columns. -->
+                                <ul t-attf-class="cbet-items#{' cbet-2col' if fmt._job_aid_two_columns(s, size_class) else ''}">
+                                    <li t-foreach="s.line_ids" t-as="l" class="cbet-item">
+                                        <t t-call="hr_skills_cbet.cbet_icon"><t t-set="icon" t-value="l.icon_id"/></t>
+                                        <span t-field="l.text"/>
+                                    </li>
+                                </ul>
+                                <div t-if="not is_html_empty(s.note_html)" class="cbet-note" t-out="s.note_html"/>
+                            </div>
+                        </t>
+                        <!-- Verso -->
+                        <div class="cbet-page-break" style="page-break-after: always;"/>
+                        <h1>Procedure — checklist</h1>
+                        <t t-foreach="o._face_sections('verso')" t-as="s">
+                            <div t-attf-class="cbet-section cbet-#{s.kind}">
+                                <h2>
+                                    <t t-call="hr_skills_cbet.cbet_icon"><t t-set="icon" t-value="s.icon_id"/></t>
+                                    <span t-field="s.name"/>
+                                </h2>
+                                <ul class="cbet-check">
+                                    <li t-foreach="s.line_ids" t-as="l"
+                                        t-attf-class="cbet-check-item#{' cbet-has-icon' if l.icon_id else ''}">
+                                        <span class="cbet-box"/>
+                                        <t t-call="hr_skills_cbet.cbet_icon"><t t-set="icon" t-value="l.icon_id"/></t>
+                                        <span t-field="l.text"/>
+                                    </li>
+                                </ul>
+                                <div t-if="not is_html_empty(s.note_html)" class="cbet-note" t-out="s.note_html"/>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

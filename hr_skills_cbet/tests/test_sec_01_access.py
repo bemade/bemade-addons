@@ -47,3 +47,41 @@ class TestSecAccess(CbetCommon):
     def test_manager_sees_all(self):
         e = self._make_evaluation(self.comp, self.other_emp, evaluator=self.evaluator)
         self.assertIn(e, self.env["cbet.evaluation"].with_user(self.manager).search([]))
+
+    def test_icons_and_job_aids_are_read_only_below_manager(self):
+        icon = self.env["cbet.icon"].search([("token", "=", "epi-lunettes")])
+        aid = self.env["cbet.job.aid"].create({"competency_id": self.comp.id})
+        section = self.env["cbet.job.aid.section"].create(
+            {"job_aid_id": aid.id, "name": "PPE"})
+        line = self.env["cbet.job.aid.line"].create({"section_id": section.id, "text": "x"})
+        for record in (icon, aid, section, line):
+            self.assertTrue(record.with_user(self.cand_user).read(["id"]))
+            self.assertTrue(record.with_user(self.evaluator).read(["id"]))
+            with self.assertRaises(AccessError):
+                record.with_user(self.cand_user).write({"active": False} if "active" in record._fields
+                                                       else {"text": "y"})
+            with self.assertRaises(AccessError):
+                record.with_user(self.evaluator).unlink()
+        self.assertTrue(self.env["cbet.icon"].with_user(self.manager).create(
+            {"token": "xtest-manager", "name": "Manager icon"}))
+        aid.with_user(self.manager).write({"variant": "A"})
+        self.assertEqual(aid.variant, "A")
+
+
+@tagged("post_install", "-at_install")
+class TestFrenchLocales(CbetCommon):
+    """The module's French ships as a generic ``fr.po`` so every French locale
+    (fr_FR on Durpro, fr_CA elsewhere, fr_BE …) gets the translated UI — Odoo
+    loads ``fr.po`` then ``<locale>.po`` and never another locale's file."""
+
+    def _label(self, lang):
+        self.env["res.lang"]._activate_lang(lang)
+        self.env["ir.module.module"].search([("name", "=", "hr_skills_cbet")])._update_translations(lang)
+        return self.env["cbet.competency"].with_context(lang=lang).fields_get(
+            ["validity_months"], ["string"])["validity_months"]["string"]
+
+    def test_fr_FR_and_fr_CA_both_get_the_french_labels(self):
+        for lang in ("fr_FR", "fr_CA"):
+            label = self._label(lang)
+            self.assertNotEqual(label, "Certification validity (months)", lang)
+            self.assertIn("mois", label, lang)

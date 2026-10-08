@@ -282,10 +282,33 @@ class TestCovPatient(TransactionCase):
 
     @mute_logger('odoo.addons.bemade_sports_clinic.models.patient')
     def test_create_portal_patient_permission(self):
-        # The acting admin lacks the portal groups required by the public method.
+        # Task 1577: an internal user holding NO treatment-professional group
+        # (and no coach group) is refused by the public method.
+        plain = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Cov Plain Internal', 'login': 'cov.plain.internal@example.com',
+            'group_ids': [Command.set([
+                self.env.ref('base.group_user').id,
+                self.env.ref('bemade_sports_clinic.group_sports_clinic_user').id,
+            ])],
+        })
         with self.assertRaises(AccessError):
-            self.env['sports.patient'].create_portal_patient(
+            self.env['sports.patient'].with_user(plain).create_portal_patient(
                 {'first_name': 'A', 'last_name': 'B'})
+
+    def test_create_portal_patient_internal_tp(self):
+        # Task 1577: an INTERNAL treatment professional may create a player,
+        # like a portal one.
+        itp = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Cov Internal TP', 'login': 'cov.internal.tp@example.com',
+            'group_ids': [Command.set([
+                self.env.ref('base.group_user').id,
+                self.env.ref('bemade_sports_clinic.group_sports_clinic_user').id,
+                self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional').id,
+            ])],
+        })
+        patient = self.env['sports.patient'].with_user(itp).create_portal_patient(
+            {'first_name': 'Internal', 'last_name': 'Created'})
+        self.assertEqual(patient.sudo().last_name, 'Created')
 
     def test_create_portal_patient_private_impl(self):
         patient = self.env['sports.patient']._create_portal_patient({

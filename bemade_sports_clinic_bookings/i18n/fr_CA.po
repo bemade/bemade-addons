@@ -1,0 +1,111 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_sports_clinic_bookings
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-29 03:04+0000\n"
+"PO-Revision-Date: 2026-09-29 03:04+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
+msgid "<option value=\"\">All types</option>"
+msgstr "<option value=\"\">Tous les types</option>"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
+msgid "<span>Filters</span>"
+msgstr "<span>Filtres</span>"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "All"
+msgstr "Toutes"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
+msgid "Apply filters"
+msgstr "Appliquer les filtres"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
+msgid "Appointment type"
+msgstr "Type de rendez-vous"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "Calendar"
+msgstr "Calendrier"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
+msgid "Cancelled"
+msgstr "Annulée"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "Client"
+msgstr "Client"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "Email"
+msgstr "Courriel"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
+msgid "From"
+msgstr "Du"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
+msgid "No bookings."
+msgstr "Aucune réservation."
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "Past"
+msgstr "Passées"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "Phone"
+msgstr "Téléphone"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
+msgid "Reset"
+msgstr "Réinitialiser"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "Status"
+msgstr "Statut"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
+msgid "To"
+msgstr "Au"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "Upcoming"
+msgstr "À venir"

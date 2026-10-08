@@ -1,0 +1,80 @@
+# Translation of Odoo Server.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: mail_company_signature
+#. odoo-python
+#: code:addons/mail_company_signature/models/res_users.py:0
+msgid ""
+"%s is still subject to the company-standard signature. Disable the policy "
+"first."
+msgstr ""
+"%s est encore soumis à la signature standard de l'entreprise. Désactivez "
+"d'abord la politique."
+
+#. module: mail_company_signature
+#. odoo-javascript
+#: code:addons/mail_company_signature/static/src/composer_patch.xml:0
+msgid "Add signature"
+msgstr "Ajouter la signature"
+
+#. module: mail_company_signature
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_company__company_signature_template
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_config_settings__company_signature_template
+msgid "Company signature template"
+msgstr "Modèle de signature de l'entreprise"
+
+#. module: mail_company_signature
+#: model_terms:ir.ui.view,arch_db:mail_company_signature.res_config_settings_view_form
+msgid "Company-standard Signature"
+msgstr "Signature standard de l'entreprise"
+
+#. module: mail_company_signature
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_company__company_signature_enforced
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_config_settings__company_signature_enforced
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_users__company_signature_enforced
+msgid "Enforce company-standard signature"
+msgstr "Imposer la signature standard de l'entreprise"
+
+#. module: mail_company_signature
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_users__personal_signature_backup
+msgid "Personal signature backup"
+msgstr "Sauvegarde de la signature personnelle"
+
+#. module: mail_company_signature
+#. odoo-javascript
+#: code:addons/mail_company_signature/static/src/composer_patch.xml:0
+msgid "Remove signature"
+msgstr "Retirer la signature"
+
+#. module: mail_company_signature
+#. odoo-javascript
+#: code:addons/mail_company_signature/static/src/composer_patch.xml:0
+msgid "Remove the signature from this message"
+msgstr "Retirer la signature de ce message"
+
+#. module: mail_company_signature
+#: model_terms:ir.ui.view,arch_db:mail_company_signature.view_users_form
+msgid "Restore personal signature"
+msgstr "Restaurer la signature personnelle"
+
+#. module: mail_company_signature
+#. odoo-javascript
+#: code:addons/mail_company_signature/static/src/composer_patch.xml:0
+msgid "Signature removed for this message"
+msgstr "Signature retirée pour ce message"
+
+#. module: mail_company_signature
+#: model_terms:ir.ui.view,arch_db:mail_company_signature.view_users_form
+#: model_terms:ir.ui.view,arch_db:mail_company_signature.view_users_form_simple_modif
+msgid ""
+"This signature is generated from the company template and cannot be edited."
+msgstr ""
+"Cette signature est générée à partir du modèle de l'entreprise et ne peut "
+"pas être modifiée."

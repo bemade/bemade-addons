@@ -558,7 +558,7 @@
                             <t t-set="config_card" t-value="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"/>
                         </t>
                     </t>
-                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')">
+                    <t t-if="(request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')) or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')">
                         <t t-call="portal.portal_docs_entry">
                             <t t-set="title">Events</t>
                             <t t-set="url">/my/events</t>
@@ -571,7 +571,7 @@
                          coaches hold no access to the attendance model at all.
                          The count is TODAY's clinics assigned to this user,
                          matching the page's default filters. -->
-                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')">
                         <t t-call="portal.portal_docs_entry">
                             <t t-set="title">Clinics</t>
                             <t t-set="url">/my/clinics</t>
@@ -596,7 +596,7 @@
                     </t>
                     <!-- Task 1244: personal quick notes. Therapists only — the
                          count is their own undismissed notes, nobody else's. -->
-                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')">
                         <t t-call="portal.portal_docs_entry">
                             <t t-set="title">Notepad</t>
                             <t t-set="url">/my/notepad</t>
@@ -604,7 +604,7 @@
                             <t t-set="config_card" t-value="True"/>
                         </t>
                     </t>
-                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                    <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')">
                         <t t-call="portal.portal_docs_entry">
                             <t t-set="title">Past Timesheets</t>
                             <t t-set="url" t-value="'/my/sc/timesheets'"/>
@@ -730,11 +730,13 @@
                              the player (else the link would 403). Task 1385:
                              position shown in brackets after the name, no label,
                              conditional on the team's show_position toggle. -->
+                        <!-- Task 1421: « #12 Last, First » via the shared helper
+                             (no number → exactly the 1414 label). -->
                         <a t-if="accessible" t-attf-href="{{ url }}" class="text-decoration-none fw-bold">
-                            <span t-field="player.last_name"/>, <span t-field="player.first_name"/><t t-if="show_position and player.position"> (<span t-esc="player.position"/>)</t>
+                            <t t-esc="player._portal_list_name()"/><t t-if="show_position and player.position"> (<span t-esc="player.position"/>)</t>
                         </a>
                         <span t-else="" class="fw-bold">
-                            <span t-field="player.last_name"/>, <span t-field="player.first_name"/><t t-if="show_position and player.position"> (<span t-esc="player.position"/>)</t>
+                            <t t-esc="player._portal_list_name()"/><t t-if="show_position and player.position"> (<span t-esc="player.position"/>)</t>
                         </span>
                     </div>
                     <!-- Desktop-only: Right-aligned badges next to injury count -->
@@ -1184,6 +1186,10 @@
         <template id="portal_my_teams">
             <t t-call="portal.portal_layout">
                 <h1>Your Teams</h1>
+                <!-- A refused team (1577 review): the clean, translated message. -->
+                <div t-if="error" class="alert alert-danger" role="alert">
+                    <t t-out="error"/>
+                </div>
                 <!-- Search bar — useful for users with many accessible teams -->
                 <div class="container-fluid mb-3">
                     <form method="get" action="/my/teams" class="row g-2 align-items-end">
@@ -1306,7 +1312,7 @@
                                                 <i class="fa fa-medkit me-1"/>
                                                 <t t-esc="(team.injured_count or 0)"/> injured
                                             </span>
-                                            <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')">
+                                            <t t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')">
                                                 <span class="badge bg-info text-dark">
                                                     <i class="fa fa-tasks me-1"/>
                                                     <t t-esc="(team.activity_count or 0)"/> activities
@@ -1317,7 +1323,7 @@
                                             <a t-attf-href="/my/team?team_id={{ team.id }}" class="btn btn-outline-secondary btn-sm me-2">
                                                 <i class="fa fa-eye"></i> View
                                             </a>
-                                            <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"
+                                            <a t-if="(request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')) or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"
                                                t-attf-href="/my/team/activities?team_id={{ team.id }}"
                                                class="btn bg-o-color-1 text-white btn-sm">
                                                 <i class="fa fa-tasks"></i> Activities
@@ -1389,7 +1395,7 @@
                     </h1>
                     <div class="d-flex flex-wrap gap-2">
                         <!-- Therapist: go to dedicated Add/Link Player page -->
-                        <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system')"
+                        <a t-if="(request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')) or request.env.user.has_group('base.group_system')"
                            t-attf-href="/my/team/{{ team.id }}/player/add_link" class="btn bg-o-color-1 text-white">
                             <i class="fa fa-plus me-1"/> Add Player
                         </a>
@@ -1404,7 +1410,7 @@
                 <!-- Therapist Add Player Modal removed in favor of dedicated page -->
 
                 <!-- Coach Request Add Player Modal -->
-                <div t-if="not (user_has_group('bemade_sports_clinic.group_portal_treatment_professional') or user_has_group('base.group_system'))" t-attf-id="requestAddPlayerModal{{ team.id }}" class="modal fade" tabindex="-1" aria-hidden="true">
+                <div t-if="not (user_has_group('bemade_sports_clinic.group_portal_treatment_professional') or user_has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional') or user_has_group('base.group_system'))" t-attf-id="requestAddPlayerModal{{ team.id }}" class="modal fade" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header">
@@ -1454,23 +1460,26 @@
                      and Activities (team-level only, task 1223) -->
                 <ul class="nav nav-tabs mb-3" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab"
+                        <!-- Task 1421: active_tab is server-driven so a roster sort
+                             reload lands on the roster tab; default stays Dashboard. -->
+                        <t t-set="active_tab" t-value="active_tab or 'dashboard'"/>
+                        <button t-attf-class="nav-link #{'active' if active_tab == 'dashboard' else ''}" id="dashboard-tab" data-bs-toggle="tab"
                                 data-bs-target="#dashboard" type="button" role="tab"
-                                aria-controls="dashboard" aria-selected="true">
+                                aria-controls="dashboard" t-att-aria-selected="'true' if active_tab == 'dashboard' else 'false'">
                             <i class="fa fa-heartbeat me-1"/> Dashboard
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="players-tab" data-bs-toggle="tab"
+                        <button t-attf-class="nav-link #{'active' if active_tab == 'players' else ''}" id="players-tab" data-bs-toggle="tab"
                                 data-bs-target="#players" type="button" role="tab"
-                                aria-controls="players" aria-selected="false">
+                                aria-controls="players" t-att-aria-selected="'true' if active_tab == 'players' else 'false'">
                             <i class="fa fa-users me-1"/> Players
                         </button>
                     </li>
                     <li t-if="can_view_activities" class="nav-item" role="presentation">
-                        <button class="nav-link" id="activities-tab" data-bs-toggle="tab"
+                        <button t-attf-class="nav-link #{'active' if active_tab == 'activities' else ''}" id="activities-tab" data-bs-toggle="tab"
                                 data-bs-target="#activities" type="button" role="tab"
-                                aria-controls="activities" aria-selected="false">
+                                aria-controls="activities" t-att-aria-selected="'true' if active_tab == 'activities' else 'false'">
                             <i class="fa fa-tasks me-1"/> Activities <span class="badge text-bg-secondary ms-1" t-esc="len(team_activities)"/>
                         </button>
                     </li>
@@ -1479,7 +1488,7 @@
                 <div class="tab-content">
                     <!-- Dashboard tab (task 1272): team-health header, recent
                          player changes (role-scoped, ranked), upcoming events. -->
-                    <div class="tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
+                    <div t-attf-class="tab-pane fade #{'show active' if active_tab == 'dashboard' else ''}" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
                         <!-- Task 1270: team announcement (all-staff, TP-authored). -->
                         <t t-if="team.announcement">
                             <div t-attf-class="alert #{team.announcement_is_expired and 'alert-secondary' or 'alert-info'} mb-3">
@@ -1708,7 +1717,7 @@
                             </details>
                         </t>
                         <h5 class="mb-2">
-                            Upcoming events <small class="text-muted">(next 7 days)</small>
+                            Upcoming events <small class="text-muted" t-esc="upcoming_events_window_label"/>
                         </h5>
                         <t t-if="upcoming_events">
                             <ul class="list-group mb-3">
@@ -1727,7 +1736,7 @@
                             </ul>
                         </t>
                         <t t-else="">
-                            <p class="text-muted">No upcoming events in the next 7 days.</p>
+                            <p class="text-muted" t-esc="upcoming_events_empty_label"/>
                         </t>
                         <!-- Task 1416: read-only « Temporary staff » block — the team
                              staff rows that exist only inside a window (dated temporary
@@ -1755,7 +1764,7 @@
                         </t>
                     </div>
 
-                    <div class="tab-pane fade" id="players" role="tabpanel" aria-labelledby="players-tab">
+                    <div t-attf-class="tab-pane fade #{'show active' if active_tab == 'players' else ''}" id="players" role="tabpanel" aria-labelledby="players-tab">
                         <!-- Pending Removals Alert — only for viewers who can action
                              a removal on this team (task 1260), not any portal TP. -->
                         <t t-if="any(p.pending_removal for p in players) and can_remove_on_team">
@@ -1773,6 +1782,21 @@
                              alert's "Review now" link a real target: it scrolls the TP
                              to the player list, where pending players carry a badge and
                              the direct-remove control to action them. -->
+                        <!-- Task 1421: « Sort: Status · Number », sticky per user
+                             (res.users.roster_sort_mode). Blanks sort last on Number. -->
+                        <div class="d-flex justify-content-end align-items-center gap-2 mb-2 small o_sc_roster_sort">
+                            <span class="text-muted">Sort:</span>
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Sort players">
+                                <a t-attf-href="/my/team?team_id=#{team.id}&amp;sort=status"
+                                   t-attf-class="btn #{'btn-secondary active' if roster_sort_mode != 'number' else 'btn-outline-secondary'}">
+                                    <i class="fa fa-heartbeat me-1" aria-hidden="true"/>By status
+                                </a>
+                                <a t-attf-href="/my/team?team_id=#{team.id}&amp;sort=number"
+                                   t-attf-class="btn #{'btn-secondary active' if roster_sort_mode == 'number' else 'btn-outline-secondary'}">
+                                    <i class="fa fa-sort-numeric-asc me-1" aria-hidden="true"/>By number
+                                </a>
+                            </div>
+                        </div>
                         <div class="container-fluid" id="pending-removals">
                             <div class="row g-3 justify-content-center">
                                 <t t-foreach="players" t-as="player">
@@ -1794,12 +1818,12 @@
                         </div>
                     </div>
 
-                    <div t-if="can_view_activities" class="tab-pane fade" id="activities" role="tabpanel" aria-labelledby="activities-tab">
+                    <div t-if="can_view_activities" t-attf-class="tab-pane fade #{'show active' if active_tab == 'activities' else ''}" id="activities" role="tabpanel" aria-labelledby="activities-tab">
                         <!-- Shared add-activity header (task 1223 reuses the 1222 partial),
                              scoped strictly to this team (res_model='sports.team'). -->
                         <t t-set="add_model" t-value="'sports.team'"/>
                         <t t-set="add_res_id" t-value="team.id"/>
-                        <t t-set="add_return_url" t-value="'/my/team?team_id=%s' % team.id"/>
+                        <t t-set="add_return_url" t-value="'/my/team?team_id=%s&amp;tab=activities' % team.id"/>
                         <t t-call="bemade_sports_clinic.portal_activity_add_header"/>
 
                         <!-- Team-level activity list. team_activities holds ONLY
@@ -1808,6 +1832,9 @@
                         <t t-set="today_date" t-value="datetime.datetime.strptime(today, '%Y-%m-%d').date()"/>
                         <t t-set="context_model" t-value="'sports.team'"/>
                         <t t-set="context_res_id" t-value="team.id"/>
+                        <!-- Task 1500: the activity_list_table partial renders the shared
+                             Reassign modal; return to this team page after a reassign. -->
+                        <t t-set="reassign_return_url" t-value="'/my/team?team_id=%s&amp;tab=activities' % team.id"/>
                         <t t-call="bemade_sports_clinic.activity_list_table">
                             <t t-set="filtered_activities" t-value="team_activities"/>
                             <t t-set="show_assignee" t-value="True"/>
@@ -1826,7 +1853,7 @@
                 <h1>Your Players</h1>
 
                 <div class="d-flex justify-content-end mb-3">
-                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')"
+                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')"
                        href="/my/player/create" class="btn bg-o-color-1 text-white">
                         <i class="fa fa-plus"/> Create Player
                     </a>
@@ -1901,6 +1928,12 @@
                                             </t>
                                         </select>
                                     </div>
+                                    <!-- Jersey number (task 1421): exact match, « #12 » or « 12 » -->
+                                    <div class="col-md-2">
+                                        <input type="text" name="jersey_number" class="form-control" placeholder="Jersey no."
+                                               maxlength="8" inputmode="numeric"
+                                               t-att-value="jersey_number or ''" onchange="this.form.submit();"/>
+                                    </div>
                                 </div>
                             </form>
                         </div>
@@ -1931,7 +1964,14 @@
         <template id="portal_my_player_injuries">
             <t t-call="portal.portal_layout">
                 <div class="mb-2">
-                    <h1 class="mb-0"><span t-field="player.name"/></h1>
+                    <!-- Task 1421: « #12 First Last » (name alone without a number). -->
+                    <h1 class="mb-0"><span t-esc="player._portal_heading_name()"/></h1>
+                </div>
+                <!-- Task 1421: soft duplicate-number warning after a save
+                     (?warning=duplicate_number, text computed from live data). -->
+                <div t-if="jersey_warning" class="alert alert-warning o_sc_jersey_warning d-flex align-items-center" role="alert">
+                    <i class="fa fa-exclamation-triangle flex-shrink-0 me-2" aria-hidden="true"/>
+                    <div t-esc="jersey_warning"/>
                 </div>
                 <div class="d-flex flex-wrap gap-2 mb-3">
                     <a t-att-href="'/my/player/edit?patient_id=%s%s' % (player.id, ctx_qs)" class="btn bg-o-color-1 text-white">
@@ -2936,7 +2976,7 @@
                                         </div>
                                         
                                         <!-- Status fields (Treatment Professionals only) -->
-                                        <t t-if="user_has_group('bemade_sports_clinic.group_portal_treatment_professional') or user_has_group('base.group_system')">
+                                        <t t-if="user_has_group('bemade_sports_clinic.group_portal_treatment_professional') or user_has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional') or user_has_group('base.group_system')">
                                             <div class="row g-3 mb-3">
                                                 <div class="col-md-6">
                                                     <label for="match_status" class="form-label">Match Status</label>

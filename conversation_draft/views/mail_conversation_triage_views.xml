@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="mail_conversation_view_list_triage" model="ir.ui.view">
+        <field name="name">mail.conversation.view.list.triage.draft</field>
+        <field name="model">mail.conversation</field>
+        <field
+      name="inherit_id"
+      ref="conversation_base.mail_conversation_view_list_triage"
+    />
+        <field name="arch" type="xml">
+            <field name="last_message_snippet" position="after">
+                <field name="draft_editor_id" column_invisible="1" />
+                <field name="has_pending_draft" widget="conversation_draft_flag" />
+            </field>
+        </field>
+    </record>
+</odoo>

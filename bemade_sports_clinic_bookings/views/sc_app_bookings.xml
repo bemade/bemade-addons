@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1540 (epic #1535, P3) — the portal bookings pages on the Sports
+    Clinic app shell (rendered by controllers/bookings.py from the
+    appointment_portal_staff context, only when the shell is active). The
+    calendar is the shell's shared sc_calendar component on the unchanged
+    /my/bookings/calendar/data feed. No inline script / style.
+-->
+<odoo>
+
+    <template id="sc_app_bookings" name="Sports Clinic App: bookings">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title" t-value="sc_nav_labels['bookings']"/>
+            <t t-set="sc_active_nav" t-value="'bookings'"/>
+            <t t-call="bemade_sports_clinic.sc_page_tabs">
+                <t t-set="tabs" t-value="sc_booking_segments"/>
+                <t t-set="active" t-value="filterby"/>
+            </t>
+            <form method="get" action="/my/bookings" class="o_sc_filters" data-sc-section="bookings.filters">
+                <input type="hidden" name="filterby" t-att-value="filterby"/>
+                <details class="o_sc_disclosure" t-att-open="'open' if (selected_type_id or date_from or date_to) else None">
+                    <summary class="o_sc_disclosure_summary">
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
+                        <span>Filters</span>
+                    </summary>
+                    <div class="o_sc_filter_grid">
+                        <div class="o_sc_field">
+                            <label for="sc_booking_type" class="o_sc_field_label">Appointment type</label>
+                            <select id="sc_booking_type" name="appointment_type_id" class="o_sc_input o_sc_select">
+                                <option value="">All types</option>
+                                <t t-foreach="booking_types" t-as="btype">
+                                    <option t-att-value="btype.id" t-att-selected="'selected' if selected_type_id == btype.id else None" t-out="btype.name"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="o_sc_field">
+                            <label for="sc_booking_from" class="o_sc_field_label">From</label>
+                            <input type="date" id="sc_booking_from" name="date_from" class="o_sc_input" t-att-value="date_from or ''"/>
+                        </div>
+                        <div class="o_sc_field">
+                            <label for="sc_booking_to" class="o_sc_field_label">To</label>
+                            <input type="date" id="sc_booking_to" name="date_to" class="o_sc_input" t-att-value="date_to or ''"/>
+                        </div>
+                    </div>
+                    <div class="o_sc_form_actions">
+                        <a href="/my/bookings" class="o_sc_btn o_sc_btn_ghost">Reset</a>
+                        <button type="submit" class="o_sc_btn o_sc_btn_primary">Apply filters</button>
+                    </div>
+                </details>
+            </form>
+            <div t-if="sc_booking_rows" class="o_sc_list" data-sc-section="bookings.list">
+                <t t-foreach="sc_booking_rows" t-as="row">
+                    <div class="o_sc_entity_row o_sc_entity_row_static" t-att-data-sc-booking-id="row['id']">
+                        <span class="o_sc_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'bookings'"/></t></span>
+                        <span class="o_sc_row_text">
+                            <span class="o_sc_row_title" t-out="row['title']"/>
+                            <span class="o_sc_row_subtitle" t-out="row['subtitle']"/>
+                        </span>
+                        <span class="o_sc_row_trailing">
+                            <span t-if="row['cancelled']" class="o_sc_chip o_sc_chip_red">Cancelled</span>
+                            <span t-elif="row['status']" class="o_sc_chip o_sc_chip_ghost" t-out="row['status']"/>
+                        </span>
+                    </div>
+                </t>
+            </div>
+            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-set="message">No bookings.</t>
+            </t>
+            <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_sc_pager">
+                <t t-call="portal.pager"/>
+            </div>
+        </t>
+    </template>
+
+    <template id="sc_app_bookings_calendar" name="Sports Clinic App: bookings calendar">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title" t-value="sc_nav_labels['bookings']"/>
+            <t t-set="sc_active_nav" t-value="'bookings'"/>
+            <t t-call="bemade_sports_clinic.sc_page_tabs">
+                <t t-set="tabs" t-value="sc_booking_segments"/>
+                <t t-set="active" t-value="'calendar'"/>
+            </t>
+            <t t-call="bemade_sports_clinic.sc_calendar">
+                <t t-set="props" t-value="sc_calendar_props"/>
+            </t>
+        </t>
+    </template>
+
+</odoo>

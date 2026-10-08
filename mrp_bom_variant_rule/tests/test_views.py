@@ -5,11 +5,16 @@
 Acceptance criteria
 ===================
 
-1. A ruleset can be authored end to end through its form: name, bound
-   templates, a slot, a rule inside that slot, and a condition inside that
-   rule, all in one editing session. This is the module's whole premise — a
-   product expert maintains the table — so a view that loads but cannot be
-   filled in is a failure, not a cosmetic problem.
+1. A ruleset can be authored end to end through its forms: name, bound
+   templates and slots on the ruleset form; then, on the slot's own form, the
+   rules that compete for it and their conditions. This is the module's whole
+   premise — a product expert maintains the table — so a view that loads but
+   cannot be filled in is a failure, not a cosmetic problem.
+1b. Rules are ordered where they compete: on the slot form, by dragging. The
+   ruleset's Rules page is an overview across slots, and an overview ordered
+   by slot cannot also be dragged — Odoo only resequences a list whose first
+   sort key is the handle field. Every list in the module that shows a handle
+   must therefore be sorted by that handle first, or the handle is a lie.
 2. An attribute value's named parameters can be entered through the value
    form, since a quantity expression is meaningless without them.
 3. The generated-BOM fields render on the stock bill-of-materials form, and
@@ -27,8 +32,8 @@ from .common import BomVariantRuleCommon
 @tagged("post_install", "-at_install", "mrp_bom_variant_rule")
 class TestViews(BomVariantRuleCommon, RuleSetBuilderMixin):
     def test_rule_set_form_authors_a_whole_rule_table(self):
-        """Slots, rules and conditions are all reachable from the ruleset
-        form without dropping to the shell."""
+        """Slots are reachable from the ruleset form, and a slot's rules and
+        their conditions from the slot form, without dropping to the shell."""
         component = self._component("Vessel 1500L")
         form = Form(
             self.env["mrp.bom.rule.set"],
@@ -42,13 +47,10 @@ class TestViews(BomVariantRuleCommon, RuleSetBuilderMixin):
         rule_set = form.save()
         slot = rule_set.slot_ids
 
-        # The rules page is a second pass, because a rule has to name the slot
-        # it competes for and a slot only exists once saved.
-        form = Form(
-            rule_set, view="mrp_bom_variant_rule.view_mrp_bom_rule_set_form"
-        )
+        # Rules are authored on the slot they compete for, which is also the
+        # only place their order among each other means anything.
+        form = Form(slot, view="mrp_bom_variant_rule.view_mrp_bom_slot_form")
         with form.rule_ids.new() as rule:
-            rule.slot_id = slot
             rule.product_id = component
             rule.qty_expr = "volume * trains"
             with rule.condition_ids.new() as condition:
@@ -66,29 +68,76 @@ class TestViews(BomVariantRuleCommon, RuleSetBuilderMixin):
         # Rules page would show an empty list for a ruleset that has rules.
         self.assertEqual(rule_set.rule_ids.rule_set_id, rule_set)
 
-    def test_rule_set_form_edits_an_existing_ruleset(self):
-        """Reopening a saved ruleset and adding a second rule works, which is
-        the ordinary case: rule tables grow rather than being written once."""
+    def test_slot_form_edits_an_existing_slot(self):
+        """Reopening a saved slot and adding a second rule works, which is the
+        ordinary case: rule tables grow rather than being written once."""
         rule_set = self._rule_set()
         slot = self._slot(rule_set, "Vessel")
         self._rule(slot, self._component("Vessel Small"), qty_expr="1")
         fallback = self._component("Vessel Default")
 
-        form = Form(
-            rule_set, view="mrp_bom_variant_rule.view_mrp_bom_rule_set_form"
-        )
+        form = Form(slot, view="mrp_bom_variant_rule.view_mrp_bom_slot_form")
         with form.rule_ids.new() as rule:
-            rule.slot_id = slot
             rule.product_id = fallback
             rule.qty_expr = "1"
             rule.sequence = 99
         form.save()
 
-        ordered = rule_set.rule_ids.sorted(lambda r: (r.sequence, r.id))
+        ordered = slot.rule_ids.sorted(lambda r: (r.sequence, r.id))
         self.assertEqual(ordered[-1].product_id, fallback)
         # A conditionless rule is the one that shadows everything after it, so
         # the form has to say so rather than showing an empty cell.
         self.assertIn("catch-all", ordered[-1].condition_summary)
+
+    def test_rules_overview_names_the_slot_without_the_ruleset(self):
+        """The ruleset's Rules page shows the slot by its bare name. The slot's
+        display name carries the ruleset as a prefix, and in a column of a few
+        hundred pixels that prefix is all a reader gets to see."""
+        rule_set = self._rule_set(name="Water treatment systems")
+        slot = self._slot(rule_set, "Control valve")
+        rule = self._rule(slot, self._component("Valve"), qty_expr="1")
+        self.assertEqual(slot.display_name, "Water treatment systems / Control valve")
+        self.assertEqual(rule.slot_name, "Control valve")
+
+        arch = self.env["mrp.bom.rule.set"].get_view(
+            self.env.ref("mrp_bom_variant_rule.view_mrp_bom_rule_set_form").id,
+            "form",
+        )["arch"]
+        self.assertIn('name="slot_name"', arch)
+
+    def test_every_handle_sorts_its_list(self):
+        """A list whose first sort key is not its handle field renders the
+        handle but silently refuses to drag (web's ListRenderer.canResequence).
+        The rules overview on the ruleset form is ordered by slot, so it must
+        not carry a handle; the slot form's rule list is ordered by sequence,
+        so it may."""
+        from lxml import etree
+
+        views = self.env["ir.ui.view"].search(
+            [("model", "in", ["mrp.bom.rule.set", "mrp.bom.slot", "mrp.bom.rule"])]
+        )
+        checked = 0
+        for view in views:
+            for node in etree.fromstring(view.arch).iter("list"):
+                handles = [
+                    f.get("name")
+                    for f in node.iter("field")
+                    if f.get("widget") == "handle"
+                ]
+                if not handles:
+                    continue
+                checked += 1
+                # An unspecified order falls back to the handle field itself
+                # (list_arch_parser), so only an explicit order can break it.
+                order = node.get("default_order")
+                if order:
+                    self.assertEqual(
+                        order.split(",")[0].strip().split()[0],
+                        handles[0],
+                        "%s: list %r has a handle on %s but sorts by %r"
+                        % (view.name, node.get("string"), handles[0], order),
+                    )
+        self.assertGreater(checked, 0, "no handle lists found -- test is dead")
 
     def test_rule_standalone_form(self):
         """The cross-ruleset rule form still requires a slot, and can carry a

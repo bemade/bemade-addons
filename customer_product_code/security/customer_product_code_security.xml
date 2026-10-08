@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="group_product_customer_code_user" model="res.groups">
+        <field name="name">Customer Product Codes: User</field>
+    </record>
+
+    <record id="group_product_customer_code_manager" model="res.groups">
+        <field name="name">Customer Product Codes: Manager</field>
+        <field name="implied_ids" eval="[Command.link(ref('group_product_customer_code_user'))]"/>
+    </record>
+
+    <record id="product_customer_code_company_rule" model="ir.rule">
+        <field name="name">Customer product code: multi-company</field>
+        <field name="model_id" ref="model_product_customer_code"/>
+        <field name="domain_force">[('company_id', 'in', company_ids + [False])]</field>
+    </record>
+</odoo>

@@ -1,0 +1,140 @@
+// Task 1538 (epic #1535) — Fit Crew brand tokens for the portal app shell.
+//
+// Brand guide (Feb 2025, p.27): Forêt #243925 · Vert néon #A4C754 ·
+// Mauve #783E88 · Minuit #120E12 · Charbon #302E33 · Gris #E5E5E5.
+// Type (p.29–31): Teko (titles), DM Sans (text).
+//
+// Task 1540: the fonts are SELF-HOSTED (static/src/fonts, SIL OFL 1.1, latin
+// subset of the brand files — no off-domain request: the clinic kiosk's iPad
+// is URL-filtered), and the tokens are MIXINS applied to two roots: the shell
+// (.o_sc_app, dark by default, light via [data-sc-theme="light"]) and the
+// sign-in kiosk (.o_sc_kiosk_body, light). This bundle loads on every
+// frontend page, so NOTHING may leak outside those roots (switch off =
+// today's portal, unchanged); an @font-face only downloads when used.
+
+@font-face {
+    font-family: "Teko";
+    font-style: normal;
+    font-weight: 300 700;
+    font-display: swap;
+    src: url("/bemade_sports_clinic/static/src/fonts/Teko-Variable-latin.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "DM Sans";
+    font-style: normal;
+    font-weight: 100 1000;
+    font-display: swap;
+    src: url("/bemade_sports_clinic/static/src/fonts/DMSans-Variable-latin.woff2") format("woff2");
+}
+
+// Palette, type and scale — shared by every root.
+@mixin sc-brand-tokens {
+    // Brand palette
+    --sc-forest: #243925;
+    --sc-neon: #a4c754;
+    --sc-mauve: #783e88;
+    --sc-midnight: #120e12;
+    --sc-charcoal: #302e33;
+    --sc-grey: #e5e5e5;
+
+    // Type
+    --sc-font-title: "Teko", "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --sc-font-text: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --sc-text-xs: 11px;
+    --sc-text-sm: 12px;
+    --sc-text-md: 14px;
+    --sc-text-lg: 16px;
+    --sc-title-md: 20px;
+    --sc-title-lg: 24px;
+    --sc-title-xl: 30px;
+
+    // Spacing / radius / elevation scale
+    --sc-space-1: 4px;
+    --sc-space-2: 8px;
+    --sc-space-3: 12px;
+    --sc-space-4: 16px;
+    --sc-space-5: 22px;
+    --sc-space-6: 32px;
+    --sc-radius-sm: 10px;
+    --sc-radius-md: 12px;
+    --sc-radius-lg: 14px;
+    --sc-radius-pill: 999px;
+    --sc-tap: 44px;
+    --sc-rail-width: 232px;
+    --sc-appbar-height: 56px;
+    --sc-tabs-height: 64px;
+}
+
+@mixin sc-theme-dark {
+    --sc-bg: #120e12;
+    --sc-surface: #1d1a20;
+    --sc-surface-2: #302e33;
+    --sc-line: #3b393f;
+    --sc-fg: #e5e5e5;
+    --sc-fg-2: #a9a8ae;
+    --sc-fg-3: #7a7980;
+    --sc-accent: #a4c754;
+    --sc-accent-fg: #120e12;
+    --sc-secondary: #b678c4;
+    --sc-ok: #a4c754;
+    --sc-warn: #e9b949;
+    --sc-bad: #ec6a6a;
+    --sc-tone-fg: #120e12;
+    --sc-bar: #0d0a0e;
+    --sc-bar-fg: #e5e5e5;
+    --sc-bar-fg-2: #a9a8ae;
+    --sc-bar-active: #a4c754;
+    --sc-bar-active-bg: rgba(164, 199, 84, 0.14);
+    --sc-hover: rgba(255, 255, 255, 0.06);
+    --sc-focus: #a4c754;
+    --sc-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+@mixin sc-theme-light {
+    --sc-bg: #f4f5f2;
+    --sc-surface: #ffffff;
+    --sc-surface-2: #e5e5e5;
+    --sc-line: #d5d7d1;
+    --sc-fg: #120e12;
+    --sc-fg-2: #4d4c52;
+    --sc-fg-3: #6b6a71;
+    --sc-accent: #243925;
+    --sc-accent-fg: #ffffff;
+    --sc-secondary: #783e88;
+    --sc-ok: #5f8f2b;
+    --sc-warn: #b8860b;
+    --sc-bad: #c0392b;
+    --sc-tone-fg: #ffffff;
+    --sc-bar: #243925;
+    --sc-bar-fg: #ffffff;
+    --sc-bar-fg-2: #cfd6c9;
+    --sc-bar-active: #ffffff;
+    --sc-bar-active-bg: rgba(164, 199, 84, 0.22);
+    --sc-hover: rgba(18, 14, 18, 0.06);
+    --sc-focus: #783e88;
+    --sc-shadow: 0 6px 20px rgba(18, 14, 18, 0.12);
+}
+
+.o_sc_app {
+    @include sc-brand-tokens;
+    @include sc-theme-dark;
+
+    &[data-sc-theme="light"] {
+        @include sc-theme-light;
+    }
+}
+
+// Task 1540: the sign-in kiosk root (clinic_kiosk_layout's <body>).
+.o_sc_kiosk_body {
+    @include sc-brand-tokens;
+    @include sc-theme-light;
+}
+
+// The page behind the shell (overscroll, safe areas) follows the theme too.
+body.o_sc_app_body {
+    background: #120e12;
+    &.o_sc_app_body_light {
+        background: #f4f5f2;
+    }
+}

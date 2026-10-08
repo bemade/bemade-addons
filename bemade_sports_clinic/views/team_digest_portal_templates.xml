@@ -42,11 +42,11 @@
                         <div class="fw-bold">
                             <t t-if="player.get('player_id')">
                                 <a t-att-href="'/my/player?player_id=%s' % player['player_id']" class="text-decoration-none">
-                                    <t t-esc="player['player_name']"/><t t-if="player.get('position')"> (<t t-esc="player['position']"/>)</t>
+                                    <t t-if="player.get('jersey_number')">#<t t-esc="player['jersey_number']"/> </t><t t-esc="player['player_name']"/><t t-if="player.get('position')"> (<t t-esc="player['position']"/>)</t>
                                 </a>
                             </t>
                             <t t-else="">
-                                <t t-esc="player['player_name']"/><t t-if="player.get('position')"> (<t t-esc="player['position']"/>)</t>
+                                <t t-if="player.get('jersey_number')">#<t t-esc="player['jersey_number']"/> </t><t t-esc="player['player_name']"/><t t-if="player.get('position')"> (<t t-esc="player['position']"/>)</t>
                             </t>
                         </div>
                         <span t-if="player.get('changed_recently')" class="badge bg-warning text-dark">

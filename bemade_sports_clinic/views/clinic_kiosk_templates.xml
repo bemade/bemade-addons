@@ -6,8 +6,9 @@
     no address bar, no back button, no home indicator escape — so every
     screen is escapable in-page and every « return to start » targets
     /clinic/kiosk. Deliberately NOT the portal layout: no navbar, no login
-    link, no footer, no menu. Built on web.layout with the frontend CSS
-    bundle only (no JS bundle); the only JavaScript is three tiny inline
+    link, no footer, no menu. Built on web.layout with its own CSS-only
+    bundle (bemade_sports_clinic.assets_kiosk, task 1540: brand tokens,
+    self-hosted fonts, no off-domain request; no JS bundle); the only JavaScript is three tiny inline
     scripts (pairing poll, bfcache guard, idle reset), each with a
     no-JS fallback (noscript meta refresh / PRG being server-side).
 
@@ -38,31 +39,17 @@
                         <meta http-equiv="refresh"
                               t-att-content="'%s; url=%s' % (noscript_refresh_seconds, noscript_refresh_url)"/>
                     </noscript>
-                    <t t-call-assets="web.assets_frontend" t-js="false"/>
-                    <style>
-                        .o_sc_kiosk_body { min-height: 100vh; background: var(--bs-light, #f8f9fa); }
-                        .o_sc_kiosk {
-                            max-width: 34rem; margin: 0 auto;
-                            padding-top: calc(2rem + env(safe-area-inset-top, 0px));
-                            padding-right: calc(1.25rem + env(safe-area-inset-right, 0px));
-                            padding-bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
-                            padding-left: calc(1.25rem + env(safe-area-inset-left, 0px));
-                        }
-                        .o_sc_kiosk .form-control { font-size: 1.5rem; padding: 0.9rem 1rem; min-height: 3.75rem; }
-                        .o_sc_kiosk .form-label { font-size: 1.15rem; font-weight: 600; }
-                        .o_sc_kiosk .btn-lg { font-size: 1.5rem; padding: 1rem 1.5rem; min-height: 4.25rem; }
-                        .o_sc_kiosk_result { font-size: 1.5rem; }
-                        .o_sc_kiosk_result .o_sc_kiosk_icon { font-size: 5rem; line-height: 1; }
-                        .o_sc_kiosk_code {
-                            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-                            font-size: 4.5rem; font-weight: 700; letter-spacing: 0.75rem;
-                            line-height: 1.2; text-indent: 0.75rem; /* re-center: tracking pads the right */
-                        }
-                        .o_sc_kiosk_policy summary { cursor: pointer; font-weight: 600; min-height: 2.75rem; display: list-item; }
-                        .o_sc_kiosk_lang { min-height: 2.75rem; display: inline-flex; align-items: center; }
-                    </style>
+                    <!-- CSS only (no JS bundle). Task 1540: the kiosk's own
+                         bundle (Bootstrap, Font Awesome, the brand tokens and
+                         the self-hosted fonts, static/src/scss/sc_kiosk.scss)
+                         replaces web.assets_frontend and the former inline
+                         <style>: nothing is loaded from another domain. -->
+                    <t t-call-assets="bemade_sports_clinic.assets_kiosk" t-js="false"/>
                 </t>
                 <main class="o_sc_kiosk" role="main">
+                    <div class="o_sc_kiosk_brand">
+                        <img src="/bemade_sports_clinic/static/src/img/sc_logo_chrome.png" alt="Le Fit Crew" width="64" height="64"/>
+                    </div>
                     <t t-out="0"/>
                 </main>
                 <!-- bfcache guard: a back-gesture restore must never resurface

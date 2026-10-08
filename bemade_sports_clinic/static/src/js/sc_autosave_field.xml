@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Task 1542 (epic #1535), extended by task 1539 — see sc_autosave_field.js. -->
+<templates xml:space="preserve">
+    <t t-name="bemade_sports_clinic.ScAutosaveField">
+        <div class="o_sc_field o_sc_autosave" t-att-data-sc-autosave="props.mode or 'draft'"
+             t-att-data-sc-field="props.field or props.name"
+             t-att-data-sc-state="state.status" t-att-data-sc-restored="state.restored ? '1' : '0'">
+            <label class="o_sc_field_label" t-att-for="props.inputId">
+                <span t-esc="props.label"/>
+                <span t-if="statusLabel" t-attf-class="o_sc_save_state o_sc_save_state_{{ state.status }}" role="status" t-esc="statusLabel"/>
+                <button t-if="props.clearable and state.value and !props.disabled" type="button"
+                        class="o_sc_link_btn o_sc_clear_btn" t-on-click="clear">Clear</button>
+            </label>
+            <div t-if="state.restored" class="o_sc_banner o_sc_draft_banner" role="status">
+                <strong class="o_sc_banner_title">Draft restored</strong>
+                <span>Your unpublished text was kept on this device.</span>
+                <button type="button" class="o_sc_link_btn" t-on-click="discardDraft">Discard the draft</button>
+            </div>
+            <div t-if="state.conflict" class="o_sc_banner o_sc_banner_warn o_sc_conflict_banner" role="alert">
+                <strong class="o_sc_banner_title">Changed elsewhere</strong>
+                <span t-esc="conflictText"/>
+                <div class="o_sc_banner_actions">
+                    <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" t-on-click="keepMine">Keep mine</button>
+                    <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" t-on-click="takeTheirs">Take theirs</button>
+                </div>
+            </div>
+            <textarea t-if="type === 'textarea'" t-ref="input" class="o_sc_input o_sc_textarea" rows="4"
+                      t-att-id="props.inputId" t-att-name="props.name" t-att-placeholder="props.placeholder"
+                      t-att-required="props.required" t-att-disabled="props.disabled"
+                      t-model="state.value" t-on-input="onInput" t-on-blur="commit"/>
+            <select t-elif="type === 'select'" t-ref="input" class="o_sc_input o_sc_select"
+                    t-att-id="props.inputId" t-att-name="props.name" t-att-required="props.required"
+                    t-att-disabled="props.disabled" t-model="state.value" t-on-change="onChange">
+                <t t-foreach="props.options or []" t-as="opt" t-key="opt_index">
+                    <option t-att-value="opt[0]" t-esc="opt[1]"/>
+                </t>
+            </select>
+            <div t-elif="type === 'segmented'" t-ref="input" class="o_sc_segmented o_sc_segmented_full o_sc_seg_input"
+                 role="group" t-att-id="props.inputId" t-att-aria-label="props.label">
+                <t t-foreach="props.options or []" t-as="opt" t-key="opt_index">
+                    <button type="button" t-att-data-sc-value="opt[0]" t-att-disabled="props.disabled"
+                            t-att-aria-pressed="state.value === opt[0] ? 'true' : 'false'"
+                            t-on-click="() => this.onPick(opt[0])" t-esc="opt[1]"/>
+                </t>
+                <input t-if="props.name" type="hidden" t-att-name="props.name" t-att-value="state.value"/>
+            </div>
+            <div t-elif="type === 'date_na'" class="o_sc_date_na">
+                <input t-ref="input" class="o_sc_input" type="date" t-att-id="props.inputId"
+                       t-att-name="props.name" t-att-value="dateValue" t-att-disabled="isNa or props.disabled"
+                       t-att-required="!isNa and props.required"
+                       t-on-input="(ev) => { this.state.value = ev.target.value; this.onInput(); }"
+                       t-on-change="(ev) => { this.state.value = ev.target.value; this.onChange(); }"/>
+                <label class="o_sc_check">
+                    <input type="checkbox" t-att-name="props.naName" value="1" t-att-checked="isNa"
+                           t-att-disabled="props.disabled" t-on-change="onNaToggle"/>
+                    <span t-esc="naLabel"/>
+                </label>
+            </div>
+            <input t-else="" t-ref="input" class="o_sc_input" t-att-type="type"
+                   t-att-id="props.inputId" t-att-name="props.name" t-att-placeholder="props.placeholder"
+                   t-att-required="props.required" t-att-disabled="props.disabled"
+                   t-model="state.value" t-on-input="onInput" t-on-change="onChange" t-on-blur="commit"/>
+            <small t-if="props.hint" class="o_sc_hint" t-esc="props.hint"/>
+            <div t-if="state.message" class="o_sc_field_message" role="status" t-esc="state.message"/>
+            <div t-if="state.error" class="o_sc_field_message o_sc_field_error" role="alert" t-esc="state.error"/>
+        </div>
+    </t>
+</templates>

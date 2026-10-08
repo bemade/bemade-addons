@@ -1,0 +1,577 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* conversation_draft
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-01 20:20+0000\n"
+"PO-Revision-Date: 2026-10-01 20:20+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft_recipient.py:0
+msgid "(no address)"
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
+msgid ""
+"A colleague has just started a reply on this conversation. Open it again to "
+"join their draft."
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/conversation_draft_access_mixin.py:0
+msgid ""
+"Access to this reply draft is refused (%(operation)s): it follows access to "
+"the conversation it belongs to."
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__message_needaction
+msgid "Action Needed"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation__active_draft_id
+msgid "Active Draft"
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
+msgid "Add at least one reachable To recipient before sending."
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_template_view_form
+msgid "Apply"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__message_attachment_count
+msgid "Attachment Count"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__attachment_ids
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid "Attachments"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields.selection,name:conversation_draft.selection__mail_conversation_draft_recipient__mode__bcc
+msgid "Bcc"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__body
+msgid "Body"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_template_view_form
+msgid "Cancel"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields.selection,name:conversation_draft.selection__mail_conversation_draft_recipient__mode__cc
+msgid "Cc"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid ""
+"Confirm the email did go out. The draft will be closed without a recorded "
+"message."
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model,name:conversation_draft.model_mail_conversation
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__conversation_id
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_template__conversation_id
+msgid "Conversation"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model,name:conversation_draft.model_conversation_draft_access_mixin
+msgid "Conversation Draft Access Delegation"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model,name:conversation_draft.model_mail_conversation_draft_recipient
+msgid "Conversation Draft Recipient"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model,name:conversation_draft.model_mail_conversation_draft
+msgid "Conversation Reply Draft"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__create_uid
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__create_uid
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_template__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__create_date
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__create_date
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_template__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid "Discard"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid "Discard this reply draft?"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields.selection,name:conversation_draft.selection__mail_conversation_draft__state__discarded
+msgid "Discarded"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_conversation_draft_access_mixin__display_name
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation__display_name
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__display_name
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__display_name
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_template__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__draft_id
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_template__draft_id
+#: model:ir.model.fields.selection,name:conversation_draft.selection__mail_conversation_draft__state__draft
+msgid "Draft"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation__draft_editor_id
+msgid "Draft Editor"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_template__draft_has_body
+msgid "Draft Has Body"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation__draft_ids
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_view_form
+msgid "Drafts"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__editing_last_seen
+msgid "Editing Last Seen"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__editing_since
+msgid "Editing Since"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__email
+msgid "Email"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__email_normalized
+msgid "Email Normalized"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__message_follower_ids
+msgid "Followers"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__message_partner_ids
+msgid "Followers (Partners)"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__has_message
+msgid "Has Message"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation__has_pending_draft
+msgid "Has Pending Draft"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__has_unreachable_recipients
+msgid "Has Unreachable Recipients"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_conversation_draft_access_mixin__id
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation__id
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__id
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__id
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_template__id
+msgid "ID"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,help:conversation_draft.field_mail_conversation_draft__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,help:conversation_draft.field_mail_conversation_draft__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid "If the email did go out, sending again will send it twice. Continue?"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields.selection,name:conversation_draft.selection__mail_conversation_draft_template__mode__append
+msgid "Insert after existing text"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__is_being_edited
+msgid "Is Being Edited"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__message_is_follower
+msgid "Is Follower"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__is_reachable
+msgid "Is Reachable"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__is_send_stuck
+msgid "Is Send Stuck"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__editor_id
+msgid "Last Edited By"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__write_uid
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__write_uid
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_template__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__write_date
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__write_date
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_template__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,help:conversation_draft.field_mail_conversation_draft__subject
+msgid "Leave empty to use the conversation's name as the subject."
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid "Mark as sent"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__message_has_error
+msgid "Message Delivery error"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__mode
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_template__mode
+msgid "Mode"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__message_needaction_counter
+msgid "Number of Actions"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__message_has_error_counter
+msgid "Number of errors"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,help:conversation_draft.field_mail_conversation_draft__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,help:conversation_draft.field_mail_conversation_draft__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__participant_id
+msgid "Participant"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__partner_id
+msgid "Partner"
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/wizards/mail_conversation_draft_template.py:0
+msgid "Pick a template written for conversations."
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
+msgid "Pick a transport you can send from before sending."
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid "Reachable"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__recipient_ids
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid "Recipients"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields.selection,name:conversation_draft.selection__mail_conversation_draft_template__mode__replace
+msgid "Replace text"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_view_form
+msgid "Reply"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid "Reply Draft"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_list
+msgid "Reply Drafts"
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
+msgid "Reply on %(conversation)s"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_view_form
+msgid "Reply with template"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid "Return to draft"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid "Send"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__transport_id
+msgid "Send From"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields.selection,name:conversation_draft.selection__mail_conversation_draft__state__sending
+msgid "Sending"
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
+msgid "Sending failed: %s"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields.selection,name:conversation_draft.selection__mail_conversation_draft__state__sent
+msgid "Sent"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__sent_by_id
+msgid "Sent By"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__sent_date
+msgid "Sent Date"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__sent_message_id
+msgid "Sent Message"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid ""
+"Some recipients have no email address and will not\n"
+"                        receive this reply."
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__state
+msgid "State"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__subject
+msgid "Subject"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_template__template_id
+msgid "Template"
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
+msgid "This draft is being saved by someone else, try again in a moment."
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid ""
+"This reply has been sending for a long time. Check the\n"
+"                        mailbox's sent folder, then either mark it as sent or\n"
+"                        return it to draft."
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid "This reply is being sent by"
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
+msgid "This reply is still being sent, give it a few minutes."
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
+msgid "This reply no longer exists."
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
+msgid "This reply was already sent (or is being sent) by %(user)s."
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/wizards/mail_conversation_draft_template.py:0
+msgid "This reply was already sent or can no longer be edited."
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
+msgid "This reply was already sent or discarded and can no longer be edited."
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft_recipient.py:0
+msgid ""
+"This reply was already sent or discarded; its recipients can no longer "
+"change."
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
+msgid "This reply was discarded."
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields.selection,name:conversation_draft.selection__mail_conversation_draft_recipient__mode__to
+msgid "To"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_template_view_form
+msgid "Use Template"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model,name:conversation_draft.model_mail_conversation_draft_template
+msgid "Use Template on Conversation Draft"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid "Use template"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,help:conversation_draft.field_mail_conversation_draft_recipient__is_reachable
+msgid ""
+"Whether we have an address to send to. A recipient without one is kept "
+"visible but will not receive the reply."
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,help:conversation_draft.field_mail_conversation__draft_editor_id
+msgid "Who is working on the pending draft right now, if anyone."
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
+msgid "Write the reply..."
+msgstr ""
+
+#. module: conversation_draft
+#. odoo-python
+#: code:addons/conversation_draft/models/mail_conversation_draft.py:0
+msgid "someone"
+msgstr ""

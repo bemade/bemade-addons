@@ -1,7 +1,17 @@
+import unittest
+
 from odoo import Command
 from odoo.exceptions import ValidationError
 from odoo.tests import Form, TransactionCase, tagged
 from odoo.tools import mute_logger
+
+# Task 1536: phone_validation exposes no public "lib present" flag; probe the
+# optional dependency directly so the formatting tests skip (with a reason)
+# on an image without it instead of failing.
+try:
+    import phonenumbers
+except ImportError:  # pragma: no cover - exercised on the CI image only
+    phonenumbers = None
 
 
 @tagged('post_install', '-at_install')
@@ -139,6 +149,7 @@ class TestCovSportsTeam(TransactionCase):
 
     # ----- staff phone auto-format (task 1345) -----
 
+    @unittest.skipUnless(phonenumbers, "phonenumbers not installed on this image")
     def test_staff_phone_onchange_company_country_fallback(self):
         """Adding a staff line via the team Form auto-formats a local mobile to
         INTERNATIONAL even when the new partner has NO country_id, falling back
@@ -163,6 +174,7 @@ class TestCovSportsTeam(TransactionCase):
                         "the company-country fallback, got %r" % formatted)
         self.assertIn('514', formatted)
 
+    @unittest.skipUnless(phonenumbers, "phonenumbers not installed on this image")
     def test_staff_phone_format_partner_country(self):
         """The partner-has-country path also formats to INTERNATIONAL."""
         ca = self.env.ref('base.ca')

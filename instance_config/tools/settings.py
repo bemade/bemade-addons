@@ -15,6 +15,8 @@ payoff is that it extends itself: install an app tomorrow and its settings are
 covered without a line of new code here.
 """
 
+from odoo.models import BaseModel
+
 from .handler import Handler, register
 
 #: Fields on the transient itself, never configuration.
@@ -41,6 +43,11 @@ def _normalise(value):
     """
     if value is None:
         return False
+    if isinstance(value, BaseModel):
+        # ``default_get`` hands back a recordset for some related many2one
+        # settings (e.g. ``hr_expense_alias_domain_id``); an empty one is not
+        # ``False`` to ``!=``, so it reported a phantom change.
+        return value.id or False
     if isinstance(value, (list, tuple)):
         return tuple(value)
     return value

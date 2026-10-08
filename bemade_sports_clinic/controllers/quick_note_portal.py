@@ -15,11 +15,13 @@ import logging
 from datetime import timedelta
 
 from odoo import _, fields, http
+from odoo.tools import format_datetime
 from odoo.exceptions import AccessError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal
 
 from .access_control_mixin import AccessControlMixin
+from .app_shell import AppShellMixin
 
 _logger = logging.getLogger(__name__)
 
@@ -29,16 +31,16 @@ EVENT_PICKER_PAST = 30
 EVENT_PICKER_FUTURE = 60
 
 
-class QuickNotePortal(CustomerPortal, AccessControlMixin):
+class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     """Quick capture + inbox for a therapist's personal notes to self."""
 
     # ------------------------------------------------------------------
     # helpers
     # ------------------------------------------------------------------
-    @staticmethod
-    def _is_quick_note_user():
-        return request.env.user.has_group(
-            'bemade_sports_clinic.group_portal_treatment_professional')
+    def _is_quick_note_user(self):
+        # Task 1577: portal OR internal therapists (own notes only, by the
+        # record rules and _get_own_note).
+        return self._is_treatment_professional()
 
     def _check_quick_note_access(self):
         """Gate every quick-note route on the portal therapist group.
@@ -151,7 +153,53 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin):
             'error': kw.get('error'),
             'success': kw.get('success'),
         })
-        return request.render('bemade_sports_clinic.portal_my_quick_notes', values)
+        # Task 1540: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_notepad_values(values))
+        return self._sc_render('bemade_sports_clinic.portal_my_quick_notes',
+                               'bemade_sports_clinic.sc_app_notepad', values)
+
+    SC_NOTE_DRAFT_PREFIX = 'sports.quick.note.new.'
+
+    def _sc_notepad_values(self, values):
+        """/my/notepad in the shell: quick capture (a device draft until
+        « Ajouter »), one card per note with its links as chips, archive /
+        restore / delete and an edit sheet — all posting to today's routes."""
+        env = request.env
+        tz = env.user.tz or env.context.get('tz')
+
+        def _row(note):
+            chips = [label for label in (
+                note.team_id.name, note.patient_id.display_name,
+                note.injury_id.display_name, note.event_id.name) if label]
+            return {
+                'id': note.id,
+                'note': note.note or '',
+                'when': format_datetime(env, note.create_date, tz=tz, dt_format='EEE d MMM · HH:mm'),
+                'chips': chips,
+                'links': {
+                    'team_id': note.team_id.id or '',
+                    'patient_id': note.patient_id.id or '',
+                    'injury_id': note.injury_id.id or '',
+                    'event_id': note.event_id.id or '',
+                },
+            }
+        success = {
+            'note_added': env._("Note added."),
+            'note_updated': env._("Note updated."),
+            'note_archived': env._("Note archived."),
+            'note_restored': env._("Note restored."),
+            'note_deleted': env._("Note deleted."),
+        }.get(values.get('success'))
+        error = {
+            'empty_note': env._("Please enter a note."),
+        }.get(values.get('error'))
+        return {
+            'sc_note_rows': [_row(note) for note in values['notes']],
+            'sc_archived_rows': [_row(note) for note in values['archived_notes']],
+            'sc_quick_note_prefix': self.SC_NOTE_DRAFT_PREFIX,
+            'sc_flash': {'success': success, 'error': error},
+        }
 
     @http.route(['/my/notepad/add'], type='http', auth='user', website=True,
                 methods=['POST'])
