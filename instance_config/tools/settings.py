@@ -15,7 +15,6 @@ payoff is that it extends itself: install an app tomorrow and its settings are
 covered without a line of new code here.
 """
 
-from odoo import _
 from odoo.models import BaseModel
 
 from .handler import Handler, register
@@ -121,7 +120,7 @@ class SettingsHandler(Handler):
                 vals[name] = wanted
 
         if unknown:
-            report.gap(self.domain, _(
+            report.gap(self.domain, env._(
                 "settings not present on this instance (their modules are not "
                 "installed): %(names)s", names=", ".join(sorted(unknown)),
             ))

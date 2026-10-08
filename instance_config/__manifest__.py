@@ -1,6 +1,6 @@
 {
     "name": "Instance Configuration as Code",
-    "version": "19.0.1.9.2",
+    "version": "19.0.1.9.3",
     "summary": "Read and write an instance's configuration as a readable YAML "
                "file, idempotently and symmetrically",
     "description": """

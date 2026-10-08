@@ -22,6 +22,7 @@ AC-6  A readable export of a live instance is itself a valid document that
 
 from odoo.exceptions import UserError
 from odoo.tests import tagged
+from odoo.tools.misc import mute_logger
 
 from ..tools import engine
 from ..tools.aliases import to_canonical, to_readable
@@ -82,13 +83,15 @@ class TestAliases(InstanceConfigCase):
     def test_undefined_rights_bundle_is_a_clear_error(self):
         """AC-4."""
         doc = {"version": 1, "users": [{"login": "x", "rights": "nope"}]}
-        with self.assertRaises(UserError) as caught:
+        with mute_logger("odoo.tools.translate"), \
+                self.assertRaises(UserError) as caught:
             to_canonical(doc)
         self.assertIn("nope", str(caught.exception))
 
     def test_unknown_feature_is_a_clear_error(self):
         """AC-5: a typo must not vanish."""
-        with self.assertRaises(UserError) as caught:
+        with mute_logger("odoo.tools.translate"), \
+                self.assertRaises(UserError) as caught:
             to_canonical({"version": 1, "features": {"analitic": True}})
         self.assertIn("analitic", str(caught.exception))
 
