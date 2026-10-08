@@ -10,6 +10,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-22.04
+    # A healthy run takes well under an hour. Without a limit, a hung test (e.g. a
+    # clock left frozen, so an HttpCase waits forever for Chrome to exit)
+    # holds the job for GitHub's 6 h default.
+    timeout-minutes: 60
     container:
       image: registry.bemade.org:443/bemade/docker-odoo-enterprise/odoo-enterprise-ci:${{ github.base_ref }}
       credentials:
