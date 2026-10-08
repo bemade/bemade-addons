@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- « Ma liste du jour »: the paper list the child ticks, printed from the day's deliverables.
+         Letter paper, the household template's margins (14 mm / 16 mm). -->
+    <record id="paperformat_day_list" model="report.paperformat">
+        <field name="name">Letter (day's list)</field>
+        <field name="default" eval="False"/>
+        <field name="format">Letter</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">14</field>
+        <field name="margin_bottom">14</field>
+        <field name="margin_left">16</field>
+        <field name="margin_right">16</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_day_list" model="ir.actions.report">
+        <field name="name">Day's list</field>
+        <field name="model">homeschool.day</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">homeschool.report_day_list</field>
+        <field name="report_file">homeschool.report_day_list</field>
+        <field name="print_report_name">'Ma liste du jour - %s' % (object.date)</field>
+        <field name="binding_model_id" ref="model_homeschool_day"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="homeschool.paperformat_day_list"/>
+    </record>
+
+    <!-- The text is the household's paper, in French by design: not translated (t-translation="off"). -->
+    <template id="report_day_list">
+        <t t-call="web.basic_layout">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="homeschool.report_day_list_document"/>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_day_list_document">
+        <div class="page hs-page" t-attf-style="{{ 'page-break-before: always;' if doc_index else '' }}" t-translation="off">
+            <style>
+                .hs-page { color: #1B2A33; font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 17px; line-height: 1.4; }
+                .hs-title { font-family: Georgia, "Times New Roman", serif; font-size: 2rem; font-weight: 700; margin: 0; color: #2F7E8A; }
+                .hs-sub { color: #5A6B75; margin: 2px 0 18px 0; font-size: 1rem; }
+                table.hs-item { width: 100%; border-collapse: separate; border-spacing: 0; background: #FFFFFF; border: 1px solid #C9D3D9; border-radius: 10px; margin-bottom: 12px; page-break-inside: avoid; }
+                table.hs-item td { vertical-align: top; padding: 12px 0 12px 14px; }
+                table.hs-item td.hs-box-cell { width: 34px; padding-left: 16px; }
+                table.hs-item td.hs-text { padding-right: 16px; }
+                .hs-box { width: 34px; height: 34px; border: 2.5px solid #1B2A33; border-radius: 6px; margin-top: 2px; text-align: center; font-size: 24px; line-height: 30px; font-weight: 700; }
+                .hs-box-done { color: #3C8A4B; }
+                td.hs-when { width: 78px; font-family: Georgia, "Times New Roman", serif; color: #C98A2D; font-weight: 700; font-size: 1rem; padding-top: 16px; }
+                .hs-item b { display: block; font-size: 1.15rem; }
+                .hs-item span { color: #5A6B75; font-size: .95rem; }
+                table.hs-bonus { border: 2px dashed #3C8A4B; background: transparent; }
+                .hs-bonus b { color: #3C8A4B; }
+                .hs-foot { margin-top: 18px; color: #5A6B75; font-size: .95rem; border-top: 1px solid #C9D3D9; padding-top: 8px; }
+                .hs-fill { display: inline-block; border-bottom: 1.5px solid #1B2A33; min-width: 220px; height: 1.2em; vertical-align: bottom; }
+            </style>
+            <h1 class="hs-title">Ma liste du jour</h1>
+            <p class="hs-sub"><t t-out="doc.display_name"/> · je coche quand c'est fait, pas avant</p>
+            <t t-foreach="doc.deliverable_ids.sorted(lambda d: (d.sequence, d.id))" t-as="line">
+                <table t-attf-class="hs-item{{ ' hs-bonus' if line.bonus else '' }}">
+                    <tr>
+                        <td class="hs-box-cell">
+                            <div t-if="line.done" class="hs-box hs-box-done">✓</div>
+                            <div t-else="" class="hs-box">&#160;</div>
+                        </td>
+                        <td class="hs-when"><t t-out="line.when or ''"/></td>
+                        <td class="hs-text">
+                            <b t-out="line.name"/>
+                            <span t-if="line.detail" t-out="line.detail"/>
+                        </td>
+                    </tr>
+                </table>
+            </t>
+            <p class="hs-foot">Quand tout est coché : <b>le reste du temps est à toi.</b> &#160; Ce qui n'est pas coché va à demain, sans drame — je l'écris ici : <span class="hs-fill">&#160;</span></p>
+        </div>
+    </template>
+</odoo>

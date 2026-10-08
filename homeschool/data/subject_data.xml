@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="subject_fle" model="homeschool.subject">
+        <field name="code">FLE</field><field name="name">French</field><field name="sequence">10</field>
+        <field name="csv_keys">francais,FLE,fle</field><field name="color">4</field>
+    </record>
+    <record id="subject_math" model="homeschool.subject">
+        <field name="code">MATH</field><field name="name">Mathematics</field><field name="sequence">20</field>
+        <field name="csv_keys">mathematique,MATH,math</field><field name="color">1</field>
+    </record>
+    <record id="subject_ang" model="homeschool.subject">
+        <field name="code">ANG</field><field name="name">English</field><field name="sequence">30</field>
+        <field name="csv_keys">anglais_langue_seconde,anglais_ela,ANG,ang</field><field name="color">6</field>
+    </record>
+    <record id="subject_st" model="homeschool.subject">
+        <field name="code">ST</field><field name="name">Science and technology</field><field name="sequence">40</field>
+        <field name="csv_keys">science_technologie,ST,st</field><field name="color">10</field>
+    </record>
+    <record id="subject_us" model="homeschool.subject">
+        <field name="code">US</field><field name="name">Social studies</field><field name="sequence">50</field>
+        <field name="csv_keys">univers_social,US,us</field><field name="color">2</field>
+    </record>
+    <record id="subject_other" model="homeschool.subject">
+        <field name="code">AUTRE</field><field name="name">Other</field><field name="sequence">90</field>
+        <field name="csv_keys">autres,interne,AUTRE</field><field name="color">0</field>
+    </record>
+</odoo>

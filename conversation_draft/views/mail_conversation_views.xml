@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="mail_conversation_view_form" model="ir.ui.view">
+        <field name="name">mail.conversation.view.form.draft</field>
+        <field name="model">mail.conversation</field>
+        <field name="inherit_id" ref="conversation_base.mail_conversation_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//form/sheet" position="before">
+                <header>
+                    <button
+            name="action_open_draft"
+            string="Reply"
+            type="object"
+            class="btn-primary"
+          />
+                    <button
+            name="action_open_draft_with_template"
+            string="Reply with template"
+            type="object"
+          />
+                </header>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Drafts" name="drafts">
+                    <field name="draft_ids" readonly="1">
+                        <list>
+                            <field name="create_date" />
+                            <field name="subject" />
+                            <field name="editor_id" />
+                            <field name="state" />
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

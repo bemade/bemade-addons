@@ -135,6 +135,7 @@
                     <field name="last_name"/>
                     <field name="stage"/>
                     <field name="position"/>
+                    <field name="jersey_number"/>
                     <field name="active_injury_count"/>
                     <field name="dashboard_score_tp"/>
                     <field name="dashboard_digest_html"/>
@@ -160,7 +161,7 @@
                                          name is an <a type="open"> action link, so clicking the name opens
                                          the form while clicking the digest still only expands/collapses. -->
                                     <strong class="o_kanban_record_title">
-                                        <a type="open" role="button" class="text-reset" style="cursor: pointer;"><field name="last_name"/>, <field name="first_name"/></a>
+                                        <a type="open" role="button" class="text-reset" style="cursor: pointer;"><t t-if="record.jersey_number.raw_value">#<field name="jersey_number"/> </t><field name="last_name"/>, <field name="first_name"/></a>
                                     </strong>
                                     <span t-attf-class="badge {{ record.stage.raw_value == 'no_play' ? 'text-bg-danger' : record.stage.raw_value == 'practice_ok' ? 'text-bg-warning' : 'text-bg-success' }}">
                                         <field name="stage"/>
@@ -173,7 +174,8 @@
                 </kanban>
             </field>
         </record>
-        <!-- Task 1272: embedded list of the team's upcoming (7-day) events. -->
+        <!-- Task 1272: embedded list of the team's upcoming events (window set
+             in Settings → Sports Clinic → Dashboard Upcoming Events Window, task 1533). -->
         <record id="sports_event_view_list_team_dashboard" model="ir.ui.view">
             <field name="name">sports.event.view.list.team.dashboard</field>
             <field name="model">sports.event</field>
@@ -341,7 +343,7 @@
                                 <field name="dashboard_active_patient_ids" nolabel="1"
                                        readonly="1" mode="kanban"
                                        context="{'kanban_view_ref': 'bemade_sports_clinic.sports_patient_view_kanban_dashboard', 'dashboard_show_position': show_position_on_dashboard}"/>
-                                <separator string="Upcoming Events (next 7 days)"/>
+                                <separator string="Upcoming Events"/>
                                 <field name="dashboard_upcoming_event_ids" nolabel="1"
                                        readonly="1"
                                        context="{'list_view_ref': 'bemade_sports_clinic.sports_event_view_list_team_dashboard'}"/>

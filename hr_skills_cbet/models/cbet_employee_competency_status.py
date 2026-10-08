@@ -82,7 +82,15 @@ class CbetEmployeeCompetencyStatus(models.Model):
                 WHERE active = TRUE
                 ORDER BY employee_id, competency_id, valid_from DESC
             )
-            SELECT row_number() OVER () AS id,
+            -- The id must identify the CELL, not its position in the result.
+            -- row_number() renumbers every row whenever one is inserted, and the
+            -- ORM reads a record by id alone (search returns ids; the following
+            -- read matches `id IN (...)` and never re-checks employee/competency),
+            -- so a positional id silently reports another employee's state.
+            -- Packing the pair is stable for any data: competency_id occupies the
+            -- low 20 bits (< 1,048,576 competencies) and the result stays well
+            -- inside the 2^53 the web client can represent exactly.
+            SELECT ((p.employee_id::bigint << 20) | p.competency_id) AS id,
                    p.employee_id,
                    p.competency_id,
                    c.domain_id,

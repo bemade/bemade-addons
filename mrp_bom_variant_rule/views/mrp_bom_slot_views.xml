@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 Bemade Inc.
+     License LGPL-3 - See https://www.gnu.org/licenses/lgpl-3.0.html -->
+<odoo>
+    <record id="view_mrp_bom_slot_form" model="ir.ui.view">
+        <field name="name">mrp.bom.slot.form</field>
+        <field name="model">mrp.bom.slot</field>
+        <field name="arch" type="xml">
+            <form string="Slot">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" />
+                        <h1>
+                            <field name="name" placeholder="e.g. Vessel" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="required" widget="boolean_toggle" />
+                        </group>
+                    </group>
+                    <separator string="Rules" />
+                    <div class="alert alert-info" role="status">
+                        <p class="mb-1">
+                            Read from the top: the <b>first rule whose
+                            conditions the variant satisfies wins the slot</b>,
+                            and every rule below it is ignored. Drag the rows
+                            to change the order.
+                        </p>
+                        <p class="mb-0">
+                            A rule with no conditions matches every variant,
+                            so it belongs last — anywhere else it shadows the
+                            rules after it.
+                        </p>
+                    </div>
+                    <field name="rule_ids">
+                        <list string="Rules" default_order="sequence, id">
+                            <field name="sequence" widget="handle" />
+                            <field name="condition_summary" />
+                            <field name="selection_mode" />
+                            <field name="product_id" />
+                            <field name="mapping_summary" />
+                            <field name="qty_expr" />
+                            <field
+                name="product_uom_id"
+                groups="uom.group_uom"
+              />
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="mail_conversation_view_form" model="ir.ui.view">
+        <field name="name">mail.conversation.view.form</field>
+        <field name="model">mail.conversation</field>
+        <field name="arch" type="xml">
+            <form string="Conversation">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" />
+                        <h1>
+                            <field name="name" placeholder="Conversation subject..." />
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="state" />
+                            <field name="user_id" />
+                            <field name="team_id" />
+                        </group>
+                        <group>
+                            <field name="tag_ids" widget="many2many_tags" />
+                            <field name="primary_transport_id" />
+                            <field name="quiet_email_ingest" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Linked Records" name="links">
+                            <field name="link_ids">
+                                <list editable="bottom">
+                                    <field name="res_model" />
+                                    <field name="res_id" />
+                                    <field name="reason" />
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Participants" name="participants">
+                            <field name="participant_ids">
+                                <list editable="bottom">
+                                    <field name="partner_id" />
+                                    <field name="email" />
+                                    <field name="kind" />
+                                    <field name="role" />
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Members" name="members">
+                            <field name="member_ids">
+                                <list editable="bottom">
+                                    <field name="user_id" />
+                                    <field name="is_handled" />
+                                    <field name="unread" />
+                                    <field name="snooze_until" />
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="mail_conversation_view_list" model="ir.ui.view">
+        <field name="name">mail.conversation.view.list</field>
+        <field name="model">mail.conversation</field>
+        <field name="arch" type="xml">
+            <list string="Conversations">
+                <field name="name" />
+                <field name="state" />
+                <field name="user_id" />
+                <field name="team_id" />
+                <field name="tag_ids" widget="many2many_tags" />
+            </list>
+        </field>
+    </record>
+
+    <record id="mail_conversation_view_list_triage" model="ir.ui.view">
+        <field name="name">mail.conversation.view.list.triage</field>
+        <field name="model">mail.conversation</field>
+        <field name="arch" type="xml">
+            <list
+        string="Conversations"
+        js_class="conversation_triage_list"
+        decoration-bf="my_unread"
+        decoration-muted="state == 'done'"
+        multi_edit="0"
+      >
+                <header>
+                    <button
+            name="action_triage_hide"
+            string="Hide from my list"
+            type="object"
+            title="Removes the selected conversations from your list only. Colleagues still see them."
+          />
+                    <button name="action_triage_unhide" string="Unhide" type="object" />
+                    <button
+            name="action_triage_done"
+            string="Done"
+            type="object"
+            title="Closes the selected conversations for the whole team."
+          />
+                    <button name="action_triage_reopen" string="Reopen" type="object" />
+                    <button
+            name="action_triage_open_snooze_wizard"
+            string="Snooze"
+            type="object"
+          />
+                    <button
+            name="action_triage_unsnooze"
+            string="Unsnooze"
+            type="object"
+          />
+                    <button
+            name="action_triage_open_assign_wizard"
+            string="Assign…"
+            type="object"
+          />
+                    <button
+            name="action_triage_assign_me"
+            string="Assign to me"
+            type="object"
+          />
+                    <button
+            name="action_triage_mark_read"
+            string="Mark read"
+            type="object"
+          />
+                    <button
+            name="action_triage_mark_unread"
+            string="Mark unread"
+            type="object"
+          />
+                </header>
+                <field name="my_unread" column_invisible="1" />
+                <field name="my_hidden" column_invisible="1" />
+                <field name="my_snoozed" column_invisible="1" />
+                <field name="name" />
+                <field name="last_message_snippet" class="text-muted" />
+                <field name="triage_participants" widget="conversation_participants" />
+                <field
+          name="tag_ids"
+          widget="many2many_tags"
+          options="{'color_field': 'color'}"
+        />
+                <field name="user_id" widget="many2one_avatar_user" optional="show" />
+                <field
+          name="triage_channel"
+          widget="conversation_channel"
+          optional="show"
+        />
+                <field name="triage_links" widget="conversation_links" />
+                <field name="state" optional="show" />
+                <field name="last_message_date" widget="conversation_relative_time" />
+                <button
+          name="action_triage_mark_read"
+          type="object"
+          icon="fa-envelope-open-o"
+          title="Mark read"
+          invisible="not my_unread"
+        />
+                <button
+          name="action_triage_mark_unread"
+          type="object"
+          icon="fa-envelope"
+          title="Mark unread"
+          invisible="my_unread"
+        />
+                <button
+          name="action_triage_hide"
+          type="object"
+          icon="fa-eye-slash"
+          title="Hide from my list (colleagues still see it)"
+          invisible="my_hidden or my_snoozed"
+        />
+                <button
+          name="action_triage_unhide"
+          type="object"
+          icon="fa-eye"
+          title="Unhide"
+          invisible="not my_hidden"
+        />
+                <button
+          name="action_triage_open_snooze_wizard"
+          type="object"
+          icon="fa-clock-o"
+          title="Snooze"
+          invisible="my_snoozed"
+        />
+                <button
+          name="action_triage_unsnooze"
+          type="object"
+          icon="fa-bell-slash-o"
+          title="Unsnooze"
+          invisible="not my_snoozed"
+        />
+                <button
+          name="action_triage_open_assign_wizard"
+          type="object"
+          icon="fa-user-plus"
+          title="Assign"
+        />
+                <button
+          name="action_triage_done"
+          type="object"
+          icon="fa-check"
+          title="Done (closes it for everyone)"
+          invisible="state == 'done'"
+        />
+                <button
+          name="action_triage_reopen"
+          type="object"
+          icon="fa-undo"
+          title="Reopen"
+          invisible="state != 'done'"
+        />
+            </list>
+        </field>
+    </record>
+
+    <record id="mail_conversation_view_search" model="ir.ui.view">
+        <field name="name">mail.conversation.view.search</field>
+        <field name="model">mail.conversation</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="user_id" />
+                <field name="team_id" />
+                <field name="tag_ids" />
+                <filter
+          name="filter_my_list"
+          string="My list"
+          domain="[('my_in_list', '=', True)]"
+        />
+                <filter
+          name="filter_my_unread"
+          string="Unread"
+          domain="[('my_unread', '=', True)]"
+        />
+                <filter
+          name="filter_my_hidden"
+          string="Hidden by me"
+          domain="[('my_hidden', '=', True)]"
+        />
+                <filter
+          name="filter_my_snoozed"
+          string="Snoozed by me"
+          domain="[('my_snoozed', '=', True)]"
+        />
+                <separator />
+                <filter
+          name="filter_open"
+          string="Open"
+          domain="[('state', '=', 'open')]"
+        />
+                <filter
+          name="filter_state_snoozed"
+          string="Snoozed"
+          domain="[('state', '=', 'snoozed')]"
+        />
+                <filter
+          name="filter_waiting"
+          string="Waiting"
+          domain="[('state', '=', 'waiting')]"
+        />
+                <filter
+          name="filter_done"
+          string="Done"
+          domain="[('state', '=', 'done')]"
+        />
+                <separator />
+                <filter
+          name="filter_unanswered"
+          string="Unanswered"
+          domain="[('unanswered', '=', True)]"
+        />
+                <filter
+          name="filter_unassigned"
+          string="Unassigned"
+          domain="[('unassigned', '=', True)]"
+        />
+                <filter
+          name="filter_my"
+          string="My Conversations"
+          domain="[('user_id', '=', uid)]"
+        />
+                <group>
+                    <filter
+            name="groupby_state"
+            string="State"
+            context="{'group_by': 'state'}"
+          />
+                    <filter
+            name="groupby_team"
+            string="Team"
+            context="{'group_by': 'team_id'}"
+          />
+                    <filter
+            name="groupby_user"
+            string="Assignee"
+            context="{'group_by': 'user_id'}"
+          />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="mail_conversation_action" model="ir.actions.act_window">
+        <field name="name">Conversations</field>
+        <field name="res_model">mail.conversation</field>
+        <field name="view_mode">list,form</field>
+        <field
+      name="view_ids"
+      eval="[(5, 0, 0),
+             (0, 0, {'view_mode': 'list', 'view_id': ref('mail_conversation_view_list_triage')}),
+             (0, 0, {'view_mode': 'form', 'view_id': ref('mail_conversation_view_form')})]"
+    />
+        <field
+      name="context"
+    >{'search_default_filter_my_list': 1, 'search_default_filter_open': 1}</field>
+    </record>
+
+    <menuitem id="menu_mail_conversation_root" name="Conversations" sequence="60" />
+    <menuitem
+    id="menu_mail_conversation"
+    name="Conversations"
+    parent="menu_mail_conversation_root"
+    action="mail_conversation_action"
+    sequence="10"
+  />
+</odoo>

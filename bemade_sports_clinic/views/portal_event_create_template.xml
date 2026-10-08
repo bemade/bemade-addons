@@ -36,6 +36,7 @@
 
                     <!-- Create Form -->
                     <form action="/my/event/create/submit" method="post" class="needs-validation" novalidate="true">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <div class="row">
                             <div class="col-lg-8">
                                 <div class="card">
@@ -397,10 +398,20 @@
                                     return;
                                 }
 
+                                // Task 1540: a CSRF-checked http POST (form-encoded) answering JSON.
+                                var tokenInput = document.querySelector('input[name="csrf_token"]');
+                                var body = new URLSearchParams();
+                                body.set('csrf_token', (window.odoo &amp;&amp; window.odoo.csrf_token) || (tokenInput ? tokenInput.value : ''));
+                                body.set('name', name);
+                                body.set('street', street);
+                                body.set('street2', street2);
+                                body.set('city', city);
+                                body.set('zip', zip);
                                 fetch('/my/venue/create', {
                                     method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ jsonrpc: '2.0', method: 'call', params: { name: name, street: street, street2: street2, city: city, zip: zip } })
+                                    credentials: 'same-origin',
+                                    headers: { 'Accept': 'application/json' },
+                                    body: body
                                 })
                                 .then(function(resp) { return resp.json(); })
                                 .then(function(data) {

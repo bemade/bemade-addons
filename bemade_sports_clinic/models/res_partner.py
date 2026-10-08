@@ -55,10 +55,15 @@ class Partner(models.Model):
     )
 
     def write(self, vals):
+        # Task 1536: the guard is module-owned bookkeeping that runs for ANY
+        # caller writing a partner name (e.g. res.users.create toggling
+        # partner.active from another addon's tests). A caller without a
+        # clinic group cannot read sports.patient, so the existence check is
+        # a sudo read — it only decides whether to raise, never returns data.
         if (
-            self.patient_ids
-            and "name" in vals
+            "name" in vals
             and not self.env.context.get("patient_update")
+            and self.sudo().patient_ids
         ):
             raise ValidationError(
                 _("To change a patient's name, change it from the patient form.")
@@ -70,7 +75,7 @@ class Partner(models.Model):
             # Task 1415: organization lines re-evaluate eligibility (archived
             # contact -> rows gone / status « ineligible »; unarchived -> the
             # line, still the declared intent, propagates again).
-            self.env["sports.organization.staff"]._sync_for_partners(self)
+            self.env["sports.organization.staff"].sudo()._sync_for_partners(self)
         return res
 
     def _sports_clinic_purge_archived_staff(self):

@@ -1,6 +1,6 @@
 {
     'name': 'Bemade PWA Configuration',
-    'version': '19.0.0.1.0',
+    'version': '19.0.0.1.1',
     'summary': 'Manage PWA settings including dynamic app icons',
     'description': """
 Manage Progressive Web App Settings

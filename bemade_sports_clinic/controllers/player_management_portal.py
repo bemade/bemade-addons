@@ -4,12 +4,13 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from .access_control_mixin import AccessControlMixin
+from .app_shell import AppShellMixin
 from dateutil.relativedelta import relativedelta
 
 _logger = logging.getLogger(__name__)
 
 
-class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
+class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     """Controller for player management functionality in the portal"""
     
     # Access control methods now inherited from AccessControlMixin
@@ -21,7 +22,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         is attempted and yields no matching players.
         """
         user = request.env.user
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
 
         # Gather query params for search-first flow
@@ -53,6 +54,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             return {
                 'id': p.id,
                 'name': p.name,
+                # Task 1421: « #12 First Last » for the result rows.
+                'label': p._portal_heading_name(),
+                'jersey_number': p.jersey_number or '',
                 'first_name': p.first_name,
                 'last_name': p.last_name,
                 'date_of_birth': p.date_of_birth or '',
@@ -60,11 +64,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             }
 
         # Staff-only teams for multi-select
-        all_teams = request.env['sports.team'].search([
-            ('id', 'in', request.env['sports.team.staff'].search([
-                ('partner_id', '=', user.partner_id.id)
-            ]).mapped('team_id').ids)
-        ], order='name')
+        all_teams = self._team_targets()
 
         canada = request.env['res.country'].search([('code', '=', 'CA')], limit=1)
         states = request.env['res.country.state'].search([('country_id', '=', canada.id)], order='name') if canada else request.env['res.country.state']
@@ -103,13 +103,15 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 'active_results': [],
                 'archived_results': [],
             })
-        return request.render('bemade_sports_clinic.portal_create_player', values)
+        # Task 1539: the app shell (switch on) or today's template (off).
+        return self._sc_render('bemade_sports_clinic.portal_create_player',
+                               'bemade_sports_clinic.sc_app_player_create', values)
 
     @http.route(['/my/player/create/save'], type='http', auth='user', website=True, methods=['POST'])
     def create_player_submit(self, **post):
         """Handle standalone player creation submit."""
         user = request.env.user
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
 
         first_name = (post.get('first_name') or '').strip()
@@ -125,9 +127,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             selected_team_ids = [int(tid) for tid in request.httprequest.form.getlist('team_ids')]
         except Exception:
             selected_team_ids = []
-        allowed_team_ids = request.env['sports.team.staff'].search([
-            ('partner_id', '=', user.partner_id.id)
-        ]).mapped('team_id').ids
+        allowed_team_ids = self._team_targets().ids
         selected_team_ids = [tid for tid in selected_team_ids if tid in allowed_team_ids]
 
         # Require at least one team for treatment professionals to ensure access control
@@ -177,6 +177,11 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         if 'position' in post:
             _pos = (post.get('position') or '').strip()
             vals['position'] = _pos if _pos else False
+        # Jersey number (task 1421) - same audience as position; the model
+        # normalises it (« #12 » → « 12 », blank → False).
+        if 'jersey_number' in post:
+            _num = (post.get('jersey_number') or '').strip()
+            vals['jersey_number'] = _num if _num else False
 
         # Additional fields for treatment professionals
         if is_treatment_prof:
@@ -209,7 +214,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         except Exception as e:
             _logger.exception('Error creating patient from portal create')
             self._portal_flash(
-                str(e) or _('There was an error creating the player. Please review your inputs and try again.'), post)
+                self._user_error_text(e, 'patient')
+                or _('There was an error creating the player. Please review your inputs and try again.'), post)
             return request.redirect('/my/player/create')
 
         # Optionally create a primary emergency contact if provided (TPs and coaches)
@@ -231,8 +237,20 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 except Exception:
                     _logger.exception('Failed to create primary emergency contact during player create')
 
-        return request.redirect(f"/my/player?player_id={patient.id}")
-    
+        return request.redirect(
+            self._with_jersey_warning(f"/my/player?player_id={patient.id}", patient))
+
+    @staticmethod
+    def _with_jersey_warning(url, patient):
+        """Task 1421: append ``warning=duplicate_number`` to a post-save
+        redirect when the player now shares a jersey number with an active
+        teammate. Soft: the save already happened; the player page renders the
+        banner (naming the other player) from live data, any other landing
+        page ignores the parameter."""
+        if patient.exists() and patient.sudo()._jersey_duplicates():
+            return url + ('&' if '?' in url else '?') + 'warning=duplicate_number'
+        return url
+
     @http.route(['/my/player/edit'], type='http', auth='user', website=True)
     def edit_player_form(self, patient_id, **post):
         """Show form to edit player information"""
@@ -240,16 +258,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         
         # Check if user is a treatment professional or coach
         user = request.env.user
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
         teams = patient.team_ids
         # All teams for multi-select limited to current user's staff teams
-        all_teams = request.env['sports.team'].search([
-            ('id', 'in', request.env['sports.team.staff'].search([
-                ('partner_id', '=', user.partner_id.id)
-            ]).mapped('team_id').ids)
-        ], order='name')
+        all_teams = self._team_targets()
         
         # Determine team context from query or post and whether a coach can request removal
         # Only consider a team context if the current user is staff on that team and the player is a member
@@ -362,9 +376,34 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             values['error'] = flash_error
             values['form_data'] = flash_data
             if flash_data.get('return_url'):
-                values['return_url'] = flash_data['return_url']
+                values['return_url'] = self._safe_return_url(
+                    flash_data['return_url'], values.get('return_url'))
 
-        return request.render('bemade_sports_clinic.portal_edit_player', values)
+        # Task 1539: the app shell (switch on: field-by-field autosave through
+        # /my/app/save) or today's template (off). Shell-only values are
+        # computed only for the shell.
+        if self._sc_app_shell_active():
+            values.update(self._sc_player_edit_values(patient, values))
+        return self._sc_render('bemade_sports_clinic.portal_edit_player',
+                               'bemade_sports_clinic.sc_app_player_edit', values)
+
+    def _sc_player_edit_values(self, patient, values):
+        env = request.env
+        primary_contact = env['sports.patient.contact'].search([
+            ('patient_id', '=', patient.id)], order='sequence,id', limit=1)
+        edit_url = '/my/player/edit?patient_id=%s' % patient.id
+        if values.get('team_context_id'):
+            edit_url += '&team_id=%s' % values['team_context_id']
+        edit_url = self._with_clinic(edit_url, values.get('clinic_event'))
+        return {
+            'sc_primary_contact': primary_contact,
+            'sc_state_options': [('', '')] + [(st.id, st.name) for st in values['states']],
+            'sc_status_options': self._sc_status_options(),
+            'sc_edit_url': edit_url,
+            'sc_contact_type_options': [
+                (key, label) for key, label in env['sports.patient.contact']._fields[
+                    'contact_type']._description_selection(env)],
+        }
     
     @http.route(['/my/player/save'], type='http', auth='user', website=True, methods=['POST'])
     def edit_player_submit(self, **post):
@@ -387,7 +426,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         edit_url = self._with_clinic(edit_url, self._clinic_context(post))
             
         # Check if user is a treatment professional or coach
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
         # If DOB is being changed/provided, validate format upfront to avoid unhelpful errors
@@ -453,6 +492,10 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         if 'position' in post:
             _pos = (post.get('position') or '').strip()
             vals['position'] = _pos if _pos else False
+        # Jersey number (task 1421) - same audience as position.
+        if 'jersey_number' in post:
+            _num = (post.get('jersey_number') or '').strip()
+            vals['jersey_number'] = _num if _num else False
 
         # Additional fields that only treatment professionals can update
         if is_treatment_prof:
@@ -462,9 +505,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             except Exception:
                 team_id_list = []
             # Defense-in-depth: restrict to teams where current user is staff
-            allowed_team_ids = request.env['sports.team.staff'].search([
-                ('partner_id', '=', request.env.user.partner_id.id)
-            ]).mapped('team_id').ids
+            allowed_team_ids = self._team_targets().ids
             filtered_team_ids = [tid for tid in team_id_list if tid in allowed_team_ids]
             # Always set the M2M command, even if empty, to allow clearing all teams
             vals['team_ids'] = [(6, 0, list(set(filtered_team_ids)))]
@@ -516,7 +557,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
                 self._portal_flash(str(ve) or _('Invalid combination of match and practice status.'), post)
                 return request.redirect(edit_url)
             except Exception as e:
-                self._portal_flash(str(e) or _('An unexpected error occurred.'), post)
+                self._portal_flash(self._user_error_text(e, 'patient') or _('An unexpected error occurred.'), post)
                 return request.redirect(edit_url)
 
         # Update or create primary emergency contact (TPs and coaches), regardless of patient field changes
@@ -569,6 +610,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
 
         return_url = self._local_return_url(
             post.get('return_url'), f'/my/player?player_id={patient_id}')
+        if 'jersey_number' in vals or 'team_ids' in vals:
+            return_url = self._with_jersey_warning(return_url, patient)
         return request.redirect(return_url)
     
     # ------------------------------------------------------------------
@@ -645,11 +688,13 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         """Show form to add a new emergency contact for a player"""
         patient = self._check_access_to_patient(patient_id)
             
-        return_url = post.get('return_url', f'/my/player?player_id={patient_id}')
+        # Task 1544: same-site paths only (rendered as a link, then posted back).
+        return_url = self._safe_return_url(
+            post.get('return_url'), f'/my/player?player_id={patient_id}')
         
         # Check if user is a treatment professional or coach
         user = request.env.user
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
         # Only TPs and coaches can add emergency contacts
@@ -669,7 +714,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             values['error'] = flash_error
             values.update(flash_data)
 
-        return request.render('bemade_sports_clinic.portal_add_contact', values)
+        # Task 1539: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            for key in ('contact', 'name', 'contact_type', 'mobile', 'email'):
+                values.setdefault(key, None)
+        return self._sc_render('bemade_sports_clinic.portal_add_contact',
+                               'bemade_sports_clinic.sc_app_contact_form', values)
     
     @http.route(['/my/player/contact/save'], type='http', auth='user', website=True, methods=['POST'])
     def add_contact_submit(self, **post):
@@ -682,7 +732,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         patient = self._check_access_to_patient(patient_id)
             
         # Check if user is a treatment professional or coach
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
         # Only TPs and coaches can add emergency contacts
@@ -712,7 +762,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
 
         # Respect a return_url field so the form lands the user back
         # on the originating tab (e.g. ".../my/player?...#contacts").
-        return_url = post.get('return_url') or f'/my/player?player_id={patient_id}#contacts'
+        return_url = self._safe_return_url(
+            post.get('return_url'), f'/my/player?player_id={patient_id}#contacts')
         return request.redirect(return_url)
     
     @http.route(['/my/player/contact/edit'], type='http', auth='user', website=True)
@@ -725,10 +776,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             
         patient = self._check_access_to_patient(contact.patient_id.id)
             
-        return_url = post.get('return_url', f'/my/player?player_id={patient.id}')
+        # Task 1544: same-site paths only (rendered as a link, then posted back).
+        return_url = self._safe_return_url(
+            post.get('return_url'), f'/my/player?player_id={patient.id}')
         
         # Check if user is a treatment professional or coach
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
         # Only TPs and coaches can edit emergency contacts
@@ -749,7 +802,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
             values['error'] = flash_error
             values.update(flash_data)
 
-        return request.render('bemade_sports_clinic.portal_edit_contact', values)
+        # Task 1539: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            for key in ('contact', 'name', 'contact_type', 'mobile', 'email'):
+                values.setdefault(key, None)
+        return self._sc_render('bemade_sports_clinic.portal_edit_contact',
+                               'bemade_sports_clinic.sc_app_contact_form', values)
     
     @http.route(['/my/player/contact/update'], type='http', auth='user', website=True, methods=['POST'])
     def edit_contact_submit(self, **post):
@@ -767,7 +825,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         patient = self._check_access_to_patient(contact.patient_id.id)
             
         # Check if user is a treatment professional
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
         # Only TPs and coaches can edit emergency contacts
@@ -799,7 +857,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         # Update the contact
         contact.sudo().write(vals)
 
-        return_url = post.get('return_url') or f'/my/player?player_id={patient.id}#contacts'
+        return_url = self._safe_return_url(
+            post.get('return_url'), f'/my/player?player_id={patient.id}#contacts')
         return request.redirect(return_url)
     
     @http.route(['/my/player/contact/delete'], type='http', auth='user', website=True, methods=['POST'])
@@ -813,9 +872,10 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin):
         patient = self._check_access_to_patient(contact.patient_id.id)
             
         # Check if user is a treatment professional
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        is_treatment_prof = self._is_treatment_professional()
         
-        return_url = post.get('return_url') or f'/my/player?player_id={patient.id}#contacts'
+        return_url = self._safe_return_url(
+            post.get('return_url'), f'/my/player?player_id={patient.id}#contacts')
 
         # Regular coaches shouldn't be able to delete emergency contacts
         if not is_treatment_prof:

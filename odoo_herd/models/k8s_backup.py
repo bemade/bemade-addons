@@ -328,19 +328,14 @@ class K8sOdooBackup(models.Model):
                 _("Failed to fetch S3 credentials from cluster: %s") % str(e)
             )
 
-        # Create S3 client
-        endpoint = s3_config.endpoint
-        # boto3 needs the endpoint without trailing slash
-        if endpoint.endswith("/"):
-            endpoint = endpoint[:-1]
-
+        # Signing makes no network call: sign for the host the browser will hit.
         s3_client = boto3.client(
             "s3",
-            endpoint_url=endpoint,
+            endpoint_url=s3_config._get_presign_endpoint(),
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
             region_name=s3_config.region or "us-east-1",
-            config=Config(signature_version="s3v4"),
+            config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
             verify=not s3_config.allow_insecure,
         )
 

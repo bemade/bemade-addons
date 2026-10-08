@@ -12,6 +12,14 @@ _logger = logging.getLogger(__name__)
 # other staff (coaches included) get read-only access.
 ANNOUNCEMENT_TP_ROLES = ("head_therapist", "therapist", "doctor")
 
+# Task 1533: horizon (days) of the « Upcoming events » block. ONE window for
+# the team dashboard, its portal view and the morning briefing's event union
+# (which reads dashboard_upcoming_event_ids). Configurable in Settings via the
+# ir.config_parameter below; the default lives in code, like the activity
+# window (task 1392) — no data record.
+DASHBOARD_UPCOMING_EVENTS_DAYS_PARAM = "bemade_sports_clinic.dashboard_upcoming_events_days"
+DASHBOARD_UPCOMING_EVENTS_DAYS_DEFAULT = 14
+
 
 class SportsTeam(models.Model):
     _name = "sports.team"
@@ -481,10 +489,26 @@ class SportsTeam(models.Model):
             )
             rec.dashboard_watchlist_patient_ids = watchlist
 
+    @api.model
+    def _dashboard_upcoming_events_days(self):
+        """Horizon (days) of the upcoming-events block (task 1533). Configurable
+        via ``DASHBOARD_UPCOMING_EVENTS_DAYS_PARAM``; defaults to 14; a
+        non-numeric value falls back to the default and a zero/negative value
+        is floored to 1 (mirrors ``sports.patient._dashboard_window_hours``)."""
+        raw = self.env["ir.config_parameter"].sudo().get_param(
+            DASHBOARD_UPCOMING_EVENTS_DAYS_PARAM, DASHBOARD_UPCOMING_EVENTS_DAYS_DEFAULT
+        )
+        try:
+            days = int(raw)
+        except (TypeError, ValueError):
+            days = DASHBOARD_UPCOMING_EVENTS_DAYS_DEFAULT
+        return max(days, 1)
+
     @api.depends("event_ids.date_start", "event_ids.state")
     def _compute_dashboard_upcoming_events(self):
+        # Non-stored: a window change in Settings is live on the next read.
         now = fields.Datetime.now()
-        horizon = now + timedelta(days=7)
+        horizon = now + timedelta(days=self._dashboard_upcoming_events_days())
         for rec in self:
             events = rec.event_ids.filtered(
                 lambda e: e.date_start

@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- One instance, several families: each family is a res.company.
+
+         Manager rules (one per family-owned model): a manager sees the companies he is attached
+         to. Curriculum items, item dependencies and subjects are shared (no company, no rule);
+         what a family has done about an item is its own homeschool.item.coverage row (ruled).
+
+         Portal rules: a portal user reaches
+           - his own student (student.user_id) and the students he is attached to as a resource
+             user (student.resource_user_ids) — read; subjects are shared (access line, no rule);
+           - the days, blocks, deliverables, reading books and reading entries of those students
+             — read;
+           - the INSTITUTIONAL traces and material of the companies of those students — read;
+           - the traces HE submitted while they wait for the parent's validation — read, create
+             and write (the model's guard keeps ``validated``, ``diffusion``, ``note``,
+             ``student_id``… out of his reach; a validated trace leaves the rule's domain);
+           - write: his own student's deliverables (the model limits him to ``done``) and his own
+             student's reading entries (write + create). Resource users write nothing else.
+         There is deliberately no portal rule and no portal access line on homeschool.journal,
+         homeschool.indicator, homeschool.indicator.value and homeschool.review: the parent's
+         journal and the indicators never reach the portal. This file is not noupdate: the rules
+         refresh on every upgrade. -->
+    <record id="rule_student_company" model="ir.rule">
+        <field name="name">Students: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_student"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_year_company" model="ir.rule">
+        <field name="name">School years: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_year"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_day_company" model="ir.rule">
+        <field name="name">Days: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_day"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_block_company" model="ir.rule">
+        <field name="name">Blocks: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_block"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_trace_company" model="ir.rule">
+        <field name="name">Traces: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_trace"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_review_company" model="ir.rule">
+        <field name="name">Reviews: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_review"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_project_company" model="ir.rule">
+        <field name="name">Projects: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_project"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_material_company" model="ir.rule">
+        <field name="name">Material: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_material"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_block_template_company" model="ir.rule">
+        <field name="name">Block templates: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_block_template"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_indicator_company" model="ir.rule">
+        <field name="name">Indicators: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_indicator"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_indicator_value_company" model="ir.rule">
+        <field name="name">Indicator values: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_indicator_value"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_journal_company" model="ir.rule">
+        <field name="name">Journal: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_journal"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_item_coverage_company" model="ir.rule">
+        <field name="name">Item coverage: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_item_coverage"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_deliverable_company" model="ir.rule">
+        <field name="name">Deliverables: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_deliverable"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_reading_book_company" model="ir.rule">
+        <field name="name">Reading books: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_reading_book"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_reading_entry_company" model="ir.rule">
+        <field name="name">Reading entries: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_reading_entry"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+
+    <record id="rule_student_portal_own" model="ir.rule">
+        <field name="name">Students: portal sees his own student and the students he follows</field>
+        <field name="model_id" ref="model_homeschool_student"/>
+        <field name="domain_force">['|', ('user_id', '=', user.id), ('resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_day_portal_own" model="ir.rule">
+        <field name="name">Days: portal sees his student's days (own or resource user)</field>
+        <field name="model_id" ref="model_homeschool_day"/>
+        <field name="domain_force">['|', ('student_id.user_id', '=', user.id), ('student_id.resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_block_portal_own" model="ir.rule">
+        <field name="name">Blocks: portal sees his student's blocks (own or resource user)</field>
+        <field name="model_id" ref="model_homeschool_block"/>
+        <field name="domain_force">['|', ('student_id.user_id', '=', user.id), ('student_id.resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_deliverable_portal_read" model="ir.rule">
+        <field name="name">Deliverables: portal sees his student's deliverables (own or resource user)</field>
+        <field name="model_id" ref="model_homeschool_deliverable"/>
+        <field name="domain_force">['|', ('student_id.user_id', '=', user.id), ('student_id.resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_deliverable_portal_tick" model="ir.rule">
+        <field name="name">Deliverables: the student ticks his own (the model limits the write to 'done')</field>
+        <field name="model_id" ref="model_homeschool_deliverable"/>
+        <field name="domain_force">[('student_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="False"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_reading_book_portal_read" model="ir.rule">
+        <field name="name">Reading books: portal sees his student's books (own or resource user)</field>
+        <field name="model_id" ref="model_homeschool_reading_book"/>
+        <field name="domain_force">['|', ('student_id.user_id', '=', user.id), ('student_id.resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_reading_entry_portal_read" model="ir.rule">
+        <field name="name">Reading entries: portal sees his student's entries (own or resource user)</field>
+        <field name="model_id" ref="model_homeschool_reading_entry"/>
+        <field name="domain_force">['|', ('student_id.user_id', '=', user.id), ('student_id.resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_reading_entry_portal_own" model="ir.rule">
+        <field name="name">Reading entries: the student writes his own</field>
+        <field name="model_id" ref="model_homeschool_reading_entry"/>
+        <field name="domain_force">[('student_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="False"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_trace_portal_own_submitted" model="ir.rule">
+        <field name="name">Traces: portal submits, sees and edits his own traces while they wait for validation</field>
+        <field name="model_id" ref="model_homeschool_trace"/>
+        <field name="domain_force">[('create_uid', '=', user.id), ('validated', '=', False)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_trace_portal_institutional" model="ir.rule">
+        <field name="name">Traces: portal sees institutional traces of his students' families</field>
+        <field name="model_id" ref="model_homeschool_trace"/>
+        <field name="domain_force">[('diffusion', '=', 'institutional'), ('company_id.homeschool_student_ids', 'any', ['|', ('user_id', '=', user.id), ('resource_user_ids', 'in', [user.id])])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_material_portal_institutional" model="ir.rule">
+        <field name="name">Material: portal sees institutional material of his students' families</field>
+        <field name="model_id" ref="model_homeschool_material"/>
+        <field name="domain_force">[('diffusion', '=', 'institutional'), ('company_id.homeschool_student_ids', 'any', ['|', ('user_id', '=', user.id), ('resource_user_ids', 'in', [user.id])])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+</odoo>

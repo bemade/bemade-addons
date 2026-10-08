@@ -7,6 +7,13 @@ from . import test_cat_06_units
 from . import test_cat_07_protocol_policy
 from . import test_cat_09_publication
 from . import test_cat_10_import
+from . import test_cat_11_fiche_full
+from . import test_cat_12_procedure
+from . import test_cat_13_job_aid
+from . import test_cat_14_demo_notes
+from . import test_cat_15_icons
+from . import test_cat_16_authoring
+from . import test_cat_17_whole_document_bodies
 from . import test_std_01_standard
 from . import test_std_02_qualification
 from . import test_std_03_tieback
@@ -24,3 +31,8 @@ from . import test_val_01_expiry
 from . import test_rpt_01_grid
 from . import test_rpt_04_matrix
 from . import test_sec_01_access
+from . import test_rpt_02_job_aid
+from . import test_rpt_03_fiche
+from . import test_rpt_06_procedure_notes
+from . import test_rpt_07_print_wizard
+from . import test_cat_18_import_guard

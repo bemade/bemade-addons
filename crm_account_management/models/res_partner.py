@@ -36,7 +36,10 @@ class ResPartner(models.Model):
         res = super().write(vals)
         if "name" in vals:
             for partner in self:
-                for ou in partner.owned_organizational_unit_ids:
+                # Any user allowed to rename a contact may lack the CRM group that
+                # reads organizational units: the OU sync is module-owned
+                # bookkeeping, so read it with sudo (mirrors the write below).
+                for ou in partner.sudo().owned_organizational_unit_ids:
                     if ou.name == old_names.get(partner.id):
                         ou.sudo().write({"name": partner.name})
         return res

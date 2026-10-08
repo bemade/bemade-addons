@@ -39,6 +39,13 @@ class MailMail(models.Model):
                 for a in (entry.get("email_to_normalized") or [])
                 if email_normalize(a)
             }
+            if not to_normalized:
+                # Recipient without a usable address: core marks that
+                # notification as failed only when send_email finds no valid
+                # To/Cc at all. Adding the peers here would deliver the copy
+                # to them (a duplicate) and record a "sent" for a recipient
+                # who never got the message.
+                continue
 
             # Build per-entry Cc = all peers except this entry's To recipient
             cc_peers = [

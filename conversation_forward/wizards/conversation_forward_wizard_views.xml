@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="conversation_forward_wizard_view_form" model="ir.ui.view">
+        <field name="name">conversation.forward.wizard.view.form</field>
+        <field name="model">conversation.forward.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Forward">
+                <group>
+                    <field name="conversation_id" invisible="1" />
+                    <field name="forward_mode" widget="radio" />
+                    <field
+            name="message_id"
+            invisible="forward_mode != 'message'"
+            required="forward_mode == 'message'"
+            options="{'no_create': True}"
+          />
+                    <field name="transport_id" options="{'no_create': True}" />
+                    <field
+            name="to_emails"
+            placeholder="a@example.com, b@example.com"
+          />
+                    <field name="cc_emails" />
+                    <field name="bcc_emails" />
+                    <field name="subject" />
+                    <field name="include_attachments" />
+                    <field
+            name="attachment_names"
+            invisible="not include_attachments or not attachment_names"
+          />
+                </group>
+                <field name="note" placeholder="Add a message..." />
+                <footer>
+                    <button
+            string="Send"
+            name="action_send"
+            type="object"
+            class="btn-primary"
+            data-hotkey="q"
+          />
+                    <button string="Cancel" special="cancel" data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
