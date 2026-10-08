@@ -10,7 +10,6 @@ and the transaction.
 
 import os
 
-from odoo import _
 from odoo.exceptions import UserError
 
 from .aliases import to_canonical, to_readable
