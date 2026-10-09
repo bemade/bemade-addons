@@ -113,9 +113,11 @@ class ProductProduct(models.Model):
         self.ensure_one()
         # Same company / variant / active-partner filter Odoo's own seller
         # selection applies, so a price meant for another company or another
-        # variant is never offered as "the last known price".
+        # variant is never offered as "the last known price". ``params`` is
+        # passed explicitly because the purchase module's override of
+        # ``_get_filtered_supplier`` makes it a required argument.
         candidates = self.seller_ids._get_filtered_supplier(
-            self.env.company, self
+            self.env.company, self, params=False
         ).filtered(lambda s: not s.min_qty or s.min_qty <= qty)
         if not candidates:
             return self.env["product.supplierinfo"]
