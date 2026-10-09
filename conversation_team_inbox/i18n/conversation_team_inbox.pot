@@ -1,0 +1,192 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* conversation_team_inbox
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 13:12+0000\n"
+"PO-Revision-Date: 2026-10-09 13:12+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: conversation_team_inbox
+#. odoo-python
+#: code:addons/conversation_team_inbox/models/mail_conversation_team.py:0
+msgid "%(team)s (team inbox)"
+msgstr ""
+
+#. module: conversation_team_inbox
+#. odoo-python
+#: code:addons/conversation_team_inbox/models/mail_conversation_team.py:0
+msgid "'%(address)s' is not a valid email address."
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,help:conversation_team_inbox.field_mail_conversation_team__alias_defaults
+msgid ""
+"A Python dictionary that will be evaluated to provide default values when "
+"creating new records for this alias."
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__alias_id
+msgid "Alias"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__alias_domain_id
+msgid "Alias Domain"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__alias_domain
+msgid "Alias Domain Name"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__alias_name
+msgid "Alias Name"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model,name:conversation_team_inbox.model_mail_conversation
+msgid "Conversation"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model,name:conversation_team_inbox.model_mail_conversation_team
+msgid "Conversation Team"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model,name:conversation_team_inbox.model_conversation_transport
+msgid "Conversation Transport"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__alias_defaults
+msgid "Default Values"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_conversation_transport__display_name
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation__display_name
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__alias_email
+msgid "Email Alias"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,help:conversation_team_inbox.field_mail_conversation_team__alias_domain
+msgid "Email domain e.g. 'example.com' in 'odoo@example.com'"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__from_address
+msgid "From Address"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_conversation_transport__id
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation__id
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__id
+msgid "ID"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,help:conversation_team_inbox.field_mail_conversation_team__team_transport_id
+msgid "Maintained automatically: the sending identity of this team."
+msgstr ""
+
+#. module: conversation_team_inbox
+#. odoo-python
+#: code:addons/conversation_team_inbox/models/conversation_transport.py:0
+msgid "No recipient to send to on %(transport)s."
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_conversation_transport__provider
+msgid "Provider"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model_terms:ir.ui.view,arch_db:conversation_team_inbox.mail_conversation_team_view_form
+msgid "Team Email Address"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model_terms:ir.ui.view,arch_db:conversation_team_inbox.mail_conversation_team_view_form
+msgid "Team Inbox"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields.selection,name:conversation_team_inbox.selection__conversation_transport__provider__team_smtp
+msgid "Team Mailbox (Odoo outgoing mail servers)"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__team_transport_id
+msgid "Team Transport"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,field_description:conversation_team_inbox.field_conversation_transport__team_ids
+msgid "Teams"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,help:conversation_team_inbox.field_mail_conversation_team__from_address
+msgid ""
+"The address replies from this team's conversations are sent from, e.g. "
+"sales@example.com. Odoo picks the outgoing mail server configured for this "
+"address or its domain."
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,help:conversation_team_inbox.field_conversation_transport__provider
+msgid ""
+"The concrete transport implementation providing this connection (generic "
+"IMAP/SMTP, Gmail OAuth, ...). This base module defines no options itself -- "
+"each opt-in provider module (conversation_imap, conversation_gmail, ...) "
+"registers its own via selection_add, so the dropdown only ever offers a "
+"provider that is actually installed and implemented."
+msgstr ""
+
+#. module: conversation_team_inbox
+#. odoo-python
+#: code:addons/conversation_team_inbox/models/conversation_transport.py:0
+msgid "The message could not be delivered from %(address)s: %(error)s"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model:ir.model.fields,help:conversation_team_inbox.field_mail_conversation_team__alias_name
+msgid ""
+"The name of the email alias, e.g. 'jobs' if you want to catch emails for "
+"<jobs@example.odoo.com>"
+msgstr ""
+
+#. module: conversation_team_inbox
+#. odoo-python
+#: code:addons/conversation_team_inbox/models/conversation_transport.py:0
+msgid "This team has no from address configured"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model_terms:ir.ui.view,arch_db:conversation_team_inbox.mail_conversation_team_view_form
+msgid "e.g. sales"
+msgstr ""
+
+#. module: conversation_team_inbox
+#: model_terms:ir.ui.view,arch_db:conversation_team_inbox.mail_conversation_team_view_form
+msgid "e.g. sales@example.com"
+msgstr ""
