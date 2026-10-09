@@ -91,6 +91,9 @@ class ProductProduct(models.Model):
         ranking, confidence and evidence-reporting then apply to it unchanged.
         """
         self.ensure_one()
+        # _select_seller and the seller filters read self.env.company, so the
+        # lookup must run in the company the cost is being resolved for.
+        self = self.with_company(company)
         candidates = []
         seller = self._select_seller(quantity=qty, date=date, uom_id=self.uom_id)
         if seller:
@@ -108,9 +111,14 @@ class ProductProduct(models.Model):
         it is reported as evidence rather than as a commitment.
         """
         self.ensure_one()
-        candidates = self.seller_ids.filtered(
-            lambda s: not s.min_qty or s.min_qty <= qty
-        )
+        # Same company / variant / active-partner filter Odoo's own seller
+        # selection applies, so a price meant for another company or another
+        # variant is never offered as "the last known price". ``params`` is
+        # passed explicitly because the purchase module's override of
+        # ``_get_filtered_supplier`` makes it a required argument.
+        candidates = self.seller_ids._get_filtered_supplier(
+            self.env.company, self, params=False
+        ).filtered(lambda s: not s.min_qty or s.min_qty <= qty)
         if not candidates:
             return self.env["product.supplierinfo"]
         dated = candidates.filtered("date_start")

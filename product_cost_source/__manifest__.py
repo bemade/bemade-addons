@@ -2,7 +2,7 @@
 # License LGPL-3 - See https://www.gnu.org/licenses/lgpl-3.0.html
 {
     "name": "Product Cost Source",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.0.1",
     "summary": "Resolve a product's unit cost, name where it came from, "
     "and say how far it can be trusted.",
     "description": """Product Cost Source

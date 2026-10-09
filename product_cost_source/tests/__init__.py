@@ -6,3 +6,4 @@ from . import test_price_age
 from . import test_evidence
 from . import test_expiry_warning
 from . import test_extension_point
+from . import test_company_scope

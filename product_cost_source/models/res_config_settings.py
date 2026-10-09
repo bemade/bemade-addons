@@ -1,6 +1,7 @@
 # Copyright 2026 Bemade Inc.
 # License LGPL-3 - See https://www.gnu.org/licenses/lgpl-3.0.html
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 PRICE_AGE_PARAM = "product_cost_source.price_age_months"
 DEFAULT_PRICE_AGE_MONTHS = 6
@@ -21,6 +22,14 @@ class ResConfigSettings(models.TransientModel):
         "Outside one, a price older than this is reported as an estimate, and "
         "the components responsible are named so they can be requoted.",
     )
+
+    @api.constrains("price_age_months")
+    def _check_price_age_months(self):
+        for settings in self:
+            if settings.price_age_months <= 0:
+                raise ValidationError(
+                    self.env._("The price age must be a whole number of months greater than zero.")
+                )
 
     @api.model
     def _price_age_months(self):
