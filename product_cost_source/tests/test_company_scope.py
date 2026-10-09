@@ -39,18 +39,17 @@ class TestCompanyScope(ProductCostSourceCommon):
         self.assertTrue(own)
 
     def test_other_variant_price_is_not_the_fallback(self):
-        template = self.product.product_tmpl_id
         attribute = self.env["product.attribute"].create(
             {
                 "name": "Size",
-                "value_ids": [
-                    (0, 0, {"name": "S"}),
-                    (0, 0, {"name": "L"}),
-                ],
+                "value_ids": [(0, 0, {"name": "S"}), (0, 0, {"name": "L"})],
             }
         )
-        template.write(
+        template = self.env["product.template"].create(
             {
+                "name": "Variant Component",
+                "type": "consu",
+                "is_storable": True,
                 "attribute_line_ids": [
                     (
                         0,
@@ -60,14 +59,19 @@ class TestCompanyScope(ProductCostSourceCommon):
                             "value_ids": [(6, 0, attribute.value_ids.ids)],
                         },
                     )
-                ]
+                ],
             }
         )
         variant_1, variant_2 = template.product_variant_ids
-        self.assertNotEqual(variant_1, variant_2)
-        self._supplier_price(
-            10.0, product=variant_2, date_start=self._months_ago(2)
-        ).write({"product_id": variant_2.id})
+        self.env["product.supplierinfo"].create(
+            {
+                "partner_id": self.vendor.id,
+                "product_tmpl_id": template.id,
+                "product_id": variant_2.id,
+                "price": 10.0,
+                "date_start": self._months_ago(2),
+            }
+        )
         self.assertEqual(self._resolve(product=variant_1).sources, [])
         self.assertEqual(len(self._resolve(product=variant_2).sources), 1)
 
