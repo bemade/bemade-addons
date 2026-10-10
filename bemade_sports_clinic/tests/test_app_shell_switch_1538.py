@@ -95,8 +95,10 @@ class TestAppShellSwitch1538(AppShellCommon):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/home')
+        # Owner review 2026-10-10: « Clinic » left the phone tabs for
+        # « More »; the laptop rail keeps it.
         self.assertEqual(self._nav_keys(tree, 'o_sc_tabs'),
-                         ['teams', 'players', 'clinic', 'activities', 'more'])
+                         ['teams', 'players', 'notepad', 'activities', 'more'])
         self.assertIn('clinic', self._nav_keys(tree, 'o_sc_rail_nav'))
         # The therapist-only home section.
         self.assertTrue(tree.xpath('//*[@data-sc-section="home.clinic_teaser"]'))
@@ -154,7 +156,7 @@ class TestAppShellSwitch1538(AppShellCommon):
         self._switch(True)
         self._login_coach()
         self.assertEqual(self.coach.sc_nav_mode, 'back')
-        _text, tree = self._get('/my/teams')
+        _text, tree = self._get('/my/team?team_id=%s' % self.team_a.id)
         self.assertTrue(tree.xpath('//a[contains(@class, "o_sc_back")]'))
         self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_appbar_context")]'))
         self.assertFalse(tree.xpath('//nav[contains(@class, "o_sc_crumbs")]'))
@@ -164,10 +166,10 @@ class TestAppShellSwitch1538(AppShellCommon):
         self._switch(True)
         self.coach.sc_nav_mode = 'crumbs'
         self._login_coach()
-        _text, tree = self._get('/my/teams')
+        _text, tree = self._get('/my/team?team_id=%s' % self.team_a.id)
         crumbs = tree.xpath('//nav[contains(@class, "o_sc_crumbs")]')
         self.assertTrue(crumbs)
-        self.assertTrue(crumbs[0].xpath('.//a[@href="/my/home"]'))
+        self.assertTrue(crumbs[0].xpath('.//a[@href="/my/teams"]'))
         self.assertFalse(tree.xpath('//a[contains(@class, "o_sc_back")]'))
         self.assertEqual(self._shell(tree).get('data-sc-nav'), 'crumbs')
 

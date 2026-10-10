@@ -64,6 +64,18 @@ document.addEventListener("sc:toast", (ev) => {
     const detail = ev.detail || {};
     showToast(detail.message || "", detail.actionLabel, detail.action);
 });
+// A status save answers the player's new stage: update the hero pill in place.
+document.addEventListener("sc:saved", (ev) => {
+    const { model, recordId, result } = ev.detail || {};
+    const stage = result && result.stage;
+    if (model !== "sports.patient" || !stage) {
+        return;
+    }
+    for (const chip of document.querySelectorAll(`[data-sc-stage-chip="${recordId}"]`)) {
+        chip.className = `o_sc_chip o_sc_chip_${stage.tone || "ghost"}`;
+        chip.textContent = stage.label || "";
+    }
+});
 document.addEventListener("sc:fetch-error", (ev) => {
     const error = ev.detail || {};
     if (error.status === 0) {

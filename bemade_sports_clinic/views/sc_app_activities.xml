@@ -179,7 +179,7 @@
             <t t-set="sc_active_nav" t-value="'activities'"/>
             <t t-if="context_team and simplified">
                 <t t-set="sc_parent_url" t-value="'/my/team?team_id=%s&amp;tab=activities' % context_team.id"/>
-                <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], '/my/home'), (context_team.name, '/my/team?team_id=%s' % context_team.id)]"/>
+                <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], '/my/teams'), (context_team.name, '/my/team?team_id=%s' % context_team.id)]"/>
             </t>
             <t t-elif="context_event and simplified">
                 <t t-set="sc_parent_url" t-value="'/my/event/%s' % context_event.id"/>

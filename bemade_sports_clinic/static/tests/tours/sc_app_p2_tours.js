@@ -196,3 +196,35 @@ tours.add("sc_1539_activity_complete", {
         },
     ],
 });
+
+// ------------------- player status: the hero pill follows the save (2026-10-10)
+tours.add("sc_status_pill_refresh", {
+    steps: () => [
+        {
+            content: "Available: the hero pill is green; mark the page to detect a reload",
+            trigger: "[data-sc-stage-chip].o_sc_chip_green",
+            run() {
+                window.__scPillNoReload = true;
+            },
+        },
+        {
+            content: "Pick « No play »",
+            trigger: '.o_sc_autosave[data-sc-field="sc_status"] button[data-sc-value="no:no"]',
+            run: "click",
+        },
+        {
+            content: "Saved",
+            trigger:
+                '.o_sc_autosave[data-sc-field="sc_status"][data-sc-state="saved"] button[data-sc-value="no:no"][aria-pressed="true"]',
+        },
+        {
+            content: "The hero pill turned red in place (no reload)",
+            trigger: "[data-sc-stage-chip].o_sc_chip_red",
+            run() {
+                if (!window.__scPillNoReload) {
+                    throw new Error("the page reloaded");
+                }
+            },
+        },
+    ],
+});

@@ -326,6 +326,18 @@ export class ScAutosaveField extends Component {
             this.state.savedAt = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
             this.state.status = "saved";
             this.state.conflict = null;
+            // Lets the page reflect a save elsewhere (e.g. the player's
+            // status pill, owner review 2026-10-10).
+            document.dispatchEvent(
+                new CustomEvent("sc:saved", {
+                    detail: {
+                        model: this.props.model,
+                        recordId: this.props.recordId,
+                        field: this.props.field,
+                        result,
+                    },
+                })
+            );
             return true;
         } catch (error) {
             if (error.status === 409 && error.payload) {

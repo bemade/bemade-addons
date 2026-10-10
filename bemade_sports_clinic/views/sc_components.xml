@@ -140,7 +140,7 @@
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'close'"/></t>
                 </button>
             </div>
-            <div class="o_sc_sheet_body">
+            <div t-attf-class="o_sc_sheet_body #{'o_sc_legacy' if lazy_url else ''}">
                 <p t-if="lazy_url" class="o_sc_empty o_sc_lazy_loading">Loading…</p>
                 <t t-else="" t-out="0"/>
             </div>

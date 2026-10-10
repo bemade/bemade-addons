@@ -102,7 +102,19 @@
                 </div>
             </form>
 
-            <p class="o_sc_meta" data-sc-section="players.count" t-out="sc_players_count_label"/>
+            <div class="o_sc_list_bar">
+                <p class="o_sc_meta" data-sc-section="players.count" t-out="sc_players_count_label"/>
+                <!-- Owner review 2026-10-10: « By status » = most injured first (on) or
+                     alphabetical (off); a plain link, the server re-sorts and
+                     remembers the choice. -->
+                <t t-set="sc_sort_label">By status</t>
+                <a t-att-href="sc_players_sort_toggle_url" class="o_sc_switch" role="switch"
+                   data-sc-section="players.sort"
+                   t-att-aria-checked="'true' if players_sort_mode == 'status' else 'false'">
+                    <span class="o_sc_switch_track" aria-hidden="true"><span class="o_sc_switch_thumb"/></span>
+                    <span class="o_sc_switch_label" t-out="sc_sort_label"/>
+                </a>
+            </div>
 
             <div t-if="sc_player_rows" class="o_sc_list" data-sc-section="players.list">
                 <t t-foreach="sc_player_rows" t-as="row">
@@ -177,11 +189,12 @@
     <template id="sc_app_player" name="Sports Clinic App: player">
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-set="sc_title" t-value="player._portal_heading_name()"/>
-            <t t-set="sc_context" t-value="sc_player_team.name if sc_player_team else sc_nav_labels['players']"/>
+            <!-- « Team · position » under « #12 First Last » (owner review 2026-10-10). -->
+            <t t-set="sc_context" t-value="' · '.join(part for part in ((sc_player_team.name if sc_player_team else sc_nav_labels['players']), player.position) if part)"/>
             <t t-set="sc_active_nav" t-value="'players'"/>
             <t t-if="team">
                 <t t-set="sc_parent_url" t-value="'/my/team?team_id=%s&amp;tab=players' % team.id"/>
-                <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], '/my/home'), (team.name, '/my/team?team_id=%s' % team.id)]"/>
+                <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], '/my/teams'), (team.name, '/my/team?team_id=%s' % team.id)]"/>
             </t>
             <t t-elif="clinic_event">
                 <t t-set="sc_parent_url" t-value="'/my/clinic/%s' % clinic_event.id"/>
@@ -216,10 +229,9 @@
                     </div>
                 </div>
                 <div class="o_sc_chips">
-                    <t t-call="bemade_sports_clinic.sc_status_chip">
-                        <t t-set="tone" t-value="sc_player_dot"/>
-                        <t t-set="label" t-value="sc_player_chip"/>
-                    </t>
+                    <!-- Updated in place after a status save (sc_app_ui.js). -->
+                    <span t-attf-class="o_sc_chip o_sc_chip_#{sc_player_dot or 'ghost'}"
+                          t-att-data-sc-stage-chip="player.id" t-out="sc_player_chip"/>
                     <span t-if="player.pending_removal" class="o_sc_chip o_sc_chip_ghost">Removal pending</span>
                     <span t-if="player.predicted_return_date" class="o_sc_chip o_sc_chip_ghost">
                         <span>Predicted return:</span> <span t-field="player.predicted_return_date"/>
@@ -278,7 +290,30 @@
                             <t t-set="value" t-value="player.training_recommendation"/>
                             <t t-set="pre" t-value="True"/>
                         </t>
+                        <!-- Training recommendation history (owner review
+                             2026-10-10), like the team announcement's. -->
+                        <div t-if="sc_training_history" class="o_sc_card_actions">
+                            <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
+                                    data-sc-sheet-open="sc_training_history_sheet">
+                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'history'"/></t>
+                                <span>Training history</span>
+                            </button>
+                        </div>
                     </div>
+                    <t t-if="sc_training_history" t-call="bemade_sports_clinic.sc_sheet">
+                        <t t-set="sheet_id" t-value="'sc_training_history_sheet'"/>
+                        <t t-set="title">Training recommendation history</t>
+                        <t t-set="lazy_url" t-value="False"/>
+                        <ol class="o_sc_history">
+                            <li t-foreach="sc_training_history" t-as="h">
+                                <div class="o_sc_meta">
+                                    <span t-out="h['when']" t-options="{'widget': 'datetime'}"/> · <t t-out="h['author']"/>
+                                </div>
+                                <p t-if="h['body']" class="o_sc_pre" t-out="h['body']"/>
+                                <p t-else="" class="o_sc_meta">Cleared</p>
+                            </li>
+                        </ol>
+                    </t>
                     <div class="o_sc_section">
                         <section class="o_sc_section" data-sc-section="player.active_injuries">
                             <t t-call="bemade_sports_clinic.sc_section_header">

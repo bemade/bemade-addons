@@ -275,6 +275,11 @@ $sc-laptop: 992px;
             display: none;
         }
 
+        // « More » entries already on the rail (marked by the template).
+        .o_sc_content [data-sc-in-rail] {
+            display: none;
+        }
+
         .o_sc_appbar {
             padding-left: var(--sc-space-5);
             padding-right: var(--sc-space-5);
@@ -404,11 +409,18 @@ $sc-laptop: 992px;
         min-width: 0;
     }
 
+    // The « more » link sits right after the title (owner review 2026-10-10:
+    // right-aligned, it looked orphaned over an empty list or read as part of
+    // the next column). min-height = the link's, so a header with and without
+    // a link line up side by side.
     .o_sc_section_header {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        justify-content: space-between;
-        gap: var(--sc-space-2);
+        justify-content: flex-start;
+        column-gap: var(--sc-space-3);
+        row-gap: 0;
+        min-height: 32px;
         margin-top: 6px;
         font-family: var(--sc-font-title);
         font-weight: 500;
@@ -515,6 +527,18 @@ $sc-laptop: 992px;
         display: flex;
         flex-direction: column;
         min-width: 0;
+    }
+
+    // A long chip inside the text column (e.g. a temporary-access label):
+    // starts under the subtitle and wraps instead of widening the row.
+    .o_sc_row_chip_line {
+        display: flex;
+        margin-top: var(--sc-space-1);
+
+        .o_sc_chip {
+            white-space: normal;
+            line-height: 1.3;
+        }
     }
 
     .o_sc_row_title {
@@ -801,6 +825,74 @@ $sc-laptop: 992px;
             background: var(--sc-accent);
             border-color: var(--sc-accent);
             color: var(--sc-accent-fg);
+        }
+    }
+
+    // List header: count on the left, a control (e.g. a sort switch) on the
+    // right; wraps on a narrow phone.
+    .o_sc_list_bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--sc-space-2);
+    }
+
+    // On / off switch (owner review 2026-10-10). A link with role="switch" +
+    // aria-checked: the server applies the change and re-renders.
+    .o_sc_switch {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sc-space-2);
+        min-height: var(--sc-tap);
+        color: var(--sc-fg);
+        font-size: var(--sc-text-md);
+        font-weight: 600;
+        text-decoration: none;
+
+        &:hover,
+        &:focus {
+            color: var(--sc-fg);
+            text-decoration: none;
+        }
+
+        &:focus-visible .o_sc_switch_track {
+            outline: 2px solid var(--sc-focus);
+            outline-offset: 2px;
+        }
+    }
+
+    .o_sc_switch_track {
+        position: relative;
+        flex: none;
+        width: 44px;
+        height: 26px;
+        border-radius: var(--sc-radius-pill);
+        background: var(--sc-surface-2);
+        border: 1px solid var(--sc-line);
+        transition: background-color 0.15s ease;
+    }
+
+    .o_sc_switch_thumb {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--sc-fg-2);
+        transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    .o_sc_switch[aria-checked="true"] {
+        .o_sc_switch_track {
+            background: var(--sc-accent);
+            border-color: var(--sc-accent);
+        }
+
+        .o_sc_switch_thumb {
+            background: var(--sc-accent-fg);
+            transform: translateX(18px);
         }
     }
 

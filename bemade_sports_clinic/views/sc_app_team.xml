@@ -25,8 +25,7 @@
             <t t-set="sc_context" t-value="sc_team_org or sc_nav_labels['teams']"/>
             <t t-set="sc_active_nav" t-value="'teams'"/>
             <t t-set="sc_parent_url" t-value="'/my/teams'"/>
-            <t t-set="sc_my_teams_label">My teams</t>
-            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], '/my/home'), (sc_my_teams_label, '/my/teams')]"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], '/my/teams')]"/>
             <t t-set="sc_show_add" t-value="sc_can_add_directly and sc_can('team.add_player')"/>
             <t t-set="sc_show_request" t-value="not sc_can_add_directly and sc_can('team.request_add')"/>
             <t t-set="sc_show_activities" t-value="can_view_activities and sc_can('team.activities')"/>
@@ -270,12 +269,15 @@
                                         <span class="o_sc_row_text">
                                             <span class="o_sc_row_title" t-out="staff_row.partner_id.name"/>
                                             <span class="o_sc_row_subtitle" t-field="staff_row.role"/>
-                                        </span>
-                                        <span class="o_sc_row_trailing">
-                                            <t t-call="bemade_sports_clinic.sc_status_chip">
-                                                <t t-set="tone" t-value="'mauve' if staff_row.source == 'temp' else 'yellow'"/>
-                                                <t t-set="label" t-value="staff_row.temp_access_label"/>
-                                            </t>
+                                            <!-- Under the name, wrapping: the access label is long
+                                                 (event, players, end date) and squeezed the name to
+                                                 0 px in the trailing slot. -->
+                                            <span class="o_sc_row_chip_line">
+                                                <t t-call="bemade_sports_clinic.sc_status_chip">
+                                                    <t t-set="tone" t-value="'mauve' if staff_row.source == 'temp' else 'yellow'"/>
+                                                    <t t-set="label" t-value="staff_row.temp_access_label"/>
+                                                </t>
+                                            </span>
                                         </span>
                                     </div>
                                 </t>

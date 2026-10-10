@@ -42,7 +42,7 @@ class TestAppShellToursPhone1542(_TourCommon):
     browser_size = '390x844'
 
     def test_nav_phone(self):
-        self.start_tour('/my/home', 'sc_1542_nav_phone', login='pc.coach@example.com')
+        self.start_tour('/my/teams', 'sc_1542_nav_phone', login='pc.coach@example.com')
 
     def test_team_tabs_phone(self):
         self.start_tour(self.team_url, 'sc_1542_team_tabs', login='pc.tp@example.com')
@@ -90,7 +90,7 @@ class TestAppShellToursLaptop1542(_TourCommon):
         })
 
     def test_nav_laptop(self):
-        self.start_tour('/my/home', 'sc_1542_nav_laptop', login='pc.tp@example.com')
+        self.start_tour('/my/teams', 'sc_1542_nav_laptop', login='pc.tp@example.com')
 
     def test_prefs_theme_and_crumbs(self):
         self.start_tour('/my/home', 'sc_1542_prefs', login='pc.coach@example.com')

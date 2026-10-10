@@ -3090,6 +3090,7 @@ msgid "Allowed User"
 msgstr "Utilisateurs autorisés"
 
 #. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__players_sort_mode__name
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__teams_sort_mode__alpha
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_teams
 msgid "Alphabetical"
@@ -8751,6 +8752,11 @@ msgid "Please verify this injury and set the appropriate status."
 msgstr "Veuillez vérifier cette blessure et définir le statut approprié."
 
 #. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__players_sort_mode
+msgid "Portal Players Sort"
+msgstr "Tri des joueurs (portail)"
+
+#. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__roster_sort_mode
 msgid "Portal Roster Sort"
 msgstr "Tri de l'alignement (portail)"
@@ -9216,7 +9222,7 @@ msgstr "Changements récents des joueurs"
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__teams_sort_mode__activity
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_teams
 msgid "Recent activity"
-msgstr "Activité récente"
+msgstr "Récemment actives"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_card_injury_detail
@@ -13479,6 +13485,8 @@ msgid "By number"
 msgstr "Par numéro"
 
 #. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__res_users__players_sort_mode__status
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_players
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 msgid "By status"
 msgstr "Par statut"
@@ -14263,8 +14271,8 @@ msgstr "Code postal"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
-msgid "Practice only"
-msgstr "Pratique seulement"
+msgid "Contact practice"
+msgstr "Pratique contact"
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -14407,3 +14415,17 @@ msgstr "Vous ne pouvez pas modifier cet enregistrement."
 msgid "You do not have permission to do this."
 msgstr "Vous n'avez pas la permission de faire ceci."
 
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+msgid "Training history"
+msgstr "Historique des recommandations"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+msgid "Training recommendation history"
+msgstr "Historique des recommandations d'entraînement"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+msgid "Cleared"
+msgstr "Effacée"

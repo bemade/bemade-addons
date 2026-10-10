@@ -98,6 +98,8 @@ _TEXT_TYPES = ('char', 'text', 'html')
 _VALID_STATUS_PAIRS = {('yes', 'yes'), ('no', 'yes'), ('no', 'no_contact'), ('no', 'no')}
 # The status pair's values (virtual field ``sc_status``), in display order.
 SC_STATUS_KEYS = ('yes:yes', 'no:yes', 'no:no_contact', 'no:no')
+# Dot / chip tone of a player's stage (same tones as the lists' rows).
+SC_STAGE_TONES = {'no_play': 'red', 'practice_ok': 'yellow', 'healthy': 'green'}
 
 
 def _clean_text(value):
@@ -143,6 +145,12 @@ def _patient_write(ctrl, patient, field, value):
         if (match, practice) not in _VALID_STATUS_PAIRS:
             raise ValidationError(_("Invalid combination of match and practice status."))
         patient.write({'match_status': match, 'practice_status': practice})
+        # Owner review 2026-10-10: the page updates the hero's status pill in
+        # place from this (sc_app_ui.js, « sc:saved »).
+        stage = patient.stage or 'healthy'
+        labels = dict(patient._fields['stage']._description_selection(patient.env))
+        extra['stage'] = {'tone': SC_STAGE_TONES.get(stage, 'green'),
+                          'label': labels.get(stage, '')}
         return extra
     if field in ('first_name', 'last_name'):
         # Task 1537: a rename goes through the ORM as the user (the partner
@@ -465,7 +473,7 @@ class AppShellMixin:
         # literal that follows an _() call in the same list for a term.
         labels = (
             env._("Match + practice"),
-            env._("Practice only"),
+            env._("Contact practice"),
             env._("Practice, no contact"),
             env._("No play"),
         )
@@ -724,7 +732,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                                         dt_format='EEE d MMM · HH:mm'),
                 'kind': kinds.get(event.event_type, ''),
                 'name': event.name or '',
-                'url': '/my/event/%s' % event.id,
+                'url': '/my/event/%s?return_url=%%2Fmy%%2Fhome' % event.id,
             })
         return rows
 
@@ -909,7 +917,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                  'type': 'image/png', 'purpose': 'maskable'},
             ],
             'shortcuts': [
-                {'name': labels['teams'], 'url': '/my/home'},
+                {'name': labels['teams'], 'url': '/my/teams'},
                 {'name': labels['players'], 'url': '/my/players'},
             ],
         }
