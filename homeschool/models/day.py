@@ -2,6 +2,7 @@
 from datetime import timedelta
 
 from odoo import api, fields, models
+from odoo.fields import Domain
 from odoo.tools import format_date
 
 from .block import NO_HOURS_KINDS
@@ -59,7 +60,11 @@ class Day(models.Model):
     deliverable_done_count = fields.Integer(compute="_compute_deliverable_counts")
 
     journal_ids = fields.One2many("homeschool.journal", "day_id")
-    journal_state = fields.Selection(JOURNAL_STATES, compute="_compute_journal_state", store=True)
+    journal_state = fields.Selection(
+        JOURNAL_STATES, compute="_compute_journal_state", search="_search_journal_state",
+        help="Not stored: « today » is not a dependency Odoo can track, so a stored value went stale "
+             "on days created ahead of time. Computed on read, searched through a plain domain.",
+    )
 
     _student_date_unique = models.Constraint(
         "unique(student_id, date)", "There is already a day for this student on that date."
@@ -129,6 +134,31 @@ class Day(models.Model):
             lambda b: b.kind not in NO_HOURS_KINDS and b.status != "skipped"
             and not (b.actuals_recorded and b.adult_recorded)
         )
+
+    # the same rule as ``_pending_blocks``, as a domain on homeschool.block
+    _PENDING_BLOCK_DOMAIN = [
+        ("kind", "not in", NO_HOURS_KINDS), ("status", "!=", "skipped"),
+        "|", ("actuals_recorded", "=", False), ("adult_recorded", "=", False),
+    ]
+
+    @api.model
+    def _search_journal_state(self, operator, value):
+        """``journal_state`` as a plain domain, one per value (``incomplete`` and ``done``
+        partition the non-off days up to today)."""
+        if operator not in ("=", "!=", "in", "not in"):
+            raise NotImplementedError("Unsupported operator %r on journal_state" % operator)
+        values = {value} if isinstance(value, str) else set(value or ())
+        if operator in ("!=", "not in"):
+            values = {state for state, _ in JOURNAL_STATES} - values
+        today = fields.Date.context_today(self)
+        past = [("is_off", "=", False), ("date", "<=", today)]
+        per_state = {
+            "off": [("is_off", "=", True)],
+            "future": [("is_off", "=", False), ("date", ">", today)],
+            "incomplete": past + ["|", ("journal_ids", "=", False), ("block_ids", "any", self._PENDING_BLOCK_DOMAIN)],
+            "done": past + [("journal_ids", "!=", False), ("block_ids", "not any", self._PENDING_BLOCK_DOMAIN)],
+        }
+        return Domain.OR(Domain(per_state[state]) for state in per_state if state in values)
 
     def action_open_close_wizard(self):
         """« Fermer la journée »: the wizard on this day, first hour-bearing block."""
