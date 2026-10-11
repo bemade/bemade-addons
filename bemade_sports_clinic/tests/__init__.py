@@ -138,3 +138,4 @@ from . import test_app_shell_tools_1540
 from . import test_app_shell_i18n_1540
 from . import test_app_shell_home_nav
 from . import test_app_shell_player_status
+from . import test_app_shell_player_inline

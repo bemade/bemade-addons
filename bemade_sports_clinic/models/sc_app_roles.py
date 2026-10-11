@@ -188,7 +188,9 @@ VISIBILITY_REGISTRY = {
     'patient.status.edit': {'include': TP},
     'patient.training.edit': {'include': TP},
     'patient.edit.tp_fields': {'include': TP},
-    'patient.contacts.tab': {'include': TP},
+    # Owner decision 2026-10-10: coaches see and edit emergency contacts too
+    # (their ACL / record rules already allowed it; deleting stays TP).
+    'patient.contacts.tab': {'include': STAFF},
     'patient.notes.tab': {'include': TP},
     'patient.activities.tab': {'include': STAFF},
     'patient.remove': {'include': TP},

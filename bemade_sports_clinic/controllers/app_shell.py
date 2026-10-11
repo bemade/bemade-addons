@@ -34,11 +34,11 @@ from dateutil.relativedelta import relativedelta
 
 from markupsafe import Markup
 
-from odoo import _, fields, http
+from odoo import Command, _, fields, http
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
 from odoo.modules.module import get_manifest
-from odoo.tools import file_open, format_datetime
+from odoo.tools import file_open, format_date, format_datetime
 
 from odoo.addons.portal.controllers.portal import CustomerPortal
 
@@ -130,15 +130,65 @@ def _patient_check(ctrl, patient):
     ctrl._check_access_to_patient(patient.id)
 
 
+def _assignable_teams():
+    """The teams the CURRENT user may assign a player to (the player form's
+    rule: staffed teams; every team for a clinic administrator)."""
+    return AppShellPortal()._team_targets()
+
+
 def _patient_read(patient, field):
     if field == 'sc_status':
         return '%s:%s' % (patient.match_status or '', patient.practice_status or '')
+    if field == 'sc_team_ids':
+        # Only the teams this user may assign: the checklist shows (and
+        # posts back) those; the player's other teams are not theirs to touch.
+        mine = patient.sudo().team_ids & _assignable_teams()
+        return ','.join(str(team_id) for team_id in sorted(mine.ids))
     return AppShellPortal._sc_save_value(patient, field, raw=True)
+
+
+def _patient_display(patient, field):
+    if field == 'sc_team_ids':
+        return ', '.join(patient.sudo().team_ids.mapped('name'))
+    return None
+
+
+# Identity fields: a save answers the new heading (app bar + hero).
+_HEADING_FIELDS = ('first_name', 'last_name', 'jersey_number', 'position')
+
+
+def _patient_heading(patient):
+    team = patient.sudo().team_ids[:1]
+    return {
+        'title': patient._portal_heading_name(),
+        'list_name': patient._portal_list_name(),
+        'position': patient.position or '',
+        'context': ' · '.join(part for part in (team.name, patient.position) if part),
+    }
 
 
 def _patient_write(ctrl, patient, field, value):
     """/my/player/save's rules, one field at a time (task 1539)."""
+    extra = _patient_write_field(ctrl, patient, field, value)
+    if field in _HEADING_FIELDS:
+        extra['heading'] = _patient_heading(patient)
+    return extra
+
+
+def _patient_write_field(ctrl, patient, field, value):
     extra = {}
+    if field == 'sc_team_ids':
+        # Owner review 2026-10-10 (inline Teams card): add / remove ONLY the
+        # teams this user may assign; the player's other teams are kept.
+        try:
+            selected = {int(part) for part in (value or '').split(',') if part.strip()}
+        except ValueError:
+            raise ValidationError(_("Invalid value.")) from None
+        allowed = _assignable_teams()
+        current = patient.sudo().team_ids
+        patient.write({'team_ids': [Command.set(
+            ((current - allowed) | allowed.filtered(lambda t: t.id in selected)).ids)]})
+        return extra
     if field == 'sc_status':
         # Match / practice are ONE save (the pair constraint): « no:no ».
         match, _sep, practice = (value or '').partition(':')
@@ -322,10 +372,14 @@ SAVE_REGISTRY = {
             'last_consultation_date': _TP_ROLES,
             # Virtual: « match:practice », saved as a pair.
             'sc_status': _TP_ROLES,
+            # Virtual: CSV of the assignable teams ticked (owner review
+            # 2026-10-10, the player page's Teams card).
+            'sc_team_ids': _TP_ROLES,
         },
         'check': _patient_check,
         'write': _patient_write,
         'read': _patient_read,
+        'display': _patient_display,
     },
     'sports.patient.injury': {
         'fields': {
@@ -458,10 +512,22 @@ class AppShellMixin:
             'sc_team_row': self._sc_team_row,
             # Task 1539: props builders for the sc_autosave_field component.
             'sc_field_props': self._sc_field_props,
+            # Owner review 2026-10-10: a card's read view (same strings the
+            # save route answers, so an in-place update matches a reload).
+            'sc_display': lambda record, field: AppShellPortal._sc_save_display(record, field),
+            'sc_display_key': lambda record, field: '%s:%s:%s' % (record._name, record.id, field),
             'sc_draft_props': self._sc_draft_props,
         }
         shell.update(values)
         return shell
+
+    def _sc_player_tab_url(self, patient_id, tab, team_id=None, clinic=None):
+        """The player page on ``tab``, with the team / clinic context."""
+        url = '/my/player?player_id=%s' % patient_id
+        if team_id:
+            url += '&team_id=%s' % team_id
+        url = self._with_clinic(url, clinic) if clinic else url
+        return url + '&tab=%s' % tab
 
     @staticmethod
     def _sc_status_options():
@@ -799,6 +865,35 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return field.to_string(value) if value else False
         return value
 
+    @staticmethod
+    def _sc_save_display(record, name):
+        """The saved value as a reader sees it (owner review 2026-10-10: a
+        card's read view updates in place after a save) — a name for a
+        many2one, a label for a selection, a formatted date; '' when empty."""
+        spec = SAVE_REGISTRY.get(record._name) or {}
+        if spec.get('display'):
+            shown = spec['display'](record, name)
+            if shown is not None:
+                return shown
+        field = record._fields.get(name)
+        if field is None:
+            return ''
+        value = record[name]
+        if not value:
+            return ''
+        if field.type == 'many2one':
+            # The plain name, as the select options show it (a province reads
+            # « Quebec », not « Quebec (CA) »).
+            value = value.sudo()
+            return (value.name if 'name' in value._fields else value.display_name) or ''
+        if field.type == 'selection':
+            return dict(field._description_selection(record.env)).get(value, '')
+        if field.type == 'date':
+            return format_date(record.env, value)
+        if field.type == 'datetime':
+            return format_datetime(record.env, value)
+        return str(value)
+
     @classmethod
     def _sc_field_unchanged(cls, record, field, old_value):
         """Does ``record.field`` still hold what the client last saw?"""
@@ -879,6 +974,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'ok': True,
                 'write_date': fields.Datetime.to_string(record.write_date),
                 'value': self._sc_save_value(record, field),
+                'display': self._sc_save_display(record, field),
             }
             payload.update(extra)
             return self._sc_save_json(payload)

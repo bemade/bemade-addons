@@ -91,6 +91,142 @@ $sc-p2-laptop: 992px;
         gap: var(--sc-space-3);
     }
 
+    // ------------------------------------------- inline-edit cards (2026-10-10)
+    // One pencil per card; read view by default (sc_app_ui.js toggles).
+    .o_sc_edit_card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+
+        [data-sc-edit-view][hidden] {
+            display: none !important;
+        }
+    }
+
+    .o_sc_edit_card_head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--sc-space-2);
+        min-height: var(--sc-tap);
+    }
+
+    .o_sc_edit_card_title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2);
+        margin: 0;
+        font-family: var(--sc-font-title);
+        font-weight: 500;
+        font-size: var(--sc-title-md);
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--sc-fg);
+        min-width: 0;
+
+        .o_sc_chip {
+            font-family: var(--sc-font-text);
+            text-transform: none;
+            letter-spacing: 0;
+        }
+    }
+
+    .o_sc_edit_card[data-sc-edit-open] [data-sc-edit-toggle] {
+        color: var(--sc-accent);
+    }
+
+    // tags field: chips + a search box with a few suggestions.
+    .o_sc_tags_field {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-2);
+    }
+
+    .o_sc_tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sc-space-2);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+
+        &:empty {
+            display: none;
+        }
+    }
+
+    .o_sc_tag {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sc-space-1);
+        max-width: 100%;
+        padding: 2px 2px 2px 12px;
+        border-radius: var(--sc-radius-pill);
+        background: var(--sc-surface-2);
+        border: 1px solid var(--sc-line);
+        font-size: var(--sc-text-md);
+
+        > span {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    .o_sc_tag_remove {
+        appearance: none;
+        flex: none;
+        width: 32px;
+        height: 32px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--sc-fg-2);
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            background: var(--sc-hover);
+            color: var(--sc-bad);
+        }
+    }
+
+    .o_sc_tags_options {
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        border: 1px solid var(--sc-line);
+        border-radius: var(--sc-radius-sm);
+        overflow: hidden;
+    }
+
+    .o_sc_tags_option {
+        appearance: none;
+        width: 100%;
+        min-height: var(--sc-tap);
+        padding: 0 var(--sc-space-3);
+        border: 0;
+        border-top: 1px solid var(--sc-line);
+        background: var(--sc-surface);
+        color: var(--sc-fg);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            background: var(--sc-hover);
+        }
+    }
+
+    .o_sc_tags_options > li:first-child .o_sc_tags_option {
+        border-top: 0;
+    }
+
     // ---------------------------------------------------------- buttons
     .o_sc_btn_danger {
         background: transparent;
@@ -287,16 +423,26 @@ $sc-p2-laptop: 992px;
     }
 
     // ---------------------------------------------------------- activities
+    // One card per activity: the row (link to the detail) without its own
+    // frame, then the actions on a footer line inside the card.
     .o_sc_activity {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+        padding: 0;
+        gap: 0;
+        overflow: hidden;
+
+        > .o_sc_entity_row {
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+        }
+
+        &:hover {
+            border-color: var(--sc-fg-3);
+        }
     }
 
     .o_sc_activity_actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        padding-left: var(--sc-space-3);
+        border-top: 1px solid var(--sc-line);
+        padding: var(--sc-space-2) var(--sc-space-3);
     }
 }

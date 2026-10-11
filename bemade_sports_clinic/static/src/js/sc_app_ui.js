@@ -64,17 +64,116 @@ document.addEventListener("sc:toast", (ev) => {
     const detail = ev.detail || {};
     showToast(detail.message || "", detail.actionLabel, detail.action);
 });
-// A status save answers the player's new stage: update the hero pill in place.
+// A save updates the page in place (owner review 2026-10-10):
+// * the read views of inline-edit cards ([data-sc-display="model:id:field"]);
+// * the player's status pill (a status save answers the new stage);
+// * the player's heading (an Identity save answers it).
 document.addEventListener("sc:saved", (ev) => {
-    const { model, recordId, result } = ev.detail || {};
-    const stage = result && result.stage;
-    if (model !== "sports.patient" || !stage) {
+    const { model, recordId, field, result } = ev.detail || {};
+    if (!result) {
         return;
     }
-    for (const chip of document.querySelectorAll(`[data-sc-stage-chip="${recordId}"]`)) {
-        chip.className = `o_sc_chip o_sc_chip_${stage.tone || "ghost"}`;
-        chip.textContent = stage.label || "";
+    if (result.display !== undefined) {
+        for (const el of document.querySelectorAll(`[data-sc-display="${model}:${recordId}:${field}"]`)) {
+            el.textContent = result.display || "—";
+        }
     }
+    const card = ev.target && ev.target.closest && ev.target.closest("[data-sc-edit-card]");
+    for (const opened of document.querySelectorAll("[data-sc-edit-card][data-sc-edit-open]")) {
+        opened.dataset.scEditChanged = "1";
+    }
+    if (card) {
+        card.dataset.scEditChanged = "1";
+    }
+    if (model !== "sports.patient") {
+        return;
+    }
+    const stage = result.stage;
+    if (stage) {
+        for (const chip of document.querySelectorAll(`[data-sc-stage-chip="${recordId}"]`)) {
+            chip.className = `o_sc_chip o_sc_chip_${stage.tone || "ghost"}`;
+            chip.textContent = stage.label || "";
+        }
+    }
+    const heading = result.heading;
+    if (heading) {
+        for (const el of document.querySelectorAll("[data-sc-heading]")) {
+            const key = el.dataset.scHeading;
+            if (key === "title" || key === "list_name") {
+                el.textContent = heading[key] || "";
+            } else if (key === "position_suffix") {
+                el.textContent = heading.position ? ` · ${heading.position}` : "";
+            } else if (key === "context") {
+                const team = el.dataset.scHeadingTeam || "";
+                el.textContent = [team, heading.position].filter(Boolean).join(" · ");
+            }
+        }
+    }
+});
+
+// A link to « …#<details id> » opens that inline card (e.g. Overview's
+// « Add Injury » → the Injuries tab's card), owner review 2026-10-10.
+function openHashedDetails() {
+    const id = window.location.hash.slice(1);
+    const details = id && /^[\w-]+$/.test(id) && document.getElementById(id);
+    if (details && details.tagName === "DETAILS" && details.closest(".o_sc_app")) {
+        details.open = true;
+        details.scrollIntoView({ block: "start" });
+    }
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", openHashedDetails);
+} else {
+    openHashedDetails();
+}
+window.addEventListener("hashchange", openHashedDetails);
+
+// Inline-edit cards: ONE pencil per card toggles its edit view; « Done »
+// closes it (a card whose read view is server-built reloads after a change).
+function setCardEditing(card, editing) {
+    const edit = card.querySelector('[data-sc-edit-view="edit"]');
+    const read = card.querySelector('[data-sc-edit-view="read"]');
+    if (!edit) {
+        return;
+    }
+    edit.hidden = !editing;
+    if (read) {
+        read.hidden = editing;
+    }
+    if (editing) {
+        card.dataset.scEditOpen = "1";
+    } else {
+        delete card.dataset.scEditOpen;
+    }
+    const toggle = card.querySelector("[data-sc-edit-toggle]");
+    if (toggle) {
+        toggle.setAttribute("aria-expanded", editing ? "true" : "false");
+    }
+    if (editing) {
+        const first = edit.querySelector("input, textarea, select");
+        if (first) {
+            first.focus({ preventScroll: true });
+        }
+    }
+}
+
+document.addEventListener("click", (ev) => {
+    const toggle = ev.target.closest && ev.target.closest("[data-sc-edit-toggle]");
+    const done = !toggle && ev.target.closest && ev.target.closest("[data-sc-edit-done]");
+    const card = (toggle || done) && (toggle || done).closest("[data-sc-edit-card]");
+    if (!card) {
+        return;
+    }
+    ev.preventDefault();
+    if (toggle) {
+        setCardEditing(card, !card.dataset.scEditOpen);
+        return;
+    }
+    if (card.dataset.scEditReload && card.dataset.scEditChanged) {
+        window.location.reload();
+        return;
+    }
+    setCardEditing(card, false);
 });
 document.addEventListener("sc:fetch-error", (ev) => {
     const error = ev.detail || {};

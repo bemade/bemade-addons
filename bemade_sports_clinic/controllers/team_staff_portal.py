@@ -944,7 +944,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         tabs = [('overview', env._("Overview"))]
         tabs.append(('injuries', env._("Injuries")))
         tabs.append(('info', env._("Info")))
-        if is_tp and sc_app_roles.can('patient.contacts.tab', roles):
+        if sc_app_roles.can('patient.contacts.tab', roles):
             tabs.append(('contacts', env._("Contacts")))
         tabs.append(('documents', env._("Documents")))
         if is_tp and sc_app_roles.can('patient.notes.tab', roles):
@@ -993,6 +993,23 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_player_events': events,
             'sc_status_options': self._sc_status_options(),
             'sc_training_history': player._training_recommendation_history(),
+            # Inline « Add Injury » card (owner review 2026-10-10): the new
+            # injury page's draft prefix and consent choices.
+            'sc_new_injury_prefix': 'sports.patient.%s.new_injury.' % player.id,
+            'sc_consent_options': [('', '')] + list(
+                env['sports.patient.injury']._fields['parental_consent']._description_selection(env)),
+            # Inline editing (owner review 2026-10-10).
+            'sc_state_options': [('', '')] + [
+                (state.id, state.name) for state in env['res.country.state'].search(
+                    [('country_id.code', '=', 'CA')], order='name')],
+            'sc_contact_type_options': list(
+                env['sports.patient.contact']._fields['contact_type']._description_selection(env)),
+            'sc_team_options': [(team.id, team.name) for team in self._team_targets()] if is_tp else [],
+            'relationship_types': env['sports.patient.contact']._fields['contact_type']._description_selection(env),
+            # The Contacts tab (therapists AND coaches since 2026-10-10): read
+            # from the contact model — patient.contact_ids is TP-only.
+            'sc_player_contacts': env['sports.patient.contact'].search(
+                [('patient_id', '=', player.id)], order='sequence,id'),
             'sc_can_activities': can_activities,
             'sc_note_props': note_props,
             'sc_memberships': memberships,

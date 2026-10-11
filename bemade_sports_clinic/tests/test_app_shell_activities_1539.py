@@ -135,7 +135,7 @@ class TestAppShellActivities1539(AppShellCommon):
         panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
         self.assertFalse(panel.xpath('.//*[contains(@class, "o_sc_legacy")]'))
         self.assertTrue(panel.xpath('.//*[@data-sc-activity-row="%s"]' % self.act_team.id))
-        form = panel.xpath('.//dialog[@id="sc_activity_add_sheet"]//form')[0]
+        form = panel.xpath('.//details[@data-sc-section="activity.add"]//form')[0]
         self.assertEqual(form.get('action'), '/my/activity/save')
         count = self.env['mail.activity'].search_count([('res_model', '=', 'sports.team')])
         resp = self.url_open('/my/activity/save', data={

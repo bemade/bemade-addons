@@ -14,6 +14,73 @@
 -->
 <odoo>
 
+    <!--
+        The new-injury form (device drafts until « Create »): the
+        /my/patient/injury/new page and the player page's inline « Add
+        Injury » card (owner review 2026-10-10). Variables: patient,
+        return_url, team_context_id, clinic_event, is_treatment_prof,
+        sc_draft_prefix, sc_consent_options, cancel_url (page only).
+    -->
+    <template id="sc_injury_new_form" name="App shell: new injury form">
+        <form action="/my/patient/injury/create" method="post" class="o_sc_form" data-sc-form="injury.new"
+              t-att-data-sc-draft-prefix="sc_draft_prefix">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+            <input type="hidden" name="patient_id" t-att-value="patient.id"/>
+            <input type="hidden" name="return_url" t-att-value="return_url"/>
+            <input t-if="team_context_id" type="hidden" name="team_context_id" t-att-value="team_context_id"/>
+            <input t-if="clinic_event" type="hidden" name="clinic_id" t-att-value="clinic_event.id"/>
+            <div class="o_sc_grid2">
+                <div class="o_sc_card o_sc_fields">
+                    <t t-set="lbl">Diagnosis/Description</t>
+                    <t t-call="bemade_sports_clinic.sc_field_autosave">
+                        <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'diagnosis', 'diagnosis', lbl, 'text', required=True)"/>
+                    </t>
+                    <t t-set="lbl">Date of Injury</t>
+                    <t t-set="hint">Check N/A if exact date is unknown</t>
+                    <t t-call="bemade_sports_clinic.sc_field_autosave">
+                        <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'injury_date', 'injury_date', lbl, 'date_na', value=datetime.date.today().isoformat(), naName='injury_date_na', required=True, hint=hint)"/>
+                    </t>
+                    <t t-if="is_treatment_prof and sc_can('injury.tp_fields')">
+                        <t t-set="lbl">Predicted Resolution Date</t>
+                        <t t-call="bemade_sports_clinic.sc_field_autosave">
+                            <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'predicted_resolution_date', 'predicted_resolution_date', lbl, 'date')"/>
+                        </t>
+                        <t t-set="lbl">Parental Consent</t>
+                        <t t-call="bemade_sports_clinic.sc_field_autosave">
+                            <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'parental_consent', 'parental_consent', lbl, 'select', options=sc_consent_options, required=True)"/>
+                        </t>
+                        <label class="o_sc_check">
+                            <input type="checkbox" name="hidden_from_coaches" value="1"/>
+                            <span>Hide from coaches</span>
+                        </label>
+                    </t>
+                </div>
+                <div class="o_sc_card o_sc_fields">
+                    <t t-set="lbl">External Notes</t>
+                    <t t-set="hint">Notes visible to all team members</t>
+                    <t t-call="bemade_sports_clinic.sc_field_autosave">
+                        <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'external_notes', 'external_notes', lbl, 'textarea', hint=hint)"/>
+                    </t>
+                    <t t-if="is_treatment_prof and sc_can('injury.internal_notes')">
+                        <t t-set="lbl">Internal Notes (Medical Staff Only)</t>
+                        <t t-set="hint">Notes visible only to treatment professionals</t>
+                        <t t-call="bemade_sports_clinic.sc_field_autosave">
+                            <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'internal_notes', 'internal_notes', lbl, 'textarea', hint=hint)"/>
+                        </t>
+                    </t>
+                </div>
+            </div>
+            <div t-attf-class="#{'o_sc_actionbar' if cancel_url else 'o_sc_form_actions'}">
+                <a t-if="cancel_url" t-att-href="cancel_url" class="o_sc_btn o_sc_btn_ghost">Cancel</a>
+                <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="injury.create">
+                    <span t-if="is_treatment_prof">Create Injury</span>
+                    <span t-else="">Submit Report</span>
+                </button>
+            </div>
+        </form>
+    </template>
+
+
     <!-- /my/patient/injury/new?patient_id=<id> (shell): nothing is created
          before « Créer » — the typing is a device draft (sc_autosave_field,
          draft mode) and the form posts to today's create route. -->
@@ -37,62 +104,9 @@
                 <t t-set="title">Kept on this device until you create it</t>
                 What you type stays a draft on this device; nobody is notified before « Create ».
             </t>
-            <form action="/my/patient/injury/create" method="post" class="o_sc_form" data-sc-form="injury.new"
-                  t-att-data-sc-draft-prefix="sc_draft_prefix">
-                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                <input type="hidden" name="patient_id" t-att-value="patient.id"/>
-                <input type="hidden" name="return_url" t-att-value="return_url"/>
-                <input t-if="team_context_id" type="hidden" name="team_context_id" t-att-value="team_context_id"/>
-                <input t-if="clinic_event" type="hidden" name="clinic_id" t-att-value="clinic_event.id"/>
-                <div class="o_sc_grid2">
-                    <div class="o_sc_card o_sc_fields">
-                        <t t-set="lbl">Diagnosis/Description</t>
-                        <t t-call="bemade_sports_clinic.sc_field_autosave">
-                            <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'diagnosis', 'diagnosis', lbl, 'text', required=True)"/>
-                        </t>
-                        <t t-set="lbl">Date of Injury</t>
-                        <t t-set="hint">Check N/A if exact date is unknown</t>
-                        <t t-call="bemade_sports_clinic.sc_field_autosave">
-                            <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'injury_date', 'injury_date', lbl, 'date_na', value=datetime.date.today().isoformat(), naName='injury_date_na', required=True, hint=hint)"/>
-                        </t>
-                        <t t-if="is_treatment_prof and sc_can('injury.tp_fields')">
-                            <t t-set="lbl">Predicted Resolution Date</t>
-                            <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'predicted_resolution_date', 'predicted_resolution_date', lbl, 'date')"/>
-                            </t>
-                            <t t-set="lbl">Parental Consent</t>
-                            <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'parental_consent', 'parental_consent', lbl, 'select', options=sc_consent_options, required=True)"/>
-                            </t>
-                            <label class="o_sc_check">
-                                <input type="checkbox" name="hidden_from_coaches" value="1"/>
-                                <span>Hide from coaches</span>
-                            </label>
-                        </t>
-                    </div>
-                    <div class="o_sc_card o_sc_fields">
-                        <t t-set="lbl">External Notes</t>
-                        <t t-set="hint">Notes visible to all team members</t>
-                        <t t-call="bemade_sports_clinic.sc_field_autosave">
-                            <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'external_notes', 'external_notes', lbl, 'textarea', hint=hint)"/>
-                        </t>
-                        <t t-if="is_treatment_prof and sc_can('injury.internal_notes')">
-                            <t t-set="lbl">Internal Notes (Medical Staff Only)</t>
-                            <t t-set="hint">Notes visible only to treatment professionals</t>
-                            <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'internal_notes', 'internal_notes', lbl, 'textarea', hint=hint)"/>
-                            </t>
-                        </t>
-                    </div>
-                </div>
-                <div class="o_sc_actionbar">
-                    <a t-att-href="return_url" class="o_sc_btn o_sc_btn_ghost">Cancel</a>
-                    <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="injury.create">
-                        <span t-if="is_treatment_prof">Create Injury</span>
-                        <span t-else="">Submit Report</span>
-                    </button>
-                </div>
-            </form>
+            <t t-call="bemade_sports_clinic.sc_injury_new_form">
+                <t t-set="cancel_url" t-value="return_url"/>
+            </t>
         </t>
     </template>
 

@@ -110,6 +110,37 @@
         </h2>
     </template>
 
+    <!--
+        Owner review 2026-10-10 — an inline-editable card: read view by
+        default, ONE pencil (data-sc-edit-toggle) reveals the card's autosave
+        fields (data-sc-edit-view="edit"), « Done » (data-sc-edit-done) hides
+        them again (sc_app_ui.js). Read values carry data-sc-display hooks
+        that a save updates in place. This is the card head. Variables:
+        title, editable.
+    -->
+    <template id="sc_edit_card_head" name="App shell: edit card head">
+        <div class="o_sc_edit_card_head">
+            <h3 class="o_sc_edit_card_title" t-out="title"/>
+            <button t-if="editable" type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1"
+                    aria-expanded="false" aria-label="Edit" title="Edit">
+                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+            </button>
+        </div>
+    </template>
+
+    <!-- « Done » of an edit card's edit view. -->
+    <template id="sc_edit_card_done" name="App shell: edit card done">
+        <div class="o_sc_form_actions">
+            <button type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm" data-sc-edit-done="1">Done</button>
+        </div>
+    </template>
+
+    <!-- A read-view row. Variables: label, record, field. -->
+    <template id="sc_display_row" name="App shell: display row">
+        <dt t-out="label"/>
+        <dd><span t-att-data-sc-display="sc_display_key(record, field)" t-out="sc_display(record, field) or '—'"/></dd>
+    </template>
+
     <!-- Empty state. Variable: message. -->
     <template id="sc_empty_state" name="App shell: empty state">
         <p class="o_sc_empty" t-out="message"/>
@@ -282,7 +313,9 @@
     -->
     <template id="sc_activity_row" name="App shell: activity row">
         <t t-set="act_state" t-value="'overdue' if activity.date_deadline &lt; today_date else ('today' if activity.date_deadline == today_date else 'planned')"/>
-        <div class="o_sc_activity" t-att-data-sc-activity-row="activity.id" t-att-data-sc-activity-state="act_state">
+        <!-- ONE card, actions inside it (owner review 2026-10-10: same UX as
+             the other tabs' cards). -->
+        <div class="o_sc_card o_sc_activity" t-att-data-sc-activity-row="activity.id" t-att-data-sc-activity-state="act_state">
             <a t-attf-href="/my/activity/#{activity.id}" class="o_sc_entity_row">
                 <span t-att-class="'o_sc_dot o_sc_tone_%s' % ('red' if act_state == 'overdue' else ('yellow' if act_state == 'today' else 'green'))" aria-hidden="true"/>
                 <span class="o_sc_row_text">
@@ -300,7 +333,7 @@
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'chevron'"/></t>
                 </span>
             </a>
-            <div class="o_sc_activity_actions">
+            <div class="o_sc_card_actions o_sc_activity_actions">
                 <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-sheet-open="sc_activity_complete_sheet"
                         t-att-data-sc-activity-id="activity.id" data-sc-action="activity.complete">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'check'"/></t>
