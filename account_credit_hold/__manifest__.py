@@ -1,6 +1,6 @@
 {
     "name": "Account Credit Hold",
-    "version": "19.0.1.2.2",
+    "version": "19.0.1.2.3",
     "summary": "Allows setting clients on credit hold, blocking the ability confirm a new sales order.",
     "category": "Accounting/Accounting",
     "author": "Bemade Inc.",
