@@ -50,8 +50,24 @@ class TestAppShellI18n1538(AppShellCommon):
         self._switch(True)
         self._login_coach()
         text = self._fr('/my/teams')
-        for term in ('Mes équipes', 'Activité récente', 'Alphabétique', 'Retour'):
+        for term in ('Mes équipes', 'Récemment actives', 'Alphabétique'):
             self.assertIn(term, text, term)
+        self.assertNotIn('Activité récente', text)
+
+    def test_players_sort_switch_in_french(self):
+        self._switch(True)
+        self._login_tp()
+        text = self._fr('/my/players')
+        # Same label as the team roster's sort (owner review 2026-10-10).
+        self.assertIn('Par statut', text)
+        self.assertNotIn('Plus blessés', text)
+
+    def test_contact_practice_in_french(self):
+        self._switch(True)
+        self._login_tp()
+        text = self._fr('/my/player?player_id=%s' % self.player.id)
+        self.assertIn('Pratique contact', text)
+        self.assertNotIn('Pratique seulement', text)
 
     def test_more_in_french(self):
         self._switch(True)

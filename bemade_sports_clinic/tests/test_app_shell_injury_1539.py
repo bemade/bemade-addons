@@ -234,7 +234,7 @@ class TestAppShellNotes1539(AppShellCommon):
         self._login_coach()
         _text, tree = self._get(self.notes_url)
         self.assertFalse(tree.xpath('//form[@data-sc-form="notes.add"]'))
-        self.assertFalse(tree.xpath('//owl-component'))
+        self.assertFalse(tree.xpath('//owl-component[contains(@props, \'"field": "note"\')]'))
 
     # -- UC-N3 -----------------------------------------------------------
     def test_history_scopes(self):

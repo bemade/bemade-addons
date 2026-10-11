@@ -29,7 +29,8 @@
  *   re-posts the previous value through the same route.
  *
  * Input types: textarea | text | email | tel | date | select | segmented |
- * date_na (a date + « N/A » box, value "na" or YYYY-MM-DD).
+ * date_na (a date + « N/A » box, value "na" or YYYY-MM-DD) | tags (CSV of the
+ * chosen option keys: removable chips + a search box suggesting a few options).
  */
 import { Component, onMounted, onWillUnmount, useRef, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
@@ -38,6 +39,15 @@ import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
 import { readDraft, removeDraft, writeDraft } from "@bemade_sports_clinic/js/sc_draft_store";
 
 const DRAFT_DEBOUNCE = 300;
+// tags: suggestions shown at once (owner review 2026-10-10: never a long list).
+const TAGS_MAX_MATCHES = 8;
+
+function fold(text) {
+    return String(text || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+}
 
 function norm(value) {
     return (value === null || value === undefined || value === false ? "" : String(value)).trim();
@@ -84,6 +94,7 @@ export class ScAutosaveField extends Component {
             savedAt: "",
             message: "",
             error: "",
+            query: "", // tags: the search box
         });
         this.writeDate = this.props.writeDate || "";
         // The field value the server last held (sent as old_value: a record
@@ -157,6 +168,14 @@ export class ScAutosaveField extends Component {
 
     get naLabel() {
         return _t("N/A");
+    }
+
+    get noMatchLabel() {
+        return _t("No match");
+    }
+
+    removeLabel(label) {
+        return _t("Remove %s", label);
     }
 
     // ------------------------------------------------------------ restore
@@ -243,6 +262,62 @@ export class ScAutosaveField extends Component {
         this.onChange();
     }
 
+    // --------------------------------------------------------------- tags
+    get checkedKeys() {
+        return (this.state.value || "").split(",").map((key) => key.trim()).filter(Boolean);
+    }
+
+    isChecked(key) {
+        return this.checkedKeys.includes(String(key));
+    }
+
+    get chosenOptions() {
+        const keys = this.checkedKeys;
+        return (this.props.options || []).filter((opt) => keys.includes(String(opt[0])));
+    }
+
+    get tagMatches() {
+        const query = fold(this.state.query).trim();
+        if (!query) {
+            return [];
+        }
+        const words = query.split(/\s+/);
+        return (this.props.options || [])
+            .filter((opt) => !this.isChecked(opt[0]))
+            .filter((opt) => words.every((word) => fold(opt[1]).includes(word)))
+            .slice(0, TAGS_MAX_MATCHES);
+    }
+
+    addTag(key) {
+        this.state.query = "";
+        this.onCheck(key, true);
+        if (this.inputRef.el) {
+            this.inputRef.el.focus();
+        }
+    }
+
+    onTagKeydown(ev) {
+        if (ev.key === "Enter") {
+            ev.preventDefault();
+            const first = this.tagMatches[0];
+            if (first) {
+                this.addTag(first[0]);
+            }
+        } else if (ev.key === "Escape") {
+            this.state.query = "";
+        }
+    }
+
+    onCheck(key, checked) {
+        const keys = new Set(this.checkedKeys);
+        if (checked) {
+            keys.add(String(key));
+        } else {
+            keys.delete(String(key));
+        }
+        this.onPick([...keys].sort((a, b) => Number(a) - Number(b)).join(","));
+    }
+
     onPick(value) {
         if (this.props.disabled || String(value) === this.state.value) {
             return;
@@ -326,6 +401,18 @@ export class ScAutosaveField extends Component {
             this.state.savedAt = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
             this.state.status = "saved";
             this.state.conflict = null;
+            // Lets the page reflect a save elsewhere (e.g. the player's
+            // status pill, owner review 2026-10-10).
+            document.dispatchEvent(
+                new CustomEvent("sc:saved", {
+                    detail: {
+                        model: this.props.model,
+                        recordId: this.props.recordId,
+                        field: this.props.field,
+                        result,
+                    },
+                })
+            );
             return true;
         } catch (error) {
             if (error.status === 409 && error.payload) {

@@ -88,7 +88,7 @@ class TestAppShellRoles1538(TransactionCase):
         tp_tabs = self._keys(self.tp._sc_app_roles(), 'tab')
         both_tabs = self._keys(self.both._sc_app_roles(), 'tab')
         self.assertEqual(coach_tabs, ['teams', 'players', 'activities', 'more'])
-        self.assertEqual(tp_tabs, ['teams', 'players', 'clinic', 'activities', 'more'])
+        self.assertEqual(tp_tabs, ['teams', 'players', 'notepad', 'activities', 'more'])
         self.assertEqual(both_tabs, tp_tabs)
         self.assertEqual(self._keys(self.plain._sc_app_roles(), 'tab'), [])
 

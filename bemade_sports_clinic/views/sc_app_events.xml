@@ -27,8 +27,8 @@
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-set="sc_title" t-value="sc_nav_labels['events']"/>
             <t t-set="sc_active_nav" t-value="'events'"/>
-            <t t-set="sc_parent_url" t-value="'/my/app/more'"/>
-            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['more'], '/my/app/more')]"/>
+            <t t-set="sc_parent_url" t-value="sc_events_back_url or '/my/app/more'"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], sc_events_back_url)] if sc_events_back_url else [(sc_nav_labels['more'], '/my/app/more')]"/>
             <t t-if="can_edit">
                 <t t-set="sc_create_label">New event</t>
                 <t t-set="sc_primary_action" t-value="{'url': '/my/event/create', 'label': sc_create_label, 'key': 'events.create'}"/>
@@ -81,8 +81,8 @@
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-set="sc_title" t-value="sc_nav_labels['events']"/>
             <t t-set="sc_active_nav" t-value="'events'"/>
-            <t t-set="sc_parent_url" t-value="'/my/app/more'"/>
-            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['more'], '/my/app/more')]"/>
+            <t t-set="sc_parent_url" t-value="sc_events_back_url or '/my/app/more'"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], sc_events_back_url)] if sc_events_back_url else [(sc_nav_labels['more'], '/my/app/more')]"/>
             <t t-call="bemade_sports_clinic.sc_event_segments">
                 <t t-set="active" t-value="'calendar'"/>
             </t>
@@ -192,7 +192,7 @@
             <t t-set="sc_context" t-value="sc_nav_labels['events']"/>
             <t t-set="sc_active_nav" t-value="'events'"/>
             <t t-set="sc_parent_url" t-value="return_url or '/my/events'"/>
-            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['events'], return_url or '/my/events')]"/>
+            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'] if (return_url or '').startswith('/my/home') else sc_nav_labels['events'], return_url or '/my/events')]"/>
             <t t-if="can_add_timesheet">
                 <t t-set="sc_ts_label">Add My Timesheet</t>
                 <t t-set="sc_primary_action" t-value="{'sheet': 'sc_ts_add_sheet', 'label': sc_ts_label, 'key': 'timesheet.add', 'icon': 'timesheet'}"/>

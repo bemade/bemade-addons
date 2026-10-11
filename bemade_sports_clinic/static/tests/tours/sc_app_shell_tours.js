@@ -124,8 +124,14 @@ tours.add("sc_1542_prefs", {
             expectUnloadPage: true,
         },
         {
+            content: "Open a team (a sub-page of « Équipes »)",
+            trigger: "main a[data-sc-team-id]",
+            run: "click",
+            expectUnloadPage: true,
+        },
+        {
             content: "Sub-page shows the crumb row, no back chevron",
-            trigger: 'nav.o_sc_crumbs a[href="/my/home"]',
+            trigger: 'nav.o_sc_crumbs a[href="/my/teams"]',
             run() {
                 assert(!document.querySelector(".o_sc_back"), "back chevron in crumbs mode");
             },

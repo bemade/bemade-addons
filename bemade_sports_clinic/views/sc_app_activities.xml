@@ -119,15 +119,18 @@
     </template>
 
     <!--
-        « Ajouter une activité » sheet (today's inline add header). Variables:
-        add_model, add_res_id, add_return_url, add_team_id, activity_types,
-        assignable_users, default_activity_type_id, today.
+        « Ajouter une activité » — an inline card at the top of the tab, like
+        « Add Emergency Contact » / « Upload Document » (owner review
+        2026-10-10: same UX across the tabs; was a button opening a dialog).
+        Variables: add_model, add_res_id, add_return_url, add_team_id,
+        activity_types, assignable_users, default_activity_type_id, today.
     -->
-    <template id="sc_activity_add_sheet" name="App shell: add activity sheet">
-        <t t-call="bemade_sports_clinic.sc_sheet">
-            <t t-set="sheet_id" t-value="'sc_activity_add_sheet'"/>
-            <t t-set="title">Add Activity</t>
-            <t t-set="lazy_url" t-value="False"/>
+    <template id="sc_activity_add_sheet" name="App shell: add activity (inline)">
+        <details class="o_sc_card o_sc_disclosure" data-sc-section="activity.add">
+            <summary class="o_sc_disclosure_summary" data-sc-action="activity.add">
+                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                <span>Add Activity</span>
+            </summary>
             <form action="/my/activity/save" method="post" class="o_sc_form" data-sc-form="activity.add">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="model" t-att-value="add_model"/>
@@ -163,11 +166,10 @@
                     </select>
                 </div>
                 <div class="o_sc_form_actions">
-                    <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
                     <button type="submit" class="o_sc_btn o_sc_btn_primary">Add Activity</button>
                 </div>
             </form>
-        </t>
+        </details>
     </template>
 
     <!-- /my/activities (+ ?model=&res_id= context views, /my/team/activities,
@@ -179,7 +181,7 @@
             <t t-set="sc_active_nav" t-value="'activities'"/>
             <t t-if="context_team and simplified">
                 <t t-set="sc_parent_url" t-value="'/my/team?team_id=%s&amp;tab=activities' % context_team.id"/>
-                <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], '/my/home'), (context_team.name, '/my/team?team_id=%s' % context_team.id)]"/>
+                <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], '/my/teams'), (context_team.name, '/my/team?team_id=%s' % context_team.id)]"/>
             </t>
             <t t-elif="context_event and simplified">
                 <t t-set="sc_parent_url" t-value="'/my/event/%s' % context_event.id"/>

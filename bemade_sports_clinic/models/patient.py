@@ -1988,6 +1988,25 @@ class Patient(models.Model):
         label = self._jersey_label() if with_jersey else ""
         return "%s %s" % (label, name) if label else name
 
+    def _training_recommendation_history(self):
+        """Every change of ONE patient's training recommendation, newest
+        first, from the field's mail tracking (owner review 2026-10-10: a
+        history like the team announcement's). Plain dicts — ``when``
+        (datetime), ``author`` and ``body`` (the text set, '' when cleared) —
+        read as sudo: callers gate on who may see the recommendation."""
+        self.ensure_one()
+        trackings = self.env["mail.tracking.value"].sudo().search([
+            ("field_id.model", "=", self._name),
+            ("field_id.name", "=", "training_recommendation"),
+            ("mail_message_id.model", "=", self._name),
+            ("mail_message_id.res_id", "=", self.id),
+        ], order="id desc")
+        return [{
+            "when": tracking.mail_message_id.date,
+            "author": tracking.mail_message_id.author_id.name or "",
+            "body": (tracking.new_value_text or "").strip(),
+        } for tracking in trackings]
+
     def _portal_heading_name(self):
         """« #12 First Last » of ONE patient for single-patient headings (the
         player page H1, the clinic dossier card) — ``name`` alone without a

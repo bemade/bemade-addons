@@ -114,23 +114,27 @@ def _bookings_enabled(ctx):
 # Navigation
 # ---------------------------------------------------------------------------
 NAV_REGISTRY = (
-    # « Équipes » is the app home (/my/home); /my/teams is its full list.
-    _nav('teams', _lt('Teams'), 'teams', '/my/home', STAFF, 10, TAB_RAIL),
+    # « Équipes » opens the full teams list; the dashboard (/my/home) is the
+    # login landing page, reached from the logo (owner review 2026-10-10).
+    # Owner review 2026-10-10: phone tabs = Teams, Players, Notepad,
+    # Activities, More; Clinic / Events / Timesheets live in « More » on the
+    # phone and stay always visible on the laptop rail, above « More ».
+    _nav('teams', _lt('Teams'), 'teams', '/my/teams', STAFF, 10, TAB_RAIL),
     _nav('players', _lt('Players'), 'players', '/my/players', STAFF, 20, TAB_RAIL),
-    _nav('clinic', _lt('Clinic'), 'clinic', '/my/clinics', TP, 30, TAB_RAIL),
+    _nav('notepad', _lt('Notepad'), 'note', '/my/notepad', TP, 30, TAB_RAIL,
+         subtitle=_lt('Your quick notes')),
     _nav('activities', _lt('Activities'), 'activities', '/my/activities', STAFF, 40,
          TAB_RAIL),
-    _nav('bookings', _lt('Bookings'), 'bookings', '/my/bookings', EVERYONE, 50,
+    _nav('clinic', _lt('Clinic'), 'clinic', '/my/clinics', TP, 50, RAIL_PLUS),
+    _nav('events', _lt('Events and calendar'), 'calendar', '/my/events', STAFF, 60,
+         RAIL_PLUS, subtitle=_lt('Games, practices, clinics')),
+    _nav('timesheets', _lt('Timesheets'), 'timesheet', '/my/sc/timesheets', TP, 70,
+         RAIL_PLUS, subtitle=_lt('Event coverage')),
+    _nav('bookings', _lt('Bookings'), 'bookings', '/my/bookings', EVERYONE, 80,
          RAIL_PLUS, requires=_bookings_enabled,
          subtitle=_lt('Your appointments')),
     _nav('more', _lt('More'), 'more', '/my/app/more', EVERYONE, 90, TAB_RAIL),
     # « Plus » only.
-    _nav('events', _lt('Events and calendar'), 'calendar', '/my/events', STAFF, 110,
-         PLUS_ONLY, subtitle=_lt('Games, practices, clinics')),
-    _nav('notepad', _lt('Notepad'), 'note', '/my/notepad', TP, 120, PLUS_ONLY,
-         subtitle=_lt('Your quick notes')),
-    _nav('timesheets', _lt('Timesheets'), 'timesheet', '/my/sc/timesheets', TP, 130,
-         PLUS_ONLY, subtitle=_lt('Event coverage')),
     _nav('digests', _lt('Daily summaries'), 'summary', '/my/teams', STAFF, 140,
          PLUS_ONLY, subtitle=_lt('History per team, from the team page')),
     # Internal users (e.g. an internal lead therapist on the sideline) keep a
@@ -184,7 +188,9 @@ VISIBILITY_REGISTRY = {
     'patient.status.edit': {'include': TP},
     'patient.training.edit': {'include': TP},
     'patient.edit.tp_fields': {'include': TP},
-    'patient.contacts.tab': {'include': TP},
+    # Owner decision 2026-10-10: coaches see and edit emergency contacts too
+    # (their ACL / record rules already allowed it; deleting stays TP).
+    'patient.contacts.tab': {'include': STAFF},
     'patient.notes.tab': {'include': TP},
     'patient.activities.tab': {'include': STAFF},
     'patient.remove': {'include': TP},

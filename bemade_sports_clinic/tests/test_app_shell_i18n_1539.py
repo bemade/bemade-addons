@@ -43,14 +43,14 @@ class TestAppShellI18n1539(TestAppShellI18n1538):
         for term in ('Filtres', 'Effacer les filtres', 'Créer un joueur', 'Rechercher'):
             self.assertIn(term, text, term)
         text = self._fr_text('/my/player?player_id=%s' % self.player.id)
-        for term in ('Aperçu', 'Blessures', 'Infos', 'Nouvelle blessure', 'Modifier le joueur',
+        for term in ('Aperçu', 'Blessures', 'Infos', 'Ajouter une blessure',
                      'Statut de jeu', 'Prochains événements', 'Blessures actives',
                      "Appartenance à l'équipe", 'Ajouter une note de traitement',
                      'Ajouter une activité', 'Match + pratique', 'Aucun jeu'):
             self.assertIn(term, text, term)
-        text = self._fr_text('/my/player/edit?patient_id=%s' % self.player.id)
-        for term in ('Sauvegarde au fil de la saisie', 'Informations médicales', 'Code postal',
-                     'Enregistrer les équipes', 'Terminé'):
+        # The retired edit page's fields, inline on the Info tab (2026-10-10).
+        text = self._fr_text('/my/player?player_id=%s&tab=info' % self.player.id)
+        for term in ('Informations médicales', 'Code postal', 'Terminé'):
             self.assertIn(term, text, term)
 
     def test_injury_pages_in_french(self):

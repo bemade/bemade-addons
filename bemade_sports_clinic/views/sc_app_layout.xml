@@ -90,9 +90,11 @@
                             <t t-call="bemade_sports_clinic.sc_logo_mark"/>
                         </a>
                         <h1 class="o_sc_appbar_title">
-                            <span class="o_sc_appbar_title_text" t-out="sc_title"/>
+                            <span class="o_sc_appbar_title_text" t-att-data-sc-heading="'title' if sc_heading_live else None" t-out="sc_title"/>
                             <small t-if="sc_context and sc_parent_url and sc_nav_mode != 'crumbs'"
-                                   class="o_sc_appbar_context" t-out="sc_context"/>
+                                   class="o_sc_appbar_context" t-out="sc_context"
+                                   t-att-data-sc-heading="'context' if sc_heading_live else None"
+                                   t-att-data-sc-heading-team="sc_heading_team if sc_heading_live else None"/>
                         </h1>
                         <button t-if="sc_primary_action and sc_primary_action.get('sheet')" type="button"
                                 t-att-data-sc-sheet-open="sc_primary_action['sheet']"

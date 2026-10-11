@@ -196,3 +196,136 @@ tours.add("sc_1539_activity_complete", {
         },
     ],
 });
+
+// ------------------- player status: the hero pill follows the save (2026-10-10)
+tours.add("sc_status_pill_refresh", {
+    steps: () => [
+        {
+            content: "Available: the hero pill is green; mark the page to detect a reload",
+            trigger: "[data-sc-stage-chip].o_sc_chip_green",
+            run() {
+                window.__scPillNoReload = true;
+            },
+        },
+        {
+            content: "Pick « No play »",
+            trigger: '.o_sc_autosave[data-sc-field="sc_status"] button[data-sc-value="no:no"]',
+            run: "click",
+        },
+        {
+            content: "Saved",
+            trigger:
+                '.o_sc_autosave[data-sc-field="sc_status"][data-sc-state="saved"] button[data-sc-value="no:no"][aria-pressed="true"]',
+        },
+        {
+            content: "The hero pill turned red in place (no reload)",
+            trigger: "[data-sc-stage-chip].o_sc_chip_red",
+            run() {
+                if (!window.__scPillNoReload) {
+                    throw new Error("the page reloaded");
+                }
+            },
+        },
+    ],
+});
+
+// ------------- player page: one pencil per card, read view updates in place
+tours.add("sc_player_inline_edit", {
+    steps: () => [
+        {
+            content: "Identity card in read mode; mark the page to detect a reload",
+            trigger: '[data-sc-edit-card="identity"] [data-sc-edit-view="read"]',
+            run() {
+                const edit = document.querySelector('[data-sc-edit-card="identity"] [data-sc-edit-view="edit"]');
+                if (!edit || !edit.hidden) {
+                    throw new Error("the edit view is not hidden by default");
+                }
+                window.__scInlineNoReload = true;
+            },
+        },
+        {
+            content: "Pencil: the card's fields appear",
+            trigger: '[data-sc-edit-card="identity"] button[data-sc-edit-toggle]',
+            run: "click",
+        },
+        {
+            content: "Edit the position",
+            trigger: '[data-sc-edit-card="identity"] [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="position"] input',
+            run: "edit Safety",
+        },
+        {
+            content: "Leave the field (saves)",
+            trigger: ".o_sc_appbar_title",
+            run: "click",
+        },
+        {
+            content: "Saved",
+            trigger: '[data-sc-edit-card="identity"] .o_sc_autosave[data-sc-field="position"][data-sc-state="saved"]',
+        },
+        {
+            content: "Done: back to read mode",
+            trigger: '[data-sc-edit-card="identity"] button[data-sc-edit-done]',
+            run: "click",
+        },
+        {
+            content: "The read view shows the new position, without a reload",
+            trigger: '[data-sc-edit-card="identity"] [data-sc-edit-view="read"]',
+            run() {
+                if (!document.querySelector('[data-sc-edit-card="identity"] [data-sc-edit-view="edit"]').hidden) {
+                    throw new Error("« Done » left the edit view open");
+                }
+                const shown = document.querySelector('[data-sc-edit-card="identity"] [data-sc-display$=":position"]');
+                if (!window.__scInlineNoReload) {
+                    throw new Error("the page reloaded");
+                }
+                if (!shown || shown.textContent.trim() !== "Safety") {
+                    throw new Error(`read view shows « ${shown && shown.textContent} »`);
+                }
+            },
+        },
+        {
+            content: "The app bar context follows",
+            trigger: '.o_sc_appbar_context:contains("Safety")',
+        },
+    ],
+});
+
+// ---------------- player page Teams card: chips + search to add (2026-10-10)
+tours.add("sc_player_teams_tags", {
+    steps: () => [
+        {
+            content: "Open the Teams card",
+            trigger: '[data-sc-edit-card="teams"] button[data-sc-edit-toggle]',
+            run: "click",
+        },
+        {
+            content: "The current team is a chip",
+            trigger: '[data-sc-edit-card="teams"] .o_sc_tags .o_sc_tag:contains("PC Team A")',
+        },
+        {
+            content: "Search a team to add",
+            trigger: '[data-sc-edit-card="teams"] .o_sc_tags_search',
+            run: "edit Team C",
+        },
+        {
+            content: "Pick it in the suggestions",
+            trigger: '[data-sc-edit-card="teams"] .o_sc_tags_option:contains("PC Team C")',
+            run: "click",
+        },
+        {
+            content: "Added and saved",
+            trigger:
+                '[data-sc-edit-card="teams"] .o_sc_autosave[data-sc-state="saved"] .o_sc_tag:contains("PC Team C")',
+        },
+        {
+            content: "Remove Team A",
+            trigger: '[data-sc-edit-card="teams"] .o_sc_tag:contains("PC Team A") button.o_sc_tag_remove',
+            run: "click",
+        },
+        {
+            content: "Only Team C left, saved",
+            trigger:
+                '[data-sc-edit-card="teams"] .o_sc_autosave[data-sc-state="saved"] .o_sc_tags:not(:has(.o_sc_tag:contains("PC Team A")))',
+        },
+    ],
+});

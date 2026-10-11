@@ -91,6 +91,17 @@ class User(models.Model):
         string="Portal Roster Sort",
         copy=False,
     )
+    # Owner review 2026-10-10: the app shell's « Players » list order, toggled
+    # by the list's switch (same contract as roster_sort_mode). Unset = most
+    # injured first.
+    players_sort_mode = fields.Selection(
+        selection=[
+            ("status", "By status"),
+            ("name", "Alphabetical"),
+        ],
+        string="Portal Players Sort",
+        copy=False,
+    )
 
     # Task 1538: portal app shell preferences (self-writable; set from
     # « Plus › Apparence / Navigation » and the app-bar theme toggle through
@@ -123,6 +134,7 @@ class User(models.Model):
             "digest_send_when_empty",
             "teams_sort_mode",
             "roster_sort_mode",
+            "players_sort_mode",
             "sc_nav_mode",
             "sc_theme",
         ]
@@ -134,6 +146,7 @@ class User(models.Model):
             "digest_send_when_empty",
             "teams_sort_mode",
             "roster_sort_mode",
+            "players_sort_mode",
             "sc_nav_mode",
             "sc_theme",
         ]

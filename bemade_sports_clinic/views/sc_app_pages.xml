@@ -12,7 +12,6 @@
     <template id="sc_app_home" name="Sports Clinic App: home">
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-set="sc_title">Teams</t>
-            <t t-set="sc_active_nav" t-value="'teams'"/>
 
             <section t-if="sc_can('home.clinic_teaser')" class="o_sc_section" data-sc-section="home.clinic_teaser">
                 <t t-call="bemade_sports_clinic.sc_entity_row">
@@ -74,7 +73,7 @@
             <section t-if="sc_can('home.upcoming')" class="o_sc_section" data-sc-section="home.upcoming">
                 <t t-call="bemade_sports_clinic.sc_section_header">
                     <t t-set="title">Upcoming</t>
-                    <t t-set="more_url" t-value="'/my/events'"/>
+                    <t t-set="more_url" t-value="'/my/events?return_url=%2Fmy%2Fhome'"/>
                     <t t-set="more_label">Calendar</t>
                 </t>
                 <t t-if="sc_upcoming" t-call="bemade_sports_clinic.sc_card">
@@ -97,9 +96,6 @@
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-set="sc_title">My teams</t>
             <t t-set="sc_active_nav" t-value="'teams'"/>
-            <t t-set="sc_parent_url" t-value="'/my/home'"/>
-            <t t-set="sc_context" t-value="sc_nav_labels['teams']"/>
-            <t t-set="sc_crumbs" t-value="[(sc_nav_labels['teams'], '/my/home')]"/>
 
             <!-- A refused team (1577 review): the clean, translated message. -->
             <t t-if="error" t-call="bemade_sports_clinic.sc_banner">
@@ -187,7 +183,9 @@
                         <t t-set="lead_icon" t-value="entry['icon']"/>
                         <t t-set="title" t-value="entry['label']"/>
                         <t t-set="subtitle" t-value="entry['subtitle']"/>
-                        <t t-set="row_attrs" t-value="{'data-sc-nav-key': entry['key']}"/>
+                        <!-- Entries also on the laptop rail are hidden there (owner
+                             review 2026-10-10); the phone keeps them here. -->
+                        <t t-set="row_attrs" t-value="{'data-sc-nav-key': entry['key'], 'data-sc-in-rail': '1' if 'rail' in entry['placement'] else None}"/>
                     </t>
                 </t>
             </div>

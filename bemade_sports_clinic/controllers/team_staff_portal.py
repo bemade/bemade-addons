@@ -17,6 +17,12 @@ TEAMS_SORT_MODES = ('activity', 'alpha', 'mine')
 # should virtually never have to page — paging across a personal order is a
 # chore, and the cards are light.
 TEAMS_PAGE_SIZE = 48
+# App shell « Players » list sort modes (owner review 2026-10-10) -> ORM order.
+# « status » = most injured first (stored severity key, as the roster).
+SC_PLAYERS_SORT_ORDERS = {
+    'status': 'sort_order asc, last_name asc, first_name asc',
+    'name': 'last_name asc, first_name asc',
+}
 
 
 class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
@@ -454,10 +460,18 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             },
         )
 
-        # Query with ordering: last name, first name ASC
+        # Query with ordering: last name, first name ASC. The app shell lists
+        # the most injured first by default (stored severity key, as the
+        # roster's « By status »), switchable to alphabetical (owner review
+        # 2026-10-10).
+        order = 'last_name asc, first_name asc'
+        sort_mode = None
+        if self._sc_app_shell_active():
+            sort_mode = self._sc_players_resolve_sort(kw.get('sort'))
+            order = SC_PLAYERS_SORT_ORDERS[sort_mode]
         players = Patients_search.search(
             domain,
-            order='last_name asc, first_name asc',
+            order=order,
             limit=self._items_per_page,
             offset=pgr['offset'],
         )
@@ -519,6 +533,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'organizations': organizations,
                 'match_status_selection': match_status_selection,
                 'practice_status_selection': practice_status_selection,
+                'players_sort_mode': sort_mode,
         }
         # Task 1539: the app shell (switch on) or today's template, byte for
         # byte (switch off). Shell rows are computed only for the shell.
@@ -531,6 +546,22 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     # Task 1539 — the players list in the app shell
     # ------------------------------------------------------------------
     SC_STAGE_TONES = {'no_play': 'red', 'practice_ok': 'yellow', 'healthy': 'green'}
+
+    def _sc_players_resolve_sort(self, requested):
+        """Effective players sort mode; an explicit ``?sort=`` becomes the
+        user's sticky preference (res.users.players_sort_mode, self-writable —
+        same contract as the roster sort). Unknown or absent → the stored
+        preference, else « status » (most injured first)."""
+        user = http.request.env.user
+        stored = user.players_sort_mode if user.players_sort_mode in SC_PLAYERS_SORT_ORDERS else None
+        if requested in SC_PLAYERS_SORT_ORDERS:
+            if requested != stored:
+                try:
+                    user.write({'players_sort_mode': requested})
+                except AccessError:
+                    pass
+            return requested
+        return stored or 'status'
 
     def _sc_players_values(self, values, is_tp_admin):
         """Entity rows for ``sc_app_players`` — built from the legacy values
@@ -554,8 +585,14 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             })
         active_filters = any(values.get(key) for key in (
             'team_id', 'organization_id', 'match_status', 'practice_status', 'jersey_number'))
+        # The sort switch flips the mode and keeps the active filters (the
+        # page resets: the order changes what page 1 holds).
+        toggle_args = {key: val for key, val in http.request.httprequest.args.items()
+                       if key != 'sort' and val}
+        toggle_args['sort'] = 'name' if values['players_sort_mode'] == 'status' else 'status'
         return {
             'sc_player_rows': rows,
+            'sc_players_sort_toggle_url': '/my/players?' + urllib.parse.urlencode(toggle_args),
             'sc_can_create_player': is_tp_admin and self._is_treatment_professional(),
             'sc_filters_open': active_filters,
             'sc_players_count_label': env._("%(count)s player(s)", count=values['players_count']),
@@ -874,7 +911,13 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'url': '/my/injury/edit?injury_id=%s%s' % (injury.id, ctx_qs),
             }
 
-        injuries = values['injuries']
+        # Owner review 2026-10-10: current injuries (active, unverified)
+        # first, then resolved; each by injury date, newest first.
+        injuries = values['injuries'].sorted(lambda i: (
+            i.stage not in ('active', 'unverified'),
+            -(i.injury_date or date.min).toordinal(),
+            -i.id,
+        ))
         active = injuries.filtered(lambda i: i.stage in ('active', 'unverified'))
 
         # Next events of the player's teams (the viewer's own ACL decides).
@@ -901,7 +944,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         tabs = [('overview', env._("Overview"))]
         tabs.append(('injuries', env._("Injuries")))
         tabs.append(('info', env._("Info")))
-        if is_tp and sc_app_roles.can('patient.contacts.tab', roles):
+        if sc_app_roles.can('patient.contacts.tab', roles):
             tabs.append(('contacts', env._("Contacts")))
         tabs.append(('documents', env._("Documents")))
         if is_tp and sc_app_roles.can('patient.notes.tab', roles):
@@ -949,6 +992,24 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_active_injury_rows': [_injury_row(i) for i in active],
             'sc_player_events': events,
             'sc_status_options': self._sc_status_options(),
+            'sc_training_history': player._training_recommendation_history(),
+            # Inline « Add Injury » card (owner review 2026-10-10): the new
+            # injury page's draft prefix and consent choices.
+            'sc_new_injury_prefix': 'sports.patient.%s.new_injury.' % player.id,
+            'sc_consent_options': [('', '')] + list(
+                env['sports.patient.injury']._fields['parental_consent']._description_selection(env)),
+            # Inline editing (owner review 2026-10-10).
+            'sc_state_options': [('', '')] + [
+                (state.id, state.name) for state in env['res.country.state'].search(
+                    [('country_id.code', '=', 'CA')], order='name')],
+            'sc_contact_type_options': list(
+                env['sports.patient.contact']._fields['contact_type']._description_selection(env)),
+            'sc_team_options': [(team.id, team.name) for team in self._team_targets()] if is_tp else [],
+            'relationship_types': env['sports.patient.contact']._fields['contact_type']._description_selection(env),
+            # The Contacts tab (therapists AND coaches since 2026-10-10): read
+            # from the contact model — patient.contact_ids is TP-only.
+            'sc_player_contacts': env['sports.patient.contact'].search(
+                [('patient_id', '=', player.id)], order='sequence,id'),
             'sc_can_activities': can_activities,
             'sc_note_props': note_props,
             'sc_memberships': memberships,

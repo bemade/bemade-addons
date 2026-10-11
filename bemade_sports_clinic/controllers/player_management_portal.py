@@ -295,6 +295,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Clinic navigation context (task 1410): validated, dropped if invalid.
         clinic_event = self._clinic_context(post)
 
+        # Owner review 2026-10-10: in the app shell every field is edited
+        # inline on the player page — this page is retired there.
+        if self._sc_app_shell_active():
+            return request.redirect(self._sc_player_tab_url(
+                patient.id, 'info', team_context_id, clinic_event))
+
         # Build default return_url based on validated team context if not explicitly provided
         return_url = self._local_return_url(
             post.get('return_url') or request.httprequest.args.get('return_url'), None)
@@ -379,32 +385,10 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 values['return_url'] = self._safe_return_url(
                     flash_data['return_url'], values.get('return_url'))
 
-        # Task 1539: the app shell (switch on: field-by-field autosave through
-        # /my/app/save) or today's template (off). Shell-only values are
-        # computed only for the shell.
-        if self._sc_app_shell_active():
-            values.update(self._sc_player_edit_values(patient, values))
-        return self._sc_render('bemade_sports_clinic.portal_edit_player',
-                               'bemade_sports_clinic.sc_app_player_edit', values)
+        # The shell redirects to the player page above (owner review
+        # 2026-10-10): this is today's page only.
+        return request.render('bemade_sports_clinic.portal_edit_player', values)
 
-    def _sc_player_edit_values(self, patient, values):
-        env = request.env
-        primary_contact = env['sports.patient.contact'].search([
-            ('patient_id', '=', patient.id)], order='sequence,id', limit=1)
-        edit_url = '/my/player/edit?patient_id=%s' % patient.id
-        if values.get('team_context_id'):
-            edit_url += '&team_id=%s' % values['team_context_id']
-        edit_url = self._with_clinic(edit_url, values.get('clinic_event'))
-        return {
-            'sc_primary_contact': primary_contact,
-            'sc_state_options': [('', '')] + [(st.id, st.name) for st in values['states']],
-            'sc_status_options': self._sc_status_options(),
-            'sc_edit_url': edit_url,
-            'sc_contact_type_options': [
-                (key, label) for key, label in env['sports.patient.contact']._fields[
-                    'contact_type']._description_selection(env)],
-        }
-    
     @http.route(['/my/player/save'], type='http', auth='user', website=True, methods=['POST'])
     def edit_player_submit(self, **post):
         """Process the form submission to update player information"""
@@ -687,6 +671,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def add_contact_form(self, patient_id, **post):
         """Show form to add a new emergency contact for a player"""
         patient = self._check_access_to_patient(patient_id)
+        if self._sc_app_shell_active():
+            # Owner review 2026-10-10: added inline on the Contacts tab.
+            return request.redirect(self._sc_player_tab_url(patient.id, 'contacts'))
             
         # Task 1544: same-site paths only (rendered as a link, then posted back).
         return_url = self._safe_return_url(
@@ -714,12 +701,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             values['error'] = flash_error
             values.update(flash_data)
 
-        # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            for key in ('contact', 'name', 'contact_type', 'mobile', 'email'):
-                values.setdefault(key, None)
-        return self._sc_render('bemade_sports_clinic.portal_add_contact',
-                               'bemade_sports_clinic.sc_app_contact_form', values)
+        # The shell redirects to the Contacts tab above (owner review
+        # 2026-10-10): this is today's page only.
+        return request.render('bemade_sports_clinic.portal_add_contact', values)
     
     @http.route(['/my/player/contact/save'], type='http', auth='user', website=True, methods=['POST'])
     def add_contact_submit(self, **post):
@@ -775,6 +759,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return request.redirect('/my/players')
             
         patient = self._check_access_to_patient(contact.patient_id.id)
+        if self._sc_app_shell_active():
+            # Owner review 2026-10-10: edited inline on the Contacts tab.
+            return request.redirect(self._sc_player_tab_url(patient.id, 'contacts'))
             
         # Task 1544: same-site paths only (rendered as a link, then posted back).
         return_url = self._safe_return_url(
@@ -802,12 +789,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             values['error'] = flash_error
             values.update(flash_data)
 
-        # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            for key in ('contact', 'name', 'contact_type', 'mobile', 'email'):
-                values.setdefault(key, None)
-        return self._sc_render('bemade_sports_clinic.portal_edit_contact',
-                               'bemade_sports_clinic.sc_app_contact_form', values)
+        # The shell redirects to the Contacts tab above (owner review
+        # 2026-10-10): this is today's page only.
+        return request.render('bemade_sports_clinic.portal_edit_contact', values)
     
     @http.route(['/my/player/contact/update'], type='http', auth='user', website=True, methods=['POST'])
     def edit_contact_submit(self, **post):

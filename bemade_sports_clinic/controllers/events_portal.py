@@ -14,6 +14,9 @@ _logger = logging.getLogger(__name__)
 
 # Task 1540: the shell's events segments, in display order.
 SC_EVENT_SEGMENTS = ('upcoming', 'past', 'calendar')
+# Where an event page's back link may lead (owner review 2026-10-10: an event
+# opened from the app home goes back home).
+EVENT_RETURN_PREFIXES = ('/my/events', '/my/home')
 
 
 class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
@@ -563,8 +566,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         if return_url and isinstance(return_url, str) and '&amp;' in return_url:
             return_url = return_url.replace('&amp;', '&')
         if return_url:
-            # Only allow returning to the portal events list (prevent open redirects)
-            if not return_url.startswith('/my/events'):
+            # Only allow returning to the portal events list or the app home
+            # (prevent open redirects)
+            if not return_url.startswith(EVENT_RETURN_PREFIXES):
                 return_url = None
         else:
             # Fallback: infer from referrer (e.g. user navigated via /my/event/<id>)
@@ -576,7 +580,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     candidate = parsed.path
                     if parsed.query:
                         candidate = f"{candidate}?{parsed.query}"
-                    if candidate.startswith('/my/events'):
+                    if candidate.startswith(EVENT_RETURN_PREFIXES):
                         return_url = candidate
             except Exception:
                 return_url = None
@@ -669,7 +673,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         if return_url and isinstance(return_url, str) and '&amp;' in return_url:
             return_url = return_url.replace('&amp;', '&')
 
-        if return_url and not str(return_url).startswith('/my/events'):
+        if return_url and not str(return_url).startswith(EVENT_RETURN_PREFIXES):
             return_url = None
 
         return ('&return_url=%s' % urllib.parse.quote(return_url, safe='')) if return_url else ''
@@ -798,7 +802,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return_url = kw.get('return_url')
         if return_url and isinstance(return_url, str) and '&amp;' in return_url:
             return_url = return_url.replace('&amp;', '&')
-        if return_url and not return_url.startswith('/my/events'):
+        if return_url and not return_url.startswith(EVENT_RETURN_PREFIXES):
             return_url = None
         if not return_url:
             try:
@@ -809,7 +813,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     cand = (qs.get('return_url') or [None])[0]
                     if cand and isinstance(cand, str) and '&amp;' in cand:
                         cand = cand.replace('&amp;', '&')
-                    if cand and cand.startswith('/my/events'):
+                    if cand and cand.startswith(EVENT_RETURN_PREFIXES):
                         return_url = cand
             except Exception:
                 return_url = None
@@ -1278,6 +1282,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'past': _url(segment='past', no_default_dates='1', sortby='date_desc', date_to=yesterday),
             'calendar': '/my/events/calendar',
         }
+        back_url = self._sc_events_back_url()
+        if back_url:
+            urls['calendar'] += '?' + urllib.parse.urlencode({'return_url': back_url})
         segments = [(key, labels[key], urls[key]) for key in SC_EVENT_SEGMENTS]
         chips = [('', env._("All"), _url(event_type=''), not event_type)]
         chips += [(key, label, _url(event_type=key), key == event_type)
@@ -1304,17 +1311,30 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_event_segment': segment,
             'sc_event_chips': chips,
             'sc_event_rows': rows,
+            'sc_events_back_url': back_url,
         }
 
+    def _sc_events_back_url(self):
+        """The events list / calendar back link's target when the page was
+        opened from elsewhere than « Plus » (the home's « Calendar » link
+        passes ``return_url=/my/home``); False = the default (« Plus »)."""
+        return self._safe_return_url(http.request.httprequest.args.get('return_url'), False)
+
     def _sc_events_calendar_values(self, values):
-        params = {key: val for key, val in http.request.httprequest.args.items() if val}
+        params = {key: val for key, val in http.request.httprequest.args.items()
+                  if val and key != 'return_url'}
         labels = self._sc_event_segment_labels()
         urls = {
             'upcoming': '/my/events',
             'past': '/my/events?segment=past&no_default_dates=1&sortby=date_desc',
             'calendar': '/my/events/calendar',
         }
+        back_url = self._sc_events_back_url()
+        if back_url:
+            back_qs = urllib.parse.urlencode({'return_url': back_url})
+            urls = {key: url + ('&' if '?' in url else '?') + back_qs for key, url in urls.items()}
         return {
+            'sc_events_back_url': back_url,
             'sc_calendar_props': json.dumps({
                 'feedUrl': '/my/events/calendar/data',
                 'params': params,

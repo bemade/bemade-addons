@@ -72,7 +72,7 @@ class TestAppShellPwa1542(AppShellCommon):
                                     ('512x512', 'maskable')})
         for icon in manifest['icons']:
             self.assertEqual(self.url_open(icon['src']).status_code, 200, icon['src'])
-        self.assertEqual([s['url'] for s in manifest['shortcuts']], ['/my/home', '/my/players'])
+        self.assertEqual([s['url'] for s in manifest['shortcuts']], ['/my/teams', '/my/players'])
 
     def test_routes_are_not_multilang(self):
         """Website language redirects must never touch the app URLs (the

@@ -60,6 +60,14 @@ $sc-laptop: 992px;
         min-height: 32px;
     }
 
+    .o_sc_section_more.o_sc_link_btn {
+        font-family: var(--sc-font-text);
+        font-size: var(--sc-text-sm);
+        letter-spacing: 0;
+        text-transform: none;
+        padding: 0;
+    }
+
     .o_sc_btn_sm {
         min-height: 36px;
         padding: 0 12px;
@@ -436,6 +444,12 @@ $sc-laptop: 992px;
 
         .btn {
             min-height: 36px;
+        }
+
+        .list-group-item-action:hover,
+        .list-group-item-action:focus {
+            background: var(--sc-hover);
+            color: var(--sc-fg);
         }
 
         .btn-close {

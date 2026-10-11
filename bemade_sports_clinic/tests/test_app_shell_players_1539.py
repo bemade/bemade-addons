@@ -166,7 +166,7 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         self.assertIsNotNone(self._shell(tree))
         self.assertNotIn('id="playerTabs"', text)
         self.assertEqual(tree.xpath('//nav[@data-sc-tabs]/a/@data-sc-tab'),
-                         ['overview', 'injuries', 'info', 'documents', 'activities'])
+                         ['overview', 'injuries', 'info', 'contacts', 'documents', 'activities'])
         for secret in ('Hidden synthetic injury', 'Internal synthetic text',
                        'TP-only synthetic remark', 'Synthetic allergy',
                        'Synthetic team note', '2010'):
@@ -175,11 +175,11 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         self.assertNotIn('training_recommendation', self._owl_fields(tree))
         self.assertIn('Bike 15 min (synthetic)', text)
         self.assertTrue(tree.xpath('//*[@data-sc-section="player.status.readonly"]'))
-        # « Nouvelle blessure » for coaches too, with the team context kept.
+        # « Report Injury » for coaches too, with the team context kept —
+        # inline on the Injuries tab since the owner review of 2026-10-10.
         _text, tree = self._get(self.url + '&team_id=%s' % self.team_a.id)
-        action = tree.xpath('//header//a[@data-sc-action="injury.new"]/@href')
-        self.assertEqual(action, ['/my/patient/injury/new?patient_id=%s&team_id=%s'
-                                  % (self.player.id, self.team_a.id)])
+        form = tree.xpath('//details[@id="sc_new_injury"]//form[@data-sc-form="injury.new"]')[0]
+        self.assertEqual(form.xpath('.//input[@name="team_context_id"]/@value'), [str(self.team_a.id)])
 
     def test_therapist_tabs_and_fields(self):
         self._switch(True)
@@ -231,8 +231,11 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         self._switch(True)
         self._login_coach()
         _text, tree = self._get(self.url)
-        for sheet in ('complete', 'reschedule', 'cancel', 'add'):
-            form = tree.xpath('//dialog[@id="sc_activity_%s_sheet"]//form' % sheet)
+        # « add » is an inline card since the owner review of 2026-10-10.
+        forms = {sheet: tree.xpath('//dialog[@id="sc_activity_%s_sheet"]//form' % sheet)
+                 for sheet in ('complete', 'reschedule', 'cancel')}
+        forms['add'] = tree.xpath('//details[@data-sc-section="activity.add"]//form')
+        for sheet, form in forms.items():
             self.assertTrue(form, sheet)
             self.assertTrue(form[0].xpath('.//input[@name="csrf_token"]/@value')[0], sheet)
             self.assertIn('tab=activities', form[0].xpath('.//input[@name="return_url"]/@value')[0])
@@ -301,10 +304,12 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
             self.assertIsNone(self._shell(tree), url)
 
     # -- UC-P4 -----------------------------------------------------------
+    # Owner review 2026-10-10: the edit page is retired in the shell — the
+    # same fields, roles and forms now live on the player page (Info tab).
     def test_coach_form_fields(self):
         self._switch(True)
         self._login_coach()
-        text, tree = self._get(self.edit_url)
+        text, tree = self._get('/my/player?player_id=%s&tab=info' % self.player.id)
         self.assertIsNotNone(self._shell(tree))
         keys = self._owl_keys(tree)
         for field in ('first_name', 'last_name', 'jersey_number', 'position', 'email', 'phone',
@@ -316,23 +321,20 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         for field in ('name', 'contact_type', 'mobile', 'email'):
             self.assertIn('sports.patient.contact.%s' % field, keys, field)
         self.assertNotIn('Synthetic allergy', text)
-        self.assertFalse(tree.xpath('//form[@data-sc-form="player.teams"]'))
+        self.assertNotIn('sports.patient.sc_team_ids', keys)
 
     def test_therapist_form_fields_and_teams(self):
         self._switch(True)
         self._login_tp()
-        _text, tree = self._get(self.edit_url)
+        _text, tree = self._get('/my/player?player_id=%s&tab=info' % self.player.id)
         keys = self._owl_keys(tree)
         for field in ('allergies', 'sc_status', 'date_of_birth', 'team_info_notes',
-                      'training_recommendation', 'last_consultation_date'):
+                      'training_recommendation', 'last_consultation_date', 'sc_team_ids'):
             self.assertIn('sports.patient.%s' % field, keys, field)
-        form = tree.xpath('//form[@data-sc-form="player.teams"]')[0]
-        self.assertEqual(form.get('action'), '/my/player/save')
-        self.assertEqual(form.xpath('.//input[@name="team_ids"][@checked]/@value'),
-                         [str(self.team_a.id)])
-        # « Terminé » goes back to the player.
-        done = tree.xpath('//a[@data-sc-action="player.edit.done"]/@href')
-        self.assertEqual(done, ['/my/player?player_id=%s' % self.player.id])
+        teams = [json.loads(p) for p in tree.xpath(
+            '//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')
+            if json.loads(p).get('field') == 'sc_team_ids'][0]
+        self.assertEqual(teams['value'], str(self.team_a.id))
 
     def test_teams_form_post_keeps_other_fields(self):
         self._switch(True)
@@ -351,10 +353,10 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         self.contact.sudo().unlink()
         self._switch(True)
         self._login_coach()
-        _text, tree = self._get(self.edit_url)
-        form = tree.xpath('//form[@data-sc-form="contact.add_primary"]')[0]
+        # Coaches have the Contacts tab since 2026-10-10 (owner decision).
+        _text, tree = self._get('/my/player?player_id=%s&tab=contacts' % self.player.id)
+        form = tree.xpath('//form[@data-sc-form="contact.add"]')[0]
         self.assertEqual(form.get('action'), '/my/player/contact/save')
-        self.assertEqual(form.xpath('.//input[@name="return_url"]/@value'), [self.edit_url])
 
     def test_create_search_first(self):
         self._switch(True)
@@ -377,13 +379,12 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         self.assertFalse(form.xpath('.//input[@name="date_of_birth"]'))
 
     def test_contact_forms_in_shell(self):
+        # Owner review 2026-10-10: added / edited inline on the Contacts tab.
         self._switch(True)
         self._login_tp()
-        _text, tree = self._get('/my/player/contact/add?patient_id=%s' % self.player.id)
-        form = tree.xpath('//form[@data-sc-form="contact.form"]')[0]
+        _text, tree = self._get('/my/player?player_id=%s&tab=contacts' % self.player.id)
+        form = tree.xpath('//form[@data-sc-form="contact.add"]')[0]
         self.assertEqual(form.get('action'), '/my/player/contact/save')
         self.assertTrue(form.xpath('.//input[@name="mobile"]'))
-        _text, tree = self._get('/my/player/contact/edit?contact_id=%s' % self.contact.id)
-        form = tree.xpath('//form[@data-sc-form="contact.form"]')[0]
-        self.assertEqual(form.get('action'), '/my/player/contact/update')
-        self.assertEqual(form.xpath('.//input[@name="name"]/@value'), ['Parent One'])
+        card = tree.xpath('//*[@data-sc-edit-card="contact-%s"]' % self.contact.id)[0]
+        self.assertIn('Parent One', card.text_content())
