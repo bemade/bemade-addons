@@ -215,6 +215,7 @@
                                                         Archive
                                                     </button>
                                                     <button
+                            t-if="currentTransport.can_trash_mail"
                             class="btn btn-outline-danger btn-sm o_inbox_delete"
                             t-on-click="() => this.onDelete(item)"
                           >

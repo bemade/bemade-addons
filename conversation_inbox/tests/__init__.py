@@ -4,3 +4,4 @@ from . import test_conversation_inbox_views
 from . import test_conversation_inbox_tour
 from . import test_conversation_inbox_auto_archive
 from . import test_conversation_inbox_record_link
+from . import test_shared_inbox_tours

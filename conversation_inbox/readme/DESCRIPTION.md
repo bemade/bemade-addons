@@ -37,6 +37,10 @@ it.
   `_trash_remote` / `_mark_read_remote` hooks. Hide, Archive and Delete are
   three distinct buttons. Expanding a message no longer changes its read
   state on the server.
+  On a shared (ownerless) account the Delete button only appears for users
+  holding the "Delete shared mail" group (the server refuses the call
+  otherwise); Archive and Mark read stay available to everyone who can see
+  the account. On a personal account the owner sees all three.
 - **Archive After Filing** (`archive_on_capture`, per transport, default
   off): when on, a message filed through the capture wizard, the reassign
   wizard or the composer's filed path is also archived in the mailbox, after
