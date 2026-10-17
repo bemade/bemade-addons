@@ -861,7 +861,11 @@ class CalendarEvent(models.Model):
             return {}
         until = rrule.get("until")
         if until and isinstance(until, list):
-            until = until[0].astimezone(utc)
+            if isinstance(until[0], datetime):
+                until = until[0].astimezone(utc)
+            else:
+                until = datetime.combine(until[0], datetime.min.time()).replace(tzinfo=utc)
+
         rrule_str = rrule.to_ical() and rrule.to_ical().decode("utf-8")
         if rrule_str:
             dtstart = component.get(
