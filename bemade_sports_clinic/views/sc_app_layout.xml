@@ -127,11 +127,14 @@
                              badge = MY overdue activities, fetched by
                              sc_live_count.js from a light JSON route (at once,
                              then every 60 s while the tab is visible) — never
-                             computed on every page; hidden at 0. -->
+                             computed on every page; hidden at 0.
+                             Task 1622: its href carries the page it is
+                             tapped on (sc_from) — the activities page's
+                             way back. -->
                         <t t-if="sc_activity_clock">
                             <t t-set="sc_clock_label">My activities</t>
                             <t t-set="sc_clock_badge_label">Overdue activities</t>
-                            <a href="/my/activities?sc_clock=1"
+                            <a t-att-href="sc_clock_url"
                                class="o_sc_icon_btn o_sc_appbar_clock" data-sc-activity-clock-bar="1"
                                t-att-title="sc_clock_label">
                                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'clock'"/></t>

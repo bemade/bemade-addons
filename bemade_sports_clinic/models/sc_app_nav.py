@@ -51,7 +51,7 @@ Phones show the back chevron + context line, laptops the full trail (CSS
 only, ``sc_components.scss``); there is no per-user setting.
 """
 import re
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, quote, urlencode, urlsplit
 
 from odoo.exceptions import AccessError, MissingError
 from odoo.tools.translate import LazyTranslate
@@ -277,7 +277,41 @@ def _activities_parent(v):
         return ('sc_app_team', {'team': v['context_team'], 'tab': 'activities'})
     if v.get('simplified') and v.get('context_event'):
         return ('sc_app_event', {'event': v['context_event']})
+    # Task 1622: opened from the app bar clock — back to the page it was
+    # tapped on (``sc_clock_from``, the page's return_url: resolve() honours
+    # it when it is a readable registered page), else the home.
+    if v.get('sc_clock_from'):
+        return ('sc_app_home', {})
     return None
+
+
+# Task 1622: the app bar clock (#1592) opens /my/activities from any shell
+# page; its href carries that page (``sc_from``) so the activities page gets
+# a way back. Only a safe same-site path is ever passed on; the activities
+# page honours it only when it matches a registered page the user may read
+# (resolve / match_url) — never an open redirect.
+CLOCK_PATH = '/my/activities'
+_CLOCK_DROPPED_ARGS = ('success', 'error')
+
+
+def clock_origin(value):
+    """The clock's origin ``sc_from`` if it is a safe same-site path."""
+    return safe_return_url(value, None)
+
+
+def clock_url(path, args):
+    """The app bar clock's href on the page ``path`` (``args``: its query,
+    a werkzeug MultiDict). On the activities page itself the clock keeps
+    the origin the page was opened with (a page is never its own way back);
+    the flash args (``success`` / ``error``) are not part of the origin."""
+    if path == CLOCK_PATH:
+        origin = clock_origin(args.get('sc_from'))
+    else:
+        query = urlencode([(key, value) for key, value in args.items(multi=True)
+                           if key not in _CLOCK_DROPPED_ARGS])
+        origin = clock_origin(path + ('?' + query if query else ''))
+    url = CLOCK_PATH + '?sc_clock=1'
+    return url + '&sc_from=' + quote(origin, safe='') if origin else url
 
 
 def _activity_form_parent(v):
@@ -313,7 +347,8 @@ PAGES = {page.key: page for page in (
     _static('sc_app_notepad', '/my/notepad', nav_label('notepad')),
     Page('sc_app_activities', url='/my/activities', label=nav_label('activities'),
          path=r'/my/activities', parent=_activities_parent,
-         context=lambda v: v.get('sc_context_title') or None),
+         context=lambda v: v.get('sc_context_title') or None,
+         return_url=lambda v: v.get('sc_clock_from')),
     # -- « Plus » pages ------------------------------------------------
     _static('sc_app_events', '/my/events', nav_label('events'),
             parent=lambda v: ('sc_app_more', {})),

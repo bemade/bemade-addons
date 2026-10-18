@@ -1267,6 +1267,8 @@ class AppShellMixin:
             # Task 1592: the app bar's activity clock (its overdue badge is
             # fetched by sc_live_count.js, not computed here).
             'sc_activity_clock': sc_app_roles.can('app.activity_clock', roles, is_system=is_system),
+            # Task 1622: the clock's href carries the page it is tapped on.
+            'sc_clock_url': sc_app_nav.clock_url(path, request.httprequest.args),
             'sc_user_initials': initials or '?',
             # Task 1606: the head of the user menu (name + role).
             'sc_user_name': user.name or '',

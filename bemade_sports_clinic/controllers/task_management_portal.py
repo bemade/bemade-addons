@@ -5,7 +5,7 @@ from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from .access_control_mixin import AccessControlMixin
 from .app_shell import AppShellMixin
-from ..models import sc_app_roles
+from ..models import sc_app_nav, sc_app_roles
 from datetime import date, timedelta
 from urllib.parse import quote
 
@@ -277,6 +277,11 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 if values.get('context_model') and values.get('context_res_id') else False),
             'sc_context_title': context_title,
             'sc_flash': self._sc_activity_flash(),
+            # Task 1622: opened from the app bar clock — the page it was
+            # tapped on (kept by the tab links), the way back. Not on the
+            # record wrappers: they have their own parent.
+            'sc_clock_from': False if values.get('simplified') else (
+                sc_app_nav.clock_origin(request.params.get('sc_from')) or False),
         }
 
     @staticmethod
