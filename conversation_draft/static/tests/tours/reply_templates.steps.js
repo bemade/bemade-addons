@@ -76,7 +76,8 @@ export default [
     id: "open-conversation",
     title: "Ouvrir la conversation",
     narration: "Ouvrons la conversation créée plus tôt.",
-    selector: ".o_data_row:contains('Question de livraison') td[name='name']",
+    selector:
+      ".o_data_row:has(td[name='name'][data-tooltip^='Question de livraison']) td[name='name']",
     action: "click",
   },
   {
