@@ -115,7 +115,8 @@ jobs:
             --addons "${ADDONS}" \
             --addons-path "${ADDONS_PATH},${ADDONS_DIR}" \
             --timings /tmp/timings/test-timings.json \
-            --max-shards 6 \
+            --max-shards 10 \
+            --target-seconds 240 \
             --out /tmp/odoo-db/shards.json \
             --install-tags-out /tmp/odoo-db/install-tags
       - name: Install addons and run at_install tests
