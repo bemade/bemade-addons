@@ -4,10 +4,17 @@
 # (itself the target of a link from another conversation) shows no tab; a
 # record without link shows no tab. The server state it leaves behind: nothing was posted on the
 # record.
+#
+# The tours run on the test's own res.partner list/form views and action, not
+# on the stock partner action: when other addons are installed in the same
+# database, they can add fields the ordinary user may not read to the stock
+# partner form, which then fails to load. A primary view created here has no
+# inheriting views, so the record opens whatever else is installed, and it
+# still carries the standard chatter widget the tab is built on.
 
 from datetime import timedelta
 
-from odoo import fields
+from odoo import Command, fields
 from odoo.addons.mail.tests.common import mail_new_test_user
 from odoo.tests import HttpCase, tagged
 
@@ -21,7 +28,39 @@ class TestRecordTabTour(HttpCase):
             cls.env, login="rec_tab_tour", name="Tour User", groups="base.group_user"
         )
         cls.record = cls.env["res.partner"].create({"name": "Industries Tremblay"})
-        cls.env["res.partner"].create({"name": "Client Sans Lien"})
+        cls.unlinked_record = cls.env["res.partner"].create({"name": "Client Sans Lien"})
+        View = cls.env["ir.ui.view"]
+        list_view = View.create(
+            {
+                "name": "Relevant conversations tour list",
+                "model": "res.partner",
+                "type": "list",
+                "mode": "primary",
+                "arch": '<list><field name="name"/></list>',
+            }
+        )
+        form_view = View.create(
+            {
+                "name": "Relevant conversations tour form",
+                "model": "res.partner",
+                "type": "form",
+                "mode": "primary",
+                "arch": '<form><sheet><field name="name"/></sheet><chatter/></form>',
+            }
+        )
+        cls.action = cls.env["ir.actions.act_window"].create(
+            {
+                "name": "Relevant conversations tour",
+                "res_model": "res.partner",
+                "view_mode": "list,form",
+                "domain": str([("id", "in", (cls.record | cls.unlinked_record).ids)]),
+                "view_ids": [
+                    Command.create({"sequence": 1, "view_mode": "list", "view_id": list_view.id}),
+                    Command.create({"sequence": 2, "view_mode": "form", "view_id": form_view.id}),
+                ],
+            }
+        )
+        cls.start_url = f"/odoo/action-{cls.action.id}"
         Conversation = cls.env["mail.conversation"].with_context(
             mail_create_nosubscribe=True, mail_create_nolog=True
         )
@@ -67,7 +106,7 @@ class TestRecordTabTour(HttpCase):
     def test_record_tab_tour(self):
         before = self._record_messages()
         self.start_tour(
-            "/odoo/action-base.action_partner_form",
+            self.start_url,
             "conversation_record_tab",
             login=self.user.login,
         )
@@ -76,7 +115,7 @@ class TestRecordTabTour(HttpCase):
 
     def test_record_without_link_tour(self):
         self.start_tour(
-            "/odoo/action-base.action_partner_form",
+            self.start_url,
             "conversation_record_tab_empty",
             login=self.user.login,
         )

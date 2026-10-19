@@ -31,13 +31,12 @@ function toTourStep(step) {
   return out;
 }
 
-// Wait until the chatter is rendered and its (possibly empty) tab request
-// has had time to come back.
-const waitForChatter = () => [
+// Wait until the chatter has settled the tab for a record of `model`
+// (request answered, or skipped): only then is "no tab" meaningful.
+const waitForChatter = (model) => [
   {
     content: "Wait for the chatter to be loaded",
-    trigger: ".o-mail-Chatter .o-mail-Chatter-topbar",
-    run: async () => await new Promise((resolve) => setTimeout(resolve, 1000)),
+    trigger: `.o-mail-Chatter[data-relevant-conversations-loaded^='${model},']`,
   },
 ];
 
@@ -51,7 +50,7 @@ const tourOnlyAfter = () => ({
     },
   ],
   "conversation-form": [
-    ...waitForChatter(),
+    ...waitForChatter("mail.conversation"),
     {
       content: "No tab on a conversation, even one linked to another conversation",
       trigger: ".o-mail-Chatter:not(:has(.o_relevant_conversations_toggle))",
@@ -59,10 +58,9 @@ const tourOnlyAfter = () => ({
   ],
 });
 
-const START_URL = "/odoo/action-base.action_partner_form";
-
+// No url: the Python test starts the tours on its own partner action (see
+// test_record_tab_tour.py).
 registry.category("web_tour.tours").add("conversation_record_tab", {
-  url: START_URL,
   steps: () => {
     const extra = tourOnlyAfter();
     return steps
@@ -72,14 +70,13 @@ registry.category("web_tour.tours").add("conversation_record_tab", {
 });
 
 registry.category("web_tour.tours").add("conversation_record_tab_empty", {
-  url: START_URL,
   steps: () => [
     {
       content: "Open a record without linked conversation",
       trigger: ".o_data_row td.o_data_cell:contains('Client Sans Lien')",
       run: "click",
     },
-    ...waitForChatter(),
+    ...waitForChatter("res.partner"),
     {
       content: "No tab for a record without linked conversation",
       trigger: ".o-mail-Chatter:not(:has(.o_relevant_conversations_toggle))",
