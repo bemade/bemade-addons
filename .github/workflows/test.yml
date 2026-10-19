@@ -6,6 +6,12 @@ name: tests
 # a share of the post_install test classes, balanced on the class durations of
 # the latest run. "Test Repo Addons With Odoo" is the required check: it passes
 # only if the install job and every shard did.
+#
+# The install job and the shards run on Bemade's self-hosted runners (scale set
+# arc-bemade-addons, odoo-ci/arc-bemade-addons-values.yaml): the image carries
+# Odoo Enterprise, so it is pulled inside the cluster, and the database handed
+# from the install job to the shards is encrypted before it becomes an
+# artifact of this public repository.
 
 on:
   pull_request:
@@ -22,6 +28,10 @@ permissions:
   contents: read
   actions: read  # read the class timings of an earlier run
 
+defaults:
+  run:
+    shell: bash  # container jobs default to sh, which has no pipefail
+
 env:
   PGHOST: postgres
   PGUSER: odoo
@@ -31,13 +41,11 @@ env:
 
 jobs:
   install:
-    runs-on: ubuntu-22.04
+    runs-on: arc-bemade-addons
     timeout-minutes: 45
     container:
-      image: registry.bemade.org:443/bemade/docker-odoo-enterprise/odoo-enterprise-ci:${{ github.base_ref }}
-      credentials:
-        username: ${{ secrets.BEMADE_REGISTRY_USER }}
-        password: ${{ secrets.BEMADE_REGISTRY_PASSWORD }}
+      # Portless: the runners' pull secret is keyed by the exact host string.
+      image: registry.bemade.org/bemade/docker-odoo-enterprise/odoo-enterprise-ci:${{ github.base_ref }}
       options: --user root
     name: Install addons
     services:
@@ -107,10 +115,10 @@ jobs:
             --addons "${ADDONS}" \
             --addons-path "${ADDONS_PATH},${ADDONS_DIR}" \
             --timings /tmp/timings/test-timings.json \
+            --max-shards 6 \
             --out /tmp/odoo-db/shards.json \
             --install-tags-out /tmp/odoo-db/install-tags
       - name: Install addons and run at_install tests
-        shell: bash
         run: |
           ADDONS_DIR="${GITHUB_WORKSPACE}"
           echo "Installing addons: ${ADDONS}"
@@ -122,30 +130,36 @@ jobs:
             --test-tags "$(cat /tmp/odoo-db/install-tags)" \
             --http-interface=127.0.0.1 \
             --stop-after-init 2>&1 | tee test-output.log
-      - name: Dump the database
+      - name: Dump and encrypt the database
+        env:
+          # The dump holds Odoo Enterprise views and assets, and artifacts of a
+          # public repository can be downloaded by anyone: never upload it in
+          # clear. Unset on fork pull requests, which cannot pull the image anyway.
+          CI_ARTIFACT_KEY: ${{ secrets.CI_ARTIFACT_KEY }}
         run: |
+          : "${CI_ARTIFACT_KEY:?CI_ARTIFACT_KEY is not set; refusing to upload the database unencrypted}"
           DATA_DIR=$(python3 -c "from odoo.tools import config; config.parse_config([]); print(config['data_dir'])" | tail -1)
           pg_dump -Fc -f /tmp/odoo-db/db.dump ${PGDATABASE}
           tar -C "${DATA_DIR}" -cf /tmp/odoo-db/data-dir.tar .
+          mkdir -p /tmp/odoo-db-upload
+          tar -C /tmp/odoo-db -cf - . \
+            | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:CI_ARTIFACT_KEY -out /tmp/odoo-db-upload/odoo-db.tar.enc
       - uses: actions/upload-artifact@v4
         with:
           name: odoo-db
-          path: /tmp/odoo-db
+          path: /tmp/odoo-db-upload/odoo-db.tar.enc
           retention-days: 1
 
   test:
     needs: install
     if: needs.install.outputs.shards != '[]'
-    runs-on: ubuntu-22.04
+    runs-on: arc-bemade-addons
     # A shard takes well under 15 min. Without a limit, a hung test (e.g. a
     # clock left frozen, so an HttpCase waits forever for Chrome to exit)
     # holds the job for GitHub's 6 h default.
     timeout-minutes: 45
     container:
-      image: registry.bemade.org:443/bemade/docker-odoo-enterprise/odoo-enterprise-ci:${{ github.base_ref }}
-      credentials:
-        username: ${{ secrets.BEMADE_REGISTRY_USER }}
-        password: ${{ secrets.BEMADE_REGISTRY_PASSWORD }}
+      image: registry.bemade.org/bemade/docker-odoo-enterprise/odoo-enterprise-ci:${{ github.base_ref }}
       options: --user root
     name: Test shard ${{ matrix.shard }}
     strategy:
@@ -170,9 +184,14 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: odoo-db
-          path: /tmp/odoo-db
+          path: /tmp/odoo-db-upload
       - name: Restore the database
+        env:
+          CI_ARTIFACT_KEY: ${{ secrets.CI_ARTIFACT_KEY }}
         run: |
+          mkdir -p /tmp/odoo-db
+          openssl enc -d -aes-256-cbc -pbkdf2 -pass env:CI_ARTIFACT_KEY -in /tmp/odoo-db-upload/odoo-db.tar.enc \
+            | tar -C /tmp/odoo-db -xf -
           DATA_DIR=$(python3 -c "from odoo.tools import config; config.parse_config([]); print(config['data_dir'])" | tail -1)
           oca_wait_for_postgres
           dropdb --if-exists ${PGDATABASE}
@@ -181,7 +200,6 @@ jobs:
           mkdir -p "${DATA_DIR}"
           tar -C "${DATA_DIR}" -xf /tmp/odoo-db/data-dir.tar
       - name: Run post_install tests
-        shell: bash
         run: |
           ADDONS_DIR="${GITHUB_WORKSPACE}"
           # -at_install: without -i, Odoo would run at_install tests while the
