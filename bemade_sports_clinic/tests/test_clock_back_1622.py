@@ -83,7 +83,7 @@ class TestClockBack1622(Clock1622Common):
         self.assertEqual(current, 'Activities')
         back, crumbs, _current, _context = self._nav(CLOCK + '&sc_from=' + _q(HOME))
         self.assertEqual(back, [HOME])
-        self.assertEqual(crumbs, [(HOME, 'Home')])
+        self.assertEqual(crumbs, [(HOME, 'Dashboard')])
 
     def test_without_origin_stays_top_level(self):
         for url in ('/my/activities', CLOCK):
@@ -118,7 +118,7 @@ class TestClockBack1622(Clock1622Common):
         for origin in ('/web/login', '/my/account', unreadable):
             back, crumbs, _current, _context = self._nav(CLOCK + '&sc_from=' + _q(origin))
             self.assertEqual(back, [HOME], origin)
-            self.assertEqual(crumbs, [(HOME, 'Home')], origin)
+            self.assertEqual(crumbs, [(HOME, 'Dashboard')], origin)
 
     # -- UC-C5 -----------------------------------------------------------
     def test_record_wrappers_keep_their_parent(self):

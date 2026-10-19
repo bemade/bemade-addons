@@ -338,7 +338,7 @@ def _digest_history_from(env, match, args):
 
 PAGES = {page.key: page for page in (
     # -- top level (logo, no back) -------------------------------------
-    _static('sc_app_home', '/my/home', _lt('Home')),
+    _static('sc_app_home', '/my/home', _lt('Dashboard')),  # owner 2026-10-18 (#1623)
     _static('sc_app_teams', '/my/teams', nav_label('teams')),
     _static('sc_app_players', '/my/players', nav_label('players')),
     _static('sc_app_clinics', '/my/clinics', nav_label('clinic')),

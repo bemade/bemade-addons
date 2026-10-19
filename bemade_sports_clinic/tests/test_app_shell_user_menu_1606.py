@@ -192,7 +192,7 @@ class TestUserMenu1606(UserMenuCommon):
         self.assertEqual(tree.xpath('//header//a[@data-sc-back]/@href'), ['/my/home'])
         crumbs = [(a.get('href'), a.text_content().strip())
                   for a in tree.xpath('//nav[contains(@class, "o_sc_crumbs")]//li/a')]
-        self.assertEqual(crumbs, [('/my/home', 'Home')])
+        self.assertEqual(crumbs, [('/my/home', 'Dashboard')])
         current = tree.xpath('//nav[contains(@class, "o_sc_crumbs")]//li[@aria-current="page"]')
         self.assertEqual(current[0].text_content().strip(), 'Settings')
         # Nothing on the bottom tabs / rail claims to be the current page.
@@ -284,7 +284,7 @@ class TestUserMenuFrench1606(UserMenuCommon):
                     self.assertEqual(trigger.get('aria-label'), 'Menu utilisateur')
             text = self._fr('/my/app/settings')
             for term in ('Paramètres', 'Langue', 'Apparence', 'Sombre', 'Clair',
-                         'Mon compte', 'Sécurité', 'Accueil'):
+                         'Mon compte', 'Sécurité', 'Tableau de bord'):
                 self.assertIn(term, text, term)
             # Review fixes 2026-10-18: no « Portail classique » row.
             self.assertNotIn('Autres documents du portail', text)
