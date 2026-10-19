@@ -1,6 +1,7 @@
 /*
- * Task 1588 — « Plus › Langue »: the profile language is the only source of
- * truth in the app shell (tests/test_app_shell_lang.py). Starts on « Plus »
+ * Task 1588 — « Paramètres › Langue » (« Plus » until task 1606): the profile
+ * language is the only source of truth in the app shell
+ * (tests/test_app_shell_lang.py). Starts on « Paramètres »
  * as a fr_CA user. Language-independent triggers (html[lang], values).
  */
 import { registry } from "@web/core/registry";
@@ -8,7 +9,7 @@ import { registry } from "@web/core/registry";
 registry.category("web_tour.tours").add("sc_1588_lang_switch", {
     steps: () => [
         {
-            content: "« Plus » in French, FR pressed",
+            content: "« Paramètres » in French, FR pressed",
             trigger: 'html[lang="fr-CA"] #sc_language button[name="lang"][value="fr_CA"][aria-pressed="true"]',
         },
         {

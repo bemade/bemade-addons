@@ -134,14 +134,14 @@
                                  column (same idiom as the injury_date row above). -->
                             <label for="internal_notes"/>
                             <div>
-                                <field name="internal_notes"/>
+                                <field name="internal_notes" placeholder="Current state (replaces the previous text; the history keeps the versions)"/>
                                 <field name="last_internal_note_info" nolabel="1" readonly="1"
                                        class="text-muted fst-italic o_sc_last_note_stamp"
                                        invisible="not last_internal_note_info"/>
                             </div>
                             <label for="external_notes"/>
                             <div>
-                                <field name="external_notes"/>
+                                <field name="external_notes" placeholder="Current state (replaces the previous text; the history keeps the versions)"/>
                                 <field name="last_external_note_info" nolabel="1" readonly="1"
                                        class="text-muted fst-italic o_sc_last_note_stamp"
                                        invisible="not last_external_note_info"/>

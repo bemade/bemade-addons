@@ -177,17 +177,19 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         _text, tree = self._get(self._tab())
         item = tree.xpath('//details[@id="injury-%s"][@data-sc-edit-card]' % self.injury.id)[0]
         self.assertIsNone(item.get('open'))
-        read = item.xpath('.//*[@data-sc-edit-view="read"]')[0]
-        self.assertIn('Synthetic ext', read.text_content())
-        self.assertIn('Synthetic int', read.text_content())
-        self.assertEqual(len(item.xpath('.//button[@data-sc-edit-toggle]')), 1)
-        edit = item.xpath('.//*[@data-sc-edit-view="edit"]')[0]
-        self.assertEqual(edit.get('hidden'), 'hidden')
-        fields_ = ' '.join(self._fields_in(edit))
+        # Task 1616: the read views (Details, then Notes), one pencil per
+        # group; together they edit what the card's single pencil did.
+        reads = ' '.join(r.text_content() for r in item.xpath('.//*[@data-sc-edit-view="read"]'))
+        self.assertIn('Synthetic ext', reads)
+        self.assertIn('Synthetic int', reads)
+        self.assertEqual(len(item.xpath('.//button[@data-sc-edit-toggle]')), 2)
+        edits = item.xpath('.//*[@data-sc-edit-view="edit"]')
+        self.assertTrue(all(edit.get('hidden') == 'hidden' for edit in edits))
+        fields_ = ' '.join(f for edit in edits for f in self._fields_in(edit))
         for name in ('"sc_injury_date"', '"predicted_resolution_date"', '"parental_consent"',
                      '"external_notes"', '"internal_notes"', '"hidden_from_coaches"', '"stage"'):
             self.assertIn(name, fields_)
-        self.assertTrue(item.xpath('.//a[contains(@href, "/my/injury/edit?injury_id=%s")]' % self.injury.id))
+        self.assertFalse(item.xpath('.//a[contains(@href, "/my/injury/edit")]'))
         self.assertTrue(item.xpath('.//summary//*[contains(@class, "o_sc_consent_todo")]'))
         self._login_coach()
         _text, tree = self._get(self._tab())
@@ -236,7 +238,7 @@ class TestAppShellInjuryInlineFr(TestAppShellI18n1538):
         self._login_tp()
         text = self._fr('/my/player?player_id=%s&tab=injuries' % self.player.id).replace('&#39;', "'")
         for term in ('Les entraîneurs peuvent-ils voir cette blessure ?', 'Non, la masquer',
-                     'Consentement à compléter', 'Notes de traitement, documents et historique',
+                     'Consentement à compléter', 'Détails', 'Ajouter des documents',
                      'Date de la blessure'):
             self.assertIn(term, text, term)
 

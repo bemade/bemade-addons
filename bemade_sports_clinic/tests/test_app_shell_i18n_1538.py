@@ -38,6 +38,7 @@ class TestAppShellI18n1538(AppShellCommon):
 
     def test_home_in_french(self):
         self._switch(True)
+        self._theme_choice(True)  # task 1602: the theme labels need the toggles
         self._login_tp()
         text = self._fr('/my/home')
         for term in ('Équipes', 'Joueurs', 'Clinique', 'Activités', 'Plus',
@@ -71,10 +72,14 @@ class TestAppShellI18n1538(AppShellCommon):
 
     def test_more_in_french(self):
         self._switch(True)
+        self._theme_choice(True)  # task 1602: the theme labels need the toggles
         self._login_tp()
         text = self._fr('/my/app/more')
         # Task 1579: no « Navigation » setting any more.
-        for term in ('Apparence', 'Sombre', 'Clair', 'Mon compte', 'Sécurité',
-                     'Événements et calendrier', 'Bloc-notes', 'Feuilles de temps',
-                     'Déconnexion'):
+        for term in ('Événements et calendrier', 'Bloc-notes', 'Feuilles de temps',
+                     'Paramètres', 'Se déconnecter'):
+            self.assertIn(term, text.replace('&#39;', "'"), term)
+        # Task 1606: the settings moved to « Paramètres ».
+        text = self._fr('/my/app/settings')
+        for term in ('Apparence', 'Sombre', 'Clair', 'Mon compte', 'Sécurité'):
             self.assertIn(term, text.replace('&#39;', "'"), term)

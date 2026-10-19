@@ -1,0 +1,104 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* mail_notification_addressed_only
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-17 21:04+0000\n"
+"PO-Revision-Date: 2026-10-17 21:04+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: mail_notification_addressed_only
+#: model:ir.model.fields,field_description:mail_notification_addressed_only.field_mail_addressed_only_rule__active
+msgid "Active"
+msgstr "Actif"
+
+#. module: mail_notification_addressed_only
+#: model:ir.model,name:mail_notification_addressed_only.model_res_config_settings
+msgid "Config Settings"
+msgstr "Paramètres de configuration"
+
+#. module: mail_notification_addressed_only
+#: model:ir.model.fields,field_description:mail_notification_addressed_only.field_mail_addressed_only_rule__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: mail_notification_addressed_only
+#: model:ir.model.fields,field_description:mail_notification_addressed_only.field_mail_addressed_only_rule__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: mail_notification_addressed_only
+#: model:ir.model.fields,field_description:mail_notification_addressed_only.field_mail_addressed_only_rule__display_name
+#: model:ir.model.fields,field_description:mail_notification_addressed_only.field_mail_thread__display_name
+#: model:ir.model.fields,field_description:mail_notification_addressed_only.field_res_config_settings__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: mail_notification_addressed_only
+#: model:ir.model.fields,field_description:mail_notification_addressed_only.field_res_config_settings__addressed_only_model_ids
+#: model_terms:ir.ui.view,arch_db:mail_notification_addressed_only.res_config_settings_view_form
+msgid "Email Only When Addressed"
+msgstr "Courriel seulement si adressé"
+
+#. module: mail_notification_addressed_only
+#: model:ir.model,name:mail_notification_addressed_only.model_mail_addressed_only_rule
+msgid "Email Only When Addressed Rule"
+msgstr "Règle « courriel seulement si adressé »"
+
+#. module: mail_notification_addressed_only
+#: model:ir.model,name:mail_notification_addressed_only.model_mail_thread
+msgid "Email Thread"
+msgstr "Discussion par e-mail"
+
+#. module: mail_notification_addressed_only
+#: model:ir.model.fields,field_description:mail_notification_addressed_only.field_mail_addressed_only_rule__id
+#: model:ir.model.fields,field_description:mail_notification_addressed_only.field_mail_thread__id
+#: model:ir.model.fields,field_description:mail_notification_addressed_only.field_res_config_settings__id
+msgid "ID"
+msgstr ""
+
+#. module: mail_notification_addressed_only
+#: model:ir.model.fields,field_description:mail_notification_addressed_only.field_mail_addressed_only_rule__write_uid
+msgid "Last Updated by"
+msgstr "Dernière mise à jour par"
+
+#. module: mail_notification_addressed_only
+#: model:ir.model.fields,field_description:mail_notification_addressed_only.field_mail_addressed_only_rule__write_date
+msgid "Last Updated on"
+msgstr "Dernière mise à jour le"
+
+#. module: mail_notification_addressed_only
+#: model:ir.model.fields,field_description:mail_notification_addressed_only.field_mail_addressed_only_rule__model_id
+msgid "Model"
+msgstr "Modèle"
+
+#. module: mail_notification_addressed_only
+#: model:ir.model.fields,field_description:mail_notification_addressed_only.field_mail_addressed_only_rule__model
+msgid "Model Name"
+msgstr "Nom du modèle"
+
+#. module: mail_notification_addressed_only
+#: model_terms:ir.ui.view,arch_db:mail_notification_addressed_only.res_config_settings_view_form
+msgid ""
+"On the record types listed here, internal followers only receive an email "
+"for messages addressed to them (recipient, mention, Cc/Bcc). Other messages "
+"reach them in their Odoo inbox. Customers and other external followers are "
+"not affected."
+msgstr ""
+"Pour les types de documents listés ici, les abonnés internes ne reçoivent un"
+" courriel que pour les messages qui leur sont adressés (destinataire, "
+"mention, Cc/Cci). Les autres messages arrivent dans leur boîte de réception "
+"Odoo. Les clients et les autres abonnés externes ne sont pas touchés."
+
+#. module: mail_notification_addressed_only
+#: model:ir.model.constraint,message:mail_notification_addressed_only.constraint_mail_addressed_only_rule_model_uniq
+msgid "This model is already in the list."
+msgstr "Ce modèle est déjà dans la liste."

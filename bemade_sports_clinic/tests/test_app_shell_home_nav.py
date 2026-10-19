@@ -21,7 +21,8 @@ Acceptance criteria covered here:
   — out, then returning, then available — alphabetical within each group
   (the roster's « By status » order) by default. A switch toggles it to
   alphabetical and back; the choice is sticky per user
-  (``res.users.players_sort_mode``) and the switch keeps the active filters.
+  (``res.users.players_sort_mode``) and the sort keeps the active filters
+  (task 1607: a sort menu in the list header, was a switch).
 * UC-H7 Phone bottom tabs: « Teams », « Players », « Notepad » (therapists),
   « Activities », then « More » — « Clinic », « Events » and « Timesheets »
   move to « More ». Laptop rail: the same plus « Clinic », « Events »,
@@ -167,18 +168,19 @@ class TestAppShellHomeNav(Parity1577Common):
             '//*[@data-sc-section="players.list"]//*[@data-sc-player-id]/@data-sc-player-id')]
 
     @staticmethod
-    def _sort_switch(tree):
-        nodes = tree.xpath('//a[@role="switch"][@data-sc-section="players.sort"]')
-        return nodes[0] if nodes else None
+    def _sort_options(tree):
+        # Task 1607 (deliberate update): the list header's sort menu.
+        return {a.get('data-sc-sort'): a for a in tree.xpath(
+            '//*[@data-sc-section="players.sort"]//a[@role="menuitemradio"]')}
 
     def test_players_list_most_injured_first(self):
         made = self._make_order_players()
         _text, tree = self._get('/my/players?first_name=Order')
         self.assertEqual(self._player_ids(tree), [made[k].id for k in ('Bbb', 'Zzz', 'Mmm', 'Aaa')])
-        switch = self._sort_switch(tree)
-        self.assertIsNotNone(switch)
-        self.assertEqual(switch.get('aria-checked'), 'true')
-        args = parse_qs(urlparse(switch.get('href')).query)
+        options = self._sort_options(tree)
+        self.assertEqual(options['status'].get('aria-checked'), 'true')
+        self.assertEqual(options['name'].get('aria-checked'), 'false')
+        args = parse_qs(urlparse(options['name'].get('href')).query)
         self.assertEqual(args.get('sort'), ['name'])
         self.assertEqual(args.get('first_name'), ['Order'])
 
@@ -189,9 +191,9 @@ class TestAppShellHomeNav(Parity1577Common):
         self.assertEqual(self._player_ids(tree), alpha)
         self.env.invalidate_all()
         self.assertEqual(self.tp.players_sort_mode, 'name')
-        switch = self._sort_switch(tree)
-        self.assertEqual(switch.get('aria-checked'), 'false')
-        self.assertEqual(parse_qs(urlparse(switch.get('href')).query).get('sort'), ['status'])
+        options = self._sort_options(tree)
+        self.assertEqual(options['name'].get('aria-checked'), 'true')
+        self.assertEqual(parse_qs(urlparse(options['status'].get('href')).query).get('sort'), ['status'])
         # Sticky: the next visit without ?sort= keeps alphabetical.
         _text, tree = self._get('/my/players?first_name=Order')
         self.assertEqual(self._player_ids(tree), alpha)

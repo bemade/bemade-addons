@@ -13,6 +13,14 @@
  * The chip's text becomes the count and its tone follows it
  * (data-sc-live-tone-on when > 0, data-sc-live-tone-off at 0), exactly like
  * the first server render.
+ *
+ * Task 1592 (the app bar's activity clock badge):
+ *   data-sc-live-eager="1"      first fetch at once (the count is NOT
+ *                               rendered server-side on every page)
+ *   data-sc-live-hide-zero="1"  the chip is hidden while the count is 0
+ *
+ * Task 1611: « sc:live-count-refresh » on the document polls every counter
+ * at once (an activity save, a page restored by « back »).
  */
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
 
@@ -31,7 +39,7 @@ class LiveCount {
             }
         };
         document.addEventListener("visibilitychange", this.onVisibility);
-        this.schedule();
+        this.schedule(el.dataset.scLiveEager ? 0 : this.interval);
     }
 
     schedule(delay = this.interval) {
@@ -65,6 +73,9 @@ class LiveCount {
         if (el.textContent !== text) {
             el.textContent = text;
         }
+        if (el.dataset.scLiveHideZero) {
+            el.hidden = count <= 0;
+        }
         const on = el.dataset.scLiveToneOn;
         const off = el.dataset.scLiveToneOff;
         if (on && off) {
@@ -73,6 +84,16 @@ class LiveCount {
         }
     }
 }
+
+// Task 1611: an activity save (or a page shown again by « back ») refreshes
+// every live counter at once — e.g. the app bar's overdue badge.
+document.addEventListener("sc:live-count-refresh", () => {
+    for (const el of document.querySelectorAll(".o_sc_app [data-sc-live-count-url]")) {
+        if (el.scLiveCount) {
+            el.scLiveCount.schedule(0);
+        }
+    }
+});
 
 function start() {
     for (const el of document.querySelectorAll(".o_sc_app [data-sc-live-count-url]")) {

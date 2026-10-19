@@ -5,6 +5,8 @@ from . import mail_activity
 from . import patient
 from . import patient_injury
 from . import injury_note_history
+from . import patient_training_history
+from . import patient_return_proposal
 from . import patient_contact
 from . import res_partner
 from . import sc_app_roles

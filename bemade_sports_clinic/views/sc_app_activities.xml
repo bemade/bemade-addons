@@ -21,11 +21,9 @@
     <template id="sc_activity_list" name="App shell: activity list">
         <div t-if="activities" class="o_sc_list" data-sc-section="activities.list">
             <t t-foreach="activities" t-as="activity">
-                <t t-set="related" t-value="{}"/>
-                <t t-if="activity.res_model in ('sports.patient', 'sports.team', 'sports.event')">
-                    <t t-set="related_rec" t-value="request.env[activity.res_model].browse(activity.res_id)"/>
-                    <t t-set="related" t-value="{'name': related_rec.display_name}"/>
-                </t>
+                <!-- Task 1595: computed in the controller, access-gated
+                     (was a non-sudo browse here). -->
+                <t t-set="related_links" t-value="sc_activity_related(activity)"/>
                 <t t-call="bemade_sports_clinic.sc_activity_row"/>
             </t>
         </div>
@@ -126,8 +124,15 @@
         activity_types, assignable_users, default_activity_type_id, today.
     -->
     <template id="sc_activity_add_sheet" name="App shell: add activity (inline)">
-        <details class="o_sc_card o_sc_disclosure" data-sc-section="activity.add">
-            <summary class="o_sc_disclosure_summary" data-sc-action="activity.add">
+        <!-- Task 1607: opened by the list header's « + Ajouter ». -->
+        <t t-call="bemade_sports_clinic.sc_list_header">
+            <t t-set="header_section" t-value="'activity.add.header'"/>
+            <t t-set="add_label">Add Activity</t>
+            <t t-set="add_panel" t-value="'sc_activity_add'"/>
+            <t t-set="add_key" t-value="'activity.add'"/>
+        </t>
+        <details class="o_sc_card o_sc_disclosure o_sc_list_add_panel" id="sc_activity_add" data-sc-section="activity.add">
+            <summary class="o_sc_disclosure_summary">
                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                 <span>Add Activity</span>
             </summary>
@@ -172,19 +177,29 @@
         </details>
     </template>
 
+    <!-- Task 1607: the activities page's list header — « + Ajouter » (the
+         add-activity page, was the app bar's « Add Activity »). -->
+    <template id="sc_activities_header" name="App shell: activities list header">
+        <t t-call="bemade_sports_clinic.sc_list_header">
+            <t t-set="header_section" t-value="'activities.header'"/>
+            <t t-if="sc_add_activity_url">
+                <t t-set="add_label">Add Activity</t>
+                <t t-set="add_url" t-value="sc_add_activity_url"/>
+                <t t-set="add_key" t-value="'activity.add'"/>
+            </t>
+        </t>
+    </template>
+
     <!-- /my/activities (+ ?model=&res_id= context views, /my/team/activities,
          /my/event/activities) in the shell. -->
     <template id="sc_app_activities" name="Sports Clinic App: activities">
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-set="sc_title" t-value="sc_nav_labels['activities']"/>
             <t t-set="sc_active_nav" t-value="'activities'"/>
-            <t t-if="sc_add_activity_url">
-                <t t-set="sc_add_activity_label">Add Activity</t>
-                <t t-set="sc_primary_action" t-value="{'url': sc_add_activity_url, 'label': sc_add_activity_label, 'key': 'activity.add'}"/>
-            </t>
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
             <t t-set="sc_can_reassign" t-value="show_assignee and sc_can('activities.reassign')"/>
             <t t-if="simplified">
+                <t t-call="bemade_sports_clinic.sc_activities_header"/>
                 <t t-call="bemade_sports_clinic.sc_activity_list">
                     <t t-set="show_assignee" t-value="True"/>
                     <t t-set="can_reassign" t-value="sc_can_reassign"/>
@@ -196,6 +211,7 @@
                     <t t-set="tabs" t-value="sc_activity_tabs"/>
                     <t t-set="active" t-value="sc_activity_active_tab"/>
                 </t>
+                <t t-call="bemade_sports_clinic.sc_activities_header"/>
                 <t t-foreach="sc_activity_tabs" t-as="atab">
                     <section class="o_sc_tab_panel" t-att-data-sc-tab-panel="atab[0]" role="tabpanel"
                              t-att-hidden="None if sc_activity_active_tab == atab[0] else 'hidden'">
@@ -295,6 +311,9 @@
     <template id="sc_app_activity_detail" name="Sports Clinic App: activity detail">
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-set="sc_title" t-value="activity.summary or activity.activity_type_id.name"/>
+            <!-- Task 1611: a save refreshes the title, the state chip and the
+                 read view in place (and the app bar's overdue badge). -->
+            <t t-set="sc_page_key" t-value="'mail.activity:%s' % activity.id"/>
             <t t-set="sc_active_nav" t-value="'activities'"/>
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
             <t t-set="act_state" t-value="'overdue' if activity.date_deadline &lt; today_date else ('today' if activity.date_deadline == today_date else 'planned')"/>
@@ -302,9 +321,9 @@
                  activity is edited in place (was a separate edit page); the
                  type stays read-only, as the edit route always treated it. -->
             <section t-attf-class="o_sc_card #{'o_sc_edit_card' if sc_activity_editable else ''}" data-sc-section="activity.detail"
-                     t-att-data-sc-edit-card="'activity' if sc_activity_editable else None" data-sc-edit-reload="1">
+                     t-att-data-sc-edit-card="'activity' if sc_activity_editable else None">
                 <div class="o_sc_edit_card_head">
-                    <span class="o_sc_chips">
+                    <span class="o_sc_chips" t-att-data-sc-fragment="sc_fragment_key(activity, 'chips')">
                         <span t-if="act_state == 'overdue'" class="o_sc_chip o_sc_chip_red">Overdue</span>
                         <span t-elif="act_state == 'today'" class="o_sc_chip o_sc_chip_yellow">Today</span>
                         <span t-else="" class="o_sc_chip o_sc_chip_ghost">Planned</span>
@@ -317,16 +336,22 @@
                         </button>
                     </t>
                 </div>
-                <div data-sc-edit-view="read">
+                <div data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(activity, 'read')">
                     <dl class="o_sc_kv">
                         <dt>Summary</dt><dd><span t-att-data-sc-display="sc_display_key(activity, 'summary')" t-out="activity.summary or '—'"/></dd>
                         <dt>Activity Type</dt><dd><span t-field="activity.activity_type_id"/></dd>
                         <dt>Due Date</dt><dd><span t-att-data-sc-display="sc_display_key(activity, 'date_deadline')" t-field="activity.date_deadline" t-options="{'widget': 'date'}"/></dd>
                         <dt>Assigned To</dt><dd><span t-att-data-sc-display="sc_display_key(activity, 'user_id')" t-out="activity.sudo().user_id.name"/></dd>
-                        <t t-if="related_record_name">
+                        <!-- Task 1595: the same access-gated links as the row. -->
+                        <t t-if="sc_related_links">
                             <dt>Related Record</dt>
-                            <dd><a t-if="sc_related_url" t-att-href="sc_related_url" t-out="related_record_name"/><t t-else="" t-out="related_record_name"/></dd>
+                            <dd class="o_sc_row_links" data-sc-section="activity.related">
+                                <t t-call="bemade_sports_clinic.sc_row_links"><t t-set="links" t-value="sc_related_links"/></t>
+                            </dd>
                         </t>
+                        <!-- Task 1595: « Créée le ». -->
+                        <dt>Created</dt>
+                        <dd><span data-sc-activity-created="1" t-field="activity.create_date" t-options="{'widget': 'datetime', 'hide_seconds': True}"/></dd>
                     </dl>
                     <div t-if="activity.note" class="o_sc_activity_note"><div t-field="activity.note"/></div>
                 </div>

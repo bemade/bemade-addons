@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.60.0",
+    'version': "19.0.1.89.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -153,6 +153,7 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "security/team_digest_rules.xml",
         "security/sports_quick_note_rules.xml",
         "security/sports_clinic_attendance_rules.xml",
+        "security/training_history_rules.xml",
         # Task 1401: personal /my/teams order, own-rows-only rule.
         "security/sports_team_user_rank_rules.xml",
         "data/sports_clinic_data.xml",
@@ -227,6 +228,7 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "views/sc_components.xml",
         "views/sc_app_layout.xml",
         "views/sc_app_pages.xml",
+        "views/sc_app_account.xml",
         # Task 1542: team page, install page, offline page.
         "views/sc_app_team.xml",
         # Task 1539: P2 — players, injuries, notes, documents, activities.
@@ -317,6 +319,19 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             # Task 1585: tap-to-call / tap-to-email hrefs.
             "bemade_sports_clinic/static/src/js/sc_contact_href.js",
             "bemade_sports_clinic/static/src/js/sc_app_ui.js",
+            # Task 1606: the user menu (rail footer / app-bar avatar).
+            "bemade_sports_clinic/static/src/js/sc_user_menu.js",
+            "bemade_sports_clinic/static/src/js/sc_list_header.js",
+            # Task 1611: read fragments (in-place refresh after a save) and
+            # the « back shows current data » check.
+            "bemade_sports_clinic/static/src/js/sc_fragments.js",
+            # Task 1603: follow-up proposals (the sheet after a save).
+            "bemade_sports_clinic/static/src/js/sc_proposal.js",
+            # Task 1604: quick « Vérifier » / « Résoudre » of an injury.
+            "bemade_sports_clinic/static/src/js/sc_injury_quick.js",
+            "bemade_sports_clinic/static/src/js/sc_injury_card.js",
+            "bemade_sports_clinic/static/src/js/sc_account.js",
+            "bemade_sports_clinic/static/src/js/sc_forms.js",
             "bemade_sports_clinic/static/src/js/sc_app_nav.js",
             "bemade_sports_clinic/static/src/js/sc_sw_register.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.js",
@@ -326,6 +341,8 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             "bemade_sports_clinic/static/src/js/sc_activities.js",
             # Task 1540: P3 styles, the live clinic waiting list.
             "bemade_sports_clinic/static/src/scss/sc_p3.scss",
+            # Task 1620: « Mon compte » / « Sécurité » in the shell.
+            "bemade_sports_clinic/static/src/scss/sc_account.scss",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.js",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.xml",
             # Review 2026-09-29: live counters (the home's clinics-today chip).

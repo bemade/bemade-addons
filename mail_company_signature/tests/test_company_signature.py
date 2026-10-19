@@ -38,13 +38,13 @@ class TestCompanySignature(CompanySignatureCommon):
             "job_title": "",
             "mobile_phone": "",
             "name": "Ann",
-            "company_name": "Durpro",
+            "company_name": "Acme",
         }
         cases = [
             ("<p>Cell : {{mobile_phone}}</p><p>{{name}}</p>", "<p>Ann</p>"),
             (
                 "<p>{{job_title}} – {{company_name}}</p>",
-                "<p> – Durpro</p>",
+                "<p> – Acme</p>",
             ),
             (
                 "<p>Fermé le 26 nov.</p><p>{{mobile_phone}}</p>",
@@ -200,12 +200,12 @@ class TestCompanySignature(CompanySignatureCommon):
         self.assertTrue(self.u_portal.sudo().signature_is_generated)
 
     def test_per_company_policy(self):
-        self.company_b.sudo().company_signature_template = "<p>PNEUMAC {{name}}</p>"
+        self.company_b.sudo().company_signature_template = "<p>GLOBEX {{name}}</p>"
         self._enable(self.company_a)
         self._enable(self.company_b)
-        self.assertIn("PNEUMAC", self.u_b.signature)
+        self.assertIn("GLOBEX", self.u_b.signature)
         for user in self.u_full | self.u_nomobile | self.u_noemp:
-            self.assertNotIn("PNEUMAC", user.signature)
+            self.assertNotIn("GLOBEX", user.signature)
         # batched, mixed-company matching
         self._make_employee(self.u_full, self.company_b, {"job_title": "WrongCo"})
         batch = self.u_full | self.u_b

@@ -12,7 +12,8 @@ Acceptance criteria covered here:
 * UC-S3 (AC3) A sub-page renders the back chevron + context line AND the
   crumb row (task 1579: the screen width decides which one shows — the
   former ``sc_nav_mode`` setting is gone).
-* UC-S4 (AC2) The theme attribute follows ``sc_theme`` (dark by default).
+* UC-S4 (AC2) The theme attribute follows ``sc_theme`` (dark by default)
+  when the theme choice is enabled (task 1602: forced dark otherwise).
 * UC-S5 The stock portal home stays reachable from the shell
   (``/my/home?classic=1``).
 """
@@ -26,12 +27,17 @@ from odoo.addons.bemade_sports_clinic.controllers.app_shell import AppShellMixin
 from odoo.addons.bemade_sports_clinic.tests.portal_cov_common import PortalCovCommon
 
 SWITCH = 'bemade_sports_clinic.app_shell_enabled'
+THEME_CHOICE = 'bemade_sports_clinic.sc_theme_choice_enabled'
 
 
 class AppShellCommon(PortalCovCommon):
 
     def _switch(self, on):
         self.env['ir.config_parameter'].sudo().set_param(SWITCH, 'True' if on else False)
+
+    def _theme_choice(self, on):
+        """Task 1602: the dark / light choice (off = forced dark)."""
+        self.env['ir.config_parameter'].sudo().set_param(THEME_CHOICE, 'True' if on else False)
 
     def _get(self, url):
         resp = self.url_open(url)
@@ -147,7 +153,9 @@ class TestAppShellSwitch1538(AppShellCommon):
         text, tree = self._get('/my/teams')
         self.assertIsNotNone(self._shell(tree))
         self.assertIn('PC Team A', text)
-        rows = tree.xpath('//a[contains(@class, "o_sc_entity_row")][@data-sc-team-id]')
+        # Task 1592 (deliberate update): a team row is a link row now (its
+        # activity clock is its own link); the team id is on the main link.
+        rows = tree.xpath('//*[contains(@class, "o_sc_entity_row")]//a[@data-sc-team-id]')
         self.assertTrue(rows)
         # Sticky sort (task 1401) survives in the shell.
         self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_sort")]'))
@@ -176,6 +184,7 @@ class TestAppShellSwitch1538(AppShellCommon):
     # -- UC-S4 -----------------------------------------------------------
     def test_theme_attribute_follows_preference(self):
         self._switch(True)
+        self._theme_choice(True)
         self._login_tp()
         self.assertEqual(self.tp.sc_theme, 'dark')
         _text, tree = self._get('/my/home')

@@ -101,7 +101,8 @@ class TestInternalTpParity1577(Parity1577Common):
         self.assertIsNotNone(self._shell(tree))
         self.assertFalse(tree.xpath('//*[@data-sc-section="injury.stage.readonly"]'),
                          "the therapist gets the stage control, not the read-only chip")
-        self.assertTrue(tree.xpath('//dialog[@id="sc_delete_injury_sheet"]//form'))
+        # Task 1616: the injury page is the open card.
+        self.assertTrue(tree.xpath('//dialog[@id="sc_delete_injury_sheet_%s"]//form' % self.injury.id))
         props = ' '.join(tree.xpath('//owl-component/@props'))
         for name in ('internal_notes', 'hidden_from_coaches', 'resolution_date'):
             self.assertIn('"%s"' % name, props, name)

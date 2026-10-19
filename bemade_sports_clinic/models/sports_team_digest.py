@@ -4,6 +4,8 @@ import logging
 
 import pytz
 
+from odoo.tools import format_date
+
 _logger = logging.getLogger(__name__)
 
 # Config params (global). The capture time is the team-local clock time at/after
@@ -130,6 +132,62 @@ class SportsTeamDigest(models.Model):
                     "backend_link": True,
                 },
             )
+
+    # ------------------------------------------- history row counts (task 1614)
+    def _sc_counts(self, role):
+        """Counts shown under a history date: ``{players, changes,
+        new_injuries}``.
+
+        A therapist reads the stored counts (the TP superset captured with the
+        snapshot). Those also count internal notes and hidden-from-coaches
+        injuries, so a coach's counts are taken from the coach re-gated
+        snapshot instead: players with at least one change a coach may read,
+        those changes, and the new injuries a coach may see.
+        """
+        self.ensure_one()
+        if role != "coach":
+            return {
+                "players": self.player_count,
+                "changes": self.change_count,
+                "new_injuries": self.new_injury_count,
+            }
+        players = changes = new_injuries = 0
+        for player in self._render_for_role("coach"):
+            cards = player["active_injuries"] + player["resolved_injuries"]
+            own = len(player["items"]) + sum(len(c["items"]) for c in cards)
+            if own:
+                players += 1
+                changes += own
+            new_injuries += sum(1 for c in player["active_injuries"] if c.get("is_new"))
+        return {"players": players, "changes": changes, "new_injuries": new_injuries}
+
+    def _sc_counts_label(self, role):
+        """« 2 players · 5 changes · 1 new injury », or « No changes »."""
+        counts = self._sc_counts(role)
+        if not counts["players"] and not counts["changes"]:
+            return self.env._("No changes")
+        n = counts["players"]
+        parts = [self.env._("1 player") if n == 1
+                 else self.env._("%(count)s players", count=n)]
+        n = counts["changes"]
+        parts.append(self.env._("1 change") if n == 1
+                     else self.env._("%(count)s changes", count=n))
+        n = counts["new_injuries"]
+        if n:
+            parts.append(self.env._("1 new injury") if n == 1
+                         else self.env._("%(count)s new injuries", count=n))
+        return " · ".join(parts)
+
+    def _sc_snapshot_line(self):
+        """The legacy page's explainer, restored in the app shell (task 1614):
+        « Snapshot of <date> (<tz>) — changes over the last 24 h »."""
+        self.ensure_one()
+        return self.env._(
+            "Snapshot of %(date)s%(tz)s — changes over the last %(hours)s h",
+            date=format_date(self.env, self.snapshot_date),
+            tz=" (%s)" % self.timezone if self.timezone else "",
+            hours=(self.item_data or {}).get("window_hours") or SNAPSHOT_WINDOW_HOURS,
+        )
 
     # -------------------------------------------------------- role re-gate (read)
     def _render_for_role(self, role):

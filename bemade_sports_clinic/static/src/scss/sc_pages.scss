@@ -459,6 +459,18 @@ $sc-laptop: 992px;
             color: var(--sc-fg-2) !important;
         }
 
+        // Task 1614: the digest's « Show details » link and its team
+        // announcement (alert-info / alert-secondary) on the shell surface.
+        .text-primary {
+            color: var(--sc-accent) !important;
+        }
+
+        .alert {
+            --bs-alert-bg: var(--sc-surface-2);
+            --bs-alert-color: var(--sc-fg);
+            --bs-alert-border-color: var(--sc-line);
+        }
+
         .card,
         .list-group-item,
         .modal-content,
@@ -466,6 +478,15 @@ $sc-laptop: 992px;
             background: var(--sc-surface);
             color: var(--sc-fg);
             border-color: var(--sc-line);
+        }
+
+        // Task 1614: Odoo's frontend paints every .card-body with a 90 %
+        // white (bootstrap_review_frontend) — light shell text on near-white.
+        // !important: that rule's :not(.card[data-vxml] .card-body) outweighs
+        // any selector of ours.
+        .card-body {
+            background-color: transparent !important;
+            color: var(--sc-fg) !important;
         }
 
         .card-header,

@@ -24,7 +24,8 @@
                 </div>
             </t>
             <t t-if="not players">
-                <div class="text-muted fst-italic small">
+                <!-- Task 1614: .o_sc_empty = the app's lazy loader keeps it. -->
+                <div class="text-muted fst-italic small o_sc_empty">
                     No changes were recorded for this day.
                 </div>
             </t>

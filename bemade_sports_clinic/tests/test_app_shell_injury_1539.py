@@ -25,7 +25,10 @@ Acceptance criteria covered here:
 * UC-N3 (AC5) Note history (task 1581: the injury page's sheet fragment):
   a coach gets the external rows only (even with ?scope=internal), a
   therapist all of them + the scope filter.
-* UC-D1 (AC1/AC2/AC5) Injury documents: switch OFF = today's page; in the
+  Task 1616: /my/injury/edit lands on the open injury card, which carries
+  the same fields and actions.
+* UC-D1 (AC1/AC2/AC5) Injury documents (task 1616: the open card's
+  « Documents »): switch OFF = today's page; in the
   shell a therapist gets upload + a delete sheet posting (CSRF) to today's
   POST route, a coach only the list and the download links.
 """
@@ -65,7 +68,7 @@ class TestAppShellInjury1539(AppShellCommon):
     @staticmethod
     def _owl(tree):
         out = {}
-        for node in tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+        for node in tree.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
             props = json.loads(node.get('props'))
             out[props.get('field') or props.get('name')] = props
         return out
@@ -143,10 +146,18 @@ class TestAppShellInjury1539(AppShellCommon):
                       resp.text)
 
     # -- UC-I3 -----------------------------------------------------------
+    def _card(self, tree):
+        """Task 1616: the injury page is the open card (an old link lands
+        on it) — its fields are the card's."""
+        card = tree.xpath('//details[@id="injury-%s"]' % self.injury.id)[0]
+        self.assertEqual(card.get('open'), 'open')
+        return card
+
     def test_edit_therapist(self):
         self._switch(True)
         self._login_tp()
         text, tree = self._get(self.edit_url)
+        tree = self._card(tree)
         owl = self._owl(tree)
         self.assertEqual(owl['stage']['inputType'], 'segmented')
         self.assertTrue(owl['stage']['instant'])
@@ -156,7 +167,7 @@ class TestAppShellInjury1539(AppShellCommon):
                      'resolution_date', 'parental_consent'):
             self.assertEqual(owl[name]['mode'], 'server', name)
         self.assertIn('TP-only synthetic remark', text)
-        form = tree.xpath('//dialog[@id="sc_delete_injury_sheet"]//form')[0]
+        form = tree.xpath('.//dialog[@id="sc_delete_injury_sheet_%s"]//form' % self.injury.id)[0]
         self.assertEqual(form.get('action'), '/my/injury/delete')
         self.assertEqual(form.xpath('.//input[@name="injury_id"]/@value'), [str(self.injury.id)])
         self.assertTrue(form.xpath('.//input[@name="csrf_token"]/@value')[0])
@@ -165,15 +176,16 @@ class TestAppShellInjury1539(AppShellCommon):
         self._switch(True)
         self._login_coach()
         text, tree = self._get(self.edit_url)
+        tree = self._card(tree)
         owl = self._owl(tree)
         self.assertEqual(set(owl), {'sc_injury_date', 'external_notes'})
         self.assertIn('Visible synthetic remark', text)
         self.assertNotIn('TP-only synthetic remark', text)
-        self.assertFalse(tree.xpath('//*[@data-sc-action="injury.delete"]'))
-        # The status reads in the details card's read view (pencil paradigm).
-        read = tree.xpath('//*[@data-sc-edit-card="injury-details"]//*[@data-sc-edit-view="read"]')[0]
-        self.assertIn(self.injury.diagnosis or '', read.text_content())
-        self.assertFalse([p for p in tree.xpath('//owl-component/@props') if '"stage"' in p])
+        self.assertFalse(tree.xpath('.//*[@data-sc-action="injury.delete"]'))
+        # The diagnosis and status read in the card's summary (task 1616).
+        summary = tree.xpath('./summary')[0]
+        self.assertIn(self.injury.diagnosis or '', summary.text_content())
+        self.assertFalse([p for p in tree.xpath('.//owl-component/@props') if '"stage"' in p])
 
     # -- UC-I4 -----------------------------------------------------------
     def test_hidden_injury_never_reaches_a_coach(self):
@@ -286,10 +298,12 @@ class TestAppShellDocuments1539(AppShellCommon):
         self._login_tp()
         _text, tree = self._get(self.url + '&team_id=%s' % self.team_a.id)
         self.assertIsNotNone(self._shell(tree))
-        upload = tree.xpath('//*[@data-sc-section="documents.upload"]//form')[0]
-        self.assertEqual(upload.get('action'), '/my/injury/document/upload')
+        # Task 1616: the documents are the open card's « Documents ».
+        card = tree.xpath('//details[@id="injury-%s"][@open]' % self.injury.id)[0]
+        upload = card.xpath('.//dialog[@id="sc_injury_%s_documents_add"]//form' % self.injury.id)[0]
+        self.assertEqual(upload.get('action'), '/my/patient/document/upload')
         self.assertEqual(upload.get('enctype'), 'multipart/form-data')
-        self.assertEqual(upload.xpath('.//input[@name="team_id"]/@value'), [str(self.team_a.id)])
+        self.assertIn('team_id=%s' % self.team_a.id, upload.xpath('.//input[@name="return_url"]/@value')[0])
         self.assertTrue(tree.xpath('//a[@href="/my/injury/document/download/%s"]' % self.doc.id))
         form = tree.xpath('//dialog[@id="sc_delete_document_%s"]//form' % self.doc.id)[0]
         self.assertEqual(form.get('action'), '/my/injury/document/delete/%s' % self.doc.id)
@@ -304,6 +318,6 @@ class TestAppShellDocuments1539(AppShellCommon):
         self._switch(True)
         self._login_coach()
         _text, tree = self._get(self.url)
-        self.assertFalse(tree.xpath('//*[@data-sc-section="documents.upload"]'))
+        self.assertFalse(tree.xpath('//*[@data-sc-action="injury.documents.add"]'))
         self.assertFalse(tree.xpath('//*[@data-sc-action="documents.delete"]'))
         self.assertTrue(tree.xpath('//a[@href="/my/injury/document/download/%s"]' % self.doc.id))

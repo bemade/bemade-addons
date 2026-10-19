@@ -2,9 +2,35 @@
 <!-- Task 1540 (epic #1535, P3) — see sc_calendar.js. -->
 <templates xml:space="preserve">
     <t t-name="bemade_sports_clinic.ScCalendar">
-        <div class="o_sc_calendar_box" t-att-data-sc-calendar-ready="state.ready ? '1' : '0'">
+        <div class="o_sc_calendar_box" t-att-class="{'o_sc_calendar_staff': props.staffColors}" t-att-data-sc-calendar-ready="state.ready ? '1' : '0'">
             <p t-if="state.error" class="o_sc_banner o_sc_banner_warn" role="alert" t-esc="errorLabel"/>
             <div class="o_sc_calendar" t-ref="calendar"/>
+            <!-- Task 1605: the people of the visible range; tap = filter. -->
+            <div t-if="props.staffColors and (state.legend.people.length or state.legend.unassigned or activeMissing)"
+                 class="o_sc_staff_legend" data-sc-section="calendar.legend"
+                 role="group" t-att-aria-label="legendTitle">
+                <span class="o_sc_staff_legend_title" t-esc="legendTitle"/>
+                <t t-foreach="state.legend.people" t-as="person" t-key="person.id">
+                    <button type="button" class="o_sc_staff_legend_item"
+                            t-att-class="{'o_sc_staff_legend_active': isActive(person)}"
+                            t-att-data-sc-staff-legend="person.id"
+                            t-att-aria-pressed="isActive(person) ? 'true' : 'false'"
+                            t-att-aria-label="legendLabel(person)" t-att-title="legendLabel(person)"
+                            t-on-click="() => this.filterOn(person)">
+                        <span class="o_sc_staff_dot" t-attf-style="background: {{ person.color }}"/>
+                        <span t-esc="person.name"/>
+                    </button>
+                </t>
+                <button t-if="activeMissing" type="button" class="o_sc_staff_legend_item"
+                        data-sc-staff-legend="all" t-on-click="() => this.filterOn(null)">
+                    <span t-esc="showAllLabel"/>
+                </button>
+                <span t-if="state.legend.unassigned" class="o_sc_staff_legend_item o_sc_staff_legend_static"
+                      data-sc-staff-legend="none">
+                    <span class="o_sc_staff_dot o_sc_staff_dot_none"/>
+                    <span t-esc="unassignedLabel"/>
+                </span>
+            </div>
             <div t-if="state.selected" class="o_sc_card o_sc_calendar_detail" data-sc-calendar-detail="1" role="status">
                 <div class="o_sc_card_head">
                     <strong t-esc="state.selected.title"/>

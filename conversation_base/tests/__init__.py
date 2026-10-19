@@ -18,3 +18,4 @@ from . import test_triage_members
 from . import test_triage_actions
 from . import test_triage_row_data
 from . import test_triage_tour
+from . import test_transport_permissions

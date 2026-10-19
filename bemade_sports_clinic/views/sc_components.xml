@@ -21,10 +21,11 @@
             <t t-elif="icon == 'activities'"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></t>
             <t t-elif="icon in ('bookings', 'calendar')"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></t>
             <t t-elif="icon == 'note'"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></t>
-            <t t-elif="icon == 'timesheet'"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></t>
+            <t t-elif="icon in ('timesheet', 'clock')"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></t>
             <t t-elif="icon == 'summary'"><path d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6"/></t>
             <t t-elif="icon == 'account'"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></t>
             <t t-elif="icon == 'security'"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></t>
+            <t t-elif="icon == 'settings'"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></t>
             <t t-elif="icon == 'documents'"><path d="M3 7h18v13H3zM8 7V4h8v3"/></t>
             <t t-elif="icon == 'backend'"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></t>
             <t t-elif="icon == 'logout'"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></t>
@@ -52,6 +53,7 @@
             <t t-elif="icon == 'mail'"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></t>
             <t t-elif="icon == 'check'"><path d="M20 6L9 17l-5-5"/></t>
             <t t-elif="icon == 'filter'"><path d="M22 3H2l8 9.5V19l4 2v-8.5z"/></t>
+            <t t-elif="icon == 'sort'"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></t>
             <t t-else=""><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></t>
         </svg>
     </template>
@@ -133,6 +135,76 @@
             <span t-out="title"/>
             <a t-if="more_url" t-att-href="more_url" class="o_sc_section_more" t-out="more_label"/>
         </h2>
+    </template>
+
+    <!--
+        Task 1607 — the list header: ONE line directly above a list, the same
+        on every page (the app bar carries no list action any more).
+        « + Ajouter » on the left — always that label; add_label (the full
+        action, « Add Injury », « Create a player »…) is its accessible name —
+        and the sort, condensed into a menu, on the right. Variables (all
+        optional; nothing set renders nothing):
+          add_label      the full action (aria-label / title)
+          add_url        a link …
+          add_sheet      … or the id of the sheet (dialog) it opens …
+          add_panel      … or the id of the inline <details> it opens / closes
+                         (the panel follows the header; sc_list_header.js)
+          add_open       add_panel only: the panel renders open
+          add_key        data-sc-action of the add control
+          count          a short count text (« 12 player(s) »)
+          sorts          [{key, label, url, active}] (sc_sort_options), the
+                         menu's links; sort_id (unique on the page, the
+                         popup's id), sort_label (« Sort players »),
+                         sort_section (data-sc-section of the menu)
+          header_section data-sc-section of the header line
+          header_fragment its read-fragment key (task 1611), when a save
+                         can change what it offers
+    -->
+    <template id="sc_list_header" name="App shell: list header">
+        <div t-if="add_label or sorts or count or header_fragment" class="o_sc_list_header"
+             t-att-data-sc-section="header_section or None"
+             t-att-data-sc-fragment="header_fragment or None">
+            <t t-if="add_label">
+                <t t-set="sc_add_text">Add</t>
+                <a t-if="add_url" t-att-href="add_url" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm o_sc_list_add"
+                   t-att-data-sc-action="add_key or None" t-att-aria-label="add_label" t-att-title="add_label">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                    <span class="o_sc_list_add_label" t-out="sc_add_text"/>
+                </a>
+                <button t-elif="add_sheet" type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm o_sc_list_add"
+                        t-att-data-sc-sheet-open="add_sheet" t-att-data-sc-action="add_key or None"
+                        t-att-aria-label="add_label" t-att-title="add_label">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                    <span class="o_sc_list_add_label" t-out="sc_add_text"/>
+                </button>
+                <button t-elif="add_panel" type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm o_sc_list_add"
+                        t-att-aria-controls="add_panel" t-att-aria-expanded="'true' if add_open else 'false'"
+                        data-sc-list-add-toggle="1" t-att-data-sc-action="add_key or None"
+                        t-att-aria-label="add_label" t-att-title="add_label">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                    <span class="o_sc_list_add_label" t-out="sc_add_text"/>
+                </button>
+            </t>
+            <span t-if="count" class="o_sc_meta o_sc_list_header_count" t-out="count"/>
+            <div t-if="sorts" class="o_sc_sort_menu" t-att-data-sc-section="sort_section or None">
+                <t t-set="sc_sort_current" t-value="([s for s in sorts if s['active']] or sorts)[0]"/>
+                <button type="button" class="o_sc_sort_toggle" data-sc-menu-toggle="1" aria-haspopup="menu"
+                        aria-expanded="false" t-att-aria-controls="sort_id">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'sort'"/></t>
+                    <span class="visually-hidden" t-out="sort_label"/>
+                    <span class="o_sc_sort_current" t-out="sc_sort_current['label']"/>
+                </button>
+                <div t-att-id="sort_id" class="o_sc_menu_popup o_sc_sort_popup" role="menu" data-sc-menu-popup="1"
+                     t-att-aria-label="sort_label" hidden="hidden">
+                    <a t-foreach="sorts" t-as="sort" t-att-href="sort['url']" role="menuitemradio"
+                       class="o_sc_menu_item" t-att-data-sc-sort="sort['key']"
+                       t-att-aria-checked="'true' if sort['active'] else 'false'">
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'check'"/></t>
+                        <span t-out="sort['label']"/>
+                    </a>
+                </div>
+            </div>
+        </div>
     </template>
 
     <!--
@@ -282,6 +354,7 @@
             </span>
             <p t-if="value" t-attf-class="o_sc_field_value #{'o_sc_pre' if pre else ''}" t-out="value"/>
             <p t-else="" class="o_sc_field_value o_sc_muted" t-out="empty or '—'"/>
+            <small t-if="static_hint" class="o_sc_hint" t-out="static_hint"/>
         </div>
     </template>
 
@@ -323,17 +396,23 @@
     <!--
         Task 1539 — document row. Variables: doc (sports.injury.document),
         download_url, delete_sheet (dialog id of the delete confirm, or
-        False), meta (subtitle text).
+        False), meta (subtitle text). Task 1616: optional edit_toggle (the
+        pencil of the enclosing per-document edit card) and fragment_key
+        (the text is a read fragment refreshed by a save of the document).
     -->
     <template id="sc_document_row" name="App shell: document row">
         <div class="o_sc_entity_row o_sc_entity_row_static o_sc_doc_row" t-att-data-sc-document-id="doc.id">
             <span class="o_sc_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'documents'"/></t></span>
-            <span class="o_sc_row_text">
+            <span class="o_sc_row_text" t-att-data-sc-fragment="fragment_key or None">
                 <span class="o_sc_row_title" t-out="doc.name"/>
                 <span class="o_sc_row_subtitle" t-out="meta"/>
                 <span t-if="doc.description" class="o_sc_row_subtitle" t-out="doc.description"/>
             </span>
             <span class="o_sc_row_trailing">
+                <button t-if="edit_toggle" type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1"
+                        aria-expanded="false" data-sc-action="documents.edit" aria-label="Edit" title="Edit">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                </button>
                 <a t-att-href="download_url" class="o_sc_icon_btn" data-sc-action="documents.download"
                    aria-label="Download" title="Download">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'download'"/></t>
@@ -357,9 +436,11 @@
     <template id="sc_note_card" name="App shell: note card">
         <!-- Owner review 2026-10-11: an editable note is a pencil card. -->
         <article t-attf-class="o_sc_card o_sc_note_card #{'o_sc_edit_card' if edit_props else ''}" t-att-data-sc-note-id="note.id"
-                 t-att-data-sc-edit-card="('note-%s' % note.id) if edit_props else None"
-                 t-att-data-sc-edit-reload="'1' if edit_props else None">
-            <div class="o_sc_meta o_sc_note_meta">
+                 t-att-data-sc-edit-card="('note-%s' % note.id) if edit_props else None">
+            <!-- Task 1611: the meta line and the « modified » stamp are read
+                 fragments (a save of the note — or of its linked injury's
+                 diagnosis — refreshes them in place). -->
+            <div class="o_sc_meta o_sc_note_meta" t-att-data-sc-fragment="sc_fragment_key(note, 'meta')">
                 <span t-out="note.portal_when_label"/>
                 <span>·</span>
                 <span class="o_sc_note_author" t-out="note.sudo().user_id.name"/>
@@ -393,39 +474,231 @@
                 </div>
             </t>
             <p t-else="" class="o_sc_pre o_sc_note_text" t-out="note.note"/>
-            <p t-if="note.modified_label" class="o_sc_meta o_sc_note_modified" t-att-title="note.modified_by_name"
-               t-out="note.modified_label"/>
+            <div class="o_sc_note_stamp" t-att-data-sc-fragment="sc_fragment_key(note, 'stamp')">
+                <p t-if="note.modified_label" class="o_sc_meta o_sc_note_modified" t-att-title="note.modified_by_name"
+                   t-out="note.modified_label"/>
+            </div>
         </article>
     </template>
 
     <!--
+        Task 1595 — LINK ROW: a list row with ONE main link plus secondary
+        links / chips, without nesting anchors. Shared by the activity rows
+        and meant for the player rows with their team links + expand control
+        (#1593) and the activities clock chip on player / team / event rows
+        and injury cards (#1592).
+
+        How it works: the row is a plain container (not an <a>); the TITLE is
+        the main <a>, whose ::after is stretched over the whole row (the
+        Bootstrap « stretched link » pattern, no JS) — a tap anywhere on the
+        row opens ``href``. Every other <a> / <button> / <summary> / form
+        control inside the row is layered above it, so it gets its own tap.
+        Keyboard: the main link is one tab stop (its focus ring outlines the
+        whole row), each secondary link / control its own; screen readers
+        read the main link's text (the title), then the rest as plain text.
+
+        Slots (variables set in the t-call body):
+          href          main target (required)
+          title         main link text (required)
+          main_attrs    dict of extra attributes of the main <a> (data-*, aria-label…)
+          title_parts   optional split title (owner review 2026-10-14): a list of
+                        {text[, url, model]} segments; a segment with ``url`` is
+                        its own link (e.g. the related record's name in an
+                        activity title), layered above the main link, which
+                        then carries the whole title as its aria-label (never
+                        an <a> inside an <a>)
+          subtitle      text or markup (a t-set body) under the title — never
+                        put a link here, use ``links`` or ``meta``
+          dot / lead_icon   leading dot tone (red|yellow|green) or sc_icon key, as sc_entity_row
+          meta          optional markup under the subtitle (t-set body): chips,
+                        status lines, extra links (layered above automatically)
+          links         list of secondary links on their own line under the text:
+                        dicts {label|name, url (False → plain text), icon (sc_icon
+                        key, optional), title (tooltip, optional), model (data
+                        attribute, optional)} — see sc_row_links
+          row_class     extra classes of the row container
+          row_attrs     dict of extra attributes of the row container
+          chevron       trailing chevron (default True)
+          body (0)      trailing content: chips, counts, icon buttons / links
+                        (each clickable on its own, the rest of the row opens href)
+    -->
+    <template id="sc_link_row" name="App shell: link row">
+        <div t-attf-class="o_sc_entity_row o_sc_link_row #{row_class or ''}" t-att="row_attrs or {}">
+            <span t-if="dot" t-attf-class="o_sc_dot o_sc_tone_#{dot}" aria-hidden="true"/>
+            <span t-elif="lead_icon" class="o_sc_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="lead_icon"/></t></span>
+            <span t-else="" class="o_sc_row_lead o_sc_row_lead_empty" aria-hidden="true"/>
+            <span class="o_sc_row_text">
+                <span t-if="title_parts and any(part.get('url') for part in title_parts)"
+                      class="o_sc_row_title o_sc_row_title_split" data-sc-title-split="1">
+                    <a t-att-href="href" class="o_sc_link_row_main" t-att-aria-label="title" t-att="main_attrs or {}"/>
+                    <t t-foreach="title_parts" t-as="title_part">
+                        <a t-if="title_part.get('url')" t-att-href="title_part['url']" class="o_sc_row_title_link"
+                           t-att-data-sc-title-link="title_part.get('model') or '1'" t-out="title_part['text']"/>
+                        <span t-else="" t-out="title_part['text']"/>
+                    </t>
+                </span>
+                <a t-else="" t-att-href="href" class="o_sc_link_row_main o_sc_row_title" t-att="main_attrs or {}" t-out="title"/>
+                <span t-if="subtitle" class="o_sc_row_subtitle" t-out="subtitle"/>
+                <t t-if="meta" t-out="meta"/>
+                <span t-if="links" class="o_sc_row_links" data-sc-row-links="1">
+                    <t t-call="bemade_sports_clinic.sc_row_links"/>
+                </span>
+            </span>
+            <span class="o_sc_row_trailing">
+                <t t-out="0"/>
+                <t t-if="chevron is not False" t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'chevron'"/></t>
+            </span>
+        </div>
+    </template>
+
+    <!-- Task 1595 — the secondary links of a link row (or any « record
+         links » line, e.g. the activity detail's related record). Variable:
+         links (see sc_link_row). A link without url is plain text. -->
+    <template id="sc_row_links" name="App shell: row links">
+        <t t-foreach="links" t-as="row_link">
+            <t t-set="row_link_label" t-value="row_link.get('label') or row_link.get('name')"/>
+            <a t-if="row_link.get('url')" t-att-href="row_link['url']" class="o_sc_row_link"
+               t-att-title="row_link.get('title')" t-att-data-sc-row-link="row_link.get('model') or '1'">
+                <t t-if="row_link.get('icon')" t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="row_link['icon']"/></t>
+                <span t-out="row_link_label"/>
+            </a>
+            <span t-else="" class="o_sc_row_link o_sc_row_link_plain" t-att-title="row_link.get('title')"
+                  t-att-data-sc-row-link-plain="row_link.get('model') or '1'">
+                <t t-if="row_link.get('icon')" t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="row_link['icon']"/></t>
+                <span t-out="row_link_label"/>
+            </span>
+        </t>
+    </template>
+
+    <!--
+        Task 1593 — the legacy card's always-on lines of a player row: the
+        training recommendation on ONE line (truncated; whole in the expanded
+        detail) and « Retour prévu » for an injured player (the date, « — »
+        when unset). Variable: row (_sc_player_row_extras keys).
+    -->
+    <template id="sc_player_row_lines" name="App shell: player row lines">
+        <span t-if="row.get('training')" class="o_sc_row_line o_sc_row_training" data-sc-row-training="1">
+            <i class="fa fa-graduation-cap" aria-hidden="true"/>
+            <span class="o_sc_row_line_text" t-out="row['training']"/>
+        </span>
+        <span t-if="row.get('return_label')" class="o_sc_row_line o_sc_row_return" data-sc-row-return="1">
+            <i class="fa fa-clock-o" aria-hidden="true"/>
+            <span>Predicted return:</span>
+            <span class="o_sc_row_line_value" t-out="row['return_label']"/>
+        </span>
+    </template>
+
+    <!--
+        Task 1593 — PLAYER ROW (roster, dashboard « to watch », /my/players):
+        a link row (sc_link_row) carrying the legacy card's content — the
+        name opens the player page, the teams are separate links (none on a
+        team's own page), the Match / Practice / injuries status line, the
+        training recommendation and « Retour prévu » lines, and a « Details »
+        control that expands the active-injury detail UNDER the row,
+        lazy-loaded from ``row['detail_url']`` (sc_app_ui.js) — never
+        rendered for every row.
+
+        Variables: row (from _sc_player_row / _sc_players_values: id, url,
+        title, subtitle, dot, status, changed, pending_removal, training,
+        return_label, team_links, detail_url), row_scope (a short key making
+        the detail's id unique when one player is listed twice on a page).
+        Body (0) = extra trailing chips.
+    -->
+    <template id="sc_player_row" name="App shell: player row">
+        <t t-set="sc_row_detail_id" t-value="'sc-row-detail-%s-%s' % (row_scope or 'row', row['id'])"/>
+        <div class="o_sc_row_group o_sc_player_row" t-att-data-sc-player-id="row['id']">
+            <t t-call="bemade_sports_clinic.sc_link_row">
+                <t t-set="href" t-value="row['url']"/>
+                <t t-set="dot" t-value="row['dot']"/>
+                <t t-set="title" t-value="row['title']"/>
+                <t t-set="subtitle" t-value="row['subtitle']"/>
+                <t t-set="links" t-value="row.get('team_links')"/>
+                <t t-set="meta">
+                    <t t-call="bemade_sports_clinic.sc_player_status_line">
+                        <t t-set="row_status" t-value="row.get('status')"/>
+                        <t t-set="row_changed" t-value="row.get('changed')"/>
+                    </t>
+                    <t t-call="bemade_sports_clinic.sc_player_row_lines"/>
+                    <button t-if="row.get('detail_url')" type="button" class="o_sc_row_expand"
+                            t-att-data-sc-row-expand="sc_row_detail_id" t-att-aria-controls="sc_row_detail_id"
+                            aria-expanded="false">
+                        <span>Details</span>
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
+                    </button>
+                </t>
+                <t t-call="bemade_sports_clinic.sc_activity_clock">
+                    <t t-set="clock" t-value="row.get('clock')"/>
+                </t>
+                <t t-out="0"/>
+                <t t-if="row.get('pending_removal')" t-call="bemade_sports_clinic.sc_status_chip">
+                    <t t-set="tone" t-value="'ghost'"/>
+                    <t t-set="label">Removal pending</t>
+                </t>
+            </t>
+            <div t-if="row.get('detail_url')" t-att-id="sc_row_detail_id" class="o_sc_row_detail"
+                 t-att-data-sc-lazy-url="row['detail_url']" data-sc-row-detail="1" hidden="hidden">
+                <div class="o_sc_lazy_body">
+                    <p class="o_sc_empty o_sc_lazy_loading">Loading…</p>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!--
+        Task 1592 — ACTIVITY CLOCK chip of a player / team / event row or an
+        injury card: a clock + the number of activities assigned to the
+        viewer on that record (total), red when at least one of them is
+        overdue, neutral otherwise; nothing at 0. A link to the record's own
+        activities section. Variable: clock (_sc_activity_clocks: count,
+        overdue, url, label), None / False = no chip. Put it in a link row's
+        trailing body (sc_link_row lifts it above the row's main link) —
+        never inside another <a>.
+    -->
+    <template id="sc_activity_clock" name="App shell: activity clock">
+        <a t-if="clock and clock.get('count')" t-att-href="clock['url']"
+           t-attf-class="o_sc_chip o_sc_activity_clock o_sc_chip_#{'red' if clock.get('overdue') else 'ghost'}"
+           t-att-data-sc-activity-clock="clock['count']"
+           t-att-data-sc-activity-overdue="str(clock.get('overdue') or 0)"
+           t-att-aria-label="clock['label']" t-att-title="clock['label']">
+            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'clock'"/></t>
+            <span t-out="clock['count']"/>
+        </a>
+    </template>
+
+    <!--
         Task 1539 — activity row with its due-date state chip. Variables:
-        activity, today_date, related (dict: name, url), show_assignee,
+        activity, today_date, related_links (sc_activity_related: the
+        access-gated related-record links, task 1595), show_assignee,
         can_reassign. Actions open the shared sheets (sc_activity_sheets)
         through sc_activities.js.
+        Task 1595: a link row (sc_link_row) — the title opens the activity,
+        the related player / team / event / injury link opens that record;
+        the activity type shows in the subtitle when a summary is the title.
     -->
     <template id="sc_activity_row" name="App shell: activity row">
         <t t-set="act_state" t-value="'overdue' if activity.date_deadline &lt; today_date else ('today' if activity.date_deadline == today_date else 'planned')"/>
         <!-- ONE card, actions inside it (owner review 2026-10-10: same UX as
              the other tabs' cards). -->
         <div class="o_sc_card o_sc_activity" t-att-data-sc-activity-row="activity.id" t-att-data-sc-activity-state="act_state">
-            <a t-attf-href="/my/activity/#{activity.id}" class="o_sc_entity_row">
-                <span t-att-class="'o_sc_dot o_sc_tone_%s' % ('red' if act_state == 'overdue' else ('yellow' if act_state == 'today' else 'green'))" aria-hidden="true"/>
-                <span class="o_sc_row_text">
-                    <span class="o_sc_row_title" t-out="activity.summary or activity.activity_type_id.name"/>
-                    <span class="o_sc_row_subtitle">
-                        <span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/>
-                        <t t-if="related and related.get('name')"> · <t t-out="related['name']"/></t>
-                        <t t-if="show_assignee and activity.user_id"> · <t t-out="activity.user_id.name"/></t>
-                    </span>
-                </span>
-                <span class="o_sc_row_trailing">
-                    <span t-if="act_state == 'overdue'" class="o_sc_chip o_sc_chip_red">Overdue</span>
-                    <span t-elif="act_state == 'today'" class="o_sc_chip o_sc_chip_yellow">Today</span>
-                    <span t-else="" class="o_sc_chip o_sc_chip_ghost">Planned</span>
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'chevron'"/></t>
-                </span>
-            </a>
+            <t t-call="bemade_sports_clinic.sc_link_row">
+                <t t-set="href" t-value="'/my/activity/%s' % activity.id"/>
+                <t t-set="title" t-value="activity.summary or activity.activity_type_id.name"/>
+                <!-- Owner review 2026-10-14: the related record's name in the
+                     title is a link to it too (same access-gated URL). -->
+                <t t-set="title_parts" t-value="sc_activity_title_parts(title, related_links)"/>
+                <t t-set="dot" t-value="'red' if act_state == 'overdue' else ('yellow' if act_state == 'today' else 'green')"/>
+                <t t-set="subtitle">
+                    <span t-if="activity.summary and activity.activity_type_id" class="o_sc_activity_type"
+                          t-out="activity.activity_type_id.name"/>
+                    <t t-if="activity.summary and activity.activity_type_id"> · </t>
+                    <span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/>
+                    <t t-if="show_assignee and activity.user_id"> · <t t-out="activity.user_id.name"/></t>
+                </t>
+                <t t-set="links" t-value="related_links"/>
+                <span t-if="act_state == 'overdue'" class="o_sc_chip o_sc_chip_red">Overdue</span>
+                <span t-elif="act_state == 'today'" class="o_sc_chip o_sc_chip_yellow">Today</span>
+                <span t-else="" class="o_sc_chip o_sc_chip_ghost">Planned</span>
+            </t>
             <!-- Task 1589: actions only for who may act on the activity. -->
             <div t-if="sc_activity_can_act(activity)" class="o_sc_card_actions o_sc_activity_actions">
                 <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-sheet-open="sc_activity_complete_sheet"

@@ -154,7 +154,16 @@
                                 <field name="jersey_number"/>
                                 <field name="match_status"/>
                                 <field name="practice_status"/>
-                                <field name="training_recommendation"/>
+                                <!-- Task 1601: « Updated on <date> by <author> » under
+                                     the recommendation (label + div keeps it in the
+                                     value column, as on the injury notes). -->
+                                <label for="training_recommendation"/>
+                                <div>
+                                    <field name="training_recommendation"/>
+                                    <field name="last_training_recommendation_info" nolabel="1" readonly="1"
+                                           class="text-muted fst-italic o_sc_last_note_stamp"
+                                           invisible="not last_training_recommendation_info"/>
+                                </div>
                                 <field name="predicted_return_date"/>
                                 <field name="return_date"/>
                                 <field name="team_info_notes"/>
@@ -162,6 +171,15 @@
                              <notebook>
                                  <page string="Injuries">
                                      <field name="injury_ids"/>
+                                 </page>
+                                 <page string="Training Recommendation History" name="training_history">
+                                     <field name="training_history_ids" readonly="1">
+                                         <list create="0" delete="0" edit="0" no_open="1">
+                                             <field name="change_datetime"/>
+                                             <field name="author_id"/>
+                                             <field name="content_display"/>
+                                         </list>
+                                     </field>
                                  </page>
                                  <page string="Treatment Notes">
                                     <field name="treatment_note_ids">

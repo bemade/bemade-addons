@@ -28,6 +28,25 @@ def legacy_change_emails_enabled(env):
     return str(raw).strip().lower() not in ('', '0', 'false', 'none')
 
 
+def history_author_uid(env):
+    """The authenticated author of an audit-history row (tasks 1241, 1601).
+
+    Portal saves often go through ``record.sudo().write(vals)``, which rebinds
+    the environment to the superuser; an audit trail must credit the human
+    behind the request, so when running as sudo inside an HTTP request the
+    session uid is recovered instead."""
+    if env.su and request and request.session and request.session.uid:
+        return request.session.uid
+    return env.uid
+
+
+def history_stamp_date(record, when):
+    """``when`` (a UTC datetime) as the reader's local date, formatted in the
+    reader's lang — the date half of the « … on <date> by <author> » stamps
+    (tasks 1406, 1601)."""
+    return format_date(record.env, fields.Date.context_today(record, timestamp=when))
+
+
 external_tracking_fields = {
     "diagnosis",
     "predicted_resolution_date",
@@ -102,11 +121,17 @@ class PatientInjury(models.Model):
     # record access to their teams' non-hidden injuries, so without field
     # groups they could read this through JSON-RPC. Code that builds coach-
     # facing output must not read it as the coach (see _card_injury_detail).
+    # Task 1582: each note is ONE « current state » text — a save replaces
+    # it, every version stays in sports.injury.note.history.
     internal_notes = fields.Text(
         tracking=True,
+        help="Current state (replaces the previous text; the history keeps the versions)",
         groups="base.group_user,bemade_sports_clinic.group_portal_treatment_professional",
     )
-    external_notes = fields.Text(tracking=True)
+    external_notes = fields.Text(
+        tracking=True,
+        help="Current state (replaces the previous text; the history keeps the versions)",
+    )
     predicted_resolution_date = fields.Date(tracking=True)
     resolution_date = fields.Date(
         tracking=True, help="The date when the injury was actually resolved."
@@ -272,17 +297,27 @@ class PatientInjury(models.Model):
             raise AccessError(_("Only treatment professionals can verify injuries."))
             
         self.write({'stage': 'active'})
-        message = _("Injury verified by %s") % self.env.user.name
-        self.message_post(body=message)
-        # Close any open verification activities for this injury. Task 1409:
-        # they live on the patient and are keyed by the technical injury_id
-        # link (whatever their res_model).
+        self._after_verify()
+        return True
+
+    def _after_verify(self):
+        """What verifying an injury does besides the stage (task 1612: the
+        « Verify » button AND the app's status selector call it): log
+        « Injury verified by … » and close the open verification To-Dos."""
+        for injury in self:
+            injury.message_post(body=_("Injury verified by %s") % self.env.user.name)
+        self._close_verify_activities()
+
+    def _close_verify_activities(self):
+        """Close the open verification To-Dos about the injuries in self.
+        Task 1409: they live on the patient and are keyed by the technical
+        injury_id link (whatever their res_model). Task 1604: called on ANY
+        transition out of « unverified » (see ``write``), not only a verify."""
         verif_acts = self.env['mail.activity'].sudo().search(
             self._verify_activity_domain() + [('active', '=', True)]
         )
         if verif_acts:
             verif_acts.action_done()
-        return True
 
     def _activity_summary_prefix(self):
         """User-visible context prefix for an activity about this injury
@@ -303,15 +338,34 @@ class PatientInjury(models.Model):
             ('summary', 'ilike', VERIFY_INJURY_SUMMARY),
         ]
         
-    def action_resolve_injury(self):
-        """Mark an injury as resolved."""
+    @api.model
+    def _sc_clear_resolved_predicted_dates(self):
+        """Review fixes 2026-10-18 (post-migrate 19.0.1.86.0): null the
+        predicted resolution date of every already-RESOLVED injury, in SQL —
+        no tracking, no chatter, no digest bump (a data cleanup, not a
+        change anyone made). Unresolved injuries are left alone (even those
+        carrying a resolution date). Returns the number of rows cleared."""
+        self.env.flush_all()
+        self.env.cr.execute("""
+            UPDATE sports_patient_injury
+               SET predicted_resolution_date = NULL
+             WHERE stage = 'resolved'
+               AND predicted_resolution_date IS NOT NULL
+        """)
+        count = self.env.cr.rowcount
+        self.invalidate_model(['predicted_resolution_date'])
+        return count
+
+    def action_resolve_injury(self, resolution_date=None):
+        """Mark an injury as resolved, on ``resolution_date`` (task 1604: the
+        app's « Résoudre » confirms a date) or today."""
         self.ensure_one()
         if self.stage == "resolved":
             return True
-            
+
         self.write({
             'stage': 'resolved',
-            'resolution_date': fields.Date.context_today(self)
+            'resolution_date': resolution_date or fields.Date.context_today(self)
         })
         message = _("Injury marked as resolved by %s") % self.env.user.name
         self.message_post(body=message)
@@ -330,15 +384,9 @@ class PatientInjury(models.Model):
 
     def _note_history_author_id(self):
         """Resolve the authenticated author for note-history rows (task 1241).
-
-        Portal saves go through ``injury.sudo().write(vals)``, which rebinds
-        the environment to the superuser; the audit trail must credit the
-        human behind the request, so when running as sudo inside an HTTP
-        request we recover the session uid instead.
-        """
-        if self.env.su and request and request.session and request.session.uid:
-            return request.session.uid
-        return self.env.uid
+        Task 1601: shared with the training recommendation history
+        (``history_author_uid``)."""
+        return history_author_uid(self.env)
 
     def _last_note_history(self, scope):
         """The newest sports.injury.note.history row of ``scope`` for this
@@ -355,10 +403,9 @@ class PatientInjury(models.Model):
         is gone (task 1406)."""
         if not row:
             return ''
-        when = fields.Date.context_today(self, timestamp=row.note_datetime)
         return _(
             'Last note on %(date)s by %(author)s',
-            date=format_date(self.env, when),
+            date=history_stamp_date(self, row.note_datetime),
             author=row.author_id.name or '—',
         )
 
@@ -377,11 +424,14 @@ class PatientInjury(models.Model):
         doesn't change the field produces no row (task 1241).
 
         Task 1404: comparison is strip-normalized so whitespace-only diffs
-        log nothing, and an essentially-empty NEW value — including a genuine
-        clear — logs nothing (customer decision; the traceability trade-off on
-        clear events is explicitly accepted). Stored content stays raw
-        (un-stripped); normalization is for comparison only. The invariant is
-        that no history row ever has essentially-empty content."""
+        log nothing. Stored content stays raw (un-stripped); normalization is
+        for comparison only.
+
+        Owner review 2026-10-14 (supersedes 1404's « a clear logs nothing »):
+        a genuine clear — a non-empty note made essentially empty — IS
+        recorded, as ONE empty-content row (the history shows it « Cleared »,
+        like the training recommendation's). Empty -> whitespace-only still
+        logs nothing (nothing was there to clear)."""
         changed_fields = [f for f in note_history_scope_by_field if f in vals]
         if not changed_fields:
             return []
@@ -394,13 +444,11 @@ class PatientInjury(models.Model):
                 new_norm = (vals.get(fname) or "").strip()
                 if old_norm == new_norm:
                     continue
-                if not new_norm:
-                    # Clears and whitespace-only writes log nothing.
-                    continue
                 history_vals.append({
                     'injury_id': rec.id,
                     'scope': note_history_scope_by_field[fname],
-                    'content': vals.get(fname),
+                    # A clear: an empty row (rendered « Cleared »).
+                    'content': vals.get(fname) if new_norm else '',
                     'author_id': author_id,
                     'note_datetime': now,
                 })
@@ -423,7 +471,24 @@ class PatientInjury(models.Model):
         if not self.env.context.get('skip_note_history'):
             note_history_vals = self._prepare_note_history_vals(vals)
 
+        # Task 1604 (from 1612): whatever moves an injury out of
+        # « unverified » (verify, the app's status selector straight to
+        # « Resolved », the backend) closes its « Verify injury » To-Do.
+        leaving_unverified = self.browse()
+        if vals.get('stage') and vals['stage'] != 'unverified':
+            leaving_unverified = self.filtered(lambda i: i.stage == 'unverified')
+
+        # Review fixes 2026-10-18 (injury dates rule): resolving an injury —
+        # whatever the path (app stage save, quick « Résoudre »,
+        # action_resolve_injury, the backend) — clears its predicted
+        # resolution date: once resolved only the real date matters.
+        if vals.get('stage') == 'resolved' and vals.get('predicted_resolution_date') is not False:
+            vals = dict(vals, predicted_resolution_date=False)
+
         res = super().write(vals)
+
+        if leaving_unverified:
+            leaving_unverified._close_verify_activities()
 
         if note_history_vals:
             # sudo: history rows are only ever created by server code; no
@@ -432,7 +497,10 @@ class PatientInjury(models.Model):
 
         # Update subscriptions if internal_notes changes (unless suppressed)
         if not suppress_followers and 'internal_notes' in vals:
-            for rec in self:
+            # sudo (owner review 2026-10-14): follower-subtype upkeep reads
+            # the followers' users and groups, which a portal therapist saving
+            # the internal notes may not read (res.groups ACL -> 403).
+            for rec in self.sudo():
                 rec._manage_treatment_professional_subscriptions()
 
         # Task 1272: propagate non-note injury changes to the owning player's
@@ -730,6 +798,11 @@ class PatientInjury(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        # Review fixes 2026-10-18: an injury created already resolved carries
+        # no predicted resolution date (same rule as resolving one).
+        vals_list = [dict(vals, predicted_resolution_date=False)
+                     if vals.get('stage') == 'resolved' else vals
+                     for vals in vals_list]
         # Determine context before creating to avoid mail.followers writes
         # when portal/coach creates. "Treatment professional" covers BOTH
         # internal and portal TPs — the latter must also create injuries

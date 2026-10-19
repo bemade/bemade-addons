@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation IMAP",
-    "version": "19.0.1.1.1",
+    "version": "19.0.1.2.1",
     "category": "Discuss",
     "summary": "Generic IMAP/SMTP conversation transport provider "
     "(endpoints + password login for the shared email engine).",
@@ -32,6 +32,11 @@
     "data": [
         "views/conversation_transport_views.xml",
     ],
+    "assets": {
+        "web.assets_tests": [
+            "conversation_imap/static/tests/tours/**/*",
+        ],
+    },
     "installable": True,
     "application": False,
     "auto_install": False,

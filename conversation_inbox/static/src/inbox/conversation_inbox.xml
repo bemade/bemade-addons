@@ -30,6 +30,37 @@
                             </option>
                         </t>
                     </select>
+                    <t t-if="canSearch">
+                        <form
+              class="o_conversation_inbox_search input-group w-auto"
+              t-on-submit="onSearchSubmit"
+            >
+                            <input
+                type="search"
+                class="form-control o_conversation_inbox_search_input"
+                placeholder="Search this mailbox..."
+                aria-label="Search this mailbox"
+                t-model="state.searchTerm"
+              />
+                            <button
+                type="submit"
+                class="btn btn-secondary o_conversation_inbox_search_submit"
+                title="Search"
+              >
+                                <i class="fa fa-search" />
+                            </button>
+                            <t t-if="state.searchTerm or state.activeQuery">
+                                <button
+                  type="button"
+                  class="btn btn-secondary o_conversation_inbox_search_clear"
+                  title="Clear search"
+                  t-on-click="onSearchClear"
+                >
+                                    <i class="fa fa-times" />
+                                </button>
+                            </t>
+                        </form>
+                    </t>
                     <div class="ms-auto d-flex gap-2">
                         <button
               class="btn btn-secondary"
@@ -51,6 +82,11 @@
 
                 <t t-if="state.loading">
                     <div class="text-muted">Loading...</div>
+                </t>
+                <t t-elif="!state.items.length and state.activeQuery">
+                    <div
+            class="text-muted o_conversation_inbox_no_match"
+          >No messages match your search.</div>
                 </t>
                 <t t-elif="!state.items.length">
                     <div class="text-muted">No messages on this page.</div>
@@ -179,6 +215,7 @@
                                                         Archive
                                                     </button>
                                                     <button
+                            t-if="currentTransport.can_trash_mail"
                             class="btn btn-outline-danger btn-sm o_inbox_delete"
                             t-on-click="() => this.onDelete(item)"
                           >

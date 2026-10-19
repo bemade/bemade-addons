@@ -30,3 +30,5 @@ access_homeschool_reading_entry_portal,homeschool.reading.entry portal read + wr
 access_homeschool_student_portal,homeschool.student portal read,model_homeschool_student,base.group_portal,1,0,0,0
 access_homeschool_subject_portal,homeschool.subject portal read,model_homeschool_subject,base.group_portal,1,0,0,0
 access_ir_attachment_homeschool_portal,ir.attachment portal read + create (record-level check of ir.attachment applies),base.model_ir_attachment,base.group_portal,1,0,1,0
+access_homeschool_close_week_wizard_manager,homeschool.close.week.wizard manager,model_homeschool_close_week_wizard,group_homeschool_manager,1,1,1,1
+access_homeschool_close_week_wizard_line_manager,homeschool.close.week.wizard.line manager,model_homeschool_close_week_wizard_line,group_homeschool_manager,1,1,1,1

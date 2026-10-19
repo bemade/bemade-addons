@@ -18,7 +18,8 @@
  *   [data-sc-draft-clear="<key prefix>"] drops those drafts on load (the
  *   landing page of a created injury / added note); a legacy #fragment
  *   (#notes, #contacts… from the POST round-trips) opens the matching tab
- *   (data-sc-tab or one of data-sc-tab-aliases).
+ *   (data-sc-tab or one of data-sc-tab-aliases);
+ * - task 1620: a sheet marked data-sc-sheet-open-on-load opens on load.
  */
 import { _t } from "@web/core/l10n/translation";
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
@@ -105,55 +106,34 @@ if (document.readyState === "loading") {
     showSessionNotification();
 }
 
-// A save updates the page in place (owner review 2026-10-10):
-// * the read views of inline-edit cards ([data-sc-display="model:id:field"]);
-//   a tap-to-call / tap-to-email link's href follows (task 1585);
-// * the player's status pill (a status save answers the new stage);
-// * the player's heading (an Identity save answers it).
+// A save updates the page in place (owner review 2026-10-10): the read views
+// of inline-edit cards ([data-sc-display="model:id:field"]) at once; a
+// tap-to-call / tap-to-email link's href follows (task 1585). Task 1611:
+// everything else the save touches (titles, hero, chips, lists…) refreshes as
+// read fragments (sc_fragments.js) — the former ad-hoc « heading » / « stage »
+// payloads are gone.
 document.addEventListener("sc:saved", (ev) => {
     const { model, recordId, field, result } = ev.detail || {};
     if (!result) {
         return;
     }
+    // Task 1594: a holder flagged data-sc-display-hide-empty (the hero's
+    // « Actual return » chip) shows only while its value is set.
+    const show = (el, display) => {
+        scSetDisplay(el, display);
+        const holder = el.closest("[data-sc-display-hide-empty]");
+        if (holder) {
+            holder.hidden = !display;
+        }
+    };
     if (result.display !== undefined) {
         for (const el of document.querySelectorAll(`[data-sc-display="${model}:${recordId}:${field}"]`)) {
-            scSetDisplay(el, result.display);
+            show(el, result.display);
         }
     }
     for (const [name, shown] of Object.entries(result.also || {})) {
         for (const el of document.querySelectorAll(`[data-sc-display="${model}:${recordId}:${name}"]`)) {
-            scSetDisplay(el, shown.display);
-        }
-    }
-    const card = ev.target && ev.target.closest && ev.target.closest("[data-sc-edit-card]");
-    for (const opened of document.querySelectorAll("[data-sc-edit-card][data-sc-edit-open]")) {
-        opened.dataset.scEditChanged = "1";
-    }
-    if (card) {
-        card.dataset.scEditChanged = "1";
-    }
-    if (model !== "sports.patient") {
-        return;
-    }
-    const stage = result.stage;
-    if (stage) {
-        for (const chip of document.querySelectorAll(`[data-sc-stage-chip="${recordId}"]`)) {
-            chip.className = `o_sc_chip o_sc_chip_${stage.tone || "ghost"}`;
-            chip.textContent = stage.label || "";
-        }
-    }
-    const heading = result.heading;
-    if (heading) {
-        for (const el of document.querySelectorAll("[data-sc-heading]")) {
-            const key = el.dataset.scHeading;
-            if (key === "title" || key === "list_name") {
-                el.textContent = heading[key] || "";
-            } else if (key === "position_suffix") {
-                el.textContent = heading.position ? ` · ${heading.position}` : "";
-            } else if (key === "context") {
-                const team = el.dataset.scHeadingTeam || "";
-                el.textContent = [team, heading.position].filter(Boolean).join(" · ");
-            }
+            show(el, shown.display);
         }
     }
 });
@@ -202,7 +182,7 @@ if (document.readyState === "loading") {
 window.addEventListener("hashchange", openHashedDetails);
 
 // Inline-edit cards: ONE pencil per card toggles its edit view; « Done »
-// closes it (a card whose read view is server-built reloads after a change).
+// closes it and (task 1611) refreshes the read fragments at once — no reload.
 function setCardEditing(card, editing) {
     const edit = card.querySelector('[data-sc-edit-view="edit"]');
     const read = card.querySelector('[data-sc-edit-view="read"]');
@@ -246,14 +226,20 @@ document.addEventListener("click", (ev) => {
     }
     ev.preventDefault();
     if (toggle) {
-        setCardEditing(card, !card.dataset.scEditOpen);
-        return;
-    }
-    if (card.dataset.scEditReload && card.dataset.scEditChanged) {
-        window.location.reload();
+        const closing = Boolean(card.dataset.scEditOpen);
+        setCardEditing(card, !closing);
+        if (closing) {
+            document.dispatchEvent(new CustomEvent("sc:refresh-now"));
+        }
         return;
     }
     setCardEditing(card, false);
+    // The hidden « Done » would keep the focus inside the card (a busy card
+    // is never re-ordered or dropped by a list refresh).
+    if (done && done.contains(document.activeElement)) {
+        document.activeElement.blur();
+    }
+    document.dispatchEvent(new CustomEvent("sc:refresh-now"));
 });
 document.addEventListener("sc:fetch-error", (ev) => {
     const error = ev.detail || {};
@@ -276,7 +262,9 @@ async function loadLazy(container, url, target) {
         const html = await scFetch(url, { as: "html" });
         target.innerHTML = html;
         // A fragment with its own empty state (task 1581 histories) keeps it.
-        if (!target.querySelector("li, a, tr, .o_sc_empty")) {
+        // Task 1614: [data-sc-lazy-filled] = content even without a link
+        // (a digest day whose players have no page link).
+        if (!target.querySelector("li, a, tr, .o_sc_empty, [data-sc-lazy-filled]")) {
             const empty = document.createElement("p");
             empty.className = "o_sc_empty";
             empty.textContent = _t("Nothing to show.");
@@ -307,6 +295,29 @@ document.addEventListener(
     },
     true
 );
+
+// Task 1593: a player row's « Details » control ([data-sc-row-expand] =
+// the id of the detail region under the row) shows / hides that region and
+// fetches its body on first open. A button, not a <details>: the row's main
+// link stays one stretched link and the detail spans the row's full width.
+document.addEventListener("click", (ev) => {
+    const toggle = ev.target.closest && ev.target.closest("[data-sc-row-expand]");
+    if (!toggle || !toggle.closest(".o_sc_app")) {
+        return;
+    }
+    const region = document.getElementById(toggle.dataset.scRowExpand);
+    if (!region) {
+        return;
+    }
+    ev.preventDefault();
+    const open = region.hidden;
+    region.hidden = !open;
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    toggle.closest(".o_sc_player_row")?.classList.toggle("o_sc_row_open", open);
+    if (open && region.dataset.scLazyUrl) {
+        loadLazy(region, region.dataset.scLazyUrl, region.querySelector(".o_sc_lazy_body"));
+    }
+});
 
 // --------------------------------------------------------------- sheets
 function refetchSheet(dialog, url) {
@@ -438,6 +449,12 @@ function init() {
     const hash = (window.location.hash || "").slice(1).split("?")[0];
     if (hash && /^[\w-]+$/.test(hash)) {
         activateTab(root, hash);
+    }
+    // Task 1620: a sheet the server answered an error in (« Supprimer le
+    // compte » with a wrong password) opens again on load.
+    const reopen = root.querySelector("dialog.o_sc_sheet[data-sc-sheet-open-on-load]");
+    if (reopen) {
+        openSheet(reopen.id);
     }
 }
 if (document.readyState === "loading") {

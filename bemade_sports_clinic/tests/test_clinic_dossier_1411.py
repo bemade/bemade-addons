@@ -18,8 +18,8 @@ repository is public):
   clinic page admits TPs and system admins, and an admin without a TP group
   cannot read injuries at all today, so no real role reaches it.);
 * /my/injury/save with partial=1 writes ONLY the note fields present (no
-  clobbering of diagnosis / stage / TPs / absent notes), honours the #1404
-  blank-row rule, ignores internal_notes from a non-TP, and returns to the
+  clobbering of diagnosis / stage / TPs / absent notes), records a clear as
+  ONE empty history row (2026-10-14), ignores internal_notes from a non-TP, and returns to the
   clinic with the card anchor; without partial=1 the route behaves as before;
 * /my/player/<id>/quick: TP-only (403 otherwise), whitelisted fields, the
   match/practice combination validated server-side — an invalid pair writes
@@ -223,7 +223,8 @@ class TestClinicDossier1411(HttpCase):
         self.assertEqual(self.injury.internal_notes, 'int v2')
         self.assertEqual(self.injury.external_notes, 'ext v1')
         self.assertEqual(self._history_count(), before + 1)
-        # Whitespace-only ⇒ a genuine clear, and NO history row (#1404).
+        # Whitespace-only ⇒ a genuine clear: ONE empty history row (owner
+        # review 2026-10-14, supersedes #1404's « no row »).
         resp = self.url_open('/my/injury/save', data={
             'csrf_token': token, 'injury_id': self.injury.id, 'partial': '1',
             'internal_notes': '   ', 'return_url': self.injury_return_url,
@@ -231,7 +232,8 @@ class TestClinicDossier1411(HttpCase):
         self.assertEqual(resp.status_code, 303)
         self._refresh()
         self.assertFalse(self.injury.internal_notes)
-        self.assertEqual(self._history_count(), before + 1)
+        self.assertEqual(self._history_count(), before + 2)
+        before += 1
         # Unchanged value ⇒ no row either.
         resp = self.url_open('/my/injury/save', data={
             'csrf_token': token, 'injury_id': self.injury.id, 'partial': '1',

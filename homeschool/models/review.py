@@ -23,8 +23,10 @@ class Review(models.Model):
     iso_week = fields.Char(compute="_compute_iso_week", store=True)
     name = fields.Char(compute="_compute_name", store=True)
 
-    answer_dose = fields.Text(string="Dose kept?", help="No adjustment before the 6-week review.")
-    answer_cap = fields.Text(string="Visible cap respected?")
+    answer_dose = fields.Text(string="Dose kept?", help="Was the planned dose kept this week? Say what changed and why.")
+    answer_cap = fields.Text(string="Soft cap — did we stop at the right moments?",
+                             help="The cap is no longer a fixed duration: we stop when it makes sense.")
+    # no longer asked (kept for the history of past reviews; not on the form)
     answer_recorded = fields.Text(string="Week recorded as it was?")
     adjustment = fields.Text(string="Adjustment for next week (within the plan's envelope)")
     notes = fields.Text(help="Markdown.")
@@ -44,6 +46,15 @@ class Review(models.Model):
         labels = dict(self._fields["kind"].selection)
         for rec in self:
             rec.name = "%s — %s" % (labels.get(rec.kind, rec.kind), rec.iso_week or rec.date)
+
+    @api.depends("kind", "iso_week", "date")
+    @api.depends_context("lang")
+    def _compute_display_name(self):
+        """The stored ``name`` keeps the English kind label (stable for the exports and
+        search); what people see is the kind in their own language: « Six semaines — 2026-W41 »."""
+        labels = dict(self._fields["kind"]._description_selection(self.env))
+        for rec in self:
+            rec.display_name = "%s — %s" % (labels.get(rec.kind, rec.kind), rec.iso_week or rec.date) if rec.kind else rec.name
 
     @api.depends("date", "student_id", "company_id")
     def _compute_gaps(self):
@@ -70,19 +81,11 @@ class Review(models.Model):
     def action_record_adult_hours(self):
         """Record the computed adult-present hours of the week as an R1-ADULTE value (on demand)."""
         Indicator = self.env["homeschool.indicator"]
-        Value = self.env["homeschool.indicator.value"]
         for rec in self:
-            indicator = Indicator._by_code("R1-ADULTE", rec.company_id)
-            if not indicator:
-                indicator = Indicator.create({"code": "R1-ADULTE", "name": "Adult-present hours (week)", "unit": "h/week",
-                                              "period": "weekly", "direction": "down", "computed": True,
-                                              "company_id": rec.company_id.id})
-            monday = rec.date - timedelta(days=rec.date.weekday())
-            existing = Value.search([("indicator_id", "=", indicator.id), ("student_id", "=", rec.student_id.id), ("iso_week", "=", rec.iso_week)], limit=1)
-            vals = {"value": rec.adult_hours, "note": "recorded from review %s" % rec.name}
-            if existing:
-                existing.write(vals)
-            else:
-                Value.create(dict(vals, indicator_id=indicator.id, student_id=rec.student_id.id, date=monday,
-                                  company_id=rec.company_id.id))
+            Indicator.record_adult_hours(rec.student_id, rec.date, note="recorded from review %s" % rec.name)
         return True
+
+    def action_open_close_week_wizard(self):
+        """« Fermer la semaine » on this review's week and student."""
+        self.ensure_one()
+        return self.env["homeschool.close.week.wizard"].action_open(student=self.student_id, any_date=self.date)

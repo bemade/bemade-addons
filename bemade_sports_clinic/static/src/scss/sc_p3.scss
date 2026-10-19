@@ -218,6 +218,92 @@ $sc-p3-laptop: 1024px;
         }
     }
 
+    // Task 1605: the therapist colour dot (one colour, conic slices for
+    // several, grey when unassigned) replaces FullCalendar's own dot; the
+    // legend under the calendar filters on tap.
+    .o_sc_staff_dot {
+        display: inline-block;
+        flex: none;
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 50%;
+        vertical-align: middle;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+    }
+
+    .o_sc_staff_dot_none {
+        background: var(--sc-fg-3);
+    }
+
+    // Only on a calendar that opted in (bookings keeps FullCalendar's dot).
+    .o_sc_calendar_staff .o_sc_calendar {
+        .fc-daygrid-event-dot,
+        .fc-list-event-dot {
+            display: none;
+        }
+
+        .fc-daygrid-event .o_sc_staff_dot {
+            margin: 0 0.25rem 0 0.125rem;
+        }
+
+        .fc-timegrid-event .o_sc_staff_dot {
+            margin-right: 0.25rem;
+            box-shadow: 0 0 0 1px var(--sc-surface);
+        }
+    }
+
+    .o_sc_staff_legend {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2);
+        margin-top: var(--sc-space-3);
+
+        .o_sc_staff_legend_title {
+            color: var(--sc-fg-2);
+            margin-right: var(--sc-space-1);
+        }
+    }
+
+    .o_sc_staff_legend_item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        min-height: 36px;
+        max-width: 100%;
+        padding: 0.25rem 0.75rem;
+        border: 1px solid var(--sc-line);
+        border-radius: var(--sc-radius-pill);
+        background: var(--sc-surface);
+        color: var(--sc-fg);
+        font: inherit;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+
+        &.o_sc_staff_legend_active {
+            border-color: var(--sc-accent);
+            background: var(--sc-bar-active-bg);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--sc-focus);
+            outline-offset: 2px;
+        }
+    }
+
+    button.o_sc_staff_legend_item {
+        cursor: pointer;
+
+        &:hover {
+            background: var(--sc-hover);
+        }
+    }
+
+    .o_sc_staff_legend_static {
+        border-style: dashed;
+        color: var(--sc-fg-2);
+    }
+
     // -------------------------------------------------------- notepad
     .o_sc_quick_note {
         .o_sc_note_text {
@@ -276,5 +362,58 @@ $sc-p3-laptop: 1024px;
 @media (prefers-reduced-motion: reduce) {
     .o_sc_app .o_sc_live i {
         animation: none;
+    }
+}
+
+// Task 1592 — the activity clock: the app bar's clock + overdue badge, and
+// the clock chip of player / team / event rows and injury cards.
+.o_sc_app {
+    .o_sc_appbar_clock {
+        position: relative;
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .o_sc_appbar_badge {
+        position: absolute;
+        top: 4px;
+        right: 2px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: var(--sc-radius-pill);
+        background: var(--sc-bad);
+        color: var(--sc-tone-fg);
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 18px;
+        text-align: center;
+        pointer-events: none;
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    .o_sc_activity_clock {
+        gap: 4px;
+        text-decoration: none;
+
+        &.o_sc_chip_ghost {
+            color: var(--sc-fg);
+        }
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: none;
+            filter: brightness(1.1);
+        }
+    }
+
+    .o_sc_row_trailing .o_sc_activity_clock .o_sc_icon,
+    .o_sc_activity_clock .o_sc_icon {
+        width: 14px;
+        height: 14px;
+        color: currentColor;
     }
 }

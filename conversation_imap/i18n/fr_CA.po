@@ -1,0 +1,160 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* conversation_imap
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-16 20:13+0000\n"
+"PO-Revision-Date: 2026-10-16 20:13+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr_CA\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: conversation_imap
+#: model:ir.model,name:conversation_imap.model_conversation_transport
+msgid "Conversation Transport"
+msgstr "Transport de conversation"
+
+#. module: conversation_imap
+#: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
+
+#. module: conversation_imap
+#: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__id
+msgid "ID"
+msgstr ""
+
+#. module: conversation_imap
+#: model:ir.model.fields.selection,name:conversation_imap.selection__conversation_transport__provider__imap
+msgid "IMAP / Generic Email"
+msgstr "IMAP / Courriel générique"
+
+#. module: conversation_imap
+#: model_terms:ir.ui.view,arch_db:conversation_imap.conversation_transport_view_form_imap
+msgid "IMAP / SMTP"
+msgstr ""
+
+#. module: conversation_imap
+#: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__imap_port
+msgid "IMAP Port"
+msgstr "Port IMAP"
+
+#. module: conversation_imap
+#: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__imap_host
+msgid "IMAP Server"
+msgstr "Serveur IMAP"
+
+#. module: conversation_imap
+#: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__imap_ssl
+msgid "IMAP over SSL"
+msgstr "IMAP sur SSL"
+
+#. module: conversation_imap
+#: model:ir.model.fields,help:conversation_imap.field_conversation_transport__password
+msgid ""
+"IMAP/SMTP account password. Generic IMAP has no universal OAuth mechanism, "
+"so this stays a plain stored secret. Only administrators can read or write "
+"it; the owner of a personal transport sets theirs through the New Password "
+"field. Left blank on an OAuth-connected account (conversation_gmail, ...): "
+"those authenticate with a token instead, never a stored password."
+msgstr ""
+"Mot de passe du compte IMAP/SMTP. L'IMAP générique n'a pas de mécanisme "
+"OAuth universel : il reste donc un secret stocké en clair. Seuls les "
+"administrateurs peuvent le lire ou l'écrire; le propriétaire d'un compte "
+"personnel définit le sien par le champ Nouveau mot de passe. Laissé vide sur"
+" un compte connecté par OAuth (conversation_gmail, ...) : ceux-ci "
+"s'authentifient par jeton, jamais par un mot de passe stocké."
+
+#. module: conversation_imap
+#: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__new_password
+msgid "New Password"
+msgstr "Nouveau mot de passe"
+
+#. module: conversation_imap
+#: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__password
+msgid "Password"
+msgstr "Mot de passe"
+
+#. module: conversation_imap
+#: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__password_set
+msgid "Password Set"
+msgstr "Mot de passe défini"
+
+#. module: conversation_imap
+#: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__provider
+msgid "Provider"
+msgstr "Fournisseur"
+
+#. module: conversation_imap
+#: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__smtp_port
+msgid "SMTP Port"
+msgstr "Port SMTP"
+
+#. module: conversation_imap
+#: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__smtp_host
+msgid "SMTP Server"
+msgstr "Serveur SMTP"
+
+#. module: conversation_imap
+#: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__smtp_ssl
+msgid "SMTP over STARTTLS"
+msgstr "SMTP sur STARTTLS"
+
+#. module: conversation_imap
+#: model:ir.model.fields,help:conversation_imap.field_conversation_transport__provider
+msgid ""
+"The concrete transport implementation providing this connection (generic "
+"IMAP/SMTP, Gmail OAuth, ...). This base module defines no options itself -- "
+"each opt-in provider module (conversation_imap, conversation_gmail, ...) "
+"registers its own via selection_add, so the dropdown only ever offers a "
+"provider that is actually installed and implemented."
+msgstr ""
+"L'implémentation concrète du transport fournissant cette connexion "
+"(IMAP/SMTP générique, Gmail OAuth, ...). Ce module de base ne définit aucune"
+" option : chaque module de fournisseur facultatif (conversation_imap, "
+"conversation_gmail, ...) enregistre la sienne par selection_add, de sorte "
+"que la liste n'offre jamais qu'un fournisseur réellement installé et "
+"implémenté."
+
+#. module: conversation_imap
+#: model:ir.model.fields,help:conversation_imap.field_conversation_transport__smtp_ssl
+msgid ""
+"Use STARTTLS on the SMTP connection (the common case on port 587). Leave off"
+" only for a plain/legacy relay."
+msgstr ""
+"Utiliser STARTTLS sur la connexion SMTP (le cas courant sur le port 587). Ne"
+" le désactivez que pour un relais simple ou ancien."
+
+#. module: conversation_imap
+#: model:ir.model.fields,help:conversation_imap.field_conversation_transport__password_set
+msgid ""
+"Whether a password is stored for this account. Says nothing about its value."
+msgstr ""
+"Indique si un mot de passe est enregistré pour ce compte. Ne dit rien sur sa"
+" valeur."
+
+#. module: conversation_imap
+#: model:ir.model.fields,help:conversation_imap.field_conversation_transport__new_password
+msgid ""
+"Write-only. Sets the account password of your own transport without ever "
+"being able to read a stored password back."
+msgstr ""
+"Écriture seule. Définit le mot de passe de votre propre compte sans jamais "
+"pouvoir relire un mot de passe enregistré."
+
+#. module: conversation_imap
+#. odoo-python
+#: code:addons/conversation_imap/models/conversation_transport.py:0
+msgid ""
+"You can only set the password of your own transport; shared mailboxes are "
+"managed by an administrator."
+msgstr ""
+"Vous ne pouvez définir que le mot de passe de votre propre compte; les "
+"boîtes partagées sont gérées par un administrateur."

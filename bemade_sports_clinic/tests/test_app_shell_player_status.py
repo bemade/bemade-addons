@@ -9,11 +9,12 @@ Acceptance criteria covered here:
   selector saves in place).
 * UC-PS2 Owner review 2026-10-11: the page header carries the play-status
   selector in place of the status pill; it shows the player's current
-  status (the pressed choice).
+  status (the pressed choice). Review fixes 2026-10-18: behind the header's
+  pencil (edit view); the read view shows the status label.
 * UC-PS3 The « no match, practice » choice reads « Contact practice »
   (fr: « Pratique contact »), not « Practice only ».
 * UC-PS5 Training recommendation history (like the team announcement's):
-  every change (from the field's tracking) listed newest first with date,
+  every change (task 1601: from sports.patient.training.history) listed newest first with date,
   author and the text set (« Cleared » when emptied), in a sheet opened from
   the training recommendation card. Owner review 2026-10-11: the link is
   ALWAYS there, green (a link button), next to the « Training
@@ -60,23 +61,26 @@ class TestAppShellPlayerStatus(PlayerStatusCommon):
 
     def _hero_status(self):
         _text, tree = self._get('/my/player?player_id=%s' % self.player.id)
-        self.assertFalse(tree.xpath('//*[@data-sc-stage-chip]'))
+        # Review fixes 2026-10-18: the header reads the status label (chip)
+        # and the selector sits in its edit view (behind the pencil).
+        self.assertEqual(len(tree.xpath('//*[@data-sc-section="player.hero"]'
+                                        '/*[@data-sc-edit-view="read"]//*[@data-sc-stage-chip]')), 1)
         props = [json.loads(p) for p in tree.xpath(
-            '//*[@data-sc-section="player.hero"]//owl-component/@props')]
+            '//*[@data-sc-section="player.hero"]/*[@data-sc-edit-view="edit"]//owl-component/@props')]
         status = [p for p in props if p.get('field') == 'sc_status']
         self.assertEqual(len(status), 1)
         return status[0]
 
     # -- UC-PS1 ----------------------------------------------------------
     def test_status_save_answers_the_stage_chip(self):
+        """Task 1611: the status chips refresh as the player's read fragments
+        (``refresh``), no ad-hoc ``stage`` payload any more."""
         self._login_tp()
-        for value, tone in (('no:no', 'red'), ('no:yes', 'yellow'),
-                            ('no:no_contact', 'yellow'), ('yes:yes', 'green')):
+        for value in ('no:no', 'no:yes', 'no:no_contact', 'yes:yes'):
             resp = self._save_status(value)
             self.assertEqual(resp.status_code, 200, resp.text)
-            stage = resp.json()['stage']
-            self.assertEqual(stage['tone'], tone, value)
-            self.assertTrue(stage['label'], value)
+            self.assertNotIn('stage', resp.json())
+            self.assertIn('sports.patient:%s:*' % self.player.id, resp.json()['refresh'], value)
 
     # -- UC-PS2 ----------------------------------------------------------
     def test_header_status_selector(self):

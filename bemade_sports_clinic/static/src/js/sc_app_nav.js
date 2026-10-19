@@ -13,11 +13,19 @@
  * (?tab=, filters, ?success= flashes) is not « another page », and a form
  * POST that redirects back to the same page adds one more history entry for
  * it (counted, so back skips them all). Inert outside .o_sc_app.
+ *
+ * Task 1618 (owner review 2026-10-18, « always »): on a laptop the back
+ * chevron shows on every sub-page next to the breadcrumb, exactly as on a
+ * phone (previous in-app page, else the parent). The shell still gets
+ * ``o_sc_back_useful`` whenever there is a chevron (kept for styling hooks);
+ * ``isStandalone()`` stays exported for the installed-app checks.
  */
 
 const STORE_KEY = "sc_nav_stack:v1";
 const POST_KEY = "sc_nav_post:v1";
 const UP_KEY = "sc_nav_up:v1";
+// Set by sc_fragments.js when a back/forward step reloads a stale page.
+const BF_RELOAD_KEY = "sc_nav_bf_reload:v1";
 const MAX_DEPTH = 50;
 
 function storage() {
@@ -121,6 +129,16 @@ export function syncStack(type) {
     const wentUp = takeFlag(UP_KEY);
     let stack = load();
     const top = stack[stack.length - 1];
+    if (takeFlag(BF_RELOAD_KEY) && type === "reload") {
+        // #1611 reloads a stale page restored by back/forward: the stack
+        // already stepped back to it — keep it (task 1618).
+        if (top && top.k === key) {
+            top.u = url;
+            save(stack);
+            return stack;
+        }
+        type = "back_forward";
+    }
     if (type === "reload") {
         // A reload falls back to the declared parent (owner decision).
         stack = [{ u: url, k: key, n: 1 }];
@@ -176,6 +194,35 @@ export function backDistance() {
     return top.k === pageKey(currentUrl()) ? top.n || 1 : 0;
 }
 
+/** The app runs installed (home-screen / desktop PWA, incl. iOS). */
+export function isStandalone() {
+    try {
+        if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) {
+            return true;
+        }
+    } catch {
+        // no matchMedia: a browser tab
+    }
+    return window.navigator.standalone === true;
+}
+
+/**
+ * Task 1618 (owner review 2026-10-18): the chevron is always useful on a
+ * sub-page — it shows whenever the page has one (no « only when it adds
+ * something » rule any more).
+ */
+export function backIsUseful() {
+    return Boolean(document.querySelector(".o_sc_app a[data-sc-back]"));
+}
+
+/** Toggle ``o_sc_back_useful`` on the shell root (task 1618). */
+export function updateBackUseful() {
+    const shell = document.querySelector(".o_sc_app[data-sc-app-shell]");
+    if (shell) {
+        shell.classList.toggle("o_sc_back_useful", backIsUseful());
+    }
+}
+
 function inShell() {
     return Boolean(document.querySelector(".o_sc_app[data-sc-app-shell]"));
 }
@@ -185,6 +232,7 @@ function init() {
         return;
     }
     syncStack(navigationType());
+    updateBackUseful();
 }
 
 if (document.readyState === "loading") {
@@ -197,6 +245,25 @@ if (document.readyState === "loading") {
 window.addEventListener("pageshow", (ev) => {
     if (ev.persisted && inShell()) {
         syncStack("back_forward");
+        updateBackUseful();
+    }
+});
+
+// Task 1618: the page can switch to the installed display (« Open in app »);
+// ``sc:nav-sync`` re-checks it on demand (tours stub matchMedia).
+try {
+    const standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)");
+    standalone && standalone.addEventListener && standalone.addEventListener("change", () => {
+        if (inShell()) {
+            updateBackUseful();
+        }
+    });
+} catch {
+    // no matchMedia
+}
+document.addEventListener("sc:nav-sync", () => {
+    if (inShell()) {
+        updateBackUseful();
     }
 });
 

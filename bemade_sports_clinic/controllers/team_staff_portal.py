@@ -8,7 +8,7 @@ from odoo.exceptions import UserError, AccessError, MissingError
 
 from .access_control_mixin import AccessControlMixin
 from ..models import sc_app_roles
-from .app_shell import AppShellMixin
+from .app_shell import AppShellMixin, sc_country_options, sc_state_options
 
 # /my/teams sort modes (task 1401). Keys are what the page posts and what
 # res.users.teams_sort_mode stores; labels live in the template (translated).
@@ -273,6 +273,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                                        'search': search_term,
                                        'sort_mode': sort_mode,
                                        'can_rank': self._teams_can_rank(),
+                                       # Task 1592: the rows' activity clocks
+                                       # (one query, the shell only).
+                                       'sc_team_clocks': (self._sc_team_clocks(teams)
+                                                          if self._sc_app_shell_active() else {}),
                                        'page': page,
                                        # 1577 review: a refused team lands
                                        # here with a CODE, never raw text.
@@ -569,14 +573,23 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         env = http.request.env
         stage_labels = dict(env['sports.patient']._fields['stage']._description_selection(env))
         rows = []
+        # Task 1593: the legacy card's content (team links, training
+        # recommendation, « Retour prévu », expanded detail) for the openable
+        # rows, computed for the whole page at once.
+        accessible_players = values['players'].filtered(
+            lambda p: p.id in values['accessible_ids'])
+        extras = self._sc_player_row_extras(accessible_players)
         for player in values['players']:
             stage = player.stage or 'healthy'
             teams = player.sudo().team_ids
             accessible = player.id in values['accessible_ids']
             rows.append({
+                **extras.get(player.id, {}),
                 'id': player.id,
                 'title': player._portal_list_name(),
-                'subtitle': ', '.join(teams.mapped('name')),
+                # Openable rows carry the teams as links (task 1593); a
+                # locked row keeps the plain names.
+                'subtitle': '' if accessible else ', '.join(teams.mapped('name')),
                 'dot': self.SC_STAGE_TONES.get(stage, 'green'),
                 'chip': stage_labels.get(stage, ''),
                 'accessible': accessible,
@@ -586,14 +599,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             })
         active_filters = any(values.get(key) for key in (
             'team_id', 'organization_id', 'match_status', 'practice_status', 'jersey_number'))
-        # The sort switch flips the mode and keeps the active filters (the
-        # page resets: the order changes what page 1 holds).
-        toggle_args = {key: val for key, val in http.request.httprequest.args.items()
-                       if key != 'sort' and val}
-        toggle_args['sort'] = 'name' if values['players_sort_mode'] == 'status' else 'status'
+        # Task 1607: the sort menu (sc_sort_options) keeps the active filters
+        # and resets the page itself.
         return {
             'sc_player_rows': rows,
-            'sc_players_sort_toggle_url': '/my/players?' + urllib.parse.urlencode(toggle_args),
             'sc_can_create_player': is_tp_admin and self._is_treatment_professional(),
             'sc_filters_open': active_filters,
             'sc_players_count_label': env._("%(count)s player(s)", count=values['players_count']),
@@ -648,6 +657,47 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'bemade_sports_clinic.portal_card_recent_changes_fragment',
             {'items': items, 'player': player},
         )
+
+    @http.route(route=['/my/player/<int:player_id>/row-detail'], type='http',
+                auth='user', website=True)
+    def portal_player_row_detail(self, player_id, team_id=None, **kw):
+        """Task 1593: the expanded detail of ONE player row (roster,
+        dashboard / watch lists, /my/players) — the legacy card's
+        expandable: the whole training recommendation (+ its « Updated on »
+        stamp), « Retour prévu », the last consultation and the active
+        injuries. Fetched when a row is expanded, never for every row.
+
+        Same access as the player page (``_check_access_to_patient``). The
+        injuries come from ``_card_active_injuries`` read as the CURRENT
+        user: the coach record rule drops hidden-from-coaches injuries (Loi
+        25) and a non-therapist never gets an internal note."""
+        try:
+            player = self._check_access_to_patient(int(player_id))
+        except (UserError, AccessError, MissingError) as e:
+            response = http.request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': self._user_error_text(e, 'patient'),
+            })
+            response.status_code = 403
+            return response
+        team = http.request.env['sports.team']
+        try:
+            team_id = int(team_id) if team_id else 0
+        except ValueError:
+            team_id = 0
+        if team_id and team_id in player.sudo().team_ids.ids:
+            team = team.browse(team_id)
+        player_url = '/my/player?player_id=%s' % player.id
+        if team:
+            player_url += '&team_id=%s' % team.id
+        is_tp = self._is_tp_or_system()
+        return http.request.render('bemade_sports_clinic.sc_player_row_detail', {
+            'player': player,
+            'team': team,
+            'player_url': player_url,
+            'active_injuries': player._card_active_injuries(is_tp),
+        })
 
     @http.route(route=['/my/player/<int:player_id>/training-history'], type='http',
                 auth='user', website=True)
@@ -913,7 +963,6 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     # ------------------------------------------------------------------
     # Task 1539 — the player page in the app shell
     # ------------------------------------------------------------------
-    SC_INJURY_TONES = {'unverified': 'yellow', 'active': 'red', 'resolved': 'green'}
     # Owner review 2026-10-11: no « Overview » (status in the header, the
     # training recommendation on Info) and no « Contacts » (on Info); the
     # page opens on « Injuries ». Old ?tab= values still land.
@@ -927,8 +976,6 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         user = env.user
         is_tp = values['is_treatment_prof']
         stage_labels = dict(env['sports.patient']._fields['stage']._description_selection(env))
-        injury_stages = dict(
-            env['sports.patient.injury']._fields['stage']._description_selection(env))
         ctx_qs = values['ctx_qs']
         base_url = '/my/player?player_id=%s%s' % (player.id, ctx_qs)
         can_activities = is_tp or user.has_group('bemade_sports_clinic.group_portal_team_coach')
@@ -948,26 +995,24 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         created = env['sports.patient.injury'].sudo().browse(created_id).exists()
         created_draft_clear = bool(
             created and created.patient_id == player and created.create_uid == user)
-        tp_view = bool(is_tp and user._sc_app_roles() & sc_app_roles.TP)
+        tp_view = self._sc_injury_tp_view(is_tp)
+
+        # Task 1592: the cards' activity clocks (one query). An injury holds
+        # no activities of its own (task 1409: they are scheduled on the
+        # patient with the injury link) — the clock opens this page's
+        # Activities tab.
+        injury_clocks = self._sc_activity_clocks(
+            values['injuries'], lambda i: '%s&tab=activities' % base_url)
+
+        # Task 1616: the cards' Documents (one query) and their own address
+        # (an upload / delete comes back to the card, open).
+        injury_documents = self._sc_injury_card_documents(values['injuries'])
 
         def _injury_row(injury):
-            when = (format_date(env, injury.injury_date) if injury.injury_date
-                    else env._("Date unknown"))
-            return {
-                'id': injury.id,
-                'title': injury.diagnosis or env._("Injury"),
-                'subtitle': ' · '.join(part for part in (
-                    when, injury_stages.get(injury.stage, '')) if part),
-                'dot': self.SC_INJURY_TONES.get(injury.stage, 'green'),
-                'chip': injury_stages.get(injury.stage, ''),
-                'hidden': bool(injury.hidden_from_coaches),
-                'url': '/my/injury/edit?injury_id=%s%s' % (injury.id, ctx_qs),
-                'injury': injury,
-                'open': injury.id == opened_id,
-                'created': injury.id == created_id and injury.create_uid == user,
-                'consent_todo': tp_view and not injury.parental_consent,
-                'diagnosis_editable': bool(is_tp or injury.stage == 'unverified'),
-            }
+            return self._sc_injury_card_row(
+                injury, ctx_qs, is_tp, tp_view, opened_id=opened_id, created_id=created_id,
+                clocks=injury_clocks, list_url='%s&tab=injuries' % base_url,
+                documents=injury_documents)
 
         # Owner review 2026-10-10: current injuries (active, unverified)
         # first, then resolved; each by injury date, newest first.
@@ -1038,7 +1083,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         } for doc in values['patient_documents']]
 
         stage = player.stage or 'healthy'
-        return {
+        return dict(self._sc_injury_card_options(), **{
             'sc_player_tabs': sc_tabs,
             'sc_player_active_tab': active_tab,
             'sc_player_url': base_url,
@@ -1049,22 +1094,16 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_created_draft_clear': created_draft_clear,
             'sc_injury_rows': [_injury_row(i) for i in injuries],
             'sc_is_tp_view': tp_view,
-            'sc_injury_stage_options': list(
-                env['sports.patient.injury']._fields['stage']._description_selection(env)),
-            # Labels first, keys zipped in (babel's extractor, see app_shell).
-            'sc_visibility_options': list(zip(('0', '1'), (env._("Coaches"), env._("Hidden")))),
             'sc_active_injury_rows': [_injury_row(i) for i in active],
             'sc_player_events': events,
             'sc_status_options': self._sc_status_options(),
             # Inline « Add Injury » card (owner review 2026-10-10): the new
             # injury page's draft prefix and consent choices.
             'sc_new_injury_prefix': 'sports.patient.%s.new_injury.' % player.id,
-            'sc_consent_options': [('', '')] + list(
-                env['sports.patient.injury']._fields['parental_consent']._description_selection(env)),
             # Inline editing (owner review 2026-10-10).
-            'sc_state_options': [('', '')] + [
-                (state.id, state.name) for state in env['res.country.state'].search(
-                    [('country_id.code', '=', 'CA')], order='name')],
+            # Task 1594: the province choices follow the player's country.
+            'sc_state_options': sc_state_options(env, player.country_id),
+            'sc_country_options': sc_country_options(env),
             'sc_contact_type_options': list(
                 env['sports.patient.contact']._fields['contact_type']._description_selection(env)),
             'sc_team_options': [(team.id, team.name) for team in self._team_targets()] if is_tp else [],
@@ -1076,6 +1115,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_can_activities': can_activities,
             'sc_note_props': note_props,
             'sc_memberships': memberships,
+            # Task 1593: the hero's team names are links (same gate as the
+            # player rows' team links).
+            'sc_hero_team_links': list(self._sc_team_links(all_teams).values()),
             'sc_document_rows': document_rows,
             'sc_injury_choices': [(i.id, i.display_name or i.diagnosis or str(i.id))
                                   for i in injuries],
@@ -1085,7 +1127,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_activities_return': '%s&tab=activities' % base_url,
             'today_date': fields.Date.context_today(player),
             'sc_flash': self._sc_player_flash(kw),
-        }
+        })
 
     @staticmethod
     def _sc_player_flash(kw):
@@ -1116,6 +1158,13 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'invalid_user': env._("You cannot assign this activity to that user."),
             'injury_visibility': env._("Please choose whether coaches can see this injury."),
             'injury_diagnosis': env._("Please enter a diagnosis."),
-            'undo_expired': env._("This injury can no longer be undone; delete it from its page."),
+            'undo_expired': env._("This injury can no longer be undone; delete it from its card."),
         }.get(kw.get('error'))
+        # Task 1616: the injury cards' messages (several documents, a file
+        # list over the limit, an old injury-page save).
+        card = AppShellMixin._sc_injury_card_flash(kw)
+        if kw.get('success') in ('documents_uploaded', 'injury_updated', 'document_deleted'):
+            success = card['success']
+        if kw.get('error') in ('file_too_large', 'invalid_category'):
+            error = card['error']
         return {'success': success, 'error': error}

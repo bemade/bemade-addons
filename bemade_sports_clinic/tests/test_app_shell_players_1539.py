@@ -100,7 +100,8 @@ class TestAppShellPlayersList1539(PlayersCommon1539):
         self.assertFalse(tree.xpath('//*[@data-sc-action="players.create"]'))
         self._login_tp()
         _text, tree = self._get('/my/players')
-        action = tree.xpath('//header//a[@data-sc-action="players.create"]')
+        # Task 1607 (deliberate update): « + Ajouter » is in the list header.
+        action = tree.xpath('//div[contains(@class, "o_sc_list_header")]//a[@data-sc-action="players.create"]')
         self.assertEqual(action[0].get('href'), '/my/player/create')
 
     def test_filters_keep_their_params(self):
@@ -132,8 +133,14 @@ class TestAppShellPlayersList1539(PlayersCommon1539):
         self.player.sudo().team_ids = [Command.link(self.team_b.id)]
         self._switch(True)
         self._login_coach()
-        text, _tree = self._get('/my/players')
-        self.assertIn('PC Team A, PC Team B', text)
+        _text, tree = self._get('/my/players')
+        # Task 1593: the teams are a links line (team B, not staffed by the
+        # coach, as plain text), no longer a joined subtitle.
+        row = tree.xpath('//*[@data-sc-section="players.list"]//*[@data-sc-player-id="%s"]'
+                         % self.player.id)[0]
+        teams = [' '.join(node.text_content().split())
+                 for node in row.xpath('.//*[contains(concat(" ", @class, " "), " o_sc_row_link ")]')]
+        self.assertEqual(teams, ['PC Team A', 'PC Team B'])
 
 
 @tagged('post_install', '-at_install')

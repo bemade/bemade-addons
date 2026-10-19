@@ -1,9 +1,13 @@
 from odoo import models, fields, api, _, Command
+from odoo.exceptions import ValidationError
 from odoo.tools import format_datetime
 
 from . import sc_app_roles
 from datetime import time, timedelta
 import logging
+
+import colorsys
+import re
 
 import pytz
 
@@ -21,6 +25,29 @@ DIGEST_BASELINE_MIN_AGE = timedelta(hours=1)
 # Roles that receive a per-team line, and how they scope role-visible activity.
 DIGEST_COACH_ROLES = {"head_coach", "coach"}
 DIGEST_TP_ROLES = {"head_therapist", "therapist", "doctor"}
+
+# Task 1605: the events calendar's colour per therapist. Hand-picked for the
+# dark app surface (#1d1a20: every colour >= 3:1), no greys (grey = an
+# unassigned event), ordered so the first ones handed out are far apart.
+SC_CALENDAR_PALETTE = (
+    "#ef5350", "#26c6da", "#ffca28", "#7c8cff", "#66bb6a", "#e057e0",
+    "#ff9248", "#42a5f5", "#c0e04a", "#a77bff", "#2ed3a0", "#ff6fa8",
+    "#f4a99a", "#8fdcf0", "#e8e08a", "#b8b0ff", "#a6e3a1", "#f2a6e6",
+    "#d9a066", "#8cb4ff", "#b5a642", "#4fb3a9", "#e0c3a0", "#c62f8a",
+)
+SC_CALENDAR_COLOR_RE = re.compile(r"^#[0-9a-f]{6}$")
+
+
+def _sc_generated_colors():
+    """Further colours once the palette is exhausted: golden-angle hues,
+    light enough for the dark surface (endless, deterministic)."""
+    index = 0
+    while True:
+        hue = (index * 137.508) % 360 / 360
+        lightness = (0.68, 0.6, 0.76)[index % 3]
+        red, green, blue = colorsys.hls_to_rgb(hue, lightness, 0.62)
+        yield "#%02x%02x%02x" % (round(red * 255), round(green * 255), round(blue * 255))
+        index += 1
 
 
 class User(models.Model):
@@ -119,6 +146,50 @@ class User(models.Model):
         copy=False,
     )
 
+    # Task 1605: the user's colour on the events calendar (dot before each
+    # event title, legend). Handed out automatically the first time the user
+    # shows up in the calendar feed (``_sc_calendar_colors``), then stable;
+    # an admin may override it on the user form. Internal users read it;
+    # the portal gets it through the feed (sudo, as the names).
+    sc_calendar_color = fields.Char(
+        string="Calendar Colour",
+        groups="base.group_user",
+        copy=False,
+        help="Colour of this person's events on the portal calendar (#rrggbb). "
+             "Chosen automatically; change it to override.",
+    )
+
+    @api.model
+    def _sc_normalize_calendar_color(self, vals):
+        if vals.get("sc_calendar_color"):
+            vals["sc_calendar_color"] = vals["sc_calendar_color"].strip().lower()
+        return vals
+
+    @api.constrains("sc_calendar_color")
+    def _check_sc_calendar_color(self):
+        for user in self:
+            if user.sc_calendar_color and not SC_CALENDAR_COLOR_RE.match(user.sc_calendar_color):
+                raise ValidationError(_(
+                    "The calendar colour must be a hexadecimal colour like #ef5350."))
+
+    def _sc_calendar_colors(self):
+        """``{user id: '#rrggbb'}`` for these users, handing a colour to the
+        ones without (task 1605): the first palette colour nobody holds
+        (users taken by id), then generated hues — never a colour already
+        held while one is free. Stored, hence stable across sessions."""
+        users = self.sudo().with_context(active_test=False)
+        missing = users.filtered(lambda user: not user.sc_calendar_color).sorted("id")
+        if missing:
+            held = set(users.search([("sc_calendar_color", "!=", False)]).mapped("sc_calendar_color"))
+            candidates = (colour for colour in SC_CALENDAR_PALETTE if colour not in held)
+            generated = (colour for colour in _sc_generated_colors()
+                         if colour not in held and colour not in SC_CALENDAR_PALETTE)
+            for user in missing:
+                colour = next(candidates, None) or next(generated)
+                held.add(colour)
+                user.sc_calendar_color = colour
+        return {user.id: user.sc_calendar_color for user in users}
+
     @property
     def SELF_READABLE_FIELDS(self):
         return super().SELF_READABLE_FIELDS + [
@@ -194,6 +265,8 @@ class User(models.Model):
     
     def write(self, vals):
         """Override write to trigger treatment professional group assignment when portal access is granted."""
+        if vals.get('sc_calendar_color'):  # task 1605
+            vals = self._sc_normalize_calendar_color(dict(vals))
         # Process user updates for portal access changes
 
         # Archiving a user (portal-access revoke) must scrub the person from
@@ -258,6 +331,8 @@ class User(models.Model):
         """Override create to trigger treatment professional group assignment when portal users are created."""
         # Process user creation for portal access
         
+        # Task 1605: a calendar colour is stored lower case.
+        vals_list = [self._sc_normalize_calendar_color(dict(vals)) for vals in vals_list]
         # Create the users first
         users = super().create(vals_list)
         

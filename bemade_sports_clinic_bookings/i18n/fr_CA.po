@@ -94,6 +94,11 @@ msgid "Reset"
 msgstr "Réinitialiser"
 
 #. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
+msgid "Sort bookings"
+msgstr "Trier les réservations"
+
+#. module: bemade_sports_clinic_bookings
 #. odoo-python
 #: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
 msgid "Status"

@@ -10,7 +10,8 @@ Acceptance criteria:
   the unchanged feed; « Réservations » is in the navigation.
 * UC-B3 The feed keeps its shape; no inline script / style in this addon's
   shell views.
-* UC-B4 fr_CA: the shell bookings page renders in French.
+* UC-B4 fr_CA: the shell bookings page renders in French (task 1596: the
+  sort control too).
 * UC-B5 (task 1585) Tap to call / write: each row shows the client's phone
   as a ``tel:`` link (``+`` and digits only) and email as a ``mailto:``
   link — no longer inside the subtitle; a client without a phone gets no
@@ -97,7 +98,8 @@ class TestBookingsShell(BookingsShellCommon):
         env = self.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic', 'bemade_sports_clinic_bookings'], ['fr_CA'], overwrite=True)
+            ['bemade_sports_clinic', 'bemade_sports_clinic_bookings', 'appointment_portal_staff'],
+            ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):
@@ -107,5 +109,7 @@ class TestBookingsShell(BookingsShellCommon):
         self.authenticate('bk.tp@example.com', 'bk-tp-pass')
         self.opener.cookies.set('frontend_lang', 'fr_CA')
         text, _tree = self._get('/my/bookings')
-        for term in ('À venir', 'Passées', 'Calendrier', 'Tous les types', 'Filtres', 'Réservations'):
+        for term in ('À venir', 'Passées', 'Calendrier', 'Tous les types', 'Filtres', 'Réservations',
+                     # Task 1596: the sort control.
+                     'Trier les réservations', 'Date (plus ancienne d', 'Date (plus récente d'):
             self.assertIn(term, text, term)

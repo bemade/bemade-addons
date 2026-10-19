@@ -31,6 +31,10 @@ export class ConversationInboxAction extends Component {
       page: 1,
       hasMore: false,
       loading: false,
+      // What is typed in the search box, vs. the term the list was last
+      // loaded with ("" = the normal inbox). Paging follows the latter.
+      searchTerm: "",
+      activeQuery: "",
       expandedId: null,
       expandedBody: null,
       expandedAttachments: [],
@@ -71,7 +75,7 @@ export class ConversationInboxAction extends Component {
     const transports = await this.orm.searchRead(
       "conversation.transport",
       [["browsable", "=", true]],
-      ["id", "name", "sendable", "mailbox_writable"]
+      ["id", "name", "sendable", "mailbox_writable", "can_trash_mail", "searchable"]
     );
     this.state.transports = transports;
     this.state.transportId = transports.length ? transports[0].id : null;
@@ -81,35 +85,81 @@ export class ConversationInboxAction extends Component {
     this.state.transportId = ev.target.value ? parseInt(ev.target.value, 10) : null;
     this.state.expandedId = null;
     this.state.expandedBody = null;
+    this.state.searchTerm = "";
+    this.state.activeQuery = "";
     if (this.state.transportId) {
-      await this.loadPage(1);
+      await this.loadPage(1, "");
     } else {
       this.state.items = [];
     }
   }
 
-  async loadPage(page) {
+  /**
+   * Load one page of the normal inbox (`query` empty) or of the search
+   * results for `query`. The query is the plain text the user typed:
+   * the server turns it into a safe mailbox search, so nothing here
+   * builds search syntax. `activeQuery` only moves once the call
+   * succeeded, so a failed search leaves the previous list and its
+   * paging intact.
+   */
+  async loadPage(page, query = this.state.activeQuery) {
     if (!this.state.transportId) {
       return;
     }
+    const requestId = (this._requestId = (this._requestId || 0) + 1);
     this.state.loading = true;
     try {
       const result = await this.orm.call("conversation.transport", "browse_page", [
         this.state.transportId,
-        false,
+        query || false,
         page,
       ]);
+      if (requestId !== this._requestId) {
+        // A newer request superseded this one.
+        return;
+      }
       this.state.items = result.items || [];
       this.state.page = result.page || page;
       this.state.hasMore = Boolean(result.has_more);
+      this.state.activeQuery = query || "";
       this.state.expandedId = null;
       this.state.expandedBody = null;
       this.state.expandedAttachments = [];
     } catch (error) {
-      this.notification.add(this._errorMessage(error), {type: "danger"});
+      if (requestId === this._requestId) {
+        this.notification.add(this._errorMessage(error), {type: "danger"});
+      }
     } finally {
-      this.state.loading = false;
+      if (requestId === this._requestId) {
+        this.state.loading = false;
+      }
     }
+  }
+
+  get canSearch() {
+    const transport = this.currentTransport;
+    return Boolean(transport && transport.searchable);
+  }
+
+  /** Enter / the magnifier: search the mailbox for the trimmed term. */
+  async onSearchSubmit(ev) {
+    if (ev) {
+      ev.preventDefault();
+    }
+    const term = (this.state.searchTerm || "").trim();
+    if (!term) {
+      await this.onSearchClear();
+      return;
+    }
+    this.state.searchTerm = term;
+    await this.loadPage(1, term);
+  }
+
+  /** Back to page 1 of the normal inbox list. */
+  async onSearchClear() {
+    this.state.searchTerm = "";
+    this.state.activeQuery = "";
+    await this.loadPage(1, "");
   }
 
   async onNextPage() {

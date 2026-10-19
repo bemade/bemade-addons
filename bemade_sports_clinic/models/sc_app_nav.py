@@ -51,7 +51,7 @@ Phones show the back chevron + context line, laptops the full trail (CSS
 only, ``sc_components.scss``); there is no per-user setting.
 """
 import re
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, quote, urlencode, urlsplit
 
 from odoo.exceptions import AccessError, MissingError
 from odoo.tools.translate import LazyTranslate
@@ -159,14 +159,6 @@ def _player_parent(v):
     })
 
 
-def _injury_parent(v):
-    return ('sc_app_injury_edit', {
-        'injury': v['injury'],
-        'team': v.get('team'),
-        'clinic_event': v.get('clinic_event'),
-    })
-
-
 def _heading(v):
     player = _player_of(v)
     return player.sudo()._portal_heading_name() if player else ''
@@ -243,19 +235,6 @@ def _player_context(v):
     return ' · '.join(part for part in (team_label, player.position if player else '') if part)
 
 
-def _injury_from(env, match, args):
-    injury = _readable(env, 'sports.patient.injury', _arg(args, 'injury_id'))
-    if not injury:
-        return None
-    team = _readable(env, 'sports.team', _arg(args, 'team_id'))
-    return {'injury': injury, 'team': team,
-            'clinic_event': _clinic_from(env, _arg(args, 'clinic_id'))}
-
-
-def _injury_label(v):
-    return _name(v['injury'], 'diagnosis') or str(_lt('Injury'))
-
-
 def _clinic_from_path(env, match, args):
     clinic = _clinic_from(env, match.group(1))
     return {'event': clinic} if clinic else None
@@ -298,7 +277,41 @@ def _activities_parent(v):
         return ('sc_app_team', {'team': v['context_team'], 'tab': 'activities'})
     if v.get('simplified') and v.get('context_event'):
         return ('sc_app_event', {'event': v['context_event']})
+    # Task 1622: opened from the app bar clock — back to the page it was
+    # tapped on (``sc_clock_from``, the page's return_url: resolve() honours
+    # it when it is a readable registered page), else the home.
+    if v.get('sc_clock_from'):
+        return ('sc_app_home', {})
     return None
+
+
+# Task 1622: the app bar clock (#1592) opens /my/activities from any shell
+# page; its href carries that page (``sc_from``) so the activities page gets
+# a way back. Only a safe same-site path is ever passed on; the activities
+# page honours it only when it matches a registered page the user may read
+# (resolve / match_url) — never an open redirect.
+CLOCK_PATH = '/my/activities'
+_CLOCK_DROPPED_ARGS = ('success', 'error')
+
+
+def clock_origin(value):
+    """The clock's origin ``sc_from`` if it is a safe same-site path."""
+    return safe_return_url(value, None)
+
+
+def clock_url(path, args):
+    """The app bar clock's href on the page ``path`` (``args``: its query,
+    a werkzeug MultiDict). On the activities page itself the clock keeps
+    the origin the page was opened with (a page is never its own way back);
+    the flash args (``success`` / ``error``) are not part of the origin."""
+    if path == CLOCK_PATH:
+        origin = clock_origin(args.get('sc_from'))
+    else:
+        query = urlencode([(key, value) for key, value in args.items(multi=True)
+                           if key not in _CLOCK_DROPPED_ARGS])
+        origin = clock_origin(path + ('?' + query if query else ''))
+    url = CLOCK_PATH + '?sc_clock=1'
+    return url + '&sc_from=' + quote(origin, safe='') if origin else url
 
 
 def _activity_form_parent(v):
@@ -325,7 +338,7 @@ def _digest_history_from(env, match, args):
 
 PAGES = {page.key: page for page in (
     # -- top level (logo, no back) -------------------------------------
-    _static('sc_app_home', '/my/home', _lt('Home')),
+    _static('sc_app_home', '/my/home', _lt('Dashboard')),  # owner 2026-10-18 (#1623)
     _static('sc_app_teams', '/my/teams', nav_label('teams')),
     _static('sc_app_players', '/my/players', nav_label('players')),
     _static('sc_app_clinics', '/my/clinics', nav_label('clinic')),
@@ -334,7 +347,8 @@ PAGES = {page.key: page for page in (
     _static('sc_app_notepad', '/my/notepad', nav_label('notepad')),
     Page('sc_app_activities', url='/my/activities', label=nav_label('activities'),
          path=r'/my/activities', parent=_activities_parent,
-         context=lambda v: v.get('sc_context_title') or None),
+         context=lambda v: v.get('sc_context_title') or None,
+         return_url=lambda v: v.get('sc_clock_from')),
     # -- « Plus » pages ------------------------------------------------
     _static('sc_app_events', '/my/events', nav_label('events'),
             parent=lambda v: ('sc_app_more', {})),
@@ -344,6 +358,16 @@ PAGES = {page.key: page for page in (
             parent=lambda v: ('sc_app_more', {})),
     _static('sc_app_install', '/my/app/install', nav_label('install'),
             parent=lambda v: ('sc_app_more', {})),
+    # Task 1606: « Paramètres », opened from the user menu (not a page of
+    # « Plus »): a sub-page of the home — back = where the user came from
+    # (sc_app_nav.js), else the home.
+    _static('sc_app_settings', '/my/app/settings', _lt('Settings'),
+            parent=lambda v: ('sc_app_home', {})),
+    # Task 1620: the core « Mon compte » / « Sécurité » routes rendered in
+    # the shell — sub-pages of « Paramètres ». No path on purpose: they are
+    # never a return_url / « came from » target (test_app_shell_nav_1579).
+    Page('sc_app_account', parent=lambda v: ('sc_app_settings', {})),
+    Page('sc_app_security', parent=lambda v: ('sc_app_settings', {})),
     # -- teams ---------------------------------------------------------
     Page('sc_app_team', path=r'/my/team', from_url=_team_from,
          url=lambda v: '/my/team?team_id=%s%s' % (
@@ -368,12 +392,10 @@ PAGES = {page.key: page for page in (
     Page('sc_app_player_create', parent=lambda v: ('sc_app_players', {})),
     # -- injuries ------------------------------------------------------
     Page('sc_app_injury_new', parent=_player_parent, context=_heading),
-    Page('sc_app_injury_edit', path=r'/my/injury/edit', from_url=_injury_from,
-         url=lambda v: '/my/injury/edit?injury_id=%s%s' % (v['injury'].id, _ctx_qs(v)),
-         label=_injury_label, parent=_player_parent, context=_heading),
+    # Task 1616: no injury page / injury documents page any more — the
+    # injury is its open card (/my/injury/edit and /my/injury/documents
+    # redirect there).
     Page('sc_app_treatment_notes', parent=_player_parent, context=_heading),
-    Page('sc_app_injury_documents', parent=_injury_parent,
-         context=lambda v: _name(v['injury'], 'diagnosis') or _heading(v)),
     # -- clinics -------------------------------------------------------
     Page('sc_app_clinic', path=r'/my/clinic/(\d+)', from_url=_clinic_from_path,
          url=lambda v: '/my/clinic/%s' % v['event'].id,

@@ -986,6 +986,9 @@
                                 <span class="text-muted small"> — <t t-esc="digest_diag"/></span>
                             </t>
                         </t>
+                        <!-- Task 1582: a note is ONE « current state » text —
+                             its change reads as the new text alone. -->
+                        <span t-if="it.get('category') == 'note'" class="badge text-bg-light border ms-1 fw-normal dashboard-digest-new-note">New note</span>
                     </div>
                     <t t-if="it.get('sub_items')">
                         <ul class="list-unstyled ms-1 mb-0">
@@ -1013,7 +1016,7 @@
                         <!-- Task 1385 (CR-A #4): show the delta as
                              « ancienne → nouvelle » when a pre-window value is
                              known; gracefully fall back to the new value alone. -->
-                        <t t-if="it.get('old_value')">
+                        <t t-if="it.get('old_value') and it.get('category') != 'note'">
                             <div style="white-space: pre-wrap;"><span class="text-muted text-decoration-line-through" t-esc="it['old_value']"/> <i class="fa fa-arrow-right mx-1 small" aria-hidden="true"/> <span t-esc="it['value']"/></div>
                         </t>
                         <t t-else="">

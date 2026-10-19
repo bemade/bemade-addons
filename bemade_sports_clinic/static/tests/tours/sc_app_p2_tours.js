@@ -33,7 +33,7 @@ tours.add("sc_1539_players_to_player", {
         },
         {
             content: "Open the first player",
-            trigger: '[data-sc-section="players.list"] a.o_sc_entity_row[data-sc-player-id]',
+            trigger: '[data-sc-section="players.list"] [data-sc-player-id] a.o_sc_link_row_main',
             run: "click",
             expectUnloadPage: true,
         },
@@ -213,14 +213,20 @@ tours.add("sc_1539_activity_complete", {
 // ------------------- player status: the hero pill follows the save (2026-10-10)
 tours.add("sc_status_pill_refresh", {
     // Owner review 2026-10-11: the status selector lives in the page header
-    // (in place of the status pill) and saves in place.
+    // (in place of the status pill) and saves in place. Review fixes
+    // 2026-10-18: the header is a read view; its pencil opens the selector.
     steps: () => [
         {
-            content: "Available: « Match + practice » pressed in the header; mark the page to detect a reload",
-            trigger: '[data-sc-section="player.hero"] .o_sc_autosave[data-sc-field="sc_status"] button[data-sc-value="yes:yes"][aria-pressed="true"]',
+            content: "Read view: the status label; mark the page to detect a reload, open the pencil",
+            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="read"] [data-sc-stage-chip]',
             run() {
                 window.__scPillNoReload = true;
+                document.querySelector('[data-sc-section="player.hero"] > button[data-sc-edit-toggle]').click();
             },
+        },
+        {
+            content: "Available: « Match + practice » pressed in the header's edit view",
+            trigger: '[data-sc-section="player.hero"] .o_sc_autosave[data-sc-field="sc_status"] button[data-sc-value="yes:yes"][aria-pressed="true"]',
         },
         {
             content: "Pick « No play »",
@@ -237,6 +243,20 @@ tours.add("sc_status_pill_refresh", {
                 }
             },
         },
+        {
+            content: "« Done » closes the header's edit view",
+            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="edit"] button[data-sc-edit-done]',
+            run: "click",
+        },
+        {
+            content: "The read view shows the new status (read fragment, no reload)",
+            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="read"] [data-sc-stage-chip].o_sc_chip_red',
+            run() {
+                if (!window.__scPillNoReload) {
+                    throw new Error("the page reloaded");
+                }
+            },
+        },
     ],
 });
 
@@ -244,8 +264,8 @@ tours.add("sc_status_pill_refresh", {
 tours.add("sc_injury_inline_create", {
     steps: () => [
         {
-            content: "Open « Add Injury »",
-            trigger: 'details#sc_new_injury > summary',
+            content: "Open « Add Injury » from the list header's « + Ajouter »",
+            trigger: '.o_sc_list_header button.o_sc_list_add[aria-controls="sc_new_injury"][aria-expanded="false"]',
             run: "click",
         },
         {
@@ -308,11 +328,19 @@ tours.add("sc_injury_resolve_date", {
             },
         },
         {
-            content: "No resolution date yet",
-            trigger: '.o_sc_injury_item[open] .o_sc_autosave[data-sc-field="resolution_date"] input',
+            // Review fixes 2026-10-18: the resolution date field is hidden
+            // until the injury is resolved.
+            content: "No resolution date yet (its field hidden while active)",
+            trigger: '.o_sc_injury_item[open] .o_sc_autosave[data-sc-field="predicted_resolution_date"] input',
             run() {
-                if (this.anchor.value) {
-                    throw new Error(`resolution date already set: ${this.anchor.value}`);
+                const input = document.querySelector(
+                    '.o_sc_injury_item[open] .o_sc_autosave[data-sc-field="resolution_date"] input'
+                );
+                if (input.value) {
+                    throw new Error(`resolution date already set: ${input.value}`);
+                }
+                if (input.offsetParent) {
+                    throw new Error("the resolution date shows on an active injury");
                 }
             },
         },
@@ -350,7 +378,7 @@ tours.add("sc_event_pencil", {
             content: "Leave the field so it saves",
             trigger: '[data-sc-edit-card="event"] .o_sc_autosave[data-sc-field="name"] input',
             run() {
-                this.anchor.blur();
+                this.anchor.blur(); this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI: blur() fires no event without window focus
             },
         },
         {
@@ -358,10 +386,9 @@ tours.add("sc_event_pencil", {
             trigger: '[data-sc-edit-card="event"] .o_sc_autosave[data-sc-field="name"][data-sc-state="saved"]',
         },
         {
-            content: "Done: the card reloads with the new name",
+            content: "Done: the card closes (task 1611: no reload, the title is a read fragment)",
             trigger: '[data-sc-edit-card="event"] [data-sc-edit-done]',
             run: "click",
-            expectUnloadPage: true,
         },
         {
             content: "The title shows the new name",
@@ -391,6 +418,11 @@ tours.add("sc_training_history_refresh", {
             run: "click",
         },
         {
+            content: "Review fixes 2026-10-18: the header's pencil opens its edit view",
+            trigger: '[data-sc-section="player.hero"] > button[data-sc-edit-toggle]',
+            run: "click",
+        },
+        {
             content: "Type a recommendation",
             trigger: '.o_sc_autosave[data-sc-field="training_recommendation"] textarea',
             run: "edit Synthetic bike only",
@@ -399,7 +431,7 @@ tours.add("sc_training_history_refresh", {
             content: "Leave the field so it saves",
             trigger: '.o_sc_autosave[data-sc-field="training_recommendation"] textarea',
             run() {
-                this.anchor.blur();
+                this.anchor.blur(); this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI: blur() fires no event without window focus
             },
         },
         {
@@ -407,8 +439,13 @@ tours.add("sc_training_history_refresh", {
             trigger: '.o_sc_autosave[data-sc-field="training_recommendation"][data-sc-state="saved"]',
         },
         {
-            content: "Open the history again",
-            trigger: '[data-sc-section="player.training"] .o_sc_field_label [data-sc-sheet-open="sc_training_history_sheet"]',
+            // Task 1601: the « Updated on … by … » stamp appears in place.
+            content: "The authorship stamp is updated without a reload",
+            trigger: '.o_sc_autosave[data-sc-field="training_recommendation"] .o_sc_hint:contains(Updated on):contains(PC TP)',
+        },
+        {
+            content: "Open the history again (the edit view's link)",
+            trigger: '[data-sc-section="player.training.edit"] [data-sc-sheet-open="sc_training_history_sheet"]',
             run: "click",
         },
         {
@@ -480,12 +517,17 @@ tours.add("sc_player_inline_edit", {
         {
             // Task 1579: the context line is the PHONE's (hidden on a
             // laptop, where this tour runs): check its text, not visibility.
+            // Task 1611: refreshed as a read fragment (a fetch after the save).
             content: "The app bar context follows",
             trigger: '[data-sc-edit-card="identity"] [data-sc-edit-view="read"]',
-            run() {
-                const context = document.querySelector(".o_sc_appbar_context");
-                if (!context || !context.textContent.includes("Safety")) {
-                    throw new Error(`context line reads « ${context && context.textContent} »`);
+            async run() {
+                const start = Date.now();
+                const context = () => document.querySelector(".o_sc_appbar_context");
+                while (!(context() && context().textContent.includes("Safety"))) {
+                    if (Date.now() - start > 8000) {
+                        throw new Error(`context line reads « ${context() && context().textContent} »`);
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, 100));
                 }
             },
         },

@@ -9,6 +9,8 @@ from odoo.addons.phone_validation.tools import phone_validation
 from .patient_injury import (
     dashboard_external_injury_fields,
     dashboard_internal_injury_fields,
+    history_author_uid,
+    history_stamp_date,
     legacy_change_emails_enabled,
 )
 import logging
@@ -201,6 +203,22 @@ class Patient(models.Model):
     # TP-write is enforced at the portal (template t-if + controller gate), the
     # same way date_of_birth is handled.
     training_recommendation = fields.Text(string="Training Recommendation", tracking=True)
+    # Task 1601: every change (a clear included) lands in an append-only
+    # history, like the injury notes; the newest row gives the « Updated on
+    # <date> by <author> » stamp shown under the field everywhere it is shown.
+    # compute_sudo: the history model is rule-gated for portal users, the
+    # stamp is plain display text about a field the reader already sees.
+    training_history_ids = fields.One2many(
+        comodel_name="sports.patient.training.history",
+        inverse_name="patient_id",
+        string="Training Recommendation History",
+        readonly=True,
+    )
+    last_training_recommendation_info = fields.Char(
+        string="Training recommendation last updated",
+        compute="_compute_last_training_recommendation_info",
+        compute_sudo=True,
+    )
     injury_ids = fields.One2many(
         comodel_name="sports.patient.injury",
         inverse_name="patient_id",
@@ -338,10 +356,43 @@ class Patient(models.Model):
                 res.update({"team_ids": team_ids})
         return res
 
+    @api.depends("training_history_ids.change_datetime", "training_history_ids.author_id")
+    def _compute_last_training_recommendation_info(self):
+        for patient in self:
+            row = patient.training_history_ids.sorted(
+                key=lambda r: (r.change_datetime, r.id), reverse=True)[:1]
+            patient.last_training_recommendation_info = _(
+                "Updated on %(date)s by %(author)s",
+                date=history_stamp_date(patient, row.change_datetime),
+                author=row.author_id.name or "—",
+            ) if row else ""
+
+    def _prepare_training_history_vals(self, vals):
+        """History rows for the players whose training recommendation
+        ``vals`` really changes (task 1601): whitespace-only differences are
+        no change; a clear IS one (empty content). Runs whatever the mail
+        tracking context; only ``skip_training_history`` turns it off."""
+        if "training_recommendation" not in vals or self.env.context.get("skip_training_history"):
+            return []
+        new = vals.get("training_recommendation") or ""
+        author_id = history_author_uid(self.env)
+        now = fields.Datetime.now()
+        return [{
+            "patient_id": patient.id,
+            "change_datetime": now,
+            "author_id": author_id,
+            "content": new if new.strip() else False,
+        } for patient in self.sudo()
+            if (patient.training_recommendation or "").strip() != new.strip()]
+
     def write(self, vals):
         self._normalize_jersey_vals(vals)
         corrections = self._sc_identity_guard(vals)
+        training_history = self._prepare_training_history_vals(vals)
         res = super().write(vals)
+        if training_history:
+            # sudo: history rows are only ever created by server code.
+            self.env["sports.patient.training.history"].sudo().create(training_history)
         if corrections:
             self._sc_post_identity_note(corrections)
         if "jersey_number" in vals or "team_ids" in vals:
@@ -1899,6 +1950,19 @@ class Patient(models.Model):
                     .id
                 )
         res = super().create(vals_list)
+        # Task 1601: a player created with a recommendation gets its first
+        # history row.
+        if not self.env.context.get("skip_training_history"):
+            author_id = history_author_uid(self.env)
+            now = fields.Datetime.now()
+            initial = [{
+                "patient_id": patient.id,
+                "change_datetime": now,
+                "author_id": author_id,
+                "content": patient.training_recommendation,
+            } for patient in res.sudo() if (patient.training_recommendation or "").strip()]
+            if initial:
+                self.env["sports.patient.training.history"].sudo().create(initial)
         res._notify_jersey_duplicates()
         # Stamp the Law 25 retention clock for any player created without a team.
         res._sync_date_left_last_team()
@@ -2234,22 +2298,22 @@ class Patient(models.Model):
 
     def _training_recommendation_history(self):
         """Every change of ONE patient's training recommendation, newest
-        first, from the field's mail tracking (owner review 2026-10-10: a
-        history like the team announcement's). Plain dicts — ``when``
-        (datetime), ``author`` and ``body`` (the text set, '' when cleared) —
-        read as sudo: callers gate on who may see the recommendation."""
+        first (owner review 2026-10-10: a history like the team
+        announcement's). Task 1601: read from
+        ``sports.patient.training.history`` — NOT sudo, so the model's record
+        rules re-enforce the team scoping behind the caller's own gate. Plain
+        dicts — ``when`` (datetime), ``author`` and ``body`` (the text set,
+        '' when cleared)."""
         self.ensure_one()
-        trackings = self.env["mail.tracking.value"].sudo().search([
-            ("field_id.model", "=", self._name),
-            ("field_id.name", "=", "training_recommendation"),
-            ("mail_message_id.model", "=", self._name),
-            ("mail_message_id.res_id", "=", self.id),
-        ], order="id desc")
+        rows = self.env["sports.patient.training.history"].search(
+            [("patient_id", "=", self.id)])
         return [{
-            "when": tracking.mail_message_id.date,
-            "author": tracking.mail_message_id.author_id.name or "",
-            "body": (tracking.new_value_text or "").strip(),
-        } for tracking in trackings]
+            "when": row.change_datetime,
+            # sudo: the author's name only (a portal reader may not read
+            # internal users).
+            "author": row.author_id.sudo().name or "",
+            "body": (row.content or "").strip(),
+        } for row in rows]
 
     def _portal_heading_name(self):
         """Single-patient headings (the player page title, the clinic dossier

@@ -98,7 +98,8 @@ class TestAppShellActivities1539(AppShellCommon):
         self.assertEqual(form.get('action'), '/my/activity/reassign')
         options = form.xpath('.//select[@name="new_user_id"]/option/@value')
         self.assertIn(str(self.coach.id), options)
-        add = tree.xpath('//header//a[@data-sc-action="activity.add"]/@href')
+        # Task 1607 (deliberate update): « + Ajouter » is in the list header.
+        add = tree.xpath('//div[contains(@class, "o_sc_list_header")]//a[@data-sc-action="activity.add"]/@href')
         self.assertEqual(add, ['/my/activity/create?model=sports.team&res_id=%s&return_url=%s'
                                % (self.team_a.id, quote(url, safe=''))])
         resp = self.url_open('/my/activity/reassign', data={

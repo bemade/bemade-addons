@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Draft",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.3.0",
     "category": "Discuss",
     "summary": "Shared, collaboratively edited reply drafts on a conversation.",
     "author": "Bemade Inc.",
@@ -31,6 +31,7 @@
     ],
     "data": [
         "security/ir.model.access.csv",
+        "data/mail_notification_scope_data.xml",
         "views/mail_conversation_draft_views.xml",
         "wizards/mail_conversation_draft_template_views.xml",
         "views/mail_conversation_views.xml",

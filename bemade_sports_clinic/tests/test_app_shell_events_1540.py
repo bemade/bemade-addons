@@ -71,7 +71,8 @@ class TestAppShellEvents1540(Events1540Common):
         self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'), ['upcoming', 'past', 'calendar'])
         ids = [int(x) for x in tree.xpath('//*[@data-sc-event-id]/@data-sc-event-id')]
         self.assertIn(self.event.id, ids)
-        self.assertEqual(tree.xpath('//header//a[@data-sc-action="events.create"]/@href'), ['/my/event/create'])
+        # Task 1607 (deliberate update): « + Ajouter » is in the list header.
+        self.assertEqual(tree.xpath('//div[contains(@class, "o_sc_list_header")]//a[@data-sc-action="events.create"]/@href'), ['/my/event/create'])
         game = tree.xpath('//a[@data-sc-event-type="game"]/@href')[0]
         self.assertIn('event_type=game', game)
         _text, tree = self._get('/my/events?no_default_dates=1&event_type=clinic')
@@ -105,7 +106,11 @@ class TestAppShellEvents1540(Events1540Common):
             form = tree.xpath('//dialog[@id="%s"]//form' % sheet)[0]
             self.assertEqual(form.get('action'), action)
             self.assertTrue(form.xpath('.//input[@name="csrf_token"]'), sheet)
-        self.assertEqual(tree.xpath('//header//button/@data-sc-sheet-open'), ['sc_ts_add_sheet'])
+        # Task 1607 (deliberate update): « + Ajouter » in the timesheets list
+        # header (was in the app bar).
+        self.assertEqual(tree.xpath('//div[contains(@class, "o_sc_list_header")]//button/@data-sc-sheet-open'),
+                         ['sc_ts_add_sheet'])
+        self.assertFalse(tree.xpath('//header//button/@data-sc-sheet-open'))
         # The own timesheet is edited in place (pencil card, owner review 2026-10-11).
         self.assertTrue(tree.xpath('//*[@data-sc-edit-card="timesheet-%s"]' % self.timesheet.id))
 

@@ -14,11 +14,12 @@ Acceptance criteria:
   skip_note_history context disables it.
 - Creating an injury with initially non-empty notes seeds one row per
   non-empty note field.
-- Task 1404 — normalized capture: comparison is strip-normalized, and an
-  essentially-empty NEW value logs NOTHING, genuine clears included (customer
-  decision, traceability trade-off accepted). Whitespace-only diffs log
-  nothing in either direction on either field; re-adding after a clear logs
-  the new content; stored content stays raw. The 19.0.1.24.2 migration
+- Task 1404 — normalized capture: comparison is strip-normalized.
+  Whitespace-only diffs log nothing in either direction on either field;
+  empty -> whitespace-only logs nothing; stored content stays raw.
+- Owner review 2026-10-14 (supersedes 1404's « a clear logs nothing »): a
+  genuine clear logs ONE empty-content row (shown « Cleared »); re-adding
+  after a clear logs the new content. The 19.0.1.24.2 migration
   deletes pre-existing essentially-empty rows and nothing else.
 - Portal: a coach sees EXTERNAL rows only — both at the record-rule level
   (ORM search) and over HTTP, including when tampering with the scope GET
@@ -118,9 +119,9 @@ class TestInjuryNoteHistory(PortalCovCommon):
 
     # ---- normalized capture (task 1404) ----
 
-    def test_clear_logs_nothing_and_keeps_prior_rows(self):
-        """Behaviour row 3: clearing a note logs no row; the field stays
-        empty; prior rows are untouched."""
+    def test_clear_logs_an_empty_row_and_keeps_prior_rows(self):
+        """Owner review 2026-10-14: clearing a note logs ONE empty-content
+        row; the field stays empty; prior rows are untouched."""
         injury = self._new_injury()
         injury.with_context(mail_notrack=True).write({'internal_notes': 'A + B'})
         self.assertEqual(len(self._rows(injury, scope='internal')), 1)
@@ -129,9 +130,12 @@ class TestInjuryNoteHistory(PortalCovCommon):
 
         self.assertFalse(injury.internal_notes)
         rows = self._rows(injury, scope='internal')
-        self.assertEqual(len(rows), 1, "a clear must not create a history row")
-        self.assertEqual(rows.content, 'A + B',
-                         "the prior snapshot must keep its content")
+        self.assertEqual(len(rows), 2, "a clear creates one history row")
+        self.assertEqual(sorted((r.content or '') for r in rows), ['', 'A + B'],
+                         "the clear row is empty; the prior snapshot keeps its content")
+        # Whitespace-only on an already-empty note: nothing more.
+        injury.with_context(mail_notrack=True).write({'internal_notes': '  '})
+        self.assertEqual(len(self._rows(injury, scope='internal')), 2)
 
     def test_whitespace_only_diff_logs_nothing(self):
         """Behaviour row 4: whitespace-only diffs log nothing — both
@@ -164,16 +168,14 @@ class TestInjuryNoteHistory(PortalCovCommon):
 
     def test_readd_after_clear_logs_new_content(self):
         """Behaviour row 5: re-adding a note after a clear logs the new
-        content — no blank row anywhere."""
+        content; the clear itself is the one empty row."""
         injury = self._new_injury()
         injury.with_context(mail_notrack=True).write({'internal_notes': 'A'})
         injury.with_context(mail_notrack=True).write({'internal_notes': False})
         injury.with_context(mail_notrack=True).write({'internal_notes': 'C'})
 
         rows = self._rows(injury, scope='internal')
-        self.assertEqual(rows.mapped('content'), ['A', 'C'])
-        self.assertFalse(any(not (r.content or '').strip() for r in rows),
-                         "no history row may have essentially-empty content")
+        self.assertEqual([r.content or '' for r in rows], ['A', '', 'C'])
 
     def test_logged_content_stays_raw(self):
         """Normalization is for comparison only — the stored snapshot keeps

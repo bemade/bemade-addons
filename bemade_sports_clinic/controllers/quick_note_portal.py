@@ -169,8 +169,11 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         tz = env.user.tz or env.context.get('tz')
 
         def _row(note):
+            # Task 1611: the player chip reads as the pencil card's choice
+            # and its save display (« Last, First », _portal_list_name).
             chips = [label for label in (
-                note.team_id.name, note.patient_id.display_name,
+                note.team_id.name,
+                note.patient_id._portal_list_name() if note.patient_id else '',
                 note.injury_id.display_name, note.event_id.name) if label]
             return {
                 'id': note.id,

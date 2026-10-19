@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Task 1538 (epic #1535) — P1a pages of the portal app shell: the app home
-    (« Équipes »), the teams list and « Plus ». Rendered only with the system
+    (« Tableau de bord », task 1623; was « Équipes »), the teams list and
+    « Plus ». Rendered only with the system
     switch on (see controllers/app_shell.py); today's templates are untouched.
     Section visibility is asked from the registry with sc_can(<key>) — never
     from groups.
 -->
 <odoo>
 
-    <!-- /my/home (shell) — « Équipes » -->
+    <!-- /my/home (shell) — « Tableau de bord » (task 1623; the « Équipes »
+         menu entry is the teams list, /my/teams) -->
     <template id="sc_app_home" name="Sports Clinic App: home">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">Teams</t>
+            <t t-set="sc_title">Dashboard</t>
 
             <section t-if="sc_can('home.clinic_teaser')" class="o_sc_section" data-sc-section="home.clinic_teaser">
                 <t t-call="bemade_sports_clinic.sc_entity_row">
@@ -56,13 +58,7 @@
                 </t>
                 <div t-if="sc_team_rows" class="o_sc_list">
                     <t t-foreach="sc_team_rows" t-as="row">
-                        <t t-call="bemade_sports_clinic.sc_entity_row">
-                            <t t-set="href" t-value="row['url']"/>
-                            <t t-set="dot" t-value="row['status']"/>
-                            <t t-set="title" t-value="row['title']"/>
-                            <t t-set="subtitle" t-value="row['subtitle']"/>
-                            <t t-set="row_attrs" t-value="{'data-sc-team-id': row['id']}"/>
-                        </t>
+                        <t t-call="bemade_sports_clinic.sc_team_list_row"/>
                     </t>
                 </div>
                 <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
@@ -91,6 +87,22 @@
         </t>
     </template>
 
+    <!-- One team row (home « My teams », /my/teams). Variable: row
+         (_sc_team_row). Task 1592: a link row (sc_link_row) so the activity
+         clock chip is its own link; data-sc-team-id on the main link. -->
+    <template id="sc_team_list_row" name="App shell: team list row">
+        <t t-call="bemade_sports_clinic.sc_link_row">
+            <t t-set="href" t-value="row['url']"/>
+            <t t-set="dot" t-value="row['status']"/>
+            <t t-set="title" t-value="row['title']"/>
+            <t t-set="subtitle" t-value="row['subtitle']"/>
+            <t t-set="main_attrs" t-value="{'data-sc-team-id': row['id']}"/>
+            <t t-call="bemade_sports_clinic.sc_activity_clock">
+                <t t-set="clock" t-value="row.get('clock')"/>
+            </t>
+        </t>
+    </template>
+
     <!-- /my/teams (shell) — every team, sticky sort (task 1401) kept -->
     <template id="sc_app_teams" name="Sports Clinic App: teams">
         <t t-call="bemade_sports_clinic.sc_app_layout">
@@ -113,27 +125,25 @@
                 </div>
             </form>
 
-            <div class="o_sc_sort o_sc_segmented" role="group" aria-label="Sort teams">
-                <a t-attf-href="/my/teams?sort=activity#{search_qs}"
-                   t-att-aria-pressed="'true' if sort_mode == 'activity' else 'false'">Recent activity</a>
-                <a t-attf-href="/my/teams?sort=alpha#{search_qs}"
-                   t-att-aria-pressed="'true' if sort_mode == 'alpha' else 'false'">Alphabetical</a>
-                <a t-if="can_rank" t-attf-href="/my/teams?sort=mine#{search_qs}"
-                   t-att-aria-pressed="'true' if sort_mode == 'mine' else 'false'">My order</a>
-            </div>
+            <!-- Task 1607: the sort in the list header (a menu, same control
+                 on every list); no add on this list. -->
+            <t t-call="bemade_sports_clinic.sc_list_header">
+                <t t-set="header_section" t-value="'teams.header'"/>
+                <t t-set="sc_sort_activity">Recent activity</t>
+                <t t-set="sc_sort_alpha">Alphabetical</t>
+                <t t-set="sc_sort_mine">My order</t>
+                <t t-set="sorts" t-value="sc_sort_options('sort', [('activity', sc_sort_activity), ('alpha', sc_sort_alpha)] + ([('mine', sc_sort_mine)] if can_rank else []), sort_mode)"/>
+                <t t-set="sort_id" t-value="'sc_teams_sort'"/>
+                <t t-set="sort_label">Sort teams</t>
+                <t t-set="sort_section" t-value="'teams.sort'"/>
+            </t>
 
             <div t-if="teams" class="o_sc_list">
                 <t t-foreach="teams" t-as="team">
-                    <t t-set="row" t-value="sc_team_row(team, True)"/>
+                    <t t-set="row" t-value="sc_team_row(team, True, sc_team_clocks)"/>
                     <div t-attf-class="o_sc_row_wrap #{'o_sc_row_wrap_reorder' if sort_mode == 'mine' else ''}"
                          t-attf-id="team-#{team.id}">
-                        <t t-call="bemade_sports_clinic.sc_entity_row">
-                            <t t-set="href" t-value="row['url']"/>
-                            <t t-set="dot" t-value="row['status']"/>
-                            <t t-set="title" t-value="row['title']"/>
-                            <t t-set="subtitle" t-value="row['subtitle']"/>
-                            <t t-set="row_attrs" t-value="{'data-sc-team-id': row['id']}"/>
-                        </t>
+                        <t t-call="bemade_sports_clinic.sc_team_list_row"/>
                         <!-- « My order »: the up/down posts of task 1401 (no drag in the shell). -->
                         <div t-if="sort_mode == 'mine'" class="o_sc_reorder">
                             <form action="/my/teams/reorder" method="post">
@@ -190,19 +200,18 @@
                 </t>
             </div>
 
-            <section class="o_sc_section" id="sc_appearance">
-                <t t-call="bemade_sports_clinic.sc_section_header">
-                    <t t-set="title">Appearance</t>
-                </t>
-                <form method="post" action="/my/app/pref" data-sc-pref="1" class="o_sc_segmented o_sc_segmented_full">
-                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <input type="hidden" name="redirect" value="/my/app/more"/>
-                    <button type="submit" name="sc_theme" value="dark"
-                            t-att-aria-pressed="'true' if sc_theme == 'dark' else 'false'">Dark</button>
-                    <button type="submit" name="sc_theme" value="light"
-                            t-att-aria-pressed="'true' if sc_theme == 'light' else 'false'">Light</button>
-                </form>
-            </section>
+            <p class="o_sc_footnote">Le Fit Crew</p>
+        </t>
+    </template>
+
+    <!-- /my/app/settings — « Paramètres » (task 1606), opened from the user
+         menu: the language, appearance and account blocks that used to sit
+         at the bottom of « Plus » (moved, not duplicated). Logging out is the
+         menu's « Se déconnecter ». -->
+    <template id="sc_app_settings" name="Sports Clinic App: settings">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title">Settings</t>
+            <t t-set="sc_active_nav" t-value="False"/>
 
             <!-- Task 1588: the profile language (res.users.lang), a plain
                  POST (full reload: the whole page changes language). -->
@@ -212,7 +221,7 @@
                 </t>
                 <form method="post" action="/my/app/pref" class="o_sc_segmented o_sc_segmented_full">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <input type="hidden" name="redirect" value="/my/app/more"/>
+                    <input type="hidden" name="redirect" value="/my/app/settings"/>
                     <t t-foreach="sc_langs" t-as="sc_lang">
                         <button type="submit" name="lang" t-att-value="sc_lang['code']"
                                 t-att-title="sc_lang['name']"
@@ -220,6 +229,21 @@
                                 t-att-aria-pressed="'true' if sc_lang['active'] else 'false'"
                                 t-out="sc_lang['label']"/>
                     </t>
+                </form>
+            </section>
+
+            <!-- Task 1602: hidden while the app is forced dark. -->
+            <section t-if="sc_theme_choice" class="o_sc_section" id="sc_appearance">
+                <t t-call="bemade_sports_clinic.sc_section_header">
+                    <t t-set="title">Appearance</t>
+                </t>
+                <form method="post" action="/my/app/pref" data-sc-pref="1" class="o_sc_segmented o_sc_segmented_full">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="redirect" value="/my/app/settings"/>
+                    <button type="submit" name="sc_theme" value="dark"
+                            t-att-aria-pressed="'true' if sc_theme == 'dark' else 'false'">Dark</button>
+                    <button type="submit" name="sc_theme" value="light"
+                            t-att-aria-pressed="'true' if sc_theme == 'light' else 'false'">Light</button>
                 </form>
             </section>
 
@@ -240,21 +264,10 @@
                         <t t-set="title">Security</t>
                         <t t-set="subtitle">Password and sign-in</t>
                     </t>
-                    <t t-call="bemade_sports_clinic.sc_entity_row">
-                        <t t-set="href" t-value="'/my/home?classic=1'"/>
-                        <t t-set="lead_icon" t-value="'documents'"/>
-                        <t t-set="title">Other portal documents</t>
-                        <t t-set="subtitle">Invoices, quotes and the classic portal</t>
-                    </t>
-                    <t t-call="bemade_sports_clinic.sc_entity_row">
-                        <t t-set="href" t-value="'/web/session/logout?redirect=/'"/>
-                        <t t-set="lead_icon" t-value="'logout'"/>
-                        <t t-set="title">Log out</t>
-                        <t t-set="chevron" t-value="False"/>
-                    </t>
+                    <!-- Review fixes 2026-10-18 (#1606): no « Portail classique »
+                         row any more (owner). -->
                 </div>
             </section>
-            <p class="o_sc_footnote">Le Fit Crew</p>
         </t>
     </template>
 

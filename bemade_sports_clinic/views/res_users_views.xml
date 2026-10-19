@@ -28,6 +28,11 @@
                     <group>
                         <field name="accessible_team_ids" widget="many2many_checkboxes"/>
                     </group>
+                    <!-- Task 1605: the colour of this person's events on the
+                         portal calendar (automatic; an admin may override). -->
+                    <group string="Portal Calendar" name="sc_calendar">
+                        <field name="sc_calendar_color" widget="color"/>
+                    </group>
                 </page>
             </page>
 

@@ -1,6 +1,6 @@
 {
     'name': 'Sports Clinic Bookings on the App Shell',
-    'version': '19.0.1.1.0',
+    'version': '19.0.1.3.0',
     'summary': "Glue: the portal bookings pages (appointment_portal_staff) on the Sports Clinic app shell.",
     'description': """
 Sports Clinic Bookings on the App Shell
@@ -18,7 +18,9 @@ role), ``/my/bookings`` and ``/my/bookings/calendar`` render on the shell:
 * the list: upcoming / past / all segments, the appointment-type filter,
   one row per booking (client, type, time, status; cancelled badged; the
   client's phone and email as tap-to-call / tap-to-email links) — the
-  same search, filters and query parameters as the portal page;
+  same search, filters and query parameters as the portal page; a date
+  sort control (oldest / newest first) whose choice, like the filters,
+  survives switching segments;
 * the calendar: the shell's shared calendar component (FullCalendar from
   Odoo's lazy bundle) on the unchanged ``/my/bookings/calendar/data`` feed,
   a booking's details shown under the calendar (phone / email as tap

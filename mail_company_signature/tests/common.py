@@ -12,7 +12,7 @@ class CompanySignatureCommon(MailCommon):
     def setUpClass(cls):
         super().setUpClass()
         cls.company_a = cls.env.company
-        cls.company_b = cls.env["res.company"].create({"name": "Pneumac Test"})
+        cls.company_b = cls.env["res.company"].create({"name": "Acme Test"})
         cls.company_a.sudo().company_signature_template = TEMPLATE_A
         cls.u_full = cls._make_user(
             "sig_full",

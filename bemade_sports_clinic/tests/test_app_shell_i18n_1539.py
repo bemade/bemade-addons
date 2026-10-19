@@ -58,7 +58,8 @@ class TestAppShellI18n1539(TestAppShellI18n1538):
         self._switch(True)
         self._login_tp()
         text = self._fr_text('/my/patient/injury/new?patient_id=%s' % self.player.id)
-        for term in ("Gardée sur cet appareil jusqu'à sa création", 'Créer une blessure',
+        # Review fixes 2026-10-18: the create button reads « Créer ».
+        for term in ("Gardée sur cet appareil jusqu'à sa création", 'Créer',
                      'Cochez S/O si la date exacte est inconnue'):
             self.assertIn(term, text, term)
         text = self._fr_text('/my/injury/edit?injury_id=%s' % self.injury.id)
@@ -66,7 +67,9 @@ class TestAppShellI18n1539(TestAppShellI18n1538):
                      'Historique des notes', 'Oui, supprimer la blessure', 'Supprimer'):
             self.assertIn(term, text, term)
         text = self._fr_text('/my/injury/documents?injury_id=%s' % self.injury.id)
-        for term in ('Téléverser un document', 'Taille max 10 Mo', 'Téléverser'):
+        # Review fixes 2026-10-18 b: the shared multi-file picker's hints.
+        for term in ('Téléverser un document', 'Plusieurs fichiers à la fois — 10 Mo maximum chacun',
+                     'Appliquée à chaque fichier ajouté', 'Téléverser'):
             self.assertIn(term, text, term)
 
     def test_activities_in_french(self):

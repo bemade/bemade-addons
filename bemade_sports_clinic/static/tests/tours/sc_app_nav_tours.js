@@ -40,7 +40,7 @@ tours.add("sc_1579_back_came_from", {
     steps: () => [
         {
             content: "Filtered players list (top level: logo, no back)",
-            trigger: '.o_sc_app[data-sc-top="1"] [data-sc-section="players.list"] a[data-sc-player-id]:contains("One")',
+            trigger: '.o_sc_app[data-sc-top="1"] [data-sc-section="players.list"] [data-sc-player-id] a.o_sc_link_row_main:contains("One")',
             run(helpers) {
                 reloadIfRestored();
                 return helpers.click();
@@ -49,7 +49,7 @@ tours.add("sc_1579_back_came_from", {
         },
         {
             content: "Player page: back's href is the declared parent (the players list)",
-            trigger: '.o_sc_app[data-sc-top="0"] a.o_sc_back[href="/my/players"]',
+            trigger: '.o_sc_app[data-sc-top="0"] a.o_sc_back[href$="/my/players"]',
             run() {
                 phoneChrome();
                 document.querySelector("a.o_sc_back").click();
@@ -106,8 +106,15 @@ tours.add("sc_1579_digest_chain", {
             expectUnloadPage: true,
         },
         {
-            content: "Digest list: open a snapshot",
-            trigger: '[data-sc-section="digest.history"] a[data-sc-digest-id]',
+            // Task 1614: a date expands in place; its « Open this day » link
+            // leads to the day's page.
+            content: "Digest list: expand a date",
+            trigger: '[data-sc-section="digest.history"] details[data-sc-digest-row] > summary',
+            run: "click",
+        },
+        {
+            content: "Digest list: open the day's page",
+            trigger: '[data-sc-section="digest.history"] details[open] a[data-sc-digest-id]',
             run(helpers) {
                 reloadIfRestored();
                 return helpers.click();
@@ -180,7 +187,9 @@ tours.add("sc_1579_laptop_trail", {
             content: "Laptop: the full trail, the current page last",
             trigger: 'nav.o_sc_crumbs[aria-label] ol li[aria-current="page"]',
             run() {
-                assert(!visible(".o_sc_back"), "laptop: back chevron visible");
+                // Task 1618 (owner review 2026-10-18): the chevron always
+                // shows next to the trail on a laptop sub-page.
+                assert(visible(".o_sc_back"), "laptop: back chevron hidden");
                 assert(!visible(".o_sc_appbar_context"), "laptop: context line visible");
                 const links = [...document.querySelectorAll("nav.o_sc_crumbs ol li a")].map(
                     (a) => a.getAttribute("href")
@@ -197,7 +206,7 @@ tours.add("sc_1579_laptop_trail", {
         },
         {
             content: "Team page: its trail is « Teams »",
-            trigger: 'nav.o_sc_crumbs ol li a[href="/my/teams"]',
+            trigger: 'nav.o_sc_crumbs ol li a[href$="/my/teams"]',
             run() {
                 assert(window.location.pathname === "/my/team", window.location.href);
             },

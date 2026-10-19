@@ -40,9 +40,11 @@ export function notifyFetchError(error) {
  * @param {"json"|"html"} [options.as] expected answer
  * @param {number} [options.timeout] ms
  * @param {boolean} [options.toast] dispatch sc:fetch-error on failure
+ * @param {Object} [options.headers] extra request headers (task 1611:
+ *     X-Sc-Fragments)
  */
 export async function scFetch(url, options = {}) {
-    const { method = "GET", data = null, as = "json", timeout = 15000, toast = true } = options;
+    const { method = "GET", data = null, as = "json", timeout = 15000, toast = true, headers = {} } = options;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     const init = {
@@ -52,6 +54,7 @@ export async function scFetch(url, options = {}) {
         headers: {
             "X-Requested-With": "XMLHttpRequest",
             Accept: as === "json" ? "application/json" : "text/html",
+            ...headers,
         },
     };
     if (method !== "GET") {

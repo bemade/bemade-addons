@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0+e\n"
+"Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-02 18:39+0000\n"
-"PO-Revision-Date: 2026-10-02 18:39+0000\n"
+"POT-Creation-Date: 2026-10-17 22:52+0000\n"
+"PO-Revision-Date: 2026-10-17 22:52+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -143,7 +143,9 @@ msgid ""
 "Allow users of this account to archive, trash or mark messages read on the "
 "REAL mailbox from the inbox viewer "
 "(_archive_remote/_trash_remote/_mark_read_remote). Off by default: mailbox "
-"writes must be enabled explicitly per account, shared accounts included."
+"writes must be enabled explicitly per account. On a shared account (no "
+"owner) only a Conversations manager can switch this on, and deleting "
+"additionally needs the 'Delete shared mail' permission."
 msgstr ""
 
 #. module: conversation_base
@@ -163,6 +165,12 @@ msgid ""
 msgstr ""
 
 #. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_triage_assign_view_form
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_triage_snooze_view_form
+msgid "Apply"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__archive_on_capture
 msgid "Archive After Filing"
 msgstr ""
@@ -173,9 +181,33 @@ msgid "Artifact Only"
 msgstr ""
 
 #. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/mail_conversation.py:0
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_triage_assign_view_form
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
+msgid "Assign"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model,name:conversation_base.model_mail_conversation_triage_assign
+msgid "Assign Conversations"
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
+msgid "Assign to me"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__user_id
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_assign__user_id
 #: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
 msgid "Assignee"
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
+msgid "Assign…"
 msgstr ""
 
 #. module: conversation_base
@@ -184,8 +216,25 @@ msgid "Attachment Count"
 msgstr ""
 
 #. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__conversation_transport__record_link_mode__auto
+msgid "Automatic"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__browsable
 msgid "Browsable"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__can_trash_mail
+msgid "Can Delete Mail"
+msgstr ""
+
+#. module: conversation_base
+#: model:res.groups,comment:conversation_base.group_delete_shared_mail
+msgid ""
+"Can delete (move to the mailbox Trash) mail of a shared mail account. Not "
+"implied by the Manager group; grant it explicitly."
 msgstr ""
 
 #. module: conversation_base
@@ -211,6 +260,17 @@ msgid ""
 msgstr ""
 
 #. module: conversation_base
+#: model:res.groups,comment:conversation_base.group_conversation_manager
+msgid "Can switch write-back (mailbox_writable) on for a shared mail account."
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_triage_assign_view_form
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_triage_snooze_view_form
+msgid "Cancel"
+msgstr ""
+
+#. module: conversation_base
 #: model_terms:ir.ui.view,arch_db:conversation_base.conversation_transport_view_form
 msgid "Capabilities"
 msgstr ""
@@ -218,6 +278,11 @@ msgstr ""
 #. module: conversation_base
 #: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_participant__role__cc
 msgid "Cc"
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
+msgid "Closes the selected conversations for the whole team."
 msgstr ""
 
 #. module: conversation_base
@@ -272,6 +337,24 @@ msgid "Conversation Transport"
 msgstr ""
 
 #. module: conversation_base
+#. odoo-javascript
+#: code:addons/conversation_base/static/src/triage/triage_fields.js:0
+msgid "Conversation channel"
+msgstr ""
+
+#. module: conversation_base
+#. odoo-javascript
+#: code:addons/conversation_base/static/src/triage/triage_fields.js:0
+msgid "Conversation linked records"
+msgstr ""
+
+#. module: conversation_base
+#. odoo-javascript
+#: code:addons/conversation_base/static/src/triage/triage_fields.js:0
+msgid "Conversation participants"
+msgstr ""
+
+#. module: conversation_base
 #: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_form
 msgid "Conversation subject..."
 msgstr ""
@@ -279,9 +362,14 @@ msgstr ""
 #. module: conversation_base
 #: model:ir.actions.act_window,name:conversation_base.mail_conversation_action
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__conversation_ids
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_assign__conversation_ids
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_snooze__conversation_ids
+#: model:ir.module.category,name:conversation_base.module_category_conversations
 #: model:ir.ui.menu,name:conversation_base.menu_mail_conversation
 #: model:ir.ui.menu,name:conversation_base.menu_mail_conversation_root
+#: model:res.groups.privilege,name:conversation_base.res_groups_privilege_conversations
 #: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
 msgid "Conversations"
 msgstr ""
 
@@ -298,6 +386,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__create_uid
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_tag__create_uid
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__create_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_assign__create_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_snooze__create_uid
 msgid "Created by"
 msgstr ""
 
@@ -309,6 +399,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__create_date
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_tag__create_date
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__create_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_assign__create_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_snooze__create_date
 msgid "Created on"
 msgstr ""
 
@@ -347,6 +439,11 @@ msgid ""
 msgstr ""
 
 #. module: conversation_base
+#: model:res.groups,name:conversation_base.group_delete_shared_mail
+msgid "Delete shared mail"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_link__reason__direct
 msgid "Direct"
 msgstr ""
@@ -359,13 +456,22 @@ msgstr ""
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__display_name
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_tag__display_name
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__display_name
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_assign__display_name
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_snooze__display_name
 #: model:ir.model.fields,field_description:conversation_base.field_mail_message__display_name
 msgid "Display Name"
 msgstr ""
 
 #. module: conversation_base
 #: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation__state__done
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
 msgid "Done"
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
+msgid "Done (closes it for everyone)"
 msgstr ""
 
 #. module: conversation_base
@@ -421,6 +527,22 @@ msgid "Has Message"
 msgstr ""
 
 #. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__my_hidden
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
+msgid "Hidden by me"
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
+msgid "Hide from my list"
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
+msgid "Hide from my list (colleagues still see it)"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__id
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__id
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_link__id
@@ -428,6 +550,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__id
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_tag__id
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__id
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_assign__id
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_snooze__id
 #: model:ir.model.fields,field_description:conversation_base.field_mail_message__id
 msgid "ID"
 msgstr ""
@@ -467,11 +591,18 @@ msgid ""
 msgstr ""
 
 #. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__my_in_list
+msgid "In my list"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__inbox_transport_ids
 msgid "Inbox Transports"
 msgstr ""
 
 #. module: conversation_base
+#. odoo-javascript
+#: code:addons/conversation_base/static/src/triage/triage_fields.js:0
 #: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_participant__kind__internal
 msgid "Internal"
 msgstr ""
@@ -492,6 +623,11 @@ msgid "Kind"
 msgstr ""
 
 #. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__last_message_snippet
+msgid "Last Message Snippet"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__write_uid
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__write_uid
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_link__write_uid
@@ -499,6 +635,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__write_uid
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_tag__write_uid
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__write_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_assign__write_uid
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_snooze__write_uid
 msgid "Last Updated by"
 msgstr ""
 
@@ -510,7 +648,24 @@ msgstr ""
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__write_date
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_tag__write_date
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_team__write_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_assign__write_date
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_snooze__write_date
 msgid "Last Updated on"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_triage_snooze__preset__later_today
+msgid "Later today"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation_triage_assign__team_id
+msgid "Leave empty to keep each conversation's current team."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__record_link_mode
+msgid "Link Replies to Odoo Records"
 msgstr ""
 
 #. module: conversation_base
@@ -545,8 +700,23 @@ msgid "Mailbox Writable"
 msgstr ""
 
 #. module: conversation_base
+#: model:res.groups,name:conversation_base.group_conversation_manager
+msgid "Manager"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_link__reason__manual
 msgid "Manual"
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
+msgid "Mark read"
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
+msgid "Mark unread"
 msgstr ""
 
 #. module: conversation_base
@@ -595,6 +765,11 @@ msgid "My Conversations"
 msgstr ""
 
 #. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
+msgid "My list"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__name
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__name
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_tag__name
@@ -631,6 +806,11 @@ msgid "Next Activity Type"
 msgstr ""
 
 #. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_triage_snooze__preset__next_week
+msgid "Next week"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_mail_conversation__unassigned
 msgid "No assignee. A team alone does not count as assigned."
 msgstr ""
@@ -663,6 +843,27 @@ msgstr ""
 #. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_mail_conversation__message_has_error_counter
 msgid "Number of messages with delivery error"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__conversation_transport__record_link_mode__off
+msgid "Off"
+msgstr ""
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/conversation_transport.py:0
+msgid ""
+"Only a Conversations manager can assign an owner to a shared mail account "
+"(%(transport)s)."
+msgstr ""
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/conversation_transport.py:0
+msgid ""
+"Only a Conversations manager can enable mailbox actions (archive, delete, "
+"mark read) on a shared mail account (%(transport)s)."
 msgstr ""
 
 #. module: conversation_base
@@ -721,6 +922,11 @@ msgid "Partner"
 msgstr ""
 
 #. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_triage_snooze__preset__custom
+msgid "Pick a date and time"
+msgstr ""
+
+#. module: conversation_base
 #. odoo-python
 #: code:addons/conversation_base/models/mail_conversation.py:0
 msgid "Pick a record to link this captured item to."
@@ -729,7 +935,26 @@ msgstr ""
 #. module: conversation_base
 #. odoo-python
 #: code:addons/conversation_base/models/mail_conversation.py:0
+msgid "Pick a snooze time in the future."
+msgstr ""
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/wizards/mail_conversation_triage_snooze.py:0
+msgid "Pick a snooze time."
+msgstr ""
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/mail_conversation.py:0
 msgid "Pick an existing conversation to add this item to."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__last_message_snippet
+msgid ""
+"Plain-text preview of the newest message that is real activity (same "
+"classification as the other triage facets)."
 msgstr ""
 
 #. module: conversation_base
@@ -742,6 +967,11 @@ msgid ""
 msgstr ""
 
 #. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_snooze__preset
+msgid "Preset"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__primary_transport_id
 msgid "Primary Transport"
 msgstr ""
@@ -750,6 +980,13 @@ msgstr ""
 #: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__provider
 #: model_terms:ir.ui.view,arch_db:conversation_base.conversation_transport_view_search
 msgid "Provider"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_mail_conversation__triage_channel
+msgid ""
+"Provider of the transport the conversation last used; 'internal' when there "
+"is none."
 msgstr ""
 
 #. module: conversation_base
@@ -784,6 +1021,24 @@ msgid "Related Record ID"
 msgstr ""
 
 #. module: conversation_base
+#. odoo-javascript
+#: code:addons/conversation_base/static/src/triage/triage_fields.js:0
+msgid "Relative time"
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
+msgid ""
+"Removes the selected conversations from your list only. Colleagues still see"
+" them."
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
+msgid "Reopen"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_participant__role__requester
 msgid "Requester"
 msgstr ""
@@ -796,6 +1051,12 @@ msgstr ""
 #. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__activity_user_id
 msgid "Responsible User"
+msgstr ""
+
+#. module: conversation_base
+#. odoo-javascript
+#: code:addons/conversation_base/static/src/triage/triage_fields.xml:0
+msgid "Restricted record"
 msgstr ""
 
 #. module: conversation_base
@@ -819,13 +1080,44 @@ msgid "Shared Accounts"
 msgstr ""
 
 #. module: conversation_base
+#: model:res.groups.privilege,name:conversation_base.res_groups_privilege_delete_shared_mail
+msgid "Shared Mailbox"
+msgstr ""
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/mail_conversation.py:0
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_triage_snooze_view_form
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
+msgid "Snooze"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model,name:conversation_base.model_mail_conversation_triage_snooze
+msgid "Snooze Conversations"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_member__snooze_until
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_snooze__snooze_until
 msgid "Snooze Until"
 msgstr ""
 
 #. module: conversation_base
 #: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation__state__snoozed
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
 msgid "Snoozed"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__my_snoozed
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
+msgid "Snoozed by me"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__my_snooze_until
+msgid "Snoozed until"
 msgstr ""
 
 #. module: conversation_base
@@ -851,6 +1143,11 @@ msgid ""
 msgstr ""
 
 #. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__conversation_transport__record_link_mode__suggest
+msgid "Suggest"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_conversation_transport__searchable
 msgid ""
 "Supports server-side search of the remote mailbox (_search_remote) beyond "
@@ -864,6 +1161,7 @@ msgstr ""
 
 #. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__team_id
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_triage_assign__team_id
 #: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
 msgid "Team"
 msgstr ""
@@ -959,6 +1257,11 @@ msgid "To"
 msgstr ""
 
 #. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation_triage_snooze__preset__tomorrow
+msgid "Tomorrow"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_mail_mail__transport_id
 #: model:ir.model.fields,field_description:conversation_base.field_mail_message__transport_id
 msgid "Transport"
@@ -974,6 +1277,21 @@ msgstr ""
 #. module: conversation_base
 #: model_terms:ir.ui.view,arch_db:conversation_base.conversation_transport_view_form
 msgid "Triage"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__triage_channel
+msgid "Triage Channel"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__triage_links
+msgid "Triage Links"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__triage_participants
+msgid "Triage Participants"
 msgstr ""
 
 #. module: conversation_base
@@ -999,8 +1317,30 @@ msgid "Unassigned"
 msgstr ""
 
 #. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
+msgid "Unhide"
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_member__unread
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
 msgid "Unread"
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__my_unread
+msgid "Unread by me"
+msgstr ""
+
+#. module: conversation_base
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
+msgid "Unsnooze"
+msgstr ""
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/mail_conversation.py:0
+msgid "Unsupported search operator."
 msgstr ""
 
 #. module: conversation_base
@@ -1010,6 +1350,7 @@ msgstr ""
 
 #. module: conversation_base
 #: model:ir.model.fields.selection,name:conversation_base.selection__mail_conversation__state__waiting
+#: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_search
 msgid "Waiting"
 msgstr ""
 
@@ -1019,12 +1360,40 @@ msgid "Watcher"
 msgstr ""
 
 #. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_conversation_transport__record_link_mode
+msgid ""
+"What to do when an inbound message in this mailbox is a reply to mail Odoo "
+"itself sent (its headers name an Odoo record). Applies to personal mailboxes"
+" only: a shared mailbox is always Off. Suggest: preselect that record in the"
+" capture dialog; you still confirm. Automatic: file and link the message "
+"without the dialog, but only when 'File Replies in Odoo by Default' is also "
+"on (otherwise it behaves like Suggest); filing still needs a click on New "
+"Conversation or Link to a Record. Off: do nothing."
+msgstr ""
+
+#. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_conversation_transport__default_file_in_odoo
 msgid ""
 "Whether the composer pre-selects 'file this exchange into a conversation' "
 "for this account. Off by default, and deliberately: a personal mailbox's "
 "traffic must not land in the shared hub unless a human says so each time. "
 "Turn it on for a shared or team mailbox, where filing is the point."
+msgstr ""
+
+#. module: conversation_base
+#: model:ir.model.fields,help:conversation_base.field_conversation_transport__can_trash_mail
+msgid ""
+"Whether the current user may delete (move to Trash) mail on this account: "
+"always on a personal account, only with the 'Delete shared mail' permission "
+"on a shared one."
+msgstr ""
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/conversation_transport.py:0
+msgid ""
+"You are not allowed to delete mail in the shared mail account %(transport)s."
+" Ask an administrator for the 'Delete shared mail' permission."
 msgstr ""
 
 #. module: conversation_base

@@ -62,7 +62,9 @@ class TestAppShellSave1542(AppShellCommon):
             'sports.patient', 'sports.patient.injury', 'sports.treatment.note',
             'sports.patient.contact',
             # Owner review 2026-10-11 (pencil paradigm portal-wide).
-            'mail.activity', 'sports.quick.note', 'sports.event.timesheet', 'sports.event'})
+            'mail.activity', 'sports.quick.note', 'sports.event.timesheet', 'sports.event',
+            # Task 1616: an injury card's documents (re-filed after an upload).
+            'sports.injury.document'})
         self._login_tp()
         resp = self._post({'field': 'announcement_deadline', 'value': '2030-01-01',
                            'write_date': self._wd()})

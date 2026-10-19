@@ -5,14 +5,18 @@ Acceptance criteria:
 * UC-PL1 No « Overview » and no « Contacts » tab: the player page opens on
   « Injuries ». Old links still land: ``?tab=overview`` opens Injuries,
   ``?tab=contacts`` (and the ``#contacts`` fragment) opens Info.
-* UC-PL2 The page header carries the play-status selector in place of the
-  status pill (a therapist edits it there; a coach sees the Match / Practice
-  values read-only); there is no separate status pill anymore.
+* UC-PL2 The page header carries the play status. Review fixes 2026-10-18:
+  the header is a READ view with one pencil — everyone reads the status
+  label + Match / Practice chips there; a therapist's pencil opens the edit
+  view holding the play-status selector (the only one on the page); a coach
+  has no pencil and no selector.
 * UC-PL3 Date of birth and age sit in the « Player » card (read view, and
   the date in its edit view), no longer in « Medical Information ».
-* UC-PL4 The training recommendation (always live, with its history link)
-  sits just above the allergies: its card comes right before « Medical
-  Information » on the Info tab; a coach sees it read-only.
+* UC-PL4 The training recommendation (with its history link) sits in the
+  page header (owner review 2026-10-14 — no longer on the Info tab), right
+  under the play status (task 1615), the one return date next and the
+  allergies callout after (header read view, everyone); a therapist edits
+  the recommendation (live, stamp + history) in the header's edit view.
 * UC-PL5 Emergency contacts are on the Info tab (cards and « Add Emergency
   Contact »); adding or editing one comes back to the Info tab.
 """
@@ -74,13 +78,22 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         self._login_tp()
         _text, tree = self._get(self._url(tab='injuries'))
         hero = tree.xpath('//*[@data-sc-section="player.hero"]')[0]
-        self.assertEqual(self._owl(hero)['sc_status']['inputType'], 'segmented')
-        self.assertFalse(tree.xpath('//*[@data-sc-stage-chip]'))
+        self.assertEqual(hero.get('data-sc-edit-card'), 'player-header')
+        self.assertEqual(len(hero.xpath('./button[@data-sc-edit-toggle]')), 1)
+        read = hero.xpath('./*[@data-sc-edit-view="read"]')[0]
+        edit = hero.xpath('./*[@data-sc-edit-view="edit"]')[0]
+        self.assertEqual(edit.get('hidden'), 'hidden')
+        self.assertTrue(read.xpath('.//*[@data-sc-section="player.status.readonly"]//*[@data-sc-stage-chip]'))
+        self.assertFalse(read.xpath('.//owl-component'))
+        self.assertEqual(self._owl(edit)['sc_status']['inputType'], 'segmented')
         self.assertEqual(len(tree.xpath('//owl-component[contains(@props, \'"sc_status"\')]')), 1)
         self._login_coach()
         _text, tree = self._get(self._url(tab='injuries'))
         hero = tree.xpath('//*[@data-sc-section="player.hero"]')[0]
         self.assertNotIn('sc_status', self._owl(hero))
+        self.assertIsNone(hero.get('data-sc-edit-card'))
+        self.assertFalse(hero.xpath('.//*[@data-sc-edit-toggle]'))
+        self.assertFalse(hero.xpath('.//*[@data-sc-edit-view="edit"]'))
         self.assertTrue(hero.xpath('.//*[@data-sc-section="player.status.readonly"]'))
 
     # -- UC-PL3 / UC-PL4 -------------------------------------------------
@@ -96,16 +109,39 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         medical = panel.xpath('.//*[@data-sc-edit-card="medical"]')[0]
         self.assertNotIn('Date of birth', medical.text_content())
         self.assertNotIn('date_of_birth', self._owl(medical))
-        # The training card comes right before « Medical Information ».
-        training = panel.xpath('.//*[@data-sc-section="player.training"]')
+        # Owner review 2026-10-14: the training recommendation left the Info
+        # tab for the header; task 1615: right under the play status, then
+        # « Retour prévu » (the full order: test_header_order_1615).
+        self.assertFalse(panel.xpath('.//*[@data-sc-section="player.training"]'))
+        training = tree.xpath('//*[@data-sc-section="player.training"]')
         self.assertEqual(len(training), 1)
-        self.assertIs(training[0].getnext(), medical)
-        self.assertIn('training_recommendation', self._owl(training[0]))
+        hero = tree.xpath('//*[@data-sc-section="player.hero"]')[0]
+        read = hero.xpath('./*[@data-sc-edit-view="read"]')[0]
+        self.assertIs(training[0].getparent(), read)
+        # Task 1611: the banner sits in its always-rendered read-fragment
+        # holder (filled / cleared in place).
+        self.assertEqual(training[0].getprevious().get('data-sc-section'), 'player.status')
+        self.assertEqual(training[0].getnext().get('data-sc-section'), 'player.return')
+        allergies = read.xpath('./*[@data-sc-section="player.allergies"]')[0]
+        self.assertTrue(allergies.xpath('./*[contains(@class, "o_sc_banner")]'))
+        self.assertIn('Synthetic peanuts', allergies.text_content())
+        self.assertIn('Synthetic bike', training[0].text_content())
+        self.assertTrue(training[0].xpath('.//*[@data-sc-sheet-open="sc_training_history_sheet"]'))
+        # Review fixes 2026-10-18: the therapist edits it in the header's
+        # edit view (live, with its History).
+        edit = hero.xpath('./*[@data-sc-edit-view="edit"]')[0]
+        training_edit = edit.xpath('./*[@data-sc-section="player.training.edit"]')[0]
+        self.assertIn('training_recommendation', self._owl(training_edit))
+        self.assertTrue(training_edit.xpath('.//owl-component[contains(@props, "sc_training_history_sheet")]'))
         self._login_coach()
         _text, tree = self._get(self._url(tab='info'))
-        training = tree.xpath('//section[@data-sc-tab-panel="info"]//*[@data-sc-section="player.training"]')[0]
+        self.assertFalse(tree.xpath(
+            '//section[@data-sc-tab-panel="info"]//*[@data-sc-section="player.training"]'))
+        training = tree.xpath('//*[@data-sc-section="player.hero"]/*[@data-sc-edit-view="read"]'
+                              '/*[@data-sc-section="player.training"]')[0]
         self.assertIn('Synthetic bike', training.text_content())
         self.assertNotIn('training_recommendation', self._owl(training))
+        self.assertTrue(training.xpath('.//*[@data-sc-sheet-open="sc_training_history_sheet"]'))
 
     # -- UC-PL5 ----------------------------------------------------------
     def test_contacts_on_info_tab(self):
