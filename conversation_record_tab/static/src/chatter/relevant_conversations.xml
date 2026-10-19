@@ -2,6 +2,11 @@
 <templates xml:space="preserve">
 
 <t t-inherit="mail.Chatter" t-inherit-mode="extension">
+    <xpath expr="//div[hasclass('o-mail-Chatter')]" position="attributes">
+        <attribute
+        name="t-att-data-relevant-conversations-loaded"
+      >relevantConversations.loadedFor</attribute>
+    </xpath>
     <xpath expr="//div[hasclass('o-mail-Followers')]" position="before">
         <button
         t-if="relevantConversations.count"

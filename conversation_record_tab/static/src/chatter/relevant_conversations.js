@@ -17,7 +17,15 @@ patch(Chatter.prototype, {
     this.conversationOrm = useService("orm");
     this.conversationAction = useService("action");
     this.relevantKeepLast = new KeepLast();
-    this.relevantConversations = useState({count: 0, scopes: [], open: true});
+    // The loadedFor key is "<model>,<id>" once the list for that record is
+    // settled (loaded or skipped); it is rendered as an inert data attribute
+    // on the chatter root.
+    this.relevantConversations = useState({
+      count: 0,
+      scopes: [],
+      open: true,
+      loadedFor: false,
+    });
     useEffect(
       (model, id) => {
         this.loadRelevantConversations(model, id);
@@ -31,7 +39,10 @@ patch(Chatter.prototype, {
     const state = this.relevantConversations;
     state.count = 0;
     state.scopes = [];
+    state.loadedFor = false;
+    const recordKey = `${model},${id}`;
     if (!user.isInternalUser || !id || EXCLUDED_MODELS.includes(model)) {
+      state.loadedFor = recordKey;
       return;
     }
     const keepLast = this.relevantKeepLast;
@@ -46,6 +57,7 @@ patch(Chatter.prototype, {
     }
     state.count = result.count;
     state.scopes = result.scopes;
+    state.loadedFor = recordKey;
   },
 
   toggleRelevantConversations() {
