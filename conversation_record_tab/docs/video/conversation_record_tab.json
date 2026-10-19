@@ -1,0 +1,12 @@
+{
+  "stepsFile": "../../static/tests/tours/conversation_record_tab.steps.js",
+  "startPath": "/odoo/action-base.action_partner_form",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "lang": "fr_CA",
+  "voice": "fr_FR-siwis-medium",
+  "title": "Retrouver les conversations liées depuis une fiche",
+  "introNarration": "Dans cette démonstration, nous voyons comment retrouver, directement depuis une fiche (un client, une soumission, une tâche, un billet), les conversations qui lui ont été liées.",
+  "outroTitle": "À vous de jouer",
+  "outroNarration": "Aucun courriel n'est copié dans la fiche : la conversation reste à un seul endroit, et la fiche y donne accès en un clic. Une fiche sans conversation liée ne change pas."
+}
