@@ -7,3 +7,4 @@ from . import test_conversation_inbox_record_link
 from . import test_conversation_inbox_link_picker
 from . import test_shared_inbox_tours
 from . import test_link_record_picker_tour
+from . import test_conversation_inbox_my_mailboxes

@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation IMAP",
-    "version": "19.0.1.2.1",
+    "version": "19.0.1.3.0",
     "category": "Discuss",
     "summary": "Generic IMAP/SMTP conversation transport provider "
     "(endpoints + password login for the shared email engine).",

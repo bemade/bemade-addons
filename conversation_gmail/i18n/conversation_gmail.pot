@@ -1,0 +1,199 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* conversation_gmail
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-19 21:33+0000\n"
+"PO-Revision-Date: 2026-10-19 21:33+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: conversation_gmail
+#. odoo-python
+#: code:addons/conversation_gmail/models/conversation_transport.py:0
+msgid ""
+"%(transport)s is connected to Gmail but has no login address on file; "
+"reconnect the account."
+msgstr ""
+
+#. module: conversation_gmail
+#: model_terms:ir.ui.view,arch_db:conversation_gmail.conversation_transport_view_form_gmail
+msgid ""
+"<span invisible=\"not gmail_connected\">\n"
+"                            Connected.\n"
+"                        </span>"
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,field_description:conversation_gmail.field_conversation_transport__google_gmail_access_token
+msgid "Access Token"
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,field_description:conversation_gmail.field_conversation_transport__google_gmail_access_token_expiration
+msgid "Access Token Expiration Timestamp"
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,field_description:conversation_gmail.field_conversation_transport__active
+msgid "Active"
+msgstr ""
+
+#. module: conversation_gmail
+#. odoo-python
+#: code:addons/conversation_gmail/models/conversation_transport.py:0
+msgid "An error occurred when fetching the access token."
+msgstr ""
+
+#. module: conversation_gmail
+#: model_terms:ir.ui.view,arch_db:conversation_gmail.conversation_transport_view_form_gmail
+msgid "Connect to Google"
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,field_description:conversation_gmail.field_conversation_transport__gmail_connected
+msgid "Connected to Google"
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model,name:conversation_gmail.model_conversation_transport
+msgid "Conversation Transport"
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,field_description:conversation_gmail.field_conversation_transport__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields.selection,name:conversation_gmail.selection__conversation_transport__provider__gmail
+#: model_terms:ir.ui.view,arch_db:conversation_gmail.conversation_transport_view_form_gmail
+msgid "Gmail"
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,field_description:conversation_gmail.field_conversation_transport__client_id
+msgid "Gmail Client ID"
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,field_description:conversation_gmail.field_conversation_transport__client_secret
+msgid "Gmail Client Secret"
+msgstr ""
+
+#. module: conversation_gmail
+#. odoo-python
+#: code:addons/conversation_gmail/models/conversation_transport.py:0
+msgid ""
+"Gmail OAuth is not set up for %(transport)s yet: no Google Client ID/Secret "
+"is configured, either on this account or instance-wide. Either enter a "
+"Client ID/Secret on this account (for a personal Gmail account), or ask an "
+"administrator to go to Settings, then General Settings, then under Emails "
+"enable 'Custom Email Servers', then fill in the Gmail Client ID and Client "
+"Secret under 'Use a Gmail Server' and save. Come back here afterwards and "
+"click 'Connect to Gmail' again."
+msgstr ""
+
+#. module: conversation_gmail
+#. odoo-python
+#: code:addons/conversation_gmail/models/conversation_transport.py:0
+msgid "Go to General Settings"
+msgstr ""
+
+#. module: conversation_gmail
+#. odoo-python
+#: code:addons/conversation_gmail/models/conversation_transport.py:0
+msgid ""
+"Google sign-in is not set up on this database yet. Please contact an "
+"administrator."
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,field_description:conversation_gmail.field_conversation_transport__id
+msgid "ID"
+msgstr ""
+
+#. module: conversation_gmail
+#. odoo-python
+#: code:addons/conversation_gmail/models/conversation_transport.py:0
+msgid "Only the administrator can link a Gmail mail server."
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,help:conversation_gmail.field_conversation_transport__client_id
+msgid ""
+"Override the instance-wide Google OAuth Client ID for this account only. "
+"Leave blank to use the one configured under Settings > General Settings > "
+"Emails > 'Use a Gmail Server' (the common case for a Google Workspace org "
+"sharing one OAuth app). Set this when connecting a personal Gmail account "
+"with its own Google Cloud OAuth client instead."
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,help:conversation_gmail.field_conversation_transport__client_secret
+msgid ""
+"Paired with Client ID above; leave both blank to use the instance-wide "
+"credentials. Treated as a credential, like the OAuth tokens below: only an "
+"administrator can read or edit it."
+msgstr ""
+
+#. module: conversation_gmail
+#. odoo-python
+#: code:addons/conversation_gmail/models/conversation_transport.py:0
+msgid "Please configure your Gmail credentials."
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,field_description:conversation_gmail.field_conversation_transport__provider
+msgid "Provider"
+msgstr ""
+
+#. module: conversation_gmail
+#: model_terms:ir.ui.view,arch_db:conversation_gmail.conversation_transport_view_form_gmail
+msgid "Reconnect"
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,field_description:conversation_gmail.field_conversation_transport__google_gmail_refresh_token
+msgid "Refresh Token"
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,help:conversation_gmail.field_conversation_transport__google_gmail_uri
+msgid "The URL to generate the authorization code from Google"
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,help:conversation_gmail.field_conversation_transport__provider
+msgid ""
+"The concrete transport implementation providing this connection (generic "
+"IMAP/SMTP, Gmail OAuth, ...). This base module defines no options itself -- "
+"each opt-in provider module (conversation_imap, conversation_gmail, ...) "
+"registers its own via selection_add, so the dropdown only ever offers a "
+"provider that is actually installed and implemented."
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,field_description:conversation_gmail.field_conversation_transport__google_gmail_uri
+msgid "URI"
+msgstr ""
+
+#. module: conversation_gmail
+#: model:ir.model.fields,help:conversation_gmail.field_conversation_transport__gmail_connected
+msgid ""
+"Whether a Google authorisation is stored for this account. Says nothing "
+"about the tokens themselves."
+msgstr ""
+
+#. module: conversation_gmail
+#. odoo-python
+#: code:addons/conversation_gmail/models/conversation_transport.py:0
+msgid "You can only connect your own mailbox to Google."
+msgstr ""

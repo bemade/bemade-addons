@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-19 15:23+0000\n"
+"POT-Creation-Date: 2026-10-19 21:32+0000\n"
 "PO-Revision-Date: 2026-10-16 20:25+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -38,6 +38,12 @@ msgstr ""
 #. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
+msgid "Add a mailbox"
+msgstr "Ajouter une boîte"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Add to Existing"
 msgstr "Ajouter à une conversation"
 
@@ -50,6 +56,11 @@ msgstr ""
 #: model:ir.model.fields.selection,name:conversation_inbox.selection__conversation_inbox_reply_wizard__filing_mode__existing
 msgid "Add to existing"
 msgstr ""
+
+#. module: conversation_inbox
+#: model_terms:ir.actions.act_window,help:conversation_inbox.conversation_transport_action_my
+msgid "Add your first mailbox"
+msgstr "Ajoutez votre première boîte courriel"
 
 #. module: conversation_inbox
 #. odoo-javascript
@@ -149,6 +160,17 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:conversation_inbox.conversation_inbox_reply_wizard_view_form
 msgid "Compose"
 msgstr ""
+
+#. module: conversation_inbox
+#: model_terms:ir.actions.act_window,help:conversation_inbox.conversation_transport_action_my
+msgid ""
+"Connect your own Google Workspace or IMAP mailbox to browse,\n"
+"                file and reply to your email from Conversations. Nobody else\n"
+"                can see or use it."
+msgstr ""
+"Connectez votre propre boîte Google Workspace ou IMAP pour consulter, "
+"classer et répondre à vos courriels depuis Conversations. Personne d'autre "
+"ne peut la voir ni l'utiliser."
 
 #. module: conversation_inbox
 #: model:ir.model,name:conversation_inbox.model_mail_conversation
@@ -291,7 +313,7 @@ msgstr ""
 #: model:ir.actions.client,name:conversation_inbox.conversation_inbox_client_action
 #: model:ir.ui.menu,name:conversation_inbox.menu_conversation_inbox
 msgid "Inbox"
-msgstr ""
+msgstr "Boîte de réception"
 
 #. module: conversation_inbox
 #: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_capture_wizard__write_uid
@@ -331,6 +353,11 @@ msgid "Loading..."
 msgstr "Chargement..."
 
 #. module: conversation_inbox
+#: model_terms:ir.ui.view,arch_db:conversation_inbox.conversation_transport_view_form_my
+msgid "Mailbox"
+msgstr "Boîte courriel"
+
+#. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Mark read"
@@ -365,8 +392,9 @@ msgstr ""
 #. module: conversation_inbox
 #: model:ir.actions.act_window,name:conversation_inbox.conversation_transport_action_my
 #: model:ir.ui.menu,name:conversation_inbox.menu_conversation_transport_my
-msgid "My Mail Accounts"
-msgstr ""
+#: model_terms:ir.ui.view,arch_db:conversation_inbox.conversation_transport_view_list_my
+msgid "My mailboxes"
+msgstr "Mes boîtes courriel"
 
 #. module: conversation_inbox
 #: model:ir.model.fields,help:conversation_inbox.field_conversation_inbox_capture_wizard__res_display_name
@@ -491,12 +519,36 @@ msgid ""
 msgstr ""
 
 #. module: conversation_inbox
+#: model_terms:ir.ui.view,arch_db:conversation_inbox.conversation_transport_view_form_my
+#: model_terms:ir.ui.view,arch_db:conversation_inbox.conversation_transport_view_list_my
+msgid "Remove"
+msgstr "Retirer"
+
+#. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Remove from this list only; the message stays in your mailbox."
 msgstr ""
 "Retirer de cette liste seulement; le courriel reste dans votre boîte "
 "courriel."
+
+#. module: conversation_inbox
+#: model_terms:ir.ui.view,arch_db:conversation_inbox.conversation_transport_view_list_my
+msgid ""
+"Remove the selected mailboxes from Odoo? Conversations already filed are "
+"kept, and your real mailbox is not changed."
+msgstr ""
+"Retirer les boîtes sélectionnées d'Odoo? Les conversations déjà classées "
+"sont conservées et votre vraie boîte courriel n'est pas modifiée."
+
+#. module: conversation_inbox
+#: model_terms:ir.ui.view,arch_db:conversation_inbox.conversation_transport_view_form_my
+msgid ""
+"Remove this mailbox from Odoo? Conversations already filed are kept, and "
+"your real mailbox is not changed."
+msgstr ""
+"Retirer cette boîte d'Odoo? Les conversations déjà classées sont conservées "
+"et votre vraie boîte courriel n'est pas modifiée."
 
 #. module: conversation_inbox
 #. odoo-javascript
@@ -599,6 +651,18 @@ msgstr ""
 #: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_reply_wizard__transport_id
 msgid "Transport"
 msgstr ""
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
+msgid ""
+"You have no mailbox connected yet. Add your own Google\n"
+"                        Workspace or IMAP mailbox under \"My mailboxes\"; no\n"
+"                        administrator is needed."
+msgstr ""
+"Vous n'avez pas encore de boîte courriel connectée. Ajoutez votre propre "
+"boîte Google Workspace ou IMAP sous « Mes boîtes courriel » : aucun "
+"administrateur n'est nécessaire."
 
 #. module: conversation_inbox
 #. odoo-python
