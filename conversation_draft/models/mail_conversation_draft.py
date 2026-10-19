@@ -84,6 +84,13 @@ class MailConversationDraft(models.Model):
         "draft_id",
         "attachment_id",
         string="Attachments",
+        # Same as every core attachment many2many (mail.message, mail.template,
+        # ...): without it each read, fields_get and group-by join runs an
+        # access-checked ir.attachment search that, with no res_model to narrow
+        # on, scans every record-linked attachment in the database. Draft access
+        # is delegated to the conversation, and the attachments themselves are
+        # still checked when read or downloaded.
+        bypass_search_access=True,
     )
     # Deliberately NOT tracked: tracking would subscribe the editor and make
     # every keystroke-adjacent save noisy in the chatter.
