@@ -32,8 +32,12 @@ class ConversationInboxCaptureWizard(models.TransientModel):
     conversation_id = fields.Many2one(
         "mail.conversation", string="Existing Conversation"
     )
-    res_model_id = fields.Many2one("ir.model", string="Record Model")
-    res_id = fields.Integer(string="Record ID")
+    res_model = fields.Selection(
+        selection="_selection_res_model", string="Record Model"
+    )
+    res_id = fields.Many2oneReference(
+        string="Record", model_field="res_model"
+    )
     res_display_name = fields.Char(
         string="Record",
         compute="_compute_res_display_name",
@@ -44,12 +48,40 @@ class ConversationInboxCaptureWizard(models.TransientModel):
     user_id = fields.Many2one("res.users", string="Assign To")
     team_id = fields.Many2one("mail.conversation.team")
 
-    @api.depends("res_model_id", "res_id")
+    @api.model
+    def _selection_res_model(self):
+        """Business models a user may link a captured item to: chatter
+        (``mail.thread``) models the current user can read. ``ir.model`` is
+        read with sudo because ordinary internal users have no access to
+        it; readability of each model is still checked as the user."""
+        models = self.env["ir.model"].sudo().search(
+            [("transient", "=", False), ("is_mail_thread", "=", True)]
+        )
+        return [
+            (model.model, model.name)
+            for model in models.sorted("name")
+            if model.model in self.env and self.env[model.model].has_access("read")
+        ]
+
+    @api.onchange("res_model")
+    def _onchange_res_model(self):
+        # A record id only means something for the model it was picked
+        # from; never carry it over to another model. The initial form
+        # load also runs this onchange, so the preselected record (see
+        # ``action_open_for_item``) is the one pair that is kept.
+        preset = (
+            self.env.context.get("default_res_model"),
+            self.env.context.get("default_res_id"),
+        )
+        if (self.res_model, self.res_id) != preset:
+            self.res_id = False
+
+    @api.depends("res_model", "res_id")
     def _compute_res_display_name(self):
         for wizard in self:
             name = False
             try:
-                model = wizard.res_model_id.model
+                model = wizard.res_model
                 if model and wizard.res_id and model in self.env:
                     record = self.env[model].browse(wizard.res_id)
                     if record.exists() and record.has_access("read"):
@@ -121,8 +153,7 @@ class ConversationInboxCaptureWizard(models.TransientModel):
                 conversations._inbox_archive_after_capture(transport, external_id)
             return self._action_open_conversation(conversation)
 
-        ir_model = self.env["ir.model"]._get(target._name)
-        context["default_res_model_id"] = ir_model.id
+        context["default_res_model"] = target._name
         context["default_res_id"] = target.id
         if mode != "existing":
             context["default_mode"] = "link"
@@ -140,10 +171,10 @@ class ConversationInboxCaptureWizard(models.TransientModel):
 
     def _get_link_target(self):
         self.ensure_one()
-        if not self.res_model_id or not self.res_id:
+        if not self.res_model or not self.res_id:
             raise UserError(_("Pick a record to link this captured item to."))
-        target = self.env[self.res_model_id.model].browse(self.res_id)
-        if not target.exists():
+        target = self.env[self.res_model].browse(self.res_id)
+        if not target.exists() or not target.has_access("read"):
             raise UserError(_("That record could not be found."))
         return target
 
