@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Reply templates are ordinary mail.template records scoped to
+         mail.conversation. This menu is only a window onto them; mail.template
+         itself is not touched. -->
+    <record id="mail_reply_template_view_form" model="ir.ui.view">
+        <field name="name">mail.template.view.form.reply.template</field>
+        <field name="model">mail.template</field>
+        <field name="mode">primary</field>
+        <field name="inherit_id" ref="mail.email_template_form" />
+        <field name="arch" type="xml">
+            <xpath
+        expr="//field[@name='model_id'][@groups='!base.group_no_one']"
+        position="attributes"
+      >
+                <attribute name="readonly">1</attribute>
+                <attribute name="force_save">1</attribute>
+            </xpath>
+            <xpath
+        expr="//field[@name='model_id'][@groups='base.group_no_one']"
+        position="attributes"
+      >
+                <attribute name="readonly">1</attribute>
+                <attribute name="force_save">1</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="mail_reply_template_action" model="ir.actions.act_window">
+        <field name="name">Reply templates</field>
+        <field name="res_model">mail.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('model', '=', 'mail.conversation')]</field>
+        <field
+      name="context"
+      eval="{'default_model_id': ref('conversation_base.model_mail_conversation')}"
+    />
+        <field name="group_ids" eval="[(4, ref('base.group_system'))]" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first reply template
+            </p>
+            <p>
+                Reply templates pre-fill the subject, text and attachments of a
+                reply draft on a conversation.
+            </p>
+        </field>
+    </record>
+
+    <record
+    id="mail_reply_template_action_view_list"
+    model="ir.actions.act_window.view"
+  >
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="mail.email_template_tree" />
+        <field name="act_window_id" ref="mail_reply_template_action" />
+    </record>
+    <record
+    id="mail_reply_template_action_view_form"
+    model="ir.actions.act_window.view"
+  >
+        <field name="sequence">2</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="mail_reply_template_view_form" />
+        <field name="act_window_id" ref="mail_reply_template_action" />
+    </record>
+
+    <menuitem
+    id="menu_mail_reply_template"
+    name="Reply templates"
+    parent="conversation_base.menu_mail_conversation_root"
+    action="mail_reply_template_action"
+    groups="base.group_system"
+    sequence="90"
+  />
+</odoo>

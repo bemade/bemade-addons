@@ -18,8 +18,9 @@
             name="action_use_template"
             string="Use template"
             type="object"
-            invisible="state != 'draft'"
+            invisible="state != 'draft' or not has_reply_templates"
           />
+                    <field name="has_reply_templates" invisible="1" />
                     <button
             name="action_discard"
             string="Discard"

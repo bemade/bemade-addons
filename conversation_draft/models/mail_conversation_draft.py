@@ -25,6 +25,19 @@ HISTORY_ATTRIBUTE = re.compile(r'\s*data-last-history-steps="[0-9,]*"')
 CONTENT_FIELDS = {"body", "subject", "transport_id", "recipient_ids", "attachment_ids"}
 
 
+def conversation_templates_exist(env):
+    """Whether at least one ``mail.template`` is written for conversations.
+
+    Read with ``sudo``: whether a template exists must not depend on the
+    reader's access to the template model.
+    """
+    return bool(
+        env["mail.template"]
+        .sudo()
+        .search_count([("model", "=", "mail.conversation")], limit=1)
+    )
+
+
 class MailConversationDraft(models.Model):
     """A reply being prepared on a conversation, shared by everyone who can
     work the conversation.
@@ -50,6 +63,10 @@ class MailConversationDraft(models.Model):
         required=True,
         ondelete="cascade",
         index=True,
+    )
+    has_reply_templates = fields.Boolean(
+        compute="_compute_has_reply_templates",
+        help="Whether any reply template exists for conversations.",
     )
     state = fields.Selection(
         [
@@ -106,6 +123,13 @@ class MailConversationDraft(models.Model):
     # ------------------------------------------------------------
     # Computes
     # ------------------------------------------------------------
+
+    # No ``@api.depends`` and not stored: evaluated on every read, so a
+    # template created or deleted shows up without an upgrade or restart.
+    def _compute_has_reply_templates(self):
+        exists = conversation_templates_exist(self.env)
+        for draft in self:
+            draft.has_reply_templates = exists
 
     @api.depends("conversation_id")
     def _compute_display_name(self):

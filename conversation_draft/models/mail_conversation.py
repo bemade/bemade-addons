@@ -1,7 +1,7 @@
 from odoo import api, fields, models
 from odoo.fields import Domain
 
-from .mail_conversation_draft import ACTIVE_STATES
+from .mail_conversation_draft import ACTIVE_STATES, conversation_templates_exist
 
 
 class MailConversation(models.Model):
@@ -28,6 +28,18 @@ class MailConversation(models.Model):
         compute="_compute_active_draft",
         help="Who is working on the pending draft right now, if anyone.",
     )
+
+    has_reply_templates = fields.Boolean(
+        compute="_compute_has_reply_templates",
+        help="Whether any reply template exists for conversations.",
+    )
+
+    # No ``@api.depends`` and not stored: evaluated on every read, so a
+    # template created or deleted shows up without an upgrade or restart.
+    def _compute_has_reply_templates(self):
+        exists = conversation_templates_exist(self.env)
+        for conversation in self:
+            conversation.has_reply_templates = exists
 
     @api.depends("draft_ids.state", "draft_ids.editor_id", "draft_ids.editing_last_seen")
     def _compute_active_draft(self):
