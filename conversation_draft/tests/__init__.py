@@ -6,3 +6,5 @@ from . import test_draft_comments
 from . import test_draft_access
 from . import test_draft_template
 from . import test_draft_triage_view
+from . import test_reply_templates
+from . import test_reply_templates_tour
