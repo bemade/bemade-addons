@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-19 21:19+0000\n"
-"PO-Revision-Date: 2026-10-19 21:19+0000\n"
+"POT-Creation-Date: 2026-10-19 21:32+0000\n"
+"PO-Revision-Date: 2026-10-19 21:32+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -125,7 +125,7 @@ msgid "Conversation Reply Draft"
 msgstr ""
 
 #. module: conversation_draft
-#: model_terms:ir.actions.act_window,help:conversation_draft.mail_reply_template_action
+#: model_terms:ir.actions.server,help:conversation_draft.mail_reply_template_server_action
 msgid "Create your first reply template"
 msgstr ""
 
@@ -424,13 +424,13 @@ msgid "Reply on %(conversation)s"
 msgstr ""
 
 #. module: conversation_draft
-#: model:ir.actions.act_window,name:conversation_draft.mail_reply_template_action
+#: model:ir.actions.server,name:conversation_draft.mail_reply_template_server_action
 #: model:ir.ui.menu,name:conversation_draft.menu_mail_reply_template
 msgid "Reply templates"
 msgstr ""
 
 #. module: conversation_draft
-#: model_terms:ir.actions.act_window,help:conversation_draft.mail_reply_template_action
+#: model_terms:ir.actions.server,help:conversation_draft.mail_reply_template_server_action
 msgid ""
 "Reply templates pre-fill the subject, text and attachments of a\n"
 "                reply draft on a conversation."

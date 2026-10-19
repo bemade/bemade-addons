@@ -132,7 +132,7 @@ msgid "Conversation Reply Draft"
 msgstr "Brouillon de réponse à une conversation"
 
 #. module: conversation_draft
-#: model_terms:ir.actions.act_window,help:conversation_draft.mail_reply_template_action
+#: model_terms:ir.actions.server,help:conversation_draft.mail_reply_template_server_action
 msgid "Create your first reply template"
 msgstr "Créez votre premier modèle de réponse"
 
@@ -434,13 +434,13 @@ msgid "Reply on %(conversation)s"
 msgstr "Réponse sur %(conversation)s"
 
 #. module: conversation_draft
-#: model:ir.actions.act_window,name:conversation_draft.mail_reply_template_action
+#: model:ir.actions.server,name:conversation_draft.mail_reply_template_server_action
 #: model:ir.ui.menu,name:conversation_draft.menu_mail_reply_template
 msgid "Reply templates"
 msgstr "Modèles de réponse"
 
 #. module: conversation_draft
-#: model_terms:ir.actions.act_window,help:conversation_draft.mail_reply_template_action
+#: model_terms:ir.actions.server,help:conversation_draft.mail_reply_template_server_action
 msgid ""
 "Reply templates pre-fill the subject, text and attachments of a\n"
 "                reply draft on a conversation."
