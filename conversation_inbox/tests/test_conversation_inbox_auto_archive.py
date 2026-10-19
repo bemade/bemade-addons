@@ -93,7 +93,7 @@ class AutoArchiveCase(InboxWizardTestMixin, TransactionCase):
         self._capture(
             "link",
             "p-link",
-            res_model_id=self.env["ir.model"]._get_id("mail.conversation"),
+            res_model="mail.conversation",
             res_id=link_target.id,
         )
         fetch_patch, normalize_patch = self._mock_fetch_normalize(

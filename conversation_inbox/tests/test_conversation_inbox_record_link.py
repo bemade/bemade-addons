@@ -53,13 +53,10 @@ class TestConversationInboxRecordLink(InboxWizardTestMixin, TransactionCase):
         )
 
     def _form(self, action):
-        # Run as superuser: internal users have no read access on ir.model
-        # (a limit of the wizard's existing res_model_id field, not of the
-        # resolver, which is exercised as ``self.user`` above).
         return Form(
-            self.env["conversation.inbox.capture.wizard"].with_context(
-                **action["context"]
-            )
+            self.env["conversation.inbox.capture.wizard"]
+            .with_user(self.user)
+            .with_context(**action["context"])
         )
 
     def test_new_field_defaults_suggest(self):
@@ -116,7 +113,7 @@ class TestConversationInboxRecordLink(InboxWizardTestMixin, TransactionCase):
                 {
                     "transport_id": self.transport.id,
                     "external_id": "ext-1",
-                    "res_model_id": self.env["ir.model"]._get("res.partner").id,
+                    "res_model": "res.partner",
                     "res_id": self.partner.id,
                 }
             )
@@ -175,9 +172,11 @@ class TestConversationInboxRecordLink(InboxWizardTestMixin, TransactionCase):
         action, _fetch = self._open()
         form = self._form(action)
         self.assertEqual(form.mode, "link")
-        self.assertEqual(form.res_model_id.model, "res.partner")
+        self.assertEqual(form.res_model, "res.partner")
         self.assertEqual(form.res_id, self.partner.id)
-        self.assertEqual(form.res_display_name, self.partner.display_name)
+        self.assertEqual(
+            form.save().res_display_name, self.partner.display_name
+        )
         self.assertEqual(self._counts(), before)
         fetch_patch, normalize_patch = self._mock_fetch_normalize(
             in_reply_to=self.msgid
