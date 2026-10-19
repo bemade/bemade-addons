@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Task 1538 (epic #1535) — P1a pages of the portal app shell: the app home
-    (« Équipes »), the teams list and « Plus ». Rendered only with the system
+    (« Tableau de bord », task 1623; was « Équipes »), the teams list and
+    « Plus ». Rendered only with the system
     switch on (see controllers/app_shell.py); today's templates are untouched.
     Section visibility is asked from the registry with sc_can(<key>) — never
     from groups.
 -->
 <odoo>
 
-    <!-- /my/home (shell) — « Équipes » -->
+    <!-- /my/home (shell) — « Tableau de bord » (task 1623; the « Équipes »
+         menu entry is the teams list, /my/teams) -->
     <template id="sc_app_home" name="Sports Clinic App: home">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">Teams</t>
+            <t t-set="sc_title">Dashboard</t>
 
             <section t-if="sc_can('home.clinic_teaser')" class="o_sc_section" data-sc-section="home.clinic_teaser">
                 <t t-call="bemade_sports_clinic.sc_entity_row">

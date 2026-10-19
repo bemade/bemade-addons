@@ -109,7 +109,8 @@ class TestActivityClockAppBar1592(Clock1592Common):
             bar = tree.xpath('//header[contains(@class, "o_sc_appbar")]'
                              '//a[@data-sc-activity-clock-bar]')
             self.assertEqual(len(bar), 1)
-            self.assertEqual(bar[0].get('href'), '/my/activities?sc_clock=1')
+            # Task 1622: the href carries the page it is tapped on.
+            self.assertEqual(bar[0].get('href'), '/my/activities?sc_clock=1&sc_from=%2Fmy%2Fhome')
             self.assertEqual(bar[0].get('title'), 'My activities')
             badge = bar[0].xpath('.//*[@data-sc-live-count-url]')[0]
             self.assertEqual(badge.get('data-sc-live-count-url'), COUNT_URL)

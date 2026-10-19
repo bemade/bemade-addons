@@ -171,7 +171,7 @@ class TestAppShellNav1579(Nav1579Common):
         back, crumbs, _current, _context = self._nav(
             '/my/player?player_id=%s&return_url=%%2Fmy%%2Fhome' % self.player.id)
         self.assertEqual(back, [HOME])
-        self.assertEqual(crumbs, [(HOME, 'Home')])
+        self.assertEqual(crumbs, [(HOME, 'Dashboard')])
 
     def test_injury_pages_keep_the_player_context(self):
         # Task 1616: the injury page and its documents page are the injury's
@@ -289,6 +289,6 @@ class TestAppShellNavFr1579(TestAppShellI18n1538):
         self.assertIn('>Équipes</a>', text)
         self.assertIn('aria-label="Fil d\'Ariane"', text.replace('&#39;', "'"))
         text = self._fr('/my/player?player_id=%s&return_url=%%2Fmy%%2Fhome' % self.player.id)
-        self.assertIn('>Accueil</a>', text)
+        self.assertIn('>Tableau de bord</a>', text)  # #1623: breadcrumb root renamed
         text = self._fr('/my/team/%s/digest-history' % self.team_a.id)
         self.assertIn('Historique des sommaires', text)
