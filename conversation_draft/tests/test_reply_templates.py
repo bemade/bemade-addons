@@ -5,11 +5,12 @@
 #   * A template written for another model does not count.
 #   * An administrator-only "Reply templates" menu and action list only the
 #     conversation templates; creating one there presets the model.
-#   * A user who is not an administrator sees neither the menu nor the action.
+#   * A user who is not an administrator sees neither the menu nor the action,
+#     and cannot run the action (so not open it from its URL either).
 
-from ast import literal_eval
-
+from odoo.exceptions import AccessError
 from odoo.tests import Form
+from odoo.tools.misc import mute_logger
 
 from .common import DraftCommon
 
@@ -25,7 +26,9 @@ class TestReplyTemplates(DraftCommon):
             {"conversation_id": cls.conversation.id}
         )
         cls.conv_model = cls.env["ir.model"]._get_id("mail.conversation")
-        cls.action = cls.env.ref("conversation_draft.mail_reply_template_action")
+        cls.action = cls.env.ref(
+            "conversation_draft.mail_reply_template_server_action"
+        )
         cls.menu = cls.env.ref("conversation_draft.menu_mail_reply_template")
 
     def _flags(self, user=None):
@@ -34,6 +37,11 @@ class TestReplyTemplates(DraftCommon):
         conversation.invalidate_recordset()
         draft.invalidate_recordset()
         return conversation.has_reply_templates, draft.has_reply_templates
+
+    def _window_action(self):
+        """The window action the menu opens for an administrator."""
+        admin = self.env.ref("base.user_admin")
+        return self.action.with_user(admin).run()
 
     def _template(self, model="mail.conversation"):
         return self.env["mail.template"].create(
@@ -71,14 +79,22 @@ class TestReplyTemplates(DraftCommon):
     def test_action_lists_only_conversation_templates(self):
         mine = self._template()
         other = self._template("res.partner")
-        found = self.env["mail.template"].search(literal_eval(self.action.domain))
+        action = self._window_action()
+        self.assertEqual(action["type"], "ir.actions.act_window")
+        self.assertEqual(action["res_model"], "mail.template")
+        found = self.env["mail.template"].search(action["domain"])
         self.assertIn(mine, found)
         self.assertNotIn(other, found)
 
     def test_creating_from_the_action_presets_the_model(self):
-        context = literal_eval(self.action.context)
+        action = self._window_action()
+        context = action["context"]
         self.assertEqual(context["default_model_id"], self.conv_model)
-        form_view = self.env.ref("conversation_draft.mail_reply_template_view_form")
+        form_view = dict((mode, view) for view, mode in action["views"])["form"]
+        self.assertEqual(
+            form_view,
+            self.env.ref("conversation_draft.mail_reply_template_view_form").id,
+        )
         with Form(
             self.env["mail.template"].with_context(**context),
             view=form_view,
@@ -97,9 +113,15 @@ class TestReplyTemplates(DraftCommon):
 
     def test_menu_is_admin_only(self):
         admin_group = self.env.ref("base.group_system")
+        self.assertEqual(self.menu.action, self.action)
         self.assertEqual(self.menu.group_ids, admin_group)
         self.assertEqual(self.action.group_ids, admin_group)
         Menu = self.env["ir.ui.menu"]
         admin = self.env.ref("base.user_admin")
         self.assertIn(self.menu.id, Menu.with_user(admin)._visible_menu_ids())
         self.assertNotIn(self.menu.id, Menu.with_user(self.user_a)._visible_menu_ids())
+
+    def test_non_admin_cannot_run_the_action(self):
+        with mute_logger("odoo.addons.base.models.ir_actions"):
+            with self.assertRaises(AccessError):
+                self.action.with_user(self.user_a).run()
