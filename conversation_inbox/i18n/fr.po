@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-16 20:25+0000\n"
+"POT-Creation-Date: 2026-10-19 15:23+0000\n"
 "PO-Revision-Date: 2026-10-16 20:25+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -102,7 +102,7 @@ msgstr "Annuler"
 #. module: conversation_inbox
 #: model_terms:ir.ui.view,arch_db:conversation_inbox.conversation_inbox_capture_wizard_view_form
 msgid "Capture"
-msgstr ""
+msgstr "Capturer"
 
 #. module: conversation_inbox
 #: model:ir.model,name:conversation_inbox.model_conversation_inbox_capture_wizard
@@ -141,8 +141,8 @@ msgstr ""
 #. module: conversation_inbox
 #: model:ir.model.fields,help:conversation_inbox.field_conversation_inbox_reply_wizard__bcc_emails
 msgid ""
-"Comma-separated. Sent in the SMTP envelope only -- never a header, and never"
-" recorded in Odoo when filing."
+"Comma-separated. Sent in the SMTP envelope only -- never a header, and never "
+"recorded in Odoo when filing."
 msgstr ""
 
 #. module: conversation_inbox
@@ -316,7 +316,7 @@ msgstr "Lier à un dossier"
 #. module: conversation_inbox
 #: model:ir.model.fields.selection,name:conversation_inbox.selection__conversation_inbox_capture_wizard__mode__link
 msgid "Link to a Record"
-msgstr ""
+msgstr "Lier à un enregistrement"
 
 #. module: conversation_inbox
 #. odoo-javascript
@@ -359,8 +359,8 @@ msgid ""
 "Move this message to the Trash of your mailbox? You can recover it from "
 "there."
 msgstr ""
-"Déplacer ce courriel dans la corbeille de votre boîte courriel? Vous pourrez"
-" l'y récupérer."
+"Déplacer ce courriel dans la corbeille de votre boîte courriel? Vous pourrez "
+"l'y récupérer."
 
 #. module: conversation_inbox
 #: model:ir.actions.act_window,name:conversation_inbox.conversation_transport_action_my
@@ -398,7 +398,8 @@ msgstr "Suivant"
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid ""
 "No browsable mail account is configured for you yet. Ask an\n"
-"                    administrator to connect one under \"My Mail Accounts\", or\n"
+"                    administrator to connect one under \"My Mail Accounts\", "
+"or\n"
 "                    connect your own if you have access."
 msgstr ""
 
@@ -473,18 +474,14 @@ msgstr ""
 
 #. module: conversation_inbox
 #: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_capture_wizard__res_display_name
-msgid "Record"
-msgstr ""
-
-#. module: conversation_inbox
 #: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_capture_wizard__res_id
-msgid "Record ID"
-msgstr ""
+msgid "Record"
+msgstr "Enregistrement"
 
 #. module: conversation_inbox
-#: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_capture_wizard__res_model_id
+#: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_capture_wizard__res_model
 msgid "Record Model"
-msgstr ""
+msgstr "Type d'enregistrement"
 
 #. module: conversation_inbox
 #: model:ir.model.fields,help:conversation_inbox.field_conversation_inbox_reply_wizard__file_in_odoo
