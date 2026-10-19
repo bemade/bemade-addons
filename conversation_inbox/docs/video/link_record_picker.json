@@ -18,6 +18,9 @@
   "stepOverrides": {
     "click_link": {
       "containsText": "Lier à un dossier"
+    },
+    "expand_item": {
+      "containsText": "Soumission pour la commande"
     }
   }
 }

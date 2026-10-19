@@ -61,7 +61,8 @@ export default [
   {
     id: "capture",
     title: "Cliquer sur « Capturer »",
-    narration: "Vous cliquez sur « Capturer » pour lier le courriel à cet enregistrement.",
+    narration:
+      "Vous cliquez sur « Capturer » pour lier le courriel à cet enregistrement.",
     selector: ".modal footer button[name='action_capture']",
     action: "click",
   },

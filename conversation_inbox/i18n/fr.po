@@ -141,8 +141,8 @@ msgstr ""
 #. module: conversation_inbox
 #: model:ir.model.fields,help:conversation_inbox.field_conversation_inbox_reply_wizard__bcc_emails
 msgid ""
-"Comma-separated. Sent in the SMTP envelope only -- never a header, and never "
-"recorded in Odoo when filing."
+"Comma-separated. Sent in the SMTP envelope only -- never a header, and never"
+" recorded in Odoo when filing."
 msgstr ""
 
 #. module: conversation_inbox
@@ -359,8 +359,8 @@ msgid ""
 "Move this message to the Trash of your mailbox? You can recover it from "
 "there."
 msgstr ""
-"Déplacer ce courriel dans la corbeille de votre boîte courriel? Vous pourrez "
-"l'y récupérer."
+"Déplacer ce courriel dans la corbeille de votre boîte courriel? Vous pourrez"
+" l'y récupérer."
 
 #. module: conversation_inbox
 #: model:ir.actions.act_window,name:conversation_inbox.conversation_transport_action_my
@@ -398,8 +398,7 @@ msgstr "Suivant"
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid ""
 "No browsable mail account is configured for you yet. Ask an\n"
-"                    administrator to connect one under \"My Mail Accounts\", "
-"or\n"
+"                    administrator to connect one under \"My Mail Accounts\", or\n"
 "                    connect your own if you have access."
 msgstr ""
 
