@@ -3,6 +3,9 @@ from odoo import api, fields, models
 # Rows rendered in the record tab; the count still reflects every link.
 RECORD_TAB_LIMIT = 100
 
+# Models whose chatter never shows the tab (kept in sync with the client).
+EXCLUDED_MODELS = ("mail.conversation",)
+
 
 class MailConversationLink(models.Model):
     _inherit = "mail.conversation.link"
@@ -13,10 +16,14 @@ class MailConversationLink(models.Model):
 
         Called by the chatter, once per record load. Internal users only;
         anyone else gets an empty payload rather than an access error.
+        Conversations themselves get nothing: their form has its own
+        "Linked Records" page, even when a conversation is linked to another.
         """
         empty = {"count": 0, "scopes": []}
-        if not (res_model and res_id) or not self.env.user.has_group(
-            "base.group_user"
+        if (
+            not (res_model and res_id)
+            or res_model in EXCLUDED_MODELS
+            or not self.env.user.has_group("base.group_user")
         ):
             return empty
         scopes = [

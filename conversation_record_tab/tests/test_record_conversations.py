@@ -137,6 +137,16 @@ class TestRecordConversations(TransactionCase):
     def test_no_link_gives_empty_payload(self):
         self.assertEqual(self._payload(), {"count": 0, "scopes": []})
 
+    def test_conversation_linked_to_a_conversation_gets_nothing(self):
+        target = self._conversation("Target conversation", hours_ago=1)
+        source = self._conversation("Source conversation", hours_ago=2)
+        self._link(source, record=target)
+        self.assertEqual(
+            self.Link._conversations_for_record("mail.conversation", target.id),
+            source,
+        )
+        self.assertEqual(self._payload(record=target), {"count": 0, "scopes": []})
+
     def test_linking_posts_nothing_on_the_record(self):
         self.record.message_post(body="Existing")
         before = self.env["mail.message"].search_count(
