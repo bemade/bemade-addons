@@ -183,6 +183,7 @@
           type="object"
           icon="fa-envelope-open-o"
           title="Mark as read (only you)"
+          aria-label="Mark as read (only you)"
           invisible="not my_unread"
         />
                 <button
@@ -190,6 +191,7 @@
           type="object"
           icon="fa-envelope"
           title="Mark as unread (only you)"
+          aria-label="Mark as unread (only you)"
           invisible="my_unread"
         />
                 <button
@@ -197,6 +199,7 @@
           type="object"
           icon="fa-eye-slash"
           title="Hide from my list (colleagues still see it)"
+          aria-label="Hide from my list (colleagues still see it)"
           invisible="my_hidden or my_snoozed"
         />
                 <button
@@ -204,6 +207,7 @@
           type="object"
           icon="fa-eye"
           title="Unhide: put it back in my list (only you)"
+          aria-label="Unhide: put it back in my list (only you)"
           invisible="not my_hidden"
         />
                 <button
@@ -211,6 +215,7 @@
           type="object"
           icon="fa-clock-o"
           title="Snooze until later (only you)"
+          aria-label="Snooze until later (only you)"
           invisible="my_snoozed"
         />
                 <button
@@ -218,6 +223,7 @@
           type="object"
           icon="fa-bell-slash-o"
           title="Unsnooze: bring it back to my list now (only you)"
+          aria-label="Unsnooze: bring it back to my list now (only you)"
           invisible="not my_snoozed"
         />
                 <button
@@ -225,12 +231,14 @@
           type="object"
           icon="fa-user-plus"
           title="Assign it to someone (changes the assignee for everyone)"
+          aria-label="Assign it to someone (changes the assignee for everyone)"
         />
                 <button
           name="action_triage_done"
           type="object"
           icon="fa-check"
           title="Done (closes it for everyone)"
+          aria-label="Done (closes it for everyone)"
           invisible="state == 'done'"
         />
                 <button
@@ -238,6 +246,7 @@
           type="object"
           icon="fa-undo"
           title="Reopen (reopens it for everyone)"
+          aria-label="Reopen (reopens it for everyone)"
           invisible="state != 'done'"
         />
             </list>
