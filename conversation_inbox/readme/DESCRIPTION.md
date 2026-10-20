@@ -10,6 +10,13 @@ it.
   message stubs a page at a time from the user's `browsable` transport(s),
   fetching a message's full envelope only when expanded -- nothing is
   written to Odoo just by looking.
+- **Row actions without opening the message.** Every row shows its actions
+  as icons with descriptive tooltips (same gating as before), so a message
+  can be triaged without fetching its body. A checkbox on each row, plus a
+  select-all for the page, drives a bulk bar to **Hide**, **Mark read**,
+  **Archive** or **Delete** exactly the ticked messages (one confirmation
+  for a bulk delete; a partial failure is reported and the failed rows stay
+  listed and ticked). The selection is cleared on page or account change.
 - The full GTD action set from an inbox item: file as a **new
   conversation**, **add to an existing conversation**, **link to a
   record**, **reassign** to a colleague/team, **reply / reply-all /

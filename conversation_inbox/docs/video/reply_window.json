@@ -10,8 +10,7 @@
   "outroTitle": "À retenir",
   "outroNarration": "La fenêtre Répondre, Répondre à tous ou Transférer s'ouvre rapidement, que ce soit pour votre boîte personnelle ou pour une boîte partagée. Les pièces jointes fonctionnent comme avant.",
   "stepOverrides": {
-    "expand_item": {"containsText": "Soumission pour la commande"},
-    "click_reply": {"containsText": "Répondre"},
+    "see_item": {"containsText": "Soumission pour la commande"},
     "cancel": {"containsText": "Annuler"}
   }
 }

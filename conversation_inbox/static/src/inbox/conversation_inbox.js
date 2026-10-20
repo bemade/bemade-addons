@@ -6,6 +6,14 @@ import {_t} from "@web/core/l10n/translation";
 import {registry} from "@web/core/registry";
 import {useService} from "@web/core/utils/hooks";
 
+// The existing per-item RPCs behind Hide / Archive / Delete / Mark read.
+const ITEM_RPCS = {
+  hide: ["mail.conversation", "action_dismiss"],
+  archive: ["conversation.transport", "archive_item"],
+  trash: ["conversation.transport", "trash_item"],
+  mark_read: ["conversation.transport", "mark_read_item"],
+};
+
 /**
  * The in-Odoo GTD inbox/triage viewer (task #3965, AC5/AC6).
  *
@@ -38,6 +46,10 @@ export class ConversationInboxAction extends Component {
       expandedId: null,
       expandedBody: null,
       expandedAttachments: [],
+      // External_ids ticked for a bulk action. Only ever holds ids of rows
+      // on the current page of the current account.
+      selectedIds: [],
+      bulkBusy: false,
     });
 
     onWillStart(async () => {
@@ -90,6 +102,7 @@ export class ConversationInboxAction extends Component {
     this.state.transportId = ev.target.value ? parseInt(ev.target.value, 10) : null;
     this.state.expandedId = null;
     this.state.expandedBody = null;
+    this.state.selectedIds = [];
     this.state.searchTerm = "";
     this.state.activeQuery = "";
     if (this.state.transportId) {
@@ -127,6 +140,7 @@ export class ConversationInboxAction extends Component {
       this.state.page = result.page || page;
       this.state.hasMore = Boolean(result.has_more);
       this.state.activeQuery = query || "";
+      this.state.selectedIds = [];
       this.state.expandedId = null;
       this.state.expandedBody = null;
       this.state.expandedAttachments = [];
@@ -262,16 +276,188 @@ export class ConversationInboxAction extends Component {
     }
   }
 
+  /** Swallow a click so it never reaches the row's expand/collapse handler. */
+  noop() {
+    // Intentionally empty: `t-on-click.stop` does the work.
+  }
+
   /** Drop a row from the list and collapse it, without touching the server. */
   _removeItem(item) {
     this.state.items = this.state.items.filter(
       (candidate) => candidate.external_id !== item.external_id
+    );
+    this.state.selectedIds = this.state.selectedIds.filter(
+      (id) => id !== item.external_id
     );
     if (this.state.expandedId === item.external_id) {
       this.state.expandedId = null;
       this.state.expandedBody = null;
       this.state.expandedAttachments = [];
     }
+  }
+
+  // ------------------------------------------------------------------
+  // Actions offered on every row, collapsed or not. None of them needs
+  // the message body on the client: the dialogs and the alias routing
+  // fetch the message server-side, and only when they need it.
+  // ------------------------------------------------------------------
+
+  /** The row's action icons, under the transport's own gating. */
+  get rowActions() {
+    const transport = this.currentTransport || {};
+    const actions = [
+      {
+        key: "new_conversation",
+        icon: "fa-plus-circle",
+        label: _t("New Conversation"),
+        title: _t("File this message as a new conversation"),
+        run: (item) => this.onCapture(item, "new"),
+      },
+      {
+        key: "add_existing",
+        icon: "fa-comments-o",
+        label: _t("Add to Existing"),
+        title: _t("Add this message to an existing conversation"),
+        run: (item) => this.onCapture(item, "existing"),
+      },
+      {
+        key: "link_record",
+        icon: "fa-link",
+        label: _t("Link to Record"),
+        title: _t("Link this message to a record in Odoo"),
+        run: (item) => this.onCapture(item, "link"),
+      },
+      {
+        key: "reassign",
+        icon: "fa-user-plus",
+        label: _t("Reassign"),
+        title: _t("File this message and assign it to a colleague or a team"),
+        run: (item) => this.onReassign(item),
+      },
+    ];
+    if (transport.sendable) {
+      actions.push(
+        {
+          key: "reply",
+          icon: "fa-reply",
+          label: _t("Reply"),
+          title: _t("Reply to the sender"),
+          run: (item) => this.onCompose(item, "reply"),
+        },
+        {
+          key: "reply_all",
+          icon: "fa-reply-all",
+          label: _t("Reply All"),
+          title: _t("Reply to the sender and everyone else on the message"),
+          run: (item) => this.onCompose(item, "reply_all"),
+        },
+        {
+          key: "forward",
+          icon: "fa-share",
+          label: _t("Forward"),
+          title: _t("Forward this message to someone else"),
+          run: (item) => this.onCompose(item, "forward"),
+        }
+      );
+    }
+    actions.push({
+      key: "route_alias",
+      icon: "fa-random",
+      label: _t("Route via Alias"),
+      title: _t("Route this message through the mail alias gateway"),
+      run: (item) => this.onRouteViaAlias(item),
+    });
+    if (transport.mailbox_writable) {
+      actions.push(
+        {
+          key: "mark_read",
+          icon: "fa-envelope-open-o",
+          label: _t("Mark read"),
+          title: _t("Mark as read in your mailbox"),
+          run: (item) => this.onMarkRead(item),
+        },
+        {
+          key: "archive",
+          icon: "fa-archive",
+          label: _t("Archive"),
+          title: _t("Archive in your mailbox"),
+          run: (item) => this.onArchive(item),
+        }
+      );
+      if (transport.can_trash_mail) {
+        actions.push({
+          key: "delete",
+          icon: "fa-trash",
+          label: _t("Delete"),
+          title: _t("Move to the Trash of your mailbox"),
+          danger: true,
+          run: (item) => this.onDelete(item),
+        });
+      }
+    }
+    actions.push({
+      key: "hide",
+      icon: "fa-eye-slash",
+      label: _t("Hide"),
+      title: _t("Remove from this list only; the message stays in your mailbox."),
+      run: (item) => this.onHide(item),
+    });
+    return actions;
+  }
+
+  /** The bulk bar's actions: only the ones that need no dialog input. */
+  get bulkActions() {
+    const transport = this.currentTransport || {};
+    const actions = [];
+    if (transport.mailbox_writable) {
+      actions.push(
+        {
+          key: "mark_read",
+          icon: "fa-envelope-open-o",
+          label: _t("Mark selection as read"),
+          title: _t("Mark the selected messages as read in your mailbox"),
+          run: () => this.onBulkMarkRead(),
+        },
+        {
+          key: "archive",
+          icon: "fa-archive",
+          label: _t("Archive selection"),
+          title: _t("Archive the selected messages in your mailbox"),
+          run: () => this.onBulkArchive(),
+        }
+      );
+      if (transport.can_trash_mail) {
+        actions.push({
+          key: "delete",
+          icon: "fa-trash",
+          label: _t("Delete selection"),
+          title: _t("Move the selected messages to the Trash of your mailbox"),
+          danger: true,
+          run: () => this.onBulkDelete(),
+        });
+      }
+    }
+    actions.push({
+      key: "hide",
+      icon: "fa-eye-slash",
+      label: _t("Hide selection"),
+      title: _t(
+        "Remove the selected messages from this list only; they stay in your mailbox."
+      ),
+      run: () => this.onBulkHide(),
+    });
+    return actions;
+  }
+
+  // ------------------------------------------------------------------
+  // Per-item server calls, shared by the row buttons and the bulk bar.
+  // Each is one existing RPC taking (transport_id, external_id), so no
+  // message body is ever fetched to run them.
+  // ------------------------------------------------------------------
+
+  _callItem(kind, item, transportId = this.state.transportId) {
+    const [model, method] = ITEM_RPCS[kind];
+    return this.orm.call(model, method, [transportId, item.external_id]);
   }
 
   /**
@@ -282,10 +468,7 @@ export class ConversationInboxAction extends Component {
    */
   async onHide(item) {
     try {
-      await this.orm.call("mail.conversation", "action_dismiss", [
-        this.state.transportId,
-        item.external_id,
-      ]);
+      await this._callItem("hide", item);
       this._removeItem(item);
     } catch (error) {
       this.notification.add(this._errorMessage(error), {type: "danger"});
@@ -295,10 +478,7 @@ export class ConversationInboxAction extends Component {
   /** Archive on the real mailbox, then drop the row. */
   async onArchive(item) {
     try {
-      await this.orm.call("conversation.transport", "archive_item", [
-        this.state.transportId,
-        item.external_id,
-      ]);
+      await this._callItem("archive", item);
       this._removeItem(item);
     } catch (error) {
       this.notification.add(this._errorMessage(error), {type: "danger"});
@@ -316,10 +496,7 @@ export class ConversationInboxAction extends Component {
       cancelLabel: _t("Cancel"),
       confirm: async () => {
         try {
-          await this.orm.call("conversation.transport", "trash_item", [
-            this.state.transportId,
-            item.external_id,
-          ]);
+          await this._callItem("trash", item);
           this._removeItem(item);
         } catch (error) {
           this.notification.add(this._errorMessage(error), {type: "danger"});
@@ -335,14 +512,130 @@ export class ConversationInboxAction extends Component {
   /** Set \Seen on the real mailbox; the row stays in the list. */
   async onMarkRead(item) {
     try {
-      await this.orm.call("conversation.transport", "mark_read_item", [
-        this.state.transportId,
-        item.external_id,
-      ]);
+      await this._callItem("mark_read", item);
       this.notification.add(_t("Marked as read."), {type: "success"});
     } catch (error) {
       this.notification.add(this._errorMessage(error), {type: "danger"});
     }
+  }
+
+  // ------------------------------------------------------------------
+  // Selection and bulk actions.
+  // ------------------------------------------------------------------
+
+  isSelected(item) {
+    return this.state.selectedIds.includes(item.external_id);
+  }
+
+  get allSelected() {
+    return (
+      this.state.items.length > 0 &&
+      this.state.items.every((item) => this.isSelected(item))
+    );
+  }
+
+  get selectedCountLabel() {
+    return _t("%(count)s selected", {count: this.state.selectedIds.length});
+  }
+
+  toggleSelected(item) {
+    this.state.selectedIds = this.isSelected(item)
+      ? this.state.selectedIds.filter((id) => id !== item.external_id)
+      : [...this.state.selectedIds, item.external_id];
+  }
+
+  /** The header checkbox: every row of this page, or none. */
+  toggleSelectAll() {
+    this.state.selectedIds = this.allSelected
+      ? []
+      : this.state.items.map((item) => item.external_id);
+  }
+
+  clearSelection() {
+    this.state.selectedIds = [];
+  }
+
+  /**
+   * Run one per-item RPC for exactly the ticked rows of this page, one
+   * after the other. A failure never stops the remaining rows: it is
+   * collected and reported once at the end, and the failed rows stay in
+   * the list and stay ticked. Returns the number of successes.
+   */
+  async _bulkRun(kind) {
+    const transportId = this.state.transportId;
+    const items = this.state.items.filter((item) => this.isSelected(item));
+    if (!items.length || this.state.bulkBusy) {
+      return;
+    }
+    this.state.bulkBusy = true;
+    const errors = [];
+    let done = 0;
+    try {
+      for (const item of items) {
+        try {
+          await this._callItem(kind, item, transportId);
+          done += 1;
+          if (kind !== "mark_read") {
+            this._removeItem(item);
+          }
+        } catch (error) {
+          errors.push(this._errorMessage(error));
+        }
+      }
+    } finally {
+      this.state.bulkBusy = false;
+    }
+    if (errors.length) {
+      this.notification.add(
+        _t("%(failed)s of %(total)s messages failed: %(errors)s", {
+          failed: errors.length,
+          total: items.length,
+          errors: [...new Set(errors)].join(" "),
+        }),
+        {type: "danger"}
+      );
+    } else if (kind === "mark_read") {
+      this.notification.add(_t("Marked as read: %(count)s.", {count: done}), {
+        type: "success",
+      });
+    }
+  }
+
+  onBulkHide() {
+    return this._bulkRun("hide");
+  }
+
+  onBulkArchive() {
+    return this._bulkRun("archive");
+  }
+
+  onBulkMarkRead() {
+    return this._bulkRun("mark_read");
+  }
+
+  onBulkDelete() {
+    const count = this.state.selectedIds.length;
+    if (!count) {
+      return;
+    }
+    this.dialog.add(ConfirmationDialog, {
+      title: _t("Delete messages"),
+      body:
+        count === 1
+          ? _t(
+              "Move this message to the Trash of your mailbox? You can recover it from there."
+            )
+          : _t(
+              "Move %(count)s messages to the Trash of your mailbox? You can recover them from there.",
+              {count}
+            ),
+      confirmLabel: _t("Delete"),
+      cancelLabel: _t("Cancel"),
+      confirm: () => this._bulkRun("trash"),
+      cancel: () => {
+        // Cancelling makes no server call.
+      },
+    });
   }
 }
 

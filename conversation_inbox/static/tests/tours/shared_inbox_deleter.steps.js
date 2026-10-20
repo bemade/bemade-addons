@@ -17,19 +17,20 @@ export default [
     value: "Tour Shared Mailbox",
   },
   {
-    id: "expand_shared",
-    title: "Ouvrir un courriel de la boîte partagée",
-    narration: "Vous ouvrez un courriel de la boîte partagée.",
+    id: "see_shared",
+    title: "Repérer un courriel de la boîte partagée",
+    narration:
+      "Vous repérez un courriel de la boîte partagée, sans avoir besoin de l'ouvrir.",
     selector: ".o_conversation_inbox_list .card-header",
-    action: "click",
+    action: "assert",
     containsText: "Shared Message",
   },
   {
     id: "delete_offered",
-    title: "Cliquer sur Supprimer",
+    title: "Cliquer sur l'icône Supprimer",
     narration:
-      "Avec la permission de supprimer le courrier partagé, le bouton Supprimer est offert.",
-    selector: ".o_conversation_inbox_list .card-body .o_inbox_delete",
+      "Avec la permission de supprimer le courrier partagé, l'icône Supprimer est offerte sur la ligne.",
+    selector: ".o_conversation_inbox_list .o_inbox_row_actions .o_inbox_delete",
     action: "click",
   },
   {

@@ -21,6 +21,7 @@
                     <select
             id="o_conversation_inbox_transport"
             class="form-select w-auto"
+            t-att-disabled="state.bulkBusy"
             t-on-change="onTransportChange"
           >
                         <t
@@ -71,7 +72,7 @@
                         <button
               class="btn btn-secondary"
               t-on-click="onPrevPage"
-              t-att-disabled="state.page &lt;= 1"
+              t-att-disabled="state.page &lt;= 1 or state.bulkBusy"
             >
                             Previous
                         </button>
@@ -79,7 +80,7 @@
                         <button
               class="btn btn-secondary"
               t-on-click="onNextPage"
-              t-att-disabled="!state.hasMore"
+              t-att-disabled="!state.hasMore or state.bulkBusy"
             >
                             Next
                         </button>
@@ -99,14 +100,70 @@
                 </t>
                 <t t-else="">
                     <div class="o_conversation_inbox_list flex-grow-1 overflow-auto">
-                        <t t-foreach="state.items" t-as="item" t-key="item.external_id">
-                            <div class="card mb-2">
+                        <div
+              class="o_conversation_inbox_toolbar d-flex flex-wrap align-items-center gap-2 mb-2"
+            >
+                            <label class="d-flex align-items-center gap-2 mb-0">
+                                <input
+                  type="checkbox"
+                  class="form-check-input mt-0 o_inbox_select_all"
+                  t-att-checked="allSelected"
+                  t-att-disabled="state.bulkBusy"
+                  t-on-change="toggleSelectAll"
+                />
+                                <span>Select all</span>
+                            </label>
+                            <t t-if="state.selectedIds.length">
                                 <div
-                  class="card-header d-flex justify-content-between align-items-center"
+                  class="o_inbox_bulk_bar d-flex flex-wrap align-items-center gap-2 ms-3"
+                >
+                                    <strong
+                    class="o_inbox_selected_count"
+                    t-esc="selectedCountLabel"
+                  />
+                                    <t
+                    t-foreach="bulkActions"
+                    t-as="bulk"
+                    t-key="bulk.key"
+                  >
+                                        <button
+                      t-att-class="'btn btn-sm o_inbox_bulk_' + bulk.key + (bulk.danger ? ' btn-outline-danger' : ' btn-secondary')"
+                      t-att-title="bulk.title"
+                      t-att-disabled="state.bulkBusy"
+                      t-on-click="() => bulk.run()"
+                    >
+                                            <i t-att-class="'fa me-1 ' + bulk.icon" />
+                                            <t t-esc="bulk.label" />
+                                        </button>
+                                    </t>
+                                    <button
+                    class="btn btn-link btn-sm o_inbox_bulk_clear"
+                    t-att-disabled="state.bulkBusy"
+                    t-on-click="clearSelection"
+                  >Clear selection</button>
+                                </div>
+                            </t>
+                        </div>
+                        <t t-foreach="state.items" t-as="item" t-key="item.external_id">
+                            <div
+                class="card mb-2 o_inbox_row"
+                t-att-data-external-id="item.external_id"
+              >
+                                <div
+                  class="card-header d-flex align-items-center gap-2"
                   style="cursor: pointer;"
                   t-on-click="() => this.onExpand(item)"
                 >
-                                    <div>
+                                    <input
+                    type="checkbox"
+                    class="form-check-input mt-0 flex-shrink-0 o_inbox_select"
+                    aria-label="Select this message"
+                    t-att-checked="isSelected(item)"
+                    t-att-disabled="state.bulkBusy"
+                    t-on-click.stop="noop"
+                    t-on-change="() => this.toggleSelected(item)"
+                  />
+                                    <div class="flex-grow-1 text-truncate">
                                         <strong
                       t-esc="item.subject || '(no subject)'"
                     />
@@ -115,7 +172,32 @@
                       t-esc="item.email_from"
                     />
                                     </div>
-                                    <span class="text-muted" t-esc="item.date" />
+                                    <span
+                    class="text-muted flex-shrink-0"
+                    t-esc="item.date"
+                  />
+                                    <div
+                    class="o_inbox_row_actions d-flex flex-shrink-0 gap-1 ms-2"
+                    t-on-click.stop="noop"
+                  >
+                                        <t
+                      t-foreach="rowActions"
+                      t-as="rowAction"
+                      t-key="rowAction.key"
+                    >
+                                            <button
+                        type="button"
+                        t-att-class="'btn btn-sm btn-link px-1 o_inbox_' + rowAction.key + (rowAction.danger ? ' text-danger' : ' text-secondary')"
+                        t-att-title="rowAction.title"
+                        t-att-aria-label="rowAction.label"
+                        t-on-click="() => rowAction.run(item)"
+                      >
+                                                <i
+                          t-att-class="'fa ' + rowAction.icon"
+                        />
+                                            </button>
+                                        </t>
+                                    </div>
                                 </div>
                                 <t t-if="state.expandedId === item.external_id">
                                     <div class="card-body">
@@ -152,90 +234,6 @@
                                                     </t>
                                                 </div>
                                             </t>
-                                            <div class="d-flex flex-wrap gap-2">
-                                                <button
-                          class="btn btn-primary btn-sm"
-                          t-on-click="() => this.onCapture(item, 'new')"
-                        >
-                                                    New Conversation
-                                                </button>
-                                                <button
-                          class="btn btn-secondary btn-sm"
-                          t-on-click="() => this.onCapture(item, 'existing')"
-                        >
-                                                    Add to Existing
-                                                </button>
-                                                <button
-                          class="btn btn-secondary btn-sm"
-                          t-on-click="() => this.onCapture(item, 'link')"
-                        >
-                                                    Link to Record
-                                                </button>
-                                                <button
-                          class="btn btn-secondary btn-sm"
-                          t-on-click="() => this.onReassign(item)"
-                        >
-                                                    Reassign
-                                                </button>
-                                                <t
-                          t-if="currentTransport and currentTransport.sendable"
-                        >
-                                                    <button
-                            class="btn btn-secondary btn-sm"
-                            t-on-click="() => this.onCompose(item, 'reply')"
-                          >
-                                                        Reply
-                                                    </button>
-                                                    <button
-                            class="btn btn-secondary btn-sm"
-                            t-on-click="() => this.onCompose(item, 'reply_all')"
-                          >
-                                                        Reply All
-                                                    </button>
-                                                    <button
-                            class="btn btn-secondary btn-sm"
-                            t-on-click="() => this.onCompose(item, 'forward')"
-                          >
-                                                        Forward
-                                                    </button>
-                                                </t>
-                                                <button
-                          class="btn btn-secondary btn-sm"
-                          t-on-click="() => this.onRouteViaAlias(item)"
-                        >
-                                                    Route via Alias
-                                                </button>
-                                                <t
-                          t-if="currentTransport and currentTransport.mailbox_writable"
-                        >
-                                                    <button
-                            class="btn btn-secondary btn-sm o_inbox_mark_read"
-                            t-on-click="() => this.onMarkRead(item)"
-                          >
-                                                        Mark read
-                                                    </button>
-                                                    <button
-                            class="btn btn-secondary btn-sm o_inbox_archive"
-                            t-on-click="() => this.onArchive(item)"
-                          >
-                                                        Archive
-                                                    </button>
-                                                    <button
-                            t-if="currentTransport.can_trash_mail"
-                            class="btn btn-outline-danger btn-sm o_inbox_delete"
-                            t-on-click="() => this.onDelete(item)"
-                          >
-                                                        Delete
-                                                    </button>
-                                                </t>
-                                                <button
-                          class="btn btn-outline-secondary btn-sm ms-auto o_inbox_hide"
-                          t-on-click="() => this.onHide(item)"
-                          title="Remove from this list only; the message stays in your mailbox."
-                        >
-                                                    Hide
-                                                </button>
-                                            </div>
                                         </t>
                                     </div>
                                 </t>

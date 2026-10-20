@@ -3,7 +3,8 @@
 #     forward/back, expands an item, and opens each triage dialog.
 #   - Mark read / Archive / Delete (cancel + confirm) / Hide
 #     reach the right server call -- or none, for a cancel and for Hide --
-#     and the row leaves or stays as appropriate.
+#     and the row leaves or stays as appropriate, all from icons on the
+#     collapsed row, without the message body being fetched first.
 #   - The composer opens prefilled (subject, recipient, quoted original)
 #     with the attachments control reachable without scrolling past the
 #     draft.
@@ -17,6 +18,7 @@
 
 from unittest.mock import patch
 
+from odoo import api
 from odoo.tests import HttpCase, tagged
 
 _TOUR_ITEMS = {
@@ -60,6 +62,8 @@ def _stub(external_id):
 # listing, as it would on a server. Module-level because the stubs run on
 # the HTTP request threads.
 _MAILBOX_CALLS = {"archive": [], "trash": [], "mark_read": []}
+# The external ids whose message the viewer asked to open (fetch_envelope).
+_ENVELOPE_CALLS = []
 
 
 def _fake_browse(self, query=None, page=1):
@@ -123,7 +127,17 @@ class TestConversationInboxTour(HttpCase):
         cls = type(transport_model)
         for calls in _MAILBOX_CALLS.values():
             calls.clear()
-        with patch.object(cls, "_browse", _fake_browse), patch.object(
+        _ENVELOPE_CALLS.clear()
+        original_envelope = cls.fetch_envelope
+
+        @api.model
+        def _recording_envelope(self, transport_id, external_id):
+            _ENVELOPE_CALLS.append(external_id)
+            return original_envelope(self, transport_id, external_id)
+
+        with patch.object(cls, "fetch_envelope", _recording_envelope), patch.object(
+            cls, "_browse", _fake_browse
+        ), patch.object(
             cls, "_fetch", _fake_fetch
         ), patch.object(cls, "_normalize", _fake_normalize), patch.object(
             cls, "_archive_remote", _fake_archive
@@ -137,6 +151,9 @@ class TestConversationInboxTour(HttpCase):
                 "conversation_inbox_tour",
                 login="admin",
             )
+        # Only the row the tour opened to read was fetched: acting on a
+        # collapsed row (including archived message 1) never loaded a body.
+        self.assertEqual(_ENVELOPE_CALLS, ["2"])
         self.assertEqual(_MAILBOX_CALLS["mark_read"], ["1"])
         self.assertEqual(_MAILBOX_CALLS["archive"], ["1"])
         # Exactly once: the cancelled attempt made no server call.

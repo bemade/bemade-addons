@@ -9,20 +9,20 @@ export default [
     action: "assert",
   },
   {
-    id: "expand_item",
-    title: "Ouvrir un courriel",
-    narration: "Vous ouvrez le courriel que vous voulez classer.",
+    id: "see_item",
+    title: "Repérer le courriel",
+    narration:
+      "Vous repérez le courriel que vous voulez classer : pas besoin de l'ouvrir.",
     selector: ".o_conversation_inbox_list .card-header",
-    action: "click",
+    action: "assert",
     containsText: "Link Picker Message",
   },
   {
     id: "click_link",
-    title: "Cliquer sur « Lier à un dossier »",
-    narration: "Vous cliquez sur le bouton « Lier à un dossier ».",
-    selector: ".o_conversation_inbox_list .card-body button.btn-secondary",
+    title: "Cliquer sur l'icône « Lier à un dossier »",
+    narration: "Vous cliquez sur l'icône « Lier à un dossier » de la ligne.",
+    selector: ".o_conversation_inbox_list .o_inbox_row_actions .o_inbox_link_record",
     action: "click",
-    containsText: "Link to Record",
   },
   {
     id: "type_model",
