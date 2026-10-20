@@ -8,6 +8,7 @@ from . import injury_note_history
 from . import patient_training_history
 from . import patient_return_proposal
 from . import patient_contact
+from . import patient_incomplete_todo
 from . import res_partner
 from . import sc_app_roles
 from . import sc_app_nav
