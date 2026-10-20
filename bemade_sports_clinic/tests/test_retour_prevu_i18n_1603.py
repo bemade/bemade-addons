@@ -3,7 +3,7 @@ RENDER, website-aware (fr_CA on every website + the ``frontend_lang``
 cookie). Synthetic fixtures only.
 
 * UC-F1 The player header: « Retour prévu » (therapist field and coach read
-  view); the proposal sheet's « Appliquer », « Ignorer », « Les
+  view); the proposal sheet's « Appliquer », « Annuler », « Les
   modifications n'ont pas pu être appliquées. ».
 * UC-F2 The three proposals (save answers, the user's language): titles,
   messages, row labels, « Aucune date »; the apply answer « Modifications
@@ -49,7 +49,7 @@ class TestRetourPrevuI18n1603(TestAppShellI18n1538):
     def test_header_and_sheet_in_french(self):
         self._login_tp()
         text = self._fr(self._url()).replace('&#39;', "'")
-        for term in ('Appliquer', 'Ignorer', "Les modifications n'ont pas pu être appliquées."):
+        for term in ('Appliquer', 'Annuler', "Les modifications n'ont pas pu être appliquées."):
             self.assertIn(term, text, term)
         # The therapist's field: the label travels in the island's props.
         field = lxml_html.fromstring(text).xpath(

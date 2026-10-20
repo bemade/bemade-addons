@@ -259,14 +259,16 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         self.assertFalse(self.player.return_date)
         self.assertEqual(self.player.predicted_return_date, D('2026-04-15'))
 
-    def test_resolved_to_active_without_tracking_proposes_an_empty_date(self):
+    def test_resolved_to_active_without_tracking_proposes_a_week_ahead(self):
         self.injury.sudo().with_context(mail_notrack=True).write(
             {'stage': 'resolved', 'resolution_date': D('2026-03-10')})
         self._login_tp()
         proposal = self._saved(self.injury, 'stage', 'active')['propose']
         items = self._by_key(proposal)
         pred = items[('sports.patient.injury', self.injury.id, 'predicted_resolution_date')]
-        self.assertEqual(pred['proposed'], '')
+        # Owner review 2026-10-20: never an empty or past date — a week ahead.
+        week = fields.Date.context_today(self.injury) + timedelta(days=7)
+        self.assertEqual(pred['proposed'], fields.Date.to_string(week))
         self.assertTrue(pred['editable'])
         # The player's actual return differs: left alone.
         self.assertNotIn(('sports.patient', self.player.id, 'return_date'), items)
