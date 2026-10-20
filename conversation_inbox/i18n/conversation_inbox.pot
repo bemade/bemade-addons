@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 12:06+0000\n"
-"PO-Revision-Date: 2026-10-20 12:06+0000\n"
+"POT-Creation-Date: 2026-10-20 14:39+0000\n"
+"PO-Revision-Date: 2026-10-20 14:39+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -61,7 +61,6 @@ msgstr ""
 #. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
-#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Add to Existing"
 msgstr ""
 
@@ -83,7 +82,6 @@ msgstr ""
 #. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
-#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Archive"
 msgstr ""
 
@@ -245,7 +243,6 @@ msgstr ""
 #. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
-#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Delete"
 msgstr ""
 
@@ -324,15 +321,8 @@ msgid "Filing Mode"
 msgstr ""
 
 #. module: conversation_inbox
-#. odoo-python
-#: code:addons/conversation_inbox/tests/test_conversation_inbox_auto_archive.py:0
-msgid "Folder Archive missing on X"
-msgstr ""
-
-#. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
-#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 #: model:ir.model.fields.selection,name:conversation_inbox.selection__conversation_inbox_reply_wizard__action_type__forward
 msgid "Forward"
 msgstr ""
@@ -369,7 +359,6 @@ msgstr ""
 #. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
-#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Hide"
 msgstr ""
 
@@ -422,7 +411,6 @@ msgstr ""
 #. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
-#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Link to Record"
 msgstr ""
 
@@ -457,7 +445,6 @@ msgstr ""
 #. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
-#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Mark read"
 msgstr ""
 
@@ -540,7 +527,6 @@ msgstr ""
 #. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
-#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 #: model:ir.model.fields.selection,name:conversation_inbox.selection__conversation_inbox_capture_wizard__mode__new
 msgid "New Conversation"
 msgstr ""
@@ -615,7 +601,6 @@ msgstr ""
 #. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
-#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 #: model_terms:ir.ui.view,arch_db:conversation_inbox.conversation_inbox_reassign_wizard_view_form
 msgid "Reassign"
 msgstr ""
@@ -654,7 +639,6 @@ msgstr ""
 #. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
-#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Remove from this list only; the message stays in your mailbox."
 msgstr ""
 
@@ -682,7 +666,6 @@ msgstr ""
 #. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
-#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 #: model:ir.model.fields.selection,name:conversation_inbox.selection__conversation_inbox_reply_wizard__action_type__reply
 msgid "Reply"
 msgstr ""
@@ -690,7 +673,6 @@ msgstr ""
 #. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
-#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 #: model:ir.model.fields.selection,name:conversation_inbox.selection__conversation_inbox_reply_wizard__action_type__reply_all
 msgid "Reply All"
 msgstr ""
@@ -721,7 +703,6 @@ msgstr ""
 #. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
-#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Route via Alias"
 msgstr ""
 

@@ -1,0 +1,225 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* conversation_forward
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-20 14:30+0000\n"
+"PO-Revision-Date: 2026-10-20 14:30+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: conversation_forward
+#. odoo-python
+#: code:addons/conversation_forward/models/mail_conversation.py:0
+msgid "%s is not a valid email address."
+msgstr "%s n'est pas une adresse courriel valide."
+
+#. module: conversation_forward
+#: model_terms:ir.ui.view,arch_db:conversation_forward.conversation_forward_wizard_view_form
+msgid "Add a message..."
+msgstr "Ajoutez un message..."
+
+#. module: conversation_forward
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__attachment_names
+msgid "Attachments"
+msgstr "Pièces jointes"
+
+#. module: conversation_forward
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__bcc_emails
+msgid "Bcc"
+msgstr "Cci"
+
+#. module: conversation_forward
+#: model_terms:ir.ui.view,arch_db:conversation_forward.conversation_forward_wizard_view_form
+msgid "Cancel"
+msgstr "Annuler"
+
+#. module: conversation_forward
+#. odoo-python
+#: code:addons/conversation_forward/models/mail_conversation.py:0
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__cc_emails
+msgid "Cc"
+msgstr "Cc"
+
+#. module: conversation_forward
+#: model:ir.model.fields,help:conversation_forward.field_conversation_forward_wizard__cc_emails
+#: model:ir.model.fields,help:conversation_forward.field_conversation_forward_wizard__to_emails
+msgid "Comma-separated addresses."
+msgstr "Adresses séparées par des virgules."
+
+#. module: conversation_forward
+#: model:ir.model.fields,help:conversation_forward.field_conversation_forward_wizard__bcc_emails
+msgid "Comma-separated. Never recorded in Odoo."
+msgstr "Séparées par des virgules. Jamais enregistrées dans Odoo."
+
+#. module: conversation_forward
+#: model:ir.model,name:conversation_forward.model_mail_conversation
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__conversation_id
+msgid "Conversation"
+msgstr "Conversation"
+
+#. module: conversation_forward
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: conversation_forward
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: conversation_forward
+#. odoo-python
+#: code:addons/conversation_forward/models/mail_conversation.py:0
+msgid "Date"
+msgstr "Date"
+
+#. module: conversation_forward
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__display_name
+#: model:ir.model.fields,field_description:conversation_forward.field_mail_conversation__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: conversation_forward
+#. odoo-python
+#: code:addons/conversation_forward/models/mail_conversation.py:0
+msgid "Enter at least one recipient in To."
+msgstr "Saisissez au moins un destinataire dans À."
+
+#. module: conversation_forward
+#. odoo-javascript
+#. odoo-python
+#: code:addons/conversation_forward/models/mail_conversation.py:0
+#: code:addons/conversation_forward/static/src/message_actions.js:0
+#: model_terms:ir.ui.view,arch_db:conversation_forward.conversation_forward_wizard_view_form
+msgid "Forward"
+msgstr "Transférer"
+
+#. module: conversation_forward
+#: model:ir.model,name:conversation_forward.model_conversation_forward_wizard
+msgid "Forward Conversation"
+msgstr "Transférer la conversation"
+
+#. module: conversation_forward
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__forward_mode
+msgid "Forward Mode"
+msgstr "Mode de transfert"
+
+#. module: conversation_forward
+#: model:ir.actions.server,name:conversation_forward.action_conversation_forward
+msgid "Forward conversation…"
+msgstr "Transférer la conversation…"
+
+#. module: conversation_forward
+#. odoo-python
+#: code:addons/conversation_forward/models/mail_conversation.py:0
+msgid "Forwarded message"
+msgstr "Message transféré"
+
+#. module: conversation_forward
+#. odoo-python
+#: code:addons/conversation_forward/models/mail_conversation.py:0
+msgid "Forwarded via %(transport)s to %(recipients)s"
+msgstr "Transféré par %(transport)s à %(recipients)s"
+
+#. module: conversation_forward
+#. odoo-python
+#: code:addons/conversation_forward/models/mail_conversation.py:0
+msgid "From"
+msgstr "De"
+
+#. module: conversation_forward
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__id
+#: model:ir.model.fields,field_description:conversation_forward.field_mail_conversation__id
+msgid "ID"
+msgstr "ID"
+
+#. module: conversation_forward
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__include_attachments
+msgid "Include Attachments"
+msgstr "Inclure les pièces jointes"
+
+#. module: conversation_forward
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__write_uid
+msgid "Last Updated by"
+msgstr "Mis à jour par"
+
+#. module: conversation_forward
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__write_date
+msgid "Last Updated on"
+msgstr "Mis à jour le"
+
+#. module: conversation_forward
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__message_id
+msgid "Message"
+msgstr "Message"
+
+#. module: conversation_forward
+#. odoo-python
+#: code:addons/conversation_forward/models/mail_conversation.py:0
+msgid "Only messages of this conversation can be forwarded."
+msgstr "Seuls les messages de cette conversation peuvent être transférés."
+
+#. module: conversation_forward
+#. odoo-python
+#: code:addons/conversation_forward/wizards/conversation_forward_wizard.py:0
+msgid "Pick the message to forward."
+msgstr "Choisissez le message à transférer."
+
+#. module: conversation_forward
+#: model_terms:ir.ui.view,arch_db:conversation_forward.conversation_forward_wizard_view_form
+msgid "Send"
+msgstr "Envoyer"
+
+#. module: conversation_forward
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__transport_id
+msgid "Send Via"
+msgstr "Envoyer par"
+
+#. module: conversation_forward
+#. odoo-python
+#: code:addons/conversation_forward/models/mail_conversation.py:0
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__subject
+msgid "Subject"
+msgstr "Objet"
+
+#. module: conversation_forward
+#. odoo-python
+#: code:addons/conversation_forward/models/mail_conversation.py:0
+msgid "There is nothing to forward."
+msgstr "Il n'y a rien à transférer."
+
+#. module: conversation_forward
+#: model:ir.model.fields.selection,name:conversation_forward.selection__conversation_forward_wizard__forward_mode__message
+msgid "This message"
+msgstr "Ce message"
+
+#. module: conversation_forward
+#. odoo-python
+#: code:addons/conversation_forward/models/mail_conversation.py:0
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__to_emails
+msgid "To"
+msgstr "À"
+
+#. module: conversation_forward
+#: model:ir.model.fields.selection,name:conversation_forward.selection__conversation_forward_wizard__forward_mode__conversation
+msgid "Whole conversation"
+msgstr "Toute la conversation"
+
+#. module: conversation_forward
+#: model:ir.model.fields,field_description:conversation_forward.field_conversation_forward_wizard__note
+msgid "Your Message"
+msgstr "Votre message"
+
+#. module: conversation_forward
+#: model_terms:ir.ui.view,arch_db:conversation_forward.conversation_forward_wizard_view_form
+msgid "a@example.com, b@example.com"
+msgstr "a@exemple.com, b@exemple.com"

@@ -19,7 +19,7 @@ msgstr ""
 #. module: conversation_imap
 #: model:ir.model,name:conversation_imap.model_conversation_transport
 msgid "Conversation Transport"
-msgstr "Transport de conversation"
+msgstr "Boîte courriel de conversation"
 
 #. module: conversation_imap
 #: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__display_name
@@ -29,17 +29,17 @@ msgstr "Nom affiché"
 #. module: conversation_imap
 #: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__id
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #. module: conversation_imap
 #: model:ir.model.fields.selection,name:conversation_imap.selection__conversation_transport__provider__imap
 msgid "IMAP / Generic Email"
-msgstr "IMAP / Courriel générique"
+msgstr "Courriel (IMAP)"
 
 #. module: conversation_imap
 #: model_terms:ir.ui.view,arch_db:conversation_imap.conversation_transport_view_form_imap
 msgid "IMAP / SMTP"
-msgstr ""
+msgstr "IMAP / SMTP"
 
 #. module: conversation_imap
 #: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__imap_port
@@ -116,12 +116,12 @@ msgid ""
 "registers its own via selection_add, so the dropdown only ever offers a "
 "provider that is actually installed and implemented."
 msgstr ""
-"L'implémentation concrète du transport fournissant cette connexion "
+"L'implémentation concrète de la boîte courriel qui fournit cette connexion "
 "(IMAP/SMTP générique, Gmail OAuth, ...). Ce module de base ne définit aucune"
 " option : chaque module de fournisseur facultatif (conversation_imap, "
 "conversation_gmail, ...) enregistre la sienne par selection_add, de sorte "
-"que la liste n'offre jamais qu'un fournisseur réellement installé et "
-"implémenté."
+"que la liste n'offre que des fournisseurs réellement installés et "
+"implémentés."
 
 #. module: conversation_imap
 #: model:ir.model.fields,help:conversation_imap.field_conversation_transport__smtp_ssl
@@ -146,8 +146,8 @@ msgid ""
 "Write-only. Sets the account password of your own transport without ever "
 "being able to read a stored password back."
 msgstr ""
-"Écriture seule. Définit le mot de passe de votre propre compte sans jamais "
-"pouvoir relire un mot de passe enregistré."
+"Écriture seule. Définit le mot de passe de votre propre boîte courriel sans "
+"jamais pouvoir relire un mot de passe enregistré."
 
 #. module: conversation_imap
 #. odoo-python
@@ -156,5 +156,5 @@ msgid ""
 "You can only set the password of your own transport; shared mailboxes are "
 "managed by an administrator."
 msgstr ""
-"Vous ne pouvez définir que le mot de passe de votre propre compte; les "
-"boîtes partagées sont gérées par un administrateur."
+"Vous ne pouvez définir que le mot de passe de votre propre boîte courriel; "
+"les boîtes partagées sont gérées par un administrateur."

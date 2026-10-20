@@ -1,0 +1,109 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* conversation_participant_scope
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-20 14:39+0000\n"
+"PO-Revision-Date: 2026-10-20 14:39+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: conversation_participant_scope
+#: model:ir.model.fields.selection,name:conversation_participant_scope.selection__mail_conversation__external_visibility__full
+msgid "All participants visible"
+msgstr ""
+
+#. module: conversation_participant_scope
+#: model:ir.model.fields.selection,name:conversation_participant_scope.selection__mail_conversation_participant__visibility__exposed
+msgid "Always visible to externals"
+msgstr ""
+
+#. module: conversation_participant_scope
+#: model:ir.model,name:conversation_participant_scope.model_mail_conversation
+msgid "Conversation"
+msgstr ""
+
+#. module: conversation_participant_scope
+#: model:ir.model,name:conversation_participant_scope.model_mail_conversation_participant
+msgid "Conversation Participant"
+msgstr ""
+
+#. module: conversation_participant_scope
+#: model:ir.model.fields,help:conversation_participant_scope.field_mail_conversation__external_visibility
+msgid ""
+"Conversation-level policy controlling what an external viewer sees of the "
+"participant/CC list. Per-participant visibility overrides "
+"(mail.conversation.participant.visibility) are applied on top of this base "
+"policy."
+msgstr ""
+
+#. module: conversation_participant_scope
+#: model:ir.model.fields,field_description:conversation_participant_scope.field_mail_conversation__display_name
+#: model:ir.model.fields,field_description:conversation_participant_scope.field_mail_conversation_participant__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: conversation_participant_scope
+#: model:ir.model.fields.selection,name:conversation_participant_scope.selection__mail_conversation__external_visibility__private
+msgid "Each external sees only themselves"
+msgstr ""
+
+#. module: conversation_participant_scope
+#: model:ir.model.fields,field_description:conversation_participant_scope.field_mail_conversation__external_visibility
+msgid "External Visibility"
+msgstr ""
+
+#. module: conversation_participant_scope
+#: model:ir.model.fields.selection,name:conversation_participant_scope.selection__mail_conversation_participant__visibility__auto
+msgid "Follow conversation policy"
+msgstr ""
+
+#. module: conversation_participant_scope
+#: model:ir.model.fields.selection,name:conversation_participant_scope.selection__mail_conversation_participant__visibility__hidden
+msgid "Hidden from externals"
+msgstr ""
+
+#. module: conversation_participant_scope
+#: model:ir.model.fields.selection,name:conversation_participant_scope.selection__mail_conversation__external_visibility__hide_internal
+msgid "Hide internal team from externals"
+msgstr ""
+
+#. module: conversation_participant_scope
+#: model:ir.model.fields,field_description:conversation_participant_scope.field_mail_conversation__id
+#: model:ir.model.fields,field_description:conversation_participant_scope.field_mail_conversation_participant__id
+msgid "ID"
+msgstr ""
+
+#. module: conversation_participant_scope
+#: model:ir.model.fields,help:conversation_participant_scope.field_mail_conversation_participant__visibility
+msgid ""
+"Per-participant override of the conversation's external_visibility policy, "
+"applied last when computing what an external viewer may see of the "
+"participant/CC list."
+msgstr ""
+
+#. module: conversation_participant_scope
+#: model:ir.model.fields,field_description:conversation_participant_scope.field_mail_conversation_participant__receives_updates
+msgid "Receives Updates"
+msgstr ""
+
+#. module: conversation_participant_scope
+#: model:ir.model.fields,help:conversation_participant_scope.field_mail_conversation_participant__receives_updates
+msgid ""
+"True: an ongoing member of this conversation's audience, included in future "
+"outbound recipient computation. False: a one-off CC included on a single "
+"message only -- excluded from future recipient computation until promoted "
+"(see _promote_to_recipient)."
+msgstr ""
+
+#. module: conversation_participant_scope
+#: model:ir.model.fields,field_description:conversation_participant_scope.field_mail_conversation_participant__visibility
+msgid "Visibility"
+msgstr ""

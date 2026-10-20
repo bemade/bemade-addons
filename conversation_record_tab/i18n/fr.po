@@ -29,7 +29,7 @@ msgstr "Nom affiché"
 #. module: conversation_record_tab
 #: model:ir.model.fields,field_description:conversation_record_tab.field_mail_conversation_link__id
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #. module: conversation_record_tab
 #. odoo-python
