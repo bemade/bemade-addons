@@ -1123,3 +1123,21 @@ $sc-p2-laptop: 992px;
     }
 
 }
+
+// Review 2026-10-20 (#1629): in the pencil view the training title is a
+// section title above the field; the field's own label row (« Effacer »,
+// the save state) sits on the title's line instead of a line of its own.
+.o_sc_app [data-sc-section="player.training.edit"] {
+    position: relative;
+
+    .o_sc_autosave > .o_sc_field_label {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin: 0;
+        min-height: calc(var(--sc-title-md) * 1.2);
+        display: flex;
+        align-items: center;
+        gap: var(--sc-space-2);
+    }
+}

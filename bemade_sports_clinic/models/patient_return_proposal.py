@@ -26,6 +26,8 @@ them through the normal save paths (``SAVE_REGISTRY``)::
 The builders compute as sudo (they are only called for a therapist, after an
 access-checked save) and format in the caller's language.
 """
+from datetime import timedelta
+
 from odoo import fields, models
 from odoo.tools import format_date
 
@@ -191,6 +193,11 @@ class SportsPatient(models.Model):
         restored = False
         if previous == 'resolved' and injury.stage == 'active' and not injury.predicted_resolution_date:
             restored = injury._sc_predicted_before_resolve()
+            # Review 2026-10-20 (#1631): never propose a past (or no) date —
+            # a week from today, editable in the popup.
+            today = fields.Date.context_today(self)
+            if not restored or restored < today:
+                restored = today + timedelta(days=7)
             items.append(self._sc_proposal_item(
                 injury, 'predicted_resolution_date', env._("Predicted Resolution Date"),
                 False, restored, editable=True))

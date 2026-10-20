@@ -59,6 +59,23 @@ export function closeAll(except) {
     }
 }
 
+/**
+ * Review 2026-10-20 (#1631): a popup opened near the right edge (the
+ * injury card's status pill) must not run past the content area: flip it to
+ * open leftwards, aligned on its toggle's right edge.
+ */
+function keepInView(popup) {
+    popup.classList.remove("o_sc_popup_end");
+    const area = popup.closest(".o_sc_content");
+    const limit = Math.min(
+        window.innerWidth,
+        area ? area.getBoundingClientRect().right : window.innerWidth
+    );
+    if (popup.getBoundingClientRect().right > limit - 8) {
+        popup.classList.add("o_sc_popup_end");
+    }
+}
+
 export function open(toggle, which = "first") {
     const popup = popupOf(toggle);
     if (!popup) {
@@ -66,6 +83,7 @@ export function open(toggle, which = "first") {
     }
     closeAll(toggle);
     popup.hidden = false;
+    keepInView(popup);
     toggle.setAttribute("aria-expanded", "true");
     const items = itemsOf(popup);
     const checked = items.find((item) => item.getAttribute("aria-checked") === "true");
