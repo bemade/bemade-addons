@@ -547,6 +547,11 @@
                 <i class="fa fa-heartbeat mt-1" title="Training Recommendation"/>
                 <span class="ms-1 o_sc_pre" t-esc="player.training_recommendation"/>
             </div>
+            <!-- Review 2026-10-20 (#1626): the « Updated on … by … » stamp,
+                 as in the other player cards' detail. -->
+            <p t-if="player.training_recommendation and player.last_training_recommendation_info"
+               class="o_sc_meta mb-1" data-sc-change-detail-stamp="1"
+               t-out="player.last_training_recommendation_info"/>
             <div t-if="player.stage != 'healthy'" class="text-muted small d-flex align-items-center mb-1">
                 <i class="fa fa-clock-o" title="Estimated Return"/>
                 <span class="ms-1">Predicted return:</span>
