@@ -1442,6 +1442,10 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         left: auto;
         right: 0;
     }
+    .o_sc_menu_popup.o_sc_popup_up {
+        top: auto;
+        bottom: calc(100% + 6px);
+    }
 
     .o_sc_pill_option {
         appearance: none;

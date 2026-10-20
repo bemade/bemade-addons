@@ -62,7 +62,8 @@ export function closeAll(except) {
 /**
  * Review 2026-10-20 (#1631): a popup opened near the right edge (the
  * injury card's status pill) must not run past the content area: flip it to
- * open leftwards, aligned on its toggle's right edge.
+ * open leftwards, aligned on its toggle's right edge; near the bottom of the
+ * window, flip it to open upwards.
  */
 function keepInView(popup) {
     popup.classList.remove("o_sc_popup_end");
@@ -74,6 +75,14 @@ function keepInView(popup) {
     if (popup.getBoundingClientRect().right > limit - 8) {
         popup.classList.add("o_sc_popup_end");
     }
+    // …and one opened near the bottom (the last injury card, under the
+    // test-DB ribbon) opens upwards when there is more room above.
+    popup.classList.remove("o_sc_popup_up");
+    const rect = popup.getBoundingClientRect();
+    const toggleRect = popup.parentElement.getBoundingClientRect();
+    if (rect.bottom > window.innerHeight - 56 && toggleRect.top > window.innerHeight - toggleRect.bottom) {
+        popup.classList.add("o_sc_popup_up");
+    }
 }
 
 export function open(toggle, which = "first") {
@@ -83,7 +92,9 @@ export function open(toggle, which = "first") {
     }
     closeAll(toggle);
     popup.hidden = false;
-    keepInView(popup);
+    if (popup.classList.contains("o_sc_pill_popup")) {
+        keepInView(popup); // the other menus have their own placement
+    }
     toggle.setAttribute("aria-expanded", "true");
     const items = itemsOf(popup);
     const checked = items.find((item) => item.getAttribute("aria-checked") === "true");
