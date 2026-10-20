@@ -81,6 +81,11 @@ export class ConversationInboxAction extends Component {
     this.state.transportId = transports.length ? transports[0].id : null;
   }
 
+  /** Open the self-service "My mailboxes" screen (empty-state call to action). */
+  onAddMailbox() {
+    return this.action.doAction("conversation_inbox.conversation_transport_action_my");
+  }
+
   async onTransportChange(ev) {
     this.state.transportId = ev.target.value ? parseInt(ev.target.value, 10) : null;
     this.state.expandedId = null;

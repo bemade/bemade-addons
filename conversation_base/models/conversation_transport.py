@@ -215,6 +215,71 @@ class ConversationTransport(models.Model):
         return super().write(vals)
 
     # ------------------------------------------------------------
+    # Removing a mailbox. A removed mailbox is archived, never deleted:
+    # ``mail.message.transport_id`` / ``external_id`` and
+    # ``mail.conversation.primary_transport_id`` are the capture-idempotency
+    # and correlation keys of mail already filed from it, and a plain unlink
+    # would null them (the default ``set null`` ondelete). Nothing is sent to
+    # the remote mailbox.
+    # ------------------------------------------------------------
+
+    def _clear_credentials(self):
+        """Wipe every stored secret of this transport. Providers override
+        this to drop their own (password, OAuth tokens, ...); runs with
+        elevated rights because the owner cannot read those fields."""
+
+    def action_remove_mailbox(self):
+        """Disconnect the mailbox from Odoo: stop all use of it, clear its
+        credentials and archive the record. Allowed to the owner of a
+        personal transport and to administrators; a shared transport is an
+        administrator's to manage."""
+        if not self.env.su and not self.env.user.has_group("base.group_system"):
+            if any(transport.user_id != self.env.user for transport in self):
+                raise AccessError(
+                    self.env._("You can only remove your own mailboxes.")
+                )
+        for transport in self.sudo():
+            transport._clear_credentials()
+            transport.write(
+                {
+                    "active": False,
+                    "browsable": False,
+                    "searchable": False,
+                    "sendable": False,
+                    "pushable": False,
+                    "mailbox_writable": False,
+                }
+            )
+        return self._action_after_remove()
+
+    def _action_after_remove(self):
+        """Where the client goes once a mailbox is removed. A feature module
+        that owns a list of mailboxes overrides this to land on it."""
+        return {"type": "ir.actions.act_window_close"}
+
+    @api.ondelete(at_uninstall=False)
+    def _unlink_except_referenced(self):
+        """Refuse to delete a transport mail was filed from (see above)."""
+        for transport in self.sudo():
+            if (
+                self.env["mail.message"].sudo().search_count(
+                    [("transport_id", "=", transport.id)], limit=1
+                )
+                or self.env["mail.conversation"]
+                .sudo()
+                .with_context(active_test=False)
+                .search_count([("primary_transport_id", "=", transport.id)], limit=1)
+            ):
+                raise UserError(
+                    self.env._(
+                        "%(transport)s has mail filed from it and cannot be "
+                        "deleted. Remove it instead: the filed conversations "
+                        "are kept.",
+                        transport=transport.display_name,
+                    )
+                )
+
+    # ------------------------------------------------------------
     # Abstract hook interface. Every hook raises NotImplementedError on the
     # base record; a provider submodule overrides the ones its capability
     # flags claim to support. Hooks persist nothing in Odoo themselves --

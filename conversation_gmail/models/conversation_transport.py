@@ -6,7 +6,7 @@ import time
 import requests
 from werkzeug.urls import url_encode, url_join
 
-from odoo import api, fields, models
+from odoo import api, fields, models, tools
 from odoo.exceptions import AccessError, RedirectWarning, UserError
 
 _logger = logging.getLogger(__name__)
@@ -118,13 +118,36 @@ class ConversationTransport(models.Model):
     # ------------------------------------------------------------
 
     def open_google_gmail_uri(self):
+        """Start the Google consent flow for this transport.
+
+        Self-service: the OWNER of a personal transport may connect (or
+        reconnect) it; an administrator may connect any transport, as
+        before. Everyone else is refused -- another user's personal
+        transport and any shared one (no owner) included. The consent URL
+        is built from the instance-wide Google client unless the transport
+        carries its own override, so the user never enters a client id or
+        secret."""
         self.ensure_one()
-        # Only pre-empt with the friendlier redirect for users who could
-        # actually act on it -- everyone else keeps the mixin's own
-        # AccessError, unchanged, via super() below.
-        if self.env.user.has_group("base.group_system") and not self.google_gmail_uri:
-            client_id, client_secret = self._get_gmail_client_credentials()
+        is_admin = self.env.is_admin()
+        if not is_admin and (not self.user_id or self.user_id != self.env.user):
+            raise AccessError(
+                self.env._("You can only connect your own mailbox to Google.")
+            )
+        # The consent URL and the client credentials sit behind
+        # base.group_system; reading them server-side is safe because the
+        # access check above has passed. ``sudo()`` keeps the acting uid,
+        # which the CSRF token below is bound to.
+        record = self.sudo()
+        if not record.google_gmail_uri:
+            client_id, client_secret = record._get_gmail_client_credentials()
             if not client_id or not client_secret:
+                if not is_admin:
+                    raise UserError(
+                        self.env._(
+                            "Google sign-in is not set up on this database "
+                            "yet. Please contact an administrator."
+                        )
+                    )
                 settings_action = self.env.ref(
                     "base_setup.action_general_configuration"
                 )
@@ -145,35 +168,61 @@ class ConversationTransport(models.Model):
                     settings_action.id,
                     self.env._("Go to General Settings"),
                 )
-                # else: google_gmail_uri is falsy for some other reason
-                # (e.g. web.base.url misconfigured) -- fall through to the
-                # mixin's own error rather than mask it as a credentials
-                # issue.
-        # Deliberately NOT calling super() (google.gmail.mixin's own
-        # open_google_gmail_uri): its 19.0 body pre-checks
-        # `self[self._email_field]` for a valid email address and raises
-        # "Please enter a valid email address." before building the
-        # consent URL, plus falls into an Odoo IAP flow when the
-        # instance-level credentials are unset. Neither fits this model:
-        # `login` is blank until _fetch_gmail_refresh_token fills it in
-        # *after* consent (see below) -- consent must precede the login,
-        # not follow it -- and this provider never depends on Odoo IAP
-        # (see _fetch_gmail_access_token below). Reproduce just the two
-        # remaining pieces of the mixin's contract: the admin-only guard
-        # (same predicate and message as the mixin) and the act_url
-        # response, both otherwise unchanged from the 18.0 mixin body this
-        # override used to delegate to via super().
-        if not self.env.is_admin():
-            raise AccessError(
-                self.env._("Only the administrator can link a Gmail mail server.")
-            )
-        if not self.google_gmail_uri:
+            # else: google_gmail_uri is falsy for some other reason
+            # (e.g. web.base.url misconfigured) -- fall through to the
+            # generic error rather than mask it as a credentials issue.
             raise UserError(self.env._("Please configure your Gmail credentials."))
+        # Deliberately NOT calling super() (google.gmail.mixin's own
+        # open_google_gmail_uri): its 19.0 body is admin-only, pre-checks
+        # `self[self._email_field]` for a valid email address (``login`` is
+        # blank until _fetch_gmail_refresh_token fills it in *after*
+        # consent) and falls into an Odoo IAP flow when the instance-level
+        # credentials are unset, which this provider never uses (see
+        # _fetch_gmail_access_token below).
         return {
             "type": "ir.actions.act_url",
-            "url": self.google_gmail_uri,
+            "url": record.google_gmail_uri,
             "target": "self",
         }
+
+    def _get_gmail_csrf_token(self):
+        """Bind the OAuth ``state`` to the user who starts the flow, on top
+        of core's (model, id) HMAC, so a consent URL replayed by a different
+        user fails the callback's check. Scoped to this model: the
+        ``ir.mail_server`` / ``fetchmail.server`` tokens are unchanged."""
+        self.ensure_one()
+        return tools.misc.hmac(
+            env=self.env(su=True),
+            scope="google_gmail_oauth",
+            message=(self._name, self.id, self.env.uid),
+        )
+
+    gmail_connected = fields.Boolean(
+        string="Connected to Google",
+        compute="_compute_gmail_connected",
+        help="Whether a Google authorisation is stored for this account. "
+        "Says nothing about the tokens themselves.",
+    )
+
+    @api.depends_context("uid")
+    @api.depends("google_gmail_refresh_token")
+    def _compute_gmail_connected(self):
+        for transport in self:
+            transport.gmail_connected = bool(
+                transport.sudo().google_gmail_refresh_token
+            )
+
+    def _clear_credentials(self):
+        result = super()._clear_credentials()
+        self.sudo().write(
+            {
+                "google_gmail_refresh_token": False,
+                "google_gmail_access_token": False,
+                "google_gmail_access_token_expiration": 0,
+                "client_secret": False,
+            }
+        )
+        return result
 
     def _get_gmail_client_credentials(self):
         """Credential fallback chain (task #3965, AC4 / blocking issue
@@ -191,6 +240,7 @@ class ConversationTransport(models.Model):
         return client_id, client_secret
 
     @api.depends("client_id", "client_secret")
+    @api.depends_context("uid")
     def _compute_gmail_uri(self):
         """Overrides google.gmail.mixin's own compute (registered only on
         our model -- ir.mail_server/fetchmail.server are untouched) to
@@ -287,8 +337,16 @@ class ConversationTransport(models.Model):
             authorization_code
         )
         email_address = self._gmail_fetch_userinfo_email(access_token)
+        values = {}
         if email_address:
-            self.write({"login": email_address})
+            values["login"] = email_address
+        if self.user_id and not self.artifact_only:
+            # A personal mailbox that has just been connected is usable
+            # right away: the owner should not have to tick technical
+            # capability boxes before it shows up in the Inbox.
+            values.update(browsable=True, searchable=True, sendable=True)
+        if values:
+            self.write(values)
         return refresh_token, access_token, expiration
 
     def _gmail_fetch_userinfo_email(self, access_token):
@@ -383,13 +441,17 @@ class ConversationTransport(models.Model):
         self.ensure_one()
         if self.provider != "gmail":
             return super()._imap_oauth_string(force_refresh=force_refresh)
-        if not self.google_gmail_refresh_token:
+        # The token fields are administrator-only; the engine runs as the
+        # (non-admin) owner of a personal mailbox, and the tokens never
+        # leave the server.
+        transport = self.sudo()
+        if not transport.google_gmail_refresh_token:
             # Not (yet) connected via Gmail OAuth -- the engine's generic
             # guard ("configure the IMAP host and login") takes over,
             # since login is still blank at this point (see
             # _fetch_gmail_refresh_token above).
             return None
-        if not self.login:
+        if not transport.login:
             raise UserError(
                 self.env._(
                     "%(transport)s is connected to Gmail but has no login "
@@ -403,5 +465,5 @@ class ConversationTransport(models.Model):
             # an IMAP/SMTP auth attempt failed even though our own expiry
             # check thought the cached token was still good (e.g. revoked
             # or rotated out of band).
-            self.google_gmail_access_token_expiration = 0
-        return self._generate_oauth2_string(self.login, self.google_gmail_refresh_token)
+            transport.google_gmail_access_token_expiration = 0
+        return transport._generate_oauth2_string(transport.login, transport.google_gmail_refresh_token)

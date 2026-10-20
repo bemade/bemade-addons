@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-17 22:52+0000\n"
-"PO-Revision-Date: 2026-10-17 22:52+0000\n"
+"POT-Creation-Date: 2026-10-19 21:32+0000\n"
+"PO-Revision-Date: 2026-10-19 21:32+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -31,6 +31,14 @@ msgstr ""
 #. odoo-python
 #: code:addons/conversation_base/models/conversation_transport.py:0
 msgid "%(transport)s does not support mailbox actions."
+msgstr ""
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/conversation_transport.py:0
+msgid ""
+"%(transport)s has mail filed from it and cannot be deleted. Remove it "
+"instead: the filed conversations are kept."
 msgstr ""
 
 #. module: conversation_base
@@ -1394,6 +1402,12 @@ msgstr ""
 msgid ""
 "You are not allowed to delete mail in the shared mail account %(transport)s."
 " Ask an administrator for the 'Delete shared mail' permission."
+msgstr ""
+
+#. module: conversation_base
+#. odoo-python
+#: code:addons/conversation_base/models/conversation_transport.py:0
+msgid "You can only remove your own mailboxes."
 msgstr ""
 
 #. module: conversation_base

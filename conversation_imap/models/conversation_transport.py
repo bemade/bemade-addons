@@ -102,6 +102,11 @@ class ConversationTransport(models.Model):
         for transport in self:
             transport.password_set = bool(transport.sudo().password)
 
+    def _clear_credentials(self):
+        result = super()._clear_credentials()
+        self.sudo().write({"password": False})
+        return result
+
     def _email_providers(self):
         return super()._email_providers() + ["imap"]
 

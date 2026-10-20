@@ -3,10 +3,16 @@
     <t t-name="conversation_inbox.Inbox">
         <div class="o_conversation_inbox h-100 d-flex flex-column p-3">
             <t t-if="!state.transports.length">
-                <div class="alert alert-info" role="alert">
-                    No browsable mail account is configured for you yet. Ask an
-                    administrator to connect one under "My Mail Accounts", or
-                    connect your own if you have access.
+                <div class="alert alert-info o_conversation_inbox_empty" role="alert">
+                    <p class="mb-2">
+                        You have no mailbox connected yet. Add your own Google
+                        Workspace or IMAP mailbox under "My mailboxes"; no
+                        administrator is needed.
+                    </p>
+                    <button
+            class="btn btn-primary o_conversation_inbox_add_mailbox"
+            t-on-click="onAddMailbox"
+          >Add a mailbox</button>
                 </div>
             </t>
             <t t-else="">
