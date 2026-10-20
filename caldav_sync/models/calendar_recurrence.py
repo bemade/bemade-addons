@@ -9,6 +9,7 @@ from odoo import api, fields, models
 
 # Import helper functions and constants from parent module
 from odoo.addons.calendar.models.calendar_recurrence import (
+    BYDAY_SELECTION,
     RRULE_FREQ_TO_SELECT,
     RRULE_WEEKDAY_TO_FIELD,
 )
@@ -62,64 +63,41 @@ class RecurrenceRule(models.Model):
 
     @api.model
     def _rrule_parse(self, rule_str, date_start):
-        """Override to fix compatibility with python-dateutil 2.9.x+
+        """Extend core parsing to monthly rules by day with BYSETPOS, e.g.
+        FREQ=MONTHLY;BYDAY=SU;BYSETPOS=2 (the second Sunday of each month).
 
-        In python-dateutil 2.9.x+, monthly recurrence with BYSETPOS (e.g., "2nd Sunday")
-        is no longer stored in _bynweekday. Instead:
-        - _byweekday contains the weekday (e.g., (6,) for Sunday)
-        - _bysetpos contains the position (e.g., (2,) for 2nd)
-
-        This patch maintains compatibility with both old and new python-dateutil versions.
+        python-dateutil stores that form in _byweekday/_bysetpos. Core only reads
+        the BYDAY=2SU form from _bynweekday, so core imports it as a weekly rule.
+        Only the single weekday, single position case is mapped here; any other
+        combination keeps core's result and is logged.
         """
-        data = {}
-        day_list = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+        data = super()._rrule_parse(rule_str, date_start)
 
-        # Remove X- properties that rrulestr cannot parse
-        rule_str = re.sub(r';?X-[-\w]+=[^;:]*', '', rule_str).replace(":;", ":").lstrip(":;")
-
-        if 'Z' in rule_str and date_start and not date_start.tzinfo:
+        # Same preparation as core, needed to get the parsed rule back
+        rule_str = re.sub(r";?X-[-\w]+=[^;:]*", "", rule_str).replace(":;", ":").lstrip(":;")
+        if "Z" in rule_str and date_start and not date_start.tzinfo:
             date_start = pytz.utc.localize(date_start)
         rule = rrule.rrulestr(rule_str, dtstart=date_start)
 
-        data['rrule_type'] = freq_to_select(rule._freq)
-        data['count'] = rule._count
-        data['interval'] = rule._interval
-        data['until'] = rule._until
+        if rule._freq != rrule.MONTHLY or not rule._bysetpos:
+            return data
 
-        # Repeat monthly by nweekday ((weekday, weeknumber), )
-        # Support both old python-dateutil (using _bynweekday) and new versions 2.9.x+ (using _byweekday + _bysetpos)
-        if rule._bynweekday:
-            # Old python-dateutil versions: _bynweekday contains ((weekday, position), )
-            data['weekday'] = day_list[list(rule._bynweekday)[0][0]].upper()
-            data['byday'] = str(list(rule._bynweekday)[0][1])
-            data['month_by'] = 'day'
-            data['rrule_type'] = 'monthly'
-        elif rule._bysetpos and rule._byweekday and rule._freq == 1:  # MONTHLY = 1
-            # New python-dateutil 2.9.x+: _byweekday + _bysetpos for monthly recurring by day
-            # Example: FREQ=MONTHLY;BYDAY=SU;BYSETPOS=2 (2nd Sunday of each month)
-            data['weekday'] = day_list[list(rule._byweekday)[0]].upper()
-            data['byday'] = str(list(rule._bysetpos)[0])
-            data['month_by'] = 'day'
-            data['rrule_type'] = 'monthly'
+        weekdays = tuple(rule._byweekday or ())
+        positions = [str(position) for position in rule._bysetpos]
+        if len(weekdays) != 1 or len(positions) != 1 or positions[0] not in dict(BYDAY_SELECTION):
+            _logger.warning(
+                "Unsupported monthly BYSETPOS recurrence %r, imported as core parses it",
+                rule_str,
+            )
+            return data
 
-        # Repeat weekly
-        # Only set weekly if not already identified as monthly
-        if rule._byweekday and data.get('rrule_type') != 'monthly':
-            for weekday in day_list:
-                data[weekday] = False  # reset
-            for weekday_index in rule._byweekday:
-                weekday = rrule.weekday(weekday_index)
-                data[weekday_to_field(weekday.weekday)] = True
-                data['rrule_type'] = 'weekly'
-
-        if rule._bymonthday and data['rrule_type'] == 'monthly':
-            data['day'] = list(rule._bymonthday)[0]
-            data['month_by'] = 'date'
-
-        if data.get('until'):
-            data['end_type'] = 'end_date'
-        elif data.get('count'):
-            data['end_type'] = 'count'
-        else:
-            data['end_type'] = 'forever'
+        day_list = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+        data.update(
+            rrule_type="monthly",
+            weekday=day_list[weekdays[0]].upper(),
+            byday=positions[0],
+            month_by="day",
+            # Clear the weekly day flags core set from BYDAY
+            **{day: False for day in day_list},
+        )
         return data
