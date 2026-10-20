@@ -6,13 +6,13 @@ Acceptance criteria covered here:
 * UC-PS1 Saving the play status (``sc_status``) answers the player's new
   stage (tone + label) for whatever on the page shows it — no reload (the
   browser half is the ``sc_status_pill_refresh`` tour: the header's
-  selector saves in place).
+  pills save in place).
 * UC-PS2 Owner review 2026-10-11: the page header carries the play-status
-  selector in place of the status pill; it shows the player's current
-  status (the pressed choice). Review fixes 2026-10-18: behind the header's
-  pencil (edit view); the read view shows the status label.
-* UC-PS3 The « no match, practice » choice reads « Contact practice »
-  (fr: « Pratique contact »), not « Practice only ».
+  control; it shows the player's current status. Task 1627: the Match /
+  Practice pill dropdowns of the read view (the checked choices), no
+  selector behind the pencil, no status label.
+* UC-PS3 Task 1627: the Practice values read as the model's selection
+  (« Yes, no contact »), never « Practice only ».
 * UC-PS5 Training recommendation history (like the team announcement's):
   every change (task 1601: from sports.patient.training.history) listed newest first with date,
   author and the text set (« Cleared » when emptied), in a sheet opened from
@@ -60,16 +60,19 @@ class TestAppShellPlayerStatus(PlayerStatusCommon):
         }, allow_redirects=False)
 
     def _hero_status(self):
+        """Task 1627: the pair the header's pills show (their checked
+        choices), from its read view; nothing behind the pencil."""
         _text, tree = self._get('/my/player?player_id=%s' % self.player.id)
-        # Review fixes 2026-10-18: the header reads the status label (chip)
-        # and the selector sits in its edit view (behind the pencil).
-        self.assertEqual(len(tree.xpath('//*[@data-sc-section="player.hero"]'
-                                        '/*[@data-sc-edit-view="read"]//*[@data-sc-stage-chip]')), 1)
-        props = [json.loads(p) for p in tree.xpath(
-            '//*[@data-sc-section="player.hero"]/*[@data-sc-edit-view="edit"]//owl-component/@props')]
-        status = [p for p in props if p.get('field') == 'sc_status']
-        self.assertEqual(len(status), 1)
-        return status[0]
+        hero = tree.xpath('//*[@data-sc-section="player.hero"]')[0]
+        self.assertFalse(hero.xpath('.//*[@data-sc-stage-chip]'))
+        props = [json.loads(p) for p in hero.xpath('.//owl-component/@props')]
+        self.assertFalse([p for p in props if p.get('field') == 'sc_status'])
+        checked = {}
+        for pill in hero.xpath('./*[@data-sc-edit-view="read"]//*[@data-sc-pill-select]'):
+            popup = tree.xpath('//*[@id="%s"]' % pill.xpath('./button/@aria-controls')[0])[0]
+            checked[pill.get('data-sc-pill-key')] = popup.xpath(
+                './/*[@aria-checked="true"]/@data-sc-pill-value')[0]
+        return '%(match)s:%(practice)s' % checked
 
     # -- UC-PS1 ----------------------------------------------------------
     def test_status_save_answers_the_stage_chip(self):
@@ -85,15 +88,15 @@ class TestAppShellPlayerStatus(PlayerStatusCommon):
     # -- UC-PS2 ----------------------------------------------------------
     def test_header_status_selector(self):
         self._login_tp()
-        self.assertEqual(self._hero_status()['value'], 'yes:yes')
+        self.assertEqual(self._hero_status(), 'yes:yes')
         self.player.write({'match_status': 'no', 'practice_status': 'no'})
-        self.assertEqual(self._hero_status()['value'], 'no:no')
+        self.assertEqual(self._hero_status(), 'no:no')
 
     # -- UC-PS3 ----------------------------------------------------------
     def test_contact_practice_label(self):
         self._login_tp()
         text, _tree = self._get('/my/player?player_id=%s' % self.player.id)
-        self.assertIn('Contact practice', text)
+        self.assertIn('Yes, no contact', text)
         self.assertNotIn('Practice only', text)
 
     # -- UC-PS4 ----------------------------------------------------------

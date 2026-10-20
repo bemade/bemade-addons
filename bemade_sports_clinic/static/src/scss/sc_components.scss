@@ -1384,6 +1384,105 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         }
     }
 
+    // Task 1627 — a status pill that is its own dropdown
+    // (sc_status_pill_select): the row pills' tones (.o_sc_status_pill +
+    // .o_sc_chip_<tone>), a chevron, a tap-sized hit area; its menu is the
+    // shared .o_sc_menu_popup, opened under the pill's left edge.
+    .o_sc_pill_select_wrap {
+        position: relative;
+        display: inline-flex;
+        vertical-align: middle;
+
+        &[aria-busy="true"] .o_sc_pill_select {
+            opacity: 0.6;
+            cursor: progress;
+        }
+    }
+
+    .o_sc_pill_select {
+        appearance: none;
+        min-height: 32px;
+        padding: 2px 8px 2px 10px;
+        font: inherit;
+        font-size: var(--sc-text-xs);
+        font-weight: 600;
+        line-height: 1.2;
+        cursor: pointer;
+
+        .o_sc_icon {
+            width: 14px;
+            height: 14px;
+            flex: none;
+            transition: transform 0.15s ease;
+        }
+
+        &[aria-expanded="true"] .o_sc_icon {
+            transform: rotate(180deg);
+        }
+
+        &:hover {
+            filter: brightness(1.08);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--sc-focus);
+            outline-offset: 2px;
+        }
+    }
+
+    .o_sc_pill_popup {
+        left: 0;
+        right: auto;
+        min-width: 220px;
+    }
+
+    .o_sc_pill_option {
+        appearance: none;
+        width: 100%;
+        border: 0;
+        background: transparent;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+
+        .o_sc_pill_swatch {
+            flex: none;
+            width: 10px;
+            height: 10px;
+            padding: 0;
+            border-radius: 50%;
+        }
+
+        // Greyed (an invalid pair): muted text, faded swatch; the hint
+        // keeps a readable contrast (dark mode is forced, #1602).
+        &[aria-disabled="true"] {
+            color: var(--sc-fg-3);
+            cursor: not-allowed;
+
+            .o_sc_pill_swatch {
+                opacity: 0.35;
+            }
+
+            &:hover {
+                background: transparent;
+            }
+        }
+    }
+
+    .o_sc_pill_option_text {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 4px 0;
+        white-space: normal;
+    }
+
+    .o_sc_pill_hint {
+        color: var(--sc-fg-2);
+        font-size: var(--sc-text-xs);
+        font-weight: 400;
+    }
+
     // The event page's timesheets section (task 1607): its read-fragment
     // holders take no room while empty, nor does the section when all are.
     .o_sc_event_timesheets {

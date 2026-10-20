@@ -18,6 +18,10 @@
  * Task 1607: the list header's sort menu is the same kind of popup —
  * button[data-sc-menu-toggle] + [data-sc-menu-popup] whose items are
  * a[role="menuitemradio"] links (the checked one gets the focus on open).
+ *
+ * Task 1627: open / close / closeAll are exported for menus whose clicks
+ * another module owns (sc_status_pills.js: button items, and a toggle that
+ * may sit in a <summary>, handled in the capture phase).
  */
 
 const TOGGLE = "[data-sc-user-menu-toggle], [data-sc-menu-toggle]";
@@ -33,7 +37,7 @@ function itemsOf(popup) {
     return [...popup.querySelectorAll(ITEM)];
 }
 
-function close(toggle, { focus = false } = {}) {
+export function close(toggle, { focus = false } = {}) {
     const popup = popupOf(toggle);
     if (popup) {
         popup.hidden = true;
@@ -44,7 +48,7 @@ function close(toggle, { focus = false } = {}) {
     }
 }
 
-function closeAll(except) {
+export function closeAll(except) {
     for (const toggle of document.querySelectorAll(TOGGLE)) {
         if (toggle.getAttribute("aria-expanded") !== "true" || !toggle.closest(".o_sc_app")) {
             continue;
@@ -55,7 +59,7 @@ function closeAll(except) {
     }
 }
 
-function open(toggle, which = "first") {
+export function open(toggle, which = "first") {
     const popup = popupOf(toggle);
     if (!popup) {
         return;

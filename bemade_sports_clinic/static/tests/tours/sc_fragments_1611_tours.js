@@ -300,19 +300,36 @@ tours.add("sc_1611_back_roster", {
             },
             expectUnloadPage: true,
         },
+        // Task 1627: « No play » from the header's status pills (Match no,
+        // then Practice no) — no pencil.
         {
-            content: "Player page: the header's pencil (review fixes 2026-10-18)",
-            trigger: '[data-sc-section="player.hero"] > button[data-sc-edit-toggle]',
+            content: "Player page: open the Match pill",
+            trigger: '[data-sc-pill-key="match"]:not([aria-busy]) button.o_sc_pill_select',
             run: "click",
         },
         {
-            content: "Player page: « No play »",
-            trigger: '.o_sc_autosave[data-sc-field="sc_status"] button[data-sc-value="no:no"]',
+            content: "Match: No",
+            trigger: '[data-sc-pill-key="match"] [role="menuitemradio"][data-sc-pill-value="no"]',
+            run: "click",
+        },
+        {
+            content: "Saved in place; open the Practice pill",
+            trigger: '[data-sc-pill-key="practice"]:not([aria-busy]) button.o_sc_pill_select',
+            run() {
+                if (!document.querySelector('[data-sc-pill-key="match"]:not([aria-busy]) button.o_sc_chip_red')) {
+                    throw new Error("match not saved yet");
+                }
+                this.anchor.click();
+            },
+        },
+        {
+            content: "Practice: No",
+            trigger: '[data-sc-pill-key="practice"] [role="menuitemradio"][data-sc-pill-value="no"]:not([aria-disabled])',
             run: "click",
         },
         {
             content: "Saved; back",
-            trigger: '.o_sc_autosave[data-sc-field="sc_status"][data-sc-state="saved"]',
+            trigger: '[data-sc-pill-key="practice"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_red',
             run() {
                 window.history.back();
             },

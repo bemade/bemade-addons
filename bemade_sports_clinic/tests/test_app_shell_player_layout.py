@@ -83,10 +83,14 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         read = hero.xpath('./*[@data-sc-edit-view="read"]')[0]
         edit = hero.xpath('./*[@data-sc-edit-view="edit"]')[0]
         self.assertEqual(edit.get('hidden'), 'hidden')
-        self.assertTrue(read.xpath('.//*[@data-sc-section="player.status.readonly"]//*[@data-sc-stage-chip]'))
+        # Task 1627: the status pills are live dropdowns in the READ view (no
+        # stage chip, no selector behind the pencil).
+        self.assertFalse(read.xpath('.//*[@data-sc-stage-chip]'))
+        self.assertEqual(len(read.xpath('.//*[@data-sc-section="player.status.readonly"]'
+                                        '//button[contains(@class, "o_sc_pill_select")]')), 2)
         self.assertFalse(read.xpath('.//owl-component'))
-        self.assertEqual(self._owl(edit)['sc_status']['inputType'], 'segmented')
-        self.assertEqual(len(tree.xpath('//owl-component[contains(@props, \'"sc_status"\')]')), 1)
+        self.assertNotIn('sc_status', self._owl(edit))
+        self.assertFalse(tree.xpath('//owl-component[contains(@props, \'"sc_status"\')]'))
         self._login_coach()
         _text, tree = self._get(self._url(tab='injuries'))
         hero = tree.xpath('//*[@data-sc-section="player.hero"]')[0]
@@ -95,6 +99,7 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         self.assertFalse(hero.xpath('.//*[@data-sc-edit-toggle]'))
         self.assertFalse(hero.xpath('.//*[@data-sc-edit-view="edit"]'))
         self.assertTrue(hero.xpath('.//*[@data-sc-section="player.status.readonly"]'))
+        self.assertFalse(hero.xpath('.//*[@data-sc-section="player.status.readonly"]//button'))
 
     # -- UC-PL3 / UC-PL4 -------------------------------------------------
     def test_info_cards(self):

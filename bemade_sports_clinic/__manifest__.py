@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.90.0",
+    'version': "19.0.1.91.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -329,6 +329,8 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             "bemade_sports_clinic/static/src/js/sc_proposal.js",
             # Task 1604: quick « Vérifier » / « Résoudre » of an injury.
             "bemade_sports_clinic/static/src/js/sc_injury_quick.js",
+            # Task 1627: status pill dropdowns (Match / Practice).
+            "bemade_sports_clinic/static/src/js/sc_status_pills.js",
             "bemade_sports_clinic/static/src/js/sc_injury_card.js",
             "bemade_sports_clinic/static/src/js/sc_account.js",
             "bemade_sports_clinic/static/src/js/sc_forms.js",

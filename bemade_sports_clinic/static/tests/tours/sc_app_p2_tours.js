@@ -212,45 +212,42 @@ tours.add("sc_1539_activity_complete", {
 
 // ------------------- player status: the hero pill follows the save (2026-10-10)
 tours.add("sc_status_pill_refresh", {
-    // Owner review 2026-10-11: the status selector lives in the page header
-    // (in place of the status pill) and saves in place. Review fixes
-    // 2026-10-18: the header is a read view; its pencil opens the selector.
+    // Owner review 2026-10-11: the status changes from the page header and
+    // saves in place. Task 1627: the Match / Practice pills are the
+    // dropdowns (no pencil, no 4-way selector); « No play » = Match no, then
+    // Practice no.
     steps: () => [
         {
-            content: "Read view: the status label; mark the page to detect a reload, open the pencil",
-            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="read"] [data-sc-stage-chip]',
+            content: "Read view: the Match pill (green); mark the page to detect a reload, open it",
+            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="read"] [data-sc-pill-key="match"] button.o_sc_pill_select.o_sc_chip_green',
             run() {
                 window.__scPillNoReload = true;
-                document.querySelector('[data-sc-section="player.hero"] > button[data-sc-edit-toggle]').click();
+                this.anchor.click();
             },
         },
         {
-            content: "Available: « Match + practice » pressed in the header's edit view",
-            trigger: '[data-sc-section="player.hero"] .o_sc_autosave[data-sc-field="sc_status"] button[data-sc-value="yes:yes"][aria-pressed="true"]',
-        },
-        {
-            content: "Pick « No play »",
-            trigger: '[data-sc-section="player.hero"] .o_sc_autosave[data-sc-field="sc_status"] button[data-sc-value="no:no"]',
+            content: "Match: No",
+            trigger: '[data-sc-section="player.hero"] [data-sc-pill-key="match"] [role="menuitemradio"][data-sc-pill-value="no"]',
             run: "click",
         },
         {
-            content: "Saved in place (no reload)",
-            trigger:
-                '[data-sc-section="player.hero"] .o_sc_autosave[data-sc-field="sc_status"][data-sc-state="saved"] button[data-sc-value="no:no"][aria-pressed="true"]',
+            content: "Saved in place: Match red; open Practice",
+            trigger: '[data-sc-section="player.hero"] [data-sc-pill-key="practice"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_green',
             run() {
-                if (!window.__scPillNoReload) {
-                    throw new Error("the page reloaded");
+                if (!document.querySelector('[data-sc-section="player.hero"] [data-sc-pill-key="match"]:not([aria-busy]) button.o_sc_chip_red')) {
+                    throw new Error("the match pill did not turn red");
                 }
+                this.anchor.click();
             },
         },
         {
-            content: "« Done » closes the header's edit view",
-            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="edit"] button[data-sc-edit-done]',
+            content: "Practice: No",
+            trigger: '[data-sc-section="player.hero"] [data-sc-pill-key="practice"] [role="menuitemradio"][data-sc-pill-value="no"]:not([aria-disabled])',
             run: "click",
         },
         {
             content: "The read view shows the new status (read fragment, no reload)",
-            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="read"] [data-sc-stage-chip].o_sc_chip_red',
+            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="read"] [data-sc-pill-key="practice"]:not([aria-busy]) button.o_sc_chip_red',
             run() {
                 if (!window.__scPillNoReload) {
                     throw new Error("the page reloaded");

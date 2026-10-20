@@ -157,12 +157,15 @@ class TestPlayerInline(PlayerInlineCommon):
         _text, tree = self._get(self._url(tab='info'))
         panel = tree.xpath('//*[@data-sc-app-shell]')[0]
         live = ' '.join(self._fields_in(panel))
-        self.assertIn('"sc_status"', live)
         self.assertIn('"training_recommendation"', live)
-        # Review fixes 2026-10-18: both behind the HEADER's one pencil (its
-        # edit view), still autosaving fields.
-        for node in panel.xpath('.//owl-component[contains(@props, \'"sc_status"\') '
-                                'or contains(@props, \'"training_recommendation"\')]'):
+        # Task 1627: the status is the header's pill dropdowns (read view,
+        # outside the pencil), no autosave field.
+        self.assertNotIn('"sc_status"', live)
+        self.assertEqual(len(panel.xpath('.//*[@data-sc-section="player.hero"]/*[@data-sc-edit-view="read"]'
+                                         '//*[@data-sc-pill-select][@data-sc-field="sc_status"]')), 2)
+        # Review fixes 2026-10-18: the training recommendation behind the
+        # HEADER's one pencil (its edit view), still an autosaving field.
+        for node in panel.xpath('.//owl-component[contains(@props, \'"training_recommendation"\')]'):
             self.assertEqual(node.xpath('ancestor::*[@data-sc-edit-card][1]/@data-sc-edit-card'),
                              ['player-header'])
             self.assertTrue(node.xpath('ancestor::*[@data-sc-edit-view="edit"]'))

@@ -67,7 +67,10 @@ class TestAppShellI18n1538(AppShellCommon):
         self._switch(True)
         self._login_tp()
         text = self._fr('/my/player?player_id=%s' % self.player.id)
-        self.assertIn('Pratique contact', text)
+        # Task 1627: the 4-way changer (« Pratique contact ») is gone; the
+        # Practice pill offers the model's values.
+        self.assertIn('Oui, sans contact', text)
+        self.assertIn('Pratique : Oui', text)
         self.assertNotIn('Pratique seulement', text)
 
     def test_more_in_french(self):

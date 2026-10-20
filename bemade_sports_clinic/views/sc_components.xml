@@ -104,6 +104,70 @@
         </span>
     </template>
 
+    <!--
+        Task 1627 — a coloured status pill that is its own dropdown (shared:
+        the player header and the clinic dossier's Match / Practice pills;
+        meant for other status pills too). Variables:
+
+        - pill: {key, text, title, tone, icon, menu_label, options, target}
+          (e.g. sports.patient._sc_status_pills()):
+          options [{value, label, tone, icon, checked, disabled, hint, post}]
+          — ``post`` is the value a pick saves (default: ``value``); a
+          disabled option is greyed, says why (``hint``) and posts nothing;
+          target {model, id, field, write_date, old_value}: the pick posts
+          ``POST /my/app/save/<model>/<id>`` {field, value: post, write_date,
+          old_value} (sc_status_pills.js) — render the pill INSIDE a read
+          fragment so the next pick posts fresh values;
+        - editable: False -> the same coloured pill, read-only (a span, no
+          menu);
+        - undo_message: the « Annuler » toast's message after a pick.
+
+        The menu is the shell's generic menu popup (sc_user_menu.js:
+        keyboard, Escape, outside tap, one open at a time).
+    -->
+    <template id="sc_status_pill_select" name="App shell: status pill select">
+        <t t-set="sc_pill_target" t-value="pill['target']"/>
+        <t t-set="sc_pill_menu_id" t-value="'sc-pill-%s-%s-%s' % (sc_pill_target['model'].replace('.', '-'), sc_pill_target['id'], pill['key'])"/>
+        <span t-if="editable" class="o_sc_pill_select_wrap" data-sc-pill-select="1"
+              t-att-data-sc-pill-key="pill['key']"
+              t-att-data-sc-model="sc_pill_target['model']"
+              t-att-data-sc-record-id="sc_pill_target['id']"
+              t-att-data-sc-field="sc_pill_target['field']"
+              t-att-data-sc-write-date="sc_pill_target['write_date']"
+              t-att-data-sc-old-value="sc_pill_target['old_value']"
+              t-att-data-sc-undo-message="undo_message or None">
+            <button type="button" t-attf-class="o_sc_status_pill o_sc_pill_select o_sc_chip_#{pill['tone']}"
+                    data-sc-menu-toggle="1" aria-haspopup="menu" aria-expanded="false"
+                    t-att-aria-controls="sc_pill_menu_id" t-att-title="pill['title']"
+                    t-att-data-sc-pill-value="pill['value']">
+                <i t-if="pill['icon']" t-attf-class="fa #{pill['icon']}" aria-hidden="true"/>
+                <span class="o_sc_pill_text" t-out="pill['text']"/>
+                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
+            </button>
+            <span t-att-id="sc_pill_menu_id" class="o_sc_menu_popup o_sc_pill_popup" role="menu" data-sc-menu-popup="1"
+                  t-att-aria-label="pill['menu_label']" hidden="hidden">
+                <button t-foreach="pill['options']" t-as="option" type="button" role="menuitemradio"
+                        class="o_sc_menu_item o_sc_pill_option"
+                        t-att-data-sc-pill-value="option['value']"
+                        t-att-data-sc-pill-post="None if option['disabled'] else (option.get('post') or option['value'])"
+                        t-att-aria-checked="'true' if option['checked'] else 'false'"
+                        t-att-aria-disabled="'true' if option['disabled'] else None">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'check'"/></t>
+                    <span t-attf-class="o_sc_pill_swatch o_sc_chip_#{option['tone']}" aria-hidden="true"/>
+                    <span class="o_sc_pill_option_text">
+                        <span t-out="option['label']"/>
+                        <small t-if="option['disabled'] and option['hint']" class="o_sc_pill_hint" t-out="option['hint']"/>
+                    </span>
+                </button>
+            </span>
+        </span>
+        <span t-else="" t-attf-class="o_sc_status_pill o_sc_chip_#{pill['tone']}" t-att-title="pill['title']"
+              t-att-data-sc-pill-key="pill['key']" data-sc-pill-readonly="1">
+            <i t-if="pill['icon']" t-attf-class="fa #{pill['icon']}" aria-hidden="true"/>
+            <span class="o_sc_pill_text" t-out="pill['text']"/>
+        </span>
+    </template>
+
     <!-- The legacy card's ⚡ « Changements récents » flag. -->
     <template id="sc_recent_pill" name="App shell: recent changes pill">
         <span class="o_sc_recent_pill"><i class="fa fa-bolt" aria-hidden="true"/> Recent changes</span>

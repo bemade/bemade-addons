@@ -46,7 +46,10 @@ from odoo.tools.misc import mute_logger
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
 # Task 1603: « Retour prévu » is a live header field too (next to the training rec).
-ALWAYS_LIVE = {'sc_status', 'training_recommendation', 'predicted_return_date'}
+# Task 1627: the play status is no autosave field any more — it is the
+# Match / Practice pill dropdowns, live outside the pencil by owner decision
+# (checked below: only in a ``status`` read fragment).
+ALWAYS_LIVE = {'training_recommendation', 'predicted_return_date'}
 
 
 @tagged('post_install', '-at_install')
@@ -274,6 +277,12 @@ class TestAppShellPencil(AppShellCommon):
                         continue
                     self.assertTrue(node.xpath('ancestor::*[@data-sc-edit-view="edit"]'),
                                     '%s: %s is live outside a pencil' % (url, props.get('field')))
+                # Task 1627: the deliberate always-live exception — the status
+                # pills, in the player's « status » read fragment only.
+                for pill in tree.xpath('//*[@data-sc-pill-select]'):
+                    self.assertEqual(pill.get('data-sc-field'), 'sc_status', url)
+                    self.assertTrue(pill.xpath('ancestor::*[@data-sc-fragment="sports.patient:%s:status"]'
+                                               % pill.get('data-sc-record-id')), url)
 
 
 @tagged('post_install', '-at_install')

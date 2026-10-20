@@ -203,13 +203,14 @@
                 <t t-out="jersey_warning"/>
             </t>
 
-            <!-- Hero: name, team, status chips, the edit / removal actions.
+            <!-- Hero: name, team, status pills, the edit / removal actions.
                  Review fixes 2026-10-18 (#1603 / #1615): a READ view with ONE
                  pencil (therapists) for the whole header group. Read: the play
-                 status (chips), the training recommendation, ONE return date
+                 status (Match / Practice pills — task 1627: live dropdowns for
+                 therapists), the training recommendation, ONE return date
                  (« Retour prévu » while the player is not « Play OK », else
                  « Retour réel »; « not set » while that date is empty) and the
-                 allergies banner. Edit: the status selector, the
+                 allergies banner. Edit: the
                  recommendation (autosave + stamp + History), both return
                  dates (#1603 proposals intact), the allergies and « Remove
                  player ». Coaches: read view only, no pencil. -->
@@ -217,7 +218,9 @@
             <t t-set="sc_hero_training_edit" t-value="is_treatment_prof and sc_can('patient.training.edit')"/>
             <t t-set="sc_hero_return_edit" t-value="is_treatment_prof and sc_can('patient.return.edit')"/>
             <t t-set="sc_hero_allergies_edit" t-value="is_treatment_prof and sc_can('patient.allergies')"/>
-            <t t-set="sc_hero_editable" t-value="sc_hero_status_edit or sc_hero_training_edit or sc_hero_return_edit or sc_hero_allergies_edit"/>
+            <!-- Task 1627: the status pills are live outside the pencil; the
+                 pencil shows only when another header field is editable. -->
+            <t t-set="sc_hero_editable" t-value="sc_hero_training_edit or sc_hero_return_edit or sc_hero_allergies_edit"/>
             <t t-set="sc_hero_can_remove" t-value="can_direct_remove and removal_team_id and sc_can('patient.remove')"/>
             <div t-attf-class="o_sc_card o_sc_hero#{' o_sc_edit_card o_sc_hero_editable' if sc_hero_editable else ''}"
                  data-sc-section="player.hero" t-att-data-sc-edit-card="'player-header' if sc_hero_editable else None">
@@ -247,17 +250,24 @@
 
                 <!-- ============================== READ ============================== -->
                 <div class="o_sc_hero_read" data-sc-edit-view="read" data-sc-section="player.header.read">
-                    <!-- The play status, read-only for everyone (owner review
-                         2026-10-18: the selector is in the edit view). -->
+                    <!-- Task 1627: the play status as two coloured pills, Match
+                         and Practice (no computed stage pill any more). For
+                         therapists each pill is its own dropdown, always live
+                         (never behind the pencil): two taps change it, invalid
+                         choices greyed with a hint. Coaches: the same pills,
+                         read-only. Inside the « status » read fragment, so a
+                         change recolours them in place and the next change
+                         posts fresh values. -->
                     <div class="o_sc_hero_status" data-sc-section="player.status">
+                        <t t-set="sc_status_undo">Status changed</t>
                         <div class="o_sc_chips" data-sc-section="player.status.readonly"
                              t-att-data-sc-fragment="sc_fragment_key(player, 'status')">
-                            <!-- Task 1594: the player's status label (Play OK /
-                                 Practice OK / Injured), as on the legacy page. -->
-                            <span t-attf-class="o_sc_chip o_sc_chip_#{sc_player_dot}" t-att-data-sc-stage-chip="player.id"
-                                  t-out="sc_player_chip"/>
-                            <span class="o_sc_chip o_sc_chip_ghost"><span>Match:</span> <span t-field="player.match_status"/></span>
-                            <span class="o_sc_chip o_sc_chip_ghost"><span>Practice:</span> <span t-field="player.practice_status"/></span>
+                            <t t-foreach="player._sc_status_pills()" t-as="pill">
+                                <t t-call="bemade_sports_clinic.sc_status_pill_select">
+                                    <t t-set="editable" t-value="sc_hero_status_edit"/>
+                                    <t t-set="undo_message" t-value="sc_status_undo"/>
+                                </t>
+                            </t>
                         </div>
                     </div>
                     <!-- Task 1615: the training recommendation right under the
@@ -317,13 +327,6 @@
                 <!-- ============================== EDIT ============================== -->
                 <div t-if="sc_hero_editable" class="o_sc_fields o_sc_hero_edit" data-sc-edit-view="edit"
                      data-sc-section="player.header.edit" hidden="hidden">
-                    <div t-if="sc_hero_status_edit" class="o_sc_fields" data-sc-section="player.status.edit">
-                        <t t-set="sc_status_label">Play status</t>
-                        <t t-set="sc_status_undo">Status changed</t>
-                        <t t-call="bemade_sports_clinic.sc_field_autosave">
-                            <t t-set="props" t-value="sc_field_props(player, 'sc_status', sc_status_label, 'segmented', options=sc_status_options, instant=True, undoMessage=sc_status_undo)"/>
-                        </t>
-                    </div>
                     <div t-if="sc_hero_training_edit" class="o_sc_fields" data-sc-section="player.training.edit">
                         <t t-call="bemade_sports_clinic.sc_field_autosave">
                             <t t-set="props" t-value="sc_field_props(player, 'training_recommendation', sc_training_label, 'textarea', clearable=True, historySheet='sc_training_history_sheet', historyLabel=sc_training_history_label, hint=player.last_training_recommendation_info or None)"/>

@@ -46,8 +46,9 @@ class TestAppShellI18n1539(TestAppShellI18n1538):
         # Owner review 2026-10-11: no « Aperçu » tab (status in the header,
         # training on Infos, the page opens on « Blessures »).
         for term in ('Blessures', 'Infos', 'Ajouter une blessure',
-                     'Statut de jeu', "Appartenance à l'équipe", 'Ajouter une note de traitement',
-                     'Ajouter une activité', 'Match + pratique', 'Aucun jeu'):
+                     "Appartenance à l'équipe", 'Ajouter une note de traitement',
+                     # Task 1627: the Match / Practice pill dropdowns.
+                     'Ajouter une activité', 'Match : Oui', 'Pratique : Oui', 'Mettre d\'abord Match à Non'):
             self.assertIn(term, text, term)
         # The retired edit page's fields, inline on the Info tab (2026-10-10).
         text = self._fr_text('/my/player?player_id=%s&tab=info' % self.player.id)
