@@ -1,0 +1,17 @@
+{
+  "stepsFile": "../../static/tests/tours/reply_window.steps.js",
+  "startPath": "/odoo/action-conversation_inbox.conversation_inbox_client_action",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "lang": "fr_CA",
+  "voice": "fr_FR-siwis-medium",
+  "title": "Répondre à un courriel depuis la boîte de réception",
+  "introNarration": "Dans cette démonstration, nous voyons la fenêtre de réponse de la boîte de réception de Conversations : elle s'ouvre maintenant sans longue attente, avec le destinataire, l'objet et le message cité déjà remplis.",
+  "outroTitle": "À retenir",
+  "outroNarration": "La fenêtre Répondre, Répondre à tous ou Transférer s'ouvre rapidement, que ce soit pour votre boîte personnelle ou pour une boîte partagée. Les pièces jointes fonctionnent comme avant.",
+  "stepOverrides": {
+    "expand_item": {"containsText": "Soumission pour la commande"},
+    "click_reply": {"containsText": "Répondre"},
+    "cancel": {"containsText": "Annuler"}
+  }
+}
