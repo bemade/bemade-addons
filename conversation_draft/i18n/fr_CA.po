@@ -17,6 +17,12 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: conversation_draft
+#. odoo-javascript
+#: code:addons/conversation_draft/static/src/draft_flag_field.js:0
+msgid "%(user)s is replying"
+msgstr "%(user)s est en train de répondre"
+
+#. module: conversation_draft
 #. odoo-python
 #: code:addons/conversation_draft/models/mail_conversation_draft_recipient.py:0
 msgid "(no address)"
@@ -126,6 +132,11 @@ msgid "Conversation Reply Draft"
 msgstr "Brouillon de réponse à une conversation"
 
 #. module: conversation_draft
+#: model_terms:ir.actions.server,help:conversation_draft.mail_reply_template_server_action
+msgid "Create your first reply template"
+msgstr "Créez votre premier modèle de réponse"
+
+#. module: conversation_draft
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__create_uid
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__create_uid
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_template__create_uid
@@ -164,6 +175,9 @@ msgid "Display Name"
 msgstr "Nom affiché"
 
 #. module: conversation_draft
+#. odoo-javascript
+#: code:addons/conversation_draft/static/src/draft_flag_field.js:0
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation__draft_ids
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__draft_id
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_template__draft_id
 #: model:ir.model.fields.selection,name:conversation_draft.selection__mail_conversation_draft__state__draft
@@ -181,7 +195,12 @@ msgid "Draft Has Body"
 msgstr "Le brouillon a un corps"
 
 #. module: conversation_draft
-#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation__draft_ids
+#. odoo-javascript
+#: code:addons/conversation_draft/static/src/draft_flag_field.js:0
+msgid "Draft indicator"
+msgstr "Indicateur de brouillon"
+
+#. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_view_form
 msgid "Drafts"
 msgstr "Brouillons"
@@ -227,6 +246,12 @@ msgid "Has Pending Draft"
 msgstr "A un brouillon en cours"
 
 #. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation__has_reply_templates
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__has_reply_templates
+msgid "Has Reply Templates"
+msgstr "A des modèles de réponse"
+
+#. module: conversation_draft
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__has_unreachable_recipients
 msgid "Has Unreachable Recipients"
 msgstr "A des destinataires injoignables"
@@ -247,6 +272,7 @@ msgstr ""
 
 #. module: conversation_draft
 #: model:ir.model.fields,help:conversation_draft.field_mail_conversation_draft__message_has_error
+#: model:ir.model.fields,help:conversation_draft.field_mail_conversation_draft__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
 msgstr ""
 
@@ -408,6 +434,21 @@ msgid "Reply on %(conversation)s"
 msgstr "Réponse sur %(conversation)s"
 
 #. module: conversation_draft
+#: model:ir.actions.server,name:conversation_draft.mail_reply_template_server_action
+#: model:ir.ui.menu,name:conversation_draft.menu_mail_reply_template
+msgid "Reply templates"
+msgstr "Modèles de réponse"
+
+#. module: conversation_draft
+#: model_terms:ir.actions.server,help:conversation_draft.mail_reply_template_server_action
+msgid ""
+"Reply templates pre-fill the subject, text and attachments of a\n"
+"                reply draft on a conversation."
+msgstr ""
+"Les modèles de réponse préremplissent le sujet, le texte et les pièces "
+"jointes d'un brouillon de réponse sur une conversation."
+
+#. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_view_form
 msgid "Reply with template"
 msgstr "Répondre avec un modèle"
@@ -416,6 +457,11 @@ msgstr "Répondre avec un modèle"
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
 msgid "Return to draft"
 msgstr "Remettre en brouillon"
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr "Erreur de livraison SMS"
 
 #. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
@@ -575,6 +621,12 @@ msgstr "Utiliser un modèle sur un brouillon de conversation"
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
 msgid "Use template"
 msgstr "Utiliser un modèle"
+
+#. module: conversation_draft
+#: model:ir.model.fields,help:conversation_draft.field_mail_conversation__has_reply_templates
+#: model:ir.model.fields,help:conversation_draft.field_mail_conversation_draft__has_reply_templates
+msgid "Whether any reply template exists for conversations."
+msgstr "Indique si un modèle de réponse existe pour les conversations."
 
 #. module: conversation_draft
 #: model:ir.model.fields,help:conversation_draft.field_mail_conversation_draft_recipient__is_reachable

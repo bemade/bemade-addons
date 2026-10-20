@@ -17,7 +17,9 @@
             name="action_open_draft_with_template"
             string="Reply with template"
             type="object"
+            invisible="not has_reply_templates"
           />
+                    <field name="has_reply_templates" invisible="1" />
                 </header>
             </xpath>
             <xpath expr="//notebook" position="inside">

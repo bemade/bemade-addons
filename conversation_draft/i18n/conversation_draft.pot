@@ -6,14 +6,20 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-01 20:20+0000\n"
-"PO-Revision-Date: 2026-10-01 20:20+0000\n"
+"POT-Creation-Date: 2026-10-19 21:32+0000\n"
+"PO-Revision-Date: 2026-10-19 21:32+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
+
+#. module: conversation_draft
+#. odoo-javascript
+#: code:addons/conversation_draft/static/src/draft_flag_field.js:0
+msgid "%(user)s is replying"
+msgstr ""
 
 #. module: conversation_draft
 #. odoo-python
@@ -119,6 +125,11 @@ msgid "Conversation Reply Draft"
 msgstr ""
 
 #. module: conversation_draft
+#: model_terms:ir.actions.server,help:conversation_draft.mail_reply_template_server_action
+msgid "Create your first reply template"
+msgstr ""
+
+#. module: conversation_draft
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__create_uid
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__create_uid
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_template__create_uid
@@ -157,6 +168,9 @@ msgid "Display Name"
 msgstr ""
 
 #. module: conversation_draft
+#. odoo-javascript
+#: code:addons/conversation_draft/static/src/draft_flag_field.js:0
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation__draft_ids
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_recipient__draft_id
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft_template__draft_id
 #: model:ir.model.fields.selection,name:conversation_draft.selection__mail_conversation_draft__state__draft
@@ -174,7 +188,12 @@ msgid "Draft Has Body"
 msgstr ""
 
 #. module: conversation_draft
-#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation__draft_ids
+#. odoo-javascript
+#: code:addons/conversation_draft/static/src/draft_flag_field.js:0
+msgid "Draft indicator"
+msgstr ""
+
+#. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_view_form
 msgid "Drafts"
 msgstr ""
@@ -220,6 +239,12 @@ msgid "Has Pending Draft"
 msgstr ""
 
 #. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation__has_reply_templates
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__has_reply_templates
+msgid "Has Reply Templates"
+msgstr ""
+
+#. module: conversation_draft
 #: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__has_unreachable_recipients
 msgid "Has Unreachable Recipients"
 msgstr ""
@@ -240,6 +265,7 @@ msgstr ""
 
 #. module: conversation_draft
 #: model:ir.model.fields,help:conversation_draft.field_mail_conversation_draft__message_has_error
+#: model:ir.model.fields,help:conversation_draft.field_mail_conversation_draft__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
 msgstr ""
 
@@ -398,6 +424,19 @@ msgid "Reply on %(conversation)s"
 msgstr ""
 
 #. module: conversation_draft
+#: model:ir.actions.server,name:conversation_draft.mail_reply_template_server_action
+#: model:ir.ui.menu,name:conversation_draft.menu_mail_reply_template
+msgid "Reply templates"
+msgstr ""
+
+#. module: conversation_draft
+#: model_terms:ir.actions.server,help:conversation_draft.mail_reply_template_server_action
+msgid ""
+"Reply templates pre-fill the subject, text and attachments of a\n"
+"                reply draft on a conversation."
+msgstr ""
+
+#. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_view_form
 msgid "Reply with template"
 msgstr ""
@@ -405,6 +444,11 @@ msgstr ""
 #. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
 msgid "Return to draft"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,field_description:conversation_draft.field_mail_conversation_draft__message_has_sms_error
+msgid "SMS Delivery error"
 msgstr ""
 
 #. module: conversation_draft
@@ -551,6 +595,12 @@ msgstr ""
 #. module: conversation_draft
 #: model_terms:ir.ui.view,arch_db:conversation_draft.mail_conversation_draft_view_form
 msgid "Use template"
+msgstr ""
+
+#. module: conversation_draft
+#: model:ir.model.fields,help:conversation_draft.field_mail_conversation__has_reply_templates
+#: model:ir.model.fields,help:conversation_draft.field_mail_conversation_draft__has_reply_templates
+msgid "Whether any reply template exists for conversations."
 msgstr ""
 
 #. module: conversation_draft
