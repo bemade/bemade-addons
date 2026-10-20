@@ -274,7 +274,10 @@ class TestTrainingHistoryPortal1601(History1581Common):
         self.assertEqual(resp.json()['hint'], stamp)
         # The page renders it under the therapist's autosave field.
         _text, tree = self._get('/my/player?player_id=%s&tab=info' % self.player.id)
-        self.assertEqual(self._training_props(tree)['hint'], stamp)
+        props = self._training_props(tree)
+        self.assertEqual(props['hint'], stamp)
+        # Task 1629: the History link moved to the section title (one link).
+        self.assertNotIn('historySheet', props)
         # An unchanged save adds nothing.
         self._save_training('Synthetic bike only')
         self.assertEqual(len(self._rows()), 1)
@@ -301,6 +304,10 @@ class TestTrainingHistoryPortal1601(History1581Common):
         hint = tree.xpath('//*[@data-sc-section="player.training"]//*[contains(@class, "o_sc_hint")]')
         self.assertEqual([h.text_content().strip() for h in hint],
                          [_stamp(self.env, row.change_datetime, 'PC TP')])
+        # Task 1629: the stamp stays under the value, below the title + link.
+        section = tree.xpath('//*[@data-sc-section="player.training"]')[0]
+        self.assertEqual(section.xpath('./*')[0].tag, 'h3')
+        self.assertEqual(len(section.xpath('.//*[@data-sc-sheet-open="sc_training_history_sheet"]')), 1)
         entries = self._entries(self._fragment('/my/player/%s/training-history' % self.player.id))
         self.assertEqual([e['body'] for e in entries], ['Synthetic pool'])
         with mute_logger('odoo.http'):

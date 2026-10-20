@@ -398,8 +398,9 @@ tours.add("sc_event_pencil", {
 tours.add("sc_training_history_refresh", {
     steps: () => [
         {
+            // Task 1629: the link sits right after the all-caps section title.
             content: "Open the (empty) training history; mark the page to detect a reload",
-            trigger: '[data-sc-section="player.training"] .o_sc_field_label [data-sc-sheet-open="sc_training_history_sheet"]',
+            trigger: '[data-sc-section="player.training"] > h3.o_sc_edit_card_title > button.o_sc_section_more[data-sc-sheet-open="sc_training_history_sheet"]',
             run(helpers) {
                 window.__scTrainingNoReload = true;
                 helpers.click();
@@ -441,8 +442,26 @@ tours.add("sc_training_history_refresh", {
             trigger: '.o_sc_autosave[data-sc-field="training_recommendation"] .o_sc_hint:contains(Updated on):contains(PC TP)',
         },
         {
-            content: "Open the history again (the edit view's link)",
-            trigger: '[data-sc-section="player.training.edit"] [data-sc-sheet-open="sc_training_history_sheet"]',
+            // Task 1629: one title + one History link in the edit view; the
+            // island's label stays as the textarea's accessible name.
+            content: "The edit view has one History link, next to its title",
+            trigger: '[data-sc-section="player.training.edit"] > h3.o_sc_edit_card_title > button.o_sc_section_more',
+            run() {
+                const section = this.anchor.closest('[data-sc-section="player.training.edit"]');
+                const links = section.querySelectorAll('[data-sc-sheet-open="sc_training_history_sheet"]');
+                if (links.length !== 1) {
+                    throw new Error(`expected one History link in the edit view, got ${links.length}`);
+                }
+                const textarea = section.querySelector(".o_sc_autosave textarea");
+                const label = textarea && textarea.labels && textarea.labels[0];
+                if (!label || !label.textContent.includes("Training Recommendation")) {
+                    throw new Error("the training textarea lost its accessible name");
+                }
+            },
+        },
+        {
+            content: "Open the history again (the edit view's title link)",
+            trigger: '[data-sc-section="player.training.edit"] > h3.o_sc_edit_card_title > button[data-sc-sheet-open="sc_training_history_sheet"]',
             run: "click",
         },
         {

@@ -412,7 +412,8 @@
     -->
     <template id="sc_field_static" name="App shell: static field">
         <div class="o_sc_field o_sc_field_static">
-            <span class="o_sc_field_label"><span t-out="label"/>
+            <!-- Task 1629: no_label = the value only (its title sits above). -->
+            <span t-if="not no_label" class="o_sc_field_label"><span t-out="label"/>
                 <button t-if="history_sheet" type="button" class="o_sc_link_btn o_sc_field_history"
                         t-att-data-sc-sheet-open="history_sheet" t-out="history_label"/>
             </span>

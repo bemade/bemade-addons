@@ -271,17 +271,19 @@
                         </div>
                     </div>
                     <!-- Task 1615: the training recommendation right under the
-                         play status (read; its stamp and History). -->
+                         play status (read; its stamp and History). Task 1629:
+                         an all-caps in-card title with « History » right after
+                         it (the team announcement's pattern), the same in the
+                         edit view below; the value has no label row. -->
                     <t t-set="sc_training_label">Training Recommendation</t>
                     <t t-set="sc_training_history_label">History</t>
                     <div class="o_sc_hero_training" data-sc-section="player.training"
                          t-att-data-sc-fragment="sc_fragment_key(player, 'training')">
+                        <t t-call="bemade_sports_clinic.sc_training_title"/>
                         <t t-call="bemade_sports_clinic.sc_field_static">
-                            <t t-set="label" t-value="sc_training_label"/>
+                            <t t-set="no_label" t-value="True"/>
                             <t t-set="value" t-value="player.training_recommendation"/>
                             <t t-set="pre" t-value="True"/>
-                            <t t-set="history_sheet" t-value="'sc_training_history_sheet'"/>
-                            <t t-set="history_label" t-value="sc_training_history_label"/>
                             <!-- Task 1601: who changed it last, and when. -->
                             <t t-set="static_hint" t-value="player.last_training_recommendation_info"/>
                         </t>
@@ -327,9 +329,13 @@
                 <!-- ============================== EDIT ============================== -->
                 <div t-if="sc_hero_editable" class="o_sc_fields o_sc_hero_edit" data-sc-edit-view="edit"
                      data-sc-section="player.header.edit" hidden="hidden">
+                    <!-- Task 1629: the same title + History as the read view;
+                         the island's own label stays, visually hidden, as the
+                         textarea's accessible name (no second History). -->
                     <div t-if="sc_hero_training_edit" class="o_sc_fields" data-sc-section="player.training.edit">
+                        <t t-call="bemade_sports_clinic.sc_training_title"/>
                         <t t-call="bemade_sports_clinic.sc_field_autosave">
-                            <t t-set="props" t-value="sc_field_props(player, 'training_recommendation', sc_training_label, 'textarea', clearable=True, historySheet='sc_training_history_sheet', historyLabel=sc_training_history_label, hint=player.last_training_recommendation_info or None)"/>
+                            <t t-set="props" t-value="sc_field_props(player, 'training_recommendation', sc_training_label, 'textarea', clearable=True, labelHidden=True, hint=player.last_training_recommendation_info or None)"/>
                         </t>
                     </div>
                     <!-- Task 1603: « Retour prévu » (a change may propose aligning
@@ -769,6 +775,21 @@
          is_treatment_prof, sc_is_tp_view; optional card_add_id (default
          sc_new_injury), team_context_id, clinic_event, card_origin
          ('clinic': the create lands back on the clinic dossier). -->
+    <!--
+        Task 1629 — the player header's training recommendation title: an
+        all-caps in-card title (as « Details » / « Notes ») with its ONE
+        « History » link right after the label (the team announcement's
+        pattern). Variables: sc_training_label, sc_training_history_label
+        (translated in sc_app_player).
+    -->
+    <template id="sc_training_title" name="App shell: training recommendation title">
+        <h3 class="o_sc_edit_card_title o_sc_training_title">
+            <span t-out="sc_training_label"/>
+            <button type="button" class="o_sc_section_more o_sc_link_btn"
+                    data-sc-sheet-open="sc_training_history_sheet" t-out="sc_training_history_label"/>
+        </h3>
+    </template>
+
     <template id="sc_injury_add_card" name="App shell: inline add injury card">
         <!-- Task 1607: opened by the list header's « + Ajouter », right above
              the injury list. -->

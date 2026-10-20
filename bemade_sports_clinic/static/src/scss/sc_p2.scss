@@ -405,6 +405,12 @@ $sc-p2-laptop: 992px;
         min-width: 0;
     }
 
+    // Task 1629: the training recommendation's title (+ « History ») sits
+    // just above its value / editor.
+    .o_sc_training_title {
+        margin-bottom: var(--sc-space-1);
+    }
+
     .o_sc_hero_return:empty {
         display: none;
     }
