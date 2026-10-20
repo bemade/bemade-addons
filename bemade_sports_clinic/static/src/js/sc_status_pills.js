@@ -22,6 +22,12 @@
  *   pills' write_date / old_value are also updated at once.
  * - A 409 (changed elsewhere) or any refusal: a toast, and the record's
  *   fragments are refreshed.
+ * - Task 1631: an item with data-sc-pill-action posts nothing here: the
+ *   menu closes, the pill blurs and an « sc:pill-action » event
+ *   ({action, value, from, model, recordId, pill}) hands the pick to the
+ *   module owning that action (the injury stage's verify / resolve flows).
+ *   An empty data-sc-pill-post is a value (a blank choice); only a missing
+ *   one means « nothing to post ».
  */
 import { _t } from "@web/core/l10n/translation";
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
@@ -146,6 +152,28 @@ async function pick(pill, item) {
     });
 }
 
+/** Task 1631: a pick another module acts on (no save here). */
+function handOff(pill, item) {
+    const toggle = toggleOf(pill);
+    if (toggle) {
+        close(toggle);
+        toggle.blur();
+    }
+    item.blur();
+    document.dispatchEvent(
+        new CustomEvent("sc:pill-action", {
+            detail: {
+                action: item.dataset.scPillAction,
+                value: item.dataset.scPillValue,
+                from: item.dataset.scPillFrom || "",
+                model: pill.dataset.scModel,
+                recordId: Number(pill.dataset.scRecordId),
+                pill,
+            },
+        })
+    );
+}
+
 // A keyboard pick: once the fresh pill is in, the focus goes back to it.
 let refocus = null;
 document.addEventListener("sc:fragments", () => {
@@ -196,7 +224,15 @@ document.addEventListener(
         if (item.getAttribute("aria-disabled") === "true") {
             return; // greyed: its hint says why; the menu stays open
         }
-        if (item.getAttribute("aria-checked") === "true" || !item.dataset.scPillPost) {
+        if (item.getAttribute("aria-checked") === "true") {
+            close(toggleOf(pill), { focus: true });
+            return;
+        }
+        if (item.dataset.scPillAction) {
+            handOff(pill, item);
+            return;
+        }
+        if (item.dataset.scPillPost === undefined) {
             close(toggleOf(pill), { focus: true });
             return;
         }

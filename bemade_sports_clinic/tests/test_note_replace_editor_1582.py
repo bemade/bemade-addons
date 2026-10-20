@@ -6,10 +6,10 @@ editor. Server side of it. Synthetic fixtures only (public repo).
 Acceptance criteria covered here:
 
 * UC-R1 The injury page edits both notes with the opt-in replace editor
-  (``replace`` prop, the « Write the injury's current state … » placeholder)
-  and a « History » link on each field opening a SCOPED history sheet
-  (external for the external note, internal for the internal one). A coach
-  gets the external note only, and no internal sheet.
+  (``replace`` prop, the « Write the injury's current state … » placeholder).
+  Task 1631: no per-field « History » / scoped sheet any more — ONE
+  « History » in the Notes head (both scopes, labelled). A coach gets the
+  external note only.
 * UC-R2 The player page's inline injury card does the same, per injury.
 * UC-R3 Every other autosave field is unchanged: no ``replace`` prop
   (diagnosis, dates, status, training recommendation…).
@@ -27,7 +27,7 @@ Acceptance criteria covered here:
   (« Texte actuel », « Nouvelle note », « Reprendre le texte actuel »,
   « Remplace le texte précédent ; l'ancien est conservé dans
   l'historique. ») served by the translations route, the page's placeholder
-  / sheet titles / « Historique », the digest's « Nouvelle note », the
+  / « Historique » (task 1631: one, no scoped sheet titles), the digest's « Nouvelle note », the
   legacy placeholder « État actuel (…) ».
 """
 import json
@@ -80,17 +80,12 @@ class TestNoteReplaceEditor1582(PlayerInlineCommon):
                 self.assertIs(props[fname].get('replace'), True)
                 self.assertEqual(props[fname]['inputType'], 'textarea')
                 self.assertEqual(props[fname]['placeholder'], PLACEHOLDER)
-                # Task 1616: the injury page is the open card (per-injury ids).
-                self.assertEqual(props[fname]['historySheet'],
-                                 'sc_note_history_sheet_%s_%s' % (self.injury.id, scope))
-                self.assertEqual(props[fname]['historyLabel'], 'History')
+                # Task 1631: no per-field « History ».
+                self.assertNotIn('historySheet', props[fname])
                 # The current text is the value the editor shows read-only.
                 self.assertEqual(props[fname]['value'], 'T1582 synthetic %s v1' % scope)
-                sheet = self._sheet(tree, 'sc_note_history_sheet_%s_%s' % (self.injury.id, scope))
-                self.assertIsNotNone(sheet)
-                self.assertTrue(sheet.get('data-sc-lazy-url').endswith(
-                    '/my/injury/%s/notes/history/fragment?scope=%s' % (self.injury.id, scope)))
-        # The all-scopes sheet of the card header is kept (task 1581).
+                self.assertIsNone(self._sheet(tree, 'sc_note_history_sheet_%s_%s' % (self.injury.id, scope)))
+        # The all-scopes sheet of the card header is the one (task 1581/1631).
         self.assertIsNotNone(self._sheet(tree, 'sc_note_history_sheet_%s' % self.injury.id))
 
     def test_injury_page_coach_external_only(self):
@@ -99,7 +94,8 @@ class TestNoteReplaceEditor1582(PlayerInlineCommon):
         props = _autosave_props(tree)
         self.assertIs(props['external_notes'].get('replace'), True)
         self.assertNotIn('internal_notes', props)
-        self.assertIsNotNone(self._sheet(tree, 'sc_note_history_sheet_%s_external' % self.injury.id))
+        # Task 1631: the coach's one « History » (external rows only).
+        self.assertIsNotNone(self._sheet(tree, 'sc_note_history_sheet_%s' % self.injury.id))
         self.assertIsNone(self._sheet(tree, 'sc_note_history_sheet_%s_internal' % self.injury.id))
 
     def test_scoped_history_fragment(self):
@@ -118,12 +114,11 @@ class TestNoteReplaceEditor1582(PlayerInlineCommon):
         props = _autosave_props(item)
         for fname, scope in (('external_notes', 'external'), ('internal_notes', 'internal')):
             with self.subTest(field=fname):
-                sheet_id = 'sc_note_history_sheet_%s_%s' % (self.injury.id, scope)
                 self.assertIs(props[fname].get('replace'), True)
-                self.assertEqual(props[fname]['historySheet'], sheet_id)
-                sheet = self._sheet(item, sheet_id)
-                self.assertIsNotNone(sheet)
-                self.assertTrue(sheet.get('data-sc-lazy-url').endswith('?scope=%s' % scope))
+                # Task 1631: one « History » for both notes (the head's).
+                self.assertNotIn('historySheet', props[fname])
+                self.assertIsNone(self._sheet(item, 'sc_note_history_sheet_%s_%s' % (self.injury.id, scope)))
+        self.assertIsNotNone(self._sheet(item, 'sc_note_history_sheet_%s' % self.injury.id))
 
     def test_player_inline_card_coach(self):
         self._login_coach()
@@ -296,10 +291,14 @@ class TestNoteReplaceFr1582(TestAppShellI18n1538):
         props = _autosave_props(tree)
         self.assertEqual(props['external_notes']['placeholder'],
                          "Écrire l'état actuel de la blessure — remplace le texte précédent")
-        self.assertEqual(props['internal_notes']['historyLabel'], 'Historique')
+        # Task 1631: one « Historique » (the Notes head), no scoped sheets.
+        self.assertNotIn('historyLabel', props['internal_notes'])
+        links = tree.xpath('//*[@data-sc-edit-card="injury-notes"]//*[@data-sc-sheet-open="sc_note_history_sheet_%s"]'
+                           % self.injury.id)
+        self.assertEqual([' '.join(link.text_content().split()) for link in links], ['Historique'])
         titles = {t.strip() for t in tree.xpath('//dialog//h2[contains(@class, "o_sc_sheet_title")]/text()')}
-        self.assertIn('Historique des notes externes', titles)
-        self.assertIn('Historique des notes internes', titles)
+        self.assertNotIn('Historique des notes externes', titles)
+        self.assertNotIn('Historique des notes internes', titles)
 
     def test_legacy_placeholder_and_digest_in_french(self):
         self._switch(False)

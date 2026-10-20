@@ -87,30 +87,47 @@ tours.add("sc_1539_injury_autosave", {
             content: "Saved on blur",
             trigger: '.o_sc_autosave[data-sc-field="external_notes"][data-sc-state="saved"]',
         },
+        // Task 1631: the status is the card header's pill dropdown —
+        // « Resolved » asks the date (the « Résoudre » sheet), going back to
+        // « Active » saves at once and offers to undo the dates.
         {
-            content: "Edit the details card (pencil)",
-            trigger: '[data-sc-edit-card="injury-details"] button[data-sc-edit-toggle]',
+            content: "Open the status pill",
+            trigger: '.o_sc_injury_item [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_red',
             run: "click",
         },
         {
-            content: "Resolve: instant save",
-            trigger: '.o_sc_autosave[data-sc-field="stage"] button[data-sc-value="resolved"]',
+            content: "« Resolved »: the resolve sheet",
+            trigger: '.o_sc_injury_item [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="resolved"]',
             run: "click",
         },
         {
-            content: "Saved, « Résolue » pressed",
-            trigger:
-                '.o_sc_autosave[data-sc-field="stage"][data-sc-state="saved"] button[data-sc-value="resolved"][aria-pressed="true"]',
-        },
-        {
-            content: "Undo from the toast",
-            trigger: ".o_sc_toast:not([hidden]) [data-sc-toast-action]",
+            content: "Confirm the resolution date",
+            trigger: "#sc_injury_resolve_sheet[open] [data-sc-injury-resolve-confirm]",
             run: "click",
         },
         {
-            content: "Back to « Active », saved again",
-            trigger:
-                '.o_sc_autosave[data-sc-field="stage"][data-sc-state="saved"] button[data-sc-value="active"][aria-pressed="true"]',
+            content: "Dismiss the follow-up proposal",
+            trigger: "#sc_proposal_sheet[open] [data-sc-proposal-dismiss]",
+            run: "click",
+        },
+        {
+            content: "Resolved: the pill is green; back to « Active »",
+            trigger: '.o_sc_injury_item [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_green',
+            run: "click",
+        },
+        {
+            content: "Pick « Active »",
+            trigger: '.o_sc_injury_item [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="active"]',
+            run: "click",
+        },
+        {
+            content: "The backward proposal; dismiss it",
+            trigger: '#sc_proposal_sheet[open][data-sc-proposal-kind="moved_back"] [data-sc-proposal-dismiss]',
+            run: "click",
+        },
+        {
+            content: "Back to « Active » (red), in place",
+            trigger: '.o_sc_injury_item [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_red',
         },
     ],
 });
@@ -342,8 +359,18 @@ tours.add("sc_injury_resolve_date", {
             },
         },
         {
-            content: "Resolve",
-            trigger: '.o_sc_injury_item[open] .o_sc_autosave[data-sc-field="stage"] button[data-sc-value="resolved"]',
+            content: "Resolve from the status pill (task 1631)",
+            trigger: '.o_sc_injury_item[open] [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select',
+            run: "click",
+        },
+        {
+            content: "« Resolved »",
+            trigger: '.o_sc_injury_item[open] [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="resolved"]',
+            run: "click",
+        },
+        {
+            content: "Confirm the date (today)",
+            trigger: "#sc_injury_resolve_sheet[open] [data-sc-injury-resolve-confirm]",
             run: "click",
         },
         {

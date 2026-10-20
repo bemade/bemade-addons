@@ -96,9 +96,12 @@ class TestAppShellPencil(AppShellCommon):
         text, tree = self._get(self.injury_url)
         details, edit = self._card(tree, 'injury-details')
         names = {f['field'] for f in self._fields(edit)}
-        for name in ('diagnosis', 'sc_injury_date', 'stage', 'predicted_resolution_date',
-                     'resolution_date', 'parental_consent', 'hidden_from_coaches'):
+        for name in ('diagnosis', 'sc_injury_date', 'predicted_resolution_date', 'resolution_date'):
             self.assertIn(name, names)
+        # Task 1631: status, consent and visibility are pill dropdowns.
+        for name in ('stage', 'parental_consent', 'hidden_from_coaches'):
+            self.assertNotIn(name, names)
+            self.assertTrue(tree.xpath('//*[@data-sc-pill-select][@data-sc-field="%s"]' % name), name)
         notes, edit = self._card(tree, 'injury-notes')
         self.assertEqual({f['field'] for f in self._fields(edit)}, {'external_notes', 'internal_notes'})
         read = notes.xpath('.//*[@data-sc-edit-view="read"]')[0].text_content()
@@ -278,11 +281,20 @@ class TestAppShellPencil(AppShellCommon):
                     self.assertTrue(node.xpath('ancestor::*[@data-sc-edit-view="edit"]'),
                                     '%s: %s is live outside a pencil' % (url, props.get('field')))
                 # Task 1627: the deliberate always-live exception — the status
-                # pills, in the player's « status » read fragment only.
+                # pills, in the player's « status » read fragment only. Task
+                # 1631: and the injury card's pills — the status in its
+                # « summary », consent + visibility in its « flags ».
+                homes = {
+                    ('sports.patient', 'sc_status'): 'status',
+                    ('sports.patient.injury', 'stage'): 'summary',
+                    ('sports.patient.injury', 'parental_consent'): 'flags',
+                    ('sports.patient.injury', 'hidden_from_coaches'): 'flags',
+                }
                 for pill in tree.xpath('//*[@data-sc-pill-select]'):
-                    self.assertEqual(pill.get('data-sc-field'), 'sc_status', url)
-                    self.assertTrue(pill.xpath('ancestor::*[@data-sc-fragment="sports.patient:%s:status"]'
-                                               % pill.get('data-sc-record-id')), url)
+                    home = homes.get((pill.get('data-sc-model'), pill.get('data-sc-field')))
+                    self.assertTrue(home, '%s: %s' % (url, pill.get('data-sc-field')))
+                    self.assertTrue(pill.xpath('ancestor::*[@data-sc-fragment="%s:%s:%s"]' % (
+                        pill.get('data-sc-model'), pill.get('data-sc-record-id'), home)), url)
 
 
 @tagged('post_install', '-at_install')

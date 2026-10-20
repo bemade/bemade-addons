@@ -171,14 +171,22 @@ tours.add("sc_1611_injury_stage", {
                 return helpers.click();
             },
         },
+        // Task 1631: the status is the header pill (« Resolved » = the
+        // resolve sheet), no longer in the Details edit view.
         {
-            content: "« Resolved »",
-            trigger: `${CARD} .o_sc_autosave[data-sc-field="stage"] button[data-sc-value="resolved"]`,
+            content: "Open the status pill",
+            trigger: `${CARD} > summary [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select`,
             run: "click",
         },
         {
-            content: "Saved",
-            trigger: `${CARD} .o_sc_autosave[data-sc-field="stage"][data-sc-state="saved"]`,
+            content: "« Resolved »",
+            trigger: `${CARD} > summary [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="resolved"]`,
+            run: "click",
+        },
+        {
+            content: "Confirm the date",
+            trigger: "#sc_injury_resolve_sheet[open] [data-sc-injury-resolve-confirm]",
+            run: "click",
         },
         {
             content: "The summary turns green at once, the card stays open in edit mode",
@@ -186,6 +194,10 @@ tours.add("sc_1611_injury_stage", {
             run() {
                 assert(document.querySelector(`${CARD_DETAILS}[data-sc-edit-open]`), "the card closed");
                 assertNoReload();
+                const proposal = document.querySelector("#sc_proposal_sheet[open] [data-sc-proposal-dismiss]");
+                if (proposal) {
+                    proposal.click();
+                }
             },
         },
         {
@@ -202,7 +214,7 @@ tours.add("sc_1611_injury_stage", {
                     const items = [...document.querySelectorAll('[data-sc-section="player.injuries"] [data-sc-fragment-item]')];
                     return items[items.length - 1] === card;
                 }, "resolved card last");
-                assert(card.querySelectorAll('[data-sc-edit-card="injury-details"] [data-sc-edit-view="read"] dt').length >= 3, "read rows");
+                assert(card.querySelectorAll('[data-sc-edit-card="injury-details"] [data-sc-edit-view="read"] dt').length >= 2, "read rows");
                 assertNoReload();
             },
         },

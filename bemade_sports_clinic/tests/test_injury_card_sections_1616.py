@@ -15,10 +15,10 @@ Acceptance criteria:
   (``injury.documents``) — then « Delete » (therapists) and « Done »; no
   « Treatment notes, documents and history » link, no treatment note.
 * AC-2 One pencil per group: the Details edit view holds the injury fields
-  only (diagnosis, date, status, predicted / resolution dates, consent,
-  visibility), the Notes edit view the two notes only (replace editors with
-  their « last note » stamp and scoped history sheets); the combined
-  « History » sheet is reachable from the Notes head.
+  only (diagnosis, date, predicted / resolution dates — task 1631: status,
+  consent and visibility are pill dropdowns), the Notes edit view the two
+  notes only (replace editors with their « last note » stamp); the ONE
+  combined « History » sheet is reachable from the Notes head.
 * AC-3 Gates follow the former page: a coach gets Details (the date of a
   verified injury), the external notes and the documents
   list (download) — no status, visibility, consent, internal notes, upload,
@@ -148,15 +148,18 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         notes = card.xpath('.//section[@data-sc-edit-card="injury-notes"]')[0]
         self.assertEqual(len(details.xpath('.//button[@data-sc-edit-toggle]')), 1)
         self.assertEqual(len(notes.xpath('.//button[@data-sc-edit-toggle]')), 1)
+        # Task 1631: status, consent and visibility are pill dropdowns (the
+        # header / the Details flags row), no longer behind the pencil.
         self.assertEqual(self._fields(details.xpath('.//*[@data-sc-edit-view="edit"]')[0]), [
-            'diagnosis', 'sc_injury_date', 'stage', 'predicted_resolution_date',
-            'resolution_date', 'parental_consent', 'hidden_from_coaches'])
+            'diagnosis', 'sc_injury_date', 'predicted_resolution_date', 'resolution_date'])
+        self.assertEqual(details.xpath('.//*[contains(@class, "o_sc_injury_flags")]//@data-sc-pill-key'),
+                         ['consent', 'visibility'])
         self.assertEqual(self._fields(notes.xpath('.//*[@data-sc-edit-view="edit"]')[0]),
                          ['external_notes', 'internal_notes'])
         import json
         ext = json.loads(notes.xpath('.//owl-component')[0].get('props'))
         self.assertTrue(ext['replace'])
-        self.assertEqual(ext['historySheet'], 'sc_note_history_sheet_%s_external' % self.injury.id)
+        self.assertNotIn('historySheet', ext)  # task 1631: the head's one only
         # The combined « History » sheet from the Notes head.
         self.assertTrue(notes.xpath('.//div[contains(@class, "o_sc_edit_card_head")]'
                                     '//button[@data-sc-sheet-open="sc_note_history_sheet_%s"]' % self.injury.id))

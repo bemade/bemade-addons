@@ -118,7 +118,9 @@ class TestClinicDossierInline1590(ClinicDossier1590Common):
         props = self._props(card)
         for fname in ('external_notes', 'internal_notes'):
             self.assertIs(props[fname].get('replace'), True)
-        self.assertIn('stage', props)
+        # Task 1631: the status is the header's pill dropdown.
+        self.assertNotIn('stage', props)
+        self.assertTrue(card.xpath('./summary//*[@data-sc-pill-select][@data-sc-field="stage"]'))
         self.injury.invalidate_recordset()
         self.assertEqual(props['external_notes'].get('hint'), self.injury.last_external_note_info)
         self.assertTrue(props['external_notes'].get('hint'))

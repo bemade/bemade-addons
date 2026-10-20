@@ -216,3 +216,4 @@ from . import test_dashboard_title_1623
 from . import test_dashboard_card_1626
 from . import test_status_pills_1627
 from . import test_training_title_1629
+from . import test_injury_card_1631

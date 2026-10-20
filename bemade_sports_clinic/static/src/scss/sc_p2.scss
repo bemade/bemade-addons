@@ -704,6 +704,23 @@ $sc-p2-laptop: 992px;
         }
     }
 
+    // Task 1631: the Details row of consent + visibility pills — side by
+    // side on a laptop, stacked on a phone.
+    .o_sc_injury_flags {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2);
+        margin-bottom: var(--sc-space-3);
+    }
+
+    @media (max-width: 575.98px) {
+        .o_sc_injury_flags {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+
     @media (min-width: 992px) {
         .o_sc_injury_sections {
             display: grid;

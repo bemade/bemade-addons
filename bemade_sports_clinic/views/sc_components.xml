@@ -111,9 +111,15 @@
 
         - pill: {key, text, title, tone, icon, menu_label, options, target}
           (e.g. sports.patient._sc_status_pills()):
-          options [{value, label, tone, icon, checked, disabled, hint, post}]
-          — ``post`` is the value a pick saves (default: ``value``); a
-          disabled option is greyed, says why (``hint``) and posts nothing;
+          options [{value, label, tone, icon, checked, disabled, hint, post,
+          action, from}]
+          — ``post`` is the value a pick saves (default: ``value``; an empty
+          string is a value too: a blank choice); a disabled option is
+          greyed, says why (``hint``) and posts nothing; task 1631: an
+          ``action`` option posts nothing either — the pick is announced as
+          an « sc:pill-action » DOM event ({action, value, from, model,
+          recordId, pill}) for the module that owns that action (e.g. the
+          injury stage's verify / resolve flows, sc_injury_quick.js);
           target {model, id, field, write_date, old_value}: the pick posts
           ``POST /my/app/save/<model>/<id>`` {field, value: post, write_date,
           old_value} (sc_status_pills.js) — render the pill INSIDE a read
@@ -149,7 +155,9 @@
                 <button t-foreach="pill['options']" t-as="option" type="button" role="menuitemradio"
                         class="o_sc_menu_item o_sc_pill_option"
                         t-att-data-sc-pill-value="option['value']"
-                        t-att-data-sc-pill-post="None if option['disabled'] else (option.get('post') or option['value'])"
+                        t-att-data-sc-pill-post="None if option['disabled'] else option.get('post', option['value'])"
+                        t-att-data-sc-pill-action="option.get('action') or None"
+                        t-att-data-sc-pill-from="option.get('from') or None"
                         t-att-aria-checked="'true' if option['checked'] else 'false'"
                         t-att-aria-disabled="'true' if option['disabled'] else None">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'check'"/></t>

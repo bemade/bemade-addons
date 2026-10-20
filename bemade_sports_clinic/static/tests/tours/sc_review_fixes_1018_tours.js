@@ -117,14 +117,25 @@ tours.add("sc_1018_injury_dates", {
                 assert(!visible(`${DETAILS} .o_sc_autosave[data-sc-field="resolution_date"]`), "resolution date shown");
             },
         },
+        // Task 1631: resolved from the header pill (the resolve sheet).
+        {
+            content: "Open the status pill",
+            trigger: `${CARD} > summary [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select`,
+            run: "click",
+        },
         {
             content: "Mark it resolved",
-            trigger: `${DETAILS} .o_sc_autosave[data-sc-field="stage"] button[data-sc-value="resolved"]`,
+            trigger: `${CARD} > summary [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="resolved"]`,
+            run: "click",
+        },
+        {
+            content: "Confirm the date",
+            trigger: "#sc_injury_resolve_sheet[open] [data-sc-injury-resolve-confirm]",
             run: "click",
         },
         {
             content: "Resolved: the resolution date shows, the predicted one goes (in place)",
-            trigger: `${DETAILS} .o_sc_autosave[data-sc-field="stage"][data-sc-state="saved"]`,
+            trigger: `${CARD} > summary [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_green`,
             async run() {
                 await waitFor(
                     () => visible(`${DETAILS} .o_sc_autosave[data-sc-field="resolution_date"]`)

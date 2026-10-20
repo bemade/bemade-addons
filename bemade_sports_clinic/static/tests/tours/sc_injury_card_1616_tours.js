@@ -89,7 +89,11 @@ tours.add("sc_1616_card_sections", {
             trigger: `${DETAILS}[data-sc-edit-open] [data-sc-edit-view="edit"]:not([hidden])`,
             run() {
                 assert(!editShown(NOTES), "Notes opened too");
-                assert(el(`${DETAILS} .o_sc_autosave[data-sc-field="stage"]`), "status in Details");
+                // Task 1631: status in the header pill, consent + visibility
+                // as pills in Details (outside the pencil).
+                assert(el(`${DETAILS} .o_sc_autosave[data-sc-field="predicted_resolution_date"]`), "dates in Details");
+                assert(!el(`${DETAILS} .o_sc_autosave[data-sc-field="stage"]`), "status still in Details");
+                assert(el(`${DETAILS} .o_sc_injury_flags [data-sc-pill-key="consent"]`), "no consent pill");
                 assert(!el(`${DETAILS} .o_sc_autosave[data-sc-field="external_notes"]`), "notes in Details");
             },
         },

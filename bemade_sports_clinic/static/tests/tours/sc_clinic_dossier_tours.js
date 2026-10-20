@@ -125,7 +125,7 @@ tours.add("sc_1590_clinic_injury_edit", {
         },
         {
             content: "Edit view shown, no legacy form anywhere",
-            trigger: '[data-sc-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-sc-edit-card="injury-details"] [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="stage"]',
+            trigger: '[data-sc-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-sc-edit-card="injury-details"] [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="sc_injury_date"]',
             run() {
                 assert(!document.querySelector('form[action*="/my/injury/save"]'), "a legacy injury form");
             },

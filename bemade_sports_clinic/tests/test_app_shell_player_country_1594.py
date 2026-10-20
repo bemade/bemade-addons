@@ -358,7 +358,8 @@ class TestPlayerCountryI18n1594(TestAppShellI18n1538):
         self._login_coach()
         tree = lxml_html.fromstring(self._fr(self._url()))
         self.assertFalse(tree.xpath('//*[@data-sc-stage-chip]'))
-        pills = [' '.join(p.text_content().split()) for p in tree.xpath('//*[@data-sc-pill-readonly]')]
+        pills = [' '.join(p.text_content().split()) for p in tree.xpath(
+            '//*[@data-sc-pill-readonly][@data-sc-pill-key="match" or @data-sc-pill-key="practice"]')]
         self.assertEqual(pills, ['Match : Oui', 'Pratique : Oui'])
 
     @mute_logger('odoo.http')
