@@ -94,7 +94,7 @@ def _parse_rrule_string(rrule_str: str) -> Dict[str, Any]:
 def _extract_vcal_email(vcal_address):
     email_regex = re.compile(r"[a-z0-9.\-+_]+@[a-z0-9.\-+_]+\.[a-z]+")
     res = email_regex.search(str(vcal_address).lower())
-    return res.group(0).lower().strip() if res else ""
+    return res.group(0).strip() if res else ""
 
 
 class CalendarEvent(models.Model):
@@ -773,7 +773,13 @@ class CalendarEvent(models.Model):
             return {}
         until = rrule.get("until")
         if until and isinstance(until, list):
-            until = until[0].astimezone(utc)
+            until = until[0]
+            if isinstance(until, datetime):
+                # A floating (naive) UNTIL is read in the server's zone, not the event's TZID
+                until = until.astimezone(utc)
+            else:
+                # All-day series: RFC 5545 gives UNTIL as a DATE, keep its whole last day
+                until = datetime.combine(until, datetime.max.time(), tzinfo=utc)
             rrule["until"] = until
         rrule_str = rrule.to_ical() and rrule.to_ical().decode("utf-8")
         if rrule_str:
@@ -920,7 +926,7 @@ class CalendarEvent(models.Model):
         start = component.get("dtstart") and component.decoded("dtstart")
         if isinstance(start, datetime):
             start = start.astimezone(utc).replace(tzinfo=None)
-        elif component.get("dtstart").params.get("VALUE") == "DATE":
+        elif isinstance(start, date):
             allday = True
         else:
             _logger.warning(
@@ -933,9 +939,10 @@ class CalendarEvent(models.Model):
             pass  # handled below alongside the duration/instant-event fallback
         elif isinstance(end, datetime):
             end = end.astimezone(utc).replace(tzinfo=None)
-        elif dtend_prop.params.get("VALUE") == "DATE":
-            allday = True
-            end = end - timedelta(days=1)
+        elif isinstance(end, date) and allday:
+            # DTEND is exclusive for all-day events, so the last day is the one before it.
+            # Never before start, for clients that send DTEND == DTSTART.
+            end = max(start, end - timedelta(days=1))
         else:
             _logger.warning(
                 f"Unsupported dtend type for event {component.get('uid')}: {type(end)}"
