@@ -215,7 +215,10 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
 
     # -- AC-4 ------------------------------------------------------------
     def test_resolved_to_active_restores_the_dates(self):
-        self.injury.write({'predicted_resolution_date': D('2026-04-15')})
+        # A FUTURE predicted date (a past one is replaced by « a week ahead »).
+        future = fields.Date.context_today(self.injury) + timedelta(days=30)
+        future_s = fields.Date.to_string(future)
+        self.injury.write({'predicted_resolution_date': future})
         self.env.cr.flush()
         self._login_tp()
         resp = self._resolve(self.injury, '2026-03-10')
@@ -239,12 +242,12 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         res = items[(inj, self.injury.id, 'resolution_date')]
         self.assertEqual((res['current'], res['proposed']), ('2026-03-10', ''))
         pred = items[(inj, self.injury.id, 'predicted_resolution_date')]
-        self.assertEqual(pred['proposed'], '2026-04-15', 'restored from tracking')
+        self.assertEqual(pred['proposed'], future_s, 'restored from tracking')
         self.assertTrue(pred['editable'])
         ret = items[(pat, self.player.id, 'return_date')]
         self.assertEqual((ret['current'], ret['proposed']), ('2026-03-10', ''))
         prevu = items[(pat, self.player.id, 'predicted_return_date')]
-        self.assertEqual(prevu['proposed'], '2026-04-15')
+        self.assertEqual(prevu['proposed'], future_s)
         # The chatter line.
         self.assertTrue(self.injury.message_ids.filtered(
             lambda m: 'moved back to' in (m.body or '') and 'Active' in (m.body or '')))
@@ -255,9 +258,9 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         self.injury.invalidate_recordset()
         self.player.invalidate_recordset()
         self.assertFalse(self.injury.resolution_date)
-        self.assertEqual(self.injury.predicted_resolution_date, D('2026-04-15'))
+        self.assertEqual(self.injury.predicted_resolution_date, D(future_s))
         self.assertFalse(self.player.return_date)
-        self.assertEqual(self.player.predicted_return_date, D('2026-04-15'))
+        self.assertEqual(self.player.predicted_return_date, D(future_s))
 
     def test_resolved_to_active_without_tracking_proposes_a_week_ahead(self):
         self.injury.sudo().with_context(mail_notrack=True).write(
