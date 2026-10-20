@@ -55,7 +55,7 @@ def _fake_archive(self, external_id):
 def _fake_trash(self, external_id):
     _CALLS["trash"].append(external_id)
     if external_id == "4":
-        raise UserError("Trash refused for message 4.")
+        raise UserError("Trash refused for message 4.")  # pylint: disable=translation-required
     return True
 
 

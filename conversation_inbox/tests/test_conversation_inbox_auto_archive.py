@@ -154,7 +154,7 @@ class TestAutoArchive(AutoArchiveCase):
         self.transport.archive_on_capture = True
 
         def failing(transport, external_id):
-            raise UserError("Folder Archive missing on X")
+            raise UserError("Folder Archive missing on X")  # pylint: disable=translation-required
 
         with patch.object(
             type(self.transport), "_archive_remote", failing
