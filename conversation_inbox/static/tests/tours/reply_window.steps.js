@@ -11,20 +11,20 @@ export default [
     action: "assert",
   },
   {
-    id: "expand_item",
-    title: "Ouvrir un courriel",
-    narration: "Vous ouvrez le courriel auquel vous voulez répondre.",
+    id: "see_item",
+    title: "Repérer le courriel",
+    narration:
+      "Vous repérez le courriel auquel vous voulez répondre : pas besoin de l'ouvrir.",
     selector: ".o_conversation_inbox_list .card-header",
-    action: "click",
+    action: "assert",
     containsText: "Reply Window Message",
   },
   {
     id: "click_reply",
-    title: "Cliquer sur « Répondre »",
-    narration: "Vous cliquez sur le bouton « Répondre ».",
-    selector: ".card-body button",
+    title: "Cliquer sur l'icône « Répondre »",
+    narration: "Vous cliquez sur l'icône « Répondre » de la ligne.",
+    selector: ".o_inbox_row_actions .o_inbox_reply",
     action: "click",
-    containsText: "Reply",
   },
   {
     id: "window_open",

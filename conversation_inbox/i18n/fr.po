@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-19 21:32+0000\n"
+"POT-Creation-Date: 2026-10-20 12:06+0000\n"
 "PO-Revision-Date: 2026-10-16 20:25+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -15,6 +15,18 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "%(count)s selected"
+msgstr "%(count)s sélectionné(s)"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "%(failed)s of %(total)s messages failed: %(errors)s"
+msgstr "%(failed)s message(s) sur %(total)s ont échoué : %(errors)s"
 
 #. module: conversation_inbox
 #. odoo-python
@@ -43,6 +55,13 @@ msgstr "Ajouter une boîte"
 
 #. module: conversation_inbox
 #. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Add this message to an existing conversation"
+msgstr "Ajouter ce message à une conversation existante"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Add to Existing"
 msgstr "Ajouter à une conversation"
@@ -64,9 +83,28 @@ msgstr "Ajoutez votre première boîte courriel"
 
 #. module: conversation_inbox
 #. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Archive"
 msgstr "Archiver"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Archive in your mailbox"
+msgstr "Archiver dans votre boîte courriel"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Archive selection"
+msgstr "Archiver la sélection"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Archive the selected messages in your mailbox"
+msgstr "Archiver les messages sélectionnés dans votre boîte courriel"
 
 #. module: conversation_inbox
 #: model_terms:ir.ui.view,arch_db:conversation_inbox.conversation_inbox_capture_wizard_view_form
@@ -133,6 +171,12 @@ msgid "Clear search"
 msgstr "Effacer la recherche"
 
 #. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
+msgid "Clear selection"
+msgstr "Vider la sélection"
+
+#. module: conversation_inbox
 #: model_terms:ir.ui.view,arch_db:conversation_inbox.conversation_inbox_reply_wizard_view_form
 msgid "Comma-separated"
 msgstr ""
@@ -179,6 +223,11 @@ msgid "Conversation"
 msgstr ""
 
 #. module: conversation_inbox
+#: model:ir.model,name:conversation_inbox.model_conversation_transport
+msgid "Conversation Transport"
+msgstr ""
+
+#. module: conversation_inbox
 #: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_capture_wizard__create_uid
 #: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_reassign_wizard__create_uid
 #: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_reply_wizard__create_uid
@@ -212,9 +261,22 @@ msgid "Delete message"
 msgstr "Supprimer le courriel"
 
 #. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Delete messages"
+msgstr "Supprimer les messages"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Delete selection"
+msgstr "Supprimer la sélection"
+
+#. module: conversation_inbox
 #: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_capture_wizard__display_name
 #: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_reassign_wizard__display_name
 #: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_reply_wizard__display_name
+#: model:ir.model.fields,field_description:conversation_inbox.field_conversation_transport__display_name
 #: model:ir.model.fields,field_description:conversation_inbox.field_mail_conversation__display_name
 msgid "Display Name"
 msgstr ""
@@ -243,6 +305,18 @@ msgid "File in Odoo"
 msgstr ""
 
 #. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "File this message and assign it to a colleague or a team"
+msgstr "Classer ce message et l'assigner à un collègue ou à une équipe"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "File this message as a new conversation"
+msgstr "Classer ce message dans une nouvelle conversation"
+
+#. module: conversation_inbox
 #: model:ir.model.fields,help:conversation_inbox.field_conversation_inbox_reply_wizard__attachment_ids
 msgid ""
 "Files you add here. On a forward the original's own attachments are carried "
@@ -262,10 +336,17 @@ msgstr ""
 
 #. module: conversation_inbox
 #. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 #: model:ir.model.fields.selection,name:conversation_inbox.selection__conversation_inbox_reply_wizard__action_type__forward
 msgid "Forward"
 msgstr "Transférer"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Forward this message to someone else"
+msgstr "Transférer ce message à quelqu'un d'autre"
 
 #. module: conversation_inbox
 #: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_reply_wizard__forwarded_filenames
@@ -292,14 +373,22 @@ msgstr ""
 
 #. module: conversation_inbox
 #. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Hide"
 msgstr "Masquer"
 
 #. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Hide selection"
+msgstr "Masquer la sélection"
+
+#. module: conversation_inbox
 #: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_capture_wizard__id
 #: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_reassign_wizard__id
 #: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_reply_wizard__id
+#: model:ir.model.fields,field_description:conversation_inbox.field_conversation_transport__id
 #: model:ir.model.fields,field_description:conversation_inbox.field_mail_conversation__id
 msgid "ID"
 msgstr ""
@@ -331,6 +420,13 @@ msgstr ""
 
 #. module: conversation_inbox
 #. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Link this message to a record in Odoo"
+msgstr "Lier ce message à un enregistrement dans Odoo"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Link to Record"
 msgstr "Lier à un dossier"
@@ -359,6 +455,13 @@ msgstr "Boîte courriel"
 
 #. module: conversation_inbox
 #. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Mark as read in your mailbox"
+msgstr "Marquer comme lu dans votre boîte courriel"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Mark read"
 msgstr "Marquer comme lu"
@@ -366,8 +469,26 @@ msgstr "Marquer comme lu"
 #. module: conversation_inbox
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Mark selection as read"
+msgstr "Marquer la sélection comme lue"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Mark the selected messages as read in your mailbox"
+msgstr "Marquer les messages sélectionnés comme lus dans votre boîte courriel"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
 msgid "Marked as read."
 msgstr "Marqué comme lu."
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Marked as read: %(count)s."
+msgstr "Marqués comme lus : %(count)s."
 
 #. module: conversation_inbox
 #: model:ir.model.fields,field_description:conversation_inbox.field_conversation_inbox_capture_wizard__mode
@@ -383,11 +504,34 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
 msgid ""
+"Move %(count)s messages to the Trash of your mailbox? You can recover them "
+"from there."
+msgstr ""
+"Déplacer %(count)s messages vers la corbeille de votre boîte courriel? Vous "
+"pourrez les récupérer à partir de là."
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Move the selected messages to the Trash of your mailbox"
+msgstr ""
+"Déplacer les messages sélectionnés vers la corbeille de votre boîte courriel"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid ""
 "Move this message to the Trash of your mailbox? You can recover it from "
 "there."
 msgstr ""
 "Déplacer ce courriel dans la corbeille de votre boîte courriel? Vous pourrez"
 " l'y récupérer."
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Move to the Trash of your mailbox"
+msgstr "Déplacer vers la corbeille de votre boîte courriel"
 
 #. module: conversation_inbox
 #: model:ir.actions.act_window,name:conversation_inbox.conversation_transport_action_my
@@ -405,6 +549,7 @@ msgstr ""
 
 #. module: conversation_inbox
 #. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 #: model:ir.model.fields.selection,name:conversation_inbox.selection__conversation_inbox_capture_wizard__mode__new
 msgid "New Conversation"
@@ -420,15 +565,6 @@ msgstr ""
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Next"
 msgstr "Suivant"
-
-#. module: conversation_inbox
-#. odoo-javascript
-#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
-msgid ""
-"No browsable mail account is configured for you yet. Ask an\n"
-"                    administrator to connect one under \"My Mail Accounts\", or\n"
-"                    connect your own if you have access."
-msgstr ""
 
 #. module: conversation_inbox
 #. odoo-javascript
@@ -488,6 +624,7 @@ msgstr ""
 
 #. module: conversation_inbox
 #. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 #: model_terms:ir.ui.view,arch_db:conversation_inbox.conversation_inbox_reassign_wizard_view_form
 msgid "Reassign"
@@ -526,6 +663,7 @@ msgstr "Retirer"
 
 #. module: conversation_inbox
 #. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Remove from this list only; the message stays in your mailbox."
 msgstr ""
@@ -542,6 +680,15 @@ msgstr ""
 "sont conservées et votre vraie boîte courriel n'est pas modifiée."
 
 #. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid ""
+"Remove the selected messages from this list only; they stay in your mailbox."
+msgstr ""
+"Retirer les messages sélectionnés de cette liste seulement; ils restent dans"
+" votre boîte courriel."
+
+#. module: conversation_inbox
 #: model_terms:ir.ui.view,arch_db:conversation_inbox.conversation_transport_view_form_my
 msgid ""
 "Remove this mailbox from Odoo? Conversations already filed are kept, and "
@@ -552,6 +699,7 @@ msgstr ""
 
 #. module: conversation_inbox
 #. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 #: model:ir.model.fields.selection,name:conversation_inbox.selection__conversation_inbox_reply_wizard__action_type__reply
 msgid "Reply"
@@ -559,10 +707,23 @@ msgstr "Répondre"
 
 #. module: conversation_inbox
 #. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 #: model:ir.model.fields.selection,name:conversation_inbox.selection__conversation_inbox_reply_wizard__action_type__reply_all
 msgid "Reply All"
 msgstr "Répondre à tous"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Reply to the sender"
+msgstr "Répondre à l'expéditeur"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Reply to the sender and everyone else on the message"
+msgstr "Répondre à l'expéditeur et à tous les autres destinataires du message"
 
 #. module: conversation_inbox
 #: model:ir.model,name:conversation_inbox.model_conversation_inbox_reply_wizard
@@ -571,6 +732,13 @@ msgstr ""
 
 #. module: conversation_inbox
 #. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
+msgid "Route this message through the mail alias gateway"
+msgstr "Acheminer ce message par la passerelle d'alias courriel"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.js:0
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Route via Alias"
 msgstr "Acheminer via l'alias"
@@ -598,6 +766,18 @@ msgstr "Rechercher dans cette boîte courriel"
 #: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
 msgid "Search this mailbox..."
 msgstr "Rechercher dans cette boîte courriel..."
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
+msgid "Select all"
+msgstr "Tout sélectionner"
+
+#. module: conversation_inbox
+#. odoo-javascript
+#: code:addons/conversation_inbox/static/src/inbox/conversation_inbox.xml:0
+msgid "Select this message"
+msgstr "Sélectionner ce message"
 
 #. module: conversation_inbox
 #: model_terms:ir.ui.view,arch_db:conversation_inbox.conversation_inbox_reply_wizard_view_form

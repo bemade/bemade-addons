@@ -14,3 +14,11 @@
     height: auto !important;
   }
 }
+
+// Row actions live in the header so they work without opening the message:
+// keep the icons on one line and let the subject truncate instead.
+.o_inbox_row_actions {
+  .btn {
+    line-height: 1;
+  }
+}

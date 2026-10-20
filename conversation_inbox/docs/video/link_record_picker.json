@@ -16,10 +16,7 @@
   "outroTitle": "À retenir",
   "outroNarration": "Choisissez d'abord le type d'enregistrement, puis tapez une partie de son nom et sélectionnez-le dans la liste. Si vous changez de type, votre choix précédent est effacé pour éviter un mauvais lien.",
   "stepOverrides": {
-    "click_link": {
-      "containsText": "Lier à un dossier"
-    },
-    "expand_item": {
+    "see_item": {
       "containsText": "Soumission pour la commande"
     }
   }
