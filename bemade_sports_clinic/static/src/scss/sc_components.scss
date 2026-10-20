@@ -919,6 +919,17 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         }
     }
 
+    // Task 1626: while « Details » is open, the face's training and
+    // « Retour prévu » lines hide — the detail shows them whole, so each
+    // item is in one place only. Face only (the row's link row), never
+    // inside the detail region.
+    .o_sc_player_row.o_sc_row_open > .o_sc_link_row {
+        [data-sc-row-training],
+        [data-sc-row-return] {
+            display: none;
+        }
+    }
+
     .o_sc_row_detail {
         border-top: 1px solid var(--sc-line);
         padding: var(--sc-space-2) var(--sc-space-3) var(--sc-space-3);

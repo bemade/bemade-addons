@@ -650,6 +650,16 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # one fragment, each injury's changes inside its own card.
             values = player._sc_change_detail(role, is_tp, cutoff)
             values['player'] = player
+            # Task 1626: the detail ends with « Open the player page », with
+            # the team context when given (as the row detail does).
+            try:
+                team_id = int(kw.get('team_id') or 0)
+            except ValueError:
+                team_id = 0
+            player_url = '/my/player?player_id=%s' % player.id
+            if team_id and team_id in player.sudo().team_ids.ids:
+                player_url += '&team_id=%s' % team_id
+            values['player_url'] = player_url
             return http.request.render(
                 'bemade_sports_clinic.sc_player_change_detail', values)
         items = player._dashboard_change_items_deduped(role, cutoff, shown_injury_ids)

@@ -213,3 +213,4 @@ from . import test_review_fixes_1018c
 from . import test_clock_back_1622
 from . import test_clock_back_tours_1622
 from . import test_dashboard_title_1623
+from . import test_dashboard_card_1626

@@ -871,7 +871,7 @@
                          Position moved to the header; last consultation moved
                          into the expandable below. -->
                     <div t-if="player.training_recommendation" class="text-muted small d-flex align-items-start mb-1">
-                        <i class="fa fa-graduation-cap mt-1" title="Training Recommendation"></i>
+                        <i class="fa fa-heartbeat mt-1" title="Training Recommendation"></i>
                         <span class="ms-1" style="white-space: pre-wrap;" t-esc="player.training_recommendation"/>
                     </div>
                     <!-- Task 1388: only meaningful for an injured player. Hide the
@@ -2142,7 +2142,7 @@
                         <div class="row" t-if="(player.training_recommendation or '').strip() or player.stage != 'healthy'">
                             <div class="col-12">
                                 <div class="border rounded p-2 mt-2">
-                                    <i class="fa fa-graduation-cap me-1" aria-hidden="true"/>
+                                    <i class="fa fa-heartbeat me-1" aria-hidden="true"/>
                                     <strong>Training Recommendation</strong>
                                     <div t-if="(player.training_recommendation or '').strip()" class="mt-1" style="white-space: pre-wrap;" t-esc="player.training_recommendation"/>
                                     <div t-else="" class="mt-1">—</div>

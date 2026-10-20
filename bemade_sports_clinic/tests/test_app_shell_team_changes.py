@@ -91,14 +91,16 @@ class TestAppShellTeamChanges(AppShellCommon):
 
     def _changed_row(self, tree):
         rows = tree.xpath('//*[@data-sc-section="team.recent_changes"]'
-                          '//details[@data-sc-player-id="%s"]' % self.player.id)
+                          '//*[contains(@class, "o_sc_player_row")][@data-sc-player-id="%s"]'
+                          % self.player.id)
         self.assertEqual(len(rows), 1)
         return rows[0]
 
     def _detail(self, injuries=()):
         with self._presence(injuries), self._injury_presence(injuries):
             _text, tree = self._get(self.url)
-            url = self._changed_row(tree).get('data-sc-lazy-url')
+            # Task 1626: the lazy URL is on the row's « Details » region.
+            url = self._changed_row(tree).xpath('.//*[@data-sc-row-detail]/@data-sc-lazy-url')[0]
             text, tree = self._get(url)
         return url, text, tree
 

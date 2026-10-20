@@ -578,7 +578,7 @@
     -->
     <template id="sc_player_row_lines" name="App shell: player row lines">
         <span t-if="row.get('training')" class="o_sc_row_line o_sc_row_training" data-sc-row-training="1">
-            <i class="fa fa-graduation-cap" aria-hidden="true"/>
+            <i class="fa fa-heartbeat" aria-hidden="true"/>
             <span class="o_sc_row_line_text" t-out="row['training']"/>
         </span>
         <span t-if="row.get('return_label')" class="o_sc_row_line o_sc_row_return" data-sc-row-return="1">

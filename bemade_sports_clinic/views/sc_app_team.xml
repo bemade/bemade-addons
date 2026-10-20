@@ -177,38 +177,12 @@
                                data-sc-action="team.digest_history">History</a>
                         </h2>
                         <div t-if="sc_dashboard_rows" class="o_sc_list">
+                            <!-- Task 1626: a player row like « Other players to
+                                 watch » (link to the player page always on the
+                                 face, « Details » toggle); its detail is the
+                                 change detail (row['detail_url']). -->
                             <t t-foreach="sc_dashboard_rows" t-as="row">
-                                <details t-if="row['changed']" class="o_sc_expand" t-att-data-sc-player-id="row['id']"
-                                         t-attf-data-sc-lazy-url="/my/player/#{row['id']}/recent-changes?detail=1">
-                                    <summary class="o_sc_entity_row">
-                                        <span t-attf-class="o_sc_dot o_sc_tone_#{row['dot']}" aria-hidden="true"/>
-                                        <span class="o_sc_row_text">
-                                            <span class="o_sc_row_title" t-out="row['title']"/>
-                                            <span t-if="row['subtitle']" class="o_sc_row_subtitle" t-out="row['subtitle']"/>
-                                            <t t-call="bemade_sports_clinic.sc_player_status_line">
-                                                <t t-set="row_status" t-value="row['status']"/>
-                                                <t t-set="row_changed" t-value="True"/>
-                                            </t>
-                                            <!-- Task 1593: the legacy card's lines (the
-                                                 expanded detail has them whole). -->
-                                            <t t-call="bemade_sports_clinic.sc_player_row_lines"/>
-                                        </span>
-                                        <span class="o_sc_row_trailing">
-                                            <t t-if="row['pending_removal']" t-call="bemade_sports_clinic.sc_status_chip">
-                                                <t t-set="tone" t-value="'ghost'"/>
-                                                <t t-set="label">Removal pending</t>
-                                            </t>
-                                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
-                                        </span>
-                                    </summary>
-                                    <div class="o_sc_expand_body">
-                                        <div class="o_sc_legacy o_sc_lazy_body">
-                                            <p class="o_sc_empty o_sc_lazy_loading">Loading…</p>
-                                        </div>
-                                        <a t-att-href="row['url']" class="o_sc_section_more">Open the player page</a>
-                                    </div>
-                                </details>
-                                <t t-else="" t-call="bemade_sports_clinic.sc_player_row">
+                                <t t-call="bemade_sports_clinic.sc_player_row">
                                     <t t-set="row_scope" t-value="'dash'"/>
                                 </t>
                             </t>
@@ -566,9 +540,11 @@
          non-injury changes, then the injuries, each with its own changes.
          Reuses the legacy injury card and change list. -->
     <template id="sc_player_change_detail" name="App shell: player change detail">
-        <div class="o_sc_change_detail">
+        <!-- Task 1626: o_sc_legacy here (was on the <details> body that
+             held it) — the legacy partials keep the shell's tokens. -->
+        <div class="o_sc_change_detail o_sc_legacy">
             <div t-if="player.training_recommendation" class="text-muted small d-flex align-items-start mb-1">
-                <i class="fa fa-graduation-cap mt-1" title="Training Recommendation"/>
+                <i class="fa fa-heartbeat mt-1" title="Training Recommendation"/>
                 <span class="ms-1 o_sc_pre" t-esc="player.training_recommendation"/>
             </div>
             <div t-if="player.stage != 'healthy'" class="text-muted small d-flex align-items-center mb-1">
@@ -612,6 +588,9 @@
                     </t>
                 </t>
             </t>
+            <!-- Task 1626: the app's dashboard card detail ends with the
+                 player page link (the legacy fragment has no player_url). -->
+            <a t-if="player_url" t-att-href="player_url" class="o_sc_section_more">Open the player page</a>
         </div>
     </template>
 

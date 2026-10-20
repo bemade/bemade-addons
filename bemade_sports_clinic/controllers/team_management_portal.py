@@ -505,6 +505,11 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         for player in values['dashboard_players'].filtered(lambda p: p.id in changed):
             row = self._sc_player_row(player, team, stage_labels, show_position, extras)
             row['changed'] = True
+            # Task 1626: the card is a player row like the others; its
+            # « Details » loads the player's change detail, not the plain
+            # row detail.
+            row['detail_url'] = '/my/player/%s/recent-changes?detail=1&team_id=%s' % (
+                player.id, team.id)
             dashboard_rows.append(row)
         watch_rows = [
             self._sc_player_row(player, team, stage_labels, show_position, extras)

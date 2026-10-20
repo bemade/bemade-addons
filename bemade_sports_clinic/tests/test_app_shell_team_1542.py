@@ -201,8 +201,13 @@ class TestAppShellTeam1542(AppShellCommon):
         with patch.object(type(self.env['sports.patient']), '_dashboard_card_presence',
                           return_value={'players': {self.player.id}, 'injuries': set()}):
             _text, tree = self._get(self.url)
-        urls = tree.xpath('//details[@data-sc-player-id="%s"]/@data-sc-lazy-url' % self.player.id)
-        self.assertEqual(urls, ['/my/player/%s/recent-changes?detail=1' % self.player.id])
+        # Task 1626: the card is a player row; its « Details » region holds
+        # the lazy URL.
+        urls = tree.xpath('//*[@data-sc-section="team.recent_changes"]'
+                          '//*[@data-sc-player-id="%s"]//*[@data-sc-row-detail]/@data-sc-lazy-url'
+                          % self.player.id)
+        self.assertEqual(urls, ['/my/player/%s/recent-changes?detail=1&team_id=%s'
+                                % (self.player.id, self.team_a.id)])
         resp = self.url_open(urls[0])
         self.assertEqual(resp.status_code, 200)
 

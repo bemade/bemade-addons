@@ -971,18 +971,19 @@ msgstr "<i class=\"fa fa-flag-checkered me-1\"/> Fin du déplacement"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 msgid ""
-"<i class=\"fa fa-graduation-cap me-1\" aria-hidden=\"true\"/>\n"
+"<i class=\"fa fa-heartbeat me-1\" aria-hidden=\"true\"/>\n"
 "                                    <strong>Training Recommendation</strong>"
 msgstr ""
-"<i class=\"fa fa-graduation-cap me-1\" aria-hidden=\"true\"/>\n"
+"<i class=\"fa fa-heartbeat me-1\" aria-hidden=\"true\"/>\n"
 "                                    <strong>Recommandation d'entraînement</strong>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_change_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.team_digest_render
-msgid "<i class=\"fa fa-graduation-cap mt-1\" title=\"Training Recommendation\"/>"
+msgid "<i class=\"fa fa-heartbeat mt-1\" title=\"Training Recommendation\"/>"
 msgstr ""
-"<i class=\"fa fa-graduation-cap mt-1\" title=\"Recommandation "
+"<i class=\"fa fa-heartbeat mt-1\" title=\"Recommandation "
 "d'entraînement\"/>"
 
 #. module: bemade_sports_clinic
@@ -14418,7 +14419,7 @@ msgid "Offline — pending"
 msgstr "Hors ligne — en attente"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_change_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_row_detail
 msgid "Open the player page"
 msgstr "Ouvrir la fiche du joueur"
