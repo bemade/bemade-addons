@@ -176,8 +176,10 @@ class TestAppShellPlayer1539(PlayersCommon1539):
                          ['injuries', 'info', 'documents', 'activities'])
         for secret in ('Hidden synthetic injury', 'Internal synthetic text',
                        'TP-only synthetic remark', 'Synthetic allergy',
-                       'Synthetic team note', '2010'):
+                       'Synthetic team note'):
             self.assertNotIn(secret, text, secret)
+        # Task 1633: the date of birth is no longer therapist-only.
+        self.assertIn('2010', text)
         self.assertNotIn('sc_status', self._owl_fields(tree))
         self.assertNotIn('training_recommendation', self._owl_fields(tree))
         self.assertIn('Bike 15 min (synthetic)', text)
@@ -325,9 +327,9 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         self.assertIsNotNone(self._shell(tree))
         keys = self._owl_keys(tree)
         for field in ('first_name', 'last_name', 'jersey_number', 'position', 'email', 'phone',
-                      'street', 'city', 'zip', 'state_id'):
+                      'street', 'city', 'zip', 'state_id', 'date_of_birth'):  # dob: task 1633
             self.assertIn('sports.patient.%s' % field, keys, field)
-        for field in ('allergies', 'sc_status', 'date_of_birth', 'team_info_notes',
+        for field in ('allergies', 'sc_status', 'team_info_notes',
                       'training_recommendation'):
             self.assertNotIn('sports.patient.%s' % field, keys, field)
         for field in ('name', 'contact_type', 'mobile', 'email'):
@@ -387,11 +389,14 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         self.assertEqual(form.get('action'), '/my/player/create/save')
         self.assertEqual(form.xpath('.//input[@name="first_name"]/@value'), ['Nobody'])
         self.assertTrue(form.xpath('.//input[@name="date_of_birth"]'))
-        # A coach's create form has no date of birth (field ACL).
+        self.assertTrue(form.xpath('.//input[@name="date_of_birth"][@required]'))
+        # Task 1633: a coach's create form has the date of birth too
+        # (optional for them).
         self._login_coach()
         _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic')
         form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
-        self.assertFalse(form.xpath('.//input[@name="date_of_birth"]'))
+        self.assertTrue(form.xpath('.//input[@name="date_of_birth"]'))
+        self.assertFalse(form.xpath('.//input[@name="date_of_birth"][@required]'))
 
     def test_contact_forms_in_shell(self):
         # Owner review 2026-10-10: added / edited inline on the Contacts tab.

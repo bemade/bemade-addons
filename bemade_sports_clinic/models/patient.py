@@ -145,13 +145,15 @@ class Patient(models.Model):
     )
 
     # Patient fields
+    # Task 1633: coaches read / edit it too (their teams' players only:
+    # the coach record rule portal_team_staff_player_access).
     date_of_birth = fields.Date(
-        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
+        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional,bemade_sports_clinic.group_portal_team_coach",
         tracking=True,
     )
     age = fields.Integer(
         compute="_compute_age",
-        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
+        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional,bemade_sports_clinic.group_portal_team_coach",
     )
     contact_ids = fields.One2many(
         comodel_name="sports.patient.contact",

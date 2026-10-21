@@ -163,8 +163,9 @@ NAV_REGISTRY = (
 # ---------------------------------------------------------------------------
 VISIBILITY_REGISTRY = {
     # Field keys (model + field): hidden => server-side unreadable (tested).
-    'patient.dob': {'include': TP, 'model': 'sports.patient', 'field': 'date_of_birth'},
-    'patient.age': {'include': TP, 'model': 'sports.patient', 'field': 'age'},
+    # Task 1633: coaches too (their teams' players — the coach record rule).
+    'patient.dob': {'include': STAFF, 'model': 'sports.patient', 'field': 'date_of_birth'},
+    'patient.age': {'include': STAFF, 'model': 'sports.patient', 'field': 'age'},
     'patient.allergies': {'include': TP, 'model': 'sports.patient', 'field': 'allergies'},
     'patient.internal_notes': {'include': TP, 'model': 'sports.patient',
                                'field': 'team_info_notes'},

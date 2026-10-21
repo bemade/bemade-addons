@@ -899,7 +899,9 @@ SAVE_REGISTRY = {
             # Task 1594: the legacy form took the country from any staff.
             'country_id': _STAFF_ROLES,
             # Therapists only (a coach posting them gets 403).
-            'date_of_birth': _TP_ROLES, 'allergies': _TP_ROLES,
+            # Task 1633: coaches set it too (a change of an existing one is
+            # the confirmed identity correction, task 1600).
+            'date_of_birth': _STAFF_ROLES, 'allergies': _TP_ROLES,
             'team_info_notes': _TP_ROLES, 'training_recommendation': _TP_ROLES,
             'last_consultation_date': _TP_ROLES,
             # Task 1594: the actual return date — never a coach's (the legacy
