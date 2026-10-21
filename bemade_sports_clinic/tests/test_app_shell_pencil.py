@@ -290,11 +290,18 @@ class TestAppShellPencil(AppShellCommon):
                     ('sports.patient.injury', 'parental_consent'): 'flags',
                     ('sports.patient.injury', 'hidden_from_coaches'): 'flags',
                 }
+                # Task 1634: and the player cards' pills, in each card's
+                # « row-<scope> » read fragment.
+                card_homes = {('sports.patient', 'sc_status')}
                 for pill in tree.xpath('//*[@data-sc-pill-select]'):
-                    home = homes.get((pill.get('data-sc-model'), pill.get('data-sc-field')))
+                    target = (pill.get('data-sc-model'), pill.get('data-sc-field'))
+                    home = homes.get(target)
                     self.assertTrue(home, '%s: %s' % (url, pill.get('data-sc-field')))
-                    self.assertTrue(pill.xpath('ancestor::*[@data-sc-fragment="%s:%s:%s"]' % (
-                        pill.get('data-sc-model'), pill.get('data-sc-record-id'), home)), url)
+                    base = '%s:%s:' % (pill.get('data-sc-model'), pill.get('data-sc-record-id'))
+                    keys = pill.xpath('ancestor::*[@data-sc-fragment]/@data-sc-fragment')
+                    self.assertTrue(base + home in keys or (
+                        target in card_homes and any(k.startswith(base + 'row-') for k in keys)),
+                        '%s: %s' % (url, keys))
 
 
 @tagged('post_install', '-at_install')

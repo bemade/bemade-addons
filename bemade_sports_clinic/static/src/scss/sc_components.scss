@@ -1430,6 +1430,27 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         }
     }
 
+    // Task 1634 — the player cards' compact variant: the row badges' size
+    // (.o_sc_status_pill) plus a small chevron; the hit area grows past the
+    // drawn pill (::before) so a phone tap still lands without crowding the
+    // card's status line.
+    .o_sc_pill_select_compact .o_sc_pill_select {
+        min-height: 22px;
+        padding: 1px 5px 1px 8px;
+        gap: 3px;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset: -5px -2px;
+        }
+
+        .o_sc_icon {
+            width: 12px;
+            height: 12px;
+        }
+    }
+
     .o_sc_pill_popup {
         left: 0;
         right: auto;

@@ -340,7 +340,9 @@ class TestAppShellTeamChangesFr(TestAppShellI18n1538):
             text = self._fr('/my/team?team_id=%s' % self.team_a.id)
         self.assertIn('</i> Changements récents</span>', text)
         # UC-RC9's pills: label + tooltip (selection label) in French.
-        self.assertIn('</i> Pratique</span>', text)
+        # Task 1634: a therapist's card pills are the compact dropdowns
+        # (short label on the face, the full value as the title).
+        self.assertIn('<span class="o_sc_pill_text">Pratique</span>', text)
         self.assertIn('title="Match : Oui"', text)
         self.assertIn('title="Blessures actives"', text)
         text = self._fr('/my/player/%s/recent-changes?detail=1' % self.player.id)

@@ -11,6 +11,9 @@
  *   burst of saves), matches them against the keys the page carries and GETs
  *   the page's OWN URL with « X-Sc-Fragments: k1,k2 » — the route renders as
  *   for a reload and answers {fragments: {key: html}, missing, title};
+ * - task 1634: a node with data-sc-fragment-keep is never emptied when its
+ *   key is missing from the fresh render (a player card stays put until the
+ *   next visit);
  * - swaps each node in place, NEVER one that holds an OWL island
  *   (owl-component), the focused element or an open sheet: such a key is
  *   kept « stale » and retried once the element lets go (focus out, « Done »);
@@ -223,6 +226,11 @@ export function applyFragments(payload) {
     }
     for (const key of (payload && payload.missing) || []) {
         for (const el of nodesFor(key)) {
+            if (el.dataset.scFragmentKeep) {
+                // Task 1634: a player card whose player the fresh render
+                // lists elsewhere stays as it is (it moves on the next visit).
+                continue;
+            }
             if (el.dataset.scFragmentMode === "list") {
                 const empty = document.createElement(el.tagName);
                 lists.push([el, empty, key]);

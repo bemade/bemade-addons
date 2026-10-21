@@ -220,3 +220,4 @@ from . import test_injury_card_1631
 from . import test_incomplete_player_todo_1628
 from . import test_digest_assigned_events_1636
 from . import test_coach_dob_1633
+from . import test_card_status_pills_1634

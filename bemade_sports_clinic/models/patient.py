@@ -2254,16 +2254,31 @@ class Patient(models.Model):
         "no": ("red", "fa-ban"),
     }
 
-    def _sc_row_status(self):
+    @api.model
+    def _sc_status_labels(self):
+        """Task 1634: ``{field: {value: label}}`` of the Match / Practice
+        selections in the request language — computed ONCE per list render
+        and passed to ``_sc_row_status`` / ``_sc_status_pills`` (never per
+        row)."""
+        env = self.env
+        return {
+            field_name: dict(self._fields[field_name]._description_selection(env))
+            for field_name in ("match_status", "practice_status")
+        }
+
+    def _sc_row_status(self, labels=None):
         """Status line of ONE player row: ``{'pills': [match, practice],
-        'injuries': n}``, each pill ``{label, tone, icon, title}``."""
+        'injuries': n}``, each pill ``{label, tone, icon, title}``.
+        ``labels``: ``_sc_status_labels()`` (task 1634: computed once for a
+        whole list)."""
         self.ensure_one()
         env = self.env
+        labels_of = labels or self._sc_status_labels()
 
         def pill(field_name, label, tones):
             value = self[field_name]
             tone, icon = tones.get(value, ("ghost", ""))
-            labels = dict(self._fields[field_name]._description_selection(env))
+            labels = labels_of[field_name]
             return {
                 "label": label,
                 "tone": tone,
@@ -2284,7 +2299,7 @@ class Patient(models.Model):
     _SC_VALID_STATUS_PAIRS = frozenset(
         {("yes", "yes"), ("no", "yes"), ("no", "no_contact"), ("no", "no")})
 
-    def _sc_status_pills(self):
+    def _sc_status_pills(self, labels=None):
         """Task 1627: the Match and Practice pill dropdowns of ONE player
         (the ``sc_status_pill_select`` component): ``[match, practice]``,
         each ``{key, label, text, value, tone, icon, title, menu_label,
@@ -2296,9 +2311,12 @@ class Patient(models.Model):
         ``disabled`` with a ``hint`` saying what to change first (owner
         decision 2026-10-20: greyed out, never auto-adjusted).
         ``target``: what the pick posts to (``/my/app/save``), with the
-        ``write_date`` / ``old_value`` of this render."""
+        ``write_date`` / ``old_value`` of this render.
+        ``labels``: ``_sc_status_labels()`` (task 1634: computed once for a
+        whole list of player cards)."""
         self.ensure_one()
         env = self.env
+        labels_of = labels or self._sc_status_labels()
         match, practice = self.match_status, self.practice_status
         pair = "%s:%s" % (match, practice)
         target = {
@@ -2317,7 +2335,7 @@ class Patient(models.Model):
         pills = []
         for key, field_name, label, menu_label, tones, pair_of, hint in specs:
             value = self[field_name]
-            labels = dict(self._fields[field_name]._description_selection(env))
+            labels = labels_of[field_name]
             tone, icon = tones.get(value, ("ghost", ""))
             text = env._("%(what)s: %(value)s", what=label,
                          value=labels.get(value) or env._("Unknown"))

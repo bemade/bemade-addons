@@ -133,8 +133,10 @@
                             <span class="o_sc_row_text">
                                 <span class="o_sc_row_title" t-out="row['title']"/>
                                 <span class="o_sc_row_subtitle" t-out="row['subtitle']"/>
+                                <!-- Task 1634: static pills (no quick change on a locked row). -->
                                 <t t-call="bemade_sports_clinic.sc_player_status_line">
                                     <t t-set="row_status" t-value="row['status']"/>
+                                    <t t-set="row_pills" t-value="False"/>
                                 </t>
                             </span>
                             <span class="o_sc_row_trailing">
