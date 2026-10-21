@@ -70,6 +70,18 @@ msgid "%(count)s on the list"
 msgstr "%(count)s sur la liste"
 
 #. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
+msgid "%(count)s open activities"
+msgstr "%(count)s activités ouvertes"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
+msgid "%(count)s open activities, %(overdue)s overdue"
+msgstr "%(count)s activités ouvertes, dont %(overdue)s en retard"
+
+#. module: bemade_sports_clinic
 #. odoo-javascript
 #: code:addons/bemade_sports_clinic/static/src/js/sc_clinic_worklist.js:0
 msgid "%s waiting"

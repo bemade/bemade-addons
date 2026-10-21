@@ -1071,7 +1071,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Legacy #fragments (a POST round-trip's return_url) open the tab now
         # holding them: the contacts are on Info.
         aliases = {'info': 'patient-info team-info contacts'}
-        sc_tabs = [(key, label, '%s&tab=%s' % (base_url, key), aliases.get(key, ''))
+        # Task 1635: the Activities tab counts what its panel lists.
+        badges = {'activities': self._sc_activity_tab_badge(values['player_activities'])}
+        sc_tabs = [(key, label, '%s&tab=%s' % (base_url, key), aliases.get(key, ''),
+                    badges.get(key))
                    for key, label in tabs]
 
         editable = values['editable_note_ids']

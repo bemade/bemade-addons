@@ -546,6 +546,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 format_date(env, team.announcement_deadline)
                 if team.announcement_deadline else ''),
             'sc_team_url': '/my/team?team_id=%s' % team.id,
+            # Task 1635: the Activities tab counts what its panel lists.
+            'sc_team_activities_badge': self._sc_activity_tab_badge(values['team_activities']),
             'sc_window_label': env._("(last %(hours)s h)",
                                      hours=values.get('dashboard_window_hours')),
             'sc_pending_label': env._(

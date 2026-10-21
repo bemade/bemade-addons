@@ -568,6 +568,26 @@ class AccessControlMixin:
             }
         return clocks
 
+    @staticmethod
+    def _sc_activity_tab_badge(activities):
+        """Task 1635 — the Activities tab's count pill (``sc_page_tabs``'
+        optional 5th tuple item): ``{'count', 'tone', 'label'}``, or None at
+        0. ``activities`` is the recordset the tab itself lists — searched
+        as the viewer, so the record rules make the count per viewer (no
+        second, rule-bypassing query). Red when one of them is overdue
+        (deadline before today in the viewer's timezone)."""
+        count = len(activities)
+        if not count:
+            return None
+        env = request.env
+        today = fields.Date.context_today(env.user)
+        overdue = len(activities.filtered(
+            lambda a: a.date_deadline and a.date_deadline < today))
+        label = (env._("%(count)s open activities, %(overdue)s overdue",
+                       count=count, overdue=overdue)
+                 if overdue else env._("%(count)s open activities", count=count))
+        return {'count': count, 'tone': 'red' if overdue else 'neutral', 'label': label}
+
     @classmethod
     def _activity_scope_teams(cls):
         """The teams whose activities the viewer lists / acts on (task 1577

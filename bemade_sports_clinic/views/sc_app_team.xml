@@ -53,7 +53,7 @@
             <t t-set="sc_tab_dashboard">Overview</t>
             <t t-set="sc_tab_players">Players</t>
             <t t-set="sc_tab_activities">Activities</t>
-            <t t-set="sc_team_tabs" t-value="[('dashboard', sc_tab_dashboard, sc_team_url + '&amp;tab=dashboard'), ('players', sc_tab_players, sc_team_url + '&amp;tab=players')] + ([('activities', sc_tab_activities, sc_team_url + '&amp;tab=activities')] if sc_show_activities else [])"/>
+            <t t-set="sc_team_tabs" t-value="[('dashboard', sc_tab_dashboard, sc_team_url + '&amp;tab=dashboard'), ('players', sc_tab_players, sc_team_url + '&amp;tab=players')] + ([('activities', sc_tab_activities, sc_team_url + '&amp;tab=activities', '', sc_team_activities_badge)] if sc_show_activities else [])"/>
             <t t-set="sc_active_tab" t-value="active_tab if (active_tab != 'activities' or sc_show_activities) else 'dashboard'"/>
             <t t-call="bemade_sports_clinic.sc_page_tabs">
                 <t t-set="tabs" t-value="sc_team_tabs"/>

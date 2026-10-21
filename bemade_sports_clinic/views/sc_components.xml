@@ -416,7 +416,9 @@
 
     <!--
         Task 1542 — segmented page tabs (deep-linkable). Variables: tabs =
-        [(key, label, url[, aliases])], active (key). Task 1539: the optional
+        [(key, label, url[, aliases[, badge]])], active (key). Task 1635: the
+        optional 5th item is a count pill after the label, {'count', 'tone'
+        ('neutral' | 'red'), 'label' (its aria-label)}; None = no pill. Task 1539: the optional
         4th item lists legacy #fragment names that open this tab (e.g. the
         player page's « #patient-info » after a POST round-trip). Every tab is a real link (the
         server renders the active panel); sc_app_ui.js switches panels in
@@ -429,7 +431,10 @@
                 <a t-att-href="tab[2]" role="tab" t-att-data-sc-tab="tab[0]"
                    t-att-data-sc-tab-aliases="tab[3] if len(tab) &gt; 3 and tab[3] else None"
                    t-att-aria-selected="'true' if tab[0] == active else 'false'"
-                   t-att-aria-pressed="'true' if tab[0] == active else 'false'" t-out="tab[1]"/>
+                   t-att-aria-pressed="'true' if tab[0] == active else 'false'"><t t-out="tab[1]"/><t t-set="sc_tab_badge" t-value="tab[4] if len(tab) &gt; 4 else None"/><span t-if="sc_tab_badge"
+                        t-attf-class="o_sc_tab_badge o_sc_tab_badge_#{sc_tab_badge['tone']}" role="img"
+                        t-att-aria-label="sc_tab_badge['label']" t-att-title="sc_tab_badge['label']"
+                        t-out="sc_tab_badge['count']"/></a>
             </t>
         </nav>
     </template>
