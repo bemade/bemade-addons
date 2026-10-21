@@ -1,6 +1,6 @@
 {
     "name": "Mail Notification: Email Only When Addressed",
-    "version": "19.0.1.0.1",
+    "version": "19.0.1.0.2",
     "category": "Discuss",
     "summary": "Internal followers get chatter emails only when addressed; "
     "everything else lands in their Odoo inbox.",

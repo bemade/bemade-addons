@@ -4,16 +4,17 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0+e\n"
+"Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-09 13:12+0000\n"
+"POT-Creation-Date: 2026-10-20 14:30+0000\n"
 "PO-Revision-Date: 2026-10-09 13:12+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
-"Plural-Forms: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #. module: conversation_team_inbox
 #. odoo-python
@@ -33,63 +34,65 @@ msgid ""
 "A Python dictionary that will be evaluated to provide default values when "
 "creating new records for this alias."
 msgstr ""
+"Un dictionnaire Python qui sera interprété pour fournir les valeurs par "
+"défaut lors de la création de nouveaux enregistrements pour cet alias."
 
 #. module: conversation_team_inbox
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__alias_id
 msgid "Alias"
-msgstr ""
+msgstr "Alias"
 
 #. module: conversation_team_inbox
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__alias_domain_id
 msgid "Alias Domain"
-msgstr ""
+msgstr "Domaine alias"
 
 #. module: conversation_team_inbox
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__alias_domain
 msgid "Alias Domain Name"
-msgstr ""
+msgstr "Nom d'alias de domaine"
 
 #. module: conversation_team_inbox
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__alias_name
 msgid "Alias Name"
-msgstr ""
+msgstr "Nom de l'alias"
 
 #. module: conversation_team_inbox
 #: model:ir.model,name:conversation_team_inbox.model_mail_conversation
 msgid "Conversation"
-msgstr ""
+msgstr "Conversation"
 
 #. module: conversation_team_inbox
 #: model:ir.model,name:conversation_team_inbox.model_mail_conversation_team
 msgid "Conversation Team"
-msgstr ""
+msgstr "Équipe de conversation"
 
 #. module: conversation_team_inbox
 #: model:ir.model,name:conversation_team_inbox.model_conversation_transport
 msgid "Conversation Transport"
-msgstr ""
+msgstr "Boîte courriel de conversation"
 
 #. module: conversation_team_inbox
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__alias_defaults
 msgid "Default Values"
-msgstr ""
+msgstr "Valeurs par défaut"
 
 #. module: conversation_team_inbox
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_conversation_transport__display_name
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation__display_name
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__display_name
 msgid "Display Name"
-msgstr ""
+msgstr "Nom d'affichage"
 
 #. module: conversation_team_inbox
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__alias_email
 msgid "Email Alias"
-msgstr ""
+msgstr "Alias de messagerie"
 
 #. module: conversation_team_inbox
 #: model:ir.model.fields,help:conversation_team_inbox.field_mail_conversation_team__alias_domain
 msgid "Email domain e.g. 'example.com' in 'odoo@example.com'"
-msgstr ""
+msgstr "Domaine de l'courriel e.g. 'example.com' dans 'odoo@example.com'"
 
 #. module: conversation_team_inbox
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__from_address
@@ -101,7 +104,7 @@ msgstr "Adresse d'expédition"
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation__id
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__id
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #. module: conversation_team_inbox
 #: model:ir.model.fields,help:conversation_team_inbox.field_mail_conversation_team__team_transport_id
@@ -117,7 +120,7 @@ msgstr "Aucun destinataire à qui envoyer sur %(transport)s."
 #. module: conversation_team_inbox
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_conversation_transport__provider
 msgid "Provider"
-msgstr ""
+msgstr "Fournisseur"
 
 #. module: conversation_team_inbox
 #: model_terms:ir.ui.view,arch_db:conversation_team_inbox.mail_conversation_team_view_form
@@ -127,17 +130,17 @@ msgstr "Adresse courriel de l'équipe"
 #. module: conversation_team_inbox
 #: model_terms:ir.ui.view,arch_db:conversation_team_inbox.mail_conversation_team_view_form
 msgid "Team Inbox"
-msgstr "Boîte de réception d'équipe"
+msgstr "Boîte d'équipe"
 
 #. module: conversation_team_inbox
 #: model:ir.model.fields.selection,name:conversation_team_inbox.selection__conversation_transport__provider__team_smtp
 msgid "Team Mailbox (Odoo outgoing mail servers)"
-msgstr "Boîte d'équipe (serveurs de courrier sortant d'Odoo)"
+msgstr "Boîte courriel d'équipe (serveurs de courrier sortant d'Odoo)"
 
 #. module: conversation_team_inbox
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_mail_conversation_team__team_transport_id
 msgid "Team Transport"
-msgstr "Transport de l'équipe"
+msgstr "Boîte courriel de l'équipe"
 
 #. module: conversation_team_inbox
 #: model:ir.model.fields,field_description:conversation_team_inbox.field_conversation_transport__team_ids
@@ -164,6 +167,12 @@ msgid ""
 "registers its own via selection_add, so the dropdown only ever offers a "
 "provider that is actually installed and implemented."
 msgstr ""
+"L'implémentation concrète de la boîte courriel qui fournit cette connexion "
+"(IMAP/SMTP générique, Gmail OAuth, ...). Ce module de base ne définit aucune"
+" option : chaque module de fournisseur facultatif (conversation_imap, "
+"conversation_gmail, ...) enregistre la sienne par selection_add, de sorte "
+"que la liste n'offre que des fournisseurs réellement installés et "
+"implémentés."
 
 #. module: conversation_team_inbox
 #. odoo-python
@@ -177,6 +186,8 @@ msgid ""
 "The name of the email alias, e.g. 'jobs' if you want to catch emails for "
 "<jobs@example.odoo.com>"
 msgstr ""
+"Le nom de l'alias courriel, p. ex. « emplois » si vous voulez recevoir les "
+"courriels destinés à <jobs@example.odoo.com>"
 
 #. module: conversation_team_inbox
 #. odoo-python

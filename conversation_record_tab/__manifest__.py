@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Record Tab",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Discuss",
     "summary": "Show the conversations linked to a record in its chatter.",
     "description": """

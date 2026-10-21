@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Draft",
-    "version": "19.0.1.3.0",
+    "version": "19.0.1.3.1",
     "category": "Discuss",
     "summary": "Shared, collaboratively edited reply drafts on a conversation.",
     "author": "Bemade Inc.",
