@@ -390,13 +390,12 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         self.assertEqual(form.xpath('.//input[@name="first_name"]/@value'), ['Nobody'])
         self.assertTrue(form.xpath('.//input[@name="date_of_birth"]'))
         self.assertTrue(form.xpath('.//input[@name="date_of_birth"][@required]'))
-        # Task 1633: a coach's create form has the date of birth too
-        # (optional for them).
+        # Task 1633: a coach's create form has the date of birth too,
+        # required as for therapists (owner review 2026-10-21).
         self._login_coach()
         _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic')
         form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
-        self.assertTrue(form.xpath('.//input[@name="date_of_birth"]'))
-        self.assertFalse(form.xpath('.//input[@name="date_of_birth"][@required]'))
+        self.assertTrue(form.xpath('.//input[@name="date_of_birth"][@required]'))
 
     def test_contact_forms_in_shell(self):
         # Owner review 2026-10-10: added / edited inline on the Contacts tab.
