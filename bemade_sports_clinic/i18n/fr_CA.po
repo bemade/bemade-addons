@@ -266,6 +266,12 @@ msgstr ""
 
 #. module: bemade_sports_clinic
 #. odoo-python
+#: code:addons/bemade_sports_clinic/models/res_users.py:0
+msgid "%(name)s %(when)s · assigned (%(team)s) / assigné·e (%(team)s)"
+msgstr "%(name)s %(when)s · assigné·e (%(team)s) / assigned (%(team)s)"
+
+#. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_team.py:0
 msgid ""
 "%(names)s: this staff member comes from the organization %(org)s. Manage it "
@@ -564,6 +570,7 @@ msgid ""
 "                                    <li>\n"
 "                                        <strong t-out=\"ev['name']\"/>\n"
 "                                        <t t-if=\"ev.get('date_label') or ev['date_start']\"> — <t t-out=\"ev.get('date_label') or format_datetime(ev['date_start'])\"/></t>\n"
+"                                        <t t-if=\"ev.get('assigned')\"> · assigné·e (<t t-out=\"ev.get('assigned_label')\"/>) / assigned (<t t-out=\"ev.get('assigned_label')\"/>)</t>\n"
 "                                    </li>\n"
 "                                </t>\n"
 "                            </ul>\n"

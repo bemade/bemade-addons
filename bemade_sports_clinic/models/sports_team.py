@@ -504,17 +504,28 @@ class SportsTeam(models.Model):
             days = DASHBOARD_UPCOMING_EVENTS_DAYS_DEFAULT
         return max(days, 1)
 
+    @api.model
+    def _dashboard_upcoming_events_domain(self):
+        """``sports.event`` domain of the upcoming-events block: starts between
+        now and now + the configured horizon, not cancelled. Shared by the team
+        dashboard compute and the morning briefing's assigned-events lookup
+        (task 1636) so the two can never drift."""
+        now = fields.Datetime.now()
+        horizon = now + timedelta(days=self._dashboard_upcoming_events_days())
+        return [
+            ("date_start", ">=", now),
+            ("date_start", "<=", horizon),
+            ("state", "!=", "cancelled"),
+        ]
+
     @api.depends("event_ids.date_start", "event_ids.state")
     def _compute_dashboard_upcoming_events(self):
         # Non-stored: a window change in Settings is live on the next read.
-        now = fields.Datetime.now()
-        horizon = now + timedelta(days=self._dashboard_upcoming_events_days())
+        domain = self._dashboard_upcoming_events_domain()
         for rec in self:
-            events = rec.event_ids.filtered(
-                lambda e: e.date_start
-                and now <= e.date_start <= horizon
-                and e.state != "cancelled"
-            ).sorted(key=lambda e: e.date_start)
+            events = rec.event_ids.filtered_domain(domain).sorted(
+                key=lambda e: e.date_start
+            )
             rec.dashboard_upcoming_event_ids = events
 
     @api.depends("staff_ids.role")

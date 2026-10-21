@@ -25,6 +25,9 @@ DIGEST_BASELINE_MIN_AGE = timedelta(hours=1)
 # Roles that receive a per-team line, and how they scope role-visible activity.
 DIGEST_COACH_ROLES = {"head_coach", "coach"}
 DIGEST_TP_ROLES = {"head_therapist", "therapist", "doctor"}
+# Task 1636: a TP assigned to an upcoming event is a recipient even without a
+# team staff row (portal or internal treatment-professional group).
+DIGEST_TP_GROUP_XMLIDS = sc_app_roles._TP_GROUPS
 
 # Task 1605: the events calendar's colour per therapist. Hand-picked for the
 # dark app surface (#1d1a20: every colour >= 3:1), no greys (grey = an
@@ -534,12 +537,18 @@ class User(models.Model):
 
         Only eligible staff lines are included: silent_notifications and
         archived/revoked access are dropped (``_is_follower_eligible``); the
-        ``other`` role is skipped; doctors are scoped as TP."""
+        ``other`` role is skipped; doctors are scoped as TP.
+
+        Task 1636: the events the user is ASSIGNED to (``assigned_staff_ids``,
+        same window + states via ``_dashboard_upcoming_events_domain``) join
+        the list; one not already brought in by a staff team is flagged
+        ``assigned`` with its teams as ``assigned_label``."""
         self.ensure_one()
         partner = self.partner_id
         team_lines = []
         seen_events = self.env["sports.event"].sudo()
         events = []
+        assigned_ids = set()
         for staff in partner.sudo().team_staff_rel_ids:
             if not staff._is_follower_eligible():
                 continue
@@ -556,6 +565,15 @@ class User(models.Model):
                 if ev not in seen_events:
                     seen_events |= ev
                     events.append(ev)
+        assigned_events = self.env["sports.event"].sudo().search(
+            self.env["sports.team"]._dashboard_upcoming_events_domain()
+            + [("assigned_staff_ids", "in", self.ids)]
+        )
+        for ev in assigned_events:
+            if ev not in seen_events:
+                seen_events |= ev
+                events.append(ev)
+                assigned_ids.add(ev.id)
         team_lines.sort(key=lambda l: (-l["changes"], l["name"] or ""))
         events.sort(key=lambda e: e.date_start or fields.Datetime.now())
         tz_name = self._digest_resolve_timezone()
@@ -568,10 +586,18 @@ class User(models.Model):
                     self.env, ev.date_start, tz=tz_name,
                     dt_format="EEE d MMM, HH 'h' mm", lang_code=ev_lang,
                 )
+            assigned = ev.id in assigned_ids
+            assigned_label = ""
+            if assigned:
+                assigned_label = ", ".join(
+                    n for n in ev.team_ids.mapped("name") if n
+                ) or (ev.partner_id.name or "")
             event_data.append({
                 "name": ev.name,
                 "date_start": ev.date_start,
                 "date_label": date_label,
+                "assigned": assigned,
+                "assigned_label": assigned_label,
             })
         return team_lines, event_data
 
@@ -720,15 +746,22 @@ class User(models.Model):
                     if ev["date_start"]
                     else ""
                 )
-                ev_items.append(
-                    escape(
-                        _(
-                            "%(name)s %(when)s",
-                            name=ev["name"] or "",
-                            when=when,
-                        )
+                if ev.get("assigned"):
+                    # Task 1636: an event reached only through an assignment.
+                    label = _(
+                        "%(name)s %(when)s · assigned (%(team)s) / "
+                        "assigné·e (%(team)s)",
+                        name=ev["name"] or "",
+                        when=when,
+                        team=ev.get("assigned_label") or "",
                     )
-                )
+                else:
+                    label = _(
+                        "%(name)s %(when)s",
+                        name=ev["name"] or "",
+                        when=when,
+                    )
+                ev_items.append(escape(label))
             ev_lines.append(
                 Markup("<ul>%s</ul>")
                 % Markup("").join(Markup("<li>%s</li>") % it for it in ev_items)
@@ -807,18 +840,45 @@ class User(models.Model):
 
     @api.model
     def _digest_eligible_users(self):
-        """Active users who are sports-clinic staff in a coach/TP role."""
+        """Active users who are sports-clinic staff in a coach/TP role, plus
+        (task 1636) active treatment professionals assigned to an upcoming
+        event in the window, even without a team staff row. One search for the
+        windowed assigned events, one for the users — never one per user."""
         staff = (
             self.env["sports.team.staff"]
             .sudo()
             .search([("role", "in", list(DIGEST_COACH_ROLES | DIGEST_TP_ROLES))])
         )
+        users = self.browse()
         partners = staff.partner_id
-        if not partners:
-            return self.browse()
-        return self.sudo().search(
-            [("partner_id", "in", partners.ids), ("active", "=", True)]
+        if partners:
+            users = self.sudo().search(
+                [("partner_id", "in", partners.ids), ("active", "=", True)]
+            )
+        tp_group_ids = [
+            g.id
+            for g in (
+                self.env.ref(xmlid, raise_if_not_found=False)
+                for xmlid in DIGEST_TP_GROUP_XMLIDS
+            )
+            if g
+        ]
+        assigned = (
+            self.env["sports.event"]
+            .sudo()
+            .search(
+                self.env["sports.team"]._dashboard_upcoming_events_domain()
+                + [("assigned_staff_ids", "!=", False)]
+            )
+            .assigned_staff_ids
         )
+        if assigned and tp_group_ids:
+            users |= self.sudo().search([
+                ("id", "in", assigned.ids),
+                ("active", "=", True),
+                ("all_group_ids", "in", tp_group_ids),
+            ])
+        return users
 
     @api.model
     def _cron_send_morning_digests(self, now=None):
