@@ -899,7 +899,9 @@ SAVE_REGISTRY = {
             # Task 1594: the legacy form took the country from any staff.
             'country_id': _STAFF_ROLES,
             # Therapists only (a coach posting them gets 403).
-            'date_of_birth': _TP_ROLES, 'allergies': _TP_ROLES,
+            # Task 1633: coaches set it too (a change of an existing one is
+            # the confirmed identity correction, task 1600).
+            'date_of_birth': _STAFF_ROLES, 'allergies': _TP_ROLES,
             'team_info_notes': _TP_ROLES, 'training_recommendation': _TP_ROLES,
             'last_consultation_date': _TP_ROLES,
             # Task 1594: the actual return date — never a coach's (the legacy
@@ -1137,6 +1139,35 @@ def sc_extract_fragments(html, keys):
             found[key] = etree.tostring(node, encoding='unicode', method='html', with_tail=False)
     title = tree.find('.//title')
     return found, (title.text_content().strip() if title is not None else '')
+
+SC_ROW_KEY_RE = re.compile(r'^sports\.patient:(\d+):row-(\w+)$')
+
+
+def sc_fill_moved_row_fragments(found, keys):
+    """Review 2026-10-21 (#1634): a player card the client still shows in a
+    section the fresh render no longer lists it in (a status change moves the
+    player from « à surveiller » to « Changements récents ») gets the SAME
+    player's fresh card from another section, its row scope rewritten (the
+    fragment key, the pill menu ids, the details region id) — so the card the
+    user just changed updates in place instead of staying stale (it is kept
+    where it is until the next visit, data-sc-fragment-keep)."""
+    by_player = {}
+    for key, html in found.items():
+        match = SC_ROW_KEY_RE.match(key)
+        if match:
+            by_player.setdefault(match.group(1), (match.group(2), html))
+    for key in keys:
+        match = SC_ROW_KEY_RE.match(key)
+        if not match or key in found or match.group(1) not in by_player:
+            continue
+        pid, scope = match.groups()
+        other, html = by_player[pid]
+        html = html.replace('sports.patient:%s:row-%s' % (pid, other), key)
+        html = re.sub(r'(sc-pill-sports-patient-%s-\w+)-%s\b' % (pid, re.escape(other)),
+                      r'\1-%s' % scope, html)
+        html = html.replace('sc-row-detail-%s-%s' % (other, pid), 'sc-row-detail-%s-%s' % (scope, pid))
+        found[key] = html
+
 
 # PWA (task 1542): static files the service worker precaches, besides the
 # offline page. Never a /my/ page or any data.
@@ -1705,6 +1736,7 @@ class AppShellMixin:
         if keys is None:
             return response
         found, title = sc_extract_fragments(response.render(), keys)
+        sc_fill_moved_row_fragments(found, keys)
         response = request.make_json_response({
             'fragments': found,
             'missing': [key for key in keys if key not in found],

@@ -22,7 +22,7 @@ from odoo.exceptions import UserError, AccessError, MissingError
 from odoo.http import request
 from odoo.tools import format_date
 
-from ..models import sc_app_nav
+from ..models import sc_app_nav, sc_app_roles
 from datetime import datetime, time
 import time as systime
 import logging
@@ -450,7 +450,19 @@ class AccessControlMixin:
             'model': 'sports.team',
         } for team in teams}
 
-    def _sc_player_row_extras(self, players, team_links=True, team=None):
+    def _sc_status_editable(self):
+        """Task 1634: may the viewer change Match / Practice from a player
+        card? The player page's rule (#1627): a treatment professional (or
+        clinic administrator) holding ``patient.status.edit``; the save
+        route re-checks."""
+        user = request.env.user
+        if not (self._is_treatment_professional() or self._is_clinic_admin()):
+            return False
+        return sc_app_roles.can('patient.status.edit', user._sc_app_roles(),
+                                is_system=user.has_group('base.group_system'))
+
+    def _sc_player_row_extras(self, players, team_links=True, team=None, status_edit=False,
+                              labels=None):
         """The legacy card's content for each row of ``players`` (task 1593),
         ``{player_id: {...}}`` — computed for the whole list at once (the
         teams, their names and the readable set in a few queries, never per
@@ -467,8 +479,15 @@ class AccessControlMixin:
 
         Task 1592: ``clock`` — the activity clock chip (``_sc_activity_clocks``,
         ONE grouped query for the whole list), opening the player page's
-        Activities tab (with the team context when given); None at 0."""
+        Activities tab (with the team context when given); None at 0.
+
+        Task 1634: ``status`` — the Match / Practice / injuries line
+        (``_sc_row_status``) and, when ``status_edit`` (the viewer may change
+        them, ``_sc_status_editable``), ``pills`` — the quick-change
+        dropdowns (``_sc_status_pills``); the selection labels are computed
+        ONCE for the whole list (or given: ``labels``)."""
         env = request.env
+        labels = labels or env['sports.patient']._sc_status_labels()
         links = self._sc_team_links(players.sudo().team_ids) if team_links else {}
         team_qs = '&team_id=%s' % team.id if team else ''
         clocks = self._sc_activity_clocks(
@@ -491,6 +510,8 @@ class AccessControlMixin:
                 'team_links': [links[t.id] for t in player.sudo().team_ids if t.id in links],
                 'detail_url': detail_url,
                 'clock': clocks.get(player.id),
+                'status': player._sc_row_status(labels),
+                'pills': player._sc_status_pills(labels) if status_edit else None,
             }
         return extras
 
@@ -546,6 +567,26 @@ class AccessControlMixin:
                 'label': label,
             }
         return clocks
+
+    @staticmethod
+    def _sc_activity_tab_badge(activities):
+        """Task 1635 — the Activities tab's count pill (``sc_page_tabs``'
+        optional 5th tuple item): ``{'count', 'tone', 'label'}``, or None at
+        0. ``activities`` is the recordset the tab itself lists — searched
+        as the viewer, so the record rules make the count per viewer (no
+        second, rule-bypassing query). Red when one of them is overdue
+        (deadline before today in the viewer's timezone)."""
+        count = len(activities)
+        if not count:
+            return None
+        env = request.env
+        today = fields.Date.context_today(env.user)
+        overdue = len(activities.filtered(
+            lambda a: a.date_deadline and a.date_deadline < today))
+        label = (env._("%(count)s open activities, %(overdue)s overdue",
+                       count=count, overdue=overdue)
+                 if overdue else env._("%(count)s open activities", count=count))
+        return {'count': count, 'tone': 'red' if overdue else 'neutral', 'label': label}
 
     @classmethod
     def _activity_scope_teams(cls):

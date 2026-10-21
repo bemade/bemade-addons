@@ -442,7 +442,6 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'chip': stage_labels.get(stage, ''),
             'url': '/my/player?player_id=%s&team_id=%s' % (player.id, team.id),
             'pending_removal': bool(player.pending_removal),
-            'status': player._sc_row_status(),
         })
 
     def _sc_add_player_search(self, team):
@@ -498,9 +497,11 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             key=lambda p: (p.sort_order, p.last_name or '', p.first_name or ''))
         # Task 1593: the rows' legacy-card content for every listed player
         # at once (no per-row queries); no team links on the team's own page.
+        # Task 1634: the Match / Practice pills are quick-change dropdowns for
+        # a status editor (the cards' status line, in place).
         extras = self._sc_player_row_extras(
             values['dashboard_players'] | watched | values['players'],
-            team_links=False, team=team)
+            team_links=False, team=team, status_edit=self._sc_status_editable())
         dashboard_rows = []
         for player in values['dashboard_players'].filtered(lambda p: p.id in changed):
             row = self._sc_player_row(player, team, stage_labels, show_position, extras)
@@ -545,6 +546,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 format_date(env, team.announcement_deadline)
                 if team.announcement_deadline else ''),
             'sc_team_url': '/my/team?team_id=%s' % team.id,
+            # Task 1635: the Activities tab counts what its panel lists.
+            'sc_team_activities_badge': self._sc_activity_tab_badge(values['team_activities']),
             'sc_window_label': env._("(last %(hours)s h)",
                                      hours=values.get('dashboard_window_hours')),
             'sc_pending_label': env._(

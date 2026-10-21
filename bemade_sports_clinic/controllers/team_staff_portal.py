@@ -578,7 +578,11 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # rows, computed for the whole page at once.
         accessible_players = values['players'].filtered(
             lambda p: p.id in values['accessible_ids'])
-        extras = self._sc_player_row_extras(accessible_players)
+        # Task 1634: quick-change Match / Practice dropdowns on the openable
+        # rows of a status editor; the locked rows stay static.
+        labels = env['sports.patient']._sc_status_labels()
+        extras = self._sc_player_row_extras(
+            accessible_players, status_edit=self._sc_status_editable(), labels=labels)
         for player in values['players']:
             stage = player.stage or 'healthy'
             teams = player.sudo().team_ids
@@ -594,7 +598,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'chip': stage_labels.get(stage, ''),
                 'accessible': accessible,
                 'changed': player.id in (values.get('changed_player_ids') or ()),
-                'status': player._sc_row_status(),
+                'status': (extras[player.id]['status'] if player.id in extras
+                           else player._sc_row_status(labels)),
                 'url': '/my/player?player_id=%s' % player.id if accessible else False,
             })
         active_filters = any(values.get(key) for key in (
@@ -1066,7 +1071,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Legacy #fragments (a POST round-trip's return_url) open the tab now
         # holding them: the contacts are on Info.
         aliases = {'info': 'patient-info team-info contacts'}
-        sc_tabs = [(key, label, '%s&tab=%s' % (base_url, key), aliases.get(key, ''))
+        # Task 1635: the Activities tab counts what its panel lists.
+        badges = {'activities': self._sc_activity_tab_badge(values['player_activities'])}
+        sc_tabs = [(key, label, '%s&tab=%s' % (base_url, key), aliases.get(key, ''),
+                    badges.get(key))
                    for key, label in tabs]
 
         editable = values['editable_note_ids']

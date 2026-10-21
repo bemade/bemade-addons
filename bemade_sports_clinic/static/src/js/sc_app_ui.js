@@ -319,6 +319,18 @@ document.addEventListener("click", (ev) => {
     }
 });
 
+// Task 1634: a player card's face is a read fragment (a status pick swaps
+// it): its fresh « Details » control follows the region it controls, which
+// stays open or closed under the card.
+document.addEventListener("sc:fragments", () => {
+    for (const toggle of document.querySelectorAll(".o_sc_app [data-sc-row-expand]")) {
+        const region = document.getElementById(toggle.dataset.scRowExpand);
+        if (region) {
+            toggle.setAttribute("aria-expanded", region.hidden ? "false" : "true");
+        }
+    }
+});
+
 // --------------------------------------------------------------- sheets
 function refetchSheet(dialog, url) {
     const body = dialog.querySelector(".o_sc_sheet_body");

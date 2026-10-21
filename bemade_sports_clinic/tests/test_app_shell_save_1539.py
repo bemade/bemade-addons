@@ -80,9 +80,10 @@ class TestAppShellSave1539(AppShellCommon):
     def test_coach_refused_therapist_fields(self):
         self._login_coach()
         self.player.sudo().write({'allergies': 'Peanuts'})
+        # Task 1633: date_of_birth left this list (coaches set it).
         for field, value in (('allergies', 'None'), ('sc_status', 'no:no'),
                              ('training_recommendation', 'Rest'),
-                             ('team_info_notes', 'x'), ('date_of_birth', '2010-01-01')):
+                             ('team_info_notes', 'x')):
             resp = self._save(self.player, field, value)
             self.assertEqual(resp.status_code, 403, field)
         for field, value in (('stage', 'resolved'), ('internal_notes', 'Coach text'),

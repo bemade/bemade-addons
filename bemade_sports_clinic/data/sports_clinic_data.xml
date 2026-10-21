@@ -195,6 +195,7 @@
                                     <li>
                                         <strong t-out="ev['name']"/>
                                         <t t-if="ev.get('date_label') or ev['date_start']"> — <t t-out="ev.get('date_label') or format_datetime(ev['date_start'])"/></t>
+                                        <t t-if="ev.get('assigned')"> · assigné·e (<t t-out="ev.get('assigned_label')"/>) / assigned (<t t-out="ev.get('assigned_label')"/>)</t>
                                     </li>
                                 </t>
                             </ul>
