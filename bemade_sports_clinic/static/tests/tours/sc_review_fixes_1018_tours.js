@@ -5,8 +5,9 @@
  * - sc_1018_header_pencil: the player header is a read view; its ONE pencil
  *   opens the edit view (recommendation — task 1627: the status pills are
  *   live in the read view —, both return
- *   dates, allergies, « Remove player » only there); the allergies saved
- *   there show in the read view's banner after « Done » (no reload).
+ *   dates, « Remove player » only there — task 1630: the allergies moved to
+ *   the header's pills); the recommendation saved there shows in the read
+ *   view after « Done » (no reload).
  * - sc_1018_injury_dates: on an injury card, « Resolved » hides the
  *   predicted resolution date and shows the resolution date in place.
  */
@@ -51,8 +52,10 @@ tours.add("sc_1018_header_pencil", {
         },
         {
             content: "Edit view: every header field and « Remove player »",
-            trigger: `${HERO} [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="allergies"] textarea`,
+            trigger: `${HERO} [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="training_recommendation"] textarea`,
             run() {
+                // Task 1630: no allergies in the header pencil (the pills' popups).
+                assert(!document.querySelector(`${HERO} [data-sc-edit-view="edit"] .o_sc_autosave[data-sc-field^="allerg"]`), "allergies in the pencil");
                 // Task 1627: no status selector in the pencil any more.
                 assert(!document.querySelector(`${HERO} .o_sc_autosave[data-sc-field="sc_status"]`), "status in the pencil");
                 for (const field of ["training_recommendation", "predicted_return_date", "return_date"]) {
@@ -63,13 +66,13 @@ tours.add("sc_1018_header_pencil", {
             },
         },
         {
-            content: "Type the allergies",
-            trigger: `${HERO} .o_sc_autosave[data-sc-field="allergies"] textarea`,
+            content: "Type the recommendation",
+            trigger: `${HERO} [data-sc-edit-view="edit"] .o_sc_autosave[data-sc-field="training_recommendation"] textarea`,
             run: "edit Synthetic latex",
         },
         {
             content: "Leave the field so it saves",
-            trigger: `${HERO} .o_sc_autosave[data-sc-field="allergies"] textarea`,
+            trigger: `${HERO} [data-sc-edit-view="edit"] .o_sc_autosave[data-sc-field="training_recommendation"] textarea`,
             run() {
                 this.anchor.blur();
                 this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI
@@ -77,7 +80,7 @@ tours.add("sc_1018_header_pencil", {
         },
         {
             content: "Saved",
-            trigger: `${HERO} .o_sc_autosave[data-sc-field="allergies"][data-sc-state="saved"]`,
+            trigger: `${HERO} [data-sc-edit-view="edit"] .o_sc_autosave[data-sc-field="training_recommendation"][data-sc-state="saved"]`,
         },
         {
             content: "« Done »",
@@ -85,13 +88,13 @@ tours.add("sc_1018_header_pencil", {
             run: "click",
         },
         {
-            content: "The read view's banner shows the allergies (read fragment, no reload)",
+            content: "The read view shows the recommendation (read fragment, no reload)",
             trigger: `${HERO} [data-sc-edit-view="read"]`,
             async run() {
                 await waitFor(
-                    () => (document.querySelector(`${HERO} [data-sc-section="player.allergies"]`) || {})
+                    () => (document.querySelector(`${HERO} [data-sc-section="player.training"]`) || {})
                         .textContent?.includes("Synthetic latex"),
-                    "allergies banner"
+                    "recommendation"
                 );
                 assert(window.__sc1018NoReload, "the page reloaded");
                 assert(!visible(`${HERO} [data-sc-action="player.remove"]`), "« Remove player » shown after Done");

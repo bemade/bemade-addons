@@ -15,7 +15,9 @@ Checklist (``_sc_incomplete_items``):
 * an emergency contact with a phone number (any ``contact_ids`` row with a
   ``mobile``);
 * for a player aged 14 or more — or whose date of birth is missing — the
-  player's own email and phone, each listed separately.
+  player's own email and phone, each listed separately;
+* task 1630: the allergy level and the medical-alert level, each listed
+  while « Not specified » (no level chosen).
 
 Assignee (``_sc_incomplete_todo_assignee``), so the To-Do lands with someone
 who can both see the player in the portal app and edit these fields:
@@ -42,6 +44,7 @@ INCOMPLETE_TODO_GRACE_HOURS = 48
 INCOMPLETE_TODO_PERSONAL_AGE = 14
 INCOMPLETE_TODO_ITEMS = (
     'first_name', 'last_name', 'date_of_birth', 'emergency_contact', 'email', 'phone',
+    'allergy_level', 'medical_alert_level',
 )
 TP_GROUPS = (
     'bemade_sports_clinic.group_sports_clinic_treatment_professional',
@@ -85,6 +88,11 @@ class Patient(models.Model):
                 missing.append('email')
             if not (player.phone or '').strip():
                 missing.append('phone')
+        # Task 1630: a level left « Not specified ».
+        if not player.allergy_level:
+            missing.append('allergy_level')
+        if not player.medical_alert_level:
+            missing.append('medical_alert_level')
         return missing
 
     def _sc_incomplete_labels(self):
@@ -97,6 +105,8 @@ class Patient(models.Model):
             'emergency_contact': _("Emergency contact with a phone number"),
             'email': _("Player's email"),
             'phone': _("Player's phone"),
+            'allergy_level': _("Allergy level"),
+            'medical_alert_level': _("Medical alert"),
         }
 
     def _sc_incomplete_todo_texts(self, missing, lang):

@@ -5,7 +5,8 @@ Acceptance criteria (static/tests/tours/sc_fragments_1611_tours.js):
 
 * AC-T1 Player page: a rename updates the app bar title, the document title,
   the hero name and initials; a date of birth updates the « Age » row;
-  filling the allergies shows the hero banner, clearing them hides it — all
+  filling the allergy details (task 1630: in the « Allergies » pill's
+  popup) shows them in its read view, clearing them hides them — all
   without « Done » and without a reload.
 * AC-T2 Injury card: « Resolved » turns the summary green at once (the card
   stays open in edit mode); after « Done » the resolved card moves after the
@@ -54,7 +55,7 @@ class FragmentsTours:
         self.start_tour(self._player_url('info'), 'sc_1611_player_fragments', login='pc.tp@example.com')
         self.player.invalidate_recordset()
         self.assertEqual(self.player.last_name, 'Zedsynth')
-        self.assertFalse(self.player.allergies)
+        self.assertFalse(self.player.allergy_details)
 
     def test_injury_stage(self):
         self.start_tour(self._player_url('injuries', injury=self.injury_b.id), 'sc_1611_injury_stage',

@@ -387,8 +387,120 @@ $sc-p2-laptop: 992px;
     .o_sc_hero_editable {
         position: relative;
 
-        .o_sc_hero_head {
+        .o_sc_hero_top {
             padding-right: calc(var(--sc-tap) + var(--sc-space-1, 4px));
+        }
+    }
+
+    // Task 1630: the name / team head and, left of the pencil, the
+    // « Allergies » / « Medical alert » pills; on a narrow screen the pills
+    // wrap under the name.
+    .o_sc_hero_top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2) var(--sc-space-3);
+        min-width: 0;
+
+        > .o_sc_hero_head {
+            flex: 1 1 auto;
+        }
+    }
+
+    .o_sc_med_pills {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+
+        &:empty {
+            display: none;
+        }
+    }
+
+    .o_sc_med_pill {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        min-height: 26px;
+        padding: 2px 10px;
+        border: 1px solid transparent;
+        border-radius: var(--sc-radius-pill);
+        font: inherit;
+        font-size: var(--sc-text-xs);
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+        cursor: pointer;
+
+        // A phone tap lands even on the small drawn pill.
+        &::before {
+            content: "";
+            position: absolute;
+            inset: -8px -2px;
+        }
+
+        .o_sc_icon {
+            width: 14px;
+            height: 14px;
+        }
+    }
+
+    .o_sc_med_pill_static {
+        cursor: default;
+
+        &::before {
+            content: none;
+        }
+    }
+
+    .o_sc_med_urgent { background: var(--sc-bad); color: var(--sc-tone-fg); }
+    .o_sc_med_minor { background: var(--sc-warn); color: var(--sc-tone-fg); }
+    .o_sc_med_none { background: var(--sc-surface-2); color: var(--sc-fg-2); }
+    .o_sc_med_unset { background: transparent; border-color: var(--sc-line); border-style: dashed; color: var(--sc-fg-2); }
+
+    .o_sc_med_epipen {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .o_sc_med_sheet {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+    }
+
+    .o_sc_med_level_line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2);
+        margin: 0;
+    }
+
+    .o_sc_med_epipen_line {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 700;
+
+        .o_sc_icon {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    .o_sc_med_details,
+    .o_sc_med_details_empty {
+        margin: 0;
+    }
+
+    @media (max-width: 575.98px) {
+        .o_sc_med_pills {
+            margin-left: 0;
+            flex-basis: 100%;
         }
     }
 

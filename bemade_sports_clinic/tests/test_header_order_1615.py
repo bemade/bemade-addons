@@ -9,14 +9,15 @@ Acceptance criteria:
   coaches; no stage label), then (its very next block) the training recommendation,
   then ONE return date — « Retour prévu » while the player is not Play OK,
   else « Retour réel », a muted « not set » line while that date is empty
-  (review fixes 2026-10-18, 1018c) — then the
-  allergies holder (banner for therapists, hidden when empty).
+  (review fixes 2026-10-18, 1018c). Task 1630: the allergies banner left
+  the read view for the « Allergies » / « Medical alert » pills in the
+  header's top row (test_medical_alerts_1630).
 * AC-2 Edit view (therapists, behind the header's one pencil): the
   training recommendation (live; task 1627: no status selector), « Retour
-  prévu », « Retour réel », the allergies, « Remove player » (edit view
+  prévu », « Retour réel », « Remove player » (task 1630: no allergies) (edit view
   only), then « Done ». Coaches: no pencil, no edit view.
 * AC-3 Nothing else moves: the header still opens on the name / team head
-  and ends on the actions row; the #1611 fragment keys of the header
+  (task 1630: in its top row, with the pills) and ends on the actions row; the #1611 fragment keys of the header
   regions are unchanged (``status`` and ``predicted-return`` are now read
   fragments for everyone).
 * AC-4 Clinic dossier: the play status (task 1627: the same pills), then
@@ -27,9 +28,9 @@ from odoo.tests import tagged
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_clinic_1540 import Clinic1540Common
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_player_inline import PlayerInlineCommon
 
-ORDER = ['player.status', 'player.training', 'player.return', 'player.allergies']
+ORDER = ['player.status', 'player.training', 'player.return']
 EDIT_ORDER = ['player.training.edit', 'player.predicted_return',
-              'player.return_date.edit', 'player.allergies.edit']
+              'player.return_date.edit']
 
 
 @tagged('post_install', '-at_install')
@@ -38,7 +39,8 @@ class TestHeaderOrder1615(PlayerInlineCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.player.sudo().write({'allergies': 'Synthetic pollen', 'training_recommendation': 'Synthetic rowing',
+        cls.player.sudo().write({'allergy_level': 'minor', 'allergy_details': 'Synthetic pollen',
+                                 'training_recommendation': 'Synthetic rowing',
                                  'predicted_return_date': '2030-02-01', 'return_date': '2029-12-01',
                                  'match_status': 'no', 'practice_status': 'no'})
 
@@ -57,8 +59,10 @@ class TestHeaderOrder1615(PlayerInlineCommon):
     def _assert_order(self, tree):
         hero = self._hero(tree)
         children = self._children(hero)
-        # AC-3: head first, actions last.
-        self.assertIn('o_sc_hero_head', children[0].get('class'))
+        # AC-3: head first (task 1630: in the top row with the pills),
+        # actions last.
+        self.assertIn('o_sc_hero_top', children[0].get('class'))
+        self.assertIn('o_sc_hero_head', children[0][0].get('class'))
         self.assertIn('o_sc_actions_row', children[-1].get('class'))
         read = hero.xpath('./*[@data-sc-edit-view="read"]')[0]
         blocks = self._children(read)
@@ -76,7 +80,7 @@ class TestHeaderOrder1615(PlayerInlineCommon):
         self.assertFalse(read['player.status'].xpath('.//*[@data-sc-stage-chip]'))
         self.assertEqual(len(read['player.status'].xpath('.//button[contains(@class, "o_sc_pill_select")]')), 2)
         self.assertIn('Synthetic rowing', read['player.training'].text_content())
-        self.assertIn('Synthetic pollen', read['player.allergies'].text_content())
+        self.assertNotIn('Synthetic pollen', hero.xpath('./*[@data-sc-edit-view="read"]')[0].text_content())
         edit = hero.xpath('./*[@data-sc-edit-view="edit"]')[0]
         self.assertEqual(edit.get('hidden'), 'hidden')
         sections = [c.get('data-sc-section') for c in self._children(edit) if c.get('data-sc-section')]
@@ -85,8 +89,7 @@ class TestHeaderOrder1615(PlayerInlineCommon):
         self.assertNotIn('player.status.edit', sections)
         for section, field in (('player.training.edit', 'training_recommendation'),
                                ('player.predicted_return', 'predicted_return_date'),
-                               ('player.return_date.edit', 'return_date'),
-                               ('player.allergies.edit', 'allergies')):
+                               ('player.return_date.edit', 'return_date')):
             self.assertTrue(fields[section].xpath('.//owl-component[contains(@props, \'"%s"\')]' % field),
                             section)
         # « Remove player » only in the edit view; « Done » closes it.
@@ -139,7 +142,7 @@ class TestHeaderOrder1615(PlayerInlineCommon):
             _text, tree = self._get(self._url(tab='injuries'))
             hero = self._hero(tree)
             keys = set(hero.xpath('.//@data-sc-fragment'))
-            for part in ('hero-head', 'hero-chips', 'allergies', 'hero-actions', 'status', 'predicted-return',
+            for part in ('hero-head', 'hero-chips', 'medical-pills', 'hero-actions', 'status', 'predicted-return',
                          'training'):
                 self.assertIn('sports.patient:%s:%s' % (pid, part), keys)
             # Never an island inside a read fragment.

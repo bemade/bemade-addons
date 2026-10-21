@@ -223,3 +223,7 @@ from . import test_coach_dob_1633
 from . import test_card_status_pills_1634
 from . import test_activity_tab_count_1635
 from . import test_moved_row_fragment_1634
+from . import test_medical_alerts_migration_1630
+from . import test_medical_alerts_1630
+from . import test_medical_alerts_i18n_1630
+from . import test_medical_alerts_tours_1630

@@ -368,11 +368,13 @@ class TestClinicDossier1411(HttpCase):
     def test_quick_ignores_non_whitelisted_fields(self):
         self.authenticate('cd.tp@example.com', 'cd-tp')
         resp = self._post_quick({'training_recommendation': 'rec v3',
-                                 'first_name': 'Hacked', 'allergies': 'peanuts'})
+                                 'first_name': 'Hacked', 'allergies': 'peanuts',
+                                 'allergy_details': 'peanuts'})
         self.assertEqual(resp.status_code, 303)
         self._refresh()
         self.assertEqual(self.patient.first_name, 'Dora')
         self.assertFalse(self.patient.sudo().allergies)
+        self.assertFalse(self.patient.sudo().allergy_details)
 
     def test_quick_offhost_return_url_falls_back(self):
         self.authenticate('cd.tp@example.com', 'cd-tp')

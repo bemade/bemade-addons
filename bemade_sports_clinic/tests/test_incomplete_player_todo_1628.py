@@ -15,6 +15,8 @@ Acceptance criteria:
   ``contact_ids`` row) with a ``mobile``; for a player aged 14+ — or whose
   date of birth is missing — the player's own email and phone, each listed
   separately. Under 14, the personal email / phone are not asked for.
+  Task 1630: a « Not specified » allergy level and medical-alert level, each
+  listed (« Niveau d'allergies » / « Alerte médicale »).
 * AC-2 Scope: only players created at or after the cut-off parameter
   ``bemade_sports_clinic.incomplete_todo_since`` (set by the 19.0.1.94.0
   post-migrate to the upgrade time) AND more than 48 h ago. Archived players
@@ -107,11 +109,16 @@ class IncompleteTodoCommon(HttpCase):
 
     # -- helpers ------------------------------------------------------------
     def _player(self, *, creator=None, hours_old=72, teams=None, dob=None,
-                email=False, phone=False, contact_mobile=None, name='Kid'):
+                email=False, phone=False, contact_mobile=None, name='Kid',
+                allergy_level='none', medical_alert_level='none'):
+        # Task 1630: both levels are checklist items too; set by default so
+        # the other cases keep testing what they test (« Not specified »
+        # cases: test_checklist_medical_levels).
         player = self.env['sports.patient'].create({
             'first_name': name, 'last_name': 'Synthetic',
             'team_ids': [Command.set((teams if teams is not None else self.team).ids)],
             'date_of_birth': dob, 'email': email, 'phone': phone,
+            'allergy_level': allergy_level, 'medical_alert_level': medical_alert_level,
         })
         if contact_mobile is not None:
             self.env['sports.patient.contact'].create({
@@ -160,6 +167,28 @@ class TestIncompletePlayerTodo1628(IncompleteTodoCommon):
     def test_checklist_under_14_skips_personal_contact(self):
         player = self._player(dob=self._dob(13))
         self.assertEqual(player._sc_incomplete_items(), ['emergency_contact'])
+
+    def test_checklist_medical_levels(self):
+        """Task 1630: a « Not specified » allergy / medical-alert level is
+        listed; « None » counts as answered."""
+        player = self._player(dob=self._dob(10), contact_mobile='+1 514 555 0110',
+                              allergy_level=False, medical_alert_level=False)
+        self.assertEqual(player._sc_incomplete_items(), ['allergy_level', 'medical_alert_level'])
+        player.allergy_level = 'urgent'
+        self.assertEqual(player._sc_incomplete_items(), ['medical_alert_level'])
+        player.medical_alert_level = 'none'
+        self.assertEqual(player._sc_incomplete_items(), [])
+
+    def test_medical_levels_in_french_todo(self):
+        """Task 1630: « Niveau d'allergies » / « Alerte médicale » in the
+        To-Do of an fr_CA assignee."""
+        self.tp_creator.lang = 'fr_CA'
+        player = self._player(dob=self._dob(10), contact_mobile='+1 514 555 0111',
+                              allergy_level=False, medical_alert_level=False)
+        self._run()
+        text = self._text(self._todos(player))
+        self.assertIn("Niveau d'allergies", text)
+        self.assertIn('Alerte médicale', text)
 
     def test_checklist_contact_without_mobile_does_not_count(self):
         player = self._player(dob=self._dob(10), contact_mobile=False)

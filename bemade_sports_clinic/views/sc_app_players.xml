@@ -211,21 +211,26 @@
                  status (Match / Practice pills — task 1627: live dropdowns for
                  therapists), the training recommendation, ONE return date
                  (« Retour prévu » while the player is not « Play OK », else
-                 « Retour réel »; « not set » while that date is empty) and the
-                 allergies banner. Edit: the
+                 « Retour réel »; « not set » while that date is empty). Edit: the
                  recommendation (autosave + stamp + History), both return
-                 dates (#1603 proposals intact), the allergies and « Remove
-                 player ». Coaches: read view only, no pencil. -->
+                 dates (#1603 proposals intact) and « Remove player ».
+                 Coaches: read view only, no pencil. Task 1630: the
+                 « Allergies » / « Medical alert » pills sit left of the
+                 pencil, each opening its popup (therapists edit there). -->
             <t t-set="sc_hero_status_edit" t-value="is_treatment_prof and sc_can('patient.status.edit')"/>
             <t t-set="sc_hero_training_edit" t-value="is_treatment_prof and sc_can('patient.training.edit')"/>
             <t t-set="sc_hero_return_edit" t-value="is_treatment_prof and sc_can('patient.return.edit')"/>
-            <t t-set="sc_hero_allergies_edit" t-value="is_treatment_prof and sc_can('patient.allergies')"/>
+            <!-- Task 1630: the pills (every staff role; a coach sees the
+                 non-urgent / urgent ones only) and their popups' pencil. -->
+            <t t-set="sc_hero_medical" t-value="sc_can('patient.medical_alerts')"/>
+            <t t-set="sc_hero_medical_tp" t-value="bool(is_treatment_prof)"/>
             <!-- Task 1627: the status pills are live outside the pencil; the
                  pencil shows only when another header field is editable. -->
-            <t t-set="sc_hero_editable" t-value="sc_hero_training_edit or sc_hero_return_edit or sc_hero_allergies_edit"/>
+            <t t-set="sc_hero_editable" t-value="sc_hero_training_edit or sc_hero_return_edit"/>
             <t t-set="sc_hero_can_remove" t-value="can_direct_remove and removal_team_id and sc_can('patient.remove')"/>
             <div t-attf-class="o_sc_card o_sc_hero#{' o_sc_edit_card o_sc_hero_editable' if sc_hero_editable else ''}"
                  data-sc-section="player.hero" t-att-data-sc-edit-card="'player-header' if sc_hero_editable else None">
+                <div class="o_sc_hero_top">
                 <div class="o_sc_hero_head" t-att-data-sc-fragment="sc_fragment_key(player, 'hero-head')">
                     <span class="o_sc_avatar" t-out="''.join(part[:1] for part in [player.first_name or '', player.last_name or '']).upper()"/>
                     <div>
@@ -239,6 +244,13 @@
                             <span t-out="(' · %s' % player.position) if player.position else ''"/>
                         </p>
                     </div>
+                </div>
+                <t t-if="sc_hero_medical" t-call="bemade_sports_clinic.sc_medical_pills">
+                    <t t-set="patient" t-value="player"/>
+                    <t t-set="scope" t-value="'player'"/>
+                    <t t-set="tp" t-value="sc_hero_medical_tp"/>
+                    <t t-set="section" t-value="'player.medical'"/>
+                </t>
                 </div>
                 <!-- The header group's pencil (therapists only), top right. -->
                 <t t-if="sc_hero_editable">
@@ -314,18 +326,6 @@
                             <t t-else="">Actual return: not set</t>
                         </p>
                     </div>
-                    <!-- Task 1611: the holder is always there (a read fragment), so
-                         filling the allergies shows the banner and clearing them
-                         hides it, in place. -->
-                    <div class="o_sc_hero_allergies" data-sc-section="player.allergies"
-                         t-att-data-sc-fragment="sc_fragment_key(player, 'allergies')">
-                        <t t-if="is_treatment_prof and sc_can('patient.allergies') and (player.allergies or '').replace('\xa0', '').strip()"
-                           t-call="bemade_sports_clinic.sc_banner">
-                            <t t-set="tone" t-value="'warn'"/>
-                            <t t-set="title">Allergies</t>
-                            <t t-out="player.allergies"/>
-                        </t>
-                    </div>
                 </div>
 
                 <!-- ============================== EDIT ============================== -->
@@ -353,12 +353,6 @@
                         <t t-set="sc_actual_label">Actual return date</t>
                         <t t-call="bemade_sports_clinic.sc_field_autosave">
                             <t t-set="props" t-value="sc_field_props(player, 'return_date', sc_actual_label, 'date', clearable=True)"/>
-                        </t>
-                    </div>
-                    <div t-if="sc_hero_allergies_edit" class="o_sc_fields" data-sc-section="player.allergies.edit">
-                        <t t-set="sc_allergies_label">Allergies</t>
-                        <t t-call="bemade_sports_clinic.sc_field_autosave">
-                            <t t-set="props" t-value="sc_field_props(player, 'allergies', sc_allergies_label, 'textarea', clearable=True)"/>
                         </t>
                     </div>
                     <!-- « Remove player »: in the edit view only. -->
@@ -391,6 +385,14 @@
                     </t>
                 </div>
             </div>
+            <!-- Task 1630: the pills' popups — outside the header card (its
+                 edit card) and every read fragment (they hold islands). -->
+            <t t-if="sc_hero_medical" t-call="bemade_sports_clinic.sc_medical_sheets">
+                <t t-set="patient" t-value="player"/>
+                <t t-set="scope" t-value="'player'"/>
+                <t t-set="tp" t-value="sc_hero_medical_tp"/>
+                <t t-set="editable" t-value="sc_hero_medical_tp"/>
+            </t>
 
             <t t-call="bemade_sports_clinic.sc_page_tabs">
                 <t t-set="tabs" t-value="sc_player_tabs"/>
@@ -477,6 +479,28 @@
                                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'last_consultation_date', lbl, 'date')"/></t>
                                 <t t-set="lbl">Actual return date</t>
                                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'return_date', lbl, 'date', clearable=True)"/></t>
+                                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                            </div>
+                        </section>
+
+                        <!-- Task 1630: « Other medical history » (therapists only). -->
+                        <section t-if="is_treatment_prof and sc_can('patient.medical_history')"
+                                 class="o_sc_card o_sc_edit_card" data-sc-edit-card="medical-history"
+                                 data-sc-section="player.info.medical_history">
+                            <t t-call="bemade_sports_clinic.sc_edit_card_head">
+                                <t t-set="title">Other medical history</t>
+                                <t t-set="editable" t-value="True"/>
+                            </t>
+                            <div data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(player, 'medical-history')">
+                                <t t-call="bemade_sports_clinic.sc_field_static">
+                                    <t t-set="no_label" t-value="True"/>
+                                    <t t-set="value" t-value="player.medical_history_other"/>
+                                    <t t-set="pre" t-value="True"/>
+                                </t>
+                            </div>
+                            <div class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
+                                <t t-set="lbl">Other medical history</t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'medical_history_other', lbl, 'textarea', clearable=True, labelHidden=True)"/></t>
                                 <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
                             </div>
                         </section>
@@ -1433,9 +1457,34 @@
                                     <option value="no">No</option>
                                 </select>
                             </div>
+                            <!-- Task 1630: the allergy / medical-alert block (levels
+                                 optional: « Not specified » goes to the #1628
+                                 « Complete the player's file » To-Do). -->
+                            <t t-set="sc_new_levels" t-value="request.env['sports.patient']._sc_medical_level_options()"/>
                             <div class="o_sc_field">
-                                <label for="sc_new_allergies" class="o_sc_field_label">Allergies</label>
-                                <textarea id="sc_new_allergies" name="allergies" class="o_sc_input o_sc_textarea" rows="2"/>
+                                <label for="sc_new_allergy_level" class="o_sc_field_label">Allergy level</label>
+                                <select id="sc_new_allergy_level" name="allergy_level" class="o_sc_input o_sc_select">
+                                    <option t-foreach="sc_new_levels" t-as="lvl" t-att-value="lvl[0]" t-out="lvl[1]"/>
+                                </select>
+                            </div>
+                            <div class="o_sc_field">
+                                <label for="sc_new_allergy_details" class="o_sc_field_label">Allergy details</label>
+                                <textarea id="sc_new_allergy_details" name="allergy_details" class="o_sc_input o_sc_textarea" rows="2"/>
+                            </div>
+                            <label class="o_sc_check">
+                                <input type="hidden" name="allergy_epipen_present" value="1"/>
+                                <input type="checkbox" id="sc_new_allergy_epipen" name="allergy_epipen" value="1"/>
+                                <span>EpiPen</span>
+                            </label>
+                            <div class="o_sc_field">
+                                <label for="sc_new_medical_alert_level" class="o_sc_field_label">Medical alert level</label>
+                                <select id="sc_new_medical_alert_level" name="medical_alert_level" class="o_sc_input o_sc_select">
+                                    <option t-foreach="sc_new_levels" t-as="lvl" t-att-value="lvl[0]" t-out="lvl[1]"/>
+                                </select>
+                            </div>
+                            <div class="o_sc_field">
+                                <label for="sc_new_medical_alert_details" class="o_sc_field_label">Medical alert details</label>
+                                <textarea id="sc_new_medical_alert_details" name="medical_alert_details" class="o_sc_input o_sc_textarea" rows="2"/>
                             </div>
                         </t>
                         <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Primary Emergency Contact</t></t>

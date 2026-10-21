@@ -53,6 +53,7 @@
             <t t-elif="icon == 'mail'"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></t>
             <t t-elif="icon == 'check'"><path d="M20 6L9 17l-5-5"/></t>
             <t t-elif="icon == 'filter'"><path d="M22 3H2l8 9.5V19l4 2v-8.5z"/></t>
+            <t t-elif="icon == 'epipen'"><rect x="9" y="2" width="6" height="14" rx="2"/><path d="M12 16v6M9 6h6M10 19h4"/></t>
             <t t-elif="icon == 'sort'"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></t>
             <t t-else=""><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></t>
         </svg>
@@ -829,6 +830,101 @@
                 </button>
             </div>
         </div>
+    </template>
+
+    <!--
+        Task 1630 (owner + MC 2026-10-21) — the « Allergies » and « Medical
+        alert » pills of a player (the player header, the clinic dossier):
+        each coloured by its level — « None » grey, « Not urgent » yellow,
+        « Urgent – life-threatening » red, « Not specified » a muted
+        outline — the allergies one with the EpiPen icon when ticked. A pill
+        opens its popup (sc_medical_sheets). A READ fragment (no island):
+        a save refreshes it in place. Variables: patient, scope (unique ids
+        per page: 'player' / 'clinic'), tp (the viewer is a therapist: both
+        pills, every level; a coach gets the non-urgent / urgent ones only),
+        section (data-sc-section of the holder).
+    -->
+    <template id="sc_medical_pills" name="App shell: medical pills">
+        <div class="o_sc_med_pills" t-att-data-sc-section="section or 'medical.pills'"
+             t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-pills')">
+            <t t-foreach="patient._sc_medical_pills(tp=tp)" t-as="pill">
+                <button type="button" t-attf-class="o_sc_med_pill o_sc_med_#{pill['tone']}"
+                        t-att-data-sc-sheet-open="'sc_med_%s_%s_%s' % (scope, pill['key'], patient.id)"
+                        t-att-data-sc-med-pill="pill['key']" t-att-data-sc-med-level="pill['level'] or 'unset'"
+                        aria-haspopup="dialog" t-att-title="pill['text']"
+                        t-att-aria-label="('%s · EpiPen' % pill['text']) if pill['epipen'] else pill['text']">
+                    <span class="o_sc_med_pill_label" t-out="pill['label']"/>
+                    <span t-if="pill['epipen']" class="o_sc_med_epipen" data-sc-med-epipen="1">
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
+                    </span>
+                </button>
+            </t>
+        </div>
+    </template>
+
+    <!--
+        Task 1630 — the popups of sc_medical_pills (sc_sheet: a bottom sheet
+        on a phone, a dialog on a laptop): the level, EpiPen and the details
+        (a read fragment); for a therapist (``editable``) a pencil opens the
+        edit view — the level (« Not specified » first), the details, EpiPen
+        (allergies) — saved field by field. Rendered OUTSIDE any read
+        fragment (it holds islands). Variables: patient, scope, tp, editable.
+    -->
+    <template id="sc_medical_sheets" name="App shell: medical sheets">
+        <t t-set="sc_med_levels" t-value="patient._sc_medical_level_options()"/>
+        <t t-foreach="patient._sc_medical_pills(tp=tp)" t-as="pill">
+            <t t-call="bemade_sports_clinic.sc_sheet">
+                <t t-set="sheet_id" t-value="'sc_med_%s_%s_%s' % (scope, pill['key'], patient.id)"/>
+                <t t-set="lazy_url" t-value="False"/>
+                <t t-set="title" t-value="pill['label']"/>
+                <div t-attf-class="o_sc_med_sheet#{' o_sc_edit_card' if editable else ''}"
+                     t-att-data-sc-section="'medical.%s' % pill['key']"
+                     t-att-data-sc-edit-card="('medical-%s' % pill['key']) if editable else None">
+                    <div class="o_sc_med_read" data-sc-edit-view="read"
+                         t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s' % pill['key'])">
+                        <p class="o_sc_med_level_line">
+                            <span t-attf-class="o_sc_med_pill o_sc_med_pill_static o_sc_med_#{pill['tone']}"
+                                  t-att-data-sc-med-level="pill['level'] or 'unset'" t-out="pill['level_label']"/>
+                            <span t-if="pill['epipen']" class="o_sc_med_epipen_line" data-sc-med-epipen="1">
+                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
+                                <span>EpiPen</span>
+                            </span>
+                        </p>
+                        <p t-if="pill['details']" class="o_sc_pre o_sc_med_details" t-out="pill['details']"/>
+                        <p t-else="" class="o_sc_muted o_sc_med_details_empty">No details.</p>
+                    </div>
+                    <t t-if="editable">
+                        <t t-set="sc_med_edit_label">Edit</t>
+                        <div class="o_sc_actions_row o_sc_med_edit_row">
+                            <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-edit-toggle="1"
+                                    data-sc-action="medical.edit" aria-expanded="false" t-att-title="sc_med_edit_label">
+                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                                <span t-out="sc_med_edit_label"/>
+                            </button>
+                        </div>
+                        <div class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
+                            <t t-if="pill['key'] == 'allergy'">
+                                <t t-set="lbl">Allergy level</t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'allergy_level', lbl, 'select', options=sc_med_levels)"/></t>
+                                <t t-set="lbl">EpiPen</t>
+                                <t t-set="sc_med_yes">Yes</t>
+                                <t t-set="sc_med_no">No</t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'allergy_epipen', lbl, 'segmented', options=[('1', sc_med_yes), ('0', sc_med_no)])"/></t>
+                                <t t-set="lbl">Allergy details</t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'allergy_details', lbl, 'textarea', clearable=True)"/></t>
+                            </t>
+                            <t t-else="">
+                                <t t-set="lbl">Medical alert level</t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'medical_alert_level', lbl, 'select', options=sc_med_levels)"/></t>
+                                <t t-set="lbl">Medical alert details</t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'medical_alert_details', lbl, 'textarea', clearable=True)"/></t>
+                            </t>
+                            <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                        </div>
+                    </t>
+                </div>
+            </t>
+        </t>
     </template>
 
 </odoo>

@@ -134,6 +134,10 @@ class TestLaw25Anonymize(TransactionCase):
             team_info_notes="Confidential note",
             return_date=self.today - relativedelta(years=6),
         )
+        # Task 1630: the medical free text is wiped too (the levels stay).
+        player.write({"allergy_level": "minor", "allergy_details": "Synthetic kiwi",
+                      "medical_alert_details": "Synthetic asthma",
+                      "medical_history_other": "Synthetic fracture"})
         partner = player.partner_id
         old_name, old_email, old_phone = "Maurice Richard", "rocket@example.com", "+1 514 555 0101"
         # street lives on the partner (patient.street is related)
@@ -152,6 +156,9 @@ class TestLaw25Anonymize(TransactionCase):
         self.assertFalse(player.date_of_birth)
         self.assertFalse(player.team_info_notes)
         self.assertFalse(player.return_date)
+        self.assertFalse(player.allergy_details or player.medical_alert_details
+                         or player.medical_history_other)
+        self.assertEqual(player.allergy_level, "minor")
         # ... and on the partner
         self.assertNotIn("Maurice", partner.name)
         self.assertFalse(partner.email)

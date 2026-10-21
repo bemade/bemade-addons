@@ -4,7 +4,7 @@
 Acceptance criteria covered here (AC3 / AC5):
 
 * UC-R1 Per-role allowlists are enforced SERVER-SIDE: a coach posting a
-  therapist-only field (player allergies, the status pair, injury stage /
+  therapist-only field (player allergy details, the status pair, injury stage /
   internal notes / visibility / predicted date) gets 403 and nothing is
   written, although the ORM would let a coach write the injury.
 * UC-R2 A blur save writes ONE field and adds exactly ONE note-history row
@@ -79,9 +79,10 @@ class TestAppShellSave1539(AppShellCommon):
     # -- UC-R1 -----------------------------------------------------------
     def test_coach_refused_therapist_fields(self):
         self._login_coach()
-        self.player.sudo().write({'allergies': 'Peanuts'})
+        self.player.sudo().write({'allergy_details': 'Peanuts'})
         # Task 1633: date_of_birth left this list (coaches set it).
-        for field, value in (('allergies', 'None'), ('sc_status', 'no:no'),
+        # Task 1630: the allergy details replace the allergies text.
+        for field, value in (('allergy_details', 'None'), ('sc_status', 'no:no'),
                              ('training_recommendation', 'Rest'),
                              ('team_info_notes', 'x')):
             resp = self._save(self.player, field, value)
@@ -94,7 +95,7 @@ class TestAppShellSave1539(AppShellCommon):
             self.assertEqual(resp.status_code, 403, field)
         self.player.invalidate_recordset()
         self.injury.invalidate_recordset()
-        self.assertEqual(self.player.sudo().allergies, 'Peanuts')
+        self.assertEqual(self.player.sudo().allergy_details, 'Peanuts')
         self.assertEqual(self.player.match_status, 'yes')
         self.assertEqual(self.injury.stage, 'active')
         self.assertFalse(self.injury.sudo().internal_notes)
@@ -102,7 +103,7 @@ class TestAppShellSave1539(AppShellCommon):
 
     def test_therapist_saves_therapist_fields(self):
         self._login_tp()
-        resp = self._save(self.player, 'allergies', ' Pollen ')
+        resp = self._save(self.player, 'allergy_details', ' Pollen ')
         self.assertEqual(resp.status_code, 200, resp.text)
         self.assertEqual(resp.json()['value'], 'Pollen')
         resp = self._save(self.injury, 'internal_notes', 'TP-only synthetic text')

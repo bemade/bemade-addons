@@ -5,9 +5,9 @@ Acceptance criteria covered here (laptop 1366 px and phone 390 px):
 
 * RF-HEADER The player header opens as a read view (status chips, no
   selector, no « Remove player »); its one pencil opens the edit view with
-  the status selector, the recommendation, both return dates, the allergies
-  and « Remove player »; allergies saved there show in the read view's
-  banner after « Done », without a reload.
+  the recommendation, both return dates and « Remove player » (task 1630:
+  no allergies — the header's pills); the recommendation saved there shows
+  in the read view after « Done », without a reload.
 * RF-DATES On an injury card, picking « Resolved » hides the predicted
   resolution date field and shows the resolution date field, in place; the
   predicted date is cleared on the record.
@@ -32,7 +32,7 @@ class _Tours1018:
         url = '/my/player?player_id=%s&team_id=%s&tab=injuries' % (self.player.id, self.team_a.id)
         self.start_tour(url, 'sc_1018_header_pencil', login='pc.tp@example.com')
         self.player.invalidate_recordset()
-        self.assertEqual(self.player.allergies, 'Synthetic latex')
+        self.assertEqual(self.player.training_recommendation, 'Synthetic latex')
 
     def test_injury_dates(self):
         url = '/my/player?player_id=%s&tab=injuries&injury=%s' % (self.player.id, self.injury.id)

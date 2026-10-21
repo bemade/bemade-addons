@@ -50,7 +50,7 @@ function typeAndLeave(input, value) {
 
 // -------------------------------------------- player page (Info tab)
 const IDENTITY = '[data-sc-edit-card="identity"]';
-const HEADER = '[data-sc-edit-card="player-header"]';
+const MED_PILLS = '[data-sc-section="player.medical"]';
 
 tours.add("sc_1611_player_fragments", {
     steps: () => [
@@ -116,40 +116,45 @@ tours.add("sc_1611_player_fragments", {
             },
         },
         {
-            // Review fixes 2026-10-18 b: the allergies are edited in the
-            // player header only (its pencil), no longer in the Medical card.
-            content: "Open the header pencil",
-            trigger: `${HEADER} button[data-sc-edit-toggle]`,
+            // Task 1630: the allergies are the header's « Allergies » pill;
+            // a therapist edits them in its popup (pencil).
+            content: "Open the Allergies pill's popup",
+            trigger: `${MED_PILLS} button[data-sc-med-pill="allergy"]`,
             run: "click",
         },
         {
-            content: "Fill the allergies and leave the field",
-            trigger: `${HEADER} [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="allergies"] textarea`,
+            content: "Its pencil",
+            trigger: `dialog[open] [data-sc-edit-card="medical-allergy"] [data-sc-action="medical.edit"]`,
+            run: "click",
+        },
+        {
+            content: "Fill the allergy details and leave the field",
+            trigger: `dialog[open] [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="allergy_details"] textarea`,
             run() {
                 typeAndLeave(this.anchor, "Synthetic pollen");
             },
         },
         {
-            content: "The hero's allergies banner is refreshed (read view, behind the open edit view)",
+            content: "The popup's read view is refreshed (behind the open edit view)",
             trigger: ".o_sc_app",
             async run() {
                 await waitFor(() => {
-                    const banner = document.querySelector('[data-sc-section="player.allergies"] .o_sc_banner');
-                    return banner && banner.textContent.includes("Synthetic pollen");
-                }, "banner shown");
+                    const read = frag("medical-allergy");
+                    return read && read.textContent.includes("Synthetic pollen");
+                }, "details shown");
                 assertNoReload();
             },
         },
         {
-            content: "Clear the allergies",
-            trigger: `${HEADER} .o_sc_autosave[data-sc-field="allergies"] .o_sc_clear_btn`,
+            content: "Clear the allergy details",
+            trigger: `dialog[open] .o_sc_autosave[data-sc-field="allergy_details"] .o_sc_clear_btn`,
             run: "click",
         },
         {
-            content: "The banner goes",
+            content: "The details go",
             trigger: ".o_sc_app",
             async run() {
-                await waitFor(() => !document.querySelector('[data-sc-section="player.allergies"] .o_sc_banner'), "banner gone");
+                await waitFor(() => !frag("medical-allergy").textContent.includes("Synthetic pollen"), "details gone");
                 assertNoReload();
             },
         },

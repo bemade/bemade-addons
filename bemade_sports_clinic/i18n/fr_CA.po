@@ -3260,12 +3260,14 @@ msgstr ""
 "portail). Utilisé pour filtrer la sélection du personnel."
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergies
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
+#: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Allergies"
 msgstr ""
 
@@ -5314,6 +5316,7 @@ msgstr "Chaque partenaire ne peut être lié qu'à une seule équipe."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_quick_note_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_timesheet_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_row
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
 msgid "Edit"
 msgstr "Modifier"
 
@@ -7618,6 +7621,7 @@ msgid "Next Activity Type"
 msgstr "Type de la prochaine activité"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__match_status__no
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__practice_status__no
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_injury__parental_consent__no
@@ -7626,6 +7630,8 @@ msgstr "Type de la prochaine activité"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_add_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_sheets
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
 msgid "No"
 msgstr "Non"
 
@@ -13328,11 +13334,14 @@ msgid "Wrong password."
 msgstr "Mot de passe erroné."
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__match_status__yes
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__practice_status__yes
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_injury__parental_consent__yes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_add_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
 msgid "Yes"
 msgstr "Oui"
 
@@ -15945,3 +15954,171 @@ msgstr ""
 "Technique (tâche 1628) : une tâche « Fiche incomplète » a déjà été émise "
 "pour ce joueur. Une tâche marquée comme faite ou annulée n'est jamais émise "
 "de nouveau."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "%(head)s: %(details)s"
+msgstr "%(head)s : %(details)s"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "%(what)s (%(qualifiers)s)"
+msgstr "%(what)s (%(qualifiers)s)"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "%(what)s: %(level)s"
+msgstr "%(what)s : %(level)s"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid ""
+"<i class=\"fa fa-exclamation-triangle\"/> <strong>Allergies / medical "
+"alert</strong>"
+msgstr ""
+"<i class=\"fa fa-exclamation-triangle\"/> <strong>Allergies / alerte "
+"médicale</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "<span>EpiPen</span>"
+msgstr "<span>EpiPen</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid "<strong>Allergies / medical alert:</strong>"
+msgstr "<strong>Allergies / alerte médicale :</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_search
+msgid "Alerts to validate"
+msgstr "Alertes à valider"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergies
+msgid "Allergies (legacy)"
+msgstr "Allergies (ancien champ)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergy_details
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Allergy details"
+msgstr "Détails des allergies"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_incomplete_todo.py:0
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergy_level
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Allergy level"
+msgstr "Niveau d'allergies"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid "Edit in the app."
+msgstr "Modifier dans l'application."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergy_epipen
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "EpiPen"
+msgstr "EpiPen"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_form
+msgid "Health"
+msgstr "Santé"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+#: code:addons/bemade_sports_clinic/models/patient_incomplete_todo.py:0
+msgid "Medical alert"
+msgstr "Alerte médicale"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__medical_alert_details
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Medical alert details"
+msgstr "Détails de l'alerte médicale"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__medical_alert_level
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Medical alert level"
+msgstr "Niveau d'alerte médicale"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.act_window,name:bemade_sports_clinic.action_patient_medical_review
+#: model:ir.ui.menu,name:bemade_sports_clinic.sports_clinic_medical_review_menu
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_list_medical_review
+msgid "Medical alerts to validate"
+msgstr "Alertes médicales à valider"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "No details."
+msgstr "Aucun détail."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.actions.act_window,help:bemade_sports_clinic.action_patient_medical_review
+msgid "No medical alert to validate."
+msgstr "Aucune alerte médicale à valider."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__allergy_level__none
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__medical_alert_level__none
+msgid "None known"
+msgstr "Aucune"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Not specified"
+msgstr "Non renseigné"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__allergy_level__minor
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__medical_alert_level__minor
+msgid "Not urgent"
+msgstr "Non urgente"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__medical_history_other
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+msgid "Other medical history"
+msgstr "Autres antécédents médicaux"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient__medical_alert_review
+msgid ""
+"Pre-filled from the former free-text allergies field: check the levels and "
+"details, then untick."
+msgstr ""
+"Prérempli à partir de l'ancien champ texte des allergies : vérifiez les "
+"niveaux et les détails, puis décochez."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__medical_alert_review
+msgid "To validate"
+msgstr "À valider"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__allergy_level__urgent
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__medical_alert_level__urgent
+msgid "Urgent – life-threatening"
+msgstr "Urgente – risque vital"

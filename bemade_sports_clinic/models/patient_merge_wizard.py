@@ -3,14 +3,27 @@ from markupsafe import Markup
 from odoo import api, fields, models, Command, _
 from odoo.exceptions import UserError
 
+from .medical_alerts import more_severe
+
 # Fields resolved by an explicit rule rather than by destination-precedence.
 # Never reported as conflicts: the rule, not the user, decides them.
 RULE_RESOLVED_FIELDS = (
     "first_name", "last_name", "partner_id", "team_ids",
     "last_consultation_date", "match_status", "practice_status",
+    # Task 1630: the more severe level wins; EpiPen / « to validate »: OR.
+    "allergy_level", "medical_alert_level", "allergy_epipen", "medical_alert_review",
 )
 # Clinical free text: never discarded, concatenated under a provenance header.
-TEXT_FIELDS = ("team_info_notes", "allergies")
+# Task 1630: the allergy / medical-alert details and « Other medical history »
+# (the legacy allergies text too, while the hidden column is kept).
+TEXT_FIELDS = (
+    "team_info_notes", "allergy_details", "medical_alert_details",
+    "medical_history_other", "allergies",
+)
+# Task 1630: levels resolved to the more severe one.
+LEVEL_FIELDS = ("allergy_level", "medical_alert_level")
+# Task 1630: booleans resolved with OR (a ticked EpiPen is never lost).
+OR_FIELDS = ("allergy_epipen", "medical_alert_review")
 # Scalars: destination wins where set, sources fill blanks.
 # Task 1421: two records with different jersey numbers surface as a conflict.
 SCALAR_FIELDS = ("date_of_birth", "predicted_return_date", "return_date", "jersey_number")
@@ -222,7 +235,7 @@ class PatientMergeWizard(models.TransientModel):
         values. A source-only value is not a conflict -- it fills a blank.
 
         Only fields the acting user can actually READ are compared:
-        date_of_birth, team_info_notes and allergies are group-restricted, and
+        date_of_birth, team_info_notes and the medical fields are group-restricted, and
         a restricted value must not leak into a warning.
         """
         self.ensure_one()
@@ -339,6 +352,14 @@ class PatientMergeWizard(models.TransientModel):
             merged = self._merge_text(dst, srcs, fname)
             if merged != dst[fname]:
                 values[fname] = merged
+        # Task 1630: the more severe level; EpiPen and « to validate »: OR.
+        for fname in LEVEL_FIELDS:
+            level = more_severe(*(p[fname] for p in (dst | srcs)))
+            if level != dst[fname]:
+                values[fname] = level
+        for fname in OR_FIELDS:
+            if not dst[fname] and any(src[fname] for src in srcs):
+                values[fname] = True
         # match_status/practice_status are deliberately absent: only four
         # combinations are valid (see constrain_match_and_practice_status), so
         # they stay as the destination's pair rather than being resolved

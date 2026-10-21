@@ -900,7 +900,7 @@ class AccessControlMixin:
     @staticmethod
     def _is_treatment_professional():
         """Portal OR internal treatment professional (task 1411) — exactly the
-        groups the TP-only patient fields (team_info_notes, allergies) are
+        groups the TP-only patient fields (team_info_notes, medical_history_other) are
         restricted to, so a template guarded by this never reads a field the
         user may not see."""
         user = request.env.user
