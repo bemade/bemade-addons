@@ -1383,11 +1383,12 @@
                                 <label for="sc_new_last" class="o_sc_field_label">Last name</label>
                                 <input type="text" id="sc_new_last" name="last_name" class="o_sc_input" required="required" t-att-value="last_name"/>
                             </div>
-                            <!-- Task 1633: coaches too; required for therapists, as before. -->
+                            <!-- Task 1633: coaches too; required for everyone who sets it
+                                 (owner review 2026-10-21: coaches as well as therapists). -->
                             <div t-if="sc_can('patient.dob')" class="o_sc_field">
                                 <label for="sc_new_dob" class="o_sc_field_label">Date of birth</label>
                                 <input type="date" id="sc_new_dob" name="date_of_birth" class="o_sc_input" t-att-value="date_of_birth"
-                                       t-att-required="'required' if is_treatment_prof else None"/>
+                                       required="required"/>
                             </div>
                             <div class="o_sc_field">
                                 <label for="sc_new_jersey" class="o_sc_field_label">Jersey no.</label>
