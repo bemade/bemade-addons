@@ -1113,7 +1113,6 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_clinic_teams': ', '.join(event_sudo.team_ids.mapped('name')),
             'sc_clinic_staff': ', '.join(staff.mapped('name')),
             'sc_worklist_props': json.dumps(worklist_props, default=str),
-            'sc_status_options': self._sc_status_options(),
             'sc_note_props': note_props,
             'sc_injury_rows': injury_rows,
             'sc_is_tp_view': tp_view,

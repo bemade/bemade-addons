@@ -83,10 +83,14 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         read = hero.xpath('./*[@data-sc-edit-view="read"]')[0]
         edit = hero.xpath('./*[@data-sc-edit-view="edit"]')[0]
         self.assertEqual(edit.get('hidden'), 'hidden')
-        self.assertTrue(read.xpath('.//*[@data-sc-section="player.status.readonly"]//*[@data-sc-stage-chip]'))
+        # Task 1627: the status pills are live dropdowns in the READ view (no
+        # stage chip, no selector behind the pencil).
+        self.assertFalse(read.xpath('.//*[@data-sc-stage-chip]'))
+        self.assertEqual(len(read.xpath('.//*[@data-sc-section="player.status.readonly"]'
+                                        '//button[contains(@class, "o_sc_pill_select")]')), 2)
         self.assertFalse(read.xpath('.//owl-component'))
-        self.assertEqual(self._owl(edit)['sc_status']['inputType'], 'segmented')
-        self.assertEqual(len(tree.xpath('//owl-component[contains(@props, \'"sc_status"\')]')), 1)
+        self.assertNotIn('sc_status', self._owl(edit))
+        self.assertFalse(tree.xpath('//owl-component[contains(@props, \'"sc_status"\')]'))
         self._login_coach()
         _text, tree = self._get(self._url(tab='injuries'))
         hero = tree.xpath('//*[@data-sc-section="player.hero"]')[0]
@@ -95,6 +99,19 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         self.assertFalse(hero.xpath('.//*[@data-sc-edit-toggle]'))
         self.assertFalse(hero.xpath('.//*[@data-sc-edit-view="edit"]'))
         self.assertTrue(hero.xpath('.//*[@data-sc-section="player.status.readonly"]'))
+        self.assertFalse(hero.xpath('.//*[@data-sc-section="player.status.readonly"]//button'))
+
+    def _assert_training_title(self, section):
+        """Task 1629: ``section`` opens with the h3 ``o_sc_edit_card_title``
+        « Training Recommendation » and its « History » link right after the
+        label (``o_sc_section_more o_sc_link_btn``), the only one inside."""
+        title = section.xpath('./*')[0]
+        self.assertEqual(title.tag, 'h3')
+        self.assertIn('o_sc_edit_card_title', title.get('class').split())
+        label, link = title.xpath('./*')
+        self.assertEqual(label.text_content().strip(), 'Training Recommendation')
+        self.assertTrue({'o_sc_section_more', 'o_sc_link_btn'} <= set(link.get('class').split()))
+        self.assertEqual(section.xpath('.//*[@data-sc-sheet-open="sc_training_history_sheet"]'), [link])
 
     # -- UC-PL3 / UC-PL4 -------------------------------------------------
     def test_info_cards(self):
@@ -126,13 +143,16 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         self.assertTrue(allergies.xpath('./*[contains(@class, "o_sc_banner")]'))
         self.assertIn('Synthetic peanuts', allergies.text_content())
         self.assertIn('Synthetic bike', training[0].text_content())
-        self.assertTrue(training[0].xpath('.//*[@data-sc-sheet-open="sc_training_history_sheet"]'))
+        # Task 1629: an all-caps in-card title with ONE History link after it.
+        self._assert_training_title(training[0])
         # Review fixes 2026-10-18: the therapist edits it in the header's
-        # edit view (live, with its History).
+        # edit view (live, with its History). Task 1629: the same title +
+        # link heads it; the island draws no second link.
         edit = hero.xpath('./*[@data-sc-edit-view="edit"]')[0]
         training_edit = edit.xpath('./*[@data-sc-section="player.training.edit"]')[0]
         self.assertIn('training_recommendation', self._owl(training_edit))
-        self.assertTrue(training_edit.xpath('.//owl-component[contains(@props, "sc_training_history_sheet")]'))
+        self._assert_training_title(training_edit)
+        self.assertFalse(training_edit.xpath('.//owl-component[contains(@props, "sc_training_history_sheet")]'))
         self._login_coach()
         _text, tree = self._get(self._url(tab='info'))
         self.assertFalse(tree.xpath(
@@ -141,7 +161,7 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
                               '/*[@data-sc-section="player.training"]')[0]
         self.assertIn('Synthetic bike', training.text_content())
         self.assertNotIn('training_recommendation', self._owl(training))
-        self.assertTrue(training.xpath('.//*[@data-sc-sheet-open="sc_training_history_sheet"]'))
+        self._assert_training_title(training)
 
     # -- UC-PL5 ----------------------------------------------------------
     def test_contacts_on_info_tab(self):

@@ -23,3 +23,11 @@ class MailActivity(models.Model):
         help="Technical link to the injury this activity is about "
         "(set by the injury verification cron and the 1409 migration).",
     )
+    # Task 1628: the « Complete the player's file » To-Do raised by the
+    # incomplete-player cron. The cron keys on this flag (never on the
+    # translated summary) to find, update and close its one To-Do per player.
+    patient_incomplete_todo = fields.Boolean(
+        string="Incomplete Player File To-Do",
+        copy=False,
+        help="Technical: set by the incomplete-player cron (task 1628).",
+    )

@@ -222,16 +222,20 @@
                         </div>
 
                         <div class="o_sc_card o_sc_fields" data-sc-section="clinic.dossier.status" id="clinic-status">
-                            <t t-if="is_treatment_prof and sc_can('patient.status.edit')">
-                                <t t-set="sc_status_label">Play status</t>
-                                <t t-set="sc_status_undo">Status changed</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                    <t t-set="props" t-value="sc_field_props(patient, 'sc_status', sc_status_label, 'segmented', options=sc_status_options, instant=True, undoMessage=sc_status_undo)"/>
+                            <!-- Task 1627: the player page's Match / Practice pill
+                                 dropdowns replace the 4-way changer (read-only,
+                                 coloured pills without the status right); a
+                                 read fragment, so a change recolours them in
+                                 place. -->
+                            <t t-set="sc_status_undo">Status changed</t>
+                            <div class="o_sc_chips" data-sc-section="clinic.dossier.status.pills"
+                                 t-att-data-sc-fragment="sc_fragment_key(patient, 'status')">
+                                <t t-foreach="patient._sc_status_pills()" t-as="pill">
+                                    <t t-call="bemade_sports_clinic.sc_status_pill_select">
+                                        <t t-set="editable" t-value="is_treatment_prof and sc_can('patient.status.edit')"/>
+                                        <t t-set="undo_message" t-value="sc_status_undo"/>
+                                    </t>
                                 </t>
-                            </t>
-                            <div t-else="" class="o_sc_chips">
-                                <span class="o_sc_chip o_sc_chip_ghost"><span>Match:</span> <span t-field="patient.match_status"/></span>
-                                <span class="o_sc_chip o_sc_chip_ghost"><span>Practice:</span> <span t-field="patient.practice_status"/></span>
                             </div>
                             <t t-set="sc_training_label">Training Recommendation</t>
                             <t t-if="is_treatment_prof and sc_can('patient.training.edit')" t-call="bemade_sports_clinic.sc_field_autosave">

@@ -2,8 +2,8 @@
  * Task 1582 — the injury notes' « replace » editor
  * (tests/test_note_replace_tours_1582.py): an EMPTY « New note » under the
  * read-only current text, « Reuse current text » prefills, an empty editor
- * never saves, a save replaces the text (a history row is added, the scoped
- * « History » sheet shows it). Language-independent triggers.
+ * never saves, a save replaces the text (a history row is added, the Notes
+ * head's « History » sheet shows it — task 1631: the only one). Language-independent triggers.
  */
 import { registry } from "@web/core/registry";
 
@@ -94,19 +94,24 @@ tours.add("sc_1582_note_replace", {
                 assert(read && read.textContent.includes(NEW), "read view not refreshed");
             },
         },
+        // Task 1631: no per-field « History » — the Notes head's one (both
+        // scopes, each entry labelled), in edit mode too.
         {
-            content: "« History » next to the replace hint opens the external history",
-            trigger: `${FIELD} .o_sc_replace_hint [data-sc-sheet-open^="sc_note_history_sheet_"][data-sc-sheet-open$="_external"]`,
-            run: "click",
+            content: "No « History » next to the replace hint; the head's one opens the history",
+            trigger: `[data-sc-edit-card="injury-notes"] .o_sc_edit_card_head [data-sc-sheet-open^="sc_note_history_sheet_"]`,
+            run(helpers) {
+                assert(
+                    !document.querySelector(`${FIELD} [data-sc-sheet-open^="sc_note_history_sheet_"]`),
+                    "a per-field History link"
+                );
+                return helpers.click();
+            },
         },
         {
-            content: "The scoped history lists the new text, external rows only",
-            trigger: `dialog[id^="sc_note_history_sheet_"][id$="_external"][open] li.o_sc_history_entry:contains(${NEW})`,
+            content: "The history lists the new text and keeps the previous one",
+            trigger: `dialog[id^="sc_note_history_sheet_"][open] li.o_sc_history_entry:contains(${NEW})`,
             run() {
-                const rows = [
-                    ...document.querySelectorAll('dialog[id^="sc_note_history_sheet_"][id$="_external"][open] li.o_sc_history_entry'),
-                ];
-                assert(rows.every((li) => li.dataset.scScope === "external"), "a non-external row");
+                const rows = [...document.querySelectorAll('dialog[id^="sc_note_history_sheet_"][open] li.o_sc_history_entry')];
                 assert(
                     rows.some((li) => li.textContent.includes(CURRENT)),
                     "the previous text is not kept in the history"

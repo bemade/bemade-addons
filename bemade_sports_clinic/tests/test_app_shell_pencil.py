@@ -46,7 +46,10 @@ from odoo.tools.misc import mute_logger
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
 # Task 1603: « Retour prévu » is a live header field too (next to the training rec).
-ALWAYS_LIVE = {'sc_status', 'training_recommendation', 'predicted_return_date'}
+# Task 1627: the play status is no autosave field any more — it is the
+# Match / Practice pill dropdowns, live outside the pencil by owner decision
+# (checked below: only in a ``status`` read fragment).
+ALWAYS_LIVE = {'training_recommendation', 'predicted_return_date'}
 
 
 @tagged('post_install', '-at_install')
@@ -93,9 +96,12 @@ class TestAppShellPencil(AppShellCommon):
         text, tree = self._get(self.injury_url)
         details, edit = self._card(tree, 'injury-details')
         names = {f['field'] for f in self._fields(edit)}
-        for name in ('diagnosis', 'sc_injury_date', 'stage', 'predicted_resolution_date',
-                     'resolution_date', 'parental_consent', 'hidden_from_coaches'):
+        for name in ('diagnosis', 'sc_injury_date', 'predicted_resolution_date', 'resolution_date'):
             self.assertIn(name, names)
+        # Task 1631: status, consent and visibility are pill dropdowns.
+        for name in ('stage', 'parental_consent', 'hidden_from_coaches'):
+            self.assertNotIn(name, names)
+            self.assertTrue(tree.xpath('//*[@data-sc-pill-select][@data-sc-field="%s"]' % name), name)
         notes, edit = self._card(tree, 'injury-notes')
         self.assertEqual({f['field'] for f in self._fields(edit)}, {'external_notes', 'internal_notes'})
         read = notes.xpath('.//*[@data-sc-edit-view="read"]')[0].text_content()
@@ -274,6 +280,21 @@ class TestAppShellPencil(AppShellCommon):
                         continue
                     self.assertTrue(node.xpath('ancestor::*[@data-sc-edit-view="edit"]'),
                                     '%s: %s is live outside a pencil' % (url, props.get('field')))
+                # Task 1627: the deliberate always-live exception — the status
+                # pills, in the player's « status » read fragment only. Task
+                # 1631: and the injury card's pills — the status in its
+                # « summary », consent + visibility in its « flags ».
+                homes = {
+                    ('sports.patient', 'sc_status'): 'status',
+                    ('sports.patient.injury', 'stage'): 'summary',
+                    ('sports.patient.injury', 'parental_consent'): 'flags',
+                    ('sports.patient.injury', 'hidden_from_coaches'): 'flags',
+                }
+                for pill in tree.xpath('//*[@data-sc-pill-select]'):
+                    home = homes.get((pill.get('data-sc-model'), pill.get('data-sc-field')))
+                    self.assertTrue(home, '%s: %s' % (url, pill.get('data-sc-field')))
+                    self.assertTrue(pill.xpath('ancestor::*[@data-sc-fragment="%s:%s:%s"]' % (
+                        pill.get('data-sc-model'), pill.get('data-sc-record-id'), home)), url)
 
 
 @tagged('post_install', '-at_install')

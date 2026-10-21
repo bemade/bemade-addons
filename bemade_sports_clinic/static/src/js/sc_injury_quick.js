@@ -16,6 +16,11 @@
  * (summary, card order, the player's lists — task 1611) follow in place, and
  * a ``propose`` opens the follow-up sheet (task 1603: the last active injury
  * resolved -> clear Retour prévu + actual return).
+ *
+ * Task 1631: the card header's status pill (#1627's component) hands two of
+ * its picks over here (« sc:pill-action »): « Actif » from « Non vérifié »
+ * = the verify above, « Résolu » = the resolve sheet above (from
+ * « Non vérifié » too: the sheet then posts ``from_unverified=1``).
  */
 import { _t } from "@web/core/l10n/translation";
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
@@ -53,8 +58,7 @@ async function post(injuryId, action, data = {}) {
     return scFetch(`/my/injury/${injuryId}/${action}`, { method: "POST", data, toast: false });
 }
 
-async function verify(button) {
-    const injuryId = button.dataset.scInjuryId;
+async function verify(button, injuryId = button.dataset.scInjuryId) {
     button.disabled = true;
     try {
         const result = await post(injuryId, "verify");
@@ -81,14 +85,15 @@ function injuryName(button) {
     return title ? title.textContent.trim() : "";
 }
 
-function openResolve(button) {
+function openResolve(button, injuryId = button.dataset.scInjuryId, fromStage = "") {
     const dialog = resolveSheet();
     if (!dialog || typeof dialog.showModal !== "function") {
         return;
     }
     const form = dialog.querySelector("form[data-sc-injury-resolve-form]");
     const input = form.querySelector('input[name="resolution_date"]');
-    form.dataset.scInjuryId = button.dataset.scInjuryId;
+    form.dataset.scInjuryId = injuryId;
+    form.dataset.scFromUnverified = fromStage === "unverified" ? "1" : "";
     input.value = input.max || input.defaultValue;
     form.querySelector("[data-sc-injury-resolve-name]").textContent = injuryName(button);
     form.querySelector("[data-sc-injury-resolve-error]").hidden = true;
@@ -113,7 +118,11 @@ async function confirmResolve(form) {
     confirm.disabled = true;
     error.hidden = true;
     try {
-        const result = await post(injuryId, "resolve", { resolution_date: input.value });
+        const data = { resolution_date: input.value };
+        if (form.dataset.scFromUnverified === "1") {
+            data.from_unverified = "1";
+        }
+        const result = await post(injuryId, "resolve", data);
         form.closest("dialog").close();
         announce(injuryId, result);
     } catch (err) {
@@ -156,4 +165,18 @@ document.addEventListener("submit", (ev) => {
     }
     ev.preventDefault();
     confirmResolve(form);
+});
+
+// Task 1631: the status pill's verify / resolve picks.
+document.addEventListener("sc:pill-action", (ev) => {
+    const detail = ev.detail || {};
+    if (detail.model !== MODEL || !detail.pill || !inShell(detail.pill)) {
+        return;
+    }
+    const toggle = detail.pill.querySelector("[data-sc-menu-toggle]") || detail.pill;
+    if (detail.action === "injury.verify") {
+        verify(toggle, detail.recordId);
+    } else if (detail.action === "injury.resolve") {
+        openResolve(toggle, detail.recordId, detail.from);
+    }
 });

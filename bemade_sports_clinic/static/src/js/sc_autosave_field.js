@@ -110,6 +110,9 @@ export class ScAutosaveField extends Component {
         inputType: { type: String, optional: true },
         inputId: { type: String, optional: true },
         label: { type: String, optional: true },
+        // Task 1629: the label is visually hidden (a section title above
+        // names the field; the label stays its accessible name).
+        labelHidden: { type: Boolean, optional: true },
         hint: { type: String, optional: true },
         placeholder: { type: String, optional: true },
         value: { optional: true },

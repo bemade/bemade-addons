@@ -186,9 +186,12 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         edits = item.xpath('.//*[@data-sc-edit-view="edit"]')
         self.assertTrue(all(edit.get('hidden') == 'hidden' for edit in edits))
         fields_ = ' '.join(f for edit in edits for f in self._fields_in(edit))
-        for name in ('"sc_injury_date"', '"predicted_resolution_date"', '"parental_consent"',
-                     '"external_notes"', '"internal_notes"', '"hidden_from_coaches"', '"stage"'):
+        for name in ('"sc_injury_date"', '"predicted_resolution_date"',
+                     '"external_notes"', '"internal_notes"'):
             self.assertIn(name, fields_)
+        # Task 1631: status / consent / visibility are pill dropdowns.
+        self.assertEqual(sorted(item.xpath('.//*[@data-sc-pill-select]/@data-sc-field')),
+                         ['hidden_from_coaches', 'parental_consent', 'stage'])
         self.assertFalse(item.xpath('.//a[contains(@href, "/my/injury/edit")]'))
         self.assertTrue(item.xpath('.//summary//*[contains(@class, "o_sc_consent_todo")]'))
         self._login_coach()

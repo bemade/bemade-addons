@@ -21,13 +21,13 @@ Acceptance criteria covered here:
   ONE return date — the predicted one while not Play OK). Therapists edit it behind the
   Medical Information card's pencil; coaches cannot (the legacy portal never
   let a coach write it; the save answers 403).
-* UC-4 Status label: users without the play-status selector (coaches) read
-  the player's status label (Play OK / Practice OK / Injured) in the hero,
-  as a ``data-sc-stage-chip`` (therapists keep the selector, UC-PS2); the
-  inline injury cards keep their stage badge.
+* UC-4 Status: task 1627 replaced the hero's status label
+  (``data-sc-stage-chip``) with coloured Match / Practice pills — coaches
+  read them (read-only), therapists change them (dropdowns); the inline
+  injury cards keep their stage badge.
 * UC-5 French (fr_CA, by render): « Pays », « Retour réel », « Date de
-  retour réelle », the coach's status label (« Matchs autorisés »: the stage
-  labels come from the model's selection), and the foreign-province
+  retour réelle », the coach's status pills (« Match : Oui », « Pratique :
+  Oui »: the values come from the model's selections), and the foreign-province
   refusal « Cette province n'appartient pas au pays du joueur. ».
 """
 import json
@@ -256,31 +256,39 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
         self.assertEqual(ret.text_content().strip(), 'Actual return: not set')
 
     # -- UC-4 ------------------------------------------------------------
-    def test_coach_reads_status_label(self):
+    def test_coach_reads_status_pills(self):
+        # Task 1627: coloured read-only Match / Practice pills (no stage label).
         cases = (
-            ({'match_status': 'yes', 'practice_status': 'yes'}, 'green', 'Play OK'),
-            ({'match_status': 'no', 'practice_status': 'yes'}, 'yellow', 'Practice OK'),
-            ({'match_status': 'no', 'practice_status': 'no'}, 'red', 'Injured'),
+            ({'match_status': 'yes', 'practice_status': 'yes'}, ('green', 'green'),
+             ('Match: Yes', 'Practice: Yes')),
+            ({'match_status': 'no', 'practice_status': 'yes'}, ('red', 'green'),
+             ('Match: No', 'Practice: Yes')),
+            ({'match_status': 'no', 'practice_status': 'no'}, ('red', 'red'),
+             ('Match: No', 'Practice: No')),
         )
         self._login_coach()
-        for vals, tone, label in cases:
+        for vals, tones, labels in cases:
             self.player.write(vals)
             _text, tree = self._get(self._url())
-            chip = tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-stage-chip="%s"]' % self.player.id)
-            self.assertEqual(len(chip), 1, vals)
-            self.assertIn('o_sc_chip_%s' % tone, chip[0].get('class'))
-            self.assertEqual(chip[0].text_content().strip(), label)
+            hero = tree.xpath('//*[@data-sc-section="player.hero"]')[0]
+            self.assertFalse(hero.xpath('.//*[@data-sc-stage-chip]'))
+            pills = hero.xpath('.//*[@data-sc-pill-readonly]')
+            self.assertEqual([p.get('data-sc-pill-key') for p in pills], ['match', 'practice'], vals)
+            for pill, tone, label in zip(pills, tones, labels):
+                self.assertIn('o_sc_chip_%s' % tone, pill.get('class'), vals)
+                self.assertEqual(' '.join(pill.text_content().split()), label)
 
-    def test_therapist_reads_label_edits_with_selector(self):
-        # Review fixes 2026-10-18: the therapist's header read view shows the
-        # status label too; the selector is in the header's edit view.
+    def test_therapist_changes_status_with_the_pills(self):
+        # Task 1627: the therapist's pills are dropdowns in the READ view; the
+        # header's edit view has no status selector any more.
         self._login_tp()
         _text, tree = self._get(self._url())
         read = tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-edit-view="read"]')[0]
-        self.assertEqual(len(read.xpath('.//*[@data-sc-stage-chip]')), 1)
+        self.assertFalse(read.xpath('.//*[@data-sc-stage-chip]'))
+        self.assertEqual(len(read.xpath('.//button[contains(@class, "o_sc_pill_select")]')), 2)
         self.assertFalse(read.xpath('.//owl-component'))
         edit = tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-edit-view="edit"]')[0]
-        self.assertEqual(len(self._props(edit, 'sc_status', scope='.//*')), 1)
+        self.assertFalse(self._props(edit, 'sc_status', scope='.//*'))
 
     def test_injury_cards_carry_stage_badge(self):
         injury = self.env['sports.patient.injury'].create({
@@ -344,15 +352,15 @@ class TestPlayerCountryI18n1594(TestAppShellI18n1538):
             self.assertIn(term, text, term)
         self.assertNotIn('Actual return', text)
 
-    def test_coach_status_label_in_french(self):
+    def test_coach_status_pills_in_french(self):
+        # Task 1627: the coach's read-only pills, in French.
         self._switch(True)
         self._login_coach()
         tree = lxml_html.fromstring(self._fr(self._url()))
-        chip = tree.xpath('//*[@data-sc-stage-chip="%s"]' % self.player.id)
-        label = dict(self.player.with_context(lang='fr_CA')._fields['stage']._description_selection(
-            self.env(context=dict(self.env.context, lang='fr_CA'))))['healthy']
-        self.assertEqual(chip[0].text_content().strip(), label)
-        self.assertNotEqual(label, 'Play OK')
+        self.assertFalse(tree.xpath('//*[@data-sc-stage-chip]'))
+        pills = [' '.join(p.text_content().split()) for p in tree.xpath(
+            '//*[@data-sc-pill-readonly][@data-sc-pill-key="match" or @data-sc-pill-key="practice"]')]
+        self.assertEqual(pills, ['Match : Oui', 'Pratique : Oui'])
 
     @mute_logger('odoo.http')
     def test_foreign_province_refusal_in_french(self):

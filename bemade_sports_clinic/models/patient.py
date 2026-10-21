@@ -2278,6 +2278,76 @@ class Patient(models.Model):
             "injuries": self.active_injury_count,
         }
 
+    # Task 1627: the match / practice pairs the constraint allows.
+    _SC_VALID_STATUS_PAIRS = frozenset(
+        {("yes", "yes"), ("no", "yes"), ("no", "no_contact"), ("no", "no")})
+
+    def _sc_status_pills(self):
+        """Task 1627: the Match and Practice pill dropdowns of ONE player
+        (the ``sc_status_pill_select`` component): ``[match, practice]``,
+        each ``{key, label, text, value, tone, icon, title, menu_label,
+        options, target}``.
+
+        ``options``: ``{value, label, tone, icon, checked, disabled, hint,
+        post}`` — ``post`` is the ``sc_status`` pair a pick saves (the other
+        pill's value kept); a choice that would make an invalid pair is
+        ``disabled`` with a ``hint`` saying what to change first (owner
+        decision 2026-10-20: greyed out, never auto-adjusted).
+        ``target``: what the pick posts to (``/my/app/save``), with the
+        ``write_date`` / ``old_value`` of this render."""
+        self.ensure_one()
+        env = self.env
+        match, practice = self.match_status, self.practice_status
+        pair = "%s:%s" % (match, practice)
+        target = {
+            "model": self._name,
+            "id": self.id,
+            "field": "sc_status",
+            "write_date": fields.Datetime.to_string(self.sudo().write_date),
+            "old_value": pair,
+        }
+        specs = (
+            ("match", "match_status", env._("Match"), env._("Match status"),
+             self._SC_MATCH_PILLS, lambda v: (v, practice), env._("Requires Practice: Yes")),
+            ("practice", "practice_status", env._("Practice"), env._("Practice status"),
+             self._SC_PRACTICE_PILLS, lambda v: (match, v), env._("Set Match to No first")),
+        )
+        pills = []
+        for key, field_name, label, menu_label, tones, pair_of, hint in specs:
+            value = self[field_name]
+            labels = dict(self._fields[field_name]._description_selection(env))
+            tone, icon = tones.get(value, ("ghost", ""))
+            text = env._("%(what)s: %(value)s", what=label,
+                         value=labels.get(value) or env._("Unknown"))
+            options = []
+            for option, option_label in labels.items():
+                new_pair = pair_of(option)
+                valid = new_pair in self._SC_VALID_STATUS_PAIRS
+                option_tone, option_icon = tones.get(option, ("ghost", ""))
+                options.append({
+                    "value": option,
+                    "label": option_label,
+                    "tone": option_tone,
+                    "icon": option_icon,
+                    "checked": option == value,
+                    "disabled": not valid,
+                    "hint": "" if valid else hint,
+                    "post": "%s:%s" % new_pair if valid else "",
+                })
+            pills.append({
+                "key": key,
+                "label": label,
+                "menu_label": menu_label,
+                "value": value,
+                "text": text,
+                "title": text,
+                "tone": tone,
+                "icon": icon,
+                "options": options,
+                "target": target,
+            })
+        return pills
+
     def _portal_list_name(self, with_jersey=True):
         """« Last, First » of ONE patient for portal lists and pickers —
         « #12 Last, First » when the player has a jersey number (task 1421,

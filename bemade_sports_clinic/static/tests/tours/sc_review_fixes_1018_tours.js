@@ -3,7 +3,8 @@
  * Language-independent triggers, synthetic fixtures.
  *
  * - sc_1018_header_pencil: the player header is a read view; its ONE pencil
- *   opens the edit view (status selector, recommendation, both return
+ *   opens the edit view (recommendation — task 1627: the status pills are
+ *   live in the read view —, both return
  *   dates, allergies, « Remove player » only there); the allergies saved
  *   there show in the read view's banner after « Done » (no reload).
  * - sc_1018_injury_dates: on an injury card, « Resolved » hides the
@@ -39,11 +40,11 @@ async function waitFor(check, message, timeout = 8000) {
 tours.add("sc_1018_header_pencil", {
     steps: () => [
         {
-            content: "Read view: status chips, no selector, no « Remove player »; open the pencil",
-            trigger: `${HERO} [data-sc-edit-view="read"] [data-sc-stage-chip]`,
+            content: "Read view: status pills (task 1627), no « Remove player »; open the pencil",
+            trigger: `${HERO} [data-sc-edit-view="read"] [data-sc-pill-key="match"] button.o_sc_pill_select`,
             run() {
                 window.__sc1018NoReload = true;
-                assert(!visible(`${HERO} .o_sc_autosave[data-sc-field="sc_status"]`), "selector shown in read mode");
+                assert(!document.querySelector(`${HERO} .o_sc_autosave[data-sc-field="sc_status"]`), "a 4-way selector");
                 assert(!visible(`${HERO} [data-sc-action="player.remove"]`), "« Remove player » shown in read mode");
                 document.querySelector(`${HERO} > button[data-sc-edit-toggle]`).click();
             },
@@ -52,7 +53,9 @@ tours.add("sc_1018_header_pencil", {
             content: "Edit view: every header field and « Remove player »",
             trigger: `${HERO} [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="allergies"] textarea`,
             run() {
-                for (const field of ["sc_status", "training_recommendation", "predicted_return_date", "return_date"]) {
+                // Task 1627: no status selector in the pencil any more.
+                assert(!document.querySelector(`${HERO} .o_sc_autosave[data-sc-field="sc_status"]`), "status in the pencil");
+                for (const field of ["training_recommendation", "predicted_return_date", "return_date"]) {
                     assert(visible(`${HERO} .o_sc_autosave[data-sc-field="${field}"]`), `${field} missing`);
                 }
                 assert(visible(`${HERO} [data-sc-action="player.remove"]`), "« Remove player » hidden in edit mode");
@@ -114,14 +117,25 @@ tours.add("sc_1018_injury_dates", {
                 assert(!visible(`${DETAILS} .o_sc_autosave[data-sc-field="resolution_date"]`), "resolution date shown");
             },
         },
+        // Task 1631: resolved from the header pill (the resolve sheet).
+        {
+            content: "Open the status pill",
+            trigger: `${CARD} > summary [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select`,
+            run: "click",
+        },
         {
             content: "Mark it resolved",
-            trigger: `${DETAILS} .o_sc_autosave[data-sc-field="stage"] button[data-sc-value="resolved"]`,
+            trigger: `${CARD} > summary [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="resolved"]`,
+            run: "click",
+        },
+        {
+            content: "Confirm the date",
+            trigger: "#sc_injury_resolve_sheet[open] [data-sc-injury-resolve-confirm]",
             run: "click",
         },
         {
             content: "Resolved: the resolution date shows, the predicted one goes (in place)",
-            trigger: `${DETAILS} .o_sc_autosave[data-sc-field="stage"][data-sc-state="saved"]`,
+            trigger: `${CARD} > summary [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_green`,
             async run() {
                 await waitFor(
                     () => visible(`${DETAILS} .o_sc_autosave[data-sc-field="resolution_date"]`)

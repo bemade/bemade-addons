@@ -8,7 +8,9 @@
              t-att-data-sc-field="props.field or props.name"
              t-att-data-sc-state="state.status" t-att-data-sc-restored="state.restored ? '1' : '0'">
             <label class="o_sc_field_label" t-att-for="props.inputId">
-                <span t-esc="props.label"/>
+                <!-- Task 1629: labelHidden = the title sits above the field;
+                     the label stays as the input's accessible name. -->
+                <span t-att-class="props.labelHidden ? 'visually-hidden' : undefined" t-esc="props.label"/>
                 <span t-if="statusLabel" t-attf-class="o_sc_save_state o_sc_save_state_{{ state.status }}" role="status" t-esc="statusLabel"/>
                 <button t-if="canClear" type="button"
                         class="o_sc_link_btn o_sc_clear_btn" t-on-click="clear">Clear</button>

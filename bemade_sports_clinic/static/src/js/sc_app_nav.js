@@ -284,6 +284,24 @@ document.addEventListener("click", (ev) => {
     setFlag(UP_KEY);
 });
 
+// Review 2026-10-20 (#1626): a breadcrumb link to the page this tab came
+// from is the same move as the back chevron — history.back(), so that page
+// comes back with its view state (the team's Dashboard vs Players tab, its
+// filters) instead of the crumb's canonical URL.
+document.addEventListener("click", (ev) => {
+    const crumb = ev.target.closest && ev.target.closest(".o_sc_app .o_sc_crumbs a[href]");
+    if (!crumb || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button) {
+        return;
+    }
+    const stack = load();
+    const previous = stack[stack.length - 2];
+    const distance = backDistance();
+    if (distance > 0 && previous && previous.k === pageKey(crumb.getAttribute("href"))) {
+        ev.preventDefault();
+        window.history.go(-distance);
+    }
+});
+
 // A form POST in the shell that comes back to the same page adds a history
 // entry for it: remember it for the next page load.
 document.addEventListener("submit", (ev) => {

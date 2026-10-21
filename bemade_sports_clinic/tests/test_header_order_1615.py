@@ -4,22 +4,23 @@ Review fixes 2026-10-18: the player header is a READ view with ONE pencil
 
 Acceptance criteria:
 
-* AC-1 Read view (everyone): the play status (label + Match / Practice
-  chips, read-only), then (its very next block) the training recommendation,
+* AC-1 Read view (everyone): the play status (task 1627: the coloured
+  Match / Practice pills — dropdowns for therapists, read-only for
+  coaches; no stage label), then (its very next block) the training recommendation,
   then ONE return date — « Retour prévu » while the player is not Play OK,
   else « Retour réel », a muted « not set » line while that date is empty
   (review fixes 2026-10-18, 1018c) — then the
   allergies holder (banner for therapists, hidden when empty).
 * AC-2 Edit view (therapists, behind the header's one pencil): the
-  play-status selector, the training recommendation (live), « Retour
+  training recommendation (live; task 1627: no status selector), « Retour
   prévu », « Retour réel », the allergies, « Remove player » (edit view
   only), then « Done ». Coaches: no pencil, no edit view.
 * AC-3 Nothing else moves: the header still opens on the name / team head
   and ends on the actions row; the #1611 fragment keys of the header
   regions are unchanged (``status`` and ``predicted-return`` are now read
   fragments for everyone).
-* AC-4 Clinic dossier: the play status, then the training recommendation,
-  in the same « status » card.
+* AC-4 Clinic dossier: the play status (task 1627: the same pills), then
+  the training recommendation, in the same « status » card.
 """
 from odoo.tests import tagged
 
@@ -27,7 +28,7 @@ from odoo.addons.bemade_sports_clinic.tests.test_app_shell_clinic_1540 import Cl
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_player_inline import PlayerInlineCommon
 
 ORDER = ['player.status', 'player.training', 'player.return', 'player.allergies']
-EDIT_ORDER = ['player.status.edit', 'player.training.edit', 'player.predicted_return',
+EDIT_ORDER = ['player.training.edit', 'player.predicted_return',
               'player.return_date.edit', 'player.allergies.edit']
 
 
@@ -72,7 +73,8 @@ class TestHeaderOrder1615(PlayerInlineCommon):
         hero, read = self._assert_order(tree)
         self.assertEqual(hero.get('data-sc-edit-card'), 'player-header')
         self.assertEqual(len(hero.xpath('.//button[@data-sc-edit-toggle]')), 1)
-        self.assertTrue(read['player.status'].xpath('.//*[@data-sc-stage-chip]'))
+        self.assertFalse(read['player.status'].xpath('.//*[@data-sc-stage-chip]'))
+        self.assertEqual(len(read['player.status'].xpath('.//button[contains(@class, "o_sc_pill_select")]')), 2)
         self.assertIn('Synthetic rowing', read['player.training'].text_content())
         self.assertIn('Synthetic pollen', read['player.allergies'].text_content())
         edit = hero.xpath('./*[@data-sc-edit-view="edit"]')[0]
@@ -80,8 +82,8 @@ class TestHeaderOrder1615(PlayerInlineCommon):
         sections = [c.get('data-sc-section') for c in self._children(edit) if c.get('data-sc-section')]
         self.assertEqual([s for s in sections if s in EDIT_ORDER], EDIT_ORDER, sections)
         fields = {s: c for s, c in zip(sections, [c for c in self._children(edit) if c.get('data-sc-section')])}
-        for section, field in (('player.status.edit', 'sc_status'),
-                               ('player.training.edit', 'training_recommendation'),
+        self.assertNotIn('player.status.edit', sections)
+        for section, field in (('player.training.edit', 'training_recommendation'),
                                ('player.predicted_return', 'predicted_return_date'),
                                ('player.return_date.edit', 'return_date'),
                                ('player.allergies.edit', 'allergies')):
@@ -99,6 +101,7 @@ class TestHeaderOrder1615(PlayerInlineCommon):
         self.assertFalse(hero.xpath('.//*[@data-sc-edit-toggle] | .//*[@data-sc-edit-view="edit"]'))
         self.assertFalse(hero.xpath('.//owl-component'))
         self.assertTrue(read['player.status'].xpath('.//*[@data-sc-section="player.status.readonly"]'))
+        self.assertEqual(len(read['player.status'].xpath('.//*[@data-sc-pill-readonly]')), 2)
         self.assertIn('Synthetic rowing', read['player.training'].text_content())
         self.assertIn('2030', read['player.return'].text_content())
 
@@ -152,7 +155,10 @@ class TestDossierOrder1615(Clinic1540Common):
         self._login_tp()
         _text, tree = self._get('/my/clinic/%s?patient=%s&tab=dossier' % (self.clinic.id, self.player.id))
         card = tree.xpath('//*[@data-sc-section="clinic.dossier.status"]')[0]
+        # Task 1627: the status pills first, then the live recommendation.
+        blocks = [child for child in card if isinstance(child.tag, str)]
+        self.assertEqual(blocks[0].get('data-sc-section'), 'clinic.dossier.status.pills')
+        self.assertEqual(len(blocks[0].xpath('.//*[@data-sc-pill-select]')), 2)
         fields = card.xpath('.//owl-component/@props')
-        self.assertEqual(len(fields), 2, fields)
-        self.assertIn('"sc_status"', fields[0])
-        self.assertIn('"training_recommendation"', fields[1])
+        self.assertEqual(len(fields), 1, fields)
+        self.assertIn('"training_recommendation"', fields[0])

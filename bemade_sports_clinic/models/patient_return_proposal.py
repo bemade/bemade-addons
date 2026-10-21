@@ -26,6 +26,8 @@ them through the normal save paths (``SAVE_REGISTRY``)::
 The builders compute as sudo (they are only called for a therapist, after an
 access-checked save) and format in the caller's language.
 """
+from datetime import timedelta
+
 from odoo import fields, models
 from odoo.tools import format_date
 
@@ -159,5 +161,75 @@ class SportsPatient(models.Model):
             env._("No active injury left"),
             env._("This was the player's last active injury. Clear the predicted return "
                   "and set the actual return date?"),
+            items,
+        )
+
+    def _after_injury_moved_back(self, injury, previous):
+        """Task 1631 (owner decision 2026-10-20): ``injury`` was moved BACK
+        from ``previous`` (a correction from the card's status pill):
+        propose undoing the dates that followed the previous status — each
+        row ticked, untickable, dates editable:
+
+        * from « resolved »: clear the injury's resolution date; clear the
+          player's actual return when it is that resolution date;
+        * back to « active » from « resolved »: restore the predicted
+          resolution date the resolve wiped (mail tracking; an empty
+          editable date when there is none) and set Retour prévu to the
+          latest predicted date of the active injuries, this one included;
+        * back to « unverified »: Retour prévu recomputed from the
+          remaining active injuries (cleared when none is left).
+
+        The ONLY proposal of a backward move (the forward builders are not
+        called). None when nothing applies."""
+        self.ensure_one()
+        injury = injury.sudo()
+        patient = self.sudo()
+        env = self.env
+        items = []
+        resolution = injury.resolution_date
+        if previous == 'resolved' and resolution:
+            items.append(self._sc_proposal_item(
+                injury, 'resolution_date', env._("Resolution Date"), resolution, False))
+        restored = False
+        if previous == 'resolved' and injury.stage == 'active' and not injury.predicted_resolution_date:
+            restored = injury._sc_predicted_before_resolve()
+            # Review 2026-10-20 (#1631): never propose a past (or no) date —
+            # a week from today, editable in the popup.
+            today = fields.Date.context_today(self)
+            if not restored or restored < today:
+                restored = today + timedelta(days=7)
+            items.append(self._sc_proposal_item(
+                injury, 'predicted_resolution_date', env._("Predicted Resolution Date"),
+                False, restored, editable=True))
+        if previous == 'resolved' and resolution and patient.return_date == resolution:
+            items.append(self._sc_proposal_item(
+                self, 'return_date', env._("Actual return date"), patient.return_date, False))
+        current = patient.predicted_return_date
+        if injury.stage == 'active':
+            dates = [d for d in self._sc_active_injuries().mapped('predicted_resolution_date') if d]
+            if restored:
+                dates.append(restored)
+            latest = max(dates) if dates else False
+            if latest and latest != current:
+                items.append(self._sc_proposal_item(
+                    self, 'predicted_return_date', env._("Predicted return"),
+                    current, latest, editable=True))
+        else:
+            latest = self._sc_latest_active_predicted()
+            if not self._sc_active_injuries():
+                latest = False
+                propose = bool(current)
+            else:
+                propose = bool(latest) and latest != current
+            if propose:
+                items.append(self._sc_proposal_item(
+                    self, 'predicted_return_date', env._("Predicted return"),
+                    current, latest, editable=True))
+        labels = dict(injury._fields['stage']._description_selection(env))
+        return self._sc_proposal(
+            'moved_back',
+            env._("Correct the dates?"),
+            env._("The injury was moved back to %s. These dates followed the previous status: "
+                  "untick the ones to keep.", labels.get(injury.stage, injury.stage)),
             items,
         )

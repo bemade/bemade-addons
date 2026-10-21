@@ -18,6 +18,10 @@
  * Task 1607: the list header's sort menu is the same kind of popup —
  * button[data-sc-menu-toggle] + [data-sc-menu-popup] whose items are
  * a[role="menuitemradio"] links (the checked one gets the focus on open).
+ *
+ * Task 1627: open / close / closeAll are exported for menus whose clicks
+ * another module owns (sc_status_pills.js: button items, and a toggle that
+ * may sit in a <summary>, handled in the capture phase).
  */
 
 const TOGGLE = "[data-sc-user-menu-toggle], [data-sc-menu-toggle]";
@@ -33,7 +37,7 @@ function itemsOf(popup) {
     return [...popup.querySelectorAll(ITEM)];
 }
 
-function close(toggle, { focus = false } = {}) {
+export function close(toggle, { focus = false } = {}) {
     const popup = popupOf(toggle);
     if (popup) {
         popup.hidden = true;
@@ -44,7 +48,7 @@ function close(toggle, { focus = false } = {}) {
     }
 }
 
-function closeAll(except) {
+export function closeAll(except) {
     for (const toggle of document.querySelectorAll(TOGGLE)) {
         if (toggle.getAttribute("aria-expanded") !== "true" || !toggle.closest(".o_sc_app")) {
             continue;
@@ -55,13 +59,42 @@ function closeAll(except) {
     }
 }
 
-function open(toggle, which = "first") {
+/**
+ * Review 2026-10-20 (#1631): a popup opened near the right edge (the
+ * injury card's status pill) must not run past the content area: flip it to
+ * open leftwards, aligned on its toggle's right edge; near the bottom of the
+ * window, flip it to open upwards.
+ */
+function keepInView(popup) {
+    popup.classList.remove("o_sc_popup_end");
+    const area = popup.closest(".o_sc_content");
+    const limit = Math.min(
+        window.innerWidth,
+        area ? area.getBoundingClientRect().right : window.innerWidth
+    );
+    if (popup.getBoundingClientRect().right > limit - 8) {
+        popup.classList.add("o_sc_popup_end");
+    }
+    // …and one opened near the bottom (the last injury card, under the
+    // test-DB ribbon) opens upwards when there is more room above.
+    popup.classList.remove("o_sc_popup_up");
+    const rect = popup.getBoundingClientRect();
+    const toggleRect = popup.parentElement.getBoundingClientRect();
+    if (rect.bottom > window.innerHeight - 56 && toggleRect.top > window.innerHeight - toggleRect.bottom) {
+        popup.classList.add("o_sc_popup_up");
+    }
+}
+
+export function open(toggle, which = "first") {
     const popup = popupOf(toggle);
     if (!popup) {
         return;
     }
     closeAll(toggle);
     popup.hidden = false;
+    if (popup.classList.contains("o_sc_pill_popup")) {
+        keepInView(popup); // the other menus have their own placement
+    }
     toggle.setAttribute("aria-expanded", "true");
     const items = itemsOf(popup);
     const checked = items.find((item) => item.getAttribute("aria-checked") === "true");

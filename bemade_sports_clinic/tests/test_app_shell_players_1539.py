@@ -182,6 +182,7 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         self.assertNotIn('training_recommendation', self._owl_fields(tree))
         self.assertIn('Bike 15 min (synthetic)', text)
         self.assertTrue(tree.xpath('//*[@data-sc-section="player.status.readonly"]'))
+        self.assertFalse(tree.xpath('//*[@data-sc-pill-select]'))
         # « Report Injury » for coaches too, with the team context kept —
         # inline on the Injuries tab since the owner review of 2026-10-10.
         _text, tree = self._get(self.url + '&team_id=%s' % self.team_a.id)
@@ -195,9 +196,11 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         self.assertEqual(tree.xpath('//nav[@data-sc-tabs]/a/@data-sc-tab'),
                          ['injuries', 'info', 'documents', 'notes', 'activities'])
         owl = self._owl_fields(tree)
-        self.assertEqual(owl['sc_status']['inputType'], 'segmented')
-        self.assertTrue(owl['sc_status']['instant'])
-        self.assertEqual(owl['sc_status']['value'], 'yes:yes')
+        # Task 1627: the status is the header's Match / Practice pill
+        # dropdowns (posting ``sc_status``), not an autosave field.
+        self.assertNotIn('sc_status', owl)
+        pills = tree.xpath('//*[@data-sc-pill-select][@data-sc-field="sc_status"]')
+        self.assertEqual([p.get('data-sc-old-value') for p in pills], ['yes:yes', 'yes:yes'])
         self.assertEqual(owl['training_recommendation']['mode'], 'server')
         for visible in ('Hidden synthetic injury', 'Synthetic allergy', 'Synthetic team note'):
             self.assertIn(visible, text, visible)
@@ -337,9 +340,12 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&tab=info' % self.player.id)
         keys = self._owl_keys(tree)
-        for field in ('allergies', 'sc_status', 'date_of_birth', 'team_info_notes',
+        for field in ('allergies', 'date_of_birth', 'team_info_notes',
                       'training_recommendation', 'last_consultation_date', 'sc_team_ids'):
             self.assertIn('sports.patient.%s' % field, keys, field)
+        # Task 1627: the status posts from the header's pills (no island).
+        self.assertNotIn('sports.patient.sc_status', keys)
+        self.assertEqual(len(tree.xpath('//*[@data-sc-pill-select][@data-sc-field="sc_status"]')), 2)
         teams = [json.loads(p) for p in tree.xpath(
             '//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')
             if json.loads(p).get('field') == 'sc_team_ids'][0]

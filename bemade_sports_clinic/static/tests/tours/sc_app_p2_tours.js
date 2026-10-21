@@ -87,30 +87,47 @@ tours.add("sc_1539_injury_autosave", {
             content: "Saved on blur",
             trigger: '.o_sc_autosave[data-sc-field="external_notes"][data-sc-state="saved"]',
         },
+        // Task 1631: the status is the card header's pill dropdown —
+        // « Resolved » asks the date (the « Résoudre » sheet), going back to
+        // « Active » saves at once and offers to undo the dates.
         {
-            content: "Edit the details card (pencil)",
-            trigger: '[data-sc-edit-card="injury-details"] button[data-sc-edit-toggle]',
+            content: "Open the status pill",
+            trigger: '.o_sc_injury_item [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_red',
             run: "click",
         },
         {
-            content: "Resolve: instant save",
-            trigger: '.o_sc_autosave[data-sc-field="stage"] button[data-sc-value="resolved"]',
+            content: "« Resolved »: the resolve sheet",
+            trigger: '.o_sc_injury_item [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="resolved"]',
             run: "click",
         },
         {
-            content: "Saved, « Résolue » pressed",
-            trigger:
-                '.o_sc_autosave[data-sc-field="stage"][data-sc-state="saved"] button[data-sc-value="resolved"][aria-pressed="true"]',
-        },
-        {
-            content: "Undo from the toast",
-            trigger: ".o_sc_toast:not([hidden]) [data-sc-toast-action]",
+            content: "Confirm the resolution date",
+            trigger: "#sc_injury_resolve_sheet[open] [data-sc-injury-resolve-confirm]",
             run: "click",
         },
         {
-            content: "Back to « Active », saved again",
-            trigger:
-                '.o_sc_autosave[data-sc-field="stage"][data-sc-state="saved"] button[data-sc-value="active"][aria-pressed="true"]',
+            content: "Dismiss the follow-up proposal",
+            trigger: "#sc_proposal_sheet[open] [data-sc-proposal-dismiss]",
+            run: "click",
+        },
+        {
+            content: "Resolved: the pill is green; back to « Active »",
+            trigger: '.o_sc_injury_item [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_green',
+            run: "click",
+        },
+        {
+            content: "Pick « Active »",
+            trigger: '.o_sc_injury_item [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="active"]',
+            run: "click",
+        },
+        {
+            content: "The backward proposal; dismiss it",
+            trigger: '#sc_proposal_sheet[open][data-sc-proposal-kind="moved_back"] [data-sc-proposal-dismiss]',
+            run: "click",
+        },
+        {
+            content: "Back to « Active » (red), in place",
+            trigger: '.o_sc_injury_item [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_red',
         },
     ],
 });
@@ -212,45 +229,42 @@ tours.add("sc_1539_activity_complete", {
 
 // ------------------- player status: the hero pill follows the save (2026-10-10)
 tours.add("sc_status_pill_refresh", {
-    // Owner review 2026-10-11: the status selector lives in the page header
-    // (in place of the status pill) and saves in place. Review fixes
-    // 2026-10-18: the header is a read view; its pencil opens the selector.
+    // Owner review 2026-10-11: the status changes from the page header and
+    // saves in place. Task 1627: the Match / Practice pills are the
+    // dropdowns (no pencil, no 4-way selector); « No play » = Match no, then
+    // Practice no.
     steps: () => [
         {
-            content: "Read view: the status label; mark the page to detect a reload, open the pencil",
-            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="read"] [data-sc-stage-chip]',
+            content: "Read view: the Match pill (green); mark the page to detect a reload, open it",
+            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="read"] [data-sc-pill-key="match"] button.o_sc_pill_select.o_sc_chip_green',
             run() {
                 window.__scPillNoReload = true;
-                document.querySelector('[data-sc-section="player.hero"] > button[data-sc-edit-toggle]').click();
+                this.anchor.click();
             },
         },
         {
-            content: "Available: « Match + practice » pressed in the header's edit view",
-            trigger: '[data-sc-section="player.hero"] .o_sc_autosave[data-sc-field="sc_status"] button[data-sc-value="yes:yes"][aria-pressed="true"]',
-        },
-        {
-            content: "Pick « No play »",
-            trigger: '[data-sc-section="player.hero"] .o_sc_autosave[data-sc-field="sc_status"] button[data-sc-value="no:no"]',
+            content: "Match: No",
+            trigger: '[data-sc-section="player.hero"] [data-sc-pill-key="match"] [role="menuitemradio"][data-sc-pill-value="no"]',
             run: "click",
         },
         {
-            content: "Saved in place (no reload)",
-            trigger:
-                '[data-sc-section="player.hero"] .o_sc_autosave[data-sc-field="sc_status"][data-sc-state="saved"] button[data-sc-value="no:no"][aria-pressed="true"]',
+            content: "Saved in place: Match red; open Practice",
+            trigger: '[data-sc-section="player.hero"] [data-sc-pill-key="practice"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_green',
             run() {
-                if (!window.__scPillNoReload) {
-                    throw new Error("the page reloaded");
+                if (!document.querySelector('[data-sc-section="player.hero"] [data-sc-pill-key="match"]:not([aria-busy]) button.o_sc_chip_red')) {
+                    throw new Error("the match pill did not turn red");
                 }
+                this.anchor.click();
             },
         },
         {
-            content: "« Done » closes the header's edit view",
-            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="edit"] button[data-sc-edit-done]',
+            content: "Practice: No",
+            trigger: '[data-sc-section="player.hero"] [data-sc-pill-key="practice"] [role="menuitemradio"][data-sc-pill-value="no"]:not([aria-disabled])',
             run: "click",
         },
         {
             content: "The read view shows the new status (read fragment, no reload)",
-            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="read"] [data-sc-stage-chip].o_sc_chip_red',
+            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="read"] [data-sc-pill-key="practice"]:not([aria-busy]) button.o_sc_chip_red',
             run() {
                 if (!window.__scPillNoReload) {
                     throw new Error("the page reloaded");
@@ -345,8 +359,18 @@ tours.add("sc_injury_resolve_date", {
             },
         },
         {
-            content: "Resolve",
-            trigger: '.o_sc_injury_item[open] .o_sc_autosave[data-sc-field="stage"] button[data-sc-value="resolved"]',
+            content: "Resolve from the status pill (task 1631)",
+            trigger: '.o_sc_injury_item[open] [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select',
+            run: "click",
+        },
+        {
+            content: "« Resolved »",
+            trigger: '.o_sc_injury_item[open] [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="resolved"]',
+            run: "click",
+        },
+        {
+            content: "Confirm the date (today)",
+            trigger: "#sc_injury_resolve_sheet[open] [data-sc-injury-resolve-confirm]",
             run: "click",
         },
         {
@@ -401,8 +425,9 @@ tours.add("sc_event_pencil", {
 tours.add("sc_training_history_refresh", {
     steps: () => [
         {
+            // Task 1629: the link sits right after the all-caps section title.
             content: "Open the (empty) training history; mark the page to detect a reload",
-            trigger: '[data-sc-section="player.training"] .o_sc_field_label [data-sc-sheet-open="sc_training_history_sheet"]',
+            trigger: '[data-sc-section="player.training"] > h3.o_sc_edit_card_title > button.o_sc_section_more[data-sc-sheet-open="sc_training_history_sheet"]',
             run(helpers) {
                 window.__scTrainingNoReload = true;
                 helpers.click();
@@ -444,8 +469,26 @@ tours.add("sc_training_history_refresh", {
             trigger: '.o_sc_autosave[data-sc-field="training_recommendation"] .o_sc_hint:contains(Updated on):contains(PC TP)',
         },
         {
-            content: "Open the history again (the edit view's link)",
-            trigger: '[data-sc-section="player.training.edit"] [data-sc-sheet-open="sc_training_history_sheet"]',
+            // Task 1629: one title + one History link in the edit view; the
+            // island's label stays as the textarea's accessible name.
+            content: "The edit view has one History link, next to its title",
+            trigger: '[data-sc-section="player.training.edit"] > h3.o_sc_edit_card_title > button.o_sc_section_more',
+            run() {
+                const section = this.anchor.closest('[data-sc-section="player.training.edit"]');
+                const links = section.querySelectorAll('[data-sc-sheet-open="sc_training_history_sheet"]');
+                if (links.length !== 1) {
+                    throw new Error(`expected one History link in the edit view, got ${links.length}`);
+                }
+                const textarea = section.querySelector(".o_sc_autosave textarea");
+                const label = textarea && textarea.labels && textarea.labels[0];
+                if (!label || !label.textContent.includes("Training Recommendation")) {
+                    throw new Error("the training textarea lost its accessible name");
+                }
+            },
+        },
+        {
+            content: "Open the history again (the edit view's title link)",
+            trigger: '[data-sc-section="player.training.edit"] > h3.o_sc_edit_card_title > button[data-sc-sheet-open="sc_training_history_sheet"]',
             run: "click",
         },
         {

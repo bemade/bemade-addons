@@ -164,8 +164,13 @@ tours.add("sc_1620_account", {
         {
             trigger: `${ADDRESS}:not([data-sc-edit-open]) [data-sc-edit-view="read"]:not([hidden])`,
             async run() {
-                await waitFor(() => readText(ADDRESS).includes("Synthetic City"), "address read view");
-                assert(!readText(ADDRESS).includes("1 Synthetic Street"), "street still shown");
+                // Task 1625: wait for BOTH — the city can already show from
+                // the city's own (earlier) refresh while the street-clear
+                // refresh is still in flight.
+                await waitFor(() => {
+                    const text = readText(ADDRESS);
+                    return text.includes("Synthetic City") && !text.includes("1 Synthetic Street");
+                }, "address read view: new city, street gone");
                 assert(window.__sc1018bNoReload === "1", "the page reloaded");
             },
         },

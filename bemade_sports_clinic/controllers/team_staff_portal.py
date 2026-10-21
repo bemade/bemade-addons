@@ -650,6 +650,16 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # one fragment, each injury's changes inside its own card.
             values = player._sc_change_detail(role, is_tp, cutoff)
             values['player'] = player
+            # Task 1626: the detail ends with « Open the player page », with
+            # the team context when given (as the row detail does).
+            try:
+                team_id = int(kw.get('team_id') or 0)
+            except ValueError:
+                team_id = 0
+            player_url = '/my/player?player_id=%s' % player.id
+            if team_id and team_id in player.sudo().team_ids.ids:
+                player_url += '&team_id=%s' % team_id
+            values['player_url'] = player_url
             return http.request.render(
                 'bemade_sports_clinic.sc_player_change_detail', values)
         items = player._dashboard_change_items_deduped(role, cutoff, shown_injury_ids)
@@ -975,7 +985,6 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         env = http.request.env
         user = env.user
         is_tp = values['is_treatment_prof']
-        stage_labels = dict(env['sports.patient']._fields['stage']._description_selection(env))
         ctx_qs = values['ctx_qs']
         base_url = '/my/player?player_id=%s%s' % (player.id, ctx_qs)
         can_activities = is_tp or user.has_group('bemade_sports_clinic.group_portal_team_coach')
@@ -1082,21 +1091,17 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 doc.created_by_id.display_name or '') if part),
         } for doc in values['patient_documents']]
 
-        stage = player.stage or 'healthy'
         return dict(self._sc_injury_card_options(), **{
             'sc_player_tabs': sc_tabs,
             'sc_player_active_tab': active_tab,
             'sc_player_url': base_url,
             'sc_contacts_return': '%s&tab=info' % base_url,
-            'sc_player_dot': self.SC_STAGE_TONES.get(stage, 'green'),
-            'sc_player_chip': stage_labels.get(stage, ''),
             'sc_player_team': values['team'] or player.team_ids[:1],
             'sc_created_draft_clear': created_draft_clear,
             'sc_injury_rows': [_injury_row(i) for i in injuries],
             'sc_is_tp_view': tp_view,
             'sc_active_injury_rows': [_injury_row(i) for i in active],
             'sc_player_events': events,
-            'sc_status_options': self._sc_status_options(),
             # Inline « Add Injury » card (owner review 2026-10-10): the new
             # injury page's draft prefix and consent choices.
             'sc_new_injury_prefix': 'sports.patient.%s.new_injury.' % player.id,

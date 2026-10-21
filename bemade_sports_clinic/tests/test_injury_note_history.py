@@ -19,7 +19,10 @@ Acceptance criteria:
   empty -> whitespace-only logs nothing; stored content stays raw.
 - Owner review 2026-10-14 (supersedes 1404's « a clear logs nothing »): a
   genuine clear logs ONE empty-content row (shown « Cleared »); re-adding
-  after a clear logs the new content. The 19.0.1.24.2 migration
+  after a clear logs the new content. Task 1631: re-adding within ONE HOUR
+  of the clear, by the SAME user, in the SAME scope REPLACES the empty row
+  (content + time; the dashboards are bumped as for a new row) — another
+  author, an older clear or a non-empty previous row -> a new row. The 19.0.1.24.2 migration
   deletes pre-existing essentially-empty rows and nothing else.
 - Portal: a coach sees EXTERNAL rows only — both at the record-rule level
   (ORM search) and over HTTP, including when tampering with the scope GET
@@ -28,6 +31,10 @@ Acceptance criteria:
 - The portal save flow (injury.sudo().write) credits the authenticated
   session user as author, not the superuser.
 """
+from datetime import timedelta
+from unittest.mock import patch
+
+from odoo import fields
 from odoo.tests import tagged
 
 from .portal_cov_common import PortalCovCommon
@@ -167,15 +174,94 @@ class TestInjuryNoteHistory(PortalCovCommon):
         self.assertFalse(self._rows(injury))
 
     def test_readd_after_clear_logs_new_content(self):
-        """Behaviour row 5: re-adding a note after a clear logs the new
-        content; the clear itself is the one empty row."""
+        """Behaviour row 5, task 1631: re-adding a note right after a clear
+        (same user, within the hour) REPLACES the empty « Cleared » row with
+        the new content — one entry, not an empty one plus the new one."""
         injury = self._new_injury()
         injury.with_context(mail_notrack=True).write({'internal_notes': 'A'})
         injury.with_context(mail_notrack=True).write({'internal_notes': False})
+        cleared = self._rows(injury, scope='internal')[-1]
+        self.assertFalse(cleared.content)
         injury.with_context(mail_notrack=True).write({'internal_notes': 'C'})
 
         rows = self._rows(injury, scope='internal')
+        self.assertEqual([r.content or '' for r in rows], ['A', 'C'])
+        self.assertEqual(rows[-1], cleared, "the clear row itself was overwritten")
+
+    # ---- task 1631: the 1-hour overwrite of a clear ----
+
+    def _age(self, row, minutes):
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE sports_injury_note_history SET note_datetime = note_datetime - %s * interval '1 minute'"
+            " WHERE id = %s", (minutes, row.id))
+        row.invalidate_recordset()
+
+    def test_clear_that_stays_empty_is_recorded(self):
+        injury = self._new_injury()
+        injury.with_context(mail_notrack=True).write({'external_notes': 'A'})
+        injury.with_context(mail_notrack=True).write({'external_notes': False})
+        rows = self._rows(injury, scope='external')
+        self.assertEqual([r.content or '' for r in rows], ['A', ''])
+
+    def test_clear_older_than_an_hour_is_kept(self):
+        injury = self._new_injury()
+        injury.with_context(mail_notrack=True).write({'external_notes': 'A'})
+        injury.with_context(mail_notrack=True).write({'external_notes': False})
+        first, cleared = self._rows(injury, scope='external')
+        self._age(first, 120)
+        self._age(cleared, 61)
+        injury.with_context(mail_notrack=True).write({'external_notes': 'C'})
+        rows = self._rows(injury, scope='external')
         self.assertEqual([r.content or '' for r in rows], ['A', '', 'C'])
+
+    def test_clear_within_the_hour_is_overwritten(self):
+        injury = self._new_injury()
+        injury.with_context(mail_notrack=True).write({'external_notes': 'A'})
+        injury.with_context(mail_notrack=True).write({'external_notes': False})
+        first, cleared = self._rows(injury, scope='external')
+        self._age(first, 120)
+        self._age(cleared, 59)
+        injury.with_context(mail_notrack=True).write({'external_notes': 'C'})
+        rows = self._rows(injury, scope='external')
+        self.assertEqual([r.content or '' for r in rows], ['A', 'C'])
+        cleared.invalidate_recordset()
+        self.assertGreater(cleared.note_datetime, fields.Datetime.now() - timedelta(minutes=5),
+                           "the overwritten row is re-stamped now")
+
+    def test_clear_by_another_user_is_kept(self):
+        injury = self._new_injury()
+        injury.with_context(mail_notrack=True).write({'external_notes': 'A'})
+        injury.with_context(mail_notrack=True).write({'external_notes': False})
+        injury.with_user(self.tp).sudo().with_context(mail_notrack=True).write({'external_notes': 'C'})
+        rows = self._rows(injury, scope='external')
+        self.assertEqual([r.content or '' for r in rows], ['A', '', 'C'])
+        self.assertEqual(rows[-1].author_id, self.tp)
+
+    def test_non_empty_previous_row_is_never_overwritten(self):
+        injury = self._new_injury()
+        injury.with_context(mail_notrack=True).write({'external_notes': 'A'})
+        injury.with_context(mail_notrack=True).write({'external_notes': 'B'})
+        rows = self._rows(injury, scope='external')
+        self.assertEqual([r.content or '' for r in rows], ['A', 'B'])
+
+    def test_other_scope_clear_is_not_overwritten(self):
+        injury = self._new_injury()
+        injury.with_context(mail_notrack=True).write({'internal_notes': 'A'})
+        injury.with_context(mail_notrack=True).write({'internal_notes': False})
+        injury.with_context(mail_notrack=True).write({'external_notes': 'C'})
+        self.assertEqual([r.content or '' for r in self._rows(injury, scope='internal')], ['A', ''])
+        self.assertEqual([r.content or '' for r in self._rows(injury, scope='external')], ['C'])
+
+    def test_overwrite_still_bumps_the_dashboards(self):
+        injury = self._new_injury()
+        injury.with_context(mail_notrack=True).write({'external_notes': 'A'})
+        injury.with_context(mail_notrack=True).write({'external_notes': False})
+        Patient = type(self.env['sports.patient'])
+        with patch.object(Patient, '_bump_dashboard_activity', autospec=True) as bump:
+            injury.with_context(mail_notrack=True).write({'external_notes': 'C'})
+        self.assertTrue(bump.called, "an overwrite bumps the dashboards like a new row")
+        self.assertEqual(bump.call_args[0][1], {'coach', 'tp'})
 
     def test_logged_content_stays_raw(self):
         """Normalization is for comparison only — the stored snapshot keeps

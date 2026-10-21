@@ -51,6 +51,7 @@ from odoo.addons.portal.controllers.portal import CustomerPortal
 
 from ..models import sc_app_nav, sc_app_roles
 from ..models.patient import IDENTITY_CONFIRM_KEY, IDENTITY_FIELDS
+from ..models.patient_injury import STAGE_ORDER
 from .access_control_mixin import AccessControlMixin
 
 _logger = logging.getLogger(__name__)
@@ -146,15 +147,14 @@ _TP_ROLES = sc_app_roles.TP
 # SAVE_REGISTRY role allowlist and check), and how many changes at once.
 PROPOSAL_FIELDS = {
     'sports.patient': ('predicted_return_date', 'return_date'),
-    'sports.patient.injury': ('predicted_resolution_date',),
+    # Task 1631: a backward move proposes clearing the resolution date.
+    'sports.patient.injury': ('predicted_resolution_date', 'resolution_date'),
 }
 PROPOSAL_MAX_CHANGES = 50
 SC_PROPOSAL_SESSION_KEY = 'sc_pending_proposal'
 _STAFF_ROLES = sc_app_roles.STAFF
 _TEXT_TYPES = ('char', 'text', 'html')
 _VALID_STATUS_PAIRS = {('yes', 'yes'), ('no', 'yes'), ('no', 'no_contact'), ('no', 'no')}
-# The status pair's values (virtual field ``sc_status``), in display order.
-SC_STATUS_KEYS = ('yes:yes', 'no:yes', 'no:no_contact', 'no:no')
 
 
 def sc_state_options(env, country):
@@ -687,10 +687,18 @@ def _injury_write(ctrl, injury, field, value):
         if not stage:
             raise ValidationError(_("Invalid value."))
         vals = {'stage': stage}
+        previous = injury.stage
+        # Task 1631: a move to an earlier stage (the card's status pill) is a
+        # correction — no date is touched here; the save answers ONE
+        # proposal to undo the dates that followed (_injury_propose).
+        if STAGE_ORDER.get(stage, 0) < STAGE_ORDER.get(previous, 0):
+            injury.write(vals)
+            injury._sc_log_moved_back()
+            return {'propose_context': {'sc_previous_stage': previous}}
         # « Résoudre »: the stage and the resolution date travel together.
         if stage == 'resolved' and not injury.resolution_date:
             vals['resolution_date'] = fields.Date.context_today(injury)
-        verifying = injury.stage == 'unverified' and stage == 'active'
+        verifying = previous == 'unverified' and stage == 'active'
         injury.write(vals)
         if verifying:
             # Task 1612: verifying from the app does what the « Verify »
@@ -730,6 +738,11 @@ def _injury_propose(injury, field):
     if not patient or field not in ('predicted_resolution_date', 'stage'):
         return None
     patient = patient.with_env(injury.env)
+    # Task 1631: a backward move (the write hook passed the previous stage)
+    # answers its own proposal, and only it.
+    previous = injury.env.context.get('sc_previous_stage')
+    if field == 'stage' and previous and STAGE_ORDER.get(injury.stage, 0) < STAGE_ORDER.get(previous, 0):
+        return patient._after_injury_moved_back(injury, previous)
     if field == 'stage' and injury.stage == 'resolved':
         return patient._after_last_active_resolved(injury)
     return patient._retour_prevu_after_injury_change(injury)
@@ -1432,21 +1445,6 @@ class AppShellMixin:
         url = self._with_clinic(url, clinic) if clinic else url
         return url + '&tab=%s' % tab
 
-    @staticmethod
-    def _sc_status_options():
-        """Task 1539: the four valid match / practice pairs (patient.py
-        constraint) as ONE choice each — the status is always saved as a
-        pair (SAVE_REGISTRY virtual field ``sc_status``)."""
-        env = request.env
-        # Labels first, keys zipped in: babel's extractor would take a
-        # literal that follows an _() call in the same list for a term.
-        labels = (
-            env._("Match + practice"),
-            env._("Contact practice"),
-            env._("Practice, no contact"),
-            env._("No play"),
-        )
-        return list(zip(SC_STATUS_KEYS, labels))
 
     @staticmethod
     def _sc_options(pairs):
@@ -1509,11 +1507,9 @@ class AppShellMixin:
         """The option lists an injury card's autosave fields need."""
         env = request.env
         Injury = env['sports.patient.injury']
-        # Labels first, keys zipped in (babel's extractor, see above).
-        visibility_labels = (env._("Coaches"), env._("Hidden"))
+        # Task 1631: status, consent and visibility are pill dropdowns now
+        # (sports.patient.injury._sc_stage_pill / _sc_flag_pills).
         return {
-            'sc_injury_stage_options': list(Injury._fields['stage']._description_selection(env)),
-            'sc_visibility_options': list(zip(('0', '1'), visibility_labels)),
             'sc_consent_options': [('', '')] + list(
                 Injury._fields['parental_consent']._description_selection(env)),
             # Task 1616: the card's Documents (upload sheet, per-document
@@ -2271,12 +2267,17 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
     @http.route(['/my/injury/<int:injury_id>/resolve'], type='http', auth='user',
                 methods=['POST'], csrf=True, multilang=False)
-    def sc_injury_quick_resolve(self, injury_id, resolution_date=None, **kw):
+    def sc_injury_quick_resolve(self, injury_id, resolution_date=None, from_unverified=None, **kw):
         """« Résoudre » after the confirm sheet: an ACTIVE injury becomes
         resolved on ``resolution_date`` (default today; a past date is
-        allowed, a future one refused)."""
+        allowed, a future one refused). Task 1631: the card's status pill
+        may also resolve an UNVERIFIED one (``from_unverified=1``: « Résolu »
+        picked from « Non vérifié »; its verification To-Do closes, as with
+        the former status selector)."""
+        allowed = ('active', 'unverified') if from_unverified == '1' else ('active',)
+
         def run(injury):
-            if injury.stage != 'active':
+            if injury.stage not in allowed:
                 raise UserError(_("Only active injuries can be resolved."))
             day = _date_value(resolution_date) or fields.Date.context_today(injury)
             if day > fields.Date.context_today(injury):
@@ -2391,7 +2392,11 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 payload['live_counts'] = True
             # Task 1603: a follow-up proposal — never blocking (the field is
             # saved); the page shows it as a sheet (sc_proposal.js).
-            proposal = self._sc_save_proposal(spec, record, field)
+            # Task 1631: what the write hook knew before writing (e.g. an
+            # injury's previous stage) reaches the proposal builder.
+            propose_context = extra.pop('propose_context', None)
+            proposal = self._sc_save_proposal(
+                spec, record.with_context(**propose_context) if propose_context else record, field)
             if proposal:
                 payload['propose'] = proposal
             payload.update(extra)

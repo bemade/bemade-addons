@@ -189,9 +189,20 @@ tours.add("sc_1603_last_resolved", {
                 return helpers.click();
             },
         },
+        // Task 1631: « Resolved » from the header pill (the resolve sheet).
+        {
+            content: "Open the status pill",
+            trigger: `${CARD} [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select`,
+            run: "click",
+        },
         {
             content: "« Resolved »",
-            trigger: `${CARD} .o_sc_autosave[data-sc-field="stage"] button[data-sc-value="resolved"]`,
+            trigger: `${CARD} [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="resolved"]`,
+            run: "click",
+        },
+        {
+            content: "Confirm the date (today)",
+            trigger: "#sc_injury_resolve_sheet[open] [data-sc-injury-resolve-confirm]",
             run: "click",
         },
         {

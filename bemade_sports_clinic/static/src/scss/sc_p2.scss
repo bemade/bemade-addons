@@ -405,6 +405,12 @@ $sc-p2-laptop: 992px;
         min-width: 0;
     }
 
+    // Task 1629: the training recommendation's title (+ « History ») sits
+    // just above its value / editor.
+    .o_sc_training_title {
+        margin-bottom: var(--sc-space-1);
+    }
+
     .o_sc_hero_return:empty {
         display: none;
     }
@@ -695,6 +701,23 @@ $sc-p2-laptop: 992px;
         + .o_sc_injury_section {
             border-top: 1px solid var(--sc-line);
             padding-top: var(--sc-space-3);
+        }
+    }
+
+    // Task 1631: the Details row of consent + visibility pills — side by
+    // side on a laptop, stacked on a phone.
+    .o_sc_injury_flags {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2);
+        margin-bottom: var(--sc-space-3);
+    }
+
+    @media (max-width: 575.98px) {
+        .o_sc_injury_flags {
+            flex-direction: column;
+            align-items: flex-start;
         }
     }
 
@@ -1099,4 +1122,22 @@ $sc-p2-laptop: 992px;
         font-size: var(--sc-text-sm);
     }
 
+}
+
+// Review 2026-10-20 (#1629): in the pencil view the training title is a
+// section title above the field; the field's own label row (« Effacer »,
+// the save state) sits on the title's line instead of a line of its own.
+.o_sc_app [data-sc-section="player.training.edit"] {
+    position: relative;
+
+    .o_sc_autosave > .o_sc_field_label {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin: 0;
+        min-height: calc(var(--sc-title-md) * 1.2);
+        display: flex;
+        align-items: center;
+        gap: var(--sc-space-2);
+    }
 }

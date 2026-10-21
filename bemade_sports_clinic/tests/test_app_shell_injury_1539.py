@@ -159,12 +159,15 @@ class TestAppShellInjury1539(AppShellCommon):
         text, tree = self._get(self.edit_url)
         tree = self._card(tree)
         owl = self._owl(tree)
-        self.assertEqual(owl['stage']['inputType'], 'segmented')
-        self.assertTrue(owl['stage']['instant'])
-        self.assertEqual(owl['hidden_from_coaches']['value'], '0')
+        # Task 1631: status, consent and visibility are pill dropdowns.
+        for name in ('stage', 'parental_consent', 'hidden_from_coaches'):
+            self.assertNotIn(name, owl)
+        pills = {p.get('data-sc-field'): p for p in tree.xpath('.//*[@data-sc-pill-select]')}
+        self.assertEqual(set(pills), {'stage', 'parental_consent', 'hidden_from_coaches'})
+        self.assertEqual(pills['hidden_from_coaches'].get('data-sc-old-value'), '0')
         self.assertEqual(owl['sc_injury_date']['inputType'], 'date_na')
         for name in ('diagnosis', 'external_notes', 'internal_notes', 'predicted_resolution_date',
-                     'resolution_date', 'parental_consent'):
+                     'resolution_date'):
             self.assertEqual(owl[name]['mode'], 'server', name)
         self.assertIn('TP-only synthetic remark', text)
         form = tree.xpath('.//dialog[@id="sc_delete_injury_sheet_%s"]//form' % self.injury.id)[0]

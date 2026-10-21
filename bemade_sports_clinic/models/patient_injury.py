@@ -1,5 +1,5 @@
 from odoo import models, fields, api, _
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from odoo.exceptions import ValidationError, UserError, AccessError
 from odoo.http import request
 from odoo.tools.misc import format_date
@@ -66,6 +66,15 @@ note_history_scope_by_field = {
     "internal_notes": "internal",
     "external_notes": "external",
 }
+
+# Task 1631 (owner decision 2026-10-20): a note cleared (« Effacer ») and
+# rewritten by the SAME user in the same scope within this many minutes
+# replaces the empty « Cleared » history row instead of stacking a new one.
+NOTE_CLEAR_OVERWRITE_MINUTES = 60
+
+# Task 1631: the stage order — a move to an earlier stage is a « backward »
+# move (a correction), which proposes to undo the dates that followed.
+STAGE_ORDER = {"unverified": 0, "active": 1, "resolved": 2}
 
 # --- Team-dashboard propagation (task 1272) ---------------------------------
 # Injury field changes that are clinically/externally visible -> bump BOTH the
@@ -371,6 +380,121 @@ class PatientInjury(models.Model):
         self.message_post(body=message)
         return True
 
+    # ------------------------------------------------------------------
+    # Task 1631 — the injury card's pill dropdowns and backward moves
+    # ------------------------------------------------------------------
+    _SC_STAGE_TONES = {'unverified': 'yellow', 'active': 'red', 'resolved': 'green'}
+    _SC_CONSENT_TONES = {'yes': 'green', 'no': 'red', 'na': 'ghost', '': 'yellow'}
+    _SC_VISIBILITY_TONES = {'0': 'ghost', '1': 'yellow'}
+
+    def _sc_pill_target(self, field, old_value):
+        self.ensure_one()
+        return {
+            'model': self._name,
+            'id': self.id,
+            'field': field,
+            'write_date': fields.Datetime.to_string(self.sudo().write_date),
+            'old_value': old_value,
+        }
+
+    @staticmethod
+    def _sc_pill(key, text, menu_label, value, tone, options, target):
+        return {
+            'key': key, 'label': menu_label, 'menu_label': menu_label,
+            'value': value, 'text': text, 'title': text, 'tone': tone, 'icon': '',
+            'options': options, 'target': target,
+        }
+
+    def _sc_stage_pill(self):
+        """Task 1631: the card header's status pill (``sc_status_pill_select``).
+        Every transition is offered (fixing a mistake is the point):
+        « Actif » from « Non vérifié » is the verify action and « Résolu »
+        from an unresolved status the resolve sheet (``action``, handled by
+        sc_injury_quick.js); the other (backward) picks post ``stage``."""
+        self.ensure_one()
+        env = self.env
+        stage = self.stage
+        labels = dict(self._fields['stage']._description_selection(env))
+        options = []
+        for value, label in labels.items():
+            action = None
+            if value == 'active' and stage == 'unverified':
+                action = 'injury.verify'
+            elif value == 'resolved' and stage != 'resolved':
+                action = 'injury.resolve'
+            options.append({
+                'value': value, 'label': label, 'icon': '',
+                'tone': self._SC_STAGE_TONES.get(value, 'ghost'),
+                'checked': value == stage, 'disabled': False, 'hint': '',
+                'post': value, 'action': action,
+                'from': stage if action == 'injury.resolve' else None,
+            })
+        return self._sc_pill(
+            'stage', labels.get(stage, ''), env._("Injury status"), stage,
+            self._SC_STAGE_TONES.get(stage, 'ghost'), options,
+            self._sc_pill_target('stage', stage))
+
+    def _sc_flag_pills(self):
+        """Task 1631: the Details row's « Consentement parental » and
+        « Visibilité » pills, ``[consent, visibility]`` (blank consent =
+        yellow « To be specified », pickable)."""
+        self.ensure_one()
+        env = self.env
+        consent = self.parental_consent or ''
+        consent_labels = dict(self._fields['parental_consent']._description_selection(env))
+        consent_labels[''] = env._("To be specified")
+        consent_options = [{
+            'value': value, 'label': label, 'icon': '',
+            'tone': self._SC_CONSENT_TONES[value],
+            'checked': value == consent, 'disabled': False, 'hint': '', 'post': value,
+        } for value, label in consent_labels.items()]
+        hidden = '1' if self.hidden_from_coaches else '0'
+        visibility_labels = {'0': env._("Coaches"), '1': env._("Hidden")}
+        visibility_options = [{
+            'value': value, 'label': label, 'icon': '',
+            'tone': self._SC_VISIBILITY_TONES[value],
+            'checked': value == hidden, 'disabled': False, 'hint': '', 'post': value,
+        } for value, label in visibility_labels.items()]
+        return [
+            self._sc_pill(
+                'consent',
+                env._("Parental consent: %(value)s", value=consent_labels[consent]),
+                env._("Parental consent"), consent, self._SC_CONSENT_TONES[consent],
+                consent_options, self._sc_pill_target('parental_consent', consent)),
+            self._sc_pill(
+                'visibility',
+                env._("Visibility: %(value)s", value=visibility_labels[hidden]),
+                env._("Visibility"), hidden, self._SC_VISIBILITY_TONES[hidden],
+                visibility_options, self._sc_pill_target('hidden_from_coaches', hidden)),
+        ]
+
+    def _sc_predicted_before_resolve(self):
+        """Task 1631: the predicted resolution date the last resolve wiped
+        (read from the mail tracking of ``predicted_resolution_date``: the
+        newest change to « empty » gives its old value), or False when the
+        field holds a date or no such tracking exists."""
+        self.ensure_one()
+        if self.predicted_resolution_date:
+            return False
+        field = self.env['ir.model.fields']._get(self._name, 'predicted_resolution_date')
+        tracking = self.env['mail.tracking.value'].sudo().search([
+            ('field_id', '=', field.id),
+            ('mail_message_id.model', '=', self._name),
+            ('mail_message_id.res_id', '=', self.id),
+        ], order='id desc', limit=1)
+        if not tracking or tracking.new_value_datetime or not tracking.old_value_datetime:
+            return False
+        return tracking.old_value_datetime.date()
+
+    def _sc_log_moved_back(self):
+        """Task 1631: « Injury moved back to <status> by <user> » on the
+        injury's chatter (a backward move from the app's status pill)."""
+        labels = dict(self._fields['stage']._description_selection(self.env))
+        for injury in self:
+            injury.message_post(body=_(
+                "Injury moved back to %(stage)s by %(user)s",
+                stage=labels.get(injury.stage, injury.stage), user=self.env.user.name))
+
     # Task 1269 dead-code cleanup: a first ``create`` was defined here and
     # immediately shadowed by the fuller ``@api.model_create_multi`` override
     # below (Python keeps the last definition), so it never executed. Its
@@ -454,6 +578,34 @@ class PatientInjury(models.Model):
                 })
         return history_vals
 
+    def _overwrite_recent_clears(self, history_vals):
+        """Task 1631 (owner decision 2026-10-20): for each NON-EMPTY history
+        row about to be created, when the newest row of that injury + scope
+        is an EMPTY one (« Cleared ») by the same author, less than
+        ``NOTE_CLEAR_OVERWRITE_MINUTES`` old, that row is rewritten (content
+        + time, through sudo: the model is read-only for every group) and
+        the dashboards bumped as for a new row. Returns the vals still to
+        create. A clear that stays empty is never touched."""
+        History = self.env['sports.injury.note.history'].sudo()
+        limit = fields.Datetime.now() - timedelta(minutes=NOTE_CLEAR_OVERWRITE_MINUTES)
+        remaining = []
+        for vals in history_vals:
+            if not (vals.get('content') or '').strip():
+                remaining.append(vals)
+                continue
+            last = History.search([
+                ('injury_id', '=', vals['injury_id']), ('scope', '=', vals['scope']),
+            ], order='note_datetime desc, id desc', limit=1)
+            if (last and last.author_id.id == vals['author_id']
+                    and not (last.content or '').strip()
+                    and last.note_datetime >= limit):
+                last.write({'content': vals['content'], 'note_datetime': vals['note_datetime']})
+                if not self.env.context.get('dashboard_bump'):
+                    last._bump_dashboards()
+                continue
+            remaining.append(vals)
+        return remaining
+
     def write(self, vals):
         """Override write to refresh follower subtypes when internal notes change."""
         # Detect suppression context (portal coach flows)
@@ -490,6 +642,10 @@ class PatientInjury(models.Model):
         if leaving_unverified:
             leaving_unverified._close_verify_activities()
 
+        if note_history_vals:
+            # Task 1631: a note written right after its clear (same user,
+            # same scope, within the hour) overwrites the empty row.
+            note_history_vals = self._overwrite_recent_clears(note_history_vals)
         if note_history_vals:
             # sudo: history rows are only ever created by server code; no
             # group holds create rights on the model.
