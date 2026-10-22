@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <!-- Security hotfix 19.0.1.42.4: sports.treatment.note had NO record rule,
+         while every portal user (base.group_portal) and every portal coach held
+         a read ACL — so any logged-in portal account could read every
+         treatment note over JSON-RPC.
+
+         Now: only portal treatment professionals hold a portal ACL (read; the
+         portal add / edit routes write with sudo behind their own TP + author
+         checks), and this rule scopes it to notes on patients of teams the TP
+         staffs — the same predicate as the portal TP patient / injury rules.
+         Coaches and plain portal users hold no ACL at all: no coach-facing
+         screen shows treatment notes (the player Notes tab is TP-only).
+
+         Deliberately NOT noupdate, so an upgrade of an existing database
+         creates (and keeps refreshing) the rule. Internal users are not in
+         this rule's group and are unchanged. -->
+    <record id="portal_treatment_professional_treatment_note_access" model="ir.rule">
+        <field name="name">Portal Treatment Professionals: treatment notes of staffed teams' patients</field>
+        <field name="model_id" ref="model_sports_treatment_note"/>
+        <field name="groups" eval="[(6, 0, [ref('bemade_sports_clinic.group_portal_treatment_professional')])]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+        <field name="domain_force">[('patient_id.team_ids.staff_ids.user_ids', 'in', user.id)]</field>
+    </record>
+</odoo>

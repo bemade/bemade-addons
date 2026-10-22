@@ -582,7 +582,17 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin):
             return request.redirect('/my/players')
 
         # Get user's role
-        is_treatment_prof = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+        user = request.env.user
+        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+
+        # Security hotfix 19.0.1.42.4: treatment notes are a therapist surface
+        # (the player Notes tab is TP-only). The notes below are read with
+        # sudo, so the patient (team) check alone let a coach read them by
+        # typing the URL — require the same roles as the edit route.
+        if not (self._is_treatment_professional()
+                or user.has_group('bemade_sports_clinic.group_sports_clinic_admin')
+                or user.has_group('base.group_system')):
+            return self._forbidden(_('Only treatment professionals can view treatment notes.'))
 
         # Patient context only: show all notes for this patient, with optional
         # injury links rendered in the template
