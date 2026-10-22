@@ -2398,6 +2398,10 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     'current_write_date': current,
                     'by': record.sudo().write_uid.name or '',
                 }, 409)
+            if model == 'sports.patient':
+                # Task 1639: the identity guard applies to everyone working
+                # through the app (internal users included).
+                record = record.with_context(sc_identity_guard=True)
             if model == 'sports.patient' and field in IDENTITY_FIELDS:
                 # Task 1600: changing an existing name / date of birth is an
                 # explicit, confirmed step (``confirm=1``, posted by the

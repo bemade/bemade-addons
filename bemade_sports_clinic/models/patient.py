@@ -862,9 +862,13 @@ class Patient(models.Model):
                 # Note this is NOT the same question as
                 # ``_is_follower_eligible``: eligibility inspects ARCHIVED users
                 # to DENY notification, this ignores them to PICK a link.
-                internal = bool(
-                    partner.user_ids.filtered(lambda u: u.active and not u.share)
-                )
+                # Task 1639: a clinic role (internal therapist, clinic
+                # admin…) opens the app like the portal users; the backend
+                # link only for internal logins with no clinic role.
+                active_users = partner.user_ids.filtered(lambda u: u.active)
+                internal = bool(active_users) and all(
+                    u._sc_backend_link_recipient() for u in active_users
+                ) and bool(active_users.filtered(lambda u: not u.share))
                 keep = self._urgent_notify_keep_item
                 status_count = sum(
                     1 for authors in status_patients.values()
@@ -2121,7 +2125,11 @@ class Patient(models.Model):
     # administrators, the backend, the merge wizard, crons) are deliberately
     # NOT guarded: the backend merge flows must stay able to align two files.
     def _sc_identity_guarded(self):
-        return bool(self.env.user.share)
+        """Task 1600: portal users. Task 1639 (owner 2026-10-22): internal
+        users too when they work through the app / portal routes, which set
+        ``sc_identity_guard`` in the context; the backend form, merges,
+        imports and crons (no flag) stay unguarded."""
+        return bool(self.env.user.share or self.env.context.get("sc_identity_guard"))
 
     @staticmethod
     def _sc_identity_text(value):

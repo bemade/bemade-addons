@@ -783,7 +783,9 @@ class PatientInjury(models.Model):
             is_treatment_prof = False
             treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
             for user in users:
-                if treatment_prof_group in user.group_ids:
+                # Task 1639: all_group_ids (implied groups too): a clinic
+                # admin is a therapist through « Administrator ».
+                if treatment_prof_group in user.all_group_ids:
                     is_treatment_prof = True
                     break
             

@@ -35,6 +35,12 @@ class TestDashboardUrlPerRecipient(TransactionCase):
         users to DENY notification, the link decision ignores them to PICK a
         link.
 
+    Task 1639 (owner 2026-10-22): a recipient with a CLINIC role (staff on
+    the team, internal therapist, clinic admin) gets the APP link even when
+    internal; the backend link is only for internal users with no clinic
+    role. The « internal staff » fixtures below are team staff, so they now
+    get the app link (the tests keep their names, the expectations follow).
+
     All fixtures are synthetic.
     """
 
@@ -192,8 +198,9 @@ class TestDashboardUrlPerRecipient(TransactionCase):
         )
 
     def test_urgent_internal_staff_gets_backend_link(self):
+        # Task 1639: internal team staff hold a clinic role -> the app link.
         self.assertEqual(
-            self._urgent_url_for(self.p_internal), self._backend_url()
+            self._urgent_url_for(self.p_internal), self._portal_url()
         )
 
     def test_urgent_contact_without_user_gets_portal_link(self):
@@ -202,8 +209,9 @@ class TestDashboardUrlPerRecipient(TransactionCase):
         )
 
     def test_urgent_partner_with_both_user_kinds_gets_backend_link(self):
+        # Task 1639: a clinic role on the partner's logins -> the app link.
         self.assertEqual(
-            self._urgent_url_for(self.p_both), self._backend_url()
+            self._urgent_url_for(self.p_both), self._portal_url()
         )
 
     def test_urgent_archived_internal_with_active_portal_gets_portal_link(self):
@@ -220,13 +228,13 @@ class TestDashboardUrlPerRecipient(TransactionCase):
             recipients[self.p_portal.id][0]["url"], self._portal_url()
         )
         self.assertEqual(
-            recipients[self.p_internal.id][0]["url"], self._backend_url()
+            recipients[self.p_internal.id][0]["url"], self._portal_url()  # task 1639
         )
         self.assertEqual(
             recipients[self.p_contact.id][0]["url"], self._portal_url()
         )
         self.assertEqual(
-            recipients[self.p_both.id][0]["url"], self._backend_url()
+            recipients[self.p_both.id][0]["url"], self._portal_url()  # task 1639
         )
 
     def test_urgent_rendered_mail_carries_the_recipient_link(self):
@@ -257,17 +265,17 @@ class TestDashboardUrlPerRecipient(TransactionCase):
         self.assertIn("/my/team?team_id=%s" % self.team.id, portal_body)
         self.assertNotIn("/odoo/action-", portal_body)
 
+        # Task 1639: internal team staff (a clinic role) get the app link too.
         internal_body = _body_for(self.p_internal)
-        self.assertIn(
-            "/odoo/action-%s/%s" % (self.action.id, self.team.id), internal_body
-        )
-        self.assertNotIn("/my/team?team_id=", internal_body)
+        self.assertIn("/my/team?team_id=%s" % self.team.id, internal_body)
+        self.assertNotIn("/odoo/action-", internal_body)
 
     # --------------------------------------------------------------- briefing
     def test_briefing_internal_staff_gets_backend_link(self):
-        """The mirror fix: internal staff used to get the portal link."""
+        """Task 1639: internal team staff hold a clinic role -> the app link
+        (1396 had sent them the backend link)."""
         self.assertEqual(
-            self._briefing_url_for(self.u_internal), self._backend_url()
+            self._briefing_url_for(self.u_internal), self._portal_url()
         )
 
     def test_briefing_portal_coach_still_gets_portal_link(self):

@@ -1023,6 +1023,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         This is used when the search yields no results and we render the full form inline.
         Only treatment professionals/admins may create directly.
         """
+        # Task 1639: the identity guard for internal users too.
+        request.update_context(sc_identity_guard=True)
         try:
             team = self._check_team_access(team_id)
 
@@ -1231,6 +1233,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 type='http', auth="user", website=True, methods=['POST'], csrf=True)
     def portal_add_player_submit(self, team_id, **post):
         """Handle the form submission to add a new player."""
+        # Task 1639: the identity guard for internal users too.
+        request.update_context(sc_identity_guard=True)
         try:
             team = self._check_team_access(team_id)
             
@@ -1411,6 +1415,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         Only treatment professionals (and admins) can directly add/link.
         Coaches must use the request route.
         """
+        # Task 1639: the identity guard for internal users too.
+        request.update_context(sc_identity_guard=True)
         try:
             team = self._check_team_access(team_id)
 
@@ -1606,6 +1612,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         """Create a brand new player and link to team from the Add/Link page.
         Separate endpoint from link flow to simplify validation and UX.
         """
+        # Task 1639: the identity guard for internal users too.
+        request.update_context(sc_identity_guard=True)
         try:
             team = self._check_team_access(team_id)
 

@@ -110,6 +110,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     @http.route(['/my/player/create/save'], type='http', auth='user', website=True, methods=['POST'])
     def create_player_submit(self, **post):
         """Handle standalone player creation submit."""
+        # Task 1639: the identity guard (duplicates) for internal users too.
+        request.update_context(sc_identity_guard=True)
         user = request.env.user
         is_treatment_prof = self._is_treatment_professional()
         is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
@@ -418,6 +420,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         * a save that leaves the user without access to the player lands on
           the players list with a toast, never on a 403.
         """
+        # Task 1639: the identity guard for internal users too.
+        request.update_context(sc_identity_guard=True)
         patient_id = post.get('patient_id')
         
         if not patient_id:
