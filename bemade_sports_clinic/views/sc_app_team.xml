@@ -533,6 +533,32 @@
         </html>
     </template>
 
+    <!-- Task 1651: the head of a player card's expanded detail, shared by
+         the recent-changes detail and the row detail (roster, « to watch »,
+         /my/players): the training recommendation (heading, text, its
+         « Updated on … by … » stamp), the predicted return (not healthy),
+         the last consultation (« — » when empty). Expects player. -->
+    <template id="sc_player_detail_head" name="App shell: player detail head">
+        <div t-if="(player.training_recommendation or '').strip()" class="o_sc_row_detail_training" data-sc-row-detail-section="training">
+            <h3 class="o_sc_change_detail_sub">Training Recommendation</h3>
+            <p class="o_sc_pre" t-out="player.training_recommendation"/>
+            <p t-if="player.last_training_recommendation_info" class="o_sc_meta"
+               data-sc-change-detail-stamp="1" t-out="player.last_training_recommendation_info"/>
+        </div>
+        <div t-if="player.stage != 'healthy'" class="text-muted small d-flex align-items-center mb-1">
+            <i class="fa fa-clock-o" title="Estimated Return"/>
+            <span class="ms-1">Predicted return:</span>
+            <span t-if="player.predicted_return_date" class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/>
+            <span t-else="" class="ms-1">—</span>
+        </div>
+        <div class="text-muted small d-flex align-items-center mb-2">
+            <i class="fa fa-stethoscope" title="Last Consultation Date"/>
+            <span class="ms-1">Last consultation:</span>
+            <span t-if="player.last_consultation_date" class="ms-1" t-field="player.last_consultation_date" t-options="{'widget': 'date'}"/>
+            <span t-else="" class="ms-1">—</span>
+        </div>
+    </template>
+
     <!-- Owner review 2026-10-11: the expanded recent-changes row carries the
          legacy card's detail, from /my/player/<id>/recent-changes?detail=1
          (values: sports.patient._sc_change_detail). Order: training
@@ -543,26 +569,8 @@
         <!-- Task 1626: o_sc_legacy here (was on the <details> body that
              held it) — the legacy partials keep the shell's tokens. -->
         <div class="o_sc_change_detail o_sc_legacy">
-            <div t-if="player.training_recommendation" class="text-muted small d-flex align-items-start mb-1">
-                <i class="fa fa-heartbeat mt-1" title="Training Recommendation"/>
-                <span class="ms-1 o_sc_pre" t-esc="player.training_recommendation"/>
-            </div>
-            <!-- Review 2026-10-20 (#1626): the « Updated on … by … » stamp,
-                 as in the other player cards' detail. -->
-            <p t-if="player.training_recommendation and player.last_training_recommendation_info"
-               class="o_sc_meta mb-1" data-sc-change-detail-stamp="1"
-               t-out="player.last_training_recommendation_info"/>
-            <div t-if="player.stage != 'healthy'" class="text-muted small d-flex align-items-center mb-1">
-                <i class="fa fa-clock-o" title="Estimated Return"/>
-                <span class="ms-1">Predicted return:</span>
-                <span t-if="player.predicted_return_date" class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/>
-                <span t-else="" class="ms-1">—</span>
-            </div>
-            <div class="text-muted small d-flex align-items-center mb-2">
-                <i class="fa fa-stethoscope" title="Last Consultation Date"/>
-                <span class="ms-1">Last consultation:</span>
-                <span class="ms-1" t-field="player.last_consultation_date" t-options="{'widget': 'date'}"/>
-            </div>
+            <!-- Task 1651: the shared head (as in the other player cards). -->
+            <t t-call="bemade_sports_clinic.sc_player_detail_head"/>
             <div t-if="items" class="o_sc_recent_changes_content mb-2">
                 <div class="mb-1">
                     <span class="badge bg-warning text-dark o_sc_recent_heading">
@@ -607,23 +615,8 @@
          the viewer: no hidden injury nor internal note for a coach). -->
     <template id="sc_player_row_detail" name="App shell: player row detail">
         <div class="o_sc_change_detail o_sc_row_detail_body" t-att-data-sc-row-detail-player="player.id">
-            <div t-if="(player.training_recommendation or '').strip()" class="o_sc_row_detail_training" data-sc-row-detail-section="training">
-                <h3 class="o_sc_change_detail_sub">Training Recommendation</h3>
-                <p class="o_sc_pre" t-out="player.training_recommendation"/>
-                <p t-if="player.last_training_recommendation_info" class="o_sc_meta" t-out="player.last_training_recommendation_info"/>
-            </div>
-            <div t-if="player.stage != 'healthy'" class="text-muted small d-flex align-items-center mb-1">
-                <i class="fa fa-clock-o" title="Estimated Return"/>
-                <span class="ms-1">Predicted return:</span>
-                <span t-if="player.predicted_return_date" class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/>
-                <span t-else="" class="ms-1">—</span>
-            </div>
-            <div class="text-muted small d-flex align-items-center mb-2">
-                <i class="fa fa-stethoscope" title="Last Consultation Date"/>
-                <span class="ms-1">Last consultation:</span>
-                <span t-if="player.last_consultation_date" class="ms-1" t-field="player.last_consultation_date" t-options="{'widget': 'date'}"/>
-                <span t-else="" class="ms-1">—</span>
-            </div>
+            <!-- Task 1651: the shared head (as in the other player cards). -->
+            <t t-call="bemade_sports_clinic.sc_player_detail_head"/>
             <t t-if="active_injuries">
                 <h3 class="o_sc_change_detail_sub">Active injuries</h3>
                 <t t-foreach="active_injuries" t-as="inj">

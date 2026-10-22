@@ -12454,6 +12454,7 @@ msgstr "Formation"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_row_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_detail_head
 msgid "Training Recommendation"
 msgstr "Recommandation d'entraînement"
 
@@ -15301,24 +15302,22 @@ msgstr ""
 "Changements récents</span>"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_change_detail
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_row_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_detail_head
 msgid ""
 "<i class=\"fa fa-clock-o\" title=\"Estimated Return\"/>\n"
-"                <span class=\"ms-1\">Predicted return:</span>"
+"            <span class=\"ms-1\">Predicted return:</span>"
 msgstr ""
 "<i class=\"fa fa-clock-o\" title=\"Retour estimé\"/>\n"
-"                <span class=\"ms-1\">Retour prévu :</span>"
+"            <span class=\"ms-1\">Retour prévu :</span>"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_change_detail
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_row_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_detail_head
 msgid ""
 "<i class=\"fa fa-stethoscope\" title=\"Last Consultation Date\"/>\n"
-"                <span class=\"ms-1\">Last consultation:</span>"
+"            <span class=\"ms-1\">Last consultation:</span>"
 msgstr ""
 "<i class=\"fa fa-stethoscope\" title=\"Date de la dernière consultation\"/>\n"
-"                <span class=\"ms-1\">Dernière consultation :</span>"
+"            <span class=\"ms-1\">Dernière consultation :</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_change_detail
