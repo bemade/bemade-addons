@@ -7,7 +7,7 @@ from odoo import http, fields, _
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
-from .access_control_mixin import AccessControlMixin
+from .access_control_mixin import AccessControlMixin, parse_portal_date
 from .app_shell import AppShellMixin
 from datetime import datetime, timedelta
 from urllib.parse import quote as url_quote
@@ -232,7 +232,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             vals['injury_date_na'] = True
             vals['injury_date'] = False  # Clear injury_date if N/A is checked
         elif post.get('injury_date'):
-            vals['injury_date'] = post.get('injury_date')
+            vals['injury_date'] = parse_portal_date(post.get('injury_date'))  # task 1640
             vals['injury_date_na'] = False
         
         # Handle optional fields
@@ -240,7 +240,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             vals['parental_consent'] = post.get('parental_consent')
         
         if post.get('predicted_resolution_date'):
-            vals['predicted_resolution_date'] = post.get('predicted_resolution_date')
+            vals['predicted_resolution_date'] = parse_portal_date(post.get('predicted_resolution_date'))  # task 1640
             
         # Handle internal notes for treatment professionals
         if is_treatment_prof and post.get('internal_notes'):
@@ -587,16 +587,16 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         else:
             vals['injury_date_na'] = False
             if post.get('injury_date'):
-                vals['injury_date'] = post.get('injury_date')
+                vals['injury_date'] = parse_portal_date(post.get('injury_date'))  # task 1640
         
 
         
         # Handle resolution dates
         if post.get('predicted_resolution_date'):
-            vals['predicted_resolution_date'] = post.get('predicted_resolution_date')
+            vals['predicted_resolution_date'] = parse_portal_date(post.get('predicted_resolution_date'))  # task 1640
         
         if post.get('resolution_date'):
-            vals['resolution_date'] = post.get('resolution_date')
+            vals['resolution_date'] = parse_portal_date(post.get('resolution_date'))  # task 1640
         
         # Fields only treatment professionals can update
         if is_treatment_prof:

@@ -18,7 +18,7 @@
 #
 
 from odoo import http, _, fields
-from odoo.exceptions import UserError, AccessError, MissingError
+from odoo.exceptions import UserError, AccessError, MissingError, ValidationError
 from odoo.http import request
 from odoo.tools import format_date
 
@@ -29,6 +29,37 @@ import logging
 import pytz
 
 _logger = logging.getLogger(__name__)
+
+# Task 1640: the date range a portal / app form may post (the browser's
+# date inputs carry the same 4-digit-year bounds, sc_date_bounds.js).
+PORTAL_MIN_YEAR = 1900
+PORTAL_MAX_YEAR = 9999
+
+
+def _check_portal_year(year):
+    if not PORTAL_MIN_YEAR <= year <= PORTAL_MAX_YEAR:
+        raise ValidationError(_("Please enter a valid date."))
+
+
+def parse_portal_date(value):
+    """Task 1640: a posted date (``YYYY-MM-DD``) as a ``date``; empty →
+    False. A malformed value (« 202610-10-10 ») or a year outside
+    1900..9999 raises a ValidationError with a clear message, never the
+    ORM's generic error."""
+    if value in ('', None, False):
+        return False
+    if isinstance(value, str):
+        value = value.strip()
+        if not value:
+            return False
+    try:
+        day = fields.Date.to_date(value)
+    except (TypeError, ValueError):
+        raise ValidationError(_("Please enter a valid date.")) from None
+    if not day:
+        raise ValidationError(_("Please enter a valid date."))
+    _check_portal_year(day.year)
+    return day
 
 
 class AccessControlMixin:
@@ -48,7 +79,9 @@ class AccessControlMixin:
     def _parse_portal_datetime(self, val):
         """Parse a datetime-local input (YYYY-MM-DDTHH:MM[:SS]) from the portal
         as user-local time and convert to a UTC string for fields.Datetime.
-        Returns False if empty; returns the raw value if it can't be parsed.
+        Returns False if empty. Task 1640: an unparsable value or a year
+        outside 1900..9999 raises a ValidationError (« Please enter a valid
+        date. ») — the raw string is no longer handed to the ORM.
         """
         if not val:
             return False
@@ -64,9 +97,18 @@ class AccessControlMixin:
                     dt = datetime.strptime(val, '%Y-%m-%d %H:%M')
                 except ValueError:
                     dt = datetime.strptime(val, '%Y-%m-%d %H:%M:%S')
-        except ValueError:
-            # Fallback: let the ORM try to coerce whatever string was provided.
+        except (TypeError, ValueError):
+            # Any other shape the ORM itself reads (a bare date) passes
+            # through as before; the rest is refused clearly (task 1640).
+            try:
+                coerced = fields.Datetime.to_datetime(val)
+            except (TypeError, ValueError):
+                coerced = None
+            if not coerced:
+                raise ValidationError(_("Please enter a valid date.")) from None
+            _check_portal_year(coerced.year)
             return val
+        _check_portal_year(dt.year)
 
         user_tz = http.request.env.tz
         local_dt = user_tz.localize(dt)

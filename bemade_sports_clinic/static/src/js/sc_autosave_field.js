@@ -78,6 +78,7 @@ import { registry } from "@web/core/registry";
 import { _t } from "@web/core/l10n/translation";
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
 import { readDraft, removeDraft, writeDraft } from "@bemade_sports_clinic/js/sc_draft_store";
+import { DATE_BOUNDS, isValidDateValue } from "@bemade_sports_clinic/js/sc_date_bounds";
 
 const DRAFT_DEBOUNCE = 300;
 // Owner review 2026-10-14: inputs whose value is only complete once the
@@ -138,6 +139,10 @@ export class ScAutosaveField extends Component {
         recordId: { type: Number, optional: true },
         field: { type: String, optional: true },
         writeDate: { type: String, optional: true },
+        // Task 1640: per-field date bounds (default 1900 .. 9999 — the
+        // 4-digit year cap).
+        min: { type: String, optional: true },
+        max: { type: String, optional: true },
         "*": true,
     };
 
@@ -324,6 +329,17 @@ export class ScAutosaveField extends Component {
         return DATE_LIKE_TYPES.includes(this.type);
     }
 
+    /** Task 1640: the input's bounds (props, else the 4-digit-year cap). */
+    get dateBounds() {
+        const bounds = DATE_BOUNDS[this.type === "date_na" ? "date" : this.type] || {};
+        return { min: this.props.min || bounds.min, max: this.props.max || bounds.max };
+    }
+
+    /** Task 1640: a value worth keeping (empty, or an in-range date). */
+    isKeepable(value) {
+        return !this.isDateLike || isValidDateValue(this.type, value);
+    }
+
     /** The browser holds a half-typed (invalid) date / time. */
     get isIncomplete() {
         const el = this.inputRef.el;
@@ -399,6 +415,12 @@ export class ScAutosaveField extends Component {
         }
         const draft = readDraft(this.key);
         if (!draft) {
+            return;
+        }
+        if (!this.isKeepable(draft.value)) {
+            // Task 1640: a draft holding an out-of-range / malformed date
+            // (« 202610-10-10 ») is dropped, never brought back.
+            removeDraft(this.key);
             return;
         }
         if (this.isServer) {
@@ -775,7 +797,7 @@ export class ScAutosaveField extends Component {
     }
 
     keepDraft() {
-        if (norm(this.state.value) === norm(this.props.value)) {
+        if (norm(this.state.value) === norm(this.props.value) || !this.isKeepable(this.state.value)) {
             removeDraft(this.key);
             this.state.status = "idle";
             return;

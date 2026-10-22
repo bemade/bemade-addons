@@ -261,6 +261,8 @@ async function loadLazy(container, url, target) {
     try {
         const html = await scFetch(url, { as: "html" });
         target.innerHTML = html;
+        // Task 1640: listeners may enhance the injected body (date bounds).
+        target.dispatchEvent(new CustomEvent("sc:lazy-loaded", { bubbles: true }));
         // A fragment with its own empty state (task 1581 histories) keeps it.
         // Task 1614: [data-sc-lazy-filled] = content even without a link
         // (a digest day whose players have no page link).

@@ -52,7 +52,7 @@ from odoo.addons.portal.controllers.portal import CustomerPortal
 from ..models import sc_app_nav, sc_app_roles
 from ..models.patient import IDENTITY_CONFIRM_KEY, IDENTITY_FIELDS
 from ..models.patient_injury import STAGE_ORDER
-from .access_control_mixin import AccessControlMixin
+from .access_control_mixin import AccessControlMixin, parse_portal_date
 
 _logger = logging.getLogger(__name__)
 
@@ -240,12 +240,9 @@ def _record_value(model, value):
 
 
 def _date_value(value):
-    if value in ('', None, False):
-        return False
-    try:
-        return fields.Date.to_date(value)
-    except (TypeError, ValueError):
-        raise ValidationError(_("Please enter a valid date.")) from None
+    """Task 1640: a malformed date or a year outside 1900..9999 is refused
+    with « Please enter a valid date. » (shared with the legacy routes)."""
+    return parse_portal_date(value)
 
 
 # -- mail.activity (owner review 2026-10-11: the activity page's pencil card) --

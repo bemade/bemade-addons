@@ -9254,6 +9254,7 @@ msgstr "Veuillez entrer une date de naissance valide (AAAA-MM-JJ)."
 
 #. module: bemade_sports_clinic
 #. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
 #: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
 #: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_note_edit_form

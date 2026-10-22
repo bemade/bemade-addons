@@ -3,7 +3,7 @@ from odoo import http, fields, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
-from .access_control_mixin import AccessControlMixin
+from .access_control_mixin import AccessControlMixin, parse_portal_date
 from .app_shell import AppShellMixin
 from ..models import sc_app_nav, sc_app_roles
 from datetime import date, timedelta
@@ -561,7 +561,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'summary': summary,
             'note': post.get('note', ''),
             'user_id': int(user_id),
-            'date_deadline': date_deadline,
+            'date_deadline': parse_portal_date(date_deadline),  # task 1640
             'res_model_id': model_id,
             'res_id': int(res_id),
         }
@@ -610,7 +610,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         if 'note' in post:
             update_vals['note'] = post['note']
         if 'date_deadline' in post:
-            update_vals['date_deadline'] = post['date_deadline']
+            update_vals['date_deadline'] = parse_portal_date(post['date_deadline'])  # task 1640
 
         # Assignee change from the edit page (task 1500): honoured, and
         # validated with the SAME per-actor rule as save / reassign. Outside

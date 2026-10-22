@@ -2,7 +2,7 @@ from odoo import http, fields, _
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
-from .access_control_mixin import AccessControlMixin
+from .access_control_mixin import AccessControlMixin, parse_portal_date
 from .app_shell import AppShellMixin
 import logging
 from datetime import date
@@ -783,7 +783,12 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     _("Only treatment professionals can edit the team announcement."),
                 )
             body = (post.get('announcement') or '').strip()
-            deadline = (post.get('announcement_deadline') or '').strip() or False
+            # Task 1640: a malformed deadline (« 202610-10-10 ») gets a clear
+            # message, not « Error saving announcement. ».
+            try:
+                deadline = parse_portal_date(post.get('announcement_deadline'))
+            except ValidationError as e:
+                return self._announcement_error_redirect(team_id, e.args[0])
             team.write({
                 'announcement': body or False,
                 'announcement_deadline': deadline,
