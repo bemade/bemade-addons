@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <!-- Security hotfix 19.0.1.42.5, forward-port 19.0.1.99.3 (portal ACL / record-rule sweep).
+
+         Deliberately NOT noupdate, so an upgrade of an existing database
+         creates (and keeps refreshing) these rules. Internal users are not in
+         these rules' groups and are unchanged. -->
+
+    <!-- 1. Emergency contacts: portal TPs held a read/write/create ACL on
+         sports.patient.contact with NO record rule, so every portal TP read
+         every team's contacts. Same team scope as the coach and internal
+         contact rules. -->
+    <record id="portal_treatment_professional_patient_contact_access" model="ir.rule">
+        <field name="name">Portal Treatment Professionals: contacts of staffed teams' patients</field>
+        <field name="model_id" ref="model_sports_patient_contact"/>
+        <field name="groups" eval="[(6, 0, [ref('bemade_sports_clinic.group_portal_treatment_professional')])]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+        <field name="domain_force">[('patient_id.team_ids.staff_ids.user_ids', 'in', user.id)]</field>
+    </record>
+
+    <!-- 2. Injury documents: the base.group_portal rule now excludes documents
+         of injuries hidden from coaches; portal TPs keep every document of
+         their staffed teams' patients (hidden injuries included) through this
+         rule, ORed with the portal one. -->
+    <record id="portal_treatment_professional_injury_document_access" model="ir.rule">
+        <field name="name">Portal Treatment Professionals: injury documents of staffed teams' patients</field>
+        <field name="model_id" ref="model_sports_injury_document"/>
+        <field name="groups" eval="[(6, 0, [ref('bemade_sports_clinic.group_portal_treatment_professional')])]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[('patient_id.team_ids.staff_ids.user_ids', 'in', user.id)]</field>
+    </record>
+
+    <!-- 3. Team staff: base.group_portal held a read ACL on sports.team.staff
+         with no record rule, so any portal user listed every team's staff.
+         A portal user now reads the staff rows of the teams they staff
+         themselves. Pages that legitimately show staff outside that scope
+         (event assignee pickers, activity assignee lists, the professional
+         filter) already read through sudo helpers. -->
+    <record id="portal_team_staff_own_teams" model="ir.rule">
+        <field name="name">Portal users: staff of the teams they staff</field>
+        <field name="model_id" ref="model_sports_team_staff"/>
+        <field name="groups" eval="[(6, 0, [ref('base.group_portal')])]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+        <field name="domain_force">[('team_id.staff_ids.user_ids', 'in', user.id)]</field>
+    </record>
+</odoo>
