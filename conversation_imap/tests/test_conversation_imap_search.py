@@ -133,7 +133,10 @@ class TestConversationImapSearch(TransactionCase):
                 # sent as one literal: the command line itself carries
                 # nothing of what the user typed
                 self.assertRegex(line, rb"SEARCH CHARSET UTF-8 TEXT \x00\d+\x00$")
-                self.assertNotIn(b"ALL", line)
+                # imaplib's random command tag may itself contain "ALL", so
+                # look only at what follows the tag
+                command = line.split(b" ", 1)[1]
+                self.assertNotIn(b"ALL", command)
 
     def test_term_is_trimmed_and_blank_means_no_search(self):
         self.assertEqual(self._subjects("  pompe  "), ["Soumission pompe hydraulique"])
