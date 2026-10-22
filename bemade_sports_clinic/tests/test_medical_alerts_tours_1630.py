@@ -10,8 +10,8 @@ laptop 1366 px. Synthetic fixtures only.
 * TOUR-PENCIL (review round 1) The popup's icon-only pencil stays visible
   while editing, top right of the content, clear of the sheet's close ✕.
 * TOUR-CARD (review round 1) A coach's roster card shows the compact red
-  pills (EpiPen icon); a tap on a pill opens the player; no horizontal
-  scroll at phone width.
+  pills (EpiPen icon); no horizontal scroll at phone width. Task 1652: a
+  tap on a pill opens its popup (read-only for a coach).
 
 The look (tones in both themes, the EpiPen icon, phone popups as bottom
 sheets) stays UNVERIFIED here — the dev-review click-through covers it.

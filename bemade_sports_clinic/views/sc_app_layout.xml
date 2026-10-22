@@ -181,6 +181,20 @@
                         <t t-out="0"/>
                     </main>
                     <t t-if="sc_search_url" t-call="bemade_sports_clinic.sc_app_search_sheet"/>
+                    <!-- Task 1652: the popups of the red medical pills on this
+                         page's player cards — once per player, outside every
+                         read fragment (they hold islands). -->
+                    <t t-if="sc_card_med_patients and sc_can('patient.medical_alerts')">
+                        <t t-set="sc_card_med_is_tp" t-value="sc_card_med_tp()"/>
+                        <t t-foreach="sc_card_med_patients()" t-as="sc_card_med_patient">
+                            <t t-call="bemade_sports_clinic.sc_medical_sheets">
+                                <t t-set="patient" t-value="sc_card_med_patient"/>
+                                <t t-set="scope" t-value="'card'"/>
+                                <t t-set="tp" t-value="sc_card_med_is_tp"/>
+                                <t t-set="editable" t-value="sc_card_med_is_tp"/>
+                            </t>
+                        </t>
+                    </t>
                     <!-- Task 1542: status toast (sc_fetch errors, offline).
                          Task 1583: it also shows the pending session
                          notification of a POST round-trip on load. -->

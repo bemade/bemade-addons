@@ -540,6 +540,18 @@ class AccessControlMixin:
         clocks = self._sc_activity_clocks(
             players, lambda p: '/my/player?player_id=%s%s&tab=activities' % (p.id, team_qs))
         medical = players._sc_card_medical_pills()
+        # Task 1652: a red card pill opens the player page's popup — the
+        # page renders those sheets once per player (sc_app_layout, outside
+        # the read fragments); the pill falls back to the player's Info tab.
+        seen = getattr(request, '_sc_card_med_ids', None)
+        if seen is None:
+            seen = request._sc_card_med_ids = []
+        for player_id, pills in medical.items():
+            if player_id not in seen:
+                seen.append(player_id)
+            for pill in pills:
+                pill['sheet'] = 'sc_med_card_%s_%s' % (pill['key'], player_id)
+                pill['fallback'] = '/my/player?player_id=%s&tab=info' % player_id
         extras = {}
         for player in players:
             injured = (player.stage or 'healthy') != 'healthy'

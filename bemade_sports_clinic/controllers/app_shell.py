@@ -1314,6 +1314,11 @@ class AppShellMixin:
             # Task 1598: a system admin also sees the TP actions legacy
             # granted them (registry keys flagged ``system``).
             'sc_can': lambda key: sc_app_roles.can(key, roles, is_system=is_system),
+            # Task 1652: the players whose red card pills this page shows
+            # (filled while the rows are built) and the viewer's role there.
+            'sc_card_med_patients': lambda: request.env['sports.patient'].browse(
+                getattr(request, '_sc_card_med_ids', None) or []).exists(),
+            'sc_card_med_tp': lambda: bool(self._is_treatment_professional()),
             # Task 1604: today in the user's timezone (the resolve sheet's
             # default and latest resolution date).
             'sc_today_iso': fields.Date.to_string(fields.Date.context_today(user)),

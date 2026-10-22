@@ -116,16 +116,22 @@
                     <span t-attf-class="o_sc_status_pill o_sc_chip_#{pill['tone']}" t-att-title="pill['title']"><i t-if="pill['icon']" t-attf-class="fa #{pill['icon']}" aria-hidden="true"/> <t t-out="pill['label']"/></span>
                 </t>
                 <!-- Task 1630 (review round 1): the RED allergy / medical-alert
-                     pills (row_status['medical'], _sc_card_medical_pills) —
-                     static compact spans, no popup: a tap opens the player. -->
+                     pills (row_status['medical'], _sc_card_medical_pills).
+                     Task 1652: a tap opens the player page's popup (the
+                     page-level sc_medical_sheets, scope « card »;
+                     sc_med_card_pills.js), never the card / its link; no
+                     sheet on the page = the player's Info tab. -->
                 <t t-foreach="row_status.get('medical') or ()" t-as="med">
-                    <span class="o_sc_med_pill o_sc_med_pill_static o_sc_med_card_pill o_sc_med_urgent"
-                          t-att-data-sc-med-pill="med['key']" data-sc-med-level="urgent" t-att-title="med['title']">
+                    <button type="button" class="o_sc_med_pill o_sc_med_card_pill o_sc_med_urgent"
+                            t-att-data-sc-med-card-sheet="med.get('sheet')"
+                            t-att-data-sc-med-fallback="med.get('fallback')"
+                            aria-haspopup="dialog" t-att-aria-label="med['title']"
+                            t-att-data-sc-med-pill="med['key']" data-sc-med-level="urgent" t-att-title="med['title']">
                         <span class="o_sc_med_pill_label" t-out="med['label']"/>
                         <span t-if="med['epipen']" class="o_sc_med_epipen" data-sc-med-epipen="1">
                             <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
                         </span>
-                    </span>
+                    </button>
                 </t>
                 <span t-if="row_status['injuries']" class="o_sc_injury_count" t-att-title="sc_injuries_title"><i class="fa fa-chain-broken" aria-hidden="true"/> <t t-out="row_status['injuries']"/></span>
             </t>

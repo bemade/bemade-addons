@@ -460,15 +460,27 @@ $sc-p2-laptop: 992px;
     // (sc_player_status_line) — the size of the status pills next to them,
     // and NOT positioned: under the link row's stretched link, so a tap on
     // the pill opens the player.
+    // Task 1652: the card pill is a button, as tall as the status pills
+    // beside it (same padding, border, font metrics; the compact
+    // quick-change pills' 22 px).
     .o_sc_med_pill.o_sc_med_card_pill {
-        position: static;
-        min-height: 0;
+        // Above the card's stretched link (.o_sc_link_row_main::after), so
+        // a tap lands on the pill, not on the card.
+        position: relative;
+        z-index: 1;
+        appearance: none;
+        min-height: 22px;
         padding: 1px 8px;
         gap: 3px;
+        font-weight: 600;
+        line-height: 1.45;
+        white-space: nowrap;
+        cursor: pointer;
+        vertical-align: middle;
 
         .o_sc_icon {
-            width: 12px;
-            height: 12px;
+            width: 1em;
+            height: 1em;
         }
     }
 
