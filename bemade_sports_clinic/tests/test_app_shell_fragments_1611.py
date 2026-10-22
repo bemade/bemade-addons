@@ -74,7 +74,10 @@ class TestFragments1611(FragmentsCommon):
         self._login_tp()
         url = self._player_url()
         key = 'sports.patient:%s' % self.player.id
-        for part in ('appbar', 'crumb', 'hero-head', 'hero-chips', 'allergies', 'hero-actions',
+        # Task 1630: the « allergies » holder became the medical pills (+ the
+        # popups' read views).
+        for part in ('appbar', 'crumb', 'hero-head', 'hero-chips', 'medical-pills', 'medical-allergy',
+                     'medical-medical_alert', 'hero-actions',
                      'identity', 'memberships', 'removal-sheets'):
             self.assertFragmentMatchesPage(url, '%s:%s' % (key, part))
 
@@ -147,11 +150,13 @@ class TestFragments1611(FragmentsCommon):
             'hidden_from_coaches': True,
         })
         self.injury.sudo().write({'internal_notes': 'Synthetic internal note'})
-        self.player.sudo().write({'allergies': 'Synthetic allergy'})
+        # Task 1630: a « None » allergy (a coach sees yellow / red only).
+        self.player.sudo().write({'allergy_level': 'none', 'allergy_details': 'Synthetic allergy'})
         self._login_coach()
         url = self._player_url('injuries')
         key = 'sports.patient:%s' % self.player.id
-        payload = self._fragments(url, ['%s:injuries' % key, '%s:allergies' % key,
+        payload = self._fragments(url, ['%s:injuries' % key, '%s:medical-pills' % key,
+                                        '%s:medical-allergy' % key,
                                         'sports.patient.injury:%s:read' % self.injury.id,
                                         'sports.patient.injury:%s:summary' % hidden.id])
         blob = ' '.join(payload['fragments'].values())

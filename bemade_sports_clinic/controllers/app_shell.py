@@ -515,6 +515,9 @@ def _assignable_teams():
 def _patient_read(patient, field):
     if field == 'sc_status':
         return '%s:%s' % (patient.match_status or '', patient.practice_status or '')
+    if field == 'allergy_epipen':
+        # Task 1630: the segmented « Yes / No » control's values.
+        return '1' if patient.allergy_epipen else '0'
     if field == 'sc_team_ids':
         # Only the teams this user may assign: the checklist shows (and
         # posts back) those; the player's other teams are not theirs to touch.
@@ -526,6 +529,11 @@ def _patient_read(patient, field):
 def _patient_display(patient, field):
     if field == 'sc_team_ids':
         return ', '.join(patient.sudo().team_ids.mapped('name'))
+    if field in ('allergy_level', 'medical_alert_level'):
+        # Task 1630: « Not specified » for no level.
+        return patient._sc_level_label(patient[field])
+    if field == 'allergy_epipen':
+        return patient.env._("Yes") if patient.allergy_epipen else patient.env._("No")
     return None
 
 
@@ -576,6 +584,13 @@ def _patient_write(ctrl, patient, field, value):
                 raise ValidationError(_(
                     'Date of Birth must not be in the future and not be more than 120 years ago.'))
         patient.write({field: dob})
+        return extra
+    if field in ('allergy_level', 'medical_alert_level'):
+        # Task 1630: « » = Not specified.
+        patient.write({field: _selection_value(patient, field, value)})
+        return extra
+    if field == 'allergy_epipen':
+        patient.write({field: str(value).lower() in _TRUTHY})
         return extra
     if field in ('last_consultation_date', 'return_date', 'predicted_return_date'):
         # Task 1603: « Retour prévu » too (empty = cleared).
@@ -901,7 +916,13 @@ SAVE_REGISTRY = {
             # Therapists only (a coach posting them gets 403).
             # Task 1633: coaches set it too (a change of an existing one is
             # the confirmed identity correction, task 1600).
-            'date_of_birth': _STAFF_ROLES, 'allergies': _TP_ROLES,
+            'date_of_birth': _STAFF_ROLES,
+            # Task 1630: the allergy / medical-alert levels, details, EpiPen
+            # and « Other medical history » replace the free-text allergies
+            # (coaches read some of them, never write: 403).
+            'allergy_level': _TP_ROLES, 'allergy_details': _TP_ROLES,
+            'allergy_epipen': _TP_ROLES, 'medical_alert_level': _TP_ROLES,
+            'medical_alert_details': _TP_ROLES, 'medical_history_other': _TP_ROLES,
             'team_info_notes': _TP_ROLES, 'training_recommendation': _TP_ROLES,
             'last_consultation_date': _TP_ROLES,
             # Task 1594: the actual return date — never a coach's (the legacy
@@ -921,8 +942,9 @@ SAVE_REGISTRY = {
         'display': _patient_display,
         'hint': _patient_hint,
         'propose': _patient_propose,
-        # The player page / dossier: title, hero (initials, teams, allergies
-        # banner), identity read view (age), memberships, removal actions.
+        # The player page / dossier: title, hero (initials, teams, the
+        # allergy / medical-alert pills and their popups), identity read view
+        # (age), memberships, removal actions.
         'refresh': {'*': ['*']},
     },
     'sports.patient.injury': {

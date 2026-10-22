@@ -1132,8 +1132,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
             # Extra medical/status fields (only for TP/admin)
             if is_tp:
-                if 'allergies' in post:
-                    vals['allergies'] = post.get('allergies') or False
+                # Task 1630: the allergy / medical-alert block.
+                vals.update(request.env['sports.patient']._sc_medical_vals_from_post(post))
                 if 'team_info_notes' in post:
                     vals['team_info_notes'] = post.get('team_info_notes') or False
                 if post.get('match_status'):

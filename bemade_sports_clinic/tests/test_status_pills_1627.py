@@ -213,7 +213,7 @@ class TestStatusPills1627(StatusPillsMixin, FragmentsCommon):
         tree = self._page(self._url())
         self.assertFalse(tree.xpath('//owl-component[contains(@props, \'"sc_status"\')]'))
         self.assertFalse(tree.xpath('//*[@data-sc-section="player.status.edit"]'))
-        # The pencil stays for the header's other fields (training, dates, allergies).
+        # The pencil stays for the header's other fields (training, dates; task 1630: the allergies are the pills' popups).
         hero = self._hero(tree)
         self.assertEqual(len(hero.xpath('.//button[@data-sc-edit-toggle]')), 1)
 

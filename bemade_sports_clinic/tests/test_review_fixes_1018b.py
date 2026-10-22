@@ -6,8 +6,8 @@ Acceptance criteria:
 
 * F1 Allergies only in the player header: the Medical card (Infos tab) has
   no allergies row in its read view and no allergies field in its edit
-  view; the header keeps the allergies banner (read) and the allergies
-  field behind its pencil (therapists).
+  view; the header keeps the allergies (task 1630: the « Allergies » pill,
+  edited in its popup by therapists).
 * F2 One document picker: the player Documents tab and the injury card's
   « Add documents » sheet render the SAME upload component
   (``form[data-sc-doc-upload]``: drop zone with a ``multiple`` file input,
@@ -67,7 +67,7 @@ class TestAllergiesHeaderOnly1018b(AppShellCommon):
     def setUp(self):
         super().setUp()
         self._switch(True)
-        self.player.sudo().allergies = 'Synthetic allergy'
+        self.player.sudo().write({'allergy_level': 'minor', 'allergy_details': 'Synthetic allergy'})
 
     def test_medical_card_has_no_allergies(self):
         self._login_tp()
@@ -76,21 +76,24 @@ class TestAllergiesHeaderOnly1018b(AppShellCommon):
         self.assertEqual(len(medical), 1)
         read = medical[0].xpath('.//*[@data-sc-edit-view="read"]')[0]
         self.assertNotIn('Allergies', [' '.join(dt.itertext()).strip() for dt in read.xpath('.//dt')])
-        self.assertNotIn('allergies', _island_fields(medical[0]))
+        for field in ('allergies', 'allergy_level', 'allergy_details'):
+            self.assertNotIn(field, _island_fields(medical[0]))
         # The other medical fields stay.
         self.assertIn('return_date', _island_fields(medical[0]))
 
     def test_header_keeps_allergies_read_and_edit(self):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s' % self.player.id)
-        banner = tree.xpath('//*[@data-sc-section="player.allergies"]')
-        self.assertEqual(len(banner), 1)
-        self.assertIn('Synthetic allergy', ' '.join(banner[0].itertext()))
-        edit = tree.xpath('//*[@data-sc-section="player.allergies.edit"]')
-        self.assertEqual(len(edit), 1)
-        self.assertEqual(_island_fields(edit[0]), ['allergies'])
-        # Exactly one allergies island on the whole page.
-        self.assertEqual(_island_fields(tree).count('allergies'), 1)
+        # Task 1630: the pill in the header, the details + editor in its popup.
+        pill = tree.xpath('//*[@data-sc-section="player.medical"]//button[@data-sc-med-pill="allergy"]')
+        self.assertEqual(len(pill), 1)
+        sheet = tree.xpath('//dialog[@id="sc_med_player_allergy_%s"]' % self.player.id)
+        self.assertEqual(len(sheet), 1)
+        self.assertIn('Synthetic allergy', ' '.join(sheet[0].itertext()))
+        self.assertEqual(_island_fields(sheet[0]), ['allergy_level', 'allergy_epipen', 'allergy_details'])
+        # Exactly one allergy-details island on the whole page; no legacy one.
+        self.assertEqual(_island_fields(tree).count('allergy_details'), 1)
+        self.assertNotIn('allergies', _island_fields(tree))
 
 
 class DocPicker1018bMixin(InjuryCard1616Mixin):

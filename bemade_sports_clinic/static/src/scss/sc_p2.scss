@@ -387,8 +387,157 @@ $sc-p2-laptop: 992px;
     .o_sc_hero_editable {
         position: relative;
 
-        .o_sc_hero_head {
+        .o_sc_hero_top {
             padding-right: calc(var(--sc-tap) + var(--sc-space-1, 4px));
+        }
+    }
+
+    // Task 1630: the name / team head and, left of the pencil, the
+    // « Allergies » / « Medical alert » pills; on a narrow screen the pills
+    // wrap under the name.
+    .o_sc_hero_top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2) var(--sc-space-3);
+        min-width: 0;
+
+        > .o_sc_hero_head {
+            flex: 1 1 auto;
+        }
+    }
+
+    .o_sc_med_pills {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+
+        &:empty {
+            display: none;
+        }
+    }
+
+    .o_sc_med_pill {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        min-height: 26px;
+        padding: 2px 10px;
+        border: 1px solid transparent;
+        border-radius: var(--sc-radius-pill);
+        font: inherit;
+        font-size: var(--sc-text-xs);
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+        cursor: pointer;
+
+        // A phone tap lands even on the small drawn pill.
+        &::before {
+            content: "";
+            position: absolute;
+            inset: -8px -2px;
+        }
+
+        .o_sc_icon {
+            width: 14px;
+            height: 14px;
+        }
+    }
+
+    .o_sc_med_pill_static {
+        cursor: default;
+
+        &::before {
+            content: none;
+        }
+    }
+
+    // Review round 1 (owner 2026-10-22): the red pills on player cards
+    // (sc_player_status_line) — the size of the status pills next to them,
+    // and NOT positioned: under the link row's stretched link, so a tap on
+    // the pill opens the player.
+    .o_sc_med_pill.o_sc_med_card_pill {
+        position: static;
+        min-height: 0;
+        padding: 1px 8px;
+        gap: 3px;
+
+        .o_sc_icon {
+            width: 12px;
+            height: 12px;
+        }
+    }
+
+    .o_sc_med_urgent { background: var(--sc-bad); color: var(--sc-tone-fg); }
+    .o_sc_med_minor { background: var(--sc-warn); color: var(--sc-tone-fg); }
+    .o_sc_med_none { background: var(--sc-surface-2); color: var(--sc-fg-2); }
+    .o_sc_med_unset { background: transparent; border-color: var(--sc-line); border-style: dashed; color: var(--sc-fg-2); }
+
+    .o_sc_med_epipen {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .o_sc_med_sheet {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+    }
+
+    // Review round 1: the read view and, top-right, the icon-only pencil
+    // (kept while editing: the read view hides, the pencil stays).
+    .o_sc_med_sheet_top {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--sc-space-2);
+        min-width: 0;
+
+        > .o_sc_med_read {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        > .o_sc_med_edit_toggle {
+            margin-left: auto;
+            // Centre the tap target on the level pill's line.
+            margin-top: calc((26px - var(--sc-tap)) / 2);
+            margin-right: calc(var(--sc-space-2) * -1);
+        }
+    }
+
+    .o_sc_med_level_line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2);
+        margin: 0;
+    }
+
+    .o_sc_med_epipen_line {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 700;
+
+        .o_sc_icon {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    .o_sc_med_details,
+    .o_sc_med_details_empty {
+        margin: 0;
+    }
+
+    @media (max-width: 575.98px) {
+        .o_sc_med_pills {
+            margin-left: 0;
+            flex-basis: 100%;
         }
     }
 

@@ -13,6 +13,14 @@ from .patient_injury import (
     history_stamp_date,
     legacy_change_emails_enabled,
 )
+from .medical_alerts import (
+    COACH_LEVELS,
+    LEVEL_MINOR,
+    LEVEL_NONE,
+    LEVEL_TONES,
+    LEVEL_URGENT,
+    UNSET_TONE,
+)
 import logging
 
 from markupsafe import Markup
@@ -37,6 +45,19 @@ JERSEY_SORT_LAST = 10 ** 8
 # two players by a portal user (exact-duplicate refusal).
 IDENTITY_FIELDS = ('first_name', 'last_name', 'date_of_birth')
 IDENTITY_CONFIRM_KEY = 'sc_identity_confirmed'
+
+# Task 1630: allergy / medical-alert levels (no value = « Not specified »).
+MEDICAL_LEVEL_SELECTION = [
+    # « None known » (not « None »: the shared msgid is masculine in French).
+    (LEVEL_NONE, "None known"),
+    (LEVEL_MINOR, "Not urgent"),
+    (LEVEL_URGENT, "Urgent – life-threatening"),
+]
+_MEDICAL_ALERT_GROUPS = (
+    "bemade_sports_clinic.group_sports_clinic_treatment_professional,"
+    "bemade_sports_clinic.group_portal_treatment_professional,"
+    "bemade_sports_clinic.group_portal_team_coach"
+)
 
 # Summaries of the « Player Removal Request » activities (English source and
 # the fr_CA rendering the cron may have stored).
@@ -270,8 +291,45 @@ class Patient(models.Model):
         compute="_compute_document_count",
         string="Document Count",
     )
+    # Task 1630: the legacy free text, kept for this release as a hidden
+    # column (no UI, system only) — the 19.0.1.99.0 post-migrate pre-filled
+    # the levels below from it. Dropping it is a follow-up once the clinic
+    # has validated the pre-filled entries.
     allergies = fields.Text(
+        string="Allergies (legacy)",
+        readonly=True,
+        groups="base.group_system",
+    )
+    # Task 1630 (owner + MC 2026-10-21): allergies and medical alerts, each a
+    # level (no value = « Not specified ») + details; EpiPen with the
+    # allergies. Coaches read the level / details / EpiPen (the app shows
+    # them only the non-urgent and urgent ones); therapists read and edit.
+    allergy_level = fields.Selection(
+        selection=MEDICAL_LEVEL_SELECTION,
+        string="Allergy level",
+        groups=_MEDICAL_ALERT_GROUPS,
+    )
+    allergy_details = fields.Text(string="Allergy details", groups=_MEDICAL_ALERT_GROUPS)
+    allergy_epipen = fields.Boolean(string="EpiPen", groups=_MEDICAL_ALERT_GROUPS)
+    medical_alert_level = fields.Selection(
+        selection=MEDICAL_LEVEL_SELECTION,
+        string="Medical alert level",
+        groups=_MEDICAL_ALERT_GROUPS,
+    )
+    medical_alert_details = fields.Text(string="Medical alert details", groups=_MEDICAL_ALERT_GROUPS)
+    # Therapists only, never coaches (the Infos tab).
+    medical_history_other = fields.Text(
+        string="Other medical history",
         groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
+    )
+    # Pre-filled from the legacy text by the migration: the clinic validates
+    # them from the back-end list « Medical alerts to validate ».
+    medical_alert_review = fields.Boolean(
+        string="To validate",
+        copy=False,
+        groups="base.group_user",
+        help="Pre-filled from the former free-text allergies field: check the "
+        "levels and details, then untick.",
     )
     team_info_notes = fields.Text(
         string="Notes",
@@ -1878,6 +1936,12 @@ class Patient(models.Model):
                     "last_name": _("Player %s") % patient.id,
                     "date_of_birth": False,
                     "team_info_notes": False,
+                    # Task 1630: the medical free text (the levels / EpiPen
+                    # carry no identity and stay).
+                    "allergies": False,
+                    "allergy_details": False,
+                    "medical_alert_details": False,
+                    "medical_history_other": False,
                     "predicted_return_date": False,
                     "return_date": False,
                     "is_anonymized": True,
@@ -2367,6 +2431,162 @@ class Patient(models.Model):
                 "target": target,
             })
         return pills
+
+    # ----------------------------------------------------------------------
+    # Task 1630: allergies + medical alert pills
+    # ----------------------------------------------------------------------
+    # The posted / saved fields of the medical block (therapists only).
+    SC_MEDICAL_FIELDS = (
+        "allergy_level", "allergy_details", "allergy_epipen",
+        "medical_alert_level", "medical_alert_details", "medical_history_other",
+    )
+
+    def _sc_level_label(self, level):
+        """« None known » / « Not urgent » / « Urgent – life-threatening », or
+        « Not specified » for no value, in the env's language."""
+        if not level:
+            return self.env._("Not specified")
+        labels = dict(self._fields["allergy_level"]._description_selection(self.env))
+        return labels.get(level, level)
+
+    @api.model
+    def _sc_medical_level_options(self):
+        """The level choices of a form / select: « Not specified » first."""
+        labels = dict(self._fields["allergy_level"]._description_selection(self.env))
+        return [("", self.env._("Not specified"))] + [
+            (key, labels[key]) for key, _label in MEDICAL_LEVEL_SELECTION]
+
+    def _sc_medical_pills(self, tp=False):
+        """Task 1630: the two header pills of ONE player, « Allergies » and
+        « Medical alert »: ``[{key, label, level, level_label, tone, details,
+        epipen, text}]``.
+
+        ``tp``: the viewer is a therapist (both pills, every level). A coach
+        gets only the non-urgent / urgent ones (owner + MC 2026-10-21: no
+        pill for « None » / « Not specified »). Read as the CURRENT user: the
+        fields are group-restricted (therapists + portal coaches) — the
+        caller gates the call on ``sc_can('patient.medical_alerts')``."""
+        self.ensure_one()
+        env = self.env
+        if not self._has_field_access(self._fields["allergy_level"], "read"):
+            # Neither therapist nor coach (e.g. a system administrator
+            # without a clinic role): nothing to show, never an AccessError.
+            return []
+        allergy_label = env._("Allergies")
+        alert_label = env._("Medical alert")
+        specs = (
+            ("allergy", allergy_label, "allergy_level", "allergy_details", "allergy_epipen"),
+            ("medical_alert", alert_label, "medical_alert_level", "medical_alert_details", None),
+        )
+        pills = []
+        for key, label, level_field, details_field, epipen_field in specs:
+            level = self[level_field] or False
+            if not tp and level not in COACH_LEVELS:
+                continue
+            level_label = self._sc_level_label(level)
+            epipen = bool(epipen_field and self[epipen_field])
+            pills.append({
+                "key": key,
+                "label": label,
+                "level": level,
+                "level_label": level_label,
+                "tone": LEVEL_TONES.get(level, UNSET_TONE),
+                "details": (self[details_field] or "").strip(),
+                "epipen": epipen,
+                "text": env._("%(what)s: %(level)s", what=label, level=level_label),
+            })
+        return pills
+
+    # Review round 1 (owner 2026-10-22): the pills a player CARD shows.
+    _SC_CARD_MEDICAL_FIELDS = ("allergy_level", "allergy_epipen", "medical_alert_level")
+
+    def _sc_card_medical_pills(self):
+        """Task 1630, review round 1: the RED (« Urgent – life-threatening »)
+        medical pills of player cards (dashboard, roster, /my/players):
+        ``{player_id: [{key, label, epipen, title}]}``, players without a
+        red level absent. Shown to therapists and coaches alike (a coach
+        sees red, owner's rule); « Not urgent » / « None » / « Not
+        specified » never show on a card.
+
+        ONE batched read for the whole recordset, as the CURRENT user (never
+        sudo: the fields are group-restricted). A viewer failing the
+        field-group check gets nothing; records the viewer may not read are
+        skipped — never an AccessError."""
+        records = self.sudo(False)
+        if not records:
+            return {}
+        if not all(records._has_field_access(records._fields[name], "read")
+                   for name in self._SC_CARD_MEDICAL_FIELDS):
+            return {}
+        try:
+            records = records._filtered_access("read")
+            records.fetch(list(self._SC_CARD_MEDICAL_FIELDS))
+        except AccessError:
+            return {}
+        env = self.env
+        specs = (
+            ("allergy", env._("Allergies"), "allergy_level", "allergy_epipen"),
+            ("medical_alert", env._("Medical alert"), "medical_alert_level", None),
+        )
+        urgent_label = self._sc_level_label(LEVEL_URGENT)
+        result = {}
+        for record in records:
+            pills = []
+            for key, label, level_field, epipen_field in specs:
+                if record[level_field] != LEVEL_URGENT:
+                    continue
+                epipen = bool(epipen_field and record[epipen_field])
+                title = env._("%(what)s: %(level)s", what=label, level=urgent_label)
+                pills.append({
+                    "key": key,
+                    "label": label,
+                    "epipen": epipen,
+                    "title": ("%s · EpiPen" % title) if epipen else title,
+                })
+            if pills:
+                result[record.id] = pills
+        return result
+
+    def _sc_medical_summary_lines(self, tp=False):
+        """Task 1630: the legacy portal's compact read of the pills, one line
+        each — « Allergies (urgent – life-threatening, EpiPen): … ». Same
+        visibility rule as ``_sc_medical_pills``; a therapist gets no line
+        for « Not specified » / « None » without details."""
+        lines = []
+        for pill in self._sc_medical_pills(tp=tp):
+            if not pill["level"] and not pill["details"]:
+                continue
+            qualifiers = [pill["level_label"].lower()]
+            if pill["epipen"]:
+                qualifiers.append("EpiPen")
+            head = self.env._("%(what)s (%(qualifiers)s)", what=pill["label"],
+                              qualifiers=", ".join(qualifiers))
+            lines.append({
+                "key": pill["key"],
+                "tone": pill["tone"],
+                "text": self.env._("%(head)s: %(details)s", head=head, details=pill["details"])
+                if pill["details"] else head,
+            })
+        return lines
+
+    @api.model
+    def _sc_medical_vals_from_post(self, post):
+        """Task 1630: the medical block of a create / edit form (therapists
+        only — the caller gates it). Only the keys the form posted; an
+        unknown level is ignored; EpiPen is a checkbox (posted when ticked,
+        with its ``allergy_epipen_present`` marker so unticking clears it)."""
+        vals = {}
+        levels = {key for key, _label in MEDICAL_LEVEL_SELECTION}
+        for name in ("allergy_level", "medical_alert_level"):
+            if name in post:
+                value = (post.get(name) or "").strip()
+                vals[name] = value if value in levels else False
+        for name in ("allergy_details", "medical_alert_details", "medical_history_other"):
+            if name in post:
+                vals[name] = (post.get(name) or "").strip() or False
+        if "allergy_epipen" in post or "allergy_epipen_present" in post:
+            vals["allergy_epipen"] = str(post.get("allergy_epipen") or "").lower() in ("1", "on", "true", "yes")
+        return vals
 
     def _portal_list_name(self, with_jersey=True):
         """« Last, First » of ONE patient for portal lists and pickers —
@@ -3213,8 +3433,10 @@ class Patient(models.Model):
             patient_vals['position'] = vals.get('position') or False
         if 'jersey_number' in vals:
             patient_vals['jersey_number'] = vals.get('jersey_number') or False
-        if 'allergies' in vals:
-            patient_vals['allergies'] = vals.get('allergies') or False
+        # Task 1630: the medical block replaces the legacy allergies text.
+        for key in self.SC_MEDICAL_FIELDS:
+            if key in vals:
+                patient_vals[key] = vals.get(key) or False
         if 'team_info_notes' in vals:
             patient_vals['team_info_notes'] = vals.get('team_info_notes') or False
         

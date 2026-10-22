@@ -14,8 +14,8 @@ Acceptance criteria:
   the date in its edit view), no longer in « Medical Information ».
 * UC-PL4 The training recommendation (with its history link) sits in the
   page header (owner review 2026-10-14 — no longer on the Info tab), right
-  under the play status (task 1615), the one return date next and the
-  allergies callout after (header read view, everyone); a therapist edits
+  under the play status (task 1615), the one return date next (task 1630:
+  the allergies are the header's pills, test_medical_alerts_1630); a therapist edits
   the recommendation (live, stamp + history) in the header's edit view.
 * UC-PL5 Emergency contacts are on the Info tab (cards and « Add Emergency
   Contact »); adding or editing one comes back to the Info tab.
@@ -34,7 +34,8 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.player.sudo().write({'date_of_birth': date(2010, 5, 4), 'allergies': 'Synthetic peanuts',
+        cls.player.sudo().write({'date_of_birth': date(2010, 5, 4), 'allergy_level': 'minor',
+                                 'allergy_details': 'Synthetic peanuts',
                                  'training_recommendation': 'Synthetic bike'})
 
     def setUp(self):
@@ -139,9 +140,12 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         # holder (filled / cleared in place).
         self.assertEqual(training[0].getprevious().get('data-sc-section'), 'player.status')
         self.assertEqual(training[0].getnext().get('data-sc-section'), 'player.return')
-        allergies = read.xpath('./*[@data-sc-section="player.allergies"]')[0]
-        self.assertTrue(allergies.xpath('./*[contains(@class, "o_sc_banner")]'))
-        self.assertIn('Synthetic peanuts', allergies.text_content())
+        # Task 1630: no allergies banner in the read view — the pill in the
+        # header's top row, its details in the popup.
+        self.assertFalse(read.xpath('./*[@data-sc-section="player.allergies"]'))
+        self.assertTrue(hero.xpath('.//*[@data-sc-section="player.medical"]//button[@data-sc-med-pill="allergy"]'))
+        self.assertIn('Synthetic peanuts', tree.xpath(
+            '//dialog[@id="sc_med_player_allergy_%s"]' % self.player.id)[0].text_content())
         self.assertIn('Synthetic bike', training[0].text_content())
         # Task 1629: an all-caps in-card title with ONE History link after it.
         self._assert_training_title(training[0])

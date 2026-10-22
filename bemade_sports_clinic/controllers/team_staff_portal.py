@@ -840,8 +840,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # No need for sudo() now that we have proper field-level access rights
         patient_info = {}
         if is_treatment_prof:
-            # Include allergies and medical notes - direct access now that security is properly configured
-            patient_info['allergies'] = player.allergies
+            # Medical notes - direct access now that security is properly
+            # configured. Task 1630: the allergies are the medical-alert
+            # summary lines (player._sc_medical_summary_lines), read in the template.
             patient_info['team_info_notes'] = player.team_info_notes
         
         # Compute removal request visibility for coaches on the player detail view
