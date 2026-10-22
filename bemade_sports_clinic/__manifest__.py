@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.42.4",
+    'version': "19.0.1.42.5",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -111,6 +111,7 @@ does not do:
         "security/sports_clinic_rules.xml",
         "security/sports_clinic_portal_rules.xml",
         "security/sports_treatment_note_rules.xml",
+        "security/portal_access_sweep_rules.xml",
         "security/mail_activity_portal_rules.xml",
         "security/sports_event_rules.xml",
         "security/partner_access.xml",

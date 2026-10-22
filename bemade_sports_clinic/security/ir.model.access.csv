@@ -2,7 +2,8 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_patient_user,User Access for Patients,model_sports_patient,group_sports_clinic_user,1,1,1,0
 access_patient_treatment_pro,Treatment Professional Access for Patients,model_sports_patient,group_sports_clinic_treatment_professional,1,1,1,1
 access_patient_admin,Admin Access for Patients,model_sports_patient,group_sports_clinic_admin,1,1,1,1
-access_patient_portal,Portal Access for Patients,model_sports_patient,base.group_portal,1,1,1,0
+access_patient_portal,Portal Access for Patients,model_sports_patient,base.group_portal,1,0,0,0
+access_patient_portal_coach,Portal Coach Access for Patients,model_sports_patient,bemade_sports_clinic.group_portal_team_coach,1,1,1,0
 access_patient_portal_tp,Portal Treatment Professional Access for Patients,model_sports_patient,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
 access_sports_event_user,User Access for Sports Events,model_sports_event,base.group_user,1,1,1,1
 access_sports_event_portal_treatment_professional,Portal Treatment Professional Access for Sports Events,model_sports_event,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
