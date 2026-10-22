@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.102.0",
+    'version': "19.0.1.102.1",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -318,6 +318,8 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             "bemade_sports_clinic/static/src/scss/sc_p2.scss",
             "bemade_sports_clinic/static/src/js/sc_fetch.js",
             "bemade_sports_clinic/static/src/js/sc_draft_store.js",
+            # Task 1646: the focus rule of add panels / edit views.
+            "bemade_sports_clinic/static/src/js/sc_focus.js",
             # Task 1640: 4-digit year cap (min / max) on date inputs — app
             # shell and legacy portal pages alike.
             "bemade_sports_clinic/static/src/js/sc_date_bounds.js",

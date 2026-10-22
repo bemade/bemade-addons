@@ -23,6 +23,7 @@
  */
 import { _t } from "@web/core/l10n/translation";
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { focusFirstField } from "@bemade_sports_clinic/js/sc_focus";
 import { scSetDisplay } from "@bemade_sports_clinic/js/sc_contact_href";
 import {
     clearAllDrafts,
@@ -203,10 +204,8 @@ function setCardEditing(card, editing) {
         toggle.setAttribute("aria-expanded", editing ? "true" : "false");
     }
     if (editing) {
-        const first = edit.querySelector("input, textarea, select");
-        if (first) {
-            first.focus({ preventScroll: true });
-        }
+        // Task 1646: a text field only (never a picker), nothing on a phone.
+        focusFirstField(edit);
     }
 }
 

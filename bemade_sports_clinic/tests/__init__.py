@@ -236,3 +236,4 @@ from . import test_edit_anchor_tours_1642
 from . import test_bars_pinned_tours_1643
 from . import test_upload_sheet_tours_1644
 from . import test_phone_format_1645
+from . import test_add_panel_focus_tours_1646

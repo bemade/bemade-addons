@@ -4,14 +4,14 @@
  * button[data-sc-list-add-toggle][aria-controls=<details id>] opens / closes
  * that <details> (the add form right under the header, its own <summary>
  * hidden: the header is the one control). Opening moves the focus to the
- * panel's first field. aria-expanded follows the panel however it opens —
+ * panel's first TEXT field — task 1646: never a select / picker, and
+ * nothing at all on a phone (sc_focus.js). aria-expanded follows the panel however it opens —
  * the button, a « …#<id> » link (sc_app_ui.js), a script — through the
  * <details> « toggle » event. The sort menu is sc_user_menu.js's popup.
  * Inert outside .o_sc_app.
  */
 
-const FOCUSABLE =
-    'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])';
+import { focusFirstField } from "@bemade_sports_clinic/js/sc_focus";
 
 function togglesOf(panel) {
     return [...document.querySelectorAll("[data-sc-list-add-toggle]")].filter(
@@ -31,12 +31,7 @@ document.addEventListener("click", (ev) => {
     ev.preventDefault();
     panel.open = !panel.open;
     if (panel.open) {
-        const field = [...panel.querySelectorAll(FOCUSABLE)].find(
-            (el) => el.offsetParent !== null && !el.closest("summary")
-        );
-        if (field) {
-            field.focus({ preventScroll: true });
-        }
+        focusFirstField(panel);
         panel.scrollIntoView({ block: "nearest" });
     }
 });
