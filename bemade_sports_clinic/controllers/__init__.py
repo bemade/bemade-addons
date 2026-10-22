@@ -12,3 +12,4 @@ from . import clinic_portal
 from . import clinic_kiosk
 from . import timesheets_portal
 from . import app_search
+from . import app_player_add

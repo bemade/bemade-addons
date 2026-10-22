@@ -21,6 +21,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         Shows a search UI first; only renders the full create form when a search
         is attempted and yields no matching players.
         """
+        # Task 1655: in the app the page is retired — the Joueurs list's
+        # inline panel creates players (search as you type, then create).
+        pending = request.session.get('portal_flash')
+        if self._sc_app_shell_active() and self._sc_player_add_allowed() and not (
+                isinstance(pending, dict) and pending.get('scope') == ['player_create']):
+            return request.redirect('/my/players?add=1')
         user = request.env.user
         is_treatment_prof = self._is_treatment_professional()
         is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')

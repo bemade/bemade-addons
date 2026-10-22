@@ -79,7 +79,8 @@ tours.add("sc_1640_team", {
             content: "The plain QWeb « add player » DOB input is stamped (on load)",
             trigger: "main#sc_content",
             run() {
-                assertBounds(document.querySelector("#sc_add_dob"), "add-player DOB (QWeb)");
+                // Task 1655: the inline create panel's date of birth.
+                assertBounds(document.querySelector('#sc_add_player [data-sc-player-add-field="dob"]'), "add-player DOB (QWeb)");
             },
         },
         {

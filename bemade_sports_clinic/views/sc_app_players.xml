@@ -103,18 +103,23 @@
                  server re-sorts and remembers the choice) in the list header. -->
             <t t-call="bemade_sports_clinic.sc_list_header">
                 <t t-set="header_section" t-value="'players.header'"/>
-                <t t-if="sc_can_create_player and sc_can('players.create')">
+                <!-- Task 1655: the inline create panel (was the /my/player/create page). -->
+                <t t-if="sc_can_create_player and sc_can('players.create') and sc_player_add">
                     <t t-set="add_label">Create a player</t>
-                    <t t-set="add_url" t-value="'/my/player/create'"/>
+                    <t t-set="add_panel" t-value="sc_player_add['id']"/>
+                    <t t-set="add_open" t-value="sc_player_add['open']"/>
                     <t t-set="add_key" t-value="'players.create'"/>
                 </t>
                 <t t-set="count" t-value="sc_players_count_label"/>
                 <t t-set="sc_sort_status">By status</t>
                 <t t-set="sc_sort_alpha">Alphabetical</t>
-                <t t-set="sorts" t-value="sc_sort_options('sort', [('status', sc_sort_status), ('name', sc_sort_alpha)], players_sort_mode)"/>
+                <t t-set="sorts" t-value="sc_sort_options('sort', [('status', sc_sort_status), ('name', sc_sort_alpha)], players_sort_mode, ('add',))"/>
                 <t t-set="sort_id" t-value="'sc_players_sort'"/>
                 <t t-set="sort_label">Sort players</t>
                 <t t-set="sort_section" t-value="'players.sort'"/>
+            </t>
+            <t t-if="sc_can_create_player and sc_can('players.create') and sc_player_add" t-call="bemade_sports_clinic.sc_player_add_panel">
+                <t t-set="panel" t-value="sc_player_add"/>
             </t>
 
             <div t-if="sc_player_rows" class="o_sc_list" data-sc-section="players.list">
@@ -429,7 +434,19 @@
                     <!-- Owner review 2026-10-10: the « Edit Player » page is retired —
                          every field is edited here, one pencil per card. -->
                     <div class="o_sc_section" data-sc-section="player.info.personal">
-                        <section class="o_sc_card o_sc_edit_card" data-sc-edit-card="identity">
+                        <section class="o_sc_card o_sc_edit_card" data-sc-edit-card="identity"
+                                 t-att-data-sc-edit-open-on-load="'1' if sc_created_player else None">
+                            <!-- Task 1655: a player just created inline — « Undo » toast. -->
+                            <t t-if="sc_created_player">
+                                <t t-set="sc_player_created_label">Player created</t>
+                                <t t-set="sc_player_undo_label">Undo</t>
+                                <form t-attf-action="/my/player/#{player.id}/undo-create" method="post" hidden="hidden"
+                                      data-sc-form="player.undo" t-att-data-sc-toast-message="sc_player_created_label"
+                                      t-att-data-sc-toast-action="sc_player_undo_label">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="return_url" t-att-value="sc_created_player_back"/>
+                                </form>
+                            </t>
                             <t t-call="bemade_sports_clinic.sc_edit_card_head">
                                 <t t-set="title">Player</t>
                                 <t t-set="editable" t-value="True"/>

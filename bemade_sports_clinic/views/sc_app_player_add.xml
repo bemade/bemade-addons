@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1655 — create a player inline (the Joueurs list and the team page's
+    Joueurs tab): key information only, an existence check as you type
+    (sc_player_add.js → GET /my/app/player-check), then the player page.
+    Variables: panel (AccessControlMixin._sc_player_add_panel).
+-->
+<odoo>
+    <template id="sc_player_add_panel" name="App shell: create a player (inline)">
+        <t t-set="d" t-value="panel['data']"/>
+        <details t-att-id="panel['id']" class="o_sc_card o_sc_disclosure o_sc_list_add_panel o_sc_player_add"
+                 t-att-data-sc-section="panel['section']" t-att-open="'open' if panel['open'] else None">
+            <summary class="o_sc_disclosure_summary">
+                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                <span>Create a player</span>
+            </summary>
+            <form action="/my/app/player/create" method="post" class="o_sc_form" data-sc-form="player.add"
+                  data-sc-player-add="1">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="return_url" t-att-value="panel['return_url']"/>
+                <input type="hidden" name="context_team_id" t-att-value="panel['team_id']"/>
+                <!-- For the check's « Add to team » (the link route's inline mode). -->
+                <input type="hidden" name="sc_inline" value="1"/>
+                <input type="hidden" t-att-id="panel['team_target']" name="team_ids" t-att-value="panel['team_csv']"
+                       data-sc-player-add-teams="1"/>
+                <p t-if="panel['error']" class="o_sc_field_message o_sc_field_error" role="alert"
+                   data-sc-player-add-error="1" t-out="panel['error']"/>
+                <div class="o_sc_filter_grid">
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" t-att-for="'%s_first' % panel['id']">First name</label>
+                        <input type="text" t-att-id="'%s_first' % panel['id']" name="first_name" class="o_sc_input"
+                               autocomplete="off" required="required" t-att-value="d.get('first_name') or ''"
+                               data-sc-player-add-field="first"/>
+                    </div>
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" t-att-for="'%s_last' % panel['id']">Last name</label>
+                        <input type="text" t-att-id="'%s_last' % panel['id']" name="last_name" class="o_sc_input"
+                               autocomplete="off" required="required" t-att-value="d.get('last_name') or ''"
+                               data-sc-player-add-field="last"/>
+                    </div>
+                    <div class="o_sc_field">
+                        <label class="o_sc_field_label" t-att-for="'%s_dob' % panel['id']">Date of birth</label>
+                        <input type="date" t-att-id="'%s_dob' % panel['id']" name="date_of_birth" class="o_sc_input"
+                               required="required" t-att-value="d.get('date_of_birth') or ''"
+                               data-sc-player-add-field="dob"/>
+                    </div>
+                </div>
+                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="panel['team_props']"/></t>
+                <!-- The existence check (as you type). -->
+                <div class="o_sc_player_check" data-sc-player-check="1" aria-live="polite">
+                    <p class="o_sc_hint">Type a first and a last name to look for existing players.</p>
+                </div>
+                <details class="o_sc_disclosure o_sc_player_add_ec" t-att-open="'open' if d.get('ec_name') or d.get('ec_mobile') else None">
+                    <summary class="o_sc_disclosure_summary"><span>Emergency contact (optional)</span></summary>
+                    <div class="o_sc_filter_grid">
+                        <div class="o_sc_field">
+                            <label class="o_sc_field_label" t-att-for="'%s_ec_name' % panel['id']">Name</label>
+                            <input type="text" t-att-id="'%s_ec_name' % panel['id']" name="ec_name" class="o_sc_input"
+                                   autocomplete="off" t-att-value="d.get('ec_name') or ''"/>
+                        </div>
+                        <div class="o_sc_field">
+                            <label class="o_sc_field_label" t-att-for="'%s_ec_type' % panel['id']">Relationship</label>
+                            <select t-att-id="'%s_ec_type' % panel['id']" name="ec_contact_type" class="o_sc_input o_sc_select">
+                                <t t-foreach="panel['relationship_types']" t-as="rel">
+                                    <option t-att-value="rel[0]" t-att-selected="'selected' if rel[0] == (d.get('ec_contact_type') or 'other') else None" t-out="rel[1]"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="o_sc_field">
+                            <label class="o_sc_field_label" t-att-for="'%s_ec_mobile' % panel['id']">Mobile</label>
+                            <input type="tel" t-att-id="'%s_ec_mobile' % panel['id']" name="ec_mobile" class="o_sc_input"
+                                   inputmode="tel" autocomplete="off" t-att-value="d.get('ec_mobile') or ''"/>
+                        </div>
+                    </div>
+                </details>
+                <div class="o_sc_form_actions">
+                    <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="player.add"
+                            data-sc-player-add-submit="1" disabled="disabled">Create</button>
+                </div>
+                <small class="o_sc_hint" data-sc-player-add-hint="1">Create becomes available once the check has found no player with the same name and date of birth.</small>
+            </form>
+        </details>
+    </template>
+
+    <template id="sc_player_check_results" name="App shell: create a player — existence check">
+        <div class="o_sc_player_check_results" data-sc-check-results="1"
+             t-att-data-sc-exact="'1' if sc_exact else '0'" t-att-data-sc-ready="'1' if sc_ready else '0'">
+            <p t-if="not sc_ready" class="o_sc_hint">Type a first and a last name to look for existing players.</p>
+            <p t-elif="sc_dob_error" class="o_sc_field_message o_sc_field_error" role="alert">Please enter a valid date.</p>
+            <t t-elif="sc_rows">
+                <p t-if="sc_exact" class="o_sc_field_message o_sc_field_error" role="alert" data-sc-check-exact="1">Same name and date of birth: open or add this player instead.</p>
+                <p t-else="" class="o_sc_hint">Possible matches:</p>
+                <ul class="o_sc_search_list">
+                    <li t-foreach="sc_rows" t-as="row"
+                        t-attf-class="o_sc_search_row #{'o_sc_search_archived' if row['archived'] else ''}"
+                        t-att-data-sc-check-player="row['id']" t-att-data-sc-check-exact="'1' if row['exact'] else None">
+                        <span class="o_sc_search_link">
+                            <span class="o_sc_row_title" t-out="row['title']"/>
+                            <span t-if="row['teams']" class="o_sc_row_subtitle" t-out="row['teams']"/>
+                            <span t-if="row['archived']" class="o_sc_chip o_sc_search_flag">Archived player</span>
+                        </span>
+                        <a t-if="row['url']" t-att-href="row['url']" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
+                           data-sc-check-open="1">Open</a>
+                        <!-- Injected INSIDE the create form (no nested form): the
+                             button posts that form to the team page's guarded
+                             link route (formaction; existing_id + sc_inline). -->
+                        <t t-if="sc_team and not (row['on_team'] and not row['archived'])">
+                            <button t-if="not row['archived']" type="submit" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
+                                    t-attf-formaction="/my/team/#{sc_team.id}/player/add" formnovalidate="formnovalidate"
+                                    name="existing_id" t-att-value="row['id']" data-sc-action="player.link">Add to team</button>
+                            <button t-else="" type="submit" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
+                                    t-attf-formaction="/my/team/#{sc_team.id}/player/add" formnovalidate="formnovalidate"
+                                    name="existing_id" t-att-value="row['id']" data-sc-action="player.reactivate">Reactivate and add</button>
+                        </t>
+                        <span t-elif="row['on_team']" class="o_sc_chip o_sc_chip_ghost">On the team</span>
+                    </li>
+                </ul>
+            </t>
+            <p t-else="" class="o_sc_hint" data-sc-check-none="1">No existing player matches.</p>
+        </div>
+    </template>
+</odoo>

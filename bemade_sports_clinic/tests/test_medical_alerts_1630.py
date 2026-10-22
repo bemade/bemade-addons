@@ -273,16 +273,16 @@ class TestMedicalHeader1630(MedicalCommon):
 
     # -- CRE-1 --------------------------------------------------------------
     def test_app_create_form_fields(self):
+        # Task 1655: a therapist creates players inline (key information
+        # only — the medical fields are set on the player page afterwards).
         self._login_tp()
-        _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic')
-        form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
-        for name in ('allergy_level', 'allergy_details', 'allergy_epipen',
-                     'medical_alert_level', 'medical_alert_details'):
-            self.assertTrue(form.xpath('.//*[@name="%s"]' % name), name)
-        self.assertFalse(form.xpath('.//*[@name="allergies"]'))
-        self.assertFalse(form.xpath('.//select[@name="allergy_level"][@required]'), 'optional')
-        options = form.xpath('.//select[@name="allergy_level"]/option/@value')
-        self.assertEqual(options, ['', 'none', 'minor', 'urgent'])
+        resp = self.url_open('/my/player/create?first_name=Nobody&last_name=Synthetic', allow_redirects=False)
+        self.assertIn(resp.status_code, (302, 303))
+        _text, tree = self._get('/my/players?add=1')
+        form = tree.xpath('//form[@data-sc-player-add]')[0]
+        for name in ('allergy_level', 'allergy_details', 'allergy_epipen', 'allergies'):
+            self.assertFalse(form.xpath('.//*[@name="%s"]' % name), name)
+        # The legacy POST (/my/player/create/save) still takes them.
         resp = self.url_open('/my/player/create/save', data={
             'csrf_token': self._csrf(), 'first_name': 'Syn', 'last_name': 'Created',
             'date_of_birth': '2010-01-01', 'team_ids': str(self.team_a.id),

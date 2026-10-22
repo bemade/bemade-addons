@@ -104,8 +104,9 @@ class TestAppShellPlayersList1539(PlayersCommon1539):
         self._login_tp()
         _text, tree = self._get('/my/players')
         # Task 1607 (deliberate update): « + Ajouter » is in the list header.
-        action = tree.xpath('//div[contains(@class, "o_sc_list_header")]//a[@data-sc-action="players.create"]')
-        self.assertEqual(action[0].get('href'), '/my/player/create')
+        action = tree.xpath('//div[contains(@class, "o_sc_list_header")]//button[@data-sc-action="players.create"]')
+        # Task 1655: it opens the inline create panel.
+        self.assertEqual(action[0].get('aria-controls'), 'sc_player_add')
 
     def test_filters_keep_their_params(self):
         self._switch(True)
@@ -383,19 +384,18 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         self.assertEqual(form.get('action'), '/my/player/contact/save')
 
     def test_create_search_first(self):
+        # Task 1655: in the app the separate page is retired for therapists —
+        # the Joueurs list's inline panel searches as you type, then creates
+        # (test_player_add_inline_1655.py); a coach keeps the page (#1633).
         self._switch(True)
         self._login_tp()
-        _text, tree = self._get('/my/player/create')
-        self.assertTrue(tree.xpath('//form[@data-sc-form="player.search"]'))
-        self.assertFalse(tree.xpath('//form[@data-sc-form="player.create"]'))
-        _text, tree = self._get('/my/player/create?first_name=Pat&last_name=One')
-        self.assertTrue(tree.xpath('//*[@data-sc-player-id="%s"]' % self.player.id))
-        self.assertFalse(tree.xpath('//form[@data-sc-form="player.create"]'))
+        resp = self.url_open('/my/player/create', allow_redirects=False)
+        self.assertIn(resp.status_code, (302, 303))
+        self.assertTrue(resp.headers['Location'].endswith('/my/players?add=1'))
+        self._login_coach()
         _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic')
         form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
         self.assertEqual(form.get('action'), '/my/player/create/save')
-        self.assertEqual(form.xpath('.//input[@name="first_name"]/@value'), ['Nobody'])
-        self.assertTrue(form.xpath('.//input[@name="date_of_birth"]'))
         self.assertTrue(form.xpath('.//input[@name="date_of_birth"][@required]'))
         # Task 1633: a coach's create form has the date of birth too,
         # required as for therapists (owner review 2026-10-21).

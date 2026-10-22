@@ -1,5 +1,5 @@
 import urllib.parse
-from datetime import date
+from datetime import date, timedelta
 
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo import fields, http, _
@@ -609,6 +609,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return {
             'sc_player_rows': rows,
             'sc_can_create_player': is_tp_admin and self._is_treatment_professional(),
+            # Task 1655: the inline « create a player » panel.
+            'sc_player_add': self._sc_player_add_panel(),
             'sc_filters_open': active_filters,
             'sc_players_count_label': env._("%(count)s player(s)", count=values['players_count']),
         }
@@ -1010,6 +1012,14 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 return 0
         created_id = _int_arg('created')
         opened_id = _int_arg('injury') or created_id
+        # Task 1655: ?created_player=<id> — the player just created inline:
+        # the identity card opens in edit and « Undo » is offered (creator
+        # only, within the undo window).
+        sc_created_player = bool(
+            _int_arg('created_player') == player.id
+            and player.sudo().create_uid == user
+            and player.sudo().create_date
+            and player.sudo().create_date >= fields.Datetime.now() - timedelta(minutes=2))
         # Task 1579: a create from the full « new injury » page lands here —
         # drop its device draft once the injury exists (even when the viewer,
         # a coach, does not list unverified injuries).
@@ -1114,6 +1124,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         contact_error, contact_data = self._portal_pop_flash(('contact_add', player.id))
 
         return dict(self._sc_injury_card_options(), **{
+            'sc_created_player': sc_created_player,
+            'sc_created_player_back': ('/my/team?team_id=%s&tab=players' % values['team'].id
+                                       if values.get('team') else '/my/players'),
             'sc_contact_add_error': contact_error,
             'sc_contact_add_data': contact_data or {},
             'sc_player_tabs': sc_tabs,

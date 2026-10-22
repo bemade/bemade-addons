@@ -114,7 +114,8 @@ class TestListHeader1607(ListHeader1607Common):
         _text, tree = self._get('/my/players?first_name=Pat&page=2&success=1')
         header = self._header(tree, 'players.header')
         add = self._add(header)
-        self.assertEqual((add.tag, add.get('href')), ('a', '/my/player/create'))
+        # Task 1655: the inline create panel (was a link to /my/player/create).
+        self.assertEqual((add.tag, add.get('aria-controls')), ('button', 'sc_player_add'))
         self.assertEqual(add.get('aria-label'), 'Create a player')
         self.assertEqual(add.get('data-sc-action'), 'players.create')
         self.assertTrue(header.xpath('.//*[contains(@class, "o_sc_list_header_count")]'))
@@ -126,7 +127,9 @@ class TestListHeader1607(ListHeader1607Common):
         self.assertEqual(header.xpath('.//*[@data-sc-section="players.sort"]//button/@aria-controls'),
                          ['sc_players_sort'])
         # The header sits right above the list.
-        self.assertEqual(header.getnext().get('data-sc-section'), 'players.list')
+        # Task 1655: the (closed) inline create panel, then the list.
+        self.assertEqual(header.getnext().get('data-sc-section'), 'players.add')
+        self.assertEqual(header.getnext().getnext().get('data-sc-section'), 'players.list')
 
     def test_players_header_coach_has_no_add(self):
         self._login_coach()
@@ -226,11 +229,11 @@ class TestListHeader1607(ListHeader1607Common):
     # -- team ----------------------------------------------------------------
     def test_team_roster_header(self):
         self._login_tp()
-        _text, tree = self._get('/my/team?team_id=%s&tab=players&add_first=Pat&add_last=One' % self.team_a.id)
+        _text, tree = self._get('/my/team?team_id=%s&tab=players&add=1' % self.team_a.id)
         header = self._header(tree, 'team.roster.header')
         add, panel = self.assertPanelFollows(header, 'sc_add_player')
         self.assertEqual((add.get('aria-label'), add.get('data-sc-action')), ('Add a player', 'team.add_player'))
-        # A search keeps the panel open (as before).
+        # Task 1655: ?add=1 opens the inline create panel.
         self.assertEqual((add.get('aria-expanded'), panel.get('open')), ('true', 'open'))
         sorts = self._sorts(header)
         self.assertEqual(sorted(sorts), ['number', 'status'])

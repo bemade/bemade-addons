@@ -765,6 +765,62 @@ class AccessControlMixin:
     def _portal_flash_scope(scope):
         return [str(part) for part in (scope if isinstance(scope, (list, tuple)) else (scope,))]
 
+    # Task 1655 — the inline « create a player » panel (Joueurs list + team page)
+    def _sc_player_add_allowed(self):
+        user = request.env.user
+        return bool(self._is_clinic_admin() or user.has_group('base.group_system')
+                    or self._is_treatment_professional())
+
+    def _sc_player_add_panel(self, team=None, panel_id='sc_player_add', section='players.add'):
+        """Render values of ``sc_player_add_panel`` (None when the viewer may
+        not create players)."""
+        if not self._sc_player_add_allowed():
+            return None
+        env = request.env
+        targets = self._team_targets()
+        error, data = self._portal_pop_flash(('player_add',))
+        data = data or {}
+        # A link carrying the former team-page search (?add_first= …) opens
+        # the panel with those values.
+        args = request.httprequest.args
+        legacy = {'add_first': 'first_name', 'add_last': 'last_name', 'add_dob': 'date_of_birth'}
+        if not error and any(key in args for key in legacy):
+            data = {field: (args.get(key) or '').strip() for key, field in legacy.items()}
+        if data.get('team_ids') is not None:
+            chosen = str(data.get('team_ids') or '')
+        elif team and team in targets:
+            chosen = str(team.id)
+        elif len(targets) == 1:
+            chosen = str(targets.id)
+        else:
+            chosen = ''
+        target_id = '%s_team_ids' % panel_id
+        return {
+            'id': panel_id,
+            'section': section,
+            'team_id': team.id if team else '',
+            'open': bool(error) or args.get('add') == '1' or any(key in args for key in legacy),
+            'error': error,
+            'data': data,
+            'team_target': target_id,
+            'team_csv': chosen,
+            'team_props': self._sc_form_props(
+                target_id, env._("Teams"), value=chosen,
+                options=[(t.id, t.name) for t in targets],
+                placeholder=env._("Add a team…")),
+            'relationship_types': env['sports.patient.contact']._fields['contact_type']._description_selection(env),
+            'return_url': request.httprequest.full_path.rstrip('?'),
+        }
+
+    def _sc_chosen_teams(self, csv):
+        ids = []
+        for part in str(csv or '').split(','):
+            part = part.strip()
+            if part.isdigit():
+                ids.append(int(part))
+        targets = self._team_targets()
+        return targets.filtered(lambda t: t.id in ids)
+
     @staticmethod
     def _sc_phone_error(post, *keys):
         """Task 1645: « Invalid phone number. » when one of the posted

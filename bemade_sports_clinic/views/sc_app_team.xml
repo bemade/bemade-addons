@@ -273,7 +273,7 @@
                     <t t-if="sc_show_add">
                         <t t-set="add_label">Add a player</t>
                         <t t-set="add_panel" t-value="'sc_add_player'"/>
-                        <t t-set="add_open" t-value="bool(sc_add_search)"/>
+                        <t t-set="add_open" t-value="bool(sc_add_search) or bool(sc_player_add and sc_player_add['open'])"/>
                         <t t-set="add_key" t-value="'team.add_player'"/>
                     </t>
                     <t t-elif="sc_show_request">
@@ -283,12 +283,19 @@
                     </t>
                     <t t-set="sc_sort_status">By status</t>
                     <t t-set="sc_sort_number">By number</t>
-                    <t t-set="sorts" t-value="sc_sort_options('sort', [('status', sc_sort_status), ('number', sc_sort_number)], 'number' if roster_sort_mode == 'number' else 'status', ('add_first', 'add_last', 'add_dob'))"/>
+                    <t t-set="sorts" t-value="sc_sort_options('sort', [('status', sc_sort_status), ('number', sc_sort_number)], 'number' if roster_sort_mode == 'number' else 'status', ('add_first', 'add_last', 'add_dob', 'add'))"/>
                     <t t-set="sort_id" t-value="'sc_roster_sort'"/>
                     <t t-set="sort_label">Sort players</t>
                     <t t-set="sort_section" t-value="'team.roster.sort'"/>
                 </t>
-                <details t-if="sc_show_add" class="o_sc_card o_sc_disclosure o_sc_list_add_panel" id="sc_add_player"
+                <!-- Task 1655: the shared inline create panel (search as you
+                     type, then create) for therapists / clinic admins; the
+                     former search-then-create panel stays below as the
+                     fallback (sc_player_add is None). -->
+                <t t-if="sc_show_add and sc_player_add" t-call="bemade_sports_clinic.sc_player_add_panel">
+                    <t t-set="panel" t-value="sc_player_add"/>
+                </t>
+                <details t-elif="sc_show_add" class="o_sc_card o_sc_disclosure o_sc_list_add_panel" id="sc_add_player"
                          data-sc-section="team.add_player" t-att-open="'open' if sc_add_search else None">
                     <summary class="o_sc_disclosure_summary">
                         <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>

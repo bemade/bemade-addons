@@ -165,6 +165,30 @@ if (document.readyState === "loading") {
     offerUndoCreate();
 }
 
+// Task 1655: a player just created inline — the identity card opens in edit
+// and « Player created · Undo » is offered for the undo window; the address
+// loses ?created_player= so a reload offers neither again.
+function offerUndoCreatePlayer() {
+    const form = document.querySelector('.o_sc_app form[data-sc-form="player.undo"]');
+    if (form) {
+        showToast(form.dataset.scToastMessage, form.dataset.scToastAction, () => form.submit(), SC_UNDO_CREATE_MS);
+    }
+    for (const card of document.querySelectorAll(".o_sc_app [data-sc-edit-card][data-sc-edit-open-on-load]")) {
+        setCardEditing(card, true);
+        card.scrollIntoView({ block: "start" });
+    }
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("created_player")) {
+        url.searchParams.delete("created_player");
+        window.history.replaceState(window.history.state, "", url.toString());
+    }
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", offerUndoCreatePlayer);
+} else {
+    offerUndoCreatePlayer();
+}
+
 // A link to « …#<details id> » opens that inline card (e.g. Overview's
 // « Add Injury » → the Injuries tab's card), owner review 2026-10-10.
 function openHashedDetails() {

@@ -20,6 +20,8 @@ Acceptance criteria:
 from datetime import date
 from urllib.parse import parse_qs, urlparse
 
+from lxml import html as lxml_html
+
 from odoo import Command
 from odoo.tests import tagged
 
@@ -46,40 +48,44 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
 
     def _card(self, tree):
         panel = tree.xpath('//section[@data-sc-tab-panel="players"]')[0]
-        cards = panel.xpath('./details[@data-sc-section="team.add_player"]')
+        # Task 1655: the shared inline create panel (same id, sc_add_player).
+        cards = panel.xpath('./details[@id="sc_add_player"][@data-sc-section="team.add_player"]')
         self.assertEqual(len(cards), 1)
         return cards[0]
 
     # -- UC-AP1 ----------------------------------------------------------
     def test_inline_card_search_form(self):
+        # Task 1655: the panel searches as you type (the check endpoint) and
+        # creates through /my/app/player/create, the team pre-filled.
         self._login_tp()
         _text, tree = self._get(self.url)
         card = self._card(tree)
-        form = card.xpath('.//form[@data-sc-form="player.search"]')[0]
-        self.assertEqual(form.get('method'), 'get')
+        form = card.xpath('.//form[@data-sc-player-add]')[0]
+        self.assertEqual(form.get('action'), '/my/app/player/create')
         names = set(form.xpath('.//*[@name]/@name'))
-        for name in ('team_id', 'tab', 'add_first', 'add_last', 'add_dob'):
+        for name in ('first_name', 'last_name', 'date_of_birth', 'team_ids', 'context_team_id'):
             self.assertIn(name, names)
+        self.assertEqual(form.xpath('.//input[@name="team_ids"]/@value'), [str(self.team_a.id)])
         self.assertFalse(tree.xpath('//header//*[@data-sc-action="team.add_player"]'))
 
     # -- UC-AP2 ----------------------------------------------------------
     def test_search_results(self):
         self._login_tp()
-        _text, tree = self._get(self.url + '&add_last=Synthetic')
-        card = self._card(tree)
-        self.assertIsNotNone(card.get('open'))
-        rows = {int(r.get('data-sc-player-id')): r for r in card.xpath('.//*[@data-sc-add-result]')}
-        self.assertIn(self.other.id, rows)
-        self.assertIn(self.archived.id, rows)
-        link = rows[self.other.id].xpath('.//form[@data-sc-form="player.link"]')[0]
-        self.assertEqual(link.get('action'), '/my/team/%s/player/add' % self.team_a.id)
-        self.assertEqual(link.xpath('.//input[@name="existing_id"]/@value'), [str(self.other.id)])
-        self.assertTrue(rows[self.archived.id].xpath('.//button[@data-sc-action="player.reactivate"]'))
-        _text, tree = self._get(self.url + '&add_last=One')
-        rows = {int(r.get('data-sc-player-id')): r for r in self._card(tree).xpath('.//*[@data-sc-add-result]')}
-        self.assertTrue(rows[self.player.id].xpath('.//*[@data-sc-on-team]'))
-        create = self._card(tree).xpath('.//form[@data-sc-form="player.create"]')
-        self.assertEqual(len(create), 1)
+        resp = self.url_open('/my/app/player-check?first=&last=Synthetic&team_ids=%s' % self.team_a.id)
+        tree = lxml_html.fromstring('<div>%s</div>' % resp.text)
+        # A last name alone is not enough (the check waits for both names).
+        self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-ready'), ['0'])
+        for first, player in (('Sara', self.archived),):
+            resp = self.url_open('/my/app/player-check?first=%s&last=Synthetic&team_ids=%s'
+                                 % (first, self.team_a.id))
+            tree = lxml_html.fromstring('<div>%s</div>' % resp.text)
+            row = tree.xpath('//li[@data-sc-check-player="%s"]' % player.id)
+            self.assertTrue(row)
+            self.assertTrue(row[0].xpath('.//button[@data-sc-action="player.reactivate"]'
+                                         '[@formaction="/my/team/%s/player/add"]' % self.team_a.id))
+        resp = self.url_open('/my/app/player-check?first=Pat&last=One&team_ids=%s' % self.team_a.id)
+        tree = lxml_html.fromstring('<div>%s</div>' % resp.text)
+        self.assertIn('On the team', tree.xpath('//li[@data-sc-check-player="%s"]' % self.player.id)[0].text_content())
 
     # -- UC-AP3 ----------------------------------------------------------
     def test_link_existing(self):

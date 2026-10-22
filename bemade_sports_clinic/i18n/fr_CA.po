@@ -4377,6 +4377,7 @@ msgstr "La fin de la couverture doit être après son début."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_add_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_new_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_event_recurrence_wizard
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "Create"
 msgstr "Créer"
 
@@ -4874,6 +4875,7 @@ msgstr "Date de la blessure"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "Date of birth"
 msgstr "Date de naissance"
 
@@ -5994,6 +5996,7 @@ msgstr "Prénom <span class=\"text-danger\">*</span>"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_players
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "First name"
 msgstr "Prénom"
 
@@ -7081,6 +7084,7 @@ msgstr "Dernière note interne"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_players
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "Last name"
 msgstr "Nom de famille"
 
@@ -7357,6 +7361,7 @@ msgstr "Équipes manquantes (noms)"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_contact_fields
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "Mobile"
 msgstr "Cellulaire"
 
@@ -7506,6 +7511,7 @@ msgstr "S/O"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_contact_fields
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_account
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "Name"
 msgstr "Nom"
 
@@ -9262,6 +9268,7 @@ msgstr "Veuillez entrer une date de naissance valide (AAAA-MM-JJ)."
 #: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
 #: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_note_edit_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
 msgid "Please enter a valid date."
 msgstr "Veuillez saisir une date valide."
 
@@ -9981,6 +9988,7 @@ msgstr "Enregistré pour"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_contact_fields
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "Relationship"
 msgstr "Relation"
 
@@ -15185,6 +15193,7 @@ msgstr "Aujourd'hui (%(count)s)"
 #: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
 #: code:addons/bemade_sports_clinic/static/src/js/sc_status_pills.js:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 msgid "Undo"
 msgstr "Annuler"
 
@@ -15502,17 +15511,20 @@ msgstr "<span>Archivé</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
 msgid "On the team"
 msgstr "Dans l'équipe"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
 msgid "Add to team"
 msgstr "Ajouter à l'équipe"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
 msgid "Reactivate and add"
 msgstr "Réactiver et ajouter"
 
@@ -16179,6 +16191,7 @@ msgstr ""
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
 msgid "Archived player"
 msgstr "Joueur archivé"
 
@@ -16238,3 +16251,61 @@ msgstr "Choisissez un autre niveau que « Aucune » pour ajouter des détails."
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "— Choose —"
 msgstr "— Choisir —"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid ""
+"<small class=\"o_sc_hint\" data-sc-player-add-hint=\"1\">Create becomes "
+"available once the check has found no player with the same name and date of "
+"birth.</small>"
+msgstr ""
+"<small class=\"o_sc_hint\" data-sc-player-add-hint=\"1\">« Créer » devient "
+"disponible une fois la vérification faite, si aucun joueur n'a le même nom et "
+"la même date de naissance.</small>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "<span>Create a player</span>"
+msgstr "<span>Créer un joueur</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "<span>Emergency contact (optional)</span>"
+msgstr "<span>Contact d'urgence (facultatif)</span>"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_player_add.py:0
+msgid "An emergency contact needs a name and a mobile."
+msgstr "Un contact d'urgence doit avoir un nom et un cellulaire."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "No existing player matches."
+msgstr "Aucun joueur existant ne correspond."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "Open"
+msgstr "Ouvrir"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+msgid "Player created"
+msgstr "Joueur créé"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "Possible matches:"
+msgstr "Joueurs possibles :"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "Same name and date of birth: open or add this player instead."
+msgstr "Même nom et même date de naissance : ouvrez ou ajoutez plutôt ce joueur."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "Type a first and a last name to look for existing players."
+msgstr "Tapez un prénom et un nom pour chercher les joueurs existants."

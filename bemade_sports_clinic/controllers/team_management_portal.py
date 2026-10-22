@@ -536,6 +536,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_team_org': org,
             'sc_dashboard_rows': dashboard_rows,
             'sc_add_search': add_search,
+            # Task 1655: the inline « create a player » panel (team pre-filled).
+            'sc_player_add': self._sc_player_add_panel(team, 'sc_add_player', 'team.add_player'),
             'sc_watch_rows': watch_rows,
             'sc_roster_rows': roster_rows,
             'sc_upcoming_rows': upcoming_rows,
