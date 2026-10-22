@@ -779,11 +779,17 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             ('patient_id', '=', player.id)
         ], order='create_date desc, id desc')
 
-        # Treatment notes for the new Notes tab (TPs only see this tab,
-        # but always loading is cheap and avoids tab-conditional context).
-        treatment_notes = http.request.env['sports.treatment.note'].search([
-            ('patient_id', '=', player.id)
-        ], order='date desc, id desc')
+        # Treatment notes for the Notes tab, which only TPs see. Since the
+        # 19.0.1.42.4 security hotfix (forward-port 19.0.1.99.2) portal coaches
+        # and plain portal users hold NO ACL on sports.treatment.note (portal
+        # TPs read it, scoped to their teams by record rule), so the search
+        # MUST stay gated: coaches and role='other' staff would get an
+        # AccessError and a 500 on the whole player page.
+        treatment_notes = http.request.env['sports.treatment.note']
+        if is_treatment_prof:
+            treatment_notes = treatment_notes.search([
+                ('patient_id', '=', player.id)
+            ], order='date desc, id desc')
 
         # Activities tab (task 1222): the player's own activities. Since task
         # 1409 activities live on the patient only (the former injury-level
