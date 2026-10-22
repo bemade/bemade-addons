@@ -16137,3 +16137,35 @@ msgstr "À valider"
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__medical_alert_level__urgent
 msgid "Urgent – life-threatening"
 msgstr "Urgente – risque vital"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
+#: code:addons/bemade_sports_clinic/models/sc_phone.py:0
+msgid "Invalid phone number."
+msgstr "Numéro de téléphone invalide."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__sc_phone_invalid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_contact__sc_phone_invalid
+msgid "Phone number to fix"
+msgstr "Numéro à corriger"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_search
+msgid "Phone numbers to fix"
+msgstr "Numéros à corriger"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sc_phone_mixin
+msgid "Sports clinic: phone normalization"
+msgstr "Clinique sportive : normalisation des numéros de téléphone"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient__sc_phone_invalid
+msgid ""
+"The player's phone or an emergency contact's mobile is not a valid phone "
+"number."
+msgstr ""
+"Le téléphone du joueur ou le cellulaire d'un contact d'urgence n'est pas un "
+"numéro de téléphone valide."

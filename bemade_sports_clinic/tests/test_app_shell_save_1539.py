@@ -275,10 +275,11 @@ class TestAppShellSave1539(AppShellCommon):
     # -- UC-R7 -----------------------------------------------------------
     def test_coach_edits_primary_contact(self):
         self._login_coach()
-        resp = self._save(self.contact, 'mobile', '555-0100')
+        # Task 1645: a valid number, stored formatted.
+        resp = self._save(self.contact, 'mobile', '514-555-0100')
         self.assertEqual(resp.status_code, 200, resp.text)
         self.contact.invalidate_recordset()
-        self.assertEqual(self.contact.mobile, '555-0100')
+        self.assertEqual(self.contact.mobile, '+1 514-555-0100')
         resp = self._save(self.contact, 'name', '')
         self.assertEqual(resp.status_code, 400)
 

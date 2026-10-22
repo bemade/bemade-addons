@@ -599,7 +599,8 @@
                             <t t-set="add_panel" t-value="'sc_contact_add'"/>
                             <t t-set="add_key" t-value="'contact.new'"/>
                         </t>
-                        <details class="o_sc_card o_sc_disclosure o_sc_list_add_panel" id="sc_contact_add" data-sc-section="contact.add">
+                        <details class="o_sc_card o_sc_disclosure o_sc_list_add_panel" id="sc_contact_add" data-sc-section="contact.add"
+                                 t-att-open="'open' if sc_contact_add_error else None">
                             <summary class="o_sc_disclosure_summary">
                                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                                 <span>Add Emergency Contact</span>
@@ -608,11 +609,12 @@
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="patient_id" t-att-value="player.id"/>
                                 <input type="hidden" name="return_url" t-att-value="sc_contacts_return"/>
+                                <p t-if="sc_contact_add_error" class="o_sc_field_message o_sc_field_error" role="alert" t-out="sc_contact_add_error"/>
                                 <t t-call="bemade_sports_clinic.sc_contact_fields">
-                                    <t t-set="c_name" t-value="''"/>
-                                    <t t-set="c_type" t-value="''"/>
-                                    <t t-set="c_mobile" t-value="''"/>
-                                    <t t-set="c_email" t-value="''"/>
+                                    <t t-set="c_name" t-value="sc_contact_add_data.get('name') or ''"/>
+                                    <t t-set="c_type" t-value="sc_contact_add_data.get('contact_type') or ''"/>
+                                    <t t-set="c_mobile" t-value="sc_contact_add_data.get('mobile') or ''"/>
+                                    <t t-set="c_email" t-value="sc_contact_add_data.get('email') or ''"/>
                                 </t>
                                 <div class="o_sc_form_actions">
                                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="contact.add">Add Emergency Contact</button>
@@ -1352,7 +1354,8 @@
         </div>
         <div class="o_sc_field">
             <label for="sc_contact_mobile" class="o_sc_field_label">Mobile</label>
-            <input type="tel" id="sc_contact_mobile" name="mobile" class="o_sc_input" t-att-value="c_mobile"/>
+            <input type="tel" id="sc_contact_mobile" name="mobile" class="o_sc_input" t-att-value="c_mobile"
+                   inputmode="tel" autocomplete="tel"/>
         </div>
         <div class="o_sc_field">
             <label for="sc_contact_email" class="o_sc_field_label">Email</label>
@@ -1441,7 +1444,8 @@
                             </div>
                             <div class="o_sc_field">
                                 <label for="sc_new_phone" class="o_sc_field_label">Phone</label>
-                                <input type="tel" id="sc_new_phone" name="phone" class="o_sc_input" t-att-value="phone or ''"/>
+                                <input type="tel" id="sc_new_phone" name="phone" class="o_sc_input" t-att-value="phone or ''"
+                                       inputmode="tel" autocomplete="tel"/>
                             </div>
                         </div>
                         <fieldset t-if="all_teams" class="o_sc_fields">
@@ -1517,7 +1521,8 @@
                             </div>
                             <div class="o_sc_field">
                                 <label for="sc_new_ec_mobile" class="o_sc_field_label">Mobile</label>
-                                <input type="tel" id="sc_new_ec_mobile" name="ec_mobile" class="o_sc_input"/>
+                                <input type="tel" id="sc_new_ec_mobile" name="ec_mobile" class="o_sc_input"
+                                       t-att-value="ec_mobile or ''" inputmode="tel" autocomplete="off"/>
                             </div>
                             <div class="o_sc_field">
                                 <label for="sc_new_ec_email" class="o_sc_field_label">Email</label>

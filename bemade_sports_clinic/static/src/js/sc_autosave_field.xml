@@ -139,6 +139,7 @@
                    t-att-id="props.inputId" t-att-name="props.name" t-att-placeholder="props.placeholder"
                    t-att-required="props.required" t-att-disabled="props.disabled"
                    t-att-min="dateBounds.min" t-att-max="dateBounds.max"
+                   t-att-inputmode="type === 'tel' ? 'tel' : undefined"
                    t-model="state.value" t-on-input="onInput" t-on-change="onChange" t-on-blur="commit"
                    t-on-keydown="onDateKeydown" t-on-pointerdown="onDatePointer"/>
             <small t-if="state.hint and !isReplace" class="o_sc_hint" t-esc="state.hint"/>

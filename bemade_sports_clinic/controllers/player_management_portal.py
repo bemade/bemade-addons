@@ -135,6 +135,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             self._portal_flash(_('Please select at least one team to assign to this player.'), None, ('player_create',))
             return request.redirect('/my/player/create')
 
+        # Task 1645: the player's phone and the emergency contact's mobile.
+        phone_error = self._sc_phone_error(post, 'phone', 'ec_mobile')
+        if phone_error:
+            self._portal_flash(phone_error, None, ('player_create',))
+            return request.redirect('/my/player/create')
+
         # Validate DOB format and range if provided
         if dob:
             try:
@@ -437,6 +443,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         is_treatment_prof = self._is_treatment_professional()
         is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
+        # Task 1645: the phone and the emergency contact's mobile.
+        phone_error = self._sc_phone_error(post, 'phone', 'ec_mobile')
+        if phone_error:
+            flash(phone_error)
+            return request.redirect(edit_url)
+
         # If DOB is being changed/provided, validate format upfront to avoid unhelpful errors
         dob_str = (post.get('date_of_birth') or '').strip()
         dob_date = None
@@ -778,6 +790,11 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         if not post.get('name') or not post.get('contact_type'):
             self._portal_flash(_("Name and contact type are required fields"), post, ('contact_add', patient.id))
             return request.redirect('/my/player/contact/add?patient_id=%s' % patient_id)
+        # Task 1645: a mobile the clinic's phone rule refuses.
+        phone_error = self._sc_phone_error(post, 'mobile')
+        if phone_error:
+            self._portal_flash(phone_error, post, ('contact_add', patient.id))
+            return request.redirect('/my/player/contact/add?patient_id=%s' % patient_id)
         
         # Prepare values for contact creation
         vals = {
@@ -870,6 +887,11 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Required fields
         if not post.get('name') or not post.get('contact_type'):
             self._portal_flash(_("Name and contact type are required fields"), post, ('contact_edit', contact.id))
+            return request.redirect('/my/player/contact/edit?contact_id=%s' % contact.id)
+        # Task 1645: a mobile the clinic's phone rule refuses.
+        phone_error = self._sc_phone_error(post, 'mobile')
+        if phone_error:
+            self._portal_flash(phone_error, post, ('contact_edit', contact.id))
             return request.redirect('/my/player/contact/edit?contact_id=%s' % contact.id)
         
         # Prepare values for contact update

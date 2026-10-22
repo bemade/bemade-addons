@@ -32,8 +32,10 @@ class TapLinksCommon(AppShellCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.player.write({'email': 'pat.one@example.com', 'phone': '+1 (555) 010-0123'})
-        cls.contact.write({'mobile': '555 010 0456', 'email': 'parent.one@example.com'})
+        # Task 1645: raw 555 numbers (not dialable) kept as typed — lenient.
+        lenient = {'sc_phone_lenient': True}
+        cls.player.with_context(**lenient).write({'email': 'pat.one@example.com', 'phone': '+1 (555) 010-0123'})
+        cls.contact.with_context(**lenient).write({'mobile': '555 010 0456', 'email': 'parent.one@example.com'})
         cls.org.write({'email': 'org@example.com'})
         cls.tp.partner_id.write({'email': 'pc.tp@example.com'})
         cls.event.write({'partner_id': cls.org.id})
@@ -111,12 +113,12 @@ class TestTapLinks(TapLinksCommon):
         self._login_tp()
         self.contact.invalidate_recordset()
         resp = self.url_open('/my/app/save/%s/%s' % (self.contact._name, self.contact.id), data={
-            'field': 'mobile', 'value': '555 010 0999',
+            'field': 'mobile', 'value': '514 555 0199',  # task 1645: a valid number
             'write_date': fields.Datetime.to_string(self.contact.write_date),
             'csrf_token': self._csrf(),
         }, allow_redirects=False)
         self.assertEqual(resp.status_code, 200, resp.text)
-        self.assertEqual(resp.json()['display'], '555 010 0999')
+        self.assertEqual(resp.json()['display'], '+1 514-555-0199')
 
     # -- UC-T4 -----------------------------------------------------------
     def test_event_staff_and_organization_emails(self):
@@ -162,7 +164,7 @@ class TestTapLinksTour(TapLinksCommon):
         self._switch(True)
         self.start_tour(self._player_url(), 'sc_1585_tap_links', login='pc.tp@example.com')
         self.contact.invalidate_recordset()
-        self.assertEqual(self.contact.mobile, '555 010 0777')
+        self.assertEqual(self.contact.mobile, '+1 514-555-0177')  # task 1645: stored formatted
 
 
 @tagged('post_install', '-at_install')

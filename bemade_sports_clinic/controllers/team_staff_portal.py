@@ -1106,7 +1106,14 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 doc.created_by_id.display_name or '') if part),
         } for doc in values['patient_documents']]
 
+        # Task 1645: a refused « Add Emergency Contact » (an invalid mobile)
+        # comes back here (the shell has no separate form page): the panel
+        # re-opens with the message and the typed values.
+        contact_error, contact_data = self._portal_pop_flash(('contact_add', player.id))
+
         return dict(self._sc_injury_card_options(), **{
+            'sc_contact_add_error': contact_error,
+            'sc_contact_add_data': contact_data or {},
             'sc_player_tabs': sc_tabs,
             'sc_player_active_tab': active_tab,
             'sc_player_url': base_url,

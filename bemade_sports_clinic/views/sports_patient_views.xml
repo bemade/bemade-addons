@@ -18,6 +18,9 @@
                     <!-- Task 1630: pre-filled from the former allergies text. -->
                     <filter name="medical_alert_review" string="Alerts to validate"
                             domain="[('medical_alert_review', '=', True)]"/>
+                    <!-- Task 1645: phones the reformat could not read. -->
+                    <filter name="sc_phone_invalid" string="Phone numbers to fix"
+                            domain="[('sc_phone_invalid', '=', True)]"/>
                     <filter name="groupby_team_ids" context="{'group_by': 'team_ids'}"/>
                     <filter name="groupby_jersey_number" string="Jersey Number" context="{'group_by': 'jersey_number'}"/>
                 </search>

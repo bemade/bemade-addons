@@ -753,6 +753,18 @@ class AccessControlMixin:
     def _portal_flash_scope(scope):
         return [str(part) for part in (scope if isinstance(scope, (list, tuple)) else (scope,))]
 
+    @staticmethod
+    def _sc_phone_error(post, *keys):
+        """Task 1645: « Invalid phone number. » when one of the posted
+        ``keys`` is a phone the clinic rule refuses, else None — checked
+        before anything is written, so the form comes back with the typed
+        values (the models refuse it too)."""
+        from ..models.sc_phone import sc_phone_is_valid
+        for key in keys:
+            if (post.get(key) or '').strip() and not sc_phone_is_valid(request.env, post.get(key)):
+                return _("Invalid phone number.")
+        return None
+
     def _portal_flash(self, error, form_data=None, scope=None):
         """Stash a validation error + submitted form data for a PRG redirect
         to the form identified by ``scope`` (a tuple such as

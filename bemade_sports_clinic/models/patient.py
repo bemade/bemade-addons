@@ -6,6 +6,7 @@ import re
 import unicodedata
 from dateutil.relativedelta import relativedelta
 from odoo.addons.phone_validation.tools import phone_validation
+from .sc_phone import sc_phone_is_valid
 from .patient_injury import (
     dashboard_external_injury_fields,
     dashboard_internal_injury_fields,
@@ -122,7 +123,9 @@ DASHBOARD_SYNOPSIS_MAX_PHRASES = 4
 class Patient(models.Model):
     _name = "sports.patient"
     _description = "Patient"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "sc.phone.mixin"]
+    # Task 1645: normalized / refused in create / write (sc_phone.py).
+    _sc_phone_fields = ("phone",)
     
     _unique_patient = models.Constraint(
         'UNIQUE(partner_id)',
@@ -2795,6 +2798,26 @@ class Patient(models.Model):
                     'default_team_id': self.team_ids[0].id if self.team_ids else False
                 },
             }
+
+    # Task 1645: MC's « Numbers to fix » — the player's phone or one of the
+    # contacts' mobiles does not parse (left as is by the reformat).
+    sc_phone_invalid = fields.Boolean(
+        string="Phone number to fix", compute="_compute_sc_phone_invalid", store=True,
+        help="The player's phone or an emergency contact's mobile is not a valid phone number.")
+
+    @api.depends("partner_id.phone", "country_id", "contact_ids.sc_phone_invalid")
+    def _compute_sc_phone_invalid(self):
+        for patient in self:
+            patient.sc_phone_invalid = (
+                not sc_phone_is_valid(patient.env, patient.phone, patient._sc_phone_country())
+                or any(patient.contact_ids.mapped("sc_phone_invalid"))
+            )
+
+    def _sc_phone_country(self, vals=None):
+        country = self.env["res.country"]
+        if vals and vals.get("country_id"):
+            country = country.browse(vals["country_id"])
+        return country or self[:1].country_id or self.env.company.country_id
 
     @api.onchange("phone", "country_id")
     def _onchange_phone_validation(self):
