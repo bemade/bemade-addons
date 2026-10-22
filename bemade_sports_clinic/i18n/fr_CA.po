@@ -3792,6 +3792,8 @@ msgstr ""
 "rapport de présences."
 
 #. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
 #. odoo-javascript
 #: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic._timesheet_card
@@ -16309,3 +16311,37 @@ msgstr "Même nom et même date de naissance : ouvrez ou ajoutez plutôt ce joue
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
 msgid "Type a first and a last name to look for existing players."
 msgstr "Tapez un prénom et un nom pour chercher les joueurs existants."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
+msgid "Remove %s?"
+msgstr "Retirer %s ?"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
+msgid ""
+"You will no longer have access to this player: you are not a member of any "
+"of their other teams."
+msgstr ""
+"Vous n'aurez plus accès à ce joueur, car vous n'êtes membre d'aucune de ses "
+"autres équipes."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
+msgid "Remove and leave"
+msgstr "Retirer et quitter"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "%(player)s removed from %(team)s"
+msgstr "%(player)s retiré de %(team)s"
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_fragments.js:0
+msgid "You no longer have access to this page."
+msgstr "Vous n'avez plus accès à cette page."

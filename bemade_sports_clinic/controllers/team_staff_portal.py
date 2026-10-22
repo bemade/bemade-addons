@@ -370,6 +370,27 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     # and this handler's only other route ('/my/team/page/<int:page>') was linked
     # nowhere. It was unreachable dead code. (Dead-route audit.)
 
+    def _sc_team_confirm_remove(self, player):
+        """Task 1656: the data the Teams widget needs to ask before a removal
+        that would END the viewer's access: ``access`` — the teams the viewer
+        staffs (a non-admin keeps access while ONE of them stays on the
+        player; the widget decides live, as tags come and go), the popup's
+        texts (``title`` holds ``%s`` for the team). Admins never lose
+        access: None."""
+        if self._is_clinic_admin():
+            return None
+        env = http.request.env
+        staffed = env['sports.team.staff'].sudo().search([
+            ('partner_id', '=', env.user.partner_id.id)]).mapped('team_id')
+        return {
+            'access': [str(team_id) for team_id in staffed.ids],
+            'title': env._("Remove %s?"),
+            'message': env._("You will no longer have access to this player: you are not a "
+                             "member of any of their other teams."),
+            'confirm': env._("Remove and leave"),
+            'cancel': env._("Cancel"),
+        }
+
     @http.route(route=['/my/players', '/my/players/page/<int:page>'], type='http', auth='user', website=True)
     def view_players(self, page=1, **kw):
         """Display the list of players the portal user has access to, with filters.
@@ -1128,6 +1149,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_created_player_back': ('/my/team?team_id=%s&tab=players' % values['team'].id
                                        if values.get('team') else '/my/players'),
             'sc_contact_add_error': contact_error,
+            # Task 1656: removing the team that gives the viewer access asks
+            # first (the tags widget's confirmRemove).
+            'sc_team_confirm': self._sc_team_confirm_remove(player),
             'sc_contact_add_data': contact_data or {},
             'sc_player_tabs': sc_tabs,
             'sc_player_active_tab': active_tab,

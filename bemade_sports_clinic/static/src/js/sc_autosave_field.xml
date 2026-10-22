@@ -105,7 +105,7 @@
                         <span t-esc="opt[1]"/>
                         <button type="button" class="o_sc_tag_remove" t-att-disabled="isDisabled"
                                 t-att-aria-label="removeLabel(opt[1])" t-att-title="removeLabel(opt[1])"
-                                t-on-click="() => this.onCheck(opt[0], false)">×</button>
+                                t-on-click="() => this.onRemoveTag(opt[0])">×</button>
                     </li>
                 </ul>
                 <input t-ref="input" type="search" class="o_sc_input o_sc_tags_search" autocomplete="off"

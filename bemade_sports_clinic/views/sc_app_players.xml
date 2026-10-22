@@ -599,7 +599,7 @@
                                 <t t-set="lbl">Teams</t>
                                 <t t-set="sc_teams_undo">Teams changed</t>
                                 <t t-set="sc_teams_add">Add a team…</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'sc_team_ids', lbl, 'tags', options=sc_team_options, instant=True, undoMessage=sc_teams_undo, placeholder=sc_teams_add)"/></t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'sc_team_ids', lbl, 'tags', options=sc_team_options, instant=True, undoMessage=sc_teams_undo, placeholder=sc_teams_add, confirmRemove=sc_team_confirm)"/></t>
                                 <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
                             </div>
                         </section>

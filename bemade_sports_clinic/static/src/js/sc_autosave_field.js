@@ -79,6 +79,7 @@ import { _t } from "@web/core/l10n/translation";
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
 import { readDraft, removeDraft, writeDraft } from "@bemade_sports_clinic/js/sc_draft_store";
 import { DATE_BOUNDS, isValidDateValue } from "@bemade_sports_clinic/js/sc_date_bounds";
+import { scConfirm, scLeavePage } from "@bemade_sports_clinic/js/sc_confirm";
 
 const DRAFT_DEBOUNCE = 300;
 // Owner review 2026-10-14: inputs whose value is only complete once the
@@ -149,6 +150,10 @@ export class ScAutosaveField extends Component {
         optionMeta: { type: Object, optional: true },
         // Task 1653: the empty option of a select is shown, never chosen.
         lockEmpty: { type: Boolean, optional: true },
+        // Task 1656: {access: [keys], title ("%s" = the tag), message,
+        // confirm, cancel} — removing the LAST chosen « access » tag (the
+        // player's only team the viewer staffs) asks first.
+        confirmRemove: { type: Object, optional: true },
         "*": true,
     };
 
@@ -769,6 +774,27 @@ export class ScAutosaveField extends Component {
         }
     }
 
+    /** Task 1656: removing a tag that would end the viewer's access asks. */
+    async onRemoveTag(key) {
+        const rule = this.props.confirmRemove;
+        const access = new Set((rule && rule.access) || []);
+        const others = this.checkedKeys.filter((k) => String(k) !== String(key) && access.has(String(k)));
+        if (rule && access.has(String(key)) && !others.length) {
+            const label = (this.options.find((opt) => String(opt[0]) === String(key)) || [key, key])[1];
+            const go = await scConfirm({
+                title: String(rule.title || "").replace("%s", label),
+                message: rule.message,
+                confirm: rule.confirm,
+                cancel: rule.cancel,
+            });
+            if (!go) {
+                return; // the tag stays, nothing saved
+            }
+            this.leaving = true;
+        }
+        this.onCheck(key, false);
+    }
+
     onCheck(key, checked) {
         const keys = new Set(this.checkedKeys);
         if (checked) {
@@ -912,10 +938,19 @@ export class ScAutosaveField extends Component {
                         write_date: this.writeDate,
                         old_value: this.lastSaved,
                     },
-                    confirm ? { confirm: "1" } : {}
+                    confirm ? { confirm: "1" } : {},
+                    this.leaving ? { leaving: "1" } : {}
                 ),
                 toast: false,
             });
+            // Task 1656: the save ended the viewer's access to this record
+            // (the popup's « Remove and leave », or a stale page): leave it.
+            if (result && result.lost_access) {
+                this.state.status = "saved";
+                scLeavePage(result.message);
+                return true;
+            }
+            this.leaving = false;
             this.writeDate = result.write_date;
             // The value typed meanwhile (a save waiting) is never overwritten.
             const changedSince = this.state.value !== sent;

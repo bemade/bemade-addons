@@ -165,6 +165,26 @@ if (document.readyState === "loading") {
     offerUndoCreate();
 }
 
+// Task 1656: a toast kept for this page by the previous one (it was left
+// after its viewer lost access to it: sc_confirm.js scLeavePage).
+function showPendingToast() {
+    let message = null;
+    try {
+        message = window.sessionStorage.getItem("sc_pending_toast:v1");
+        window.sessionStorage.removeItem("sc_pending_toast:v1");
+    } catch {
+        return;
+    }
+    if (message && app()) {
+        showToast(message);
+    }
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", showPendingToast);
+} else {
+    showPendingToast();
+}
+
 // Task 1655: a player just created inline — the identity card opens in edit
 // and « Player created · Undo » is offered for the undo window; the address
 // loses ?created_player= so a reload offers neither again.

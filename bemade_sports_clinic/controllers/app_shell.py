@@ -2140,6 +2140,25 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return bool(request.env.user._sc_app_roles() & frozenset(allowed[field]))
         return True
 
+    def _sc_lost_access_payload(self, patient, teams_before):
+        """Task 1656: the viewer removed the team that gave them access to
+        ``patient`` — ``{ok, lost_access, message}`` (no refresh patterns, no
+        re-read as the viewer: the page is left), else None."""
+        try:
+            self._check_access_to_patient(patient.id)
+            return None
+        except (AccessError, MissingError, UserError):
+            pass
+        player = patient.sudo()
+        removed = teams_before - player.team_ids
+        return {
+            'ok': True,
+            'lost_access': True,
+            'message': _("%(player)s removed from %(team)s",
+                         player=player._portal_list_name(with_jersey=False),
+                         team=', '.join(removed.mapped('name'))),
+        }
+
     @staticmethod
     def _sc_identity_confirm_needed(patient, field, value):
         """The 409 payload asking the client to confirm an identity
@@ -2415,6 +2434,10 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             extra = {}
             # A refused / invalid write leaves nothing behind (a hook may
             # write more than one field).
+            # Task 1656: the teams before a player's teams save (a removal may
+            # end the viewer's own access).
+            teams_before = (record.sudo().team_ids
+                            if model == 'sports.patient' and field == 'sc_team_ids' else None)
             with request.env.cr.savepoint():
                 if spec.get('write'):
                     extra = spec['write'](self, record, field, value) or {}
@@ -2424,6 +2447,10 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     record.write({field: value})
                 record.flush_recordset()
             record.invalidate_recordset()
+            if teams_before is not None:
+                lost = self._sc_lost_access_payload(record, teams_before)
+                if lost:
+                    return self._sc_save_json(lost)
             payload = {
                 'ok': True,
                 'write_date': fields.Datetime.to_string(record.write_date),
