@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.100.2",
+    'version': "19.0.1.101.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -324,6 +324,8 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             # Task 1585: tap-to-call / tap-to-email hrefs.
             "bemade_sports_clinic/static/src/js/sc_contact_href.js",
             "bemade_sports_clinic/static/src/js/sc_app_ui.js",
+            # Task 1642: after an edit, back to the top of the edited block.
+            "bemade_sports_clinic/static/src/js/sc_edit_anchor.js",
             # Task 1606: the user menu (rail footer / app-bar avatar).
             "bemade_sports_clinic/static/src/js/sc_user_menu.js",
             "bemade_sports_clinic/static/src/js/sc_list_header.js",

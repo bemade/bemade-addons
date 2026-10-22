@@ -232,3 +232,4 @@ from . import test_treatment_note_access_hotfix
 from . import test_portal_access_sweep_hotfix
 from . import test_date_year_cap_1640
 from . import test_resolve_refresh_tours_1641
+from . import test_edit_anchor_tours_1642

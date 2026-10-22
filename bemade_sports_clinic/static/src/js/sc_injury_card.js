@@ -21,6 +21,7 @@
  *   listed; hidden from the first row on, shown again when it is emptied.
  */
 import { _t } from "@web/core/l10n/translation";
+import { anchorEdited } from "@bemade_sports_clinic/js/sc_edit_anchor";
 
 function inShell(node) {
     return Boolean(node && node.closest && node.closest(".o_sc_app"));
@@ -46,7 +47,10 @@ document.addEventListener("click", (ev) => {
     }
     card.open = false;
     document.dispatchEvent(new CustomEvent("sc:refresh-now"));
-    card.scrollIntoView({ block: "nearest" });
+    // Task 1642: back to the top of the collapsed card once the refresh
+    // and the keyboard have settled (was scrollIntoView « nearest », which
+    // could leave the screen somewhere unrelated).
+    anchorEdited(card);
 });
 
 // ------------------------------------- status-only fields (review 2026-10-18)
