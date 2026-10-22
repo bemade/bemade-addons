@@ -485,13 +485,19 @@ class AccessControlMixin:
         (``_sc_row_status``) and, when ``status_edit`` (the viewer may change
         them, ``_sc_status_editable``), ``pills`` — the quick-change
         dropdowns (``_sc_status_pills``); the selection labels are computed
-        ONCE for the whole list (or given: ``labels``)."""
+        ONCE for the whole list (or given: ``labels``).
+
+        Task 1630 (review round 1): ``status['medical']`` — the RED
+        allergy / medical-alert pills of the card
+        (``sports.patient._sc_card_medical_pills``: ONE batched read as the
+        viewer, nothing when the viewer may not read the fields)."""
         env = request.env
         labels = labels or env['sports.patient']._sc_status_labels()
         links = self._sc_team_links(players.sudo().team_ids) if team_links else {}
         team_qs = '&team_id=%s' % team.id if team else ''
         clocks = self._sc_activity_clocks(
             players, lambda p: '/my/player?player_id=%s%s&tab=activities' % (p.id, team_qs))
+        medical = players._sc_card_medical_pills()
         extras = {}
         for player in players:
             injured = (player.stage or 'healthy') != 'healthy'
@@ -510,7 +516,7 @@ class AccessControlMixin:
                 'team_links': [links[t.id] for t in player.sudo().team_ids if t.id in links],
                 'detail_url': detail_url,
                 'clock': clocks.get(player.id),
-                'status': player._sc_row_status(labels),
+                'status': dict(player._sc_row_status(labels), medical=medical.get(player.id, [])),
                 'pills': player._sc_status_pills(labels) if status_edit else None,
             }
         return extras

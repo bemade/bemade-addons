@@ -227,3 +227,4 @@ from . import test_medical_alerts_migration_1630
 from . import test_medical_alerts_1630
 from . import test_medical_alerts_i18n_1630
 from . import test_medical_alerts_tours_1630
+from . import test_medical_card_pills_1630

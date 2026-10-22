@@ -115,6 +115,18 @@
                 <t t-else="" t-foreach="row_status['pills']" t-as="pill">
                     <span t-attf-class="o_sc_status_pill o_sc_chip_#{pill['tone']}" t-att-title="pill['title']"><i t-if="pill['icon']" t-attf-class="fa #{pill['icon']}" aria-hidden="true"/> <t t-out="pill['label']"/></span>
                 </t>
+                <!-- Task 1630 (review round 1): the RED allergy / medical-alert
+                     pills (row_status['medical'], _sc_card_medical_pills) —
+                     static compact spans, no popup: a tap opens the player. -->
+                <t t-foreach="row_status.get('medical') or ()" t-as="med">
+                    <span class="o_sc_med_pill o_sc_med_pill_static o_sc_med_card_pill o_sc_med_urgent"
+                          t-att-data-sc-med-pill="med['key']" data-sc-med-level="urgent" t-att-title="med['title']">
+                        <span class="o_sc_med_pill_label" t-out="med['label']"/>
+                        <span t-if="med['epipen']" class="o_sc_med_epipen" data-sc-med-epipen="1">
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
+                        </span>
+                    </span>
+                </t>
                 <span t-if="row_status['injuries']" class="o_sc_injury_count" t-att-title="sc_injuries_title"><i class="fa fa-chain-broken" aria-hidden="true"/> <t t-out="row_status['injuries']"/></span>
             </t>
             <t t-if="row_changed" t-call="bemade_sports_clinic.sc_recent_pill"/>
@@ -880,28 +892,32 @@
                 <div t-attf-class="o_sc_med_sheet#{' o_sc_edit_card' if editable else ''}"
                      t-att-data-sc-section="'medical.%s' % pill['key']"
                      t-att-data-sc-edit-card="('medical-%s' % pill['key']) if editable else None">
-                    <div class="o_sc_med_read" data-sc-edit-view="read"
-                         t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s' % pill['key'])">
-                        <p class="o_sc_med_level_line">
-                            <span t-attf-class="o_sc_med_pill o_sc_med_pill_static o_sc_med_#{pill['tone']}"
-                                  t-att-data-sc-med-level="pill['level'] or 'unset'" t-out="pill['level_label']"/>
-                            <span t-if="pill['epipen']" class="o_sc_med_epipen_line" data-sc-med-epipen="1">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
-                                <span>EpiPen</span>
-                            </span>
-                        </p>
-                        <p t-if="pill['details']" class="o_sc_pre o_sc_med_details" t-out="pill['details']"/>
-                        <p t-else="" class="o_sc_muted o_sc_med_details_empty">No details.</p>
+                    <!-- Review round 1 (owner 2026-10-22): the app's standard edit
+                         pencil (as sc_edit_card_head) — icon only, top-right of
+                         the popup content, beside the level line (not in the
+                         sheet head with its close ✕); outside the read / edit
+                         views, so it stays while editing. -->
+                    <div class="o_sc_med_sheet_top">
+                        <div class="o_sc_med_read" data-sc-edit-view="read"
+                             t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s' % pill['key'])">
+                            <p class="o_sc_med_level_line">
+                                <span t-attf-class="o_sc_med_pill o_sc_med_pill_static o_sc_med_#{pill['tone']}"
+                                      t-att-data-sc-med-level="pill['level'] or 'unset'" t-out="pill['level_label']"/>
+                                <span t-if="pill['epipen']" class="o_sc_med_epipen_line" data-sc-med-epipen="1">
+                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
+                                    <span>EpiPen</span>
+                                </span>
+                            </p>
+                            <p t-if="pill['details']" class="o_sc_pre o_sc_med_details" t-out="pill['details']"/>
+                            <p t-else="" class="o_sc_muted o_sc_med_details_empty">No details.</p>
+                        </div>
+                        <button t-if="editable" type="button" class="o_sc_icon_btn o_sc_med_edit_toggle"
+                                data-sc-edit-toggle="1" data-sc-action="medical.edit" aria-expanded="false"
+                                aria-label="Edit" title="Edit">
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                        </button>
                     </div>
                     <t t-if="editable">
-                        <t t-set="sc_med_edit_label">Edit</t>
-                        <div class="o_sc_actions_row o_sc_med_edit_row">
-                            <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-edit-toggle="1"
-                                    data-sc-action="medical.edit" aria-expanded="false" t-att-title="sc_med_edit_label">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
-                                <span t-out="sc_med_edit_label"/>
-                            </button>
-                        </div>
                         <div class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
                             <t t-if="pill['key'] == 'allergy'">
                                 <t t-set="lbl">Allergy level</t>

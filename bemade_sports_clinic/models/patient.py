@@ -2497,6 +2497,56 @@ class Patient(models.Model):
             })
         return pills
 
+    # Review round 1 (owner 2026-10-22): the pills a player CARD shows.
+    _SC_CARD_MEDICAL_FIELDS = ("allergy_level", "allergy_epipen", "medical_alert_level")
+
+    def _sc_card_medical_pills(self):
+        """Task 1630, review round 1: the RED (« Urgent – life-threatening »)
+        medical pills of player cards (dashboard, roster, /my/players):
+        ``{player_id: [{key, label, epipen, title}]}``, players without a
+        red level absent. Shown to therapists and coaches alike (a coach
+        sees red, owner's rule); « Not urgent » / « None » / « Not
+        specified » never show on a card.
+
+        ONE batched read for the whole recordset, as the CURRENT user (never
+        sudo: the fields are group-restricted). A viewer failing the
+        field-group check gets nothing; records the viewer may not read are
+        skipped — never an AccessError."""
+        records = self.sudo(False)
+        if not records:
+            return {}
+        if not all(records._has_field_access(records._fields[name], "read")
+                   for name in self._SC_CARD_MEDICAL_FIELDS):
+            return {}
+        try:
+            records = records._filtered_access("read")
+            records.fetch(list(self._SC_CARD_MEDICAL_FIELDS))
+        except AccessError:
+            return {}
+        env = self.env
+        specs = (
+            ("allergy", env._("Allergies"), "allergy_level", "allergy_epipen"),
+            ("medical_alert", env._("Medical alert"), "medical_alert_level", None),
+        )
+        urgent_label = self._sc_level_label(LEVEL_URGENT)
+        result = {}
+        for record in records:
+            pills = []
+            for key, label, level_field, epipen_field in specs:
+                if record[level_field] != LEVEL_URGENT:
+                    continue
+                epipen = bool(epipen_field and record[epipen_field])
+                title = env._("%(what)s: %(level)s", what=label, level=urgent_label)
+                pills.append({
+                    "key": key,
+                    "label": label,
+                    "epipen": epipen,
+                    "title": ("%s · EpiPen" % title) if epipen else title,
+                })
+            if pills:
+                result[record.id] = pills
+        return result
+
     def _sc_medical_summary_lines(self, tp=False):
         """Task 1630: the legacy portal's compact read of the pills, one line
         each — « Allergies (urgent – life-threatening, EpiPen): … ». Same

@@ -7,6 +7,11 @@ laptop 1366 px. Synthetic fixtures only.
   (red, EpiPen icon) follow in place, without a reload.
 * TOUR-COACH A coach sees only the red Medical alert pill and its details,
   with no pencil and no grey / outline pill.
+* TOUR-PENCIL (review round 1) The popup's icon-only pencil stays visible
+  while editing, top right of the content, clear of the sheet's close ✕.
+* TOUR-CARD (review round 1) A coach's roster card shows the compact red
+  pills (EpiPen icon); a tap on a pill opens the player; no horizontal
+  scroll at phone width.
 
 The look (tones in both themes, the EpiPen icon, phone popups as bottom
 sheets) stays UNVERIFIED here — the dev-review click-through covers it.
@@ -33,6 +38,12 @@ class _Tours1630:
         self.player.sudo().write({'allergy_level': 'none', 'medical_alert_level': 'urgent',
                                   'medical_alert_details': 'Synthetic asthma'})
         self.start_tour(self._url(), 'sc_1630_medical_coach', login='pc.coach@example.com')
+
+    def test_card_pills_open_the_player(self):
+        self.player.sudo().write({'allergy_level': 'urgent', 'allergy_epipen': True,
+                                  'medical_alert_level': 'urgent'})
+        self.start_tour('/my/team?team_id=%s&tab=players' % self.team_a.id, 'sc_1630_card_pills',
+                        login='pc.coach@example.com')
 
 
 @tagged('post_install', '-at_install')

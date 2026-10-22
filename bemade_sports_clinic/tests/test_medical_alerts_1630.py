@@ -126,7 +126,28 @@ class TestMedicalHeader1630(MedicalCommon):
         self.assertTrue(read.xpath('.//*[@data-sc-med-epipen]'))
         self.assertFalse(read.xpath('.//owl-component'))
         card = sheet.xpath('.//*[@data-sc-edit-card="medical-allergy"]')[0]
-        self.assertTrue(card.xpath('.//button[@data-sc-edit-toggle][@data-sc-action="medical.edit"]'))
+        # Review round 1 (owner 2026-10-22): the app's standard edit pencil —
+        # icon only, top-right of the popup content (the level line's row,
+        # not the dialog head with its close ✕), visible while editing.
+        toggles = card.xpath('.//button[@data-sc-edit-toggle]')
+        self.assertEqual(len(toggles), 1)
+        toggle = toggles[0]
+        self.assertIn('o_sc_icon_btn', toggle.get('class'))
+        self.assertEqual(toggle.get('data-sc-action'), 'medical.edit')
+        self.assertEqual((toggle.get('aria-label'), toggle.get('title')), ('Edit', 'Edit'))
+        self.assertEqual(toggle.text_content().strip(), '', 'icon only')
+        self.assertTrue(toggle.xpath('.//*[local-name()="svg"]'))
+        self.assertFalse(toggle.xpath('ancestor::*[@data-sc-edit-view]'), 'hidden while editing')
+        self.assertFalse(toggle.xpath('ancestor::*[contains(@class, "o_sc_sheet_head")]'))
+        top = card.xpath('./*[contains(@class, "o_sc_med_sheet_top")]')
+        self.assertEqual(len(top), 1)
+        self.assertIs(card.xpath('./*')[0], top[0], 'the first line of the popup')
+        self.assertIs(toggle.getparent(), top[0])
+        self.assertIs(top[0].xpath('./*')[-1], toggle, 'right of the level line')
+        self.assertTrue(top[0].xpath('./*[@data-sc-edit-view="read"]//*[contains(@class, "o_sc_med_level_line")]'))
+        # No « Edit » text button any more.
+        self.assertFalse(sheet.xpath('.//*[contains(@class, "o_sc_med_edit_row")]'))
+        self.assertFalse([b for b in sheet.xpath('.//button') if b.text_content().strip() == 'Edit'])
         edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
         self.assertEqual(edit.get('hidden'), 'hidden')
         props = [json.loads(p) for p in edit.xpath('.//owl-component/@props')]

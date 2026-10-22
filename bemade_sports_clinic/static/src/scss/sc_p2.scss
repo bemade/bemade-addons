@@ -456,6 +456,22 @@ $sc-p2-laptop: 992px;
         }
     }
 
+    // Review round 1 (owner 2026-10-22): the red pills on player cards
+    // (sc_player_status_line) — the size of the status pills next to them,
+    // and NOT positioned: under the link row's stretched link, so a tap on
+    // the pill opens the player.
+    .o_sc_med_pill.o_sc_med_card_pill {
+        position: static;
+        min-height: 0;
+        padding: 1px 8px;
+        gap: 3px;
+
+        .o_sc_icon {
+            width: 12px;
+            height: 12px;
+        }
+    }
+
     .o_sc_med_urgent { background: var(--sc-bad); color: var(--sc-tone-fg); }
     .o_sc_med_minor { background: var(--sc-warn); color: var(--sc-tone-fg); }
     .o_sc_med_none { background: var(--sc-surface-2); color: var(--sc-fg-2); }
@@ -470,6 +486,27 @@ $sc-p2-laptop: 992px;
         display: flex;
         flex-direction: column;
         gap: var(--sc-space-3);
+    }
+
+    // Review round 1: the read view and, top-right, the icon-only pencil
+    // (kept while editing: the read view hides, the pencil stays).
+    .o_sc_med_sheet_top {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--sc-space-2);
+        min-width: 0;
+
+        > .o_sc_med_read {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        > .o_sc_med_edit_toggle {
+            margin-left: auto;
+            // Centre the tap target on the level pill's line.
+            margin-top: calc((26px - var(--sc-tap)) / 2);
+            margin-right: calc(var(--sc-space-2) * -1);
+        }
     }
 
     .o_sc_med_level_line {

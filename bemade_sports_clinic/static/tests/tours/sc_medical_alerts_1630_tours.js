@@ -75,6 +75,26 @@ tours.add("sc_1630_medical_tp", {
             trigger: "dialog[open] .o_sc_autosave[data-sc-field='allergy_level'][data-sc-state='saved']",
         },
         {
+            // Review round 1: the icon-only pencil stays visible while
+            // editing, at the top right of the content, clear of the close ✕.
+            content: "The pencil stays, top right, clear of the close button",
+            trigger: "dialog[open] [data-sc-edit-card='medical-allergy'] [data-sc-action='medical.edit'][aria-expanded='true']",
+            run() {
+                const dialog = this.anchor.closest("dialog");
+                const pencil = this.anchor.getBoundingClientRect();
+                const close = dialog.querySelector("[data-sc-sheet-close]").getBoundingClientRect();
+                const body = dialog.querySelector(".o_sc_sheet_body").getBoundingClientRect();
+                const select = dialog
+                    .querySelector(".o_sc_autosave[data-sc-field='allergy_level']")
+                    .getBoundingClientRect();
+                assert(pencil.width > 0 && pencil.height > 0, "the pencil is hidden while editing");
+                assert(!this.anchor.textContent.trim(), "the pencil has text");
+                assert(pencil.top >= close.bottom - 1, "the pencil overlaps the sheet head");
+                assert(pencil.right > body.right - pencil.width * 1.5, "the pencil is not at the right");
+                assert(pencil.bottom <= select.top + 1, "the pencil is not above the fields");
+            },
+        },
+        {
             content: "Tick EpiPen (« Yes »)",
             trigger: "dialog[open] .o_sc_autosave[data-sc-field='allergy_epipen'] button[data-sc-value='1']",
             run: "click",
@@ -144,6 +164,45 @@ tours.add("sc_1630_medical_coach", {
             content: "Close it",
             trigger: "dialog[open] [data-sc-sheet-close]",
             run: "click",
+        },
+    ],
+});
+
+/*
+ * Review round 1 (owner 2026-10-22) — sc_1630_card_pills: on the team
+ * roster, a red player's card shows the compact « Allergies » (EpiPen) and
+ * « Medical alert » pills; a tap ON a pill lands on the card's link (the
+ * pills sit under the stretched link) and opens the player; nothing
+ * overflows the phone width.
+ */
+tours.add("sc_1630_card_pills", {
+    steps: () => [
+        {
+            content: "The red pills on the roster card",
+            trigger: '[data-sc-section="team.roster"] .o_sc_row_status [data-sc-med-pill="allergy"].o_sc_med_urgent',
+            expectUnloadPage: true,
+            run() {
+                const row = this.anchor.closest(".o_sc_link_row");
+                assert(row.querySelector('.o_sc_row_status [data-sc-med-pill="medical_alert"].o_sc_med_urgent'),
+                    "no medical-alert pill");
+                assert(this.anchor.querySelector("[data-sc-med-epipen] svg"), "no EpiPen icon");
+                assert(!row.querySelector("button[data-sc-med-pill]"), "a pill button on a card");
+                this.anchor.scrollIntoView({ block: "center" });
+                const box = this.anchor.getBoundingClientRect();
+                const rowBox = row.getBoundingClientRect();
+                assert(box.height <= 24, `pill not compact: ${box.height}px`);
+                assert(box.right <= rowBox.right + 1, "the pill overflows the card");
+                assert(document.documentElement.scrollWidth <= window.innerWidth + 1, "horizontal page scroll");
+                const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+                const link = hit && hit.closest("a");
+                assert(link && link.classList.contains("o_sc_link_row_main"),
+                    `a tap on the pill lands on ${hit && hit.outerHTML.slice(0, 80)}`);
+                link.click();
+            },
+        },
+        {
+            content: "The player page opens",
+            trigger: '[data-sc-section="player.hero"]',
         },
     ],
 });
