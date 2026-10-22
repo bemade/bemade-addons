@@ -64,8 +64,9 @@ class TabCount1635Mixin(Clock1592Mixin):
         self.assertIn(tone, classes)
         self.assertNotIn(other, classes)
         self.assertTrue(badge.get('aria-label'))
-        # The label still reads first, the pill after it.
-        self.assertTrue((tab.text or '').strip())
+        # Task 1647: the pill comes first, the label right after it.
+        self.assertTrue(badge.getnext() is not None and 'o_sc_tab_label' in badge.getnext().get('class'))
+        self.assertTrue(badge.getnext().text_content().strip())
         return badge
 
     def _panel_rows(self, tree):

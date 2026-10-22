@@ -1080,8 +1080,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         aliases = {'info': 'patient-info team-info contacts'}
         # Task 1635: the Activities tab counts what its panel lists.
         badges = {'activities': self._sc_activity_tab_badge(values['player_activities'])}
+        # Task 1647: a short label on a phone (« Docs »).
+        shorts = {'documents': env._("Docs")}
         sc_tabs = [(key, label, '%s&tab=%s' % (base_url, key), aliases.get(key, ''),
-                    badges.get(key))
+                    badges.get(key), shorts.get(key))
                    for key, label in tabs]
 
         editable = values['editable_note_ids']

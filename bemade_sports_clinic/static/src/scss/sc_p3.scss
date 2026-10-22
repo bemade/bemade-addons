@@ -453,3 +453,53 @@ $sc-p3-laptop: 1024px;
         color: var(--sc-tone-fg);
     }
 }
+
+// Task 1647: the tab bars fit a phone's width — compact tabs sharing the
+// width (up to five), the count pill before the label, a short label where
+// one is given (« Docs »). Six or more tabs, or a screen under 340 px,
+// still scroll sideways (.o_sc_page_tabs_scroll / below).
+.o_sc_app {
+    .o_sc_tab_label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_sc_tab_label_short {
+        display: none;
+    }
+
+    @media (max-width: 991.98px) {
+        // Shared by content: a short label (Info) gives room to a long
+        // one with its pill (Activités 3).
+        .o_sc_page_tabs:not(.o_sc_page_tabs_scroll) > a {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding: 0 6px;
+            gap: 4px;
+            font-size: 12px;
+        }
+
+        .o_sc_tab_label_long {
+            display: none;
+        }
+
+        .o_sc_tab_label_short {
+            display: inline;
+        }
+    }
+
+    @media (max-width: 339.98px) {
+        .o_sc_page_tabs {
+            overflow-x: auto;
+            scrollbar-width: none;
+
+            > a,
+            &:not(.o_sc_page_tabs_scroll) > a {
+                flex: 0 0 auto;
+                padding: 0 12px;
+            }
+        }
+    }
+}
