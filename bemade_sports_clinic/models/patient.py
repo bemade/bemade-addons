@@ -448,8 +448,54 @@ class Patient(models.Model):
         } for patient in self.sudo()
             if (patient.training_recommendation or "").strip() != new.strip()]
 
+    # Task 1645 / 1653: (level field, its details / EpiPen) pairs.
+    _SC_MEDICAL_PAIRS = (
+        ("allergy_level", ("allergy_details", "allergy_epipen")),
+        ("medical_alert_level", ("medical_alert_details",)),
+    )
+
+    def _sc_medical_level_rules(self, vals):
+        """Task 1653 (owner 2026-10-22) — the levels' rules, in ``vals``:
+
+        * once a level is set it can't go back to « Not specified » (no
+          value): « Please choose a level. »;
+        * « None known » clears the details (and EpiPen) in the same write;
+        * details / EpiPen can't be SET while the level is (or becomes)
+          « None known »: refused (« Choose a level other than « None known »
+          to add details. »), never silently dropped.
+
+        Imports, install / upgrade and superuser scripts are exempt (the
+        phone rule's leniency, sc_phone.py)."""
+        lenient = self._sc_phone_lenient()
+        for level_field, others in self._SC_MEDICAL_PAIRS:
+            if level_field in vals:
+                new = vals[level_field] or False
+                vals[level_field] = new
+                if not new and not lenient and any(rec[level_field] for rec in self):
+                    raise ValidationError(self.env._("Please choose a level."))
+                if new == LEVEL_NONE and not lenient:
+                    # (imports / scripts keep what they write: the migration
+                    # flags such records « to validate » instead)
+                    for name in others:
+                        if vals.get(name):
+                            raise ValidationError(self.env._(
+                                "Choose a level other than « None known » to add details."))
+                        vals[name] = False
+                    continue
+            if lenient:
+                continue
+            for name in others:
+                if vals.get(name) and level_field not in vals and any(
+                        rec[level_field] == LEVEL_NONE for rec in self):
+                    raise ValidationError(self.env._(
+                        "Choose a level other than « None known » to add details."))
+        return vals
+
     def write(self, vals):
         self._normalize_jersey_vals(vals)
+        if any(level in vals or any(o in vals for o in others)
+               for level, others in self._SC_MEDICAL_PAIRS):
+            vals = self._sc_medical_level_rules(dict(vals))
         corrections = self._sc_identity_guard(vals)
         training_history = self._prepare_training_history_vals(vals)
         res = super().write(vals)
@@ -2003,6 +2049,9 @@ class Patient(models.Model):
                     row.get('first_name'), row.get('last_name'), row.get('date_of_birth'))
         for row in vals_list:
             self._normalize_jersey_vals(row)
+            # Task 1653: « None known » leaves no details / EpiPen.
+            if any(level in row for level, _others in self._SC_MEDICAL_PAIRS):
+                row.update(self.browse()._sc_medical_level_rules(dict(row)))
             if "partner_id" not in row:
                 row["partner_id"] = (
                     self.env["res.partner"].with_context(
@@ -2453,11 +2502,16 @@ class Patient(models.Model):
         return labels.get(level, level)
 
     @api.model
-    def _sc_medical_level_options(self):
-        """The level choices of a form / select: « Not specified » first."""
+    def _sc_medical_level_options(self, current=False):
+        """The level choices of a form / select. Task 1653: « Not specified »
+        is not a choice — an unset level shows a « — Choose — »
+        placeholder (the app makes it unselectable), a set one only the
+        three real levels."""
         labels = dict(self._fields["allergy_level"]._description_selection(self.env))
-        return [("", self.env._("Not specified"))] + [
-            (key, labels[key]) for key, _label in MEDICAL_LEVEL_SELECTION]
+        options = [(key, labels[key]) for key, _label in MEDICAL_LEVEL_SELECTION]
+        if not current:
+            options.insert(0, ("", self.env._("— Choose —")))
+        return options
 
     def _sc_medical_pills(self, tp=False):
         """Task 1630: the two header pills of ONE player, « Allergies » and

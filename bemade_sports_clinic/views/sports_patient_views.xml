@@ -174,13 +174,15 @@
                                 <field name="team_info_notes"/>
                             </group>
                             <!-- Task 1630: allergies + medical alert (levels, details,
-                                 EpiPen), « Other medical history », « To validate ». -->
+                                 EpiPen), « Other medical history », « To validate ».
+                                 Task 1653: « None known » locks (and clears) the
+                                 details / EpiPen; a set level can't be emptied. -->
                             <group name="health" string="Health">
                                 <field name="allergy_level"/>
-                                <field name="allergy_epipen"/>
-                                <field name="allergy_details"/>
+                                <field name="allergy_epipen" readonly="allergy_level == 'none'"/>
+                                <field name="allergy_details" readonly="allergy_level == 'none'"/>
                                 <field name="medical_alert_level"/>
-                                <field name="medical_alert_details"/>
+                                <field name="medical_alert_details" readonly="medical_alert_level == 'none'"/>
                                 <field name="medical_history_other"/>
                                 <field name="medical_alert_review"/>
                             </group>
@@ -291,10 +293,10 @@
                     <field name="last_name" readonly="1"/>
                     <field name="team_ids" widget="many2many_tags" readonly="1"/>
                     <field name="allergy_level"/>
-                    <field name="allergy_epipen"/>
-                    <field name="allergy_details"/>
+                    <field name="allergy_epipen" readonly="allergy_level == 'none'"/>
+                    <field name="allergy_details" readonly="allergy_level == 'none'"/>
                     <field name="medical_alert_level"/>
-                    <field name="medical_alert_details"/>
+                    <field name="medical_alert_details" readonly="medical_alert_level == 'none'"/>
                     <field name="medical_alert_review" widget="boolean_toggle"/>
                 </list>
             </field>

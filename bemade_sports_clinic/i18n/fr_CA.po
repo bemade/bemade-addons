@@ -16220,3 +16220,21 @@ msgstr "Continuez à taper pour réduire la liste."
 #: code:addons/bemade_sports_clinic/static/src/js/sc_picker.js:0
 msgid "Type to search…"
 msgstr "Tapez pour chercher…"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Please choose a level."
+msgstr "Choisissez un niveau."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Choose a level other than « None known » to add details."
+msgstr "Choisissez un autre niveau que « Aucune » pour ajouter des détails."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "— Choose —"
+msgstr "— Choisir —"

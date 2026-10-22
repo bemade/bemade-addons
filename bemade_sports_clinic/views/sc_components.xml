@@ -897,8 +897,12 @@
         fragment (it holds islands). Variables: patient, scope, tp, editable.
     -->
     <template id="sc_medical_sheets" name="App shell: medical sheets">
-        <t t-set="sc_med_levels" t-value="patient._sc_medical_level_options()"/>
         <t t-foreach="patient._sc_medical_pills(tp=tp)" t-as="pill">
+            <!-- Task 1653: no « Not specified » choice (an unset level shows
+                 a locked « — Choose — »); « None known » locks the details
+                 and EpiPen (empty) until another level is chosen. -->
+            <t t-set="sc_med_levels" t-value="patient._sc_medical_level_options(current=pill['level'])"/>
+            <t t-set="sc_med_locked" t-value="pill['level'] == 'none'"/>
             <t t-call="bemade_sports_clinic.sc_sheet">
                 <t t-set="sheet_id" t-value="'sc_med_%s_%s_%s' % (scope, pill['key'], patient.id)"/>
                 <t t-set="lazy_url" t-value="False"/>
@@ -935,19 +939,19 @@
                         <div class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
                             <t t-if="pill['key'] == 'allergy'">
                                 <t t-set="lbl">Allergy level</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'allergy_level', lbl, 'select', options=sc_med_levels)"/></t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'allergy_level', lbl, 'select', options=sc_med_levels, lockEmpty=True)"/></t>
                                 <t t-set="lbl">EpiPen</t>
                                 <t t-set="sc_med_yes">Yes</t>
                                 <t t-set="sc_med_no">No</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'allergy_epipen', lbl, 'segmented', options=[('1', sc_med_yes), ('0', sc_med_no)])"/></t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'allergy_epipen', lbl, 'segmented', options=[('1', sc_med_yes), ('0', sc_med_no)], disabled=sc_med_locked or None)"/></t>
                                 <t t-set="lbl">Allergy details</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'allergy_details', lbl, 'textarea', clearable=True)"/></t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'allergy_details', lbl, 'textarea', clearable=True, disabled=sc_med_locked or None)"/></t>
                             </t>
                             <t t-else="">
                                 <t t-set="lbl">Medical alert level</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'medical_alert_level', lbl, 'select', options=sc_med_levels)"/></t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'medical_alert_level', lbl, 'select', options=sc_med_levels, lockEmpty=True)"/></t>
                                 <t t-set="lbl">Medical alert details</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'medical_alert_details', lbl, 'textarea', clearable=True)"/></t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'medical_alert_details', lbl, 'textarea', clearable=True, disabled=sc_med_locked or None)"/></t>
                             </t>
                             <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
                         </div>

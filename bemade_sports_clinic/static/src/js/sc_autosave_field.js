@@ -147,6 +147,8 @@ export class ScAutosaveField extends Component {
         picker: { type: Boolean, optional: true },
         pickerKey: { type: String, optional: true },
         optionMeta: { type: Object, optional: true },
+        // Task 1653: the empty option of a select is shown, never chosen.
+        lockEmpty: { type: Boolean, optional: true },
         "*": true,
     };
 
@@ -157,6 +159,8 @@ export class ScAutosaveField extends Component {
             // Task 1582: in replace mode ``value`` is the NEW text being
             // written (empty on edit) and ``current`` the text the server holds.
             value: this.props.replace ? "" : asText(this.props.value),
+            // Task 1653: null = follow props.disabled.
+            locked: null,
             current: asText(this.props.value),
             status: "idle", // idle | dirty | draft | saving | saved | queued | error | conflict
             restored: false,
@@ -234,6 +238,10 @@ export class ScAutosaveField extends Component {
             }
             if (Array.isArray(also[this.props.field].options)) {
                 this.state.options = also[this.props.field].options;
+            }
+            // Task 1653: a sibling's save may lock / unlock this field.
+            if (also[this.props.field].disabled !== undefined) {
+                this.state.locked = Boolean(also[this.props.field].disabled);
             }
             if (["dirty", "saving"].includes(this.state.status)) {
                 return;
@@ -318,7 +326,7 @@ export class ScAutosaveField extends Component {
 
     /** « Clear » is offered while there is something to clear. */
     get canClear() {
-        if (!this.props.clearable || this.props.disabled) {
+        if (!this.props.clearable || this.isDisabled) {
             return false;
         }
         return Boolean(this.isReplace ? this.state.current : this.state.value);
@@ -331,6 +339,13 @@ export class ScAutosaveField extends Component {
     /** A date / date-time / time input: saved only once complete. */
     get isDateLike() {
         return DATE_LIKE_TYPES.includes(this.type);
+    }
+
+    /** Task 1653: disabled by the props, or locked by a sibling's save. */
+    get isDisabled() {
+        return this.state.locked === undefined || this.state.locked === null
+            ? Boolean(this.props.disabled)
+            : this.state.locked;
     }
 
     /** Task 1640: the input's bounds (props, else the 4-digit-year cap). */
@@ -629,7 +644,7 @@ export class ScAutosaveField extends Component {
 
     /** Focus / click in the search box: the full list opens (browse). */
     openTags() {
-        if (this.props.disabled || this.state.open) {
+        if (this.isDisabled || this.state.open) {
             return;
         }
         this.state.open = true;
@@ -765,7 +780,7 @@ export class ScAutosaveField extends Component {
     }
 
     onPick(value) {
-        if (this.props.disabled || String(value) === this.state.value) {
+        if (this.isDisabled || String(value) === this.state.value) {
             return;
         }
         const previous = this.state.value;

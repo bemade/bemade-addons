@@ -242,3 +242,4 @@ from . import test_header_search_1650
 from . import test_link_pickers_1648
 from . import test_change_detail_training_1651
 from . import test_card_med_pills_1652
+from . import test_medical_level_rules_1653

@@ -153,8 +153,9 @@ class TestMedicalHeader1630(MedicalCommon):
         props = [json.loads(p) for p in edit.xpath('.//owl-component/@props')]
         self.assertEqual([p['field'] for p in props], ['allergy_level', 'allergy_epipen', 'allergy_details'])
         self.assertEqual(props[0]['inputType'], 'select')
-        self.assertEqual(props[0]['options'][0], ['', 'Not specified'])
-        self.assertEqual([o[0] for o in props[0]['options']], ['', 'none', 'minor', 'urgent'])
+        # Task 1653: a set level offers the three levels only.
+        self.assertEqual(props[0]['options'][0], ['none', 'None known'])
+        self.assertEqual([o[0] for o in props[0]['options']], ['none', 'minor', 'urgent'])
         self.assertEqual(props[0]['value'], 'urgent')
         self.assertEqual(props[1]['value'], '1')
         alert = self._sheet(tree, 'medical_alert')
@@ -215,7 +216,6 @@ class TestMedicalHeader1630(MedicalCommon):
         self._login_tp()
         cases = (
             ('allergy_level', 'minor', 'minor', 'Not urgent'),
-            ('allergy_level', '', False, 'Not specified'),
             ('allergy_epipen', '0', False, 'No'),
             ('allergy_epipen', '1', True, 'Yes'),
             ('allergy_details', '  Synthetic latex  ', 'Synthetic latex', None),
@@ -231,7 +231,11 @@ class TestMedicalHeader1630(MedicalCommon):
                 self.assertEqual(payload.get('display'), display, field)
         with mute_logger('odoo.http', 'odoo.addons.bemade_sports_clinic.controllers.app_shell'):
             resp = self._save(self.player, 'allergy_level', 'bogus')
-        self.assertNotEqual(resp.status_code, 200)
+            self.assertNotEqual(resp.status_code, 200)
+            # Task 1653: a set level can't go back to « Not specified ».
+            resp = self._save(self.player, 'allergy_level', '')
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json()['message'], 'Please choose a level.')
 
     def test_coach_gets_403_on_every_field(self):
         self._login_coach()

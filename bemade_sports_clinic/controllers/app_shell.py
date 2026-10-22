@@ -583,8 +583,13 @@ def _patient_write(ctrl, patient, field, value):
         patient.write({field: dob})
         return extra
     if field in ('allergy_level', 'medical_alert_level'):
-        # Task 1630: « » = Not specified.
+        # Task 1630: « » = Not specified. Task 1653: refused once set (the
+        # model); « None known » empties and locks the details / EpiPen —
+        # answered along (also), so the popup's fields follow in place.
         patient.write({field: _selection_value(patient, field, value)})
+        others = dict(patient._SC_MEDICAL_PAIRS)[field]
+        extra['also_fields'] = list(others)
+        extra['also_disabled'] = {name: patient[field] == 'none' for name in others}
         return extra
     if field == 'allergy_epipen':
         patient.write({field: str(value).lower() in _TRUTHY})
@@ -2428,6 +2433,8 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # Task 1594: and their fresh choices when they changed (a country
             # save answers the province choices of the new country).
             also_options = extra.pop('also_options', None) or {}
+            # Task 1653: and whether they are locked now.
+            also_disabled = extra.pop('also_disabled', None) or {}
             if also:
                 payload['also'] = {name: {
                     'value': self._sc_save_value(record, name),
@@ -2436,6 +2443,9 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 for name, options in also_options.items():
                     if name in payload['also']:
                         payload['also'][name]['options'] = AppShellMixin._sc_options(options)
+                for name, disabled in also_disabled.items():
+                    if name in payload['also']:
+                        payload['also'][name]['disabled'] = bool(disabled)
             hint = spec['hint'](record, field) if spec.get('hint') else None
             if hint is not None:
                 payload['hint'] = hint
