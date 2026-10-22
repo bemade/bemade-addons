@@ -229,3 +229,4 @@ from . import test_medical_alerts_i18n_1630
 from . import test_medical_alerts_tours_1630
 from . import test_medical_card_pills_1630
 from . import test_treatment_note_access_hotfix
+from . import test_portal_access_sweep_hotfix
