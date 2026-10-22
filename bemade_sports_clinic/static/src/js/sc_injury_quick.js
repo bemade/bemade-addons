@@ -21,6 +21,13 @@
  * its picks over here (« sc:pill-action »): « Actif » from « Non vérifié »
  * = the verify above, « Résolu » = the resolve sheet above (from
  * « Non vérifié » too: the sheet then posts ``from_unverified=1``).
+ *
+ * Task 1641: a read fragment holding the focus is never swapped
+ * (sc_fragments.js), and WebKit (Safari, Chrome on iPhone) never focuses a
+ * tapped button — the focus lands on the card's <summary>, so blurring the
+ * button left the summary focused; the native <dialog> then gave that focus
+ * back on close and the card never showed « Résolu ». The focus is released
+ * from any read fragment before the sheet opens and again after it closes.
  */
 import { _t } from "@web/core/l10n/translation";
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
@@ -54,6 +61,17 @@ function refreshInjury(injuryId) {
     requestRefresh([`${MODEL}:${injuryId}:*`], { immediate: true });
 }
 
+/**
+ * Task 1641: let go of a focus held inside a read fragment (the card's
+ * summary or anything in it) so the refresh that follows can swap it.
+ */
+function releaseFragmentFocus() {
+    const active = document.activeElement;
+    if (active && active !== document.body && active.closest && active.closest("[data-sc-fragment]")) {
+        active.blur();
+    }
+}
+
 async function post(injuryId, action, data = {}) {
     return scFetch(`/my/injury/${injuryId}/${action}`, { method: "POST", data, toast: false });
 }
@@ -62,8 +80,10 @@ async function verify(button, injuryId = button.dataset.scInjuryId) {
     button.disabled = true;
     try {
         const result = await post(injuryId, "verify");
-        // The summary fragment is not swapped while it holds the focus.
+        // The summary fragment is not swapped while it holds the focus
+        // (task 1641: wherever the tap left it — the button or the summary).
         button.blur();
+        releaseFragmentFocus();
         announce(injuryId, result);
     } catch (err) {
         button.disabled = false;
@@ -99,6 +119,8 @@ function openResolve(button, injuryId = button.dataset.scInjuryId, fromStage = "
     form.querySelector("[data-sc-injury-resolve-error]").hidden = true;
     form.querySelector("[data-sc-injury-resolve-confirm]").disabled = false;
     button.blur();
+    // Task 1641: the dialog gives back on close the focus it found on open.
+    releaseFragmentFocus();
     if (!dialog.open) {
         dialog.showModal();
     }
@@ -124,6 +146,8 @@ async function confirmResolve(form) {
         }
         const result = await post(injuryId, "resolve", data);
         form.closest("dialog").close();
+        // Task 1641: the focus the dialog restored must not pin the card.
+        releaseFragmentFocus();
         announce(injuryId, result);
     } catch (err) {
         const message = err && err.payload && err.payload.message;
