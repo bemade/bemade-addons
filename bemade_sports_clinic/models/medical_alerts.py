@@ -82,6 +82,9 @@ CONDITION_STEMS = (
     'hemophil', 'drepanocyt', 'sickle', 'hypertens', 'hypotens', 'migrain',
     'commotion', 'concussion', 'inhalat', 'inhaler', 'ventolin', 'pompe',
     'anemi', 'thyroid', 'crohn', 'celiaqu', 'coeliaqu', 'celiac',
+    # Owner review 2026-10-21 (prod values check): immunosuppression,
+    # splenectomy, G6PD deficiency, a hemophilia factor product.
+    'immuno', 'splenect', 'g6pd', 'wilat',
 )
 # Allergy words (stems, on the folded text) -> the allergies (a text with no
 # condition word goes there too).
@@ -103,10 +106,23 @@ EPIPEN_NEGATIVE_RE = re.compile(
 SEVERE_RE = re.compile(r'\bsev[eè]re?s?\b|\bsevere(?:ly)?\b|\bsevere\b')
 
 
+# Owner review 2026-10-21: the « --- Merged from … --- » provenance headers
+# the merge wizard writes are not content.
+_MERGE_HEADER_RE = re.compile(r'^\s*-{2,}\s*merged from\b.*$', re.IGNORECASE | re.MULTILINE)
+
+
+def strip_merge_headers(text):
+    return _MERGE_HEADER_RE.sub('', text or '')
+
+
 def is_none_variant(text):
-    """« aucune », « Aucune allergie connue », « N/A », « NKA »…"""
+    """« aucune », « Aucune allergie connue », « N/A », « NKA »… and (owner
+    review 2026-10-21) a text of only dashes / punctuation (« - ») or « x »."""
+    text = strip_merge_headers(text)
+    if (text or '').strip() and not squash(text):
+        return True
     key = squash(text)
-    return bool(key) and bool(_NONE_RE.match(key))
+    return bool(key) and (key in ('x', 'xx', 'xxx') or bool(_NONE_RE.match(key)))
 
 
 def _has_stem(folded, stems):
@@ -127,11 +143,15 @@ def classify_legacy_allergies(text):
 
     ``text`` is kept verbatim in the details of a pre-filled entry."""
     raw = text or ''
-    folded = fold(raw)
-    if not squash(raw):
+    content = strip_merge_headers(raw)
+    folded = fold(content)
+    if not content.strip():
         return {'kind': 'empty'}
-    if is_none_variant(raw):
-        return {'kind': 'none', 'allergy_level': LEVEL_NONE, 'allergy_details': False}
+    if is_none_variant(content):
+        # Owner review 2026-10-21: « aucune » means nothing to report on
+        # both the allergies and the medical alert.
+        return {'kind': 'none', 'allergy_level': LEVEL_NONE, 'allergy_details': False,
+                'medical_alert_level': LEVEL_NONE, 'medical_alert_details': False}
     epipen = epipen_mentioned(folded)
     severe = bool(SEVERE_RE.search(folded))
     condition = _has_stem(folded, CONDITION_STEMS)

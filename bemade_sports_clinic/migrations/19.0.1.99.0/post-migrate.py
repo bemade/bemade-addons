@@ -67,7 +67,9 @@ def convert(env):
             counts['review'] += 1
         player.write(vals)
     if none_ids:
-        Patient.browse(none_ids).write({'allergy_level': 'none', 'allergy_details': False})
+        # Owner review 2026-10-21: « aucune » = nothing to report on both.
+        Patient.browse(none_ids).write({'allergy_level': 'none', 'allergy_details': False,
+                                        'medical_alert_level': 'none', 'medical_alert_details': False})
     counts['scanned'] = len(players)
     return counts
 

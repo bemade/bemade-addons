@@ -42,6 +42,10 @@ NONE_VARIANTS = (
 )
 
 
+NONE_VALS = {'kind': 'none', 'allergy_level': 'none', 'allergy_details': False,
+             'medical_alert_level': 'none', 'medical_alert_details': False}
+
+
 @tagged('post_install', '-at_install')
 class TestMedicalAlertClassification1630(TransactionCase):
 
@@ -49,10 +53,24 @@ class TestMedicalAlertClassification1630(TransactionCase):
         for text in NONE_VARIANTS:
             self.assertTrue(is_none_variant(text), text)
             vals = classify_legacy_allergies(text)
-            self.assertEqual(vals, {'kind': 'none', 'allergy_level': 'none', 'allergy_details': False}, text)
+            self.assertEqual(vals, NONE_VALS, text)
+
+    def test_punctuation_x_and_merge_headers_are_none(self):
+        # Owner review 2026-10-21: « - » / « x » mean nothing to report; the
+        # merge wizard's provenance header is not content.
+        for text in ('-', ' - ', '.', 'x', 'XX',
+                     '--- Merged from Synthetic A (ID 1) ---\naucune',
+                     'aucune\n\n--- Merged from Synthetic B (ID 2) ---\n-'):
+            self.assertEqual(classify_legacy_allergies(text), NONE_VALS, repr(text))
+
+    def test_more_condition_words(self):
+        for text in ('Immunosupprime (synthetic)', 'Splenectomie', 'G6PD deficiency', 'Facteur Wilate'):
+            vals = classify_legacy_allergies(text)
+            self.assertEqual(vals.get('medical_alert_level'), 'minor', text)
+            self.assertNotIn('allergy_level', vals, text)
 
     def test_empty(self):
-        for text in (False, None, '', '   ', ' ', ' - ', '.'):
+        for text in (False, None, '', '   ', ' '):
             self.assertEqual(classify_legacy_allergies(text), {'kind': 'empty'}, repr(text))
 
     def test_condition_word(self):
@@ -162,7 +180,8 @@ class TestMedicalAlertMigration1630(TransactionCase):
         none = self._read('none')
         self.assertEqual((none['allergy_level'], none['allergy_details'], none['medical_alert_review']),
                          ('none', False, False))
-        self.assertFalse(none['medical_alert_level'])
+        # Owner review 2026-10-21: « aucune » sets the medical alert to Aucune too.
+        self.assertEqual(none['medical_alert_level'], 'none')
         self.assertEqual(self._read('none2')['allergy_level'], 'none')
         for key in ('empty', 'blank'):
             row = self._read(key)
