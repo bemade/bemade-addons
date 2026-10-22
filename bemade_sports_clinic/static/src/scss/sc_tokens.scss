@@ -138,3 +138,27 @@ body.o_sc_app_body {
         background: #f4f5f2;
     }
 }
+
+// Task 1643: in the mobile BROWSER (not the installed app) the app bar and
+// the tabs must stay pinned while the address bar collapses / expands. The
+// window is the only scroller: the frontend layout's html / body
+// « height: 100% » (a viewport-sized box the page overflows) gives way to a
+// growing box, and #wrapwrap never scrolls, clips or transforms (each would
+// break the app bar's « sticky » or re-base the tabs' « fixed »). Scoped to
+// the shell's body; the legacy portal keeps the stock layout.
+html:has(> body.o_sc_app_body),
+body.o_sc_app_body {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+}
+
+body.o_sc_app_body > #wrapwrap {
+    overflow: visible !important;
+    transform: none !important;
+    filter: none !important;
+    contain: none !important;
+    will-change: auto !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+}

@@ -40,8 +40,18 @@
 -->
 <odoo>
 
+    <!-- Task 1643: the frontend layout with ONE viewport meta, the shell's
+         (viewport-fit=cover, as in the installed app): web.frontend_layout
+         emits its own and the shell's used to come second. -->
+    <template id="sc_frontend_layout" name="Sports Clinic App: frontend layout"
+              inherit_id="web.frontend_layout" primary="True">
+        <xpath expr="//head/meta[@name='viewport']" position="attributes">
+            <attribute name="content">width=device-width, initial-scale=1, viewport-fit=cover</attribute>
+        </xpath>
+    </template>
+
     <template id="sc_app_layout" name="Sports Clinic App Layout">
-        <t t-call="web.frontend_layout">
+        <t t-call="bemade_sports_clinic.sc_frontend_layout">
             <t t-set="no_header" t-value="True"/>
             <t t-set="no_footer" t-value="True"/>
             <t t-set="no_livechat" t-value="True"/>
@@ -52,7 +62,6 @@
             <t t-set="body_classname" t-value="'o_sc_app_body o_sc_app_body_%s' % (sc_theme or 'dark')"/>
             <t t-set="title" t-value="sc_title"/>
             <t t-set="head">
-                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
                 <meta name="theme-color" t-att-content="'#120e12' if sc_theme != 'light' else '#243925'"/>
                 <!-- Task 1540: Teko / DM Sans are self-hosted (@font-face in
                      sc_tokens.scss) — no Google Fonts request. -->
