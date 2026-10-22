@@ -45,7 +45,7 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
     // ------------------------------------------------------------------
     .o_sc_main {
         min-width: 0;
-        padding-bottom: calc(var(--sc-tabs-height) + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(var(--sc-tabs-height) + env(safe-area-inset-bottom, 0px) + var(--sc-ribbon-h, 0px));
     }
 
     .o_sc_rail {
@@ -219,7 +219,8 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         position: fixed;
         left: 0;
         right: 0;
-        bottom: 0;
+        // Task 1643 addendum: above a test DB's neutralize banner (0 on prod).
+        bottom: var(--sc-ribbon-h, 0px);
         z-index: 20;
         display: flex;
         background: var(--sc-bar);

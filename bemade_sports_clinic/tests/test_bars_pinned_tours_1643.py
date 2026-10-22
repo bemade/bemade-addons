@@ -11,6 +11,10 @@ Acceptance criteria covered here:
   contain / will-change (each breaks sticky or re-bases fixed); one
   viewport meta, with viewport-fit=cover.
 
+* AC-3 (addendum) On a neutralized test DB the red banner is pinned at the
+  bottom of a phone screen and the tabs sit right above it (never under
+  it); the banner stays visible.
+
 Run with ``website`` installed too (the project CI / a prod copy): that is
 where the frontend layout's own rules apply. iPhone Chrome / Safari with a
 collapsing address bar stays UNVERIFIED until /dev-review.
@@ -34,3 +38,7 @@ class TestBarsPinnedTours1643(AppShellCommon):
 
     def test_player_list(self):
         self.start_tour('/my/players', 'sc_1643_bars_pinned', login='pc.coach@example.com')
+
+    def test_neutralize_banner_above_tabs(self):
+        self.env.ref('web.neutralize_banner').active = True
+        self.start_tour('/my/players', 'sc_1643_ribbon', login='pc.coach@example.com')

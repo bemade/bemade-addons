@@ -93,3 +93,24 @@ tours.add("sc_1643_bars_pinned", {
         },
     ],
 });
+
+// Task 1643 addendum: a neutralized DB's banner never covers the tabs.
+tours.add("sc_1643_ribbon", {
+    steps: () => [
+        {
+            content: "The banner is pinned at the bottom, the tabs sit right above it",
+            trigger: ".o_sc_app .o_sc_tabs",
+            async run() {
+                const banner = document.getElementById("oe_neutralize_banner");
+                assert(banner, "no neutralize banner rendered");
+                await sleep(100);
+                const b = banner.getBoundingClientRect();
+                const t = document.querySelector(".o_sc_tabs").getBoundingClientRect();
+                assert(b.height > 0 && Math.abs(b.bottom - window.innerHeight) <= 1,
+                    `the banner is not at the bottom: ${b.top}-${b.bottom} / ${window.innerHeight}`);
+                assert(t.bottom <= b.top + 1, `the banner covers the tabs: tabs ${t.top}-${t.bottom}, banner ${b.top}`);
+                assert(t.top > 0 && t.height > 40, "the tabs are squeezed");
+            },
+        },
+    ],
+});

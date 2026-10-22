@@ -252,6 +252,33 @@ document.addEventListener("sc:fetch-error", (ev) => {
 window.addEventListener("offline", () => app() && showToast(_t("You are offline.")));
 window.addEventListener("online", () => app() && showToast(_t("Back online.")));
 
+// Task 1643 addendum: a neutralized test DB's banner (#oe_neutralize_banner)
+// is pinned at the bottom on a phone (sc_tokens.scss); the tabs rise by its
+// height. No banner (prod) = 0.
+function measureRibbon() {
+    const banner = document.getElementById("oe_neutralize_banner");
+    if (!banner || !app()) {
+        return;
+    }
+    const update = () => {
+        const fixed = getComputedStyle(banner).position === "fixed";
+        document.documentElement.style.setProperty(
+            "--sc-ribbon-h",
+            fixed ? `${banner.getBoundingClientRect().height}px` : "0px"
+        );
+    };
+    update();
+    if (window.ResizeObserver) {
+        new ResizeObserver(update).observe(banner);
+    }
+    window.addEventListener("resize", update);
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", measureRibbon);
+} else {
+    measureRibbon();
+}
+
 // ------------------------------------------------------------ lazy load
 async function loadLazy(container, url, target) {
     if (!url || container.dataset.scLoaded === "1") {
