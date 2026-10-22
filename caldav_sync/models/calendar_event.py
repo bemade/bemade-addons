@@ -15,6 +15,7 @@ from pytz import timezone, utc
 
 from odoo import api, fields, models
 
+from odoo.addons.base_caldav.tools import busy
 from odoo.addons.calendar.models.calendar_recurrence import MAX_RECURRENT_EVENT
 
 _logger = logging.getLogger(__name__)
@@ -230,8 +231,7 @@ class CalendarEvent(models.Model):
     def _sync_create_to_caldav(self):
         for event in self:
             for user in event.caldav_user_ids:
-                client = user._get_caldav_client()
-                calendar = client.calendar(url=user.caldav_calendar_url)
+                calendar = user._get_caldav_calendar()
                 try:
                     caldav_events = event._create_in_icalendar(calendar)
                     for caldav_event in caldav_events:
@@ -288,8 +288,7 @@ class CalendarEvent(models.Model):
     def _sync_write_to_caldav(self):
         ical_event_data = self._create_event_data()
         for user in self.caldav_user_ids:
-            client = user._get_caldav_client()
-            calendar = client.calendar(url=user.caldav_calendar_url)
+            calendar = user._get_caldav_calendar()
 
             base_event = self._get_caldav_base_event_by_uid(calendar, self.caldav_uid)
             if not base_event:
@@ -382,8 +381,7 @@ class CalendarEvent(models.Model):
         delete_all = self.env.context.get("caldav_delete_all", False)
         if self.caldav_uid:
             for user in self.caldav_user_ids:
-                client = user._get_caldav_client()
-                calendar = client.calendar(url=user.caldav_calendar_url)
+                calendar = user._get_caldav_calendar()
                 try:
                     caldav_event = calendar.event_by_uid(self.caldav_uid)
                     if not delete_all and self.recurrence_id and not self.is_base_event:
@@ -520,6 +518,7 @@ class CalendarEvent(models.Model):
             event_data["location"] = vText(self.location)
         if self.videocall_location:
             event_data["conference"] = self.videocall_location
+        event_data["transp"] = vText(busy.show_as_to_transp(self.show_as))
         event_data["sequence"] = 0
 
     def _add_event_dates(self, event_data: dict) -> None:
@@ -628,7 +627,7 @@ class CalendarEvent(models.Model):
         :param user: The res.user record for whom to synchronize events.
         """
         _logger.info(f"Polling CalDAV server for user {user.name}")
-        calendar = user._get_caldav_client().calendar(url=user.caldav_calendar_url)
+        calendar = user._get_caldav_calendar()
         events = calendar.events()
         synced_events = self.env["calendar.event"]
         for caldav_event in events:
@@ -1026,6 +1025,7 @@ class CalendarEvent(models.Model):
             "location": self._extract_component_text(component, "location"),
             "videocall_location": self._extract_component_text(component, "conference"),
             "caldav_uid": str(component.get("uid")),
+            "show_as": busy.transp_to_show_as(component.get("transp")),
             "partner_ids": [(6, 0, attendee_ids.ids)],
         }
 
