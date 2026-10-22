@@ -21,12 +21,16 @@ MR-1).  Acceptance criteria covered:
 5. The existing invoice-sourced path is unchanged (line_source='invoice').
 6. action_confirm guard: a CI with neither invoices nor pickings raises;
    one with pickings confirms.
+7. The form flow (consignee, Deliveries line source, add a delivery, save)
+   stores the PO numbers, also when the form saves carrier / ship date with
+   them, and when the SO's customer reference is set afterwards.
 """
 
 from datetime import datetime, timedelta
 
 from odoo import Command
 from odoo.exceptions import UserError
+from odoo.tests import Form
 from odoo.tests.common import TransactionCase, tagged
 from odoo.tools.misc import mute_logger
 
@@ -367,3 +371,40 @@ class TestCommercialInvoicePickings(TransactionCase):
         )
         ci.action_confirm()
         self.assertEqual(ci.state, "done")
+
+    def test_form_flow_stores_po_numbers(self):
+        """Saving the form must not leave po_numbers empty (CI with an
+        empty PO cell on a delivery whose SO has a customer reference)."""
+        so, pick = self._make_sale_with_picking("PO-FORM", self.product, 3, 10.0)
+        form = Form(self.env["commercial.invoice"])
+        form.partner_id = self.partner
+        form.line_source = "picking"
+        form.picking_ids.add(pick)
+        ci = form.save()
+        self.assertEqual(ci.po_numbers, "PO-FORM")
+
+        # Saved first, deliveries added afterwards.
+        form = Form(self.env["commercial.invoice"])
+        form.partner_id = self.partner
+        form.line_source = "picking"
+        ci = form.save()
+        with Form(ci) as form:
+            form.picking_ids.add(pick)
+        self.assertEqual(ci.po_numbers, "PO-FORM")
+
+        # The customer reference set on the SO after the CI exists.
+        so.client_order_ref = "PO-LATER"
+        self.assertEqual(ci.po_numbers, "PO-LATER")
+
+    def test_written_ship_date_keeps_po_numbers(self):
+        _so, pick = self._make_sale_with_picking("PO-SD", self.product, 3, 10.0)
+        ci = self.env["commercial.invoice"].create(
+            {
+                "partner_id": self.partner.id,
+                "line_source": "picking",
+                "picking_ids": [Command.set(pick.ids)],
+                "ship_date": "2026-09-25",
+            }
+        )
+        self.assertEqual(ci.po_numbers, "PO-SD")
+        self.assertEqual(str(ci.ship_date), "2026-09-25")
