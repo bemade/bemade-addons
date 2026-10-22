@@ -503,3 +503,98 @@ $sc-p3-laptop: 1024px;
         }
     }
 }
+
+// Task 1650: the header search sheet — full screen on a phone, the centred
+// sheet on a laptop; results grouped, archived / locked players greyed.
+.o_sc_app {
+    .o_sc_search_sheet[open] {
+        display: flex;
+        flex-direction: column;
+        max-height: 85vh;
+        max-height: 85dvh;
+
+        > .o_sc_sheet_head,
+        > .o_sc_search_box {
+            flex: none;
+        }
+
+        > .o_sc_search_body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .o_sc_search_sheet[open] {
+            height: 100vh;
+            height: 100dvh;
+            max-height: 100dvh;
+            margin: 0;
+            border-radius: 0;
+            padding-top: env(safe-area-inset-top, 0px);
+        }
+    }
+
+    .o_sc_search_box {
+        padding: var(--sc-space-3) var(--sc-space-4) 0;
+    }
+
+    .o_sc_search_group + .o_sc_search_group {
+        margin-top: var(--sc-space-3);
+    }
+
+    .o_sc_search_group_title {
+        margin: 0 0 var(--sc-space-1);
+        font-size: var(--sc-text-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--sc-fg-2);
+    }
+
+    .o_sc_search_list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .o_sc_search_row {
+        display: flex;
+        align-items: center;
+        gap: var(--sc-space-2);
+        border-bottom: 1px solid var(--sc-line);
+    }
+
+    .o_sc_search_link {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        column-gap: var(--sc-space-2);
+        min-height: var(--sc-tap);
+        padding: var(--sc-space-2) var(--sc-space-1);
+        color: var(--sc-fg);
+        text-decoration: none;
+        border-radius: var(--sc-radius-sm);
+    }
+
+    a.o_sc_search_link:hover,
+    .o_sc_search_active {
+        background: var(--sc-hover);
+        outline: 2px solid var(--sc-focus);
+        outline-offset: -2px;
+    }
+
+    .o_sc_search_locked .o_sc_search_link,
+    .o_sc_search_archived .o_sc_search_link {
+        color: var(--sc-fg-3);
+    }
+
+    .o_sc_search_add {
+        flex: none;
+    }
+}
+

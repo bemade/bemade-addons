@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.102.2",
+    'version': "19.0.1.103.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -229,6 +229,7 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         # switch) — components, layout, then the pages that t-call them.
         "views/sc_components.xml",
         "views/sc_app_layout.xml",
+        "views/sc_app_search.xml",
         "views/sc_app_pages.xml",
         "views/sc_app_account.xml",
         # Task 1542: team page, install page, offline page.
@@ -331,6 +332,8 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             # Task 1606: the user menu (rail footer / app-bar avatar).
             "bemade_sports_clinic/static/src/js/sc_user_menu.js",
             "bemade_sports_clinic/static/src/js/sc_list_header.js",
+            # Task 1650: the header search (magnifier, « / », Ctrl/⌘-K).
+            "bemade_sports_clinic/static/src/js/sc_search.js",
             # Task 1611: read fragments (in-place refresh after a save) and
             # the « back shows current data » check.
             "bemade_sports_clinic/static/src/js/sc_fragments.js",

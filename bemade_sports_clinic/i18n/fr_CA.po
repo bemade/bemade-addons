@@ -4131,6 +4131,7 @@ msgstr "Les cliniques sont réservées aux thérapeutes."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_sheet
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_security
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_sheet
 msgid "Close"
 msgstr "Fermer"
 
@@ -5787,6 +5788,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_breadcrumbs_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_list
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_home
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
 msgid "Events"
 msgstr "Événements"
 
@@ -9207,6 +9209,7 @@ msgstr "Joueur : %s\n"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_player_removal_line_list
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
 msgid "Players"
 msgstr "Joueurs"
 
@@ -10504,6 +10507,8 @@ msgstr "Filtre de portée"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_teams
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_timesheets
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_sheet
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
 msgid "Search"
 msgstr "Rechercher"
 
@@ -11452,6 +11457,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_role_mass_assign_line_tree
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
 msgid "Teams"
 msgstr "Équipes"
 
@@ -15501,6 +15507,7 @@ msgstr "Dans l'équipe"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
 msgid "Add to team"
 msgstr "Ajouter à l'équipe"
 
@@ -16169,3 +16176,23 @@ msgid ""
 msgstr ""
 "Le téléphone du joueur ou le cellulaire d'un contact d'urgence n'est pas un "
 "numéro de téléphone valide."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
+msgid "Archived player"
+msgstr "Joueur archivé"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
+msgid "No results"
+msgstr "Aucun résultat"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_sheet
+msgid "Players, teams, events…"
+msgstr "Joueurs, équipes, événements…"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
+msgid "Type at least 2 letters"
+msgstr "Tapez au moins 2 lettres"
