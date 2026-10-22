@@ -85,18 +85,6 @@
                             </a>
                         </t>
                     </nav>
-                    <!-- Task 1606: the user menu (Paramètres, Se déconnecter). -->
-                    <div class="o_sc_user_menu o_sc_user_menu_rail" data-sc-user-menu="rail">
-                        <button type="button" class="o_sc_rail_me" data-sc-user-menu-toggle="1"
-                                aria-haspopup="menu" aria-expanded="false" aria-controls="sc_user_menu_rail">
-                            <span class="o_sc_avatar" aria-hidden="true" t-out="sc_user_initials"/>
-                            <span class="o_sc_rail_me_name" t-out="sc_user_name"/>
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'up'"/></t>
-                        </button>
-                        <t t-call="bemade_sports_clinic.sc_user_menu_popup">
-                            <t t-set="sc_menu_id" t-value="'sc_user_menu_rail'"/>
-                        </t>
-                    </div>
                 </aside>
 
                 <div class="o_sc_main">
@@ -149,8 +137,10 @@
                            aria-label="Search for a player" title="Search for a player">
                             <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'search'"/></t>
                         </a>
-                        <!-- Task 1606: phone only (the rail footer holds it on a
-                             laptop) — the initials open the user menu. -->
+                        <!-- Task 1606: the initials open the user menu. Task 1638:
+                             the ONLY user menu, at every width — the top right
+                             of the bar, last (like the phone and the back end);
+                             the rail has no footer menu any more. -->
                         <div class="o_sc_user_menu o_sc_user_menu_bar" data-sc-user-menu="bar">
                             <t t-set="sc_user_menu_label">User menu</t>
                             <button type="button" class="o_sc_icon_btn o_sc_appbar_me" data-sc-user-menu-toggle="1"
@@ -250,8 +240,8 @@
         </t>
     </template>
 
-    <!-- Task 1606: the user menu's popup (one per trigger: rail footer on a
-         laptop, app-bar avatar on a phone). sc_app_ui.js opens / closes it
+    <!-- Task 1606: the user menu's popup (task 1638: one, under the app-bar
+         avatar, at every width). sc_app_ui.js opens / closes it
          (tap, Enter / Space, the arrow keys, Escape, an outside tap).
          ``sc_menu_id``: the id the trigger's aria-controls names. -->
     <template id="sc_user_menu_popup" name="App shell: user menu popup">

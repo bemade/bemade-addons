@@ -3,9 +3,9 @@ only.
 
 Acceptance criteria covered here:
 
-* UC-M1 Every shell page renders the user menu twice, one per width: the
-  laptop rail footer (name + initials) and an initials avatar in the phone
-  app bar. Each trigger is a ``button[aria-haspopup="menu"]`` controlling a
+* UC-M1 Every shell page renders the user menu ONCE (task 1638: the laptop
+  rail footer copy is gone): an initials avatar at the right end of the app
+  bar, at every width. The trigger is a ``button[aria-haspopup="menu"]`` controlling a
   hidden ``role="menu"`` popup that shows the user's name + role and two
   menu items: « Paramètres » (``/my/app/settings``) and « Se déconnecter »
   (the existing logout route). For a coach, a therapist and an internal
@@ -66,8 +66,9 @@ class UserMenuCommon(AppShellCommon):
         self.authenticate('um.itp@example.com', 'um-itp-1606')
 
     @staticmethod
-    def _menu(tree, where):
-        """(trigger button, menu) of the ``rail`` / ``bar`` user menu."""
+    def _menu(tree, where='bar'):
+        """(trigger button, menu) of the ``bar`` user menu (task 1638: the
+        only one; ``rail`` must find nothing)."""
         menu_id = 'sc_user_menu_%s' % where
         triggers = tree.xpath('//button[@aria-controls="%s"]' % menu_id)
         menus = tree.xpath('//*[@id="%s"]' % menu_id)
@@ -87,7 +88,13 @@ class TestUserMenu1606(UserMenuCommon):
             login()
             for url in ('/my/home', '/my/teams', '/my/app/more'):
                 _text, tree = self._get(url)
-                for where in ('rail', 'bar'):
+                # Task 1638: exactly one user menu in the DOM, none in the rail.
+                self.assertEqual(len(tree.xpath('//*[@data-sc-user-menu-popup]')), 1, url)
+                self.assertEqual(len(tree.xpath('//button[@data-sc-user-menu-toggle]')), 1, url)
+                self.assertFalse(tree.xpath('//aside[contains(@class, "o_sc_rail")]'
+                                            '//*[@data-sc-user-menu-toggle or @data-sc-user-menu]'))
+                self.assertEqual(self._menu(tree, 'rail'), (None, None))
+                for where in ('bar',):
                     trigger, menu = self._menu(tree, where)
                     self.assertIsNotNone(trigger, (user.name, url, where))
                     self.assertIsNotNone(menu, (user.name, url, where))
@@ -110,13 +117,8 @@ class TestUserMenu1606(UserMenuCommon):
                     self.assertEqual(menu.xpath('.//*[@data-sc-user-menu-head]/@aria-hidden'),
                                      [], 'the name must stay readable')
                     self.assertFalse(menu.xpath('.//*[@role="menu"]//*[@data-sc-user-menu-head]'))
-                # Rail footer: the name + the initials (the visible name is
-                # the accessible name); app bar: the initials + a label.
-                trigger, _menu = self._menu(tree, 'rail')
-                rail_text = ' '.join(trigger.text_content().split())
-                self.assertIn(user.name, rail_text)
-                self.assertIsNone(trigger.get('aria-label'))
-                self.assertTrue(trigger.xpath('ancestor::aside[contains(@class, "o_sc_rail")]'))
+                # App bar: the initials + a label (the name and role are
+                # in the opened menu's head, task 1638).
                 trigger, _menu = self._menu(tree, 'bar')
                 self.assertEqual(trigger.get('aria-label'), 'User menu')
                 self.assertTrue(trigger.xpath('ancestor::header[contains(@class, "o_sc_appbar")]'))
@@ -140,12 +142,11 @@ class TestUserMenu1606(UserMenuCommon):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/app/settings')
-        for where in ('rail', 'bar'):
-            trigger, menu = self._menu(tree, where)
-            item = menu.xpath('.//a[@href="/my/app/settings"]')[0]
-            self.assertEqual(item.get('aria-current'), 'page')
+        trigger, menu = self._menu(tree, 'bar')
+        item = menu.xpath('.//a[@href="/my/app/settings"]')[0]
+        self.assertEqual(item.get('aria-current'), 'page')
         _text, tree = self._get('/my/home')
-        _trigger, menu = self._menu(tree, 'rail')
+        _trigger, menu = self._menu(tree, 'bar')
         self.assertIsNone(menu.xpath('.//a[@href="/my/app/settings"]')[0].get('aria-current'))
 
     # -- UC-M2 -----------------------------------------------------------
@@ -273,7 +274,7 @@ class TestUserMenuFrench1606(UserMenuCommon):
             login()
             text = self._fr('/my/home')
             tree = lxml_html.fromstring(text)
-            for where in ('rail', 'bar'):
+            for where in ('bar',):
                 trigger, menu = self._menu(tree, where)
                 labels = [' '.join(i.text_content().split())
                           for i in menu.xpath('.//*[@role="menuitem"]')]
