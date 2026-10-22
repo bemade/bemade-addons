@@ -3467,6 +3467,7 @@ msgstr "Appliquer les filtres"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_quick_note_card
 msgid "Archive"
 msgstr "Archiver"
 
@@ -16196,3 +16197,27 @@ msgstr "Joueurs, équipes, événements…"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
 msgid "Type at least 2 letters"
 msgstr "Tapez au moins 2 lettres"
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_picker.js:0
+msgid "Cleared: not in the chosen team."
+msgstr "Effacé : pas dans l'équipe choisie."
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_picker.js:0
+msgid "Cleared: not one of the chosen player's injuries."
+msgstr "Effacé : pas une des blessures du joueur choisi."
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_picker.js:0
+msgid "Keep typing to narrow the list."
+msgstr "Continuez à taper pour réduire la liste."
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_picker.js:0
+msgid "Type to search…"
+msgstr "Tapez pour chercher…"

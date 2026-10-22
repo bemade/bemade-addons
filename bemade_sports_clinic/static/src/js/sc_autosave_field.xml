@@ -67,11 +67,20 @@
                       t-att-id="props.inputId" t-att-name="props.name" t-att-placeholder="props.placeholder"
                       t-att-required="props.required" t-att-disabled="props.disabled"
                       t-model="state.value" t-on-input="onInput" t-on-blur="commit"/>
+            <!-- Task 1648: ``picker`` = the type-to-filter picker (sc_picker.js)
+                 enhances the select; ``pickerKey`` (team / player / injury /
+                 event) and ``optionMeta`` ({value: {teams, player}}) drive
+                 the narrowing between link fields. -->
             <select t-elif="type === 'select'" t-ref="input" class="o_sc_input o_sc_select"
                     t-att-id="props.inputId" t-att-name="props.name" t-att-required="props.required"
+                    t-att-data-sc-picker="props.picker ? '1' : undefined"
+                    t-att-data-sc-picker-key="props.pickerKey"
                     t-att-disabled="props.disabled" t-model="state.value" t-on-change="onChange">
                 <t t-foreach="options" t-as="opt" t-key="opt_index">
-                    <option t-att-value="opt[0]" t-esc="opt[1]"/>
+                    <option t-att-value="opt[0]"
+                            t-att-data-sc-teams="props.optionMeta and props.optionMeta[opt[0]] and props.optionMeta[opt[0]].teams"
+                            t-att-data-sc-player="props.optionMeta and props.optionMeta[opt[0]] and props.optionMeta[opt[0]].player"
+                            t-esc="opt[1]"/>
                 </t>
             </select>
             <div t-elif="type === 'segmented'" t-ref="input" class="o_sc_segmented o_sc_segmented_full o_sc_seg_input"

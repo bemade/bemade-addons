@@ -935,6 +935,7 @@
             <div t-if="not upload_injury" class="o_sc_field">
                 <label t-att-for="'%s_injury' % upload_prefix" class="o_sc_field_label">Link to Injury (optional)</label>
                 <select t-att-id="'%s_injury' % upload_prefix" name="injury_id" class="o_sc_input o_sc_select"
+                        data-sc-picker="1" data-sc-picker-key="injury"
                         t-att-data-sc-fragment="upload_injury_fragment or None">
                     <option value="">-- None --</option>
                     <t t-foreach="upload_injury_choices or []" t-as="choice">
@@ -1317,6 +1318,7 @@
                 <div t-if="note_injury_choices" class="o_sc_field">
                     <label for="sc_note_injury" class="o_sc_field_label">Link to Injury (optional)</label>
                     <select id="sc_note_injury" name="injury_id" class="o_sc_input o_sc_select"
+                            data-sc-picker="1" data-sc-picker-key="injury"
                             t-att-data-sc-fragment="sc_fragment_key(note_patient, 'note-injury-choices')">
                         <option value="">-- General note --</option>
                         <t t-foreach="note_injury_choices" t-as="choice">

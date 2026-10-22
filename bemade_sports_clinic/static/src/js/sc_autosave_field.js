@@ -143,6 +143,10 @@ export class ScAutosaveField extends Component {
         // 4-digit year cap).
         min: { type: String, optional: true },
         max: { type: String, optional: true },
+        // Task 1648: the type-to-filter picker on a select (sc_picker.js).
+        picker: { type: Boolean, optional: true },
+        pickerKey: { type: String, optional: true },
+        optionMeta: { type: Object, optional: true },
         "*": true,
     };
 

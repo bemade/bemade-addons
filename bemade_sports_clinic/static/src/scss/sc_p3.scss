@@ -598,3 +598,72 @@ $sc-p3-laptop: 1024px;
     }
 }
 
+// Task 1648: the type-to-filter picker of the link fields (sc_picker.js) —
+// the select stays (hidden) as the form value; the list sits in the flow
+// under the box (a phone keyboard does not hide it).
+.o_sc_app {
+    select.o_sc_picker_native {
+        display: none;
+    }
+
+    .o_sc_picker {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-1);
+        min-width: 0;
+    }
+
+    .o_sc_picker_box {
+        position: relative;
+        display: flex;
+        align-items: center;
+
+        .o_sc_picker_input {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding-right: var(--sc-tap);
+        }
+
+        .o_sc_picker_clear {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+    }
+
+    .o_sc_picker_list {
+        list-style: none;
+        margin: 0;
+        padding: 4px;
+        max-height: 40vh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        background: var(--sc-surface);
+        border: 1px solid var(--sc-line);
+        border-radius: var(--sc-radius-sm);
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    .o_sc_picker_option {
+        min-height: var(--sc-tap);
+        display: flex;
+        align-items: center;
+        padding: 0 var(--sc-space-2);
+        border-radius: var(--sc-radius-sm);
+        cursor: pointer;
+
+        &:hover,
+        &.o_sc_picker_option_active {
+            background: var(--sc-hover);
+        }
+
+        &[aria-selected="true"] {
+            font-weight: 600;
+        }
+    }
+}
+

@@ -239,3 +239,4 @@ from . import test_phone_format_1645
 from . import test_add_panel_focus_tours_1646
 from . import test_tabs_fit_tours_1647
 from . import test_header_search_1650
+from . import test_link_pickers_1648

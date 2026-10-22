@@ -19,7 +19,8 @@ const TEXT_FIELD = [
     'input[type="number"]',
     'input[type="url"]',
 ]
-    .map((selector) => `${selector}:not([disabled]):not([readonly])`)
+    // Task 1648: a picker's search box is a picker, not a text field.
+    .map((selector) => `${selector}:not([disabled]):not([readonly]):not(.o_sc_picker_input)`)
     .join(", ");
 
 export function isCoarsePointer() {
