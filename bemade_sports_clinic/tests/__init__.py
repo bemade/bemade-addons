@@ -234,3 +234,4 @@ from . import test_date_year_cap_1640
 from . import test_resolve_refresh_tours_1641
 from . import test_edit_anchor_tours_1642
 from . import test_bars_pinned_tours_1643
+from . import test_upload_sheet_tours_1644

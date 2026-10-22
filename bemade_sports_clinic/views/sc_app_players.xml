@@ -677,19 +677,19 @@
             <!-- ============================= Documents =============================== -->
             <section class="o_sc_tab_panel" data-sc-tab-panel="documents" role="tabpanel"
                      t-att-hidden="None if sc_player_active_tab == 'documents' else 'hidden'">
-                <!-- Task 1607: opened by the list header's « + Ajouter ». -->
+                <!-- Task 1607: opened by the list header's « + Ajouter ».
+                     Task 1644: in a sheet, like the injury card's « Add
+                     documents » (pinned head and actions, busy state). -->
                 <t t-if="is_treatment_prof and sc_can('documents.upload')" t-call="bemade_sports_clinic.sc_list_header">
                     <t t-set="header_section" t-value="'documents.upload.header'"/>
                     <t t-set="add_label">Upload a document</t>
-                    <t t-set="add_panel" t-value="'sc_documents_upload'"/>
+                    <t t-set="add_sheet" t-value="'sc_documents_upload'"/>
                     <t t-set="add_key" t-value="'documents.upload'"/>
                 </t>
-                <details t-if="is_treatment_prof and sc_can('documents.upload')" class="o_sc_card o_sc_disclosure o_sc_list_add_panel"
-                         id="sc_documents_upload" data-sc-section="documents.upload">
-                    <summary class="o_sc_disclosure_summary">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'upload'"/></t>
-                        <span>Upload Document</span>
-                    </summary>
+                <t t-if="is_treatment_prof and sc_can('documents.upload')" t-call="bemade_sports_clinic.sc_sheet">
+                    <t t-set="sheet_id" t-value="'sc_documents_upload'"/>
+                    <t t-set="title">Upload Document</t>
+                    <t t-set="lazy_url" t-value="False"/>
                     <!-- Review fixes 2026-10-18 b: the injury card's picker. -->
                     <t t-call="bemade_sports_clinic.sc_document_upload_form">
                         <t t-set="upload_prefix" t-value="'sc_pdocs'"/>
@@ -700,9 +700,9 @@
                         <t t-set="upload_injury_fragment" t-value="sc_fragment_key(player, 'doc-injury-choices')"/>
                         <t t-set="upload_return_url" t-value="documents_tab_return"/>
                         <t t-set="upload_category_options" t-value="sc_document_category_options"/>
-                        <t t-set="upload_cancel" t-value="False"/>
+                        <t t-set="upload_cancel" t-value="True"/>
                     </t>
-                </details>
+                </t>
                 <div t-if="sc_document_rows" class="o_sc_list" data-sc-section="player.documents">
                     <t t-foreach="sc_document_rows" t-as="drow">
                         <t t-call="bemade_sports_clinic.sc_document_row">
@@ -910,14 +910,22 @@
             <input type="hidden" name="patient_id" t-att-value="upload_patient_id"/>
             <input t-if="upload_injury" type="hidden" name="injury_id" t-att-value="upload_injury.id"/>
             <input type="hidden" name="return_url" t-att-value="upload_return_url"/>
-            <div class="o_sc_field">
+            <!-- Task 1644: pinned head (the picker), a scrolling middle (the
+                 files, the injury link), pinned actions — in a sheet. On a
+                 phone / touch screen the drop zone is a plain « Add files »
+                 button (same input, same picker). -->
+            <div class="o_sc_field o_sc_doc_upload_head">
                 <label t-att-for="'%s_files' % upload_prefix" class="o_sc_field_label">Files</label>
                 <label class="o_sc_dropzone" data-sc-dropzone="1">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'upload'"/></t>
                     <span class="o_sc_dropzone_text">Choose files or drop them here</span>
+                    <span class="o_sc_dropzone_text_touch">Add files</span>
                     <input type="file" t-att-id="'%s_files' % upload_prefix" name="attachment"
                            class="o_sc_dropzone_input" multiple="multiple" required="required"/>
                 </label>
+            </div>
+            <div class="o_sc_doc_upload_scroll" data-sc-doc-scroll="1">
+            <div class="o_sc_field">
                 <ul class="o_sc_file_list" data-sc-file-list="1" hidden="hidden"/>
                 <small class="o_sc_hint">Several files at once — 10 MB maximum each</small>
                 <p class="o_sc_field_error" data-sc-file-error="1" role="alert" hidden="hidden">Files over 10 MB cannot be uploaded. Remove them to continue.</p>
@@ -974,10 +982,15 @@
                     <textarea name="doc_description" class="o_sc_input o_sc_textarea" rows="1" disabled="disabled"/>
                 </label>
             </div>
-            <div class="o_sc_form_actions">
+            </div>
+            <div class="o_sc_form_actions o_sc_doc_upload_actions">
                 <button t-if="upload_cancel" type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
-                <button type="submit" class="o_sc_btn o_sc_btn_primary"
-                        t-att-data-sc-action="'%s' % upload_form_key">Upload</button>
+                <!-- Task 1644: « Uploading… » while the files are sent. -->
+                <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-doc-submit="1"
+                        t-att-data-sc-action="'%s' % upload_form_key">
+                    <span class="o_sc_btn_idle">Upload</span>
+                    <span class="o_sc_btn_busy" hidden="hidden"><span class="o_sc_spinner" aria-hidden="true"/>Uploading…</span>
+                </button>
             </div>
         </form>
     </template>

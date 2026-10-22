@@ -12902,8 +12902,9 @@ msgstr "Date de téléversement"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 msgid "Upload Document"
-msgstr "Télécharger un document"
+msgstr "Téléverser un document"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
@@ -15780,8 +15781,21 @@ msgstr "<small class=\"o_sc_hint\">Plusieurs fichiers à la fois — 10 Mo maxim
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
-msgid "<span class=\"o_sc_dropzone_text\">Choose files or drop them here</span>"
-msgstr "<span class=\"o_sc_dropzone_text\">Choisissez des fichiers ou déposez-les ici</span>"
+msgid ""
+"<span class=\"o_sc_dropzone_text\">Choose files or drop them here</span>\n"
+"                    <span class=\"o_sc_dropzone_text_touch\">Add files</span>"
+msgstr ""
+"<span class=\"o_sc_dropzone_text\">Choisissez des fichiers ou déposez-les ici</span>\n"
+"                    <span class=\"o_sc_dropzone_text_touch\">Ajouter des fichiers</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
+msgid ""
+"<span class=\"o_sc_btn_idle\">Upload</span>\n"
+"                    <span class=\"o_sc_btn_busy\" hidden=\"hidden\"><span class=\"o_sc_spinner\" aria-hidden=\"true\"/>Uploading…</span>"
+msgstr ""
+"<span class=\"o_sc_btn_idle\">Téléverser</span>\n"
+"                    <span class=\"o_sc_btn_busy\" hidden=\"hidden\"><span class=\"o_sc_spinner\" aria-hidden=\"true\"/>Téléversement…</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card

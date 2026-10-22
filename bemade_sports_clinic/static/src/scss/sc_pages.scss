@@ -301,6 +301,14 @@ $sc-laptop: 992px;
         &::backdrop {
             background: rgba(0, 0, 0, 0.55);
         }
+
+        // Task 1644: with ``website`` installed, its ``section > *
+        // { position: relative }`` beat the browser's own « fixed » of an
+        // open modal sheet placed right under a <section> (the injury card's
+        // « Add documents »): the sheet scrolled away with the page.
+        &:modal {
+            position: fixed;
+        }
     }
 
     @media (min-width: $sc-laptop) {

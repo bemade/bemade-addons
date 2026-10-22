@@ -281,13 +281,20 @@ class TestListHeader1607(ListHeader1607Common):
             ('injuries', 'injury.new.header', 'sc_new_injury', 'Add Injury'),
             ('notes', 'notes.add.header', 'sc_note_add', 'Add Treatment Note'),
             ('activities', 'activity.add.header', 'sc_activity_add', 'Add Activity'),
-            ('documents', 'documents.upload.header', 'sc_documents_upload', 'Upload a document'),
         )
         for tab, section, panel_id, label in expected:
             panel = tree.xpath('//section[@data-sc-tab-panel="%s"]' % tab)[0]
             add, _details = self.assertPanelFollows(self._header(panel, section), panel_id)
             self.assertEqual(add.get('aria-label'), label, tab)
             self.assertEqual(add.get('aria-expanded'), 'false', tab)
+        # Task 1644: the Documents « + Ajouter » opens a sheet (like the
+        # injury card's « Add documents »), not an inline panel.
+        panel = tree.xpath('//section[@data-sc-tab-panel="documents"]')[0]
+        add = self._add(self._header(panel, 'documents.upload.header'))
+        self.assertEqual(add.get('data-sc-sheet-open'), 'sc_documents_upload')
+        self.assertEqual(add.get('aria-label'), 'Upload a document')
+        self.assertEqual(len(panel.xpath('.//dialog[@id="sc_documents_upload"]//form[@data-sc-doc-upload]')), 1)
+        self.assertFalse(tree.xpath('//details[@id="sc_documents_upload"]'))
         contacts = tree.xpath('//section[@data-sc-section="player.info.emergency_contacts"]')[0]
         add, _details = self.assertPanelFollows(self._header(contacts, 'contact.add.header'), 'sc_contact_add')
         self.assertEqual(add.get('aria-label'), 'Add Emergency Contact')
