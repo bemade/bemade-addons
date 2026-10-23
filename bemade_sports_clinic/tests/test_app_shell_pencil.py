@@ -45,7 +45,11 @@ from odoo.tools.misc import mute_logger
 
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
-ALWAYS_LIVE = {'sc_status', 'training_recommendation'}
+# Task 1603: « Retour prévu » is a live header field too (next to the training rec).
+# Task 1627: the play status is no autosave field any more — it is the
+# Match / Practice pill dropdowns, live outside the pencil by owner decision
+# (checked below: only in a ``status`` read fragment).
+ALWAYS_LIVE = {'training_recommendation', 'predicted_return_date'}
 
 
 @tagged('post_install', '-at_install')
@@ -92,16 +96,20 @@ class TestAppShellPencil(AppShellCommon):
         text, tree = self._get(self.injury_url)
         details, edit = self._card(tree, 'injury-details')
         names = {f['field'] for f in self._fields(edit)}
-        for name in ('diagnosis', 'sc_injury_date', 'stage', 'predicted_resolution_date',
-                     'resolution_date', 'parental_consent', 'hidden_from_coaches'):
+        for name in ('diagnosis', 'sc_injury_date', 'predicted_resolution_date', 'resolution_date'):
             self.assertIn(name, names)
+        # Task 1631: status, consent and visibility are pill dropdowns.
+        for name in ('stage', 'parental_consent', 'hidden_from_coaches'):
+            self.assertNotIn(name, names)
+            self.assertTrue(tree.xpath('//*[@data-sc-pill-select][@data-sc-field="%s"]' % name), name)
         notes, edit = self._card(tree, 'injury-notes')
         self.assertEqual({f['field'] for f in self._fields(edit)}, {'external_notes', 'internal_notes'})
         read = notes.xpath('.//*[@data-sc-edit-view="read"]')[0].text_content()
         self.assertIn('Synthetic ext', read)
         self.assertIn('Synthetic int', read)
-        self.assertTrue(notes.xpath('.//*[@data-sc-sheet-open="sc_note_history_sheet"]'
-                                    '[not(ancestor::*[@data-sc-edit-view="edit"])]'))
+        # Task 1616: the injury page is the open card (per-injury sheet ids).
+        self.assertTrue(notes.xpath('.//*[@data-sc-sheet-open="sc_note_history_sheet_%s"]'
+                                    '[not(ancestor::*[@data-sc-edit-view="edit"])]' % self.injury.id))
         self.assertNotIn('Saved as you go', text)
 
     # -- UC-PE2 ----------------------------------------------------------
@@ -272,6 +280,28 @@ class TestAppShellPencil(AppShellCommon):
                         continue
                     self.assertTrue(node.xpath('ancestor::*[@data-sc-edit-view="edit"]'),
                                     '%s: %s is live outside a pencil' % (url, props.get('field')))
+                # Task 1627: the deliberate always-live exception — the status
+                # pills, in the player's « status » read fragment only. Task
+                # 1631: and the injury card's pills — the status in its
+                # « summary », consent + visibility in its « flags ».
+                homes = {
+                    ('sports.patient', 'sc_status'): 'status',
+                    ('sports.patient.injury', 'stage'): 'summary',
+                    ('sports.patient.injury', 'parental_consent'): 'flags',
+                    ('sports.patient.injury', 'hidden_from_coaches'): 'flags',
+                }
+                # Task 1634: and the player cards' pills, in each card's
+                # « row-<scope> » read fragment.
+                card_homes = {('sports.patient', 'sc_status')}
+                for pill in tree.xpath('//*[@data-sc-pill-select]'):
+                    target = (pill.get('data-sc-model'), pill.get('data-sc-field'))
+                    home = homes.get(target)
+                    self.assertTrue(home, '%s: %s' % (url, pill.get('data-sc-field')))
+                    base = '%s:%s:' % (pill.get('data-sc-model'), pill.get('data-sc-record-id'))
+                    keys = pill.xpath('ancestor::*[@data-sc-fragment]/@data-sc-fragment')
+                    self.assertTrue(base + home in keys or (
+                        target in card_homes and any(k.startswith(base + 'row-') for k in keys)),
+                        '%s: %s' % (url, keys))
 
 
 @tagged('post_install', '-at_install')

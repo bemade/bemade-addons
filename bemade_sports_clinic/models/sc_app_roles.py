@@ -36,11 +36,23 @@ Registries
   feature gates (e.g. the bookings addon). Templates render
   ``visible_nav(roles, placement, ctx)`` and never branch on groups.
 * ``VISIBILITY_REGISTRY``: fields and page sections, asked from QWeb with
-  ``sc_can('patient.allergies')``. A key that names ``model`` + ``field`` is a
+  ``sc_can('patient.medical_alerts')``. A key that names ``model`` + ``field`` is a
   field key: whatever it hides from a role MUST already be unreadable for that
   role server-side (field ``groups=`` / ACL / record rule) — the tests assert
   it. **The registry decides what is SHOWN, never what is ALLOWED**; security
   stays in ACLs and record rules.
+
+System administrators (task 1598)
+---------------------------------
+``base.group_system`` is not a role (it maps to no shell entry on its own),
+but the legacy pages granted a system admin the therapist ACTIONS paired
+with an ``_is_tp_or_system()``-style server value (add a player directly,
+edit the announcement, remove a player…). A key flagged ``'system': True``
+is therefore also visible to a system admin (``can(..., is_system=True)``),
+whatever their roles — a coach who is also a system admin gets « Add »,
+not nothing. ``exclude`` still wins. Plain coaches are unaffected: the
+flag only ever widens for ``is_system``. Only flag ACTION keys whose
+template gate is a server value that is already True for a system admin.
 """
 from odoo.tools.translate import LazyTranslate
 
@@ -151,9 +163,16 @@ NAV_REGISTRY = (
 # ---------------------------------------------------------------------------
 VISIBILITY_REGISTRY = {
     # Field keys (model + field): hidden => server-side unreadable (tested).
-    'patient.dob': {'include': TP, 'model': 'sports.patient', 'field': 'date_of_birth'},
-    'patient.age': {'include': TP, 'model': 'sports.patient', 'field': 'age'},
-    'patient.allergies': {'include': TP, 'model': 'sports.patient', 'field': 'allergies'},
+    # Task 1633: coaches too (their teams' players — the coach record rule).
+    'patient.dob': {'include': STAFF, 'model': 'sports.patient', 'field': 'date_of_birth'},
+    'patient.age': {'include': STAFF, 'model': 'sports.patient', 'field': 'age'},
+    # Task 1630: the allergy / medical-alert pills — every staff role reads
+    # them (a coach: only the non-urgent / urgent ones, the template's rule;
+    # editing is the therapists' pencil, gated by ``is_treatment_prof``).
+    'patient.medical_alerts': {'include': STAFF, 'model': 'sports.patient', 'field': 'allergy_level'},
+    # « Other medical history » (the Infos tab): therapists only.
+    'patient.medical_history': {'include': TP, 'model': 'sports.patient',
+                                'field': 'medical_history_other'},
     'patient.internal_notes': {'include': TP, 'model': 'sports.patient',
                                'field': 'team_info_notes'},
     'patient.contacts': {'include': TP, 'model': 'sports.patient', 'field': 'contact_ids'},
@@ -171,11 +190,11 @@ VISIBILITY_REGISTRY = {
     #                             refuses users who may add directly)
     #   team.activities         + can_view_activities (mail.activity ACLs)
     #   team.pending_removals   + can_remove_on_team (_may_remove_from_team)
-    'team.announcement.edit': {'include': TP},
-    'team.add_player': {'include': TP},
+    'team.announcement.edit': {'include': TP, 'system': True},
+    'team.add_player': {'include': TP, 'system': True},
     'team.request_add': {'include': STAFF},
     'team.activities': {'include': STAFF},
-    'team.pending_removals': {'include': TP},
+    'team.pending_removals': {'include': TP, 'system': True},
     # Task 1539 (P2) — players, injuries, notes, documents, activities. Same
     # rule: each key is ALSO gated in the template by the controller's
     # existing server-side value (the legacy page's ``is_treatment_prof`` /
@@ -187,13 +206,15 @@ VISIBILITY_REGISTRY = {
     'players.add_to_team': {'include': TP},
     'patient.status.edit': {'include': TP},
     'patient.training.edit': {'include': TP},
+    # Task 1603: « Retour prévu » in the player header.
+    'patient.return.edit': {'include': TP},
     'patient.edit.tp_fields': {'include': TP},
     # Owner decision 2026-10-10: coaches see and edit emergency contacts too
     # (their ACL / record rules already allowed it; deleting stays TP).
     'patient.contacts.tab': {'include': STAFF},
     'patient.notes.tab': {'include': TP},
     'patient.activities.tab': {'include': STAFF},
-    'patient.remove': {'include': TP},
+    'patient.remove': {'include': TP, 'system': True},
     'patient.request_removal': {'include': STAFF},
     'injury.stage.edit': {'include': TP},
     'injury.visibility.edit': {'include': TP},
@@ -204,6 +225,8 @@ VISIBILITY_REGISTRY = {
     'documents.delete': {'include': TP},
     'notes.add': {'include': TP},
     'activities.reassign': {'include': STAFF},
+    # Task 1592 — the app bar's activity clock (+ its overdue count route).
+    'app.activity_clock': {'include': STAFF},
 }
 
 
@@ -227,7 +250,43 @@ def visible_nav(roles, placement, ctx=None):
     return sorted(entries, key=lambda entry: entry['sequence'])
 
 
-def can(key, roles):
+def can(key, roles, is_system=False):
     """``sc_can`` — may this role set SEE ``key``? Unknown keys raise (typos
-    must fail loudly, not silently hide a section)."""
-    return is_visible(VISIBILITY_REGISTRY[key], roles)
+    must fail loudly, not silently hide a section). ``is_system`` (the viewer
+    is in ``base.group_system``) also opens the keys flagged ``system``
+    (task 1598), unless one of the roles is excluded."""
+    spec = VISIBILITY_REGISTRY[key]
+    if is_system and spec.get('system'):
+        return not frozenset(roles or ()) & frozenset(spec.get('exclude') or ())
+    return is_visible(spec, roles)
+
+
+# ---------------------------------------------------------------------------
+# Role label (task 1606: the head of the user menu)
+# ---------------------------------------------------------------------------
+# Most significant first, per family: the menu shows the user's top
+# therapist-side role and top coach-side role (« Thérapeute · Entraîneur »
+# for a coach who is also a therapist). Reserved roles get a label when they
+# get a group.
+# Two parallel tuples (no string literal next to an _lt() call: babel's term
+# extractor would pick it up, see the placements above).
+_ROLE_LABEL_KEYS = ('clinic_admin', 'head_therapist', 'doctor', 'therapist',
+                    'head_coach', 'coach')
+_ROLE_LABEL_TERMS = (
+    _lt('Clinic administrator'), _lt('Head Therapist'), _lt('Doctor'), _lt('Therapist'),
+    _lt('Head Coach'), _lt('Coach'),
+)
+ROLE_LABELS = dict(zip(_ROLE_LABEL_KEYS, _ROLE_LABEL_TERMS))
+ROLE_LABEL_FAMILIES = (_ROLE_LABEL_KEYS[:4], _ROLE_LABEL_KEYS[4:])
+
+
+def role_label(roles):
+    """The role line of the user menu (translated), or '' for none."""
+    roles = frozenset(roles or ())
+    labels = []
+    for family in ROLE_LABEL_FAMILIES:
+        for role in family:
+            if role in roles:
+                labels.append(str(ROLE_LABELS[role]))
+                break
+    return ' · '.join(labels)

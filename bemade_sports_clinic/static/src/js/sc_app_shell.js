@@ -3,7 +3,7 @@
  *
  * Vanilla JS, progressive enhancement only (matches the other plain-JS
  * portal helpers of this module). The theme toggle in the app bar and the
- * « Plus › Apparence » controls are ordinary POST forms to /my/app/pref
+ * « Paramètres › Apparence » controls (task 1606; « Plus » before) are ordinary POST forms to /my/app/pref
  * (marked data-sc-pref) that redirect back — they work without this script.
  * With it, the post goes through fetch (JSON answer) and the theme switches
  * in place, no reload. (Task 1579 removed the navigation-mode setting.)

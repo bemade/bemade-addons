@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Reply templates are ordinary mail.template records scoped to
+         mail.conversation. This menu is only a window onto them; mail.template
+         itself is not touched. -->
+    <record id="mail_reply_template_view_form" model="ir.ui.view">
+        <field name="name">mail.template.view.form.reply.template</field>
+        <field name="model">mail.template</field>
+        <field name="mode">primary</field>
+        <field name="inherit_id" ref="mail.email_template_form" />
+        <field name="arch" type="xml">
+            <xpath
+        expr="//field[@name='model_id'][@groups='!base.group_no_one']"
+        position="attributes"
+      >
+                <attribute name="readonly">1</attribute>
+                <attribute name="force_save">1</attribute>
+            </xpath>
+            <xpath
+        expr="//field[@name='model_id'][@groups='base.group_no_one']"
+        position="attributes"
+      >
+                <attribute name="readonly">1</attribute>
+                <attribute name="force_save">1</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- A server action, not a window action: Odoo 19 does not check a window
+         action's groups when it is loaded by URL (/web/action/load), but it
+         refuses to run a server action for a user outside its groups. The
+         window action is built here, so no window action with an xmlid exists
+         for a non-administrator to open by URL. Its name and help come from
+         this record, so they follow the user's language. -->
+    <record id="mail_reply_template_server_action" model="ir.actions.server">
+        <field name="name">Reply templates</field>
+        <field name="model_id" ref="mail.model_mail_template" />
+        <field name="path">reply-templates</field>
+        <field name="state">code</field>
+        <field name="group_ids" eval="[(4, ref('base.group_system'))]" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first reply template
+            </p>
+            <p>
+                Reply templates pre-fill the subject, text and attachments of a
+                reply draft on a conversation.
+            </p>
+        </field>
+        <field name="code">
+this = env.ref("conversation_draft.mail_reply_template_server_action")
+action = {
+    "type": "ir.actions.act_window",
+    "name": this.name,
+    "res_model": "mail.template",
+    "views": [
+        (env.ref("mail.email_template_tree").id, "list"),
+        (env.ref("conversation_draft.mail_reply_template_view_form").id, "form"),
+    ],
+    "domain": [("model", "=", "mail.conversation")],
+    "context": {
+        "default_model_id": env.ref("conversation_base.model_mail_conversation").id,
+    },
+    "help": this.help,
+}
+        </field>
+    </record>
+
+    <menuitem
+    id="menu_mail_reply_template"
+    name="Reply templates"
+    parent="conversation_base.menu_mail_conversation_root"
+    action="mail_reply_template_server_action"
+    groups="base.group_system"
+    sequence="90"
+  />
+</odoo>

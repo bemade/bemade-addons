@@ -2,9 +2,9 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_patient_user,User Access for Patients,model_sports_patient,group_sports_clinic_user,1,1,1,0
 access_patient_treatment_pro,Treatment Professional Access for Patients,model_sports_patient,group_sports_clinic_treatment_professional,1,1,1,1
 access_patient_admin,Admin Access for Patients,model_sports_patient,group_sports_clinic_admin,1,1,1,1
-access_patient_portal,Portal Access for Patients,model_sports_patient,base.group_portal,1,1,1,0
+access_patient_portal,Portal Access for Patients,model_sports_patient,base.group_portal,1,0,0,0
+access_patient_portal_coach,Portal Coach Access for Patients,model_sports_patient,bemade_sports_clinic.group_portal_team_coach,1,1,1,0
 access_patient_portal_tp,Portal Treatment Professional Access for Patients,model_sports_patient,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
-access_treatment_note_portal_coach,Portal Coach Access for Treatment Notes,model_sports_treatment_note,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
 access_sports_event_user,User Access for Sports Events,model_sports_event,base.group_user,1,1,1,1
 access_sports_event_portal_treatment_professional,Portal Treatment Professional Access for Sports Events,model_sports_event,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
 access_sports_event_portal_team_coach,Portal Team Coach Access for Sports Events,model_sports_event,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
@@ -26,7 +26,7 @@ access_team_staff_portal,Portal Access for Team Staff,model_sports_team_staff,ba
 access_team_staff_admin,Admin Access for Team Staff,model_sports_team_staff,group_sports_clinic_admin,1,1,1,1
 access_treatment_note_user,User Access for Treatment Notes,model_sports_treatment_note,group_sports_clinic_user,1,0,0,0
 access_treatment_note_treatment_pro,Treatment Professional Access for Treatment Notes,model_sports_treatment_note,group_sports_clinic_treatment_professional,1,1,1,1
-access_treatment_note_portal,Portal Access for Treatment Notes,model_sports_treatment_note,base.group_portal,1,0,0,0
+access_treatment_note_portal_tp,Portal Treatment Professional Read Access for Treatment Notes,model_sports_treatment_note,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_treatment_note_admin,Admin Access for Treatment Notes,model_sports_treatment_note,group_sports_clinic_admin,1,1,1,1
 access_injury_document_user,User Access for Injury Documents,model_sports_injury_document,group_sports_clinic_user,1,1,1,1
 access_injury_document_treatment_pro,Treatment Professional Access for Injury Documents,model_sports_injury_document,group_sports_clinic_treatment_professional,1,1,1,1
@@ -123,3 +123,9 @@ access_team_org_staff_promote_wizard_line_admin2,Clinic Admin Access for Org Sta
 access_sports_staff_grant_user,User Access for Temporary Staff Access,model_sports_staff_grant,group_sports_clinic_user,1,1,1,1
 access_sports_staff_grant_admin,Admin Access for Temporary Staff Access,model_sports_staff_grant,group_sports_clinic_admin,1,1,1,1
 access_sports_clinic_kiosk_device_system,System Access for Clinic Kiosk Device,model_sports_clinic_kiosk_device,base.group_system,1,1,1,1
+access_training_history_user,User Access for Training Recommendation History,model_sports_patient_training_history,group_sports_clinic_user,1,0,0,0
+access_training_history_treatment_pro,Treatment Professional Access for Training Recommendation History,model_sports_patient_training_history,group_sports_clinic_treatment_professional,1,0,0,0
+access_training_history_admin,Admin Access for Training Recommendation History,model_sports_patient_training_history,group_sports_clinic_admin,1,0,0,0
+access_training_history_system,System Access for Training Recommendation History,model_sports_patient_training_history,base.group_system,1,1,1,1
+access_training_history_portal_tp,Portal Treatment Prof Access for Training Recommendation History,model_sports_patient_training_history,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
+access_training_history_portal_coach,Portal Coach Access for Training Recommendation History,model_sports_patient_training_history,bemade_sports_clinic.group_portal_team_coach,1,0,0,0

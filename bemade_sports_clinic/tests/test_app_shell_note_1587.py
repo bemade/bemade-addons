@@ -135,7 +135,9 @@ class TestAppShellNote1587(_Note1587Common):
         cards = tree.xpath('//*[@data-sc-edit-card="note-%s"]' % self.note.id)
         self.assertEqual(len(cards), 1, url)
         card = cards[0]
-        self.assertEqual(card.get('data-sc-edit-reload'), '1', url)
+        # Task 1611: no reload on « Done » — the meta line is a read fragment.
+        self.assertIsNone(card.get('data-sc-edit-reload'), url)
+        self.assertTrue(card.xpath('.//*[@data-sc-fragment="sports.treatment.note:%s:meta"]' % self.note.id), url)
         edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
         props = [json.loads(p) for p in edit.xpath(
             './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]

@@ -423,12 +423,18 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     # ------------------------------------------------------------------
     # Task 1542 — the team page in the app shell
     # ------------------------------------------------------------------
-    def _sc_player_row(self, player, team, stage_labels, with_position=True):
+    def _sc_player_row(self, player, team, stage_labels, with_position=True, extras=None):
         """One roster / dashboard row: « #12 Last, First », stage dot + chip,
-        position; links to the player page like the legacy card."""
+        position; links to the player page like the legacy card.
+        Task 1593: ``extras`` (``_sc_player_row_extras``, computed once for
+        the whole page) adds the legacy card's content — training
+        recommendation, « Retour prévu », the lazy expanded detail; no team
+        links on a team's own page (as legacy)."""
         stage = player.stage or 'healthy'
         position = player.position if with_position else False
-        return {
+        if extras is None:
+            extras = self._sc_player_row_extras(player, team_links=False, team=team)
+        return dict(extras[player.id], **{
             'id': player.id,
             'title': player._portal_list_name(),
             'subtitle': position or '',
@@ -436,8 +442,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'chip': stage_labels.get(stage, ''),
             'url': '/my/player?player_id=%s&team_id=%s' % (player.id, team.id),
             'pending_removal': bool(player.pending_removal),
-            'status': player._sc_row_status(),
-        }
+        })
 
     def _sc_add_player_search(self, team):
         """The inline « Add a player » search (owner review 2026-10-11): the
@@ -486,20 +491,33 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # nothing (owner review 2026-10-11) is not a change: such a red or
         # yellow player joins « Other players to watch » instead.
         changed = set(values.get('changed_player_ids') or ())
-        dashboard_rows = []
-        for player in values['dashboard_players'].filtered(lambda p: p.id in changed):
-            row = self._sc_player_row(player, team, stage_labels, show_position)
-            row['changed'] = True
-            dashboard_rows.append(row)
         quiet = values['dashboard_players'].filtered(
             lambda p: p.id not in changed and p.stage in ('no_play', 'practice_ok'))
+        watched = (team.dashboard_watchlist_patient_ids | quiet).sorted(
+            key=lambda p: (p.sort_order, p.last_name or '', p.first_name or ''))
+        # Task 1593: the rows' legacy-card content for every listed player
+        # at once (no per-row queries); no team links on the team's own page.
+        # Task 1634: the Match / Practice pills are quick-change dropdowns for
+        # a status editor (the cards' status line, in place).
+        extras = self._sc_player_row_extras(
+            values['dashboard_players'] | watched | values['players'],
+            team_links=False, team=team, status_edit=self._sc_status_editable())
+        dashboard_rows = []
+        for player in values['dashboard_players'].filtered(lambda p: p.id in changed):
+            row = self._sc_player_row(player, team, stage_labels, show_position, extras)
+            row['changed'] = True
+            # Task 1626: the card is a player row like the others; its
+            # « Details » loads the player's change detail, not the plain
+            # row detail.
+            row['detail_url'] = '/my/player/%s/recent-changes?detail=1&team_id=%s' % (
+                player.id, team.id)
+            dashboard_rows.append(row)
         watch_rows = [
-            self._sc_player_row(player, team, stage_labels, show_position)
-            for player in (team.dashboard_watchlist_patient_ids | quiet).sorted(
-                key=lambda p: (p.sort_order, p.last_name or '', p.first_name or ''))
+            self._sc_player_row(player, team, stage_labels, show_position, extras)
+            for player in watched
         ]
         roster_rows = [
-            self._sc_player_row(player, team, stage_labels)
+            self._sc_player_row(player, team, stage_labels, extras=extras)
             for player in values['players']
         ]
         tz = user.tz or env.context.get('tz')
@@ -528,12 +546,41 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 format_date(env, team.announcement_deadline)
                 if team.announcement_deadline else ''),
             'sc_team_url': '/my/team?team_id=%s' % team.id,
+            # Task 1635: the Activities tab counts what its panel lists.
+            'sc_team_activities_badge': self._sc_activity_tab_badge(values['team_activities']),
             'sc_window_label': env._("(last %(hours)s h)",
                                      hours=values.get('dashboard_window_hours')),
             'sc_pending_label': env._(
                 "%(count)s player(s) with a pending removal request.",
                 count=sum(1 for row in roster_rows if row['pending_removal'])),
         }
+
+    def _digest_for_viewer(self, team_id, digest_id):
+        """Access + role gate shared by the snapshot page and its body
+        fragment (tasks 1267, 1614): ``(team, digest, role)``.
+
+        Only a team staff member (or a treatment professional / admin) may read
+        a snapshot (non-member -> 403); a digest of another team -> 404
+        (``MissingError``). The role is resolved exactly as the live dashboard
+        does: a portal TP (or internal/admin) gets the TP view, everyone else the
+        coach view.
+        """
+        try:
+            # Visibility gate — same membership check as the live team page. A
+            # non-member raises AccessError, surfaced as a real 403.
+            team = self._check_team_access(team_id)
+        except AccessError:
+            raise Forbidden(
+                _("You don't have permission to view this team's digest."))
+        # sudo: the team gate above is the access rule; another team's digest
+        # is « not found », never an access error.
+        digest = request.env['sports.team.digest'].sudo().browse(int(digest_id)).exists()
+        if not digest or digest.team_id.id != team.id:
+            raise MissingError(_("This digest does not exist."))
+        is_treatment_prof = self._is_treatment_professional()
+        is_admin = request.env.user.has_group('base.group_system')
+        role = 'tp' if (is_treatment_prof or is_admin) else 'coach'
+        return team, digest, role
 
     @http.route(['/my/team/<int:team_id>/digest/<int:digest_id>'],
                 type='http', auth="user", website=True)
@@ -546,34 +593,19 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         professional / admin) may view it; anyone else gets a 403.
         """
         try:
-            # Visibility gate — same membership check as the live team page. A
-            # non-member raises AccessError, surfaced below as a real 403.
-            team = self._check_team_access(team_id)
+            team, digest, role = self._digest_for_viewer(team_id, digest_id)
         except MissingError:
             return request.not_found()
-        except AccessError:
-            raise Forbidden(
-                _("You don't have permission to view this team's digest."))
 
-        digest = request.env['sports.team.digest'].browse(int(digest_id)).exists()
-        if not digest or digest.team_id.id != team.id:
-            return request.not_found()
-
-        # Resolve the viewer's role exactly as the live dashboard does: a portal
-        # TP (or internal/admin) sees the TP view; everyone else the coach view.
-        is_treatment_prof = self._is_treatment_professional()
-        is_admin = request.env.user.has_group('base.group_system')
-        role = 'tp' if (is_treatment_prof or is_admin) else 'coach'
-
-        players = digest.sudo()._render_for_role(role)
+        players = digest._render_for_role(role)
         values = {
             'page_name': 'my_teams',
             'team': team,
-            'digest': digest.sudo(),
+            'digest': digest,
             'players': players,
             # Task 1270 (slice F): the frozen announcement rides in item_data;
             # it is all-staff content, so both roles see it.
-            'announcement': (digest.sudo().item_data or {}).get('announcement'),
+            'announcement': (digest.item_data or {}).get('announcement'),
             'default_url': f'/my/team?team_id={team.id}',
         }
         # Task 1540: the app shell (switch on) or today's template (off);
@@ -582,6 +614,29 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             values['sc_digest_date'] = format_date(request.env, digest.snapshot_date)
         return self._sc_render('bemade_sports_clinic.portal_team_digest',
                                'bemade_sports_clinic.sc_app_team_digest', values)
+
+    @http.route(['/my/team/<int:team_id>/digest/<int:digest_id>/body'],
+                type='http', auth="user", website=True)
+    def portal_team_digest_body(self, team_id, digest_id, **kw):
+        """Task 1614: one snapshot's body alone (no layout, never cached), the
+        lazy body of its date in the app's digest history. Same gate and same
+        role re-gated ``team_digest_render`` as the snapshot page."""
+        try:
+            _team, digest, role = self._digest_for_viewer(team_id, digest_id)
+        except MissingError:
+            return request.not_found()
+        values = {
+            'request': request,
+            'digest': digest,
+            'players': digest._render_for_role(role),
+            'announcement': (digest.item_data or {}).get('announcement'),
+        }
+        html = request.env['ir.ui.view']._render_template(
+            'bemade_sports_clinic.sc_digest_body', values)
+        return request.make_response(html, headers=[
+            ('Content-Type', 'text/html; charset=utf-8'),
+            ('Cache-Control', 'no-store'),
+        ])
 
     def _sanitize_local_back(self, back, team_id):
         """Open-redirect guard for the digest-history backlink (task 1389).
@@ -685,10 +740,17 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Task 1540: the full history on the app shell (the modal fragment
         # above — also the P1b sheet — is unchanged).
         if self._sc_app_shell_active():
+            # Task 1614: each date expands in place (lazy body) with its
+            # counts as the subtitle — a coach's re-gated (see _sc_counts).
+            role = ('tp' if (self._is_treatment_professional()
+                             or request.env.user.has_group('base.group_system'))
+                    else 'coach')
             values['sc_digest_rows'] = [{
                 'id': d.id,
                 'label': format_date(request.env, d.snapshot_date),
+                'subtitle': d._sc_counts_label(role),
                 'url': '/my/team/%d/digest/%d' % (team.id, d.id),
+                'body_url': '/my/team/%d/digest/%d/body' % (team.id, d.id),
             } for d in digests]
         return self._sc_render('bemade_sports_clinic.portal_team_digest_history',
                                'bemade_sports_clinic.sc_app_team_digest_history', values)
@@ -1070,8 +1132,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
             # Extra medical/status fields (only for TP/admin)
             if is_tp:
-                if 'allergies' in post:
-                    vals['allergies'] = post.get('allergies') or False
+                # Task 1630: the allergy / medical-alert block.
+                vals.update(request.env['sports.patient']._sc_medical_vals_from_post(post))
                 if 'team_info_notes' in post:
                     vals['team_info_notes'] = post.get('team_info_notes') or False
                 if post.get('match_status'):

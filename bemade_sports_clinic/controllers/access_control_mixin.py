@@ -20,8 +20,9 @@
 from odoo import http, _, fields
 from odoo.exceptions import UserError, AccessError, MissingError
 from odoo.http import request
+from odoo.tools import format_date
 
-from ..models import sc_app_nav
+from ..models import sc_app_nav, sc_app_roles
 from datetime import datetime, time
 import time as systime
 import logging
@@ -136,13 +137,27 @@ class AccessControlMixin:
         return fields.Datetime.to_string(utc_dt)
 
     def _apply_event_filters(self, domain, team_id=None, organization_id=None,
-                             assigned_user_id=None, date_from=None, date_to=None):
+                             assigned_user_id=None, date_from=None, date_to=None,
+                             event_type=None, search=None):
         """Append the portal list-style filter leaves (team / organization /
-        assigned professional / date range) to an events domain.
+        assigned professional / date range / event type / free-text search)
+        to an events domain.
 
         Shared by the list view and the calendar JSON feed so both honor an
-        identical set of filters. Mutates and returns ``domain``.
+        identical set of filters (task 1591 added ``event_type`` and
+        ``search``; ``event_type`` must already be a known selection key).
+        Mutates and returns ``domain``.
         """
+        if event_type:
+            domain.append(('event_type', '=', event_type))
+        if search:
+            domain.extend([
+                '|', '|', '|',
+                ('name', 'ilike', search),
+                ('description', 'ilike', search),
+                ('team_ids.name', 'ilike', search),
+                ('venue_id.name', 'ilike', search),
+            ])
         if team_id:
             domain.append(('team_ids', 'in', [int(team_id)]))
         if organization_id:
@@ -284,6 +299,300 @@ class AccessControlMixin:
             ('res_id', '=', activity.id),
         ])
         return attached | activity.sudo().attachment_ids
+
+    # Task 1595: the record(s) an activity row / detail links to. Kind →
+    # (portal URL pattern, sc_icon key).
+    _SC_ACTIVITY_RELATED_KINDS = {
+        'sports.patient': ('/my/player?player_id=%s', 'players'),
+        'sports.team': ('/my/team?team_id=%s', 'teams'),
+        'sports.event': ('/my/event/%s', 'calendar'),
+        'sports.patient.injury': ('/my/injury/edit?injury_id=%s', 'injury'),
+    }
+
+    def _sc_activity_record_link(self, record):
+        """``{'model', 'id', 'name', 'url', 'icon'}`` of ONE related record
+        (patient / team / event / injury) of an activity (task 1595).
+
+        ``url`` is False — and the name the activity's own ``res_name`` /
+        nothing — when the viewer may not open that record: the same gate
+        as the page the link leads to (``_check_access_to_*``) AND the
+        record rules (``has_access('read')``), so a row never links to a
+        403 nor reads a field the viewer may not see. Returns None for a
+        model the portal has no page for or a deleted record."""
+        model = record._name
+        if model not in self._SC_ACTIVITY_RELATED_KINDS or not record.exists():
+            return None
+        pattern, icon = self._SC_ACTIVITY_RELATED_KINDS[model]
+        checks = {
+            'sports.patient': self._check_access_to_patient,
+            'sports.team': self._check_team_access,
+            'sports.event': self._check_access_to_event,
+            'sports.patient.injury': self._check_access_to_injury,
+        }
+        try:
+            checks[model](record.id)
+            allowed = record.has_access('read')
+        except (AccessError, MissingError, UserError):
+            allowed = False
+        link = {'model': model, 'id': record.id, 'icon': icon, 'url': False, 'name': ''}
+        if not allowed:
+            return link
+        link['url'] = pattern % record.id
+        if model == 'sports.patient.injury' and self._sc_app_shell_active():
+            # Task 1616: the injury's open card (no injury page any more).
+            link['url'] = self._sc_injury_card_url(record)
+        if model == 'sports.patient':
+            link['name'] = record._portal_list_name(with_jersey=False)
+        elif model == 'sports.patient.injury':
+            link['name'] = record.diagnosis or record.display_name
+        else:
+            link['name'] = record.display_name
+        return link
+
+    def _sc_activity_related(self, activity):
+        """The links of ``activity``'s related records for its row and
+        detail (task 1595): the record it is scheduled on (player / team /
+        event, or a legacy injury), then the injury it is ABOUT (task 1409's
+        technical ``injury_id``) when there is one. Each entry follows
+        ``_sc_activity_record_link``; a record the viewer may not open comes
+        with ``url`` False and the activity's ``res_name`` as its label
+        (already visible to whoever sees the activity), never a link.
+        sudo(): only to read the activity's own target ids — every label
+        and link is gated per record above."""
+        act = activity.sudo()
+        links = []
+        if act.res_model and act.res_id and act.res_model in self._SC_ACTIVITY_RELATED_KINDS:
+            link = self._sc_activity_record_link(request.env[act.res_model].browse(act.res_id))
+            if link:
+                if not link['url']:
+                    link['name'] = act.res_name or ''
+                if link['name']:
+                    links.append(link)
+        if act.injury_id and not (act.res_model == 'sports.patient.injury'
+                                  and act.res_id == act.injury_id.id):
+            link = self._sc_activity_record_link(request.env['sports.patient.injury'].browse(act.injury_id.id))
+            # An injury the viewer may not open is not named at all (its
+            # diagnosis is medical data; the summary prefix already says
+            # what the activity is about to those allowed to read it).
+            if link and link['url']:
+                links.append(link)
+        return links
+
+    @staticmethod
+    def _sc_title_find(title, name):
+        """Case-insensitive position of ``name`` in ``title`` (-1 if absent)."""
+        if not name:
+            return -1
+        lowered = title.lower()
+        if len(lowered) != len(title):
+            return title.find(name)
+        return lowered.find(name.lower())
+
+    def _sc_activity_title_parts(self, title, links):
+        """Owner review 2026-10-14: an activity row's title split so the
+        related record's name in it is a link to that record — ``[{text[,
+        url, model]}]`` segments, the first (earliest, then longest) name of
+        an ALLOWED link of ``links`` (``_sc_activity_related``: a record the
+        viewer may not open has no url and stays plain text). The names
+        looked for: the link's label and the record's own name / display
+        name (« One, Pat » or « Pat One »). One plain segment when no name
+        shows in the title."""
+        title = title or ''
+        best = None
+        for link in links or ():
+            if not link.get('url') or not link.get('model') or not link.get('id'):
+                continue
+            # sudo: names only, of a record the link gate already allowed.
+            record = request.env[link['model']].sudo().browse(link['id'])
+            names = {link.get('name') or ''}
+            if 'name' in record._fields:
+                names.add(record.name or '')
+            names.add(record.display_name or '')
+            for name in sorted({n.strip() for n in names if n and n.strip()}, key=len, reverse=True):
+                pos = self._sc_title_find(title, name)
+                if pos < 0:
+                    continue
+                if best is None or (pos, -len(name)) < (best[0], -best[1]):
+                    best = (pos, len(name), link)
+                break
+        if best is None:
+            return [{'text': title}]
+        pos, length, link = best
+        parts = [{'text': title[:pos]}] if pos else []
+        parts.append({'text': title[pos:pos + length], 'url': link['url'], 'model': link['model']})
+        if title[pos + length:]:
+            parts.append({'text': title[pos + length:]})
+        return parts
+
+    # ------------------------------------------------------------------
+    # Task 1593 — player rows carry the legacy card's content
+    # ------------------------------------------------------------------
+    def _sc_team_links(self, teams):
+        """``{team_id: link}`` for ``teams`` (sc_row_links dicts: name, url,
+        icon, model). ``url`` is False — the name stays plain text — when the
+        viewer may not open the team page: ``_check_team_access``'s rule
+        (staff, clinic administrator, or the historical portal-TP branch)
+        AND the record rules (one search for the whole set), so a link never
+        leads to a refusal. sudo() reads the names only."""
+        env = request.env
+        teams = teams.sudo()
+        if not teams:
+            return {}
+        readable = set(env['sports.team'].search([('id', 'in', teams.ids)]).ids)
+        user = env.user
+        if not (self._is_clinic_admin()
+                or user.has_group('bemade_sports_clinic.group_portal_treatment_professional')):
+            readable &= set(user.partner_id.team_staff_rel_ids.mapped('team_id').ids)
+        return {team.id: {
+            'name': team.name or '',
+            'url': '/my/team?team_id=%s' % team.id if team.id in readable else False,
+            'icon': 'teams',
+            'model': 'sports.team',
+        } for team in teams}
+
+    def _sc_status_editable(self):
+        """Task 1634: may the viewer change Match / Practice from a player
+        card? The player page's rule (#1627): a treatment professional (or
+        clinic administrator) holding ``patient.status.edit``; the save
+        route re-checks."""
+        user = request.env.user
+        if not (self._is_treatment_professional() or self._is_clinic_admin()):
+            return False
+        return sc_app_roles.can('patient.status.edit', user._sc_app_roles(),
+                                is_system=user.has_group('base.group_system'))
+
+    def _sc_player_row_extras(self, players, team_links=True, team=None, status_edit=False,
+                              labels=None):
+        """The legacy card's content for each row of ``players`` (task 1593),
+        ``{player_id: {...}}`` — computed for the whole list at once (the
+        teams, their names and the readable set in a few queries, never per
+        row):
+
+        * ``training``: the training recommendation on one line (the row
+          truncates it; the expanded detail shows it whole);
+        * ``injured`` / ``return_label``: « Retour prévu » for an injured
+          player — the date, or « — » when unset (the legacy hint);
+        * ``team_links``: the player's teams as links (``_sc_team_links``),
+          empty when ``team_links`` is False (a team's own page, as legacy);
+        * ``detail_url``: the lazy expanded detail (``row-detail`` route),
+          with the team context when given.
+
+        Task 1592: ``clock`` — the activity clock chip (``_sc_activity_clocks``,
+        ONE grouped query for the whole list), opening the player page's
+        Activities tab (with the team context when given); None at 0.
+
+        Task 1634: ``status`` — the Match / Practice / injuries line
+        (``_sc_row_status``) and, when ``status_edit`` (the viewer may change
+        them, ``_sc_status_editable``), ``pills`` — the quick-change
+        dropdowns (``_sc_status_pills``); the selection labels are computed
+        ONCE for the whole list (or given: ``labels``).
+
+        Task 1630 (review round 1): ``status['medical']`` — the RED
+        allergy / medical-alert pills of the card
+        (``sports.patient._sc_card_medical_pills``: ONE batched read as the
+        viewer, nothing when the viewer may not read the fields)."""
+        env = request.env
+        labels = labels or env['sports.patient']._sc_status_labels()
+        links = self._sc_team_links(players.sudo().team_ids) if team_links else {}
+        team_qs = '&team_id=%s' % team.id if team else ''
+        clocks = self._sc_activity_clocks(
+            players, lambda p: '/my/player?player_id=%s%s&tab=activities' % (p.id, team_qs))
+        medical = players._sc_card_medical_pills()
+        extras = {}
+        for player in players:
+            injured = (player.stage or 'healthy') != 'healthy'
+            text = ' '.join((player.training_recommendation or '').split())
+            return_label = False
+            if injured:
+                return_label = (format_date(env, player.predicted_return_date)
+                                if player.predicted_return_date else '—')
+            detail_url = '/my/player/%s/row-detail' % player.id
+            if team:
+                detail_url += '?team_id=%s' % team.id
+            extras[player.id] = {
+                'training': text,
+                'injured': injured,
+                'return_label': return_label,
+                'team_links': [links[t.id] for t in player.sudo().team_ids if t.id in links],
+                'detail_url': detail_url,
+                'clock': clocks.get(player.id),
+                'status': dict(player._sc_row_status(labels), medical=medical.get(player.id, [])),
+                'pills': player._sc_status_pills(labels) if status_edit else None,
+            }
+        return extras
+
+    # ------------------------------------------------------------------
+    # Task 1592 — the activity clock on player / team / event rows and
+    # injury cards
+    # ------------------------------------------------------------------
+    def _sc_activity_clocks(self, records, url):
+        """``{record_id: clock}`` for the clock chip (``sc_activity_clock``)
+        of every row of a list — the activities ASSIGNED TO THE VIEWER on
+        each record (an injury: the patient-scoped activities about it, task
+        1409's ``injury_id``) and how many of them are overdue, in ONE
+        grouped query for the whole list (never a per-row ``search_count``;
+        ``sports.team.activity_count`` is per record).
+
+        ``clock``: ``{'count', 'overdue', 'url', 'label'}``; ``url`` (from
+        ``url(record)``) is the record's own activities section. A record
+        with none is absent: the chip is hidden at 0.
+
+        sudo(): the domain is restricted to the viewer's OWN assignments on
+        records the caller already lists (and may open); mail.activity's
+        per-document access check would add a query per model."""
+        if not records:
+            return {}
+        env = request.env
+        if records._name == 'sports.patient.injury':
+            key = 'injury_id'
+            domain = [('injury_id', 'in', records.ids)]
+        else:
+            key = 'res_id'
+            domain = [('res_model', '=', records._name), ('res_id', 'in', records.ids)]
+        domain.append(('user_id', '=', env.uid))
+        today = fields.Date.context_today(env.user)
+        counts = {}
+        for target, deadline, count in env['mail.activity'].sudo()._read_group(
+                domain, [key, 'date_deadline:day'], ['__count']):
+            target_id = target.id if key == 'injury_id' else target
+            total, overdue = counts.get(target_id, (0, 0))
+            late = count if deadline and fields.Date.to_date(deadline) < today else 0
+            counts[target_id] = (total + count, overdue + late)
+        clocks = {}
+        for record in records:
+            total, overdue = counts.get(record.id, (0, 0))
+            if not total:
+                continue
+            label = (env._("My activities: %(count)s (%(overdue)s overdue)",
+                           count=total, overdue=overdue)
+                     if overdue else env._("My activities: %(count)s", count=total))
+            clocks[record.id] = {
+                'count': total,
+                'overdue': overdue,
+                'url': url(record),
+                'label': label,
+            }
+        return clocks
+
+    @staticmethod
+    def _sc_activity_tab_badge(activities):
+        """Task 1635 — the Activities tab's count pill (``sc_page_tabs``'
+        optional 5th tuple item): ``{'count', 'tone', 'label'}``, or None at
+        0. ``activities`` is the recordset the tab itself lists — searched
+        as the viewer, so the record rules make the count per viewer (no
+        second, rule-bypassing query). Red when one of them is overdue
+        (deadline before today in the viewer's timezone)."""
+        count = len(activities)
+        if not count:
+            return None
+        env = request.env
+        today = fields.Date.context_today(env.user)
+        overdue = len(activities.filtered(
+            lambda a: a.date_deadline and a.date_deadline < today))
+        label = (env._("%(count)s open activities, %(overdue)s overdue",
+                       count=count, overdue=overdue)
+                 if overdue else env._("%(count)s open activities", count=count))
+        return {'count': count, 'tone': 'red' if overdue else 'neutral', 'label': label}
 
     @classmethod
     def _activity_scope_teams(cls):
@@ -597,7 +906,7 @@ class AccessControlMixin:
     @staticmethod
     def _is_treatment_professional():
         """Portal OR internal treatment professional (task 1411) — exactly the
-        groups the TP-only patient fields (team_info_notes, allergies) are
+        groups the TP-only patient fields (team_info_notes, medical_history_other) are
         restricted to, so a template guarded by this never reads a field the
         user may not see."""
         user = request.env.user

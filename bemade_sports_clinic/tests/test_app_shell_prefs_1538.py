@@ -10,9 +10,10 @@ Acceptance criteria covered here:
   CALLER's own record: another field → 400, a bad value → 400, another user's
   record → 403, nothing written in either case. A JSON caller gets JSON; a
   plain form post is redirected back (no-JS path).
-* UC-P3 (AC4) « Plus » (``/my/app/more``) lists the role-scoped app entries
-  and the stock portal links (account, security, the classic portal home
-  with every other app's documents, logout) so nothing becomes unreachable.
+* UC-P3 (AC4) « Plus » (``/my/app/more``) lists the role-scoped app entries;
+  the stock portal links (account, security, the classic portal home with
+  every other app's documents) live on « Paramètres » (``/my/app/settings``,
+  task 1606) and logout in the user menu, so nothing becomes unreachable.
 """
 from lxml import html as lxml_html
 
@@ -42,6 +43,7 @@ class TestAppShellPrefs1538(AppShellCommon):
 
     # -- UC-P2 -----------------------------------------------------------
     def test_pref_route_sets_own_prefs_json(self):
+        self._theme_choice(True)  # task 1602: else the answer is the forced dark
         self._login_coach()
         resp = self._post_pref({'sc_theme': 'light'})
         self.assertEqual(resp.status_code, 200)
@@ -103,14 +105,22 @@ class TestAppShellPrefs1538(AppShellCommon):
 
     def test_more_lists_stock_portal_links(self):
         self._switch(True)
+        self._theme_choice(True)  # task 1602: the Appearance block needs it
         for login in (self._login_coach, self._login_tp):
             login()
-            tree = self._more()
+            self.assertIn('/my/events', set(self._more().xpath('//main//a/@href')))
+            # Task 1606: the stock links moved to « Paramètres », logout to
+            # the user menu (in the layout, outside <main>).
+            resp = self.url_open('/my/app/settings')
+            self.assertEqual(resp.status_code, 200)
+            tree = lxml_html.fromstring(resp.text)
             hrefs = set(tree.xpath('//main//a/@href'))
-            for href in ('/my/account', '/my/security', '/my/home?classic=1',
-                         '/my/events'):
+            for href in ('/my/account', '/my/security'):
                 self.assertIn(href, hrefs)
-            self.assertTrue([h for h in hrefs if h.startswith('/web/session/logout')])
+            # Review fixes 2026-10-18: no classic-portal link on Settings.
+            self.assertNotIn('/my/home?classic=1', hrefs)
+            menu = set(tree.xpath('//*[@data-sc-user-menu-popup]//a/@href'))
+            self.assertTrue([h for h in menu if h.startswith('/web/session/logout')])
             # Appearance control; no navigation setting (task 1579).
             self.assertTrue(tree.xpath('//form[@data-sc-pref]//*[@name="sc_theme"]'))
             self.assertFalse(tree.xpath('//*[@name="sc_nav_mode"]'))

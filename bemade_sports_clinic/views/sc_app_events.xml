@@ -8,8 +8,9 @@
     Every form posts to the SAME route and field names as today's pages
     (CSRF token in each, task 1540 made those routes check it). The calendar
     is the shared sc_calendar component (FullCalendar from the
-    web.fullcalendar_lib bundle, never a raw <script src>), fed by the
-    unchanged /my/events/calendar/data. Form behaviours (team / staff CSV,
+    web.fullcalendar_lib bundle, never a raw <script src>), fed by
+    /my/events/calendar/data. Task 1591: the list and the calendar share one
+    filter bar (sc_event_filter_bar), the filters carried in the URL. Form behaviours (team / staff CSV,
     venue creation through scFetch) live in static/src/js/sc_events.js.
     No inline script / style.
 -->
@@ -22,71 +23,80 @@
         </t>
     </template>
 
-    <!-- /my/events (shell) -->
-    <template id="sc_app_events" name="Sports Clinic App: events">
-        <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="sc_nav_labels['events']"/>
-            <t t-set="sc_active_nav" t-value="'events'"/>
-            <t t-if="can_edit">
-                <t t-set="sc_create_label">New event</t>
-                <t t-set="sc_primary_action" t-value="{'url': '/my/event/create', 'label': sc_create_label, 'key': 'events.create'}"/>
+    <!--
+        Task 1591: the events filter bar, shared by the list and the calendar
+        (type chips, view chips, the filter panel). Variables:
+        sc_event_chips, sc_event_views, sc_event_view, sc_event_type,
+        sc_event_filter_action (the GET target), sc_event_filter_reset,
+        sc_event_filter_list (the list's dates / sort / group by and its
+        segment parameters), sc_event_filters_open, sc_events_back_url, plus
+        the current filter values (organization_id, team_id, …).
+    -->
+    <template id="sc_event_filter_bar" name="App shell: events filter bar">
+        <div class="o_sc_chips" data-sc-section="events.types">
+            <t t-foreach="sc_event_chips" t-as="chip">
+                <a t-att-href="chip[2]" t-attf-class="o_sc_chip #{'o_sc_chip_mauve' if chip[3] else 'o_sc_chip_ghost'}"
+                   t-att-aria-pressed="'true' if chip[3] else 'false'" t-att-data-sc-event-type="chip[0] or 'all'" t-out="chip[1]"/>
             </t>
-            <t t-call="bemade_sports_clinic.sc_event_segments">
-                <t t-set="active" t-value="sc_event_segment"/>
+        </div>
+        <!-- Owner review 2026-10-11: the legacy portal's views and
+             filters are back (the legacy route does the filtering). -->
+        <div class="o_sc_chips" data-sc-section="events.views">
+            <t t-foreach="sc_event_views" t-as="view">
+                <a t-att-href="view[2]" t-attf-class="o_sc_chip #{'o_sc_chip_mauve' if view[3] else 'o_sc_chip_ghost'}"
+                   t-att-aria-pressed="'true' if view[3] else 'false'" t-att-data-sc-view="view[0]" t-out="view[1]"/>
             </t>
-            <div class="o_sc_chips" data-sc-section="events.types">
-                <t t-foreach="sc_event_chips" t-as="chip">
-                    <a t-att-href="chip[2]" t-attf-class="o_sc_chip #{'o_sc_chip_mauve' if chip[3] else 'o_sc_chip_ghost'}"
-                       t-att-aria-pressed="'true' if chip[3] else 'false'" t-att-data-sc-event-type="chip[0] or 'all'" t-out="chip[1]"/>
-                </t>
-            </div>
-            <!-- Owner review 2026-10-11: the legacy portal's views and
-                 filters are back (the legacy route does the filtering). -->
-            <div class="o_sc_chips" data-sc-section="events.views">
-                <t t-foreach="sc_event_views" t-as="view">
-                    <a t-att-href="view[2]" t-attf-class="o_sc_chip #{'o_sc_chip_mauve' if view[3] else 'o_sc_chip_ghost'}"
-                       t-att-aria-pressed="'true' if view[3] else 'false'" t-att-data-sc-view="view[0]" t-out="view[1]"/>
-                </t>
-            </div>
-            <form method="get" action="/my/events" class="o_sc_filters" data-sc-section="events.filters">
-                <input type="hidden" name="view_type" t-att-value="sc_event_view"/>
-                <input type="hidden" name="event_type" t-att-value="sc_event_type"/>
-                <input t-if="sc_event_segment == 'past'" type="hidden" name="segment" value="past"/>
-                <input t-if="no_default_dates" type="hidden" name="no_default_dates" value="1"/>
-                <input t-if="sc_events_back_url" type="hidden" name="return_url" t-att-value="sc_events_back_url"/>
-                <details class="o_sc_disclosure" t-att-open="'open' if sc_event_filters_open else None">
-                    <summary class="o_sc_disclosure_summary">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
-                        <span>Filters</span>
-                    </summary>
-                    <div class="o_sc_filter_grid">
-                        <div class="o_sc_field">
-                            <label for="sc_ev_org" class="o_sc_field_label">Organization</label>
-                            <select id="sc_ev_org" name="organization_id" class="o_sc_input o_sc_select">
-                                <option value="">All organizations</option>
-                                <t t-foreach="organizations" t-as="org_opt">
-                                    <option t-att-value="org_opt.id" t-att-selected="'selected' if organization_id == org_opt.id else None" t-out="org_opt.name"/>
-                                </t>
-                            </select>
-                        </div>
-                        <div class="o_sc_field">
-                            <label for="sc_ev_team" class="o_sc_field_label">Team</label>
-                            <select id="sc_ev_team" name="team_id" class="o_sc_input o_sc_select">
-                                <option value="">All teams</option>
-                                <t t-foreach="teams" t-as="team_opt">
-                                    <option t-att-value="team_opt.id" t-att-selected="'selected' if team_id == team_opt.id else None" t-out="team_opt.name"/>
-                                </t>
-                            </select>
-                        </div>
-                        <div class="o_sc_field">
-                            <label for="sc_ev_staff" class="o_sc_field_label">Assigned professional</label>
-                            <select id="sc_ev_staff" name="assigned_user_id" class="o_sc_input o_sc_select">
-                                <option value="">All assigned professionals</option>
-                                <t t-foreach="treatment_professionals" t-as="tp_opt">
-                                    <option t-att-value="tp_opt.id" t-att-selected="'selected' if assigned_user_id == tp_opt.id else None" t-out="tp_opt.name"/>
-                                </t>
-                            </select>
-                        </div>
+        </div>
+        <!-- Owner review 2026-10-14: the filters apply as soon as they change
+             (sc_forms.js, data-sc-autosubmit; a date once complete); without
+             JS, the « Apply filters » button stays. Sort / group by are not
+             filters: their own labelled group. -->
+        <form method="get" t-att-action="sc_event_filter_action" class="o_sc_filters" data-sc-section="events.filters"
+              data-sc-autosubmit="1">
+            <input type="hidden" name="view_type" t-att-value="sc_event_view"/>
+            <input type="hidden" name="event_type" t-att-value="sc_event_type"/>
+            <input t-if="search" type="hidden" name="search" t-att-value="search"/>
+            <input t-if="sc_event_filter_list and sc_event_segment == 'past'" type="hidden" name="segment" value="past"/>
+            <input t-if="sc_event_filter_list and no_default_dates" type="hidden" name="no_default_dates" value="1"/>
+            <input t-if="sc_events_back_url" type="hidden" name="return_url" t-att-value="sc_events_back_url"/>
+            <!-- Task 1607: the sort chosen in the list header survives a filter change. -->
+            <input t-if="sc_event_filter_list and sortby" type="hidden" name="sortby" t-att-value="sortby"/>
+            <details class="o_sc_disclosure" t-att-open="'open' if sc_event_filters_open else None">
+                <summary class="o_sc_disclosure_summary">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
+                    <span>Filters</span>
+                </summary>
+                <div class="o_sc_filter_grid">
+                    <div class="o_sc_field">
+                        <label for="sc_ev_org" class="o_sc_field_label">Organization</label>
+                        <select id="sc_ev_org" name="organization_id" class="o_sc_input o_sc_select">
+                            <option value="">All organizations</option>
+                            <t t-foreach="organizations" t-as="org_opt">
+                                <option t-att-value="org_opt.id" t-att-selected="'selected' if organization_id == org_opt.id else None" t-out="org_opt.name"/>
+                            </t>
+                        </select>
+                    </div>
+                    <div class="o_sc_field">
+                        <label for="sc_ev_team" class="o_sc_field_label">Team</label>
+                        <select id="sc_ev_team" name="team_id" class="o_sc_input o_sc_select">
+                            <option value="">All teams</option>
+                            <t t-foreach="teams" t-as="team_opt">
+                                <option t-att-value="team_opt.id" t-att-selected="'selected' if team_id == team_opt.id else None" t-out="team_opt.name"/>
+                            </t>
+                        </select>
+                    </div>
+                    <div class="o_sc_field">
+                        <label for="sc_ev_staff" class="o_sc_field_label">Assigned professional</label>
+                        <select id="sc_ev_staff" name="assigned_user_id" class="o_sc_input o_sc_select">
+                            <option value="">All assigned professionals</option>
+                            <t t-foreach="treatment_professionals" t-as="tp_opt">
+                                <option t-att-value="tp_opt.id" t-att-selected="'selected' if assigned_user_id == tp_opt.id else None" t-out="tp_opt.name"/>
+                            </t>
+                        </select>
+                    </div>
+                    <!-- Task 1591: the calendar navigates by its own range and
+                         has no sort / grouping — list-only fields. -->
+                    <t t-if="sc_event_filter_list">
                         <div class="o_sc_field">
                             <label for="sc_ev_from" class="o_sc_field_label">From</label>
                             <input type="date" id="sc_ev_from" name="date_from" class="o_sc_input" t-att-value="date_from or ''"/>
@@ -95,16 +105,17 @@
                             <label for="sc_ev_to" class="o_sc_field_label">To</label>
                             <input type="date" id="sc_ev_to" name="date_to" class="o_sc_input" t-att-value="date_to or ''"/>
                         </div>
-                        <div class="o_sc_field">
-                            <label for="sc_ev_sort" class="o_sc_field_label">Sort by</label>
-                            <select id="sc_ev_sort" name="sortby" class="o_sc_input o_sc_select">
-                                <option value="date" t-att-selected="'selected' if (not sortby or sortby == 'date') else None">Date (asc)</option>
-                                <option value="date_desc" t-att-selected="'selected' if sortby == 'date_desc' else None">Date (desc)</option>
-                                <option value="name" t-att-selected="'selected' if sortby == 'name' else None">Name</option>
-                                <option value="team" t-att-selected="'selected' if sortby == 'team' else None">Team</option>
-                                <option value="assigned" t-att-selected="'selected' if sortby == 'assigned' else None">Assigned</option>
-                            </select>
-                        </div>
+                    </t>
+                    <label class="o_sc_check">
+                        <input type="checkbox" name="show_cancelled" value="1" t-att-checked="'checked' if show_cancelled else None"/>
+                        <span>Show cancelled events</span>
+                    </label>
+                </div>
+                <!-- Task 1607: the sort is in the list header (sc_list_header);
+                     the group by stays here, in its own labelled group. -->
+                <fieldset t-if="sc_event_filter_list" class="o_sc_filter_group" data-sc-section="events.group">
+                    <legend class="o_sc_filter_group_title">Group by</legend>
+                    <div class="o_sc_filter_grid">
                         <div class="o_sc_field">
                             <label for="sc_ev_group" class="o_sc_field_label">Group by</label>
                             <select id="sc_ev_group" name="group_by" class="o_sc_input o_sc_select">
@@ -115,17 +126,44 @@
                                 <option value="therapist" t-att-selected="'selected' if group_by == 'therapist' else None">Therapist</option>
                             </select>
                         </div>
-                        <label class="o_sc_check">
-                            <input type="checkbox" name="show_cancelled" value="1" t-att-checked="'checked' if show_cancelled else None"/>
-                            <span>Show cancelled events</span>
-                        </label>
                     </div>
-                    <div class="o_sc_form_actions">
-                        <a href="/my/events?view_type=all&amp;no_default_dates=1" class="o_sc_btn o_sc_btn_ghost">Reset</a>
-                        <button type="submit" class="o_sc_btn o_sc_btn_primary">Apply filters</button>
-                    </div>
-                </details>
-            </form>
+                </fieldset>
+                <div class="o_sc_form_actions">
+                    <a t-att-href="sc_event_filter_reset" class="o_sc_btn o_sc_btn_ghost">Reset</a>
+                    <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-autosubmit-fallback="1">Apply filters</button>
+                </div>
+            </details>
+        </form>
+    </template>
+
+    <!-- /my/events (shell) -->
+    <template id="sc_app_events" name="Sports Clinic App: events">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title" t-value="sc_nav_labels['events']"/>
+            <t t-set="sc_active_nav" t-value="'events'"/>
+            <t t-call="bemade_sports_clinic.sc_event_segments">
+                <t t-set="active" t-value="sc_event_segment"/>
+            </t>
+            <t t-call="bemade_sports_clinic.sc_event_filter_bar"/>
+            <!-- Task 1607: « + Ajouter » (a new event, on the list's
+                 organization filter — task 1597) and the sort, above the list. -->
+            <t t-call="bemade_sports_clinic.sc_list_header">
+                <t t-set="header_section" t-value="'events.header'"/>
+                <t t-if="can_edit">
+                    <t t-set="add_label">New event</t>
+                    <t t-set="add_url" t-value="('/my/event/create?organization_id=%s' % organization_id) if organization_id else '/my/event/create'"/>
+                    <t t-set="add_key" t-value="'events.create'"/>
+                </t>
+                <t t-set="sc_sort_date">Date (asc)</t>
+                <t t-set="sc_sort_date_desc">Date (desc)</t>
+                <t t-set="sc_sort_name">Name</t>
+                <t t-set="sc_sort_team">Team</t>
+                <t t-set="sc_sort_assigned">Assigned</t>
+                <t t-set="sorts" t-value="sc_sort_options('sortby', [('date', sc_sort_date), ('date_desc', sc_sort_date_desc), ('name', sc_sort_name), ('team', sc_sort_team), ('assigned', sc_sort_assigned)], sortby or 'date')"/>
+                <t t-set="sort_id" t-value="'sc_events_sort'"/>
+                <t t-set="sort_label">Sort events</t>
+                <t t-set="sort_section" t-value="'events.sort'"/>
+            </t>
             <div t-if="sc_event_groups" class="o_sc_list" data-sc-section="events.list">
                 <section t-foreach="sc_event_groups" t-as="group" class="o_sc_group" t-att-data-sc-group="group['key']">
                     <h3 class="o_sc_group_title" t-out="group['label']"/>
@@ -150,12 +188,17 @@
 
     <!-- One event row of the list (variable: row). -->
     <template id="sc_event_list_row" name="App shell: event list row">
-        <t t-call="bemade_sports_clinic.sc_entity_row">
+        <!-- Task 1592: a link row (sc_link_row) so the activity clock chip
+             is its own link; data-sc-event-id on the main link. -->
+        <t t-call="bemade_sports_clinic.sc_link_row">
             <t t-set="href" t-value="row['url']"/>
             <t t-set="lead_icon" t-value="'calendar'"/>
             <t t-set="title" t-value="row['title']"/>
             <t t-set="subtitle" t-value="row['subtitle']"/>
-            <t t-set="row_attrs" t-value="{'data-sc-event-id': row['id']}"/>
+            <t t-set="main_attrs" t-value="{'data-sc-event-id': row['id']}"/>
+            <t t-call="bemade_sports_clinic.sc_activity_clock">
+                <t t-set="clock" t-value="row.get('clock')"/>
+            </t>
             <span t-if="row['cancelled']" class="o_sc_chip o_sc_chip_red">Cancelled</span>
             <span t-elif="row['kind']" class="o_sc_chip o_sc_chip_ghost" t-out="row['kind']"/>
         </t>
@@ -181,6 +224,17 @@
             <t t-call="bemade_sports_clinic.sc_event_segments">
                 <t t-set="active" t-value="'calendar'"/>
             </t>
+            <t t-call="bemade_sports_clinic.sc_event_filter_bar"/>
+            <!-- Task 1607: « + Ajouter » above the calendar (no sort: the
+                 calendar orders by time). -->
+            <t t-call="bemade_sports_clinic.sc_list_header">
+                <t t-set="header_section" t-value="'events.header'"/>
+                <t t-if="can_edit">
+                    <t t-set="add_label">New event</t>
+                    <t t-set="add_url" t-value="('/my/event/create?organization_id=%s' % organization_id) if organization_id else '/my/event/create'"/>
+                    <t t-set="add_key" t-value="'events.create'"/>
+                </t>
+            </t>
             <t t-call="bemade_sports_clinic.sc_calendar">
                 <t t-set="props" t-value="sc_calendar_props"/>
             </t>
@@ -194,11 +248,13 @@
     <template id="sc_timesheet_card" name="App shell: timesheet card">
         <!-- Owner review 2026-10-11: the pencil edit paradigm — an own,
              not-yet-invoiced timesheet is edited in place (was a sheet). -->
+        <!-- Task 1611: the head and the read lines are read fragments (a save
+             refreshes the « when », the lines and their totals in place). -->
         <article t-attf-class="o_sc_card o_sc_timesheet #{'o_sc_edit_card' if row['editable'] else ''}" t-att-data-sc-timesheet-id="row['id']"
                  t-att-data-sc-state="row['state']" t-att-data-sc-edit-card="('timesheet-%s' % row['id']) if row['editable'] else None"
-                 data-sc-edit-reload="1">
+                 t-att-data-sc-fragment-item="sc_fragment_key(row['record'], 'card')">
             <div class="o_sc_card_head">
-                <div>
+                <div t-att-data-sc-fragment="sc_fragment_key(row['record'], 'head')">
                     <a t-if="show_event" t-att-href="row['event_url']" class="o_sc_row_title" t-out="row['title']"/>
                     <strong t-else="" t-out="row['when']"/>
                     <p class="o_sc_meta">
@@ -218,7 +274,7 @@
                     </t>
                 </span>
             </div>
-            <dl class="o_sc_kv" data-sc-edit-view="read">
+            <dl class="o_sc_kv" data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(row['record'], 'read')">
                 <t t-foreach="row['lines']" t-as="line">
                     <dt t-out="line[0]"/>
                     <dd t-out="line[1]"/>
@@ -285,7 +341,8 @@
 
     <!-- « New venue » sheet (event form, and the event page's pencil card —
          venue_event set: the new venue is saved on that event, owner review
-         2026-10-11). -->
+         2026-10-11; task 1612: in the same request as the venue, over the
+         event's write date and venue the page last saw). -->
     <template id="sc_venue_sheet" name="App shell: new venue sheet">
         <t t-call="bemade_sports_clinic.sc_sheet">
             <t t-set="sheet_id" t-value="'sc_venue_sheet'"/>
@@ -293,7 +350,8 @@
             <t t-set="lazy_url" t-value="False"/>
             <form action="/my/venue/create" method="post" class="o_sc_form" data-sc-venue-form="1"
               t-att-data-sc-venue-event="venue_event.id if venue_event else None"
-              t-att-data-sc-venue-event-venue="(venue_event.sudo().venue_id.id or '') if venue_event else None">
+              t-att-data-sc-venue-event-venue="(venue_event.sudo().venue_id.id or '') if venue_event else None"
+              t-att-data-sc-venue-event-write-date="venue_event.sudo().write_date.strftime('%Y-%m-%d %H:%M:%S') if venue_event and venue_event.sudo().write_date else None">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <div class="o_sc_field">
                     <label class="o_sc_field_label" for="sc_venue_name">Venue Name</label>
@@ -324,20 +382,20 @@
     <template id="sc_app_event" name="Sports Clinic App: event">
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-set="sc_title" t-value="event.name"/>
+            <!-- Task 1611: a save of the event refreshes the title, the crumb
+                 and the timesheets section's « + Ajouter » (assigned staff,
+                 task 1607: in the section's list header) in place. -->
+            <t t-set="sc_page_key" t-value="'sports.event:%s' % event.id"/>
             <t t-set="sc_active_nav" t-value="'events'"/>
-            <t t-if="can_add_timesheet">
-                <t t-set="sc_ts_label">Add My Timesheet</t>
-                <t t-set="sc_primary_action" t-value="{'sheet': 'sc_ts_add_sheet', 'label': sc_ts_label, 'key': 'timesheet.add', 'icon': 'timesheet'}"/>
-            </t>
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
 
             <!-- Owner review 2026-10-11: the pencil edit paradigm — a therapist
                  edits the event in place (was a separate edit page). -->
             <t t-set="sc_event_editable" t-value="bool(can_edit and sc_event_edit_options)"/>
             <section t-attf-class="o_sc_card o_sc_hero #{'o_sc_edit_card' if sc_event_editable else ''}" data-sc-section="event.hero"
-                     t-att-data-sc-edit-card="'event' if sc_event_editable else None" data-sc-edit-reload="1">
+                     t-att-data-sc-edit-card="'event' if sc_event_editable else None">
                 <div class="o_sc_edit_card_head">
-                    <span class="o_sc_chips">
+                    <span class="o_sc_chips" t-att-data-sc-fragment="sc_fragment_key(event, 'chips')">
                         <span class="o_sc_chip o_sc_chip_ghost" t-out="sc_event_kind"/>
                         <span t-attf-class="o_sc_chip #{'o_sc_chip_red' if event_sudo.state == 'cancelled' else 'o_sc_chip_ghost'}" t-out="sc_event_state"/>
                     </span>
@@ -349,7 +407,7 @@
                         </button>
                     </t>
                 </div>
-                <div data-sc-edit-view="read">
+                <div data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(event, 'read')">
                 <dl class="o_sc_kv">
                     <dt>When</dt><dd t-out="sc_event_when or '—'"/>
                     <t t-if="sc_event_therapist_when"><dt>Therapist</dt><dd t-out="sc_event_therapist_when"/></t>
@@ -420,31 +478,55 @@
                 <t t-set="venue_event" t-value="event"/>
             </t>
 
-            <section t-if="can_view_timesheets" class="o_sc_section" data-sc-section="event.timesheets">
+            <!-- Task 1607: « + Ajouter » (« Add My Timesheet ») is the list
+                 header right above the timesheets. The section is there for a
+                 therapist who can edit the event too, its title / header
+                 being read fragments: assigning yourself shows them in place
+                 (it takes no room while every holder is empty). -->
+            <section t-if="can_view_timesheets or sc_event_editable" class="o_sc_section o_sc_event_timesheets"
+                     data-sc-section="event.timesheets">
                 <!-- Task 1584: admins see every therapist's rows — a neutral
                      title; a therapist sees their own. -->
-                <t t-call="bemade_sports_clinic.sc_section_header">
-                    <t t-if="show_all_timesheets" t-set="title">Timesheets</t>
-                    <t t-else="" t-set="title">My Timesheets</t>
-                </t>
-                <t t-call="bemade_sports_clinic.sc_banner" t-if="missing_count and show_all_timesheets">
-                    <t t-set="tone" t-value="'warn'"/>
-                    <span data-sc-missing-timesheets="1"><strong>Missing timesheets:</strong> <t t-out="missing_names"/></span>
-                </t>
-                <div t-if="sc_timesheet_rows" class="o_sc_list">
+                <div t-att-data-sc-fragment="sc_fragment_key(event, 'ts-title')"><t t-if="can_view_timesheets">
+                    <t t-call="bemade_sports_clinic.sc_section_header">
+                        <t t-if="show_all_timesheets" t-set="title">Timesheets</t>
+                        <t t-else="" t-set="title">My Timesheets</t>
+                    </t>
+                </t></div>
+                <div t-att-data-sc-fragment="sc_fragment_key(event, 'missing')"><t t-if="missing_count and show_all_timesheets">
+                    <t t-call="bemade_sports_clinic.sc_banner">
+                        <t t-set="tone" t-value="'warn'"/>
+                        <span data-sc-missing-timesheets="1"><strong>Missing timesheets:</strong> <t t-out="missing_names"/></span>
+                    </t>
+                </t></div>
+                <div t-att-data-sc-fragment="sc_fragment_key(event, 'ts-head')"><t t-if="can_view_timesheets">
+                    <t t-call="bemade_sports_clinic.sc_list_header">
+                        <t t-set="header_section" t-value="'event.timesheets.header'"/>
+                        <t t-if="can_add_timesheet">
+                            <t t-set="add_label">Add My Timesheet</t>
+                            <t t-set="add_sheet" t-value="'sc_ts_add_sheet'"/>
+                            <t t-set="add_key" t-value="'timesheet.add'"/>
+                        </t>
+                    </t>
+                    <t t-if="not sc_timesheet_rows" t-call="bemade_sports_clinic.sc_empty_state">
+                        <t t-set="message">No timesheets yet.</t>
+                    </t>
+                </t></div>
+                <div t-if="sc_timesheet_rows" class="o_sc_list"
+                     t-att-data-sc-fragment="sc_fragment_key(event, 'timesheets')" data-sc-fragment-mode="list">
                     <t t-foreach="sc_timesheet_rows" t-as="row">
                         <t t-call="bemade_sports_clinic.sc_timesheet_card"/>
                     </t>
                 </div>
-                <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
-                    <t t-set="message">No timesheets yet.</t>
-                </t>
                 <t t-call="bemade_sports_clinic.sc_timesheet_sheets">
                     <t t-set="rows" t-value="sc_timesheet_rows"/>
                     <t t-set="return_url" t-value="event_return_url"/>
                 </t>
             </section>
 
+            <!-- Task 1611: with the list header's « Add My Timesheet », a read
+                 fragment (assigning yourself to the event offers it at once). -->
+            <div t-att-data-sc-fragment="sc_fragment_key(event, 'ts-add')">
             <t t-if="can_add_timesheet" t-call="bemade_sports_clinic.sc_sheet">
                 <t t-set="sheet_id" t-value="'sc_ts_add_sheet'"/>
                 <t t-set="title">Add My Timesheet</t>
@@ -466,6 +548,7 @@
                     </div>
                 </form>
             </t>
+            </div>
 
             <t t-if="sc_can_cancel" t-call="bemade_sports_clinic.sc_sheet">
                 <t t-set="sheet_id" t-value="'sc_event_cancel_sheet'"/>
@@ -499,12 +582,15 @@
             <t t-set="sc_active_nav" t-value="'events'"/>
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
 
-            <form t-att-action="sc_form['action']" method="post" class="o_sc_form" data-sc-form="event.form" data-sc-event-form="1">
+            <form t-att-action="sc_form['action']" method="post" class="o_sc_form" data-sc-form="event.form" data-sc-event-form="1"
+                  t-att-data-sc-event-form-mode="sc_form_mode">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="return_url" t-att-value="sc_form['return_url']"/>
                 <input type="hidden" name="description_format" value="text"/>
-                <input type="hidden" name="team_ids" t-att-value="','.join(str(i) for i in sc_form['team_ids'])" data-sc-csv-of="sc_team"/>
-                <input type="hidden" name="assigned_staff_ids" t-att-value="','.join(str(i) for i in sc_form['staff_ids'])" data-sc-csv-of="sc_staff"/>
+                <!-- Task 1608: the submit contract (CSV ids), filled by the
+                     teams / staff multi-selects below (form-mode tags fields). -->
+                <input type="hidden" id="sc_event_team_ids" name="team_ids" t-att-value="sc_form['team_csv']"/>
+                <input type="hidden" id="sc_event_staff_ids" name="assigned_staff_ids" t-att-value="sc_form['staff_csv']"/>
                 <section class="o_sc_card o_sc_fields" data-sc-section="event.form.main">
                     <div class="o_sc_field">
                         <label class="o_sc_field_label" for="sc_event_name">Event Name</label>
@@ -543,7 +629,11 @@
                     </div>
                     <div class="o_sc_field">
                         <label class="o_sc_field_label" for="sc_event_date_end">Event End</label>
-                        <input type="datetime-local" id="sc_event_date_end" name="date_end" class="o_sc_input" required="required" t-att-value="sc_form['date_end']"/>
+                        <input type="datetime-local" id="sc_event_date_end" name="date_end" class="o_sc_input" required="required" t-att-value="sc_form['date_end']"
+                               t-att-aria-invalid="'true' if sc_form['field_errors'].get('date_end') else None"
+                               t-att-aria-describedby="'sc_event_date_end_error' if sc_form['field_errors'].get('date_end') else None"/>
+                        <div t-if="sc_form['field_errors'].get('date_end')" id="sc_event_date_end_error" class="o_sc_field_message o_sc_field_error"
+                             role="alert" t-att-data-sc-field-error="'date_end'" t-out="sc_form['field_errors']['date_end']"/>
                     </div>
                     <div class="o_sc_field">
                         <label class="o_sc_field_label" for="sc_event_therapist_start">Therapist Start</label>
@@ -551,34 +641,43 @@
                     </div>
                     <div class="o_sc_field">
                         <label class="o_sc_field_label" for="sc_event_therapist_end">Therapist End</label>
-                        <input type="datetime-local" id="sc_event_therapist_end" name="therapist_end" class="o_sc_input" t-att-value="sc_form['therapist_end']"/>
+                        <input type="datetime-local" id="sc_event_therapist_end" name="therapist_end" class="o_sc_input" t-att-value="sc_form['therapist_end']"
+                               t-att-aria-invalid="'true' if sc_form['field_errors'].get('therapist_end') else None"
+                               t-att-aria-describedby="'sc_event_therapist_end_error' if sc_form['field_errors'].get('therapist_end') else None"/>
+                        <div t-if="sc_form['field_errors'].get('therapist_end')" id="sc_event_therapist_end_error" class="o_sc_field_message o_sc_field_error"
+                             role="alert" t-att-data-sc-field-error="'therapist_end'" t-out="sc_form['field_errors']['therapist_end']"/>
                     </div>
                 </section>
                 <section class="o_sc_card o_sc_fields" data-sc-section="event.form.teams">
-                    <h2 class="o_sc_section_header"><span>Teams</span></h2>
-                    <t t-foreach="teams" t-as="team">
-                        <label class="o_sc_check">
-                            <input type="checkbox" name="sc_team" t-att-value="team.id"
-                                   t-att-checked="'checked' if team.id in sc_form['team_ids'] else None"/>
-                            <span t-out="team.name"/>
-                        </label>
-                    </t>
+                    <!-- Task 1597: picking an organization narrows the teams
+                         to its own and drops the others (the tags field's
+                         groupSelect); the model refuses the teams of two
+                         organizations. -->
+                    <div t-if="organizations" class="o_sc_field">
+                        <label class="o_sc_field_label" for="sc_event_org">Organization</label>
+                        <select id="sc_event_org" name="organization_id" class="o_sc_input o_sc_select" data-sc-org-select="1">
+                            <option value="">All organizations</option>
+                            <t t-foreach="organizations" t-as="org">
+                                <option t-att-value="org.id" t-att-selected="'selected' if org.id == sc_form['organization_id'] else None" t-out="org.name"/>
+                            </t>
+                        </select>
+                    </div>
+                    <!-- Task 1608: a compact multi-select — focusing it lists
+                         every team (grouped by organization), typing narrows. -->
+                    <div data-sc-event-pick="teams">
+                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_form['team_props']"/></t>
+                    </div>
                 </section>
                 <section class="o_sc_card o_sc_fields" data-sc-section="event.form.staff">
-                    <h2 class="o_sc_section_header"><span>Assigned Staff</span></h2>
-                    <t t-foreach="treatment_professionals" t-as="tp">
-                        <label class="o_sc_check">
-                            <input type="checkbox" name="sc_staff" t-att-value="tp.id"
-                                   t-att-checked="'checked' if tp.id in sc_form['staff_ids'] else None"/>
-                            <span t-out="tp.name"/>
-                        </label>
-                    </t>
+                    <div data-sc-event-pick="staff">
+                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_form['staff_props']"/></t>
+                    </div>
                 </section>
                 <div class="o_sc_form_actions">
                     <a t-att-href="sc_form['cancel_url']" class="o_sc_btn o_sc_btn_ghost">Cancel</a>
                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="event.save">
                         <t t-if="sc_form_mode == 'edit'">Save Changes</t>
-                        <t t-else="">Create Event</t>
+                        <t t-else="">Create</t>
                     </button>
                 </div>
             </form>

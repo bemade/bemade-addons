@@ -1,0 +1,457 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1620 — « Mon compte » (/my/account) and « Sécurité » (/my/security)
+    in the app shell (controllers/app_shell_account.py). Rendered with the
+    CORE values of portal.portal_my_details / portal.portal_my_security; the
+    core JS keeps working because its hooks are kept:
+
+    Mon compte: .o_customer_address_fill > #errors + form.address_autoformat
+      (data-submit-url → the core /my/address/submit, its validation and
+      error JSON; review fixes 2026-10-18 b / 1018c: posted on each
+      field change by sc_account.js, no #save_address), each input in its own box with its label
+      (the core address JS shows / hides / reorders the box: zip and city
+      are siblings), the core hidden inputs. Same fields and conditions as
+      portal.address_form_fields, minus company / VAT (review fixes
+      2026-10-18 b: not shown, not posted, never changed).
+    Sécurité: .o_portal_security_body (core PortalSecurity interaction:
+      « Log out from all devices », API keys), the auth_totp_portal hooks
+      (#totp_wizard_view data island DIRECTLY followed by the 2FA block —
+      the trusted-device trash selector is « #totp_wizard_view + * … »;
+      #auth_totp_portal_enable / _disable / _revoke_all_devices), the core
+      POST /my/security password form and POST /my/deactivate_account
+      (here in a shell sheet, opened on load when the core answers an
+      error). Sections render only when the core page shows them.
+-->
+<odoo>
+
+    <!-- One labelled field box (label + input) the core address JS can
+         show / hide. Variables: fid, fname, label, value, input_type,
+         optional, readonly, autocomplete. -->
+    <template id="sc_account_input" name="Sports Clinic App: account input">
+        <div t-att-id="'div_%s' % fname" t-attf-class="o_sc_field o_sc_account_field o_sc_account_field_#{fname}">
+            <label t-attf-class="o_sc_field_label #{'label-optional' if optional else ''}" t-att-for="fid">
+                <span t-out="label"/>
+                <t t-call="bemade_sports_clinic.sc_account_state"/>
+            </label>
+            <input t-att-id="fid" t-att-type="input_type or 'text'" t-att-name="fname"
+                   class="o_sc_input" t-att-value="value or None"
+                   t-att-readonly="'1' if readonly else None"
+                   t-att-autocomplete="autocomplete or None"/>
+            <t t-out="0"/>
+        </div>
+    </template>
+
+    <!-- Review fixes 2026-10-18 (1018c): a field's save state, next to its
+         label, like the app's autosave fields (« Saving… » / « Saved · 14:05 »
+         / « Error — not saved »; set by sc_account.js). -->
+    <template id="sc_account_state" name="Sports Clinic App: account field save state">
+        <span class="o_sc_save_state" data-sc-account-state="1" role="status" aria-live="polite" hidden="hidden"/>
+    </template>
+
+    <!-- The error box and « Done » INSIDE an account card's edit view
+         (review fixes 2026-10-18 b; 1018c: no « Save » / « Cancel », each
+         field saves itself). -->
+    <template id="sc_account_card_actions" name="Sports Clinic App: account card actions">
+        <div class="o_sc_account_errors" data-sc-account-errors="1" role="alert" aria-live="polite"/>
+        <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+    </template>
+
+    <!-- Review fixes 2026-10-18 b: two edit cards (read view + pencil, like
+         the rest of the app) — « Contact details » and « Address »; no
+         « Company » card (company name / VAT are not posted, so the core
+         never touches them); no page-level save. Round 2 (1018c): no
+         « Save » / « Cancel » — each field autosaves on its own (blur /
+         change: the ONE core form posted with all current values to the
+         core /my/address/submit, sc_account.js), « Done » closes the card;
+         only the name and the email are required here
+         (AppShellAccountPortal._get_mandatory_*). The core errors show in
+         the card and on the field. The read views are read fragments
+         (task 1611). -->
+    <template id="sc_app_account" name="Sports Clinic App: my account">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title">My account</t>
+            <t t-set="sc_active_nav" t-value="False"/>
+            <div class="o_customer_address_fill o_sc_account" data-sc-section="account">
+                <!-- The core address JS looks it up; the cards show the errors. -->
+                <div id="errors" class="o_sc_account_errors" hidden="hidden"/>
+                <form action="/my/address/submit" method="post" name="address_form" novalidate="novalidate"
+                      class="address_autoformat o_sc_form o_sc_account_form" data-sc-form="account"
+                      data-sc-account-form="1"
+                      t-att-data-company-country-code="res_company.country_id.code"
+                      data-submit-url="/my/address/submit">
+
+                    <section class="o_sc_card o_sc_edit_card" data-sc-edit-card="account-contact"
+                             data-sc-section="account.contact">
+                        <t t-call="bemade_sports_clinic.sc_edit_card_head">
+                            <t t-set="title">Contact details</t>
+                            <t t-set="editable" t-value="True"/>
+                        </t>
+                        <dl class="o_sc_kv" data-sc-edit-view="read"
+                            t-att-data-sc-fragment="sc_fragment_key(partner_sudo, 'account-contact')">
+                            <dt>Name</dt>
+                            <dd t-out="partner_sudo.name or '—'"/>
+                            <dt>Email</dt>
+                            <dd t-out="partner_sudo.email or '—'"/>
+                            <dt>Phone</dt>
+                            <dd t-out="partner_sudo.phone or '—'"/>
+                        </dl>
+                        <div class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
+                            <t t-call="bemade_sports_clinic.sc_account_input">
+                                <t t-set="fid" t-value="'o_name'"/>
+                                <t t-set="fname" t-value="'name'"/>
+                                <t t-set="label">Your name</t>
+                                <t t-set="value" t-value="partner_sudo.name"/>
+                                <t t-set="autocomplete" t-value="'name'"/>
+                            </t>
+                            <t t-call="bemade_sports_clinic.sc_account_input">
+                                <t t-set="fid" t-value="'o_email'"/>
+                                <t t-set="fname" t-value="'email'"/>
+                                <t t-set="label">Email</t>
+                                <t t-set="value" t-value="partner_sudo.email"/>
+                                <t t-set="input_type" t-value="'email'"/>
+                                <t t-set="autocomplete" t-value="'email'"/>
+                            </t>
+                            <t t-call="bemade_sports_clinic.sc_account_input">
+                                <t t-set="fid" t-value="'o_phone'"/>
+                                <t t-set="fname" t-value="'phone'"/>
+                                <t t-set="label">Phone</t>
+                                <t t-set="value" t-value="partner_sudo.phone"/>
+                                <t t-set="input_type" t-value="'tel'"/>
+                                <t t-set="autocomplete" t-value="'tel'"/>
+                            </t>
+                            <t t-call="bemade_sports_clinic.sc_account_card_actions"/>
+                        </div>
+                    </section>
+
+                    <section class="o_sc_card o_sc_edit_card" data-sc-edit-card="account-address"
+                             data-sc-section="account.address">
+                        <t t-call="bemade_sports_clinic.sc_edit_card_head">
+                            <t t-set="title">Address</t>
+                            <t t-set="editable" t-value="True"/>
+                        </t>
+                        <div class="o_sc_account_address" data-sc-edit-view="read"
+                             t-att-data-sc-fragment="sc_fragment_key(partner_sudo, 'account-address')">
+                            <t t-set="sc_zip_city" t-value="' '.join(p for p in ((partner_sudo.zip, partner_sudo.city) if zip_before_city else (partner_sudo.city, partner_sudo.zip)) if p)"/>
+                            <t t-set="sc_region" t-value="', '.join(p for p in (partner_sudo.state_id.name, partner_sudo.country_id.name) if p)"/>
+                            <address t-if="partner_sudo.street or partner_sudo.street2 or sc_zip_city or sc_region" class="o_sc_account_address_lines">
+                                <span t-if="partner_sudo.street" t-out="partner_sudo.street"/>
+                                <span t-if="partner_sudo.street2" t-out="partner_sudo.street2"/>
+                                <span t-if="sc_zip_city" t-out="sc_zip_city"/>
+                                <span t-if="sc_region" t-out="sc_region"/>
+                            </address>
+                            <p t-else="" class="o_sc_meta">No address yet.</p>
+                        </div>
+                        <div class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
+                            <t t-call="bemade_sports_clinic.sc_account_input">
+                                <t t-set="fid" t-value="'o_street'"/>
+                                <t t-set="fname" t-value="'street'"/>
+                                <t t-set="label">Street and number</t>
+                                <t t-set="value" t-value="partner_sudo.street"/>
+                                <t t-set="autocomplete" t-value="'address-line1'"/>
+                            </t>
+                            <t t-call="bemade_sports_clinic.sc_account_input">
+                                <t t-set="fid" t-value="'o_street2'"/>
+                                <t t-set="fname" t-value="'street2'"/>
+                                <t t-set="label">Apartment, suite, etc.</t>
+                                <t t-set="value" t-value="partner_sudo.street2"/>
+                                <t t-set="optional" t-value="True"/>
+                                <t t-set="autocomplete" t-value="'address-line2'"/>
+                            </t>
+                            <!-- Zip and city: siblings (the core JS reorders them
+                                 per country). -->
+                            <div class="o_sc_account_pair">
+                                <t t-if="zip_before_city" t-call="bemade_sports_clinic.sc_account_input">
+                                    <t t-set="fid" t-value="'o_zip'"/>
+                                    <t t-set="fname" t-value="'zip'"/>
+                                    <t t-set="label">Zip code</t>
+                                    <t t-set="value" t-value="partner_sudo.zip"/>
+                                    <t t-set="autocomplete" t-value="'postal-code'"/>
+                                </t>
+                                <t t-call="bemade_sports_clinic.sc_account_input">
+                                    <t t-set="fid" t-value="'o_city'"/>
+                                    <t t-set="fname" t-value="'city'"/>
+                                    <t t-set="label">City</t>
+                                    <t t-set="value" t-value="partner_sudo.city"/>
+                                    <t t-set="autocomplete" t-value="'address-level2'"/>
+                                </t>
+                                <t t-if="not zip_before_city" t-call="bemade_sports_clinic.sc_account_input">
+                                    <t t-set="fid" t-value="'o_zip'"/>
+                                    <t t-set="fname" t-value="'zip'"/>
+                                    <t t-set="label">Zip code</t>
+                                    <t t-set="value" t-value="partner_sudo.zip"/>
+                                    <t t-set="autocomplete" t-value="'postal-code'"/>
+                                </t>
+                            </div>
+                            <div class="o_sc_account_pair">
+                                <div id="div_country" class="o_sc_field o_sc_account_field">
+                                    <label class="o_sc_field_label" for="o_country_id">
+                                        <span>Country</span>
+                                        <t t-call="bemade_sports_clinic.sc_account_state"/>
+                                    </label>
+                                    <select id="o_country_id" name="country_id" autocomplete="country"
+                                            t-attf-class="o_sc_input o_sc_select #{'o_sc_account_locked' if not can_edit_country else ''}"
+                                            t-att-aria-readonly="'true' if not can_edit_country else None">
+                                        <option value="">Country…</option>
+                                        <option t-foreach="countries" t-as="c" t-att-value="c.id"
+                                                t-att-selected="c.id == (country.id if country else partner_sudo.country_id.id)"
+                                                t-att-code="c.code" t-out="c.name"/>
+                                    </select>
+                                    <p t-if="not can_edit_country" class="o_sc_meta">
+                                        Changing the country is not allowed once documents have been issued for your account. Please contact us for this change.
+                                    </p>
+                                </div>
+                                <div id="div_state" class="o_sc_field o_sc_account_field"
+                                     t-att-style="not country_states and 'display: none' or None">
+                                    <label class="o_sc_field_label label-optional" for="o_state_id">
+                                        <span>State / Province</span>
+                                        <t t-call="bemade_sports_clinic.sc_account_state"/>
+                                    </label>
+                                    <select id="o_state_id" name="state_id" class="o_sc_input o_sc_select" autocomplete="address-level1">
+                                        <option value="">State / Province…</option>
+                                        <option t-foreach="country_states" t-as="s" t-att-value="s.id"
+                                                t-att-selected="s.id == (int(state_id) if state_id else partner_sudo.state_id.id)"
+                                                t-out="s.name"/>
+                                    </select>
+                                </div>
+                            </div>
+                            <t t-call="bemade_sports_clinic.sc_account_card_actions"/>
+                        </div>
+                    </section>
+
+                    <!-- The core hidden inputs (portal.address_form_fields). -->
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="address_type" t-att-value="address_type"/>
+                    <input type="hidden" name="use_delivery_as_billing" t-att-value="use_delivery_as_billing"/>
+                    <input type="hidden" name="parent_id" t-att-value="parent_id"/>
+                    <input t-if="partner_id" type="hidden" name="partner_id" t-att-value="partner_id"/>
+                    <input t-if="callback" type="hidden" name="callback" t-att-value="callback"/>
+                    <input type="hidden" name="required_fields" t-att-value="'name,email'"/>
+                </form>
+            </div>
+        </t>
+    </template>
+
+    <!-- A password input with the core « show password » eye
+         (web.show_password: an .input-group with a .o_show_password child).
+         Variables: fid, fname, label, autocomplete, error. -->
+    <template id="sc_security_password" name="Sports Clinic App: password input">
+        <div class="o_sc_field">
+            <label class="o_sc_field_label" t-att-for="fid" t-out="label"/>
+            <div class="input-group o_sc_password_group">
+                <input type="password" t-att-id="fid" t-att-name="fname" class="o_sc_input"
+                       t-att-autocomplete="autocomplete" required="required"
+                       t-att-aria-invalid="'true' if error else None"
+                       t-att-aria-describedby="('%s_error' % fid) if error else None"/>
+                <button type="button" class="o_show_password o_sc_icon_btn" aria-label="Show password" title="Show password">
+                    <i class="fa fa-eye" aria-hidden="true"/>
+                </button>
+            </div>
+            <p t-if="error" t-att-id="'%s_error' % fid" class="o_sc_field_message o_sc_field_error"
+               t-att-data-sc-error-for="fname" t-out="error"/>
+        </div>
+    </template>
+
+    <template id="sc_app_security" name="Sports Clinic App: security">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title">Security</t>
+            <t t-set="sc_active_nav" t-value="False"/>
+            <t t-set="sc_password_error" t-value="get_error(errors, 'password')"/>
+            <div class="o_portal_security_body o_sc_security">
+
+                <!-- Change password (core POST /my/security). -->
+                <section class="o_sc_section" id="sc_security_password" data-sc-section="security.password">
+                    <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Change password</t></t>
+                    <div t-if="success and success.get('password')" data-sc-section="security.password.done">
+                        <t t-call="bemade_sports_clinic.sc_banner">
+                            <t t-set="tone" t-value="'ok'"/>
+                            Your password has been changed.
+                        </t>
+                    </div>
+                    <!-- A policy refusal (UserError) comes as one message
+                         (get_error: a string only, never the per-field dict). -->
+                    <t t-if="sc_password_error">
+                        <t t-call="bemade_sports_clinic.sc_banner">
+                            <t t-set="tone" t-value="'warn'"/>
+                            <span data-sc-error-for="password" t-out="sc_password_error"/>
+                        </t>
+                    </t>
+                    <form action="/my/security" method="post" class="o_sc_card o_sc_form oe_reset_password_form">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="op" value="password"/>
+                        <t t-call="bemade_sports_clinic.sc_security_password">
+                            <t t-set="fid" t-value="'current'"/>
+                            <t t-set="fname" t-value="'old'"/>
+                            <t t-set="label">Current password</t>
+                            <t t-set="autocomplete" t-value="'current-password'"/>
+                            <t t-set="error" t-value="get_error(errors, 'password.old')"/>
+                        </t>
+                        <t t-call="bemade_sports_clinic.sc_security_password">
+                            <t t-set="fid" t-value="'new'"/>
+                            <t t-set="fname" t-value="'new1'"/>
+                            <t t-set="label">New password</t>
+                            <t t-set="autocomplete" t-value="'new-password'"/>
+                            <t t-set="error" t-value="get_error(errors, 'password.new1')"/>
+                        </t>
+                        <t t-call="bemade_sports_clinic.sc_security_password">
+                            <t t-set="fid" t-value="'new2'"/>
+                            <t t-set="fname" t-value="'new2'"/>
+                            <t t-set="label">Confirm the new password</t>
+                            <t t-set="autocomplete" t-value="'new-password'"/>
+                            <t t-set="error" t-value="get_error(errors, 'password.new2')"/>
+                        </t>
+                        <div class="o_sc_form_actions">
+                            <button type="submit" class="o_sc_btn o_sc_btn_primary">Change password</button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Two-factor authentication (auth_totp_portal installed).
+                     The data island must be DIRECTLY followed by the section
+                     (trusted-device trash selector). -->
+                <t t-if="sc_totp_portal">
+                    <div class="d-none" id="totp_wizard_view">
+                        <t t-esc="env.ref('auth_totp.view_totp_wizard').sudo().get_combined_arch()"/>
+                    </div>
+                    <section class="o_sc_section" id="sc_security_totp" data-sc-section="security.totp">
+                        <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Two-factor authentication</t></t>
+                        <div class="o_sc_card o_sc_form">
+                            <t t-if="not env.user.totp_enabled">
+                                <p class="o_sc_meta">Two-factor authentication is not enabled. With it, signing in also asks for a code from an app on your phone.</p>
+                                <div class="o_sc_form_actions o_sc_form_actions_start">
+                                    <button type="button" class="o_sc_btn o_sc_btn_ghost" id="auth_totp_portal_enable">
+                                        Enable two-factor authentication
+                                    </button>
+                                </div>
+                            </t>
+                            <t t-else="">
+                                <p class="o_sc_security_on">Two-factor authentication is enabled.</p>
+                                <t t-if="len(env.user.totp_trusted_device_ids)">
+                                    <h3 class="o_sc_field_label">Trusted devices</h3>
+                                    <ul class="o_sc_security_devices">
+                                        <li t-foreach="env.user.totp_trusted_device_ids" t-as="td">
+                                            <span class="o_sc_security_device_name" t-field="td.name"/>
+                                            <span class="o_sc_meta" t-field="td.create_date"/>
+                                            <i class="fa fa-trash text-danger o_sc_security_device_remove" role="button"
+                                               tabindex="0" t-att-id="td.id" aria-label="Remove this device" title="Remove this device"/>
+                                        </li>
+                                    </ul>
+                                </t>
+                                <div class="o_sc_form_actions o_sc_form_actions_start">
+                                    <button t-if="len(env.user.totp_trusted_device_ids)" type="button"
+                                            class="o_sc_btn o_sc_btn_ghost" id="auth_totp_portal_revoke_all_devices">
+                                        Revoke all devices
+                                    </button>
+                                    <button type="button" class="o_sc_btn o_sc_btn_ghost" id="auth_totp_portal_disable">
+                                        Disable two-factor authentication
+                                    </button>
+                                </div>
+                            </t>
+                        </div>
+                    </section>
+                </t>
+
+                <!-- Sessions (core PortalSecurity interaction). -->
+                <section class="o_sc_section" id="sc_security_sessions" data-sc-section="security.sessions">
+                    <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Sessions</t></t>
+                    <div class="o_sc_card o_sc_form">
+                        <p class="o_sc_meta">Signs you out everywhere you are signed in, this device included.</p>
+                        <div class="o_sc_form_actions o_sc_form_actions_start">
+                            <button type="button" class="o_sc_btn o_sc_btn_ghost" id="portal_revoke_all_sessions_popup">
+                                Log out from all devices
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Developer API keys: debug mode + portal.allow_api_keys
+                     only (the core rule). -->
+                <section t-if="debug and allow_api_keys" class="o_sc_section" data-sc-section="security.api_keys">
+                    <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Developer API keys</t></t>
+                    <div class="o_sc_card o_sc_legacy">
+                        <table class="table">
+                            <thead>
+                                <tr><th>Description</th><th>Scope</th><th>Added on</th><th>Expiration date</th><th/></tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="env.user.api_key_ids" t-as="key">
+                                    <td><span t-field="key.name"/></td>
+                                    <td><span t-field="key.scope"/></td>
+                                    <td><span t-field="key.create_date"/></td>
+                                    <td><span t-field="key.expiration_date"/></td>
+                                    <td><i class="fa fa-trash text-danger o_portal_remove_api_key" role="button" t-att-id="key.id"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button type="button" class="o_sc_btn o_sc_btn_ghost o_portal_new_api_key">New API key</button>
+                    </div>
+                </section>
+
+                <!-- Delete account: portal users only (the core block's
+                     groups); the core POST /my/deactivate_account. -->
+                <section t-if="sc_can_deactivate" class="o_sc_section" id="sc_security_delete" data-sc-section="security.delete">
+                    <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Delete account</t></t>
+                    <div class="o_sc_card o_sc_form">
+                        <p class="o_sc_meta">Disables your account: you can no longer sign in. This cannot be undone.</p>
+                        <div class="o_sc_form_actions o_sc_form_actions_start">
+                            <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_danger"
+                                    data-sc-sheet-open="sc_deactivate_account_sheet">Delete account</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <t t-if="sc_can_deactivate">
+                <t t-set="deactivate_error" t-value="get_error(errors, 'deactivate')"/>
+                <dialog id="sc_deactivate_account_sheet" class="o_sc_sheet"
+                        aria-labelledby="sc_deactivate_account_sheet_title"
+                        t-att-data-sc-sheet-open-on-load="'1' if open_deactivate_modal else None">
+                    <div class="o_sc_sheet_head">
+                        <h2 class="o_sc_sheet_title" id="sc_deactivate_account_sheet_title">Delete your account?</h2>
+                        <button type="button" class="o_sc_icon_btn" data-sc-sheet-close="1" aria-label="Close" title="Close">
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'close'"/></t>
+                        </button>
+                    </div>
+                    <div class="o_sc_sheet_body">
+                        <form action="/my/deactivate_account" method="post" class="o_sc_form" id="sc_deactivate_account_form">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <t t-set="deactivate_other" t-value="get_error(errors, 'deactivate.other')"/>
+                            <t t-if="deactivate_other" t-call="bemade_sports_clinic.sc_banner">
+                                <t t-set="tone" t-value="'warn'"/>
+                                <span data-sc-error-for="other" t-out="deactivate_other"/>
+                            </t>
+                            <t t-call="bemade_sports_clinic.sc_banner">
+                                <t t-set="tone" t-value="'warn'"/>
+                                Your account will be disabled: you will no longer be able to sign in. This cannot be undone.
+                            </t>
+                            <div class="o_sc_field">
+                                <label class="o_sc_field_label" for="sc_deactivate_password">1. Enter your password to confirm this is your account</label>
+                                <input type="password" id="sc_deactivate_password" name="password" class="o_sc_input"
+                                       required="required" autocomplete="current-password"
+                                       t-att-aria-invalid="'true' if deactivate_error == 'password' else None"/>
+                                <p t-if="deactivate_error == 'password'" class="o_sc_field_message o_sc_field_error"
+                                   data-sc-error-for="password">Wrong password.</p>
+                            </div>
+                            <div class="o_sc_field">
+                                <label class="o_sc_field_label" for="sc_deactivate_validation">2. Type your login to confirm: <strong t-out="env.user.login"/></label>
+                                <input type="text" id="sc_deactivate_validation" name="validation" class="o_sc_input"
+                                       required="required" autocomplete="off" autocapitalize="none"
+                                       t-att-aria-invalid="'true' if deactivate_error == 'validation' else None"/>
+                                <p t-if="deactivate_error == 'validation'" class="o_sc_field_message o_sc_field_error"
+                                   data-sc-error-for="validation">Type your login exactly as shown above.</p>
+                            </div>
+                            <label class="o_sc_check" for="sc_deactivate_blacklist">
+                                <input type="checkbox" name="request_blacklist" id="sc_deactivate_blacklist" checked="checked"/>
+                                Put my email and phone on a block list so I am never contacted again
+                            </label>
+                            <div class="o_sc_form_actions">
+                                <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                                <button type="submit" class="o_sc_btn o_sc_btn_primary o_sc_btn_danger">Delete account</button>
+                            </div>
+                        </form>
+                    </div>
+                </dialog>
+            </t>
+        </t>
+    </template>
+
+</odoo>

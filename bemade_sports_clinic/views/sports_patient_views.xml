@@ -15,6 +15,9 @@
                     <field name="phone" widget="phone"/>
                     <field name="predicted_return_date"/>
                     <field name="return_date"/>
+                    <!-- Task 1630: pre-filled from the former allergies text. -->
+                    <filter name="medical_alert_review" string="Alerts to validate"
+                            domain="[('medical_alert_review', '=', True)]"/>
                     <filter name="groupby_team_ids" context="{'group_by': 'team_ids'}"/>
                     <filter name="groupby_jersey_number" string="Jersey Number" context="{'group_by': 'jersey_number'}"/>
                 </search>
@@ -144,7 +147,6 @@
                                     <button type="object" name="action_consulted_today"
                                             class="fa fa-refresh" title="Set to Today's Date"/>
                                 </span>
-                                <field name="allergies"/>
                             </group>
                             <group>
                                 <separator string="Team Information"/>
@@ -154,14 +156,43 @@
                                 <field name="jersey_number"/>
                                 <field name="match_status"/>
                                 <field name="practice_status"/>
-                                <field name="training_recommendation"/>
+                                <!-- Task 1601: « Updated on <date> by <author> » under
+                                     the recommendation (label + div keeps it in the
+                                     value column, as on the injury notes). -->
+                                <label for="training_recommendation"/>
+                                <div>
+                                    <field name="training_recommendation"/>
+                                    <field name="last_training_recommendation_info" nolabel="1" readonly="1"
+                                           class="text-muted fst-italic o_sc_last_note_stamp"
+                                           invisible="not last_training_recommendation_info"/>
+                                </div>
                                 <field name="predicted_return_date"/>
                                 <field name="return_date"/>
                                 <field name="team_info_notes"/>
                             </group>
+                            <!-- Task 1630: allergies + medical alert (levels, details,
+                                 EpiPen), « Other medical history », « To validate ». -->
+                            <group name="health" string="Health">
+                                <field name="allergy_level"/>
+                                <field name="allergy_epipen"/>
+                                <field name="allergy_details"/>
+                                <field name="medical_alert_level"/>
+                                <field name="medical_alert_details"/>
+                                <field name="medical_history_other"/>
+                                <field name="medical_alert_review"/>
+                            </group>
                              <notebook>
                                  <page string="Injuries">
                                      <field name="injury_ids"/>
+                                 </page>
+                                 <page string="Training Recommendation History" name="training_history">
+                                     <field name="training_history_ids" readonly="1">
+                                         <list create="0" delete="0" edit="0" no_open="1">
+                                             <field name="change_datetime"/>
+                                             <field name="author_id"/>
+                                             <field name="content_display"/>
+                                         </list>
+                                     </field>
                                  </page>
                                  <page string="Treatment Notes">
                                     <field name="treatment_note_ids">
@@ -243,5 +274,44 @@
                 </form>
             </field>
         </record>
+        <!-- Task 1630: « Medical alerts to validate » — the players whose
+             allergy / medical-alert levels were pre-filled from the former
+             free-text field (the original text is in the details). The
+             clinic checks each one and unticks « To validate ». -->
+        <record id="sports_patient_view_list_medical_review" model="ir.ui.view">
+            <field name="name">sports.patient.view.list.medical.review</field>
+            <field name="model">sports.patient</field>
+            <field name="priority">90</field>
+            <field name="arch" type="xml">
+                <list string="Medical alerts to validate" editable="bottom" create="0" delete="0">
+                    <field name="first_name" readonly="1"/>
+                    <field name="last_name" readonly="1"/>
+                    <field name="team_ids" widget="many2many_tags" readonly="1"/>
+                    <field name="allergy_level"/>
+                    <field name="allergy_epipen"/>
+                    <field name="allergy_details"/>
+                    <field name="medical_alert_level"/>
+                    <field name="medical_alert_details"/>
+                    <field name="medical_alert_review" widget="boolean_toggle"/>
+                </list>
+            </field>
+        </record>
+        <record id="action_patient_medical_review" model="ir.actions.act_window">
+            <field name="name">Medical alerts to validate</field>
+            <field name="res_model">sports.patient</field>
+            <field name="view_mode">list,form</field>
+            <field name="view_id" ref="sports_patient_view_list_medical_review"/>
+            <field name="search_view_id" ref="sports_patient_view_search"/>
+            <field name="context">{'search_default_medical_alert_review': 1}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">No medical alert to validate.</p>
+            </field>
+        </record>
+        <menuitem id="sports_clinic_medical_review_menu"
+                  name="Medical alerts to validate"
+                  parent="sports_clinic_staff_menu"
+                  groups="bemade_sports_clinic.group_sports_clinic_admin"
+                  action="action_patient_medical_review"
+                  sequence="30"/>
     </data>
 </odoo>

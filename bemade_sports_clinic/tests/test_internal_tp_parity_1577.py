@@ -101,10 +101,14 @@ class TestInternalTpParity1577(Parity1577Common):
         self.assertIsNotNone(self._shell(tree))
         self.assertFalse(tree.xpath('//*[@data-sc-section="injury.stage.readonly"]'),
                          "the therapist gets the stage control, not the read-only chip")
-        self.assertTrue(tree.xpath('//dialog[@id="sc_delete_injury_sheet"]//form'))
+        # Task 1616: the injury page is the open card.
+        self.assertTrue(tree.xpath('//dialog[@id="sc_delete_injury_sheet_%s"]//form' % self.injury.id))
         props = ' '.join(tree.xpath('//owl-component/@props'))
-        for name in ('internal_notes', 'hidden_from_coaches', 'resolution_date'):
+        for name in ('internal_notes', 'resolution_date'):
             self.assertIn('"%s"' % name, props, name)
+        # Task 1631: the status and visibility are pill dropdowns (editable).
+        for name in ('stage', 'hidden_from_coaches'):
+            self.assertTrue(tree.xpath('//*[@data-sc-pill-select][@data-sc-field="%s"]' % name), name)
 
     def test_injury_save_writes_tp_fields(self):
         self._login_itp()
@@ -164,22 +168,25 @@ class TestInternalTpParity1577(Parity1577Common):
         resp = self._post('/my/player/create/save', {
             'first_name': 'Ivy', 'last_name': 'Internal',
             'team_ids': str(self.team_a.id),
-            'allergies': 'P77 peanuts',
+            # Task 1630: the medical block replaces the allergies text.
+            'allergy_level': 'minor', 'allergy_details': 'P77 peanuts',
         })
         location = resp.headers.get('Location', '')
         self.assertIn('/my/player?player_id=', location)
         patient = self.env['sports.patient'].search([('last_name', '=', 'Internal')])
         self.assertEqual(patient.team_ids, self.team_a)
-        self.assertEqual(patient.allergies, 'P77 peanuts')
+        self.assertEqual((patient.allergy_level, patient.allergy_details), ('minor', 'P77 peanuts'))
 
     def test_player_edit_shows_tp_fields(self):
         self._login_itp()
         text, _tree = self._get('/my/player/edit?patient_id=%s' % self.player.id)
-        self.assertIn('name="allergies"', text)
+        self.assertIn('name="allergy_level"', text)
+        self.assertIn('name="medical_history_other"', text)
         self.assertIn('name="team_info_notes"', text)
         self._login_coach()
         text, _tree = self._get('/my/player/edit?patient_id=%s' % self.player.id)
-        self.assertNotIn('name="allergies"', text)
+        self.assertNotIn('name="allergy_level"', text)
+        self.assertNotIn('name="medical_history_other"', text)
 
     # -- UC-P4 -----------------------------------------------------------
     def test_team_add_player_directly(self):

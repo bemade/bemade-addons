@@ -17,7 +17,16 @@ const ANN = "Tour 1581 synthetic announcement";
 const NOTE = "Tour 1581 synthetic external note";
 
 function entries(sheet) {
-    return [...document.querySelectorAll(`dialog#${sheet}[open] li.o_sc_history_entry`)];
+    return [...document.querySelectorAll(`${sheetSel(sheet)}[open] li.o_sc_history_entry`)];
+}
+
+// Task 1616: the injury notes live in the open injury card — its combined
+// notes-history sheet is « sc_note_history_sheet_<injury id> ».
+const NOTES_CARD = 'details.o_sc_injury_item[open] [data-sc-edit-card="injury-notes"]';
+const NOTES_SHEET = 'dialog[id^="sc_note_history_sheet_"]:not([id$="_external"]):not([id$="_internal"])';
+
+function sheetSel(sheet) {
+    return sheet === "sc_note_history_sheet" ? NOTES_SHEET : `dialog#${sheet}`;
 }
 
 // ------------------------------------------------------ team announcement
@@ -84,7 +93,7 @@ tours.add("sc_1581_notes_fresh", {
         {
             content: "« History » next to the External Notes label",
             trigger:
-                '[data-sc-edit-card="injury-notes"] .o_sc_edit_card_head .o_sc_link_btn[data-sc-sheet-open="sc_note_history_sheet"]',
+                `${NOTES_CARD} .o_sc_edit_card_head .o_sc_link_btn[data-sc-sheet-open^="sc_note_history_sheet_"]`,
             run(helpers) {
                 window.__sc1581NoReload = true;
                 return helpers.click();
@@ -92,7 +101,7 @@ tours.add("sc_1581_notes_fresh", {
         },
         {
             content: "The notes history, all scopes",
-            trigger: 'dialog#sc_note_history_sheet[open] nav[data-sc-section="history.scope"] a[href$="scope=all"][aria-pressed="true"]',
+            trigger: `${NOTES_SHEET}[open] nav[data-sc-section="history.scope"] a[href$="scope=all"][aria-pressed="true"]`,
             run() {
                 window.__sc1581Count = entries("sc_note_history_sheet").length;
                 assert(window.__sc1581Count === 3, `entries: ${window.__sc1581Count}`);
@@ -100,12 +109,12 @@ tours.add("sc_1581_notes_fresh", {
         },
         {
             content: "Filter: internal only (re-fetched inside the sheet)",
-            trigger: 'dialog#sc_note_history_sheet[open] nav[data-sc-section="history.scope"] a[href$="scope=internal"]',
+            trigger: `${NOTES_SHEET}[open] nav[data-sc-section="history.scope"] a[href$="scope=internal"]`,
             run: "click",
         },
         {
             content: "Only internal entries",
-            trigger: 'dialog#sc_note_history_sheet[open] a[href$="scope=internal"][aria-pressed="true"]',
+            trigger: `${NOTES_SHEET}[open] a[href$="scope=internal"][aria-pressed="true"]`,
             run() {
                 const scopes = entries("sc_note_history_sheet").map((li) => li.dataset.scScope);
                 assert(scopes.length === 1 && scopes[0] === "internal", `scopes: ${scopes}`);
@@ -113,39 +122,39 @@ tours.add("sc_1581_notes_fresh", {
         },
         {
             content: "Close the sheet",
-            trigger: "dialog#sc_note_history_sheet[open] [data-sc-sheet-close]",
+            trigger: `${NOTES_SHEET}[open] [data-sc-sheet-close]`,
             run: "click",
         },
         {
             content: "Edit the notes card (pencil)",
-            trigger: '[data-sc-edit-card="injury-notes"] button[data-sc-edit-toggle]',
+            trigger: `${NOTES_CARD} button[data-sc-edit-toggle]`,
             run: "click",
         },
         {
             content: "Type an external note",
-            trigger: '.o_sc_autosave[data-sc-field="external_notes"] textarea',
+            trigger: '.o_sc_injury_item[open] .o_sc_autosave[data-sc-field="external_notes"] textarea',
             run: `edit ${NOTE}`,
         },
         {
             content: "Leave the field so it saves",
-            trigger: '.o_sc_autosave[data-sc-field="external_notes"] textarea',
+            trigger: '.o_sc_injury_item[open] .o_sc_autosave[data-sc-field="external_notes"] textarea',
             run() {
-                this.anchor.blur();
+                this.anchor.blur(); this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI: blur() fires no event without window focus
             },
         },
         {
             content: "Saved",
-            trigger: '.o_sc_autosave[data-sc-field="external_notes"][data-sc-state="saved"]',
+            trigger: '.o_sc_injury_item[open] .o_sc_autosave[data-sc-field="external_notes"][data-sc-state="saved"]',
         },
         {
             content: "Open the history again",
             trigger:
-                '[data-sc-edit-card="injury-notes"] .o_sc_edit_card_head .o_sc_link_btn[data-sc-sheet-open="sc_note_history_sheet"]',
+                `${NOTES_CARD} .o_sc_edit_card_head .o_sc_link_btn[data-sc-sheet-open^="sc_note_history_sheet_"]`,
             run: "click",
         },
         {
             content: "All scopes again, with the new note — no reload",
-            trigger: `dialog#sc_note_history_sheet[open] li.o_sc_history_entry:contains(${NOTE})`,
+            trigger: `${NOTES_SHEET}[open] li.o_sc_history_entry:contains(${NOTE})`,
             run() {
                 assert(window.__sc1581NoReload, "the page reloaded");
                 const count = entries("sc_note_history_sheet").length;

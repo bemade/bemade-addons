@@ -77,13 +77,13 @@ tours.add("sc_1540_clinic", {
             },
         },
         {
-            content: "Open the injury sheet",
-            trigger: '[data-sc-section="clinic.dossier.injuries"] a[data-sc-injury-id]',
+            content: "Open the injury card (task 1590: inline, no sheet)",
+            trigger: '[data-sc-section="clinic.dossier.injuries"] details[data-sc-edit-card="injury"] > summary',
             run: "click",
         },
         {
-            content: "The unchanged injury form fragment is loaded in the sheet",
-            trigger: "dialog.o_sc_sheet[open] .o_sc_sheet_body form",
+            content: "The card's read view is shown, with its pencil",
+            trigger: '[data-sc-section="clinic.dossier.injuries"] details[data-sc-edit-card="injury"][open] button[data-sc-edit-toggle]',
         },
     ],
 });
@@ -98,8 +98,8 @@ tours.add("sc_1540_event_timesheet", {
             expectUnloadPage: true,
         },
         {
-            content: "« Ajouter ma feuille de temps » (app bar)",
-            trigger: 'header button[data-sc-sheet-open="sc_ts_add_sheet"]',
+            content: "« + Ajouter » (Add My Timesheet) in the timesheets list header",
+            trigger: '[data-sc-section="event.timesheets"] .o_sc_list_header button.o_sc_list_add[data-sc-sheet-open="sc_ts_add_sheet"]',
             run: "click",
         },
         {
@@ -213,10 +213,9 @@ tours.add("sc_1587_note_date_injury", {
             trigger: `${NOTE_CARD} .o_sc_autosave[data-sc-field="injury_id"][data-sc-state="saved"]`,
         },
         {
-            content: "Done: the card reloads",
+            content: "Done: the card closes (task 1611: no reload, the meta line is a read fragment)",
             trigger: `${NOTE_CARD} [data-sc-edit-done]`,
             run: "click",
-            expectUnloadPage: true,
         },
         {
             content: "The meta line shows the new injury",

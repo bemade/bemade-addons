@@ -10,6 +10,13 @@ it.
   message stubs a page at a time from the user's `browsable` transport(s),
   fetching a message's full envelope only when expanded -- nothing is
   written to Odoo just by looking.
+- **Row actions without opening the message.** Every row shows its actions
+  as icons with descriptive tooltips (same gating as before), so a message
+  can be triaged without fetching its body. A checkbox on each row, plus a
+  select-all for the page, drives a bulk bar to **Hide**, **Mark read**,
+  **Archive** or **Delete** exactly the ticked messages (one confirmation
+  for a bulk delete; a partial failure is reported and the failed rows stay
+  listed and ticked). The selection is cleared on page or account change.
 - The full GTD action set from an inbox item: file as a **new
   conversation**, **add to an existing conversation**, **link to a
   record**, **reassign** to a colleague/team, **reply / reply-all /
@@ -19,6 +26,16 @@ it.
   `action_dismiss`). Hide removes the row from the list only: it archives an
   already-filed *conversation*, and is otherwise a pure client-side no-op --
   the message stays in the real mailbox and returns on the next browse.
+- **Search box** next to the account selector, shown for transports with
+  `searchable` set (tick it on the account's form). Type a word -- a name, an
+  address, a word of the subject or of the message -- and press Enter or the
+  magnifier: the list shows only the matching messages of that mailbox, newest
+  first, with the same actions, and Previous / Next page through the results.
+  The cross (or an emptied field) returns to the normal list; so does changing
+  account. The text is sent to `browse_page` as typed and matched literally by
+  the engine (never as search syntax, accents included); searching reads the
+  mailbox only and files nothing in Odoo. Too broad a search asks to be
+  narrowed.
 - **Mailbox-side triage**, on transports with
   `mailbox_writable` set: **Archive** (the message leaves the browse folder
   but stays retrievable), **Delete** (after a confirmation, moves it to the
@@ -27,6 +44,10 @@ it.
   `_trash_remote` / `_mark_read_remote` hooks. Hide, Archive and Delete are
   three distinct buttons. Expanding a message no longer changes its read
   state on the server.
+  On a shared (ownerless) account the Delete button only appears for users
+  holding the "Delete shared mail" group (the server refuses the call
+  otherwise); Archive and Mark read stay available to everyone who can see
+  the account. On a personal account the owner sees all three.
 - **Archive After Filing** (`archive_on_capture`, per transport, default
   off): when on, a message filed through the capture wizard, the reassign
   wizard or the composer's filed path is also archived in the mailbox, after

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+<t t-inherit="mail.Chatter" t-inherit-mode="extension">
+    <xpath expr="//div[hasclass('o-mail-Chatter')]" position="attributes">
+        <attribute
+        name="t-att-data-relevant-conversations-loaded"
+      >relevantConversations.loadedFor</attribute>
+    </xpath>
+    <xpath expr="//div[hasclass('o-mail-Followers')]" position="before">
+        <button
+        t-if="relevantConversations.count"
+        class="o_relevant_conversations_toggle btn btn-link text-action px-1 d-flex align-items-center text-nowrap"
+        t-att-class="{'active': relevantConversations.open, 'my-2': !props.compactHeight}"
+        t-on-click="toggleRelevantConversations"
+      >
+            <i class="fa fa-comments-o fa-fw me-1" role="img" />
+            <span>Relevant Conversations</span>
+            <span
+          class="o_relevant_conversations_count badge rounded-pill text-bg-secondary ms-1"
+          t-esc="relevantConversations.count"
+        />
+        </button>
+    </xpath>
+    <xpath expr="//div[hasclass('o-mail-AttachmentBox')]" position="before">
+        <div
+        t-if="relevantConversations.count and relevantConversations.open"
+        class="o_relevant_conversations px-3 pb-2"
+      >
+            <t t-foreach="relevantConversations.scopes" t-as="scope" t-key="scope.key">
+                <div class="d-flex align-items-center pt-2 fw-bolder">
+                    <hr class="flex-grow-1" />
+                    <span class="px-3"><t t-esc="scope.label" /> <span
+                class="badge rounded-pill text-bg-secondary ms-1"
+                t-esc="scope.count"
+              /></span>
+                    <hr class="flex-grow-1" />
+                </div>
+                <div class="list-group list-group-flush">
+                    <a
+              t-foreach="scope.conversations"
+              t-as="conversation"
+              t-key="conversation.id"
+              href="#"
+              class="o_relevant_conversation list-group-item list-group-item-action d-flex align-items-center gap-2 px-1"
+              t-on-click.prevent="() => this.openRelevantConversation(conversation.id)"
+            >
+                        <span
+                class="o_relevant_conversation_name flex-grow-1 text-truncate fw-bold"
+                t-esc="conversation.name"
+              />
+                        <small
+                t-if="conversation.via"
+                class="text-muted text-nowrap"
+                t-esc="conversation.via"
+              />
+                        <span
+                class="o_relevant_conversation_state badge rounded-pill"
+                t-att-class="conversation.state === 'done' ? 'text-bg-success' : conversation.state === 'open' ? 'text-bg-primary' : 'text-bg-warning'"
+                t-esc="conversation.state_label"
+              />
+                        <small
+                class="o_relevant_conversation_user text-nowrap"
+                t-att-class="{'text-muted fst-italic': !conversation.user_name}"
+              >
+                            <t
+                  t-if="conversation.user_name"
+                  t-esc="conversation.user_name"
+                />
+                            <t t-else="">Unassigned</t>
+                        </small>
+                        <small
+                class="o_relevant_conversation_date text-muted text-nowrap"
+                t-esc="formatConversationDate(conversation.last_message_date)"
+              />
+                    </a>
+                </div>
+            </t>
+        </div>
+    </xpath>
+</t>
+
+</templates>

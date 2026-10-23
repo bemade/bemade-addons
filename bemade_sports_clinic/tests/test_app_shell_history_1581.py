@@ -213,13 +213,16 @@ class TestAppShellHistory1581(History1581Common):
         self._login_tp()
         _text, tree = self._get('/my/injury/edit?injury_id=%s&team_id=%s' % (self.injury.id, self.team_a.id))
         self.assertFalse(tree.xpath('//*[@data-sc-action="injury.history"]'))
-        sheet = self._sheet(tree, 'sc_note_history_sheet')
+        # Task 1616: the injury page is the open card (its own sheet ids).
+        sheet = self._sheet(tree, 'sc_note_history_sheet_%s' % self.injury.id)
         self.assertEqual(sheet.get('data-sc-lazy-url'), self.notes_url)
         self.assertEqual(sheet.get('data-sc-lazy-fresh'), '1')
         # Pencil paradigm (owner review 2026-10-11): ONE « History » link in
         # the notes card's head, reachable while reading.
-        links = tree.xpath('//*[@data-sc-edit-card="injury-notes"]/*[contains(@class, "o_sc_edit_card_head")]'
-                           '//*[@data-sc-sheet-open="sc_note_history_sheet"][contains(@class, "o_sc_link_btn")]')
+        links = tree.xpath('//details[@id="injury-%s"]//*[@data-sc-edit-card="injury-notes"]'
+                           '/*[contains(@class, "o_sc_edit_card_head")]'
+                           '//*[@data-sc-sheet-open="sc_note_history_sheet_%s"][contains(@class, "o_sc_link_btn")]'
+                           % (self.injury.id, self.injury.id))
         self.assertEqual(len(links), 1)
 
     def test_training_trigger_and_lazy_fresh_sheet(self):
@@ -276,9 +279,9 @@ class TestAppShellHistory1581(History1581Common):
         resp = self.url_open('/my/injury/%s/notes/history?team_id=%s' % (self.injury.id, self.team_a.id),
                              allow_redirects=False)
         self.assertIn(resp.status_code, (302, 303))
-        self.assertTrue(resp.headers['Location'].endswith(
-            '/my/injury/edit?injury_id=%s&team_id=%s' % (self.injury.id, self.team_a.id)),
-            resp.headers['Location'])
+        # Task 1616: … the open injury card (team context kept).
+        self.assertIn('/my/player?player_id=%s&team_id=%s&tab=injuries&injury=%s#injury-%s' % (
+            self.player.id, self.team_a.id, self.injury.id, self.injury.id), resp.headers['Location'])
         self._switch(False)
         resp = self.url_open('/my/injury/%s/notes/history' % self.injury.id)
         self.assertEqual(resp.status_code, 200)

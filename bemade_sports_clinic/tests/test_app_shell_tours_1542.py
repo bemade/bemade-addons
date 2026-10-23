@@ -94,6 +94,7 @@ class TestAppShellToursLaptop1542(_TourCommon):
         self.start_tour('/my/teams', 'sc_1542_nav_laptop', login='pc.tp@example.com')
 
     def test_prefs_theme_and_crumbs(self):
+        self._theme_choice(True)  # task 1602: the toggle is hidden otherwise
         self.start_tour('/my/home', 'sc_1542_prefs', login='pc.coach@example.com')
         self.assertEqual(self.coach.sc_theme, 'light')
 

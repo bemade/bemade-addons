@@ -5,6 +5,7 @@ from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from .access_control_mixin import AccessControlMixin
 from .app_shell import AppShellMixin
+from ..models import sc_app_nav, sc_app_roles
 from datetime import date, timedelta
 from urllib.parse import quote
 
@@ -72,28 +73,15 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         staff_partner_ids = set(record_teams.sudo().staff_ids.partner_id.ids)
         return {u.id: u.partner_id.id in staff_partner_ids for u in users}
 
-    @http.route(['/my/activities'], type='http', auth='user', website=True)
-    def view_activities(self, model=None, res_id=None, simplified=False, team_id=None, **kw):
-        """Display list of activities accessible to the current user through team relationships.
-
-        When ``simplified`` is True (used by object-specific wrappers), the
-        template renders a single list view without the global dashboard tabs.
-        """
-        user = request.env.user
-
-        # Team scope (task 1577 review, 2026-09-29): every team for a clinic
-        # administrator, the staffed teams for everyone else — the same rule
-        # as the other lists; never a bare search([]) for a non-admin.
-        scope_teams = self._activity_scope_teams()
-
-        # Build search domain with team-based filtering
-        # Record rules provide broad CRUD access, controller enforces team-based security
-        
-        # Build team-based access domain for security filtering
-        # Task 1409: activities live on patients, teams and events only — no
-        # injury branch (an explicit ?model=sports.patient.injury filter
-        # therefore yields an empty list).
-        team_access_domain = [
+    @staticmethod
+    def _activity_team_access_domain(scope_teams):
+        """The team-based access domain of the activities lists (patients,
+        teams and events of ``scope_teams``). Task 1409: activities live on
+        patients, teams and events only — no injury branch (an explicit
+        ?model=sports.patient.injury filter therefore yields an empty
+        list). Record rules provide broad CRUD access, the controller
+        enforces team-based security."""
+        return [
             '|', '|',
             '&', '&',
             ('res_model', '=', 'sports.patient'),
@@ -108,7 +96,48 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             ('res_id', '!=', False),
             ('res_id', 'in', scope_teams.mapped('event_ids.id') or [0])
         ]
-        
+
+    @http.route(['/my/activities/overdue/count'], type='http', auth='user', website=True,
+                methods=['GET'], multilang=False, sitemap=False)
+    def sc_activities_overdue_count(self, **kw):
+        """Task 1592 — the app bar clock's badge as JSON ``{count: N}``: MY
+        overdue activities, the same domain as « My Activities »
+        (/my/activities: assigned to me AND in my team scope) with a
+        deadline before today (the viewer's day). Polled by
+        sc_live_count.js (at once, then every 60 s while the tab is
+        visible), never computed on every page. Same gate as the clock: the
+        staff app roles; anyone else gets a 403. Never cached."""
+        env = request.env
+        user = env.user
+        roles = user._sc_app_roles()
+        if not sc_app_roles.can('app.activity_clock', roles,
+                                is_system=user.has_group('base.group_system')):
+            response = request.make_json_response({'error': 'forbidden'}, status=403)
+        else:
+            domain = ['&', '&', ('user_id', '=', user.id),
+                      ('date_deadline', '<', fields.Date.context_today(user))] \
+                + self._activity_team_access_domain(self._activity_scope_teams())
+            count = env['mail.activity'].search_count(domain)
+            response = request.make_json_response({'count': count})
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+
+    @http.route(['/my/activities'], type='http', auth='user', website=True)
+    def view_activities(self, model=None, res_id=None, simplified=False, team_id=None, **kw):
+        """Display list of activities accessible to the current user through team relationships.
+
+        When ``simplified`` is True (used by object-specific wrappers), the
+        template renders a single list view without the global dashboard tabs.
+        """
+        user = request.env.user
+
+        # Team scope (task 1577 review, 2026-09-29): every team for a clinic
+        # administrator, the staffed teams for everyone else — the same rule
+        # as the other lists; never a bare search([]) for a non-admin.
+        scope_teams = self._activity_scope_teams()
+
+        team_access_domain = self._activity_team_access_domain(scope_teams)
+
         # Activities are scoped strictly by the team-based access domain. We used to
         # OR-in `(user_id == self) AND res_model in [...]` so a portal user could see
         # activities personally assigned to them, but that left orphan assignee
@@ -210,9 +239,14 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         planned = activities.filtered(lambda a: a.date_deadline > today)
         tab = request.params.get('tab')
         keys = ('all', 'overdue', 'today', 'planned')
+        # Task 1592: from the app bar clock (?sc_clock=1) — the Overdue tab
+        # when I have overdue activities, else All (deadline order, so the
+        # overdue ones come first anyway). An explicit ?tab= wins.
+        if tab not in keys and request.params.get('sc_clock'):
+            tab = 'overdue' if overdue else 'all'
         base = request.httprequest.path
         args = {k: v for k, v in request.httprequest.args.items()
-                if k not in ('tab', 'success', 'error')}
+                if k not in ('tab', 'success', 'error', 'sc_clock')}
         query = '&'.join('%s=%s' % (k, quote(str(v), safe='')) for k, v in args.items())
         sep = '?' + query + '&' if query else '?'
         labels = {
@@ -243,6 +277,11 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 if values.get('context_model') and values.get('context_res_id') else False),
             'sc_context_title': context_title,
             'sc_flash': self._sc_activity_flash(),
+            # Task 1622: opened from the app bar clock — the page it was
+            # tapped on (kept by the tab links), the way back. Not on the
+            # record wrappers: they have their own parent.
+            'sc_clock_from': False if values.get('simplified') else (
+                sc_app_nav.clock_origin(request.params.get('sc_from')) or False),
         }
 
     @staticmethod
@@ -851,17 +890,15 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         
         # Task 1539: the app shell (switch on) or today's template (off).
         if self._sc_app_shell_active():
-            related_url = False
-            if context_patient:
-                related_url = '/my/player?player_id=%s' % context_patient.id
-            elif context_team:
-                related_url = '/my/team?team_id=%s' % context_team.id
-            elif context_event:
-                related_url = '/my/event/%s' % context_event.id
+            # Task 1595: the related records' links, each gated by the
+            # page it leads to (no link to a record the viewer may not open).
+            related_links = self._sc_activity_related(activity)
+            related_url = related_links[0]['url'] if related_links else False
             assignable = self._activity_assignable_users_for(request.env.user)
             users = (assignable | activity.sudo().user_id).sorted('name')
             values.update({
                 'sc_related_url': related_url,
+                'sc_related_links': related_links,
                 'today_date': fields.Date.context_today(request.env.user),
                 'sc_flash': self._sc_activity_flash(),
                 # Owner review 2026-10-11: the pencil card's assignee choices.

@@ -24,7 +24,8 @@
                 </div>
             </t>
             <t t-if="not players">
-                <div class="text-muted fst-italic small">
+                <!-- Task 1614: .o_sc_empty = the app's lazy loader keeps it. -->
+                <div class="text-muted fst-italic small o_sc_empty">
                     No changes were recorded for this day.
                 </div>
             </t>
@@ -57,7 +58,7 @@
                         <!-- Task 1385 (CR-A #3): training recommendation first,
                              then predicted return (inverted), mirroring the live card. -->
                         <div t-if="player.get('training_recommendation')" class="text-muted small d-flex align-items-start mb-1">
-                            <i class="fa fa-graduation-cap mt-1" title="Training Recommendation"></i>
+                            <i class="fa fa-heartbeat mt-1" title="Training Recommendation"></i>
                             <span class="ms-1" style="white-space: pre-wrap;" t-esc="player['training_recommendation']"/>
                         </div>
                         <div t-if="player.get('predicted_return_date')" class="text-muted small d-flex align-items-center mb-1">

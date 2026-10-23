@@ -14,9 +14,13 @@
     Page slots (t-set in the t-call body):
       sc_title          app-bar title (also the <title>)
       sc_active_nav     registry key of the active tab / rail entry
-      sc_primary_action optional {'url', 'label'} rendered in the app bar;
-                        {'sheet': <dialog id>, 'label'} opens that sheet
-                        instead (task 1542)
+      sc_page_key       optional « <model>:<id> » of the page's record (task
+                        1611): the title and the crumb become read
+                        fragments (<key>:appbar / :crumb) that a save of
+                        that record refreshes
+    Task 1607: the app bar carries no page action any more (no
+    sc_primary_action): a list's « + Ajouter » is in its list header
+    (sc_components.xml, sc_list_header), directly above the list.
     Navigation comes from the declarative registry (models/sc_app_roles.py):
     sc_tabs / sc_rail — the layout never branches on groups.
 
@@ -31,6 +35,8 @@
     the screen width decides (phone: back + context, laptop: the trail — no
     user setting). sc_app_nav.js turns the back chevron into history.back()
     when the previous page of this tab is an in-app page.
+    Task 1618 (owner review 2026-10-18): on a laptop the chevron ALWAYS shows
+    next to the trail on a sub-page (back = previous page, else the parent).
 -->
 <odoo>
 
@@ -61,7 +67,8 @@
             <div class="o_sc_app" data-sc-app-shell="1"
                  t-att-data-sc-theme="sc_theme or 'dark'"
                  t-att-data-sc-top="'0' if sc_parent_url else '1'"
-                 t-att-data-sc-db="sc_db" t-att-data-sc-uid="sc_uid">
+                 t-att-data-sc-db="sc_db" t-att-data-sc-uid="sc_uid"
+                 t-att-data-sc-rendered-at="sc_rendered_at">
 
                 <!-- Laptop: left rail -->
                 <aside class="o_sc_rail" aria-label="Navigation">
@@ -78,9 +85,17 @@
                             </a>
                         </t>
                     </nav>
-                    <div class="o_sc_rail_me">
-                        <span class="o_sc_avatar" t-out="sc_user_initials"/>
-                        <span class="o_sc_rail_me_name" t-out="user_id.name"/>
+                    <!-- Task 1606: the user menu (Paramètres, Se déconnecter). -->
+                    <div class="o_sc_user_menu o_sc_user_menu_rail" data-sc-user-menu="rail">
+                        <button type="button" class="o_sc_rail_me" data-sc-user-menu-toggle="1"
+                                aria-haspopup="menu" aria-expanded="false" aria-controls="sc_user_menu_rail">
+                            <span class="o_sc_avatar" aria-hidden="true" t-out="sc_user_initials"/>
+                            <span class="o_sc_rail_me_name" t-out="sc_user_name"/>
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'up'"/></t>
+                        </button>
+                        <t t-call="bemade_sports_clinic.sc_user_menu_popup">
+                            <t t-set="sc_menu_id" t-value="'sc_user_menu_rail'"/>
+                        </t>
                     </div>
                 </aside>
 
@@ -94,29 +109,12 @@
                         <a t-else="" href="/my/home" class="o_sc_logo" aria-label="Le Fit Crew">
                             <t t-call="bemade_sports_clinic.sc_logo_mark"/>
                         </a>
-                        <h1 class="o_sc_appbar_title">
-                            <span class="o_sc_appbar_title_text" t-att-data-sc-heading="'title' if sc_heading_live else None" t-out="sc_title"/>
+                        <h1 class="o_sc_appbar_title" t-att-data-sc-fragment="('%s:appbar' % sc_page_key) if sc_page_key else None">
+                            <span class="o_sc_appbar_title_text" t-out="sc_title"/>
                             <small t-if="sc_context and sc_parent_url"
-                                   class="o_sc_appbar_context" t-out="sc_context"
-                                   t-att-data-sc-heading="'context' if sc_heading_live else None"
-                                   t-att-data-sc-heading-team="sc_heading_team if sc_heading_live else None"/>
+                                   class="o_sc_appbar_context" t-out="sc_context"/>
                         </h1>
-                        <button t-if="sc_primary_action and sc_primary_action.get('sheet')" type="button"
-                                t-att-data-sc-sheet-open="sc_primary_action['sheet']"
-                                t-att-data-sc-action="sc_primary_action.get('key')"
-                                t-att-aria-label="sc_primary_action['label']" t-att-title="sc_primary_action['label']"
-                                class="o_sc_btn o_sc_btn_primary o_sc_appbar_action">
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="sc_primary_action.get('icon') or 'plus'"/></t>
-                            <span class="o_sc_appbar_action_label" t-out="sc_primary_action['label']"/>
-                        </button>
-                        <a t-elif="sc_primary_action" t-att-href="sc_primary_action['url']"
-                           t-att-data-sc-action="sc_primary_action.get('key')"
-                           t-att-aria-label="sc_primary_action['label']" t-att-title="sc_primary_action['label']"
-                           class="o_sc_btn o_sc_btn_primary o_sc_appbar_action">
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="sc_primary_action.get('icon') or 'plus'"/></t>
-                            <span class="o_sc_appbar_action_label" t-out="sc_primary_action['label']"/>
-                        </a>
-                        <form method="post" action="/my/app/pref" class="o_sc_theme_toggle" data-sc-pref="1">
+                        <form t-if="sc_theme_choice" method="post" action="/my/app/pref" class="o_sc_theme_toggle" data-sc-pref="1">
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <input type="hidden" name="redirect" t-att-value="sc_current_url"/>
                             <button type="submit" name="sc_theme" t-att-value="'light' if sc_theme != 'light' else 'dark'"
@@ -124,10 +122,46 @@
                                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'moon'"/></t>
                             </button>
                         </form>
+                        <!-- Task 1592: the activity clock (the slot the theme toggle
+                             left, #1602; both fit when the choice is on). The red
+                             badge = MY overdue activities, fetched by
+                             sc_live_count.js from a light JSON route (at once,
+                             then every 60 s while the tab is visible) — never
+                             computed on every page; hidden at 0.
+                             Task 1622: its href carries the page it is
+                             tapped on (sc_from) — the activities page's
+                             way back. -->
+                        <t t-if="sc_activity_clock">
+                            <t t-set="sc_clock_label">My activities</t>
+                            <t t-set="sc_clock_badge_label">Overdue activities</t>
+                            <a t-att-href="sc_clock_url"
+                               class="o_sc_icon_btn o_sc_appbar_clock" data-sc-activity-clock-bar="1"
+                               t-att-title="sc_clock_label">
+                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'clock'"/></t>
+                                <span class="visually-hidden" t-out="sc_clock_label"/>
+                                <span class="o_sc_appbar_badge" hidden="hidden"
+                                      data-sc-live-count-url="/my/activities/overdue/count"
+                                      data-sc-live-poll="60" data-sc-live-eager="1" data-sc-live-hide-zero="1"
+                                      t-att-title="sc_clock_badge_label">0</span>
+                            </a>
+                        </t>
                         <a t-if="sc_search_url" t-att-href="sc_search_url" class="o_sc_icon_btn"
                            aria-label="Search for a player" title="Search for a player">
                             <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'search'"/></t>
                         </a>
+                        <!-- Task 1606: phone only (the rail footer holds it on a
+                             laptop) — the initials open the user menu. -->
+                        <div class="o_sc_user_menu o_sc_user_menu_bar" data-sc-user-menu="bar">
+                            <t t-set="sc_user_menu_label">User menu</t>
+                            <button type="button" class="o_sc_icon_btn o_sc_appbar_me" data-sc-user-menu-toggle="1"
+                                    aria-haspopup="menu" aria-expanded="false" aria-controls="sc_user_menu_bar"
+                                    t-att-aria-label="sc_user_menu_label" t-att-title="sc_user_menu_label">
+                                <span class="o_sc_avatar" aria-hidden="true" t-out="sc_user_initials"/>
+                            </button>
+                            <t t-call="bemade_sports_clinic.sc_user_menu_popup">
+                                <t t-set="sc_menu_id" t-value="'sc_user_menu_bar'"/>
+                            </t>
+                        </div>
                     </header>
 
                     <!-- Breadcrumb trail (laptop width; task 1579) -->
@@ -137,7 +171,7 @@
                                 <a t-att-href="crumb[1]" t-out="crumb[0]"/>
                             </li>
                             <li class="o_sc_crumb_current" aria-current="page"
-                                t-att-data-sc-heading="'title' if sc_heading_live else None" t-out="sc_title"/>
+                                t-att-data-sc-fragment="('%s:crumb' % sc_page_key) if sc_page_key else None" t-out="sc_title"/>
                         </ol>
                     </nav>
 
@@ -151,6 +185,55 @@
                          t-att-data-sc-notify="sc_notification and (sc_notification['message'] or sc_notification['title']) or None"
                          t-att-data-sc-notify-title="sc_notification and sc_notification['message'] and sc_notification['title'] or None"
                          t-att-data-sc-notify-tone="sc_notification and sc_notification['tone'] or None"/>
+                    <!-- Task 1604: « Resolve » confirms the resolution date
+                         (sc_injury_quick.js fills the injury and posts to
+                         /my/injury/<id>/resolve). Therapists only. -->
+                    <dialog t-if="sc_can('injury.stage.edit')" id="sc_injury_resolve_sheet" class="o_sc_sheet"
+                            aria-labelledby="sc_injury_resolve_sheet_title">
+                        <div class="o_sc_sheet_head">
+                            <h2 class="o_sc_sheet_title" id="sc_injury_resolve_sheet_title">Resolve this injury?</h2>
+                            <button type="button" class="o_sc_icon_btn" data-sc-sheet-close="1" aria-label="Close" title="Close">
+                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'close'"/></t>
+                            </button>
+                        </div>
+                        <div class="o_sc_sheet_body">
+                            <form class="o_sc_form" data-sc-injury-resolve-form="1">
+                                <p class="o_sc_confirm_message" data-sc-injury-resolve-name="1"/>
+                                <div class="o_sc_field">
+                                    <label class="o_sc_field_label" for="sc_injury_resolve_date">Resolution Date</label>
+                                    <input type="date" id="sc_injury_resolve_date" name="resolution_date" class="o_sc_input" required="required"
+                                           t-att-value="sc_today_iso" t-att-max="sc_today_iso"/>
+                                </div>
+                                <p class="o_sc_field_message o_sc_field_error" role="alert" data-sc-injury-resolve-error="1" hidden="hidden">The injury could not be resolved.</p>
+                                <div class="o_sc_form_actions">
+                                    <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                                    <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-injury-resolve-confirm="1">Resolve</button>
+                                </div>
+                            </form>
+                        </div>
+                    </dialog>
+                    <!-- Task 1603: the follow-up proposal sheet (sc_proposal.js
+                         fills it from a save's ``propose``, or from the
+                         proposal a POST round-trip left: data-sc-proposal). -->
+                    <dialog id="sc_proposal_sheet" class="o_sc_sheet o_sc_proposal_sheet"
+                            aria-labelledby="sc_proposal_sheet_title"
+                            t-att-data-sc-proposal="sc_proposal_json or None">
+                        <div class="o_sc_sheet_head">
+                            <h2 class="o_sc_sheet_title" id="sc_proposal_sheet_title" data-sc-proposal-title="1"/>
+                            <button type="button" class="o_sc_icon_btn" data-sc-sheet-close="1" aria-label="Close" title="Close">
+                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'close'"/></t>
+                            </button>
+                        </div>
+                        <div class="o_sc_sheet_body">
+                            <p class="o_sc_proposal_message" data-sc-proposal-message="1"/>
+                            <ul class="o_sc_proposal_items" data-sc-proposal-items="1"/>
+                            <p class="o_sc_field_message o_sc_field_error" role="alert" data-sc-proposal-error="1" hidden="hidden">The changes could not be applied.</p>
+                            <div class="o_sc_banner_actions o_sc_proposal_actions">
+                                <button type="button" class="o_sc_btn o_sc_btn_primary" data-sc-proposal-apply="1">Apply</button>
+                                <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-proposal-dismiss="1">Dismiss</button>
+                            </div>
+                        </div>
+                    </dialog>
                 </div>
 
                 <!-- Phone: bottom tabs -->
@@ -165,6 +248,33 @@
                 </nav>
             </div>
         </t>
+    </template>
+
+    <!-- Task 1606: the user menu's popup (one per trigger: rail footer on a
+         laptop, app-bar avatar on a phone). sc_app_ui.js opens / closes it
+         (tap, Enter / Space, the arrow keys, Escape, an outside tap).
+         ``sc_menu_id``: the id the trigger's aria-controls names. -->
+    <template id="sc_user_menu_popup" name="App shell: user menu popup">
+        <div t-att-id="sc_menu_id" class="o_sc_user_menu_popup" hidden="hidden" data-sc-user-menu-popup="1">
+            <div class="o_sc_user_menu_head" data-sc-user-menu-head="1">
+                <span class="o_sc_avatar" aria-hidden="true" t-out="sc_user_initials"/>
+                <span class="o_sc_user_menu_who">
+                    <strong class="o_sc_user_menu_name" t-out="sc_user_name"/>
+                    <small t-if="sc_user_role" class="o_sc_user_menu_role" t-out="sc_user_role"/>
+                </span>
+            </div>
+            <div role="menu" class="o_sc_user_menu_items" t-att-aria-label="sc_user_name">
+                <a role="menuitem" href="/my/app/settings" class="o_sc_user_menu_item" tabindex="-1"
+                   t-att-aria-current="'page' if page_name == 'sc_app_settings' else None">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'settings'"/></t>
+                    <span>Settings</span>
+                </a>
+                <a role="menuitem" href="/web/session/logout?redirect=/" class="o_sc_user_menu_item" tabindex="-1">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'logout'"/></t>
+                    <span>Sign out</span>
+                </a>
+            </div>
+        </div>
     </template>
 
 </odoo>

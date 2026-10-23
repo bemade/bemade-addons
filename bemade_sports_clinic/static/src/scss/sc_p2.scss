@@ -91,6 +91,12 @@ $sc-p2-laptop: 992px;
         gap: var(--sc-space-3);
     }
 
+    // Review fixes 2026-10-18: a field shown for one injury status only
+    // (sc_injury_card.js); the holder does not add a box of its own.
+    .o_sc_stage_only:not([hidden]) {
+        display: contents;
+    }
+
     // ------------------------------------------- inline-edit cards (2026-10-10)
     // One pencil per card; read view by default (sc_app_ui.js toggles).
     .o_sc_edit_card {
@@ -151,7 +157,7 @@ $sc-p2-laptop: 992px;
         padding: 0;
         list-style: none;
 
-        &:empty {
+        &:not(:has(button)) {
             display: none;
         }
     }
@@ -193,6 +199,7 @@ $sc-p2-laptop: 992px;
         }
     }
 
+    // Task 1608: the full list (browse) — scrollable, grouped.
     .o_sc_tags_options {
         display: flex;
         flex-direction: column;
@@ -201,7 +208,42 @@ $sc-p2-laptop: 992px;
         list-style: none;
         border: 1px solid var(--sc-line);
         border-radius: var(--sc-radius-sm);
-        overflow: hidden;
+        max-height: unquote("min(50vh, 22rem)");
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+
+        &:focus {
+            outline: none;
+        }
+    }
+
+    .o_sc_tags_search {
+        scroll-margin-top: 72px;
+    }
+
+    .o_sc_tags_group {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding: var(--sc-space-1) var(--sc-space-3);
+        background: var(--sc-surface-2);
+        border-top: 1px solid var(--sc-line);
+        color: var(--sc-fg-2);
+        font-size: var(--sc-text-sm);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+
+        &:first-child {
+            border-top: 0;
+        }
+    }
+
+    .o_sc_tags_option_active {
+        background: var(--sc-hover);
+        box-shadow: inset 3px 0 0 var(--sc-accent);
     }
 
     .o_sc_tags_option {
@@ -224,6 +266,10 @@ $sc-p2-laptop: 992px;
     }
 
     .o_sc_tags_options > li:first-child .o_sc_tags_option {
+        border-top: 0;
+    }
+
+    .o_sc_tags_group + li .o_sc_tags_option {
         border-top: 0;
     }
 
@@ -336,6 +382,194 @@ $sc-p2-laptop: 992px;
         min-width: 0;
     }
 
+    // Review fixes 2026-10-18 (#1603 / #1615): the header is a read view
+    // with ONE pencil (therapists), top right, next to the name.
+    .o_sc_hero_editable {
+        position: relative;
+
+        .o_sc_hero_top {
+            padding-right: calc(var(--sc-tap) + var(--sc-space-1, 4px));
+        }
+    }
+
+    // Task 1630: the name / team head and, left of the pencil, the
+    // « Allergies » / « Medical alert » pills; on a narrow screen the pills
+    // wrap under the name.
+    .o_sc_hero_top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2) var(--sc-space-3);
+        min-width: 0;
+
+        > .o_sc_hero_head {
+            flex: 1 1 auto;
+        }
+    }
+
+    .o_sc_med_pills {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+
+        &:empty {
+            display: none;
+        }
+    }
+
+    .o_sc_med_pill {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        min-height: 26px;
+        padding: 2px 10px;
+        border: 1px solid transparent;
+        border-radius: var(--sc-radius-pill);
+        font: inherit;
+        font-size: var(--sc-text-xs);
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+        cursor: pointer;
+
+        // A phone tap lands even on the small drawn pill.
+        &::before {
+            content: "";
+            position: absolute;
+            inset: -8px -2px;
+        }
+
+        .o_sc_icon {
+            width: 14px;
+            height: 14px;
+        }
+    }
+
+    .o_sc_med_pill_static {
+        cursor: default;
+
+        &::before {
+            content: none;
+        }
+    }
+
+    // Review round 1 (owner 2026-10-22): the red pills on player cards
+    // (sc_player_status_line) — the size of the status pills next to them,
+    // and NOT positioned: under the link row's stretched link, so a tap on
+    // the pill opens the player.
+    .o_sc_med_pill.o_sc_med_card_pill {
+        position: static;
+        min-height: 0;
+        padding: 1px 8px;
+        gap: 3px;
+
+        .o_sc_icon {
+            width: 12px;
+            height: 12px;
+        }
+    }
+
+    .o_sc_med_urgent { background: var(--sc-bad); color: var(--sc-tone-fg); }
+    .o_sc_med_minor { background: var(--sc-warn); color: var(--sc-tone-fg); }
+    .o_sc_med_none { background: var(--sc-surface-2); color: var(--sc-fg-2); }
+    .o_sc_med_unset { background: transparent; border-color: var(--sc-line); border-style: dashed; color: var(--sc-fg-2); }
+
+    .o_sc_med_epipen {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .o_sc_med_sheet {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+    }
+
+    // Review round 1: the read view and, top-right, the icon-only pencil
+    // (kept while editing: the read view hides, the pencil stays).
+    .o_sc_med_sheet_top {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--sc-space-2);
+        min-width: 0;
+
+        > .o_sc_med_read {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        > .o_sc_med_edit_toggle {
+            margin-left: auto;
+            // Centre the tap target on the level pill's line.
+            margin-top: calc((26px - var(--sc-tap)) / 2);
+            margin-right: calc(var(--sc-space-2) * -1);
+        }
+    }
+
+    .o_sc_med_level_line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2);
+        margin: 0;
+    }
+
+    .o_sc_med_epipen_line {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 700;
+
+        .o_sc_icon {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    .o_sc_med_details,
+    .o_sc_med_details_empty {
+        margin: 0;
+    }
+
+    @media (max-width: 575.98px) {
+        .o_sc_med_pills {
+            margin-left: 0;
+            flex-basis: 100%;
+        }
+    }
+
+    .o_sc_hero_edit_toggle {
+        position: absolute;
+        top: var(--sc-space-2);
+        right: var(--sc-space-2);
+    }
+
+    .o_sc_hero_read {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+        min-width: 0;
+    }
+
+    // Task 1629: the training recommendation's title (+ « History ») sits
+    // just above its value / editor.
+    .o_sc_training_title {
+        margin-bottom: var(--sc-space-1);
+    }
+
+    .o_sc_hero_return:empty {
+        display: none;
+    }
+
+    // Review fixes 2026-10-18 (1018c): an empty date's placeholder line.
+    .o_sc_hero_return_empty {
+        margin: 0;
+        font-size: var(--sc-text-sm);
+    }
+
     .o_sc_hero_title {
         margin: 0;
         font-family: var(--sc-font-title);
@@ -377,6 +611,71 @@ $sc-p2-laptop: 992px;
     @media (min-width: $sc-p2-laptop) {
         .o_sc_filter_grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    // Owner review 2026-10-14: sort / group by are not filters — their own
+    // labelled group under the filters.
+    .o_sc_filter_group {
+        margin: var(--sc-space-3) 0 0;
+        padding: var(--sc-space-3) 0 0;
+        border: 0;
+        border-top: 1px solid var(--sc-line);
+        min-width: 0;
+    }
+
+    .o_sc_filter_group_title {
+        float: left; // keeps the legend inside the fieldset's flow
+        width: 100%;
+        margin: 0 0 var(--sc-space-2);
+        padding: 0;
+        font-size: var(--sc-text-sm);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--sc-fg-2);
+
+        + * {
+            clear: both;
+        }
+    }
+
+    // Task 1617: the timesheets filters are open on every visit — on a phone
+    // the « Group by » group takes one row (legend left, select right; the
+    // select's own label stays for screen readers) so the list header still
+    // shows on the first screen.
+    @media (max-width: $sc-p2-laptop - 0.02px) {
+        .o_sc_filters_compact .o_sc_filter_group {
+            margin-top: var(--sc-space-2);
+            padding-top: var(--sc-space-2);
+        }
+
+        // Still floated (a rendered legend is no flow content): half the
+        // row, the grid (its own formatting context) beside it.
+        .o_sc_filters_compact .o_sc_filter_group_title {
+            width: calc(50% - var(--sc-space-2) / 2);
+            margin: 0 var(--sc-space-2) 0 0;
+            line-height: var(--sc-tap);
+
+            + * {
+                clear: none;
+            }
+        }
+
+        .o_sc_filters_compact .o_sc_filter_group .o_sc_filter_grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .o_sc_filters_compact .o_sc_filter_group .o_sc_field_label {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
     }
 
@@ -534,6 +833,263 @@ $sc-p2-laptop: 992px;
     .o_sc_injury_item.o_sc_edit_card {
         gap: 0;
     }
+
+    // Task 1616 (owner decision 2026-10-17): the open injury card in three
+    // sections — phone: Details, Notes, Documents stacked; laptop: Details
+    // top-left, Notes on the right (both rows), Documents under Details.
+    .o_sc_injury_sections {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-4);
+        min-width: 0;
+    }
+
+    .o_sc_injury_section {
+        min-width: 0;
+
+        + .o_sc_injury_section {
+            border-top: 1px solid var(--sc-line);
+            padding-top: var(--sc-space-3);
+        }
+    }
+
+    // Task 1631: the Details row of consent + visibility pills — side by
+    // side on a laptop, stacked on a phone.
+    .o_sc_injury_flags {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2);
+        margin-bottom: var(--sc-space-3);
+    }
+
+    @media (max-width: 575.98px) {
+        .o_sc_injury_flags {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+
+    @media (min-width: 992px) {
+        .o_sc_injury_sections {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-areas:
+                "details notes"
+                "documents notes";
+            grid-template-rows: auto 1fr;
+            column-gap: var(--sc-space-5);
+            row-gap: var(--sc-space-4);
+            align-items: start;
+        }
+
+        .o_sc_injury_details { grid-area: details; }
+        .o_sc_injury_documents { grid-area: documents; }
+
+        .o_sc_injury_notes {
+            grid-area: notes;
+            align-self: stretch;
+            border-left: 1px solid var(--sc-line);
+            padding-left: var(--sc-space-5);
+        }
+
+        .o_sc_injury_section + .o_sc_injury_section {
+            border-top: 0;
+            padding-top: 0;
+        }
+
+        .o_sc_injury_documents {
+            border-top: 1px solid var(--sc-line);
+            padding-top: var(--sc-space-3);
+        }
+    }
+
+    .o_sc_injury_doc_list {
+        gap: var(--sc-space-2);
+    }
+
+    .o_sc_injury_doc.o_sc_edit_card {
+        gap: var(--sc-space-2);
+    }
+
+    .o_sc_injury_card_actions {
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: var(--sc-space-2);
+        padding-top: var(--sc-space-3);
+        border-top: 1px solid var(--sc-line);
+    }
+
+    // The « Add documents » sheet: a drop zone (a tap opens the picker),
+    // the chosen files with their size, an oversized one flagged.
+    .o_sc_dropzone {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--sc-space-2);
+        min-height: calc(var(--sc-tap) * 2);
+        padding: var(--sc-space-3);
+        border: 2px dashed var(--sc-line);
+        border-radius: var(--sc-radius-md);
+        color: var(--sc-fg-2);
+        text-align: center;
+        cursor: pointer;
+
+        &.o_sc_dropzone_over,
+        &:hover {
+            border-color: var(--sc-accent);
+            color: var(--sc-fg);
+        }
+
+        &:has(input:focus-visible) {
+            outline: 2px solid var(--sc-focus);
+            outline-offset: 2px;
+        }
+    }
+
+    .o_sc_dropzone_input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .o_sc_file_list {
+        list-style: none;
+        margin: var(--sc-space-2) 0 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: var(--sc-text-sm);
+    }
+
+    .o_sc_file {
+        display: flex;
+        justify-content: space-between;
+        gap: var(--sc-space-2);
+        min-width: 0;
+    }
+
+    .o_sc_file_name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_sc_file_size {
+        flex: none;
+        color: var(--sc-fg-2);
+    }
+
+    // Review fixes 2026-10-18 (#1616): one « × » per chosen file.
+    .o_sc_file {
+        align-items: center;
+    }
+
+    .o_sc_file_name {
+        flex: 1 1 auto;
+    }
+
+    .o_sc_file_remove {
+        appearance: none;
+        flex: none;
+        width: 32px;
+        height: 32px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--sc-fg-2);
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            background: var(--sc-hover);
+            color: var(--sc-bad);
+        }
+    }
+
+    .o_sc_file_too_large .o_sc_file_size {
+        color: var(--sc-bad);
+        font-weight: 600;
+    }
+
+    // Review fixes 2026-10-18 b: each chosen file is a small block — its
+    // head (name, size, « × ») then its own name / category / description
+    // (two columns when there is room, stacked on a phone).
+    .o_sc_doc_upload .o_sc_file_list {
+        gap: var(--sc-space-2);
+    }
+
+    .o_sc_doc_upload .o_sc_file {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--sc-space-2);
+        padding: var(--sc-space-2) var(--sc-space-3) var(--sc-space-3);
+        border: 1px solid var(--sc-line);
+        border-radius: var(--sc-radius-md);
+    }
+
+    .o_sc_doc_upload .o_sc_file_too_large {
+        border-color: var(--sc-bad);
+    }
+
+    .o_sc_file_head {
+        display: flex;
+        align-items: center;
+        gap: var(--sc-space-2);
+        min-width: 0;
+    }
+
+    // Review fixes 2026-10-18 (1018c): the shared « Category » /
+    // « Description » only while no file is listed (sc_injury_card.js).
+    .o_sc_doc_shared_group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    .o_sc_file_fields {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--sc-space-2);
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    .o_sc_file_field {
+        margin: 0;
+
+        .o_sc_field_label {
+            font-size: var(--sc-text-xs);
+        }
+    }
+
+    .o_sc_file_field_wide {
+        grid-column: 1 / -1;
+
+        .o_sc_textarea {
+            min-height: var(--sc-tap);
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .o_sc_file_fields {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
 }
 
 // Grouped lists (events, timesheets: « Group by », owner review 2026-10-11).
@@ -578,5 +1134,159 @@ $sc-p2-laptop: 992px;
         dd {
             margin-bottom: var(--sc-space-2);
         }
+    }
+}
+
+// Task 1582 — the injury notes' « replace » editor (sc_autosave_field
+// replace=True): the current text read-only above an empty « New note ».
+.o_sc_app {
+    .o_sc_replace_current {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: var(--sc-space-2);
+        padding: var(--sc-space-2);
+        border: 1px solid var(--sc-line);
+        border-radius: var(--sc-radius-sm);
+        background: var(--sc-surface-2);
+    }
+
+    .o_sc_replace_current_text {
+        max-height: 9.5em;
+        overflow-y: auto;
+        color: var(--sc-fg-2);
+        overflow-wrap: anywhere;
+    }
+
+    .o_sc_replace_caption {
+        font-size: var(--sc-text-xs);
+        font-weight: 600;
+        color: var(--sc-fg-3);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .o_sc_replace_new_head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--sc-space-2);
+        margin-bottom: 4px;
+    }
+
+    .o_sc_replace_reuse {
+        font-size: var(--sc-text-xs);
+    }
+
+    .o_sc_replace_hint {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px var(--sc-space-2);
+        margin-top: 4px;
+
+        .o_sc_link_btn {
+            font-size: var(--sc-text-xs);
+        }
+    }
+}
+
+// Task 1603: the player header's « Retour prévu » and the follow-up
+// proposal sheet (sc_proposal.js).
+.o_sc_app {
+    .o_sc_hero_return .o_sc_input[type="date"] {
+        max-width: 16rem;
+    }
+
+    .o_sc_proposal_message {
+        margin: 0;
+        color: var(--sc-fg-2);
+    }
+
+    .o_sc_proposal_items {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-2);
+    }
+
+    .o_sc_proposal_item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: var(--sc-space-2) 0;
+        border-bottom: 1px solid var(--sc-line);
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+
+    .o_sc_proposal_label {
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    .o_sc_proposal_change {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2);
+        color: var(--sc-fg-2);
+
+        .o_sc_input {
+            flex: 0 1 12rem;
+            min-height: var(--sc-tap);
+        }
+    }
+
+    .o_sc_proposal_current {
+        text-decoration: line-through;
+        color: var(--sc-fg-3);
+    }
+
+    .o_sc_proposal_proposed {
+        color: var(--sc-fg);
+    }
+
+    .o_sc_proposal_actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sc-space-2);
+
+        .o_sc_btn {
+            min-height: var(--sc-tap);
+        }
+    }
+
+    // Task 1604: the quick « Vérifier » / « Résoudre » of an injury — a
+    // compact button of its own in the card row (full tap height) and on
+    // the injury page.
+    .o_sc_quick_btn {
+        min-height: var(--sc-tap);
+        padding: 0 12px;
+        font-size: var(--sc-text-sm);
+    }
+
+}
+
+// Review 2026-10-20 (#1629): in the pencil view the training title is a
+// section title above the field; the field's own label row (« Effacer »,
+// the save state) sits on the title's line instead of a line of its own.
+.o_sc_app [data-sc-section="player.training.edit"] {
+    position: relative;
+
+    .o_sc_autosave > .o_sc_field_label {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin: 0;
+        min-height: calc(var(--sc-title-md) * 1.2);
+        display: flex;
+        align-items: center;
+        gap: var(--sc-space-2);
     }
 }

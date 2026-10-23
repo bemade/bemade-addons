@@ -13,7 +13,9 @@
     the legacy scripts are NOT used here and stay unchanged.
 
     Every sheet posts to the SAME routes as today's page (CSRF token in each
-    form). The injury sheets load the unchanged fragment routes. No inline
+    form). Task 1590: the dossier's injuries are the player page's inline
+    cards (sc_injury_add_card / sc_injury_card) — the legacy fragment routes
+    are no longer loaded here (the legacy page still uses them). No inline
     script / style (lint test).
 -->
 <odoo>
@@ -30,7 +32,9 @@
                 <t t-set="active" t-value="time_filter"/>
             </t>
 
-            <form method="get" action="/my/clinics" class="o_sc_filters" data-sc-section="clinics.filters">
+            <!-- Owner review 2026-10-14: applied on change (sc_forms.js). -->
+            <form method="get" action="/my/clinics" class="o_sc_filters" data-sc-section="clinics.filters"
+                  data-sc-autosubmit="1">
                 <input type="hidden" name="filters_applied" value="1"/>
                 <input type="hidden" name="time_filter" t-att-value="time_filter"/>
                 <div class="o_sc_chips">
@@ -68,7 +72,7 @@
                     </div>
                     <div class="o_sc_form_actions">
                         <a href="/my/clinics" class="o_sc_btn o_sc_btn_ghost">Reset</a>
-                        <button type="submit" class="o_sc_btn o_sc_btn_primary">Apply filters</button>
+                        <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-autosubmit-fallback="1">Apply filters</button>
                     </div>
                 </details>
             </form>
@@ -131,8 +135,6 @@
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-set="sc_title" t-value="event.name"/>
             <t t-set="sc_active_nav" t-value="'clinic'"/>
-            <t t-set="sc_add_label">Add a patient</t>
-            <t t-set="sc_primary_action" t-value="{'sheet': 'sc_clinic_add_sheet', 'label': sc_add_label, 'key': 'clinic.add'}"/>
 
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
             <div t-if="success == 'note_added' and sc_note_draft_prefix"
@@ -164,6 +166,14 @@
                 <section class="o_sc_tab_panel o_sc_clinic_pane" data-sc-tab-panel="worklist" role="tabpanel"
                          id="clinic-worklist" data-sc-section="clinic.worklist"
                          t-att-hidden="None if sc_clinic_active_tab == 'worklist' else 'hidden'">
+                    <!-- Task 1607: « + Ajouter » (the add-patient sheet, was in
+                         the app bar) right above the worklist. -->
+                    <t t-call="bemade_sports_clinic.sc_list_header">
+                        <t t-set="header_section" t-value="'clinic.worklist.header'"/>
+                        <t t-set="add_label">Add a patient</t>
+                        <t t-set="add_sheet" t-value="'sc_clinic_add_sheet'"/>
+                        <t t-set="add_key" t-value="'clinic.add'"/>
+                    </t>
                     <owl-component name="bemade_sports_clinic.sc_clinic_worklist" t-att-props="sc_worklist_props">
                         <t t-call="bemade_sports_clinic.sc_clinic_worklist_static"/>
                     </owl-component>
@@ -179,6 +189,7 @@
                     <t t-else="">
                         <t t-set="patient" t-value="selected_patient"/>
                         <div class="o_sc_card o_sc_hero" data-sc-section="clinic.dossier.hero" t-att-data-sc-patient-id="patient.id">
+                            <div class="o_sc_hero_top">
                             <div class="o_sc_hero_head">
                                 <span class="o_sc_avatar" t-out="''.join(part[:1] for part in [patient.first_name or '', patient.last_name or '']).upper()"/>
                                 <div>
@@ -189,47 +200,62 @@
                                     </p>
                                 </div>
                             </div>
-                            <t t-if="is_treatment_prof and sc_can('patient.allergies') and (patient.allergies or '').strip()"
-                               t-call="bemade_sports_clinic.sc_banner">
-                                <t t-set="tone" t-value="'warn'"/>
-                                <t t-set="title">Allergies</t>
-                                <t t-out="patient.allergies"/>
+                            <!-- Task 1630 (owner 2026-10-20): the player page's
+                                 « Allergies » / « Medical alert » pills replace the
+                                 allergies banner; therapists edit in the popups. -->
+                            <t t-if="sc_can('patient.medical_alerts')" t-call="bemade_sports_clinic.sc_medical_pills">
+                                <t t-set="tp" t-value="bool(is_treatment_prof)"/>
+                                <t t-set="scope" t-value="'clinic'"/>
+                                <t t-set="section" t-value="'clinic.dossier.medical'"/>
                             </t>
+                            </div>
                             <div class="o_sc_actions_row">
                                 <a t-attf-href="/my/player?player_id=#{patient.id}#{dossier_ctx_qs}" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
                                    data-sc-action="clinic.full_file">
                                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'user'"/></t>
                                     <span>Full file</span>
                                 </a>
-                                <a t-if="is_treatment_prof" t-attf-href="/my/patient/injury/new?patient_id=#{patient.id}#{dossier_ctx_qs}"
-                                   class="o_sc_btn o_sc_btn_primary o_sc_btn_sm" data-sc-sheet-open="sc_clinic_injury_new"
+                                <!-- Task 1590: jumps to the inline « Add Injury » card. -->
+                                <a t-if="is_treatment_prof" href="#sc_clinic_injury_add"
+                                   class="o_sc_btn o_sc_btn_primary o_sc_btn_sm"
                                    data-sc-action="clinic.injury_new">
                                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'injury'"/></t>
                                     <span>New injury</span>
                                 </a>
                             </div>
                         </div>
+                        <!-- Task 1630: the pills' popups (islands, outside the hero). -->
+                        <t t-if="sc_can('patient.medical_alerts')" t-call="bemade_sports_clinic.sc_medical_sheets">
+                            <t t-set="tp" t-value="bool(is_treatment_prof)"/>
+                            <t t-set="scope" t-value="'clinic'"/>
+                            <t t-set="editable" t-value="bool(is_treatment_prof)"/>
+                        </t>
 
                         <div class="o_sc_card o_sc_fields" data-sc-section="clinic.dossier.status" id="clinic-status">
-                            <t t-if="is_treatment_prof and sc_can('patient.status.edit')">
-                                <t t-set="sc_status_label">Play status</t>
-                                <t t-set="sc_status_undo">Status changed</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                    <t t-set="props" t-value="sc_field_props(patient, 'sc_status', sc_status_label, 'segmented', options=sc_status_options, instant=True, undoMessage=sc_status_undo)"/>
+                            <!-- Task 1627: the player page's Match / Practice pill
+                                 dropdowns replace the 4-way changer (read-only,
+                                 coloured pills without the status right); a
+                                 read fragment, so a change recolours them in
+                                 place. -->
+                            <t t-set="sc_status_undo">Status changed</t>
+                            <div class="o_sc_chips" data-sc-section="clinic.dossier.status.pills"
+                                 t-att-data-sc-fragment="sc_fragment_key(patient, 'status')">
+                                <t t-foreach="patient._sc_status_pills()" t-as="pill">
+                                    <t t-call="bemade_sports_clinic.sc_status_pill_select">
+                                        <t t-set="editable" t-value="is_treatment_prof and sc_can('patient.status.edit')"/>
+                                        <t t-set="undo_message" t-value="sc_status_undo"/>
+                                    </t>
                                 </t>
-                            </t>
-                            <div t-else="" class="o_sc_chips">
-                                <span class="o_sc_chip o_sc_chip_ghost"><span>Match:</span> <span t-field="patient.match_status"/></span>
-                                <span class="o_sc_chip o_sc_chip_ghost"><span>Practice:</span> <span t-field="patient.practice_status"/></span>
                             </div>
                             <t t-set="sc_training_label">Training Recommendation</t>
                             <t t-if="is_treatment_prof and sc_can('patient.training.edit')" t-call="bemade_sports_clinic.sc_field_autosave">
-                                <t t-set="props" t-value="sc_field_props(patient, 'training_recommendation', sc_training_label, 'textarea', clearable=True)"/>
+                                <t t-set="props" t-value="sc_field_props(patient, 'training_recommendation', sc_training_label, 'textarea', clearable=True, hint=patient.last_training_recommendation_info or None)"/>
                             </t>
                             <t t-elif="(patient.training_recommendation or '').strip()" t-call="bemade_sports_clinic.sc_field_static">
                                 <t t-set="label" t-value="sc_training_label"/>
                                 <t t-set="value" t-value="patient.training_recommendation"/>
                                 <t t-set="pre" t-value="True"/>
+                                <t t-set="static_hint" t-value="patient.last_training_recommendation_info"/>
                             </t>
                         </div>
 
@@ -237,16 +263,24 @@
                             <t t-call="bemade_sports_clinic.sc_section_header">
                                 <t t-set="title">Active injuries</t>
                             </t>
-                            <div t-if="sc_injury_rows" class="o_sc_list">
+                            <!-- Task 1590: the player page's inline cards — add
+                                 (coach visibility, then diagnosis), pencil edit
+                                 saved field by field, the quick notes with their
+                                 « last note » stamp; every create / undo lands
+                                 back here (sc_origin=clinic). -->
+                            <t t-set="clinic_event" t-value="event"/>
+                            <t t-set="card_origin" t-value="'clinic'"/>
+                            <t t-set="card_id_prefix" t-value="'clinic-injury-'"/>
+                            <t t-call="bemade_sports_clinic.sc_injury_add_card">
+                                <t t-set="card_patient" t-value="patient"/>
+                                <t t-set="card_add_id" t-value="'sc_clinic_injury_add'"/>
+                            </t>
+                            <!-- Task 1611: a read-fragment list — a card resolved here
+                                 drops out (once closed), the others re-order. -->
+                            <div t-if="sc_injury_rows" class="o_sc_list" data-sc-section="clinic.dossier.injury_list"
+                                 t-att-data-sc-fragment="sc_fragment_key(patient, 'active-injuries')" data-sc-fragment-mode="list">
                                 <t t-foreach="sc_injury_rows" t-as="row">
-                                    <t t-call="bemade_sports_clinic.sc_entity_row">
-                                        <t t-set="href" t-value="'/my/injury/edit?injury_id=%s%s' % (row['id'], dossier_ctx_qs)"/>
-                                        <t t-set="dot" t-value="'red'"/>
-                                        <t t-set="title" t-value="row['title']"/>
-                                        <t t-set="subtitle" t-value="row['subtitle']"/>
-                                        <t t-set="row_attrs" t-value="{'data-sc-injury-id': row['id'], 'data-sc-sheet-open': 'sc_clinic_injury_%s' % row['id'], 'id': 'clinic-injury-%s' % row['id']}"/>
-                                        <span t-if="row['hidden']" class="o_sc_chip o_sc_chip_mauve">Hidden from coaches</span>
-                                    </t>
+                                    <t t-call="bemade_sports_clinic.sc_injury_card"/>
                                 </t>
                             </div>
                             <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
@@ -280,19 +314,6 @@
                             </t>
                         </section>
 
-                        <!-- Injury sheets: the unchanged fragment routes (task 1412). -->
-                        <t t-if="is_treatment_prof" t-call="bemade_sports_clinic.sc_sheet">
-                            <t t-set="sheet_id" t-value="'sc_clinic_injury_new'"/>
-                            <t t-set="title">Add Injury</t>
-                            <t t-set="lazy_url" t-value="'/my/patient/injury/new/fragment?patient_id=%s&amp;clinic_id=%s' % (patient.id, event.id)"/>
-                        </t>
-                        <t t-foreach="sc_injury_rows" t-as="row">
-                            <t t-call="bemade_sports_clinic.sc_sheet">
-                                <t t-set="sheet_id" t-value="'sc_clinic_injury_%s' % row['id']"/>
-                                <t t-set="title">Edit Injury</t>
-                                <t t-set="lazy_url" t-value="row['fragment_url']"/>
-                            </t>
-                        </t>
                     </t>
                 </section>
             </div>
@@ -305,7 +326,7 @@
                 <form t-attf-action="/my/clinic/#{event.id}/attendance/add" method="post" class="o_sc_form" data-sc-form="clinic.add">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <div class="o_sc_field">
-                        <label class="o_sc_field_label" for="sc_clinic_add_patient">Patient</label>
+                        <label class="o_sc_field_label" for="sc_clinic_add_patient">Player</label>
                         <t t-set="combo_label_clinic">Clinic teams</t>
                         <t t-set="combo_label_other">Other teams</t>
                         <t t-set="combo_empty_label">Pick a patient…</t>

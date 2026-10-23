@@ -26,8 +26,9 @@ Acceptance criteria covered here:
   teams the user may assign (a few matches at a time); each add / remove
   saves at once (browser half: the ``sc_player_teams_tags`` tour). Only the user's assignable teams are added / removed —
   the player's other teams are kept; anything else posted is ignored.
-* UC-6 Header follows edits: an Identity save answers the new heading, and
-  the app bar title and the hero carry ``data-sc-heading`` hooks.
+* UC-6 Header follows edits: the app bar title, the crumb and the hero head
+  are read fragments an Identity save refreshes (task 1611: the save answers
+  ``refresh``; the former ``heading`` payload is gone).
 * UC-7 Edit page retired: no « Edit Player » action on the player page;
   ``/my/player/edit`` redirects to the player page's Info tab, keeping the
   team / clinic context. Switch off: the legacy edit page is unchanged.
@@ -145,7 +146,7 @@ class TestPlayerInline(PlayerInlineCommon):
         self.assertFalse(teams.xpath('.//button[@data-sc-edit-toggle]'))
         self.assertFalse(teams.xpath('.//*[@data-sc-edit-view="edit"]'))
         with mute_logger('odoo.http'):
-            for field, value in (('sc_team_ids', str(self.team_a.id)), ('allergies', 'x')):
+            for field, value in (('sc_team_ids', str(self.team_a.id)), ('allergy_details', 'x')):
                 self.assertEqual(self._save(self.player, field, value).status_code, 403, field)
 
     # -- UC-4 ------------------------------------------------------------
@@ -156,11 +157,18 @@ class TestPlayerInline(PlayerInlineCommon):
         _text, tree = self._get(self._url(tab='info'))
         panel = tree.xpath('//*[@data-sc-app-shell]')[0]
         live = ' '.join(self._fields_in(panel))
-        self.assertIn('"sc_status"', live)
         self.assertIn('"training_recommendation"', live)
-        for node in panel.xpath('.//owl-component[contains(@props, \'"sc_status"\') '
-                                'or contains(@props, \'"training_recommendation"\')]'):
-            self.assertFalse(node.xpath('ancestor::*[@data-sc-edit-card]'))
+        # Task 1627: the status is the header's pill dropdowns (read view,
+        # outside the pencil), no autosave field.
+        self.assertNotIn('"sc_status"', live)
+        self.assertEqual(len(panel.xpath('.//*[@data-sc-section="player.hero"]/*[@data-sc-edit-view="read"]'
+                                         '//*[@data-sc-pill-select][@data-sc-field="sc_status"]')), 2)
+        # Review fixes 2026-10-18: the training recommendation behind the
+        # HEADER's one pencil (its edit view), still an autosaving field.
+        for node in panel.xpath('.//owl-component[contains(@props, \'"training_recommendation"\')]'):
+            self.assertEqual(node.xpath('ancestor::*[@data-sc-edit-card][1]/@data-sc-edit-card'),
+                             ['player-header'])
+            self.assertTrue(node.xpath('ancestor::*[@data-sc-edit-view="edit"]'))
 
     # -- UC-5 ------------------------------------------------------------
     def test_teams_checklist_only_touches_assignable_teams(self):
@@ -189,14 +197,13 @@ class TestPlayerInline(PlayerInlineCommon):
     def test_identity_save_answers_heading(self):
         self._login_tp()
         _text, tree = self._get(self._url())
-        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_appbar_title_text")][@data-sc-heading="title"]'))
-        self.assertTrue(tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-heading="list_name"]'))
+        key = 'sports.patient:%s' % self.player.id
+        self.assertTrue(tree.xpath('//h1[@data-sc-fragment="%s:appbar"]' % key))
+        self.assertTrue(tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-fragment="%s:hero-head"]' % key))
         resp = self._save(self.player, 'jersey_number', '7')
         self.assertEqual(resp.status_code, 200, resp.text)
-        heading = resp.json()['heading']
-        self.assertTrue(heading['title'].startswith('#7 '))
-        self.assertIn('#7', heading['list_name'])
-        self.assertIn('Linebacker', heading['context'])
+        self.assertNotIn('heading', resp.json())
+        self.assertIn('%s:*' % key, resp.json()['refresh'])
 
     # -- UC-7 ------------------------------------------------------------
     def test_edit_page_retired(self):

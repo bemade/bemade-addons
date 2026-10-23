@@ -91,45 +91,71 @@
             name="action_triage_hide"
             string="Hide from my list"
             type="object"
+            icon="fa-eye-slash"
             title="Removes the selected conversations from your list only. Colleagues still see them."
           />
-                    <button name="action_triage_unhide" string="Unhide" type="object" />
+                    <button
+            name="action_triage_unhide"
+            string="Unhide"
+            type="object"
+            icon="fa-eye"
+            title="Puts the selected conversations back in your list. Only you are affected."
+          />
                     <button
             name="action_triage_done"
             string="Done"
             type="object"
+            icon="fa-check"
             title="Closes the selected conversations for the whole team."
           />
-                    <button name="action_triage_reopen" string="Reopen" type="object" />
+                    <button
+            name="action_triage_reopen"
+            string="Reopen"
+            type="object"
+            icon="fa-undo"
+            title="Reopens the selected conversations for the whole team."
+          />
                     <button
             name="action_triage_open_snooze_wizard"
             string="Snooze"
             type="object"
+            icon="fa-clock-o"
+            title="Snoozes the selected conversations until later. Only you are affected."
           />
                     <button
             name="action_triage_unsnooze"
             string="Unsnooze"
             type="object"
+            icon="fa-bell-slash-o"
+            title="Brings the selected snoozed conversations back to your list now. Only you are affected."
           />
                     <button
             name="action_triage_open_assign_wizard"
             string="Assign…"
             type="object"
+            icon="fa-user-plus"
+            title="Changes the assignee of the selected conversations, for everyone."
           />
                     <button
             name="action_triage_assign_me"
             string="Assign to me"
             type="object"
+            icon="fa-user"
+            title="Assigns the selected conversations to you, for everyone."
           />
                     <button
             name="action_triage_mark_read"
             string="Mark read"
             type="object"
+            icon="fa-envelope-open-o"
+            title="Marks the selected conversations as read. Only you are affected."
           />
                     <button
             name="action_triage_mark_unread"
             string="Mark unread"
             type="object"
+            icon="fa-envelope"
+            title="Marks the selected conversations as unread. Only you are affected."
           />
                 </header>
                 <field name="my_unread" column_invisible="1" />
@@ -156,14 +182,16 @@
           name="action_triage_mark_read"
           type="object"
           icon="fa-envelope-open-o"
-          title="Mark read"
+          title="Mark as read (only you)"
+          aria-label="Mark as read (only you)"
           invisible="not my_unread"
         />
                 <button
           name="action_triage_mark_unread"
           type="object"
           icon="fa-envelope"
-          title="Mark unread"
+          title="Mark as unread (only you)"
+          aria-label="Mark as unread (only you)"
           invisible="my_unread"
         />
                 <button
@@ -171,47 +199,54 @@
           type="object"
           icon="fa-eye-slash"
           title="Hide from my list (colleagues still see it)"
+          aria-label="Hide from my list (colleagues still see it)"
           invisible="my_hidden or my_snoozed"
         />
                 <button
           name="action_triage_unhide"
           type="object"
           icon="fa-eye"
-          title="Unhide"
+          title="Unhide: put it back in my list (only you)"
+          aria-label="Unhide: put it back in my list (only you)"
           invisible="not my_hidden"
         />
                 <button
           name="action_triage_open_snooze_wizard"
           type="object"
           icon="fa-clock-o"
-          title="Snooze"
+          title="Snooze until later (only you)"
+          aria-label="Snooze until later (only you)"
           invisible="my_snoozed"
         />
                 <button
           name="action_triage_unsnooze"
           type="object"
           icon="fa-bell-slash-o"
-          title="Unsnooze"
+          title="Unsnooze: bring it back to my list now (only you)"
+          aria-label="Unsnooze: bring it back to my list now (only you)"
           invisible="not my_snoozed"
         />
                 <button
           name="action_triage_open_assign_wizard"
           type="object"
           icon="fa-user-plus"
-          title="Assign"
+          title="Assign it to someone (changes the assignee for everyone)"
+          aria-label="Assign it to someone (changes the assignee for everyone)"
         />
                 <button
           name="action_triage_done"
           type="object"
           icon="fa-check"
           title="Done (closes it for everyone)"
+          aria-label="Done (closes it for everyone)"
           invisible="state == 'done'"
         />
                 <button
           name="action_triage_reopen"
           type="object"
           icon="fa-undo"
-          title="Reopen"
+          title="Reopen (reopens it for everyone)"
+          aria-label="Reopen (reopens it for everyone)"
           invisible="state != 'done'"
         />
             </list>

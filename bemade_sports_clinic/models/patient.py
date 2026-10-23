@@ -9,7 +9,17 @@ from odoo.addons.phone_validation.tools import phone_validation
 from .patient_injury import (
     dashboard_external_injury_fields,
     dashboard_internal_injury_fields,
+    history_author_uid,
+    history_stamp_date,
     legacy_change_emails_enabled,
+)
+from .medical_alerts import (
+    COACH_LEVELS,
+    LEVEL_MINOR,
+    LEVEL_NONE,
+    LEVEL_TONES,
+    LEVEL_URGENT,
+    UNSET_TONE,
 )
 import logging
 
@@ -35,6 +45,19 @@ JERSEY_SORT_LAST = 10 ** 8
 # two players by a portal user (exact-duplicate refusal).
 IDENTITY_FIELDS = ('first_name', 'last_name', 'date_of_birth')
 IDENTITY_CONFIRM_KEY = 'sc_identity_confirmed'
+
+# Task 1630: allergy / medical-alert levels (no value = « Not specified »).
+MEDICAL_LEVEL_SELECTION = [
+    # « None known » (not « None »: the shared msgid is masculine in French).
+    (LEVEL_NONE, "None known"),
+    (LEVEL_MINOR, "Not urgent"),
+    (LEVEL_URGENT, "Urgent – life-threatening"),
+]
+_MEDICAL_ALERT_GROUPS = (
+    "bemade_sports_clinic.group_sports_clinic_treatment_professional,"
+    "bemade_sports_clinic.group_portal_treatment_professional,"
+    "bemade_sports_clinic.group_portal_team_coach"
+)
 
 # Summaries of the « Player Removal Request » activities (English source and
 # the fr_CA rendering the cron may have stored).
@@ -143,13 +166,15 @@ class Patient(models.Model):
     )
 
     # Patient fields
+    # Task 1633: coaches read / edit it too (their teams' players only:
+    # the coach record rule portal_team_staff_player_access).
     date_of_birth = fields.Date(
-        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
+        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional,bemade_sports_clinic.group_portal_team_coach",
         tracking=True,
     )
     age = fields.Integer(
         compute="_compute_age",
-        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
+        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional,bemade_sports_clinic.group_portal_team_coach",
     )
     contact_ids = fields.One2many(
         comodel_name="sports.patient.contact",
@@ -201,6 +226,22 @@ class Patient(models.Model):
     # TP-write is enforced at the portal (template t-if + controller gate), the
     # same way date_of_birth is handled.
     training_recommendation = fields.Text(string="Training Recommendation", tracking=True)
+    # Task 1601: every change (a clear included) lands in an append-only
+    # history, like the injury notes; the newest row gives the « Updated on
+    # <date> by <author> » stamp shown under the field everywhere it is shown.
+    # compute_sudo: the history model is rule-gated for portal users, the
+    # stamp is plain display text about a field the reader already sees.
+    training_history_ids = fields.One2many(
+        comodel_name="sports.patient.training.history",
+        inverse_name="patient_id",
+        string="Training Recommendation History",
+        readonly=True,
+    )
+    last_training_recommendation_info = fields.Char(
+        string="Training recommendation last updated",
+        compute="_compute_last_training_recommendation_info",
+        compute_sudo=True,
+    )
     injury_ids = fields.One2many(
         comodel_name="sports.patient.injury",
         inverse_name="patient_id",
@@ -250,8 +291,45 @@ class Patient(models.Model):
         compute="_compute_document_count",
         string="Document Count",
     )
+    # Task 1630: the legacy free text, kept for this release as a hidden
+    # column (no UI, system only) — the 19.0.1.99.0 post-migrate pre-filled
+    # the levels below from it. Dropping it is a follow-up once the clinic
+    # has validated the pre-filled entries.
     allergies = fields.Text(
+        string="Allergies (legacy)",
+        readonly=True,
+        groups="base.group_system",
+    )
+    # Task 1630 (owner + MC 2026-10-21): allergies and medical alerts, each a
+    # level (no value = « Not specified ») + details; EpiPen with the
+    # allergies. Coaches read the level / details / EpiPen (the app shows
+    # them only the non-urgent and urgent ones); therapists read and edit.
+    allergy_level = fields.Selection(
+        selection=MEDICAL_LEVEL_SELECTION,
+        string="Allergy level",
+        groups=_MEDICAL_ALERT_GROUPS,
+    )
+    allergy_details = fields.Text(string="Allergy details", groups=_MEDICAL_ALERT_GROUPS)
+    allergy_epipen = fields.Boolean(string="EpiPen", groups=_MEDICAL_ALERT_GROUPS)
+    medical_alert_level = fields.Selection(
+        selection=MEDICAL_LEVEL_SELECTION,
+        string="Medical alert level",
+        groups=_MEDICAL_ALERT_GROUPS,
+    )
+    medical_alert_details = fields.Text(string="Medical alert details", groups=_MEDICAL_ALERT_GROUPS)
+    # Therapists only, never coaches (the Infos tab).
+    medical_history_other = fields.Text(
+        string="Other medical history",
         groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
+    )
+    # Pre-filled from the legacy text by the migration: the clinic validates
+    # them from the back-end list « Medical alerts to validate ».
+    medical_alert_review = fields.Boolean(
+        string="To validate",
+        copy=False,
+        groups="base.group_user",
+        help="Pre-filled from the former free-text allergies field: check the "
+        "levels and details, then untick.",
     )
     team_info_notes = fields.Text(
         string="Notes",
@@ -338,10 +416,43 @@ class Patient(models.Model):
                 res.update({"team_ids": team_ids})
         return res
 
+    @api.depends("training_history_ids.change_datetime", "training_history_ids.author_id")
+    def _compute_last_training_recommendation_info(self):
+        for patient in self:
+            row = patient.training_history_ids.sorted(
+                key=lambda r: (r.change_datetime, r.id), reverse=True)[:1]
+            patient.last_training_recommendation_info = _(
+                "Updated on %(date)s by %(author)s",
+                date=history_stamp_date(patient, row.change_datetime),
+                author=row.author_id.name or "—",
+            ) if row else ""
+
+    def _prepare_training_history_vals(self, vals):
+        """History rows for the players whose training recommendation
+        ``vals`` really changes (task 1601): whitespace-only differences are
+        no change; a clear IS one (empty content). Runs whatever the mail
+        tracking context; only ``skip_training_history`` turns it off."""
+        if "training_recommendation" not in vals or self.env.context.get("skip_training_history"):
+            return []
+        new = vals.get("training_recommendation") or ""
+        author_id = history_author_uid(self.env)
+        now = fields.Datetime.now()
+        return [{
+            "patient_id": patient.id,
+            "change_datetime": now,
+            "author_id": author_id,
+            "content": new if new.strip() else False,
+        } for patient in self.sudo()
+            if (patient.training_recommendation or "").strip() != new.strip()]
+
     def write(self, vals):
         self._normalize_jersey_vals(vals)
         corrections = self._sc_identity_guard(vals)
+        training_history = self._prepare_training_history_vals(vals)
         res = super().write(vals)
+        if training_history:
+            # sudo: history rows are only ever created by server code.
+            self.env["sports.patient.training.history"].sudo().create(training_history)
         if corrections:
             self._sc_post_identity_note(corrections)
         if "jersey_number" in vals or "team_ids" in vals:
@@ -1825,6 +1936,12 @@ class Patient(models.Model):
                     "last_name": _("Player %s") % patient.id,
                     "date_of_birth": False,
                     "team_info_notes": False,
+                    # Task 1630: the medical free text (the levels / EpiPen
+                    # carry no identity and stay).
+                    "allergies": False,
+                    "allergy_details": False,
+                    "medical_alert_details": False,
+                    "medical_history_other": False,
                     "predicted_return_date": False,
                     "return_date": False,
                     "is_anonymized": True,
@@ -1899,6 +2016,19 @@ class Patient(models.Model):
                     .id
                 )
         res = super().create(vals_list)
+        # Task 1601: a player created with a recommendation gets its first
+        # history row.
+        if not self.env.context.get("skip_training_history"):
+            author_id = history_author_uid(self.env)
+            now = fields.Datetime.now()
+            initial = [{
+                "patient_id": patient.id,
+                "change_datetime": now,
+                "author_id": author_id,
+                "content": patient.training_recommendation,
+            } for patient in res.sudo() if (patient.training_recommendation or "").strip()]
+            if initial:
+                self.env["sports.patient.training.history"].sudo().create(initial)
         res._notify_jersey_duplicates()
         # Stamp the Law 25 retention clock for any player created without a team.
         res._sync_date_left_last_team()
@@ -2188,16 +2318,31 @@ class Patient(models.Model):
         "no": ("red", "fa-ban"),
     }
 
-    def _sc_row_status(self):
+    @api.model
+    def _sc_status_labels(self):
+        """Task 1634: ``{field: {value: label}}`` of the Match / Practice
+        selections in the request language — computed ONCE per list render
+        and passed to ``_sc_row_status`` / ``_sc_status_pills`` (never per
+        row)."""
+        env = self.env
+        return {
+            field_name: dict(self._fields[field_name]._description_selection(env))
+            for field_name in ("match_status", "practice_status")
+        }
+
+    def _sc_row_status(self, labels=None):
         """Status line of ONE player row: ``{'pills': [match, practice],
-        'injuries': n}``, each pill ``{label, tone, icon, title}``."""
+        'injuries': n}``, each pill ``{label, tone, icon, title}``.
+        ``labels``: ``_sc_status_labels()`` (task 1634: computed once for a
+        whole list)."""
         self.ensure_one()
         env = self.env
+        labels_of = labels or self._sc_status_labels()
 
         def pill(field_name, label, tones):
             value = self[field_name]
             tone, icon = tones.get(value, ("ghost", ""))
-            labels = dict(self._fields[field_name]._description_selection(env))
+            labels = labels_of[field_name]
             return {
                 "label": label,
                 "tone": tone,
@@ -2213,6 +2358,235 @@ class Patient(models.Model):
             ],
             "injuries": self.active_injury_count,
         }
+
+    # Task 1627: the match / practice pairs the constraint allows.
+    _SC_VALID_STATUS_PAIRS = frozenset(
+        {("yes", "yes"), ("no", "yes"), ("no", "no_contact"), ("no", "no")})
+
+    def _sc_status_pills(self, labels=None):
+        """Task 1627: the Match and Practice pill dropdowns of ONE player
+        (the ``sc_status_pill_select`` component): ``[match, practice]``,
+        each ``{key, label, text, value, tone, icon, title, menu_label,
+        options, target}``.
+
+        ``options``: ``{value, label, tone, icon, checked, disabled, hint,
+        post}`` — ``post`` is the ``sc_status`` pair a pick saves (the other
+        pill's value kept); a choice that would make an invalid pair is
+        ``disabled`` with a ``hint`` saying what to change first (owner
+        decision 2026-10-20: greyed out, never auto-adjusted).
+        ``target``: what the pick posts to (``/my/app/save``), with the
+        ``write_date`` / ``old_value`` of this render.
+        ``labels``: ``_sc_status_labels()`` (task 1634: computed once for a
+        whole list of player cards)."""
+        self.ensure_one()
+        env = self.env
+        labels_of = labels or self._sc_status_labels()
+        match, practice = self.match_status, self.practice_status
+        pair = "%s:%s" % (match, practice)
+        target = {
+            "model": self._name,
+            "id": self.id,
+            "field": "sc_status",
+            "write_date": fields.Datetime.to_string(self.sudo().write_date),
+            "old_value": pair,
+        }
+        specs = (
+            ("match", "match_status", env._("Match"), env._("Match status"),
+             self._SC_MATCH_PILLS, lambda v: (v, practice), env._("Requires Practice: Yes")),
+            ("practice", "practice_status", env._("Practice"), env._("Practice status"),
+             self._SC_PRACTICE_PILLS, lambda v: (match, v), env._("Set Match to No first")),
+        )
+        pills = []
+        for key, field_name, label, menu_label, tones, pair_of, hint in specs:
+            value = self[field_name]
+            labels = labels_of[field_name]
+            tone, icon = tones.get(value, ("ghost", ""))
+            text = env._("%(what)s: %(value)s", what=label,
+                         value=labels.get(value) or env._("Unknown"))
+            options = []
+            for option, option_label in labels.items():
+                new_pair = pair_of(option)
+                valid = new_pair in self._SC_VALID_STATUS_PAIRS
+                option_tone, option_icon = tones.get(option, ("ghost", ""))
+                options.append({
+                    "value": option,
+                    "label": option_label,
+                    "tone": option_tone,
+                    "icon": option_icon,
+                    "checked": option == value,
+                    "disabled": not valid,
+                    "hint": "" if valid else hint,
+                    "post": "%s:%s" % new_pair if valid else "",
+                })
+            pills.append({
+                "key": key,
+                "label": label,
+                "menu_label": menu_label,
+                "value": value,
+                "text": text,
+                "title": text,
+                "tone": tone,
+                "icon": icon,
+                "options": options,
+                "target": target,
+            })
+        return pills
+
+    # ----------------------------------------------------------------------
+    # Task 1630: allergies + medical alert pills
+    # ----------------------------------------------------------------------
+    # The posted / saved fields of the medical block (therapists only).
+    SC_MEDICAL_FIELDS = (
+        "allergy_level", "allergy_details", "allergy_epipen",
+        "medical_alert_level", "medical_alert_details", "medical_history_other",
+    )
+
+    def _sc_level_label(self, level):
+        """« None known » / « Not urgent » / « Urgent – life-threatening », or
+        « Not specified » for no value, in the env's language."""
+        if not level:
+            return self.env._("Not specified")
+        labels = dict(self._fields["allergy_level"]._description_selection(self.env))
+        return labels.get(level, level)
+
+    @api.model
+    def _sc_medical_level_options(self):
+        """The level choices of a form / select: « Not specified » first."""
+        labels = dict(self._fields["allergy_level"]._description_selection(self.env))
+        return [("", self.env._("Not specified"))] + [
+            (key, labels[key]) for key, _label in MEDICAL_LEVEL_SELECTION]
+
+    def _sc_medical_pills(self, tp=False):
+        """Task 1630: the two header pills of ONE player, « Allergies » and
+        « Medical alert »: ``[{key, label, level, level_label, tone, details,
+        epipen, text}]``.
+
+        ``tp``: the viewer is a therapist (both pills, every level). A coach
+        gets only the non-urgent / urgent ones (owner + MC 2026-10-21: no
+        pill for « None » / « Not specified »). Read as the CURRENT user: the
+        fields are group-restricted (therapists + portal coaches) — the
+        caller gates the call on ``sc_can('patient.medical_alerts')``."""
+        self.ensure_one()
+        env = self.env
+        if not self._has_field_access(self._fields["allergy_level"], "read"):
+            # Neither therapist nor coach (e.g. a system administrator
+            # without a clinic role): nothing to show, never an AccessError.
+            return []
+        allergy_label = env._("Allergies")
+        alert_label = env._("Medical alert")
+        specs = (
+            ("allergy", allergy_label, "allergy_level", "allergy_details", "allergy_epipen"),
+            ("medical_alert", alert_label, "medical_alert_level", "medical_alert_details", None),
+        )
+        pills = []
+        for key, label, level_field, details_field, epipen_field in specs:
+            level = self[level_field] or False
+            if not tp and level not in COACH_LEVELS:
+                continue
+            level_label = self._sc_level_label(level)
+            epipen = bool(epipen_field and self[epipen_field])
+            pills.append({
+                "key": key,
+                "label": label,
+                "level": level,
+                "level_label": level_label,
+                "tone": LEVEL_TONES.get(level, UNSET_TONE),
+                "details": (self[details_field] or "").strip(),
+                "epipen": epipen,
+                "text": env._("%(what)s: %(level)s", what=label, level=level_label),
+            })
+        return pills
+
+    # Review round 1 (owner 2026-10-22): the pills a player CARD shows.
+    _SC_CARD_MEDICAL_FIELDS = ("allergy_level", "allergy_epipen", "medical_alert_level")
+
+    def _sc_card_medical_pills(self):
+        """Task 1630, review round 1: the RED (« Urgent – life-threatening »)
+        medical pills of player cards (dashboard, roster, /my/players):
+        ``{player_id: [{key, label, epipen, title}]}``, players without a
+        red level absent. Shown to therapists and coaches alike (a coach
+        sees red, owner's rule); « Not urgent » / « None » / « Not
+        specified » never show on a card.
+
+        ONE batched read for the whole recordset, as the CURRENT user (never
+        sudo: the fields are group-restricted). A viewer failing the
+        field-group check gets nothing; records the viewer may not read are
+        skipped — never an AccessError."""
+        records = self.sudo(False)
+        if not records:
+            return {}
+        if not all(records._has_field_access(records._fields[name], "read")
+                   for name in self._SC_CARD_MEDICAL_FIELDS):
+            return {}
+        try:
+            records = records._filtered_access("read")
+            records.fetch(list(self._SC_CARD_MEDICAL_FIELDS))
+        except AccessError:
+            return {}
+        env = self.env
+        specs = (
+            ("allergy", env._("Allergies"), "allergy_level", "allergy_epipen"),
+            ("medical_alert", env._("Medical alert"), "medical_alert_level", None),
+        )
+        urgent_label = self._sc_level_label(LEVEL_URGENT)
+        result = {}
+        for record in records:
+            pills = []
+            for key, label, level_field, epipen_field in specs:
+                if record[level_field] != LEVEL_URGENT:
+                    continue
+                epipen = bool(epipen_field and record[epipen_field])
+                title = env._("%(what)s: %(level)s", what=label, level=urgent_label)
+                pills.append({
+                    "key": key,
+                    "label": label,
+                    "epipen": epipen,
+                    "title": ("%s · EpiPen" % title) if epipen else title,
+                })
+            if pills:
+                result[record.id] = pills
+        return result
+
+    def _sc_medical_summary_lines(self, tp=False):
+        """Task 1630: the legacy portal's compact read of the pills, one line
+        each — « Allergies (urgent – life-threatening, EpiPen): … ». Same
+        visibility rule as ``_sc_medical_pills``; a therapist gets no line
+        for « Not specified » / « None » without details."""
+        lines = []
+        for pill in self._sc_medical_pills(tp=tp):
+            if not pill["level"] and not pill["details"]:
+                continue
+            qualifiers = [pill["level_label"].lower()]
+            if pill["epipen"]:
+                qualifiers.append("EpiPen")
+            head = self.env._("%(what)s (%(qualifiers)s)", what=pill["label"],
+                              qualifiers=", ".join(qualifiers))
+            lines.append({
+                "key": pill["key"],
+                "tone": pill["tone"],
+                "text": self.env._("%(head)s: %(details)s", head=head, details=pill["details"])
+                if pill["details"] else head,
+            })
+        return lines
+
+    @api.model
+    def _sc_medical_vals_from_post(self, post):
+        """Task 1630: the medical block of a create / edit form (therapists
+        only — the caller gates it). Only the keys the form posted; an
+        unknown level is ignored; EpiPen is a checkbox (posted when ticked,
+        with its ``allergy_epipen_present`` marker so unticking clears it)."""
+        vals = {}
+        levels = {key for key, _label in MEDICAL_LEVEL_SELECTION}
+        for name in ("allergy_level", "medical_alert_level"):
+            if name in post:
+                value = (post.get(name) or "").strip()
+                vals[name] = value if value in levels else False
+        for name in ("allergy_details", "medical_alert_details", "medical_history_other"):
+            if name in post:
+                vals[name] = (post.get(name) or "").strip() or False
+        if "allergy_epipen" in post or "allergy_epipen_present" in post:
+            vals["allergy_epipen"] = str(post.get("allergy_epipen") or "").lower() in ("1", "on", "true", "yes")
+        return vals
 
     def _portal_list_name(self, with_jersey=True):
         """« Last, First » of ONE patient for portal lists and pickers —
@@ -2234,22 +2608,22 @@ class Patient(models.Model):
 
     def _training_recommendation_history(self):
         """Every change of ONE patient's training recommendation, newest
-        first, from the field's mail tracking (owner review 2026-10-10: a
-        history like the team announcement's). Plain dicts — ``when``
-        (datetime), ``author`` and ``body`` (the text set, '' when cleared) —
-        read as sudo: callers gate on who may see the recommendation."""
+        first (owner review 2026-10-10: a history like the team
+        announcement's). Task 1601: read from
+        ``sports.patient.training.history`` — NOT sudo, so the model's record
+        rules re-enforce the team scoping behind the caller's own gate. Plain
+        dicts — ``when`` (datetime), ``author`` and ``body`` (the text set,
+        '' when cleared)."""
         self.ensure_one()
-        trackings = self.env["mail.tracking.value"].sudo().search([
-            ("field_id.model", "=", self._name),
-            ("field_id.name", "=", "training_recommendation"),
-            ("mail_message_id.model", "=", self._name),
-            ("mail_message_id.res_id", "=", self.id),
-        ], order="id desc")
+        rows = self.env["sports.patient.training.history"].search(
+            [("patient_id", "=", self.id)])
         return [{
-            "when": tracking.mail_message_id.date,
-            "author": tracking.mail_message_id.author_id.name or "",
-            "body": (tracking.new_value_text or "").strip(),
-        } for tracking in trackings]
+            "when": row.change_datetime,
+            # sudo: the author's name only (a portal reader may not read
+            # internal users).
+            "author": row.author_id.sudo().name or "",
+            "body": (row.content or "").strip(),
+        } for row in rows]
 
     def _portal_heading_name(self):
         """Single-patient headings (the player page title, the clinic dossier
@@ -3059,8 +3433,10 @@ class Patient(models.Model):
             patient_vals['position'] = vals.get('position') or False
         if 'jersey_number' in vals:
             patient_vals['jersey_number'] = vals.get('jersey_number') or False
-        if 'allergies' in vals:
-            patient_vals['allergies'] = vals.get('allergies') or False
+        # Task 1630: the medical block replaces the legacy allergies text.
+        for key in self.SC_MEDICAL_FIELDS:
+            if key in vals:
+                patient_vals[key] = vals.get(key) or False
         if 'team_info_notes' in vals:
             patient_vals['team_info_notes'] = vals.get('team_info_notes') or False
         

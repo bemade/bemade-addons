@@ -1,13 +1,13 @@
-"""Task 1588 — « Plus › Langue »: the user's PROFILE language is the only
+"""Task 1588 — « Paramètres › Langue » (« Plus » until task 1606): the user's PROFILE language is the only
 source of truth in the app shell. Synthetic fixtures only.
 
 Acceptance criteria covered here:
 
-* UC-L1 « Plus » has a « Langue » section: one button per frontend language
+* UC-L1 « Paramètres » has a « Langue » section: one button per frontend language
   (FR / EN), the profile language pressed; hidden with a single language.
 * UC-L2 ``POST /my/app/pref`` with ``lang`` (CSRF) writes the CALLER's
   ``res.users.lang``, sets the ``frontend_lang`` cookie to match and
-  redirects to « Plus » in that language (no further language hop). A
+  redirects to « Paramètres » in that language (no further language hop). A
   language that is not an active frontend language → 400, nothing written.
 * UC-L3 Profile wins: on a shell page, a stale ``frontend_lang`` cookie, an
   ``/en/`` (or ``/fr/``) URL prefix or the browser's Accept-Language never
@@ -96,7 +96,7 @@ class TestAppShellLang1588(AppShellCommon):
         match = re.search(r'"bundle_params":\s*\{[^}]*"lang":\s*"([^"]+)"', text)
         return match.group(1).replace('_', '-') if match else None
 
-    def _post_lang(self, code, redirect='/my/app/more'):
+    def _post_lang(self, code, redirect='/my/app/settings'):
         data = {'csrf_token': self._csrf(), 'lang': code}
         if redirect:
             data['redirect'] = redirect
@@ -106,7 +106,7 @@ class TestAppShellLang1588(AppShellCommon):
     def test_more_has_language_switch(self):
         self._switch(True)
         self._login_tp()
-        tree = lxml_html.fromstring(self._open('/my/app/more').text)
+        tree = lxml_html.fromstring(self._open('/my/app/settings').text)
         buttons = tree.xpath('//section[@id="sc_language"]//form//button[@name="lang"]')
         self.assertEqual(sorted(b.get('value') for b in buttons), ['en_US', 'fr_CA'])
         labels = {b.get('value'): b.text_content().strip() for b in buttons}
@@ -122,7 +122,7 @@ class TestAppShellLang1588(AppShellCommon):
     def test_more_language_section_in_french(self):
         self._switch(True)
         self._login_tp()
-        text = self._open('/my/app/more').text
+        text = self._open('/my/app/settings').text
         self.assertEqual(self._html_lang(text), 'fr-CA')
         tree = lxml_html.fromstring(text)
         header = ' '.join(tree.xpath('//section[@id="sc_language"]//text()'))
@@ -140,7 +140,7 @@ class TestAppShellLang1588(AppShellCommon):
             frontend = self.env['res.lang']._get_frontend()
             single = type(frontend)({'fr_CA': frontend['fr_CA']})
             self.patch(type(self.env['res.lang']), '_get_frontend', lambda _self: single)
-        tree = lxml_html.fromstring(self._open('/my/app/more').text)
+        tree = lxml_html.fromstring(self._open('/my/app/settings').text)
         self.assertFalse(tree.xpath('//section[@id="sc_language"]'))
 
     # -- UC-L2 -------------------------------------------------------------
@@ -155,7 +155,8 @@ class TestAppShellLang1588(AppShellCommon):
             self.assertEqual(self.tp.lang, 'en_US')
             self.assertEqual(resp.cookies.get('frontend_lang'), 'en_US')
             location = resp.headers['Location']
-            expected = '/my/app/more' if default == self.en else '/%s/my/app/more' % self.en.url_code
+            expected = ('/my/app/settings' if default == self.en
+                        else '/%s/my/app/settings' % self.en.url_code)
             self.assertTrue(location.endswith(expected), (default.code, location))
             # Landing there: English, without another language hop.
             resp = self.url_open(location, allow_redirects=False)
@@ -203,8 +204,8 @@ class TestAppShellLang1588(AppShellCommon):
             for login, user_code, stale in ((self._login_tp, 'fr-CA', 'en_US'),
                                             (self._login_coach, 'en-US', 'fr_CA')):
                 login()
-                for url in ('/my/home', '/my/app/more', '/my/teams',
-                            '/my/app/install'):
+                for url in ('/my/home', '/my/app/more', '/my/app/settings',
+                            '/my/teams', '/my/app/install'):
                     self._cookie(stale)
                     resp = self._open(url)
                     self.assertEqual(self._html_lang(resp.text), user_code,
@@ -234,7 +235,8 @@ class TestAppShellLang1588(AppShellCommon):
     # -- UC-L4 -------------------------------------------------------------
     def test_no_redirect_loop(self):
         self._switch(True)
-        paths = ['/', '/my/home', '/my/app/more', '/my/app/install', '/my/teams']
+        paths = ['/', '/my/home', '/my/app/more', '/my/app/settings', '/my/app/install',
+                 '/my/teams']
         for default in (self.en, self.fr):
             self._set_default_lang(default)
             for login in (self._login_tp, self._login_coach):
@@ -265,7 +267,7 @@ class TestAppShellLang1588(AppShellCommon):
 @tagged('post_install', '-at_install')
 class TestAppShellLangTour1588(TestAppShellLang1588):
     """UC-L2 + UC-L3 in a browser (static/tests/tours/sc_app_lang_tours.js):
-    Plus → EN → English; a tampered cookie + reload → still English."""
+    Paramètres → EN → English; a tampered cookie + reload → still English."""
     browser_size = '390x844'
 
     # The HTTP tests run once, in their own class.
@@ -280,5 +282,5 @@ class TestAppShellLangTour1588(TestAppShellLang1588):
 
     def test_lang_switch_tour(self):
         self._switch(True)
-        self.start_tour('/my/app/more', 'sc_1588_lang_switch', login='pc.tp@example.com')
+        self.start_tour('/my/app/settings', 'sc_1588_lang_switch', login='pc.tp@example.com')
         self.assertEqual(self.tp.lang, 'en_US')

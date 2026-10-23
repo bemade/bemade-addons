@@ -147,8 +147,12 @@ class TestAppShellRoles1538(TransactionCase):
     def test_sc_can_matches_registry(self):
         coach_roles = self.coach._sc_app_roles()
         tp_roles = self.tp._sc_app_roles()
-        self.assertFalse(registry.can('patient.allergies', coach_roles))
-        self.assertTrue(registry.can('patient.allergies', tp_roles))
+        # Task 1630: the medical pills for every staff role, « Other medical
+        # history » for therapists only.
+        self.assertTrue(registry.can('patient.medical_alerts', coach_roles))
+        self.assertTrue(registry.can('patient.medical_alerts', tp_roles))
+        self.assertFalse(registry.can('patient.medical_history', coach_roles))
+        self.assertTrue(registry.can('patient.medical_history', tp_roles))
         self.assertTrue(registry.can('home.team_status', coach_roles))
         self.assertFalse(registry.can('home.clinic_teaser', coach_roles))
         self.assertTrue(registry.can('home.clinic_teaser', tp_roles))

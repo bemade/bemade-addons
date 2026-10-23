@@ -25,6 +25,19 @@ HISTORY_ATTRIBUTE = re.compile(r'\s*data-last-history-steps="[0-9,]*"')
 CONTENT_FIELDS = {"body", "subject", "transport_id", "recipient_ids", "attachment_ids"}
 
 
+def conversation_templates_exist(env):
+    """Whether at least one ``mail.template`` is written for conversations.
+
+    Read with ``sudo``: whether a template exists must not depend on the
+    reader's access to the template model.
+    """
+    return bool(
+        env["mail.template"]
+        .sudo()
+        .search_count([("model", "=", "mail.conversation")], limit=1)
+    )
+
+
 class MailConversationDraft(models.Model):
     """A reply being prepared on a conversation, shared by everyone who can
     work the conversation.
@@ -50,6 +63,10 @@ class MailConversationDraft(models.Model):
         required=True,
         ondelete="cascade",
         index=True,
+    )
+    has_reply_templates = fields.Boolean(
+        compute="_compute_has_reply_templates",
+        help="Whether any reply template exists for conversations.",
     )
     state = fields.Selection(
         [
@@ -84,6 +101,13 @@ class MailConversationDraft(models.Model):
         "draft_id",
         "attachment_id",
         string="Attachments",
+        # Same as every core attachment many2many (mail.message, mail.template,
+        # ...): without it each read, fields_get and group-by join runs an
+        # access-checked ir.attachment search that, with no res_model to narrow
+        # on, scans every record-linked attachment in the database. Draft access
+        # is delegated to the conversation, and the attachments themselves are
+        # still checked when read or downloaded.
+        bypass_search_access=True,
     )
     # Deliberately NOT tracked: tracking would subscribe the editor and make
     # every keystroke-adjacent save noisy in the chatter.
@@ -106,6 +130,13 @@ class MailConversationDraft(models.Model):
     # ------------------------------------------------------------
     # Computes
     # ------------------------------------------------------------
+
+    # No ``@api.depends`` and not stored: evaluated on every read, so a
+    # template created or deleted shows up without an upgrade or restart.
+    def _compute_has_reply_templates(self):
+        exists = conversation_templates_exist(self.env)
+        for draft in self:
+            draft.has_reply_templates = exists
 
     @api.depends("conversation_id")
     def _compute_display_name(self):

@@ -38,7 +38,10 @@ Acceptance criteria
 8. The journal week files are **rendered from the records**: ``export_journal_weeks(student)``
    returns ``{"tracking/journal/<ISO>/<ISO>.md": text}`` for every ISO week holding a day of
    the student (blocks, an entry, or a day off), in the household's French format (a
-   « Semaine N » heading, the weekly review when one exists, ``## Jours``, one ``### date``
+   « Semaine N » heading, every review of the week (all kinds, by date: « Revue de la
+   semaine », « Revue des six semaines », « Revue de janvier », « Revue de juin »; the
+   answers filled, the retired « Semaine consignée telle quelle ? » only when answered),
+   ``## Jours``, one ``### date``
    section per day with the recorded blocks as ``- Blocs :`` lines, the entry's bullets with
    the import prefixes, dated corrections). ``export_texts`` merges those dynamic paths
    after ``FILES`` (and accepts them in ``files=``); the rendered file is importable by
@@ -334,9 +337,10 @@ class TestExport(HomeschoolCase):
         # 2025-09-01 (the year's start, a Monday) → 2026-01-05 is the 19th calendar week of the year
         self.assertEqual(lines[0], "# Semaine 19 · 2026-W02 (lun. 5 janv. → dim. 11 janv.)")
         self.assertIn("## Revue de la semaine", lines)
-        self.assertIn("- **Dose tenue ? :** yes", lines)
+        self.assertIn("- **Dose gardée ? :** yes", lines)
         self.assertIn("- **Ajustement pour la semaine prochaine :** none really", lines)
-        self.assertNotIn("- **Plafond visible respecté ? :** ", "\n".join(lines), "empty answers are not rendered")
+        self.assertNotIn("Plafond souple", "\n".join(lines), "empty answers are not rendered")
+        self.assertNotIn("Semaine consignée telle quelle", "\n".join(lines), "the retired question only when answered")
         self.assertIn("## Jours", lines)
         day_start = lines.index("### 2026-01-05")
         self.assertEqual(lines[day_start + 1:day_start + 10], [
@@ -358,6 +362,39 @@ class TestExport(HomeschoolCase):
         text = self.env["homeschool.exporter"].export_journal_weeks(self.student)["tracking/journal/2026-W02/2026-W02.md"]
         self.assertIn("- Corrections :\n  - **%s** (What worked): late\n" % today, text)
         self.assertNotIn("- Ce qui a marché : late", text, "the frozen field itself is unchanged")
+
+    def test_journal_week_renders_every_review_kind(self):
+        """A six-week review renders its own section; with a weekly review in the same week
+        both render, by date; the current labels; the retired question only when answered."""
+        self._week_fixture()
+        Review = self.env["homeschool.review"]
+        Review.create({"student_id": self.student.id, "kind": "six_weeks", "date": date(2026, 1, 10),
+                       "answer_dose": "kept", "answer_cap": "mostly", "adjustment": "less reading", "notes": "six weeks in"})
+        text = self.env["homeschool.exporter"].export_journal_weeks(self.student)["tracking/journal/2026-W02/2026-W02.md"]
+        lines = text.splitlines()
+        six, weekly, days = lines.index("## Revue des six semaines"), lines.index("## Revue de la semaine"), lines.index("## Jours")
+        self.assertLess(six, weekly, "by date: the six-week review (Saturday) before the weekly one (Sunday)")
+        self.assertLess(weekly, days)
+        self.assertEqual(lines[six:weekly], [
+            "## Revue des six semaines",
+            "",
+            "- **Dose gardée ? :** kept",
+            "- **Plafond souple — on a arrêté aux bons moments ? :** mostly",
+            "- **Ajustement pour la semaine prochaine :** less reading",
+            "- **Notes :** six weeks in",
+            "",
+        ])
+        self.assertNotIn("Semaine consignée telle quelle", text)
+        # an old review that answered the retired question keeps it
+        Review.search([("student_id", "=", self.student.id), ("kind", "=", "weekly")]).answer_recorded = "yes, as it was"
+        Review.create({"student_id": self.student.id, "kind": "january", "date": date(2026, 1, 9), "notes": "mid-year"})
+        lines = self.env["homeschool.exporter"].export_journal_weeks(self.student)["tracking/journal/2026-W02/2026-W02.md"].splitlines()
+        self.assertIn("- **Semaine consignée telle quelle ? :** yes, as it was", lines)
+        self.assertEqual([l for l in lines if l.startswith("## ")],
+                         ["## Revue de janvier", "## Revue des six semaines", "## Revue de la semaine", "## Jours"])
+        june = Review.create({"student_id": self.student.id, "kind": "june", "date": date(2026, 1, 8), "answer_dose": "x"})
+        self.assertIn("## Revue de juin", self.env["homeschool.exporter"].export_journal_weeks(self.student)["tracking/journal/2026-W02/2026-W02.md"])
+        june.unlink()
 
     def test_journal_week_roundtrip_identity(self):
         self._week_fixture()

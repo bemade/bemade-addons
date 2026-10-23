@@ -17,7 +17,7 @@
 #    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 {
     "name": "Mail Notification Scope",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Discuss",
     "summary": "Opt chosen models into in-app-only, internal-only notifications.",
     "author": "Bemade Inc.",

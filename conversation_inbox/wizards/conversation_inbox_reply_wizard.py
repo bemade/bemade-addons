@@ -67,6 +67,12 @@ class ConversationInboxReplyWizard(models.TransientModel):
     attachment_ids = fields.Many2many(
         "ir.attachment",
         string="Attachments",
+        # Like core's attachment many2manys: without it the field
+        # description and every read run an access-checked ir.attachment
+        # search with no res_model to narrow on, scanning every
+        # record-linked attachment in the database (seconds on a large
+        # one). Each attachment is still access-checked when read.
+        bypass_search_access=True,
         help="Files you add here. On a forward the original's own "
         "attachments are carried over separately -- see Forwarded Files.",
     )

@@ -53,7 +53,7 @@
             <t t-set="sc_tab_dashboard">Overview</t>
             <t t-set="sc_tab_players">Players</t>
             <t t-set="sc_tab_activities">Activities</t>
-            <t t-set="sc_team_tabs" t-value="[('dashboard', sc_tab_dashboard, sc_team_url + '&amp;tab=dashboard'), ('players', sc_tab_players, sc_team_url + '&amp;tab=players')] + ([('activities', sc_tab_activities, sc_team_url + '&amp;tab=activities')] if sc_show_activities else [])"/>
+            <t t-set="sc_team_tabs" t-value="[('dashboard', sc_tab_dashboard, sc_team_url + '&amp;tab=dashboard'), ('players', sc_tab_players, sc_team_url + '&amp;tab=players')] + ([('activities', sc_tab_activities, sc_team_url + '&amp;tab=activities', '', sc_team_activities_badge)] if sc_show_activities else [])"/>
             <t t-set="sc_active_tab" t-value="active_tab if (active_tab != 'activities' or sc_show_activities) else 'dashboard'"/>
             <t t-call="bemade_sports_clinic.sc_page_tabs">
                 <t t-set="tabs" t-value="sc_team_tabs"/>
@@ -177,45 +177,13 @@
                                data-sc-action="team.digest_history">History</a>
                         </h2>
                         <div t-if="sc_dashboard_rows" class="o_sc_list">
+                            <!-- Task 1626: a player row like « Other players to
+                                 watch » (link to the player page always on the
+                                 face, « Details » toggle); its detail is the
+                                 change detail (row['detail_url']). -->
                             <t t-foreach="sc_dashboard_rows" t-as="row">
-                                <details t-if="row['changed']" class="o_sc_expand" t-att-data-sc-player-id="row['id']"
-                                         t-attf-data-sc-lazy-url="/my/player/#{row['id']}/recent-changes?detail=1">
-                                    <summary class="o_sc_entity_row">
-                                        <span t-attf-class="o_sc_dot o_sc_tone_#{row['dot']}" aria-hidden="true"/>
-                                        <span class="o_sc_row_text">
-                                            <span class="o_sc_row_title" t-out="row['title']"/>
-                                            <span t-if="row['subtitle']" class="o_sc_row_subtitle" t-out="row['subtitle']"/>
-                                            <t t-call="bemade_sports_clinic.sc_player_status_line">
-                                                <t t-set="row_status" t-value="row['status']"/>
-                                                <t t-set="row_changed" t-value="True"/>
-                                            </t>
-                                        </span>
-                                        <span class="o_sc_row_trailing">
-                                            <t t-if="row['pending_removal']" t-call="bemade_sports_clinic.sc_status_chip">
-                                                <t t-set="tone" t-value="'ghost'"/>
-                                                <t t-set="label">Removal pending</t>
-                                            </t>
-                                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
-                                        </span>
-                                    </summary>
-                                    <div class="o_sc_expand_body">
-                                        <div class="o_sc_legacy o_sc_lazy_body">
-                                            <p class="o_sc_empty o_sc_lazy_loading">Loading…</p>
-                                        </div>
-                                        <a t-att-href="row['url']" class="o_sc_section_more">Open the player page</a>
-                                    </div>
-                                </details>
-                                <t t-else="" t-call="bemade_sports_clinic.sc_entity_row">
-                                    <t t-set="href" t-value="row['url']"/>
-                                    <t t-set="dot" t-value="row['dot']"/>
-                                    <t t-set="title" t-value="row['title']"/>
-                                    <t t-set="subtitle" t-value="row['subtitle']"/>
-                                    <t t-set="row_attrs" t-value="{'data-sc-player-id': row['id']}"/>
-                                    <t t-set="row_status" t-value="row['status']"/>
-                                    <t t-if="row['pending_removal']" t-call="bemade_sports_clinic.sc_status_chip">
-                                        <t t-set="tone" t-value="'ghost'"/>
-                                        <t t-set="label">Removal pending</t>
-                                    </t>
+                                <t t-call="bemade_sports_clinic.sc_player_row">
+                                    <t t-set="row_scope" t-value="'dash'"/>
                                 </t>
                             </t>
                         </div>
@@ -231,17 +199,8 @@
                             </t>
                             <div class="o_sc_list">
                                 <t t-foreach="sc_watch_rows" t-as="row">
-                                    <t t-call="bemade_sports_clinic.sc_entity_row">
-                                        <t t-set="href" t-value="row['url']"/>
-                                        <t t-set="dot" t-value="row['dot']"/>
-                                        <t t-set="title" t-value="row['title']"/>
-                                        <t t-set="subtitle" t-value="row['subtitle']"/>
-                                        <t t-set="row_attrs" t-value="{'data-sc-player-id': row['id']}"/>
-                                        <t t-set="row_status" t-value="row['status']"/>
-                                        <t t-if="row['pending_removal']" t-call="bemade_sports_clinic.sc_status_chip">
-                                            <t t-set="tone" t-value="'ghost'"/>
-                                            <t t-set="label">Removal pending</t>
-                                        </t>
+                                    <t t-call="bemade_sports_clinic.sc_player_row">
+                                        <t t-set="row_scope" t-value="'watch'"/>
                                     </t>
                                 </t>
                             </div>
@@ -299,9 +258,39 @@
             <!-- ============================= Players ============================= -->
             <section class="o_sc_tab_panel" data-sc-tab-panel="players" role="tabpanel"
                      t-att-hidden="None if sc_active_tab == 'players' else 'hidden'">
-                <details t-if="sc_show_add" class="o_sc_card o_sc_disclosure" id="sc_add_player"
+                <t t-if="sc_pending_count and can_remove_on_team and sc_can('team.pending_removals')"
+                   t-call="bemade_sports_clinic.sc_banner">
+                    <t t-set="tone" t-value="'warn'"/>
+                    <t t-set="title">Pending removals</t>
+                    <t t-out="sc_pending_label"/>
+                </t>
+                <!-- Task 1607: the roster's list header — « + Ajouter » (add a
+                     player: search the existing ones first, then create; or
+                     request an addition) opens the panel below it; the sort
+                     (by status / by number) on the right. -->
+                <t t-call="bemade_sports_clinic.sc_list_header">
+                    <t t-set="header_section" t-value="'team.roster.header'"/>
+                    <t t-if="sc_show_add">
+                        <t t-set="add_label">Add a player</t>
+                        <t t-set="add_panel" t-value="'sc_add_player'"/>
+                        <t t-set="add_open" t-value="bool(sc_add_search)"/>
+                        <t t-set="add_key" t-value="'team.add_player'"/>
+                    </t>
+                    <t t-elif="sc_show_request">
+                        <t t-set="add_label">Request a player addition</t>
+                        <t t-set="add_panel" t-value="'sc_request_add'"/>
+                        <t t-set="add_key" t-value="'team.request_add'"/>
+                    </t>
+                    <t t-set="sc_sort_status">By status</t>
+                    <t t-set="sc_sort_number">By number</t>
+                    <t t-set="sorts" t-value="sc_sort_options('sort', [('status', sc_sort_status), ('number', sc_sort_number)], 'number' if roster_sort_mode == 'number' else 'status', ('add_first', 'add_last', 'add_dob'))"/>
+                    <t t-set="sort_id" t-value="'sc_roster_sort'"/>
+                    <t t-set="sort_label">Sort players</t>
+                    <t t-set="sort_section" t-value="'team.roster.sort'"/>
+                </t>
+                <details t-if="sc_show_add" class="o_sc_card o_sc_disclosure o_sc_list_add_panel" id="sc_add_player"
                          data-sc-section="team.add_player" t-att-open="'open' if sc_add_search else None">
-                    <summary class="o_sc_disclosure_summary" data-sc-action="team.add_player">
+                    <summary class="o_sc_disclosure_summary">
                         <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                         <span>Add a player</span>
                     </summary>
@@ -362,37 +351,30 @@
                                 </div>
                             </div>
                             <p t-else="" class="o_sc_empty">No matching player.</p>
+                            <!-- Owner review 2026-10-14: ONE set of name fields — the
+                                 new player gets the name / date of birth entered in the
+                                 search fields above (sc_forms.js copies the current
+                                 values in; without JS, those of the last search). -->
+                            <t t-set="sc_create_ready" t-value="bool((sc_add_search['first'] or '').strip() and (sc_add_search['last'] or '').strip())"/>
                             <form t-attf-action="/my/team/#{team.id}/player/add" method="post" class="o_sc_form" data-sc-form="player.create">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="sc_inline" value="1"/>
                                 <input type="hidden" name="force_new" value="1"/>
-                                <div class="o_sc_filter_grid">
-                                    <div class="o_sc_field">
-                                        <label class="o_sc_field_label" for="sc_new_first">First name</label>
-                                        <input type="text" id="sc_new_first" name="first_name" class="o_sc_input" required="required"
-                                               t-att-value="sc_add_search['first']"/>
-                                    </div>
-                                    <div class="o_sc_field">
-                                        <label class="o_sc_field_label" for="sc_new_last">Last name</label>
-                                        <input type="text" id="sc_new_last" name="last_name" class="o_sc_input" required="required"
-                                               t-att-value="sc_add_search['last']"/>
-                                    </div>
-                                    <div class="o_sc_field">
-                                        <label class="o_sc_field_label" for="sc_new_dob">Date of birth (optional)</label>
-                                        <input type="date" id="sc_new_dob" name="date_of_birth" class="o_sc_input"
-                                               t-att-value="sc_add_search['dob']"/>
-                                    </div>
-                                </div>
+                                <input type="hidden" name="first_name" data-sc-copy-from="add_first" t-att-value="sc_add_search['first']"/>
+                                <input type="hidden" name="last_name" data-sc-copy-from="add_last" t-att-value="sc_add_search['last']"/>
+                                <input type="hidden" name="date_of_birth" data-sc-copy-from="add_dob" t-att-value="sc_add_search['dob']"/>
                                 <div class="o_sc_form_actions">
-                                    <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="player.create">Create a new player</button>
+                                    <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="player.create"
+                                            t-att-disabled="None if sc_create_ready else 'disabled'">Create a new player</button>
                                 </div>
+                                <small class="o_sc_hint" data-sc-create-hint="1" t-att-hidden="'hidden' if sc_create_ready else None">Enter a first and a last name above to create a new player.</small>
                             </form>
                         </t>
                     </t>
                 </details>
-                <details t-elif="sc_show_request" class="o_sc_card o_sc_disclosure" id="sc_request_add"
+                <details t-elif="sc_show_request" class="o_sc_card o_sc_disclosure o_sc_list_add_panel" id="sc_request_add"
                          data-sc-section="team.request_add">
-                    <summary class="o_sc_disclosure_summary" data-sc-action="team.request_add">
+                    <summary class="o_sc_disclosure_summary">
                         <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                         <span>Request a player addition</span>
                     </summary>
@@ -420,31 +402,12 @@
                         </div>
                     </form>
                 </details>
-                <t t-if="sc_pending_count and can_remove_on_team and sc_can('team.pending_removals')"
-                   t-call="bemade_sports_clinic.sc_banner">
-                    <t t-set="tone" t-value="'warn'"/>
-                    <t t-set="title">Pending removals</t>
-                    <t t-out="sc_pending_label"/>
-                </t>
-                <div class="o_sc_sort o_sc_segmented" role="group" aria-label="Sort players">
-                    <a t-att-href="sc_team_url + '&amp;sort=status'"
-                       t-att-aria-pressed="'true' if roster_sort_mode != 'number' else 'false'">By status</a>
-                    <a t-att-href="sc_team_url + '&amp;sort=number'"
-                       t-att-aria-pressed="'true' if roster_sort_mode == 'number' else 'false'">By number</a>
-                </div>
                 <div t-if="sc_roster_rows" class="o_sc_list" data-sc-section="team.roster">
                     <t t-foreach="sc_roster_rows" t-as="row">
-                        <t t-call="bemade_sports_clinic.sc_entity_row">
-                            <t t-set="href" t-value="row['url']"/>
-                            <t t-set="dot" t-value="row['dot']"/>
-                            <t t-set="title" t-value="row['title']"/>
-                            <t t-set="subtitle" t-value="row['subtitle']"/>
-                            <t t-set="row_attrs" t-value="{'data-sc-player-id': row['id']}"/>
-                            <t t-set="row_status" t-value="row['status']"/>
-                            <t t-if="row['pending_removal']" t-call="bemade_sports_clinic.sc_status_chip">
-                                <t t-set="tone" t-value="'ghost'"/>
-                                <t t-set="label">Removal pending</t>
-                            </t>
+                        <!-- Task 1593: the legacy card's content (no team links
+                             on the team's own roster, as legacy). -->
+                        <t t-call="bemade_sports_clinic.sc_player_row">
+                            <t t-set="row_scope" t-value="'roster'"/>
                         </t>
                     </t>
                 </div>
@@ -577,11 +540,18 @@
          non-injury changes, then the injuries, each with its own changes.
          Reuses the legacy injury card and change list. -->
     <template id="sc_player_change_detail" name="App shell: player change detail">
-        <div class="o_sc_change_detail">
+        <!-- Task 1626: o_sc_legacy here (was on the <details> body that
+             held it) — the legacy partials keep the shell's tokens. -->
+        <div class="o_sc_change_detail o_sc_legacy">
             <div t-if="player.training_recommendation" class="text-muted small d-flex align-items-start mb-1">
-                <i class="fa fa-graduation-cap mt-1" title="Training Recommendation"/>
+                <i class="fa fa-heartbeat mt-1" title="Training Recommendation"/>
                 <span class="ms-1 o_sc_pre" t-esc="player.training_recommendation"/>
             </div>
+            <!-- Review 2026-10-20 (#1626): the « Updated on … by … » stamp,
+                 as in the other player cards' detail. -->
+            <p t-if="player.training_recommendation and player.last_training_recommendation_info"
+               class="o_sc_meta mb-1" data-sc-change-detail-stamp="1"
+               t-out="player.last_training_recommendation_info"/>
             <div t-if="player.stage != 'healthy'" class="text-muted small d-flex align-items-center mb-1">
                 <i class="fa fa-clock-o" title="Estimated Return"/>
                 <span class="ms-1">Predicted return:</span>
@@ -623,6 +593,47 @@
                     </t>
                 </t>
             </t>
+            <!-- Task 1626: the app's dashboard card detail ends with the
+                 player page link (the legacy fragment has no player_url). -->
+            <a t-if="player_url" t-att-href="player_url" class="o_sc_section_more">Open the player page</a>
+        </div>
+    </template>
+
+    <!-- Task 1593: the expanded detail of a player ROW (roster, « to watch »,
+         /my/players), from /my/player/<id>/row-detail — the legacy card's
+         expandable in the app's look: the whole training recommendation and
+         its « Updated on » stamp, predicted return, last consultation, then
+         the active injuries (sports.patient._card_active_injuries, read as
+         the viewer: no hidden injury nor internal note for a coach). -->
+    <template id="sc_player_row_detail" name="App shell: player row detail">
+        <div class="o_sc_change_detail o_sc_row_detail_body" t-att-data-sc-row-detail-player="player.id">
+            <div t-if="(player.training_recommendation or '').strip()" class="o_sc_row_detail_training" data-sc-row-detail-section="training">
+                <h3 class="o_sc_change_detail_sub">Training Recommendation</h3>
+                <p class="o_sc_pre" t-out="player.training_recommendation"/>
+                <p t-if="player.last_training_recommendation_info" class="o_sc_meta" t-out="player.last_training_recommendation_info"/>
+            </div>
+            <div t-if="player.stage != 'healthy'" class="text-muted small d-flex align-items-center mb-1">
+                <i class="fa fa-clock-o" title="Estimated Return"/>
+                <span class="ms-1">Predicted return:</span>
+                <span t-if="player.predicted_return_date" class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/>
+                <span t-else="" class="ms-1">—</span>
+            </div>
+            <div class="text-muted small d-flex align-items-center mb-2">
+                <i class="fa fa-stethoscope" title="Last Consultation Date"/>
+                <span class="ms-1">Last consultation:</span>
+                <span t-if="player.last_consultation_date" class="ms-1" t-field="player.last_consultation_date" t-options="{'widget': 'date'}"/>
+                <span t-else="" class="ms-1">—</span>
+            </div>
+            <t t-if="active_injuries">
+                <h3 class="o_sc_change_detail_sub">Active injuries</h3>
+                <t t-foreach="active_injuries" t-as="inj">
+                    <t t-call="bemade_sports_clinic.portal_card_injury_detail">
+                        <t t-set="changed" t-value="False"/>
+                    </t>
+                </t>
+            </t>
+            <p t-else="" class="o_sc_empty" data-sc-row-detail-section="no_injury">No active injuries.</p>
+            <a t-att-href="player_url" class="o_sc_section_more">Open the player page</a>
         </div>
     </template>
 

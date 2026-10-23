@@ -187,9 +187,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         if is_treatment_prof:
             if selected_team_ids:
                 vals['team_ids'] = [(6, 0, list(set(selected_team_ids)))]
-            if 'allergies' in post:
-                _all = (post.get('allergies') or '').strip()
-                vals['allergies'] = _all if _all else False
+            # Task 1630: the allergy / medical-alert block.
+            vals.update(request.env['sports.patient']._sc_medical_vals_from_post(post))
             if 'team_info_notes' in post:
                 _notes = (post.get('team_info_notes') or '').strip()
                 vals['team_info_notes'] = _notes if _notes else False
@@ -327,7 +326,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # Basic fields
             patient_info['date_of_birth'] = patient.date_of_birth
             patient_info['age'] = patient.age
-            patient_info['allergies'] = patient.allergies
+            # Task 1630: the allergy / medical-alert block (edit form).
+            for _name in patient.SC_MEDICAL_FIELDS:
+                patient_info[_name] = patient[_name]
             patient_info['team_info_notes'] = patient.team_info_notes
             
             # Status fields
@@ -529,12 +530,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             if dob_date and dob_date != current.date_of_birth:
                 vals['date_of_birth'] = dob_date
                 
-            # Medical information
-            if 'allergies' in post:
-                _all = (post.get('allergies') or '').strip()
-                vals.update({
-                    'allergies': _all if _all else False,
-                })
+            # Medical information (task 1630: the allergy / medical-alert block)
+            vals.update(request.env['sports.patient']._sc_medical_vals_from_post(post))
                 
             if 'team_info_notes' in post:
                 _notes = (post.get('team_info_notes') or '').strip()
