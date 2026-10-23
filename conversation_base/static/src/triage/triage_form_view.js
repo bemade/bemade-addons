@@ -6,20 +6,22 @@ import {registry} from "@web/core/registry";
 import {useEffect} from "@odoo/owl";
 
 /**
- * Conversation form: loading a conversation that is unread for the
- * current user marks it read for that user only, however it was opened
- * (list row, link, reload, notification, pager, redirect after filing).
+ * Conversation form: loading a conversation marks it read for the current
+ * user only, however it was opened (list row, link, reload, notification,
+ * pager, redirect after filing). The server also enrols the opener (creates
+ * their member row, read) when they have none, so a later inbound message
+ * flags them unread again like everyone who already opened it.
  */
 export class TriageFormController extends FormController {
   setup() {
     super.setup();
     useEffect(
-      (resId, unread) => {
-        if (resId && unread) {
+      (resId) => {
+        if (resId) {
           this._markRead(resId);
         }
       },
-      () => [this.model.root.resId, this.model.root.data.my_unread]
+      () => [this.model.root.resId]
     );
   }
 

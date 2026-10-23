@@ -998,7 +998,10 @@ class MailConversation(models.Model):
         return True
 
     def action_triage_mark_read(self):
-        self._triage_my_members().write({"unread": False})
+        """Mark the conversations read for *me*. Also what opening one in the
+        form does: a user without a member row gets one (read), so later
+        inbound messages flag them unread like everyone who opened it."""
+        self._triage_my_members().filtered("unread").write({"unread": False})
         return True
 
     def action_triage_mark_unread(self):
