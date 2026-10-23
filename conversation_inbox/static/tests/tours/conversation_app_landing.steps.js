@@ -3,6 +3,13 @@
 // Pure data, no imports: shared by the web_tour and the demo video.
 export default [
   {
+    id: "open-main-menu",
+    title: "Ouvrir le menu principal",
+    narration: "Ouvrez le menu principal d'Odoo, en haut à gauche.",
+    selector: ".o_navbar_apps_menu button.dropdown-toggle",
+    action: "click",
+  },
+  {
     id: "open-app",
     title: "Ouvrir l'application Conversations",
     narration:
