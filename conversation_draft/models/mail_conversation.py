@@ -1,5 +1,8 @@
+from markupsafe import Markup
+
 from odoo import api, fields, models
 from odoo.fields import Domain
+from odoo.tools.mail import is_html_empty
 
 from .mail_conversation_draft import ACTIVE_STATES, conversation_templates_exist
 
@@ -151,6 +154,20 @@ class MailConversation(models.Model):
                 if transport.sudo().sendable:
                     return transport
         return self.env["conversation.transport"]
+
+    def _draft_default_body(self, transport):
+        """The initial body of a new draft sent from ``transport``: the
+        acting user's signature as ordinary, editable text between two empty
+        paragraphs (the inbox reply wizard's layout), so nothing has to be
+        appended when the reply goes out. Empty when the user has no
+        signature or the transport is a team mailbox."""
+        self.ensure_one()
+        signature = self.env.user.signature
+        if is_html_empty(signature):
+            return False
+        if transport and not transport._draft_prefills_user_signature():
+            return False
+        return Markup("<p><br/></p>%s<p><br/></p>") % Markup(signature)
 
     def _draft_default_recipients(self):
         """Value dicts for the draft's recipient rows, derived from the

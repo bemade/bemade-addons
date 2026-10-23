@@ -1,0 +1,15 @@
+{
+  "stepsFile": "../../static/tests/tours/draft_signature.steps.js",
+  "startPath": "/odoo/action-conversation_base.mail_conversation_action",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "lang": "fr_CA",
+  "voice": "fr_FR-siwis-medium",
+  "title": "Répondre avec votre signature déjà en place",
+  "introNarration": "Dans cette démonstration, nous voyons que votre signature personnelle apparaît déjà dans le texte d'une réponse, quand la conversation n'est pas traitée par une boîte d'équipe.",
+  "outroTitle": "À vous de jouer",
+  "outroNarration": "La signature est du texte ordinaire que vous pouvez modifier ou effacer. Elle est ajoutée une seule fois, à l'ouverture de la réponse, et jamais au moment de l'envoi. Les réponses d'une boîte d'équipe ne changent pas.",
+  "stepOverrides": {
+    "signature-shown": {"containsText": "Cordialement"}
+  }
+}

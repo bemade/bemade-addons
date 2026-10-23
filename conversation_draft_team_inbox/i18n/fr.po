@@ -1,0 +1,32 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* conversation_draft_team_inbox
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-23 01:36+0000\n"
+"PO-Revision-Date: 2026-10-23 01:36+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: conversation_draft_team_inbox
+#: model:ir.model,name:conversation_draft_team_inbox.model_conversation_transport
+msgid "Conversation Transport"
+msgstr "Boîte courriel de conversation"
+
+#. module: conversation_draft_team_inbox
+#: model:ir.model.fields,field_description:conversation_draft_team_inbox.field_conversation_transport__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: conversation_draft_team_inbox
+#: model:ir.model.fields,field_description:conversation_draft_team_inbox.field_conversation_transport__id
+msgid "ID"
+msgstr "ID"
