@@ -27,6 +27,32 @@ _ENVELOPE_CACHE = LRU(512)
 
 DEFAULT_PAGE_SIZE = 25
 
+# RFC 5322 identification fields: one or more <msg-id> tokens each. The
+# stdlib's default policy treats In-Reply-To and References as unstructured
+# text, so a msg-id longer than the 78-character line length (an ordinary
+# Odoo- or Exchange-generated id) comes out RFC 2047 encoded
+# (``=?utf-8?q?=3C...?=``). A mail client compares the raw token against the
+# Message-Ids it knows, so an encoded id threads nowhere. These fields must
+# go out verbatim; same workaround as Odoo core's ir_mail_server (bpo-35805).
+_IDENTIFICATION_HEADERS = frozenset({"message-id", "in-reply-to", "references"})
+
+
+class _OutgoingPolicy(email.policy.EmailPolicy):
+    """The default policy, except identification fields are never folded
+    nor encoded."""
+
+    def _fold(self, name, value, *args, **kwargs):
+        policy = self
+        if name.lower() in _IDENTIFICATION_HEADERS:
+            # A clone, not a separate module-level policy: the generator
+            # flattens with the caller's linesep (smtplib uses CRLF), which
+            # only ``self`` carries.
+            policy = self.clone(max_line_length=None)
+        return super(_OutgoingPolicy, policy)._fold(name, value, *args, **kwargs)
+
+
+_OUTGOING_POLICY = _OutgoingPolicy()
+
 # One LIST response line, e.g. b'(\\HasNoChildren \\Trash) "/" "[Gmail]/Trash"':
 # attribute flags, hierarchy delimiter (or NIL), then the mailbox name.
 _LIST_RESPONSE_RE = re.compile(
@@ -775,7 +801,7 @@ class ConversationTransport(models.Model):
                     transport=self.display_name,
                 )
             )
-        outgoing = EmailMessage()
+        outgoing = EmailMessage(policy=_OUTGOING_POLICY)
         outgoing["Subject"] = subject or ""
         outgoing["From"] = self.login
         if to_emails:
