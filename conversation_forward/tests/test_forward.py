@@ -248,3 +248,42 @@ class TestForward(ForwardCommon):
         self.assertNotIn("secret@example.com", outgoing.as_string())
         self.assertIn("secret@example.com", envelope)
         self.assertEqual(note.message_id, outgoing["Message-Id"])
+
+    def test_long_threading_id_goes_out_plain_on_the_wire(self):
+        """A Message-Id longer than the 78-character line length (the
+        normal length of an Odoo- or Exchange-generated id) still goes out
+        as the plain token in In-Reply-To and References: never an RFC 2047
+        encoded word, never folded inside the id."""
+        long_id = (
+            "<123456789012345.1234567890.123456789012345-openerp-7-mail."
+            "conversation@mail-host-0123456789.example.com>"
+        )
+        self.assertGreater(len(long_id), 78)
+        self.m2.message_id = long_id
+        sent = []
+        connection = MagicMock()
+        connection.send_message.side_effect = lambda msg, to_addrs=None: sent.append(
+            msg
+        )
+
+        @contextmanager
+        def fake_smtp(*args, **kwargs):
+            yield connection
+
+        transport_cls = type(self.transport)
+        with patch.object(
+            transport_cls, "_is_email_transport", return_value=True
+        ), patch.object(
+            transport_cls, "_smtp_connection", side_effect=fake_smtp
+        ), patch.object(
+            transport_cls, "_imap_append_to_sent", return_value=False
+        ):
+            self.conv._forward_messages(self.m2, ["a@example.com"])
+        self.assertEqual(len(sent), 1)
+        raw = sent[0].as_bytes(policy=sent[0].policy.clone(linesep="\r\n"))
+        head = raw.split(b"\r\n\r\n", 1)[0]
+        lines = head.split(b"\r\n")
+        self.assertIn(b"In-Reply-To: " + long_id.encode(), lines)
+        self.assertIn(b"References: " + long_id.encode(), lines)
+        # No encoded word anywhere in the (all-ASCII) header block.
+        self.assertNotIn(b"=?", head)
