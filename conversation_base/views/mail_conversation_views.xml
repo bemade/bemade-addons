@@ -355,7 +355,16 @@
     >{'search_default_filter_my_list': 1, 'search_default_filter_open': 1}</field>
     </record>
 
-    <menuitem id="menu_mail_conversation_root" name="Conversations" sequence="60" />
+    <!-- The app root carries its own action so Odoo does not fall back to the
+         first child (by sequence) that has one: another conversation_* module
+         adding a lower-sequence child (e.g. the Inbox) would otherwise take over
+         the app's landing. -->
+    <menuitem
+    id="menu_mail_conversation_root"
+    name="Conversations"
+    action="mail_conversation_action"
+    sequence="60"
+  />
     <menuitem
     id="menu_mail_conversation"
     name="Conversations"
