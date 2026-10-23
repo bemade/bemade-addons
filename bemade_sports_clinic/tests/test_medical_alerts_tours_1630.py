@@ -29,6 +29,9 @@ class _Tours1630:
     def test_therapist_edits_in_popup(self):
         self.player.sudo().write({'allergy_level': 'minor', 'allergy_epipen': False,
                                   'allergy_details': 'Synthetic kiwi', 'medical_alert_level': False})
+        # Task 1654: « Urgent » needs a life-threatening item first.
+        self.env['sports.patient.critical.item'].sudo().with_context(sc_critical_quiet=True).create({
+            'patient_id': self.player.id, 'family': 'allergy', 'name': 'Synthetic kiwi'})
         self.start_tour(self._url(), 'sc_1630_medical_tp', login='pc.tp@example.com')
         self.player.invalidate_recordset()
         self.assertEqual(self.player.allergy_level, 'urgent')

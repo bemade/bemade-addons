@@ -129,3 +129,8 @@ access_training_history_admin,Admin Access for Training Recommendation History,m
 access_training_history_system,System Access for Training Recommendation History,model_sports_patient_training_history,base.group_system,1,1,1,1
 access_training_history_portal_tp,Portal Treatment Prof Access for Training Recommendation History,model_sports_patient_training_history,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_training_history_portal_coach,Portal Coach Access for Training Recommendation History,model_sports_patient_training_history,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
+access_critical_item_user,Clinic User Access for Critical Medical Items,model_sports_patient_critical_item,group_sports_clinic_user,1,1,1,1
+access_critical_item_itp,Internal TP Access for Critical Medical Items,model_sports_patient_critical_item,group_sports_clinic_treatment_professional,1,1,1,1
+access_critical_item_admin,Admin Access for Critical Medical Items,model_sports_patient_critical_item,group_sports_clinic_admin,1,1,1,1
+access_critical_item_portal_tp,Portal TP Access for Critical Medical Items,model_sports_patient_critical_item,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,1
+access_critical_item_portal_coach,Portal Coach Read Access for Critical Medical Items,model_sports_patient_critical_item,bemade_sports_clinic.group_portal_team_coach,1,0,0,0

@@ -214,6 +214,9 @@ class TestMedicalHeader1630(MedicalCommon):
     # -- SAVE-1 -------------------------------------------------------------
     def test_therapist_saves_every_field(self):
         self._login_tp()
+        # Task 1654: « Urgent » needs a life-threatening item first.
+        self.env['sports.patient.critical.item'].sudo().with_context(sc_critical_quiet=True).create({
+            'patient_id': self.player.id, 'family': 'medical_alert', 'name': 'Synthetic epilepsy'})
         cases = (
             ('allergy_level', 'minor', 'minor', 'Not urgent'),
             ('allergy_epipen', '0', False, 'No'),
@@ -295,6 +298,9 @@ class TestMedicalHeader1630(MedicalCommon):
         self.assertEqual((created.allergy_level, created.allergy_epipen, created.allergy_details),
                          ('urgent', True, 'Synthetic bee'))
         self.assertFalse(created.medical_alert_level)
+        # Task 1654: the urgent allergy's item is suggested from the details.
+        self.assertEqual([(i.family, i.name, i.epipen) for i in created.sudo().critical_item_ids],
+                         [('allergy', 'Synthetic bee', True)])
 
     def test_coach_create_ignores_medical_fields(self):
         self._login_coach()

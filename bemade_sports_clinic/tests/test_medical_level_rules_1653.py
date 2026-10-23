@@ -16,7 +16,8 @@ Acceptance criteria covered here:
 * UC-4 Migration 19.0.1.104.3: a « None known » player with details /
   EpiPen is flagged « to validate », data untouched; idempotent.
 * UC-5 (tour) the popup: placeholder locked, « None known » empties and
-  disables the details, « Urgent » re-enables them.
+  disables the details, « Not urgent » re-enables them (task 1654: « Urgent »
+  needs a life-threatening item first).
 """
 import importlib.util
 import json
@@ -85,7 +86,10 @@ class TestMedicalLevelRules1653(Levels1653Common):
             player.write({'allergy_details': 'Synthetic again'})
         with self.assertRaises(ValidationError):
             player.write({'allergy_epipen': True})
-        player.write({'allergy_level': 'urgent'})
+        # Task 1654: « Urgent » needs a life-threatening item first.
+        with self.assertRaises(ValidationError):
+            player.write({'allergy_level': 'urgent'})
+        player.write({'allergy_level': 'minor'})
         player.write({'allergy_details': 'Synthetic peanut', 'allergy_epipen': True})
         self.assertEqual(player.allergy_details, 'Synthetic peanut')
         player.write({'medical_alert_level': 'minor', 'medical_alert_details': 'Synthetic asthma'})
@@ -124,7 +128,7 @@ class TestMedicalLevelRules1653(Levels1653Common):
         self.assertNotIn('', [opt[0] for opt in props['allergy_level']['options']])
         self.assertTrue(props['allergy_details'].get('disabled'))
         self.assertTrue(props['allergy_epipen'].get('disabled'))
-        resp = self._save(self.player, 'allergy_level', 'urgent')
+        resp = self._save(self.player, 'allergy_level', 'minor')
         self.assertEqual(resp.status_code, 200, resp.text)
         also = resp.json()['also']
         self.assertFalse(also['allergy_details']['disabled'])
@@ -162,4 +166,4 @@ class TestMedicalLevelRulesTour1653(Levels1653Common):
     def test_popup_tour(self):
         self.start_tour(self._url(), 'sc_1653_levels', login='pc.tp@example.com')
         self.player.invalidate_recordset()
-        self.assertEqual(self.player.sudo().allergy_level, 'urgent')
+        self.assertEqual(self.player.sudo().allergy_level, 'minor')  # task 1654: « Urgent » needs an item

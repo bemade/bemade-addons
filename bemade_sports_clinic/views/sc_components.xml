@@ -928,6 +928,8 @@
                             </p>
                             <p t-if="pill['details']" class="o_sc_pre o_sc_med_details" t-out="pill['details']"/>
                             <p t-else="" class="o_sc_muted o_sc_med_details_empty">No details.</p>
+                            <!-- Task 1654: who changed this family last. -->
+                            <p t-if="pill.get('stamp')" class="o_sc_meta" data-sc-med-stamp="1" t-out="pill['stamp']"/>
                         </div>
                         <button t-if="editable" type="button" class="o_sc_icon_btn o_sc_med_edit_toggle"
                                 data-sc-edit-toggle="1" data-sc-action="medical.edit" aria-expanded="false"
@@ -935,8 +937,51 @@
                             <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
                         </button>
                     </div>
+                    <!-- Task 1654: the life-threatening items (a read fragment, under
+                         the level line). -->
+                    <div class="o_sc_critical" t-att-data-sc-fragment="sc_fragment_key(patient, 'critical-%s' % pill['key'])"
+                         t-att-data-sc-section="'medical.%s.critical' % pill['key']">
+                        <t t-if="pill.get('items')">
+                            <p class="o_sc_field_label">Life-threatening</p>
+                            <ul class="o_sc_critical_list">
+                                <li t-foreach="pill['items']" t-as="item" class="o_sc_critical_item" t-att-data-sc-critical-item="item['id']">
+                                    <span class="o_sc_critical_name" t-out="item['name']"/>
+                                    <span t-if="item['epipen']" class="o_sc_med_epipen" data-sc-med-epipen="1" title="EpiPen">
+                                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
+                                    </span>
+                                    <span t-if="item['action']" class="o_sc_critical_action o_sc_pre" t-out="item['action']"/>
+                                    <button t-if="editable" type="button" class="o_sc_icon_btn o_sc_critical_delete"
+                                            t-att-data-sc-critical-delete="item['id']" aria-label="Remove" title="Remove">×</button>
+                                </li>
+                            </ul>
+                        </t>
+                    </div>
                     <t t-if="editable">
                         <div class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
+                        <!-- Task 1654: add a life-threatening item (it makes the
+                             family « Urgent »); the list above refreshes. -->
+                        <form class="o_sc_form o_sc_critical_add"
+                              data-sc-critical-add="1" t-att-data-sc-patient="patient.id" t-att-data-sc-family="pill['key']">
+                            <p class="o_sc_field_label">Add a life-threatening item</p>
+                            <div class="o_sc_field">
+                                <label class="o_sc_field_label" t-att-for="'sc_crit_%s_%s_%s_name' % (scope, pill['key'], patient.id)">Name</label>
+                                <input type="text" t-att-id="'sc_crit_%s_%s_%s_name' % (scope, pill['key'], patient.id)" name="name"
+                                       class="o_sc_input" required="required" maxlength="120" autocomplete="off"/>
+                            </div>
+                            <label t-if="pill['key'] == 'allergy'" class="o_sc_check">
+                                <input type="checkbox" name="epipen" value="1"/>
+                                <span>EpiPen</span>
+                            </label>
+                            <div class="o_sc_field">
+                                <label class="o_sc_field_label" t-att-for="'sc_crit_%s_%s_%s_action' % (scope, pill['key'], patient.id)">What to do</label>
+                                <textarea t-att-id="'sc_crit_%s_%s_%s_action' % (scope, pill['key'], patient.id)" name="action"
+                                          class="o_sc_input o_sc_textarea" rows="2"/>
+                            </div>
+                            <p class="o_sc_field_message o_sc_field_error" role="alert" data-sc-critical-error="1" hidden="hidden"/>
+                            <div class="o_sc_form_actions">
+                                <button type="submit" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm" data-sc-action="medical.critical.add">Add</button>
+                            </div>
+                        </form>
                             <t t-if="pill['key'] == 'allergy'">
                                 <t t-set="lbl">Allergy level</t>
                                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(patient, 'allergy_level', lbl, 'select', options=sc_med_levels, lockEmpty=True)"/></t>

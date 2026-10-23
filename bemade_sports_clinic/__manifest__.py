@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.106.1",
+    'version': "19.0.1.107.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -148,6 +148,7 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "security/sports_clinic_portal_rules.xml",
         "security/sports_treatment_note_rules.xml",
         "security/portal_access_sweep_rules.xml",
+        "security/critical_item_rules.xml",
         "security/mail_activity_portal_rules.xml",
         "security/sports_event_rules.xml",
         "security/partner_access.xml",
@@ -341,6 +342,8 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             "bemade_sports_clinic/static/src/js/sc_picker.js",
             # Task 1652: the red card pills open the medical popups.
             "bemade_sports_clinic/static/src/js/sc_med_card_pills.js",
+            # Task 1654: add / remove critical medical items in the popups.
+            "bemade_sports_clinic/static/src/js/sc_critical_items.js",
             # Task 1655: create a player inline (existence check as you type).
             "bemade_sports_clinic/static/src/js/sc_player_add.js",
             # Task 1611: read fragments (in-place refresh after a save) and

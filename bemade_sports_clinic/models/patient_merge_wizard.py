@@ -397,6 +397,30 @@ class PatientMergeWizard(models.TransientModel):
                 active_test=False).search([("patient_id", "in", srcs.ids)])
             if records:
                 records.with_context(**QUIET).write({"patient_id": dst.id})
+        self._merge_critical_items(dst, srcs)
+
+    def _merge_critical_items(self, dst, srcs):
+        """Task 1654: the union of the critical items, one per family + name
+        (accent / case folded): EpiPen if any copy had it, the « what to do »
+        texts joined."""
+        from .patient_critical_item import _fold
+        Item = self.env["sports.patient.critical.item"].sudo().with_context(sc_critical_quiet=True, **QUIET)
+        moving = Item.search([("patient_id", "in", srcs.ids)])
+        if moving:
+            moving.write({"patient_id": dst.id})
+        kept = {}
+        for item in Item.search([("patient_id", "=", dst.id)]):
+            key = (item.family, _fold(item.name).strip())
+            if key not in kept:
+                kept[key] = item
+                continue
+            first = kept[key]
+            actions = [a for a in ((first.action or "").strip(), (item.action or "").strip()) if a]
+            first.write({
+                "epipen": first.epipen or item.epipen,
+                "action": "\n".join(dict.fromkeys(actions)) or False,
+            })
+            item.unlink()
 
     def _move_chatter(self, dst, srcs):
         messages = self.env["mail.message"].sudo().search([

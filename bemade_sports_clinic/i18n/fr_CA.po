@@ -16345,3 +16345,108 @@ msgstr "%(player)s retiré de %(team)s"
 #: code:addons/bemade_sports_clinic/static/src/js/sc_fragments.js:0
 msgid "You no longer have access to this page."
 msgstr "Vous n'avez plus accès à cette page."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Add a life-threatening item"
+msgstr "Ajouter un élément à risque vital"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Add the life-threatening item first: « Urgent » needs at least one."
+msgstr ""
+"Ajoutez d'abord l'élément à risque vital : « Urgent » en exige au moins un."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergy_updated_info
+msgid "Allergies updated"
+msgstr "Allergies mises à jour"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_critical_item__family__allergy
+msgid "Allergy"
+msgstr "Allergie"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergy_critical_ids
+msgid "Critical allergies"
+msgstr "Allergies critiques"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__medical_alert_critical_ids
+msgid "Critical conditions"
+msgstr "Conditions critiques"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__name
+msgid "Critical item"
+msgstr "Élément critique"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__critical_item_ids
+msgid "Critical items"
+msgstr "Éléments critiques"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_patient_critical_item
+msgid "Critical medical item (life-threatening allergy / condition)"
+msgstr "Élément médical critique (allergie / condition à risque vital)"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
+msgid "EpiPen goes with an allergy only."
+msgstr "L'EpiPen ne s'applique qu'à une allergie."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__family
+msgid "Family"
+msgstr "Famille"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Life-threatening"
+msgstr "Risque vital"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_form
+msgid "Life-threatening items"
+msgstr "Éléments à risque vital"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__medical_alert_updated_info
+msgid "Medical alert updated"
+msgstr "Alerte médicale mise à jour"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_critical_items.py:0
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+#: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
+msgid "Only the therapists can change the medical information."
+msgstr "Seuls les thérapeutes peuvent modifier les informations médicales."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__action
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "What to do"
+msgstr "Conduite à tenir"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
+msgid "added"
+msgstr "ajouté"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
+msgid "changed"
+msgstr "modifié"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
+msgid "removed"
+msgstr "retiré"

@@ -586,9 +586,11 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Update the patient - no sudo needed as field-level security is in
         # place. Task 1600: the identity confirmation is passed on only when
         # the form's confirm step posted it.
-        writer = patient
+        # Task 1654: no item editor here — an « Urgent » level gets its
+        # life-threatening items suggested from the details.
+        writer = patient.with_context(sc_critical_suggest=True)
         if post.get('identity_confirmed') == '1':
-            writer = patient.with_context(sc_identity_confirmed=True)
+            writer = writer.with_context(sc_identity_confirmed=True)
         if vals or removed_teams:
             try:
                 with request.env.cr.savepoint():

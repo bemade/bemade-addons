@@ -184,6 +184,30 @@
                                 <field name="medical_alert_level"/>
                                 <field name="medical_alert_details" readonly="medical_alert_level == 'none'"/>
                                 <field name="medical_history_other"/>
+                            </group>
+                            <!-- Task 1654: the life-threatening items, per family. -->
+                            <group name="critical" string="Life-threatening items" colspan="2">
+                                <field name="allergy_critical_ids" context="{'default_family': 'allergy'}"
+                                       readonly="allergy_level == 'none'">
+                                    <list editable="bottom">
+                                        <field name="sequence" widget="handle"/>
+                                        <field name="family" column_invisible="True"/>
+                                        <field name="name"/>
+                                        <field name="epipen"/>
+                                        <field name="action"/>
+                                    </list>
+                                </field>
+                                <field name="medical_alert_critical_ids" context="{'default_family': 'medical_alert'}"
+                                       readonly="medical_alert_level == 'none'">
+                                    <list editable="bottom">
+                                        <field name="sequence" widget="handle"/>
+                                        <field name="family" column_invisible="True"/>
+                                        <field name="name"/>
+                                        <field name="action"/>
+                                    </list>
+                                </field>
+                                <field name="allergy_updated_info"/>
+                                <field name="medical_alert_updated_info"/>
                                 <field name="medical_alert_review"/>
                             </group>
                              <notebook>
@@ -297,6 +321,9 @@
                     <field name="allergy_details" readonly="allergy_level == 'none'"/>
                     <field name="medical_alert_level"/>
                     <field name="medical_alert_details" readonly="medical_alert_level == 'none'"/>
+                    <!-- Task 1654: the critical items (edited on the form). -->
+                    <field name="allergy_critical_ids" widget="many2many_tags" readonly="1" optional="show"/>
+                    <field name="medical_alert_critical_ids" widget="many2many_tags" readonly="1" optional="show"/>
                     <field name="medical_alert_review" widget="boolean_toggle"/>
                 </list>
             </field>

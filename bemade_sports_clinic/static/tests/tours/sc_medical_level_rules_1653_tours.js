@@ -67,11 +67,11 @@ tours.add("sc_1653_levels", {
                 assert(details.value === "", `details kept: ${details.value}`);
                 const epipen = document.querySelector(`${EDIT} .o_sc_autosave[data-sc-field="allergy_epipen"] button`);
                 assert(epipen && epipen.disabled, "EpiPen still editable");
-                pick(document.querySelector(LEVEL), "urgent");
+                pick(document.querySelector(LEVEL), "minor");
             },
         },
         {
-            content: "« Urgent »: enabled again",
+            content: "« Not urgent »: enabled again (« Urgent » needs an item, task 1654)",
             trigger: `${DETAILS}:enabled`,
             run() {
                 const epipen = document.querySelector(`${EDIT} .o_sc_autosave[data-sc-field="allergy_epipen"] button`);
