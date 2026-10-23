@@ -96,7 +96,7 @@ class ConversationTransport(models.Model):
     )
 
     record_link_mode = fields.Selection(
-        [("auto", "Automatic"), ("suggest", "Suggest"), ("off", "Off")],
+        [("auto", "One-click filing"), ("suggest", "Suggest"), ("off", "Off")],
         string="Link Replies to Odoo Records",
         default="suggest",
         required=True,
@@ -104,10 +104,11 @@ class ConversationTransport(models.Model):
         "reply to mail Odoo itself sent (its headers name an Odoo record). "
         "Applies to personal mailboxes only: a shared mailbox is always "
         "Off. Suggest: preselect that record in the capture dialog; you "
-        "still confirm. Automatic: file and link the message without the "
-        "dialog, but only when 'File Replies in Odoo by Default' is also "
-        "on (otherwise it behaves like Suggest); filing still needs a "
-        "click on New Conversation or Link to a Record. Off: do nothing.",
+        "still confirm. One-click filing: file and link the message "
+        "without the dialog, but only when 'File Replies in Odoo by "
+        "Default' is also on (otherwise it behaves like Suggest); filing "
+        "still needs a click on New Conversation or Link to a Record, and "
+        "Add to Existing only preselects. Off: do nothing.",
     )
 
     archive_on_capture = fields.Boolean(
