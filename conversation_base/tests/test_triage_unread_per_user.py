@@ -87,10 +87,16 @@ class TestTriageUnreadPerUser(TriageCommon):
 
     def test_filer_not_flagged_on_new_conversation(self):
         a, b = self.internal_user, self.colleague
-        conv = self.Conversation.with_user(a)._capture_stub(
-            self.transport, self._stub(self.external), mode="new"
+        # Filing from a team's inbox: the new conversation lands on that
+        # team at creation, so A is already a recipient when the item is
+        # posted. Only the filing exemption keeps A's row read.
+        conv = (
+            self.Conversation.with_user(a)
+            .with_context(default_team_id=self.team.id)
+            ._capture_stub(self.transport, self._stub(self.external), mode="new")
         )
-        conv.sudo().write({"user_id": a.id, "team_id": self.team.id})
+        self.assertEqual(conv.team_id, self.team)
+        self.assertTrue(self._member(conv, b).unread)
         self.assertFalse(self._member(conv, a).unread)
         # Only the filing itself is exempt: a later inbound reaches A again.
         self._inbound(conv)
