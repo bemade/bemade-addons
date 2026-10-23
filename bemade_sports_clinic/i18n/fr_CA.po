@@ -12287,3 +12287,9 @@ msgid ""
 msgstr ""
 "⚠️ AVERTISSEMENT : Il s'agit de la seule équipe du joueur. Le retirer laissera le joueur sans équipe.\n"
 "\n"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_patient_owner_guard.py:0
+msgid "This record can't be moved to another player."
+msgstr "Cet élément ne peut pas être déplacé vers un autre joueur."

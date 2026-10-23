@@ -108,3 +108,4 @@ from . import test_core_overrides_non_clinic_user_1536
 from . import test_portal_rename_1537
 from . import test_treatment_note_access_hotfix
 from . import test_portal_access_sweep_hotfix
+from . import test_patient_owner_guard

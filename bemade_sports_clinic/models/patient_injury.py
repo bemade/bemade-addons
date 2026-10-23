@@ -5,6 +5,8 @@ from odoo.http import request
 from odoo.tools.misc import format_date
 import logging
 
+from .sc_patient_owner_guard import sc_check_patient_unchanged
+
 _logger = logging.getLogger(__name__)
 
 
@@ -401,6 +403,8 @@ class PatientInjury(models.Model):
 
     def write(self, vals):
         """Override write to refresh follower subtypes when internal notes change."""
+        # Adversarial review 2026-10-22: never moved onto another player.
+        sc_check_patient_unchanged(self, vals)
         # Detect suppression context (portal coach flows)
         suppress_followers = bool(
             self.env.context.get('mail_create_nosubscribe')
