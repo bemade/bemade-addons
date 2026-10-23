@@ -6,7 +6,10 @@ export default [
     id: "open-main-menu",
     title: "Ouvrir le menu principal",
     narration: "Ouvrez le menu principal d'Odoo, en haut à gauche.",
-    selector: ".o_navbar_apps_menu button.dropdown-toggle",
+    // Community: the navbar apps dropdown. Enterprise: the home-menu toggle
+    // that replaces it (exactly one of the two exists in a given edition).
+    selector:
+      ".o_navbar_apps_menu button.dropdown-toggle, .o_main_navbar .o_menu_toggle",
     action: "click",
   },
   {

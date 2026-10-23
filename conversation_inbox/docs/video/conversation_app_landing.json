@@ -1,6 +1,6 @@
 {
   "stepsFile": "../../static/tests/tours/conversation_app_landing.steps.js",
-  "startPath": "/odoo",
+  "startPath": "/odoo/discuss",
   "login": {"path": "/web/login", "formSelector": "form"},
   "viewport": {"width": 1280, "height": 800},
   "lang": "fr_CA",

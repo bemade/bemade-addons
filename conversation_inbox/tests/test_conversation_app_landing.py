@@ -58,4 +58,8 @@ class TestConversationAppLanding(TransactionCase):
 @tagged("post_install", "-at_install")
 class TestConversationAppLandingTour(HttpCase):
     def test_app_landing_tour(self):
-        self.start_tour("/odoo", "conversation_app_landing_tour", login="admin")
+        # Start inside another app: with web_enterprise, /odoo shows the home
+        # menu rather than an app with a navbar.
+        self.start_tour(
+            "/odoo/discuss", "conversation_app_landing_tour", login="admin"
+        )
