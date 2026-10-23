@@ -11,3 +11,4 @@ from . import test_link_record_picker_tour
 from . import test_conversation_inbox_my_mailboxes
 from . import test_reply_wizard_attachment_access
 from . import test_reply_window_tour
+from . import test_conversation_app_landing
