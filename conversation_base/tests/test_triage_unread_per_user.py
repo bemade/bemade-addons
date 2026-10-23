@@ -9,6 +9,10 @@
 #   * Mark read / unread on a subset of rows touch only the acting user.
 #   * Opening a conversation form in the real UI (list row, then the
 #     form pager) leaves the opener's rows read and everyone else's alone.
+#   * Opening a conversation by any path enrols the opener: a user who is
+#     neither assignee nor on the team and had no member row gets one
+#     (read), so the next inbound message flags them unread like everyone
+#     who already opened it. Nobody else gets a row or a change.
 
 from datetime import timedelta
 
@@ -115,6 +119,26 @@ class TestTriageUnreadPerUser(TriageCommon):
         )
         self.assertTrue(self._member(self.conv, a).unread)
 
+    def test_outsider_open_enrols_then_inbound_flags(self):
+        a, b = self.internal_user, self.colleague
+        outsider = mail_new_test_user(
+            self.env, login="triage_outsider", groups="base.group_user"
+        )
+        self.assertFalse(self._member(self.conv, outsider))
+        before = {user: self._state(self.conv, user) for user in (a, b)}
+        # What the conversation form does on load, whatever the way in.
+        self.conv.with_user(outsider).action_triage_mark_read()
+        self.assertEqual(self._state(self.conv, outsider), (False, False, False))
+        self.assertFalse(self._unread_for(self.conv, outsider))
+        for user in (a, b):
+            self.assertEqual(self._state(self.conv, user), before[user])
+        self.assertEqual(self.conv.member_ids.user_id, a | b | outsider)
+        self.assertEqual(self.conv.state, "open")
+        self._inbound(self.conv)
+        for user in (outsider, a, b):
+            self.assertTrue(self._member(self.conv, user).unread, user.login)
+        self.assertTrue(self._unread_for(self.conv, outsider))
+
     def test_bulk_mark_touches_only_selected_rows_of_actor(self):
         a, b = self.internal_user, self.colleague
         c2 = self.Conversation.create({"name": "c2", "team_id": self.team.id})
@@ -148,7 +172,7 @@ class TestConversationOpenMarksRead(HttpCase):
                 "member_ids": [Command.set([cls.user.id, cls.colleague.id])],
             }
         )
-        customer = cls.env["res.partner"].create(
+        cls.customer = customer = cls.env["res.partner"].create(
             {"name": "Open Customer", "email": "open.customer@example.com"}
         )
         # The tour searches "suivi lecture" to narrow the list to these two.
@@ -196,3 +220,49 @@ class TestConversationOpenMarksRead(HttpCase):
             self.assertEqual(conv.state, "open")
         # Not opened: still unread for the reader.
         self.assertTrue(self._member(self.noise, self.user).unread)
+
+    def test_outsider_open_by_url_enrols_reader(self):
+        # Neither assignee nor on the team, and no member row: opening the
+        # conversation by its link must enrol them (read), so the next
+        # inbound message reaches their Unread.
+        outsider = mail_new_test_user(
+            self.env, login="open_read_out", name="Reader Out", groups="base.group_user"
+        )
+        conv = self.convs["Omega"]
+        others = (self.convs["Psi"], self.noise)
+        self.assertFalse(self._member(conv, outsider))
+        before = {
+            user: (row.unread, row.is_handled, row.snooze_until)
+            for user in (self.user, self.colleague)
+            for row in self._member(conv, user)
+        }
+        self.start_tour(
+            "/odoo/action-conversation_base.mail_conversation_action/%s" % conv.id,
+            "conversation_open_enrols_reader_tour",
+            login=outsider.login,
+        )
+        self.env.invalidate_all()
+        row = self._member(conv, outsider)
+        self.assertTrue(row, "opening must enrol the opener")
+        self.assertFalse(row.unread)
+        self.assertFalse(row.is_handled)
+        for user in (self.user, self.colleague):
+            row_other = self._member(conv, user)
+            self.assertEqual(
+                (row_other.unread, row_other.is_handled, row_other.snooze_until),
+                before[user],
+            )
+        self.assertEqual(
+            conv.member_ids.user_id, self.user | self.colleague | outsider
+        )
+        self.assertEqual(conv.state, "open")
+        for other in others:
+            self.assertFalse(self._member(other, outsider), other.name)
+        # A new inbound message now reaches the outsider too.
+        conv.message_post(
+            body="<p>Follow-up</p>",
+            author_id=self.customer.id,
+            message_type="comment",
+            subtype_xmlid="mail.mt_comment",
+        )
+        self.assertTrue(self._member(conv, outsider).unread)
