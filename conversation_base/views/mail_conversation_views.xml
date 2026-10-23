@@ -4,7 +4,7 @@
         <field name="name">mail.conversation.view.form</field>
         <field name="model">mail.conversation</field>
         <field name="arch" type="xml">
-            <form string="Conversation">
+            <form string="Conversation" js_class="conversation_triage_form">
                 <sheet>
                     <div class="oe_title">
                         <label for="name" />

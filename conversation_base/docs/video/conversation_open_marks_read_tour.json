@@ -1,0 +1,12 @@
+{
+  "stepsFile": "../../static/tests/tours/conversation_open_marks_read_tour.steps.js",
+  "startPath": "/odoo/action-conversation_base.mail_conversation_action",
+  "lang": "fr_CA",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "voice": "fr_FR-siwis-medium",
+  "title": "Lire une conversation : « Non lu » est personnel",
+  "introNarration": "Dans cette démonstration, nous voyons que le filtre « Non lu » est personnel : une conversation est lue pour vous dès que vous l'ouvrez, peu importe d'où.",
+  "outroTitle": "À vous de jouer",
+  "outroNarration": "Vos collègues qui n'ont pas encore ouvert la conversation la voient toujours comme non lue."
+}
