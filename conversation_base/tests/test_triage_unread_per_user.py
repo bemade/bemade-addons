@@ -151,12 +151,17 @@ class TestConversationOpenMarksRead(HttpCase):
         customer = cls.env["res.partner"].create(
             {"name": "Open Customer", "email": "open.customer@example.com"}
         )
+        # The tour searches "suivi lecture" to narrow the list to these two.
+        # "Sigma" is noise: an unread, more recent conversation in the same
+        # default list, as a database with other data would have. The tour
+        # must not depend on what else the list holds, nor on the order.
         cls.convs = {}
-        for name, hours in (("Omega", 1), ("Psi", 2)):
+        for name, hours in (("Sigma", 0), ("Omega", 1), ("Psi", 2)):
+            label = "Sigma other" if name == "Sigma" else "%s suivi lecture" % name
             conv = (
                 cls.env["mail.conversation"]
                 .with_context(mail_create_nosubscribe=True, mail_create_nolog=True)
-                .create({"name": "%s conversation" % name, "team_id": team.id})
+                .create({"name": label, "team_id": team.id})
             )
             conv.message_post(
                 body="<p>Hello %s</p>" % name,
@@ -166,6 +171,7 @@ class TestConversationOpenMarksRead(HttpCase):
                 subtype_xmlid="mail.mt_comment",
             )
             cls.convs[name] = conv
+        cls.noise = cls.convs.pop("Sigma")
 
     def _member(self, conv, user):
         return self.env["mail.conversation.member"].search(
@@ -173,7 +179,7 @@ class TestConversationOpenMarksRead(HttpCase):
         )
 
     def test_open_marks_read_only_me(self):
-        for conv in self.convs.values():
+        for conv in (*self.convs.values(), self.noise):
             self.assertTrue(self._member(conv, self.user).unread)
             self.assertTrue(self._member(conv, self.colleague).unread)
         self.start_tour(
@@ -188,3 +194,5 @@ class TestConversationOpenMarksRead(HttpCase):
             self.assertTrue(other.unread, conv.name)
             self.assertFalse(other.is_handled)
             self.assertEqual(conv.state, "open")
+        # Not opened: still unread for the reader.
+        self.assertTrue(self._member(self.noise, self.user).unread)
