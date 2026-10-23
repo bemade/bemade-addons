@@ -10,12 +10,14 @@
     <xpath expr="//div[hasclass('o-mail-Followers')]" position="before">
         <button
         t-if="relevantConversations.count"
-        class="o_relevant_conversations_toggle btn btn-link text-action px-1 d-flex align-items-center text-nowrap"
+        class="o_relevant_conversations_toggle btn btn-link text-action px-1 d-flex align-items-center text-nowrap flex-shrink-0"
         t-att-class="{'active': relevantConversations.open, 'my-2': !props.compactHeight}"
+        title="Relevant Conversations"
+        aria-label="Relevant Conversations"
+        t-att-aria-expanded="relevantConversations.open"
         t-on-click="toggleRelevantConversations"
       >
-            <i class="fa fa-comments-o fa-fw me-1" role="img" />
-            <span>Relevant Conversations</span>
+            <i class="fa fa-comments-o fa-fw" role="img" />
             <span
           class="o_relevant_conversations_count badge rounded-pill text-bg-secondary ms-1"
           t-esc="relevantConversations.count"
@@ -27,6 +29,9 @@
         t-if="relevantConversations.count and relevantConversations.open"
         class="o_relevant_conversations px-3 pb-2"
       >
+            <h6
+          class="o_relevant_conversations_title fw-bolder pt-2 mb-0"
+        >Relevant Conversations</h6>
             <t t-foreach="relevantConversations.scopes" t-as="scope" t-key="scope.key">
                 <div class="d-flex align-items-center pt-2 fw-bolder">
                     <hr class="flex-grow-1" />

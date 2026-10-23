@@ -5,6 +5,7 @@
   "viewport": {"width": 1280, "height": 800},
   "lang": "fr_CA",
   "voice": "fr_FR-siwis-medium",
+  "stepOverrides": {"section-title": {"containsText": "Conversations pertinentes"}},
   "title": "Retrouver les conversations liées depuis une fiche",
   "introNarration": "Dans cette démonstration, nous voyons comment retrouver, directement depuis une fiche (un client, une soumission, une tâche, un billet), les conversations qui lui ont été liées.",
   "outroTitle": "À vous de jouer",

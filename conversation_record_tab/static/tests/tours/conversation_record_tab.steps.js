@@ -12,11 +12,20 @@ export default [
   },
   {
     id: "tab",
-    title: "Repérer l'onglet Conversations pertinentes",
+    title: "Repérer l'icône des conversations pertinentes",
     narration:
-      "Dans le fil de discussion, l'onglet Conversations pertinentes apparaît, avec le nombre de conversations liées à cette fiche.",
+      "Dans le fil de discussion, une petite icône de conversations apparaît, avec le nombre de conversations liées à cette fiche. En la survolant, l'infobulle Conversations pertinentes s'affiche.",
     selector: ".o-mail-Chatter .o_relevant_conversations_toggle",
     containsText: "2",
+    action: "assert",
+  },
+  {
+    id: "section-title",
+    title: "Lire le titre de la section",
+    narration:
+      "La section qui s'ouvre sous la barre porte le titre Conversations pertinentes.",
+    selector: ".o_relevant_conversations .o_relevant_conversations_title",
+    containsText: "Relevant Conversations",
     action: "assert",
   },
   {
