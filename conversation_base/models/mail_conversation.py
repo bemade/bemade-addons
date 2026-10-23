@@ -257,12 +257,16 @@ class MailConversation(models.Model):
     def _triage_unread_recipients(self):
         """Users who should see this conversation as unread after an
         inbound message: the assignee, the team's internal members and
-        everyone who already has a member row."""
+        everyone who already has a member row. A user who is filing the
+        message themselves (context ``triage_unread_skip_user_id``) has just
+        read it, so they are left out."""
         self.ensure_one()
         conversation = self.sudo()
         users = conversation.user_id | conversation.team_id.member_ids
         users = users.filtered(lambda u: u.active and not u.share)
-        return users | conversation.member_ids.user_id
+        users |= conversation.member_ids.user_id
+        skip_id = self.env.context.get("triage_unread_skip_user_id")
+        return users.filtered(lambda u: u.id != skip_id) if skip_id else users
 
     def _triage_mark_unread_for_inbound(self):
         """Flag the conversation unread for its recipients. Touches only
@@ -711,7 +715,11 @@ class MailConversation(models.Model):
             post_kwargs["email_from"] = stub.get("email_from") or stub.get(
                 "author"
             )
-        message = conversation.message_post(**post_kwargs)
+        # The user filing the item has just read it: the post must not
+        # flag the conversation unread for them (everyone else still is).
+        message = conversation.with_context(
+            triage_unread_skip_user_id=self.env.uid
+        ).message_post(**post_kwargs)
         # transport_id stays FALSY here by design: it is the model-contract
         # marker for "internal note" (mail.message docstring), and the
         # notification-safety invariant this quiet capture leans on is the

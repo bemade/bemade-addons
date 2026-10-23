@@ -119,5 +119,9 @@ class MailConversation(models.Model):
                     transport=transport.display_name,
                 )
             )
-        conversation = self._route_via_alias(rfc822, model=model)
+        # The user routing the item has just read it: the gateway post
+        # must not flag the conversation unread for them.
+        conversation = self.with_context(
+            triage_unread_skip_user_id=self.env.uid
+        )._route_via_alias(rfc822, model=model)
         return conversation.id if conversation else False
