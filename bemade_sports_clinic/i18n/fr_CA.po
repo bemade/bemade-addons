@@ -16538,3 +16538,9 @@ msgstr "nom"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "team"
 msgstr "équipe"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_patient_owner_guard.py:0
+msgid "This record can't be moved to another player."
+msgstr "Cet élément ne peut pas être déplacé vers un autre joueur."

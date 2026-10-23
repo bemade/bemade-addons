@@ -1,6 +1,7 @@
 from odoo import models, fields, api
 from odoo.addons.phone_validation.tools import phone_validation
 from .sc_phone import sc_phone_is_valid
+from .sc_patient_owner_guard import sc_check_patient_unchanged
 
 
 class PatientContact(models.Model):
@@ -27,6 +28,11 @@ class PatientContact(models.Model):
     patient_id = fields.Many2one(comodel_name='sports.patient', string='Patient')
     sc_phone_invalid = fields.Boolean(
         string="Phone number to fix", compute="_compute_sc_phone_invalid", store=True)
+
+    def write(self, vals):
+        # Adversarial review 2026-10-22: never moved onto another player.
+        sc_check_patient_unchanged(self, vals)
+        return super().write(vals)
 
     @api.depends('mobile', 'patient_id.country_id')
     def _compute_sc_phone_invalid(self):

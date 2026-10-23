@@ -249,3 +249,4 @@ from . import test_lose_access_confirm_1656
 from . import test_critical_items_1654
 from . import test_critical_items_tours_1654
 from . import test_review_fixes_1022
+from . import test_patient_owner_guard
