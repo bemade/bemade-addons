@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Draft - Team Inbox",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Discuss",
     "summary": "Reply drafts sent from a team mailbox carry no personal signature.",
     "author": "Bemade Inc.",
