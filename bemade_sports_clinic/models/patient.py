@@ -2065,6 +2065,9 @@ class Patient(models.Model):
             )
             # Task 1654: the critical items name the conditions — deleted.
             patient.critical_item_ids.sudo().with_context(sc_critical_quiet=True).unlink()
+            # Owner review 2026-10-22: and the undo snapshots of a cleared family.
+            self.env["sports.patient.medical.undo"].sudo().search(
+                [("patient_id", "=", patient.id)]).unlink()
             # Overwrite core identity PII on the partner (address, email, ...).
             if partner:
                 partner._law25_anonymize()
@@ -2273,6 +2276,25 @@ class Patient(models.Model):
             (first, last, dob, exclude_id or 0))
         row = self.env.cr.fetchone()
         return self.env['sports.patient'].sudo().browse(row[0]) if row else None
+
+    @api.onchange('first_name', 'last_name', 'date_of_birth')
+    def _onchange_sc_identity_twin(self):
+        """Owner review 2026-10-22 (#1639): the backend form stays allowed
+        for internal users, with a NON-blocking warning when another player
+        (archived included, the identity guard's normalisation) has exactly
+        this first name, last name and date of birth."""
+        for patient in self:
+            twin = patient._sc_identity_duplicate(
+                patient.first_name, patient.last_name, patient.date_of_birth,
+                exclude_id=patient._origin.id or None)
+            if twin:
+                return {'warning': {
+                    'title': _("Possible duplicate"),
+                    'message': _(
+                        "A player already has this name and date of birth: %(name)s (#%(id)s).",
+                        name=twin.with_context(active_test=False).display_name, id=twin.id),
+                }}
+        return None
 
     @api.model
     def _sc_check_identity_duplicate(self, first_name, last_name, date_of_birth, exclude_id=None):

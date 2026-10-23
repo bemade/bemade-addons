@@ -801,6 +801,11 @@ class AccessControlMixin:
             'team_id': team.id if team else '',
             'open': bool(error) or args.get('add') == '1' or any(key in args for key in legacy),
             'error': error,
+            # Owner review 2026-10-22: the field a refusal is about (its
+            # message sits under it), else next to « Create ».
+            'error_field': (data.get('sc_error_field') or '') if error else '',
+            # A therapist creates into one of their teams (an admin may not).
+            'team_required': not self._is_clinic_admin(),
             'data': data,
             'team_target': target_id,
             'team_csv': chosen,
@@ -809,7 +814,11 @@ class AccessControlMixin:
                 options=[(t.id, t.name) for t in targets],
                 placeholder=env._("Add a team…")),
             'relationship_types': env['sports.patient.contact']._fields['contact_type']._description_selection(env),
-            'return_url': request.httprequest.full_path.rstrip('?'),
+            # Owner review 2026-10-22: the team page's Joueurs tab is a
+            # client-side tab (the address may still read the dashboard):
+            # a refusal comes back to THAT tab, never to the dashboard.
+            'return_url': ('/my/team?team_id=%s&tab=players' % team.id if team
+                           else request.httprequest.full_path.rstrip('?')),
         }
 
     def _sc_chosen_teams(self, csv):

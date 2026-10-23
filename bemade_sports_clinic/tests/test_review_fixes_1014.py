@@ -296,8 +296,9 @@ class TestReviewFixes1014Pages(AppShellCommon):
                   for name in ('first_name', 'last_name', 'date_of_birth')}
         self.assertEqual(values, {'first_name': ['Sam'], 'last_name': ['Newplayer'],
                                   'date_of_birth': ['2011-03-04']})
-        # « Create » waits for the live check.
-        self.assertEqual(form.xpath('.//button[@data-sc-action="player.add"]/@disabled'), ['disabled'])
+        # « Create » waits for the live check (owner review 2026-10-22:
+        # greyed with aria-disabled, its reason under it).
+        self.assertEqual(form.xpath('.//button[@data-sc-action="player.add"]/@aria-disabled'), ['true'])
         # The labels « First name » / « Last name » appear once each.
         labels = [_text(lbl) for lbl in card.xpath('.//label')]
         self.assertEqual(labels.count('First name'), 1)
@@ -350,9 +351,10 @@ class TestReviewFixes1014I18n(TestAppShellI18n1538):
         self.assertIn('Trier les événements', text)
         tree = lxml_html.fromstring(self._fr(
             '/my/team?team_id=%s&tab=players&add_last=Newplayer' % self.team_a.id))
-        # Task 1655: the inline create panel's hint.
-        hint = tree.xpath('//*[@data-sc-player-add-hint]')[0]
-        self.assertIn('Créer', _text(hint))
+        # Task 1655: the inline create panel's reason line (owner review
+        # 2026-10-22: what is missing, in French).
+        hint = tree.xpath('//*[@data-sc-player-add-reason]')[0]
+        self.assertEqual(_text(hint), 'Complétez : prénom, date de naissance')
         self.opener.cookies.set('frontend_lang', 'fr_CA')
         resp = self.url_open('/my/event/create/submit', data={
             'csrf_token': self._csrf(), 'name': 'Synthetic bad times', 'event_type': 'game',

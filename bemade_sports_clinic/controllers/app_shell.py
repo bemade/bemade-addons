@@ -586,7 +586,14 @@ def _patient_write(ctrl, patient, field, value):
         # Task 1630: « » = Not specified. Task 1653: refused once set (the
         # model); « None known » empties and locks the details / EpiPen —
         # answered along (also), so the popup's fields follow in place.
-        patient.write({field: _selection_value(patient, field, value)})
+        new_level = _selection_value(patient, field, value)
+        # Owner review 2026-10-22: « None known » clears — a one-shot
+        # snapshot first, so the answer can offer « Undo ».
+        family = 'allergy' if field == 'allergy_level' else 'medical_alert'
+        snapshot = patient._sc_medical_snapshot(family) if new_level == 'none' else None
+        patient.write({field: new_level})
+        if snapshot:
+            extra['undo'] = patient._sc_medical_undo_offer(family, snapshot)
         others = dict(patient._SC_MEDICAL_PAIRS)[field]
         extra['also_fields'] = list(others)
         extra['also_disabled'] = {name: patient[field] == 'none' for name in others}

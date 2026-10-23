@@ -37,12 +37,40 @@ function app() {
 
 // ---------------------------------------------------------------- toast
 let toastTimer = null;
+// Owner review 2026-10-22: a toast shown while a modal popup is open (the
+// medical popup's « Details cleared · Undo ») goes INTO that popup — the
+// page behind a modal <dialog> is inert, its « Undo » could not be tapped.
+// It goes back to its place when the popup closes (and stays visible).
+let toastHome = null;
+function placeToast(root, toast) {
+    if (!toastHome && !toast.closest("dialog")) {
+        toastHome = toast.parentElement;
+    }
+    const modal = [...root.querySelectorAll("dialog[open]")].pop();
+    if (modal && toast.parentElement !== modal) {
+        modal.appendChild(toast);
+    } else if (!modal && toastHome && toast.parentElement !== toastHome) {
+        toastHome.appendChild(toast);
+    }
+}
+document.addEventListener(
+    "close",
+    (ev) => {
+        const toast = ev.target instanceof HTMLDialogElement && ev.target.querySelector(":scope > .o_sc_toast");
+        if (toast && toastHome) {
+            toastHome.appendChild(toast);
+        }
+    },
+    true
+);
+
 function showToast(message, actionLabel, action, duration, options) {
     const root = app();
     const toast = root && root.querySelector(".o_sc_toast");
     if (!toast) {
         return;
     }
+    placeToast(root, toast);
     const { title, tone } = options || {};
     const parts = [];
     if (title) {
@@ -81,7 +109,7 @@ function showToast(message, actionLabel, action, duration, options) {
 
 document.addEventListener("sc:toast", (ev) => {
     const detail = ev.detail || {};
-    showToast(detail.message || "", detail.actionLabel, detail.action);
+    showToast(detail.message || "", detail.actionLabel, detail.action, detail.duration);
 });
 
 // Task 1583: the pending session notification of a POST round-trip

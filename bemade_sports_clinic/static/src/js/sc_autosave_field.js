@@ -841,6 +841,49 @@ export class ScAutosaveField extends Component {
         );
     }
 
+    /**
+     * Owner review 2026-10-22: the toast of a save the SERVER can undo
+     * (« Details cleared · Undo »): ``undo`` = {url, token, message, action,
+     * ms}. The restore answers like a save of this field (its siblings, the
+     * pills and the lists follow, « sc:saved »).
+     */
+    offerServerUndo(undo) {
+        const { model, recordId, field } = this.props;
+        document.dispatchEvent(
+            new CustomEvent("sc:toast", {
+                detail: {
+                    message: undo.message || _t("Change saved"),
+                    actionLabel: undo.action || _t("Undo"),
+                    duration: undo.ms,
+                    action: async () => {
+                        try {
+                            const result = await scFetch(undo.url, {
+                                method: "POST",
+                                data: { token: undo.token },
+                                toast: false,
+                            });
+                            document.dispatchEvent(
+                                new CustomEvent("sc:saved", {
+                                    detail: { model, recordId, field: result.field || field, result, source: "server-undo" },
+                                })
+                            );
+                        } catch (error) {
+                            document.dispatchEvent(
+                                new CustomEvent("sc:toast", {
+                                    detail: {
+                                        message:
+                                            (error && error.payload && error.payload.message) ||
+                                            _t("This change can no longer be undone."),
+                                    },
+                                })
+                            );
+                        }
+                    },
+                },
+            })
+        );
+    }
+
     keepDraft() {
         if (norm(this.state.value) === norm(this.props.value) || !this.isKeepable(this.state.value)) {
             removeDraft(this.key);
@@ -991,6 +1034,11 @@ export class ScAutosaveField extends Component {
                     },
                 })
             );
+            // Owner review 2026-10-22: « None known » cleared the family —
+            // the answer carries a one-shot « Undo » (the server restores).
+            if (result.undo) {
+                this.offerServerUndo(result.undo);
+            }
             return true;
         } catch (error) {
             if (error.status === 428 && error.payload && error.payload.confirm_identity) {

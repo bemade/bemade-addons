@@ -41,3 +41,4 @@ from . import event_cancel_wizard
 from . import patient_merge_wizard
 from . import ir_http
 from . import patient_critical_item
+from . import patient_medical_undo

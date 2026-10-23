@@ -21,6 +21,7 @@ page's Joueurs tab (therapists / clinic admins), like « Add Injury »:
   it with its contacts and its To-Dos.
 """
 import logging
+import re
 from datetime import timedelta
 
 from odoo import Command, _, fields, http
@@ -98,10 +99,19 @@ class AppPlayerAddPortal(TeamStaffPortal):
     def _sc_player_add_back(self, post):
         url = self._safe_return_url(post.get('return_url'), '/my/players')
         url = url.split('#')[0]
-        sep = '&' if '?' in url else '?'
+        if url.startswith('/my/team') and 'tab=players' not in url:
+            # Owner review 2026-10-22: the panel lives on the Joueurs tab.
+            url = re.sub(r'([?&])tab=[^&]*&?', r'\1', url).rstrip('&?')
+            url += ('&' if '?' in url else '?') + 'tab=players'
         if 'add=1' not in url:
-            url += sep + 'add=1'
+            url += ('&' if '?' in url else '?') + 'add=1'
         return url
+
+    @staticmethod
+    def _sc_player_add_xhr():
+        """The panel's script posts with fetch: its refusals are answered as
+        JSON (the panel, its values and its focus stay as they are)."""
+        return request.httprequest.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
     @http.route('/my/app/player/create', type='http', auth='user', methods=['POST'], website=True)
     def sc_player_create(self, **post):
@@ -111,20 +121,31 @@ class AppPlayerAddPortal(TeamStaffPortal):
             return request.redirect('/my/players')
         env = request.env
 
-        def refuse(message):
-            self._portal_flash(message, post, FLASH_SCOPE)
+        xhr = self._sc_player_add_xhr()
+
+        def refuse(message, field=''):
+            # Owner review 2026-10-22: any refusal stays IN the panel, the
+            # typed values kept, the message next to the field (or to
+            # « Create »): JSON for the panel's script, else the panel
+            # re-opened on its own tab with the values (flash).
+            if xhr:
+                return request.make_json_response(
+                    {'ok': False, 'error': 'invalid', 'message': str(message), 'field': field}, status=400)
+            data = {key: value for key, value in post.items() if key != 'csrf_token'}
+            data['sc_error_field'] = field
+            self._portal_flash(message, data, FLASH_SCOPE)
             return request.redirect(self._sc_player_add_back(post))
 
         first = (post.get('first_name') or '').strip()
         last = (post.get('last_name') or '').strip()
         if not first or not last:
-            return refuse(_('First name and last name are required'))
+            return refuse(_('First name and last name are required'), 'last_name' if first else 'first_name')
         if not (post.get('date_of_birth') or '').strip():
-            return refuse(_("Date of birth is required"))
+            return refuse(_("Date of birth is required"), 'date_of_birth')
         try:
             dob = parse_portal_date(post.get('date_of_birth'))
         except ValidationError as exc:
-            return refuse(exc.args[0])
+            return refuse(exc.args[0], 'date_of_birth')
         teams = self._sc_chosen_teams(post.get('team_ids'))
         if not teams and not self._is_clinic_admin():
             return refuse(_('Please select at least one team to assign to this player.'))
@@ -132,10 +153,10 @@ class AppPlayerAddPortal(TeamStaffPortal):
         ec_mobile = (post.get('ec_mobile') or '').strip()
         ec_type = (post.get('ec_contact_type') or '').strip() or 'other'
         if (ec_name or ec_mobile) and not (ec_name and ec_mobile):
-            return refuse(_("An emergency contact needs a name and a mobile."))
+            return refuse(_("An emergency contact needs a name and a mobile."), 'ec_mobile' if ec_name else 'ec_name')
         phone_error = self._sc_phone_error(post, 'ec_mobile')
         if phone_error:
-            return refuse(phone_error)
+            return refuse(phone_error, 'ec_mobile')
         try:
             with env.cr.savepoint():
                 patient = env['sports.patient'].create_portal_patient({
@@ -154,6 +175,8 @@ class AppPlayerAddPortal(TeamStaffPortal):
         if team_id and str(team_id).isdigit() and int(team_id) in teams.ids:
             url += '&team_id=%s' % int(team_id)
         url += '&tab=info&created_player=%s' % patient.id
+        if xhr:
+            return request.make_json_response({'ok': True, 'redirect': url})
         return request.redirect(url)
 
     # ------------------------------------------------------------- undo

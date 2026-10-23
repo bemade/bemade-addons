@@ -15191,7 +15191,9 @@ msgid "Today (%(count)s)"
 msgstr "Aujourd'hui (%(count)s)"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #. odoo-javascript
+#: code:addons/bemade_sports_clinic/models/patient_medical_undo.py:0
 #: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
 #: code:addons/bemade_sports_clinic/static/src/js/sc_status_pills.js:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
@@ -16256,17 +16258,6 @@ msgstr "— Choisir —"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
-msgid ""
-"<small class=\"o_sc_hint\" data-sc-player-add-hint=\"1\">Create becomes "
-"available once the check has found no player with the same name and date of "
-"birth.</small>"
-msgstr ""
-"<small class=\"o_sc_hint\" data-sc-player-add-hint=\"1\">« Créer » devient "
-"disponible une fois la vérification faite, si aucun joueur n'a le même nom et "
-"la même date de naissance.</small>"
-
-#. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "<span>Create a player</span>"
 msgstr "<span>Créer un joueur</span>"
 
@@ -16450,3 +16441,100 @@ msgstr "modifié"
 #: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
 msgid "removed"
 msgstr "retiré"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "A player already has this name and date of birth: %(name)s (#%(id)s)."
+msgstr ""
+"Un joueur porte déjà ce nom et cette date de naissance : %(name)s (#%(id)s)."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "Checking for existing players…"
+msgstr "Vérification des joueurs existants…"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "Complete:"
+msgstr "Complétez :"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_medical_undo.py:0
+msgid "Details cleared"
+msgstr "Détails effacés"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "Emergency contact: name and mobile are required together"
+msgstr "Contact d'urgence : nom et cellulaire requis ensemble"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Possible duplicate"
+msgstr "Doublon possible"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_medical_undo__snapshot
+msgid "Snapshot"
+msgstr "Instantané"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid ""
+"The player could not be created. Please review your inputs and try again."
+msgstr ""
+"Le joueur n'a pas pu être créé. Vérifiez les informations saisies et "
+"réessayez."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_medical_undo.py:0
+msgid "These details were changed since; they can no longer be restored."
+msgstr ""
+"Ces détails ont été modifiés depuis ; ils ne peuvent plus être restaurés."
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_critical_items.py:0
+#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
+msgid "This change can no longer be undone."
+msgstr "Ce changement ne peut plus être annulé."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "This player already exists — open them or add them to the team above"
+msgstr "Ce joueur existe déjà — ouvrez-le ou ajoutez-le à l'équipe ci-dessus"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_medical_undo__token
+msgid "Token"
+msgstr "Jeton"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_patient_medical_undo
+msgid "Undo snapshot of a cleared allergy / medical alert"
+msgstr "Instantané d'annulation d'une allergie / alerte médicale effacée"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "date of birth"
+msgstr "date de naissance"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "first name"
+msgstr "prénom"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "last name"
+msgstr "nom"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "team"
+msgstr "équipe"

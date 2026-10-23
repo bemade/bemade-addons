@@ -1483,6 +1483,32 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         }
     }
 
+    // Owner review 2026-10-22: the inline « create a player » panel's
+    // « Create » is greyed until it can succeed; the reason sits under it.
+    .o_sc_player_add {
+        .o_sc_btn[aria-disabled="true"] {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .o_sc_player_add_reason {
+            margin-top: var(--sc-space-2);
+        }
+
+        .o_sc_reason_flash {
+            animation: o_sc_reason_flash 0.6s ease-out;
+        }
+    }
+
+    @keyframes o_sc_reason_flash {
+        0% {
+            color: var(--sc-accent);
+        }
+        100% {
+            color: inherit;
+        }
+    }
+
     // On / off switch (owner review 2026-10-10). A link with role="switch" +
     // aria-checked: the server applies the change and re-renders.
     .o_sc_switch {

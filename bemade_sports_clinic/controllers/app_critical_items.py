@@ -87,3 +87,31 @@ class AppCriticalItemsPortal(AppShellPortal):
         except (AccessError, UserError, ValidationError) as exc:
             return self._sc_save_json({'error': 'invalid', 'message': str(exc.args[0] if exc.args else exc)}, 400)
         return self._sc_save_json(self._sc_critical_answer(patient, family))
+
+    # Owner review 2026-10-22 (#1653 / #1654): « Undo » after « None known ».
+    @http.route('/my/app/medical/undo/<int:undo_id>', type='http', auth='user', methods=['POST'], csrf=True)
+    def sc_medical_undo(self, undo_id, token='', **kw):
+        """Restore the family a « None known » save cleared (level, details,
+        EpiPen, items): the same user, within the undo window, while the
+        family is still « None known ». One shot: the snapshot is consumed.
+        Answers like a save of the family's level (the popup follows)."""
+        undo = request.env['sports.patient.medical.undo'].sudo().browse(undo_id).exists()
+        if not undo or undo.user_id != request.env.user or not token or token != undo.token:
+            return self._sc_save_json({'error': 'forbidden'}, 403)
+        try:
+            patient = self._sc_critical_patient(undo.patient_id.id)
+        except (AccessError, MissingError, UserError, ValueError):
+            return self._sc_save_json({'error': 'forbidden'}, 403)
+        family = undo.family
+        if undo._sc_expired():
+            undo.unlink()
+            return self._sc_save_json({'error': 'expired', 'message': _(
+                "This change can no longer be undone.")}, 400)
+        try:
+            with request.env.cr.savepoint():
+                patient._sc_medical_undo_restore(undo)
+        except (AccessError, UserError, ValidationError) as exc:
+            undo.unlink()
+            return self._sc_save_json({'error': 'invalid', 'message': str(exc.args[0] if exc.args else exc)}, 400)
+        undo.unlink()
+        return self._sc_save_json(self._sc_critical_answer(patient, family))

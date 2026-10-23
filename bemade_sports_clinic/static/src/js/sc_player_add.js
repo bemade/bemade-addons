@@ -4,13 +4,25 @@
  * form[data-sc-player-add]: once a first AND a last name are typed, the
  * existence check (GET /my/app/player-check, 300 ms after the last key; a
  * newer request aborts the older one) lists the matching players under the
- * fields, refined by the date of birth and the chosen team. « Create » is
- * enabled only when the check has answered for the CURRENT name / date of
- * birth / teams and found no player with the same name and date of birth.
+ * fields, refined by the date of birth and the chosen team.
+ *
+ * Owner review 2026-10-22:
+ * - « Create » stays greyed (aria-disabled, never a dead click) until it can
+ *   succeed, with the reason under it (aria-describedby): what is missing
+ *   (« Complete: first name, last name, date of birth »), the check still
+ *   running, an exact name + date-of-birth twin, or a half-filled
+ *   emergency contact;
+ * - the create posts with fetch: ANY refusal of the server (a twin created
+ *   meanwhile, an invalid mobile…) shows in the panel — under its field, or
+ *   next to « Create » — the panel stays open with every typed value; only
+ *   a success leaves the page (the new player's page).
  */
+import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+
 const DEBOUNCE_MS = 300;
 const timers = new WeakMap();
 const inflight = new WeakMap();
+const posting = new WeakSet();
 
 function fields(form) {
     const get = (key) => (form.querySelector(`[data-sc-player-add-field="${key}"]`) || {}).value || "";
@@ -22,8 +34,50 @@ function fields(form) {
     };
 }
 
+function contact(form) {
+    const get = (key) => ((form.querySelector(`[data-sc-player-add-ec="${key}"]`) || {}).value || "").trim();
+    return { name: get("name"), mobile: get("mobile") };
+}
+
 function keyOf(values) {
     return JSON.stringify(values);
+}
+
+function reasons(form) {
+    return (form.querySelector("[data-sc-player-add-reasons]") || {}).dataset || {};
+}
+
+/** Why « Create » can't succeed yet ("" = it can). */
+function blocker(form) {
+    const values = fields(form);
+    const text = reasons(form);
+    const missing = [];
+    if (!values.first) {
+        missing.push(text.first);
+    }
+    if (!values.last) {
+        missing.push(text.last);
+    }
+    if (!values.dob) {
+        missing.push(text.dob);
+    }
+    if (text.teamRequired === "1" && !values.teams.trim()) {
+        missing.push(text.team);
+    }
+    if (missing.length) {
+        return `${text.missing} ${missing.join(", ")}`;
+    }
+    if (form.dataset.scCheckedKey === keyOf(values) && form.dataset.scCheckedExact === "1") {
+        return text.exact;
+    }
+    const ec = contact(form);
+    if (Boolean(ec.name) !== Boolean(ec.mobile)) {
+        return text.ec;
+    }
+    if (form.dataset.scCheckedKey !== keyOf(values)) {
+        return text.checking;
+    }
+    return "";
 }
 
 function refreshSubmit(form) {
@@ -31,14 +85,61 @@ function refreshSubmit(form) {
     if (!submit) {
         return;
     }
-    const values = fields(form);
-    const ready =
-        values.first && values.last && values.dob &&
-        form.dataset.scCheckedKey === keyOf(values) &&
-        form.dataset.scCheckedExact !== "1";
-    submit.disabled = !ready;
+    const reason = posting.has(form) ? "" : blocker(form);
+    const blocked = Boolean(reason) || posting.has(form);
+    submit.setAttribute("aria-disabled", blocked ? "true" : "false");
+    const line = form.querySelector("[data-sc-player-add-reason]");
+    if (line && line.textContent !== reason) {
+        line.textContent = reason;
+    }
+    if (line) {
+        line.hidden = !reason;
+    }
 }
 
+// --------------------------------------------------------------- errors
+function clearErrors(form) {
+    for (const el of form.querySelectorAll("[data-sc-player-add-field-error]")) {
+        el.remove();
+    }
+    for (const el of form.querySelectorAll('[aria-invalid="true"]')) {
+        el.removeAttribute("aria-invalid");
+    }
+    const box = form.querySelector("[data-sc-player-add-error]");
+    if (box) {
+        box.textContent = "";
+        box.hidden = true;
+    }
+}
+
+function showError(form, message, field) {
+    clearErrors(form);
+    const input = field && form.querySelector(`[name="${field}"]`);
+    if (input) {
+        const ec = input.closest("details[data-sc-player-add-ec-box]");
+        if (ec) {
+            ec.open = true;
+        }
+        const note = document.createElement("p");
+        note.className = "o_sc_field_message o_sc_field_error";
+        note.setAttribute("role", "alert");
+        note.dataset.scPlayerAddFieldError = field;
+        note.textContent = message;
+        input.setAttribute("aria-invalid", "true");
+        input.insertAdjacentElement("afterend", note);
+        input.focus({ preventScroll: true });
+        note.scrollIntoView({ block: "nearest" });
+        return;
+    }
+    const box = form.querySelector("[data-sc-player-add-error]");
+    if (box) {
+        box.textContent = message;
+        box.hidden = false;
+        box.scrollIntoView({ block: "nearest" });
+    }
+}
+
+// ---------------------------------------------------------------- check
 async function check(form) {
     const values = fields(form);
     const region = form.querySelector("[data-sc-player-check]");
@@ -94,29 +195,80 @@ function playerForm(target) {
 
 document.addEventListener("input", (ev) => {
     const form = playerForm(ev.target);
-    if (form && ev.target.matches("[data-sc-player-add-field]")) {
+    if (!form) {
+        return;
+    }
+    if (ev.target.matches("[data-sc-player-add-field]")) {
         schedule(form);
+    } else if (ev.target.matches("[data-sc-player-add-ec]")) {
+        refreshSubmit(form);
     }
 });
 
 document.addEventListener("change", (ev) => {
     const form = playerForm(ev.target);
-    if (form && ev.target.matches("[data-sc-player-add-field], [data-sc-player-add-teams]")) {
+    if (!form) {
+        return;
+    }
+    if (ev.target.matches("[data-sc-player-add-field], [data-sc-player-add-teams]")) {
         schedule(form);
+    } else if (ev.target.matches("[data-sc-player-add-ec]")) {
+        refreshSubmit(form);
     }
 });
 
-// The submit itself re-checks nothing: a stale result keeps it disabled.
+// --------------------------------------------------------------- create
+async function create(form) {
+    posting.add(form);
+    refreshSubmit(form);
+    clearErrors(form);
+    const data = Object.fromEntries(new FormData(form).entries());
+    try {
+        const result = await scFetch(form.getAttribute("action"), { method: "POST", data, toast: false, timeout: 30000 });
+        if (result && result.redirect) {
+            window.location.assign(result.redirect);
+            return;
+        }
+        showError(form, reasons(form).generic || "");
+    } catch (error) {
+        const payload = (error && error.payload) || {};
+        showError(form, payload.message || reasons(form).generic || "", payload.field || "");
+        // A twin created meanwhile: the check lists it (« Open » / « Add »).
+        delete form.dataset.scCheckedKey;
+        check(form);
+    } finally {
+        posting.delete(form);
+        refreshSubmit(form);
+    }
+}
+
 document.addEventListener(
     "submit",
     (ev) => {
         const form = playerForm(ev.target);
+        if (!form) {
+            return;
+        }
         if (ev.submitter && ev.submitter.hasAttribute("formaction")) {
             return; // the check's « Add to team » / « Reactivate and add »
         }
-        if (form && form.querySelector("[data-sc-player-add-submit]")?.disabled) {
-            ev.preventDefault();
+        ev.preventDefault();
+        if (posting.has(form)) {
+            return;
         }
+        const reason = blocker(form);
+        if (reason) {
+            // Never a dead click: the reason line says why (and is read out).
+            refreshSubmit(form);
+            const line = form.querySelector("[data-sc-player-add-reason]");
+            if (line) {
+                line.classList.remove("o_sc_reason_flash");
+                void line.offsetWidth; // restart the cue
+                line.classList.add("o_sc_reason_flash");
+            }
+            return;
+        }
+        create(form);
     },
     true
 );
@@ -125,6 +277,7 @@ document.addEventListener(
 function boot() {
     for (const form of document.querySelectorAll(".o_sc_app form[data-sc-player-add]")) {
         const values = fields(form);
+        refreshSubmit(form);
         if (values.first && values.last) {
             check(form);
         }
