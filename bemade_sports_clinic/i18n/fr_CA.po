@@ -16552,6 +16552,15 @@ msgid "A critical item can't be moved to another player or family."
 msgstr "Un élément critique ne peut pas être déplacé vers un autre joueur ou une autre famille."
 
 #. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
 msgid "A player with this identity already exists — ask a manager."
 msgstr "Un joueur avec cette identité existe déjà — demandez à un responsable."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_player_add.py:0
+msgid "Please choose a relationship from the list."
+msgstr "Veuillez choisir une relation dans la liste."

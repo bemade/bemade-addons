@@ -139,7 +139,10 @@ class TestIdentityGuardModel1600(IdentityCommon):
     # ----- AC-c (model) -----
     def test_duplicate_identity_refused_for_portal(self):
         writer = self.player.with_user(self.tp).with_context(sc_identity_confirmed=True)
-        with self.assertRaisesRegex(ValidationError, 'Another player already has this name'):
+        # Security review 2026-10-23: Dana is on another team (not readable):
+        # the generic refusal, whatever the date of birth
+        # (test_identity_oracle_1023).
+        with self.assertRaisesRegex(ValidationError, 'A player with this identity already exists'):
             writer.write({'first_name': ' dana ', 'last_name': 'SYNTHETIC', 'date_of_birth': '2010-01-02'})
         self.player.invalidate_recordset()
         self.assertEqual(self.player.first_name, 'Pat')
@@ -203,7 +206,9 @@ class TestIdentityGuardLegacy1600(IdentityCommon):
         }, allow_redirects=False)
         self.assertEqual(resp.status_code, 303)
         self.assertIn('/my/player/create', resp.headers['Location'])
-        self.assertIn('Another player already has this name and date of birth',
+        # Security review 2026-10-23: Dana is on another team — the generic
+        # refusal (test_identity_oracle_1023).
+        self.assertIn('A player with this identity already exists — ask a manager.',
                       self.url_open('/my/player/create').text)
         self.assertEqual(self.env['res.partner'].search_count([]), partners,
                          "no orphan contact left behind")
@@ -324,7 +329,9 @@ class TestIdentityGuardAppShell1600(IdentityCommon):
         self._login_tp()
         resp = self._app_save('last_name', 'Synthetic', confirm='1')
         self.assertEqual(resp.status_code, 400, resp.text)
-        self.assertIn('Another player already has this name', resp.json()['message'])
+        # Security review 2026-10-23: Dana is on another team — the generic
+        # refusal (test_identity_oracle_1023).
+        self.assertIn('A player with this identity already exists', resp.json()['message'])
 
 
 @tagged('-at_install', 'post_install')

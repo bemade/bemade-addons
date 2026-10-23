@@ -10,7 +10,8 @@
  * - « Create » stays greyed (aria-disabled, never a dead click) until it can
  *   succeed, with the reason under it (aria-describedby): what is missing
  *   (« Complete: first name, last name, date of birth »), the check still
- *   running, an exact name + date-of-birth twin, or a half-filled
+ *   running, an exact name + date-of-birth twin, a same-name player the
+ *   user can't open (security review 2026-10-23), or a half-filled
  *   emergency contact;
  * - the create posts with fetch: ANY refusal of the server (a twin created
  *   meanwhile, an invalid mobile…) shows in the panel — under its field, or
@@ -69,6 +70,11 @@ function blocker(form) {
     }
     if (form.dataset.scCheckedKey === keyOf(values) && form.dataset.scCheckedExact === "1") {
         return text.exact;
+    }
+    // Security review 2026-10-23: a same-name player the user can't open —
+    // the server refuses the create whatever the date of birth.
+    if (form.dataset.scCheckedKey === keyOf(values) && form.dataset.scCheckedTwin === "1") {
+        return text.twin;
     }
     const ec = contact(form);
     if (Boolean(ec.name) !== Boolean(ec.mobile)) {
@@ -169,6 +175,7 @@ async function check(form) {
         if (results && results.dataset.scReady === "1") {
             form.dataset.scCheckedKey = keyOf(values);
             form.dataset.scCheckedExact = results.dataset.scExact || "0";
+            form.dataset.scCheckedTwin = results.dataset.scTwinElsewhere || "0";
         } else {
             delete form.dataset.scCheckedKey;
         }

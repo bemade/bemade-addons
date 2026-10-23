@@ -2257,26 +2257,32 @@ class Patient(models.Model):
         if corrections and not self.env.context.get(IDENTITY_CONFIRM_KEY):
             raise UserError(_("Confirm the identity correction."))
         for patient in self.sudo():
+            new = {name: self._sc_identity_text(
+                fields.Date.to_date(vals[name]) if name == 'date_of_birth' and vals[name] else vals[name])
+                for name in IDENTITY_FIELDS if name in vals}
             self._sc_check_identity_duplicate(
                 vals.get('first_name', patient.first_name),
                 vals.get('last_name', patient.last_name),
                 vals['date_of_birth'] if 'date_of_birth' in vals else patient.date_of_birth,
-                exclude_id=patient.id)
+                exclude_id=patient.id,
+                identity_changed=any(value != self._sc_identity_text(patient[name])
+                                     for name, value in new.items()))
         return corrections
 
     @api.model
     def _sc_identity_duplicate(self, first_name, last_name, date_of_birth, exclude_id=None):
         """Another player (active or archived) with exactly this first name,
         last name (case-insensitive, trimmed) and date of birth, or None."""
-        first = (first_name or '').strip().lower()
-        last = (last_name or '').strip().lower()
+        first = (first_name or '').strip()
+        last = (last_name or '').strip()
         dob = fields.Date.to_date(date_of_birth) if date_of_birth else False
         if not (first and last and dob):
             return None
         self.env['sports.patient'].flush_model(['first_name', 'last_name', 'date_of_birth'])
+        # lower() on both sides: the same folding whatever the database locale.
         self.env.cr.execute(
             """SELECT id FROM sports_patient
-                WHERE lower(trim(first_name)) = %s AND lower(trim(last_name)) = %s
+                WHERE lower(trim(first_name)) = lower(%s) AND lower(trim(last_name)) = lower(%s)
                   AND date_of_birth = %s AND id != %s
                 ORDER BY id LIMIT 1""",
             (first, last, dob, exclude_id or 0))
@@ -2302,10 +2308,72 @@ class Patient(models.Model):
                 }}
         return None
 
+    def _sc_identity_unrestricted(self):
+        """Clinic administrators, system administrators and the superuser see
+        every player: the identity guard answers them with the exact twin."""
+        user = self.env.user
+        return bool(
+            user._is_superuser()
+            or user.has_group('bemade_sports_clinic.group_sports_clinic_admin')
+            or user.has_group('base.group_system'))
+
     @api.model
-    def _sc_check_identity_duplicate(self, first_name, last_name, date_of_birth, exclude_id=None):
-        if self._sc_identity_duplicate(first_name, last_name, date_of_birth, exclude_id):
-            raise ValidationError(_("Another player already has this name and date of birth."))
+    def _sc_identity_namesakes(self, first_name, last_name, exclude_id=None):
+        """The players (active or archived, sudo) with exactly this first and
+        last name (case-insensitive, trimmed), whatever their date of birth."""
+        first, last = (first_name or '').strip(), (last_name or '').strip()
+        if not (first and last):
+            return self.env['sports.patient'].sudo()
+        self.env['sports.patient'].flush_model(['first_name', 'last_name'])
+        self.env.cr.execute(
+            """SELECT id FROM sports_patient
+                WHERE lower(trim(first_name)) = lower(%s) AND lower(trim(last_name)) = lower(%s)
+                  AND id != %s""",
+            (first, last, exclude_id or 0))
+        return self.env['sports.patient'].sudo().browse([row[0] for row in self.env.cr.fetchall()])
+
+    @api.model
+    def _sc_identity_hidden_namesake(self, first_name, last_name, exclude_id=None):
+        """Security review 2026-10-23: True when a guarded user (not a clinic
+        administrator) types the exact name of a player they can't read. The
+        answer never depends on the date of birth, so the identity guard can't
+        be used to confirm another team's player's date of birth by trial."""
+        if not self._sc_identity_guarded() or self._sc_identity_unrestricted():
+            return False
+        namesakes = self._sc_identity_namesakes(first_name, last_name, exclude_id)
+        if not namesakes:
+            return False
+        readable = self.env['sports.patient'].sudo(False).with_context(active_test=False).search_count(
+            [('id', 'in', namesakes.ids)])
+        return readable < len(namesakes)
+
+    @api.model
+    def _sc_check_identity_duplicate(self, first_name, last_name, date_of_birth, exclude_id=None,
+                                     identity_changed=True):
+        """The identity guard's refusals (#1600 / #1639).
+
+        Security review 2026-10-23 (DOB oracle): for a guarded user who is not
+        a clinic administrator, a create — or a write that changes or fills a
+        first name, last name or date of birth — giving a name shared with a
+        player they can't read is refused with a generic message WHATEVER the
+        date of birth, before anything else can fail: the answer never
+        depends on that player's date of birth. The exact name + date-of-birth
+        refusal only names twins they can read.
+        """
+        if identity_changed and self._sc_identity_hidden_namesake(first_name, last_name, exclude_id):
+            raise ValidationError(_("A player with this identity already exists — ask a manager."))
+        twin = self._sc_identity_duplicate(first_name, last_name, date_of_birth, exclude_id)
+        if not twin:
+            return
+        if self._sc_identity_guarded() and not self._sc_identity_unrestricted():
+            # Only the twins the caller can read (an unchanged identity is
+            # never refused for a player the caller can't read).
+            twins = self._sc_identity_namesakes(first_name, last_name, exclude_id).filtered(
+                lambda p: p.date_of_birth == twin.date_of_birth)
+            if not self.env['sports.patient'].sudo(False).with_context(active_test=False).search_count(
+                    [('id', 'in', twins.ids)]):
+                return
+        raise ValidationError(_("Another player already has this name and date of birth."))
 
     def _sc_post_identity_note(self, corrections):
         """The audit note of a confirmed identity correction: who changed

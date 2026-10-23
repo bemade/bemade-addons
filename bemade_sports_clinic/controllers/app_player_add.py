@@ -70,6 +70,12 @@ class AppPlayerAddPortal(TeamStaffPortal):
             admin = self._is_clinic_admin()
             Patients = env['sports.patient'].sudo().with_context(active_test=False)
             folded = (sc_fold(first).strip(), sc_fold(last).strip())
+            # Security review 2026-10-23: an identical name held by a player
+            # the user can't read — the server refuses the create whatever
+            # the date of birth, so « Create » greys out with the same
+            # generic « ask a manager » line (the model's own test).
+            values['sc_twin_elsewhere'] = env['sports.patient'].with_context(
+                sc_identity_guard=True)._sc_identity_hidden_namesake(first, last)
             out = []
             for row in Patients.search_read([], ['first_name', 'last_name', 'date_of_birth', 'active']):
                 if not (sc_name_matches(first_words, row['first_name'])
@@ -81,9 +87,7 @@ class AppPlayerAddPortal(TeamStaffPortal):
                     # Adversarial review 2026-10-22: a player the user can't
                     # open is never filtered, flagged or sorted by the date
                     # of birth — the answer is the same whatever date is
-                    # typed (no confirming a date by trial). An identical
-                    # name only raises the generic « ask a manager » line.
-                    values['sc_twin_elsewhere'] = values['sc_twin_elsewhere'] or same_name
+                    # typed (no confirming a date by trial).
                     exact = False
                 else:
                     if day and row['date_of_birth'] and row['date_of_birth'] != day:
@@ -168,6 +172,10 @@ class AppPlayerAddPortal(TeamStaffPortal):
         ec_type = (post.get('ec_contact_type') or '').strip() or 'other'
         if (ec_name or ec_mobile) and not (ec_name and ec_mobile):
             return refuse(_("An emergency contact needs a name and a mobile."), 'ec_mobile' if ec_name else 'ec_name')
+        # Security review 2026-10-23: a value outside the selection is a field
+        # error in the panel (it used to fail later, as a 500).
+        if ec_name and ec_type not in env['sports.patient.contact']._fields['contact_type'].get_values(env):
+            return refuse(_("Please choose a relationship from the list."), 'ec_contact_type')
         phone_error = self._sc_phone_error(post, 'ec_mobile')
         if phone_error:
             return refuse(phone_error, 'ec_mobile')
