@@ -12,7 +12,10 @@ app role) → the core response, untouched.
 import re
 
 from odoo import _, http
+from odoo.exceptions import ValidationError
 from odoo.http import request
+
+from ..models.sc_phone import sc_normalize_phone
 
 from .app_shell import AppShellPortal
 
@@ -100,6 +103,24 @@ class AppShellAccountPortal(AppShellPortal):
         if self._sc_relaxed_address():
             return set(SC_ACCOUNT_REQUIRED_FIELDS)
         return super()._get_mandatory_delivery_address_fields(country_sudo)
+
+    def _validate_address_values(self, address_values, partner_sudo, *args, **kwargs):
+        """Task 1645: « Mon compte »'s phone follows the clinic's phone rule
+        — formatted (+1 514-555-0123) or refused with « Invalid phone
+        number. ». In the controller only: res.partner keeps the core
+        behaviour everywhere else."""
+        invalid_fields, missing_fields, error_messages = super()._validate_address_values(
+            address_values, partner_sudo, *args, **kwargs)
+        if self._sc_relaxed_address() and address_values.get('phone'):
+            country = request.env['res.country'].browse(
+                int(address_values['country_id'])) if address_values.get('country_id') else None
+            try:
+                address_values['phone'] = sc_normalize_phone(
+                    request.env, address_values['phone'], country=country or None)
+            except ValidationError as e:
+                invalid_fields.add('phone')
+                error_messages.append(e.args[0])
+        return invalid_fields, missing_fields, error_messages
 
     def _get_mandatory_address_fields(self, country_sudo):
         # The core also requires the WHOLE address as soon as one part of

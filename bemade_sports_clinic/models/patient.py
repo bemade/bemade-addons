@@ -6,6 +6,7 @@ import re
 import unicodedata
 from dateutil.relativedelta import relativedelta
 from odoo.addons.phone_validation.tools import phone_validation
+from .sc_phone import sc_phone_is_valid
 from .patient_injury import (
     dashboard_external_injury_fields,
     dashboard_internal_injury_fields,
@@ -122,7 +123,9 @@ DASHBOARD_SYNOPSIS_MAX_PHRASES = 4
 class Patient(models.Model):
     _name = "sports.patient"
     _description = "Patient"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "sc.phone.mixin"]
+    # Task 1645: normalized / refused in create / write (sc_phone.py).
+    _sc_phone_fields = ("phone",)
     
     _unique_patient = models.Constraint(
         'UNIQUE(partner_id)',
@@ -445,11 +448,124 @@ class Patient(models.Model):
         } for patient in self.sudo()
             if (patient.training_recommendation or "").strip() != new.strip()]
 
+    # Task 1645 / 1653: (level field, its details / EpiPen) pairs.
+    _SC_MEDICAL_PAIRS = (
+        ("allergy_level", ("allergy_details", "allergy_epipen")),
+        ("medical_alert_level", ("medical_alert_details",)),
+    )
+
+    def _sc_medical_level_rules(self, vals):
+        """Task 1653 (owner 2026-10-22) — the levels' rules, in ``vals``:
+
+        * once a level is set it can't go back to « Not specified » (no
+          value): « Please choose a level. »;
+        * « None known » clears the details (and EpiPen) in the same write;
+        * details / EpiPen can't be SET while the level is (or becomes)
+          « None known »: refused (« Choose a level other than « None known »
+          to add details. »), never silently dropped.
+
+        Imports, install / upgrade and superuser scripts are exempt (the
+        phone rule's leniency, sc_phone.py)."""
+        lenient = self._sc_phone_lenient()
+        for level_field, others in self._SC_MEDICAL_PAIRS:
+            if level_field in vals:
+                new = vals[level_field] or False
+                vals[level_field] = new
+                if not new and not lenient and any(rec[level_field] for rec in self):
+                    raise ValidationError(self.env._("Please choose a level."))
+                if (new == LEVEL_URGENT and not lenient
+                        and not self.env.context.get("sc_critical_sync")):
+                    # Task 1654: « Urgent » names what is life-threatening —
+                    # at least one critical item of that family first.
+                    family = "allergy" if level_field == "allergy_level" else "medical_alert"
+                    details_field = "allergy_details" if family == "allergy" else "medical_alert_details"
+                    if not self:
+                        # A creation (legacy create form, imports through the
+                        # UI): the items come with it, or are suggested from
+                        # the details right after (create below).
+                        if not (vals.get("critical_item_ids") or (vals.get(details_field) or "").strip()):
+                            raise ValidationError(self.env._(
+                                "Add the life-threatening item first: « Urgent » needs at least one."))
+                    elif any(not rec._sc_critical_items(family) and not (
+                            # The legacy edit form (no item editor): its
+                            # items are suggested from the details (write).
+                            self.env.context.get("sc_critical_suggest")
+                            and (vals.get(details_field, rec[details_field]) or "").strip())
+                            for rec in self):
+                        raise ValidationError(self.env._(
+                            "Add the life-threatening item first: « Urgent » needs at least one."))
+                if new == LEVEL_NONE and not lenient:
+                    # (imports / scripts keep what they write: the migration
+                    # flags such records « to validate » instead)
+                    for name in others:
+                        if vals.get(name):
+                            raise ValidationError(self.env._(
+                                "Choose a level other than « None known » to add details."))
+                        vals[name] = False
+                    continue
+            if lenient:
+                continue
+            for name in others:
+                if vals.get(name) and level_field not in vals and any(
+                        rec[level_field] == LEVEL_NONE for rec in self):
+                    raise ValidationError(self.env._(
+                        "Choose a level other than « None known » to add details."))
+        return vals
+
+    # Task 1654: the medical fields coaches read but never write.
+    _SC_MEDICAL_WRITE_FIELDS = (
+        "allergy_level", "allergy_details", "allergy_epipen",
+        "medical_alert_level", "medical_alert_details",
+        # Adversarial review 2026-10-22: the « Updated on … by … » stamps
+        # (a coach can't forge them through RPC either).
+        "allergy_updated_info", "medical_alert_updated_info",
+    )
+
+    def _sc_check_medical_writer(self, vals):
+        """Task 1654: coaches read the medical fields but never write them —
+        also through RPC (the field ``groups`` grant them write too)."""
+        if not any(name in vals for name in self._SC_MEDICAL_WRITE_FIELDS):
+            return
+        env = self.env
+        if env.su or not env.user.share:
+            return
+        if env.user.has_group("bemade_sports_clinic.group_portal_treatment_professional"):
+            return
+        raise AccessError(env._("Only the therapists can change the medical information."))
+
+    def _sc_medical_change_note(self, vals):
+        """Task 1654: the family's « Updated on … by … » stamp for a medical
+        change (the item changes also post an internal note)."""
+        if self.env.context.get("sc_critical_sync") or self._sc_phone_lenient():
+            return vals
+        families = []
+        for family, fields_ in (("allergy", ("allergy_level", "allergy_details", "allergy_epipen")),
+                                ("medical_alert", ("medical_alert_level", "medical_alert_details"))):
+            if any(name in vals for name in fields_):
+                families.append(family)
+                vals["%s_updated_info" % family] = self._sc_medical_stamp()
+        return vals
+
     def write(self, vals):
         self._normalize_jersey_vals(vals)
+        self._sc_check_medical_writer(vals)
+        if any(level in vals or any(o in vals for o in others)
+               for level, others in self._SC_MEDICAL_PAIRS):
+            vals = self._sc_medical_level_rules(dict(vals))
+            vals = self._sc_medical_change_note(vals)
+            # Task 1654: « None known » removes that family's critical items.
+            for level_field, family in (("allergy_level", "allergy"), ("medical_alert_level", "medical_alert")):
+                if vals.get(level_field) == LEVEL_NONE and not self._sc_phone_lenient():
+                    self.sudo().critical_item_ids.filtered(lambda i, f=family: i.family == f).unlink()
         corrections = self._sc_identity_guard(vals)
         training_history = self._prepare_training_history_vals(vals)
         res = super().write(vals)
+        # Adversarial review 2026-10-22: a later change to a family drops its
+        # pending « Undo » snapshots (patient_medical_undo.py).
+        self._sc_medical_undo_invalidate(self._sc_medical_undo_families(vals))
+        if self.env.context.get("sc_critical_suggest") and LEVEL_URGENT in (
+                vals.get("allergy_level"), vals.get("medical_alert_level")):
+            self._sc_create_suggested_items()
         if training_history:
             # sudo: history rows are only ever created by server code.
             self.env["sports.patient.training.history"].sudo().create(training_history)
@@ -813,9 +929,13 @@ class Patient(models.Model):
                 # Note this is NOT the same question as
                 # ``_is_follower_eligible``: eligibility inspects ARCHIVED users
                 # to DENY notification, this ignores them to PICK a link.
-                internal = bool(
-                    partner.user_ids.filtered(lambda u: u.active and not u.share)
-                )
+                # Task 1639: a clinic role (internal therapist, clinic
+                # admin…) opens the app like the portal users; the backend
+                # link only for internal logins with no clinic role.
+                active_users = partner.user_ids.filtered(lambda u: u.active)
+                internal = bool(active_users) and all(
+                    u._sc_backend_link_recipient() for u in active_users
+                ) and bool(active_users.filtered(lambda u: not u.share))
                 keep = self._urgent_notify_keep_item
                 status_count = sum(
                     1 for authors in status_patients.values()
@@ -1941,12 +2061,19 @@ class Patient(models.Model):
                     "allergies": False,
                     "allergy_details": False,
                     "medical_alert_details": False,
+                    "allergy_updated_info": False,
+                    "medical_alert_updated_info": False,
                     "medical_history_other": False,
                     "predicted_return_date": False,
                     "return_date": False,
                     "is_anonymized": True,
                 }
             )
+            # Task 1654: the critical items name the conditions — deleted.
+            patient.critical_item_ids.sudo().with_context(sc_critical_quiet=True).unlink()
+            # Owner review 2026-10-22: and the undo snapshots of a cleared family.
+            self.env["sports.patient.medical.undo"].sudo().search(
+                [("patient_id", "=", patient.id)]).unlink()
             # Overwrite core identity PII on the partner (address, email, ...).
             if partner:
                 partner._law25_anonymize()
@@ -2000,6 +2127,11 @@ class Patient(models.Model):
                     row.get('first_name'), row.get('last_name'), row.get('date_of_birth'))
         for row in vals_list:
             self._normalize_jersey_vals(row)
+            # Task 1654: coaches never write the medical fields.
+            self.browse()._sc_check_medical_writer(row)
+            # Task 1653: « None known » leaves no details / EpiPen.
+            if any(level in row for level, _others in self._SC_MEDICAL_PAIRS):
+                row.update(self.browse()._sc_medical_level_rules(dict(row)))
             if "partner_id" not in row:
                 row["partner_id"] = (
                     self.env["res.partner"].with_context(
@@ -2016,6 +2148,10 @@ class Patient(models.Model):
                     .id
                 )
         res = super().create(vals_list)
+        # Task 1654: a player created « Urgent » without items gets them
+        # suggested from the details (the legacy create form posts the level
+        # and the text only).
+        res._sc_create_suggested_items()
         # Task 1601: a player created with a recommendation gets its first
         # history row.
         if not self.env.context.get("skip_training_history"):
@@ -2069,7 +2205,11 @@ class Patient(models.Model):
     # administrators, the backend, the merge wizard, crons) are deliberately
     # NOT guarded: the backend merge flows must stay able to align two files.
     def _sc_identity_guarded(self):
-        return bool(self.env.user.share)
+        """Task 1600: portal users. Task 1639 (owner 2026-10-22): internal
+        users too when they work through the app / portal routes, which set
+        ``sc_identity_guard`` in the context; the backend form, merges,
+        imports and crons (no flag) stay unguarded."""
+        return bool(self.env.user.share or self.env.context.get("sc_identity_guard"))
 
     @staticmethod
     def _sc_identity_text(value):
@@ -2117,36 +2257,123 @@ class Patient(models.Model):
         if corrections and not self.env.context.get(IDENTITY_CONFIRM_KEY):
             raise UserError(_("Confirm the identity correction."))
         for patient in self.sudo():
+            new = {name: self._sc_identity_text(
+                fields.Date.to_date(vals[name]) if name == 'date_of_birth' and vals[name] else vals[name])
+                for name in IDENTITY_FIELDS if name in vals}
             self._sc_check_identity_duplicate(
                 vals.get('first_name', patient.first_name),
                 vals.get('last_name', patient.last_name),
                 vals['date_of_birth'] if 'date_of_birth' in vals else patient.date_of_birth,
-                exclude_id=patient.id)
+                exclude_id=patient.id,
+                identity_changed=any(value != self._sc_identity_text(patient[name])
+                                     for name, value in new.items()))
         return corrections
 
     @api.model
     def _sc_identity_duplicate(self, first_name, last_name, date_of_birth, exclude_id=None):
         """Another player (active or archived) with exactly this first name,
         last name (case-insensitive, trimmed) and date of birth, or None."""
-        first = (first_name or '').strip().lower()
-        last = (last_name or '').strip().lower()
+        first = (first_name or '').strip()
+        last = (last_name or '').strip()
         dob = fields.Date.to_date(date_of_birth) if date_of_birth else False
         if not (first and last and dob):
             return None
         self.env['sports.patient'].flush_model(['first_name', 'last_name', 'date_of_birth'])
+        # lower() on both sides: the same folding whatever the database locale.
         self.env.cr.execute(
             """SELECT id FROM sports_patient
-                WHERE lower(trim(first_name)) = %s AND lower(trim(last_name)) = %s
+                WHERE lower(trim(first_name)) = lower(%s) AND lower(trim(last_name)) = lower(%s)
                   AND date_of_birth = %s AND id != %s
                 ORDER BY id LIMIT 1""",
             (first, last, dob, exclude_id or 0))
         row = self.env.cr.fetchone()
         return self.env['sports.patient'].sudo().browse(row[0]) if row else None
 
+    @api.onchange('first_name', 'last_name', 'date_of_birth')
+    def _onchange_sc_identity_twin(self):
+        """Owner review 2026-10-22 (#1639): the backend form stays allowed
+        for internal users, with a NON-blocking warning when another player
+        (archived included, the identity guard's normalisation) has exactly
+        this first name, last name and date of birth."""
+        for patient in self:
+            twin = patient._sc_identity_duplicate(
+                patient.first_name, patient.last_name, patient.date_of_birth,
+                exclude_id=patient._origin.id or None)
+            if twin:
+                return {'warning': {
+                    'title': _("Possible duplicate"),
+                    'message': _(
+                        "A player already has this name and date of birth: %(name)s (#%(id)s).",
+                        name=twin.with_context(active_test=False).display_name, id=twin.id),
+                }}
+        return None
+
+    def _sc_identity_unrestricted(self):
+        """Clinic administrators, system administrators and the superuser see
+        every player: the identity guard answers them with the exact twin."""
+        user = self.env.user
+        return bool(
+            user._is_superuser()
+            or user.has_group('bemade_sports_clinic.group_sports_clinic_admin')
+            or user.has_group('base.group_system'))
+
     @api.model
-    def _sc_check_identity_duplicate(self, first_name, last_name, date_of_birth, exclude_id=None):
-        if self._sc_identity_duplicate(first_name, last_name, date_of_birth, exclude_id):
-            raise ValidationError(_("Another player already has this name and date of birth."))
+    def _sc_identity_namesakes(self, first_name, last_name, exclude_id=None):
+        """The players (active or archived, sudo) with exactly this first and
+        last name (case-insensitive, trimmed), whatever their date of birth."""
+        first, last = (first_name or '').strip(), (last_name or '').strip()
+        if not (first and last):
+            return self.env['sports.patient'].sudo()
+        self.env['sports.patient'].flush_model(['first_name', 'last_name'])
+        self.env.cr.execute(
+            """SELECT id FROM sports_patient
+                WHERE lower(trim(first_name)) = lower(%s) AND lower(trim(last_name)) = lower(%s)
+                  AND id != %s""",
+            (first, last, exclude_id or 0))
+        return self.env['sports.patient'].sudo().browse([row[0] for row in self.env.cr.fetchall()])
+
+    @api.model
+    def _sc_identity_hidden_namesake(self, first_name, last_name, exclude_id=None):
+        """Security review 2026-10-23: True when a guarded user (not a clinic
+        administrator) types the exact name of a player they can't read. The
+        answer never depends on the date of birth, so the identity guard can't
+        be used to confirm another team's player's date of birth by trial."""
+        if not self._sc_identity_guarded() or self._sc_identity_unrestricted():
+            return False
+        namesakes = self._sc_identity_namesakes(first_name, last_name, exclude_id)
+        if not namesakes:
+            return False
+        readable = self.env['sports.patient'].sudo(False).with_context(active_test=False).search_count(
+            [('id', 'in', namesakes.ids)])
+        return readable < len(namesakes)
+
+    @api.model
+    def _sc_check_identity_duplicate(self, first_name, last_name, date_of_birth, exclude_id=None,
+                                     identity_changed=True):
+        """The identity guard's refusals (#1600 / #1639).
+
+        Security review 2026-10-23 (DOB oracle): for a guarded user who is not
+        a clinic administrator, a create — or a write that changes or fills a
+        first name, last name or date of birth — giving a name shared with a
+        player they can't read is refused with a generic message WHATEVER the
+        date of birth, before anything else can fail: the answer never
+        depends on that player's date of birth. The exact name + date-of-birth
+        refusal only names twins they can read.
+        """
+        if identity_changed and self._sc_identity_hidden_namesake(first_name, last_name, exclude_id):
+            raise ValidationError(_("A player with this identity already exists — ask a manager."))
+        twin = self._sc_identity_duplicate(first_name, last_name, date_of_birth, exclude_id)
+        if not twin:
+            return
+        if self._sc_identity_guarded() and not self._sc_identity_unrestricted():
+            # Only the twins the caller can read (an unchanged identity is
+            # never refused for a player the caller can't read).
+            twins = self._sc_identity_namesakes(first_name, last_name, exclude_id).filtered(
+                lambda p: p.date_of_birth == twin.date_of_birth)
+            if not self.env['sports.patient'].sudo(False).with_context(active_test=False).search_count(
+                    [('id', 'in', twins.ids)]):
+                return
+        raise ValidationError(_("Another player already has this name and date of birth."))
 
     def _sc_post_identity_note(self, corrections):
         """The audit note of a confirmed identity correction: who changed
@@ -2450,11 +2677,16 @@ class Patient(models.Model):
         return labels.get(level, level)
 
     @api.model
-    def _sc_medical_level_options(self):
-        """The level choices of a form / select: « Not specified » first."""
+    def _sc_medical_level_options(self, current=False):
+        """The level choices of a form / select. Task 1653: « Not specified »
+        is not a choice — an unset level shows a « — Choose — »
+        placeholder (the app makes it unselectable), a set one only the
+        three real levels."""
         labels = dict(self._fields["allergy_level"]._description_selection(self.env))
-        return [("", self.env._("Not specified"))] + [
-            (key, labels[key]) for key, _label in MEDICAL_LEVEL_SELECTION]
+        options = [(key, labels[key]) for key, _label in MEDICAL_LEVEL_SELECTION]
+        if not current:
+            options.insert(0, ("", self.env._("— Choose —")))
+        return options
 
     def _sc_medical_pills(self, tp=False):
         """Task 1630: the two header pills of ONE player, « Allergies » and
@@ -2485,9 +2717,15 @@ class Patient(models.Model):
                 continue
             level_label = self._sc_level_label(level)
             epipen = bool(epipen_field and self[epipen_field])
+            # Task 1654: an urgent pill names its critical items.
+            items = self._sc_critical_items(key) if level == LEVEL_URGENT else self.env["sports.patient.critical.item"]
             pills.append({
                 "key": key,
-                "label": label,
+                "label": self._sc_critical_label(items) or label,
+                "family_label": label,
+                "items": [{"id": i.id, "name": i.name, "epipen": i.epipen, "action": (i.action or "").strip()}
+                          for i in items],
+                "stamp": self["%s_updated_info" % key] or "",
                 "level": level,
                 "level_label": level_label,
                 "tone": LEVEL_TONES.get(level, UNSET_TONE),
@@ -2496,6 +2734,18 @@ class Patient(models.Model):
                 "text": env._("%(what)s: %(level)s", what=label, level=level_label),
             })
         return pills
+
+    @staticmethod
+    def _sc_critical_label(items, limit=2):
+        """Task 1654: « Arachides », « Arachides · Noix », « Arachides · Noix
+        +1 » — the names of an urgent family's critical items ('' if none)."""
+        names = [name for name in items.mapped("name") if name]
+        if not names:
+            return ""
+        label = " · ".join(names[:limit])
+        if len(names) > limit:
+            label += " +%s" % (len(names) - limit)
+        return label
 
     # Review round 1 (owner 2026-10-22): the pills a player CARD shows.
     _SC_CARD_MEDICAL_FIELDS = ("allergy_level", "allergy_epipen", "medical_alert_level")
@@ -2530,6 +2780,13 @@ class Patient(models.Model):
         )
         urgent_label = self._sc_level_label(LEVEL_URGENT)
         result = {}
+        # Task 1654: the urgent pills name their critical items (ONE read).
+        by_family = {}
+        for item in env["sports.patient.critical.item"].sudo().search(
+                [("patient_id", "in", records.ids)]):
+            by_family.setdefault((item.patient_id.id, item.family), env["sports.patient.critical.item"])
+            by_family[(item.patient_id.id, item.family)] |= item
+        empty = env["sports.patient.critical.item"]
         for record in records:
             pills = []
             for key, label, level_field, epipen_field in specs:
@@ -2537,9 +2794,13 @@ class Patient(models.Model):
                     continue
                 epipen = bool(epipen_field and record[epipen_field])
                 title = env._("%(what)s: %(level)s", what=label, level=urgent_label)
+                items = by_family.get((record.id, key), empty)
+                names = self._sc_critical_label(items)
+                if names:
+                    title = "%s — %s" % (title, ", ".join(items.mapped("name")))
                 pills.append({
                     "key": key,
-                    "label": label,
+                    "label": names or label,
                     "epipen": epipen,
                     "title": ("%s · EpiPen" % title) if epipen else title,
                 })
@@ -2559,8 +2820,11 @@ class Patient(models.Model):
             qualifiers = [pill["level_label"].lower()]
             if pill["epipen"]:
                 qualifiers.append("EpiPen")
-            head = self.env._("%(what)s (%(qualifiers)s)", what=pill["label"],
+            head = self.env._("%(what)s (%(qualifiers)s)", what=pill["family_label"],
                               qualifiers=", ".join(qualifiers))
+            # Task 1654: the critical items, named.
+            if pill.get("items"):
+                head = "%s — %s" % (head, ", ".join(item["name"] for item in pill["items"]))
             lines.append({
                 "key": pill["key"],
                 "tone": pill["tone"],
@@ -2795,6 +3059,26 @@ class Patient(models.Model):
                     'default_team_id': self.team_ids[0].id if self.team_ids else False
                 },
             }
+
+    # Task 1645: MC's « Numbers to fix » — the player's phone or one of the
+    # contacts' mobiles does not parse (left as is by the reformat).
+    sc_phone_invalid = fields.Boolean(
+        string="Phone number to fix", compute="_compute_sc_phone_invalid", store=True,
+        help="The player's phone or an emergency contact's mobile is not a valid phone number.")
+
+    @api.depends("partner_id.phone", "country_id", "contact_ids.sc_phone_invalid")
+    def _compute_sc_phone_invalid(self):
+        for patient in self:
+            patient.sc_phone_invalid = (
+                not sc_phone_is_valid(patient.env, patient.phone, patient._sc_phone_country())
+                or any(patient.contact_ids.mapped("sc_phone_invalid"))
+            )
+
+    def _sc_phone_country(self, vals=None):
+        country = self.env["res.country"]
+        if vals and vals.get("country_id"):
+            country = country.browse(vals["country_id"])
+        return country or self[:1].country_id or self.env.company.country_id
 
     @api.onchange("phone", "country_id")
     def _onchange_phone_validation(self):

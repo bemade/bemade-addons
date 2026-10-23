@@ -18,7 +18,7 @@
 #
 
 from odoo import http, _, fields
-from odoo.exceptions import UserError, AccessError, MissingError
+from odoo.exceptions import UserError, AccessError, MissingError, ValidationError
 from odoo.http import request
 from odoo.tools import format_date
 
@@ -29,6 +29,37 @@ import logging
 import pytz
 
 _logger = logging.getLogger(__name__)
+
+# Task 1640: the date range a portal / app form may post (the browser's
+# date inputs carry the same 4-digit-year bounds, sc_date_bounds.js).
+PORTAL_MIN_YEAR = 1900
+PORTAL_MAX_YEAR = 9999
+
+
+def _check_portal_year(year):
+    if not PORTAL_MIN_YEAR <= year <= PORTAL_MAX_YEAR:
+        raise ValidationError(_("Please enter a valid date."))
+
+
+def parse_portal_date(value):
+    """Task 1640: a posted date (``YYYY-MM-DD``) as a ``date``; empty →
+    False. A malformed value (« 202610-10-10 ») or a year outside
+    1900..9999 raises a ValidationError with a clear message, never the
+    ORM's generic error."""
+    if value in ('', None, False):
+        return False
+    if isinstance(value, str):
+        value = value.strip()
+        if not value:
+            return False
+    try:
+        day = fields.Date.to_date(value)
+    except (TypeError, ValueError):
+        raise ValidationError(_("Please enter a valid date.")) from None
+    if not day:
+        raise ValidationError(_("Please enter a valid date."))
+    _check_portal_year(day.year)
+    return day
 
 
 class AccessControlMixin:
@@ -48,7 +79,9 @@ class AccessControlMixin:
     def _parse_portal_datetime(self, val):
         """Parse a datetime-local input (YYYY-MM-DDTHH:MM[:SS]) from the portal
         as user-local time and convert to a UTC string for fields.Datetime.
-        Returns False if empty; returns the raw value if it can't be parsed.
+        Returns False if empty. Task 1640: an unparsable value or a year
+        outside 1900..9999 raises a ValidationError (« Please enter a valid
+        date. ») — the raw string is no longer handed to the ORM.
         """
         if not val:
             return False
@@ -64,9 +97,18 @@ class AccessControlMixin:
                     dt = datetime.strptime(val, '%Y-%m-%d %H:%M')
                 except ValueError:
                     dt = datetime.strptime(val, '%Y-%m-%d %H:%M:%S')
-        except ValueError:
-            # Fallback: let the ORM try to coerce whatever string was provided.
+        except (TypeError, ValueError):
+            # Any other shape the ORM itself reads (a bare date) passes
+            # through as before; the rest is refused clearly (task 1640).
+            try:
+                coerced = fields.Datetime.to_datetime(val)
+            except (TypeError, ValueError):
+                coerced = None
+            if not coerced:
+                raise ValidationError(_("Please enter a valid date.")) from None
+            _check_portal_year(coerced.year)
             return val
+        _check_portal_year(dt.year)
 
         user_tz = http.request.env.tz
         local_dt = user_tz.localize(dt)
@@ -498,6 +540,18 @@ class AccessControlMixin:
         clocks = self._sc_activity_clocks(
             players, lambda p: '/my/player?player_id=%s%s&tab=activities' % (p.id, team_qs))
         medical = players._sc_card_medical_pills()
+        # Task 1652: a red card pill opens the player page's popup — the
+        # page renders those sheets once per player (sc_app_layout, outside
+        # the read fragments); the pill falls back to the player's Info tab.
+        seen = getattr(request, '_sc_card_med_ids', None)
+        if seen is None:
+            seen = request._sc_card_med_ids = []
+        for player_id, pills in medical.items():
+            if player_id not in seen:
+                seen.append(player_id)
+            for pill in pills:
+                pill['sheet'] = 'sc_med_card_%s_%s' % (pill['key'], player_id)
+                pill['fallback'] = '/my/player?player_id=%s&tab=info' % player_id
         extras = {}
         for player in players:
             injured = (player.stage or 'healthy') != 'healthy'
@@ -710,6 +764,83 @@ class AccessControlMixin:
     @staticmethod
     def _portal_flash_scope(scope):
         return [str(part) for part in (scope if isinstance(scope, (list, tuple)) else (scope,))]
+
+    # Task 1655 — the inline « create a player » panel (Joueurs list + team page)
+    def _sc_player_add_allowed(self):
+        user = request.env.user
+        return bool(self._is_clinic_admin() or user.has_group('base.group_system')
+                    or self._is_treatment_professional())
+
+    def _sc_player_add_panel(self, team=None, panel_id='sc_player_add', section='players.add'):
+        """Render values of ``sc_player_add_panel`` (None when the viewer may
+        not create players)."""
+        if not self._sc_player_add_allowed():
+            return None
+        env = request.env
+        targets = self._team_targets()
+        error, data = self._portal_pop_flash(('player_add',))
+        data = data or {}
+        # A link carrying the former team-page search (?add_first= …) opens
+        # the panel with those values.
+        args = request.httprequest.args
+        legacy = {'add_first': 'first_name', 'add_last': 'last_name', 'add_dob': 'date_of_birth'}
+        if not error and any(key in args for key in legacy):
+            data = {field: (args.get(key) or '').strip() for key, field in legacy.items()}
+        if data.get('team_ids') is not None:
+            chosen = str(data.get('team_ids') or '')
+        elif team and team in targets:
+            chosen = str(team.id)
+        elif len(targets) == 1:
+            chosen = str(targets.id)
+        else:
+            chosen = ''
+        target_id = '%s_team_ids' % panel_id
+        return {
+            'id': panel_id,
+            'section': section,
+            'team_id': team.id if team else '',
+            'open': bool(error) or args.get('add') == '1' or any(key in args for key in legacy),
+            'error': error,
+            # Owner review 2026-10-22: the field a refusal is about (its
+            # message sits under it), else next to « Create ».
+            'error_field': (data.get('sc_error_field') or '') if error else '',
+            # A therapist creates into one of their teams (an admin may not).
+            'team_required': not self._is_clinic_admin(),
+            'data': data,
+            'team_target': target_id,
+            'team_csv': chosen,
+            'team_props': self._sc_form_props(
+                target_id, env._("Teams"), value=chosen,
+                options=[(t.id, t.name) for t in targets],
+                placeholder=env._("Add a team…")),
+            'relationship_types': env['sports.patient.contact']._fields['contact_type']._description_selection(env),
+            # Owner review 2026-10-22: the team page's Joueurs tab is a
+            # client-side tab (the address may still read the dashboard):
+            # a refusal comes back to THAT tab, never to the dashboard.
+            'return_url': ('/my/team?team_id=%s&tab=players' % team.id if team
+                           else request.httprequest.full_path.rstrip('?')),
+        }
+
+    def _sc_chosen_teams(self, csv):
+        ids = []
+        for part in str(csv or '').split(','):
+            part = part.strip()
+            if part.isdigit():
+                ids.append(int(part))
+        targets = self._team_targets()
+        return targets.filtered(lambda t: t.id in ids)
+
+    @staticmethod
+    def _sc_phone_error(post, *keys):
+        """Task 1645: « Invalid phone number. » when one of the posted
+        ``keys`` is a phone the clinic rule refuses, else None — checked
+        before anything is written, so the form comes back with the typed
+        values (the models refuse it too)."""
+        from ..models.sc_phone import sc_phone_is_valid
+        for key in keys:
+            if (post.get(key) or '').strip() and not sc_phone_is_valid(request.env, post.get(key)):
+                return _("Invalid phone number.")
+        return None
 
     def _portal_flash(self, error, form_data=None, scope=None):
         """Stash a validation error + submitted form data for a PRG redirect

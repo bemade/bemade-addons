@@ -1,5 +1,5 @@
 import urllib.parse
-from datetime import date
+from datetime import date, timedelta
 
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo import fields, http, _
@@ -370,6 +370,27 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     # and this handler's only other route ('/my/team/page/<int:page>') was linked
     # nowhere. It was unreachable dead code. (Dead-route audit.)
 
+    def _sc_team_confirm_remove(self, player):
+        """Task 1656: the data the Teams widget needs to ask before a removal
+        that would END the viewer's access: ``access`` — the teams the viewer
+        staffs (a non-admin keeps access while ONE of them stays on the
+        player; the widget decides live, as tags come and go), the popup's
+        texts (``title`` holds ``%s`` for the team). Admins never lose
+        access: None."""
+        if self._is_clinic_admin():
+            return None
+        env = http.request.env
+        staffed = env['sports.team.staff'].sudo().search([
+            ('partner_id', '=', env.user.partner_id.id)]).mapped('team_id')
+        return {
+            'access': [str(team_id) for team_id in staffed.ids],
+            'title': env._("Remove %s?"),
+            'message': env._("You will no longer have access to this player: you are not a "
+                             "member of any of their other teams."),
+            'confirm': env._("Remove and leave"),
+            'cancel': env._("Cancel"),
+        }
+
     @http.route(route=['/my/players', '/my/players/page/<int:page>'], type='http', auth='user', website=True)
     def view_players(self, page=1, **kw):
         """Display the list of players the portal user has access to, with filters.
@@ -609,6 +630,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return {
             'sc_player_rows': rows,
             'sc_can_create_player': is_tp_admin and self._is_treatment_professional(),
+            # Task 1655: the inline « create a player » panel.
+            'sc_player_add': self._sc_player_add_panel(),
             'sc_filters_open': active_filters,
             'sc_players_count_label': env._("%(count)s player(s)", count=values['players_count']),
         }
@@ -1010,6 +1033,14 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 return 0
         created_id = _int_arg('created')
         opened_id = _int_arg('injury') or created_id
+        # Task 1655: ?created_player=<id> — the player just created inline:
+        # the identity card opens in edit and « Undo » is offered (creator
+        # only, within the undo window).
+        sc_created_player = bool(
+            _int_arg('created_player') == player.id
+            and player.sudo().create_uid == user
+            and player.sudo().create_date
+            and player.sudo().create_date >= fields.Datetime.now() - timedelta(minutes=2))
         # Task 1579: a create from the full « new injury » page lands here —
         # drop its device draft once the injury exists (even when the viewer,
         # a coach, does not list unverified injuries).
@@ -1080,8 +1111,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         aliases = {'info': 'patient-info team-info contacts'}
         # Task 1635: the Activities tab counts what its panel lists.
         badges = {'activities': self._sc_activity_tab_badge(values['player_activities'])}
+        # Task 1647: a short label on a phone (« Docs »).
+        shorts = {'documents': env._("Docs")}
         sc_tabs = [(key, label, '%s&tab=%s' % (base_url, key), aliases.get(key, ''),
-                    badges.get(key))
+                    badges.get(key), shorts.get(key))
                    for key, label in tabs]
 
         editable = values['editable_note_ids']
@@ -1106,7 +1139,20 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 doc.created_by_id.display_name or '') if part),
         } for doc in values['patient_documents']]
 
+        # Task 1645: a refused « Add Emergency Contact » (an invalid mobile)
+        # comes back here (the shell has no separate form page): the panel
+        # re-opens with the message and the typed values.
+        contact_error, contact_data = self._portal_pop_flash(('contact_add', player.id))
+
         return dict(self._sc_injury_card_options(), **{
+            'sc_created_player': sc_created_player,
+            'sc_created_player_back': ('/my/team?team_id=%s&tab=players' % values['team'].id
+                                       if values.get('team') else '/my/players'),
+            'sc_contact_add_error': contact_error,
+            # Task 1656: removing the team that gives the viewer access asks
+            # first (the tags widget's confirmRemove).
+            'sc_team_confirm': self._sc_team_confirm_remove(player),
+            'sc_contact_add_data': contact_data or {},
             'sc_player_tabs': sc_tabs,
             'sc_player_active_tab': active_tab,
             'sc_player_url': base_url,

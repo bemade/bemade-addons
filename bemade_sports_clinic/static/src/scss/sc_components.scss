@@ -45,7 +45,7 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
     // ------------------------------------------------------------------
     .o_sc_main {
         min-width: 0;
-        padding-bottom: calc(var(--sc-tabs-height) + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(var(--sc-tabs-height) + env(safe-area-inset-bottom, 0px) + var(--sc-ribbon-h, 0px));
     }
 
     .o_sc_rail {
@@ -219,7 +219,8 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         position: fixed;
         left: 0;
         right: 0;
-        bottom: 0;
+        // Task 1643 addendum: above a test DB's neutralize banner (0 on prod).
+        bottom: var(--sc-ribbon-h, 0px);
         z-index: 20;
         display: flex;
         background: var(--sc-bar);
@@ -364,56 +365,12 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         }
     }
 
-    // Task 1606: the user menu. The rail footer (laptop) and the app-bar
-    // avatar (phone) each anchor their own popup.
+    // Task 1606: the user menu. Task 1638: one trigger at every width, the
+    // initials avatar at the right end of the app bar (the rail footer
+    // menu is gone).
     .o_sc_user_menu {
         position: relative;
         min-width: 0;
-    }
-
-    .o_sc_user_menu_rail {
-        margin-top: auto;
-        border-top: 1px solid var(--sc-line);
-        padding-top: 6px;
-    }
-
-    .o_sc_rail_me {
-        appearance: none;
-        width: 100%;
-        border: 0;
-        background: transparent;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 12px;
-        min-height: var(--sc-tap);
-        border-radius: var(--sc-radius-sm);
-        font: inherit;
-        font-size: var(--sc-text-sm);
-        color: var(--sc-bar-fg-2);
-        text-align: left;
-        cursor: pointer;
-        min-width: 0;
-
-        > .o_sc_icon {
-            width: 16px;
-            height: 16px;
-            margin-left: auto;
-            flex: none;
-        }
-
-        &:hover,
-        &[aria-expanded="true"] {
-            background: var(--sc-hover);
-            color: var(--sc-bar-fg);
-        }
-    }
-
-    .o_sc_rail_me_name {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
 
     .o_sc_user_menu_bar {
@@ -449,14 +406,7 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         }
     }
 
-    // Laptop: opens upwards over the rail, as wide as the footer.
-    .o_sc_user_menu_rail .o_sc_user_menu_popup {
-        bottom: calc(100% + 6px);
-        left: 0;
-        right: 0;
-    }
-
-    // Phone: drops down from the avatar, right-aligned with the bar.
+    // Drops down from the avatar, right-aligned with the bar (every width).
     .o_sc_user_menu_bar .o_sc_user_menu_popup {
         top: calc(100% + 6px);
         right: 0;
@@ -526,13 +476,6 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
 
         &[aria-current="page"] {
             color: var(--sc-accent);
-        }
-    }
-
-    // Laptop: the rail footer holds the menu; no avatar in the app bar.
-    @media (min-width: $sc-laptop) {
-        .o_sc_user_menu_bar {
-            display: none;
         }
     }
 
@@ -1537,6 +1480,32 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
 
         &:not([open]) {
             display: none;
+        }
+    }
+
+    // Owner review 2026-10-22: the inline « create a player » panel's
+    // « Create » is greyed until it can succeed; the reason sits under it.
+    .o_sc_player_add {
+        .o_sc_btn[aria-disabled="true"] {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .o_sc_player_add_reason {
+            margin-top: var(--sc-space-2);
+        }
+
+        .o_sc_reason_flash {
+            animation: o_sc_reason_flash 0.6s ease-out;
+        }
+    }
+
+    @keyframes o_sc_reason_flash {
+        0% {
+            color: var(--sc-accent);
+        }
+        100% {
+            color: inherit;
         }
     }
 

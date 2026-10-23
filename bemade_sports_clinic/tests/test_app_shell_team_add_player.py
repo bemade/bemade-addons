@@ -14,11 +14,15 @@ Acceptance criteria:
   tab with a confirmation.
 * UC-AP4 « Create a new player » creates a NEW player with that name and
   date of birth (even when a similar name exists), on this team, and opens
-  the new player's page (Info tab, team context) to complete it.
+  the new player's page (Info tab, team context) to complete it. The exact
+  name of a player the therapist can't read is refused (security review
+  2026-10-23, « ask a manager »).
 * UC-AP5 A coach gets the « Request an addition » form inline instead.
 """
 from datetime import date
 from urllib.parse import parse_qs, urlparse
+
+from lxml import html as lxml_html
 
 from odoo import Command
 from odoo.tests import tagged
@@ -46,40 +50,44 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
 
     def _card(self, tree):
         panel = tree.xpath('//section[@data-sc-tab-panel="players"]')[0]
-        cards = panel.xpath('./details[@data-sc-section="team.add_player"]')
+        # Task 1655: the shared inline create panel (same id, sc_add_player).
+        cards = panel.xpath('./details[@id="sc_add_player"][@data-sc-section="team.add_player"]')
         self.assertEqual(len(cards), 1)
         return cards[0]
 
     # -- UC-AP1 ----------------------------------------------------------
     def test_inline_card_search_form(self):
+        # Task 1655: the panel searches as you type (the check endpoint) and
+        # creates through /my/app/player/create, the team pre-filled.
         self._login_tp()
         _text, tree = self._get(self.url)
         card = self._card(tree)
-        form = card.xpath('.//form[@data-sc-form="player.search"]')[0]
-        self.assertEqual(form.get('method'), 'get')
+        form = card.xpath('.//form[@data-sc-player-add]')[0]
+        self.assertEqual(form.get('action'), '/my/app/player/create')
         names = set(form.xpath('.//*[@name]/@name'))
-        for name in ('team_id', 'tab', 'add_first', 'add_last', 'add_dob'):
+        for name in ('first_name', 'last_name', 'date_of_birth', 'team_ids', 'context_team_id'):
             self.assertIn(name, names)
+        self.assertEqual(form.xpath('.//input[@name="team_ids"]/@value'), [str(self.team_a.id)])
         self.assertFalse(tree.xpath('//header//*[@data-sc-action="team.add_player"]'))
 
     # -- UC-AP2 ----------------------------------------------------------
     def test_search_results(self):
         self._login_tp()
-        _text, tree = self._get(self.url + '&add_last=Synthetic')
-        card = self._card(tree)
-        self.assertIsNotNone(card.get('open'))
-        rows = {int(r.get('data-sc-player-id')): r for r in card.xpath('.//*[@data-sc-add-result]')}
-        self.assertIn(self.other.id, rows)
-        self.assertIn(self.archived.id, rows)
-        link = rows[self.other.id].xpath('.//form[@data-sc-form="player.link"]')[0]
-        self.assertEqual(link.get('action'), '/my/team/%s/player/add' % self.team_a.id)
-        self.assertEqual(link.xpath('.//input[@name="existing_id"]/@value'), [str(self.other.id)])
-        self.assertTrue(rows[self.archived.id].xpath('.//button[@data-sc-action="player.reactivate"]'))
-        _text, tree = self._get(self.url + '&add_last=One')
-        rows = {int(r.get('data-sc-player-id')): r for r in self._card(tree).xpath('.//*[@data-sc-add-result]')}
-        self.assertTrue(rows[self.player.id].xpath('.//*[@data-sc-on-team]'))
-        create = self._card(tree).xpath('.//form[@data-sc-form="player.create"]')
-        self.assertEqual(len(create), 1)
+        resp = self.url_open('/my/app/player-check?first=&last=Synthetic&team_ids=%s' % self.team_a.id)
+        tree = lxml_html.fromstring('<div>%s</div>' % resp.text)
+        # A last name alone is not enough (the check waits for both names).
+        self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-ready'), ['0'])
+        for first, player in (('Sara', self.archived),):
+            resp = self.url_open('/my/app/player-check?first=%s&last=Synthetic&team_ids=%s'
+                                 % (first, self.team_a.id))
+            tree = lxml_html.fromstring('<div>%s</div>' % resp.text)
+            row = tree.xpath('//li[@data-sc-check-player="%s"]' % player.id)
+            self.assertTrue(row)
+            self.assertTrue(row[0].xpath('.//button[@data-sc-action="player.reactivate"]'
+                                         '[@formaction="/my/team/%s/player/add"]' % self.team_a.id))
+        resp = self.url_open('/my/app/player-check?first=Pat&last=One&team_ids=%s' % self.team_a.id)
+        tree = lxml_html.fromstring('<div>%s</div>' % resp.text)
+        self.assertIn('On the team', tree.xpath('//li[@data-sc-check-player="%s"]' % self.player.id)[0].text_content())
 
     # -- UC-AP3 ----------------------------------------------------------
     def test_link_existing(self):
@@ -98,13 +106,24 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
     # -- UC-AP4 ----------------------------------------------------------
     def test_create_new_opens_player(self):
         self._login_tp()
+        # Security review 2026-10-23: the other Sam (PC Team B) is not
+        # readable by the therapist — creating a namesake is refused with the
+        # generic « ask a manager », whatever the date of birth
+        # (test_identity_oracle_1023).
         resp = self.url_open('/my/team/%s/player/add' % self.team_a.id, data={
             'csrf_token': self._csrf(), 'first_name': 'Sam', 'last_name': 'Synthetic',
             'date_of_birth': '2011-03-04', 'force_new': '1', 'sc_inline': '1',
         }, allow_redirects=False)
         self.assertEqual(resp.status_code, 303, resp.text[:200])
+        self.assertFalse(self.env['sports.patient'].sudo().search([
+            ('first_name', '=', 'Sam'), ('last_name', '=', 'Synthetic'), ('id', '!=', self.other.id)]))
+        resp = self.url_open('/my/team/%s/player/add' % self.team_a.id, data={
+            'csrf_token': self._csrf(), 'first_name': 'Samuel', 'last_name': 'Synthetic',
+            'date_of_birth': '2011-03-04', 'force_new': '1', 'sc_inline': '1',
+        }, allow_redirects=False)
+        self.assertEqual(resp.status_code, 303, resp.text[:200])
         new = self.env['sports.patient'].sudo().search([
-            ('first_name', '=', 'Sam'), ('last_name', '=', 'Synthetic'), ('id', '!=', self.other.id)])
+            ('first_name', '=', 'Samuel'), ('last_name', '=', 'Synthetic')])
         self.assertEqual(len(new), 1)
         self.assertEqual(new.date_of_birth, date(2011, 3, 4))
         self.assertIn(self.team_a, new.team_ids)

@@ -130,7 +130,7 @@ class TestDocumentPicker1018b(DocPicker1018bMixin, AppShellCommon):
     def test_player_tab_and_card_share_the_picker(self):
         self._login_tp()
         _text, tree = self._get(self._docs_tab())
-        tab = tree.xpath('//details[@id="sc_documents_upload"]//form[@data-sc-doc-upload]')
+        tab = tree.xpath('//dialog[@id="sc_documents_upload"]//form[@data-sc-doc-upload]')
         self.assertEqual(len(tab), 1, 'the player tab uses the shared picker')
         self.assertEqual(tab[0].get('data-sc-form'), 'player.documents.upload')
         cards = tree.xpath('//dialog[@id="sc_injury_%s_documents_add"]//form[@data-sc-doc-upload]'

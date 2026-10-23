@@ -48,6 +48,25 @@ const tourOnlyAfter = () => ({
       content: "The count is exactly the number of linked conversations",
       trigger: ".o-mail-Chatter .o_relevant_conversations_count:text(2)",
     },
+    {
+      content: "The toggle is icon-only, with a tooltip and an accessible name",
+      trigger: `.o-mail-Chatter .o_relevant_conversations_toggle[title='Relevant Conversations'][aria-label='Relevant Conversations']:has(i.fa-comments-o):not(:contains('Relevant'))`,
+    },
+    {
+      content: "The followers control stays inside the visible top bar",
+      trigger: ".o-mail-Chatter-topbar .o-mail-Followers-button",
+      run() {
+        const topbar = this.anchor.closest(".o-mail-Chatter-topbar");
+        const button = this.anchor.getBoundingClientRect();
+        const bar = topbar.getBoundingClientRect();
+        if (button.right > bar.right + 1 || button.left < bar.left - 1) {
+          throw new Error("The followers control is outside the chatter top bar");
+        }
+        if (topbar.scrollWidth > topbar.clientWidth + 1) {
+          throw new Error("The chatter top bar scrolls horizontally");
+        }
+      },
+    },
   ],
   "conversation-form": [
     ...waitForChatter("mail.conversation"),

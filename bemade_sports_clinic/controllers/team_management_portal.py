@@ -2,7 +2,7 @@ from odoo import http, fields, _
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
-from .access_control_mixin import AccessControlMixin
+from .access_control_mixin import AccessControlMixin, parse_portal_date
 from .app_shell import AppShellMixin
 import logging
 from datetime import date
@@ -536,6 +536,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_team_org': org,
             'sc_dashboard_rows': dashboard_rows,
             'sc_add_search': add_search,
+            # Task 1655: the inline « create a player » panel (team pre-filled).
+            'sc_player_add': self._sc_player_add_panel(team, 'sc_add_player', 'team.add_player'),
             'sc_watch_rows': watch_rows,
             'sc_roster_rows': roster_rows,
             'sc_upcoming_rows': upcoming_rows,
@@ -783,7 +785,12 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     _("Only treatment professionals can edit the team announcement."),
                 )
             body = (post.get('announcement') or '').strip()
-            deadline = (post.get('announcement_deadline') or '').strip() or False
+            # Task 1640: a malformed deadline (« 202610-10-10 ») gets a clear
+            # message, not « Error saving announcement. ».
+            try:
+                deadline = parse_portal_date(post.get('announcement_deadline'))
+            except ValidationError as e:
+                return self._announcement_error_redirect(team_id, e.args[0])
             team.write({
                 'announcement': body or False,
                 'announcement_deadline': deadline,
@@ -1018,6 +1025,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         This is used when the search yields no results and we render the full form inline.
         Only treatment professionals/admins may create directly.
         """
+        # Task 1639: the identity guard for internal users too.
+        request.update_context(sc_identity_guard=True)
         try:
             team = self._check_team_access(team_id)
 
@@ -1226,6 +1235,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 type='http', auth="user", website=True, methods=['POST'], csrf=True)
     def portal_add_player_submit(self, team_id, **post):
         """Handle the form submission to add a new player."""
+        # Task 1639: the identity guard for internal users too.
+        request.update_context(sc_identity_guard=True)
         try:
             team = self._check_team_access(team_id)
             
@@ -1406,6 +1417,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         Only treatment professionals (and admins) can directly add/link.
         Coaches must use the request route.
         """
+        # Task 1639: the identity guard for internal users too.
+        request.update_context(sc_identity_guard=True)
         try:
             team = self._check_team_access(team_id)
 
@@ -1601,6 +1614,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         """Create a brand new player and link to team from the Add/Link page.
         Separate endpoint from link flow to simplify validation and UX.
         """
+        # Task 1639: the identity guard for internal users too.
+        request.update_context(sc_identity_guard=True)
         try:
             team = self._check_team_access(team_id)
 

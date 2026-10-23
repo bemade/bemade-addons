@@ -153,8 +153,9 @@ class TestMedicalHeader1630(MedicalCommon):
         props = [json.loads(p) for p in edit.xpath('.//owl-component/@props')]
         self.assertEqual([p['field'] for p in props], ['allergy_level', 'allergy_epipen', 'allergy_details'])
         self.assertEqual(props[0]['inputType'], 'select')
-        self.assertEqual(props[0]['options'][0], ['', 'Not specified'])
-        self.assertEqual([o[0] for o in props[0]['options']], ['', 'none', 'minor', 'urgent'])
+        # Task 1653: a set level offers the three levels only.
+        self.assertEqual(props[0]['options'][0], ['none', 'None known'])
+        self.assertEqual([o[0] for o in props[0]['options']], ['none', 'minor', 'urgent'])
         self.assertEqual(props[0]['value'], 'urgent')
         self.assertEqual(props[1]['value'], '1')
         alert = self._sheet(tree, 'medical_alert')
@@ -213,9 +214,11 @@ class TestMedicalHeader1630(MedicalCommon):
     # -- SAVE-1 -------------------------------------------------------------
     def test_therapist_saves_every_field(self):
         self._login_tp()
+        # Task 1654: « Urgent » needs a life-threatening item first.
+        self.env['sports.patient.critical.item'].sudo().with_context(sc_critical_quiet=True).create({
+            'patient_id': self.player.id, 'family': 'medical_alert', 'name': 'Synthetic epilepsy'})
         cases = (
             ('allergy_level', 'minor', 'minor', 'Not urgent'),
-            ('allergy_level', '', False, 'Not specified'),
             ('allergy_epipen', '0', False, 'No'),
             ('allergy_epipen', '1', True, 'Yes'),
             ('allergy_details', '  Synthetic latex  ', 'Synthetic latex', None),
@@ -231,7 +234,11 @@ class TestMedicalHeader1630(MedicalCommon):
                 self.assertEqual(payload.get('display'), display, field)
         with mute_logger('odoo.http', 'odoo.addons.bemade_sports_clinic.controllers.app_shell'):
             resp = self._save(self.player, 'allergy_level', 'bogus')
-        self.assertNotEqual(resp.status_code, 200)
+            self.assertNotEqual(resp.status_code, 200)
+            # Task 1653: a set level can't go back to « Not specified ».
+            resp = self._save(self.player, 'allergy_level', '')
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json()['message'], 'Please choose a level.')
 
     def test_coach_gets_403_on_every_field(self):
         self._login_coach()
@@ -269,16 +276,16 @@ class TestMedicalHeader1630(MedicalCommon):
 
     # -- CRE-1 --------------------------------------------------------------
     def test_app_create_form_fields(self):
+        # Task 1655: a therapist creates players inline (key information
+        # only — the medical fields are set on the player page afterwards).
         self._login_tp()
-        _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic')
-        form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
-        for name in ('allergy_level', 'allergy_details', 'allergy_epipen',
-                     'medical_alert_level', 'medical_alert_details'):
-            self.assertTrue(form.xpath('.//*[@name="%s"]' % name), name)
-        self.assertFalse(form.xpath('.//*[@name="allergies"]'))
-        self.assertFalse(form.xpath('.//select[@name="allergy_level"][@required]'), 'optional')
-        options = form.xpath('.//select[@name="allergy_level"]/option/@value')
-        self.assertEqual(options, ['', 'none', 'minor', 'urgent'])
+        resp = self.url_open('/my/player/create?first_name=Nobody&last_name=Synthetic', allow_redirects=False)
+        self.assertIn(resp.status_code, (302, 303))
+        _text, tree = self._get('/my/players?add=1')
+        form = tree.xpath('//form[@data-sc-player-add]')[0]
+        for name in ('allergy_level', 'allergy_details', 'allergy_epipen', 'allergies'):
+            self.assertFalse(form.xpath('.//*[@name="%s"]' % name), name)
+        # The legacy POST (/my/player/create/save) still takes them.
         resp = self.url_open('/my/player/create/save', data={
             'csrf_token': self._csrf(), 'first_name': 'Syn', 'last_name': 'Created',
             'date_of_birth': '2010-01-01', 'team_ids': str(self.team_a.id),
@@ -291,6 +298,9 @@ class TestMedicalHeader1630(MedicalCommon):
         self.assertEqual((created.allergy_level, created.allergy_epipen, created.allergy_details),
                          ('urgent', True, 'Synthetic bee'))
         self.assertFalse(created.medical_alert_level)
+        # Task 1654: the urgent allergy's item is suggested from the details.
+        self.assertEqual([(i.family, i.name, i.epipen) for i in created.sudo().critical_item_ids],
+                         [('allergy', 'Synthetic bee', True)])
 
     def test_coach_create_ignores_medical_fields(self):
         self._login_coach()

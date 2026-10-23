@@ -269,8 +269,8 @@ tours.add("sc_1542_logout_clears_drafts", {
             expectUnloadPage: true,
         },
         {
-            content: "Open the user menu (task 1606: logout left « Plus »)",
-            trigger: "button[data-sc-user-menu-toggle]",
+            content: "Open the user menu (task 1606: logout left « Plus »; task 1638: the app-bar avatar at every width)",
+            trigger: "header.o_sc_appbar button[data-sc-user-menu-toggle]",
             run: "click",
         },
         {

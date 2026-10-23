@@ -62,8 +62,9 @@ class TestMedicalAlertsI18n1630(TestAppShellI18n1538):
         self.assertEqual(labels['allergy_details']['label'], 'Détails des allergies')
         self.assertEqual(labels['medical_alert_level']['label'], "Niveau d'alerte médicale")
         self.assertEqual(labels['medical_alert_details']['label'], "Détails de l'alerte médicale")
+        # Task 1653: a set level offers the three levels only.
         self.assertEqual([o[1] for o in labels['allergy_level']['options']],
-                         ['Non renseigné', 'Aucune', 'Non urgente', 'Urgente – risque vital'])
+                         ['Aucune', 'Non urgente', 'Urgente – risque vital'])
         self.assertEqual([o[1] for o in labels['allergy_epipen']['options']], ['Oui', 'Non'])
         self.assertEqual(labels['allergy_epipen']['label'], 'EpiPen')
         # A coach: the red pill and its popup, in French.
@@ -80,7 +81,8 @@ class TestMedicalAlertsI18n1630(TestAppShellI18n1538):
     def test_save_display_in_french(self):
         self._login_tp()
         self.opener.cookies.set('frontend_lang', 'fr_CA')
-        for value, display in (('minor', 'Non urgente'), ('', 'Non renseigné'), ('none', 'Aucune')):
+        # Task 1653: once set, a level can't go back to « Non renseigné ».
+        for value, display in (('minor', 'Non urgente'), ('none', 'Aucune')):
             self.player.invalidate_recordset()
             resp = self.url_open('/my/app/save/sports.patient/%s' % self.player.id, data={
                 'field': 'medical_alert_level', 'value': value, 'csrf_token': self._csrf(),
@@ -125,5 +127,5 @@ class TestMedicalAlertsI18n1630(TestAppShellI18n1538):
         self._login_tp()
         text = self._fr('/my/player/edit?patient_id=%s' % self.player.id).replace('&#39;', "'")
         for term in ("Niveau d'allergies", 'Détails des allergies', "Niveau d'alerte médicale",
-                     'Autres antécédents médicaux', 'Non renseigné', 'Urgente – risque vital'):
+                     'Autres antécédents médicaux', '— Choisir —', 'Urgente – risque vital'):
             self.assertIn(term, text, term)

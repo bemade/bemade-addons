@@ -40,7 +40,7 @@ function setValue(el, value) {
     el.dispatchEvent(new FocusEvent("blur")); // headless CI
 }
 
-const PANEL = "details#sc_documents_upload";
+const PANEL = "dialog#sc_documents_upload"; // task 1644: a sheet
 const FORM = `${PANEL} form[data-sc-doc-upload]`;
 
 function rows() {
@@ -61,7 +61,7 @@ tours.add("sc_1018b_player_documents", {
     steps: () => [
         {
             content: "« + Ajouter » of the Documents list",
-            trigger: '.o_sc_list_header button.o_sc_list_add[aria-controls="sc_documents_upload"]',
+            trigger: '.o_sc_list_header button.o_sc_list_add[data-sc-sheet-open="sc_documents_upload"]',
             run: "click",
         },
         {

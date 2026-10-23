@@ -40,8 +40,18 @@
 -->
 <odoo>
 
+    <!-- Task 1643: the frontend layout with ONE viewport meta, the shell's
+         (viewport-fit=cover, as in the installed app): web.frontend_layout
+         emits its own and the shell's used to come second. -->
+    <template id="sc_frontend_layout" name="Sports Clinic App: frontend layout"
+              inherit_id="web.frontend_layout" primary="True">
+        <xpath expr="//head/meta[@name='viewport']" position="attributes">
+            <attribute name="content">width=device-width, initial-scale=1, viewport-fit=cover</attribute>
+        </xpath>
+    </template>
+
     <template id="sc_app_layout" name="Sports Clinic App Layout">
-        <t t-call="web.frontend_layout">
+        <t t-call="bemade_sports_clinic.sc_frontend_layout">
             <t t-set="no_header" t-value="True"/>
             <t t-set="no_footer" t-value="True"/>
             <t t-set="no_livechat" t-value="True"/>
@@ -52,7 +62,6 @@
             <t t-set="body_classname" t-value="'o_sc_app_body o_sc_app_body_%s' % (sc_theme or 'dark')"/>
             <t t-set="title" t-value="sc_title"/>
             <t t-set="head">
-                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
                 <meta name="theme-color" t-att-content="'#120e12' if sc_theme != 'light' else '#243925'"/>
                 <!-- Task 1540: Teko / DM Sans are self-hosted (@font-face in
                      sc_tokens.scss) — no Google Fonts request. -->
@@ -85,18 +94,6 @@
                             </a>
                         </t>
                     </nav>
-                    <!-- Task 1606: the user menu (Paramètres, Se déconnecter). -->
-                    <div class="o_sc_user_menu o_sc_user_menu_rail" data-sc-user-menu="rail">
-                        <button type="button" class="o_sc_rail_me" data-sc-user-menu-toggle="1"
-                                aria-haspopup="menu" aria-expanded="false" aria-controls="sc_user_menu_rail">
-                            <span class="o_sc_avatar" aria-hidden="true" t-out="sc_user_initials"/>
-                            <span class="o_sc_rail_me_name" t-out="sc_user_name"/>
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'up'"/></t>
-                        </button>
-                        <t t-call="bemade_sports_clinic.sc_user_menu_popup">
-                            <t t-set="sc_menu_id" t-value="'sc_user_menu_rail'"/>
-                        </t>
-                    </div>
                 </aside>
 
                 <div class="o_sc_main">
@@ -145,12 +142,17 @@
                                       t-att-title="sc_clock_badge_label">0</span>
                             </a>
                         </t>
-                        <a t-if="sc_search_url" t-att-href="sc_search_url" class="o_sc_icon_btn"
-                           aria-label="Search for a player" title="Search for a player">
+                        <!-- Task 1650: the magnifier opens the search sheet
+                             (sc_search.js); the link stays the no-JS way. -->
+                        <a t-if="sc_search_url" t-att-href="sc_search_url" class="o_sc_icon_btn o_sc_appbar_search"
+                           data-sc-search-open="1" aria-haspopup="dialog" aria-controls="sc_search_sheet"
+                           aria-label="Search" title="Search">
                             <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'search'"/></t>
                         </a>
-                        <!-- Task 1606: phone only (the rail footer holds it on a
-                             laptop) — the initials open the user menu. -->
+                        <!-- Task 1606: the initials open the user menu. Task 1638:
+                             the ONLY user menu, at every width — the top right
+                             of the bar, last (like the phone and the back end);
+                             the rail has no footer menu any more. -->
                         <div class="o_sc_user_menu o_sc_user_menu_bar" data-sc-user-menu="bar">
                             <t t-set="sc_user_menu_label">User menu</t>
                             <button type="button" class="o_sc_icon_btn o_sc_appbar_me" data-sc-user-menu-toggle="1"
@@ -178,6 +180,21 @@
                     <main class="o_sc_content" id="sc_content">
                         <t t-out="0"/>
                     </main>
+                    <t t-if="sc_search_url" t-call="bemade_sports_clinic.sc_app_search_sheet"/>
+                    <!-- Task 1652: the popups of the red medical pills on this
+                         page's player cards — once per player, outside every
+                         read fragment (they hold islands). -->
+                    <t t-if="sc_card_med_patients and sc_can('patient.medical_alerts')">
+                        <t t-set="sc_card_med_is_tp" t-value="sc_card_med_tp()"/>
+                        <t t-foreach="sc_card_med_patients()" t-as="sc_card_med_patient">
+                            <t t-call="bemade_sports_clinic.sc_medical_sheets">
+                                <t t-set="patient" t-value="sc_card_med_patient"/>
+                                <t t-set="scope" t-value="'card'"/>
+                                <t t-set="tp" t-value="sc_card_med_is_tp"/>
+                                <t t-set="editable" t-value="sc_card_med_is_tp"/>
+                            </t>
+                        </t>
+                    </t>
                     <!-- Task 1542: status toast (sc_fetch errors, offline).
                          Task 1583: it also shows the pending session
                          notification of a POST round-trip on load. -->
@@ -250,8 +267,8 @@
         </t>
     </template>
 
-    <!-- Task 1606: the user menu's popup (one per trigger: rail footer on a
-         laptop, app-bar avatar on a phone). sc_app_ui.js opens / closes it
+    <!-- Task 1606: the user menu's popup (task 1638: one, under the app-bar
+         avatar, at every width). sc_app_ui.js opens / closes it
          (tap, Enter / Space, the arrow keys, Escape, an outside tap).
          ``sc_menu_id``: the id the trigger's aria-controls names. -->
     <template id="sc_user_menu_popup" name="App shell: user menu popup">

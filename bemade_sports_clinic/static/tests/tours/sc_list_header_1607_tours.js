@@ -5,7 +5,7 @@
  * app bar; the players list header fits on one line right above the list
  * (no sideways scroll, 44 px targets); the sort menu opens on the checked
  * option, Escape closes it, choosing « Alphabetical » reloads sorted; then
- * « + Ajouter » opens the player creation.
+ * « + Ajouter » opens the inline creation panel (task 1655).
  * sc_1607_team_add: on the team roster, « + Ajouter » opens the add-player
  * panel right under the header (focus in its first field) and closes it.
  * Language-independent triggers (ids, data attributes, hrefs).
@@ -44,7 +44,12 @@ tours.add("sc_1607_players", {
                 assert(t.right <= h.right + 0.5, "the sort overflows the header");
                 assert(document.documentElement.scrollWidth <= window.innerWidth + 0.5,
                     "the page scrolls sideways");
-                const next = header.nextElementSibling;
+                // Task 1655: the (closed) create panel sits between them.
+                let next = header.nextElementSibling;
+                if (next && next.matches("details.o_sc_list_add_panel")) {
+                    assert(!next.open && !next.getClientRects().length, "the closed panel shows");
+                    next = next.nextElementSibling;
+                }
                 assert(next && next.matches('[data-sc-section="players.list"], .o_sc_empty'),
                     "the list does not follow the header");
             },
@@ -99,15 +104,14 @@ tours.add("sc_1607_players", {
             },
         },
         {
-            content: "« + Ajouter » opens the player creation",
-            trigger: `${HEADER} a.o_sc_list_add[data-sc-action="players.create"]`,
+            content: "« + Ajouter » opens the inline creation panel (task 1655)",
+            trigger: `${HEADER} button.o_sc_list_add[data-sc-action="players.create"][aria-controls="sc_player_add"]`,
             run: "click",
-            expectUnloadPage: true,
         },
         {
-            trigger: 'body:has(.o_sc_app) form[action="/my/player/create/save"], body:has(.o_sc_app) form[data-sc-form]',
+            trigger: 'details#sc_player_add[open] form[data-sc-player-add]',
             run() {
-                assert(window.location.pathname === "/my/player/create", window.location.pathname);
+                assert(window.location.pathname === "/my/players", window.location.pathname);
             },
         },
     ],
@@ -139,7 +143,8 @@ tours.add("sc_1607_team_add", {
                 assert(header.nextElementSibling === panel, "the panel is not under the header");
                 assert(document.activeElement && panel.contains(document.activeElement),
                     "the focus is not in the panel");
-                assert(document.activeElement.name === "add_first", `focus on ${document.activeElement.name}`);
+                // Task 1655: the inline create panel's first field.
+                assert(document.activeElement.name === "first_name", `focus on ${document.activeElement.name}`);
             },
         },
         {
