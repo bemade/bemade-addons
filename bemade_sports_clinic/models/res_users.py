@@ -215,6 +215,15 @@ class User(models.Model):
             "sc_theme",
         ]
 
+    def _sc_backend_link_recipient(self):
+        """Task 1639: True when this user's notification links should open
+        the BACKEND — an internal user with no clinic role. Every clinic
+        role (internal therapist, clinic admin, coach, portal therapist)
+        gets the app."""
+        self.ensure_one()
+        # « internal » is any backend user, not a clinic role.
+        return not self.share and not (set(self._sc_app_roles()) - {"internal"})
+
     def _sc_app_roles(self):
         """The user's portal-app role SET (task 1538) — see
         ``models/sc_app_roles.py`` for the model and the registries.
@@ -498,7 +507,10 @@ class User(models.Model):
         # Task 1396: the dashboard link follows the RECIPIENT, not the surface.
         # Here ``self`` IS the recipient user, so ``share`` is the exact signal
         # — no partner-side inference and no multi-user ambiguity.
-        url = team._dashboard_url(base_url, internal=not self.share)
+        # Task 1639: anyone with a clinic role (internal therapist, clinic
+        # admin, coach, portal therapist) gets the app link; the backend
+        # link only for an internal user with no clinic role.
+        url = team._dashboard_url(base_url, internal=self._sc_backend_link_recipient())
         # Task 1270 (slice F): the full team announcement text rides in the
         # briefing, under the all-staff framing. This is an intentional,
         # author-written all-staff broadcast (NOT player PHI) — it carries its

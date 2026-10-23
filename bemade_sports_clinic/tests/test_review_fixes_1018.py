@@ -84,8 +84,9 @@ class TestReviewFixes1018(PlayerInlineCommon):
         self._login_tp()
         self.assertEqual(self._submit_label('/my/event/create', '//button[@data-sc-action="event.save"]'),
                          'Create')
-        self.assertEqual(self._submit_label('/my/player/create?first_name=Zed&last_name=Synthetic',
-                                            '//button[@data-sc-action="player.create.submit"]'), 'Create')
+        # Task 1655: the inline create panel's button.
+        self.assertEqual(self._submit_label('/my/players?add=1',
+                                            '//button[@data-sc-action="player.add"]'), 'Create')
         self.assertEqual(self._submit_label('/my/patient/injury/new?patient_id=%s' % self.player.id,
                                             '//form//button[@data-sc-action="injury.create"]'), 'Create')
 
@@ -225,7 +226,7 @@ class TestReviewFixes1018I18n(TestAppShellI18n1538):
     def test_create_buttons_in_french(self):
         self._login_tp()
         self.assertEqual(self._button('/my/event/create', '//button[@data-sc-action="event.save"]'), ['Créer'])
-        self.assertEqual(self._button('/my/player/create?first_name=Zed&last_name=Synthetic', '//button[@data-sc-action="player.create.submit"]'),
+        self.assertEqual(self._button('/my/players?add=1', '//button[@data-sc-action="player.add"]'),
                          ['Créer'])
         self.assertEqual(self._button('/my/patient/injury/new?patient_id=%s' % self.player.id,
                                       '//form//button[@data-sc-action="injury.create"]'), ['Créer'])

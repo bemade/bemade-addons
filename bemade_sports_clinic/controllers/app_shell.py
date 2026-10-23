@@ -52,7 +52,7 @@ from odoo.addons.portal.controllers.portal import CustomerPortal
 from ..models import sc_app_nav, sc_app_roles
 from ..models.patient import IDENTITY_CONFIRM_KEY, IDENTITY_FIELDS
 from ..models.patient_injury import STAGE_ORDER
-from .access_control_mixin import AccessControlMixin
+from .access_control_mixin import AccessControlMixin, parse_portal_date
 
 _logger = logging.getLogger(__name__)
 
@@ -240,12 +240,9 @@ def _record_value(model, value):
 
 
 def _date_value(value):
-    if value in ('', None, False):
-        return False
-    try:
-        return fields.Date.to_date(value)
-    except (TypeError, ValueError):
-        raise ValidationError(_("Please enter a valid date.")) from None
+    """Task 1640: a malformed date or a year outside 1900..9999 is refused
+    with « Please enter a valid date. » (shared with the legacy routes)."""
+    return parse_portal_date(value)
 
 
 # -- mail.activity (owner review 2026-10-11: the activity page's pencil card) --
@@ -586,8 +583,20 @@ def _patient_write(ctrl, patient, field, value):
         patient.write({field: dob})
         return extra
     if field in ('allergy_level', 'medical_alert_level'):
-        # Task 1630: « » = Not specified.
-        patient.write({field: _selection_value(patient, field, value)})
+        # Task 1630: « » = Not specified. Task 1653: refused once set (the
+        # model); « None known » empties and locks the details / EpiPen —
+        # answered along (also), so the popup's fields follow in place.
+        new_level = _selection_value(patient, field, value)
+        # Owner review 2026-10-22: « None known » clears — a one-shot
+        # snapshot first, so the answer can offer « Undo ».
+        family = 'allergy' if field == 'allergy_level' else 'medical_alert'
+        snapshot = patient._sc_medical_snapshot(family) if new_level == 'none' else None
+        patient.write({field: new_level})
+        if snapshot:
+            extra['undo'] = patient._sc_medical_undo_offer(family, snapshot)
+        others = dict(patient._SC_MEDICAL_PAIRS)[field]
+        extra['also_fields'] = list(others)
+        extra['also_disabled'] = {name: patient[field] == 'none' for name in others}
         return extra
     if field == 'allergy_epipen':
         patient.write({field: str(value).lower() in _TRUTHY})
@@ -1317,6 +1326,11 @@ class AppShellMixin:
             # Task 1598: a system admin also sees the TP actions legacy
             # granted them (registry keys flagged ``system``).
             'sc_can': lambda key: sc_app_roles.can(key, roles, is_system=is_system),
+            # Task 1652: the players whose red card pills this page shows
+            # (filled while the rows are built) and the viewer's role there.
+            'sc_card_med_patients': lambda: request.env['sports.patient'].browse(
+                getattr(request, '_sc_card_med_ids', None) or []).exists(),
+            'sc_card_med_tp': lambda: bool(self._is_treatment_professional()),
             # Task 1604: today in the user's timezone (the resolve sheet's
             # default and latest resolution date).
             'sc_today_iso': fields.Date.to_string(fields.Date.context_today(user)),
@@ -2133,6 +2147,25 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return bool(request.env.user._sc_app_roles() & frozenset(allowed[field]))
         return True
 
+    def _sc_lost_access_payload(self, patient, teams_before):
+        """Task 1656: the viewer removed the team that gave them access to
+        ``patient`` — ``{ok, lost_access, message}`` (no refresh patterns, no
+        re-read as the viewer: the page is left), else None."""
+        try:
+            self._check_access_to_patient(patient.id)
+            return None
+        except (AccessError, MissingError, UserError):
+            pass
+        player = patient.sudo()
+        removed = teams_before - player.team_ids
+        return {
+            'ok': True,
+            'lost_access': True,
+            'message': _("%(player)s removed from %(team)s",
+                         player=player._portal_list_name(with_jersey=False),
+                         team=', '.join(removed.mapped('name'))),
+        }
+
     @staticmethod
     def _sc_identity_confirm_needed(patient, field, value):
         """The 409 payload asking the client to confirm an identity
@@ -2391,6 +2424,10 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     'current_write_date': current,
                     'by': record.sudo().write_uid.name or '',
                 }, 409)
+            if model == 'sports.patient':
+                # Task 1639: the identity guard applies to everyone working
+                # through the app (internal users included).
+                record = record.with_context(sc_identity_guard=True)
             if model == 'sports.patient' and field in IDENTITY_FIELDS:
                 # Task 1600: changing an existing name / date of birth is an
                 # explicit, confirmed step (``confirm=1``, posted by the
@@ -2404,6 +2441,10 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             extra = {}
             # A refused / invalid write leaves nothing behind (a hook may
             # write more than one field).
+            # Task 1656: the teams before a player's teams save (a removal may
+            # end the viewer's own access).
+            teams_before = (record.sudo().team_ids
+                            if model == 'sports.patient' and field == 'sc_team_ids' else None)
             with request.env.cr.savepoint():
                 if spec.get('write'):
                     extra = spec['write'](self, record, field, value) or {}
@@ -2413,6 +2454,10 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     record.write({field: value})
                 record.flush_recordset()
             record.invalidate_recordset()
+            if teams_before is not None:
+                lost = self._sc_lost_access_payload(record, teams_before)
+                if lost:
+                    return self._sc_save_json(lost)
             payload = {
                 'ok': True,
                 'write_date': fields.Datetime.to_string(record.write_date),
@@ -2426,6 +2471,8 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # Task 1594: and their fresh choices when they changed (a country
             # save answers the province choices of the new country).
             also_options = extra.pop('also_options', None) or {}
+            # Task 1653: and whether they are locked now.
+            also_disabled = extra.pop('also_disabled', None) or {}
             if also:
                 payload['also'] = {name: {
                     'value': self._sc_save_value(record, name),
@@ -2434,6 +2481,9 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 for name, options in also_options.items():
                     if name in payload['also']:
                         payload['also'][name]['options'] = AppShellMixin._sc_options(options)
+                for name, disabled in also_disabled.items():
+                    if name in payload['also']:
+                        payload['also'][name]['disabled'] = bool(disabled)
             hint = spec['hint'](record, field) if spec.get('hint') else None
             if hint is not None:
                 payload['hint'] = hint

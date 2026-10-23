@@ -10,8 +10,8 @@ laptop 1366 px. Synthetic fixtures only.
 * TOUR-PENCIL (review round 1) The popup's icon-only pencil stays visible
   while editing, top right of the content, clear of the sheet's close ✕.
 * TOUR-CARD (review round 1) A coach's roster card shows the compact red
-  pills (EpiPen icon); a tap on a pill opens the player; no horizontal
-  scroll at phone width.
+  pills (EpiPen icon); no horizontal scroll at phone width. Task 1652: a
+  tap on a pill opens its popup (read-only for a coach).
 
 The look (tones in both themes, the EpiPen icon, phone popups as bottom
 sheets) stays UNVERIFIED here — the dev-review click-through covers it.
@@ -29,6 +29,9 @@ class _Tours1630:
     def test_therapist_edits_in_popup(self):
         self.player.sudo().write({'allergy_level': 'minor', 'allergy_epipen': False,
                                   'allergy_details': 'Synthetic kiwi', 'medical_alert_level': False})
+        # Task 1654: « Urgent » needs a life-threatening item first.
+        self.env['sports.patient.critical.item'].sudo().with_context(sc_critical_quiet=True).create({
+            'patient_id': self.player.id, 'family': 'allergy', 'name': 'Synthetic kiwi'})
         self.start_tour(self._url(), 'sc_1630_medical_tp', login='pc.tp@example.com')
         self.player.invalidate_recordset()
         self.assertEqual(self.player.allergy_level, 'urgent')

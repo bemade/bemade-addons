@@ -23,6 +23,7 @@
  */
 import { _t } from "@web/core/l10n/translation";
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { focusFirstField } from "@bemade_sports_clinic/js/sc_focus";
 import { scSetDisplay } from "@bemade_sports_clinic/js/sc_contact_href";
 import {
     clearAllDrafts,
@@ -36,12 +37,40 @@ function app() {
 
 // ---------------------------------------------------------------- toast
 let toastTimer = null;
+// Owner review 2026-10-22: a toast shown while a modal popup is open (the
+// medical popup's « Details cleared · Undo ») goes INTO that popup — the
+// page behind a modal <dialog> is inert, its « Undo » could not be tapped.
+// It goes back to its place when the popup closes (and stays visible).
+let toastHome = null;
+function placeToast(root, toast) {
+    if (!toastHome && !toast.closest("dialog")) {
+        toastHome = toast.parentElement;
+    }
+    const modal = [...root.querySelectorAll("dialog[open]")].pop();
+    if (modal && toast.parentElement !== modal) {
+        modal.appendChild(toast);
+    } else if (!modal && toastHome && toast.parentElement !== toastHome) {
+        toastHome.appendChild(toast);
+    }
+}
+document.addEventListener(
+    "close",
+    (ev) => {
+        const toast = ev.target instanceof HTMLDialogElement && ev.target.querySelector(":scope > .o_sc_toast");
+        if (toast && toastHome) {
+            toastHome.appendChild(toast);
+        }
+    },
+    true
+);
+
 function showToast(message, actionLabel, action, duration, options) {
     const root = app();
     const toast = root && root.querySelector(".o_sc_toast");
     if (!toast) {
         return;
     }
+    placeToast(root, toast);
     const { title, tone } = options || {};
     const parts = [];
     if (title) {
@@ -80,7 +109,7 @@ function showToast(message, actionLabel, action, duration, options) {
 
 document.addEventListener("sc:toast", (ev) => {
     const detail = ev.detail || {};
-    showToast(detail.message || "", detail.actionLabel, detail.action);
+    showToast(detail.message || "", detail.actionLabel, detail.action, detail.duration);
 });
 
 // Task 1583: the pending session notification of a POST round-trip
@@ -164,6 +193,50 @@ if (document.readyState === "loading") {
     offerUndoCreate();
 }
 
+// Task 1656: a toast kept for this page by the previous one (it was left
+// after its viewer lost access to it: sc_confirm.js scLeavePage).
+function showPendingToast() {
+    let message = null;
+    try {
+        message = window.sessionStorage.getItem("sc_pending_toast:v1");
+        window.sessionStorage.removeItem("sc_pending_toast:v1");
+    } catch {
+        return;
+    }
+    if (message && app()) {
+        showToast(message);
+    }
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", showPendingToast);
+} else {
+    showPendingToast();
+}
+
+// Task 1655: a player just created inline — the identity card opens in edit
+// and « Player created · Undo » is offered for the undo window; the address
+// loses ?created_player= so a reload offers neither again.
+function offerUndoCreatePlayer() {
+    const form = document.querySelector('.o_sc_app form[data-sc-form="player.undo"]');
+    if (form) {
+        showToast(form.dataset.scToastMessage, form.dataset.scToastAction, () => form.submit(), SC_UNDO_CREATE_MS);
+    }
+    for (const card of document.querySelectorAll(".o_sc_app [data-sc-edit-card][data-sc-edit-open-on-load]")) {
+        setCardEditing(card, true);
+        card.scrollIntoView({ block: "start" });
+    }
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("created_player")) {
+        url.searchParams.delete("created_player");
+        window.history.replaceState(window.history.state, "", url.toString());
+    }
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", offerUndoCreatePlayer);
+} else {
+    offerUndoCreatePlayer();
+}
+
 // A link to « …#<details id> » opens that inline card (e.g. Overview's
 // « Add Injury » → the Injuries tab's card), owner review 2026-10-10.
 function openHashedDetails() {
@@ -203,10 +276,8 @@ function setCardEditing(card, editing) {
         toggle.setAttribute("aria-expanded", editing ? "true" : "false");
     }
     if (editing) {
-        const first = edit.querySelector("input, textarea, select");
-        if (first) {
-            first.focus({ preventScroll: true });
-        }
+        // Task 1646: a text field only (never a picker), nothing on a phone.
+        focusFirstField(edit);
     }
 }
 
@@ -252,6 +323,33 @@ document.addEventListener("sc:fetch-error", (ev) => {
 window.addEventListener("offline", () => app() && showToast(_t("You are offline.")));
 window.addEventListener("online", () => app() && showToast(_t("Back online.")));
 
+// Task 1643 addendum: a neutralized test DB's banner (#oe_neutralize_banner)
+// is pinned at the bottom on a phone (sc_tokens.scss); the tabs rise by its
+// height. No banner (prod) = 0.
+function measureRibbon() {
+    const banner = document.getElementById("oe_neutralize_banner");
+    if (!banner || !app()) {
+        return;
+    }
+    const update = () => {
+        const fixed = getComputedStyle(banner).position === "fixed";
+        document.documentElement.style.setProperty(
+            "--sc-ribbon-h",
+            fixed ? `${banner.getBoundingClientRect().height}px` : "0px"
+        );
+    };
+    update();
+    if (window.ResizeObserver) {
+        new ResizeObserver(update).observe(banner);
+    }
+    window.addEventListener("resize", update);
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", measureRibbon);
+} else {
+    measureRibbon();
+}
+
 // ------------------------------------------------------------ lazy load
 async function loadLazy(container, url, target) {
     if (!url || container.dataset.scLoaded === "1") {
@@ -261,6 +359,8 @@ async function loadLazy(container, url, target) {
     try {
         const html = await scFetch(url, { as: "html" });
         target.innerHTML = html;
+        // Task 1640: listeners may enhance the injected body (date bounds).
+        target.dispatchEvent(new CustomEvent("sc:lazy-loaded", { bubbles: true }));
         // A fragment with its own empty state (task 1581 histories) keeps it.
         // Task 1614: [data-sc-lazy-filled] = content even without a link
         // (a digest day whose players have no page link).

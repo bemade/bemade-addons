@@ -9,9 +9,11 @@ Acceptance criteria:
   line — on the team dashboard (« Recent changes », « Other players to
   watch »), the team roster and /my/players — for a therapist AND for a
   coach (the owner's rule: a coach sees red).
-* CARD-2 The pills are spans (never buttons, never inside an <a>) inside
-  the card's read fragment ``sports.patient:<id>:row-<scope>``, so a tap
-  opens the player and a save refreshes them in place.
+* CARD-2 The pills sit inside the card's read fragment
+  ``sports.patient:<id>:row-<scope>`` (a save refreshes them in place), never
+  inside an <a>. Task 1652: each is a button opening the player page's popup
+  (``data-sc-med-card-sheet``), rendered ONCE on the page, outside every
+  read fragment; the Info tab as the fallback.
 * CARD-3 « Not urgent » (yellow), « None » (grey) and « Not specified »
   never show on a card.
 * CARD-4 A viewer without read access to the fields (the field-group check
@@ -46,7 +48,7 @@ class MedicalCards1630Common(CardPills1634Common):
         pills = self._med(row)
         self.assertEqual(sorted(pills), ['allergy', 'medical_alert'], where)
         for key, node in pills.items():
-            self.assertEqual(node.tag, 'span', where)
+            self.assertEqual(node.tag, 'button', where)  # task 1652
             for cls_name in ('o_sc_med_pill', 'o_sc_med_urgent', 'o_sc_med_card_pill'):
                 self.assertIn(cls_name, node.get('class'), (where, key))
             self.assertIn(':', node.get('title'), (where, key))
@@ -58,8 +60,15 @@ class MedicalCards1630Common(CardPills1634Common):
         self.assertFalse(pills['medical_alert'].xpath('.//*[@data-sc-med-epipen]'), where)
         self.assertEqual(' '.join(pills['allergy'].text_content().split()), 'Allergies', where)
         self.assertEqual(' '.join(pills['medical_alert'].text_content().split()), 'Medical alert', where)
-        # No popup / no button on a card.
-        self.assertFalse(row.xpath('.//button[@data-sc-med-pill] | .//*[@data-sc-sheet-open]'), where)
+        # Task 1652: the popup, once on the page, outside every fragment.
+        for key, node in pills.items():
+            sheet_id = 'sc_med_card_%s_%s' % (key, self.player.id)
+            self.assertEqual(node.get('data-sc-med-card-sheet'), sheet_id, (where, key))
+            self.assertEqual(node.get('data-sc-med-fallback'),
+                             '/my/player?player_id=%s&tab=info' % self.player.id, (where, key))
+            sheets = row.getroottree().xpath('//dialog[@id="%s"]' % sheet_id)
+            self.assertEqual(len(sheets), 1, (where, key))
+            self.assertFalse(sheets[0].xpath('ancestor::*[@data-sc-fragment]'), (where, key))
 
     def _all_rows(self, tree, player):
         return tree.xpath('//*[contains(@class, "o_sc_player_row")][@data-sc-player-id="%s"]' % player.id)

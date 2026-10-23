@@ -260,7 +260,7 @@ class TestEndToEndWorkflows(TransactionCase):
             'city': 'Test City',
             'zip': '12345',
             'email': 'test.patient@example.com',
-            'phone': '555-123-4567',
+            'phone': '514-555-0167',  # task 1645: a valid synthetic number
         })
 
         # Create a contact for the patient. sports.patient.contact uses
@@ -269,7 +269,7 @@ class TestEndToEndWorkflows(TransactionCase):
         patient_contact = self.env['sports.patient.contact'].create({
             'patient_id': patient_for_anon.id,
             'name': 'Test Parent',
-            'mobile': '555-987-6543',
+            'mobile': '514-555-0198',  # task 1645: a valid synthetic number
             'email': 'test.parent@example.com',
             'contact_type': 'mother',
         })

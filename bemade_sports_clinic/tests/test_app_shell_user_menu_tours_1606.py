@@ -3,7 +3,8 @@
 
 Acceptance criteria covered here (UC-M7):
 
-* Laptop (1366 px): the rail footer opens the menu (focus on « Paramètres »),
+* Laptop (1366 px; task 1638: the app-bar avatar at the top right, the
+  rail has no user menu any more) opens the menu (focus on « Paramètres »),
   the arrow keys move between the items and wrap, Escape closes it and gives
   the focus back, an outside tap closes it, ArrowUp opens it on the last
   item; « Paramètres » opens the settings page, whose language switch works
@@ -12,6 +13,9 @@ Acceptance criteria covered here (UC-M7):
   activity clock and the search without an app-bar overflow, the title
   keeping room.
 * « Se déconnecter » logs out.
+* Task 1638: at 1024 / 1366 / 1920 px the avatar is the last thing at the
+  right end of the app bar, the only user menu in the DOM, and its popup
+  drops down right-aligned under it, fully in view.
 
 Visual layout (both themes), the popup's look and real screen readers stay
 UNVERIFIED here — the dev-review click-through covers them.
@@ -62,3 +66,21 @@ class TestUserMenuToursPhone1606(_UserMenuTourCommon):
 
     def test_sign_out_phone(self):
         self.start_tour('/my/home', 'sc_1606_sign_out', login='pc.coach@example.com')
+
+
+@tagged('post_install', '-at_install')
+class TestUserMenuPlacement1024_1638(_UserMenuTourCommon):
+    """Task 1638: the avatar at the top right, narrow laptop."""
+    browser_size = '1024x768'
+
+    def test_placement_1024(self):
+        self.start_tour('/my/teams', 'sc_1638_menu_placement', login='pc.tp@example.com')
+
+
+@tagged('post_install', '-at_install')
+class TestUserMenuPlacement1920_1638(_UserMenuTourCommon):
+    """Task 1638: the avatar at the top right, wide screen."""
+    browser_size = '1920x1080'
+
+    def test_placement_1920(self):
+        self.start_tour('/my/teams', 'sc_1638_menu_placement', login='pc.tp@example.com')

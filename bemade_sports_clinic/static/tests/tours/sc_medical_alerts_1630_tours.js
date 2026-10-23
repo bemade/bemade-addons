@@ -171,22 +171,20 @@ tours.add("sc_1630_medical_coach", {
 /*
  * Review round 1 (owner 2026-10-22) — sc_1630_card_pills: on the team
  * roster, a red player's card shows the compact « Allergies » (EpiPen) and
- * « Medical alert » pills; a tap ON a pill lands on the card's link (the
- * pills sit under the stretched link) and opens the player; nothing
- * overflows the phone width.
+ * « Medical alert » pills; nothing overflows the phone width. Task 1652: a
+ * tap ON a pill lands on the pill (above the card's stretched link) and
+ * opens its popup, not the player.
  */
 tours.add("sc_1630_card_pills", {
     steps: () => [
         {
             content: "The red pills on the roster card",
             trigger: '[data-sc-section="team.roster"] .o_sc_row_status [data-sc-med-pill="allergy"].o_sc_med_urgent',
-            expectUnloadPage: true,
             run() {
                 const row = this.anchor.closest(".o_sc_link_row");
                 assert(row.querySelector('.o_sc_row_status [data-sc-med-pill="medical_alert"].o_sc_med_urgent'),
                     "no medical-alert pill");
                 assert(this.anchor.querySelector("[data-sc-med-epipen] svg"), "no EpiPen icon");
-                assert(!row.querySelector("button[data-sc-med-pill]"), "a pill button on a card");
                 this.anchor.scrollIntoView({ block: "center" });
                 const box = this.anchor.getBoundingClientRect();
                 const rowBox = row.getBoundingClientRect();
@@ -194,15 +192,17 @@ tours.add("sc_1630_card_pills", {
                 assert(box.right <= rowBox.right + 1, "the pill overflows the card");
                 assert(document.documentElement.scrollWidth <= window.innerWidth + 1, "horizontal page scroll");
                 const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
-                const link = hit && hit.closest("a");
-                assert(link && link.classList.contains("o_sc_link_row_main"),
+                assert(hit && hit.closest("[data-sc-med-card-sheet]") === this.anchor,
                     `a tap on the pill lands on ${hit && hit.outerHTML.slice(0, 80)}`);
-                link.click();
+                hit.click();
             },
         },
         {
-            content: "The player page opens",
-            trigger: '[data-sc-section="player.hero"]',
+            content: "Task 1652: its popup opens (read-only for a coach)",
+            trigger: 'dialog[id^="sc_med_card_allergy_"][open]',
+            run() {
+                assert(!this.anchor.querySelector("[data-sc-edit-toggle]"), "a coach gets a pencil");
+            },
         },
     ],
 });

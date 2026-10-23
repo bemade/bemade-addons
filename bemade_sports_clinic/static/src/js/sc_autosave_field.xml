@@ -50,12 +50,12 @@
                 </div>
                 <div class="o_sc_replace_new_head">
                     <span class="o_sc_replace_caption">New note</span>
-                    <button t-if="state.current and !state.value and !props.disabled" type="button"
+                    <button t-if="state.current and !state.value and !isDisabled" type="button"
                             class="o_sc_link_btn o_sc_replace_reuse" t-on-click="reuseCurrent">Reuse current text</button>
                 </div>
                 <textarea t-ref="input" class="o_sc_input o_sc_textarea" rows="4" data-sc-replace="new"
                           t-att-id="props.inputId" t-att-name="props.name" t-att-placeholder="props.placeholder"
-                          t-att-disabled="props.disabled"
+                          t-att-disabled="isDisabled"
                           t-model="state.value" t-on-input="onInput" t-on-blur="commit"/>
                 <small class="o_sc_hint o_sc_replace_hint">
                     <span>Replaces the previous text; the old one is kept in the history.</span>
@@ -65,19 +65,29 @@
             </t>
             <textarea t-elif="type === 'textarea'" t-ref="input" class="o_sc_input o_sc_textarea" rows="4"
                       t-att-id="props.inputId" t-att-name="props.name" t-att-placeholder="props.placeholder"
-                      t-att-required="props.required" t-att-disabled="props.disabled"
+                      t-att-required="props.required" t-att-disabled="isDisabled"
                       t-model="state.value" t-on-input="onInput" t-on-blur="commit"/>
+            <!-- Task 1648: ``picker`` = the type-to-filter picker (sc_picker.js)
+                 enhances the select; ``pickerKey`` (team / player / injury /
+                 event) and ``optionMeta`` ({value: {teams, player}}) drive
+                 the narrowing between link fields. -->
             <select t-elif="type === 'select'" t-ref="input" class="o_sc_input o_sc_select"
                     t-att-id="props.inputId" t-att-name="props.name" t-att-required="props.required"
-                    t-att-disabled="props.disabled" t-model="state.value" t-on-change="onChange">
+                    t-att-data-sc-picker="props.picker ? '1' : undefined"
+                    t-att-data-sc-picker-key="props.pickerKey"
+                    t-att-disabled="isDisabled" t-model="state.value" t-on-change="onChange">
                 <t t-foreach="options" t-as="opt" t-key="opt_index">
-                    <option t-att-value="opt[0]" t-esc="opt[1]"/>
+                    <option t-att-value="opt[0]"
+                            t-att-disabled="props.lockEmpty and opt[0] === '' ? 'disabled' : undefined"
+                            t-att-data-sc-teams="props.optionMeta and props.optionMeta[opt[0]] and props.optionMeta[opt[0]].teams"
+                            t-att-data-sc-player="props.optionMeta and props.optionMeta[opt[0]] and props.optionMeta[opt[0]].player"
+                            t-esc="opt[1]"/>
                 </t>
             </select>
             <div t-elif="type === 'segmented'" t-ref="input" class="o_sc_segmented o_sc_segmented_full o_sc_seg_input"
                  role="group" t-att-id="props.inputId" t-att-aria-label="props.label">
                 <t t-foreach="options" t-as="opt" t-key="opt_index">
-                    <button type="button" t-att-data-sc-value="opt[0]" t-att-disabled="props.disabled"
+                    <button type="button" t-att-data-sc-value="opt[0]" t-att-disabled="isDisabled"
                             t-att-aria-pressed="state.value === opt[0] ? 'true' : 'false'"
                             t-on-click="() => this.onPick(opt[0])" t-esc="opt[1]"/>
                 </t>
@@ -93,9 +103,9 @@
                 <ul class="o_sc_tags" t-att-aria-label="props.label">
                     <li t-foreach="chosenOptions" t-as="opt" t-key="opt[0]" class="o_sc_tag">
                         <span t-esc="opt[1]"/>
-                        <button type="button" class="o_sc_tag_remove" t-att-disabled="props.disabled"
+                        <button type="button" class="o_sc_tag_remove" t-att-disabled="isDisabled"
                                 t-att-aria-label="removeLabel(opt[1])" t-att-title="removeLabel(opt[1])"
-                                t-on-click="() => this.onCheck(opt[0], false)">×</button>
+                                t-on-click="() => this.onRemoveTag(opt[0])">×</button>
                     </li>
                 </ul>
                 <input t-ref="input" type="search" class="o_sc_input o_sc_tags_search" autocomplete="off"
@@ -103,7 +113,7 @@
                        t-att-aria-expanded="state.open ? 'true' : 'false'" t-att-aria-controls="tagsListId"
                        t-att-aria-activedescendant="tagsActiveId"
                        t-att-id="props.inputId" t-att-placeholder="props.placeholder"
-                       t-att-disabled="props.disabled" t-model="state.query" t-on-input="onTagsInput"
+                       t-att-disabled="isDisabled" t-model="state.query" t-on-input="onTagsInput"
                        t-on-focus="openTags" t-on-click="openTags"/>
                 <ul t-if="state.open and tagRows.length" t-ref="list" class="o_sc_tags_options" role="listbox"
                     tabindex="-1" t-att-id="tagsListId" t-att-aria-label="props.label"
@@ -123,20 +133,23 @@
             </div>
             <div t-elif="type === 'date_na'" class="o_sc_date_na">
                 <input t-ref="input" class="o_sc_input" type="date" t-att-id="props.inputId"
-                       t-att-name="props.name" t-att-value="dateValue" t-att-disabled="isNa or props.disabled"
+                       t-att-name="props.name" t-att-value="dateValue" t-att-disabled="isNa or isDisabled"
+                       t-att-min="dateBounds.min" t-att-max="dateBounds.max"
                        t-att-required="!isNa and props.required"
                        t-on-input="(ev) => { this.state.value = ev.target.value; this.onInput(); }"
                        t-on-change="(ev) => { this.state.value = ev.target.value; this.onChange(); }"
                        t-on-blur="commit" t-on-keydown="onDateKeydown" t-on-pointerdown="onDatePointer"/>
                 <label class="o_sc_check">
                     <input type="checkbox" t-att-name="props.naName" value="1" t-att-checked="isNa"
-                           t-att-disabled="props.disabled" t-on-change="onNaToggle"/>
+                           t-att-disabled="isDisabled" t-on-change="onNaToggle"/>
                     <span t-esc="naLabel"/>
                 </label>
             </div>
             <input t-else="" t-ref="input" class="o_sc_input" t-att-type="type"
                    t-att-id="props.inputId" t-att-name="props.name" t-att-placeholder="props.placeholder"
-                   t-att-required="props.required" t-att-disabled="props.disabled"
+                   t-att-required="props.required" t-att-disabled="isDisabled"
+                   t-att-min="dateBounds.min" t-att-max="dateBounds.max"
+                   t-att-inputmode="type === 'tel' ? 'tel' : undefined"
                    t-model="state.value" t-on-input="onInput" t-on-change="onChange" t-on-blur="commit"
                    t-on-keydown="onDateKeydown" t-on-pointerdown="onDatePointer"/>
             <small t-if="state.hint and !isReplace" class="o_sc_hint" t-esc="state.hint"/>

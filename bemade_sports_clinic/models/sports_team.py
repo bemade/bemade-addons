@@ -684,6 +684,16 @@ class SportsTeam(models.Model):
 class TeamStaff(models.Model):
     _name = "sports.team.staff"
     _description = "Sports Team Staff"
+    # Task 1645: the mobile (the partner's phone) is normalized / refused.
+    _inherit = ["sc.phone.mixin"]
+    _sc_phone_fields = ("mobile",)
+
+    def _sc_phone_country(self, vals=None):
+        partner = self.env["res.partner"]
+        if vals and vals.get("partner_id"):
+            partner = partner.browse(vals["partner_id"])
+        partner = partner or self[:1].partner_id
+        return partner.country_id or self.env.company.country_id
 
     sequence = fields.Integer()
     team_id = fields.Many2one(

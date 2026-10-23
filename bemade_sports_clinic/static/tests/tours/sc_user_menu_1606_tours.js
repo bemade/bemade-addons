@@ -1,9 +1,12 @@
 /*
  * Task 1606 — the user menu (tests/test_app_shell_user_menu_tours_1606.py).
  *
- * sc_1606_menu_laptop (1366 px, rail footer) and sc_1606_menu_phone (360 px,
- * app-bar avatar) share the keyboard / Escape / outside-tap steps, then open
- * « Paramètres » and switch the language (the user starts in French).
+ * sc_1606_menu_laptop (1366 px) and sc_1606_menu_phone (360 px) share the
+ * keyboard / Escape / outside-tap steps, then open « Paramètres » and switch
+ * the language (the user starts in French). Task 1638: both use the ONE
+ * app-bar avatar (top right, at every width; no rail footer menu any more);
+ * sc_1638_menu_placement checks its place and the popup's at 1024 / 1366 /
+ * 1920 px.
  * sc_1606_sign_out: « Se déconnecter » logs out. Language-independent
  * triggers (ids, hrefs, html[lang]).
  */
@@ -152,7 +155,81 @@ function menuSteps(where) {
     ];
 }
 
-tours.add("sc_1606_menu_laptop", { steps: () => menuSteps("rail") });
+/**
+ * Task 1638: at laptop width the avatar is at the top right of the app bar
+ * (last, after the clock and search), the rail holds no user menu, there is
+ * one user menu in the DOM, and the popup drops down right-aligned under the
+ * bubble, fully in view.
+ */
+function placementSteps() {
+    const toggle = 'header.o_sc_appbar button[data-sc-user-menu-toggle][aria-controls="sc_user_menu_bar"]';
+    return [
+        {
+            content: "1638: one user menu, at the top right of the app bar",
+            trigger: toggle,
+            run() {
+                assert(document.querySelectorAll("[data-sc-user-menu-popup]").length === 1,
+                    "more than one user menu in the DOM");
+                assert(document.querySelectorAll("button[data-sc-user-menu-toggle]").length === 1,
+                    "more than one user-menu trigger");
+                assert(!document.querySelector(".o_sc_rail [data-sc-user-menu-toggle]"),
+                    "the rail still holds a user menu");
+                const rail = document.querySelector(".o_sc_rail");
+                assert(rail && rail.getClientRects().length, "the rail should show at laptop width");
+                const bar = document.querySelector("header.o_sc_appbar");
+                const barRect = bar.getBoundingClientRect();
+                const button = document.querySelector(toggle);
+                const rect = button.getBoundingClientRect();
+                assert(rect.width > 0 && rect.height >= 44, `the avatar is hidden or too small: ${rect.width}x${rect.height}`);
+                assert(rect.top >= barRect.top && rect.bottom <= barRect.bottom + 0.5,
+                    "the avatar is not inside the app bar");
+                assert(rect.top < 100, `the avatar is not at the top: ${rect.top}`);
+                assert(window.innerWidth - rect.right <= 48,
+                    `the avatar is not at the right edge: ${rect.right} / ${window.innerWidth}`);
+                const visible = [...bar.children].filter((el) => el.getClientRects().length);
+                assert(visible[visible.length - 1].contains(button), "the avatar is not last in the bar");
+                assert(bar.scrollWidth <= bar.clientWidth + 0.5,
+                    `the app bar overflows: ${bar.scrollWidth} > ${bar.clientWidth}`);
+                const title = document.querySelector(".o_sc_appbar_title").getBoundingClientRect();
+                assert(title.width >= 120, `the title is squeezed to ${title.width}px`);
+            },
+        },
+        {
+            content: "Open it",
+            trigger: toggle,
+            run: "click",
+        },
+        {
+            content: "1638: the popup drops down, right-aligned under the bubble, in view",
+            trigger: `${toggle}[aria-expanded="true"]`,
+            run() {
+                const popup = document.querySelector("#sc_user_menu_bar");
+                assert(!popup.hidden, "the popup did not open");
+                const rect = popup.getBoundingClientRect();
+                const button = document.querySelector(toggle).getBoundingClientRect();
+                assert(rect.top >= button.bottom - 0.5, "the popup does not open downwards");
+                assert(Math.abs(rect.right - button.right) <= 1,
+                    `the popup is not right-aligned: ${rect.right} vs ${button.right}`);
+                assert(rect.left >= 0 && rect.right <= window.innerWidth + 0.5,
+                    `the menu overflows the screen: ${rect.left}-${rect.right} / ${window.innerWidth}`);
+                assert(rect.bottom <= window.innerHeight + 0.5, "the menu leaves the screen");
+                const head = popup.querySelector("[data-sc-user-menu-head]").textContent;
+                assert(head.includes("PC TP"), "the name is missing from the menu head");
+            },
+        },
+        {
+            content: "Escape closes it",
+            trigger: `#sc_user_menu_bar:not([hidden]) a[role="menuitem"]`,
+            run: "press Escape",
+        },
+        {
+            trigger: `${toggle}[aria-expanded="false"]`,
+        },
+    ];
+}
+
+tours.add("sc_1606_menu_laptop", { steps: () => [...placementSteps(), ...menuSteps("bar")] });
+tours.add("sc_1638_menu_placement", { steps: () => placementSteps() });
 tours.add("sc_1606_menu_phone", {
     steps: () => [
         {
@@ -170,8 +247,8 @@ tours.add("sc_1606_menu_phone", {
                     .getBoundingClientRect();
                 assert(avatar.right <= window.innerWidth, "the avatar is off screen");
                 assert(avatar.height >= 44, `tap target ${avatar.height}px tall`);
-                assert(!document.querySelector(".o_sc_rail_me").getClientRects().length,
-                    "the rail footer shows on a phone");
+                assert(document.querySelectorAll("[data-sc-user-menu-popup]").length === 1,
+                    "more than one user menu in the DOM");
             },
         },
         ...menuSteps("bar"),
