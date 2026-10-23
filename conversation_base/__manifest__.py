@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Base",
-    "version": "19.0.1.8.2",
+    "version": "19.0.1.8.3",
     "category": "Discuss",
     "summary": "First-class conversation model decoupled from any single business record.",
     "author": "Bemade Inc.",

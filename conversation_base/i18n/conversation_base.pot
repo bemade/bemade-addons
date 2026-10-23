@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 19.0\n"
+"Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 15:23+0000\n"
-"PO-Revision-Date: 2026-10-20 15:23+0000\n"
+"POT-Creation-Date: 2026-10-23 16:51+0000\n"
+"PO-Revision-Date: 2026-10-23 16:51+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -230,11 +230,6 @@ msgstr ""
 #. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__message_attachment_count
 msgid "Attachment Count"
-msgstr ""
-
-#. module: conversation_base
-#: model:ir.model.fields.selection,name:conversation_base.selection__conversation_transport__record_link_mode__auto
-msgid "Automatic"
 msgstr ""
 
 #. module: conversation_base
@@ -609,7 +604,6 @@ msgstr ""
 
 #. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_mail_conversation__message_has_error
-#: model:ir.model.fields,help:conversation_base.field_mail_conversation__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
 msgstr ""
 
@@ -901,6 +895,11 @@ msgid "Off"
 msgstr ""
 
 #. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__conversation_transport__record_link_mode__auto
+msgid "One-click filing"
+msgstr ""
+
+#. module: conversation_base
 #. odoo-python
 #: code:addons/conversation_base/models/conversation_transport.py:0
 msgid ""
@@ -1134,11 +1133,6 @@ msgstr ""
 #. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__role
 msgid "Role"
-msgstr ""
-
-#. module: conversation_base
-#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__message_has_sms_error
-msgid "SMS Delivery error"
 msgstr ""
 
 #. module: conversation_base
@@ -1462,10 +1456,11 @@ msgid ""
 "What to do when an inbound message in this mailbox is a reply to mail Odoo "
 "itself sent (its headers name an Odoo record). Applies to personal mailboxes"
 " only: a shared mailbox is always Off. Suggest: preselect that record in the"
-" capture dialog; you still confirm. Automatic: file and link the message "
-"without the dialog, but only when 'File Replies in Odoo by Default' is also "
-"on (otherwise it behaves like Suggest); filing still needs a click on New "
-"Conversation or Link to a Record. Off: do nothing."
+" capture dialog; you still confirm. One-click filing: file and link the "
+"message without the dialog, but only when 'File Replies in Odoo by Default' "
+"is also on (otherwise it behaves like Suggest); filing still needs a click "
+"on New Conversation or Link to a Record, and Add to Existing only "
+"preselects. Off: do nothing."
 msgstr ""
 
 #. module: conversation_base

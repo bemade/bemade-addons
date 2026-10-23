@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 15:23+0000\n"
+"POT-Creation-Date: 2026-10-23 16:51+0000\n"
 "PO-Revision-Date: 2026-10-19 21:32+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -156,32 +156,32 @@ msgstr "Modèle concerné"
 #: model:ir.model.fields,help:conversation_base.field_conversation_transport__mailbox_writable
 msgid ""
 "Allow users of this account to archive, trash or mark messages read on the "
-"REAL mailbox from the inbox viewer "
-"(_archive_remote/_trash_remote/_mark_read_remote). Off by default: mailbox "
-"writes must be enabled explicitly per account. On a shared account (no "
-"owner) only a Conversations manager can switch this on, and deleting "
-"additionally needs the 'Delete shared mail' permission."
+"REAL mailbox from the inbox viewer (_archive_remote/_trash_remote/"
+"_mark_read_remote). Off by default: mailbox writes must be enabled "
+"explicitly per account. On a shared account (no owner) only a Conversations "
+"manager can switch this on, and deleting additionally needs the 'Delete "
+"shared mail' permission."
 msgstr ""
 "Permet aux utilisateurs de cette boîte courriel d'archiver, de mettre à la "
 "corbeille ou de marquer comme lus des courriels dans la VRAIE boîte depuis "
-"la visionneuse de la boîte de réception "
-"(_archive_remote/_trash_remote/_mark_read_remote). Désactivé par défaut : "
-"l'écriture dans la boîte doit être activée explicitement pour chaque boîte "
-"courriel. Sur une boîte partagée (sans propriétaire), seul un gestionnaire "
-"de Conversations peut l'activer, et la suppression exige en plus la "
-"permission « Supprimer des courriels partagés »."
+"la visionneuse de la boîte de réception (_archive_remote/_trash_remote/"
+"_mark_read_remote). Désactivé par défaut : l'écriture dans la boîte doit "
+"être activée explicitement pour chaque boîte courriel. Sur une boîte "
+"partagée (sans propriétaire), seul un gestionnaire de Conversations peut "
+"l'activer, et la suppression exige en plus la permission « Supprimer des "
+"courriels partagés »."
 
 #. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_conversation_transport__archive_on_capture
 msgid ""
 "Also archive the source message in the real mailbox once it has been filed "
-"in Odoo (new conversation, added to a conversation, linked to a record, or a"
-" filed reply). Off by default. A transport whose provider cannot archive "
+"in Odoo (new conversation, added to a conversation, linked to a record, or a "
+"filed reply). Off by default. A transport whose provider cannot archive "
 "reports a warning."
 msgstr ""
 "Archive aussi le courriel d'origine dans la vraie boîte courriel une fois "
-"qu'il est classé dans Odoo (nouvelle conversation, ajout à une conversation,"
-" lien à un enregistrement ou réponse classée). Désactivé par défaut. Si le "
+"qu'il est classé dans Odoo (nouvelle conversation, ajout à une conversation, "
+"lien à un enregistrement ou réponse classée). Désactivé par défaut. Si le "
 "fournisseur de la boîte ne peut pas archiver, un avertissement s'affiche."
 
 #. module: conversation_base
@@ -224,8 +224,7 @@ msgstr "Assigner des conversations"
 #. module: conversation_base
 #: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
 msgid "Assign it to someone (changes the assignee for everyone)"
-msgstr ""
-"Assigner à quelqu'un (change la personne assignée pour toute l'équipe)"
+msgstr "Assigner à quelqu'un (change la personne assignée pour toute l'équipe)"
 
 #. module: conversation_base
 #: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
@@ -255,18 +254,13 @@ msgid "Attachment Count"
 msgstr "Nombre de pièces jointes"
 
 #. module: conversation_base
-#: model:ir.model.fields.selection,name:conversation_base.selection__conversation_transport__record_link_mode__auto
-msgid "Automatic"
-msgstr "Automatique"
-
-#. module: conversation_base
 #: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
 msgid ""
 "Brings the selected snoozed conversations back to your list now. Only you "
 "are affected."
 msgstr ""
-"Sort de veille les conversations sélectionnées et les remet dans votre liste"
-" maintenant. Cela ne touche que vous."
+"Sort de veille les conversations sélectionnées et les remet dans votre liste "
+"maintenant. Cela ne touche que vous."
 
 #. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__browsable
@@ -291,12 +285,11 @@ msgstr ""
 #. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_conversation_transport__browsable
 msgid ""
-"Can list/paginate a remote mailbox for the in-Odoo inbox viewer "
-"(browse_page/_browse). The viewer surface only appears for browsable "
-"transports."
+"Can list/paginate a remote mailbox for the in-Odoo inbox viewer (browse_page/"
+"_browse). The viewer surface only appears for browsable transports."
 msgstr ""
-"Peut lister et paginer une boîte distante pour la visionneuse de la boîte de"
-" réception d'Odoo (browse_page/_browse). La visionneuse n'apparaît que pour "
+"Peut lister et paginer une boîte distante pour la visionneuse de la boîte de "
+"réception d'Odoo (browse_page/_browse). La visionneuse n'apparaît que pour "
 "les boîtes consultables."
 
 #. module: conversation_base
@@ -506,8 +499,8 @@ msgid ""
 "Default for new conversations of this team: messages arriving by email are "
 "recorded without in-app alerts."
 msgstr ""
-"Valeur par défaut des nouvelles conversations de cette équipe : les messages"
-" reçus par courriel sont enregistrés sans alertes dans l'application."
+"Valeur par défaut des nouvelles conversations de cette équipe : les messages "
+"reçus par courriel sont enregistrés sans alertes dans l'application."
 
 #. module: conversation_base
 #: model:res.groups,name:conversation_base.group_delete_shared_mail
@@ -630,8 +623,8 @@ msgstr "ID"
 #. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_mail_conversation__alias_parent_thread_id
 msgid ""
-"ID of the parent record holding the alias (example: project holding the task"
-" creation alias)"
+"ID of the parent record holding the alias (example: project holding the task "
+"creation alias)"
 msgstr ""
 "ID de l'enregistrement parent qui définit l'alias (exemple : le projet qui "
 "contient l'alias lié à la tâche)"
@@ -653,7 +646,6 @@ msgstr "Si coché, de nouveaux messages demandent votre attention."
 
 #. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_mail_conversation__message_has_error
-#: model:ir.model.fields,help:conversation_base.field_mail_conversation__message_has_sms_error
 msgid "If checked, some messages have a delivery error."
 msgstr "Si coché, certains messages ont une erreur de livraison."
 
@@ -848,8 +840,8 @@ msgid ""
 "changing the team re-seeds it."
 msgstr ""
 "Les messages reçus par courriel sont enregistrés dans la conversation sans "
-"alertes dans l'application (ni entrée dans la boîte de réception, ni fenêtre"
-" contextuelle, ni notification push). Initialisé à partir de la valeur par "
+"alertes dans l'application (ni entrée dans la boîte de réception, ni fenêtre "
+"contextuelle, ni notification push). Initialisé à partir de la valeur par "
 "défaut de l'équipe; changer d'équipe le réinitialise."
 
 #. module: conversation_base
@@ -924,8 +916,8 @@ msgstr ""
 #. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_mail_conversation_participant__email_normalized
 msgid ""
-"Normalized email, used as the bare-email match/dedup key. NULL (not an empty"
-" string) when the participant has no address, so that the plain "
+"Normalized email, used as the bare-email match/dedup key. NULL (not an empty "
+"string) when the participant has no address, so that the plain "
 "unique(conversation_id, email_normalized) constraint lets partner-only "
 "participants coexist freely (Postgres treats NULLs as distinct) while still "
 "deduping non-null emails per conversation."
@@ -961,6 +953,11 @@ msgstr "Nombre de messages avec des erreurs d'envoi"
 #: model:ir.model.fields.selection,name:conversation_base.selection__conversation_transport__record_link_mode__off
 msgid "Off"
 msgstr "Désactivé"
+
+#. module: conversation_base
+#: model:ir.model.fields.selection,name:conversation_base.selection__conversation_transport__record_link_mode__auto
+msgid "One-click filing"
+msgstr "Classement en un clic"
 
 #. module: conversation_base
 #. odoo-python
@@ -1033,8 +1030,8 @@ msgstr "Identifiant de la discussion de l'enregistrement parent"
 #. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_mail_conversation__alias_parent_model_id
 msgid ""
-"Parent model holding the alias. The model holding the alias reference is not"
-" necessarily the model given by alias_model_id (example: project "
+"Parent model holding the alias. The model holding the alias reference is not "
+"necessarily the model given by alias_model_id (example: project "
 "(parent_model) and task (model))"
 msgstr ""
 "Modèle parent de l'alias. Le modèle possédant la référence de l'alias n'est "
@@ -1096,9 +1093,11 @@ msgid ""
 "Policy to post a message on the document using the mailgateway.\n"
 "- everyone: everyone can post\n"
 "- partners: only authenticated partners\n"
-"- followers: only followers of the related document or members of following channels\n"
+"- followers: only followers of the related document or members of following "
+"channels\n"
 msgstr ""
-"Politique de publication d'un message sur le document via la passerelle d'courriels.\n"
+"Politique de publication d'un message sur le document via la passerelle "
+"d'courriels.\n"
 "- tout le monde : tout le monde peut publier\n"
 "- partenaires : seulement les partenaires authentifiés\n"
 "- abonnés : seulement les abonnés aux canaux suivis\n"
@@ -1176,8 +1175,8 @@ msgstr "Temps relatif"
 #. module: conversation_base
 #: model_terms:ir.ui.view,arch_db:conversation_base.mail_conversation_view_list_triage
 msgid ""
-"Removes the selected conversations from your list only. Colleagues still see"
-" them."
+"Removes the selected conversations from your list only. Colleagues still see "
+"them."
 msgstr ""
 "Retire les conversations sélectionnées de votre liste seulement. Vos "
 "collègues les voient toujours."
@@ -1222,11 +1221,6 @@ msgstr "Enregistrement restreint"
 #: model:ir.model.fields,field_description:conversation_base.field_mail_conversation_participant__role
 msgid "Role"
 msgstr "Rôle"
-
-#. module: conversation_base
-#: model:ir.model.fields,field_description:conversation_base.field_mail_conversation__message_has_sms_error
-msgid "SMS Delivery error"
-msgstr "Erreur de livraison SMS"
 
 #. module: conversation_base
 #: model:ir.model.fields,field_description:conversation_base.field_conversation_transport__searchable
@@ -1374,8 +1368,8 @@ msgid ""
 "provider that is actually installed and implemented."
 msgstr ""
 "L'implémentation concrète de la boîte courriel qui fournit cette connexion "
-"(IMAP/SMTP générique, Gmail OAuth, ...). Ce module de base ne définit aucune"
-" option : chaque module de fournisseur facultatif (conversation_imap, "
+"(IMAP/SMTP générique, Gmail OAuth, ...). Ce module de base ne définit aucune "
+"option : chaque module de fournisseur facultatif (conversation_imap, "
 "conversation_gmail, ...) enregistre la sienne par selection_add, de sorte "
 "que la liste n'offre que des fournisseurs réellement installés et "
 "implémentés."
@@ -1393,9 +1387,9 @@ msgstr ""
 #. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_mail_conversation__alias_model_id
 msgid ""
-"The model (Odoo Document Kind) to which this alias corresponds. Any incoming"
-" email that does not reply to an existing record will cause the creation of "
-"a new record of this model (e.g. a Project Task)"
+"The model (Odoo Document Kind) to which this alias corresponds. Any incoming "
+"email that does not reply to an existing record will cause the creation of a "
+"new record of this model (e.g. a Project Task)"
 msgstr ""
 "Le modèle (type de document Odoo) auquel correspond cet alias. Chaque "
 "courriel entrant ne correspondant pas à un enregistrement existant "
@@ -1414,8 +1408,8 @@ msgstr ""
 #. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_conversation_transport__user_id
 msgid ""
-"The user this personal mail-account connection belongs to. Falsy = a "
-"shared/team-level transport identity."
+"The user this personal mail-account connection belongs to. Falsy = a shared/"
+"team-level transport identity."
 msgstr ""
 "L'utilisateur à qui appartient cette connexion de boîte courriel "
 "personnelle. Vide = identité de boîte partagée ou d'équipe."
@@ -1582,22 +1576,24 @@ msgstr "Observateur"
 #: model:ir.model.fields,help:conversation_base.field_conversation_transport__record_link_mode
 msgid ""
 "What to do when an inbound message in this mailbox is a reply to mail Odoo "
-"itself sent (its headers name an Odoo record). Applies to personal mailboxes"
-" only: a shared mailbox is always Off. Suggest: preselect that record in the"
-" capture dialog; you still confirm. Automatic: file and link the message "
-"without the dialog, but only when 'File Replies in Odoo by Default' is also "
-"on (otherwise it behaves like Suggest); filing still needs a click on New "
-"Conversation or Link to a Record. Off: do nothing."
+"itself sent (its headers name an Odoo record). Applies to personal mailboxes "
+"only: a shared mailbox is always Off. Suggest: preselect that record in the "
+"capture dialog; you still confirm. One-click filing: file and link the "
+"message without the dialog, but only when 'File Replies in Odoo by Default' "
+"is also on (otherwise it behaves like Suggest); filing still needs a click "
+"on New Conversation or Link to a Record, and Add to Existing only "
+"preselects. Off: do nothing."
 msgstr ""
 "Que faire quand un message entrant de cette boîte est une réponse à un "
 "courriel qu'Odoo a lui-même envoyé (ses en-têtes désignent un enregistrement"
 " Odoo). S'applique aux boîtes personnelles seulement : une boîte partagée "
 "est toujours à Désactivé. Suggérer : présélectionne cet enregistrement dans "
-"la fenêtre de classement; vous confirmez quand même. Automatique : classe et"
-" lie le message sans la fenêtre, mais seulement si « Classer les réponses "
-"dans Odoo par défaut » est aussi activé (sinon il se comporte comme "
+"la fenêtre de classement; vous confirmez quand même. Classement en un clic : "
+"classe et lie le message sans la fenêtre, mais seulement si « Classer les "
+"réponses dans Odoo par défaut » est aussi activé (sinon il se comporte comme "
 "Suggérer); le classement exige tout de même un clic sur Nouvelle "
-"conversation ou Lier à un enregistrement. Désactivé : ne rien faire."
+"conversation ou Lier à un enregistrement, et Ajouter à une conversation se "
+"contente de présélectionner. Désactivé : ne rien faire."
 
 #. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_conversation_transport__default_file_in_odoo
@@ -1610,8 +1606,8 @@ msgstr ""
 "Indique si l'éditeur présélectionne « classer cet échange dans une "
 "conversation » pour cette boîte. Désactivé par défaut, et c'est voulu : les "
 "échanges d'une boîte personnelle ne doivent pas se retrouver dans le centre "
-"partagé sans qu'une personne le décide chaque fois. À activer pour une boîte"
-" partagée ou d'équipe, où le classement est le but."
+"partagé sans qu'une personne le décide chaque fois. À activer pour une boîte "
+"partagée ou d'équipe, où le classement est le but."
 
 #. module: conversation_base
 #: model:ir.model.fields,help:conversation_base.field_conversation_transport__can_trash_mail
@@ -1629,8 +1625,8 @@ msgstr ""
 #. odoo-python
 #: code:addons/conversation_base/models/conversation_transport.py:0
 msgid ""
-"You are not allowed to delete mail in the shared mail account %(transport)s."
-" Ask an administrator for the 'Delete shared mail' permission."
+"You are not allowed to delete mail in the shared mail account %(transport)s. "
+"Ask an administrator for the 'Delete shared mail' permission."
 msgstr ""
 "Vous n'avez pas le droit de supprimer des courriels de la boîte courriel "
 "partagée %(transport)s. Demandez la permission « Supprimer des courriels "
@@ -1646,3 +1642,29 @@ msgstr "Vous ne pouvez retirer que vos propres boîtes courriel."
 #: model_terms:ir.ui.view,arch_db:conversation_base.conversation_transport_view_form
 msgid "e.g. Support Inbox"
 msgstr "p. ex. Boîte du soutien"
+
+#~ msgid "Automatic"
+#~ msgstr "Automatique"
+
+#~ msgid "SMS Delivery error"
+#~ msgstr "Erreur de livraison SMS"
+
+#~ msgid ""
+#~ "What to do when an inbound message in this mailbox is a reply to mail "
+#~ "Odoo itself sent (its headers name an Odoo record). Applies to personal "
+#~ "mailboxes only: a shared mailbox is always Off. Suggest: preselect that "
+#~ "record in the capture dialog; you still confirm. Automatic: file and link "
+#~ "the message without the dialog, but only when 'File Replies in Odoo by "
+#~ "Default' is also on (otherwise it behaves like Suggest); filing still "
+#~ "needs a click on New Conversation or Link to a Record. Off: do nothing."
+#~ msgstr ""
+#~ "Que faire quand un message entrant de cette boîte est une réponse à un "
+#~ "courriel qu'Odoo a lui-même envoyé (ses en-têtes désignent un "
+#~ "enregistrement Odoo). S'applique aux boîtes personnelles seulement : une "
+#~ "boîte partagée est toujours à Désactivé. Suggérer : présélectionne cet "
+#~ "enregistrement dans la fenêtre de classement; vous confirmez quand même. "
+#~ "Automatique : classe et lie le message sans la fenêtre, mais seulement si "
+#~ "« Classer les réponses dans Odoo par défaut » est aussi activé (sinon il "
+#~ "se comporte comme Suggérer); le classement exige tout de même un clic sur "
+#~ "Nouvelle conversation ou Lier à un enregistrement. Désactivé : ne rien "
+#~ "faire."
