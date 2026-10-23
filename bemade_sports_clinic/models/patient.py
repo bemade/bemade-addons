@@ -516,6 +516,9 @@ class Patient(models.Model):
     _SC_MEDICAL_WRITE_FIELDS = (
         "allergy_level", "allergy_details", "allergy_epipen",
         "medical_alert_level", "medical_alert_details",
+        # Adversarial review 2026-10-22: the « Updated on … by … » stamps
+        # (a coach can't forge them through RPC either).
+        "allergy_updated_info", "medical_alert_updated_info",
     )
 
     def _sc_check_medical_writer(self, vals):
@@ -557,6 +560,9 @@ class Patient(models.Model):
         corrections = self._sc_identity_guard(vals)
         training_history = self._prepare_training_history_vals(vals)
         res = super().write(vals)
+        # Adversarial review 2026-10-22: a later change to a family drops its
+        # pending « Undo » snapshots (patient_medical_undo.py).
+        self._sc_medical_undo_invalidate(self._sc_medical_undo_families(vals))
         if self.env.context.get("sc_critical_suggest") and LEVEL_URGENT in (
                 vals.get("allergy_level"), vals.get("medical_alert_level")):
             self._sc_create_suggested_items()

@@ -60,8 +60,12 @@ class AppSearchPortal(TeamStaffPortal):
         own = {row['id']: row for row in Patients.search_read(own_domain, fields_read)}
         candidates = dict(own)
         if is_tp_admin:
-            # The Joueurs page's broadened name search (identity only).
-            for row in Patients.sudo().search_read([], fields_read):
+            # The Joueurs page's broadened name search (identity only) —
+            # active players only outside the user's own teams: the Joueurs
+            # page never lists an archived out-of-team player (adversarial
+            # review 2026-10-22); a clinic admin's scope is everything.
+            broad = [] if admin else [('active', '=', True)]
+            for row in Patients.sudo().search_read(broad, fields_read):
                 candidates.setdefault(row['id'], row)
         matched = [row for row in candidates.values()
                    if sc_name_matches(words, row['first_name'], row['last_name'])]

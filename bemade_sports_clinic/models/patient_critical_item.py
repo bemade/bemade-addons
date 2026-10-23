@@ -115,6 +115,30 @@ class PatientCriticalItem(models.Model):
             return
         raise AccessError(_("Only the therapists can change the medical information."))
 
+    def _sc_check_owner_change(self, vals):
+        """Adversarial review 2026-10-22: the record rules are checked on the
+        record BEFORE a write only — an item created on one's own player must
+        never be moved onto another player (or family). Only the superuser
+        (merges, scripts) re-parents an item."""
+        if self.env.su:
+            return
+        for name in ("patient_id", "family"):
+            if name not in vals:
+                continue
+            new = vals[name]
+            if name == "patient_id":
+                new = new.id if isinstance(new, models.BaseModel) else (new or False)
+            for item in self:
+                old = item.patient_id.id if name == "patient_id" else item.family
+                if old != new:
+                    raise AccessError(_("A critical item can't be moved to another player or family."))
+
+    def _sc_invalidate_undo(self):
+        """Adversarial review 2026-10-22: an item change drops the family's
+        pending « Undo » snapshots (patient_medical_undo.py)."""
+        for (patient, family) in {(item.patient_id, item.family) for item in self}:
+            patient._sc_medical_undo_invalidate([family])
+
     @api.model_create_multi
     def create(self, vals_list):
         self._sc_check_writer()
@@ -122,19 +146,23 @@ class PatientCriticalItem(models.Model):
             if vals.get("name"):
                 vals["name"] = vals["name"].strip()[:ITEM_NAME_MAX * 2]
         items = super().create(vals_list)
+        items._sc_invalidate_undo()
         if not self.env.context.get("sc_critical_quiet"):
             items._sc_sync_patients("added")
         return items
 
     def write(self, vals):
         self._sc_check_writer()
+        self._sc_check_owner_change(vals)
         res = super().write(vals)
+        self._sc_invalidate_undo()
         if not self.env.context.get("sc_critical_quiet"):
             self._sc_sync_patients("changed")
         return res
 
     def unlink(self):
         self._sc_check_writer()
+        self._sc_invalidate_undo()
         pairs = [(item.patient_id, item.family, item.name) for item in self]
         res = super().unlink()
         if self.env.context.get("sc_critical_quiet"):

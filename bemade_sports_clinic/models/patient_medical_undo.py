@@ -11,6 +11,10 @@ undone from the toast the save answers (« Details cleared · Undo »):
 * ``POST /my/app/medical/undo/<id>`` (controllers/app_critical_items.py)
   restores it: the same user, within the window, while the family is still
   « None known »; the snapshot is consumed either way;
+* adversarial review 2026-10-22: ANY later write to the family (level,
+  details, EpiPen, a critical item added / changed / removed), by anyone,
+  drops every pending snapshot of that player + family, for every user —
+  an undo never overwrites a later edit or clear;
 * the autovacuum drops the expired ones (a snapshot holds medical text, it
   never outlives its window by more than a day); they also go with the
   player (cascade) and on a Law 25 anonymization.
@@ -51,8 +55,33 @@ class PatientMedicalUndo(models.Model):
         self.sudo().search([("create_date", "<", deadline)]).unlink()
 
 
+# The fields of each family a later write invalidates the undo of.
+UNDO_FAMILY_FIELDS = {
+    "allergy": ("allergy_level", "allergy_details", "allergy_epipen"),
+    "medical_alert": ("medical_alert_level", "medical_alert_details"),
+}
+
+
 class Patient(models.Model):
     _inherit = "sports.patient"
+
+    def _sc_medical_undo_invalidate(self, families):
+        """Adversarial review 2026-10-22: a later change to ``families`` of
+        these players drops their pending undo snapshots, for every user (the
+        restore itself keeps the snapshot it consumes —
+        ``sc_medical_undo_keep``)."""
+        families = [family for family in families if family]
+        if not self.ids or not families:
+            return
+        domain = [("patient_id", "in", self.ids), ("family", "in", list(families))]
+        keep = self.env.context.get("sc_medical_undo_keep")
+        if keep:
+            domain.append(("id", "!=", keep))
+        self.env["sports.patient.medical.undo"].sudo().search(domain).unlink()
+
+    def _sc_medical_undo_families(self, vals):
+        return [family for family, names in UNDO_FAMILY_FIELDS.items()
+                if any(name in vals for name in names)]
 
     def _sc_medical_snapshot(self, family):
         """The family as it is now, or None when « None known » would clear
@@ -95,7 +124,11 @@ class Patient(models.Model):
     def _sc_medical_undo_restore(self, undo):
         """Put the snapshot back, as the current user (the medical rules and
         the item sync apply: the items bring « Urgent » and EpiPen back, each
-        posts its note, the family is stamped)."""
+        posts its note, the family is stamped).
+
+        Any later change to the family deleted the snapshot already
+        (``_sc_medical_undo_invalidate``); the level check stays as a second
+        guard."""
         self.ensure_one()
         family = undo.family
         level_field = LEVEL_FIELD[family]
@@ -103,21 +136,33 @@ class Patient(models.Model):
             raise UserError(self.env._("These details were changed since; they can no longer be restored."))
         snap = dict(undo.snapshot or {})
         level = snap.get("level") or False
+        items = [dict(item, patient_id=self.id, family=family)
+                 for item in snap.get("items") or [] if item.get("name")]
+        # The restore's own writes keep the snapshot they consume.
+        patient = self.with_context(sc_medical_undo_keep=undo.id)
         vals = {
             # « Urgent » comes back with its items (an item forces it).
-            level_field: LEVEL_MINOR if level == LEVEL_URGENT else level,
+            level_field: LEVEL_MINOR if level == LEVEL_URGENT and items else level,
             DETAILS_FIELD[family]: snap.get("details") or False,
         }
         if family == "allergy":
             vals["allergy_epipen"] = bool(snap.get("epipen"))
-        # A level that was never set (legacy text without a level) can't be
-        # written back through the rules (« Please choose a level »): that
-        # rare case is put back as is, like an import.
-        (self if level else self.sudo().with_context(sc_phone_lenient=True)).write(vals)
-        items = [dict(item, patient_id=self.id, family=family)
-                 for item in snap.get("items") or [] if item.get("name")]
+        if level == LEVEL_URGENT and not items:
+            # Adversarial review 2026-10-22: a legacy « Urgent » without any
+            # item comes back « Urgent », never silently « Not urgent » (the
+            # life-threatening flag is kept; the item sync's leniency lets
+            # it through « Urgent needs an item »), stamped like a save.
+            vals["%s_updated_info" % family] = self._sc_medical_stamp()
+            patient.with_context(sc_critical_sync=True).write(vals)
+        elif level:
+            patient.write(vals)
+        else:
+            # A level that was never set (legacy text without a level) can't
+            # be written back through the rules (« Please choose a level »):
+            # that rare case is put back as is, like an import.
+            patient.sudo().with_context(sc_phone_lenient=True).write(vals)
         if items:
-            self.env["sports.patient.critical.item"].create(items)
+            self.env["sports.patient.critical.item"].with_context(sc_medical_undo_keep=undo.id).create(items)
         if level == LEVEL_URGENT and family == "allergy" and snap.get("epipen") and not self.allergy_epipen:
-            self.write({"allergy_epipen": True})
+            patient.write({"allergy_epipen": True})
         return True

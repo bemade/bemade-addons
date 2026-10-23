@@ -36,6 +36,7 @@ _logger = logging.getLogger(__name__)
 
 SC_PLAYER_UNDO_MINUTES = 2
 SC_PLAYER_CHECK_LIMIT = 12
+SC_PLAYER_CHECK_MIN = 2  # letters per name part before the check searches
 FLASH_SCOPE = ('player_add',)  # also in access_control_mixin
 
 
@@ -49,8 +50,11 @@ class AppPlayerAddPortal(TeamStaffPortal):
             raise AccessError(_("You don't have permission to create patients"))
         env = request.env
         first_words, last_words = sc_words(first), sc_words(last)
-        values = {'sc_rows': [], 'sc_exact': False, 'sc_ready': bool(first_words and last_words),
-                  'sc_team': False, 'sc_dob_error': False}
+        # Adversarial review 2026-10-22: at least 2 letters per name part
+        # before anything is searched.
+        ready = all(len(''.join(words)) >= SC_PLAYER_CHECK_MIN for words in (first_words, last_words))
+        values = {'sc_rows': [], 'sc_exact': False, 'sc_ready': ready,
+                  'sc_twin_elsewhere': False, 'sc_team': False, 'sc_dob_error': False}
         try:
             day = parse_portal_date(dob) if (dob or '').strip() else False
         except ValidationError:
@@ -58,26 +62,35 @@ class AppPlayerAddPortal(TeamStaffPortal):
         teams = self._sc_chosen_teams(team_ids)
         values['sc_team'] = teams[:1]
         if values['sc_ready']:
-            own = set(env['sports.patient'].search(
-                self._prepare_players_domain(self._prepare_teams_domain())).ids)
+            own_domain = self._prepare_players_domain(self._prepare_teams_domain())
+            own = set(env['sports.patient'].search(own_domain).ids)
+            # The user's scope, archived included (the Joueurs page lists
+            # their archived players): the date of birth may refine these.
+            scope = set(env['sports.patient'].with_context(active_test=False).search(own_domain).ids)
             admin = self._is_clinic_admin()
             Patients = env['sports.patient'].sudo().with_context(active_test=False)
-            rows = []
+            folded = (sc_fold(first).strip(), sc_fold(last).strip())
+            out = []
             for row in Patients.search_read([], ['first_name', 'last_name', 'date_of_birth', 'active']):
                 if not (sc_name_matches(first_words, row['first_name'])
                         and sc_name_matches(last_words, row['last_name'])):
                     continue
-                if day and row['date_of_birth'] and row['date_of_birth'] != day:
-                    continue
-                rows.append(row)
-            records = Patients.browse([row['id'] for row in rows])
-            out = []
-            for player in records:
-                exact = bool(day and player.date_of_birth == day
-                             and sc_fold(player.first_name).strip() == sc_fold(first).strip()
-                             and sc_fold(player.last_name).strip() == sc_fold(last).strip())
+                accessible = admin or row['id'] in own
+                same_name = (sc_fold(row['first_name']).strip(), sc_fold(row['last_name']).strip()) == folded
+                if not (admin or row['id'] in scope):
+                    # Adversarial review 2026-10-22: a player the user can't
+                    # open is never filtered, flagged or sorted by the date
+                    # of birth — the answer is the same whatever date is
+                    # typed (no confirming a date by trial). An identical
+                    # name only raises the generic « ask a manager » line.
+                    values['sc_twin_elsewhere'] = values['sc_twin_elsewhere'] or same_name
+                    exact = False
+                else:
+                    if day and row['date_of_birth'] and row['date_of_birth'] != day:
+                        continue
+                    exact = bool(day and row['date_of_birth'] == day and same_name)
                 values['sc_exact'] = values['sc_exact'] or exact
-                accessible = admin or player.id in own
+                player = Patients.browse(row['id'])
                 team = values['sc_team']
                 out.append({
                     'id': player.id,
@@ -87,7 +100,8 @@ class AppPlayerAddPortal(TeamStaffPortal):
                     'exact': exact,
                     'url': '/my/player?player_id=%s' % player.id if accessible else False,
                     'on_team': bool(team and team in player.team_ids),
-                    'sort': (not exact, not player.active, sc_fold(player.last_name), sc_fold(player.first_name)),
+                    'sort': (not exact, not player.active, sc_fold(player.last_name), sc_fold(player.first_name),
+                             player.id),
                 })
             out.sort(key=lambda r: r['sort'])
             values['sc_rows'] = out[:SC_PLAYER_CHECK_LIMIT]

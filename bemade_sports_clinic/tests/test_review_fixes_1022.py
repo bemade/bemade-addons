@@ -304,8 +304,12 @@ class TestMedicalUndo1022(MedicalUndoCommon):
         undo = self._save_level('allergy_level', 'none').json()['undo']
         self.assertEqual(self._save_level('allergy_level', 'minor').status_code, 200)
         self._save(self.player, 'allergy_details', 'Synthetic pollen')
+        # Adversarial review 2026-10-22: the later change dropped the
+        # snapshot (the toast answers « can no longer be undone »).
+        self.assertFalse(self.env['sports.patient.medical.undo'].sudo().search_count(
+            [('patient_id', '=', self.player.id)]))
         resp = self._post(undo['url'], token=undo['token'])
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 403)
         self.player.invalidate_recordset()
         self.assertEqual(self.player.allergy_details, 'Synthetic pollen', 'a later change is never overwritten')
         # The medical alert is « None known » already; minor without details

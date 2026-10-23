@@ -78,9 +78,13 @@ class TestPlayerAddInline1655(PlayerAdd1655Common):
         self.assertTrue(row.xpath('.//button[@data-sc-action="player.link"]'))
         self.assertNotIn('2010', resp.text, 'no date of birth in the check')
         self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['0'])
-        # DOB refines + the exact twin.
+        # DOB refines + the exact twin — in the user's own teams only:
+        # Élodie (PC Team B) is outside them, so her date of birth never
+        # changes the answer, only a generic line (adversarial review
+        # 2026-10-22, test_adversarial_review_1022).
         resp, tree = self._check(first='Élodie', last='Synthé-Côté', dob='2010-02-03')
-        self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['1'])
+        self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['0'])
+        self.assertTrue(tree.xpath('//*[@data-sc-check-twin-elsewhere]'))
         self.assertNotIn(self.archived.id, [int(li.get('data-sc-check-player'))
                                             for li in tree.xpath('//li[@data-sc-check-player]')])
         # On the team.

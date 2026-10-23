@@ -127,6 +127,11 @@
             <t t-elif="sc_rows">
                 <p t-if="sc_exact" class="o_sc_field_message o_sc_field_error" role="alert" data-sc-check-exact="1">Same name and date of birth: open or add this player instead.</p>
                 <p t-else="" class="o_sc_hint">Possible matches:</p>
+                <!-- Adversarial review 2026-10-22: a same-name player the user
+                     can't open — a generic line, never tied to the date of
+                     birth (the answer is the same whatever date is typed). -->
+                <p t-if="sc_twin_elsewhere and not sc_exact" class="o_sc_field_message" role="status"
+                   data-sc-check-twin-elsewhere="1">A player with this identity already exists — ask a manager.</p>
                 <ul class="o_sc_search_list">
                     <li t-foreach="sc_rows" t-as="row"
                         t-attf-class="o_sc_search_row #{'o_sc_search_archived' if row['archived'] else ''}"
