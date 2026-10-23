@@ -10,7 +10,8 @@
 #   AC17  the forward record can never be the anchor of a later reply.
 #   AC20  no mail.mail, no notification to followers/participants.
 
-from unittest.mock import patch
+from contextlib import contextmanager
+from unittest.mock import MagicMock, patch
 
 from odoo.exceptions import UserError
 from odoo.tests import tagged
@@ -53,7 +54,7 @@ class TestForward(ForwardCommon):
             [(a["filename"], a["content"]) for a in kwargs["attachments"]],
             [("spec.pdf", b"%PDF-spec")],
         )
-        self.assertFalse(kwargs["in_reply_to"])
+        self.assertEqual(kwargs["in_reply_to"], "<m2@x>")
         self.assertFalse(self._new_mails)
         self.assertEqual(self.env["res.partner"].search_count([]), partner_count)
 
@@ -162,3 +163,88 @@ class TestForward(ForwardCommon):
         self.assertEqual(in_reply_to, "<m3@x>")
         self.assertNotEqual(in_reply_to, note.message_id)
         self.assertNotEqual(in_reply_to, "<fwd-1@example.com>")
+
+    def test_forward_whole_conversation_threads_under_latest_message(self):
+        with self._send_patch() as send:
+            self.conv._forward_messages(None, ["a@example.com"])
+        # m3 is the latest forwardable message of the default set.
+        self.assertEqual(send.call_args.kwargs["in_reply_to"], "<m3@x>")
+
+    def test_forward_explicit_set_threads_under_its_latest_by_date_then_id(self):
+        # Passed out of order: the latest is chosen after the (date, id) sort.
+        with self._send_patch() as send:
+            self.conv._forward_messages(self.m2 | self.m1, ["a@example.com"])
+        self.assertEqual(send.call_args.kwargs["in_reply_to"], "<m2@x>")
+
+    def test_forward_threads_on_message_id_never_external_id(self):
+        self.assertNotEqual(self.m2.external_id, self.m2.message_id)
+        with self._send_patch() as send:
+            self.conv._forward_messages(self.m2, ["a@example.com"])
+        self.assertEqual(send.call_args.kwargs["in_reply_to"], "<m2@x>")
+
+    def test_forward_without_message_id_sends_no_threading_header(self):
+        self.m2.message_id = False
+        with self._send_patch() as send:
+            note = self.conv._forward_messages(self.m2, ["a@example.com"])
+        self.assertIsNone(send.call_args.kwargs["in_reply_to"])
+        self.assertEqual(note.message_id, "<fwd-1@example.com>")
+
+    def test_forward_stays_a_quiet_note_with_wire_id(self):
+        with self.mock_mail_gateway(), self._send_patch():
+            note = self.conv._forward_messages(
+                self.m2, ["a@example.com"], cc_emails=["c@example.com"],
+                bcc_emails=["secret@example.com"],
+            )
+        self.assertEqual(note.subtype_id, self.env.ref("mail.mt_note"))
+        self.assertEqual(note.message_id, "<fwd-1@example.com>")
+        self.assertFalse(note.transport_id)
+        self.assertFalse(note.external_id)
+        self.assertIn("To: a@example.com", str(note.body))
+        self.assertIn("Cc: c@example.com", str(note.body))
+        self.assertNotIn("secret@example.com", str(note.body))
+        self.assertFalse(self._new_mails)
+
+    def test_reply_after_threaded_forward_still_anchors_on_correspondent(self):
+        with self._send_patch():
+            note = self.conv._forward_messages(None, ["a@example.com"])
+        self.assertEqual(note.message_id, "<fwd-1@example.com>")
+        with patch.object(
+            type(self.transport), "_is_email_transport", return_value=True
+        ), patch.object(
+            type(self.transport), "_send_raw", autospec=True, return_value="<r@x>"
+        ) as reply_send:
+            self.conv.action_reply("<p>hi</p>", recipients=["customer@example.com"])
+        self.assertEqual(reply_send.call_args.kwargs["in_reply_to"], "<m3@x>")
+
+    def test_threading_id_reaches_the_built_email_headers(self):
+        """End to end through the email transport's real ``_send_raw``: the
+        header lands on the built message, and Bcc stays out of it."""
+        sent = []
+        connection = MagicMock()
+        connection.send_message.side_effect = lambda msg, to_addrs=None: sent.append(
+            (msg, to_addrs)
+        )
+
+        @contextmanager
+        def fake_smtp(*args, **kwargs):
+            yield connection
+
+        transport_cls = type(self.transport)
+        with patch.object(
+            transport_cls, "_is_email_transport", return_value=True
+        ), patch.object(
+            transport_cls, "_smtp_connection", side_effect=fake_smtp
+        ), patch.object(
+            transport_cls, "_imap_append_to_sent", return_value=False
+        ):
+            note = self.conv._forward_messages(
+                self.m2, ["a@example.com"], bcc_emails=["secret@example.com"]
+            )
+        self.assertEqual(len(sent), 1)
+        outgoing, envelope = sent[0]
+        self.assertEqual(outgoing["In-Reply-To"], "<m2@x>")
+        self.assertIn("<m2@x>", outgoing["References"])
+        self.assertIsNone(outgoing["Bcc"])
+        self.assertNotIn("secret@example.com", outgoing.as_string())
+        self.assertIn("secret@example.com", envelope)
+        self.assertEqual(note.message_id, outgoing["Message-Id"])
