@@ -126,9 +126,16 @@ tours.add("sc_1616_card_sections", {
             trigger: `${NOTES_INT}[data-sc-edit-open] .o_sc_autosave[data-sc-field="internal_notes"]`,
         },
         {
-            content: "The card's « Done » closes the groups and the card",
-            trigger: `${CARD} [data-sc-injury-done]`,
-            run: "click",
+            // Task 1676: no bottom « Done » — each group closes with its ✓,
+            // the card with its summary.
+            content: "The ✓ of each open note closes it, the summary closes the card",
+            trigger: `${NOTES_INT}[data-sc-edit-open] button[data-sc-edit-toggle][data-sc-edit-toggle-done]`,
+            run() {
+                assert(!el(`${CARD} [data-sc-injury-done]`), "the bottom « Done » is back");
+                el(`${NOTES_INT} button[data-sc-edit-toggle]`).click();
+                el(`${NOTES_EXT} button[data-sc-edit-toggle]`).click();
+                el(`${CARD} > summary`).click();
+            },
         },
         {
             content: "Closed",

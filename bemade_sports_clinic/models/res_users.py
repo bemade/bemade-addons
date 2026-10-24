@@ -149,6 +149,15 @@ class User(models.Model):
         copy=False,
     )
 
+    # Task 1676: « Afficher les boutons Terminé » (Paramètres). Off by
+    # default: the edit cards' « Done » buttons are hidden and the head
+    # pencil turns into a ✓ that closes the card (it does in both modes).
+    sc_show_done_buttons = fields.Boolean(
+        string="Show « Done » buttons",
+        default=False,
+        copy=False,
+    )
+
     # Task 1605: the user's colour on the events calendar (dot before each
     # event title, legend). Handed out automatically the first time the user
     # shows up in the calendar feed (``_sc_calendar_colors``), then stable;
@@ -202,6 +211,7 @@ class User(models.Model):
             "roster_sort_mode",
             "players_sort_mode",
             "sc_theme",
+            "sc_show_done_buttons",
         ]
 
     @property
@@ -213,6 +223,7 @@ class User(models.Model):
             "roster_sort_mode",
             "players_sort_mode",
             "sc_theme",
+            "sc_show_done_buttons",
         ]
 
     def _sc_backend_link_recipient(self):

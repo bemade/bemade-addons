@@ -672,7 +672,7 @@
                                             <!-- Deleting stays with therapists (coaches have no unlink ACL). -->
                                             <button t-if="is_treatment_prof" type="button" class="o_sc_btn o_sc_btn_danger o_sc_btn_sm" data-sc-action="contact.delete"
                                                     t-att-data-sc-sheet-open="'sc_delete_contact_%s' % contact.id">Delete</button>
-                                            <button type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm" data-sc-edit-done="1">Done</button>
+                                            <button type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm o_sc_edit_done" data-sc-edit-done="1">Done</button>
                                         </div>
                                     </div>
                                 </section>
@@ -1311,11 +1311,11 @@
                         </t>
                     </section>
                 </div>
-                <div class="o_sc_injury_card_actions">
-                    <button t-if="sc_card_delete" type="button" class="o_sc_btn o_sc_btn_danger o_sc_btn_sm"
-                            t-att-data-sc-sheet-open="'sc_delete_injury_sheet_%s' % injury.id" data-sc-action="injury.delete">Delete</button>
-                    <button type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm" data-sc-injury-done="1"
-                            data-sc-action="injury.done">Done</button>
+                <!-- Task 1676: no bottom « Done » any more (the card's summary
+                     closes it); « Delete injury » on the left, therapists only. -->
+                <div t-if="sc_card_delete" class="o_sc_injury_card_actions">
+                    <button type="button" class="o_sc_btn o_sc_btn_danger o_sc_btn_sm"
+                            t-att-data-sc-sheet-open="'sc_delete_injury_sheet_%s' % injury.id" data-sc-action="injury.delete">Delete injury</button>
                 </div>
                 <t t-if="sc_card_delete" t-call="bemade_sports_clinic.sc_confirm_sheet">
                     <t t-set="sheet_id" t-value="'sc_delete_injury_sheet_%s' % injury.id"/>

@@ -130,7 +130,8 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         self.assertFalse(card.xpath('.//*[@data-sc-action="injury.open"]'))
         self.assertNotIn('Synthetic treatment note 1616', lxml_html.tostring(card, encoding='unicode'))
         actions = card.xpath('.//div[contains(@class, "o_sc_injury_card_actions")]//button/@data-sc-action')
-        self.assertEqual(actions, ['injury.delete', 'injury.done'])
+        # Task 1676: no bottom « Done »; « Delete injury » only.
+        self.assertEqual(actions, ['injury.delete'])
         sheet = card.xpath('.//dialog[@id="sc_delete_injury_sheet_%s"]//form' % self.injury.id)[0]
         self.assertEqual(sheet.get('action'), '/my/injury/delete')
         hidden = dict(zip(sheet.xpath('.//input[@type="hidden"]/@name'),
@@ -198,7 +199,9 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
             self.assertFalse(docs.xpath('.//*[@data-sc-action="%s"]' % action), action)
         self.assertFalse(docs.xpath('.//form'))
         self.assertFalse(card.xpath('.//*[@data-sc-action="injury.delete"]'))
-        self.assertTrue(card.xpath('.//*[@data-sc-action="injury.done"]'))
+        # Task 1676: no bottom « Done » (and a coach cannot delete): no foot.
+        self.assertFalse(card.xpath('.//*[@data-sc-action="injury.done"]'))
+        self.assertFalse(card.xpath('.//*[contains(@class, "o_sc_injury_card_actions")]'))
 
     # -- AC-4 ------------------------------------------------------------
     def test_fragments(self):

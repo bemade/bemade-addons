@@ -16934,3 +16934,25 @@ msgstr ""
 #: code:addons/bemade_sports_clinic/models/sports_event.py:0
 msgid "Only treatment professionals can be assigned to an event."
 msgstr "Seuls des professionnels de la santé peuvent être assignés à un événement."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__sc_show_done_buttons
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_settings
+msgid "Show « Done » buttons"
+msgstr "Afficher les boutons Terminé"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_settings
+msgid "When off, tap ✓ at the top of a card to finish editing."
+msgstr "Désactivé : touchez ✓ en haut d'une carte pour terminer la modification."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
+msgid "Delete injury"
+msgstr "Supprimer la blessure"
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_app_ui.js:0
+msgid "Finish editing"
+msgstr "Terminer la modification"

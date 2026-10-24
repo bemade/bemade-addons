@@ -25,6 +25,7 @@ import { _t } from "@web/core/l10n/translation";
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
 import { focusFirstField } from "@bemade_sports_clinic/js/sc_focus";
 import { scSetDisplay } from "@bemade_sports_clinic/js/sc_contact_href";
+import { anchorEdited } from "@bemade_sports_clinic/js/sc_edit_anchor";
 import {
     clearAllDrafts,
     purgeForeignDrafts,
@@ -274,6 +275,49 @@ if (document.readyState === "loading") {
 }
 window.addEventListener("hashchange", openHashedDetails);
 
+// Task 1676: while its card is in edit mode the head pencil is a ✓
+// (« Finish editing ») that closes the card — the same close path as
+// « Done » (refresh, #1642 anchoring), whether or not the user shows the
+// « Done » buttons (Paramètres).
+const SC_CHECK_PATH = "M20 6L9 17l-5-5";
+const scPencils = new WeakMap();
+function setToggleDone(toggle, editing) {
+    const svg = toggle.querySelector("svg");
+    if (editing) {
+        if (!scPencils.has(toggle)) {
+            scPencils.set(toggle, {
+                icon: svg ? svg.innerHTML : null,
+                label: toggle.getAttribute("aria-label"),
+                title: toggle.getAttribute("title"),
+            });
+        }
+        if (svg) {
+            svg.innerHTML = `<path d="${SC_CHECK_PATH}"/>`;
+        }
+        const label = _t("Finish editing");
+        toggle.setAttribute("aria-label", label);
+        toggle.setAttribute("title", label);
+        toggle.classList.add("o_sc_edit_toggle_done");
+        toggle.dataset.scEditToggleDone = "1";
+        return;
+    }
+    const saved = scPencils.get(toggle);
+    if (saved) {
+        if (svg && saved.icon !== null) {
+            svg.innerHTML = saved.icon;
+        }
+        for (const [attr, value] of [["aria-label", saved.label], ["title", saved.title]]) {
+            if (value === null) {
+                toggle.removeAttribute(attr);
+            } else {
+                toggle.setAttribute(attr, value);
+            }
+        }
+    }
+    toggle.classList.remove("o_sc_edit_toggle_done");
+    delete toggle.dataset.scEditToggleDone;
+}
+
 // Inline-edit cards: ONE pencil per card toggles its edit view; « Done »
 // closes it and (task 1611) refreshes the read fragments at once — no reload.
 function setCardEditing(card, editing) {
@@ -294,6 +338,7 @@ function setCardEditing(card, editing) {
     const toggle = card.querySelector("[data-sc-edit-toggle]");
     if (toggle) {
         toggle.setAttribute("aria-expanded", editing ? "true" : "false");
+        setToggleDone(toggle, editing);
     }
     if (editing) {
         // Task 1646: a text field only (never a picker), nothing on a phone.
@@ -320,7 +365,13 @@ document.addEventListener("click", (ev) => {
         const closing = Boolean(card.dataset.scEditOpen);
         setCardEditing(card, !closing);
         if (closing) {
+            // Task 1676: the ✓ closes like « Done » — focus out of the card,
+            // read fragments refreshed, back to the block's top (#1642).
+            if (card.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
             document.dispatchEvent(new CustomEvent("sc:refresh-now"));
+            anchorEdited(card);
         }
         return;
     }

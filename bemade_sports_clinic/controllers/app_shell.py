@@ -69,9 +69,11 @@ PREF_FIELDS = {
     # Task 1665: « Recevoir le sommaire quotidien par courriel » (the same
     # per-user preference as the backend « Daily Morning Briefing »).
     'digest_daily_enabled': ('1', '0'),
+    # Task 1676: « Afficher les boutons Terminé » (default off).
+    'sc_show_done_buttons': ('1', '0'),
 }
 # Task 1665: the boolean preferences, posted as '1' / '0'.
-PREF_BOOLEANS = ('digest_daily_enabled',)
+PREF_BOOLEANS = ('digest_daily_enabled', 'sc_show_done_buttons')
 # Task 1588: « Plus › Langue » — the user's profile language (``res.users.lang``),
 # allowed values = the request's frontend languages (checked at post time).
 PREF_LANG = 'lang'
@@ -1372,6 +1374,8 @@ class AppShellMixin:
             # Task 1602: forced dark (no toggles) unless the choice is on.
             'sc_theme': self._sc_effective_theme(user),
             'sc_theme_choice': self._sc_theme_choice_enabled(),
+            # Task 1676: the edit cards' « Done » buttons, per user.
+            'sc_show_done': bool(user.sudo().sc_show_done_buttons),
             'sc_langs': self._sc_lang_options(),
             'sc_current_url': path + ('?' + query if query else ''),
             'sc_search_url': '/my/players' if any(t['key'] == 'players' for t in rail) else False,
