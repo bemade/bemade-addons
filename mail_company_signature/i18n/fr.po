@@ -25,6 +25,22 @@ msgid "Add signature"
 msgstr "Ajouter la signature"
 
 #. module: mail_company_signature
+#: model:ir.model,name:mail_company_signature.model_res_company
+msgid "Companies"
+msgstr "Sociétés"
+
+#. module: mail_company_signature
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_users__company_signature_enforced
+msgid "Company Signature Enforced"
+msgstr "Imposer la signature standard de l'entreprise"
+
+#. module: mail_company_signature
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_company__company_signature_notice
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_config_settings__company_signature_notice
+msgid "Company notice"
+msgstr "Avis de l'entreprise"
+
+#. module: mail_company_signature
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_company__company_signature_template
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_config_settings__company_signature_template
 msgid "Company signature template"
@@ -36,16 +52,92 @@ msgid "Company-standard Signature"
 msgstr "Signature standard de l'entreprise"
 
 #. module: mail_company_signature
+#: model:ir.model,name:mail_company_signature.model_res_config_settings
+msgid "Config Settings"
+msgstr "Paramètres de configuration"
+
+#. module: mail_company_signature
+#: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee__display_name
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_company__display_name
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_users__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: mail_company_signature
+#: model:ir.actions.server,name:mail_company_signature.ir_cron_expire_company_notice_ir_actions_server
+msgid "Email Signatures: Remove Expired Company Notices"
+msgstr "Signatures courriel : retirer les avis d'entreprise expirés"
+
+#. module: mail_company_signature
+#: model:ir.model,name:mail_company_signature.model_hr_employee
+msgid "Employee"
+msgstr "Employé"
+
+#. module: mail_company_signature
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_company__company_signature_enforced
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_config_settings__company_signature_enforced
-#: model:ir.model.fields,field_description:mail_company_signature.field_res_users__company_signature_enforced
 msgid "Enforce company-standard signature"
 msgstr "Imposer la signature standard de l'entreprise"
+
+#. module: mail_company_signature
+#: model:ir.model.fields,help:mail_company_signature.field_res_users__company_signature_manual
+msgid ""
+"Exempt this user from the company-standard signature: they write their own. "
+"Unticking it regenerates the signature."
+msgstr ""
+"Exempter cet utilisateur de la signature standard de l'entreprise : il "
+"rédige la sienne. Décocher la case régénère la signature."
+
+#. module: mail_company_signature
+#: model_terms:ir.ui.view,arch_db:mail_company_signature.res_config_settings_view_form
+msgid ""
+"Generate the email signature of every employee from one template. They can "
+"no longer edit their own signature."
+msgstr ""
+"Générer la signature courriel de chaque employé à partir d'un modèle. Ils ne"
+" peuvent plus modifier leur propre signature."
+
+#. module: mail_company_signature
+#: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee__id
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_company__id
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_config_settings__id
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_users__id
+msgid "ID"
+msgstr ""
+
+#. module: mail_company_signature
+#: model:ir.model.fields,help:mail_company_signature.field_res_company__company_signature_notice_until
+#: model:ir.model.fields,help:mail_company_signature.field_res_config_settings__company_signature_notice_until
+msgid ""
+"Last day the company notice is shown. A daily scheduled action removes it "
+"afterwards. Leave empty to show it until it is cleared."
+msgstr ""
+"Dernier jour d'affichage de l'avis de l'entreprise. Une action planifiée "
+"quotidienne le retire ensuite. Laisser vide pour l'afficher jusqu'à ce qu'il"
+" soit effacé."
+
+#. module: mail_company_signature
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_users__company_signature_manual
+msgid "Manage own signature"
+msgstr "Gère sa propre signature"
 
 #. module: mail_company_signature
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_users__personal_signature_backup
 msgid "Personal signature backup"
 msgstr "Sauvegarde de la signature personnelle"
+
+#. module: mail_company_signature
+#: model:ir.model.fields,help:mail_company_signature.field_res_company__company_signature_template
+#: model:ir.model.fields,help:mail_company_signature.field_res_config_settings__company_signature_template
+msgid ""
+"Placeholders: {{name}}, {{job_title}}, {{job_position}}, {{work_phone}}, {{mobile_phone}}, {{work_email}}, {{company_name}}, {{company_phone}}, {{company_email}}, {{company_website}}, {{company_notice}}. {{job_position}} shows the job position in French and English (\"FR / EN\"), or the job title without a position. Unknown placeholders are left as typed.\n"
+"Write one optional line per paragraph: a paragraph whose placeholders are all empty (for example a user without a mobile) is removed entirely, label included.\n"
+"Only users with an employee file in this company get it. Turning the policy off keeps each user's last generated signature; the original is kept in the user form and can be restored there."
+msgstr ""
+"Variables : {{name}}, {{job_title}}, {{job_position}}, {{work_phone}}, {{mobile_phone}}, {{work_email}}, {{company_name}}, {{company_phone}}, {{company_email}}, {{company_website}}, {{company_notice}}. {{job_position}} affiche le poste en français et en anglais (« FR / EN »), ou le titre du poste en l'absence de poste. Les variables inconnues sont laissées telles quelles.\n"
+"Écrivez une ligne facultative par paragraphe : un paragraphe dont toutes les variables sont vides (par exemple un utilisateur sans cellulaire) est entièrement retiré, libellé compris.\n"
+"Seuls les utilisateurs ayant une fiche employé dans cette entreprise la reçoivent. Désactiver la politique conserve la dernière signature générée de chaque utilisateur; l'originale est conservée dans la fiche de l'utilisateur et peut y être restaurée."
 
 #. module: mail_company_signature
 #. odoo-javascript
@@ -65,10 +157,55 @@ msgid "Restore personal signature"
 msgstr "Restaurer la signature personnelle"
 
 #. module: mail_company_signature
+#: model:ir.model.fields,help:mail_company_signature.field_res_users__signature_is_generated
+msgid ""
+"Set when the current signature was produced by the company template rather "
+"than written by a person."
+msgstr ""
+"Coché lorsque la signature actuelle a été produite par le modèle de "
+"l'entreprise plutôt qu'écrite par une personne."
+
+#. module: mail_company_signature
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_company__company_signature_notice_until
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_config_settings__company_signature_notice_until
+msgid "Show until"
+msgstr "Afficher jusqu'au"
+
+#. module: mail_company_signature
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_users__signature_is_generated
+msgid "Signature Is Generated"
+msgstr "Signature générée"
+
+#. module: mail_company_signature
 #. odoo-javascript
 #: code:addons/mail_company_signature/static/src/composer_patch.xml:0
 msgid "Signature removed for this message"
 msgstr "Signature retirée pour ce message"
+
+#. module: mail_company_signature
+#: model:ir.model.fields,help:mail_company_signature.field_res_users__personal_signature_backup
+msgid ""
+"Signature the user had before the company-standard signature was enforced."
+msgstr ""
+"Signature de l'utilisateur avant l'application de la signature standard de "
+"l'entreprise."
+
+#. module: mail_company_signature
+#: model_terms:ir.ui.view,arch_db:mail_company_signature.res_config_settings_view_form
+msgid "Template"
+msgstr "Modèle"
+
+#. module: mail_company_signature
+#: model:ir.model.fields,help:mail_company_signature.field_res_company__company_signature_notice
+#: model:ir.model.fields,help:mail_company_signature.field_res_config_settings__company_signature_notice
+msgid ""
+"Temporary notice (closure, holiday hours...) that replaces "
+"{{company_notice}} in the template until the \"Show until\" day included; it"
+" is then removed automatically."
+msgstr ""
+"Avis temporaire (fermeture, horaire des fêtes...) qui remplace "
+"{{company_notice}} dans le modèle jusqu'au jour « Afficher jusqu'au » "
+"inclus; il est ensuite retiré automatiquement."
 
 #. module: mail_company_signature
 #: model_terms:ir.ui.view,arch_db:mail_company_signature.view_users_form
@@ -78,3 +215,20 @@ msgid ""
 msgstr ""
 "Cette signature est générée à partir du modèle de l'entreprise et ne peut "
 "pas être modifiée."
+
+#. module: mail_company_signature
+#: model:ir.model,name:mail_company_signature.model_res_users
+msgid "User"
+msgstr "Utilisateur"
+
+#. module: mail_company_signature
+#: model:ir.model.fields,help:mail_company_signature.field_res_company__company_signature_enforced
+#: model:ir.model.fields,help:mail_company_signature.field_res_config_settings__company_signature_enforced
+msgid ""
+"When enabled, the email signature of every internal user of this company who"
+" has an employee file in it is generated from the template and cannot be "
+"edited."
+msgstr ""
+"Lorsque cette option est activée, la signature courriel de chaque "
+"utilisateur interne de cette entreprise qui y a une fiche employé est "
+"générée à partir du modèle et ne peut pas être modifiée."
