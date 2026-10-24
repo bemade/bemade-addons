@@ -16965,3 +16965,8 @@ msgid ""
 msgstr ""
 "C'était la dernière blessure active du joueur. Retirer le retour prévu, "
 "inscrire la date de retour réelle et remettre ses statuts ?"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "Born on"
+msgstr "Né(e) le"

@@ -147,6 +147,8 @@
                         <span class="o_sc_search_link">
                             <span class="o_sc_row_title" t-out="row['title']"/>
                             <span t-if="row['teams']" class="o_sc_row_subtitle" t-out="row['teams']"/>
+                            <!-- Task 1672: the player's own date of birth (namesakes). -->
+                            <span t-if="row['dob']" class="o_sc_row_subtitle o_sc_check_dob" data-sc-check-dob="1"><span>Born on</span> <span t-out="row['dob']"/></span>
                             <span t-if="row['archived']" class="o_sc_chip o_sc_search_flag">Archived player</span>
                         </span>
                         <a t-if="row['url']" t-att-href="row['url']" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"

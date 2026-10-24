@@ -267,3 +267,4 @@ from . import test_card_note_stamps_1669
 from . import test_split_injury_notes_1675
 from . import test_done_buttons_pref_1676
 from . import test_last_injury_statuses_1670
+from . import test_add_panels_1672

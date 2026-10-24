@@ -27,6 +27,7 @@ from datetime import timedelta
 from odoo import Command, _, fields, http
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
+from odoo.tools import format_date
 
 from .access_control_mixin import parse_portal_date
 from .app_search import sc_fold, sc_name_matches, sc_words
@@ -100,6 +101,11 @@ class AppPlayerAddPortal(TeamStaffPortal):
                     'id': player.id,
                     'title': player._portal_list_name(),
                     'teams': ', '.join(player.team_ids.mapped('name')),
+                    # Task 1672 (owner): each suggestion's OWN date of birth,
+                    # to tell namesakes apart — the row's data, never the
+                    # typed date (S2: the answer stays the same whatever
+                    # date is typed).
+                    'dob': format_date(env, row['date_of_birth']) if row['date_of_birth'] else '',
                     'archived': not player.active,
                     'exact': exact,
                     'url': '/my/player?player_id=%s' % player.id if accessible else False,

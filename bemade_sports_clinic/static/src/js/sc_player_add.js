@@ -225,6 +225,9 @@ async function create(form) {
     try {
         const result = await scFetch(form.getAttribute("action"), { method: "POST", data, toast: false, timeout: 30000 });
         if (result && result.redirect) {
+            // Task 1672: the panel resets before the page changes (back on
+            // the team page, reopening it shows an empty form).
+            form.dispatchEvent(new CustomEvent("sc:create-success", { bubbles: true }));
             window.location.assign(result.redirect);
             return;
         }
@@ -267,9 +270,38 @@ document.addEventListener(
     true
 );
 
+// Task 1672: the check's first content, to put back on a reset.
+const checkHints = new WeakMap();
+
+document.addEventListener("sc:form-reset", (ev) => {
+    const form = playerForm(ev.target);
+    if (!form) {
+        return;
+    }
+    const previous = inflight.get(form);
+    if (previous) {
+        previous.abort();
+        inflight.delete(form);
+    }
+    clearTimeout(timers.get(form));
+    delete form.dataset.scCheckedKey;
+    delete form.dataset.scCheckedExact;
+    delete form.dataset.scCheckedTwin;
+    const region = form.querySelector("[data-sc-player-check]");
+    if (region && checkHints.has(region)) {
+        region.innerHTML = checkHints.get(region);
+    }
+    clearErrors(form);
+    refreshSubmit(form);
+});
+
 // A panel re-opened with typed values (a refused create): check at once.
 function boot() {
     for (const form of document.querySelectorAll(".o_sc_app form[data-sc-player-add]")) {
+        const region = form.querySelector("[data-sc-player-check]");
+        if (region && !checkHints.has(region) && !region.querySelector("[data-sc-check-results]")) {
+            checkHints.set(region, region.innerHTML);
+        }
         const values = fields(form);
         refreshSubmit(form);
         if (values.first && values.last) {
