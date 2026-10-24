@@ -47,7 +47,7 @@
                         </div>
                         <div class="o_sc_field">
                             <label for="sc_ts_team" class="o_sc_field_label">Team</label>
-                            <select id="sc_ts_team" name="team_id" class="o_sc_input o_sc_select">
+                            <select id="sc_ts_team" data-sc-picker="1" data-sc-picker-key="team-filter" name="team_id" class="o_sc_input o_sc_select">
                                 <option value="">All teams</option>
                                 <t t-foreach="teams" t-as="team_opt">
                                     <option t-att-value="team_opt.id" t-att-selected="'selected' if team_id == team_opt.id else None" t-out="team_opt.name"/>
@@ -57,7 +57,7 @@
                         <!-- Owner review 2026-10-11: the legacy portal's other filters. -->
                         <div class="o_sc_field">
                             <label for="sc_ts_org" class="o_sc_field_label">Organization</label>
-                            <select id="sc_ts_org" name="organization_id" class="o_sc_input o_sc_select">
+                            <select id="sc_ts_org" data-sc-picker="1" data-sc-picker-key="org" name="organization_id" class="o_sc_input o_sc_select">
                                 <option value="">All organizations</option>
                                 <t t-foreach="organizations" t-as="org_opt">
                                     <option t-att-value="org_opt.id" t-att-selected="'selected' if organization_id == org_opt.id else None" t-out="org_opt.name"/>

@@ -106,7 +106,7 @@
                 <p class="o_sc_meta"><span>Currently assigned to:</span> <strong data-sc-current-assignee="1"/></p>
                 <div class="o_sc_field">
                     <label for="sc_activity_new_user" class="o_sc_field_label">Assign to:</label>
-                    <select id="sc_activity_new_user" name="new_user_id" class="o_sc_input o_sc_select" required="required">
+                    <select id="sc_activity_new_user" data-sc-picker="1" data-sc-picker-key="user" name="new_user_id" class="o_sc_input o_sc_select" required="required">
                         <option value="">Select a person…</option>
                         <t t-foreach="available_users" t-as="au">
                             <option t-att-value="au.id" t-out="au.name"/>
@@ -169,7 +169,7 @@
                 </div>
                 <div class="o_sc_field">
                     <label for="sc_add_activity_user" class="o_sc_field_label">Assigned To</label>
-                    <select id="sc_add_activity_user" name="user_id" class="o_sc_input o_sc_select" required="required">
+                    <select id="sc_add_activity_user" data-sc-picker="1" data-sc-picker-key="user" name="user_id" class="o_sc_input o_sc_select" required="required">
                         <t t-foreach="assignable_users" t-as="au">
                             <option t-att-value="au.id" t-out="au.name"
                                     t-att-selected="'selected' if au.id == request.env.user.id else None"/>
@@ -292,7 +292,7 @@
                     <label for="sc_act_user" class="o_sc_field_label">Assigned To</label>
                     <t t-set="sc_users" t-value="available_users if activity else assignable_users"/>
                     <t t-set="sc_selected_user" t-value="activity.user_id.id if activity else default_user_id"/>
-                    <select id="sc_act_user" name="user_id" class="o_sc_input o_sc_select" required="required"
+                    <select id="sc_act_user" data-sc-picker="1" data-sc-picker-key="user" name="user_id" class="o_sc_input o_sc_select" required="required"
                             data-sc-assignee-select="1" t-att-data-sc-no-access="sc_no_access_ids">
                         <t t-foreach="sc_users" t-as="au">
                             <option t-att-value="au.id" t-out="au.name"
@@ -370,7 +370,7 @@
                     <t t-set="lbl">Due Date</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'date_deadline', lbl, 'date')"/></t>
                     <t t-set="lbl">Assigned To</t>
-                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'user_id', lbl, 'select', options=sc_activity_user_options)"/></t>
+                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'user_id', lbl, 'select', options=sc_activity_user_options, picker=True, pickerKey='user')"/></t>
                     <t t-set="lbl">Note</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'note', lbl, 'textarea', clearable=True)"/></t>
                     <t t-call="bemade_sports_clinic.sc_edit_card_done"/>

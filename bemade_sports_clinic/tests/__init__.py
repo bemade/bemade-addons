@@ -269,3 +269,4 @@ from . import test_done_buttons_pref_1676
 from . import test_last_injury_statuses_1670
 from . import test_add_panels_1672
 from . import test_near_match_1674
+from . import test_single_picker_1668

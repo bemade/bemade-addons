@@ -51,7 +51,7 @@
                         </div>
                         <div class="o_sc_field">
                             <label for="sc_players_team" class="o_sc_field_label">Team</label>
-                            <select id="sc_players_team" name="team_id" class="o_sc_input o_sc_select">
+                            <select id="sc_players_team" data-sc-picker="1" data-sc-picker-key="team-filter" name="team_id" class="o_sc_input o_sc_select">
                                 <option value="">All Teams</option>
                                 <t t-foreach="teams" t-as="team_opt">
                                     <option t-att-value="team_opt.id" t-att-selected="'selected' if team_id == team_opt.id else None"
@@ -61,7 +61,7 @@
                         </div>
                         <div class="o_sc_field">
                             <label for="sc_players_org" class="o_sc_field_label">Organization</label>
-                            <select id="sc_players_org" name="organization_id" class="o_sc_input o_sc_select">
+                            <select id="sc_players_org" data-sc-picker="1" data-sc-picker-key="org" name="organization_id" class="o_sc_input o_sc_select">
                                 <option value="">All Organizations</option>
                                 <t t-foreach="organizations" t-as="org">
                                     <option t-att-value="org.id" t-att-selected="'selected' if organization_id == org.id else None"
@@ -156,7 +156,7 @@
                               class="o_sc_add_to_team" data-sc-action="players.add_to_team">
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <input type="hidden" name="return_url" t-att-value="sc_current_url"/>
-                            <select name="team_id" class="o_sc_input o_sc_select" aria-label="Team">
+                            <select name="team_id" class="o_sc_input o_sc_select" aria-label="Team" data-sc-picker="1" data-sc-picker-key="team-filter">
                                 <t t-foreach="add_to_team_teams" t-as="att_team">
                                     <option t-att-value="att_team.id" t-out="att_team.name"/>
                                 </t>
