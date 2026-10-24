@@ -10,6 +10,7 @@
             </field>
             <field name="signature" position="before">
                 <field name="company_signature_enforced" invisible="1" />
+                <field name="company_signature_manual" groups="base.group_system" />
             </field>
             <field name="signature" position="after">
                 <div

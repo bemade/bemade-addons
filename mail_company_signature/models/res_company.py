@@ -4,7 +4,7 @@ import lxml.html
 from markupsafe import Markup, escape
 
 from odoo import api, fields, models
-from odoo.tools import is_html_empty
+from odoo.tools import html2plaintext, is_html_empty
 
 TOKEN_RE = re.compile(r"\{\{\s*(\w+)\s*\}\}")
 BLOCK_TAGS = frozenset(
@@ -12,6 +12,10 @@ BLOCK_TAGS = frozenset(
 )
 # Containers that are also removed when a line drop leaves them empty.
 CASCADE_TAGS = BLOCK_TAGS | {"ul", "ol", "table", "tbody", "thead", "tfoot"}
+# Rich-text values (``Markup``) are inserted as HTML through this marker,
+# which survives the lxml serialization untouched.
+HTML_MARKER = "MCSHTML%sMCSEND"
+HTML_MARKER_RE = re.compile(r"MCSHTML(\w+?)MCSEND")
 
 DEFAULT_TEMPLATE = (
     "<p><strong>{{name}}</strong></p>"
@@ -21,6 +25,7 @@ DEFAULT_TEMPLATE = (
     "<p>Cell : {{mobile_phone}}</p>"
     '<p><a href="mailto:{{work_email}}">{{work_email}}</a></p>'
     "<p>{{company_website}}</p>"
+    "<div>{{company_notice}}</div>"
 )
 
 
@@ -43,6 +48,52 @@ class ResCompany(models.Model):
         sanitize=True,
         groups="base.group_system",
     )
+    company_signature_notice = fields.Html(
+        string="Company notice",
+        sanitize=True,
+        groups="base.group_system",
+        help="Temporary notice (closure, holiday hours...) shown where the "
+        "template has {{company_notice}}.",
+    )
+    company_signature_notice_until = fields.Date(
+        string="Show until",
+        groups="base.group_system",
+        help="Last day the company notice is shown. A daily scheduled action "
+        "removes it afterwards. Leave empty to show it until it is cleared.",
+    )
+
+    def _company_signature_notice_value(self):
+        """The notice as ``Markup`` while it is shown, else an empty string."""
+        self.ensure_one()
+        company = self.sudo()
+        notice = company.company_signature_notice
+        until = company.company_signature_notice_until
+        if is_html_empty(notice) or (
+            until and until < fields.Date.context_today(company)
+        ):
+            return ""
+        return Markup(notice)
+
+    @api.model
+    def _cron_expire_company_signature_notice(self):
+        """Clear the notices whose last day has passed (signatures follow)."""
+        expired = self.sudo().search(
+            [
+                ("company_signature_notice_until", "!=", False),
+                (
+                    "company_signature_notice_until",
+                    "<",
+                    fields.Date.context_today(self),
+                ),
+            ]
+        )
+        if expired:
+            expired.write(
+                {
+                    "company_signature_notice": False,
+                    "company_signature_notice_until": False,
+                }
+            )
 
     # ------------------------------------------------------------------
     # Policy transitions
@@ -74,7 +125,9 @@ class ResCompany(models.Model):
 
         A block element is dropped (with its static text) when every token it
         directly owns is a known placeholder with an empty value. Unknown
-        tokens are left literal.
+        tokens are left literal. A ``Markup`` value is inserted as HTML (as
+        plain text inside an attribute); a ``<p>`` holding only such a token
+        becomes a ``<div>`` so the value's own paragraphs are not nested.
         """
         self.ensure_one()
         template = self.sudo().company_signature_template
@@ -131,18 +184,30 @@ class ResCompany(models.Model):
             if all(is_blank(name) for name in owned[block]):
                 self._company_signature_drop(block, root)
 
-        # 3. substitute remaining tokens
-        def sub(text):
+        def is_html(name):
+            return isinstance(values.get(name), Markup)
+
+        # 3. a paragraph holding only a rich-text token must not nest blocks
+        for el in root.iter("p"):
+            name = TOKEN_RE.fullmatch((el.text or "").strip())
+            if name and is_html(name.group(1)) and not len(el):
+                el.tag = "div"
+
+        # 4. substitute remaining tokens
+        def replace(match, attribute=False):
+            name = match.group(1)
+            if name not in values:
+                return match.group(0)
+            if is_html(name):
+                if attribute:
+                    return html2plaintext(values[name]).strip()
+                return HTML_MARKER % name
+            return str(values[name] or "")
+
+        def sub(text, attribute=False):
             if not text:
                 return text
-            return TOKEN_RE.sub(
-                lambda m: (
-                    str(values[m.group(1)] or "")
-                    if m.group(1) in values
-                    else m.group(0)
-                ),
-                text,
-            )
+            return TOKEN_RE.sub(lambda m: replace(m, attribute), text)
 
         for el in root.iter():
             if not isinstance(el.tag, str):
@@ -151,12 +216,17 @@ class ResCompany(models.Model):
             if el is not root:
                 el.tail = sub(el.tail)
             for key, attr_value in list(el.attrib.items()):
-                el.set(key, sub(attr_value))
+                el.set(key, sub(attr_value, attribute=True))
 
         html = escape(root.text or "")
         for child in root:
             html += Markup(lxml.html.tostring(child, encoding="unicode", method="html"))
-        return Markup(html)
+        return Markup(
+            HTML_MARKER_RE.sub(
+                lambda m: str(values[m.group(1)]) if is_html(m.group(1)) else m.group(0),
+                html,
+            )
+        )
 
     @api.model
     def _company_signature_drop(self, element, root):

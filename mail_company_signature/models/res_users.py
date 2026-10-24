@@ -5,13 +5,21 @@ from odoo.exceptions import UserError
 class ResUsers(models.Model):
     _inherit = "res.users"
 
-    # groups=False is deliberate: a related field copies the groups of its
-    # target (base.group_system), which would make the flag unreadable for
-    # plain internal users and break the readonly modifier on the signature in
-    # My Preferences. The value is a harmless boolean.
+    # groups=False is deliberate: the flag must stay readable by plain internal
+    # users for the readonly modifier on the signature in My Preferences
+    # (the company field is restricted to base.group_system). The value is a
+    # harmless boolean.
     company_signature_enforced = fields.Boolean(
-        related="company_id.company_signature_enforced",
+        compute="_compute_company_signature_enforced",
         groups=False,
+    )
+    company_signature_manual = fields.Boolean(
+        string="Manage own signature",
+        groups="base.group_system",
+        copy=False,
+        default=False,
+        help="Exempt this user from the company-standard signature: they "
+        "write their own. Unticking it regenerates the signature.",
     )
     personal_signature_backup = fields.Html(
         string="Personal signature backup",
@@ -28,13 +36,25 @@ class ResUsers(models.Model):
         "template rather than written by a person.",
     )
 
+    @api.depends("company_id", "company_signature_manual")
+    def _compute_company_signature_enforced(self):
+        for user in self:
+            sudo_user = user.sudo()
+            user.company_signature_enforced = bool(
+                sudo_user.company_id.company_signature_enforced
+                and not sudo_user.company_signature_manual
+            )
+
     # ------------------------------------------------------------------
     # Generation
     # ------------------------------------------------------------------
     def _is_company_signature_enforced(self):
         self.ensure_one()
-        return not self.share and bool(
-            self.company_id.sudo().company_signature_enforced
+        user = self.sudo()
+        return (
+            not user.share
+            and not user.company_signature_manual
+            and bool(user.company_id.company_signature_enforced)
         )
 
     def _company_signature_enforced_users(self):
@@ -47,6 +67,9 @@ class ResUsers(models.Model):
         "company_id",
         "company_id.company_signature_enforced",
         "company_id.company_signature_template",
+        "company_id.company_signature_notice",
+        "company_id.company_signature_notice_until",
+        "company_signature_manual",
         "company_id.name",
         "company_id.phone",
         "company_id.email",
@@ -56,6 +79,8 @@ class ResUsers(models.Model):
         "employee_ids.company_id",
         "employee_ids.name",
         "employee_ids.job_title",
+        "employee_ids.job_id",
+        "employee_ids.job_id.name",
         "employee_ids.work_phone",
         "employee_ids.mobile_phone",
         "employee_ids.work_email",
@@ -88,12 +113,17 @@ class ResUsers(models.Model):
         for emp in employees:
             emp_by_key.setdefault((emp.user_id.id, emp.company_id.id), emp)
         result = {}
+        notices = {}
         for user in self:
             emp = emp_by_key.get((user.id, user.company_id.id))
             company = user.company_id
+            if company.id not in notices:
+                notices[company.id] = company._company_signature_notice_value()
             result[user.id] = {
                 "name": (emp.name if emp else "") or user.name or "",
                 "job_title": (emp.job_title if emp else "") or "",
+                "job_position": self._company_signature_job_position(emp),
+                "company_notice": notices[company.id],
                 "work_phone": (emp.work_phone if emp else "") or "",
                 "mobile_phone": (emp.mobile_phone if emp else "") or "",
                 "work_email": (emp.work_email if emp else "") or user.email or "",
@@ -103,6 +133,25 @@ class ResUsers(models.Model):
                 "company_website": company.website or "",
             }
         return result
+
+    @api.model
+    def _company_signature_job_position(self, employee):
+        """Job position as "FR / EN", one value when equal or untranslated.
+
+        Without a job position, the employee's job title.
+        """
+        if not employee:
+            return ""
+        job = employee.job_id
+        if not job:
+            return (employee.job_title or "").strip()
+        french = (job.with_context(lang="fr_FR").name or "").strip()
+        english = (job.with_context(lang="en_US").name or "").strip()
+        if not french or french == english:
+            return english
+        if not english:
+            return french
+        return "%s / %s" % (french, english)
 
     # ------------------------------------------------------------------
     # Guards
