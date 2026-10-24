@@ -16952,7 +16952,6 @@ msgid "Delete injury"
 msgstr "Supprimer la blessure"
 
 #. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_app_ui.js:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
 msgid "Finish editing"
 msgstr "Terminer la modification"

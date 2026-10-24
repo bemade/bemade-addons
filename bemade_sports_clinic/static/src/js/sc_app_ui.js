@@ -32,6 +32,11 @@ import {
     removeDraftsWithPrefix,
 } from "@bemade_sports_clinic/js/sc_draft_store";
 
+// Task 1676: the pencil ↔ ✓ swap (setToggleDone). Declared up here: the
+// load-time handlers below (e.g. offerUndoCreatePlayer) already open cards.
+const SC_CHECK_PATH = "M20 6L9 17l-5-5";
+const scPencils = new WeakMap();
+
 function app() {
     return document.querySelector(".o_sc_app[data-sc-app-shell]");
 }
@@ -279,8 +284,6 @@ window.addEventListener("hashchange", openHashedDetails);
 // (« Finish editing ») that closes the card — the same close path as
 // « Done » (refresh, #1642 anchoring), whether or not the user shows the
 // « Done » buttons (Paramètres).
-const SC_CHECK_PATH = "M20 6L9 17l-5-5";
-const scPencils = new WeakMap();
 function setToggleDone(toggle, editing) {
     const svg = toggle.querySelector("svg");
     if (editing) {
@@ -294,7 +297,10 @@ function setToggleDone(toggle, editing) {
         if (svg) {
             svg.innerHTML = `<path d="${SC_CHECK_PATH}"/>`;
         }
-        const label = _t("Finish editing");
+        // The label comes translated from the layout (a card may open on
+        // load, before the JS translations are there).
+        const root = app();
+        const label = (root && root.dataset.scEditDoneLabel) || "✓";
         toggle.setAttribute("aria-label", label);
         toggle.setAttribute("title", label);
         toggle.classList.add("o_sc_edit_toggle_done");

@@ -15,7 +15,7 @@ Acceptance criteria:
   therapist gets « Delete injury » (``injury.delete``) opening the confirm
   sheet; a coach gets no foot at all.
 * AC-4 fr_CA: « Afficher les boutons Terminé », « Supprimer la blessure »,
-  the ✓'s « Terminer la modification » (JS).
+  the ✓'s « Terminer la modification » (the layout's label).
 * AC-5 Browser (phone 390 px + laptop 1366 px), setting off (default): no
   visible « Done »; the pencil turns into a ✓ (« Finish editing ») in edit
   mode and the ✓ closes the card — a player info card and an injury note;
@@ -144,11 +144,12 @@ class TestDoneButtonsPrefI18n1676(Done1676Common):
         foot = tree.xpath('//div[contains(@class, "o_sc_injury_card_actions")]//button')[0]
         self.assertEqual(' '.join(foot.text_content().split()), 'Supprimer la blessure')
 
-    def test_js_string_served_in_french(self):
-        from odoo.tools.translate import code_translations
-        js = code_translations.get_web_translations('bemade_sports_clinic', 'fr_CA')
-        messages = {m['id']: m['string'] for m in js.get('messages', ())}
-        self.assertEqual(messages.get('Finish editing'), 'Terminer la modification')
+    def test_check_label_in_french(self):
+        # The ✓'s label comes from the layout (a card may open on load,
+        # before the JS translations are loaded).
+        self._login_tp()
+        _text, tree = self._fr('/my/app/settings')
+        self.assertEqual(self._app(tree).get('data-sc-edit-done-label'), 'Terminer la modification')
 
 
 class _DoneTours1676:
