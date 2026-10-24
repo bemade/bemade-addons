@@ -480,11 +480,11 @@
 
             <section class="o_sc_section" data-sc-install-steps="ios">
                 <t t-call="bemade_sports_clinic.sc_section_header">
-                    <t t-set="title">iPhone and iPad (Safari)</t>
+                    <t t-set="title">iPhone and iPad (Safari or Chrome)</t>
                 </t>
                 <ol class="o_sc_steps">
-                    <li>Open this page in Safari.</li>
-                    <li>Tap the Share button <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'share'"/></t> at the bottom of the screen.</li>
+                    <li>Open this page in Safari or Chrome.</li>
+                    <li>Tap the Share button <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'share'"/></t> at the bottom of the screen (Safari) or in the address bar (Chrome).</li>
                     <li>Choose « Add to Home Screen », then « Add ».</li>
                 </ol>
             </section>

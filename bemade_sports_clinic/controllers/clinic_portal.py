@@ -951,7 +951,9 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         labels = {
             'today': env._("Today"),
             'upcoming': env._("Upcoming"),
-            'past': env._("Past"),
+            # Task 1661: its own msgid — the events segment « Past » is
+            # « Passés » (événements), past clinics are « Passées ».
+            'past': env._("Earlier"),
             'all': env._("All dates"),
         }
         rows = []

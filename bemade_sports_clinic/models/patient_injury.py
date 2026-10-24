@@ -15,6 +15,9 @@ _logger = logging.getLogger(__name__)
 # PATIENT with a technical injury_id link; the summary carries the
 # « [Injury: <diagnosis>] » prefix, so callers match the marker with ilike).
 VERIFY_INJURY_SUMMARY = "Verify injury"
+# Task 1661: the To-Do summary is now translated (« Vérifier la blessure »
+# in fr_CA); the lookups match both the English marker and the French one.
+VERIFY_INJURY_SUMMARY_FR = "Vérifier la blessure"
 
 
 def legacy_change_emails_enabled(env):
@@ -346,8 +349,17 @@ class PatientInjury(models.Model):
         the injuries in self (task 1409: keyed on injury_id + summary marker)."""
         return [
             ('injury_id', 'in', self.ids or [0]),
+            '|',
             ('summary', 'ilike', VERIFY_INJURY_SUMMARY),
+            ('summary', 'ilike', VERIFY_INJURY_SUMMARY_FR),
         ]
+
+    def _verify_activity_summary(self):
+        """« [Injury: <diagnosis>] Verify injury », rendered in the context
+        language (call it with the ASSIGNEE's lang — task 1661: the suffix is
+        translated too, fr_CA « Vérifier la blessure »)."""
+        self.ensure_one()
+        return self._activity_summary_prefix() + self.env._("Verify injury")
         
     @api.model
     def _sc_clear_resolved_predicted_dates(self):
@@ -941,16 +953,16 @@ class PatientInjury(models.Model):
 
             # The prefix is stored text: render it in the ASSIGNEE's language
             # (the reader), not the cron user's.
-            prefix = injury.with_context(
+            summary = injury.with_context(
                 lang=assignee.lang or self.env.user.lang
-            )._activity_summary_prefix()
+            )._verify_activity_summary()
             vals = {
                 'res_model_id': patient_model_rec.id,
                 'res_id': injury.patient_id.id,
                 'injury_id': injury.id,
                 'user_id': assignee.id,
                 'activity_type_id': todo_type.id if todo_type else False,
-                'summary': prefix + VERIFY_INJURY_SUMMARY,
+                'summary': summary,
                 'note': _("Please verify this injury and set the appropriate status."),
                 'date_deadline': fields.Date.context_today(self),
                 'automated': True,

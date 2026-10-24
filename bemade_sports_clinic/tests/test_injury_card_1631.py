@@ -458,7 +458,7 @@ class TestInjuryCardFrench1631(InjuryCard1631Mixin, FragmentsCommon):
         self.assertEqual(labels['resolution_date'], 'Date de résolution')
         self.assertEqual(labels['predicted_resolution_date'], 'Date prévue de résolution')
         bodies = ' '.join(self.injury.sudo().message_ids.mapped(lambda m: str(m.body or '')))
-        self.assertIn('Blessure ramenée à Actif par', bodies)
+        self.assertIn('Blessure ramenée à Active par', bodies)
 
 
 @tagged('post_install', '-at_install')

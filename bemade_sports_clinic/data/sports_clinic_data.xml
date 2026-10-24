@@ -159,7 +159,7 @@
                             <p><strong t-out="team['name']"/></p>
                             <div t-if="team.get('announcement')" style="margin:6px 0;">
                                 <p style="margin:0 0 2px 0;">
-                                    <strong>Annonce de l'équipe / Team announcement<t t-if="team.get('announcement_is_expired')"> (expirée / expired)</t>:</strong>
+                                    <strong>Annonce d'équipe / Team announcement<t t-if="team.get('announcement_is_expired')"> (expirée / expired)</t>:</strong>
                                 </p>
                                 <p style="white-space:pre-wrap;margin:0;" t-out="team['announcement']"/>
                             </div>

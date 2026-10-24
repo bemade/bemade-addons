@@ -679,7 +679,7 @@ class User(models.Model):
                 lines.append(
                     Markup("<p><strong>%s%s</strong></p>")
                     % (
-                        escape(_("Team announcement / Annonce de l'équipe:")),
+                        escape(_("Team announcement / Annonce d'équipe:")),
                         escape(expired_suffix),
                     )
                 )

@@ -526,8 +526,12 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Filter options
         teams = self._get_accessible_teams()
         organizations = self._get_organizations()
-        match_status_selection = dict(Patients._fields['match_status'].selection)
-        practice_status_selection = dict(Patients._fields['practice_status'].selection)
+        # Task 1661: the TRANSLATED selection labels (« Oui / Non / Oui, sans
+        # contact » in fr_CA), not the raw English source labels.
+        match_status_selection = dict(
+            Patients._fields['match_status']._description_selection(Patients.env))
+        practice_status_selection = dict(
+            Patients._fields['practice_status']._description_selection(Patients.env))
 
         # Task 1385: ONE batched presence query for the homogenized cards on this
         # page — which players have recent changes (the collapsed "changements

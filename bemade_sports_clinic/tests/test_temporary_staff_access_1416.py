@@ -617,7 +617,7 @@ class TestTempStaffFrCA1416(TransactionCase):
         source = dict(fr["sports.team.staff"]._fields["source"]._description_selection(fr))
         self.assertEqual(source["temp"], "Accès temporaire")
         states = dict(fr["sports.staff.grant"]._fields["state"]._description_selection(fr))
-        self.assertEqual(states, {"scheduled": "Planifié", "active": "Actif",
+        self.assertEqual(states, {"scheduled": "Planifié", "active": "Active",
                                   "expired": "Terminé", "revoked": "Révoqué"})
         self.assertEqual(fr["ir.model"]._get("sports.staff.grant").name, "Accès temporaire du personnel")
         self.assertEqual(
