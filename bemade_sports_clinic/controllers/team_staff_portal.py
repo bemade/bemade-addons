@@ -1203,8 +1203,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # player rows' team links).
             'sc_hero_team_links': list(self._sc_team_links(all_teams).values()),
             'sc_document_rows': document_rows,
-            'sc_injury_choices': [(i.id, i.display_name or i.diagnosis or str(i.id))
-                                  for i in injuries],
+            # Task 1665: the same list as the note edit picker.
+            'sc_injury_choices': self._sc_note_injury_options(player),
             'sc_note_draft_prefix': 'sports.patient.%s.new_note.' % player.id,
             'sc_default_activity_type_id': (
                 values['default_activity_type'].id if values['default_activity_type'] else False),

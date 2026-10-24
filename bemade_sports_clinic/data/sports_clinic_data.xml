@@ -234,5 +234,23 @@
                 </ul>
             </field>
         </record>
+        <!-- Task 1665: the mirror of the cancellation notice — bilingual
+             body, per-language subject (po), no health data. -->
+        <record id="mail_template_event_revived" model="mail.template">
+            <field name="name">Event Restored - Assigned Staff Notice</field>
+            <field name="model_id" ref="bemade_sports_clinic.model_sports_event"/>
+            <field name="subject">Le Fit Crew — Event restored: {{ object.name }}</field>
+            <field name="body_html" type="html">
+                <p>L'événement auquel vous êtes assigné a été rétabli. /
+                   The event you are assigned to has been restored.</p>
+                <ul>
+                    <li><strong>Événement / Event:</strong> <t t-out="object.name or ''"/></li>
+                    <li t-if="object.date_start"><strong>Date:</strong>
+                        <t t-out="format_datetime(object.date_start) or ''"/></li>
+                    <li t-if="object.team_ids"><strong>Équipe(s) / Team(s):</strong>
+                        <t t-out="', '.join(object.team_ids.mapped('name'))"/></li>
+                </ul>
+            </field>
+        </record>
     </data>
 </odoo>

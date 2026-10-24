@@ -795,6 +795,37 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             msg = str(e).replace('\n', ' ').replace('\r', ' ')
             return http.request.redirect(f'/my/event/{event.id}?error={urllib.parse.quote(msg)}{return_qs}')
 
+    @http.route(['/my/event/<int:event_id>/restore'], type='http', auth='user', website=True,
+                methods=['POST'])
+    def restore_event(self, event_id, **post):
+        """Task 1665: « Rétablir l'événement » — a cancelled event back to
+        Confirmed. Same rights as the cancel (a therapist, or a system
+        admin, who can write the event); the assigned staff get the
+        « Événement rétabli » notice (sports.event.write); logged on the
+        event."""
+        user = http.request.env.user
+        is_therapist = user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
+            user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+        if not (is_therapist or user.has_group('base.group_system')):
+            raise AccessError(_("You don't have permission to restore events."))
+        event = http.request.env['sports.event'].browse(event_id)
+        if not event.exists():
+            return http.request.not_found()
+        return_qs = self._get_event_return_qs(post)
+        if event.state != 'cancelled':
+            return http.request.redirect(f'/my/event/{event.id}?{return_qs.lstrip("&")}')
+        try:
+            event.with_context(portal_revive_event=True).write({'state': 'confirmed'})
+            event._update_state_from_timesheets()
+            try:
+                event.message_post(body=_('Event restored via portal by %s.', user.name))
+            except Exception:
+                pass
+            return http.request.redirect(f'/my/event/{event.id}?restored=1{return_qs}')
+        except Exception as e:
+            msg = str(e).replace('\n', ' ').replace('\r', ' ')
+            return http.request.redirect(f'/my/event/{event.id}?error={urllib.parse.quote(msg)}{return_qs}')
+
     @http.route(['/my/event/<int:event_id>/edit'], type='http', auth='user', website=True)
     def edit_event_form(self, event_id, **kw):
         """Edit event form - only accessible to therapists"""
@@ -1565,6 +1596,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             success = env._("Event created.")
         elif params.get('cancelled'):
             success = env._("Event cancelled.")
+        elif params.get('restored'):
+            success = env._("Event restored.")
         elif params.get('ts_saved'):
             success = env._("Timesheet saved.")
         elif params.get('updated'):
@@ -1587,6 +1620,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'staff': [(u.id, u.name) for u in (self._get_treatment_professionals()
                                                    | event_sudo.assigned_staff_ids).sudo().sorted('name')],
             }
+        ts_rows = [self._sc_timesheet_row(ts) for ts in timesheets]
         return {
             'sc_event_edit_options': edit_options,
             'sc_event_kind': kinds.get(event_sudo.event_type, ''),
@@ -1596,8 +1630,15 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 event_sudo, 'therapist_start', 'therapist_end'),
             'sc_event_teams': ', '.join(event_sudo.team_ids.mapped('name')),
             'sc_event_description': html2plaintext(event_sudo.description or '').strip(),
-            'sc_timesheet_rows': [self._sc_timesheet_row(ts) for ts in timesheets],
+            'sc_timesheet_rows': ts_rows,
+            # Task 1665: the user's own still-editable timesheet on this event
+            # — « Add My Timesheet » opens it in edit; a second one stays
+            # possible (« Add another timesheet », split shifts).
+            'sc_my_open_timesheet_id': next(
+                (row['id'] for row in ts_rows if row['own'] and row['editable']), False),
             'sc_can_cancel': values['can_edit'] and event_sudo.state not in ('cancelled', 'invoiced'),
+            # Task 1665: same right as the cancel.
+            'sc_can_restore': values['can_edit'] and event_sudo.state == 'cancelled',
             'sc_can_activities': is_tp or user.has_group('bemade_sports_clinic.group_portal_team_coach'),
             'sc_flash': {'success': success, 'error': error},
         }

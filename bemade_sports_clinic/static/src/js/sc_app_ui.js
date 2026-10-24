@@ -481,6 +481,49 @@ function openSheet(id) {
     }
 }
 
+// Task 1665: « Add My Timesheet » when I already have an editable timesheet
+// on this event — open THAT card in edit (scrolled to), and a toast offers
+// « Add another timesheet » (the add sheet, split shifts). The sheet's own
+// « Edit my timesheet » does the same from inside it.
+function editExistingTimesheet(id) {
+    const card = document.querySelector(`.o_sc_app [data-sc-timesheet-id="${id}"][data-sc-edit-card]`);
+    if (!card) {
+        return false;
+    }
+    setCardEditing(card, true);
+    card.scrollIntoView({ block: "center" });
+    return true;
+}
+document.addEventListener("click", (ev) => {
+    const root = app();
+    if (!root || !root.contains(ev.target)) {
+        return;
+    }
+    const add = ev.target.closest('[data-sc-action="timesheet.add"][data-sc-sheet-open]');
+    const edit = !add && ev.target.closest("[data-sc-ts-edit]");
+    if (!add && !edit) {
+        return;
+    }
+    const holder = root.querySelector("[data-sc-ts-existing-id]");
+    const id = edit ? edit.dataset.scTsEdit : holder && holder.dataset.scTsExistingId;
+    if (!id) {
+        return;
+    }
+    const dialog = edit && edit.closest("dialog");
+    if (!editExistingTimesheet(id)) {
+        return; // no card on this page: let the sheet open as usual
+    }
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    if (dialog) {
+        dialog.close();
+    }
+    if (add) {
+        showToast(_t("You already have a timesheet for this event."), _t("Add another timesheet"),
+            () => openSheet(add.dataset.scSheetOpen || "sc_ts_add_sheet"));
+    }
+}, true);
+
 document.addEventListener("click", (ev) => {
     const root = app();
     if (!root || !root.contains(ev.target)) {

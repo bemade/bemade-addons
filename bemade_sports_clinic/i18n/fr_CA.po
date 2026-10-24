@@ -16292,6 +16292,7 @@ msgstr "Aucun joueur existant ne correspond."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_list_medical_review
 msgid "Open"
 msgstr "Ouvrir"
 
@@ -16675,3 +16676,93 @@ msgstr "Vous n'avez pas accès à cette note."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_detail
 msgid "Reassign"
 msgstr "Réassigner"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_settings
+msgid "On"
+msgstr "Activé"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_settings
+msgid "Off"
+msgstr "Désactivé"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_settings
+msgid "Receive the daily summary by email"
+msgstr "Recevoir le sommaire quotidien par courriel"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+msgid "Restore event"
+msgstr "Rétablir l'événement"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+msgid "Restore this event? The assigned staff will be notified by email."
+msgstr "Rétablir cet événement ? Le personnel assigné sera avisé par courriel."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+msgid "Yes, restore"
+msgstr "Oui, rétablir"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+msgid "Edit my timesheet"
+msgstr "Modifier ma feuille de temps"
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_app_ui.js:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+msgid "You already have a timesheet for this event."
+msgstr "Vous avez déjà une feuille de temps pour cet événement."
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_app_ui.js:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+msgid "Add another timesheet"
+msgstr "Ajouter une autre feuille"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
+msgid "Event restored."
+msgstr "Événement rétabli."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
+msgid "You don't have permission to restore events."
+msgstr "Vous n'avez pas la permission de rétablir des événements."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
+msgid "Event restored via portal by %s."
+msgstr "Événement rétabli depuis le portail par %s."
+
+#. module: bemade_sports_clinic
+#: model:mail.template,subject:bemade_sports_clinic.mail_template_event_revived
+msgid "Le Fit Crew — Event restored: {{ object.name }}"
+msgstr "Le Fit Crew — Événement rétabli : {{ object.name }}"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "Le Fit Crew — Event restored: %s"
+msgstr "Le Fit Crew — Événement rétabli : %s"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "The event \"%s\" you were assigned to has been restored."
+msgstr "L'événement « %s » auquel vous êtes assigné a été rétabli."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "%s (resolved)"
+msgstr "%s (résolue)"

@@ -648,7 +648,9 @@ class SportsEvent(models.Model):
             # Exception: portal cancellation is allowed via controller with context flag.
             if not self.env.user.has_group('base.group_user'):
                 allow_portal_cancel = bool(self.env.context.get('portal_cancel_event'))
-                if not allow_portal_cancel:
+                # Task 1665: the portal « Restore » of a cancelled event.
+                allow_portal_revive = bool(self.env.context.get('portal_revive_event'))
+                if not (allow_portal_cancel or allow_portal_revive):
                     raise ValidationError("Only internal users can change event workflow state.")
             new_state = vals.get('state')
             allowed_states = {'confirmed', 'to_invoice', 'invoiced', 'cancelled'}
@@ -659,9 +661,13 @@ class SportsEvent(models.Model):
                 # Prevent marking invoiced if customer side still needs invoicing
                 if new_state == 'invoiced' and any(t.customer_ready_to_invoice for t in event.timesheet_ids.filtered('active')):
                     raise ValidationError("Cannot mark Invoiced while timesheets remain to invoice.")
-                # Portal may only cancel
-                if not self.env.user.has_group('base.group_user') and new_state != 'cancelled':
-                    raise ValidationError("Only internal users can change event workflow state.")
+                # Portal may only cancel — or (task 1665) restore a cancelled
+                # event to Confirmed.
+                if not self.env.user.has_group('base.group_user'):
+                    revive_ok = (self.env.context.get('portal_revive_event')
+                                 and new_state == 'confirmed' and event.state == 'cancelled')
+                    if new_state != 'cancelled' and not revive_ok:
+                        raise ValidationError("Only internal users can change event workflow state.")
 
         # Drag-only sync: BOTH fields of a pair shifted together (the
         # calendar drag pattern) and the other pair wasn't touched.
@@ -690,6 +696,10 @@ class SportsEvent(models.Model):
         events_entering_cancel = self.env['sports.event']
         if vals.get('state') == 'cancelled':
             events_entering_cancel = self.filtered(lambda e: e.state != 'cancelled')
+        # Task 1665: the mirror — a cancelled event restored (any path).
+        events_leaving_cancel = self.env['sports.event']
+        if vals.get('state') and vals.get('state') != 'cancelled':
+            events_leaving_cancel = self.filtered(lambda e: e.state == 'cancelled')
 
         old_times = {}
         if sync_t_to_d or sync_d_to_t:
@@ -750,6 +760,8 @@ class SportsEvent(models.Model):
             events_entering_cancel._notify_assigned_staff_cancelled(
                 reason=self.env.context.get('cancel_reason')
             )
+        if events_leaving_cancel:
+            events_leaving_cancel._notify_assigned_staff_revived()
         return res
 
     def unlink(self):
@@ -1112,6 +1124,49 @@ class SportsEvent(models.Model):
                 )
 
     @api.model
+    def _notify_assigned_staff_revived(self):
+        """Task 1665: « Événement rétabli : … » to every active assignee of
+        these events — the mirror of _notify_assigned_staff_cancelled (same
+        delivery: message_notify per language, sudo, the bilingual template
+        mail_template_event_revived, no health data)."""
+        template = self.env.ref(
+            'bemade_sports_clinic.mail_template_event_revived', raise_if_not_found=False)
+        author = self.env.user.partner_id
+        default_lang = self.env.lang or 'en_US'
+        for event in self:
+            event_sudo = event.sudo()
+            partners = event_sudo.assigned_staff_ids.filtered('active').partner_id.filtered(
+                lambda p: bool(p))
+            if not partners:
+                continue
+            for lang, lang_partners in self._group_partners_by_lang(partners, default_lang).items():
+                subject = body = None
+                if template:
+                    try:
+                        ctx_template = template.sudo().with_context(lang=lang)
+                        body = ctx_template._render_field('body_html', event_sudo.ids).get(event_sudo.id)
+                        subject = ctx_template._render_field('subject', event_sudo.ids).get(event_sudo.id)
+                    except Exception:  # pragma: no cover - template render guard
+                        _logger.exception("Failed to render the restore template for event %s", event.id)
+                        body = subject = None
+                localized = self.with_context(lang=lang)
+                if not body:
+                    body = Markup("<p>%s</p>") % escape(localized.env._(
+                        "The event \"%s\" you were assigned to has been restored.",
+                        event_sudo.display_name))
+                if not subject:
+                    subject = localized.env._("Le Fit Crew — Event restored: %s", event_sudo.display_name)
+                try:
+                    event_sudo.with_context(mail_notify_author=True, lang=lang).message_notify(
+                        body=body,
+                        subject=subject,
+                        partner_ids=lang_partners.ids,
+                        email_layout_xmlid='mail.mail_notification_light',
+                        author_id=author.id if author else None,
+                    )
+                except Exception:  # pragma: no cover - never break the restore txn
+                    _logger.exception("Failed to notify assigned staff of restored event %s", event.id)
+
     def _cancel_notice_body(self, event_label, reason=None):
         """Plain HTML fallback body used when the mail template is missing
         or fails to render."""

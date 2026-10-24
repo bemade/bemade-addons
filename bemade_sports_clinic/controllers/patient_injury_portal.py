@@ -791,11 +791,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             note.id: self._sc_note_edit_props(note)
             for note in notes if note._can_portal_edit(user)
         }
-        injuries = patient.injury_ids
         return {
             'sc_note_props': note_props,
-            'sc_injury_choices': [(i.id, i.display_name or i.diagnosis or str(i.id))
-                                  for i in injuries],
+            # Task 1665: the same list as the note edit picker.
+            'sc_injury_choices': self._sc_note_injury_options(patient),
             'sc_note_draft_prefix': 'sports.patient.%s.new_note.' % patient.id,
             'sc_flash': {
                 'success': {

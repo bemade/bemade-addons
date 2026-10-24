@@ -1119,8 +1119,9 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_injury_rows': injury_rows,
             'sc_is_tp_view': tp_view,
             'team_context_id': event.team_ids.id if len(event.team_ids) == 1 else False,
-            'sc_note_injury_choices': [
-                (inj.id, inj.diagnosis or inj.display_name) for inj in values['active_injuries']],
+            # Task 1665: the same list as the note edit picker.
+            'sc_note_injury_choices': (
+                self._sc_note_injury_options(selected) if selected else []),
             'sc_note_draft_prefix': (
                 'sports.patient.%s.new_note.' % selected.id if selected else ''),
             # The resolve sheet (#1418) is always rendered in the shell: a

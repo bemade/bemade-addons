@@ -472,6 +472,8 @@
                     </a>
                     <button t-if="sc_can_cancel" type="button" class="o_sc_btn o_sc_btn_danger o_sc_btn_sm"
                             data-sc-sheet-open="sc_event_cancel_sheet" data-sc-action="event.cancel">Cancel Event</button>
+                    <button t-if="sc_can_restore" type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm"
+                            data-sc-sheet-open="sc_event_restore_sheet" data-sc-action="event.restore">Restore event</button>
                 </div>
             </section>
             <t t-if="sc_event_editable" t-call="bemade_sports_clinic.sc_venue_sheet">
@@ -505,6 +507,11 @@
                         <t t-if="can_add_timesheet">
                             <t t-set="add_label">Add My Timesheet</t>
                             <t t-set="add_sheet" t-value="'sc_ts_add_sheet'"/>
+                            <!-- Task 1665: with an own editable timesheet
+                                 ([data-sc-ts-existing-id] in the add sheet),
+                                 the button opens THAT one in edit
+                                 (sc_app_ui.js); the sheet is then « Add
+                                 another timesheet ». -->
                             <t t-set="add_key" t-value="'timesheet.add'"/>
                         </t>
                     </t>
@@ -531,6 +538,14 @@
                 <t t-set="sheet_id" t-value="'sc_ts_add_sheet'"/>
                 <t t-set="title">Add My Timesheet</t>
                 <t t-set="lazy_url" t-value="False"/>
+                <!-- Task 1665: already a timesheet of mine here — say so; this
+                     sheet is then « Add another timesheet » (split shifts). -->
+                <div t-if="sc_my_open_timesheet_id" class="o_sc_ts_existing" data-sc-ts-existing="1"
+                     t-att-data-sc-ts-existing-id="sc_my_open_timesheet_id">
+                    <p class="o_sc_meta">You already have a timesheet for this event.</p>
+                    <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-action="timesheet.edit.existing"
+                            t-att-data-sc-ts-edit="sc_my_open_timesheet_id">Edit my timesheet</button>
+                </div>
                 <form t-attf-action="/my/event/#{event.id}/timesheet/add" method="post" class="o_sc_form" data-sc-form="timesheet.add">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="return_url" t-att-value="return_url or ''"/>
@@ -544,12 +559,24 @@
                     </t>
                     <div class="o_sc_form_actions">
                         <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
-                        <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="timesheet.add.submit">Add Timesheet</button>
+                        <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="timesheet.add.submit">
+                            <t t-if="sc_my_open_timesheet_id">Add another timesheet</t><t t-else="">Add Timesheet</t>
+                        </button>
                     </div>
                 </form>
             </t>
             </div>
 
+            <!-- Task 1665: « Rétablir l'événement » (a cancelled event). -->
+            <t t-if="sc_can_restore" t-call="bemade_sports_clinic.sc_confirm_sheet">
+                <t t-set="sheet_id" t-value="'sc_event_restore_sheet'"/>
+                <t t-set="title">Restore event</t>
+                <t t-set="message">Restore this event? The assigned staff will be notified by email.</t>
+                <t t-set="action" t-value="'/my/event/%s/restore' % event.id"/>
+                <t t-set="hidden" t-value="{'return_url': return_url or ''}"/>
+                <t t-set="confirm_label">Yes, restore</t>
+                <t t-set="danger" t-value="False"/>
+            </t>
             <t t-if="sc_can_cancel" t-call="bemade_sports_clinic.sc_sheet">
                 <t t-set="sheet_id" t-value="'sc_event_cancel_sheet'"/>
                 <t t-set="title">Cancel Event</t>

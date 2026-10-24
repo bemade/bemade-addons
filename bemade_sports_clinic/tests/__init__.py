@@ -258,3 +258,4 @@ from . import test_le_fit_crew_emails_1666
 from . import test_messages_annuler_1663
 from . import test_staff_admin_only_1659
 from . import test_todo_routing_1664
+from . import test_missing_features_1665

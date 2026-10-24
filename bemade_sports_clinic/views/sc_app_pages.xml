@@ -247,6 +247,22 @@
                 </form>
             </section>
 
+            <!-- Task 1665: the morning summary opt-out, for every app role
+                 (the user's own preference; default on). -->
+            <section class="o_sc_section" id="sc_morning_summary" data-sc-section="settings.morning_summary">
+                <t t-call="bemade_sports_clinic.sc_section_header">
+                    <t t-set="title">Receive the daily summary by email</t>
+                </t>
+                <form method="post" action="/my/app/pref" class="o_sc_segmented o_sc_segmented_full">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="redirect" value="/my/app/settings"/>
+                    <button type="submit" name="digest_daily_enabled" value="1"
+                            t-att-aria-pressed="'true' if request.env.user.digest_daily_enabled else 'false'">On</button>
+                    <button type="submit" name="digest_daily_enabled" value="0"
+                            t-att-aria-pressed="'false' if request.env.user.digest_daily_enabled else 'true'">Off</button>
+                </form>
+            </section>
+
             <section class="o_sc_section" id="sc_account">
                 <t t-call="bemade_sports_clinic.sc_section_header">
                     <t t-set="title">Account</t>
