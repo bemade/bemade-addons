@@ -526,8 +526,12 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Filter options
         teams = self._get_accessible_teams()
         organizations = self._get_organizations()
-        match_status_selection = dict(Patients._fields['match_status'].selection)
-        practice_status_selection = dict(Patients._fields['practice_status'].selection)
+        # Task 1661: the TRANSLATED selection labels (« Oui / Non / Oui, sans
+        # contact » in fr_CA), not the raw English source labels.
+        match_status_selection = dict(
+            Patients._fields['match_status']._description_selection(Patients.env))
+        practice_status_selection = dict(
+            Patients._fields['practice_status']._description_selection(Patients.env))
 
         # Task 1385: ONE batched presence query for the homogenized cards on this
         # page — which players have recent changes (the collapsed "changements
@@ -901,6 +905,19 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             sole_team_id = next(iter(player_team_ids)) if player_team_ids else None
             if sole_team_id and sole_team_id in staff_team_ids:
                 removal_team_id = sole_team_id
+        # Task 1664: no team context and the player is on several teams — the
+        # viewer's teams among them; one → that team, several → the request
+        # sheet asks « De quelle équipe ? » (the first one stands in for the
+        # direct-remove check below, which never applies to a coach).
+        removal_team_options = []
+        if not valid_team_context:
+            shared = http.request.env['sports.team'].sudo().browse(
+                sorted(staff_team_ids & player_team_ids)).sorted('name')
+            removal_team_options = [(t.id, t.name) for t in shared]
+            if not removal_team_id and removal_team_options:
+                removal_team_id = removal_team_options[0][0]
+        if len(removal_team_options) < 2:
+            removal_team_options = []
 
         # Show the direct-remove button ONLY when the viewer may actually remove
         # from this team (task 1260 — the single permission predicate), so it
@@ -985,6 +1002,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'can_request_removal': can_request_removal,
                 'can_direct_remove': can_direct_remove,
                 'removal_team_id': removal_team_id,
+                'removal_team_options': removal_team_options,
                 'team_context_id': team_context_id,
                 'clinic_event': clinic_event,
                 'ctx_qs': ctx_qs,
@@ -1185,8 +1203,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # player rows' team links).
             'sc_hero_team_links': list(self._sc_team_links(all_teams).values()),
             'sc_document_rows': document_rows,
-            'sc_injury_choices': [(i.id, i.display_name or i.diagnosis or str(i.id))
-                                  for i in injuries],
+            # Task 1665: the same list as the note edit picker.
+            'sc_injury_choices': self._sc_note_injury_options(player),
             'sc_note_draft_prefix': 'sports.patient.%s.new_note.' % player.id,
             'sc_default_activity_type_id': (
                 values['default_activity_type'].id if values['default_activity_type'] else False),
@@ -1207,7 +1225,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'activity_updated': env._("Activity updated."),
             'activity_reassigned': env._("Activity reassigned."),
             'activity_done': env._("Activity marked as done."),
-            'activity_cancelled': env._("Activity cancelled."),
+            'activity_cancelled': env._("Activity deleted."),
             'injury_deleted': env._("Injury deleted."),
             'injury_undone': env._("Injury creation undone."),
             'player_updated': env._("Player updated."),
@@ -1225,6 +1243,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'injury_visibility': env._("Please choose whether coaches can see this injury."),
             'injury_diagnosis': env._("Please enter a diagnosis."),
             'undo_expired': env._("This injury can no longer be undone; delete it from its card."),
+            # Task 1663: the player undo-create has its own message.
+            'player_undo_expired': env._(
+                "This player can no longer be undone; remove or archive them from their page."),
         }.get(kw.get('error'))
         # Task 1616: the injury cards' messages (several documents, a file
         # list over the limit, an old injury-page save).

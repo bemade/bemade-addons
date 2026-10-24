@@ -252,3 +252,13 @@ from . import test_review_fixes_1022
 from . import test_patient_owner_guard
 from . import test_adversarial_review_1022
 from . import test_identity_oracle_1023
+from . import test_fr_ca_gaps_1661
+from . import test_quick_btn_height_tours_1662
+from . import test_le_fit_crew_emails_1666
+from . import test_messages_annuler_1663
+from . import test_staff_admin_only_1659
+from . import test_todo_routing_1664
+from . import test_missing_features_1665
+from . import test_in_app_help_1660
+from . import test_form_guard_1658
+from . import test_review_fixes_1024_assign

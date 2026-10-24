@@ -205,7 +205,7 @@ class TestUserMorningDigest(TransactionCase):
 
     def _digest_messages(self):
         return self.env["mail.message"].search([
-            ("subject", "=like", "FitCrew — daily briefing%"),
+            ("subject", "=like", "Le Fit Crew — daily briefing%"),
         ])
 
     def _notified(self, partner):

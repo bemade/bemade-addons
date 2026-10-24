@@ -66,7 +66,12 @@ _TRUTHY = ('1', 'true', 'yes', 'on')
 # Task 1579: no navigation setting any more — the screen width decides.
 PREF_FIELDS = {
     'sc_theme': ('dark', 'light'),
+    # Task 1665: « Recevoir le sommaire quotidien par courriel » (the same
+    # per-user preference as the backend « Daily Morning Briefing »).
+    'digest_daily_enabled': ('1', '0'),
 }
+# Task 1665: the boolean preferences, posted as '1' / '0'.
+PREF_BOOLEANS = ('digest_daily_enabled',)
 # Task 1588: « Plus › Langue » — the user's profile language (``res.users.lang``),
 # allowed values = the request's frontend languages (checked at post time).
 PREF_LANG = 'lang'
@@ -462,14 +467,25 @@ def _event_write(ctrl, event, field, value):
         # Only when it changed (the save route's rule: an unchanged m2m still
         # runs the team record rules).
         if set(ids) != set(current):
+            # Review fixes 2026-10-24: new teams on an event with assignees
+            # assign them there — the assignment rule applies.
+            staff = event.sudo().assigned_staff_ids.ids
+            event.sudo()._sc_check_assignment(request.env.user, staff, staff, current, ids)
             # Review fixes 2026-10-18 b (#1608): any team (checked above), so
             # sudo — the team's partner / organization are read by the
             # event's computes; the one-organization constraint still runs.
             event.sudo().write({'team_ids': [Command.set(ids)]})
     elif field == 'assigned_staff_ids':
+        # Review fixes 2026-10-24: checked BEFORE the sudo write (treatment
+        # professionals only; another team's event: clinic admin only).
+        ids = _csv_ids(value)
+        event_sudo = event.sudo()
+        event_sudo._sc_check_assignment(
+            request.env.user, event_sudo.assigned_staff_ids.ids, ids,
+            event_sudo.team_ids.ids, event_sudo.team_ids.ids)
         # sudo: portal users cannot read other users (the save route's rule;
         # access enforced by the check).
-        event.sudo().write({'assigned_staff_ids': [Command.set(_csv_ids(value))]})
+        event_sudo.write({'assigned_staff_ids': [Command.set(ids)]})
     return {}
 
 
@@ -1266,6 +1282,15 @@ class AppShellMixin:
         return items
 
     @staticmethod
+    def _sc_guard_probe():
+        """Task 1658: this request is a guarded form's fetch (sc_form_guard.js
+        sends X-Sc-Guard on the POST, kept across its redirect)."""
+        try:
+            return request.httprequest.headers.get('X-Sc-Guard') == '1'
+        except RuntimeError:  # no request
+            return False
+
+    @staticmethod
     def _sc_pop_notification():
         """Task 1583: pop ``request.session['notification']`` (the
         ``{type, title, message}`` dict the POST routes store) into the
@@ -1274,7 +1299,13 @@ class AppShellMixin:
         request (task 1611) leaves it for the next real page."""
         if AppShellMixin._sc_fragment_keys() is not None:
             return False
-        notif = request.session.pop('notification', None)
+        # Task 1658: a guarded form's fetch (X-Sc-Guard) reads the page it
+        # landed on to find a refusal — peek, so the real navigation that
+        # follows a success still shows the toast.
+        if AppShellMixin._sc_guard_probe():
+            notif = request.session.get('notification')
+        else:
+            notif = request.session.pop('notification', None)
         if not isinstance(notif, dict) or not (notif.get('message') or notif.get('title')):
             return False
         return {
@@ -1295,7 +1326,7 @@ class AppShellMixin:
     def _sc_pop_proposal():
         """Task 1603: the pending proposal as JSON (popped: shown once), or
         False. A fragment request (task 1611) leaves it for the next page."""
-        if AppShellMixin._sc_fragment_keys() is not None:
+        if AppShellMixin._sc_fragment_keys() is not None or AppShellMixin._sc_guard_probe():
             return False
         proposal = request.session.pop(SC_PROPOSAL_SESSION_KEY, None)
         return json.dumps(proposal) if isinstance(proposal, dict) else False
@@ -1403,6 +1434,10 @@ class AppShellMixin:
             'sc_parent_url': nav['parent_url'],
             'sc_crumbs': nav['crumbs'],
             'sc_context': nav['context'],
+            # Task 1660: the page's help (the app bar « ? », « Aide »).
+            'sc_help': request.env['sc.help.article']._sc_help_for(
+                (page or '').rpartition('.')[2],
+                tab=request.params.get('tab') or shell.get('sc_player_active_tab')),
         })
         return shell
 
@@ -1542,16 +1577,31 @@ class AppShellMixin:
                 props[key] = str(value) if key in ('hint', 'placeholder', 'undoMessage', 'historyLabel') else value
         return json.dumps(props, default=str)
 
+    @staticmethod
+    def _sc_note_injury_options(patient):
+        """Task 1665: the ONE injury list of the treatment-note forms (add
+        AND edit, player page and clinic dossier): every injury of the player,
+        the unresolved ones first (newest first), then the resolved ones
+        suffixed « (résolue) ». ``[(id, label)]``; sudo: labels only, of the
+        player's own injuries (the forms are gated by their routes)."""
+        env = request.env
+        injuries = patient.sudo().injury_ids.sorted(
+            lambda i: (i.stage == 'resolved', -(i.id or 0)))
+        options = []
+        for injury in injuries:
+            label = injury.diagnosis or injury.display_name
+            if injury.stage == 'resolved':
+                label = env._("%s (resolved)", label)
+            options.append((injury.id, label))
+        return options
+
     def _sc_note_edit_props(self, note):
         """Task 1587: the pencil edit fields of a treatment-note card — the
-        text, the date and the linked injury (« General note », the player's
-        open injuries and the note's current one, even resolved)."""
+        text, the date and the linked injury. Task 1665: the same injury list
+        as the add form (all the player's injuries, resolved ones last)."""
         env = request.env
-        current = note.sudo().injury_id
-        injuries = note.sudo().patient_id.injury_ids.filtered(
-            lambda i: i.stage != 'resolved' or i == current)
-        options = [('', env._("General note"))] + [
-            (injury.id, injury.diagnosis or injury.display_name) for injury in injuries]
+        options = [('', env._("General note"))] + self._sc_note_injury_options(
+            note.sudo().patient_id)
         return [
             self._sc_field_props(note, 'note', env._("Note"), 'textarea'),
             self._sc_field_props(note, 'date', env._("Date"), 'date'),
@@ -2059,7 +2109,11 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                        else PREF_FIELDS[name])
             if not value or value not in allowed:
                 return request.make_json_response({'error': 'bad_request'}, status=400)
-        user.write(dict(post))
+        vals = dict(post)
+        for name in PREF_BOOLEANS:
+            if name in vals:
+                vals[name] = vals[name] == '1'
+        user.write(vals)
         lang = post.get(PREF_LANG)
         if lang:
             # Task 1588: the session context too (the backend and the

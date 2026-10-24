@@ -1434,12 +1434,29 @@ $sc-p2-laptop: 992px;
     }
 
     // Task 1604: the quick « Vérifier » / « Résoudre » of an injury — a
-    // compact button of its own in the card row (full tap height) and on
-    // the injury page.
+    // compact button of its own in the card row. Task 1662: the same
+    // metrics as the status pill beside it (.o_sc_pill_select: 32 px, xs
+    // text, pill radius), so the row is one pill high; 32 px stays a
+    // comfortable tap target. Colours unchanged (primary / ghost).
     .o_sc_quick_btn {
-        min-height: var(--sc-tap);
-        padding: 0 12px;
-        font-size: var(--sc-text-sm);
+        min-height: 32px;
+        height: 32px;
+        padding: 2px 10px;
+        border-width: 1px;
+        border-radius: var(--sc-radius-pill);
+        font-size: var(--sc-text-xs);
+        line-height: 1.2;
+    }
+
+    // Task 1662: the injury card's summary trailing group (quick button,
+    // activity clock, status pill, chevron) wraps onto a second line on a
+    // narrow phone instead of overflowing; the row gap keeps wrapped lines
+    // apart, so nothing overlaps.
+    .o_sc_injury_item > summary > .o_sc_row_trailing {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        row-gap: var(--sc-space-1);
+        min-width: 0;
     }
 
 }

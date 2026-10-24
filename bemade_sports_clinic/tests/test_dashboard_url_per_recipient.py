@@ -249,7 +249,7 @@ class TestDashboardUrlPerRecipient(TransactionCase):
             now=fields.Datetime.now() + timedelta(hours=1)
         )
         msgs = self.env["mail.message"].search([
-            ("subject", "=like", "FitCrew — urgent%"),
+            ("subject", "=like", "Le Fit Crew — urgent%"),
         ])
         self.assertTrue(msgs)
 

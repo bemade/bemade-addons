@@ -14,8 +14,11 @@
                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                 <span>Create a player</span>
             </summary>
+            <!-- Task 1658: the shared form guard (sc_form_guard.js) shows the
+                 greyed « Create » and its reason; sc_player_add.js keeps the
+                 check-as-you-type and the JSON create. -->
             <form action="/my/app/player/create" method="post" class="o_sc_form" data-sc-form="player.add"
-                  data-sc-player-add="1">
+                  data-sc-player-add="1" data-sc-guard="1">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="return_url" t-att-value="panel['return_url']"/>
                 <input type="hidden" name="context_team_id" t-att-value="panel['team_id']"/>
@@ -103,16 +106,16 @@
                 <!-- A refusal of the server (a duplicate created meanwhile, an
                      invalid mobile…) sits next to the button; the panel and
                      the typed values stay. -->
-                <p class="o_sc_field_message o_sc_field_error" role="alert" data-sc-player-add-error="1"
+                <p class="o_sc_field_message o_sc_field_error" role="alert" data-sc-player-add-error="1" data-sc-guard-error="1"
                    t-att-hidden="None if panel['error'] and not panel['error_field'] else 'hidden'"
                    t-out="panel['error'] if not panel['error_field'] else ''"/>
                 <div class="o_sc_form_actions">
                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="player.add"
-                            data-sc-player-add-submit="1" aria-disabled="true"
+                            data-sc-player-add-submit="1" data-sc-guard-submit="1" aria-disabled="true"
                             t-att-aria-describedby="'%s_reason' % panel['id']">Create</button>
                 </div>
                 <p class="o_sc_hint o_sc_player_add_reason" t-att-id="'%s_reason' % panel['id']"
-                   data-sc-player-add-reason="1" aria-live="polite">
+                   data-sc-player-add-reason="1" data-sc-guard-reason="1" aria-live="polite">
                     <t t-set="sc_missing" t-value="[label for key, label in (('first_name', sc_reason_first), ('last_name', sc_reason_last), ('date_of_birth', sc_reason_dob)) if not (d.get(key) or '').strip()] + ([sc_reason_team] if panel.get('team_required') and not panel['team_csv'] else [])"/>
                     <t t-if="sc_missing" t-out="'%s %s' % (str(sc_reason_missing), ', '.join(str(label) for label in sc_missing))"/>
                     <t t-else="" t-out="sc_reason_checking"/>

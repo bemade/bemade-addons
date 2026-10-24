@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Task 1660 (review 2026-10-24): a logged-in portal user's
+        /knowledge/article/<id> is Knowledge's portal web client, which loads
+        the knowledge.webclient bundle (built on web.assets_backend), not
+        web.assets_frontend. The guide-video player is appended to it here
+        rather than in the manifest: knowledge is a soft dependency, so this
+        addon's manifest assets may be processed BEFORE knowledge's own
+        (include web.assets_backend) and would land ahead of the module
+        loader. An ir.asset with a sequence >= 16 is applied after every
+        manifest. Inert while knowledge is not installed (the bundle is then
+        never rendered).
+    -->
+    <record id="asset_guide_video_knowledge_webclient" model="ir.asset">
+        <field name="name">Sports clinic: guide videos in the Knowledge portal client</field>
+        <field name="bundle">knowledge.webclient</field>
+        <field name="directive">append</field>
+        <field name="path">bemade_sports_clinic/static/src/js/sc_guide_video.js</field>
+        <field name="sequence">100</field>
+    </record>
+</odoo>

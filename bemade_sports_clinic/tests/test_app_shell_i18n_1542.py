@@ -36,7 +36,7 @@ class TestAppShellI18n1542(TestAppShellI18n1538):
         self.assertIn('lang="fr-CA"', html_tag)
         for term in ('Aperçu', 'Joueurs', 'Activités', 'Ajouter un joueur',
                      'Changements récents', 'Blessés', 'En reprise', 'Disponibles',
-                     "Annonce de l'équipe", 'Publier', 'Historique',
+                     "Annonce d'équipe", 'Publier', 'Historique',
                      'Événements à venir', 'Par statut', 'Par numéro',
                      # Task 1581: the announcement history sheet is lazy.
                      'Historique des annonces', 'Chargement…'):
@@ -50,7 +50,7 @@ class TestAppShellI18n1542(TestAppShellI18n1538):
         self._switch(True)
         self._login_tp()
         text = self._fr('/my/app/install').replace('&#39;', "'")
-        for term in ("Installer l'application", 'iPhone et iPad (Safari)',
+        for term in ("Installer l'application", 'iPhone et iPad (Safari ou Chrome)',
                      'Touchez le bouton Partager', "L'application est installée"):
             self.assertIn(term, text, term)
         text = self._fr('/my/app/more').replace('&#39;', "'")

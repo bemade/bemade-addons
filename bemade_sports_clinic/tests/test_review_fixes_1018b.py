@@ -358,7 +358,12 @@ class TestAllTeamsForEveryone1018b(AllTeams1608Common):
     def test_tp_creates_event_for_a_team_they_do_not_cover(self):
         self._login_tp()
         self.assertNotIn(self.team_c, self.env['sports.team'].with_user(self.tp).search([]))
+        # Review fixes 2026-10-24 (owner policy): on a team they do not
+        # staff, only a clinic admin assigns staff — with an assignee (even
+        # themselves) the create is refused; without, it goes through.
         resp = self._create(self.team_c)
+        self.assertFalse(self.env['sports.event'].search([('name', '=', 'SC 1018b Event')]))
+        resp = self._create(self.team_c, assigned_staff_ids='')
         self.assertEqual(resp.status_code, 303, resp.text[:300])
         event = self.env['sports.event'].search([('name', '=', 'SC 1018b Event')])
         self.assertEqual(len(event), 1, resp.headers.get('Location'))
@@ -379,10 +384,20 @@ class TestAllTeamsForEveryone1018b(AllTeams1608Common):
         self._login_tp()
         event = self.event  # PC Team A
         event.invalidate_recordset()
-        resp = self.url_open('/my/app/save/sports.event/%s' % event.id, data={
-            'field': 'team_ids', 'value': str(self.team_free.id), 'csrf_token': self._csrf(),
-            'write_date': fields.Datetime.to_string(event.sudo().write_date),
-        }, allow_redirects=False)
+
+        def _save():
+            event.invalidate_recordset()
+            return self.url_open('/my/app/save/sports.event/%s' % event.id, data={
+                'field': 'team_ids', 'value': str(self.team_free.id), 'csrf_token': self._csrf(),
+                'write_date': fields.Datetime.to_string(event.sudo().write_date),
+            }, allow_redirects=False)
+        # Review fixes 2026-10-24 (owner policy): moving an event WITH
+        # assignees onto a team they do not staff assigns staff there —
+        # clinic admin only. Without assignees the teams stay free.
+        resp = _save()
+        self.assertEqual(resp.status_code, 400, resp.text[:300])
+        event.sudo().write({'assigned_staff_ids': [Command.clear()]})
+        resp = _save()
         self.assertEqual(resp.status_code, 200, resp.text[:300])
         self.assertTrue(resp.json()['ok'], resp.text)
         event.invalidate_recordset()
@@ -408,7 +423,7 @@ class TestAllTeamsForEveryone1018b(AllTeams1608Common):
     @mute_logger('odoo.http')
     def test_one_organization_rule_still_applies(self):
         self._login_tp()
-        self._create(self.team_a | self.team_c, name='SC 1018b Mixed')
+        self._create(self.team_a | self.team_c, name='SC 1018b Mixed', assigned_staff_ids='')
         self.assertFalse(self.env['sports.event'].search([('name', '=', 'SC 1018b Mixed')]))
         text, _tree = self._get('/my/event/create')
         self.assertIn('same organization', text)

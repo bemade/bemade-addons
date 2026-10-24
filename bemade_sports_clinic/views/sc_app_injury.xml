@@ -27,7 +27,7 @@
     -->
     <template id="sc_injury_new_form" name="App shell: new injury form">
         <form action="/my/patient/injury/create" method="post" class="o_sc_form" data-sc-form="injury.new"
-              t-att-data-sc-draft-prefix="sc_draft_prefix">
+              t-att-data-sc-draft-prefix="sc_draft_prefix" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"diagnosis"}]'>
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
             <input type="hidden" name="patient_id" t-att-value="patient.id"/>
             <input type="hidden" name="return_url" t-att-value="return_url"/>
@@ -81,6 +81,7 @@
                     <span t-else="">Submit Report</span>
                 </button>
             </div>
+            <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_injury_new'"/></t>
         </form>
     </template>
 
@@ -98,6 +99,7 @@
             </t>
             <t t-set="sc_active_nav" t-value="'players'"/>
             <t t-if="error" t-call="bemade_sports_clinic.sc_banner">
+                <t t-set="flash_error" t-value="True"/>
                 <t t-set="tone" t-value="'warn'"/>
                 <t t-out="error"/>
             </t>

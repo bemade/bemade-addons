@@ -160,9 +160,11 @@ class TestAppShellNote1587(_Note1587Common):
             self.assertIn(str(self.injury.id), keys)
             self.assertIn(str(self.injury2.id), keys)
             # The note's current (resolved) injury stays offered; another
-            # resolved injury and another player's are not.
+            # player's is not. Task 1665 (deliberate update): every injury of
+            # the player is offered, the resolved ones last.
             self.assertIn(str(self.resolved.id), keys)
-            self.assertNotIn(str(self.closed_other.id), keys)
+            self.assertIn(str(self.closed_other.id), keys)
+            self.assertGreater(keys.index(str(self.closed_other.id)), keys.index(str(self.injury.id)))
             self.assertNotIn(str(self.foreign.id), keys)
             self.assertIn('Synthetic old bruise', card.text_content())
 

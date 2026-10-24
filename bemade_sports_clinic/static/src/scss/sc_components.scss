@@ -1500,6 +1500,24 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         }
     }
 
+    // Task 1658: the same rule app-wide — every guarded form's primary
+    // action (sc_form_guard.js).
+    form[data-sc-guard] {
+        [data-sc-guard-submit][aria-disabled="true"],
+        .o_sc_form_actions .o_sc_btn[type="submit"][aria-disabled="true"] {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .o_sc_guard_reason {
+            margin-top: var(--sc-space-2);
+        }
+
+        .o_sc_reason_flash {
+            animation: o_sc_reason_flash 0.6s ease-out;
+        }
+    }
+
     @keyframes o_sc_reason_flash {
         0% {
             color: var(--sc-accent);

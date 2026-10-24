@@ -32,6 +32,7 @@
             <t t-elif="icon == 'back'"><path d="M15 18l-6-6 6-6"/></t>
             <t t-elif="icon == 'chevron'"><path d="M9 18l6-6-6-6"/></t>
             <t t-elif="icon == 'search'"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></t>
+            <t t-elif="icon == 'help'"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></t>
             <t t-elif="icon == 'moon'"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></t>
             <t t-elif="icon == 'sun'"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></t>
             <t t-elif="icon == 'up'"><path d="M18 15l-6-6-6 6"/></t>
@@ -400,8 +401,21 @@
     </template>
 
     <!-- Banner. Variables: title, tone (info|warn). Body (0) = text. -->
+    <!-- Task 1658 — the form guard's slots (sc_form_guard.js): the
+         server-error slot and the reason line under the primary action
+         (aria-describedby). Call it right after the form's actions.
+         Variables: guard_id (unique on the page). -->
+    <template id="sc_form_guard_slots" name="App shell: form guard slots">
+        <p class="o_sc_field_message o_sc_field_error" role="alert" data-sc-guard-error="1" hidden="hidden"/>
+        <p class="o_sc_hint o_sc_guard_reason" t-att-id="'%s_reason' % guard_id" data-sc-guard-reason="1"
+           aria-live="polite" hidden="hidden"/>
+    </template>
+
     <template id="sc_banner" name="App shell: banner">
-        <div t-attf-class="o_sc_banner o_sc_banner_#{tone or 'info'}" role="status">
+        <!-- Task 1658: flash_error marks a refusal banner (the form guard
+             reads it from the page a guarded form's fetch landed on). -->
+        <div t-attf-class="o_sc_banner o_sc_banner_#{tone or 'info'}" role="status"
+             t-att-data-sc-flash-error="'1' if flash_error else None">
             <strong t-if="title" class="o_sc_banner_title" t-out="title"/>
             <t t-out="0"/>
         </div>
@@ -504,7 +518,7 @@
     <template id="sc_confirm_sheet" name="App shell: confirm sheet">
         <t t-call="bemade_sports_clinic.sc_sheet">
             <t t-set="lazy_url" t-value="False"/>
-            <form t-att-action="action" method="post" class="o_sc_form">
+            <form t-att-action="action" method="post" class="o_sc_form" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <t t-foreach="(hidden or {}).items()" t-as="hid">
                     <input type="hidden" t-att-name="hid[0]" t-att-value="hid[1]"/>
@@ -516,6 +530,7 @@
                     <button type="submit" t-attf-class="o_sc_btn #{'o_sc_btn_danger' if danger else 'o_sc_btn_primary'}"
                             data-sc-confirm-submit="1" t-out="confirm_label"/>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="sheet_id"/></t>
             </form>
         </t>
     </template>
@@ -852,7 +867,7 @@
                 </button>
                 <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-sheet-open="sc_activity_cancel_sheet"
                         t-att-data-sc-activity-id="activity.id" data-sc-action="activity.cancel">
-                    <span>Cancel</span>
+                    <span>Delete</span>
                 </button>
             </div>
         </div>

@@ -500,7 +500,7 @@ class TestInjuryCardI18n1616(InjuryCard1616Mixin, TestAppShellI18n1538):
         for term in ('Détails', 'Notes', 'Documents', 'Ajouter des documents',
                      'Choisissez des fichiers ou déposez-les ici',
                      'Plusieurs fichiers à la fois — 10 Mo maximum chacun',
-                     'Aucun document téléchargé'):
+                     'Aucun document téléversé'):
             self.assertIn(term, text, term)
 
     def test_upload_messages_in_french(self):

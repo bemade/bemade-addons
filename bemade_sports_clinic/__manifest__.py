@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.107.1",
+    'version': "19.0.1.112.2",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -171,6 +171,8 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "views/sports_team_views.xml",
         "views/sports_patient_injury_views.xml",
         "views/sports_clinic_menus.xml",
+        "views/sc_help_article_views.xml",
+        "data/sc_guide_video_assets.xml",
         # Task 1399: attendance report (pivot/graph/list) + the Reports menu.
         # After the menus (parent = sports_clinic_root), before the event views
         # (their smart-button action points at these views' model).
@@ -335,6 +337,9 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             "bemade_sports_clinic/static/src/js/sc_edit_anchor.js",
             # Task 1606: the user menu (rail footer / app-bar avatar).
             "bemade_sports_clinic/static/src/js/sc_user_menu.js",
+            "bemade_sports_clinic/static/src/js/sc_help.js",
+            # Task 1660: guide videos on the public Knowledge article pages.
+            "bemade_sports_clinic/static/src/js/sc_guide_video.js",
             "bemade_sports_clinic/static/src/js/sc_list_header.js",
             # Task 1650: the header search (magnifier, « / », Ctrl/⌘-K).
             "bemade_sports_clinic/static/src/js/sc_search.js",
@@ -345,6 +350,7 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             # Task 1654: add / remove critical medical items in the popups.
             "bemade_sports_clinic/static/src/js/sc_critical_items.js",
             # Task 1655: create a player inline (existence check as you type).
+            "bemade_sports_clinic/static/src/js/sc_form_guard.js",
             "bemade_sports_clinic/static/src/js/sc_player_add.js",
             # Task 1611: read fragments (in-place refresh after a save) and
             # the « back shows current data » check.

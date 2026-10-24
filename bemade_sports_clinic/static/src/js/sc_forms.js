@@ -12,10 +12,6 @@
  *   without JS it is still there; with JS it stays in the form (visually
  *   hidden) so « Enter » still submits. The filter panel stays open across
  *   the reload a change causes.
- * - the team page's « Add a player » card: ONE set of name fields — the
- *   « Create a new player » form takes the values entered in the search
- *   fields above it (its hidden inputs, [data-sc-copy-from]); its button is
- *   enabled once a first and a last name are there.
  */
 
 const DATE_TYPES = ["date", "datetime-local", "time", "month", "week"];
@@ -113,51 +109,6 @@ document.addEventListener("change", (ev) => {
     if (target instanceof HTMLSelectElement || (target instanceof HTMLInputElement
             && ["checkbox", "radio"].includes(target.type))) {
         applyFilters(form);
-    }
-});
-
-// ------------------------------------- « Add a player »: one set of fields
-function syncCreateForm(searchForm) {
-    const card = searchForm.closest("[data-sc-section]");
-    const create = card && card.querySelector('form[data-sc-form="player.create"]');
-    if (!create) {
-        return;
-    }
-    for (const hidden of create.querySelectorAll("input[data-sc-copy-from]")) {
-        const source = searchForm.querySelector(`[name="${hidden.dataset.scCopyFrom}"]`);
-        if (source) {
-            hidden.value = source.value;
-        }
-    }
-    const first = create.querySelector('input[name="first_name"]');
-    const last = create.querySelector('input[name="last_name"]');
-    const ready = Boolean(first && last && first.value.trim() && last.value.trim());
-    const button = create.querySelector('button[data-sc-action="player.create"]');
-    if (button) {
-        button.disabled = !ready;
-    }
-    const hint = create.querySelector("[data-sc-create-hint]");
-    if (hint) {
-        hint.hidden = ready;
-    }
-}
-
-document.addEventListener("input", (ev) => {
-    const searchForm = ev.target.closest && ev.target.closest('form[data-sc-form="player.search"]');
-    if (searchForm && inApp(searchForm)) {
-        syncCreateForm(searchForm);
-    }
-});
-
-document.addEventListener("submit", (ev) => {
-    const create = ev.target;
-    if (!(create instanceof HTMLFormElement) || create.dataset.scForm !== "player.create" || !inApp(create)) {
-        return;
-    }
-    const card = create.closest("[data-sc-section]");
-    const searchForm = card && card.querySelector('form[data-sc-form="player.search"]');
-    if (searchForm) {
-        syncCreateForm(searchForm);
     }
 });
 

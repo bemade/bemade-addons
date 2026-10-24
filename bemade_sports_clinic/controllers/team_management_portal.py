@@ -5,7 +5,7 @@ from odoo.exceptions import AccessError, MissingError, UserError, ValidationErro
 from .access_control_mixin import AccessControlMixin, parse_portal_date
 from .app_shell import AppShellMixin
 import logging
-from datetime import date
+from datetime import date, timedelta
 from urllib.parse import urlparse, quote
 from dateutil.relativedelta import relativedelta
 from werkzeug.exceptions import Forbidden
@@ -13,6 +13,11 @@ from werkzeug.exceptions import Forbidden
 from odoo.tools import format_date, format_datetime
 
 _logger = logging.getLogger(__name__)
+
+# Task 1663: « Annonce archivée — Annuler » (the toast lasts ~8 s, like the
+# status pills' undo; the server allows a little more for the page load).
+SC_ANNOUNCEMENT_UNDO_KEY = 'sc_announcement_undo'
+SC_ANNOUNCEMENT_UNDO_SECONDS = 30
 
 # Task 1389: the digest-history modal shows this many days of recent snapshots
 # for the quick glance; the "Voir tout" page shows the full retained archive.
@@ -84,6 +89,22 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             error_message = _("Error requesting removal: %s") % self._user_error_text(e, 'team')
             return request.redirect(f"/my/team/{team_id}?error={error_message}".replace(' ', '+'))
     
+    @http.route(['/my/player/<int:player_id>/request_removal'],
+                type='http', auth="user", website=True, methods=['POST'])
+    def portal_request_player_removal_any_team(self, player_id, **post):
+        """Task 1664: the player page's « Request Removal » when the player
+        is on several of the viewer's teams — the sheet posts the chosen
+        ``team_id``; the same checks as the per-team route (which it calls)."""
+        team_id = post.pop('team_id', '') or ''
+        if not str(team_id).isdigit():
+            request.session['notification'] = {
+                'type': 'warning', 'title': '',
+                'message': _("Please choose the team."),
+                'sticky': False,
+            }
+            return request.redirect('/my/player?player_id=%s' % int(player_id))
+        return self.portal_request_player_removal(int(team_id), player_id, **post)
+
     @http.route(['/my/team/<int:team_id>/player/<int:player_id>/remove'],
                type='http', auth="user", website=True, methods=['POST'])
     def portal_remove_player(self, team_id, player_id, **post):
@@ -444,40 +465,6 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'pending_removal': bool(player.pending_removal),
         })
 
-    def _sc_add_player_search(self, team):
-        """The inline « Add a player » search (owner review 2026-10-11): the
-        add_link page's lookup (therapists may FIND any patient by name / date
-        of birth, archived ones too — sudo, name / DOB only) on the team page's
-        ?add_first= / ?add_last= / ?add_dob=. None when no search was made."""
-        args = request.httprequest.args
-        if not any(key in args for key in ('add_first', 'add_last', 'add_dob')):
-            return None
-        first = (args.get('add_first') or '').strip()
-        last = (args.get('add_last') or '').strip()
-        dob = (args.get('add_dob') or '').strip()
-        result = {'first': first, 'last': last, 'dob': dob, 'rows': [], 'error': False}
-        if not (first or last):
-            result['error'] = _('Provide at least a first or last name to search')
-            return result
-        domain = [('first_name', 'ilike', '%%%s%%' % first if first else '%'),
-                  ('last_name', 'ilike', '%%%s%%' % last if last else '%')]
-        if dob:
-            try:
-                domain.append(('date_of_birth', '=', fields.Date.to_date(dob)))
-            except ValueError:
-                result['error'] = _('Please enter a valid Date of Birth (YYYY-MM-DD).')
-                return result
-        Patient = request.env['sports.patient'].sudo().with_context(active_test=False)
-        for patient in Patient.search(domain, order='active desc, last_name, first_name', limit=20):
-            result['rows'].append({
-                'id': patient.id,
-                'label': patient._portal_list_name(),
-                'dob': format_date(request.env, patient.date_of_birth) if patient.date_of_birth else '',
-                'active': bool(patient.active),
-                'on_team': team in patient.team_ids,
-            })
-        return result
-
     def _sc_team_values(self, team, values):
         """Shell-only render values for ``sc_app_team`` — built from the
         legacy values (same role filtering), never re-deriving them."""
@@ -530,12 +517,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'url': '/my/event/%s' % event.id,
         } for event in values['upcoming_events']]
         can_add_directly = self._is_tp_or_system()
-        add_search = self._sc_add_player_search(team) if can_add_directly else None
         org = team.sudo().parent_id.name or ''
         return {
             'sc_team_org': org,
             'sc_dashboard_rows': dashboard_rows,
-            'sc_add_search': add_search,
             # Task 1655: the inline « create a player » panel (team pre-filled).
             'sc_player_add': self._sc_player_add_panel(team, 'sc_add_player', 'team.add_player'),
             'sc_watch_rows': watch_rows,
@@ -544,6 +529,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_pending_count': sum(1 for row in roster_rows if row['pending_removal']),
             'sc_can_add_directly': can_add_directly,
             'sc_can_edit_announcement': team._user_can_edit_announcement(),
+            # Task 1663: right after an archive, its « Annuler » toast.
+            'sc_announcement_undo': (
+                self._sc_announcement_undo(team)
+                if request.httprequest.args.get('announcement_archived') else None),
             'sc_announcement_deadline': (
                 format_date(env, team.announcement_deadline)
                 if team.announcement_deadline else ''),
@@ -824,8 +813,22 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     team_id,
                     _("Only treatment professionals can dismiss the team announcement."),
                 )
+            # Task 1663: what « Annuler » puts back (this session only).
+            before = {
+                'team_id': team.id,
+                'user_id': request.env.user.id,
+                'body': team.announcement or '',
+                'deadline': fields.Date.to_string(team.announcement_deadline) or False,
+                'author_id': team.announcement_author_id.id or False,
+                'date': fields.Datetime.to_string(team.announcement_date) or False,
+            }
             team.action_dismiss_announcement()
-            return request.redirect(f"/my/team?team_id={team_id}")
+            history = request.env['sports.team.note.history'].sudo().search(
+                [('team_id', '=', team.id)], order='id desc', limit=1)
+            if before['body'] and history.action == 'dismiss':
+                before['history_id'] = history.id
+                request.session[SC_ANNOUNCEMENT_UNDO_KEY] = before
+            return request.redirect(f"/my/team?team_id={team_id}&announcement_archived=1")
         except AccessError as e:
             _logger.warning(
                 "Team announcement dismiss refused for user %s on team %s: %s",
@@ -839,6 +842,71 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             _logger.error("Error dismissing team announcement: %s", str(e), exc_info=True)
             return request.redirect(f"/my/team?team_id={team_id}")
 
+    def _sc_announcement_undo(self, team):
+        """Task 1663: the pending « Annuler » of this user's last archive of
+        THIS team's announcement (``request.session``), or None — when it is
+        another team's, another user's, past the window, or anything changed
+        the announcement since (a newer history row, a new text)."""
+        payload = request.session.get(SC_ANNOUNCEMENT_UNDO_KEY)
+        if not isinstance(payload, dict) or payload.get('team_id') != team.id:
+            return None
+        if payload.get('user_id') != request.env.user.id:
+            return None
+        History = request.env['sports.team.note.history'].sudo()
+        history = History.browse(payload.get('history_id') or 0).exists()
+        latest = History.search([('team_id', '=', team.id)], order='id desc', limit=1)
+        if not history or history != latest or history.action != 'dismiss':
+            return None
+        if history.author_id != request.env.user:
+            return None
+        window = timedelta(seconds=SC_ANNOUNCEMENT_UNDO_SECONDS)
+        if not history.note_datetime or fields.Datetime.now() - history.note_datetime > window:
+            return None
+        if (team.sudo().announcement or '').strip():
+            return None
+        return payload
+
+    @http.route(['/my/team/<int:team_id>/announcement/restore'],
+                type='http', auth="user", website=True, methods=['POST'], csrf=True)
+    def portal_team_announcement_restore(self, team_id, **post):
+        """Task 1663: « Annonce archivée — Annuler »: put back the
+        announcement this user just archived (same text, deadline, author and
+        date; the history gets « Restaurée »). Same right as the archive (a
+        therapist of the team / an admin), the same user, within the window,
+        nothing changed since. No email (none is sent for an announcement)."""
+        back = f"/my/team?team_id={team_id}"
+        try:
+            team = self._check_team_access(team_id, check_staff=True)
+            if not team._user_can_edit_announcement():
+                return self._announcement_error_redirect(
+                    team_id, _("Only treatment professionals can edit the team announcement."))
+            payload = self._sc_announcement_undo(team)
+            if not payload:
+                request.session['notification'] = {
+                    'type': 'warning', 'title': '',
+                    'message': _("This announcement can no longer be restored."),
+                    'sticky': False,
+                }
+                return request.redirect(back)
+            team.with_context(sc_announcement_restore=True).write({
+                'announcement': payload['body'],
+                'announcement_deadline': payload.get('deadline') or False,
+                'announcement_author_id': payload.get('author_id') or request.env.user.id,
+                'announcement_date': payload.get('date') or fields.Datetime.now(),
+            })
+            request.session.pop(SC_ANNOUNCEMENT_UNDO_KEY, None)
+            request.session['notification'] = {
+                'type': 'success', 'title': '',
+                'message': _("Announcement restored."),
+                'sticky': False,
+            }
+            return request.redirect(back)
+        except AccessError as e:
+            _logger.warning("Team announcement restore refused for user %s on team %s: %s",
+                            request.env.user.id, team_id, e)
+            return self._announcement_error_redirect(
+                team_id, _("You don't have permission to edit the team announcement."))
+
     # Task 1581: the announcement history action -> (chip tone, state); the
     # labels are built in _sc_announcement_history_entries (babel extracts
     # them from the _() calls there).
@@ -846,6 +914,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         'set': ('green', None),
         'edit': ('ghost', None),
         'dismiss': ('ghost', 'archived'),
+        'restore': ('green', None),
     }
 
     def _sc_announcement_history_entries(self, team):
@@ -854,6 +923,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'set': env._("Posted"),
             'edit': env._("Edited"),
             'dismiss': env._("Archived"),
+            'restore': env._("Restored"),
         }
         entries = []
         for row in team.note_history_ids:

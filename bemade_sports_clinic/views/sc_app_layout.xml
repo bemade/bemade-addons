@@ -142,6 +142,18 @@
                                       t-att-title="sc_clock_badge_label">0</span>
                             </a>
                         </t>
+                        <!-- Task 1660: « ? » — this page's user-guide article, in a
+                             new tab (sc_help.js follows the page's tab). -->
+                        <t t-if="sc_help and sc_help['url']">
+                            <t t-set="sc_help_label">Help on this page</t>
+                            <a t-att-href="sc_help['url']" target="_blank" rel="noopener"
+                               class="o_sc_icon_btn o_sc_appbar_help" data-sc-help="1"
+                               t-att-data-sc-help-key="sc_help['key']" t-att-data-sc-help-base="sc_help['base']"
+                               t-att-data-sc-help-home="sc_help['home'] or ''" t-att-data-sc-help-map="sc_help['map_json']"
+                               t-att-aria-label="sc_help_label" t-att-title="sc_help_label">
+                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'help'"/></t>
+                            </a>
+                        </t>
                         <!-- Task 1650: the magnifier opens the search sheet
                              (sc_search.js); the link stays the no-JS way. -->
                         <a t-if="sc_search_url" t-att-href="sc_search_url" class="o_sc_icon_btn o_sc_appbar_search"
@@ -198,6 +210,12 @@
                     <!-- Task 1542: status toast (sc_fetch errors, offline).
                          Task 1583: it also shows the pending session
                          notification of a POST round-trip on load. -->
+                    <!-- Task 1658: the form guard's shared texts (sc_form_guard.js). -->
+                    <t t-set="sc_guard_missing">Complete:</t>
+                    <t t-set="sc_guard_generic">This could not be saved. Please check the form and try again.</t>
+                    <t t-set="sc_guard_offline">No connection. Nothing was sent; try again when you are back online.</t>
+                    <span hidden="hidden" data-sc-guard-texts="1" t-att-data-missing="sc_guard_missing"
+                          t-att-data-generic="sc_guard_generic" t-att-data-offline="sc_guard_offline"/>
                     <div class="o_sc_toast" role="status" aria-live="polite" hidden="hidden"
                          t-att-data-sc-notify="sc_notification and (sc_notification['message'] or sc_notification['title']) or None"
                          t-att-data-sc-notify-title="sc_notification and sc_notification['message'] and sc_notification['title'] or None"
@@ -214,7 +232,7 @@
                             </button>
                         </div>
                         <div class="o_sc_sheet_body">
-                            <form class="o_sc_form" data-sc-injury-resolve-form="1">
+                            <form class="o_sc_form" data-sc-injury-resolve-form="1" data-sc-guard="1" data-sc-guard-rules='[{"type":"not_future","field":"resolution_date","key":"future"}]'>
                                 <p class="o_sc_confirm_message" data-sc-injury-resolve-name="1"/>
                                 <div class="o_sc_field">
                                     <label class="o_sc_field_label" for="sc_injury_resolve_date">Resolution Date</label>
@@ -226,6 +244,8 @@
                                     <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
                                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-injury-resolve-confirm="1">Resolve</button>
                                 </div>
+                                <span hidden="hidden" data-sc-guard-msg="future">The resolution date cannot be in the future.</span>
+                                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_injury_resolve'"/></t>
                             </form>
                         </div>
                     </dialog>
@@ -285,6 +305,12 @@
                    t-att-aria-current="'page' if page_name == 'sc_app_settings' else None">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'settings'"/></t>
                     <span>Settings</span>
+                </a>
+                <!-- Task 1660: the user guide (new tab). -->
+                <a t-if="sc_help and sc_help['home']" role="menuitem" t-att-href="sc_help['home']" target="_blank" rel="noopener"
+                   class="o_sc_user_menu_item" tabindex="-1" data-sc-help-home-link="1">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'help'"/></t>
+                    <span>Help</span>
                 </a>
                 <a role="menuitem" href="/web/session/logout?redirect=/" class="o_sc_user_menu_item" tabindex="-1">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'logout'"/></t>

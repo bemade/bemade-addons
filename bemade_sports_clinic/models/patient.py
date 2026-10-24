@@ -61,8 +61,13 @@ _MEDICAL_ALERT_GROUPS = (
 )
 
 # Summaries of the « Player Removal Request » activities (English source and
-# the fr_CA rendering the cron may have stored).
-REMOVAL_REQUEST_SUMMARIES = ('Player Removal Request', 'Demande de suppression de joueur')
+# the fr_CA renderings the cron may have stored — task 1661 renamed the French
+# « suppression » to « retrait », older activities keep the old wording).
+REMOVAL_REQUEST_SUMMARIES = (
+    'Player Removal Request',
+    'Demande de retrait de joueur',
+    'Demande de suppression de joueur',
+)
 
 external_tracking_fields = {
     "last_consultation_date",
@@ -1038,7 +1043,7 @@ class Patient(models.Model):
                 team_summaries
             )
         subject = self.with_context(lang=lang).env._(
-            "FitCrew — urgent updates / mises à jour urgentes (%s)", team_count
+            "Le Fit Crew — urgent updates / mises à jour urgentes (%s)", team_count
         )
         try:
             self.env["mail.thread"].sudo().with_context(lang=lang).message_notify(
@@ -3297,7 +3302,10 @@ class Patient(models.Model):
                 ('res_model', '=', 'sports.patient'),
                 ('res_id', '=', player.id),
                 ('activity_type_id', '=', activity_type.id),
-                ('summary', 'ilike', 'Player Removal Request')
+                '|', '|',
+                ('summary', 'ilike', REMOVAL_REQUEST_SUMMARIES[0]),
+                ('summary', 'ilike', REMOVAL_REQUEST_SUMMARIES[1]),
+                ('summary', 'ilike', REMOVAL_REQUEST_SUMMARIES[2]),
             ], limit=1)
             
             if existing_activity:

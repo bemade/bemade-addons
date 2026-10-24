@@ -325,6 +325,10 @@
                     <field name="allergy_critical_ids" widget="many2many_tags" readonly="1" optional="show"/>
                     <field name="medical_alert_critical_ids" widget="many2many_tags" readonly="1" optional="show"/>
                     <field name="medical_alert_review" widget="boolean_toggle"/>
+                    <!-- Task 1665: open the player's form (critical items and
+                         every medical field are edited there). -->
+                    <button name="action_view_patient_form" type="object" string="Open"
+                            icon="fa-external-link" class="btn-link"/>
                 </list>
             </field>
         </record>

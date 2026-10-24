@@ -280,7 +280,7 @@
             </t>
             <details class="o_sc_card o_sc_list_add_panel" id="sc_notepad_add" data-sc-section="notepad.add" open="open">
                 <summary class="o_sc_disclosure_summary"><span>Quick note</span></summary>
-            <form action="/my/notepad/add" method="post" class="o_sc_form" id="quick-add" data-sc-form="note.add">
+            <form action="/my/notepad/add" method="post" class="o_sc_form" id="quick-add" data-sc-form="note.add" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"note"}]'>
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <t t-set="sc_qn_label">Quick note</t>
                 <t t-set="sc_qn_placeholder">Type a note to self…</t>
@@ -297,6 +297,7 @@
                 <div class="o_sc_form_actions">
                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="note.add">Add</button>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_quick_note_add'"/></t>
             </form>
             </details>
 

@@ -19,6 +19,8 @@
  *   a success leaves the page (the new player's page).
  */
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+// Task 1658: the greyed button + reason line are the shared form guard's.
+import { guardFlash, guardRefresh } from "@bemade_sports_clinic/js/sc_form_guard";
 
 const DEBOUNCE_MS = 300;
 const timers = new WeakMap();
@@ -87,20 +89,10 @@ function blocker(form) {
 }
 
 function refreshSubmit(form) {
-    const submit = form.querySelector("[data-sc-player-add-submit]");
-    if (!submit) {
-        return;
-    }
-    const reason = posting.has(form) ? "" : blocker(form);
-    const blocked = Boolean(reason) || posting.has(form);
-    submit.setAttribute("aria-disabled", blocked ? "true" : "false");
-    const line = form.querySelector("[data-sc-player-add-reason]");
-    if (line && line.textContent !== reason) {
-        line.textContent = reason;
-    }
-    if (line) {
-        line.hidden = !reason;
-    }
+    // Task 1658: the panel's own reasons (check-as-you-type, twins, the
+    // emergency contact pair), shown by the shared guard.
+    const busy = posting.has(form);
+    guardRefresh(form, busy ? "" : blocker(form), busy);
 }
 
 // --------------------------------------------------------------- errors
@@ -267,12 +259,7 @@ document.addEventListener(
         if (reason) {
             // Never a dead click: the reason line says why (and is read out).
             refreshSubmit(form);
-            const line = form.querySelector("[data-sc-player-add-reason]");
-            if (line) {
-                line.classList.remove("o_sc_reason_flash");
-                void line.offsetWidth; // restart the cue
-                line.classList.add("o_sc_reason_flash");
-            }
+            guardFlash(form);
             return;
         }
         create(form);

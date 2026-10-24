@@ -126,7 +126,7 @@ class TestDigestAssignedEvents1636(TransactionCase):
 
     def _mail_body_for(self, user):
         msgs = self.env["mail.message"].search([
-            ("subject", "=like", "FitCrew — daily briefing%"),
+            ("subject", "=like", "Le Fit Crew — daily briefing%"),
             ("partner_ids", "in", user.partner_id.ids),
         ])
         return " ".join(m.body or "" for m in msgs)
