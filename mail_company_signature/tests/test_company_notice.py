@@ -42,7 +42,7 @@ class TestCompanyNotice(CompanySignatureCommon):
         super().setUp()
         self._enable()
         self._enable(self.company_b)
-        self.enforced_a = self.u_full | self.u_nomobile | self.u_noemp
+        self.enforced_a = self.u_full | self.u_nomobile
 
     def _run_cron(self):
         self.assertTrue(self.cron.active)

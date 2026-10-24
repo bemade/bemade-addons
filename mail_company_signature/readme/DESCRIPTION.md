@@ -2,8 +2,12 @@ Company-standard email signature.
 
 Per company (Settings > Emails), an administrator can enforce one signature
 template. While enforced, the signature of every internal user of that company
-is generated from the template and the user's employee record, and cannot be
-edited. Portal users and companies without the policy are unaffected.
+who has an active employee record in it is generated from the template and that
+employee record, and cannot be edited. Users without an employee record, portal
+users and companies without the policy are unaffected. Creating or linking an
+employee for a user subjects them to the policy (their personal signature is
+backed up); unlinking, archiving or deleting it releases them like turning the
+policy off.
 
 Template placeholders (`{{...}}`): `name`, `job_title`, `job_position`,
 `work_phone`, `mobile_phone`, `work_email`, `company_name`, `company_phone`,

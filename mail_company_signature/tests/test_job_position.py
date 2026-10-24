@@ -68,7 +68,9 @@ class TestJobPosition(CompanySignatureCommon):
         self._enable()
         # u_nomobile has a job title and no job position
         self.assertIn("<p>POS:Technicien</p>", self.u_nomobile.signature)
-        # u_noemp has neither: the line is removed, label included
+        # an employee with neither: the line is removed, label included
+        self._make_employee(self.u_noemp, self.company_a)
+        self.assertIn("Sig sig_noemp", self.u_noemp.signature)
         self.assertNotIn("POS:", self.u_noemp.signature)
 
     def test_job_title_placeholder_unchanged(self):

@@ -1,5 +1,7 @@
 1. Settings > Emails > Company-standard Signature: tick the box and edit the
-   template. Settings are per company.
+   template (the "?" next to "Template" lists the placeholders and rules).
+   Settings are per company. Only users with an employee file in the company
+   get the generated signature.
 2. Turning the policy off stops generation. Each user keeps the last generated
    signature as an editable personal signature; the original personal
    signature is stored in the user form ("Personal signature backup") and can

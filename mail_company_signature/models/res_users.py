@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
@@ -36,29 +38,96 @@ class ResUsers(models.Model):
         "template rather than written by a person.",
     )
 
-    @api.depends("company_id", "company_signature_manual")
+    @api.depends(
+        "company_id",
+        "company_signature_manual",
+        "employee_ids",
+        "employee_ids.active",
+        "employee_ids.company_id",
+    )
     def _compute_company_signature_enforced(self):
+        enforced = self._company_signature_enforced_users()
         for user in self:
-            sudo_user = user.sudo()
-            user.company_signature_enforced = bool(
-                sudo_user.company_id.company_signature_enforced
-                and not sudo_user.company_signature_manual
-            )
+            user.company_signature_enforced = user in enforced
 
     # ------------------------------------------------------------------
     # Generation
     # ------------------------------------------------------------------
     def _is_company_signature_enforced(self):
         self.ensure_one()
-        user = self.sudo()
-        return (
-            not user.share
-            and not user.company_signature_manual
-            and bool(user.company_id.company_signature_enforced)
-        )
+        return bool(self._company_signature_enforced_users())
 
     def _company_signature_enforced_users(self):
-        return self.filtered(lambda u: u._is_company_signature_enforced())
+        """Users subject to the policy: internal, not opted out, of an
+        enforcing company, and with an active employee in that company."""
+        candidates = self.filtered(
+            lambda u: not u.sudo().share
+            and not u.sudo().company_signature_manual
+            and u.sudo().company_id.company_signature_enforced
+        )
+        if not candidates:
+            return candidates
+        employees = candidates._company_signature_employees()
+        return candidates.filtered(lambda u: u.id in employees)
+
+    def _company_signature_employees(self):
+        """Return {user id: the user's active employee in their own company}.
+
+        Does not use ``employee_ids`` (its domain depends on ``env.company``).
+        """
+        users = self.sudo()
+        origin_ids = [uid for uid in users._origin.ids if uid]
+        if not origin_ids:
+            return {}
+        employees = (
+            self.env["hr.employee"]
+            .sudo()
+            .with_context(active_test=True)
+            .search(
+                [
+                    ("user_id", "in", origin_ids),
+                    ("company_id", "in", users.company_id.ids),
+                ],
+                order="id",
+            )
+        )
+        emp_by_key = {}
+        for emp in employees:
+            emp_by_key.setdefault((emp.user_id.id, emp.company_id.id), emp)
+        result = {}
+        for user in users:
+            emp = emp_by_key.get((user._origin.id, user.company_id.id))
+            if emp:
+                result[user.id] = emp
+        return result
+
+    @contextmanager
+    def _company_signature_transition(self):
+        """Apply the enforced/released transitions caused by the wrapped code.
+
+        Keyed on the real before/after enforced state of the users: newly
+        enforced users get their personal signature backed up (unless it was
+        itself generated) and regenerated; released users keep the last
+        generated signature, flagged as generated.
+        """
+        users = self.sudo().with_context(active_test=False)
+        enforced_before = users._company_signature_enforced_users()
+        prior = {
+            user.id: user.signature
+            for user in (users - enforced_before)
+            if not user.signature_is_generated
+        }
+        yield
+        enforced_after = users._company_signature_enforced_users()
+        newly = enforced_after - enforced_before
+        for user in newly:
+            if user.id in prior:
+                user.personal_signature_backup = prior[user.id]
+        if newly:
+            self.env.add_to_compute(self._fields["signature"], newly)
+        released = enforced_before - enforced_after
+        if released:
+            released.signature_is_generated = True
 
     @api.depends(
         "name",
@@ -99,23 +168,13 @@ class ResUsers(models.Model):
     def _company_signature_values(self):
         """Placeholder values for every user of the recordset, in one batch.
 
-        Does not use ``employee_ids`` (its domain depends on ``env.company``);
-        only an employee of the user's own company counts.
+        Only an employee of the user's own company counts.
         """
-        employees = self.env["hr.employee"].sudo().search(
-            [
-                ("user_id", "in", self.ids),
-                ("company_id", "in", self.company_id.ids),
-            ],
-            order="id",
-        )
-        emp_by_key = {}
-        for emp in employees:
-            emp_by_key.setdefault((emp.user_id.id, emp.company_id.id), emp)
+        emp_by_user = self._company_signature_employees()
         result = {}
         notices = {}
         for user in self:
-            emp = emp_by_key.get((user.id, user.company_id.id))
+            emp = emp_by_user.get(user.id)
             company = user.company_id
             if company.id not in notices:
                 notices[company.id] = company._company_signature_notice_value()
@@ -179,22 +238,10 @@ class ResUsers(models.Model):
         # the keys of vals): ``share`` is computed from the groups, and
         # archived users must be covered too.
         users = self.with_context(active_test=False)
-        enforced_before = users._company_signature_enforced_users()
-        prior = {
-            user.id: user.signature
-            for user in (users - enforced_before)
-            if not user.sudo().signature_is_generated
-        }
-        result = super().write(vals)
-        enforced_after = users._company_signature_enforced_users()
-        newly = enforced_after - enforced_before
-        for user in newly:
-            if user.id in prior:
-                user.sudo().personal_signature_backup = prior[user.id]
-        released = enforced_before - enforced_after
-        if released:
-            released.sudo().signature_is_generated = True
+        with users._company_signature_transition():
+            result = super().write(vals)
         if "signature" in vals:
+            enforced_after = users._company_signature_enforced_users()
             # A person wrote it: it is personal again (when not enforced).
             (users - enforced_after).sudo().signature_is_generated = False
             # An enforced user cannot persist a divergent signature.

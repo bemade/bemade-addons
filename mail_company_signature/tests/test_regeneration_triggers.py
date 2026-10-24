@@ -94,7 +94,7 @@ class TestRegenerationTriggers(CompanySignatureCommon):
         self.company_a.sudo().write(
             {"name": "Renamed Test Inc.", "website": "https://renamed.example.com"}
         )
-        for user in self.u_full | self.u_nomobile | self.u_noemp:
+        for user in self.u_full | self.u_nomobile:
             self.assertIn("Renamed Test Inc.", user.signature)
             self.assertIn("https://renamed.example.com", user.signature)
         self.assertIn("Perso", self.u_b.signature)

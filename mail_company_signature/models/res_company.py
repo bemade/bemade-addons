@@ -40,20 +40,34 @@ class ResCompany(models.Model):
         default=False,
         groups="base.group_system",
         help="When enabled, the email signature of every internal user of "
-        "this company is generated from the template and cannot be edited.",
+        "this company who has an employee file in it is generated from the "
+        "template and cannot be edited.",
     )
     company_signature_template = fields.Html(
         string="Company signature template",
         default=_default_company_signature_template,
         sanitize=True,
         groups="base.group_system",
+        help="Placeholders: {{name}}, {{job_title}}, {{job_position}}, "
+        "{{work_phone}}, {{mobile_phone}}, {{work_email}}, {{company_name}}, "
+        "{{company_phone}}, {{company_email}}, {{company_website}}, "
+        "{{company_notice}}. {{job_position}} shows the job position in French "
+        "and English (\"FR / EN\"), or the job title without a position. "
+        "Unknown placeholders are left as typed.\n"
+        "Write one optional line per paragraph: a paragraph whose placeholders "
+        "are all empty (for example a user without a mobile) is removed "
+        "entirely, label included.\n"
+        "Only users with an employee file in this company get it. Turning the "
+        "policy off keeps each user's last generated signature; the original "
+        "is kept in the user form and can be restored there.",
     )
     company_signature_notice = fields.Html(
         string="Company notice",
         sanitize=True,
         groups="base.group_system",
-        help="Temporary notice (closure, holiday hours...) shown where the "
-        "template has {{company_notice}}.",
+        help="Temporary notice (closure, holiday hours...) that replaces "
+        "{{company_notice}} in the template until the \"Show until\" day "
+        "included; it is then removed automatically.",
     )
     company_signature_notice_until = fields.Date(
         string="Show until",
@@ -108,13 +122,8 @@ class ResCompany(models.Model):
             users = Users.search(
                 [("share", "=", False), ("company_id", "in", changing.ids)]
             )
-            if new:
-                # Users flagged as generated still hold the signature produced
-                # last time: keep their older (real) backup untouched.
-                for user in users.filtered(lambda u: not u.signature_is_generated):
-                    user.personal_signature_backup = user.signature
-            else:
-                users.signature_is_generated = True
+            with users._company_signature_transition():
+                return super().write(vals)
         return super().write(vals)
 
     # ------------------------------------------------------------------
