@@ -139,6 +139,9 @@ class TestStaffAdminOnly1659(Parity1577Common):
 
     # -- AC-5 -------------------------------------------------------------
     def test_event_coverage_created_for_internal_therapist(self):
+        # Review fixes 2026-10-24: an event assignee is a treatment professional.
+        self.newcomer.write({'group_ids': [Command.link(
+            self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional').id)]})
         start = fields.Datetime.now() + timedelta(hours=2)
         event = self.env['sports.event'].with_user(self.itp).create({
             'name': 'G1659 Coverage', 'event_type': 'game',

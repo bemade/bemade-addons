@@ -24,6 +24,13 @@
  *         the field's value is not before the other's (ISO dates sort);
  *     {"type": "not_future", "field": "resolution_date", "message": "…"}
  *         a date not after today (the device's day);
+ *     {"type": "assign", "staff": "assigned_staff_ids", "teams": "team_ids",
+ *      "allowed": [team ids], "staff0": "csv", "teams0": "csv", "key": "…"}
+ *         review fixes 2026-10-24 (owner policy, the server's
+ *         sports.event._sc_check_assignment): when the assignees (CSV field
+ *         ``staff``) differ from ``staff0``, or the teams differ from
+ *         ``teams0`` while there are assignees, every chosen team must be
+ *         one of ``allowed`` (the teams the user staffs);
  * - the reason's prefix (« Complétez : ») and the generic / offline errors
  *   come from the layout's [data-sc-guard-texts] (translated there), a form
  *   may override them (data-sc-guard-missing / -generic / -offline);
@@ -166,6 +173,17 @@ export function guardReason(form) {
             const a = named(form, rule.field);
             const b = named(form, rule.than);
             if (a && b && a.value && b.value && a.value < b.value) {
+                return message(rule).trim();
+            }
+        } else if (rule.type === "assign") {
+            const ids = (value) =>
+                new Set(String(value || "").split(",").map((part) => part.trim()).filter(Boolean));
+            const same = (a, b) => a.size === b.size && [...a].every((item) => b.has(item));
+            const staff = ids((named(form, rule.staff) || {}).value);
+            const teams = ids((named(form, rule.teams) || {}).value);
+            const allowed = new Set((rule.allowed || []).map(String));
+            const changed = !same(staff, ids(rule.staff0)) || (staff.size && !same(teams, ids(rule.teams0)));
+            if (changed && ![...teams].every((team) => allowed.has(team))) {
                 return message(rule).trim();
             }
         } else if (rule.type === "not_future") {

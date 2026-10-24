@@ -16894,10 +16894,12 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event_form
 msgid ""
 "<span hidden=\"hidden\" data-sc-guard-msg=\"dates\">The end must be after the start.</span>\n"
-"                <span hidden=\"hidden\" data-sc-guard-msg=\"coverage\">The coverage end must be after its start.</span>"
+"                <span hidden=\"hidden\" data-sc-guard-msg=\"coverage\">The coverage end must be after its start.</span>\n"
+"                <span hidden=\"hidden\" data-sc-guard-msg=\"assign\">Only the clinic administration can assign staff to an event of a team you're not part of.</span>"
 msgstr ""
 "<span hidden=\"hidden\" data-sc-guard-msg=\"dates\">La fin doit être après le début.</span>\n"
-"                <span hidden=\"hidden\" data-sc-guard-msg=\"coverage\">La fin de la couverture doit être après son début.</span>"
+"                <span hidden=\"hidden\" data-sc-guard-msg=\"coverage\">La fin de la couverture doit être après son début.</span>\n"
+"                <span hidden=\"hidden\" data-sc-guard-msg=\"assign\">Seule l'administration de la clinique peut assigner du personnel à un événement d'une équipe dont vous ne faites pas partie.</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
@@ -16916,3 +16918,19 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
 msgid "This could not be saved. Please check the form and try again."
 msgstr "Impossible d'enregistrer. Vérifiez le formulaire et réessayez."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid ""
+"Only the clinic administration can assign staff to an event of a team "
+"you're not part of."
+msgstr ""
+"Seule l'administration de la clinique peut assigner du personnel à un "
+"événement d'une équipe dont vous ne faites pas partie."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "Only treatment professionals can be assigned to an event."
+msgstr "Seuls des professionnels de la santé peuvent être assignés à un événement."

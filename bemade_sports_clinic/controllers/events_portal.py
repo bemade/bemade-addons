@@ -56,8 +56,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             ('role', 'in', ['therapist', 'head_therapist', 'doctor', 'treatment_professional'])
         ]).mapped('partner_id.user_ids')
         
-        # Filter active users and sort by name
+        # Filter active users and sort by name. Review fixes 2026-10-24: only
+        # users who ARE treatment professionals (the assignee rule), so a
+        # stale row of someone else (e.g. an old event-coverage row) never
+        # offers a choice the save would refuse.
         active_users = team_staff_users.filtered(lambda u: u.active)
+        active_users &= http.request.env['sports.event']._sc_tp_users(active_users.ids)
         
         _logger.info(f"Found {len(active_users)} treatment professionals from team staff: {[u.name for u in active_users]}")
         return active_users.sorted('name')
@@ -1030,6 +1034,19 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 # If no staff selected, clear the field
                 staff_command = [(6, 0, [])]
 
+            # Review fixes 2026-10-24: the posted assignees are checked
+            # BEFORE any sudo write — each added one a treatment
+            # professional, and (owner policy) only a clinic admin assigns on
+            # an event of a team the user does not staff. The refusal shows
+            # in the form (#1658).
+            event_sudo = event.sudo()
+            current_team_ids = event_sudo.team_ids.ids
+            event_sudo._sc_check_assignment(
+                user, event_sudo.assigned_staff_ids.ids,
+                staff_command[0][2] if staff_command is not None else event_sudo.assigned_staff_ids.ids,
+                current_team_ids,
+                team_command[0][2] if team_command is not None else current_team_ids)
+
             # Task 1597: one unit — a refused write (e.g. the teams of two
             # organizations) must not stay half-applied: the error below is
             # caught, so without the savepoint the request would commit it.
@@ -1210,6 +1227,13 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     else:
                         staff_ids = [int(staff_param)]
             create_vals['state'] = 'confirmed'
+
+            # Review fixes 2026-10-24: checked BEFORE the sudo create / write
+            # (treatment professionals only; on a team the user does not
+            # staff, only a clinic admin assigns — the event itself may still
+            # be created without assignees).
+            http.request.env['sports.event']._sc_check_assignment(
+                user, (), staff_ids, (), team_ids_list)
 
             # Task 1600: the create and the staff assignment are one unit — a
             # refused step leaves no half-created event behind.
@@ -1621,7 +1645,13 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                                                    | event_sudo.assigned_staff_ids).sudo().sorted('name')],
             }
         ts_rows = [self._sc_timesheet_row(ts) for ts in timesheets]
+        # Review fixes 2026-10-24 (owner policy): the pencil card offers the
+        # assignee picker only to who may assign on this event; the others
+        # see the reason.
+        can_assign = bool(values['can_edit']) and event._sc_can_assign(user)
         return {
+            'sc_event_can_assign': can_assign,
+            'sc_event_assign_reason': '' if can_assign else env['sports.event']._sc_assign_refusal(user, [-1]),
             'sc_event_edit_options': edit_options,
             'sc_event_kind': kinds.get(event_sudo.event_type, ''),
             'sc_event_state': states.get(event_sudo.state, ''),
@@ -1764,6 +1794,25 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         form['staff_props'] = self._sc_form_props(
             'sc_event_staff_ids', env._("Assigned staff"), value=form['staff_csv'], options=staff_options,
             placeholder=env._("Add a therapist…"))
+        # Review fixes 2026-10-24 (owner policy): on an event of a team the
+        # user does not staff, only a clinic admin assigns staff — a guard
+        # rule greys « Create » / « Save » with the reason when the chosen
+        # teams / assignees would be refused (#1658; the server decides).
+        user = env.user
+        Event = env['sports.event']
+        guard_rules = [
+            {'type': 'after', 'field': 'date_end', 'than': 'date_start', 'key': 'dates'},
+            {'type': 'after', 'field': 'therapist_end', 'than': 'therapist_start', 'key': 'coverage'},
+        ]
+        if not Event._sc_assign_admin(user):
+            guard_rules.append({
+                'type': 'assign', 'staff': 'assigned_staff_ids', 'teams': 'team_ids',
+                'allowed': sorted(Event._sc_assigner_team_ids(user)),
+                'staff0': form['staff_csv'] if mode == 'edit' else '',
+                'teams0': ','.join(str(i) for i in values['selected_team_ids']) if mode == 'edit' else '',
+                'key': 'assign',
+            })
+        form['guard_rules'] = json.dumps(guard_rules)
         return {
             'sc_form_mode': mode,
             'sc_form': form,

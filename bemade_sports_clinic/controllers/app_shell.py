@@ -467,14 +467,25 @@ def _event_write(ctrl, event, field, value):
         # Only when it changed (the save route's rule: an unchanged m2m still
         # runs the team record rules).
         if set(ids) != set(current):
+            # Review fixes 2026-10-24: new teams on an event with assignees
+            # assign them there — the assignment rule applies.
+            staff = event.sudo().assigned_staff_ids.ids
+            event.sudo()._sc_check_assignment(request.env.user, staff, staff, current, ids)
             # Review fixes 2026-10-18 b (#1608): any team (checked above), so
             # sudo — the team's partner / organization are read by the
             # event's computes; the one-organization constraint still runs.
             event.sudo().write({'team_ids': [Command.set(ids)]})
     elif field == 'assigned_staff_ids':
+        # Review fixes 2026-10-24: checked BEFORE the sudo write (treatment
+        # professionals only; another team's event: clinic admin only).
+        ids = _csv_ids(value)
+        event_sudo = event.sudo()
+        event_sudo._sc_check_assignment(
+            request.env.user, event_sudo.assigned_staff_ids.ids, ids,
+            event_sudo.team_ids.ids, event_sudo.team_ids.ids)
         # sudo: portal users cannot read other users (the save route's rule;
         # access enforced by the check).
-        event.sudo().write({'assigned_staff_ids': [Command.set(_csv_ids(value))]})
+        event_sudo.write({'assigned_staff_ids': [Command.set(ids)]})
     return {}
 
 

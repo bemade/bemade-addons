@@ -267,6 +267,13 @@ class TestStaffGrant1416(GrantCaseMixin, TransactionCase):
         self.assertEqual(grant.staff_count, 4)
 
     def test_temp_adopts_event_row_and_hands_it_back(self):
+        # Review fixes 2026-10-24: only a treatment professional can be
+        # assigned to an event (an event row no longer grants the group): the
+        # replacement is a therapist of another team (their own row keeps the
+        # group while the grant's coach row comes and goes).
+        home = self.env["sports.team"].create({"name": "Synthetic Home Team"})
+        self.Staff.create({"team_id": home.id, "partner_id": self.rep.id, "role": "therapist"})
+        self.assertIn(self.tp_group, self.rep_user.group_ids)
         # an OPEN event coverage row for the same person / team
         event = self.env["sports.event"].create({
             "name": "Synthetic Game", "date_start": self.now + H, "date_end": self.now + 3 * H,
@@ -445,6 +452,9 @@ class TestEventCoverageLead1416(GrantCaseMixin, TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls._setup_fixture()
+        # Review fixes 2026-10-24: an event assignee is a treatment
+        # professional (an event row no longer grants the group).
+        cls.rep_user.write({"group_ids": [Command.link(cls.tp_group.id)]})
 
     def _event(self, start, end, **vals):
         return self.env["sports.event"].create({

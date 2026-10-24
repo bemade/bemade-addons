@@ -1108,14 +1108,19 @@ class TeamStaff(models.Model):
         if self._staff_batch():
             return res
 
+        # Review fixes 2026-10-24: an event-coverage row (auto-created from
+        # an event assignment) never changes portal groups — it used to
+        # grant the portal TP group to whoever was put on an event.
+        granting = res.filtered(lambda s: s.source != 'event')
+
         # Update all portal group memberships for new records
-        res._update_all_portal_groups()
-        
+        granting._update_all_portal_groups()
+
         # Update group membership based on staff roles
-        affected_users = res.mapped('user_ids')
+        affected_users = granting.mapped('user_ids')
         if affected_users:
             for user in affected_users.sudo():
-                res._update_all_portal_groups(user)
+                granting._update_all_portal_groups(user)
         
         # Handle follower recomputation
         res.team_id.mapped("patient_ids").recompute_followers()
@@ -1125,9 +1130,11 @@ class TeamStaff(models.Model):
         self._check_org_locked(unlinking=True)
         if self._staff_batch():
             return super().unlink()
-        # Store affected partners and users before deletion
+        # Store affected partners and users before deletion. Review fixes
+        # 2026-10-24: event-coverage rows grant no group, so removing one
+        # changes none either.
         affected_partners = self.mapped('partner_id')
-        affected_users = self.mapped('user_ids')
+        affected_users = self.filtered(lambda s: s.source != 'event').mapped('user_ids')
 
         # Standard processing for follower recomputation
         patients = self.team_id.mapped("patient_ids")
@@ -1210,9 +1217,12 @@ class TeamStaff(models.Model):
         Returns:
             recordset: Staff records with therapist roles
         """
+        # Review fixes 2026-10-24: event-coverage rows never count (they
+        # grant no portal group).
         return self.env['sports.team.staff'].sudo().search([
             ('partner_id', '=', partner_id),
-            ('role', 'in', ['head_therapist', 'therapist', 'doctor'])
+            ('role', 'in', ['head_therapist', 'therapist', 'doctor']),
+            ('source', '!=', 'event'),
         ])
     
     def _get_staff_with_coach_roles(self, partner_id):
@@ -1224,9 +1234,12 @@ class TeamStaff(models.Model):
         Returns:
             recordset: Staff records with coach roles
         """
+        # Review fixes 2026-10-24: event-coverage rows never count (they
+        # grant no portal group).
         return self.env['sports.team.staff'].sudo().search([
             ('partner_id', '=', partner_id),
-            ('role', 'in', ['head_coach', 'coach'])
+            ('role', 'in', ['head_coach', 'coach']),
+            ('source', '!=', 'event'),
         ])
     
     def update_all_treatment_professional_groups(self):
@@ -1414,7 +1427,9 @@ class TeamStaff(models.Model):
         if self._staff_batch():
             return result
 
-        if 'role' in vals or 'team_id' in vals:
+        # Review fixes 2026-10-24: a row adopted out of event coverage
+        # (``source`` changed) starts / stops counting for the groups.
+        if 'role' in vals or 'team_id' in vals or 'source' in vals:
             self._update_all_portal_groups()
 
         if 'team_id' in vals or 'silent_notifications' in vals or 'role' in vals:

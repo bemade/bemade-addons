@@ -380,6 +380,86 @@ class SportsEvent(models.Model):
         for event in self:
             event.treatment_professional_user_ids = users
 
+    # ------------------------------------------------------------------
+    # Review fixes 2026-10-24 (adversarial review): who may be assigned,
+    # and who may assign.
+    # ------------------------------------------------------------------
+    @api.model
+    def _sc_tp_users(self, user_ids):
+        """The users among ``user_ids`` who are treatment professionals
+        (portal or internal TP group, effective membership: a clinic admin is
+        one by implication). Archived users count (past events keep them).
+        sudo: identity-level check (portal users cannot read res.groups)."""
+        group_ids = self._treatment_professional_group_ids()
+        users = self.env['res.users'].sudo().with_context(active_test=False)
+        if not user_ids or not group_ids:
+            return users.browse()
+        return users.search([('id', 'in', list(user_ids)), ('all_group_ids', 'in', group_ids)])
+
+    @api.model
+    def _sc_assign_admin(self, user):
+        """A clinic administrator or a system administrator (internal)."""
+        return self.env['sports.team']._sc_staff_admin(user)
+
+    @api.model
+    def _sc_assigner_team_ids(self, user):
+        """The teams ``user`` staffs through a row that is NOT event
+        coverage (an event-sourced row never makes its holder « part of »
+        the team for this rule)."""
+        if not user.partner_id:
+            return set()
+        return set(self.env['sports.team.staff'].sudo().search([
+            ('partner_id', '=', user.partner_id.id),
+            ('source', '!=', 'event'),
+        ]).team_id.ids)
+
+    @api.model
+    def _sc_assign_refusal(self, user, team_ids):
+        """Owner policy 2026-10-24: assigning staff to an event whose teams
+        the assigner does not staff is clinic-admin only. '' when ``user``
+        may set / change the assignees of an event of ``team_ids``, else the
+        refusal text."""
+        if self._sc_assign_admin(user):
+            return ''
+        if set(team_ids or ()) <= self._sc_assigner_team_ids(user):
+            return ''
+        return self.env._(
+            "Only the clinic administration can assign staff to an event "
+            "of a team you're not part of.")
+
+    def _sc_can_assign(self, user=None):
+        """Whether ``user`` (default: current) may change THIS event's
+        assignees (the app hides the picker otherwise)."""
+        self.ensure_one()
+        return not self._sc_assign_refusal(user or self.env.user, self.sudo().team_ids.ids)
+
+    @api.model
+    def _sc_check_assignment(self, user, old_staff, new_staff, old_teams, new_teams):
+        """Refuse (ValidationError) an assignment change:
+
+        * every ADDED assignee must be a treatment professional — for every
+          writer, superuser included (a coach or any other user put there
+          used to get a therapist coverage row, and with it the portal TP
+          group: adversarial review 2026-10-24);
+        * ``user`` (None = no policy: superuser / trusted code) changing
+          the assignees, or the teams of an event that has assignees, must
+          staff every resulting team (``_sc_assign_refusal``).
+
+        Called by write / create and, BEFORE their sudo writes, by the portal
+        routes (which pass the request user)."""
+        old_staff, new_staff = set(old_staff or ()), set(new_staff or ())
+        old_teams, new_teams = set(old_teams or ()), set(new_teams or ())
+        added = new_staff - old_staff
+        if added and added - set(self._sc_tp_users(added).ids):
+            raise ValidationError(self.env._(
+                "Only treatment professionals can be assigned to an event."))
+        if user is None:
+            return
+        if new_staff != old_staff or (new_staff and new_teams != old_teams):
+            refusal = self._sc_assign_refusal(user, new_teams)
+            if refusal:
+                raise ValidationError(refusal)
+
     @staticmethod
     def _user_initials(name):
         """First letter of each whitespace-separated token of a name,
@@ -628,6 +708,12 @@ class SportsEvent(models.Model):
             for vals in vals_list
         ]
         events = super().create(vals_list)
+        # Review fixes 2026-10-24: assignees are treatment professionals, and
+        # (non-superuser) only a clinic admin assigns on another team's event.
+        policy_user = None if self.env.su else self.env.user
+        for event in events.sudo().filtered('assigned_staff_ids'):
+            self._sc_check_assignment(
+                policy_user, (), event.assigned_staff_ids.ids, (), event.team_ids.ids)
         events.sudo()._sync_event_auto_staff()
         return events
 
@@ -696,10 +782,22 @@ class SportsEvent(models.Model):
         events_entering_cancel = self.env['sports.event']
         if vals.get('state') == 'cancelled':
             events_entering_cancel = self.filtered(lambda e: e.state != 'cancelled')
-        # Task 1665: the mirror — a cancelled event restored (any path).
+        # Task 1665: the mirror — a cancelled event restored. Only a real
+        # restore (back to Confirmed: the portal « Restore », action_revive)
+        # notifies; a cancelled event billed anyway (cancelled → invoiced,
+        # action_mark_invoiced) is not « restored » (review fixes 2026-10-24).
         events_leaving_cancel = self.env['sports.event']
-        if vals.get('state') and vals.get('state') != 'cancelled':
+        if vals.get('state') == 'confirmed':
             events_leaving_cancel = self.filtered(lambda e: e.state == 'cancelled')
+
+        # Review fixes 2026-10-24: the assignees / teams before the write
+        # (the assignment checks below compare the result with them).
+        assign_before = {}
+        if 'assigned_staff_ids' in vals or 'team_ids' in vals:
+            assign_before = {
+                event.id: (event.assigned_staff_ids.ids, event.team_ids.ids)
+                for event in self.sudo()
+            }
 
         old_times = {}
         if sync_t_to_d or sync_d_to_t:
@@ -714,6 +812,14 @@ class SportsEvent(models.Model):
             }
 
         res = super().write(vals)
+
+        if assign_before:
+            policy_user = None if self.env.su else self.env.user
+            for event in self.sudo():
+                old_staff, old_teams = assign_before[event.id]
+                self._sc_check_assignment(
+                    policy_user, old_staff, event.assigned_staff_ids.ids,
+                    old_teams, event.team_ids.ids)
 
         if sync_t_to_d:
             for event in self.with_context(skip_event_time_sync=True):
@@ -855,9 +961,13 @@ class SportsEvent(models.Model):
             prior = Staff.search([('temporary_event_ids', 'in', event.ids)])
             desired = set()
             if event._is_active_for_access(now):
+                # Never auto-create coverage staff for archived users, nor
+                # (review fixes 2026-10-24) for an assignee who is not a
+                # treatment professional (a pre-constraint assignment).
+                coverage_users = event.assigned_staff_ids.filtered('active')
+                coverage_users = coverage_users & self._sc_tp_users(coverage_users.ids)
                 for team in event.team_ids:
-                    # Never auto-create coverage staff for archived users.
-                    for user in event.assigned_staff_ids.filtered('active'):
+                    for user in coverage_users:
                         if user.partner_id:
                             desired.add((team.id, user.partner_id.id))
             for team_id, partner_id in desired:

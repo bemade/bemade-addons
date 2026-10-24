@@ -459,7 +459,14 @@
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(event, 'team_ids', lbl, 'tags', options=opts['teams'], placeholder=sc_add_team)"/></t>
                     <t t-set="lbl">Assigned Staff</t>
                     <t t-set="sc_add_staff">Add a therapist…</t>
-                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(event, 'assigned_staff_ids', lbl, 'tags', options=opts['staff'], placeholder=sc_add_staff)"/></t>
+                    <t t-if="sc_event_can_assign" t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(event, 'assigned_staff_ids', lbl, 'tags', options=opts['staff'], placeholder=sc_add_staff)"/></t>
+                    <!-- Review fixes 2026-10-24 (owner policy): no picker on
+                         an event of a team the user does not staff. -->
+                    <div t-else="" class="o_sc_field o_sc_field_static" data-sc-event-staff-locked="1">
+                        <span class="o_sc_field_label" t-out="lbl"/>
+                        <p class="o_sc_field_value" t-out="', '.join(s['name'] for s in assigned_staff) if assigned_staff else '—'"/>
+                        <p class="o_sc_hint" data-sc-assign-reason="1" t-out="sc_event_assign_reason"/>
+                    </div>
                     <t t-set="lbl">Description</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(event, 'description', lbl, 'textarea', clearable=True)"/></t>
                     <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
@@ -614,7 +621,7 @@
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
 
             <form t-att-action="sc_form['action']" method="post" class="o_sc_form" data-sc-form="event.form" data-sc-event-form="1"
-                  t-att-data-sc-event-form-mode="sc_form_mode" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"after","field":"date_end","than":"date_start","key":"dates"},{"type":"after","field":"therapist_end","than":"therapist_start","key":"coverage"}]'>
+                  t-att-data-sc-event-form-mode="sc_form_mode" data-sc-guard="1" data-sc-guard-mode="fetch" t-att-data-sc-guard-rules="sc_form['guard_rules']">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="return_url" t-att-value="sc_form['return_url']"/>
                 <input type="hidden" name="description_format" value="text"/>
@@ -713,6 +720,7 @@
                 </div>
                 <span hidden="hidden" data-sc-guard-msg="dates">The end must be after the start.</span>
                 <span hidden="hidden" data-sc-guard-msg="coverage">The coverage end must be after its start.</span>
+                <span hidden="hidden" data-sc-guard-msg="assign">Only the clinic administration can assign staff to an event of a team you're not part of.</span>
                 <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_event_form'"/></t>
             </form>
 
