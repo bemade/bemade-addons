@@ -293,7 +293,7 @@ class TestNoteReplaceFr1582(TestAppShellI18n1538):
                          "Écrire l'état actuel de la blessure — remplace le texte précédent")
         # Task 1631: one « Historique » (the Notes head), no scoped sheets.
         self.assertNotIn('historyLabel', props['internal_notes'])
-        links = tree.xpath('//*[@data-sc-edit-card="injury-notes"]//*[@data-sc-sheet-open="sc_note_history_sheet_%s"]'
+        links = tree.xpath('//section[@data-sc-section="injury.notes"]//*[@data-sc-sheet-open="sc_note_history_sheet_%s"]'
                            % self.injury.id)
         self.assertEqual([' '.join(link.text_content().split()) for link in links], ['Historique'])
         titles = {t.strip() for t in tree.xpath('//dialog//h2[contains(@class, "o_sc_sheet_title")]/text()')}

@@ -219,7 +219,7 @@ class TestAppShellHistory1581(History1581Common):
         self.assertEqual(sheet.get('data-sc-lazy-fresh'), '1')
         # Pencil paradigm (owner review 2026-10-11): ONE « History » link in
         # the notes card's head, reachable while reading.
-        links = tree.xpath('//details[@id="injury-%s"]//*[@data-sc-edit-card="injury-notes"]'
+        links = tree.xpath('//details[@id="injury-%s"]//section[@data-sc-section="injury.notes"]'
                            '/*[contains(@class, "o_sc_edit_card_head")]'
                            '//*[@data-sc-sheet-open="sc_note_history_sheet_%s"][contains(@class, "o_sc_link_btn")]'
                            % (self.injury.id, self.injury.id))

@@ -966,6 +966,26 @@ $sc-p2-laptop: 992px;
         }
     }
 
+    // Task 1675: the external / internal notes are two edit cards, one
+    // pencil each, under the Notes head (its one « History »).
+    .o_sc_injury_note_card {
+        margin-top: var(--sc-space-2);
+
+        & + .o_sc_injury_note_card {
+            margin-top: var(--sc-space-3);
+            padding-top: var(--sc-space-3);
+            border-top: 1px dashed var(--sc-line);
+        }
+
+        .o_sc_injury_note_head .o_sc_edit_card_title {
+            font-size: 0.95em;
+        }
+
+        .o_sc_injury_note_read > p {
+            margin: 0;
+        }
+    }
+
     .o_sc_injury_doc_list {
         gap: var(--sc-space-2);
     }

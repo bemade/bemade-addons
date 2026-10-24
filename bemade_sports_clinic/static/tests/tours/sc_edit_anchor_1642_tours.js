@@ -55,7 +55,7 @@ function pad() {
     document.body.style.paddingBottom = "3000px";
 }
 
-const NOTES = 'details.o_sc_injury_item[open] section[data-sc-edit-card="injury-notes"]';
+const NOTES = 'details.o_sc_injury_item[open] [data-sc-edit-card="injury-notes-external"]';  // task 1675
 const CARD = "details.o_sc_injury_item";
 
 tours.add("sc_1642_injury_notes_blur", {

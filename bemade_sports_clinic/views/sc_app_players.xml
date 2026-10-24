@@ -1162,63 +1162,74 @@
                     </section>
 
                     <!-- ============================= Notes ============================= -->
-                    <section class="o_sc_injury_section o_sc_injury_notes o_sc_edit_card" data-sc-edit-card="injury-notes"
-                             data-sc-section="injury.notes">
-                        <!-- Task 1581: « History » opens the notes-history sheet
-                             (fresh on every open; a coach gets the external
-                             rows only). Task 1631: the ONLY one — in the
-                             head, read and edit modes alike; its entries
-                             say their scope (Internal / External). -->
+                    <!-- Task 1675: two independent edit cards (external, then
+                         internal for therapists), one pencil each — opening
+                         one never opens the other. Task 1581/1631: ONE
+                         « History » in the section head (all scopes, the
+                         sheet keeps its Toutes / Internes / Externes
+                         filters). -->
+                    <section class="o_sc_injury_section o_sc_injury_notes" data-sc-section="injury.notes">
                         <t t-set="sc_note_history_label">History</t>
                         <div class="o_sc_edit_card_head">
                             <h3 class="o_sc_edit_card_title">Notes</h3>
                             <span class="o_sc_card_icons">
                                 <button type="button" class="o_sc_link_btn" t-att-data-sc-sheet-open="'sc_note_history_sheet_%s' % injury.id"
                                         t-out="sc_note_history_label"/>
-                                <t t-set="sc_edit_label">Edit</t>
-                                <button type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1" aria-expanded="false"
-                                        t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label">
-                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
-                                </button>
                             </span>
                         </div>
-                        <dl class="o_sc_kv o_sc_kv_stacked" data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(injury, 'notes')">
-                            <!-- Task 1669: each note's « Last note on … by … »
-                                 stamp in the read view too (was the edit
-                                 hint only); inside this fragment, so a save
-                                 refreshes it in place (#1611/#1601). -->
-                            <dt>External Notes</dt>
-                            <dd>
-                                <span class="o_sc_pre" t-att-data-sc-display="sc_display_key(injury, 'external_notes')" t-out="injury.external_notes or '—'"/>
+                        <t t-set="sc_note_placeholder">Write the injury's current state — replaces the previous text</t>
+                        <t t-set="sc_edit_label">Edit</t>
+                        <!-- Task 1582: each note uses the « replace » editor
+                             (the current text above an empty « New note »)
+                             with its « last note » hint; task 1669: the read
+                             view carries the same stamp. -->
+                        <div class="o_sc_edit_card o_sc_injury_note_card" data-sc-edit-card="injury-notes-external"
+                             data-sc-section="injury.notes.external">
+                            <div class="o_sc_edit_card_head o_sc_injury_note_head">
+                                <h4 class="o_sc_edit_card_title">External Notes</h4>
+                                <span class="o_sc_card_icons">
+                                    <button type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1" aria-expanded="false"
+                                            t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label">
+                                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                                    </button>
+                                </span>
+                            </div>
+                            <div class="o_sc_injury_note_read" data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(injury, 'notes-external')">
+                                <p class="o_sc_pre" t-att-data-sc-display="sc_display_key(injury, 'external_notes')" t-out="injury.external_notes or '—'"/>
                                 <p t-if="injury.last_external_note_info" class="o_sc_meta o_sc_note_stamp" data-sc-note-stamp="external"
                                    t-out="injury.last_external_note_info"/>
-                            </dd>
-                            <t t-if="sc_card_internal">
-                                <dt>Internal Notes (Medical Staff Only)</dt>
-                                <dd>
-                                    <span class="o_sc_pre" t-att-data-sc-display="sc_display_key(injury, 'internal_notes')" t-out="injury.internal_notes or '—'"/>
-                                    <p t-if="injury.last_internal_note_info" class="o_sc_meta o_sc_note_stamp" data-sc-note-stamp="internal"
-                                       t-out="injury.last_internal_note_info"/>
-                                </dd>
-                            </t>
-                        </dl>
-                        <!-- Task 1582: both notes use the « replace » editor (the
-                             current text above an empty « New note ») with its
-                             « last note » stamp (task 1631: no per-field
-                             « History » — the head's one covers both). -->
-                        <div class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
-                            <t t-set="sc_note_placeholder">Write the injury's current state — replaces the previous text</t>
-                            <t t-set="lbl">External Notes</t>
-                            <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                <t t-set="props" t-value="sc_field_props(injury, 'external_notes', lbl, 'textarea', clearable=True, hint=injury.last_external_note_info or None, replace=True, placeholder=sc_note_placeholder)"/>
-                            </t>
-                            <t t-if="sc_card_internal">
+                            </div>
+                            <div class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
+                                <t t-set="lbl">External Notes</t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave">
+                                    <t t-set="props" t-value="sc_field_props(injury, 'external_notes', lbl, 'textarea', clearable=True, hint=injury.last_external_note_info or None, replace=True, placeholder=sc_note_placeholder)"/>
+                                </t>
+                                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                            </div>
+                        </div>
+                        <div t-if="sc_card_internal" class="o_sc_edit_card o_sc_injury_note_card" data-sc-edit-card="injury-notes-internal"
+                             data-sc-section="injury.notes.internal">
+                            <div class="o_sc_edit_card_head o_sc_injury_note_head">
+                                <h4 class="o_sc_edit_card_title">Internal Notes (Medical Staff Only)</h4>
+                                <span class="o_sc_card_icons">
+                                    <button type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1" aria-expanded="false"
+                                            t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label">
+                                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                                    </button>
+                                </span>
+                            </div>
+                            <div class="o_sc_injury_note_read" data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(injury, 'notes-internal')">
+                                <p class="o_sc_pre" t-att-data-sc-display="sc_display_key(injury, 'internal_notes')" t-out="injury.internal_notes or '—'"/>
+                                <p t-if="injury.last_internal_note_info" class="o_sc_meta o_sc_note_stamp" data-sc-note-stamp="internal"
+                                   t-out="injury.last_internal_note_info"/>
+                            </div>
+                            <div class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
                                 <t t-set="lbl">Internal Notes (Medical Staff Only)</t>
                                 <t t-call="bemade_sports_clinic.sc_field_autosave">
                                     <t t-set="props" t-value="sc_field_props(injury, 'internal_notes', lbl, 'textarea', clearable=True, hint=injury.last_internal_note_info or None, replace=True, placeholder=sc_note_placeholder)"/>
                                 </t>
-                            </t>
-                            <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                            </div>
                         </div>
                         <t t-call="bemade_sports_clinic.sc_sheet">
                             <t t-set="sheet_id" t-value="'sc_note_history_sheet_%s' % injury.id"/>

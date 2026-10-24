@@ -17,7 +17,8 @@ const tours = registry.category("web_tour.tours");
 
 const CARD = "details.o_sc_injury_item[open]";
 const DETAILS = `${CARD} [data-sc-edit-card="injury-details"]`;
-const NOTES = `${CARD} [data-sc-edit-card="injury-notes"]`;
+// Task 1675: the Notes section (one « History » in its head), one edit card per note.
+const NOTES = `${CARD} section[data-sc-section="injury.notes"]`;
 const FIELD = `${NOTES} .o_sc_autosave[data-sc-field="external_notes"]`;
 const PROPOSAL = "#sc_proposal_sheet";
 const NEW_NOTE = "Synthetic rewritten 1631";
@@ -158,8 +159,8 @@ tours.add("sc_1631_injury_card", {
             },
         },
         {
-            content: "Edit the notes (pencil)",
-            trigger: `${NOTES} button[data-sc-edit-toggle]`,
+            content: "Edit the external note (pencil)",
+            trigger: `${NOTES} [data-sc-edit-card="injury-notes-external"] button[data-sc-edit-toggle]`,
             run: "click",
         },
         {

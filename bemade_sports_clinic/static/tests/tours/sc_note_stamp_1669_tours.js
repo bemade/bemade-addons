@@ -13,7 +13,7 @@ function assert(condition, message) {
     }
 }
 
-const CARD = 'details.o_sc_injury_item[open] [data-sc-edit-card="injury-notes"]';
+const CARD = 'details.o_sc_injury_item[open] [data-sc-edit-card="injury-notes-external"]';  // task 1675
 const FIELD = `${CARD} .o_sc_autosave[data-sc-field="external_notes"]`;
 const NEW = "T1669 tour new note";
 

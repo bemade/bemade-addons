@@ -22,7 +22,9 @@ function entries(sheet) {
 
 // Task 1616: the injury notes live in the open injury card — its combined
 // notes-history sheet is « sc_note_history_sheet_<injury id> ».
-const NOTES_CARD = 'details.o_sc_injury_item[open] [data-sc-edit-card="injury-notes"]';
+// Task 1675: the Notes section (its head holds the one « History »), one
+// edit card per note.
+const NOTES_CARD = 'details.o_sc_injury_item[open] section[data-sc-section="injury.notes"]';
 const NOTES_SHEET = 'dialog[id^="sc_note_history_sheet_"]:not([id$="_external"]):not([id$="_internal"])';
 
 function sheetSel(sheet) {
@@ -127,7 +129,7 @@ tours.add("sc_1581_notes_fresh", {
         },
         {
             content: "Edit the notes card (pencil)",
-            trigger: `${NOTES_CARD} button[data-sc-edit-toggle]`,
+            trigger: `${NOTES_CARD} [data-sc-edit-card="injury-notes-external"] button[data-sc-edit-toggle]`,
             run: "click",
         },
         {
