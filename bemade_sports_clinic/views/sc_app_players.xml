@@ -169,6 +169,26 @@
             <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
                 <t t-set="message">No players match these filters.</t>
             </t>
+            <!-- Task 1674: a name search also lists the near matches
+                 (accents, typos, inversions) after the exact / prefix ones,
+                 with the same scope / lock rules. -->
+            <section t-if="sc_near_rows" class="o_sc_section" data-sc-section="players.near">
+                <t t-call="bemade_sports_clinic.sc_section_header">
+                    <t t-set="title">Close results</t>
+                </t>
+                <ul class="o_sc_search_list">
+                    <li t-foreach="sc_near_rows" t-as="row" class="o_sc_search_row" t-att-data-sc-near-player="row['id']">
+                        <a t-if="row['url']" t-att-href="row['url']" class="o_sc_search_link">
+                            <span class="o_sc_row_title" t-out="row['title']"/>
+                            <span t-if="row['teams']" class="o_sc_row_subtitle" t-out="row['teams']"/>
+                        </a>
+                        <span t-else="" class="o_sc_search_link" aria-disabled="true">
+                            <span class="o_sc_row_title" t-out="row['title']"/>
+                            <span t-if="row['teams']" class="o_sc_row_subtitle" t-out="row['teams']"/>
+                        </span>
+                    </li>
+                </ul>
+            </section>
             <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_sc_pager">
                 <t t-call="portal.pager"/>
             </div>

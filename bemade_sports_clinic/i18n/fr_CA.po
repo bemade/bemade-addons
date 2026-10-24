@@ -16487,6 +16487,7 @@ msgstr "Contact d'urgence : nom et cellulaire requis ensemble"
 
 #. module: bemade_sports_clinic
 #. odoo-python
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__patient_b_id
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Possible duplicate"
 msgstr "Doublon possible"
@@ -16975,3 +16976,63 @@ msgstr "Né(e) le"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "Check the existing player above"
 msgstr "Vérifiez le joueur existant ci-dessus"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_players
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
+msgid "Close results"
+msgstr "Résultats approchants"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "Similar players:"
+msgstr "Joueurs similaires :"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "Check the similar players above before creating"
+msgstr "Vérifiez les joueurs similaires ci-dessus avant de créer"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.act_window,name:bemade_sports_clinic.action_sports_patient_duplicate
+#: model:ir.model,name:bemade_sports_clinic.model_sports_patient_duplicate
+#: model:ir.ui.menu,name:bemade_sports_clinic.sports_clinic_patient_duplicate_menu
+msgid "Possible duplicates"
+msgstr "Doublons possibles"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_duplicate_view_list
+msgid "Find duplicates"
+msgstr "Rechercher les doublons"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_duplicate_view_list
+msgid "Merge…"
+msgstr "Fusionner…"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__dismissed
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_duplicate_view_list
+msgid "Not a duplicate"
+msgstr "Pas un doublon"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_duplicate__kind__exact
+msgid "Same name"
+msgstr "Même nom"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_duplicate__kind__swapped
+msgid "First and last name swapped"
+msgstr "Prénom et nom inversés"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_duplicate__kind__near
+msgid "Similar name"
+msgstr "Nom semblable"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__same_dob
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_duplicate_view_search
+msgid "Same date of birth"
+msgstr "Même date de naissance"

@@ -35,11 +35,16 @@
         <div class="o_sc_search_results" data-sc-search-results="1">
             <p t-if="sc_too_short" class="o_sc_hint o_sc_search_hint">Type at least 2 letters</p>
             <t t-else="">
-                <p t-if="not (sc_players or sc_teams or sc_events)" class="o_sc_empty">No results</p>
-                <section t-if="sc_players" class="o_sc_search_group" data-sc-search-group="players">
-                    <h3 class="o_sc_search_group_title">Players</h3>
+                <p t-if="not (sc_players or sc_near_players or sc_teams or sc_events)" class="o_sc_empty">No results</p>
+                <!-- Task 1674: the players, then the near matches (« Close
+                     results »), same rows and the same scope / lock rules. -->
+                <t t-set="sc_close_title">Close results</t>
+                <t t-set="sc_players_title">Players</t>
+                <t t-foreach="[('players', sc_players_title, sc_players), ('players_near', sc_close_title, sc_near_players)]" t-as="sc_group">
+                <section t-if="sc_group[2]" class="o_sc_search_group" t-att-data-sc-search-group="sc_group[0]">
+                    <h3 class="o_sc_search_group_title" t-out="sc_group[1]"/>
                     <ul class="o_sc_search_list">
-                        <li t-foreach="sc_players" t-as="row"
+                        <li t-foreach="sc_group[2]" t-as="row"
                             t-attf-class="o_sc_search_row #{'o_sc_search_archived' if row['archived'] else ''} #{'' if row['accessible'] else 'o_sc_search_locked'}"
                             t-att-data-sc-search-player="row['id']">
                             <a t-if="row['url']" t-att-href="row['url']" class="o_sc_search_link" data-sc-search-result="1">
@@ -59,6 +64,7 @@
                         </li>
                     </ul>
                 </section>
+                </t>
                 <section t-if="sc_teams" class="o_sc_search_group" data-sc-search-group="teams">
                     <h3 class="o_sc_search_group_title">Teams</h3>
                     <ul class="o_sc_search_list">

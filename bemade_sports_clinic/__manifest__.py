@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.114.1",
+    'version': "19.0.1.115.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -227,6 +227,7 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "views/res_partner_views.xml",
         "views/team_role_mass_assign_wizard_views.xml",
         "views/patient_merge_wizard_views.xml",
+        "views/patient_duplicate_views.xml",
         "views/res_users_views.xml",
         # Task 1538: the portal app shell (behind the app_shell_enabled
         # switch) — components, layout, then the pages that t-call them.

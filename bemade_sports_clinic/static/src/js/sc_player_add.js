@@ -92,7 +92,17 @@ function refreshSubmit(form) {
     // Task 1658: the panel's own reasons (check-as-you-type, twins, the
     // emergency contact pair), shown by the shared guard.
     const busy = posting.has(form);
-    guardRefresh(form, busy ? "" : blocker(form), busy);
+    const reason = busy ? "" : blocker(form);
+    guardRefresh(form, reason, busy);
+    // Task 1674: only similar players found — « Create » stays enabled, the
+    // reason line asks to check them first.
+    if (!busy && !reason && form.dataset.scCheckedNear === "1") {
+        const line = form.querySelector("[data-sc-guard-reason]");
+        if (line) {
+            line.textContent = reasons(form).near || "";
+            line.hidden = !line.textContent;
+        }
+    }
 }
 
 // --------------------------------------------------------------- errors
@@ -168,6 +178,7 @@ async function check(form) {
             form.dataset.scCheckedKey = keyOf(values);
             form.dataset.scCheckedExact = results.dataset.scExact || "0";
             form.dataset.scCheckedTwin = results.dataset.scTwinElsewhere || "0";
+            form.dataset.scCheckedNear = results.dataset.scNear || "0";
         } else {
             delete form.dataset.scCheckedKey;
         }
@@ -287,6 +298,7 @@ document.addEventListener("sc:form-reset", (ev) => {
     delete form.dataset.scCheckedKey;
     delete form.dataset.scCheckedExact;
     delete form.dataset.scCheckedTwin;
+    delete form.dataset.scCheckedNear;
     const region = form.querySelector("[data-sc-player-check]");
     if (region && checkHints.has(region)) {
         region.innerHTML = checkHints.get(region);

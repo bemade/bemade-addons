@@ -8,6 +8,7 @@ from odoo.exceptions import UserError, AccessError, MissingError
 
 from .access_control_mixin import AccessControlMixin
 from ..models import sc_app_roles
+from ..models.sc_name_match import NEAR, NameIndex, words as sc_words_of
 from .app_shell import AppShellMixin, sc_country_options, sc_state_options
 
 # /my/teams sort modes (task 1401). Keys are what the page posts and what
@@ -568,8 +569,41 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # byte (switch off). Shell rows are computed only for the shell.
         if self._sc_app_shell_active():
             values.update(self._sc_players_values(values, is_tp_admin))
+            # Task 1674: the near matches of a name search (first page).
+            if name_search and int(page or 1) == 1:
+                values['sc_near_rows'] = self._sc_players_near_rows(
+                    Patients_search, ([] if broaden else list(base_players_domain)),
+                    [f for f in filters if f[0] not in ('first_name', 'last_name')],
+                    domain, first_name, last_name, staff_team_ids)
         return self._sc_render('bemade_sports_clinic.portal_my_players',
                                'bemade_sports_clinic.sc_app_players', values)
+
+    def _sc_players_near_rows(self, Patients, scope, filters, found_domain, first_name, last_name,
+                              staff_team_ids, limit=10):
+        """Task 1674: the players NEAR the typed names (the shared matcher),
+        in the list's own scope and filters, minus the ones the name filter
+        already listed; openable as the list's rows are."""
+        listed = set(Patients.search(found_domain).ids)
+        rows = Patients.search_read(scope + filters, ['first_name', 'last_name'])
+        index = NameIndex([(row['id'], row['first_name'] or '', row['last_name'] or '')
+                           for row in rows if row['id'] not in listed])
+        if first_name and last_name:
+            grades = index.match(first_name, last_name)
+        else:
+            grades = index.match_words(sc_words_of(first_name or last_name))
+        ids = [rid for rid, grade in grades if grade == NEAR][:limit]
+        admin = self._is_clinic_admin()
+        out = []
+        for player in Patients.browse(ids):
+            teams = player.sudo().team_ids
+            accessible = admin or bool(staff_team_ids.intersection(teams.ids))
+            out.append({
+                'id': player.id,
+                'title': player._portal_list_name(),
+                'teams': ', '.join(teams.mapped('name')),
+                'url': '/my/player?player_id=%s' % player.id if accessible else False,
+            })
+        return out
 
     # ------------------------------------------------------------------
     # Task 1539 — the players list in the app shell

@@ -142,3 +142,5 @@ access_sports_staff_grant_system,System Admin Access for Temporary Staff Access,
 access_sports_organization_staff_team_system,System Admin Access for Organization Staff Team Status,model_sports_organization_staff_team,base.group_system,1,1,1,1
 access_sc_help_article_admin,Clinic Admin Access for App Help Articles,model_sc_help_article,group_sports_clinic_admin,1,1,1,1
 access_sc_help_article_system,System Admin Access for App Help Articles,model_sc_help_article,base.group_system,1,1,1,1
+access_sports_patient_duplicate_admin,Clinic Admin Access for Possible Duplicates,model_sports_patient_duplicate,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1
+access_sports_patient_duplicate_system,System Access for Possible Duplicates,model_sports_patient_duplicate,base.group_system,1,1,1,1
