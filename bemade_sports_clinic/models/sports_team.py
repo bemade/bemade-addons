@@ -1167,19 +1167,40 @@ class TeamStaff(models.Model):
         elif not should_have_access and has_access:
             user.sudo().write({'group_ids': [(3, treatment_prof_group.id)]})
     
-    def _get_staff_with_therapist_roles(self, partner_id):
+    def _get_staff_with_therapist_roles(self, partner_id, granting_only=False):
         """Get all staff records with therapist roles for a partner.
         
         Args:
             partner_id (int): ID of the partner to check
+            granting_only (bool): only the rows that may GRANT a
+                treatment-professional group, i.e. not the event-coverage
+                rows (``source = 'event'``). Event coverage gives record
+                access only to people who are already treatment
+                professionals; it never makes someone one (hotfix 19.0.1.42.7).
             
         Returns:
             recordset: Staff records with therapist roles
         """
-        return self.env['sports.team.staff'].sudo().search([
+        domain = [
             ('partner_id', '=', partner_id),
             ('role', 'in', ['head_therapist', 'therapist', 'doctor'])
-        ])
+        ]
+        if granting_only:
+            domain.append(('source', '!=', 'event'))
+        return self.env['sports.team.staff'].sudo().search(domain)
+
+    def _therapist_role_flags(self, partner_id):
+        """(grant, keep) for the treatment-professional groups of a partner.
+
+        ``grant``: a non-event therapist row exists, so the group may be ADDED.
+        ``keep``: any therapist row exists (event coverage included), so the
+        group is not REMOVED. Removal behaviour is unchanged by the hotfix;
+        only the grant path ignores event-coverage rows.
+        """
+        keep = bool(self._get_staff_with_therapist_roles(partner_id))
+        grant = keep and bool(
+            self._get_staff_with_therapist_roles(partner_id, granting_only=True))
+        return grant, keep
     
     def _get_staff_with_coach_roles(self, partner_id):
         """Get all staff records with coach roles for a partner.
@@ -1239,7 +1260,7 @@ class TeamStaff(models.Model):
         
         if specific_user:
             # Process only the specific user
-            has_therapist_role = bool(self._get_staff_with_therapist_roles(specific_user.partner_id.id))
+            grants_therapist, has_therapist_role = self._therapist_role_flags(specific_user.partner_id.id)
             has_coach_role = bool(self._get_staff_with_coach_roles(specific_user.partner_id.id))
 
             # Log basic diagnostic info without relying on xml_id (not a real field)
@@ -1255,7 +1276,7 @@ class TeamStaff(models.Model):
             # Handle internal users
             if user_group in specific_user.group_ids:
                 # Internal users get treatment professional group for therapist roles
-                if has_therapist_role and treatment_prof_group not in specific_user.group_ids:
+                if grants_therapist and treatment_prof_group not in specific_user.group_ids:
                     specific_user.sudo().write({'group_ids': [(4, treatment_prof_group.id)]})
                     _logger.debug("[SportsTeam] Added internal treatment group to user %s", specific_user.id)
                 elif not has_therapist_role and treatment_prof_group in specific_user.group_ids:
@@ -1264,7 +1285,7 @@ class TeamStaff(models.Model):
             # Handle portal users
             elif portal_group in specific_user.group_ids:
                 # Portal users get appropriate portal groups
-                if has_therapist_role and portal_treatment_prof_group not in specific_user.group_ids:
+                if grants_therapist and portal_treatment_prof_group not in specific_user.group_ids:
                     specific_user.sudo().write({'group_ids': [(4, portal_treatment_prof_group.id)]})
                     _logger.debug("[SportsTeam] Added portal treatment group to user %s", specific_user.id)
                 elif not has_therapist_role and portal_treatment_prof_group in specific_user.group_ids:
@@ -1281,21 +1302,21 @@ class TeamStaff(models.Model):
         
         # Process staff members with users if no specific user provided
         for staff in self.filtered('user_ids'):
-            has_therapist_role = bool(self._get_staff_with_therapist_roles(staff.partner_id.id))
+            grants_therapist, has_therapist_role = self._therapist_role_flags(staff.partner_id.id)
             has_coach_role = bool(self._get_staff_with_coach_roles(staff.partner_id.id))
             
             for user in staff.user_ids:
                 # Handle internal users
                 if user_group in user.group_ids:
                     # Internal users get treatment professional group for therapist roles
-                    if has_therapist_role and treatment_prof_group not in user.group_ids:
+                    if grants_therapist and treatment_prof_group not in user.group_ids:
                         user.sudo().write({'group_ids': [(4, treatment_prof_group.id)]})
                     elif not has_therapist_role and treatment_prof_group in user.group_ids:
                         user.sudo().write({'group_ids': [(3, treatment_prof_group.id)]})
                 # Handle portal users
                 elif portal_group in user.group_ids:
                     # Portal users get appropriate portal groups
-                    if has_therapist_role and portal_treatment_prof_group not in user.group_ids:
+                    if grants_therapist and portal_treatment_prof_group not in user.group_ids:
                         user.sudo().write({'group_ids': [(4, portal_treatment_prof_group.id)]})
                     elif not has_therapist_role and portal_treatment_prof_group in user.group_ids:
                         user.sudo().write({'group_ids': [(3, portal_treatment_prof_group.id)]})
@@ -1330,11 +1351,11 @@ class TeamStaff(models.Model):
             staff = self.filtered(lambda s: specific_user in s.user_ids)
             if not staff:
                 # Check if the user has any therapist roles through their partner
-                has_therapist_role = bool(self._get_staff_with_therapist_roles(specific_user.partner_id.id))
+                grants_therapist, has_therapist_role = self._therapist_role_flags(specific_user.partner_id.id)
                 users_to_process = specific_user
             else:
                 # Check if this partner has any staff records with therapist roles
-                has_therapist_role = bool(self._get_staff_with_therapist_roles(specific_user.partner_id.id))
+                grants_therapist, has_therapist_role = self._therapist_role_flags(specific_user.partner_id.id)
                 users_to_process = specific_user
             
             # Apply the appropriate group membership
@@ -1342,13 +1363,13 @@ class TeamStaff(models.Model):
             portal_group = self.env.ref('base.group_portal')
             if portal_group not in users_to_process.group_ids:
                 # Internal user
-                if has_therapist_role and treatment_prof_group not in users_to_process.group_ids:
+                if grants_therapist and treatment_prof_group not in users_to_process.group_ids:
                     users_to_process.sudo().write({'group_ids': [(4, treatment_prof_group.id)]})
                 elif not has_therapist_role and treatment_prof_group in users_to_process.group_ids:
                     users_to_process.sudo().write({'group_ids': [(3, treatment_prof_group.id)]})
             else:
                 # Portal user
-                if has_therapist_role and portal_treatment_prof_group not in users_to_process.group_ids:
+                if grants_therapist and portal_treatment_prof_group not in users_to_process.group_ids:
                     users_to_process.sudo().write({'group_ids': [(4, portal_treatment_prof_group.id)]})
                 elif not has_therapist_role and portal_treatment_prof_group in users_to_process.group_ids:
                     users_to_process.sudo().write({'group_ids': [(3, portal_treatment_prof_group.id)]})
@@ -1357,7 +1378,7 @@ class TeamStaff(models.Model):
         # Process staff members with users if no specific user provided
         for staff in self.filtered('user_ids'):
             # Check if this partner has any staff records with therapist roles
-            has_therapist_role = bool(self._get_staff_with_therapist_roles(staff.partner_id.id))
+            grants_therapist, has_therapist_role = self._therapist_role_flags(staff.partner_id.id)
             
             # Process each user linked to this partner
             portal_group = self.env.ref('base.group_portal')
@@ -1365,10 +1386,12 @@ class TeamStaff(models.Model):
             for user in staff.user_ids:
                 # Handle internal users
                 if user_group in user.group_ids:
-                    self._update_user_group_membership(user, has_therapist_role, treatment_prof_group)
+                    # event-coverage-only: neither grant nor revoke
+                    if grants_therapist or not has_therapist_role:
+                        self._update_user_group_membership(user, has_therapist_role, treatment_prof_group)
                 # Handle portal users
                 elif portal_group in user.group_ids:
-                    if has_therapist_role and portal_treatment_prof_group not in user.group_ids:
+                    if grants_therapist and portal_treatment_prof_group not in user.group_ids:
                         user.sudo().write({'group_ids': [(4, portal_treatment_prof_group.id)]})
                     elif not has_therapist_role and portal_treatment_prof_group in user.group_ids:
                         user.sudo().write({'group_ids': [(3, portal_treatment_prof_group.id)]})

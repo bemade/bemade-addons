@@ -12293,3 +12293,17 @@ msgstr ""
 #: code:addons/bemade_sports_clinic/models/sc_patient_owner_guard.py:0
 msgid "This record can't be moved to another player."
 msgstr "Cet élément ne peut pas être déplacé vers un autre joueur."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid ""
+"Only treatment professionals can be assigned to an event (not: %s)."
+msgstr ""
+"Seuls les thérapeutes peuvent être assignés à un événement (pas : %s)."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
+msgid "Only treatment professionals can be assigned to an event."
+msgstr "Seuls les thérapeutes peuvent être assignés à un événement."

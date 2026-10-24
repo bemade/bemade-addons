@@ -39,7 +39,11 @@ class TestArchiveStaffPurge(TransactionCase):
         })
         cls.tp_user = cls.env["res.users"].create({
             "name": "Archive TP", "login": "archive.tp@example.com",
-            "group_ids": [(6, 0, [cls.env.ref("base.group_user").id])],
+            # hotfix 19.0.1.42.7: only TPs can be event assignees
+            "group_ids": [(6, 0, [
+                cls.env.ref("base.group_user").id,
+                cls.env.ref("bemade_sports_clinic.group_sports_clinic_treatment_professional").id,
+            ])],
         })
 
     def _staff(self, partner, **vals):

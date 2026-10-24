@@ -43,6 +43,22 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
         _logger.info(f"Found {len(active_users)} treatment professionals from team staff: {[u.name for u in active_users]}")
         return active_users.sorted('name')
 
+    def _check_posted_assignees(self, staff_ids, already_assigned=()):
+        """Security (hotfix 19.0.1.42.7): the posted assignee ids come
+        straight from the client and are written under sudo, so refuse any id
+        that is not an active treatment professional before anything is
+        written. Ids already on the event are not re-judged (an earlier
+        assignee who has since left the TP groups must not block the edit).
+        Raises UserError, which both routes turn into a clean form error."""
+        new_ids = set(staff_ids) - set(already_assigned)
+        if not new_ids:
+            return
+        Users = http.request.env['res.users'].sudo()
+        candidates = Users.browse(list(new_ids)).exists().filtered('active')
+        valid = http.request.env['sports.event']._filter_treatment_professional_users(candidates)
+        if set(valid.ids) != new_ids:
+            raise UserError(_("Only treatment professionals can be assigned to an event."))
+
     @http.route(['/my/events', '/my/events/page/<int:page>'], type='http', auth='user', website=True)
     def view_events(self, page=1, view_type='all', team_id=None, organization_id=None, assigned_user_id=None,
                    date_from=None, date_to=None, sortby=None, group_by=None, search=None, no_default_dates=None,
@@ -924,6 +940,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                         # Single value
                         staff_ids = [int(staff_param)]
                 _logger.info(f"Processed staff_ids: {staff_ids}")
+                self._check_posted_assignees(
+                    staff_ids, already_assigned=event.sudo().assigned_staff_ids.ids)
                 staff_command = [(6, 0, staff_ids)]
             else:
                 _logger.info("No assigned_staff_ids parameter in post data")
@@ -1091,6 +1109,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin):
                         staff_ids = [int(x.strip()) for x in str(staff_param).split(',') if x.strip()]
                     else:
                         staff_ids = [int(staff_param)]
+            self._check_posted_assignees(staff_ids)
             create_vals['state'] = 'confirmed'
 
             # Task creation is handled by the model's create() default logic

@@ -359,6 +359,35 @@ class SportsEvent(models.Model):
         groups = [self.env.ref(r, raise_if_not_found=False) for r in refs]
         return [g.id for g in groups if g]
 
+    def _filter_treatment_professional_users(self, users):
+        """Subset of ``users`` holding a treatment-professional group
+        (internal or portal), by effective membership. Archived users are
+        judged on their groups too."""
+        group_ids = self._treatment_professional_group_ids()
+        if not users or not group_ids:
+            return self.env['res.users']
+        # sudo: all_group_ids reads res.groups, which portal users can't.
+        return self.env['res.users'].sudo().with_context(active_test=False).search([
+            ('id', 'in', users.ids),
+            ('all_group_ids', 'in', group_ids),
+        ])
+
+    def _check_assignees_are_treatment_professionals(self, users):
+        """Refuse assigning anyone who is not already a treatment
+        professional (hotfix 19.0.1.42.7). An event assignment creates an
+        event-coverage sports.team.staff row (role therapist) on each event
+        team; it must never be a way to hand a coach / any user the TP
+        group or the team's medical records. Applies under sudo too: the
+        portal controllers write the assignees as superuser."""
+        users = users.sudo()
+        if not users:
+            return
+        bad = users - self._filter_treatment_professional_users(users)
+        if bad:
+            raise ValidationError(_(
+                "Only treatment professionals can be assigned to an event "
+                "(not: %s).", ', '.join(bad.mapped('name'))))
+
     def _compute_treatment_professional_user_ids(self):
         """Compute the list of users who are treatment professionals.
 
@@ -617,6 +646,9 @@ class SportsEvent(models.Model):
             for vals in vals_list
         ]
         events = super().create(vals_list)
+        for event in events.sudo():
+            event._check_assignees_are_treatment_professionals(
+                event.assigned_staff_ids)
         events.sudo()._sync_event_auto_staff()
         return events
 
@@ -692,7 +724,20 @@ class SportsEvent(models.Model):
                 for e in self
             }
 
+        before_staff = {}
+        if 'assigned_staff_ids' in vals:
+            before_staff = {e.id: e.assigned_staff_ids for e in self.sudo()}
+
         res = super().write(vals)
+
+        # Security (hotfix 19.0.1.42.7): only treatment professionals may be
+        # assigned. Checked on the NEWLY added users only, so an event whose
+        # earlier assignee has since left the TP groups stays editable.
+        if 'assigned_staff_ids' in vals:
+            for event in self.sudo():
+                event._check_assignees_are_treatment_professionals(
+                    event.assigned_staff_ids
+                    - before_staff.get(event.id, self.env['res.users']))
 
         if sync_t_to_d:
             for event in self.with_context(skip_event_time_sync=True):

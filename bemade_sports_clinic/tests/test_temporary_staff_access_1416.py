@@ -90,6 +90,17 @@ class GrantCaseMixin:
         base.update(vals)
         return self.Grant.create(base)
 
+    @classmethod
+    def _make_rep_a_tp(cls):
+        """Hotfix 19.0.1.42.7: only treatment professionals can be event
+        assignees, and event coverage never makes someone one. Make the
+        replacement a TP the legit way: a manual therapist row on a home
+        team outside the teams these tests look at."""
+        home = cls.env["sports.team"].create({"name": "Synthetic Home Team"})
+        cls.env["sports.team.staff"].create({
+            "team_id": home.id, "partner_id": cls.rep.id, "role": "therapist",
+        })
+
     def _rows(self, partner=None, teams=None):
         return self.Staff.with_context(active_test=False).search([
             ("partner_id", "=", (partner or self.rep).id),
@@ -267,6 +278,7 @@ class TestStaffGrant1416(GrantCaseMixin, TransactionCase):
         self.assertEqual(grant.staff_count, 4)
 
     def test_temp_adopts_event_row_and_hands_it_back(self):
+        self._make_rep_a_tp()
         # an OPEN event coverage row for the same person / team
         event = self.env["sports.event"].create({
             "name": "Synthetic Game", "date_start": self.now + H, "date_end": self.now + 3 * H,
@@ -445,6 +457,7 @@ class TestEventCoverageLead1416(GrantCaseMixin, TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls._setup_fixture()
+        cls._make_rep_a_tp()
 
     def _event(self, start, end, **vals):
         return self.env["sports.event"].create({

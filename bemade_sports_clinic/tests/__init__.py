@@ -109,3 +109,4 @@ from . import test_portal_rename_1537
 from . import test_treatment_note_access_hotfix
 from . import test_portal_access_sweep_hotfix
 from . import test_patient_owner_guard
+from . import test_event_assignee_escalation_hotfix

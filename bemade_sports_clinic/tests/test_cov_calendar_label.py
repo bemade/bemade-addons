@@ -84,7 +84,14 @@ class TestCovCalendarLabel(TransactionCase):
         })
         # Assigned in a deliberately "wrong" order to prove the compute reorders.
         ev = self._event(assigned_staff_ids=[
-            Command.set([other.id, self.tp_mc.id, head.id])])
+            Command.set([self.tp_mc.id, head.id])])
+        # A non-TP can no longer be assigned (hotfix 19.0.1.42.7); a legacy
+        # one (assigned before, or who has left the TP groups) still exists.
+        self.env.flush_all()
+        self.env.cr.execute(
+            "INSERT INTO sports_event_staff_rel (event_id, user_id) VALUES (%s, %s)",
+            (ev.id, other.id))
+        ev.invalidate_recordset()
         # head (Hana Kim=HK) -> other TP (Marie Curie=MC) -> non-TP (Zoe Other=ZO)
         self.assertEqual(ev.calendar_label, 'Practice A (HK MC ZO)')
 
