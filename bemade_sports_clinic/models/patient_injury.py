@@ -901,7 +901,9 @@ class PatientInjury(models.Model):
     @api.model
     def _cron_create_injury_verification_tasks(self):
         """Create verification activities for unverified injuries.
-        Assign to head therapist(s) of the injury's team, falling back to therapists.
+        Task 1664: routed by sports.patient._sc_todo_route (the player's
+        teams, the reporter's first; head therapist, then therapist; else a
+        clinic administrator).
         Runs with sudo to avoid portal ACL constraints from coach-created injuries.
         Deduplicates by checking for existing open 'Verify injury' activities on the same injury.
 
@@ -920,23 +922,12 @@ class PatientInjury(models.Model):
         todo_type = self.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
         patient_model_rec = self.env['ir.model']._get('sports.patient')
 
+        Patient = self.env['sports.patient']
         for injury in injuries:
             if not injury.patient_id:
                 continue
-            # Determine target team: the patient's first team
-            team = injury.patient_id.team_ids[:1]
-            if not team:
-                continue
-
-            # Find staff for this team prioritized by head_therapist then therapist
-            staff = self.env['sports.team.staff'].sudo().search([
-                ('team_id', '=', team.id),
-                ('role', 'in', ['head_therapist', 'therapist'])
-            ])
-            if not staff:
-                continue
-
             # Already has an open verification To-Do (keyed on injury_id)?
+            # ONE To-Do per injury.
             existing = Activity.search(
                 injury._verify_activity_domain() + [('active', '=', True)],
                 limit=1,
@@ -944,10 +935,12 @@ class PatientInjury(models.Model):
             if existing:
                 continue
 
-            # Choose a single assignee: prefer first head therapist user, else first therapist user
-            head_users = staff.filtered(lambda s: s.role == 'head_therapist').mapped('user_ids')[:1]
-            therapist_users = staff.filtered(lambda s: s.role == 'therapist').mapped('user_ids')[:1]
-            assignee = head_users or therapist_users
+            # Task 1664: the shared routing — the player's teams (the
+            # reporter's teams first), head therapist then therapist with a
+            # user account, else a clinic administrator. A player whose first
+            # team has no therapist account no longer goes without a To-Do.
+            assignee = injury.patient_id._sc_todo_route(
+                Patient._sc_user_teams(injury.create_uid))
             if not assignee:
                 continue
 

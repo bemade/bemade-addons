@@ -117,6 +117,9 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             domain = ['&', '&', ('user_id', '=', user.id),
                       ('date_deadline', '<', fields.Date.context_today(user))] \
                 + self._activity_team_access_domain(self._activity_scope_teams())
+            # Task 1664: the notepad reminders count too (as listed).
+            domain = ['|'] + domain + ['&', ('date_deadline', '<', fields.Date.context_today(user))] \
+                + self._activity_quick_note_domain(user)
             count = env['mail.activity'].search_count(domain)
             response = request.make_json_response({'count': count})
         response.headers['Cache-Control'] = 'no-store'
@@ -160,6 +163,9 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # is assigned to AND can actually open. The per-context callers pass a
             # `model` and hit the branch above, keeping their broad context scope.
             domain = ['&', ('user_id', '=', user.id)] + team_access_domain
+            # Task 1664: plus MY notepad reminders (« Note rapide en attente »)
+            # — on notes I may read (the mail.activity rules: my own notes).
+            domain = ['|'] + domain + self._activity_quick_note_domain(user)
         
         # Search for activities with both assignment and team-based access control
         activities = request.env['mail.activity'].search(domain, order='date_deadline asc')
@@ -906,6 +912,8 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 # one act rule.
                 'sc_activity_editable': self._activity_act_access(activity),
                 'sc_activity_user_options': [(u.id, u.name) for u in users],
+                # Task 1664: the reassign sheet of the detail page.
+                'sc_activity_reassign_users': assignable.sorted('name'),
             })
         return self._sc_render('bemade_sports_clinic.portal_activity_detail',
                                'bemade_sports_clinic.sc_app_activity_detail', values)

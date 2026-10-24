@@ -72,7 +72,8 @@ class TestAppShellActivities1539(AppShellCommon):
             self.assertEqual(form.get('action'), '/my/activity/%s' % sheet)
             self.assertTrue(form.xpath('.//input[@name="csrf_token"]/@value')[0])
             self.assertEqual(form.xpath('.//input[@name="return_url"]/@value'), ['/my/activities'])
-        self.assertFalse(tree.xpath('//dialog[@id="sc_activity_reassign_sheet"]'))
+        # Task 1664 (deliberate update): « Réassigner » on « Mes activités » too.
+        self.assertTrue(tree.xpath('//dialog[@id="sc_activity_reassign_sheet"]'))
         # ?tab= deep link.
         _text, tree = self._get('/my/activities?tab=planned')
         self.assertIsNone(tree.xpath('//section[@data-sc-tab-panel="planned"]')[0].get('hidden'))

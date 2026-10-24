@@ -8183,6 +8183,7 @@ msgstr "Note mise à jour."
 #: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_breadcrumbs_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_home
+#: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
 msgid "Notepad"
 msgstr "Bloc-notes"
 
@@ -16647,3 +16648,30 @@ msgid ""
 "This player can no longer be undone; remove or archive them from their page."
 msgstr ""
 "Ce joueur ne peut plus être annulé ; retirez-le ou archivez-le depuis sa fiche."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+msgid "Which team?"
+msgstr "De quelle équipe ?"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+msgid "<option value=\"\">Choose a team…</option>"
+msgstr "<option value=\"\">Choisissez une équipe…</option>"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "Please choose the team."
+msgstr "Veuillez choisir l'équipe."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
+msgid "You do not have access to this note."
+msgstr "Vous n'avez pas accès à cette note."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_detail
+msgid "Reassign"
+msgstr "Réassigner"

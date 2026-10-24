@@ -349,7 +349,25 @@ class AccessControlMixin:
         'sports.team': ('/my/team?team_id=%s', 'teams'),
         'sports.event': ('/my/event/%s', 'calendar'),
         'sports.patient.injury': ('/my/injury/edit?injury_id=%s', 'injury'),
+        # Task 1664: a notepad reminder links to its note (its owner only).
+        'sports.quick.note': ('/my/notepad#note-%s', 'note'),
     }
+
+    @staticmethod
+    def _activity_quick_note_domain(user):
+        """Task 1664: the notepad reminders assigned to ``user`` (the
+        « Note rapide en attente » To-Dos on ``sports.quick.note``). The
+        mail.activity rules keep them to notes the user may read (a
+        therapist: their own notes)."""
+        return ['&', '&', ('res_model', '=', 'sports.quick.note'),
+                ('res_id', '!=', False), ('user_id', '=', user.id)]
+
+    def _check_quick_note_owner(self, note_id):
+        """Task 1664: the notepad lists the viewer's OWN notes only."""
+        note = request.env['sports.quick.note'].sudo().browse(note_id).exists()
+        if not note or note.user_id != request.env.user:
+            raise AccessError(_("You do not have access to this note."))
+        return note
 
     def _sc_activity_record_link(self, record):
         """``{'model', 'id', 'name', 'url', 'icon'}`` of ONE related record
@@ -370,6 +388,7 @@ class AccessControlMixin:
             'sports.team': self._check_team_access,
             'sports.event': self._check_access_to_event,
             'sports.patient.injury': self._check_access_to_injury,
+            'sports.quick.note': self._check_quick_note_owner,
         }
         try:
             checks[model](record.id)
@@ -387,6 +406,9 @@ class AccessControlMixin:
             link['name'] = record._portal_list_name(with_jersey=False)
         elif model == 'sports.patient.injury':
             link['name'] = record.diagnosis or record.display_name
+        elif model == 'sports.quick.note':
+            # Task 1664: never the note's text in a row — just « Bloc-notes ».
+            link['name'] = request.env._("Notepad")
         else:
             link['name'] = record.display_name
         return link

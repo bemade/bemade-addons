@@ -905,6 +905,19 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             sole_team_id = next(iter(player_team_ids)) if player_team_ids else None
             if sole_team_id and sole_team_id in staff_team_ids:
                 removal_team_id = sole_team_id
+        # Task 1664: no team context and the player is on several teams — the
+        # viewer's teams among them; one → that team, several → the request
+        # sheet asks « De quelle équipe ? » (the first one stands in for the
+        # direct-remove check below, which never applies to a coach).
+        removal_team_options = []
+        if not valid_team_context:
+            shared = http.request.env['sports.team'].sudo().browse(
+                sorted(staff_team_ids & player_team_ids)).sorted('name')
+            removal_team_options = [(t.id, t.name) for t in shared]
+            if not removal_team_id and removal_team_options:
+                removal_team_id = removal_team_options[0][0]
+        if len(removal_team_options) < 2:
+            removal_team_options = []
 
         # Show the direct-remove button ONLY when the viewer may actually remove
         # from this team (task 1260 — the single permission predicate), so it
@@ -989,6 +1002,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'can_request_removal': can_request_removal,
                 'can_direct_remove': can_direct_remove,
                 'removal_team_id': removal_team_id,
+                'removal_team_options': removal_team_options,
                 'team_context_id': team_context_id,
                 'clinic_event': clinic_event,
                 'ctx_qs': ctx_qs,

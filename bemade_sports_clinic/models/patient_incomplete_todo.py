@@ -137,6 +137,34 @@ class Patient(models.Model):
             lambda u: self._sc_is_assignable(u) and not u.share)
         return admins.sorted('id')[:1]
 
+    def _sc_todo_route(self, preferred_teams=None):
+        """Task 1664: the ONE routing of the automatic To-Dos about this
+        player (« Vérifier la blessure », « Compléter la fiche »). Walk the
+        player's teams — ``preferred_teams`` first (the creator's teams, when
+        known), then the others by id — and, within each team, its head
+        therapist(s) then therapist(s) (staff order) holding an active user
+        account. Nobody on any team → the first active clinic administrator.
+        Empty only when there is no clinic administrator either."""
+        self.ensure_one()
+        teams = self.sudo().team_ids
+        preferred = (preferred_teams or self.env['sports.team']).sudo() & teams
+        for team in preferred.sorted('id') | (teams - preferred).sorted('id'):
+            staff = team.staff_ids.filtered(lambda s: s.role in THERAPIST_ROLES).sorted(
+                lambda s: (THERAPIST_ROLES.index(s.role), s.sequence, s.id))
+            for row in staff:
+                users = row.user_ids.filtered(self._sc_is_assignable)
+                if users:
+                    return users.sorted('id')[:1]
+        return self._sc_first_clinic_admin()
+
+    @api.model
+    def _sc_user_teams(self, user):
+        """The teams ``user`` staffs (sudo; empty for no user)."""
+        if not user or not user.partner_id:
+            return self.env['sports.team']
+        return self.env['sports.team.staff'].sudo().search(
+            [('partner_id', '=', user.partner_id.id)]).team_id
+
     def _sc_incomplete_todo_assignee(self):
         """See the module docstring. Empty when nobody qualifies."""
         self.ensure_one()
@@ -147,14 +175,8 @@ class Patient(models.Model):
             if creator.has_group(CLINIC_ADMIN_GROUP) or (
                     creator.partner_id in teams.staff_ids.partner_id):
                 return creator
-        for team in teams:
-            staff = team.staff_ids.filtered(lambda s: s.role in THERAPIST_ROLES).sorted(
-                lambda s: (THERAPIST_ROLES.index(s.role), s.sequence, s.id))
-            for row in staff:
-                users = row.user_ids.filtered(self._sc_is_assignable)
-                if users:
-                    return users.sorted('id')[:1]
-        return self._sc_first_clinic_admin()
+        # Task 1664: the shared routing (the creator's teams first).
+        return player._sc_todo_route(self._sc_user_teams(creator))
 
     # ------------------------------------------------------------------
     # Cron

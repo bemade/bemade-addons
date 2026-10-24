@@ -199,7 +199,9 @@
             <t t-set="sc_title" t-value="sc_nav_labels['activities']"/>
             <t t-set="sc_active_nav" t-value="'activities'"/>
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
-            <t t-set="sc_can_reassign" t-value="show_assignee and sc_can('activities.reassign')"/>
+            <!-- Task 1664: « Réassigner » on every list (Mes activités too),
+                 same right as before (the route re-checks). -->
+            <t t-set="sc_can_reassign" t-value="sc_can('activities.reassign')"/>
             <t t-if="simplified">
                 <t t-call="bemade_sports_clinic.sc_activities_header"/>
                 <t t-call="bemade_sports_clinic.sc_activity_list">
@@ -392,13 +394,17 @@
                 <button type="button" class="o_sc_btn o_sc_btn_ghost"
                         data-sc-sheet-open="sc_activity_reschedule_sheet" t-att-data-sc-activity-id="activity.id"
                         data-sc-action="activity.reschedule">Reschedule</button>
+                <!-- Task 1664: « Réassigner » on the detail page too. -->
+                <button t-if="sc_can('activities.reassign')" type="button" class="o_sc_btn o_sc_btn_ghost"
+                        data-sc-sheet-open="sc_activity_reassign_sheet" data-sc-action="activity.reassign"
+                        t-att-data-sc-activity-id="activity.id" t-att-data-sc-current-user="activity.sudo().user_id.name or ''">Reassign</button>
                 <button type="button" class="o_sc_btn o_sc_btn_primary" data-sc-sheet-open="sc_activity_complete_sheet"
                         t-att-data-sc-activity-id="activity.id" data-sc-action="activity.complete">Done</button>
             </div>
             <t t-call="bemade_sports_clinic.sc_activity_sheets">
                 <t t-set="return_url" t-value="sc_related_url or '/my/activities'"/>
-                <t t-set="available_users" t-value="False"/>
-                <t t-set="can_reassign" t-value="False"/>
+                <t t-set="available_users" t-value="sc_activity_reassign_users"/>
+                <t t-set="can_reassign" t-value="sc_activity_editable and sc_can('activities.reassign')"/>
                 <t t-set="today" t-value="today"/>
             </t>
         </t>

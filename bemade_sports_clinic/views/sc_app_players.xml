@@ -774,13 +774,14 @@
                 <t t-call="bemade_sports_clinic.sc_activity_list">
                     <t t-set="activities" t-value="player_activities"/>
                     <t t-set="show_assignee" t-value="True"/>
-                    <t t-set="can_reassign" t-value="False"/>
+                    <!-- Task 1664: « Réassigner » on the player tab too. -->
+                    <t t-set="can_reassign" t-value="sc_can('activities.reassign')"/>
                     <t t-set="empty_message">No activities recorded</t>
                 </t>
                 <t t-call="bemade_sports_clinic.sc_activity_sheets">
                     <t t-set="return_url" t-value="sc_activities_return"/>
                     <t t-set="available_users" t-value="assignable_users"/>
-                    <t t-set="can_reassign" t-value="False"/>
+                    <t t-set="can_reassign" t-value="sc_can('activities.reassign')"/>
                 </t>
             </section>
 
@@ -801,10 +802,22 @@
                 <t t-set="sheet_id" t-value="'sc_request_removal_sheet'"/>
                 <t t-set="title">Request Player Removal</t>
                 <t t-set="message" t-value="False"/>
-                <t t-set="action" t-value="'/my/team/%s/player/%s/request_removal' % (removal_team_id, player.id)"/>
+                <!-- Task 1664: a player on several of the viewer's teams —
+                     the sheet asks which one (the team-agnostic route). -->
+                <t t-set="action" t-value="('/my/player/%s/request_removal' % player.id) if removal_team_options else ('/my/team/%s/player/%s/request_removal' % (removal_team_id, player.id))"/>
                 <t t-set="hidden" t-value="{}"/>
                 <t t-set="confirm_label">Submit Request</t>
                 <t t-set="danger" t-value="False"/>
+                <div t-if="removal_team_options" class="o_sc_field">
+                    <label for="sc_removal_team" class="o_sc_field_label">Which team?</label>
+                    <select id="sc_removal_team" name="team_id" class="o_sc_input o_sc_select" required="required"
+                            data-sc-section="player.request_removal.team">
+                        <option value="">Choose a team…</option>
+                        <t t-foreach="removal_team_options" t-as="opt">
+                            <option t-att-value="opt[0]" t-out="opt[1]"/>
+                        </t>
+                    </select>
+                </div>
                 <div class="o_sc_field">
                     <label for="sc_removal_reason" class="o_sc_field_label">Reason</label>
                     <textarea id="sc_removal_reason" name="reason" class="o_sc_input o_sc_textarea" rows="3"

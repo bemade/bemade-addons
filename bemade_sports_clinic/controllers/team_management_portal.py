@@ -89,6 +89,22 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             error_message = _("Error requesting removal: %s") % self._user_error_text(e, 'team')
             return request.redirect(f"/my/team/{team_id}?error={error_message}".replace(' ', '+'))
     
+    @http.route(['/my/player/<int:player_id>/request_removal'],
+                type='http', auth="user", website=True, methods=['POST'])
+    def portal_request_player_removal_any_team(self, player_id, **post):
+        """Task 1664: the player page's « Request Removal » when the player
+        is on several of the viewer's teams — the sheet posts the chosen
+        ``team_id``; the same checks as the per-team route (which it calls)."""
+        team_id = post.pop('team_id', '') or ''
+        if not str(team_id).isdigit():
+            request.session['notification'] = {
+                'type': 'warning', 'title': '',
+                'message': _("Please choose the team."),
+                'sticky': False,
+            }
+            return request.redirect('/my/player?player_id=%s' % int(player_id))
+        return self.portal_request_player_removal(int(team_id), player_id, **post)
+
     @http.route(['/my/team/<int:team_id>/player/<int:player_id>/remove'],
                type='http', auth="user", website=True, methods=['POST'])
     def portal_remove_player(self, team_id, player_id, **post):
