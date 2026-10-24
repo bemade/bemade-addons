@@ -53,10 +53,9 @@ function noteSteps(card, scope, text, other) {
         },
         {
             content: "Saved: the card's read view holds the new text and its stamp",
-            trigger: `${card} [data-sc-edit-view="read"] [data-sc-note-stamp="${scope}"]:not(:visible)`,
+            trigger: `${card} [data-sc-edit-view="read"]:not(:visible):contains(${text})`,
             run() {
-                const read = document.querySelector(`${card} [data-sc-edit-view="read"]`);
-                assert(read.textContent.includes(text), "read text not refreshed");
+                assert(this.anchor.querySelector(`[data-sc-note-stamp="${scope}"]`), "no stamp");
             },
         },
         {
