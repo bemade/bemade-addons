@@ -120,7 +120,9 @@ class TestMessagesAnnuler1663(Messages1663Common):
         _text, tree = self._page(resp.headers['Location'])
         form = tree.xpath('//form[@data-sc-form="announcement.undo"]')
         self.assertEqual(len(form), 1)
-        self.assertEqual(form[0].get('action'), '/my/team/%s/announcement/restore' % self.team_a.id)
+        # (website installed, CI: the form action carries the /fr prefix)
+        self.assertTrue(form[0].get('action').endswith('/my/team/%s/announcement/restore' % self.team_a.id),
+                        form[0].get('action'))
         self.assertEqual(form[0].get('data-sc-toast-message'), 'Annonce archivée')
         self.assertEqual(form[0].get('data-sc-toast-action'), 'Annuler')
         # A plain reload (no ?announcement_archived) offers nothing.
