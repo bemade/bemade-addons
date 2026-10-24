@@ -42,3 +42,4 @@ from . import patient_merge_wizard
 from . import ir_http
 from . import patient_critical_item
 from . import patient_medical_undo
+from . import sc_help_article

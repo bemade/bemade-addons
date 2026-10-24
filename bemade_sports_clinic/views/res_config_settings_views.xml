@@ -24,6 +24,11 @@
                 <field name="product_event_clinic_vendor_id"/>
               </div>
             </setting>
+            <setting string="User Guide Home" help="Public page of the user guide's home article (/knowledge/article/&lt;id&gt;). The page-by-page articles: Sports Clinic › Administration › App help.">
+              <div class="content-group">
+                <field name="sc_help_home_url" placeholder="/knowledge/article/…"/>
+              </div>
+            </setting>
             <setting string="Material Report Recipient" help="Email address pre-filled in the portal Add Timesheet notice inviting therapists to report personal material used, for client re-invoicing.">
               <div class="content-group">
                 <field name="material_report_email"/>

@@ -1408,6 +1408,10 @@ class AppShellMixin:
             'sc_parent_url': nav['parent_url'],
             'sc_crumbs': nav['crumbs'],
             'sc_context': nav['context'],
+            # Task 1660: the page's help (the app bar « ? », « Aide »).
+            'sc_help': request.env['sc.help.article']._sc_help_for(
+                (page or '').rpartition('.')[2],
+                tab=request.params.get('tab') or shell.get('sc_player_active_tab')),
         })
         return shell
 

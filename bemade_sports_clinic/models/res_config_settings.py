@@ -19,6 +19,13 @@ class ResConfigSettings(models.TransientModel):
         'product.product', string='Clinic Product (Vendor PO)',
         config_parameter='bemade_sports_clinic.product_event_clinic_vendor_id')
 
+    # Task 1660: the user guide's home article (the app's « Aide »).
+    sc_help_home_url = fields.Char(
+        string="User Guide Home",
+        config_parameter="bemade_sports_clinic.help_home_url",
+        help="Public page of the user guide's home article "
+             "(/knowledge/article/<id>). Empty: no « Aide » entry in the app.")
+
     # Team dashboard daily-digest snapshot config (task 1267)
     digest_capture_time = fields.Char(
         string="Digest Capture Time",

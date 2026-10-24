@@ -200,6 +200,17 @@
                 </t>
             </div>
 
+            <!-- Task 1660: the user guide (new tab), every app role. -->
+            <div t-if="sc_help and sc_help['home']" class="o_sc_list" data-sc-section="more.guide">
+                <t t-call="bemade_sports_clinic.sc_entity_row">
+                    <t t-set="href" t-value="sc_help['home']"/>
+                    <t t-set="lead_icon" t-value="'help'"/>
+                    <t t-set="title">User guide</t>
+                    <t t-set="subtitle">Articles and videos</t>
+                    <t t-set="row_attrs" t-value="{'target': '_blank', 'rel': 'noopener', 'data-sc-help-home-link': '1'}"/>
+                </t>
+            </div>
+
             <p class="o_sc_footnote">Le Fit Crew</p>
         </t>
     </template>
