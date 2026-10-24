@@ -2326,6 +2326,7 @@ msgstr "<span>Notes archivées</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_timesheet_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_row
 msgid "<span>Delete</span>"
 msgstr "<span>Supprimer</span>"
 
@@ -14933,6 +14934,7 @@ msgstr "Date inconnue"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_quick_note_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_timesheet_sheets
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_detail
 msgid "Delete"
 msgstr "Supprimer"
 
@@ -15206,6 +15208,7 @@ msgstr "Aujourd'hui (%(count)s)"
 #: code:addons/bemade_sports_clinic/static/src/js/sc_status_pills.js:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 msgid "Undo"
 msgstr "Annuler"
 
@@ -16584,3 +16587,62 @@ msgstr "Vérifier la blessure"
 #: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
 msgid "Earlier"
 msgstr "Passées"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_sheets
+msgid "Delete activity"
+msgstr "Supprimer l'activité"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_sheets
+msgid "Delete this activity?"
+msgstr "Supprimer cette activité ?"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_sheets
+msgid "Yes, delete"
+msgstr "Oui, supprimer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+msgid "Announcement archived"
+msgstr "Annonce archivée"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/task_management_portal.py:0
+#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
+msgid "Activity deleted."
+msgstr "Activité supprimée."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "Announcement restored."
+msgstr "Annonce restaurée."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "This announcement can no longer be restored."
+msgstr "Cette annonce ne peut plus être restaurée."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "Restored"
+msgstr "Restaurée"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_player_add.py:0
+msgid "Player creation undone."
+msgstr "Création du joueur annulée."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
+msgid ""
+"This player can no longer be undone; remove or archive them from their page."
+msgstr ""
+"Ce joueur ne peut plus être annulé ; retirez-le ou archivez-le depuis sa fiche."

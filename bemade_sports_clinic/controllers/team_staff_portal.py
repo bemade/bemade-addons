@@ -1211,7 +1211,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'activity_updated': env._("Activity updated."),
             'activity_reassigned': env._("Activity reassigned."),
             'activity_done': env._("Activity marked as done."),
-            'activity_cancelled': env._("Activity cancelled."),
+            'activity_cancelled': env._("Activity deleted."),
             'injury_deleted': env._("Injury deleted."),
             'injury_undone': env._("Injury creation undone."),
             'player_updated': env._("Player updated."),
@@ -1229,6 +1229,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'injury_visibility': env._("Please choose whether coaches can see this injury."),
             'injury_diagnosis': env._("Please enter a diagnosis."),
             'undo_expired': env._("This injury can no longer be undone; delete it from its card."),
+            # Task 1663: the player undo-create has its own message.
+            'player_undo_expired': env._(
+                "This player can no longer be undone; remove or archive them from their page."),
         }.get(kw.get('error'))
         # Task 1616: the injury cards' messages (several documents, a file
         # list over the limit, an old injury-page save).

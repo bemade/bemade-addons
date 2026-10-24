@@ -193,6 +193,26 @@ if (document.readyState === "loading") {
     offerUndoCreate();
 }
 
+// Task 1663: a team announcement just archived — « Announcement archived ·
+// Undo » for the pills' undo time (~8 s; the server re-checks its window);
+// the address loses ?announcement_archived= so a reload does not offer it.
+function offerUndoAnnouncement() {
+    const form = document.querySelector('.o_sc_app form[data-sc-form="announcement.undo"]');
+    if (form) {
+        showToast(form.dataset.scToastMessage, form.dataset.scToastAction, () => form.submit(), 8000);
+    }
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("announcement_archived")) {
+        url.searchParams.delete("announcement_archived");
+        window.history.replaceState(window.history.state, "", url.toString());
+    }
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", offerUndoAnnouncement);
+} else {
+    offerUndoAnnouncement();
+}
+
 // Task 1656: a toast kept for this page by the previous one (it was left
 // after its viewer lost access to it: sc_confirm.js scLeavePage).
 function showPendingToast() {

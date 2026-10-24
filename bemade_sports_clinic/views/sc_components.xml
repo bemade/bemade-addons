@@ -852,7 +852,7 @@
                 </button>
                 <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-sheet-open="sc_activity_cancel_sheet"
                         t-att-data-sc-activity-id="activity.id" data-sc-action="activity.cancel">
-                    <span>Cancel</span>
+                    <span>Delete</span>
                 </button>
             </div>
         </div>

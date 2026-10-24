@@ -376,6 +376,9 @@ class SportsTeam(models.Model):
                 continue
             if not new:
                 action = "dismiss"
+            elif not old and self.env.context.get("sc_announcement_restore"):
+                # Task 1663: the undo of an archive.
+                action = "restore"
             elif not old:
                 action = "set"
             else:

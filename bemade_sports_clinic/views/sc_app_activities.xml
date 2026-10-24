@@ -77,16 +77,18 @@
         </t>
         <t t-call="bemade_sports_clinic.sc_sheet">
             <t t-set="sheet_id" t-value="'sc_activity_cancel_sheet'"/>
-            <t t-set="title">Cancel Activity</t>
+            <!-- Task 1663: « Supprimer » (it deletes the activity) — never
+                 « Annuler », which is the undo everywhere else. -->
+            <t t-set="title">Delete activity</t>
             <t t-set="lazy_url" t-value="False"/>
             <form method="post" action="/my/activity/cancel" class="o_sc_form" data-sc-form="activity.cancel">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="activity_id" value=""/>
                 <input type="hidden" name="return_url" t-att-value="return_url"/>
-                <p class="o_sc_confirm_message">Are you sure you want to cancel this activity? This action cannot be undone.</p>
+                <p class="o_sc_confirm_message">Delete this activity?</p>
                 <div class="o_sc_form_actions">
                     <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">No</button>
-                    <button type="submit" class="o_sc_btn o_sc_btn_danger">Yes, Cancel Activity</button>
+                    <button type="submit" class="o_sc_btn o_sc_btn_danger" data-sc-action="activity.cancel.confirm">Yes, delete</button>
                 </div>
             </form>
         </t>
@@ -382,11 +384,11 @@
                     </t>
                 </div>
             </section>
-            <!-- Task 1589: Cancel / Reschedule / Done only for who may act on
+            <!-- Task 1589: Delete / Reschedule / Done only for who may act on
                  the activity (the routes re-check). -->
             <div t-if="sc_activity_editable" class="o_sc_actionbar">
                 <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-open="sc_activity_cancel_sheet"
-                        t-att-data-sc-activity-id="activity.id" data-sc-action="activity.cancel">Cancel</button>
+                        t-att-data-sc-activity-id="activity.id" data-sc-action="activity.cancel">Delete</button>
                 <button type="button" class="o_sc_btn o_sc_btn_ghost"
                         data-sc-sheet-open="sc_activity_reschedule_sheet" t-att-data-sc-activity-id="activity.id"
                         data-sc-action="activity.reschedule">Reschedule</button>

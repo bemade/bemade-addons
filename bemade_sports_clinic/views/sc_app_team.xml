@@ -94,6 +94,18 @@
                                         aria-expanded="false" t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label">
                                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
                                 </button>
+                                <!-- Task 1663: archived a moment ago — « Annonce archivée
+                                     — Annuler » (sc_app_ui.js shows the toast; the
+                                     server re-checks the window). -->
+                                <t t-if="sc_announcement_undo">
+                                    <t t-set="sc_archived_label">Announcement archived</t>
+                                    <t t-set="sc_restore_label">Undo</t>
+                                    <form t-attf-action="/my/team/#{team.id}/announcement/restore" method="post" hidden="hidden"
+                                          data-sc-form="announcement.undo" t-att-data-sc-toast-message="sc_archived_label"
+                                          t-att-data-sc-toast-action="sc_restore_label">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    </form>
+                                </t>
                                 <form t-if="team.announcement" t-attf-action="/my/team/#{team.id}/announcement/dismiss"
                                       method="post" class="o_sc_inline_form" data-sc-section="team.announcement.archive">
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>

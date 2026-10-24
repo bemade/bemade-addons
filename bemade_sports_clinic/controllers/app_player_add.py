@@ -220,7 +220,9 @@ class AppPlayerAddPortal(TeamStaffPortal):
         )
         if not allowed:
             _logger.info("Undo of player %s refused for user %s", patient.id, request.env.user.id)
-            return request.redirect('/my/player?player_id=%s&tab=info&error=undo_expired' % patient.id)
+            # Task 1663: the player's own message (not the injury one).
+            return request.redirect(
+                '/my/player?player_id=%s&tab=info&error=player_undo_expired' % patient.id)
         partner = patient.partner_id
         request.env['mail.activity'].sudo().search([
             ('res_model', '=', 'sports.patient'), ('res_id', '=', patient.id)]).unlink()
@@ -232,5 +234,12 @@ class AppPlayerAddPortal(TeamStaffPortal):
                     partner.unlink()
             except Exception:  # noqa: BLE001 — a partner used elsewhere stays
                 _logger.info("Partner %s of an undone player kept", partner.id)
-        sep = '&' if '?' in back else '?'
-        return request.redirect('%s%ssuccess=player_undone' % (back, sep))
+        # Task 1663: a toast on whichever app page the user goes back to
+        # (the team page, the players list…), « Création du joueur annulée. »
+        request.session['notification'] = {
+            'type': 'success',
+            'title': '',
+            'message': request.env._("Player creation undone."),
+            'sticky': False,
+        }
+        return request.redirect(back)

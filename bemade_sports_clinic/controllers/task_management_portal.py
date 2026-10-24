@@ -294,7 +294,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'activity_updated': env._("Activity updated."),
                 'activity_reassigned': env._("Activity reassigned."),
                 'activity_done': env._("Activity marked as done."),
-                'activity_cancelled': env._("Activity cancelled."),
+                'activity_cancelled': env._("Activity deleted."),
             }.get(params.get('success')),
             'error': {
                 'missing_fields': env._("Please fill in all required fields."),
