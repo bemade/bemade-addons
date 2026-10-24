@@ -16955,3 +16955,13 @@ msgstr "Supprimer la blessure"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
 msgid "Finish editing"
 msgstr "Terminer la modification"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_return_proposal.py:0
+msgid ""
+"This was the player's last active injury. Clear the predicted return, set "
+"the actual return date and reset their statuses?"
+msgstr ""
+"C'était la dernière blessure active du joueur. Retirer le retour prévu, "
+"inscrire la date de retour réelle et remettre ses statuts ?"

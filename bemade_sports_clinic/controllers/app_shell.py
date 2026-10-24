@@ -153,7 +153,9 @@ _TP_ROLES = sc_app_roles.TP
 # Task 1603: what an applied follow-up proposal may write (on top of the
 # SAVE_REGISTRY role allowlist and check), and how many changes at once.
 PROPOSAL_FIELDS = {
-    'sports.patient': ('predicted_return_date', 'return_date'),
+    # Task 1670: the last active injury resolved also proposes the statuses
+    # (applied together as one « sc_status » save — the pair rule).
+    'sports.patient': ('predicted_return_date', 'return_date', 'match_status', 'practice_status'),
     # Task 1631: a backward move proposes clearing the resolution date.
     'sports.patient.injury': ('predicted_resolution_date', 'resolution_date'),
 }
@@ -162,6 +164,7 @@ SC_PROPOSAL_SESSION_KEY = 'sc_pending_proposal'
 _STAFF_ROLES = sc_app_roles.STAFF
 _TEXT_TYPES = ('char', 'text', 'html')
 _VALID_STATUS_PAIRS = {('yes', 'yes'), ('no', 'yes'), ('no', 'no_contact'), ('no', 'no')}
+_STATUS_FIELDS = ('match_status', 'practice_status')
 
 
 def sc_state_options(env, country):
@@ -2267,6 +2270,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         caller runs it in one savepoint (all or nothing). Returns the
         written (record, field) pairs."""
         done = []
+        statuses = {}  # task 1670: {field: value} of the player's status rows
         for change in changes:
             if not isinstance(change, dict):
                 raise ValidationError(_("Invalid value."))
@@ -2274,7 +2278,9 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             if field not in PROPOSAL_FIELDS.get(model, ()):
                 raise AccessError(_("This change cannot be applied here."))
             spec = SAVE_REGISTRY.get(model)
-            if not spec or not self._sc_save_allowed(spec, field):
+            # Match / practice are saved as the player's one « sc_status ».
+            allowed_as = 'sc_status' if field in _STATUS_FIELDS else field
+            if not spec or not self._sc_save_allowed(spec, allowed_as):
                 raise AccessError(_("This change cannot be applied here."))
             try:
                 record = request.env[model].browse(int(change.get('id'))).exists()
@@ -2289,9 +2295,32 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             if spec.get('sudo_write') and not spec['permission'](self, record):
                 raise AccessError(_("You cannot edit this record."))
             value = change.get('value')
+            if field in _STATUS_FIELDS:
+                statuses[field] = '' if value in (None, False) else str(value)
+                continue
             spec['write'](self, record, field, '' if value in (None, False) else str(value))
             done.append((record, field))
+        if statuses:
+            done += self._sc_apply_statuses(patient, statuses)
         return done
+
+    def _sc_apply_statuses(self, patient, statuses):
+        """Task 1670: the match / practice rows of an applied proposal,
+        written together through the « sc_status » save (one write, tracked
+        like any status change); an invalid pair is refused with the status
+        pills' own reason."""
+        current = patient.sudo()
+        match = statuses.get('match_status', current.match_status)
+        practice = statuses.get('practice_status', current.practice_status)
+        for name, value in (('match_status', match), ('practice_status', practice)):
+            if value not in dict(patient._fields[name].selection):
+                raise ValidationError(_("Invalid value."))
+        if (match, practice) not in _VALID_STATUS_PAIRS:
+            if 'practice_status' in statuses and practice != 'yes' and match == 'yes':
+                raise ValidationError(_("Set Match to No first"))
+            raise ValidationError(_("Requires Practice: Yes"))
+        SAVE_REGISTRY['sports.patient']['write'](self, patient, 'sc_status', '%s:%s' % (match, practice))
+        return [(patient, name) for name in ('match_status', 'practice_status') if name in statuses]
 
     @http.route(['/my/app/apply-proposal'], type='http', auth='user',
                 methods=['POST'], csrf=True, multilang=False)
