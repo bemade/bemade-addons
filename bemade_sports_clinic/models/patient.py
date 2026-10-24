@@ -1043,7 +1043,7 @@ class Patient(models.Model):
                 team_summaries
             )
         subject = self.with_context(lang=lang).env._(
-            "FitCrew — urgent updates / mises à jour urgentes (%s)", team_count
+            "Le Fit Crew — urgent updates / mises à jour urgentes (%s)", team_count
         )
         try:
             self.env["mail.thread"].sudo().with_context(lang=lang).message_notify(

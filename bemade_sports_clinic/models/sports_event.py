@@ -1029,7 +1029,7 @@ class SportsEvent(models.Model):
                 if not body:
                     body = localized._cancel_notice_body(event_sudo.display_name, reason)
                 if not subject:
-                    subject = localized.env._("Event cancelled: %s", event_sudo.display_name)
+                    subject = localized.env._("Le Fit Crew — Event cancelled: %s", event_sudo.display_name)
                 try:
                     event_sudo.with_context(mail_notify_author=True, lang=lang).message_notify(
                         body=body,
@@ -1101,7 +1101,7 @@ class SportsEvent(models.Model):
                     mail_notify_author=True, lang=lang,
                 ).message_notify(
                     partner_ids=lang_partners.ids,
-                    subject=lenv._("Event deleted: %s", event_label),
+                    subject=lenv._("Le Fit Crew — Event deleted: %s", event_label),
                     body=body,
                     author_id=author.id if author else None,
                 )

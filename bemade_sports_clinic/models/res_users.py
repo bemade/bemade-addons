@@ -836,7 +836,7 @@ class User(models.Model):
                 team_lines, events, window_hours, events_days
             )
         subject = self.with_context(lang=lang).env._(
-            "FitCrew — daily briefing / sommaire quotidien"
+            "Le Fit Crew — daily briefing / sommaire quotidien"
         )
         try:
             self.env["mail.thread"].sudo().with_context(lang=lang).message_notify(

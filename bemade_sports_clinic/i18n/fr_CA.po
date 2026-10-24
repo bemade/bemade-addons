@@ -5695,13 +5695,13 @@ msgstr "Événement annulé. Raison : %s"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_event.py:0
-msgid "Event cancelled: %s"
-msgstr "Événement annulé : %s"
+msgid "Le Fit Crew — Event cancelled: %s"
+msgstr "Le Fit Crew — Événement annulé : %s"
 
 #. module: bemade_sports_clinic
 #: model:mail.template,subject:bemade_sports_clinic.mail_template_event_cancelled
-msgid "Event cancelled: {{ object.name }}"
-msgstr "Événement annulé : {{ object.name }}"
+msgid "Le Fit Crew — Event cancelled: {{ object.name }}"
+msgstr "Le Fit Crew — Événement annulé : {{ object.name }}"
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -5726,8 +5726,8 @@ msgstr "Couverture d'événement · %s"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_event.py:0
-msgid "Event deleted: %s"
-msgstr "Événement supprimé : %s"
+msgid "Le Fit Crew — Event deleted: %s"
+msgstr "Le Fit Crew — Événement supprimé : %s"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_event__duration
@@ -6031,23 +6031,23 @@ msgstr "Première visite"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/res_users.py:0
-msgid "FitCrew — daily briefing / sommaire quotidien"
+msgid "Le Fit Crew — daily briefing / sommaire quotidien"
 msgstr ""
 
 #. module: bemade_sports_clinic
 #: model:mail.template,subject:bemade_sports_clinic.mail_template_urgent_summary
-msgid "FitCrew — mises à jour urgentes / urgent updates"
+msgid "Le Fit Crew — mises à jour urgentes / urgent updates"
 msgstr ""
 
 #. module: bemade_sports_clinic
 #: model:mail.template,subject:bemade_sports_clinic.mail_template_morning_digest
-msgid "FitCrew — sommaire quotidien / daily briefing"
+msgid "Le Fit Crew — sommaire quotidien / daily briefing"
 msgstr ""
 
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
-msgid "FitCrew — urgent updates / mises à jour urgentes (%s)"
+msgid "Le Fit Crew — urgent updates / mises à jour urgentes (%s)"
 msgstr ""
 
 #. module: bemade_sports_clinic

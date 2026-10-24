@@ -254,3 +254,4 @@ from . import test_adversarial_review_1022
 from . import test_identity_oracle_1023
 from . import test_fr_ca_gaps_1661
 from . import test_quick_btn_height_tours_1662
+from . import test_le_fit_crew_emails_1666

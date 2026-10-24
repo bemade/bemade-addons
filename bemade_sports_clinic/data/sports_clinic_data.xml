@@ -102,7 +102,7 @@
         <record id="mail_template_urgent_summary" model="mail.template">
             <field name="name">Urgent Aggregated Updates (PHI-free)</field>
             <field name="model_id" ref="base.model_res_partner"/>
-            <field name="subject">FitCrew — mises à jour urgentes / urgent updates</field>
+            <field name="subject">Le Fit Crew — mises à jour urgentes / urgent updates</field>
             <field name="body_html" type="html">
                 <div>
                     <p>Bonjour, / Hello,</p>
@@ -145,7 +145,7 @@
         <record id="mail_template_morning_digest" model="mail.template">
             <field name="name">Daily Morning Briefing (PHI-free)</field>
             <field name="model_id" ref="base.model_res_partner"/>
-            <field name="subject">FitCrew — sommaire quotidien / daily briefing</field>
+            <field name="subject">Le Fit Crew — sommaire quotidien / daily briefing</field>
             <field name="body_html" type="html">
                 <div>
                     <p>Bonjour, / Hello,</p>
@@ -214,7 +214,7 @@
         <record id="mail_template_event_cancelled" model="mail.template">
             <field name="name">Event Cancelled - Assigned Staff Notice</field>
             <field name="model_id" ref="bemade_sports_clinic.model_sports_event"/>
-            <field name="subject">Event cancelled: {{ object.name }}</field>
+            <field name="subject">Le Fit Crew — Event cancelled: {{ object.name }}</field>
             <!-- Bilingual body (owner call, dev-review 2026-07-04 round 2):
                  mail.template body_html is whole-value translated, so static
                  per-language bodies would have to be maintained as full
