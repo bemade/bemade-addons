@@ -14,13 +14,24 @@ Acceptance criteria covered here:
   AccessError for an internal therapist and a portal user; a URL must be a
   public guide article or an https address.
 * AC-4 (tour) Guide videos: a same-origin /web/content link marked
-  « o_fc_video » becomes a playable <video controls playsinline>; another
-  origin, or a non-attachment path, stays a plain link.
+  « o_fc_video » whose attachment is a video/* becomes a playable
+  <video controls playsinline> (the link is hidden under it); another origin,
+  a non-attachment path, a non-video attachment or a link inside an editor
+  stays a plain link.
+* AC-5 (review 2026-10-24) The public /knowledge/article/<id> page upgrades
+  the link both logged out (frontend layout, web.assets_frontend) and for a
+  logged-in portal user (Knowledge's portal web client,
+  knowledge.webclient); the class « o_fc_video » survives the Html field
+  sanitizer.
 """
+import base64
+import unittest
+
 from lxml import html as lxml_html
 
 from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import tagged
+from odoo.tools import html_sanitize
 from odoo.tools.misc import mute_logger
 
 from odoo.addons.bemade_sports_clinic.models.sc_help_article import SC_HELP_HOME_PARAM
@@ -133,4 +144,100 @@ class TestInAppHelpTour1660(Help1660Common):
     browser_size = '390x844'
 
     def test_video_links_upgrade(self):
-        self.start_tour('/my/home', 'sc_1660_video_links', login='pc.tp@example.com')
+        video, text = _guide_attachments(self.env)
+        self.start_tour(
+            f'/my/home?video={video.id}&text={text.id}', 'sc_1660_video_links',
+            login='pc.tp@example.com')
+
+
+# A playable 16×16, 0.2 s black VP8 WebM (synthetic, generated with ffmpeg's
+# lavfi « color » source): every Chrome build decodes it, so the player is not
+# dropped on a decode error while the tour looks at it.
+TINY_WEBM_B64 = (
+    'GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChYECGFOAZwEAAAAAAAHpEU2bdLpN'
+    'u4tTq4QVSalmU6yBoU27i1OrhBZUrmtTrIHYTbuMU6uEElTDZ1OsggElTbuMU6uEHFO7a1Os'
+    'ggHT7AEAAAAAAABZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+    'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVSalmsirX'
+    'sYMPQkBNgI1MYXZmNjIuMTIuMTAxV0GNTGF2ZjYyLjEyLjEwMUSJiEBpAAAAAAAAFlSua8iu'
+    'AQAAAAAAAD/XgQFzxYhnzPgpSu7/8JyBACK1nIN1bmSIgQCGhVZfVlA4g4EBI+ODhAvrwgDg'
+    'kLCBELqBEJqBAlWwhFW5gQESVMNn/HNzoGPAgGfImkWjh0VOQ09ERVJEh41MYXZmNjIuMTIu'
+    'MTAxc3PWY8CLY8WIZ8z4KUru//BnyKFFo4dFTkNPREVSRIeUTGF2YzYyLjI4LjEwMSBsaWJ2'
+    'cHhnyKFFo4hEVVJBVElPTkSHkzAwOjAwOjAwLjIwMDAwMDAwMAAfQ7Z1qOeBAKOjgQAAgBAC'
+    'AJ0BKhAAEAAARwiFhYiFhIgCAgAMDWAA/v+rUIAcU7trkbuPs4EAt4r3gQHxggGm8IED'
+)
+
+
+def _guide_attachments(env):
+    """A public video attachment and a public non-video one."""
+    Attachment = env['ir.attachment'].sudo()
+    video = Attachment.create({
+        'name': 'guide-1660.webm', 'raw': base64.b64decode(TINY_WEBM_B64),
+        'mimetype': 'video/webm', 'public': True})
+    text = Attachment.create({
+        'name': 'guide-1660.txt', 'raw': b'not a video', 'mimetype': 'text/plain',
+        'public': True})
+    assert video.mimetype == 'video/webm' and text.mimetype.startswith('text/')
+    return video, text
+
+
+VIDEO_JS = 'bemade_sports_clinic/static/src/js/sc_guide_video.js'
+
+
+@tagged('post_install', '-at_install')
+class TestGuideVideoAssets1660(Help1660Common):
+
+    def _bundle(self, name):
+        return [path for path, *_rest in self.env['ir.asset']._get_asset_paths(name, {})]
+
+    def test_player_in_the_frontend_bundles(self):
+        """Anonymous visitors: the public article layout loads
+        web.assets_frontend (lazily, through web.assets_frontend_lazy)."""
+        for bundle in ('web.assets_frontend', 'web.assets_frontend_lazy'):
+            self.assertTrue(
+                any(p.endswith(VIDEO_JS) for p in self._bundle(bundle)), bundle)
+
+    def test_player_in_the_knowledge_portal_client(self):
+        """Logged-in portal users get Knowledge's portal web client."""
+        if 'knowledge.article' not in self.env:
+            self.skipTest('knowledge is not installed')
+        self.assertTrue(any(p.endswith(VIDEO_JS) for p in self._bundle('knowledge.webclient')))
+
+    def test_class_survives_the_sanitizer(self):
+        body = '<p><a class="o_fc_video" href="/web/content/42">Vidéo</a></p>'
+        self.assertIn('class="o_fc_video"', html_sanitize(body))
+        if 'knowledge.article' in self.env:
+            article = self.env['knowledge.article'].create({'name': 'Guide 1660', 'body': body})
+            self.assertIn('class="o_fc_video"', str(article.body))
+            self.assertIn('href="/web/content/42"', str(article.body))
+
+
+@tagged('post_install', '-at_install')
+class TestGuideVideoKnowledgeTour1660(Help1660Common):
+    """The real public article page (needs website_knowledge: skipped where
+    it is not installed, e.g. the addon CI)."""
+    browser_size = '390x844'
+
+    def setUp(self):
+        super().setUp()
+        module = self.env['ir.module.module'].sudo().search(
+            [('name', '=', 'website_knowledge'), ('state', '=', 'installed')])
+        if not module:
+            raise unittest.SkipTest('website_knowledge is not installed')
+        video, text = _guide_attachments(self.env)
+        body = (
+            f'<p>Guide</p>'
+            f'<p><a class="o_fc_video" id="fc_vid_ok" href="/web/content/{video.id}">Voir la vidéo</a></p>'
+            f'<p><a class="o_fc_video" id="fc_vid_text" href="/web/content/{text.id}">Notes</a></p>'
+            f'<p><a class="o_fc_video" id="fc_vid_ext" '
+            f'href="https://videos.example.com/web/content/{video.id}">Ailleurs</a></p>'
+        )
+        self.article = self.env['knowledge.article'].sudo().create({
+            'name': 'Guide 1660', 'body': body, 'website_published': True})
+
+    def test_public_article_logged_out(self):
+        self.start_tour(f'/knowledge/article/{self.article.id}', 'sc_1660_knowledge_video')
+
+    def test_public_article_portal_user(self):
+        self.start_tour(
+            f'/knowledge/article/{self.article.id}', 'sc_1660_knowledge_video',
+            login='pc.tp@example.com')
