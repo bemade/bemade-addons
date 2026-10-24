@@ -16969,8 +16969,8 @@ msgstr ""
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
-msgid "Born on"
-msgstr "Né(e) le"
+msgid "<span>Born on</span>"
+msgstr "<span>Né(e) le</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
@@ -16995,7 +16995,6 @@ msgstr "Vérifiez les joueurs similaires ci-dessus avant de créer"
 
 #. module: bemade_sports_clinic
 #: model:ir.actions.act_window,name:bemade_sports_clinic.action_sports_patient_duplicate
-#: model:ir.model,name:bemade_sports_clinic.model_sports_patient_duplicate
 #: model:ir.ui.menu,name:bemade_sports_clinic.sports_clinic_patient_duplicate_menu
 msgid "Possible duplicates"
 msgstr "Doublons possibles"
@@ -17036,3 +17035,53 @@ msgstr "Nom semblable"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_duplicate_view_search
 msgid "Same date of birth"
 msgstr "Même date de naissance"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_patient_duplicate
+msgid "Possible duplicate players"
+msgstr "Doublons de joueurs possibles"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__dob_b
+msgid "Date of birth (duplicate)"
+msgstr "Date de naissance (doublon)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__kind
+msgid "Kind"
+msgstr "Type"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__kind_sequence
+msgid "Kind Sequence"
+msgstr "Ordre du type"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.actions.act_window,help:bemade_sports_clinic.action_sports_patient_duplicate
+msgid "No possible duplicate listed."
+msgstr "Aucun doublon possible listé."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_duplicate_view_search
+msgid "Not duplicates"
+msgstr "Pas des doublons"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__teams_b
+msgid "Teams (duplicate)"
+msgstr "Équipes (doublon)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.constraint,message:bemade_sports_clinic.constraint_sports_patient_duplicate_pair_unique
+msgid "This pair is already listed."
+msgstr "Cette paire est déjà listée."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_duplicate_view_search
+msgid "To review"
+msgstr "À examiner"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.actions.act_window,help:bemade_sports_clinic.action_sports_patient_duplicate
+msgid "Use « Find duplicates » to look for players entered twice."
+msgstr "Utilisez « Rechercher les doublons » pour trouver les joueurs entrés deux fois."
