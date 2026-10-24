@@ -262,3 +262,4 @@ from . import test_missing_features_1665
 from . import test_in_app_help_1660
 from . import test_form_guard_1658
 from . import test_review_fixes_1024_assign
+from . import test_notepad_always_open_1667
