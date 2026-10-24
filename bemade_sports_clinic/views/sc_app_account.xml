@@ -275,7 +275,7 @@
                             <span data-sc-error-for="password" t-out="sc_password_error"/>
                         </t>
                     </t>
-                    <form action="/my/security" method="post" class="o_sc_card o_sc_form oe_reset_password_form">
+                    <form action="/my/security" method="post" class="o_sc_card o_sc_form oe_reset_password_form" data-sc-guard="1">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <input type="hidden" name="op" value="password"/>
                         <t t-call="bemade_sports_clinic.sc_security_password">
@@ -302,6 +302,7 @@
                         <div class="o_sc_form_actions">
                             <button type="submit" class="o_sc_btn o_sc_btn_primary">Change password</button>
                         </div>
+                        <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_security_password'"/></t>
                     </form>
                 </section>
 

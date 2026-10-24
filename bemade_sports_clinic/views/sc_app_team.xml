@@ -43,6 +43,7 @@
             <!-- Flash messages. The session notification is the shell's
                  status toast now (task 1583, sc_app_layout). -->
             <t t-if="error" t-call="bemade_sports_clinic.sc_banner">
+                <t t-set="flash_error" t-value="True"/>
                 <t t-set="tone" t-value="'warn'"/>
                 <t t-out="error"/>
             </t>
@@ -133,7 +134,7 @@
                                 Visible to all team staff (coaches included) and sent by email — do not include any confidential medical information about a player.
                             </t>
                         <form t-attf-action="/my/team/#{team.id}/announcement" method="post" class="o_sc_form"
-                              data-sc-draft-form="1">
+                              data-sc-draft-form="1" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"announcement"}]'>
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <t t-set="sc_ann_label">Announcement</t>
                             <t t-set="sc_ann_placeholder">Write an announcement for all team staff…</t>
@@ -146,6 +147,7 @@
                                 <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="team.announcement.publish">Publish</button>
                                 <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-edit-done="1">Cancel</button>
                             </div>
+                            <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_announcement'"/></t>
                         </form>
                         </div>
                     </div>
@@ -315,7 +317,7 @@
                         <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                         <span>Request a player addition</span>
                     </summary>
-                    <form t-attf-action="/my/team/#{team.id}/player/request_add" method="post" class="o_sc_form">
+                    <form t-attf-action="/my/team/#{team.id}/player/request_add" method="post" class="o_sc_form" data-sc-guard="1" data-sc-guard-mode="fetch">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <div class="o_sc_field">
                             <label class="o_sc_field_label" for="sc_req_first_name">First name</label>
@@ -337,6 +339,7 @@
                         <div class="o_sc_form_actions">
                             <button type="submit" class="o_sc_btn o_sc_btn_primary">Send the request</button>
                         </div>
+                        <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_request_add'"/></t>
                     </form>
                 </details>
                 <div t-if="sc_roster_rows" class="o_sc_list" data-sc-section="team.roster">

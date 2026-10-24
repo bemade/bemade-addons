@@ -111,6 +111,7 @@
 
             <!-- A refused team (1577 review): the clean, translated message. -->
             <t t-if="error" t-call="bemade_sports_clinic.sc_banner">
+                <t t-set="flash_error" t-value="True"/>
                 <t t-set="tone" t-value="'warn'"/>
                 <t t-out="error"/>
             </t>

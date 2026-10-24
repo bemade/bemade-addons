@@ -1271,6 +1271,15 @@ class AppShellMixin:
         return items
 
     @staticmethod
+    def _sc_guard_probe():
+        """Task 1658: this request is a guarded form's fetch (sc_form_guard.js
+        sends X-Sc-Guard on the POST, kept across its redirect)."""
+        try:
+            return request.httprequest.headers.get('X-Sc-Guard') == '1'
+        except RuntimeError:  # no request
+            return False
+
+    @staticmethod
     def _sc_pop_notification():
         """Task 1583: pop ``request.session['notification']`` (the
         ``{type, title, message}`` dict the POST routes store) into the
@@ -1279,7 +1288,13 @@ class AppShellMixin:
         request (task 1611) leaves it for the next real page."""
         if AppShellMixin._sc_fragment_keys() is not None:
             return False
-        notif = request.session.pop('notification', None)
+        # Task 1658: a guarded form's fetch (X-Sc-Guard) reads the page it
+        # landed on to find a refusal — peek, so the real navigation that
+        # follows a success still shows the toast.
+        if AppShellMixin._sc_guard_probe():
+            notif = request.session.get('notification')
+        else:
+            notif = request.session.pop('notification', None)
         if not isinstance(notif, dict) or not (notif.get('message') or notif.get('title')):
             return False
         return {
@@ -1300,7 +1315,7 @@ class AppShellMixin:
     def _sc_pop_proposal():
         """Task 1603: the pending proposal as JSON (popped: shown once), or
         False. A fragment request (task 1611) leaves it for the next page."""
-        if AppShellMixin._sc_fragment_keys() is not None:
+        if AppShellMixin._sc_fragment_keys() is not None or AppShellMixin._sc_guard_probe():
             return False
         proposal = request.session.pop(SC_PROPOSAL_SESSION_KEY, None)
         return json.dumps(proposal) if isinstance(proposal, dict) else False

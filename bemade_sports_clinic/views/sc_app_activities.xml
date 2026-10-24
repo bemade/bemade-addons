@@ -42,7 +42,7 @@
             <t t-set="sheet_id" t-value="'sc_activity_complete_sheet'"/>
             <t t-set="title">Complete Activity</t>
             <t t-set="lazy_url" t-value="False"/>
-            <form method="post" action="/my/activity/complete" class="o_sc_form" data-sc-form="activity.complete">
+            <form method="post" action="/my/activity/complete" class="o_sc_form" data-sc-form="activity.complete" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="activity_id" value=""/>
                 <input type="hidden" name="return_url" t-att-value="return_url"/>
@@ -54,13 +54,14 @@
                     <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
                     <button type="submit" class="o_sc_btn o_sc_btn_primary">Complete Activity</button>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_complete'"/></t>
             </form>
         </t>
         <t t-call="bemade_sports_clinic.sc_sheet">
             <t t-set="sheet_id" t-value="'sc_activity_reschedule_sheet'"/>
             <t t-set="title">Reschedule Activity</t>
             <t t-set="lazy_url" t-value="False"/>
-            <form method="post" action="/my/activity/reschedule" class="o_sc_form" data-sc-form="activity.reschedule">
+            <form method="post" action="/my/activity/reschedule" class="o_sc_form" data-sc-form="activity.reschedule" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="activity_id" value=""/>
                 <input type="hidden" name="return_url" t-att-value="return_url"/>
@@ -73,6 +74,7 @@
                     <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
                     <button type="submit" class="o_sc_btn o_sc_btn_primary">Reschedule</button>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_reschedule'"/></t>
             </form>
         </t>
         <t t-call="bemade_sports_clinic.sc_sheet">
@@ -81,7 +83,7 @@
                  « Annuler », which is the undo everywhere else. -->
             <t t-set="title">Delete activity</t>
             <t t-set="lazy_url" t-value="False"/>
-            <form method="post" action="/my/activity/cancel" class="o_sc_form" data-sc-form="activity.cancel">
+            <form method="post" action="/my/activity/cancel" class="o_sc_form" data-sc-form="activity.cancel" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="activity_id" value=""/>
                 <input type="hidden" name="return_url" t-att-value="return_url"/>
@@ -90,13 +92,14 @@
                     <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">No</button>
                     <button type="submit" class="o_sc_btn o_sc_btn_danger" data-sc-action="activity.cancel.confirm">Yes, delete</button>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_cancel'"/></t>
             </form>
         </t>
         <t t-if="can_reassign" t-call="bemade_sports_clinic.sc_sheet">
             <t t-set="sheet_id" t-value="'sc_activity_reassign_sheet'"/>
             <t t-set="title">Reassign Activity</t>
             <t t-set="lazy_url" t-value="False"/>
-            <form method="post" action="/my/activity/reassign" class="o_sc_form" data-sc-form="activity.reassign">
+            <form method="post" action="/my/activity/reassign" class="o_sc_form" data-sc-form="activity.reassign" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="activity_id" value=""/>
                 <input type="hidden" name="return_url" t-att-value="return_url"/>
@@ -114,6 +117,7 @@
                     <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
                     <button type="submit" class="o_sc_btn o_sc_btn_primary">Reassign Activity</button>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_reassign'"/></t>
             </form>
         </t>
     </template>
@@ -138,7 +142,7 @@
                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                 <span>Add Activity</span>
             </summary>
-            <form action="/my/activity/save" method="post" class="o_sc_form" data-sc-form="activity.add">
+            <form action="/my/activity/save" method="post" class="o_sc_form" data-sc-form="activity.add" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="model" t-att-value="add_model"/>
                 <input type="hidden" name="res_id" t-att-value="add_res_id"/>
@@ -175,6 +179,7 @@
                 <div class="o_sc_form_actions">
                     <button type="submit" class="o_sc_btn o_sc_btn_primary">Add Activity</button>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_add'"/></t>
             </form>
         </details>
     </template>

@@ -401,8 +401,21 @@
     </template>
 
     <!-- Banner. Variables: title, tone (info|warn). Body (0) = text. -->
+    <!-- Task 1658 — the form guard's slots (sc_form_guard.js): the
+         server-error slot and the reason line under the primary action
+         (aria-describedby). Call it right after the form's actions.
+         Variables: guard_id (unique on the page). -->
+    <template id="sc_form_guard_slots" name="App shell: form guard slots">
+        <p class="o_sc_field_message o_sc_field_error" role="alert" data-sc-guard-error="1" hidden="hidden"/>
+        <p class="o_sc_hint o_sc_guard_reason" t-att-id="'%s_reason' % guard_id" data-sc-guard-reason="1"
+           aria-live="polite" hidden="hidden"/>
+    </template>
+
     <template id="sc_banner" name="App shell: banner">
-        <div t-attf-class="o_sc_banner o_sc_banner_#{tone or 'info'}" role="status">
+        <!-- Task 1658: flash_error marks a refusal banner (the form guard
+             reads it from the page a guarded form's fetch landed on). -->
+        <div t-attf-class="o_sc_banner o_sc_banner_#{tone or 'info'}" role="status"
+             t-att-data-sc-flash-error="'1' if flash_error else None">
             <strong t-if="title" class="o_sc_banner_title" t-out="title"/>
             <t t-out="0"/>
         </div>
@@ -505,7 +518,7 @@
     <template id="sc_confirm_sheet" name="App shell: confirm sheet">
         <t t-call="bemade_sports_clinic.sc_sheet">
             <t t-set="lazy_url" t-value="False"/>
-            <form t-att-action="action" method="post" class="o_sc_form">
+            <form t-att-action="action" method="post" class="o_sc_form" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <t t-foreach="(hidden or {}).items()" t-as="hid">
                     <input type="hidden" t-att-name="hid[0]" t-att-value="hid[1]"/>
@@ -517,6 +530,7 @@
                     <button type="submit" t-attf-class="o_sc_btn #{'o_sc_btn_danger' if danger else 'o_sc_btn_primary'}"
                             data-sc-confirm-submit="1" t-out="confirm_label"/>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="sheet_id"/></t>
             </form>
         </t>
     </template>

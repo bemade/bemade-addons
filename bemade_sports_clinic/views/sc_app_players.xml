@@ -182,6 +182,7 @@
         </t>
         <t t-if="sc_flash and sc_flash.get('error')" t-call="bemade_sports_clinic.sc_banner">
             <t t-set="tone" t-value="'warn'"/>
+            <t t-set="flash_error" t-value="True"/>
             <t t-out="sc_flash['error']"/>
         </t>
     </template>
@@ -622,11 +623,11 @@
                                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                                 <span>Add Emergency Contact</span>
                             </summary>
-                            <form action="/my/player/contact/save" method="post" class="o_sc_form" data-sc-form="contact.add">
+                            <form action="/my/player/contact/save" method="post" class="o_sc_form" data-sc-form="contact.add" data-sc-guard="1" data-sc-guard-mode="fetch">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="patient_id" t-att-value="player.id"/>
                                 <input type="hidden" name="return_url" t-att-value="sc_contacts_return"/>
-                                <p t-if="sc_contact_add_error" class="o_sc_field_message o_sc_field_error" role="alert" t-out="sc_contact_add_error"/>
+                                <p t-if="sc_contact_add_error" class="o_sc_field_message o_sc_field_error" role="alert" data-sc-flash-error="1" t-out="sc_contact_add_error"/>
                                 <t t-call="bemade_sports_clinic.sc_contact_fields">
                                     <t t-set="c_name" t-value="sc_contact_add_data.get('name') or ''"/>
                                     <t t-set="c_type" t-value="sc_contact_add_data.get('contact_type') or ''"/>
@@ -636,6 +637,7 @@
                                 <div class="o_sc_form_actions">
                                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="contact.add">Add Emergency Contact</button>
                                 </div>
+                                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_contact_add'"/></t>
                             </form>
                         </details>
                         <div t-if="sc_player_contacts" class="o_sc_list" data-sc-section="player.contacts">
@@ -864,7 +866,7 @@
                 <span t-if="is_treatment_prof">Add Injury</span>
                 <span t-else="">Report Injury</span>
             </summary>
-            <form action="/my/patient/injury/create" method="post" class="o_sc_form" data-sc-form="injury.quick">
+            <form action="/my/patient/injury/create" method="post" class="o_sc_form" data-sc-form="injury.quick" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="patient_id" t-att-value="card_patient.id"/>
                 <input type="hidden" name="sc_inline" value="1"/>
@@ -897,6 +899,7 @@
                         </button>
                     </div>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_injury_quick_%s' % card_patient.id"/></t>
             </form>
         </details>
     </template>
@@ -937,7 +940,7 @@
     <template id="sc_document_upload_form" name="App shell: document upload picker">
         <form action="/my/patient/document/upload" method="post" enctype="multipart/form-data"
               class="o_sc_form o_sc_doc_upload" t-att-data-sc-form="upload_form_key"
-              data-sc-doc-upload="1" data-sc-max-bytes="10485760">
+              data-sc-doc-upload="1" data-sc-max-bytes="10485760" data-sc-guard="1">
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
             <input type="hidden" name="patient_id" t-att-value="upload_patient_id"/>
             <input t-if="upload_injury" type="hidden" name="injury_id" t-att-value="upload_injury.id"/>
@@ -1025,6 +1028,7 @@
                     <span class="o_sc_btn_busy" hidden="hidden"><span class="o_sc_spinner" aria-hidden="true"/>Uploading…</span>
                 </button>
             </div>
+            <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="upload_prefix"/></t>
         </form>
     </template>
 
@@ -1340,7 +1344,7 @@
                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                 <span>Add Treatment Note</span>
             </summary>
-            <form action="/my/injury/note/add" method="post" class="o_sc_form" data-sc-form="notes.add">
+            <form action="/my/injury/note/add" method="post" class="o_sc_form" data-sc-form="notes.add" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"note"}]'>
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="patient_id" t-att-value="note_patient.id"/>
                 <input t-if="note_event_id" type="hidden" name="event_id" t-att-value="note_event_id"/>
@@ -1365,6 +1369,7 @@
                 <div class="o_sc_form_actions">
                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="notes.submit">Add Note</button>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_note_add'"/></t>
             </form>
         </details>
     </template>
@@ -1402,6 +1407,7 @@
             <t t-set="sc_title">Create a player</t>
             <t t-set="sc_active_nav" t-value="'players'"/>
             <t t-if="error" t-call="bemade_sports_clinic.sc_banner">
+                <t t-set="flash_error" t-value="True"/>
                 <t t-set="tone" t-value="'warn'"/>
                 <t t-out="error"/>
             </t>

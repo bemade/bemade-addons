@@ -546,7 +546,7 @@
                     <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-action="timesheet.edit.existing"
                             t-att-data-sc-ts-edit="sc_my_open_timesheet_id">Edit my timesheet</button>
                 </div>
-                <form t-attf-action="/my/event/#{event.id}/timesheet/add" method="post" class="o_sc_form" data-sc-form="timesheet.add">
+                <form t-attf-action="/my/event/#{event.id}/timesheet/add" method="post" class="o_sc_form" data-sc-form="timesheet.add" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"after","field":"coverage_end","than":"coverage_start","key":"coverage"},{"type":"after","field":"travel_end","than":"travel_start","key":"travel"}]'>
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="return_url" t-att-value="return_url or ''"/>
                     <t t-call="bemade_sports_clinic.sc_banner">
@@ -563,6 +563,9 @@
                             <t t-if="sc_my_open_timesheet_id">Add another timesheet</t><t t-else="">Add Timesheet</t>
                         </button>
                     </div>
+                    <span hidden="hidden" data-sc-guard-msg="coverage">The coverage end must be after its start.</span>
+                    <span hidden="hidden" data-sc-guard-msg="travel">The travel end must be after its start.</span>
+                    <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_ts_add'"/></t>
                 </form>
             </t>
             </div>
@@ -581,7 +584,7 @@
                 <t t-set="sheet_id" t-value="'sc_event_cancel_sheet'"/>
                 <t t-set="title">Cancel Event</t>
                 <t t-set="lazy_url" t-value="False"/>
-                <form t-attf-action="/my/event/#{event.id}/cancel" method="post" class="o_sc_form" data-sc-form="event.cancel">
+                <form t-attf-action="/my/event/#{event.id}/cancel" method="post" class="o_sc_form" data-sc-form="event.cancel" data-sc-guard="1" data-sc-guard-mode="fetch">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="return_url" t-att-value="return_url or ''"/>
                     <div class="o_sc_field">
@@ -592,6 +595,7 @@
                         <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Back</button>
                         <button type="submit" class="o_sc_btn o_sc_btn_danger">Cancel Event</button>
                     </div>
+                    <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_event_cancel'"/></t>
                 </form>
             </t>
         </t>
@@ -610,7 +614,7 @@
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
 
             <form t-att-action="sc_form['action']" method="post" class="o_sc_form" data-sc-form="event.form" data-sc-event-form="1"
-                  t-att-data-sc-event-form-mode="sc_form_mode">
+                  t-att-data-sc-event-form-mode="sc_form_mode" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"after","field":"date_end","than":"date_start","key":"dates"},{"type":"after","field":"therapist_end","than":"therapist_start","key":"coverage"}]'>
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="return_url" t-att-value="sc_form['return_url']"/>
                 <input type="hidden" name="description_format" value="text"/>
@@ -707,6 +711,9 @@
                         <t t-else="">Create</t>
                     </button>
                 </div>
+                <span hidden="hidden" data-sc-guard-msg="dates">The end must be after the start.</span>
+                <span hidden="hidden" data-sc-guard-msg="coverage">The coverage end must be after its start.</span>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_event_form'"/></t>
             </form>
 
             <t t-call="bemade_sports_clinic.sc_venue_sheet"/>

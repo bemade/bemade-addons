@@ -323,7 +323,7 @@
                 <t t-set="sheet_id" t-value="'sc_clinic_add_sheet'"/>
                 <t t-set="title">Add a patient</t>
                 <t t-set="lazy_url" t-value="False"/>
-                <form t-attf-action="/my/clinic/#{event.id}/attendance/add" method="post" class="o_sc_form" data-sc-form="clinic.add">
+                <form t-attf-action="/my/clinic/#{event.id}/attendance/add" method="post" class="o_sc_form" data-sc-form="clinic.add" data-sc-guard="1" data-sc-guard-mode="fetch">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <div class="o_sc_field">
                         <label class="o_sc_field_label" for="sc_clinic_add_patient">Player</label>
@@ -342,6 +342,7 @@
                         <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
                         <button type="submit" class="o_sc_btn o_sc_btn_primary">Add</button>
                     </div>
+                    <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_clinic_add'"/></t>
                 </form>
             </t>
 
@@ -354,7 +355,7 @@
                 <t t-set="lazy_url" t-value="False"/>
                 <p class="o_sc_meta"><strong data-sc-resolve-name="1"/></p>
                 <form t-attf-action="/my/clinic/#{event.id}/attendance/0/link" method="post" class="o_sc_form"
-                      data-sc-resolve="link" t-attf-data-sc-action-template="/my/clinic/#{event.id}/attendance/__ID__/link">
+                      data-sc-resolve="link" t-attf-data-sc-action-template="/my/clinic/#{event.id}/attendance/__ID__/link" data-sc-guard="1" data-sc-guard-mode="fetch">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <div class="o_sc_field">
                         <label class="o_sc_field_label" for="sc_clinic_resolve_patient">Link to an existing file</label>
@@ -372,9 +373,10 @@
                     <div class="o_sc_form_actions">
                         <button type="submit" class="o_sc_btn o_sc_btn_primary">Link</button>
                     </div>
+                    <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_clinic_resolve_link'"/></t>
                 </form>
                 <form t-attf-action="/my/clinic/#{event.id}/attendance/0/create_patient" method="post" class="o_sc_form"
-                      data-sc-resolve="create" t-attf-data-sc-action-template="/my/clinic/#{event.id}/attendance/__ID__/create_patient">
+                      data-sc-resolve="create" t-attf-data-sc-action-template="/my/clinic/#{event.id}/attendance/__ID__/create_patient" data-sc-guard="1" data-sc-guard-mode="fetch">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <div t-if="len(event.team_ids) &gt; 1" class="o_sc_field">
                         <label class="o_sc_field_label" for="sc_clinic_resolve_team">Team</label>
@@ -385,14 +387,16 @@
                     <div class="o_sc_form_actions">
                         <button type="submit" class="o_sc_btn o_sc_btn_ghost" t-att-disabled="'disabled' if not sc_resolve_teams else None">Create the player</button>
                     </div>
+                    <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_clinic_resolve_create'"/></t>
                 </form>
                 <form t-attf-action="/my/clinic/#{event.id}/attendance/0/remove" method="post" class="o_sc_form"
-                      data-sc-resolve="remove" t-attf-data-sc-action-template="/my/clinic/#{event.id}/attendance/__ID__/remove">
+                      data-sc-resolve="remove" t-attf-data-sc-action-template="/my/clinic/#{event.id}/attendance/__ID__/remove" data-sc-guard="1" data-sc-guard-mode="fetch">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="patient" t-att-value="selected_patient.id if selected_patient else ''"/>
                     <div class="o_sc_form_actions">
                         <button type="submit" class="o_sc_btn o_sc_btn_danger">Remove</button>
                     </div>
+                    <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_clinic_resolve_remove'"/></t>
                 </form>
             </t>
 
