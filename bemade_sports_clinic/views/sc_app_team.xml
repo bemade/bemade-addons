@@ -476,8 +476,9 @@
     <!-- Task 1651: the head of a player card's expanded detail, shared by
          the recent-changes detail and the row detail (roster, « to watch »,
          /my/players): the training recommendation (heading, text, its
-         « Updated on … by … » stamp), the predicted return (not healthy),
-         the last consultation (« — » when empty). Expects player. -->
+         « Updated on … by … » stamp), the predicted return (not healthy).
+         Task 1669: no last consultation on cards (it stays in the player
+         file). Expects player. -->
     <template id="sc_player_detail_head" name="App shell: player detail head">
         <div t-if="(player.training_recommendation or '').strip()" class="o_sc_row_detail_training" data-sc-row-detail-section="training">
             <h3 class="o_sc_change_detail_sub">Training Recommendation</h3>
@@ -485,16 +486,10 @@
             <p t-if="player.last_training_recommendation_info" class="o_sc_meta"
                data-sc-change-detail-stamp="1" t-out="player.last_training_recommendation_info"/>
         </div>
-        <div t-if="player.stage != 'healthy'" class="text-muted small d-flex align-items-center mb-1">
+        <div t-if="player.stage != 'healthy'" class="text-muted small d-flex align-items-center mb-2">
             <i class="fa fa-clock-o" title="Estimated Return"/>
             <span class="ms-1">Predicted return:</span>
             <span t-if="player.predicted_return_date" class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/>
-            <span t-else="" class="ms-1">—</span>
-        </div>
-        <div class="text-muted small d-flex align-items-center mb-2">
-            <i class="fa fa-stethoscope" title="Last Consultation Date"/>
-            <span class="ms-1">Last consultation:</span>
-            <span t-if="player.last_consultation_date" class="ms-1" t-field="player.last_consultation_date" t-options="{'widget': 'date'}"/>
             <span t-else="" class="ms-1">—</span>
         </div>
     </template>

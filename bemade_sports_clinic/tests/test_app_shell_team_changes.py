@@ -133,7 +133,9 @@ class TestAppShellTeamChanges(AppShellCommon):
         url, text, tree = self._detail(injuries={self.injury.id})
         self.assertIn('detail=1', url)
         body = ' '.join(tree.text_content().split()).lower()
-        expected = ['synthetic bike only', '2030', 'last consultation', 'active injuries', 'sprain']
+        # Task 1669: no last consultation on cards.
+        self.assertNotIn('last consultation', body)
+        expected = ['synthetic bike only', '2030', 'active injuries', 'sprain']
         positions = [body.find(s) for s in expected]
         self.assertNotIn(-1, positions, body)
         self.assertEqual(positions, sorted(positions), body)
@@ -346,8 +348,8 @@ class TestAppShellTeamChangesFr(TestAppShellI18n1538):
         self.assertIn('title="Match : Oui"', text)
         self.assertIn('title="Blessures actives"', text)
         text = self._fr('/my/player/%s/recent-changes?detail=1' % self.player.id)
-        for term in ('Dernière consultation :', 'Blessures actives'):
-            self.assertIn(term, text, term)
+        self.assertIn('Blessures actives', text)
+        self.assertNotIn('Dernière consultation', text)  # task 1669
 
 
 class ChangeDetailFixture:
@@ -423,7 +425,7 @@ class TestAppShellChangeDetail(ChangeDetailFixture, AppShellCommon):
         self._login_tp()
         text, tree = self._get(self.url)
         body = ' '.join(tree.text_content().split()).lower()
-        order = ['last consultation', 'active injuries', 'synthetic ankle', 'synthetic knee',
+        order = ['active injuries', 'synthetic ankle', 'synthetic knee',
                  'synthetic wrist', 'resolved injuries', 'synthetic shoulder']
         positions = [body.find(t) for t in order]
         self.assertNotIn(-1, positions, body)

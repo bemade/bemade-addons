@@ -1183,11 +1183,23 @@
                             </span>
                         </div>
                         <dl class="o_sc_kv o_sc_kv_stacked" data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(injury, 'notes')">
+                            <!-- Task 1669: each note's « Last note on … by … »
+                                 stamp in the read view too (was the edit
+                                 hint only); inside this fragment, so a save
+                                 refreshes it in place (#1611/#1601). -->
                             <dt>External Notes</dt>
-                            <dd><span class="o_sc_pre" t-att-data-sc-display="sc_display_key(injury, 'external_notes')" t-out="injury.external_notes or '—'"/></dd>
+                            <dd>
+                                <span class="o_sc_pre" t-att-data-sc-display="sc_display_key(injury, 'external_notes')" t-out="injury.external_notes or '—'"/>
+                                <p t-if="injury.last_external_note_info" class="o_sc_meta o_sc_note_stamp" data-sc-note-stamp="external"
+                                   t-out="injury.last_external_note_info"/>
+                            </dd>
                             <t t-if="sc_card_internal">
                                 <dt>Internal Notes (Medical Staff Only)</dt>
-                                <dd><span class="o_sc_pre" t-att-data-sc-display="sc_display_key(injury, 'internal_notes')" t-out="injury.internal_notes or '—'"/></dd>
+                                <dd>
+                                    <span class="o_sc_pre" t-att-data-sc-display="sc_display_key(injury, 'internal_notes')" t-out="injury.internal_notes or '—'"/>
+                                    <p t-if="injury.last_internal_note_info" class="o_sc_meta o_sc_note_stamp" data-sc-note-stamp="internal"
+                                       t-out="injury.last_internal_note_info"/>
+                                </dd>
                             </t>
                         </dl>
                         <!-- Task 1582: both notes use the « replace » editor (the
