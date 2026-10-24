@@ -821,6 +821,9 @@ class AccessControlMixin:
             'id': panel_id,
             'section': section,
             'team_id': team.id if team else '',
+            # Task 1672 (addendum 2): opened from a team page the user may
+            # assign to, the team is implicit (no selector).
+            'team_fixed': bool(team and team in targets),
             'open': bool(error) or args.get('add') == '1' or any(key in args for key in legacy),
             'error': error,
             # Owner review 2026-10-22: the field a refusal is about (its

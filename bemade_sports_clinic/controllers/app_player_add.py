@@ -115,7 +115,11 @@ class AppPlayerAddPortal(TeamStaffPortal):
                 })
             out.sort(key=lambda r: r['sort'])
             values['sc_rows'] = out[:SC_PLAYER_CHECK_LIMIT]
-        html = env['ir.ui.view']._render_template('bemade_sports_clinic.sc_player_check_results', values)
+        # Task 1672 (addendum 3): in the USER's language (this JSON-ish
+        # fragment route is not language-prefixed; an English user got the
+        # website's French).
+        html = env['ir.ui.view'].with_context(lang=env.user.lang or env.lang)._render_template(
+            'bemade_sports_clinic.sc_player_check_results', values)
         return request.make_response(html, headers=[('Content-Type', 'text/html; charset=utf-8'),
                                                     ('Cache-Control', 'no-store')])
 

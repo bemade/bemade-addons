@@ -15,12 +15,24 @@ Acceptance criteria:
   the team page, reopening the panel shows an EMPTY form with the team
   pre-filled again and no existence-check rows; the « + Ajouter » toggle
   still closes and reopens it.
+* AC-5 (addendum 2) From a team page the panel has NO team selector: the
+  page's team is the hidden ``team_ids`` (the guard's « team required » is
+  met, the server still validates it) and a create attaches that team; the
+  Joueurs list keeps the selector.
+* AC-6 (addendum 3) The check fragment renders in the USER's language (an
+  English user gets « Possible matches: » even when the site language is
+  French; a French user « Joueurs possibles : »); the namesake message is
+  shown once — the reason under « Create » only points at it (« Check the
+  existing player above »).
 * AC-4 Browser, the injury add panel (player page): a title tap keeps it
   open; after a create success (« sc:create-success ») the panel resets
   (fields empty, closed) and reopens empty.
 
 Real phone taps stay UNVERIFIED until /dev-review.
 """
+import json
+
+from odoo import Command
 from odoo.tests import tagged
 
 from odoo.addons.bemade_sports_clinic.tests.test_player_add_inline_1655 import PlayerAdd1655Common
@@ -52,6 +64,65 @@ class TestAddPanelsCheckDob1672(PlayerAdd1655Common):
             answers.append(resp.text)
         self.assertEqual(answers[0], answers[1])
         self.assertEqual(answers[0], answers[2])
+
+
+@tagged('post_install', '-at_install')
+class TestAddPanelsAddenda1672(PlayerAdd1655Common):
+
+    def _team_owl(self, panel):
+        return [p for p in panel.xpath('.//owl-component/@props')
+                if json.loads(p).get('target', '').endswith('_team_ids')]
+
+    # -- AC-5 ----------------------------------------------------------------
+    def test_team_page_has_no_team_selector(self):
+        self._login_tp()
+        _text, tree = self._get('/my/team?team_id=%s&tab=players' % self.team_a.id)
+        panel = tree.xpath('//details[@id="sc_add_player"]')[0]
+        self.assertFalse(self._team_owl(panel))
+        self.assertEqual(panel.xpath('.//input[@type="hidden"][@name="team_ids"]/@value'), [str(self.team_a.id)])
+        _text, tree = self._get('/my/players?add=1')
+        panel = tree.xpath('//details[@id="sc_player_add"]')[0]
+        self.assertEqual(len(self._team_owl(panel)), 1)
+
+    def test_team_page_create_attaches_the_team(self):
+        self._login_tp()
+        resp = self._create(first_name='Implicit', last_name='Synthteam', date_of_birth='2011-05-06',
+                            team_ids=str(self.team_a.id), context_team_id=str(self.team_a.id),
+                            return_url='/my/team?team_id=%s&tab=players' % self.team_a.id)
+        self.assertIn(resp.status_code, (200, 302, 303))
+        created = self.env['sports.patient'].search([('last_name', '=', 'Synthteam')])
+        self.assertEqual(created.team_ids, self.team_a)
+
+    # -- AC-6 ----------------------------------------------------------------
+    def _french_site(self):
+        env = self.env
+        env['res.lang']._activate_lang('fr_CA')
+        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        if env['ir.module.module']._get('website').state == 'installed':
+            fr_lang = env['res.lang']._lang_get('fr_CA')
+            for website in env['website'].sudo().search([]):
+                website.language_ids = [Command.link(fr_lang.id)]
+                website.default_lang_id = fr_lang
+        self.opener.cookies.set('frontend_lang', 'fr_CA')
+
+    def test_check_fragment_in_the_users_language(self):
+        self._french_site()
+        self.tp.write({'lang': 'en_US'})
+        self._login_tp()
+        resp, tree = self._check(first='elo', last='synthe')
+        self.assertIn('Possible matches:', resp.text)
+        self.assertNotIn('Joueurs possibles', resp.text)
+        self.tp.write({'lang': 'fr_CA'})
+        resp, tree = self._check(first='elo', last='synthe')
+        self.assertIn('Joueurs possibles', resp.text)
+
+    def test_namesake_message_once(self):
+        self._login_tp()
+        _text, tree = self._get('/my/players?add=1')
+        reasons = tree.xpath('//details[@id="sc_player_add"]//*[@data-sc-player-add-reasons]')[0]
+        self.assertEqual(reasons.get('data-twin'), 'Check the existing player above')
+        resp, tree = self._check(first='Élodie', last='Synthé-Côté')
+        self.assertEqual(resp.text.count('A player with this identity already exists'), 1)
 
 
 class _Tours1672:

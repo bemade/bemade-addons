@@ -16970,3 +16970,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
 msgid "Born on"
 msgstr "Né(e) le"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "Check the existing player above"
+msgstr "Vérifiez le joueur existant ci-dessus"

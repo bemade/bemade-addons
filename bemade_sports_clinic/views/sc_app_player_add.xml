@@ -35,7 +35,9 @@
                 <t t-set="sc_reason_team">team</t>
                 <t t-set="sc_reason_checking">Checking for existing players…</t>
                 <t t-set="sc_reason_exact">This player already exists — open them or add them to the team above</t>
-                <t t-set="sc_reason_twin">A player with this identity already exists — ask a manager.</t>
+                <!-- Task 1672 (addendum 3): the namesake line itself sits in
+                     the suggestions; the reason only points at it. -->
+                <t t-set="sc_reason_twin">Check the existing player above</t>
                 <t t-set="sc_reason_ec">Emergency contact: name and mobile are required together</t>
                 <t t-set="sc_error_generic">The player could not be created. Please review your inputs and try again.</t>
                 <span hidden="hidden" data-sc-player-add-reasons="1"
@@ -68,7 +70,10 @@
                            role="alert" data-sc-player-add-field-error="date_of_birth" t-out="panel['error']"/>
                     </div>
                 </div>
-                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="panel['team_props']"/></t>
+                <!-- Task 1672 (addendum 2): from a team page the team is
+                     implicit (the hidden team_ids above, validated by the
+                     server); the Joueurs list keeps the selector. -->
+                <t t-if="not panel.get('team_fixed')" t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="panel['team_props']"/></t>
                 <!-- The existence check (as you type). -->
                 <div class="o_sc_player_check" data-sc-player-check="1" aria-live="polite">
                     <p class="o_sc_hint">Type a first and a last name to look for existing players.</p>
