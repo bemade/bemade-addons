@@ -269,9 +269,11 @@ class SportsTeam(models.Model):
         # sync sudo, so only internal users may change a team's organization
         # (a portal TP with team write access must not be able to pull an
         # organization's staff onto a team — review finding).
-        if "parent_id" in vals and not self.env.su and not self.env.user._is_internal():
+        # Task 1659: and only an ADMIN among them — the organization's staff
+        # lines follow the team (sudo), so re-parenting is a staff change.
+        if "parent_id" in vals and not self.env.su and not self._sc_staff_admin(self.env.user):
             raise AccessError(
-                _("Only internal users can change a team's parent organization.")
+                _("Only clinic administrators can change a team's parent organization.")
             )
         old_parents = (
             {rec.id: rec.parent_id for rec in self} if "parent_id" in vals else {}
@@ -346,6 +348,14 @@ class SportsTeam(models.Model):
             rec.announcement_is_expired = bool(
                 rec.announcement_deadline and rec.announcement_deadline < today
             )
+
+    @api.model
+    def _sc_staff_admin(self, user):
+        """Task 1659: who may change staff composition — a clinic
+        administrator or a system administrator (internal)."""
+        return bool(user._is_internal() and (
+            user.has_group("base.group_system")
+            or user.has_group("bemade_sports_clinic.group_sports_clinic_admin")))
 
     def _user_can_edit_announcement(self, user=None):
         """Whether ``user`` (default: current) may author/edit/dismiss THIS

@@ -8332,8 +8332,9 @@ msgstr ""
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_team.py:0
-msgid "Only internal users can change a team's parent organization."
+msgid "Only clinic administrators can change a team's parent organization."
 msgstr ""
+"Seuls les administrateurs de la clinique peuvent changer l'organisation d'une équipe."
 
 #. module: bemade_sports_clinic
 #: model:ir.model.constraint,message:bemade_sports_clinic.constraint_sports_organization_staff_override_override_team_unique
