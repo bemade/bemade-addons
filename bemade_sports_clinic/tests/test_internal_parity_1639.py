@@ -129,8 +129,10 @@ class TestInternalParity1639(Parity1639Common):
         for login, user in self._logins():
             login()
             who = user.name
-            # #1630 medical level.
-            resp = self._save(self.player, 'allergy_level', 'minor')
+            # #1630 / #1677 medical lists.
+            resp = self.url_open('/my/app/medical/item/add', data={
+                'patient_id': self.player.id, 'family': 'allergy', 'name': 'Synthetic %s' % who,
+                'csrf_token': self._csrf()}, allow_redirects=False)
             self.assertEqual(resp.status_code, 200, (who, resp.text))
             # #1633 date of birth: the confirm step, then saved.
             resp = self._save(self.player, 'date_of_birth', '2009-04-06')

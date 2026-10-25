@@ -340,24 +340,38 @@ class TestPatientMergeConflicts(TransactionCase):
         self.assertFalse(self._wizard(blank | src, blank).has_conflicts,
                          "a source-only number fills the blank, no conflict")
 
-    # -- Task 1630 -----------------------------------------------------------
-    def test_levels_most_severe_epipen_or(self):
-        """AC11."""
-        dst = self._patient('Alexandre', allergy_level='none', medical_alert_level='urgent')
-        src = self._patient('Alex', allergy_level='urgent', allergy_epipen=True,
-                            medical_alert_level='minor', medical_alert_review=True)
+    # -- Task 1630 / 1677 ----------------------------------------------------
+    def _items(self, patient, *rows):
+        self.env['sports.patient.critical.item'].with_context(sc_critical_quiet=True).create([
+            {'patient_id': patient.id, 'family': family, 'name': name, 'life_threatening': vital,
+             'first_aid_note': aid} for family, name, vital, aid in rows])
+
+    def test_lists_merged_epipen_or(self):
+        """AC11 (task 1677): the lists are merged (one item per family +
+        name, life-threatening if either was, first-aid notes joined); the
+        levels follow; EpiPen / « to validate »: OR."""
+        dst = self._patient('Alexandre', allergy_none_confirmed=True)
+        self._items(dst, ('medical_alert', 'Synthetic asthma', False, 'Synthetic inhaler'))
+        src = self._patient('Alex', allergy_epipen=True, medical_alert_review=True)
+        self._items(src, ('allergy', 'Synthetic peanut', True, False),
+                    ('medical_alert', 'synthetic ASTHMA', True, 'Synthetic call 911'))
         other = self._patient('Al')
         wizard = self._wizard(dst | src | other, dst)
         self.assertFalse(wizard.has_conflicts, "levels are resolved by rule")
         wizard.action_merge()
+        dst.invalidate_recordset()
+        self.assertEqual([(i.family, i.name, i.life_threatening) for i in dst.critical_item_ids.sorted('family')],
+                         [('allergy', 'Synthetic peanut', True), ('medical_alert', 'Synthetic asthma', True)])
+        self.assertEqual(dst.medical_alert_critical_ids.first_aid_note, 'Synthetic inhaler\nSynthetic call 911')
         self.assertEqual((dst.allergy_level, dst.medical_alert_level), ('urgent', 'urgent'))
+        self.assertFalse(dst.allergy_none_confirmed, '« none known » with items')
         self.assertTrue(dst.allergy_epipen)
         self.assertTrue(dst.medical_alert_review)
 
-    def test_unset_level_loses_to_none(self):
-        """AC11: « Not specified » never wins over a level."""
+    def test_none_known_kept_without_items(self):
+        """AC11: « none known » survives a merge with an empty file."""
         dst = self._patient('Alexandre')
-        src = self._patient('Alex', allergy_level='none')
+        src = self._patient('Alex', allergy_none_confirmed=True)
         self._wizard(dst | src, dst).action_merge()
         self.assertEqual(dst.allergy_level, 'none')
         self.assertFalse(dst.allergy_epipen)

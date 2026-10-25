@@ -146,7 +146,7 @@ class TestPlayerInline(PlayerInlineCommon):
         self.assertFalse(teams.xpath('.//button[@data-sc-edit-toggle]'))
         self.assertFalse(teams.xpath('.//*[@data-sc-edit-view="edit"]'))
         with mute_logger('odoo.http'):
-            for field, value in (('sc_team_ids', str(self.team_a.id)), ('allergy_details', 'x')):
+            for field, value in (('sc_team_ids', str(self.team_a.id)), ('medical_history_other', 'x')):
                 self.assertEqual(self._save(self.player, field, value).status_code, 403, field)
 
     # -- UC-4 ------------------------------------------------------------

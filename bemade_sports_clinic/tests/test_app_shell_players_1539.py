@@ -45,9 +45,12 @@ class PlayersCommon1539(AppShellCommon):
         super().setUpClass()
         env = cls.env
         cls.player.sudo().write({
-            # Task 1630: a « None » allergy level — a coach never sees it.
-            'jersey_number': '12', 'position': 'Goalie', 'allergy_level': 'none',
-            'allergy_details': 'Synthetic allergy', 'medical_history_other': 'Synthetic history',
+            # Task 1630: a « None » allergy level — a coach never sees it
+            # (task 1677: « no known allergy » ticked, the level follows).
+            # The details are the « old text » a therapist reads while the
+            # player is « to validate ».
+            'jersey_number': '12', 'position': 'Goalie', 'allergy_none_confirmed': True,
+            'allergy_details': 'Synthetic allergy', 'medical_alert_review': True, 'medical_history_other': 'Synthetic history',
             'team_info_notes': 'Synthetic team note', 'date_of_birth': '2010-05-06',
             'training_recommendation': 'Bike 15 min (synthetic)',
         })
@@ -348,8 +351,12 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&tab=info' % self.player.id)
         keys = self._owl_keys(tree)
+        # Task 1677: the allergies / conditions are lists in the header's
+        # popups (no island); « Other medical history » stays an island.
         for field in ('allergy_level', 'allergy_details', 'allergy_epipen', 'medical_alert_level',
-                      'medical_alert_details', 'medical_history_other', 'date_of_birth',
+                      'medical_alert_details'):
+            self.assertNotIn('sports.patient.%s' % field, keys, field)
+        for field in ('medical_history_other', 'date_of_birth',
                       'team_info_notes', 'training_recommendation', 'last_consultation_date',
                       'sc_team_ids'):
             self.assertIn('sports.patient.%s' % field, keys, field)

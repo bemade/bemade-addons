@@ -32,6 +32,7 @@ from collections import Counter
 from odoo.tests import tagged
 
 from odoo.addons.bemade_sports_clinic.controllers.app_shell import SAVE_REGISTRY
+from odoo.addons.bemade_sports_clinic.tests.medical_common_1677 import set_medical
 from odoo.addons.bemade_sports_clinic.tests.fragments_common_1611 import FragmentsCommon
 
 
@@ -76,8 +77,9 @@ class TestFragments1611(FragmentsCommon):
         key = 'sports.patient:%s' % self.player.id
         # Task 1630: the « allergies » holder became the medical pills (+ the
         # popups' read views).
-        for part in ('appbar', 'crumb', 'hero-head', 'hero-chips', 'medical-pills', 'medical-allergy',
-                     'medical-medical_alert', 'hero-actions',
+        # Task 1677: the popups' head pills and lists.
+        for part in ('appbar', 'crumb', 'hero-head', 'hero-chips', 'medical-pills', 'medical-allergy-head',
+                     'medical-medical_alert-head', 'medical-allergy-items', 'medical-epipen', 'hero-actions',
                      'identity', 'memberships', 'removal-sheets'):
             self.assertFragmentMatchesPage(url, '%s:%s' % (key, part))
 
@@ -151,12 +153,13 @@ class TestFragments1611(FragmentsCommon):
         })
         self.injury.sudo().write({'internal_notes': 'Synthetic internal note'})
         # Task 1630: a « None » allergy (a coach sees yellow / red only).
-        self.player.sudo().write({'allergy_level': 'none', 'allergy_details': 'Synthetic allergy'})
+        set_medical(self.player, allergies=[], none_allergy=True)
+        self.player.sudo().write({'allergy_details': 'Synthetic allergy'})
         self._login_coach()
         url = self._player_url('injuries')
         key = 'sports.patient:%s' % self.player.id
         payload = self._fragments(url, ['%s:injuries' % key, '%s:medical-pills' % key,
-                                        '%s:medical-allergy' % key,
+                                        '%s:medical-allergy-legacy' % key,
                                         'sports.patient.injury:%s:read' % self.injury.id,
                                         'sports.patient.injury:%s:summary' % hidden.id])
         blob = ' '.join(payload['fragments'].values())

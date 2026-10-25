@@ -1555,35 +1555,10 @@
                                     <option value="no">No</option>
                                 </select>
                             </div>
-                            <!-- Task 1630: the allergy / medical-alert block (levels
-                                 optional: « Not specified » goes to the #1628
+                            <!-- Task 1677: no allergy / medical-alert block here — the
+                                 lists are filled from the player page's popups once the
+                                 player exists (an empty file goes to the #1628
                                  « Complete the player's file » To-Do). -->
-                            <t t-set="sc_new_levels" t-value="request.env['sports.patient']._sc_medical_level_options()"/>
-                            <div class="o_sc_field">
-                                <label for="sc_new_allergy_level" class="o_sc_field_label">Allergy level</label>
-                                <select id="sc_new_allergy_level" name="allergy_level" class="o_sc_input o_sc_select">
-                                    <option t-foreach="sc_new_levels" t-as="lvl" t-att-value="lvl[0]" t-out="lvl[1]"/>
-                                </select>
-                            </div>
-                            <div class="o_sc_field">
-                                <label for="sc_new_allergy_details" class="o_sc_field_label">Allergy details</label>
-                                <textarea id="sc_new_allergy_details" name="allergy_details" class="o_sc_input o_sc_textarea" rows="2"/>
-                            </div>
-                            <label class="o_sc_check">
-                                <input type="hidden" name="allergy_epipen_present" value="1"/>
-                                <input type="checkbox" id="sc_new_allergy_epipen" name="allergy_epipen" value="1"/>
-                                <span>EpiPen</span>
-                            </label>
-                            <div class="o_sc_field">
-                                <label for="sc_new_medical_alert_level" class="o_sc_field_label">Medical alert level</label>
-                                <select id="sc_new_medical_alert_level" name="medical_alert_level" class="o_sc_input o_sc_select">
-                                    <option t-foreach="sc_new_levels" t-as="lvl" t-att-value="lvl[0]" t-out="lvl[1]"/>
-                                </select>
-                            </div>
-                            <div class="o_sc_field">
-                                <label for="sc_new_medical_alert_details" class="o_sc_field_label">Medical alert details</label>
-                                <textarea id="sc_new_medical_alert_details" name="medical_alert_details" class="o_sc_input o_sc_textarea" rows="2"/>
-                            </div>
                         </t>
                         <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Primary Emergency Contact</t></t>
                         <div class="o_sc_filter_grid">

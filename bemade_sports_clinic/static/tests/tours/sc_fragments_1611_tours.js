@@ -117,44 +117,50 @@ tours.add("sc_1611_player_fragments", {
         },
         {
             // Task 1630: the allergies are the header's « Allergies » pill;
-            // a therapist edits them in its popup (pencil).
+            // a therapist edits them in its popup (task 1677: the list).
             content: "Open the Allergies pill's popup",
             trigger: `${MED_PILLS} button[data-sc-med-pill="allergy"]`,
             run: "click",
         },
         {
-            content: "Its pencil",
-            trigger: `dialog[open] [data-sc-edit-card="medical-allergy"] [data-sc-action="medical.edit"]`,
+            content: "« + Ajouter »",
+            trigger: `dialog[open] [data-sc-section="medical.allergy"] .o_sc_list_header button[data-sc-list-add-toggle]`,
             run: "click",
         },
         {
-            content: "Fill the allergy details and leave the field",
-            trigger: `dialog[open] [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="allergy_details"] textarea`,
+            content: "Add an allergy",
+            trigger: `dialog[open] [data-sc-section="medical.allergy"] details[open] form[data-sc-med-add] input[name="name"]`,
             run() {
-                typeAndLeave(this.anchor, "Synthetic pollen");
+                this.anchor.value = "Synthetic pollen";
+                this.anchor.form.requestSubmit();
             },
         },
         {
-            content: "The popup's read view is refreshed (behind the open edit view)",
+            content: "The popup's list is refreshed in place",
             trigger: ".o_sc_app",
             async run() {
                 await waitFor(() => {
-                    const read = frag("medical-allergy");
-                    return read && read.textContent.includes("Synthetic pollen");
-                }, "details shown");
+                    const list = frag("medical-allergy-items");
+                    return list && list.textContent.includes("Synthetic pollen");
+                }, "item shown");
                 assertNoReload();
             },
         },
         {
-            content: "Clear the allergy details",
-            trigger: `dialog[open] .o_sc_autosave[data-sc-field="allergy_details"] .o_sc_clear_btn`,
+            content: "Its pencil",
+            trigger: `dialog[open] [data-sc-section="medical.allergy"] [data-sc-med-item] button[data-sc-edit-toggle]`,
             run: "click",
         },
         {
-            content: "The details go",
+            content: "The trash can",
+            trigger: `dialog[open] [data-sc-section="medical.allergy"] [data-sc-med-item] [data-sc-edit-view="edit"]:not([hidden]) button[data-sc-med-item-delete]`,
+            run: "click",
+        },
+        {
+            content: "The item goes",
             trigger: ".o_sc_app",
             async run() {
-                await waitFor(() => !frag("medical-allergy").textContent.includes("Synthetic pollen"), "details gone");
+                await waitFor(() => !frag("medical-allergy-items").textContent.includes("Synthetic pollen"), "item gone");
                 assertNoReload();
             },
         },

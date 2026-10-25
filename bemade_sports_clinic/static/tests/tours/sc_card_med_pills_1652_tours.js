@@ -4,8 +4,8 @@
  *
  * The pill is as tall as the status pill beside it; a tap opens the
  * page-level sheet without following the card's link or toggling it; the
- * therapist sets « Not urgent » in the popup: saved, the card refreshes and
- * its Allergies pill is gone.
+ * therapist unticks « Risque vital » on the allergy's card in the popup
+ * (task 1677): saved, the card refreshes and its Allergies pill is gone.
  *
  * Real phone taps stay UNVERIFIED until /dev-review.
  */
@@ -58,7 +58,7 @@ tours.add("sc_1652_card_pill", {
         },
         {
             content: "The popup is open, the card did not toggle, no navigation",
-            trigger: 'dialog[id^="sc_med_card_allergy_"][open] button[data-sc-edit-toggle]',
+            trigger: 'dialog[id^="sc_med_card_allergy_"][open] [data-sc-med-item] button[data-sc-edit-toggle]',
             run(helpers) {
                 assert(window.__sc1652NoReload === "1", "the tap navigated");
                 const pill = document.querySelector(PILL);
@@ -68,16 +68,13 @@ tours.add("sc_1652_card_pill", {
             },
         },
         {
-            content: "Set « Not urgent »",
-            trigger: 'dialog[id^="sc_med_card_allergy_"][open] [data-sc-edit-view="edit"]:not([hidden]) select[id$="_allergy_level"]',
-            run() {
-                this.anchor.value = "minor";
-                this.anchor.dispatchEvent(new Event("change", { bubbles: true }));
-            },
+            content: "Untick « Risque vital »",
+            trigger: 'dialog[id^="sc_med_card_allergy_"][open] [data-sc-med-item] [data-sc-edit-view="edit"]:not([hidden]) input[data-sc-med-item-field="life_threatening"]',
+            run: "click",
         },
         {
-            content: "Saved; close the popup",
-            trigger: 'dialog[id^="sc_med_card_allergy_"][open] .o_sc_autosave[data-sc-field="allergy_level"][data-sc-state="saved"]',
+            content: "Saved (the popup's pill is yellow); close the popup",
+            trigger: 'dialog[id^="sc_med_card_allergy_"][open] [data-sc-med-head][data-sc-med-level="minor"]',
             run() {
                 this.anchor.closest("dialog").close();
             },

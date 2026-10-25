@@ -23,15 +23,11 @@ Acceptance criteria covered here:
 * BW-1 (#1639) The backend form warns (non-blocking) when first name + last
   name + date of birth match another player, archived included (the
   identity guard's normalisation); the save goes through.
-* MU-1 (#1653 / #1654) « None known » over details / EpiPen / items answers
-  a one-shot « Undo » (« Details cleared »); the undo restores the level,
-  the details, EpiPen and the items for the SAME user within the window;
-  once used, expired, for another user or after a later change it is
-  refused. Nothing to clear → no undo. A coach never gets one.
-* I18N fr_CA: the reason line and its strings, the undo toast, the backend
-  warning.
-* MU-2 (tours, phone + laptop) « Urgent » with an item → « None known » →
-  the toast's « Undo » → the item and the details are back, no reload.
+* I18N fr_CA: the reason line and its strings, the backend warning.
+
+Task 1677 removed MU-1 / MU-2 (the « Undo » after « None known », #1653 /
+#1654): the allergies and conditions are structured lists, no level is
+chosen any more, so there is no clearing « None known » to undo.
 """
 from datetime import timedelta
 
@@ -42,7 +38,6 @@ from odoo.tests import Form, tagged
 from odoo.tools.misc import mute_logger
 
 from odoo.addons.bemade_sports_clinic.tests import test_app_shell_i18n_1538 as i18n_1538
-from odoo.addons.bemade_sports_clinic.tests.test_critical_items_1654 import Critical1654Common
 from odoo.addons.bemade_sports_clinic.tests.test_player_add_inline_1655 import PlayerAdd1655Common
 
 XHR = {'X-Requested-With': 'XMLHttpRequest'}
@@ -212,148 +207,6 @@ class TestReviewFixesToursLaptop1022(_Tours1022, PlayerAdd1655Common):
     browser_size = '1366x768'
 
 
-# --------------------------------------------------------------- MU-1 / MU-2
-class MedicalUndoCommon(Critical1654Common):
-
-    def _save_level(self, field, value):
-        return self._save(self.player, field, value)
-
-    def _urgent_with_item(self):
-        self._post('/my/app/critical/add', patient_id=self.player.id, family='allergy',
-                   name='Synthetic peanut', epipen='1', action='Synthetic: inject')
-        self.player.invalidate_recordset()
-        self.assertEqual((self.player.allergy_level, self.player.allergy_epipen), ('urgent', True))
-
-
-@tagged('post_install', '-at_install')
-class TestMedicalUndo1022(MedicalUndoCommon):
-
-    def test_clear_then_undo_restores(self):
-        self._login_tp()
-        self._urgent_with_item()
-        resp = self._save_level('allergy_level', 'none')
-        self.assertEqual(resp.status_code, 200, resp.text[:300])
-        undo = resp.json()['undo']
-        self.assertEqual((undo['message'], undo['action']), ('Details cleared', 'Undo'))
-        self.assertEqual(undo['ms'], 120000)
-        self.player.invalidate_recordset()
-        self.assertEqual((self.player.allergy_level, self.player.allergy_details, self.player.allergy_epipen),
-                         ('none', False, False))
-        self.assertFalse(self._items())
-        resp = self._post(undo['url'], token=undo['token'])
-        self.assertEqual(resp.status_code, 200, resp.text[:300])
-        payload = resp.json()
-        self.assertEqual((payload['field'], payload['value']), ('allergy_level', 'urgent'))
-        self.assertEqual(payload['also']['allergy_details']['value'], 'Synthetic kiwi')
-        self.assertFalse(payload['also']['allergy_details']['disabled'])
-        self.player.invalidate_recordset()
-        self.assertEqual((self.player.allergy_level, self.player.allergy_details, self.player.allergy_epipen),
-                         ('urgent', 'Synthetic kiwi', True))
-        item = self._items()
-        self.assertEqual((item.name, item.epipen, item.action), ('Synthetic peanut', True, 'Synthetic: inject'))
-        # One shot.
-        with mute_logger('odoo.http'):
-            resp = self._post(undo['url'], token=undo['token'])
-        self.assertEqual(resp.status_code, 403)
-        self.assertFalse(self.env['sports.patient.medical.undo'].sudo().search_count(
-            [('patient_id', '=', self.player.id)]))
-
-    def test_minor_details_restored(self):
-        self._login_tp()
-        undo = self._save_level('allergy_level', 'none').json()['undo']
-        self.assertEqual(self._post(undo['url'], token=undo['token']).status_code, 200)
-        self.player.invalidate_recordset()
-        self.assertEqual((self.player.allergy_level, self.player.allergy_details), ('minor', 'Synthetic kiwi'))
-
-    def test_unset_level_restored(self):
-        # Legacy: details without a level (before #1630's levels).
-        self.player.sudo().write({'allergy_level': False, 'allergy_details': 'Synthetic legacy kiwi'})
-        self._login_tp()
-        undo = self._save_level('allergy_level', 'none').json()['undo']
-        self.assertEqual(self._post(undo['url'], token=undo['token']).status_code, 200)
-        self.player.invalidate_recordset()
-        self.assertEqual((self.player.allergy_level, self.player.allergy_details),
-                         (False, 'Synthetic legacy kiwi'))
-
-    @mute_logger('odoo.http')
-    def test_refusals(self):
-        self._login_tp()
-        self._urgent_with_item()
-        undo = self._save_level('allergy_level', 'none').json()['undo']
-        # Wrong token, another user (a coach of the team): refused.
-        self.assertEqual(self._post(undo['url'], token='nope').status_code, 403)
-        self._login_coach()
-        self.assertEqual(self._post(undo['url'], token=undo['token']).status_code, 403)
-        # Expired (the window is 2 minutes): refused, the snapshot is gone.
-        self._login_tp()
-        record = self.env['sports.patient.medical.undo'].sudo().search([('patient_id', '=', self.player.id)])
-        self.env.cr.execute("UPDATE sports_patient_medical_undo SET create_date = %s WHERE id = %s",
-                            (fields.Datetime.now() - timedelta(minutes=3), record.id))
-        self.env.invalidate_all()
-        resp = self._post(undo['url'], token=undo['token'])
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.json()['message'], 'This change can no longer be undone.')
-        self.assertFalse(record.exists())
-        self.player.invalidate_recordset()
-        self.assertEqual(self.player.allergy_level, 'none')
-        self.assertFalse(self._items())
-
-    @mute_logger('odoo.http')
-    def test_changed_since_and_nothing_to_clear(self):
-        self._login_tp()
-        undo = self._save_level('allergy_level', 'none').json()['undo']
-        self.assertEqual(self._save_level('allergy_level', 'minor').status_code, 200)
-        self._save(self.player, 'allergy_details', 'Synthetic pollen')
-        # Adversarial review 2026-10-22: the later change dropped the
-        # snapshot (the toast answers « can no longer be undone »).
-        self.assertFalse(self.env['sports.patient.medical.undo'].sudo().search_count(
-            [('patient_id', '=', self.player.id)]))
-        resp = self._post(undo['url'], token=undo['token'])
-        self.assertEqual(resp.status_code, 403)
-        self.player.invalidate_recordset()
-        self.assertEqual(self.player.allergy_details, 'Synthetic pollen', 'a later change is never overwritten')
-        # The medical alert is « None known » already; minor without details
-        # → none clears nothing → no undo offered.
-        self.assertEqual(self._save_level('medical_alert_level', 'minor').status_code, 200)
-        resp = self._save_level('medical_alert_level', 'none')
-        self.assertEqual(resp.status_code, 200)
-        self.assertNotIn('undo', resp.json())
-
-    def test_autovacuum(self):
-        self._login_tp()
-        self._save_level('allergy_level', 'none')
-        Undo = self.env['sports.patient.medical.undo'].sudo()
-        record = Undo.search([('patient_id', '=', self.player.id)])
-        self.assertTrue(record)
-        self.env.cr.execute("UPDATE sports_patient_medical_undo SET create_date = %s WHERE id = %s",
-                            (fields.Datetime.now() - timedelta(minutes=10), record.id))
-        self.env.invalidate_all()
-        Undo._gc_expired()
-        self.assertFalse(record.exists())
-
-
-class _UndoTours1022:
-
-    def test_medical_undo(self):
-        url = '/my/player?player_id=%s&team_id=%s&tab=injuries' % (self.player.id, self.team_a.id)
-        self.start_tour(url, 'sc_1022_medical_undo', login='pc.tp@example.com')
-        self.player.invalidate_recordset()
-        self.assertEqual((self.player.allergy_level, self.player.allergy_details), ('urgent', 'Synthetic kiwi'))
-        self.assertEqual(self.player.sudo().critical_item_ids.mapped('name'), ['Arachides'])
-
-
-@tagged('post_install', '-at_install')
-class TestMedicalUndoToursPhone1022(_UndoTours1022, MedicalUndoCommon):
-    allow_inherited_tests_method = True
-    browser_size = '390x844'
-
-
-@tagged('post_install', '-at_install')
-class TestMedicalUndoToursLaptop1022(_UndoTours1022, MedicalUndoCommon):
-    allow_inherited_tests_method = True
-    browser_size = '1366x768'
-
-
 @tagged('post_install', '-at_install')
 class TestReviewFixesI18n1022(i18n_1538.TestAppShellI18n1538):
 
@@ -371,16 +224,6 @@ class TestReviewFixesI18n1022(i18n_1538.TestAppShellI18n1538):
         self.assertEqual(strings.get('data-exact'),
                          "Ce joueur existe déjà — ouvrez-le ou ajoutez-le à l'équipe ci-dessus")
         self.assertEqual(strings.get('data-ec'), "Contact d'urgence : nom et cellulaire requis ensemble")
-        # The undo toast of a « None known » clear.
-        self.player.sudo().write({'allergy_level': 'minor', 'allergy_details': 'Synthetic kiwi'})
-        self.player.invalidate_recordset()
-        resp = self.url_open('/my/app/save/sports.patient/%s' % self.player.id, data={
-            'field': 'allergy_level', 'value': 'none',
-            'write_date': fields.Datetime.to_string(self.player.write_date),
-            'csrf_token': self._csrf()}, allow_redirects=False)
-        self.assertEqual(resp.status_code, 200, resp.text[:300])
-        undo = resp.json()['undo']
-        self.assertEqual((undo['message'], undo['action']), ('Détails effacés', 'Annuler'))
         # The backend duplicate warning.
         self.player.sudo().write({'date_of_birth': '2009-04-05'})
         cadmin = self.env['res.users'].with_context(no_reset_password=True).create({

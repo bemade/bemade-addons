@@ -242,12 +242,9 @@ from . import test_header_search_1650
 from . import test_link_pickers_1648
 from . import test_change_detail_training_1651
 from . import test_card_med_pills_1652
-from . import test_medical_level_rules_1653
 from . import test_internal_parity_1639
 from . import test_player_add_inline_1655
 from . import test_lose_access_confirm_1656
-from . import test_critical_items_1654
-from . import test_critical_items_tours_1654
 from . import test_review_fixes_1022
 from . import test_patient_owner_guard
 from . import test_adversarial_review_1022
@@ -270,3 +267,5 @@ from . import test_last_injury_statuses_1670
 from . import test_add_panels_1672
 from . import test_near_match_1674
 from . import test_single_picker_1668
+from . import test_medical_lists_1677
+from . import test_medical_lists_tours_1677

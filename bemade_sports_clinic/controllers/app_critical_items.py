@@ -1,56 +1,85 @@
-"""Task 1654 — add / remove a player's critical medical items from the app's
-medical popups (therapists only; coaches read).
+"""Task 1677 — the allergy / condition lists and the EpiPen card of the
+app's medical popups (therapists only; coaches read).
 
-``POST /my/app/critical/add`` (patient_id, family, name, epipen, action) and
-``POST /my/app/critical/<item_id>/delete`` answer like a save of the family's
-level: ``{ok, value, display, write_date, also: {epipen…}, refresh,
-saved_at}`` so the popup's level field, the pills, the cards and the item
-list follow in place (fragments ``sports.patient:<id>:*``); 403 for anyone
+* ``POST /my/app/medical/item/add`` (patient_id, family, name,
+  life_threatening, first_aid_note) adds an item;
+* ``POST /my/app/medical/item/<item_id>/save`` (the posted keys among name,
+  life_threatening, first_aid_note) changes one;
+* ``POST /my/app/medical/item/<item_id>/delete`` removes one;
+* ``POST /my/app/medical/<patient_id>/set`` (field, value) saves one field
+  of the player's medical block: ``allergy_epipen``, ``allergy_epipen_note``,
+  ``allergy_none_confirmed``, ``medical_none_confirmed``.
+
+Each answers ``{ok, family, level, tone, refresh, saved_at[, item_id]}`` —
+the page refreshes its read fragments in place (the pills, the popups'
+header pill and lists, the cards: ``sports.patient:<id>:*``); 403 for anyone
 but a therapist with access to the player; 400 ``{error, message}`` for an
-invalid item.
+invalid value. Writes run as the user (ACL, record rules, the coach block and
+the immutability of ``patient_id`` / ``family`` apply).
+
+Replaces the #1654 ``/my/app/critical/*`` routes and the #1653 « Undo »
+after « None known » (no level is chosen any more: nothing to undo).
 """
-from odoo import _, fields, http
+from odoo import _, http
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
 
+from ..models.medical_alerts import LEVEL_TONES, UNSET_TONE
 from ..models.patient_critical_item import LEVEL_FIELD
-from .app_shell import AppShellPortal, _TP_ROLES, sc_now_ms, sc_refresh_patterns
+from .app_shell import AppShellPortal, _TP_ROLES, _TRUTHY, sc_now_ms
+
+# The player fields the popups save, and the family each belongs to.
+SC_MEDICAL_SET_FIELDS = {
+    'allergy_epipen': 'allergy',
+    'allergy_epipen_note': 'allergy',
+    'allergy_none_confirmed': 'allergy',
+    'medical_none_confirmed': 'medical_alert',
+}
+_BOOLEAN_FIELDS = ('allergy_epipen', 'allergy_none_confirmed', 'medical_none_confirmed')
+
+
+def _truthy(value):
+    return str(value or '').strip().lower() in _TRUTHY
 
 
 class AppCriticalItemsPortal(AppShellPortal):
 
-    def _sc_critical_answer(self, patient, family):
+    def _sc_medical_answer(self, patient, family, **extra):
+        patient = patient.sudo()
         patient.invalidate_recordset()
-        level_field = LEVEL_FIELD[family]
+        level = patient[LEVEL_FIELD[family]] or False
         payload = {
             'ok': True,
-            'field': level_field,
-            'value': self._sc_save_value(patient, level_field),
-            'display': self._sc_save_display(patient, level_field),
-            'write_date': fields.Datetime.to_string(patient.sudo().write_date),
-            'refresh': sc_refresh_patterns('sports.patient', patient, level_field)
-            or ['sports.patient:%s:*' % patient.id],
+            'family': family,
+            'level': level or 'unset',
+            'tone': LEVEL_TONES.get(level, UNSET_TONE),
+            'refresh': ['sports.patient:%s:*' % patient.id],
             'saved_at': sc_now_ms(),
         }
-        # The family's other fields follow too (their value, their write
-        # date — no stale-write conflict on the next save — and their lock:
-        # « None known » after the last item of a family without details).
-        locked = patient.sudo()[level_field] == 'none'
-        others = ('allergy_epipen', 'allergy_details') if family == 'allergy' else ('medical_alert_details',)
-        payload['also'] = {name: {
-            'value': self._sc_save_value(patient, name),
-            'display': self._sc_save_display(patient, name),
-            'disabled': locked,
-        } for name in others}
-        return payload
+        payload.update(extra)
+        return self._sc_save_json(payload)
 
     def _sc_critical_patient(self, patient_id):
         if not (request.env.user._sc_app_roles() & _TP_ROLES):
             raise AccessError(_("Only the therapists can change the medical information."))
         return self._check_access_to_patient(int(patient_id))
 
-    @http.route('/my/app/critical/add', type='http', auth='user', methods=['POST'], csrf=True)
-    def sc_critical_add(self, patient_id=0, family='allergy', name='', epipen='', action='', **kw):
+    def _sc_item_for(self, item_id):
+        """The item (as the user) and its player, or AccessError."""
+        item = request.env['sports.patient.critical.item'].browse(int(item_id)).exists()
+        if not item:
+            raise MissingError(_("Record not found."))
+        patient = self._sc_critical_patient(item.sudo().patient_id.id)
+        return item, patient
+
+    @staticmethod
+    def _sc_invalid(exc):
+        return {'error': 'invalid', 'message': str(exc.args[0] if exc.args else exc)}
+
+    @http.route('/my/app/medical/item/add', type='http', auth='user', methods=['POST'], csrf=True,
+                multilang=False)
+    def sc_medical_item_add(self, patient_id=0, family='allergy', name='', life_threatening='',
+                            first_aid_note='', **kw):
         try:
             patient = self._sc_critical_patient(patient_id)
         except (AccessError, MissingError, UserError, ValueError):
@@ -60,58 +89,83 @@ class AppCriticalItemsPortal(AppShellPortal):
         name = (name or '').strip()
         if not name:
             return self._sc_save_json({'error': 'invalid', 'message': _("Please fill in all required fields.")}, 400)
+        vals = {
+            'patient_id': patient.id, 'family': family, 'name': name,
+            'life_threatening': _truthy(life_threatening),
+        }
+        if family == 'medical_alert':
+            vals['first_aid_note'] = (first_aid_note or '').strip() or False
         try:
             with request.env.cr.savepoint():
-                request.env['sports.patient.critical.item'].create({
-                    'patient_id': patient.id, 'family': family, 'name': name,
-                    'epipen': family == 'allergy' and str(epipen).lower() in ('1', 'on', 'true', 'yes'),
-                    'action': (action or '').strip() or False,
-                })
-        except (UserError, ValidationError) as exc:
-            return self._sc_save_json({'error': 'invalid', 'message': str(exc.args[0] if exc.args else exc)}, 400)
-        return self._sc_save_json(self._sc_critical_answer(patient, family))
-
-    @http.route('/my/app/critical/<int:item_id>/delete', type='http', auth='user', methods=['POST'], csrf=True)
-    def sc_critical_delete(self, item_id, **kw):
-        item = request.env['sports.patient.critical.item'].browse(item_id).exists()
-        if not item:
+                item = request.env['sports.patient.critical.item'].create(vals)
+        except AccessError:
             return self._sc_save_json({'error': 'forbidden'}, 403)
+        except (UserError, ValidationError) as exc:
+            return self._sc_save_json(self._sc_invalid(exc), 400)
+        return self._sc_medical_answer(patient, family, item_id=item.id)
+
+    @http.route('/my/app/medical/item/<int:item_id>/save', type='http', auth='user', methods=['POST'],
+                csrf=True, multilang=False)
+    def sc_medical_item_save(self, item_id, **post):
         try:
-            patient = self._sc_critical_patient(item.sudo().patient_id.id)
+            item, patient = self._sc_item_for(item_id)
+        except (AccessError, MissingError, UserError, ValueError):
+            return self._sc_save_json({'error': 'forbidden'}, 403)
+        family = item.sudo().family
+        vals = {}
+        if 'name' in post:
+            vals['name'] = (post.get('name') or '').strip()
+            if not vals['name']:
+                return self._sc_save_json({'error': 'invalid', 'message': _("Please fill in all required fields.")}, 400)
+        if 'life_threatening' in post:
+            vals['life_threatening'] = _truthy(post.get('life_threatening'))
+        if 'first_aid_note' in post and family == 'medical_alert':
+            vals['first_aid_note'] = (post.get('first_aid_note') or '').strip() or False
+        if vals:
+            try:
+                with request.env.cr.savepoint():
+                    item.write(vals)
+            except AccessError:
+                return self._sc_save_json({'error': 'forbidden'}, 403)
+            except (UserError, ValidationError) as exc:
+                return self._sc_save_json(self._sc_invalid(exc), 400)
+        return self._sc_medical_answer(patient, family, item_id=item.id)
+
+    @http.route('/my/app/medical/item/<int:item_id>/delete', type='http', auth='user', methods=['POST'],
+                csrf=True, multilang=False)
+    def sc_medical_item_delete(self, item_id, **kw):
+        try:
+            item, patient = self._sc_item_for(item_id)
         except (AccessError, MissingError, UserError, ValueError):
             return self._sc_save_json({'error': 'forbidden'}, 403)
         family = item.sudo().family
         try:
             with request.env.cr.savepoint():
                 item.unlink()
-        except (AccessError, UserError, ValidationError) as exc:
-            return self._sc_save_json({'error': 'invalid', 'message': str(exc.args[0] if exc.args else exc)}, 400)
-        return self._sc_save_json(self._sc_critical_answer(patient, family))
+        except AccessError:
+            return self._sc_save_json({'error': 'forbidden'}, 403)
+        except (UserError, ValidationError) as exc:
+            return self._sc_save_json(self._sc_invalid(exc), 400)
+        return self._sc_medical_answer(patient, family)
 
-    # Owner review 2026-10-22 (#1653 / #1654): « Undo » after « None known ».
-    @http.route('/my/app/medical/undo/<int:undo_id>', type='http', auth='user', methods=['POST'], csrf=True)
-    def sc_medical_undo(self, undo_id, token='', **kw):
-        """Restore the family a « None known » save cleared (level, details,
-        EpiPen, items): the same user, within the undo window, while the
-        family is still « None known ». One shot: the snapshot is consumed.
-        Answers like a save of the family's level (the popup follows)."""
-        undo = request.env['sports.patient.medical.undo'].sudo().browse(undo_id).exists()
-        if not undo or undo.user_id != request.env.user or not token or token != undo.token:
+    @http.route('/my/app/medical/<int:patient_id>/set', type='http', auth='user', methods=['POST'],
+                csrf=True, multilang=False)
+    def sc_medical_set(self, patient_id, field='', value='', **kw):
+        if field not in SC_MEDICAL_SET_FIELDS:
             return self._sc_save_json({'error': 'forbidden'}, 403)
         try:
-            patient = self._sc_critical_patient(undo.patient_id.id)
+            patient = self._sc_critical_patient(patient_id)
         except (AccessError, MissingError, UserError, ValueError):
             return self._sc_save_json({'error': 'forbidden'}, 403)
-        family = undo.family
-        if undo._sc_expired():
-            undo.unlink()
-            return self._sc_save_json({'error': 'expired', 'message': _(
-                "This change can no longer be undone.")}, 400)
+        if field in _BOOLEAN_FIELDS:
+            written = _truthy(value)
+        else:
+            written = (value or '').strip()[:240] or False
         try:
             with request.env.cr.savepoint():
-                patient._sc_medical_undo_restore(undo)
-        except (AccessError, UserError, ValidationError) as exc:
-            undo.unlink()
-            return self._sc_save_json({'error': 'invalid', 'message': str(exc.args[0] if exc.args else exc)}, 400)
-        undo.unlink()
-        return self._sc_save_json(self._sc_critical_answer(patient, family))
+                patient.write({field: written})
+        except AccessError:
+            return self._sc_save_json({'error': 'forbidden'}, 403)
+        except (UserError, ValidationError) as exc:
+            return self._sc_save_json(self._sc_invalid(exc), 400)
+        return self._sc_medical_answer(patient, SC_MEDICAL_SET_FIELDS[field])

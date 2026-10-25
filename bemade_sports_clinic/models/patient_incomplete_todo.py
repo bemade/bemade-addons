@@ -17,7 +17,8 @@ Checklist (``_sc_incomplete_items``):
 * for a player aged 14 or more — or whose date of birth is missing — the
   player's own email and phone, each listed separately;
 * task 1630: the allergy level and the medical-alert level, each listed
-  while « Not specified » (no level chosen).
+  while « Not specified ». Task 1677: a family is complete once its list
+  has an item or « none known » is ticked (the level is computed).
 
 Assignee (``_sc_incomplete_todo_assignee``), so the To-Do lands with someone
 who can both see the player in the portal app and edit these fields:
@@ -88,7 +89,8 @@ class Patient(models.Model):
                 missing.append('email')
             if not (player.phone or '').strip():
                 missing.append('phone')
-        # Task 1630: a level left « Not specified ».
+        # Task 1630 / 1677: a family left « Not specified » (empty list, not
+        # confirmed).
         if not player.allergy_level:
             missing.append('allergy_level')
         if not player.medical_alert_level:
@@ -105,7 +107,7 @@ class Patient(models.Model):
             'emergency_contact': _("Emergency contact with a phone number"),
             'email': _("Player's email"),
             'phone': _("Player's phone"),
-            'allergy_level': _("Allergy level"),
+            'allergy_level': _("Allergies"),
             'medical_alert_level': _("Medical alert"),
         }
 

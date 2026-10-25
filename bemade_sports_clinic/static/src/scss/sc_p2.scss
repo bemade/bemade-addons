@@ -500,34 +500,53 @@ $sc-p2-laptop: 992px;
         gap: var(--sc-space-3);
     }
 
-    // Review round 1: the read view and, top-right, the icon-only pencil
-    // (kept while editing: the read view hides, the pencil stays).
-    .o_sc_med_sheet_top {
+    // Task 1677: the popup's head pill, the EpiPen card, the item cards.
+    .o_sc_med_head {
+        display: flex;
+        align-items: center;
+        gap: var(--sc-space-2);
+    }
+
+    .o_sc_med_card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-2);
+        padding: var(--sc-space-2) var(--sc-space-3);
+        margin: 0;
+    }
+
+    .o_sc_med_card_row {
         display: flex;
         align-items: flex-start;
         gap: var(--sc-space-2);
         min-width: 0;
 
-        > .o_sc_med_read {
+        > .o_sc_med_card_read {
             flex: 1 1 auto;
             min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+
+            > p {
+                margin: 0;
+            }
         }
 
-        > .o_sc_med_edit_toggle {
+        > .o_sc_icon_btn {
             margin-left: auto;
-            // Centre the tap target on the level pill's line.
-            margin-top: calc((26px - var(--sc-tap)) / 2);
             margin-right: calc(var(--sc-space-2) * -1);
+            margin-top: calc((26px - var(--sc-tap)) / 2);
         }
     }
 
-    // Task 1654: the life-threatening items (under the level line) and
-    // their add form (at the top of the editor).
-    .o_sc_critical:not(:has(*)) {
-        display: none;
+    .o_sc_med_card_edit {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-2);
     }
 
-    .o_sc_critical_list {
+    .o_sc_med_items {
         list-style: none;
         margin: 0;
         padding: 0;
@@ -536,39 +555,56 @@ $sc-p2-laptop: 992px;
         gap: var(--sc-space-2);
     }
 
-    .o_sc_critical_item {
+    .o_sc_med_item_line {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 4px var(--sc-space-2);
-        min-width: 0;
-
-        > .o_sc_critical_name {
-            font-weight: 700;
-            overflow-wrap: anywhere;
-        }
-
-        > .o_sc_med_epipen .o_sc_icon {
-            width: 16px;
-            height: 16px;
-        }
-
-        > .o_sc_critical_action {
-            flex: 1 0 100%;
-            order: 3;
-        }
-
-        > .o_sc_critical_delete {
-            margin-left: auto;
-        }
+        min-height: 26px;
     }
 
-    .o_sc_critical_add {
+    .o_sc_med_item_name {
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .o_sc_med_dot {
+        display: inline-block;
+        flex: none;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+
+    .o_sc_med_vital_chip {
+        background: var(--sc-bad);
+        color: var(--sc-tone-fg);
+        font-weight: 700;
+    }
+
+    .o_sc_med_first_aid {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-2);
-        padding-bottom: var(--sc-space-3);
-        border-bottom: 1px solid var(--sc-line);
+        gap: 2px;
+        font-size: var(--sc-text-sm);
+    }
+
+    .o_sc_med_item_actions {
+        display: flex;
+        justify-content: flex-start;
+    }
+
+    .o_sc_med_none_box:not(:has(*)),
+    .o_sc_med_legacy:not(:has(*)) {
+        display: none;
+    }
+
+    .o_sc_med_none_check {
+        font-size: var(--sc-text-sm);
+    }
+
+    .o_sc_med_legacy > p {
+        margin: 0;
     }
 
     .o_sc_med_level_line {
@@ -589,11 +625,6 @@ $sc-p2-laptop: 992px;
             width: 16px;
             height: 16px;
         }
-    }
-
-    .o_sc_med_details,
-    .o_sc_med_details_empty {
-        margin: 0;
     }
 
     @media (max-width: 575.98px) {

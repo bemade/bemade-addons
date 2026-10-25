@@ -66,24 +66,25 @@ class TestFragmentsPlayer1611(FragmentsCommon):
     # -- AC-P3 -------------------------------------------------------------
     def test_allergies_banner_shows_and_hides(self):
         # Task 1630: the allergies banner became the « Allergies » pill (its
-        # tone follows the level) and the popup's read view (the details).
+        # tone follows the level) and the popup. Task 1677: the level follows
+        # the list — an item added through the popup's route.
         self._login_tp()
         tree = self._page(self._url())
         holder = self._node(tree, self._key('medical-pills'))
         self.assertIsNotNone(holder, 'the holder is rendered even without allergies')
         pill = holder.xpath('.//button[@data-sc-med-pill="allergy"]')[0]
-        self.assertIn('o_sc_med_unset', pill.get('class'))
-        payload = self._saved(self.player, 'allergy_level', 'minor')
+        self.assertEqual(pill.get('data-sc-med-level'), 'unset')
+        resp = self.url_open('/my/app/medical/item/add', data={
+            'patient_id': self.player.id, 'family': 'allergy', 'name': 'Synthetic peanuts',
+            'csrf_token': self._csrf()}, allow_redirects=False)
+        self.assertEqual(resp.status_code, 200, resp.text)
+        payload = resp.json()
         self.assertRefreshes(payload, self._key('medical-pills'))
         pills = self._fragment(self._url(), self._key('medical-pills'))
         self.assertIn('o_sc_med_minor', pills.xpath('.//button[@data-sc-med-pill="allergy"]')[0].get('class'))
-        payload = self._saved(self.player, 'allergy_details', 'Synthetic peanuts')
-        self.assertRefreshes(payload, self._key('medical-allergy'))
-        read = self._fragment(self._url(), self._key('medical-allergy'))
-        self.assertIn('Synthetic peanuts', self._text(read))
-        self._saved(self.player, 'allergy_details', '')
-        read = self._fragment(self._url(), self._key('medical-allergy'))
-        self.assertNotIn('Synthetic peanuts', self._text(read))
+        self.assertRefreshes(payload, self._key('medical-allergy-items'))
+        items = self._fragment(self._url(), self._key('medical-allergy-items'))
+        self.assertIn('Synthetic peanuts', self._text(items))
 
     # -- AC-P4 -------------------------------------------------------------
     def test_teams_refresh_links_memberships_and_actions(self):

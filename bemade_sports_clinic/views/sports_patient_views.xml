@@ -173,39 +173,40 @@
                                 <field name="return_date"/>
                                 <field name="team_info_notes"/>
                             </group>
-                            <!-- Task 1630: allergies + medical alert (levels, details,
-                                 EpiPen), « Other medical history », « To validate ».
-                                 Task 1653: « None known » locks (and clears) the
-                                 details / EpiPen; a set level can't be emptied. -->
+                            <!-- Task 1630: allergies + medical alert, « Other medical
+                                 history », « To validate ». Task 1677: each family is a
+                                 list (name, life-threatening, first aid for a condition);
+                                 the levels are computed from it, the former details are
+                                 read-only (the old text to validate). -->
                             <group name="health" string="Health">
                                 <field name="allergy_level"/>
-                                <field name="allergy_epipen" readonly="allergy_level == 'none'"/>
-                                <field name="allergy_details" readonly="allergy_level == 'none'"/>
+                                <field name="allergy_epipen"/>
+                                <field name="allergy_epipen_note" invisible="not allergy_epipen"/>
+                                <field name="allergy_none_confirmed"/>
                                 <field name="medical_alert_level"/>
-                                <field name="medical_alert_details" readonly="medical_alert_level == 'none'"/>
+                                <field name="medical_none_confirmed"/>
                                 <field name="medical_history_other"/>
                             </group>
-                            <!-- Task 1654: the life-threatening items, per family. -->
-                            <group name="critical" string="Life-threatening items" colspan="2">
-                                <field name="allergy_critical_ids" context="{'default_family': 'allergy'}"
-                                       readonly="allergy_level == 'none'">
+                            <group name="critical" string="Allergies and conditions" colspan="2">
+                                <field name="allergy_critical_ids" context="{'default_family': 'allergy'}">
                                     <list editable="bottom">
                                         <field name="sequence" widget="handle"/>
                                         <field name="family" column_invisible="True"/>
                                         <field name="name"/>
-                                        <field name="epipen"/>
-                                        <field name="action"/>
+                                        <field name="life_threatening"/>
                                     </list>
                                 </field>
-                                <field name="medical_alert_critical_ids" context="{'default_family': 'medical_alert'}"
-                                       readonly="medical_alert_level == 'none'">
+                                <field name="medical_alert_critical_ids" context="{'default_family': 'medical_alert'}">
                                     <list editable="bottom">
                                         <field name="sequence" widget="handle"/>
                                         <field name="family" column_invisible="True"/>
                                         <field name="name"/>
-                                        <field name="action"/>
+                                        <field name="life_threatening"/>
+                                        <field name="first_aid_note"/>
                                     </list>
                                 </field>
+                                <field name="allergy_details" readonly="1" invisible="not allergy_details"/>
+                                <field name="medical_alert_details" readonly="1" invisible="not medical_alert_details"/>
                                 <field name="allergy_updated_info"/>
                                 <field name="medical_alert_updated_info"/>
                                 <field name="medical_alert_review"/>
@@ -316,14 +317,15 @@
                     <field name="first_name" readonly="1"/>
                     <field name="last_name" readonly="1"/>
                     <field name="team_ids" widget="many2many_tags" readonly="1"/>
+                    <!-- Task 1677: the levels are computed from the lists (edited
+                         on the form, « Open »); the former details read-only. -->
                     <field name="allergy_level"/>
-                    <field name="allergy_epipen" readonly="allergy_level == 'none'"/>
-                    <field name="allergy_details" readonly="allergy_level == 'none'"/>
-                    <field name="medical_alert_level"/>
-                    <field name="medical_alert_details" readonly="medical_alert_level == 'none'"/>
-                    <!-- Task 1654: the critical items (edited on the form). -->
+                    <field name="allergy_epipen" readonly="1"/>
                     <field name="allergy_critical_ids" widget="many2many_tags" readonly="1" optional="show"/>
+                    <field name="medical_alert_level"/>
                     <field name="medical_alert_critical_ids" widget="many2many_tags" readonly="1" optional="show"/>
+                    <field name="allergy_details" readonly="1" optional="show"/>
+                    <field name="medical_alert_details" readonly="1" optional="show"/>
                     <field name="medical_alert_review" widget="boolean_toggle"/>
                     <!-- Task 1665: open the player's form (critical items and
                          every medical field are edited there). -->

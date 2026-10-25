@@ -134,7 +134,6 @@ access_critical_item_itp,Internal TP Access for Critical Medical Items,model_spo
 access_critical_item_admin,Admin Access for Critical Medical Items,model_sports_patient_critical_item,group_sports_clinic_admin,1,1,1,1
 access_critical_item_portal_tp,Portal TP Access for Critical Medical Items,model_sports_patient_critical_item,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,1
 access_critical_item_portal_coach,Portal Coach Read Access for Critical Medical Items,model_sports_patient_critical_item,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
-access_medical_undo_system,System Access for Medical Undo Snapshots,model_sports_patient_medical_undo,base.group_system,1,1,1,1
 access_team_staff_system,System Admin Access for Team Staff,model_sports_team_staff,base.group_system,1,1,1,1
 access_sports_organization_staff_system,System Admin Access for Organization Staff,model_sports_organization_staff,base.group_system,1,1,1,1
 access_sports_organization_staff_override_system,System Admin Access for Organization Staff Overrides,model_sports_organization_staff_override,base.group_system,1,1,1,1

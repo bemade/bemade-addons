@@ -21,6 +21,7 @@ from .medical_alerts import (
     LEVEL_TONES,
     LEVEL_URGENT,
     UNSET_TONE,
+    DETAILS_FIELD,
 )
 import logging
 
@@ -309,19 +310,36 @@ class Patient(models.Model):
         groups="base.group_system",
     )
     # Task 1630 (owner + MC 2026-10-21): allergies and medical alerts, each a
-    # level (no value = « Not specified ») + details; EpiPen with the
-    # allergies. Coaches read the level / details / EpiPen (the app shows
-    # them only the non-urgent and urgent ones); therapists read and edit.
+    # level (no value = « Not specified »); EpiPen with the allergies.
+    # Task 1677 (owner 2026-10-24): each family is a structured list
+    # (``critical_item_ids``, patient_critical_item.py) and its level is
+    # COMPUTED from it — red = a life-threatening item, yellow = items, none
+    # life-threatening, « None known » = the empty list confirmed
+    # (``*_none_confirmed``), « Not specified » otherwise. The field names stay
+    # (pills, cards, digests, the #1628 To-Do, the merge read them). The
+    # former details texts stay as read-only columns (« Old text, to
+    # validate » while ``medical_alert_review`` is set).
     allergy_level = fields.Selection(
         selection=MEDICAL_LEVEL_SELECTION,
         string="Allergy level",
+        compute="_compute_medical_levels",
+        store=True,
+        readonly=True,
         groups=_MEDICAL_ALERT_GROUPS,
     )
     allergy_details = fields.Text(string="Allergy details", groups=_MEDICAL_ALERT_GROUPS)
     allergy_epipen = fields.Boolean(string="EpiPen", groups=_MEDICAL_ALERT_GROUPS)
+    # Task 1677: where the EpiPen is / how to use it (the EpiPen card).
+    allergy_epipen_note = fields.Char(string="EpiPen note", groups=_MEDICAL_ALERT_GROUPS)
+    # Task 1677: « No known allergy / condition » — the empty list confirmed.
+    allergy_none_confirmed = fields.Boolean(string="No known allergy", groups=_MEDICAL_ALERT_GROUPS)
+    medical_none_confirmed = fields.Boolean(string="No known condition", groups=_MEDICAL_ALERT_GROUPS)
     medical_alert_level = fields.Selection(
         selection=MEDICAL_LEVEL_SELECTION,
         string="Medical alert level",
+        compute="_compute_medical_levels",
+        store=True,
+        readonly=True,
         groups=_MEDICAL_ALERT_GROUPS,
     )
     medical_alert_details = fields.Text(string="Medical alert details", groups=_MEDICAL_ALERT_GROUPS)
@@ -453,70 +471,6 @@ class Patient(models.Model):
         } for patient in self.sudo()
             if (patient.training_recommendation or "").strip() != new.strip()]
 
-    # Task 1645 / 1653: (level field, its details / EpiPen) pairs.
-    _SC_MEDICAL_PAIRS = (
-        ("allergy_level", ("allergy_details", "allergy_epipen")),
-        ("medical_alert_level", ("medical_alert_details",)),
-    )
-
-    def _sc_medical_level_rules(self, vals):
-        """Task 1653 (owner 2026-10-22) — the levels' rules, in ``vals``:
-
-        * once a level is set it can't go back to « Not specified » (no
-          value): « Please choose a level. »;
-        * « None known » clears the details (and EpiPen) in the same write;
-        * details / EpiPen can't be SET while the level is (or becomes)
-          « None known »: refused (« Choose a level other than « None known »
-          to add details. »), never silently dropped.
-
-        Imports, install / upgrade and superuser scripts are exempt (the
-        phone rule's leniency, sc_phone.py)."""
-        lenient = self._sc_phone_lenient()
-        for level_field, others in self._SC_MEDICAL_PAIRS:
-            if level_field in vals:
-                new = vals[level_field] or False
-                vals[level_field] = new
-                if not new and not lenient and any(rec[level_field] for rec in self):
-                    raise ValidationError(self.env._("Please choose a level."))
-                if (new == LEVEL_URGENT and not lenient
-                        and not self.env.context.get("sc_critical_sync")):
-                    # Task 1654: « Urgent » names what is life-threatening —
-                    # at least one critical item of that family first.
-                    family = "allergy" if level_field == "allergy_level" else "medical_alert"
-                    details_field = "allergy_details" if family == "allergy" else "medical_alert_details"
-                    if not self:
-                        # A creation (legacy create form, imports through the
-                        # UI): the items come with it, or are suggested from
-                        # the details right after (create below).
-                        if not (vals.get("critical_item_ids") or (vals.get(details_field) or "").strip()):
-                            raise ValidationError(self.env._(
-                                "Add the life-threatening item first: « Urgent » needs at least one."))
-                    elif any(not rec._sc_critical_items(family) and not (
-                            # The legacy edit form (no item editor): its
-                            # items are suggested from the details (write).
-                            self.env.context.get("sc_critical_suggest")
-                            and (vals.get(details_field, rec[details_field]) or "").strip())
-                            for rec in self):
-                        raise ValidationError(self.env._(
-                            "Add the life-threatening item first: « Urgent » needs at least one."))
-                if new == LEVEL_NONE and not lenient:
-                    # (imports / scripts keep what they write: the migration
-                    # flags such records « to validate » instead)
-                    for name in others:
-                        if vals.get(name):
-                            raise ValidationError(self.env._(
-                                "Choose a level other than « None known » to add details."))
-                        vals[name] = False
-                    continue
-            if lenient:
-                continue
-            for name in others:
-                if vals.get(name) and level_field not in vals and any(
-                        rec[level_field] == LEVEL_NONE for rec in self):
-                    raise ValidationError(self.env._(
-                        "Choose a level other than « None known » to add details."))
-        return vals
-
     # Task 1654: the medical fields coaches read but never write.
     _SC_MEDICAL_WRITE_FIELDS = (
         "allergy_level", "allergy_details", "allergy_epipen",
@@ -524,7 +478,17 @@ class Patient(models.Model):
         # Adversarial review 2026-10-22: the « Updated on … by … » stamps
         # (a coach can't forge them through RPC either).
         "allergy_updated_info", "medical_alert_updated_info",
+        # Task 1677: the EpiPen card, « none known », the lists.
+        "allergy_epipen_note", "allergy_none_confirmed", "medical_none_confirmed",
+        "critical_item_ids", "allergy_critical_ids", "medical_alert_critical_ids",
     )
+    # Task 1677: the player fields of each family (stamp + internal note).
+    _SC_MEDICAL_FAMILY_FIELDS = {
+        "allergy": ("allergy_epipen", "allergy_epipen_note", "allergy_none_confirmed", "allergy_details"),
+        "medical_alert": ("medical_none_confirmed", "medical_alert_details"),
+    }
+    # Task 1677: computed from the lists — never written.
+    _SC_MEDICAL_LEVEL_FIELDS = ("allergy_level", "medical_alert_level")
 
     def _sc_check_medical_writer(self, vals):
         """Task 1654: coaches read the medical fields but never write them —
@@ -539,38 +503,69 @@ class Patient(models.Model):
         raise AccessError(env._("Only the therapists can change the medical information."))
 
     def _sc_medical_change_note(self, vals):
-        """Task 1654: the family's « Updated on … by … » stamp for a medical
-        change (the item changes also post an internal note)."""
+        """Task 1654 / 1677: the family's « Updated on … by … » stamp for a
+        medical change of the player's own fields; the internal note is
+        posted after the write (``_sc_medical_post_notes``)."""
         if self.env.context.get("sc_critical_sync") or self._sc_phone_lenient():
-            return vals
-        families = []
-        for family, fields_ in (("allergy", ("allergy_level", "allergy_details", "allergy_epipen")),
-                                ("medical_alert", ("medical_alert_level", "medical_alert_details"))):
-            if any(name in vals for name in fields_):
-                families.append(family)
+            return vals, []
+        changes = []
+        for family, names in self._SC_MEDICAL_FAMILY_FIELDS.items():
+            changed = [name for name in names if name in vals and any(
+                (rec.sudo()[name] or False) != (vals[name] or False) for rec in self)]
+            if changed:
                 vals["%s_updated_info" % family] = self._sc_medical_stamp()
-        return vals
+                changes.extend(changed)
+        return vals, changes
+
+    def _sc_medical_post_notes(self, changes):
+        """Task 1677: an internal note per change of the EpiPen card / « none
+        known » (the items post their own)."""
+        if not changes:
+            return
+        labels = {
+            "allergy_epipen": self.env._("EpiPen"),
+            "allergy_epipen_note": self.env._("EpiPen note"),
+            "allergy_none_confirmed": self.env._("No known allergy"),
+            "medical_none_confirmed": self.env._("No known condition"),
+        }
+        for patient in self.sudo():
+            parts = []
+            for name in changes:
+                if name not in labels:
+                    continue
+                value = patient[name]
+                if isinstance(value, bool):
+                    shown = self.env._("Yes") if value else self.env._("No")
+                else:
+                    shown = value or "—"
+                parts.append(Markup("%s : <b>%s</b>") % (labels[name], shown))
+            if parts:
+                patient.message_post(body=Markup(" · ").join(parts), subtype_xmlid="mail.mt_note")
 
     def write(self, vals):
         self._normalize_jersey_vals(vals)
         self._sc_check_medical_writer(vals)
-        if any(level in vals or any(o in vals for o in others)
-               for level, others in self._SC_MEDICAL_PAIRS):
-            vals = self._sc_medical_level_rules(dict(vals))
-            vals = self._sc_medical_change_note(vals)
-            # Task 1654: « None known » removes that family's critical items.
-            for level_field, family in (("allergy_level", "allergy"), ("medical_alert_level", "medical_alert")):
-                if vals.get(level_field) == LEVEL_NONE and not self._sc_phone_lenient():
-                    self.sudo().critical_item_ids.filtered(lambda i, f=family: i.family == f).unlink()
+        # Task 1677: the levels follow the lists (computed) — a write of
+        # them (an old client, a script) is ignored, never stored.
+        if any(name in vals for name in self._SC_MEDICAL_LEVEL_FIELDS):
+            vals = {k: v for k, v in vals.items() if k not in self._SC_MEDICAL_LEVEL_FIELDS}
+        medical_changes = []
+        if any(name in vals for names in self._SC_MEDICAL_FAMILY_FIELDS.values() for name in names):
+            vals, medical_changes = self._sc_medical_change_note(dict(vals))
+            if vals.get("allergy_epipen") is False and "allergy_epipen_note" not in vals:
+                # Task 1677: the note goes with the EpiPen.
+                vals["allergy_epipen_note"] = False
+            for family, none_field in (("allergy", "allergy_none_confirmed"),
+                                       ("medical_alert", "medical_none_confirmed")):
+                if vals.get(none_field) and not self._sc_phone_lenient() and not self.env.su and any(
+                        rec._sc_critical_items(family) for rec in self):
+                    raise ValidationError(self.env._(
+                        "Remove the items of the list first: « none known » is for an empty list."))
         corrections = self._sc_identity_guard(vals)
         training_history = self._prepare_training_history_vals(vals)
         res = super().write(vals)
-        # Adversarial review 2026-10-22: a later change to a family drops its
-        # pending « Undo » snapshots (patient_medical_undo.py).
-        self._sc_medical_undo_invalidate(self._sc_medical_undo_families(vals))
-        if self.env.context.get("sc_critical_suggest") and LEVEL_URGENT in (
-                vals.get("allergy_level"), vals.get("medical_alert_level")):
-            self._sc_create_suggested_items()
+        if medical_changes:
+            self._sc_medical_post_notes(medical_changes)
         if training_history:
             # sudo: history rows are only ever created by server code.
             self.env["sports.patient.training.history"].sudo().create(training_history)
@@ -2066,6 +2061,8 @@ class Patient(models.Model):
                     "allergies": False,
                     "allergy_details": False,
                     "medical_alert_details": False,
+                    # Task 1677: where the EpiPen is kept.
+                    "allergy_epipen_note": False,
                     "allergy_updated_info": False,
                     "medical_alert_updated_info": False,
                     "medical_history_other": False,
@@ -2074,11 +2071,9 @@ class Patient(models.Model):
                     "is_anonymized": True,
                 }
             )
-            # Task 1654: the critical items name the conditions — deleted.
+            # Task 1654 / 1677: the items name the allergies and conditions —
+            # deleted (the levels follow, computed).
             patient.critical_item_ids.sudo().with_context(sc_critical_quiet=True).unlink()
-            # Owner review 2026-10-22: and the undo snapshots of a cleared family.
-            self.env["sports.patient.medical.undo"].sudo().search(
-                [("patient_id", "=", patient.id)]).unlink()
             # Overwrite core identity PII on the partner (address, email, ...).
             if partner:
                 partner._law25_anonymize()
@@ -2134,9 +2129,9 @@ class Patient(models.Model):
             self._normalize_jersey_vals(row)
             # Task 1654: coaches never write the medical fields.
             self.browse()._sc_check_medical_writer(row)
-            # Task 1653: « None known » leaves no details / EpiPen.
-            if any(level in row for level, _others in self._SC_MEDICAL_PAIRS):
-                row.update(self.browse()._sc_medical_level_rules(dict(row)))
+            # Task 1677: the levels are computed from the lists.
+            for name in self._SC_MEDICAL_LEVEL_FIELDS:
+                row.pop(name, None)
             if "partner_id" not in row:
                 row["partner_id"] = (
                     self.env["res.partner"].with_context(
@@ -2153,10 +2148,6 @@ class Patient(models.Model):
                     .id
                 )
         res = super().create(vals_list)
-        # Task 1654: a player created « Urgent » without items gets them
-        # suggested from the details (the legacy create form posts the level
-        # and the text only).
-        res._sc_create_suggested_items()
         # Task 1601: a player created with a recommendation gets its first
         # history row.
         if not self.env.context.get("skip_training_history"):
@@ -2666,12 +2657,12 @@ class Patient(models.Model):
 
     # ----------------------------------------------------------------------
     # Task 1630: allergies + medical alert pills
+    # Task 1677: the families are structured lists; the pills follow them.
     # ----------------------------------------------------------------------
-    # The posted / saved fields of the medical block (therapists only).
-    SC_MEDICAL_FIELDS = (
-        "allergy_level", "allergy_details", "allergy_epipen",
-        "medical_alert_level", "medical_alert_details", "medical_history_other",
-    )
+    # The posted / saved fields of the legacy medical block (therapists only).
+    # Task 1677: the levels and details are no longer typed — the lists are
+    # edited in the app's popups; only « Other medical history » is posted.
+    SC_MEDICAL_FIELDS = ("medical_history_other",)
 
     def _sc_level_label(self, level):
         """« None known » / « Not urgent » / « Urgent – life-threatening », or
@@ -2681,22 +2672,22 @@ class Patient(models.Model):
         labels = dict(self._fields["allergy_level"]._description_selection(self.env))
         return labels.get(level, level)
 
-    @api.model
-    def _sc_medical_level_options(self, current=False):
-        """The level choices of a form / select. Task 1653: « Not specified »
-        is not a choice — an unset level shows a « — Choose — »
-        placeholder (the app makes it unselectable), a set one only the
-        three real levels."""
-        labels = dict(self._fields["allergy_level"]._description_selection(self.env))
-        options = [(key, labels[key]) for key, _label in MEDICAL_LEVEL_SELECTION]
-        if not current:
-            options.insert(0, ("", self.env._("— Choose —")))
-        return options
+    def _sc_medical_legacy_text(self, family):
+        """Task 1677: the « Old text (to validate) » of a family — its former
+        details, else the legacy allergies text — while the player is
+        flagged « to validate »; '' once validated."""
+        self.ensure_one()
+        patient = self.sudo()
+        if not patient.medical_alert_review:
+            return ""
+        details = patient[DETAILS_FIELD[family]] or ""
+        return (details or patient.allergies or "").strip()
 
     def _sc_medical_pills(self, tp=False):
-        """Task 1630: the two header pills of ONE player, « Allergies » and
-        « Medical alert »: ``[{key, label, level, level_label, tone, details,
-        epipen, text}]``.
+        """Task 1630 / 1677: the two header pills of ONE player,
+        « Allergies » and « Medical alert », with what their popups show:
+        ``[{key, label, family_label, level, level_label, tone, epipen,
+        epipen_note, none_confirmed, items, stamp, legacy_text, text}]``.
 
         ``tp``: the viewer is a therapist (both pills, every level). A coach
         gets only the non-urgent / urgent ones (owner + MC 2026-10-21: no
@@ -2709,33 +2700,33 @@ class Patient(models.Model):
             # Neither therapist nor coach (e.g. a system administrator
             # without a clinic role): nothing to show, never an AccessError.
             return []
-        allergy_label = env._("Allergies")
-        alert_label = env._("Medical alert")
         specs = (
-            ("allergy", allergy_label, "allergy_level", "allergy_details", "allergy_epipen"),
-            ("medical_alert", alert_label, "medical_alert_level", "medical_alert_details", None),
+            ("allergy", env._("Allergies"), "allergy_level", "allergy_none_confirmed"),
+            ("medical_alert", env._("Medical alert"), "medical_alert_level", "medical_none_confirmed"),
         )
         pills = []
-        for key, label, level_field, details_field, epipen_field in specs:
+        for key, label, level_field, none_field in specs:
             level = self[level_field] or False
             if not tp and level not in COACH_LEVELS:
                 continue
             level_label = self._sc_level_label(level)
-            epipen = bool(epipen_field and self[epipen_field])
-            # Task 1654: an urgent pill names its critical items.
-            items = self._sc_critical_items(key) if level == LEVEL_URGENT else self.env["sports.patient.critical.item"]
+            epipen = bool(key == "allergy" and self.allergy_epipen)
+            items = self._sc_critical_items(key)
+            urgent = items.filtered("life_threatening")
             pills.append({
                 "key": key,
-                "label": self._sc_critical_label(items) or label,
+                # The header pill names the life-threatening items.
+                "label": self._sc_critical_label(urgent) or label,
                 "family_label": label,
-                "items": [{"id": i.id, "name": i.name, "epipen": i.epipen, "action": (i.action or "").strip()}
-                          for i in items],
+                "items": [item._sc_read_dict() for item in items],
                 "stamp": self["%s_updated_info" % key] or "",
                 "level": level,
                 "level_label": level_label,
                 "tone": LEVEL_TONES.get(level, UNSET_TONE),
-                "details": (self[details_field] or "").strip(),
                 "epipen": epipen,
+                "epipen_note": ((self.allergy_epipen_note or "").strip() if epipen else ""),
+                "none_confirmed": bool(self[none_field]),
+                "legacy_text": self._sc_medical_legacy_text(key),
                 "text": env._("%(what)s: %(level)s", what=label, level=level_label),
             })
         return pills
@@ -2743,7 +2734,7 @@ class Patient(models.Model):
     @staticmethod
     def _sc_critical_label(items, limit=2):
         """Task 1654: « Arachides », « Arachides · Noix », « Arachides · Noix
-        +1 » — the names of an urgent family's critical items ('' if none)."""
+        +1 » — the names of ``items`` ('' if none)."""
         names = [name for name in items.mapped("name") if name]
         if not names:
             return ""
@@ -2756,12 +2747,12 @@ class Patient(models.Model):
     _SC_CARD_MEDICAL_FIELDS = ("allergy_level", "allergy_epipen", "medical_alert_level")
 
     def _sc_card_medical_pills(self):
-        """Task 1630, review round 1: the RED (« Urgent – life-threatening »)
-        medical pills of player cards (dashboard, roster, /my/players):
-        ``{player_id: [{key, label, epipen, title}]}``, players without a
-        red level absent. Shown to therapists and coaches alike (a coach
-        sees red, owner's rule); « Not urgent » / « None » / « Not
-        specified » never show on a card.
+        """Task 1630 / 1652 / 1677: the RED medical pills of player cards
+        (dashboard, roster, /my/players): ``{player_id: [{key, label, epipen,
+        title}]}``, players without a life-threatening item absent. Each
+        names the family's life-threatening items (the allergy one carries
+        the EpiPen icon). Shown to therapists and coaches alike (a coach
+        sees red, owner's rule); yellow / grey never show on a card.
 
         ONE batched read for the whole recordset, as the CURRENT user (never
         sudo: the fields are group-restricted). A viewer failing the
@@ -2780,24 +2771,24 @@ class Patient(models.Model):
             return {}
         env = self.env
         specs = (
-            ("allergy", env._("Allergies"), "allergy_level", "allergy_epipen"),
-            ("medical_alert", env._("Medical alert"), "medical_alert_level", None),
+            ("allergy", env._("Allergies"), "allergy_level"),
+            ("medical_alert", env._("Medical alert"), "medical_alert_level"),
         )
         urgent_label = self._sc_level_label(LEVEL_URGENT)
         result = {}
-        # Task 1654: the urgent pills name their critical items (ONE read).
+        # The life-threatening items, ONE read.
+        empty = env["sports.patient.critical.item"]
         by_family = {}
         for item in env["sports.patient.critical.item"].sudo().search(
-                [("patient_id", "in", records.ids)]):
-            by_family.setdefault((item.patient_id.id, item.family), env["sports.patient.critical.item"])
-            by_family[(item.patient_id.id, item.family)] |= item
-        empty = env["sports.patient.critical.item"]
+                [("patient_id", "in", records.ids), ("life_threatening", "=", True)]):
+            key = (item.patient_id.id, item.family)
+            by_family[key] = by_family.get(key, empty) | item
         for record in records:
             pills = []
-            for key, label, level_field, epipen_field in specs:
+            for key, label, level_field in specs:
                 if record[level_field] != LEVEL_URGENT:
                     continue
-                epipen = bool(epipen_field and record[epipen_field])
+                epipen = bool(key == "allergy" and record.allergy_epipen)
                 title = env._("%(what)s: %(level)s", what=label, level=urgent_label)
                 items = by_family.get((record.id, key), empty)
                 names = self._sc_critical_label(items)
@@ -2815,46 +2806,39 @@ class Patient(models.Model):
 
     def _sc_medical_summary_lines(self, tp=False):
         """Task 1630: the legacy portal's compact read of the pills, one line
-        each — « Allergies (urgent – life-threatening, EpiPen): … ». Same
-        visibility rule as ``_sc_medical_pills``; a therapist gets no line
-        for « Not specified » / « None » without details."""
+        each — « Allergies (urgent – life-threatening, EpiPen): Arachides
+        (life-threatening), Pollen ». Same visibility rule as
+        ``_sc_medical_pills``; a therapist gets no line for « Not
+        specified » / « None » (nothing on the list)."""
         lines = []
+        vital = self.env._("life-threatening")
         for pill in self._sc_medical_pills(tp=tp):
-            if not pill["level"] and not pill["details"]:
+            if not pill["items"] and not pill["epipen"]:
                 continue
             qualifiers = [pill["level_label"].lower()]
             if pill["epipen"]:
                 qualifiers.append("EpiPen")
             head = self.env._("%(what)s (%(qualifiers)s)", what=pill["family_label"],
                               qualifiers=", ".join(qualifiers))
-            # Task 1654: the critical items, named.
-            if pill.get("items"):
-                head = "%s — %s" % (head, ", ".join(item["name"] for item in pill["items"]))
+            names = ", ".join(
+                ("%s (%s)" % (item["name"], vital)) if item["life_threatening"] else item["name"]
+                for item in pill["items"])
             lines.append({
                 "key": pill["key"],
                 "tone": pill["tone"],
-                "text": self.env._("%(head)s: %(details)s", head=head, details=pill["details"])
-                if pill["details"] else head,
+                "text": self.env._("%(head)s: %(details)s", head=head, details=names) if names else head,
             })
         return lines
 
     @api.model
     def _sc_medical_vals_from_post(self, post):
-        """Task 1630: the medical block of a create / edit form (therapists
-        only — the caller gates it). Only the keys the form posted; an
-        unknown level is ignored; EpiPen is a checkbox (posted when ticked,
-        with its ``allergy_epipen_present`` marker so unticking clears it)."""
+        """Task 1630 / 1677: the medical block of a legacy create / edit form
+        (therapists only — the caller gates it): « Other medical history »
+        only (the allergies and conditions are lists, edited in the app)."""
         vals = {}
-        levels = {key for key, _label in MEDICAL_LEVEL_SELECTION}
-        for name in ("allergy_level", "medical_alert_level"):
-            if name in post:
-                value = (post.get(name) or "").strip()
-                vals[name] = value if value in levels else False
-        for name in ("allergy_details", "medical_alert_details", "medical_history_other"):
+        for name in self.SC_MEDICAL_FIELDS:
             if name in post:
                 vals[name] = (post.get(name) or "").strip() or False
-        if "allergy_epipen" in post or "allergy_epipen_present" in post:
-            vals["allergy_epipen"] = str(post.get("allergy_epipen") or "").lower() in ("1", "on", "true", "yes")
         return vals
 
     def _portal_list_name(self, with_jersey=True):
