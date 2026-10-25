@@ -22,7 +22,7 @@ class SportsPatientDuplicate(models.Model):
         ('exact', 'Same name'),
         ('swapped', 'First and last name swapped'),
         ('near', 'Similar name'),
-    ], required=True)
+    ], string='Kind', required=True)
     kind_sequence = fields.Integer(compute='_compute_kind_sequence', store=True)
     same_dob = fields.Boolean(string='Same date of birth')
     dob_a = fields.Date(related='patient_a_id.date_of_birth', string='Date of birth')

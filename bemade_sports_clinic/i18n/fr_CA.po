@@ -4882,6 +4882,7 @@ msgstr "Date de la blessure"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__dob_a
 msgid "Date of birth"
 msgstr "Date de naissance"
 
@@ -9079,6 +9080,7 @@ msgstr "Matchs autorisés"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_quick_note_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__patient_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__patient_a_id
 msgid "Player"
 msgstr "Joueur"
 
@@ -11506,6 +11508,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_role_mass_assign_line_tree
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__teams_a
 msgid "Teams"
 msgstr "Équipes"
 
@@ -17233,3 +17236,9 @@ msgstr "risque vital"
 #: code:addons/bemade_sports_clinic/models/res_partner.py:0
 msgid "A player's contact must be a person, not a company."
 msgstr "Le contact d'un joueur doit être une personne, pas une société."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_duplicate.py:0
+msgid "One of these players no longer exists."
+msgstr "L'un de ces joueurs n'existe plus."
