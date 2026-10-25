@@ -47,7 +47,8 @@ class TestJobPosition(CompanySignatureCommon):
     def test_french_and_english(self):
         self._enable()
         self.assertIn(
-            "<p>POS:Technicien terrain / Field Technician</p>", self.u_full.signature
+            '<p style="margin: 0px;">POS:Technicien terrain / Field Technician</p>',
+            self.u_full.signature,
         )
 
     def test_single_value_when_equal_or_missing(self):
@@ -55,19 +56,25 @@ class TestJobPosition(CompanySignatureCommon):
         for translations in ({"fr_FR": "Field Technician"}, {"fr_FR": False}):
             with self.subTest(translations=translations):
                 self.job.update_field_translations("name", translations)
-                self.assertIn("<p>POS:Field Technician</p>", self.u_full.signature)
+                self.assertIn(
+                    '<p style="margin: 0px;">POS:Field Technician</p>',
+                    self.u_full.signature,
+                )
 
     def test_names_are_stripped(self):
         self.job.update_field_translations("name", {"fr_FR": " Technicien terrain "})
         self._enable()
         self.assertIn(
-            "<p>POS:Technicien terrain / Field Technician</p>", self.u_full.signature
+            '<p style="margin: 0px;">POS:Technicien terrain / Field Technician</p>',
+            self.u_full.signature,
         )
 
     def test_fallback_to_job_title_then_dropped(self):
         self._enable()
         # u_nomobile has a job title and no job position
-        self.assertIn("<p>POS:Technicien</p>", self.u_nomobile.signature)
+        self.assertIn(
+            '<p style="margin: 0px;">POS:Technicien</p>', self.u_nomobile.signature
+        )
         # an employee with neither: the line is removed, label included
         self._make_employee(self.u_noemp, self.company_a)
         self.assertIn("Sig sig_noemp", self.u_noemp.signature)
@@ -77,8 +84,10 @@ class TestJobPosition(CompanySignatureCommon):
         self.emp_full.job_title = "Custom Title"
         self._enable()
         sig = self.u_full.signature
-        self.assertIn("<p>TITLE:Custom Title</p>", sig)
-        self.assertIn("<p>POS:Technicien terrain / Field Technician</p>", sig)
+        self.assertIn('<p style="margin: 0px;">TITLE:Custom Title</p>', sig)
+        self.assertIn(
+            '<p style="margin: 0px;">POS:Technicien terrain / Field Technician</p>', sig
+        )
 
     def test_values_are_escaped(self):
         self.job.update_field_translations(
@@ -93,6 +102,6 @@ class TestJobPosition(CompanySignatureCommon):
         self.u_full.lang = "fr_FR"
         self._enable()
         self.assertIn(
-            "<p>POS:Technicien terrain / Field Technician</p>",
+            '<p style="margin: 0px;">POS:Technicien terrain / Field Technician</p>',
             self.u_full.with_context(lang="fr_FR").signature,
         )
