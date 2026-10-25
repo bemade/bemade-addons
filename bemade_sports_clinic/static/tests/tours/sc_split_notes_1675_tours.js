@@ -7,6 +7,12 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
+/** The block's visible text, whitespace-normalised. */
+function readText(el) {
+    return (el ? el.textContent : '').replace(/\s+/g, ' ').trim();
+}
+
+
 function assert(condition, message) {
     if (!condition) {
         throw new Error(message);
@@ -27,7 +33,9 @@ function noteSteps(card, scope, text, other) {
             content: `The ${scope} pencil`,
             trigger: `${card} button[data-sc-edit-toggle]`,
             run(helpers) {
-                window[`__sc1675Other_${scope}`] = document.querySelector(`${other} [data-sc-edit-view="read"]`).innerHTML;
+                // CI 2026-10-25: compare the visible text, not the markup (a fragment
+                // refresh may redraw the other block with identical content).
+                window[`__sc1675Other_${scope}`] = readText(document.querySelector(`${other} [data-sc-edit-view="read"]`));
                 return helpers.click();
             },
         },
@@ -68,7 +76,7 @@ function noteSteps(card, scope, text, other) {
             trigger: `${card}:not([data-sc-edit-open]) [data-sc-edit-view="read"] [data-sc-note-stamp="${scope}"]`,
             run() {
                 const before = window[`__sc1675Other_${scope}`];
-                const after = document.querySelector(`${other} [data-sc-edit-view="read"]`).innerHTML;
+                const after = readText(document.querySelector(`${other} [data-sc-edit-view="read"]`));
                 assert(before === after, "the other note's block changed");
                 assert(!editing(other), "the other note is in edit mode");
             },
