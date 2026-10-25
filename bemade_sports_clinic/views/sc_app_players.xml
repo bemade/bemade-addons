@@ -1207,7 +1207,9 @@
                              data-sc-section="injury.notes.external">
                             <div class="o_sc_edit_card_head o_sc_injury_note_head">
                                 <h4 class="o_sc_edit_card_title">External Notes</h4>
-                                <span class="o_sc_card_icons">
+                                <!-- Owner review 2026-10-25 (#1675): coaches read the external
+                                     note, they no longer edit it (therapists only). -->
+                                <span t-if="sc_card_internal" class="o_sc_card_icons">
                                     <button type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1" aria-expanded="false"
                                             t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label">
                                         <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
@@ -1219,7 +1221,7 @@
                                 <p t-if="injury.last_external_note_info" class="o_sc_meta o_sc_note_stamp" data-sc-note-stamp="external"
                                    t-out="injury.last_external_note_info"/>
                             </div>
-                            <div class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
+                            <div t-if="sc_card_internal" class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
                                 <t t-set="lbl">External Notes</t>
                                 <t t-call="bemade_sports_clinic.sc_field_autosave">
                                     <t t-set="props" t-value="sc_field_props(injury, 'external_notes', lbl, 'textarea', clearable=True, hint=injury.last_external_note_info or None, replace=True, placeholder=sc_note_placeholder)"/>

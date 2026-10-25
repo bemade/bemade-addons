@@ -953,7 +953,7 @@ SAVE_REGISTRY = {
         'fields': {
             'sc_injury_date': _STAFF_ROLES,       # virtual: date or 'na'
             'diagnosis': _STAFF_ROLES,            # coach: unverified only
-            'external_notes': _STAFF_ROLES,
+            'external_notes': _TP_ROLES,          # owner 2026-10-25: coaches read only
             'stage': _TP_ROLES,
             'internal_notes': _TP_ROLES,
             'predicted_resolution_date': _TP_ROLES,

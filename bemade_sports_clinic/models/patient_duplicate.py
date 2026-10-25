@@ -44,8 +44,9 @@ class SportsPatientDuplicate(models.Model):
             pair.teams_a = ', '.join(pair.patient_a_id.team_ids.mapped('name'))
             pair.teams_b = ', '.join(pair.patient_b_id.team_ids.mapped('name'))
 
-    @api.model
     def action_find_duplicates(self):
+        # Review 2026-10-25: no @api.model: the list-header button calls it with
+        # the (empty) selection, which @api.model rejected as an extra argument.
         """Recompute the open pairs (dismissed ones stay dismissed) and show
         the list."""
         patients = self.env['sports.patient'].search_read(
