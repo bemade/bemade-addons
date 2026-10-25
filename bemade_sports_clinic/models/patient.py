@@ -2675,13 +2675,28 @@ class Patient(models.Model):
     def _sc_medical_legacy_text(self, family):
         """Task 1677: the « Old text (to validate) » of a family — its former
         details, else the legacy allergies text — while the player is
-        flagged « to validate »; '' once validated."""
+        flagged « to validate »; '' once validated.
+
+        Owner 2026-10-25: treatment professionals only (the legacy
+        ``allergies`` text was therapist-only): '' for any other viewer —
+        a coach, whatever the caller (popups, cards, fragments)."""
         self.ensure_one()
+        if not self._sc_viewer_is_tp():
+            return ""
         patient = self.sudo()
         if not patient.medical_alert_review:
             return ""
         details = patient[DETAILS_FIELD[family]] or ""
         return (details or patient.allergies or "").strip()
+
+    def _sc_viewer_is_tp(self):
+        """The CURRENT user is a treatment professional (portal or internal
+        group). The superuser flag does not count: a sudo'ed coach env is
+        still a coach viewing."""
+        user = self.env.user
+        return bool(
+            user.has_group("bemade_sports_clinic.group_portal_treatment_professional")
+            or user.has_group("bemade_sports_clinic.group_sports_clinic_treatment_professional"))
 
     def _sc_medical_pills(self, tp=False):
         """Task 1630 / 1677: the two header pills of ONE player,
@@ -2726,7 +2741,8 @@ class Patient(models.Model):
                 "epipen": epipen,
                 "epipen_note": ((self.allergy_epipen_note or "").strip() if epipen else ""),
                 "none_confirmed": bool(self[none_field]),
-                "legacy_text": self._sc_medical_legacy_text(key),
+                # Therapists only (owner 2026-10-25).
+                "legacy_text": self._sc_medical_legacy_text(key) if tp else "",
                 "text": env._("%(what)s: %(level)s", what=label, level=level_label),
             })
         return pills

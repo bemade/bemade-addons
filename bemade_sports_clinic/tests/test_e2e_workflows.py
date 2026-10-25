@@ -94,13 +94,15 @@ class TestEndToEndWorkflows(TransactionCase):
 
         # Step 1: Coach reports an injury (unverified)
         with freeze_time('2025-01-15'):
-            # Create injury as coach
+            # Create injury as coach. #1675 (owner 2026-10-25): a coach's
+            # report is the diagnosis + date — the external note is written
+            # by therapists only (the model refuses it from a coach).
             injury = self.env['sports.patient.injury'].with_user(self.coach_user).create({
                 'patient_id': self.patient.id,
                 'diagnosis': 'Ankle Sprain - Initial',
-                'external_notes': 'Player twisted ankle during practice.',
                 'injury_date': fields.Date.today(),
             })
+            self.assertFalse(injury.sudo().external_notes)
 
             # Check that injury is unverified and has default values
             self.assertEqual(injury.stage, 'unverified')

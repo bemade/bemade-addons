@@ -32,6 +32,9 @@ Acceptance criteria:
 * OLD-1 « Old text (to validate) »: the former details (else the legacy
   allergies text), read-only, only while the player is flagged « to
   validate ».
+* OLD-2 (owner 2026-10-25) that « Old text » is shown to therapists only: a
+  coach's popups / fragments / model reads never carry it nor the legacy
+  text.
 * UI-1 The popup: the family title + its pill (a read fragment), the EpiPen
   card (allergies only), the list header « + Ajouter » with its add panel,
   one card per item (pencil -> edit view with the fields and the trash can),
@@ -345,6 +348,41 @@ class TestMedicalLists1677(MedicalLists1677Common):
         self.assertFalse(tree.xpath('//dialog//textarea[@name="allergy_details"]'), 'read-only')
         self.player.sudo().write({'medical_alert_review': False})
         self.assertFalse(self._tree().xpath(legacy % ('allergy', self.player.id)))
+
+    def test_old_text_therapists_only(self):
+        """OLD-2 (owner 2026-10-25): « Old text (to validate) » is shown to
+        therapists only — never in a coach's popups, fragments or reads, the
+        legacy allergies text being therapist-only on prod."""
+        set_medical(self.player, allergies=[('Synthetic peanut', True)],
+                    conditions=[('Synthetic asthma', False, 'Synthetic inhaler')])
+        self.player.sudo().write({'allergy_details': 'Synthetic old allergy text',
+                                  'allergies': 'Synthetic legacy text',
+                                  'medical_alert_review': True})
+        legacy = '//*[@data-sc-med-legacy] | //*[contains(@class, "o_sc_med_legacy")]'
+        self._login_coach()
+        text, tree = self._get(self._url(tab='injuries'))
+        for key in ('allergy', 'medical_alert'):
+            self.assertIsNotNone(self._sheet(tree, key), key)
+        self.assertFalse(tree.xpath(legacy))
+        for needle in ('Synthetic old allergy text', 'Synthetic legacy text', 'Old text (to validate)'):
+            self.assertNotIn(needle, text)
+        key = 'sports.patient:%s' % self.player.id
+        payload = self._fragments(self._url(tab='injuries'),
+                                  ['%s:medical-allergy-legacy' % key, '%s:medical-medical_alert-legacy' % key])
+        self.assertNotIn('Synthetic', ' '.join(payload['fragments'].values()))
+        # The model helpers, whatever ``tp`` a caller passes.
+        as_coach = self.player.with_user(self.coach)
+        self.assertEqual(as_coach._sc_medical_legacy_text('allergy'), '')
+        self.assertEqual(as_coach.sudo()._sc_medical_legacy_text('medical_alert'), '')
+        self.assertEqual({p['legacy_text'] for p in as_coach._sc_medical_pills(tp=True)}, {''})
+        self.assertEqual({p['legacy_text'] for p in as_coach._sc_medical_pills(tp=False)}, {''})
+        # A therapist sees it.
+        self.assertEqual(self.player.with_user(self.tp)._sc_medical_legacy_text('allergy'),
+                         'Synthetic old allergy text')
+        self._login_tp()
+        tree = self._tree()
+        self.assertEqual([n.text_content() for n in tree.xpath('//*[@data-sc-med-legacy]')][:2],
+                         ['Synthetic old allergy text', 'Synthetic legacy text'])
 
     # -- UI-1 ---------------------------------------------------------------
     def test_popup_structure_therapist(self):

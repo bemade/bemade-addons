@@ -18,13 +18,23 @@ Acceptance criteria:
 * AC-4 The legacy injury save (``/my/injury/save``, full and partial) is not
   an app path for a coach: with the app on, a coach's posted external note
   is ignored there too.
-* AC-5 Legacy portal pages (switch off) keep today's behaviour: a coach's
-  report still records its external note.
+* AC-5 (owner 2026-10-25, supersedes « legacy unchanged ») Legacy portal
+  pages (switch off): a coach no longer saves the external note there
+  either. The report form has no external-note card for a coach and the
+  edit form shows it read-only; a coach's posted external note is dropped
+  (create, full save, partial save) with a warning flash — never a 500 —
+  and the note is unchanged.
+* AC-6 The model refuses ``external_notes`` from a coach (a share user
+  without the portal therapist group): ``write`` and ``create`` raise
+  AccessError, whatever the path (RPC included). A therapist and the
+  superuser (imports, merges, crons) still write it.
 """
 import json
 
 from odoo import fields
+from odoo.exceptions import AccessError
 from odoo.tests import tagged
+from odoo.tools.misc import mute_logger
 
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
@@ -153,10 +163,107 @@ class TestCoachExternalNoteReadOnly1675(AppShellCommon):
                 self.assertEqual(self.injury.external_notes, EXT)
 
     # -- AC-5 ------------------------------------------------------------
-    def test_legacy_portal_unchanged(self):
+    def test_legacy_coach_report_drops_external_note(self):
         self._switch(False)
         self._login_coach()
-        created = self._create(diagnosis='Synthetic legacy 1675', injury_date='2026-03-03',
-                               external_notes='Coach legacy report')
+        _text, tree = self._get('/my/patient/injury/new?patient_id=%s' % self.player.id)
+        self.assertFalse(tree.xpath('//textarea[@name="external_notes"]'))
+        self.assertTrue(tree.xpath('//textarea[@name="diagnosis"]'))
+        resp = self.url_open('/my/patient/injury/create', data={
+            'csrf_token': self._csrf(), 'patient_id': self.player.id,
+            'diagnosis': 'Synthetic legacy 1675', 'injury_date': '2026-03-03',
+            'external_notes': 'Coach legacy report'})
+        self.assertEqual(resp.status_code, 200, resp.text)
+        self.assertIn('data-sc-warning="external_notes_readonly"', resp.text)
+        created = self.env['sports.patient.injury'].sudo().search(
+            [('patient_id', '=', self.player.id), ('diagnosis', '=', 'Synthetic legacy 1675')])
         self.assertEqual(len(created), 1)
-        self.assertEqual(created.external_notes, 'Coach legacy report')
+        self.assertFalse(created.external_notes)
+        # Without an external note: no warning.
+        resp = self.url_open('/my/patient/injury/create', data={
+            'csrf_token': self._csrf(), 'patient_id': self.player.id,
+            'diagnosis': 'Synthetic legacy 1675 b', 'injury_date': '2026-03-03'})
+        self.assertEqual(resp.status_code, 200, resp.text)
+        self.assertNotIn('data-sc-warning', resp.text)
+
+    def test_legacy_coach_edit_form_external_note_read_only(self):
+        self._switch(False)
+        self._login_coach()
+        _text, tree = self._get('/my/injury/edit?injury_id=%s' % self.injury.id)
+        area = tree.xpath('//textarea[@name="external_notes"]')[0]
+        self.assertEqual(area.get('readonly'), 'readonly')
+        self.assertIn(EXT, area.text_content())
+        self.assertFalse(tree.xpath('//*[@data-clear-target="external_notes"]'))
+        self._login_tp()
+        _text, tree = self._get('/my/injury/edit?injury_id=%s' % self.injury.id)
+        self.assertIsNone(tree.xpath('//textarea[@name="external_notes"]')[0].get('readonly'))
+
+    def test_legacy_coach_save_drops_external_note_with_a_flash(self):
+        self._switch(False)
+        self._login_coach()
+        for extra in ({'partial': '1'}, {'diagnosis': self.injury.diagnosis}):
+            with self.subTest(extra=extra):
+                resp = self.url_open('/my/injury/save', data={
+                    'csrf_token': self._csrf(), 'injury_id': self.injury.id,
+                    'external_notes': 'Coach legacy note', **extra,
+                })
+                self.assertEqual(resp.status_code, 200, resp.text)
+                self.assertIn('warning=external_notes_readonly', resp.url)
+                self.assertIn('data-sc-warning="external_notes_readonly"', resp.text)
+                self.injury.invalidate_recordset()
+                self.assertEqual(self.injury.external_notes, EXT)
+        # The read-only textarea posted back as is: saved, no warning.
+        resp = self.url_open('/my/injury/save', data={
+            'csrf_token': self._csrf(), 'injury_id': self.injury.id,
+            'diagnosis': 'Synthetic coach diagnosis', 'external_notes': EXT,
+        })
+        self.assertEqual(resp.status_code, 200, resp.text)
+        self.assertNotIn('warning=', resp.url)
+        self.injury.invalidate_recordset()
+        self.assertEqual(self.injury.external_notes, EXT)
+
+    def test_legacy_therapist_save_keeps_external_note(self):
+        self._switch(False)
+        self._login_tp()
+        resp = self.url_open('/my/injury/save', data={
+            'csrf_token': self._csrf(), 'injury_id': self.injury.id, 'partial': '1',
+            'external_notes': 'Therapist legacy note'})
+        self.assertEqual(resp.status_code, 200, resp.text)
+        self.assertNotIn('warning=', resp.url)
+        self.injury.invalidate_recordset()
+        self.assertEqual(self.injury.external_notes, 'Therapist legacy note')
+
+    # -- AC-6 ------------------------------------------------------------
+    def test_model_refuses_external_notes_from_a_coach(self):
+        Injury = self.env['sports.patient.injury']
+        with mute_logger('odoo.models'), self.assertRaises(AccessError):
+            self.injury.with_user(self.coach).write({'external_notes': 'Coach RPC note'})
+        with mute_logger('odoo.models'), self.assertRaises(AccessError):
+            Injury.with_user(self.coach).create({
+                'patient_id': self.player.id, 'diagnosis': 'Synthetic coach rpc',
+                'external_notes': 'Coach RPC note'})
+        self.injury.invalidate_recordset()
+        self.assertEqual(self.injury.external_notes, EXT)
+        # The coach's other writes / creates still go through.
+        created = Injury.with_user(self.coach).create({
+            'patient_id': self.player.id, 'diagnosis': 'Synthetic coach report'})
+        self.assertFalse(created.sudo().external_notes)
+
+    def test_model_allows_external_notes_for_therapist_and_superuser(self):
+        Injury = self.env['sports.patient.injury']
+        self.injury.with_user(self.tp).write({'external_notes': 'Therapist ORM note'})
+        self.assertEqual(self.injury.sudo().external_notes, 'Therapist ORM note')
+        created = Injury.with_user(self.tp).create({
+            'patient_id': self.player.id, 'diagnosis': 'Synthetic tp orm',
+            'external_notes': 'Therapist ORM create'})
+        self.assertEqual(created.sudo().external_notes, 'Therapist ORM create')
+        # Superuser (imports, merges, crons) — even on a coach's env.
+        self.injury.with_user(self.coach).sudo().write({'external_notes': 'Su note'})
+        self.assertEqual(self.injury.sudo().external_notes, 'Su note')
+        created = Injury.with_user(self.coach).sudo().create({
+            'patient_id': self.player.id, 'diagnosis': 'Synthetic su create',
+            'external_notes': 'Su create'})
+        self.assertEqual(created.external_notes, 'Su create')
+        # An internal user (the back end) is not concerned.
+        self.injury.write({'external_notes': 'Admin note'})
+        self.assertEqual(self.injury.sudo().external_notes, 'Admin note')

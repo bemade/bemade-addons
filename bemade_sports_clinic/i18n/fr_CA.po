@@ -8403,6 +8403,23 @@ msgstr ""
 
 #. module: bemade_sports_clinic
 #. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_injury.py:0
+msgid "Only treatment professionals can edit an injury's external notes."
+msgstr ""
+"Seuls les thérapeutes peuvent modifier les notes externes d'une blessure."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_injury
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_created
+msgid ""
+"Only treatment professionals can edit the external notes: your change to "
+"them was not saved."
+msgstr ""
+"Seuls les thérapeutes peuvent modifier les notes externes : votre "
+"modification n'a pas été enregistrée."
+
+#. module: bemade_sports_clinic
+#. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
 msgid "Only treatment professionals can edit the team announcement."
 msgstr ""

@@ -1102,8 +1102,10 @@
                         </t>
                     </div>
 
-                    <!-- The former free text, read-only, until MC validates. -->
-                    <div class="o_sc_med_legacy" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-legacy' % sc_med_key)">
+                    <!-- The former free text, read-only, until MC validates.
+                         Therapists only (owner 2026-10-25): the legacy
+                         allergies text was never shown to coaches. -->
+                    <div t-if="tp" class="o_sc_med_legacy" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-legacy' % sc_med_key)">
                         <t t-if="pill['legacy_text']">
                             <p class="o_sc_field_label">Old text (to validate)</p>
                             <p class="o_sc_pre o_sc_muted" data-sc-med-legacy="1" t-out="pill['legacy_text']"/>
