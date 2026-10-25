@@ -2173,6 +2173,12 @@ class Patient(models.Model):
             ).recompute_followers()
         return res
 
+    @api.constrains("partner_id")
+    def _check_partner_is_person(self):
+        """Task 1680: a player's contact is a person, never a company."""
+        if self.sudo().filtered(lambda p: p.partner_id.is_company):
+            raise ValidationError(self.env["res.partner"]._sc_patient_company_message())
+
     @api.constrains("match_status", "practice_status")
     def constrain_match_and_practice_status(self):
         """Avoid invalid combinations of match and practice status:

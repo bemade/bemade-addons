@@ -17227,3 +17227,9 @@ msgstr ""
 #: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
 msgid "life-threatening"
 msgstr "risque vital"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/res_partner.py:0
+msgid "A player's contact must be a person, not a company."
+msgstr "Le contact d'un joueur doit être une personne, pas une société."
