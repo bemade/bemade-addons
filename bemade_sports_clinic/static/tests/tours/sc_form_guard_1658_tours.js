@@ -307,14 +307,14 @@ tours.add("sc_1658_activity", {
         },
         {
             content: "No one chosen: greyed",
-            trigger: `dialog#sc_activity_reassign_sheet[open] select[name="new_user_id"]`,
+            trigger: `dialog#sc_activity_reassign_sheet[open] select[name="new_user_id"]:not(:visible)`,
             run() {
                 assertBlocked(q(RE), "");
             },
         },
         {
             content: "Someone the server will refuse: the refusal is in the sheet",
-            trigger: `${RE} select[name="new_user_id"]`,
+            trigger: `${RE} select[name="new_user_id"]:not(:visible)`,
             run() {
                 const form = q(RE);
                 const select = form.querySelector('select[name="new_user_id"]');
