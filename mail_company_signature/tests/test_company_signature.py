@@ -254,3 +254,25 @@ class TestCompanySignature(CompanySignatureCommon):
         template = company.sudo().company_signature_template
         self.assertIn("{{name}}", template)
         self.assertNotIn("color", template)
+
+    def test_paragraphs_are_single_spaced(self):
+        """Each template paragraph is one line, not a line plus a blank one."""
+        self._enable()
+        sig = self.u_full.signature
+        self.assertIn("<p", sig)
+        self.assertNotRegex(sig, r"<p(?![^>]*margin: 0px)[^>]*>")
+
+    def test_compact_keeps_explicit_margins(self):
+        compact = self.env["res.company"]._company_signature_compact
+        self.assertEqual(
+            compact(
+                '<p>a</p><p style="color: red">b</p>'
+                '<p style="margin: 12px 0px 0px 0px;">c</p>'
+                "<div><p>d</p></div><h3>e</h3>"
+            ),
+            '<p style="margin: 0px;">a</p>'
+            '<p style="margin: 0px; color: red">b</p>'
+            '<p style="margin: 12px 0px 0px 0px;">c</p>'
+            '<div><p style="margin: 0px;">d</p></div><h3>e</h3>',
+        )
+        self.assertEqual(compact(""), "")

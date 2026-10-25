@@ -161,8 +161,9 @@ class ResUsers(models.Model):
             return
         values_by_user = enforced.sudo()._company_signature_values()
         for user in enforced:
-            user.signature = user.company_id.sudo()._company_signature_render(
-                values_by_user[user.id]
+            company = user.company_id.sudo()
+            user.signature = company._company_signature_compact(
+                company._company_signature_render(values_by_user[user.id])
             )
 
     def _company_signature_values(self):

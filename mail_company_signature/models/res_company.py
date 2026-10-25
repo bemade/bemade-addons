@@ -16,6 +16,7 @@ CASCADE_TAGS = BLOCK_TAGS | {"ul", "ol", "table", "tbody", "thead", "tfoot"}
 # which survives the lxml serialization untouched.
 HTML_MARKER = "MCSHTML%sMCSEND"
 HTML_MARKER_RE = re.compile(r"MCSHTML(\w+?)MCSEND")
+MARGIN_RE = re.compile(r"(^|;)\s*margin\s*:")
 
 DEFAULT_TEMPLATE = (
     "<p><strong>{{name}}</strong></p>"
@@ -53,7 +54,9 @@ class ResCompany(models.Model):
         "{{company_phone}}, {{company_email}}, {{company_website}}, "
         "{{company_notice}}. {{job_position}} shows the job position in French "
         "and English (\"FR / EN\"), or the job title without a position. "
-        "Unknown placeholders are left as typed.\n"
+        "Unknown placeholders are left as typed. Each paragraph is one line "
+        "(no blank line between paragraphs); for the HTML code view, activate "
+        "the developer mode and select text: the </> button is in the toolbar.\n"
         "Write one optional line per paragraph: a paragraph whose placeholders "
         "are all empty (for example a user without a mobile) is removed "
         "entirely, label included.\n"
@@ -236,6 +239,28 @@ class ResCompany(models.Model):
                 html,
             )
         )
+
+    @api.model
+    def _company_signature_compact(self, html):
+        """Give every paragraph without its own margin ``margin: 0px``.
+
+        Editors and mail clients put a blank line's worth of space around each
+        ``<p>``, so a signature written one line per paragraph would render
+        double-spaced. A paragraph that sets ``margin`` keeps it.
+        """
+        if is_html_empty(html):
+            return html
+        root = lxml.html.fragment_fromstring(html, create_parent="div")
+        for el in root.iter("p"):
+            style = (el.get("style") or "").strip()
+            if not MARGIN_RE.search(style):
+                el.set("style", f"margin: 0px; {style}" if style else "margin: 0px;")
+        result = escape(root.text or "")
+        for child in root:
+            result += Markup(
+                lxml.html.tostring(child, encoding="unicode", method="html")
+            )
+        return result
 
     @api.model
     def _company_signature_drop(self, element, root):
