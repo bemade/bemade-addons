@@ -226,7 +226,13 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'diagnosis': post.get('diagnosis', ''),
             'external_notes': post.get('external_notes', ''),
         }
-        
+        # Owner review 2026-10-25 (#1675): in the app, coaches read the
+        # external note but never write it — a coach's report carries the
+        # diagnosis only; a posted external note is ignored. The legacy
+        # (switch off) portal form keeps today's behaviour.
+        if not is_treatment_prof and self._sc_app_shell_active():
+            vals.pop('external_notes')
+
         # Handle injury date and injury_date_na checkbox
         if post.get('injury_date_na'):
             vals['injury_date_na'] = True
@@ -579,7 +585,11 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'diagnosis': post.get('diagnosis', injury.diagnosis or ''),
             'external_notes': post.get('external_notes', injury.external_notes or ''),
         })
-        
+        # #1675: in the app a coach never writes the external note (the
+        # injury card is read-only for them; this route is not an app path).
+        if not is_treatment_prof and self._sc_app_shell_active():
+            vals.pop('external_notes')
+
         # Handle injury date and N/A checkbox
         if post.get('injury_date_na'):
             vals['injury_date_na'] = True
@@ -655,11 +665,15 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
           success=injury_updated, else to the edit form as the full save does.
         """
         is_tp = self._is_treatment_professional()
+        # #1675: in the app a coach never writes the external note either.
+        coach_in_app = not is_tp and self._sc_app_shell_active()
         vals = {}
         for fname in self._PARTIAL_INJURY_FIELDS:
             if fname not in post:
                 continue
             if fname == 'internal_notes' and not is_tp:
+                continue
+            if fname == 'external_notes' and coach_in_app:
                 continue
             value = post.get(fname)
             vals[fname] = value if (value or '').strip() else False

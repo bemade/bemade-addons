@@ -262,6 +262,7 @@ from . import test_review_fixes_1024_assign
 from . import test_notepad_always_open_1667
 from . import test_card_note_stamps_1669
 from . import test_split_injury_notes_1675
+from . import test_coach_external_note_readonly_1675
 from . import test_done_buttons_pref_1676
 from . import test_last_injury_statuses_1670
 from . import test_add_panels_1672

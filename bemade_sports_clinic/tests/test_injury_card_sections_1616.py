@@ -190,7 +190,9 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         details = card.xpath('.//section[@data-sc-edit-card="injury-details"]')[0]
         self.assertEqual(self._fields(details), ['sc_injury_date'])  # active: no rewording
         notes = card.xpath('.//section[@data-sc-section="injury.notes"]')[0]
-        self.assertEqual(self._fields(notes), ['external_notes'])
+        # Owner review 2026-10-25 (#1675): the coach reads the external note.
+        self.assertEqual(self._fields(notes), [])
+        self.assertFalse(notes.xpath('.//button[@data-sc-edit-toggle]'))
         self.assertFalse(notes.xpath('.//dialog[contains(@id, "_internal")]'))
         docs = card.xpath('.//section[@data-sc-section="injury.documents"]')[0]
         self.assertEqual(len(docs.xpath('.//*[contains(@class, "o_sc_doc_row")]')), 1)

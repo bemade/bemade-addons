@@ -26,6 +26,7 @@ import time
 from lxml import html as lxml_html
 
 from odoo import Command
+from odoo.service.model import call_kw
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.bemade_sports_clinic.models import sc_name_match as m
@@ -197,6 +198,23 @@ class TestNearMatchApp1674(PlayerAdd1655Common):
         self.assertTrue(pairs.dismissed)
         self.assertFalse(Dup.search([('dismissed', '=', False), ('patient_a_id', '=', self.jonathan.id),
                                      ('patient_b_id', '=', self.jonathan_twin.id)]))
+
+    def test_find_duplicates_from_list_header(self):
+        """Review 2026-10-25: the list header's « Find duplicates » button
+        (display="always") goes through call_button with the selection as the
+        first argument — an empty list when nothing is ticked, the ticked rows
+        otherwise. Both must run the scan and return the list action (it
+        crashed: « takes 1 positional argument but 2 were given »)."""
+        Dup = self.env['sports.patient.duplicate']
+        action = call_kw(Dup, 'action_find_duplicates', [[]], {})
+        self.assertEqual(action['res_model'], 'sports.patient.duplicate')
+        pair = Dup.search([('patient_a_id', '=', self.jonathan.id), ('patient_b_id', '=', self.jonathan_twin.id)])
+        self.assertEqual(len(pair), 1)
+        # With a ticked row (which the rescan itself replaces).
+        action = call_kw(Dup, 'action_find_duplicates', [pair.ids], {})
+        self.assertEqual(action['res_model'], 'sports.patient.duplicate')
+        self.assertEqual(len(Dup.search([('patient_a_id', '=', self.jonathan.id),
+                                         ('patient_b_id', '=', self.jonathan_twin.id)])), 1)
 
 
 @tagged('post_install', '-at_install')

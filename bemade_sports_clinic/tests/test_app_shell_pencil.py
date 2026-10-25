@@ -119,8 +119,13 @@ class TestAppShellPencil(AppShellCommon):
         _text, tree = self._get(self.injury_url)
         _details, edit = self._card(tree, 'injury-details')
         self.assertEqual({f['field'] for f in self._fields(edit)}, {'sc_injury_date'})
-        _card, edit = self._card(tree, 'injury-notes-external')
-        self.assertEqual({f['field'] for f in self._fields(edit)}, {'external_notes'})
+        # Owner review 2026-10-25 (#1675): the external note reads, without
+        # a pencil or an editor, for a coach.
+        card = tree.xpath('//*[@data-sc-edit-card="injury-notes-external"]')[0]
+        self.assertFalse(card.xpath('.//button[@data-sc-edit-toggle]'))
+        self.assertFalse(card.xpath('.//*[@data-sc-edit-view="edit"]'))
+        self.assertFalse(self._fields(card))
+        self.assertIn('Synthetic ext', card.xpath('.//*[@data-sc-edit-view="read"]')[0].text_content())
         self.assertFalse(tree.xpath('//*[@data-sc-edit-card="injury-notes-internal"]'))
         notes = tree.xpath('//section[@data-sc-section="injury.notes"]')[0]
         self.assertNotIn('Synthetic int', notes.text_content())

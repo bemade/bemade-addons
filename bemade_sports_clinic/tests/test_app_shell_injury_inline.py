@@ -201,7 +201,10 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         self.assertNotIn('Synthetic int', item.text_content())
         self.assertFalse(item.xpath('.//*[contains(@class, "o_sc_consent_todo")]'))
         fields_ = ' '.join(self._fields_in(item))
-        self.assertIn('"external_notes"', fields_)
+        # Owner review 2026-10-25 (#1675): the coach reads the external note
+        # (no editor, no pencil on it).
+        self.assertIn('Synthetic ext', item.text_content())
+        self.assertNotIn('"external_notes"', fields_)
         self.assertNotIn('"internal_notes"', fields_)
         self.assertNotIn('"parental_consent"', fields_)
 

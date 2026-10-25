@@ -10,8 +10,9 @@ Acceptance criteria:
   an edit view with only its own autosave field.
 * AC-2 ONE « History » link in the Notes section head (not in the note
   cards), its sheet keeps the scope filters.
-* AC-3 Coach: the external card only (read + stamp; its pencil as today —
-  coaches may update the external note), no internal card, no internal text.
+* AC-3 Coach: the external card only (read + stamp; owner review
+  2026-10-25: no pencil — coaches read the external note, they no longer
+  edit it), no internal card, no internal text.
 * AC-4 Browser (phone 390 px + laptop 1366 px, tour
   ``sc_1675_split_notes``): the external pencil opens only the external
   editor; a save refreshes its stamp and leaves the internal block as it
@@ -87,7 +88,11 @@ class TestSplitInjuryNotes1675(Split1675Common):
         section = self._section(tree)
         self.assertEqual(len(section.xpath('.//*[@data-sc-edit-card="injury-notes-external"]')), 1)
         self.assertFalse(section.xpath('.//*[@data-sc-edit-card="injury-notes-internal"]'))
-        self.assertEqual(self._fields(section), ['external_notes'])
+        # Owner review 2026-10-25: the coach reads it — no pencil, no editor.
+        external = section.xpath('.//*[@data-sc-edit-card="injury-notes-external"]')[0]
+        self.assertFalse(external.xpath('.//button[@data-sc-edit-toggle]'))
+        self.assertEqual(self._fields(section), [])
+        self.assertIn('Synthetic ext 1675', external.text_content())
         self.assertNotIn('Synthetic int 1675', text)
 
 

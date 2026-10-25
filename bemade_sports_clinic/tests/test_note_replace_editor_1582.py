@@ -90,9 +90,12 @@ class TestNoteReplaceEditor1582(PlayerInlineCommon):
 
     def test_injury_page_coach_external_only(self):
         self._login_coach()
-        _text, tree = self._get(self.edit_url)
+        text, tree = self._get(self.edit_url)
         props = _autosave_props(tree)
-        self.assertIs(props['external_notes'].get('replace'), True)
+        # Owner review 2026-10-25 (#1675): a coach reads the external note
+        # (no editor), never the internal one.
+        self.assertNotIn('external_notes', props)
+        self.assertIn('T1582 synthetic external v1', text)
         self.assertNotIn('internal_notes', props)
         # Task 1631: the coach's one « History » (external rows only).
         self.assertIsNotNone(self._sheet(tree, 'sc_note_history_sheet_%s' % self.injury.id))
@@ -125,7 +128,9 @@ class TestNoteReplaceEditor1582(PlayerInlineCommon):
         _text, tree = self._get(self._url(tab='injuries', team_id=self.team_a.id))
         item = tree.xpath('//details[@id="injury-%s"]' % self.injury.id)[0]
         props = _autosave_props(item)
-        self.assertIs(props['external_notes'].get('replace'), True)
+        # Owner review 2026-10-25 (#1675): read only for a coach.
+        self.assertNotIn('external_notes', props)
+        self.assertIn('T1582 synthetic external v1', item.text_content())
         self.assertNotIn('internal_notes', props)
         self.assertIsNone(self._sheet(item, 'sc_note_history_sheet_%s_internal' % self.injury.id))
 

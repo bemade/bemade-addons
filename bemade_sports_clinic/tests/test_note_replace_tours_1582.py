@@ -1,6 +1,8 @@
 """Task 1582 — browser tour of the injury notes' « replace » editor
 (static/tests/tours/sc_note_replace_tours.js), a therapist on a laptop
-(1366 px) and a coach at phone width (390 px). Synthetic fixtures only.
+(1366 px) and at phone width (390 px); a coach at phone width reads the
+external note without a pencil (owner review 2026-10-25, #1675). Synthetic
+fixtures only.
 
 Acceptance criteria covered here:
 
@@ -60,5 +62,14 @@ class TestNoteReplaceTourLaptop1582(_Tour1582Common):
 class TestNoteReplaceTourPhone1582(_Tour1582Common):
     browser_size = '390x844'
 
-    def test_note_replace_coach_phone(self):
-        self._run('pc.coach@example.com')
+    # Owner review 2026-10-25 (#1675): coaches read the external note, they
+    # no longer edit it — the phone run is a therapist's; the coach's
+    # read-only card is the sc_1675_coach_external_readonly tour.
+    def test_note_replace_therapist_phone(self):
+        self._run('pc.tp@example.com')
+
+    def test_coach_external_note_read_only_phone(self):
+        self.start_tour('/my/injury/edit?injury_id=%s' % self.injury.id,
+                        'sc_1675_coach_external_readonly', login='pc.coach@example.com')
+        self.injury.invalidate_recordset()
+        self.assertEqual(self.injury.external_notes, CURRENT)

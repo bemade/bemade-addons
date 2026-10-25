@@ -130,7 +130,9 @@ class TestAppShellSave1539(AppShellCommon):
 
     # -- UC-R2 -----------------------------------------------------------
     def test_blur_save_one_history_row(self):
-        self._login_coach()
+        # Owner review 2026-10-25 (#1675): the external note is the
+        # therapist's to write in the app (a coach's save is refused).
+        self._login_tp()
         before = self._history_count(self.injury)
         resp = self._save(self.injury, 'external_notes', 'Rest two days (synthetic)')
         self.assertEqual(resp.status_code, 200, resp.text)
@@ -138,7 +140,7 @@ class TestAppShellSave1539(AppShellCommon):
         row = self.env['sports.injury.note.history'].search(
             [('injury_id', '=', self.injury.id)], order='id desc', limit=1)
         self.assertEqual(row.scope, 'external')
-        self.assertEqual(row.author_id, self.coach)
+        self.assertEqual(row.author_id, self.tp)
         # Same value again: no second row.
         resp = self._save(self.injury, 'external_notes', 'Rest two days (synthetic)')
         self.assertEqual(resp.status_code, 200)
