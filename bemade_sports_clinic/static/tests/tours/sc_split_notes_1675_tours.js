@@ -33,9 +33,9 @@ function noteSteps(card, scope, text, other) {
             content: `The ${scope} pencil`,
             trigger: `${card} button[data-sc-edit-toggle]`,
             run(helpers) {
-                // CI 2026-10-25: compare the visible text, not the markup (a fragment
-                // refresh may redraw the other block with identical content).
-                window[`__sc1675Other_${scope}`] = readText(document.querySelector(`${other} [data-sc-edit-view="read"]`));
+                // CI 2026-10-25: compare the other note's TEXT only (its « last note »
+                // stamp may legitimately be redrawn by the save's refresh).
+                window[`__sc1675Other_${scope}`] = readText(document.querySelector(`${other} [data-sc-edit-view="read"] .o_sc_pre`));
                 return helpers.click();
             },
         },
@@ -76,8 +76,8 @@ function noteSteps(card, scope, text, other) {
             trigger: `${card}:not([data-sc-edit-open]) [data-sc-edit-view="read"] [data-sc-note-stamp="${scope}"]`,
             run() {
                 const before = window[`__sc1675Other_${scope}`];
-                const after = readText(document.querySelector(`${other} [data-sc-edit-view="read"]`));
-                assert(before === after, "the other note's block changed");
+                const after = readText(document.querySelector(`${other} [data-sc-edit-view="read"] .o_sc_pre`));
+                assert(before === after, `the other note's text changed: «${before}» → «${after}»`);
                 assert(!editing(other), "the other note is in edit mode");
             },
         },
