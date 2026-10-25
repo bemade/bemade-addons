@@ -118,7 +118,10 @@ class IncompleteTodoCommon(HttpCase):
             'first_name': name, 'last_name': 'Synthetic',
             'team_ids': [Command.set((teams if teams is not None else self.team).ids)],
             'date_of_birth': dob, 'email': email, 'phone': phone,
-            'allergy_level': allergy_level, 'medical_alert_level': medical_alert_level,
+            # Task 1677: the levels follow the lists — « none » = « none
+            # known » ticked, False = nothing on file.
+            'allergy_none_confirmed': allergy_level == 'none',
+            'medical_none_confirmed': medical_alert_level == 'none',
         })
         if contact_mobile is not None:
             self.env['sports.patient.contact'].create({
@@ -174,20 +177,21 @@ class TestIncompletePlayerTodo1628(IncompleteTodoCommon):
         player = self._player(dob=self._dob(10), contact_mobile='+1 514 555 0110',
                               allergy_level=False, medical_alert_level=False)
         self.assertEqual(player._sc_incomplete_items(), ['allergy_level', 'medical_alert_level'])
-        player.allergy_level = 'urgent'
+        self.env['sports.patient.critical.item'].create({
+            'patient_id': player.id, 'family': 'allergy', 'name': 'Synthetic peanut', 'life_threatening': True})
         self.assertEqual(player._sc_incomplete_items(), ['medical_alert_level'])
-        player.medical_alert_level = 'none'
+        player.medical_none_confirmed = True
         self.assertEqual(player._sc_incomplete_items(), [])
 
     def test_medical_levels_in_french_todo(self):
-        """Task 1630: « Niveau d'allergies » / « Alerte médicale » in the
+        """Task 1630 / 1677: « Allergies » / « Alerte médicale » in the
         To-Do of an fr_CA assignee."""
         self.tp_creator.lang = 'fr_CA'
         player = self._player(dob=self._dob(10), contact_mobile='+1 514 555 0111',
                               allergy_level=False, medical_alert_level=False)
         self._run()
         text = self._text(self._todos(player))
-        self.assertIn("Niveau d'allergies", text)
+        self.assertIn('Allergies', text)
         self.assertIn('Alerte médicale', text)
 
     def test_checklist_contact_without_mobile_does_not_count(self):

@@ -59,13 +59,17 @@
                         </label>
                     </t>
                 </div>
-                <div class="o_sc_card o_sc_fields">
+                <!-- Owner review 2026-10-25 (#1675): coaches read the external
+                     note, they no longer write it — a coach's report is the
+                     diagnosis and the date (the create route ignores a coach's
+                     external note in the app). -->
+                <div t-if="is_treatment_prof" class="o_sc_card o_sc_fields">
                     <t t-set="lbl">External Notes</t>
                     <t t-set="hint">Notes visible to all team members</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave">
                         <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'external_notes', 'external_notes', lbl, 'textarea', hint=hint)"/>
                     </t>
-                    <t t-if="is_treatment_prof and sc_can('injury.internal_notes')">
+                    <t t-if="sc_can('injury.internal_notes')">
                         <t t-set="lbl">Internal Notes (Medical Staff Only)</t>
                         <t t-set="hint">Notes visible only to treatment professionals</t>
                         <t t-call="bemade_sports_clinic.sc_field_autosave">

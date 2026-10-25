@@ -620,10 +620,27 @@ class PatientInjury(models.Model):
             remaining.append(vals)
         return remaining
 
+    def _sc_check_external_notes_writer(self, vals_list):
+        """Owner decision 2026-10-25 (#1675): the external note is written by
+        treatment professionals only. A share (portal) user who is not a
+        portal therapist — a coach — gets an AccessError for any
+        ``external_notes`` in ``vals``, whatever the path (app, legacy
+        portal, RPC). Internal users and the superuser (imports, merges,
+        crons, the controllers' sudo writes) are not concerned."""
+        if self.env.su or not any('external_notes' in vals for vals in vals_list):
+            return
+        user = self.env.user
+        if not user.share:
+            return
+        if user.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
+            return
+        raise AccessError(_("Only treatment professionals can edit an injury's external notes."))
+
     def write(self, vals):
         """Override write to refresh follower subtypes when internal notes change."""
         # Adversarial review 2026-10-22: never moved onto another player.
         sc_check_patient_unchanged(self, vals)
+        self._sc_check_external_notes_writer([vals])
         # Detect suppression context (portal coach flows)
         suppress_followers = bool(
             self.env.context.get('mail_create_nosubscribe')
@@ -965,6 +982,7 @@ class PatientInjury(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        self._sc_check_external_notes_writer(vals_list)
         # Review fixes 2026-10-18: an injury created already resolved carries
         # no predicted resolution date (same rule as resolving one).
         vals_list = [dict(vals, predicted_resolution_date=False)

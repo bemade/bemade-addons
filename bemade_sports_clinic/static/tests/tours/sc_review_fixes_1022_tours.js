@@ -10,9 +10,7 @@
  *   field, panel open, values kept, no page change. The team variant starts
  *   on the team's dashboard and opens the Joueurs tab client-side (the
  *   owner's phone bounce).
- * - sc_1022_medical_undo (#1653 / #1654): an « Urgent » allergy with an
- *   item → « None known » clears it → the toast's « Undo » brings the level,
- *   the details and the item back, no reload.
+ * (sc_1022_medical_undo went with the « None known » undo, task 1677.)
  *
  * Real taps / the toast's place inside the popup on a phone stay
  * UNVERIFIED here — the dev-review click-through covers them.
@@ -29,16 +27,6 @@ function assert(condition, message) {
 
 const PANEL = "details.o_sc_player_add[open] form[data-sc-player-add]";
 const SUBMIT = `${PANEL} [data-sc-player-add-submit]`;
-
-async function waitFor(check, message, timeout = 5000) {
-    const start = Date.now();
-    while (!check()) {
-        if (Date.now() - start > timeout) {
-            throw new Error(message);
-        }
-        await new Promise((resolve) => setTimeout(resolve, 50));
-    }
-}
 
 function q(selector) {
     return document.querySelector(selector);
@@ -150,76 +138,5 @@ tours.add("sc_1022_player_add_team", {
             run: "click",
         },
         ...panelSteps(),
-    ],
-});
-
-// ------------------------------------------------------------ medical undo
-const PILLS = '[data-sc-section="player.medical"]';
-const CARD = "dialog[open] [data-sc-edit-card='medical-allergy']";
-const LEVEL = `${CARD} .o_sc_autosave[data-sc-field="allergy_level"] select`;
-
-tours.add("sc_1022_medical_undo", {
-    steps: () => [
-        {
-            content: "The Allergies pill",
-            trigger: `${PILLS} button[data-sc-med-pill="allergy"]`,
-            run() {
-                window.__sc1022NoReload = true;
-                this.anchor.click();
-            },
-        },
-        {
-            content: "The popup's pencil",
-            trigger: `${CARD} [data-sc-action='medical.edit']`,
-            run: "click",
-        },
-        {
-            content: "Add a life-threatening item",
-            trigger: `${CARD} form[data-sc-critical-add] input[name='name']`,
-            run: "edit Arachides",
-        },
-        {
-            content: "« Add »",
-            trigger: `${CARD} form[data-sc-critical-add] button[type='submit']`,
-            run: "click",
-        },
-        {
-            content: "Urgent with the item: pick « None known »",
-            trigger: `${CARD} .o_sc_critical [data-sc-critical-item]`,
-            run() {
-                const select = q(LEVEL);
-                assert(select.value === "urgent", `level: ${select.value}`);
-                select.value = "none";
-                select.dispatchEvent(new Event("change", { bubbles: true }));
-            },
-        },
-        {
-            content: "Cleared: details empty and locked, the « Undo » toast",
-            trigger: ".o_sc_toast:not([hidden]) [data-sc-toast-action]",
-            async run() {
-                const details = q(`${CARD} .o_sc_autosave[data-sc-field="allergy_details"] textarea`);
-                assert(details && details.disabled && details.value === "", "details not cleared");
-                // The item list is a read fragment refreshed after the save.
-                await waitFor(() => !q(`${CARD} [data-sc-critical-item]`), "the item is still listed");
-                // In the modal popup (the page behind it is inert).
-                assert(this.anchor.closest("dialog[open]"), "the toast is outside the open popup");
-                this.anchor.click();
-            },
-        },
-        {
-            content: "Restored: the item, « Urgent » and the details are back",
-            trigger: `${CARD} .o_sc_critical [data-sc-critical-item]`,
-            run() {
-                assert(this.anchor.textContent.includes("Arachides"), "the item");
-                assert(q(LEVEL).value === "urgent", `level: ${q(LEVEL).value}`);
-                const details = q(`${CARD} .o_sc_autosave[data-sc-field="allergy_details"] textarea`);
-                assert(details.value === "Synthetic kiwi" && !details.disabled, `details: ${details.value}`);
-                assert(window.__sc1022NoReload, "the page reloaded");
-            },
-        },
-        {
-            content: "The header pill is red again",
-            trigger: `${PILLS} button[data-sc-med-pill="allergy"].o_sc_med_urgent`,
-        },
     ],
 });

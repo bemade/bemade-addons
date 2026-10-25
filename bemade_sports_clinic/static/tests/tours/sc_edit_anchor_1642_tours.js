@@ -55,7 +55,7 @@ function pad() {
     document.body.style.paddingBottom = "3000px";
 }
 
-const NOTES = 'details.o_sc_injury_item[open] section[data-sc-edit-card="injury-notes"]';
+const NOTES = 'details.o_sc_injury_item[open] [data-sc-edit-card="injury-notes-external"]';  // task 1675
 const CARD = "details.o_sc_injury_item";
 
 tours.add("sc_1642_injury_notes_blur", {
@@ -98,17 +98,16 @@ tours.add("sc_1642_injury_done", {
             },
         },
         {
-            content: "Jump away, then « Terminé »: back to the top of the (collapsed) card",
-            trigger: `${CARD}[open] [data-sc-injury-done]`,
+            // Task 1676: the card's bottom « Terminé » is gone; the group's
+            // ✓ (its pencil in edit mode) closes it and anchors the block.
+            content: "Jump away, then the ✓: back to the top of the Notes block",
+            trigger: `${NOTES}[data-sc-edit-open] button[data-sc-edit-toggle][data-sc-edit-toggle-done]`,
             async run() {
-                const card = this.anchor.closest(CARD);
-                card.id = card.id || "t1642_card";
-                const selector = `#${card.id}`;
                 window.scrollTo(0, 0);
                 await sleep(50);
                 this.anchor.click();
-                await waitFor(() => !document.querySelector(selector).open, "the card stayed open");
-                await waitFor(() => anchored(selector), `card not anchored: ${where(selector)}`);
+                await waitFor(() => !document.querySelector(`${NOTES}[data-sc-edit-open]`), "the notes stayed open");
+                await waitFor(() => anchored(NOTES), `notes block not anchored: ${where(NOTES)}`);
             },
         },
     ],

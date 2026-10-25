@@ -70,7 +70,7 @@ tours.add("sc_1539_injury_autosave", {
     steps: () => [
         {
             content: "Edit the notes card (pencil paradigm, owner review 2026-10-11)",
-            trigger: '[data-sc-edit-card="injury-notes"] button[data-sc-edit-toggle]',
+            trigger: '[data-sc-edit-card="injury-notes-external"] button[data-sc-edit-toggle]',
             run: "click",
         },
         {

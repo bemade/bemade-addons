@@ -3,15 +3,17 @@ from markupsafe import Markup
 from odoo import api, fields, models, Command, _
 from odoo.exceptions import UserError
 
-from .medical_alerts import more_severe
 
 # Fields resolved by an explicit rule rather than by destination-precedence.
 # Never reported as conflicts: the rule, not the user, decides them.
 RULE_RESOLVED_FIELDS = (
     "first_name", "last_name", "partner_id", "team_ids",
     "last_consultation_date", "match_status", "practice_status",
-    # Task 1630: the more severe level wins; EpiPen / « to validate »: OR.
+    # Task 1630: EpiPen / « to validate »: OR. Task 1677: the levels follow
+    # the merged lists (computed); « none known » holds only while no merged
+    # record has an item of that family.
     "allergy_level", "medical_alert_level", "allergy_epipen", "medical_alert_review",
+    "allergy_none_confirmed", "medical_none_confirmed",
 )
 # Clinical free text: never discarded, concatenated under a provenance header.
 # Task 1630: the allergy / medical-alert details and « Other medical history »
@@ -19,9 +21,11 @@ RULE_RESOLVED_FIELDS = (
 TEXT_FIELDS = (
     "team_info_notes", "allergy_details", "medical_alert_details",
     "medical_history_other", "allergies",
+    # Task 1677: where the EpiPen is kept.
+    "allergy_epipen_note",
 )
-# Task 1630: levels resolved to the more severe one.
-LEVEL_FIELDS = ("allergy_level", "medical_alert_level")
+# Task 1677: « none known » per family (the list it confirms empty).
+NONE_FIELDS = {"allergy_none_confirmed": "allergy", "medical_none_confirmed": "medical_alert"}
 # Task 1630: booleans resolved with OR (a ticked EpiPen is never lost).
 OR_FIELDS = ("allergy_epipen", "medical_alert_review")
 # Scalars: destination wins where set, sources fill blanks.
@@ -352,11 +356,13 @@ class PatientMergeWizard(models.TransientModel):
             merged = self._merge_text(dst, srcs, fname)
             if merged != dst[fname]:
                 values[fname] = merged
-        # Task 1630: the more severe level; EpiPen and « to validate »: OR.
-        for fname in LEVEL_FIELDS:
-            level = more_severe(*(p[fname] for p in (dst | srcs)))
-            if level != dst[fname]:
-                values[fname] = level
+        # Task 1630: EpiPen and « to validate »: OR. Task 1677: the levels
+        # follow the merged lists; « none known » only without any item.
+        for fname, family in NONE_FIELDS.items():
+            has_items = any(p._sc_critical_items(family) for p in (dst | srcs))
+            confirmed = not has_items and any(p[fname] for p in (dst | srcs))
+            if confirmed != bool(dst[fname]):
+                values[fname] = confirmed
         for fname in OR_FIELDS:
             if not dst[fname] and any(src[fname] for src in srcs):
                 values[fname] = True
@@ -400,9 +406,9 @@ class PatientMergeWizard(models.TransientModel):
         self._merge_critical_items(dst, srcs)
 
     def _merge_critical_items(self, dst, srcs):
-        """Task 1654: the union of the critical items, one per family + name
-        (accent / case folded): EpiPen if any copy had it, the « what to do »
-        texts joined."""
+        """Task 1654 / 1677: the union of the allergies and conditions, one
+        per family + name (accent / case folded): life-threatening if any
+        copy was, the first-aid notes joined."""
         from .patient_critical_item import _fold
         Item = self.env["sports.patient.critical.item"].sudo().with_context(sc_critical_quiet=True, **QUIET)
         moving = Item.search([("patient_id", "in", srcs.ids)])
@@ -415,10 +421,11 @@ class PatientMergeWizard(models.TransientModel):
                 kept[key] = item
                 continue
             first = kept[key]
-            actions = [a for a in ((first.action or "").strip(), (item.action or "").strip()) if a]
+            notes = [a for a in ((first.first_aid_note or "").strip(),
+                                 (item.first_aid_note or "").strip()) if a]
             first.write({
-                "epipen": first.epipen or item.epipen,
-                "action": "\n".join(dict.fromkeys(actions)) or False,
+                "life_threatening": first.life_threatening or item.life_threatening,
+                "first_aid_note": "\n".join(dict.fromkeys(notes)) or False,
             })
             item.unlink()
 

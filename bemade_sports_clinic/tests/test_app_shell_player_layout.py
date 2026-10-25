@@ -25,6 +25,7 @@ from datetime import date
 
 from odoo.tests import tagged
 
+from odoo.addons.bemade_sports_clinic.tests.medical_common_1677 import set_medical
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_player_inline import PlayerInlineCommon
 
 
@@ -34,8 +35,8 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.player.sudo().write({'date_of_birth': date(2010, 5, 4), 'allergy_level': 'minor',
-                                 'allergy_details': 'Synthetic peanuts',
+        set_medical(cls.player, allergies=[('Synthetic peanuts', False)])
+        cls.player.sudo().write({'date_of_birth': date(2010, 5, 4),
                                  'training_recommendation': 'Synthetic bike'})
 
     def setUp(self):

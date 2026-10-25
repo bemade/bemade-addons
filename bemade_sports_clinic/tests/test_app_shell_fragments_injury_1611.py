@@ -132,7 +132,7 @@ class TestFragmentsInjury1611(FragmentsCommon):
         resp = self.url_open(url, allow_redirects=False)
         self.assertIn('injury=%s' % self.injury.id, resp.headers.get('Location', ''))
         payload = self._saved(self.injury, 'diagnosis', 'Synthetic elbow')
-        for part in ('summary', 'read', 'notes'):
+        for part in ('summary', 'read', 'notes-external', 'notes-internal'):
             self.assertRefreshes(payload, self._ikey(self.injury, part))
         summary = self._fragment(self._url(), self._ikey(self.injury, 'summary'))
         self.assertIn('Synthetic elbow', self._text(summary))

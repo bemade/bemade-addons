@@ -24,6 +24,7 @@ from odoo import fields, http
 from odoo.http import request
 from odoo.tools import format_datetime
 
+from ..models.sc_name_match import NEAR, NameIndex
 from .team_staff_portal import TeamStaffPortal
 
 SEARCH_MIN = 2
@@ -67,10 +68,11 @@ class AppSearchPortal(TeamStaffPortal):
             broad = [] if admin else [('active', '=', True)]
             for row in Patients.sudo().search_read(broad, fields_read):
                 candidates.setdefault(row['id'], row)
-        matched = [row for row in candidates.values()
-                   if sc_name_matches(words, row['first_name'], row['last_name'])]
-        records = env['sports.patient'].sudo().with_context(active_test=False).browse(
-            [row['id'] for row in matched])
+        # Task 1674: the shared matcher — #1650's word prefixes, then the
+        # near matches (accents, typos, inversions) as « Close results ».
+        grades = dict(NameIndex([(rid, row['first_name'] or '', row['last_name'] or '')
+                                 for rid, row in candidates.items()]).match_words(words))
+        records = env['sports.patient'].sudo().with_context(active_test=False).browse(list(grades))
         rows = []
         for player in records:
             teams = player.team_ids
@@ -88,10 +90,12 @@ class AppSearchPortal(TeamStaffPortal):
                 # its name search for this player.
                 'add_url': False if accessible else '/my/players?%s' % urlencode({
                     'first_name': player.first_name or '', 'last_name': player.last_name or ''}),
+                'near': grades[player.id] == NEAR,
                 'sort': (not player.active, not accessible, sc_fold(player.last_name), sc_fold(player.first_name)),
             })
         rows.sort(key=lambda r: r['sort'])
-        return rows[:SEARCH_LIMIT]
+        return ([r for r in rows if not r['near']][:SEARCH_LIMIT]
+                + [r for r in rows if r['near']][:SEARCH_LIMIT])
 
     def _sc_search_teams(self, words):
         rows = []
@@ -134,8 +138,10 @@ class AppSearchPortal(TeamStaffPortal):
         words = sc_words(query)
         values = {'sc_query': query, 'sc_too_short': len(sc_fold(query).replace(' ', '')) < SEARCH_MIN}
         if not values['sc_too_short'] and words:
+            players = self._sc_search_players(words)
             values.update({
-                'sc_players': self._sc_search_players(words),
+                'sc_players': [r for r in players if not r['near']],
+                'sc_near_players': [r for r in players if r['near']],
                 'sc_teams': self._sc_search_teams(words),
                 'sc_events': self._sc_search_events(words),
             })

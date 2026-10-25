@@ -127,8 +127,9 @@ class TestReviewFixes1014Save(AppShellCommon):
         self.injury.sudo().write({'internal_notes': 'Synthetic internal v1'})
         self._login_coach()
         loaded = self._wd(self.injury)
+        # Owner review 2026-10-25 (#1675): the external note is refused too.
         resp = self._save(self.injury, 'external_notes', 'Coach external', write_date=loaded)
-        self.assertEqual(resp.status_code, 200, resp.text)
+        self.assertEqual(resp.status_code, 403, resp.text)
         for write_date in (loaded, None):
             resp = self._save(self.injury, 'internal_notes', 'Coach text', write_date=write_date,
                               old_value='Synthetic internal v1')

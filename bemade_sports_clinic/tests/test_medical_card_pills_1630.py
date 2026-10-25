@@ -3,6 +3,8 @@ on player cards across the app. Synthetic fixtures only.
 
 Acceptance criteria:
 
+* (Task 1677: the levels follow the lists — fixtures through set_medical;
+  a red pill names its life-threatening items.)
 * CARD-1 A player whose allergy and / or medical-alert level is « Urgent –
   life-threatening » shows a compact, static « Allergies » (with the EpiPen
   icon when ticked) and / or « Medical alert » pill in the card's status
@@ -25,6 +27,7 @@ from unittest.mock import patch
 from odoo import Command
 from odoo.tests import tagged
 
+from odoo.addons.bemade_sports_clinic.tests.medical_common_1677 import set_medical
 from odoo.addons.bemade_sports_clinic.tests.test_card_status_pills_1634 import CardPills1634Common
 
 MED = './/*[contains(@class, "o_sc_row_status")]/*[@data-sc-med-pill]'
@@ -35,11 +38,10 @@ class MedicalCards1630Common(CardPills1634Common):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.player.sudo().write({
-            'allergy_level': 'urgent', 'allergy_epipen': True, 'allergy_details': 'Synthetic peanut',
-            'medical_alert_level': 'urgent', 'medical_alert_details': 'Synthetic epilepsy',
-        })
-        cls.other.sudo().write({'allergy_level': 'minor', 'medical_alert_level': 'none'})
+        # Task 1677: the levels follow the lists (synthetic items).
+        set_medical(cls.player, allergies=[('Synthetic peanut', True)],
+                    conditions=[('Synthetic epilepsy', True)], epipen=True)
+        set_medical(cls.other, allergies=[('Synthetic pollen', False)], conditions=[], none_condition=True)
 
     def _med(self, row):
         return {node.get('data-sc-med-pill'): node for node in row.xpath(MED)}
@@ -58,8 +60,9 @@ class MedicalCards1630Common(CardPills1634Common):
                                        % self.player.id), (where, key))
         self.assertEqual(bool(pills['allergy'].xpath('.//*[@data-sc-med-epipen]')), epipen, where)
         self.assertFalse(pills['medical_alert'].xpath('.//*[@data-sc-med-epipen]'), where)
-        self.assertEqual(' '.join(pills['allergy'].text_content().split()), 'Allergies', where)
-        self.assertEqual(' '.join(pills['medical_alert'].text_content().split()), 'Medical alert', where)
+        # Task 1654 / 1677: a red pill names its life-threatening items.
+        self.assertEqual(' '.join(pills['allergy'].text_content().split()), 'Synthetic peanut', where)
+        self.assertEqual(' '.join(pills['medical_alert'].text_content().split()), 'Synthetic epilepsy', where)
         # Task 1652: the popup, once on the page, outside every fragment.
         for key, node in pills.items():
             sheet_id = 'sc_med_card_%s_%s' % (key, self.player.id)
@@ -101,7 +104,7 @@ class TestMedicalCardPills1630(MedicalCards1630Common):
             self._assert_red(rows[0], (login.__name__, 'watch'), epipen=False)
 
     def test_only_the_red_one(self):
-        self.player.sudo().write({'medical_alert_level': 'minor'})
+        set_medical(self.player, allergies=[('Synthetic peanut', True)], conditions=[('Synthetic epilepsy', False)])
         self._login_coach()
         with self._presence():
             tree = self._page(self.team_url)
@@ -112,15 +115,22 @@ class TestMedicalCardPills1630(MedicalCards1630Common):
         self._login_tp()
         key = self._key('roster')
         self.assertFragmentMatchesPage(self.team_url, key)
-        payload = self._saved(self.player, 'allergy_level', 'minor')
+        item = self.player.sudo().allergy_critical_ids
+        resp = self.url_open('/my/app/medical/item/%s/save' % item.id, data={
+            'life_threatening': '0', 'csrf_token': self._csrf()}, allow_redirects=False)
+        self.assertEqual(resp.status_code, 200, resp.text)
+        payload = resp.json()
         self.assertRefreshes(payload, key)
         node = self._fragment(self.team_url, key)
         self.assertEqual(list(self._med(node)), ['medical_alert'])
 
     # -- CARD-3 ----------------------------------------------------------
     def test_yellow_grey_unset_show_nothing(self):
-        for level in ('minor', 'none', False):
-            self.player.sudo().write({'allergy_level': level, 'medical_alert_level': level})
+        for level, state in (('minor', dict(allergies=[('Synthetic peanut', False)],
+                                            conditions=[('Synthetic epilepsy', False)])),
+                             ('none', dict(allergies=[], conditions=[], none_allergy=True, none_condition=True)),
+                             (False, dict(allergies=[], conditions=[], none_allergy=False, none_condition=False))):
+            set_medical(self.player, **state)
             for login in (self._login_tp, self._login_coach):
                 login()
                 with self._presence():
@@ -160,9 +170,10 @@ class TestMedicalCardPills1630(MedicalCards1630Common):
     def test_unreadable_record_skipped(self):
         """A record the viewer may not read is dropped, the others still show."""
         stranger = self.env['sports.patient'].create({
-            'first_name': 'Syn', 'last_name': 'Stranger', 'allergy_level': 'urgent',
+            'first_name': 'Syn', 'last_name': 'Stranger',
             'team_ids': [Command.set([self.team_b.id])],
         })
+        set_medical(stranger, allergies=[('Synthetic sesame', True)])
         coach_players = (self.player | stranger).with_user(self.coach)
         pills = coach_players._sc_card_medical_pills()
         self.assertIn(self.player.id, pills)
@@ -171,9 +182,12 @@ class TestMedicalCardPills1630(MedicalCards1630Common):
     # -- CARD-5 ----------------------------------------------------------
     def test_one_batched_read(self):
         many = self.env['sports.patient'].create([{
-            'first_name': 'Syn%s' % i, 'last_name': 'Batch', 'allergy_level': 'urgent',
+            'first_name': 'Syn%s' % i, 'last_name': 'Batch',
             'team_ids': [Command.set([self.team_a.id])],
         } for i in range(12)])
+        self.env['sports.patient.critical.item'].with_context(sc_critical_quiet=True).create([{
+            'patient_id': player.id, 'family': 'allergy', 'name': 'Synthetic sesame',
+            'life_threatening': True} for player in many])
 
         def queries(records):
             records = records.with_user(self.tp)

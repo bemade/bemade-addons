@@ -25,6 +25,7 @@ Acceptance criteria:
 """
 from odoo.tests import tagged
 
+from odoo.addons.bemade_sports_clinic.tests.medical_common_1677 import set_medical
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_clinic_1540 import Clinic1540Common
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_player_inline import PlayerInlineCommon
 
@@ -39,8 +40,8 @@ class TestHeaderOrder1615(PlayerInlineCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.player.sudo().write({'allergy_level': 'minor', 'allergy_details': 'Synthetic pollen',
-                                 'training_recommendation': 'Synthetic rowing',
+        set_medical(cls.player, allergies=[('Synthetic pollen', False)])
+        cls.player.sudo().write({'training_recommendation': 'Synthetic rowing',
                                  'predicted_return_date': '2030-02-01', 'return_date': '2029-12-01',
                                  'match_status': 'no', 'practice_status': 'no'})
 

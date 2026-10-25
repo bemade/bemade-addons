@@ -29,6 +29,12 @@ Acceptance criteria:
   them too.
 * LEG-1 Legacy portal pages read the compact « Allergies (urgent –
   life-threatening, EpiPen): … » lines (a coach: yellow / red only).
+
+Task 1677: the levels are computed from structured lists (fixtures through
+``set_medical``); the popup's editor (HDR-2's level select, details, EpiPen
+segmented control) and the level / details / EpiPen saves (SAVE-1) are
+replaced by the lists — see test_medical_lists_1677. The create forms no
+longer take levels or details (CRE-1).
 """
 import json
 
@@ -37,6 +43,7 @@ from odoo.tests import tagged
 from odoo.tools.misc import mute_logger
 
 from odoo.addons.bemade_sports_clinic.tests.fragments_common_1611 import FragmentsMixin
+from odoo.addons.bemade_sports_clinic.tests.medical_common_1677 import set_medical
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_clinic_1540 import Clinic1540Common
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_player_inline import PlayerInlineCommon
 
@@ -48,11 +55,8 @@ class MedicalCommon(FragmentsMixin, PlayerInlineCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.player.sudo().write({
-            'allergy_level': 'urgent', 'allergy_epipen': True,
-            'allergy_details': 'Synthetic kiwi', 'medical_alert_level': 'none',
-            'medical_alert_details': False, 'medical_history_other': 'Synthetic fracture 2020',
-        })
+        set_medical(cls.player, allergies=[('Synthetic kiwi', True)], epipen=True, none_condition=True)
+        cls.player.sudo().write({'medical_history_other': 'Synthetic fracture 2020'})
 
     def setUp(self):
         super().setUp()
@@ -92,12 +96,13 @@ class TestMedicalHeader1630(MedicalCommon):
         self.assertTrue(pills['allergy'].xpath('.//*[@data-sc-med-epipen]'))
         self.assertFalse(pills['medical_alert'].xpath('.//*[@data-sc-med-epipen]'))
         self.assertEqual(pills['allergy'].get('data-sc-sheet-open'), 'sc_med_player_allergy_%s' % self.player.id)
-        # Tones of the other levels; EpiPen gone when unticked.
-        for level, tone in (('minor', 'o_sc_med_minor'), (False, 'o_sc_med_unset')):
-            self.player.sudo().write({'allergy_level': level, 'allergy_epipen': False})
+        # Tones of the other levels; EpiPen gone when unticked. Task 1677:
+        # « Not specified » is grey too.
+        for items, tone in (([('Synthetic kiwi', False)], 'o_sc_med_minor'), ([], 'o_sc_med_none')):
+            set_medical(self.player, allergies=items, epipen=False)
             pill = self._pills(self._tree())['allergy']
-            self.assertIn(tone, pill.get('class'), level)
-            self.assertFalse(pill.xpath('.//*[@data-sc-med-epipen]'), level)
+            self.assertIn(tone, pill.get('class'), items)
+            self.assertFalse(pill.xpath('.//*[@data-sc-med-epipen]'), items)
         # No allergies banner any more.
         self.assertFalse(tree.xpath('//*[@data-sc-section="player.allergies"]'))
 
@@ -106,66 +111,29 @@ class TestMedicalHeader1630(MedicalCommon):
         url = self._url(tab='injuries')
         key = 'sports.patient:%s:medical-pills' % self.player.id
         self.assertFragmentMatchesPage(url, key)
-        payload = self._saved(self.player, 'medical_alert_level', 'minor')
+        resp = self.url_open('/my/app/medical/item/add', data={
+            'patient_id': self.player.id, 'family': 'medical_alert', 'name': 'Synthetic asthma',
+            'csrf_token': self._csrf()}, allow_redirects=False)
+        self.assertEqual(resp.status_code, 200, resp.text)
+        payload = resp.json()
         self.assertRefreshes(payload, key)
-        self.assertRefreshes(payload, 'sports.patient:%s:medical-medical_alert' % self.player.id)
+        self.assertRefreshes(payload, 'sports.patient:%s:medical-medical_alert-head' % self.player.id)
         node = self._fragment(url, key)
         pill = node.xpath('.//button[@data-sc-med-pill="medical_alert"]')[0]
         self.assertIn('o_sc_med_minor', pill.get('class'))
 
     # -- HDR-2 -------------------------------------------------------------
-    def test_popup_and_therapist_pencil(self):
+    def test_popups_outside_fragments(self):
+        """Task 1677: the popup's content is test_medical_lists_1677 (UI-1);
+        here: the sheets stay outside every read fragment and the header's
+        own edit view does not edit the allergies."""
         self._login_tp()
         tree = self._tree()
         sheet = self._sheet(tree, 'allergy')
         self.assertIsNotNone(sheet)
-        read = sheet.xpath('.//*[@data-sc-edit-view="read"]')[0]
-        self.assertEqual(read.get('data-sc-fragment'), 'sports.patient:%s:medical-allergy' % self.player.id)
-        self.assertIn('Synthetic kiwi', read.text_content())
-        self.assertIn('Urgent', read.text_content())
-        self.assertTrue(read.xpath('.//*[@data-sc-med-epipen]'))
-        self.assertFalse(read.xpath('.//owl-component'))
-        card = sheet.xpath('.//*[@data-sc-edit-card="medical-allergy"]')[0]
-        # Review round 1 (owner 2026-10-22): the app's standard edit pencil —
-        # icon only, top-right of the popup content (the level line's row,
-        # not the dialog head with its close ✕), visible while editing.
-        toggles = card.xpath('.//button[@data-sc-edit-toggle]')
-        self.assertEqual(len(toggles), 1)
-        toggle = toggles[0]
-        self.assertIn('o_sc_icon_btn', toggle.get('class'))
-        self.assertEqual(toggle.get('data-sc-action'), 'medical.edit')
-        self.assertEqual((toggle.get('aria-label'), toggle.get('title')), ('Edit', 'Edit'))
-        self.assertEqual(toggle.text_content().strip(), '', 'icon only')
-        self.assertTrue(toggle.xpath('.//*[local-name()="svg"]'))
-        self.assertFalse(toggle.xpath('ancestor::*[@data-sc-edit-view]'), 'hidden while editing')
-        self.assertFalse(toggle.xpath('ancestor::*[contains(@class, "o_sc_sheet_head")]'))
-        top = card.xpath('./*[contains(@class, "o_sc_med_sheet_top")]')
-        self.assertEqual(len(top), 1)
-        self.assertIs(card.xpath('./*')[0], top[0], 'the first line of the popup')
-        self.assertIs(toggle.getparent(), top[0])
-        self.assertIs(top[0].xpath('./*')[-1], toggle, 'right of the level line')
-        self.assertTrue(top[0].xpath('./*[@data-sc-edit-view="read"]//*[contains(@class, "o_sc_med_level_line")]'))
-        # No « Edit » text button any more.
-        self.assertFalse(sheet.xpath('.//*[contains(@class, "o_sc_med_edit_row")]'))
-        self.assertFalse([b for b in sheet.xpath('.//button') if b.text_content().strip() == 'Edit'])
-        edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
-        self.assertEqual(edit.get('hidden'), 'hidden')
-        props = [json.loads(p) for p in edit.xpath('.//owl-component/@props')]
-        self.assertEqual([p['field'] for p in props], ['allergy_level', 'allergy_epipen', 'allergy_details'])
-        self.assertEqual(props[0]['inputType'], 'select')
-        # Task 1653: a set level offers the three levels only.
-        self.assertEqual(props[0]['options'][0], ['none', 'None known'])
-        self.assertEqual([o[0] for o in props[0]['options']], ['none', 'minor', 'urgent'])
-        self.assertEqual(props[0]['value'], 'urgent')
-        self.assertEqual(props[1]['value'], '1')
-        alert = self._sheet(tree, 'medical_alert')
-        alert_props = [json.loads(p)['field'] for p in alert.xpath('.//owl-component/@props')]
-        self.assertEqual(alert_props, ['medical_alert_level', 'medical_alert_details'])
-        self.assertIn('No details.', alert.xpath('.//*[@data-sc-edit-view="read"]')[0].text_content())
-        # The sheets are outside every read fragment.
+        self.assertIn('Synthetic kiwi', sheet.text_content())
         for node in tree.xpath('//*[@data-sc-fragment]'):
             self.assertFalse(node.xpath('.//dialog[starts-with(@id, "sc_med_")]'), node.get('data-sc-fragment'))
-        # The header pencil no longer edits the allergies.
         hero = tree.xpath(HERO)[0]
         self.assertFalse(hero.xpath('.//*[@data-sc-edit-view="edit"]//owl-component[contains(@props, \'"allergies"\')]'))
         self.assertFalse(hero.xpath('.//*[@data-sc-section="player.allergies.edit"]'))
@@ -180,13 +148,12 @@ class TestMedicalHeader1630(MedicalCommon):
         self.assertIn('Synthetic kiwi', sheet.text_content())
         self.assertFalse(sheet.xpath('.//*[@data-sc-edit-toggle] | .//owl-component | .//*[@data-sc-edit-view="edit"]'))
         self.assertIsNone(self._sheet(tree, 'medical_alert'))
-        self.player.sudo().write({'allergy_level': False, 'medical_alert_level': 'minor',
-                                  'medical_alert_details': 'Synthetic asthma'})
+        set_medical(self.player, allergies=[], conditions=[('Synthetic asthma', False)])
         tree = self._tree()
         self.assertEqual(list(self._pills(tree)), ['medical_alert'])
         self.assertIn('o_sc_med_minor', self._pills(tree)['medical_alert'].get('class'))
         self.assertIn('Synthetic asthma', self._sheet(tree, 'medical_alert').text_content())
-        self.player.sudo().write({'allergy_level': 'none', 'medical_alert_level': False})
+        set_medical(self.player, allergies=[], conditions=[], none_allergy=True, none_condition=False)
         tree = self._tree()
         self.assertEqual(self._pills(tree), {})
         holder = tree.xpath('//*[@data-sc-section="player.medical"]')
@@ -212,33 +179,17 @@ class TestMedicalHeader1630(MedicalCommon):
         self.assertEqual(self.player.medical_history_other, 'Synthetic surgery 2021')
 
     # -- SAVE-1 -------------------------------------------------------------
-    def test_therapist_saves_every_field(self):
+    def test_therapist_saves_other_history_only(self):
+        """Task 1677: « Other medical history » is the one generic save left
+        (the lists have their own routes; the levels are computed)."""
         self._login_tp()
-        # Task 1654: « Urgent » needs a life-threatening item first.
-        self.env['sports.patient.critical.item'].sudo().with_context(sc_critical_quiet=True).create({
-            'patient_id': self.player.id, 'family': 'medical_alert', 'name': 'Synthetic epilepsy'})
-        cases = (
-            ('allergy_level', 'minor', 'minor', 'Not urgent'),
-            ('allergy_epipen', '0', False, 'No'),
-            ('allergy_epipen', '1', True, 'Yes'),
-            ('allergy_details', '  Synthetic latex  ', 'Synthetic latex', None),
-            ('medical_alert_level', 'urgent', 'urgent', 'Urgent – life-threatening'),
-            ('medical_alert_details', 'Synthetic epilepsy', 'Synthetic epilepsy', None),
-            ('medical_history_other', '', False, None),
-        )
-        for field, value, expected, display in cases:
-            payload = self._saved(self.player, field, value)
-            self.player.invalidate_recordset()
-            self.assertEqual(self.player[field], expected, field)
-            if display is not None:
-                self.assertEqual(payload.get('display'), display, field)
+        self._saved(self.player, 'medical_history_other', '')
+        self.player.invalidate_recordset()
+        self.assertFalse(self.player.medical_history_other)
         with mute_logger('odoo.http', 'odoo.addons.bemade_sports_clinic.controllers.app_shell'):
-            resp = self._save(self.player, 'allergy_level', 'bogus')
-            self.assertNotEqual(resp.status_code, 200)
-            # Task 1653: a set level can't go back to « Not specified ».
-            resp = self._save(self.player, 'allergy_level', '')
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.json()['message'], 'Please choose a level.')
+            for field in ('allergy_level', 'allergy_details', 'allergy_epipen',
+                          'medical_alert_level', 'medical_alert_details', 'allergies'):
+                self.assertEqual(self._save(self.player, field, 'x').status_code, 403, field)
 
     def test_coach_gets_403_on_every_field(self):
         self._login_coach()
@@ -249,10 +200,6 @@ class TestMedicalHeader1630(MedicalCommon):
                                  ('allergies', 'x')):
                 resp = self._save(self.player, field, value)
                 self.assertEqual(resp.status_code, 403, field)
-        self._login_tp()
-        with mute_logger('odoo.http', 'odoo.addons.bemade_sports_clinic.controllers.app_shell'):
-            resp = self._save(self.player, 'allergies', 'x')
-        self.assertEqual(resp.status_code, 403, 'the legacy field is not savable')
         self.player.invalidate_recordset()
         self.assertEqual(self.player.sudo().allergy_level, 'urgent')
 
@@ -260,7 +207,9 @@ class TestMedicalHeader1630(MedicalCommon):
     def test_field_access(self):
         Patient = self.env['sports.patient']
         for name in ('allergy_level', 'allergy_details', 'allergy_epipen',
-                     'medical_alert_level', 'medical_alert_details'):
+                     'medical_alert_level', 'medical_alert_details',
+                     # Task 1677
+                     'allergy_epipen_note', 'allergy_none_confirmed', 'medical_none_confirmed'):
             field = Patient._fields[name]
             self.assertTrue(Patient.with_user(self.coach)._has_field_access(field, 'read'), name)
             self.assertTrue(Patient.with_user(self.tp)._has_field_access(field, 'read'), name)
@@ -285,22 +234,21 @@ class TestMedicalHeader1630(MedicalCommon):
         form = tree.xpath('//form[@data-sc-player-add]')[0]
         for name in ('allergy_level', 'allergy_details', 'allergy_epipen', 'allergies'):
             self.assertFalse(form.xpath('.//*[@name="%s"]' % name), name)
-        # The legacy POST (/my/player/create/save) still takes them.
+        # Task 1677: the legacy POST (/my/player/create/save) takes « Other
+        # medical history » only — the lists are filled on the player page.
         resp = self.url_open('/my/player/create/save', data={
             'csrf_token': self._csrf(), 'first_name': 'Syn', 'last_name': 'Created',
             'date_of_birth': '2010-01-01', 'team_ids': str(self.team_a.id),
             'allergy_level': 'urgent', 'allergy_details': 'Synthetic bee', 'allergy_epipen': '1',
-            'allergy_epipen_present': '1', 'medical_alert_level': '', 'medical_alert_details': '',
+            'allergy_epipen_present': '1', 'medical_history_other': 'Synthetic surgery',
         }, allow_redirects=False)
         self.assertIn(resp.status_code, (302, 303), resp.text[:300])
         created = self.env['sports.patient'].search([('last_name', '=', 'Created')])
         self.assertEqual(len(created), 1)
         self.assertEqual((created.allergy_level, created.allergy_epipen, created.allergy_details),
-                         ('urgent', True, 'Synthetic bee'))
-        self.assertFalse(created.medical_alert_level)
-        # Task 1654: the urgent allergy's item is suggested from the details.
-        self.assertEqual([(i.family, i.name, i.epipen) for i in created.sudo().critical_item_ids],
-                         [('allergy', 'Synthetic bee', True)])
+                         (False, False, False))
+        self.assertEqual(created.medical_history_other, 'Synthetic surgery')
+        self.assertFalse(created.sudo().critical_item_ids)
 
     def test_coach_create_ignores_medical_fields(self):
         self._login_coach()
@@ -312,19 +260,17 @@ class TestMedicalHeader1630(MedicalCommon):
         self.assertEqual(Patient._sc_medical_vals_from_post({}), {})
         vals = Patient._sc_medical_vals_from_post({
             'allergy_level': 'bogus', 'medical_alert_level': 'minor', 'allergy_details': '  x ',
-            'medical_history_other': '', 'allergy_epipen_present': '1'})
-        self.assertEqual(vals, {'allergy_level': False, 'medical_alert_level': 'minor',
-                                'allergy_details': 'x', 'medical_history_other': False,
-                                'allergy_epipen': False})
+            'medical_history_other': ' y ', 'allergy_epipen_present': '1'})
+        self.assertEqual(vals, {'medical_history_other': 'y'})
 
     # -- LEG-1 --------------------------------------------------------------
     def test_summary_lines(self):
         player = self.player.with_user(self.tp)
         lines = [line['text'] for line in player._sc_medical_summary_lines(tp=True)]
-        self.assertEqual(lines, ['Allergies (urgent – life-threatening, EpiPen): Synthetic kiwi',
-                                 'Medical alert (none known)'])
+        self.assertEqual(lines, ['Allergies (urgent – life-threatening, EpiPen): '
+                                 'Synthetic kiwi (life-threatening)'])
         coach_lines = [line['text'] for line in self.player.with_user(self.coach)._sc_medical_summary_lines()]
-        self.assertEqual(coach_lines, ['Allergies (urgent – life-threatening, EpiPen): Synthetic kiwi'])
+        self.assertEqual(coach_lines, lines)
         self.assertEqual(self.player.with_user(self.plain).sudo(False)._sc_medical_pills(tp=True), [])
 
     def test_legacy_player_page(self):
@@ -333,12 +279,19 @@ class TestMedicalHeader1630(MedicalCommon):
         resp = self.url_open('/my/player?player_id=%s&team_id=%s' % (self.player.id, self.team_a.id))
         self.assertEqual(resp.status_code, 200)
         self.assertIn('Synthetic kiwi', resp.text)
-        self.player.sudo().write({'allergy_level': 'none'})
+        # Task 1677: an item without « Risque vital » is yellow — a coach
+        # reads it; « None known » shows nothing to a coach.
+        set_medical(self.player, allergies=[('Synthetic kiwi', False)])
         resp = self.url_open('/my/player?player_id=%s&team_id=%s' % (self.player.id, self.team_a.id))
-        self.assertNotIn('Synthetic kiwi', resp.text, 'a coach never sees « None »')
+        self.assertIn('Synthetic kiwi', resp.text)
+        set_medical(self.player, allergies=[], none_allergy=True)
+        resp = self.url_open('/my/player?player_id=%s&team_id=%s' % (self.player.id, self.team_a.id))
+        self.assertNotIn('Allergies (none known)', resp.text, 'a coach never sees « None »')
         self._login_tp()
         resp = self.url_open('/my/player?player_id=%s&team_id=%s' % (self.player.id, self.team_a.id))
         self.assertEqual(resp.status_code, 200)
+        set_medical(self.player, allergies=[('Synthetic kiwi', True)], none_allergy=False)
+        resp = self.url_open('/my/player?player_id=%s&team_id=%s' % (self.player.id, self.team_a.id))
         self.assertIn('Synthetic kiwi', resp.text)
 
     def test_legacy_edit_form_saves(self):
@@ -346,7 +299,7 @@ class TestMedicalHeader1630(MedicalCommon):
         self._login_tp()
         resp = self.url_open('/my/player/edit?patient_id=%s&team_id=%s' % (self.player.id, self.team_a.id))
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('name="allergy_level"', resp.text)
+        self.assertNotIn('name="allergy_level"', resp.text)
         self.assertIn('name="medical_history_other"', resp.text)
         self.assertNotIn('name="allergies"', resp.text)
 
@@ -355,8 +308,8 @@ class TestMedicalHeader1630(MedicalCommon):
 class TestMedicalDossier1630(Clinic1540Common):
 
     def test_dossier_pills(self):
-        self.player.sudo().write({'allergy_level': 'minor', 'allergy_details': 'Synthetic pollen',
-                                  'medical_alert_level': False})
+        set_medical(self.player, allergies=[('Synthetic pollen', False)], conditions=[],
+                    none_allergy=False, none_condition=False)
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/clinic/%s?patient=%s&tab=dossier' % (self.clinic.id, self.player.id))
@@ -364,7 +317,8 @@ class TestMedicalDossier1630(Clinic1540Common):
         pills = hero.xpath('.//*[@data-sc-section="clinic.dossier.medical"]//button[@data-sc-med-pill]')
         self.assertEqual([p.get('data-sc-med-pill') for p in pills], ['allergy', 'medical_alert'])
         self.assertIn('o_sc_med_minor', pills[0].get('class'))
-        self.assertIn('o_sc_med_unset', pills[1].get('class'))
+        self.assertIn('o_sc_med_none', pills[1].get('class'))
+        self.assertEqual(pills[1].get('data-sc-med-level'), 'unset')
         sheet = tree.xpath('//dialog[@id="sc_med_clinic_allergy_%s"]' % self.player.id)[0]
         self.assertIn('Synthetic pollen', sheet.text_content())
         self.assertTrue(sheet.xpath('.//button[@data-sc-edit-toggle]'))
@@ -392,7 +346,8 @@ class TestMedicalRolesRegistry1630(MedicalCommon):
         self.assertEqual(menu.parent_id, self.env.ref('bemade_sports_clinic.sports_clinic_staff_menu'))
         arch = self.env.ref('bemade_sports_clinic.sports_patient_view_list_medical_review').arch_db
         for name in ('team_ids', 'allergy_level', 'allergy_epipen', 'allergy_details',
-                     'medical_alert_level', 'medical_alert_details', 'medical_alert_review'):
+                     'medical_alert_level', 'medical_alert_details', 'medical_alert_review',
+                     'allergy_critical_ids', 'medical_alert_critical_ids'):
             self.assertIn('name="%s"' % name, arch, name)
         search = self.env.ref('bemade_sports_clinic.sports_patient_view_search').arch_db
         self.assertIn('name="medical_alert_review"', search)

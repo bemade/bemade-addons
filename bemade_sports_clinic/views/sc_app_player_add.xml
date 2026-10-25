@@ -35,7 +35,11 @@
                 <t t-set="sc_reason_team">team</t>
                 <t t-set="sc_reason_checking">Checking for existing players…</t>
                 <t t-set="sc_reason_exact">This player already exists — open them or add them to the team above</t>
-                <t t-set="sc_reason_twin">A player with this identity already exists — ask a manager.</t>
+                <!-- Task 1672 (addendum 3): the namesake line itself sits in
+                     the suggestions; the reason only points at it. -->
+                <t t-set="sc_reason_twin">Check the existing player above</t>
+                <!-- Task 1674: only near matches — « Create » stays enabled. -->
+                <t t-set="sc_reason_near">Check the similar players above before creating</t>
                 <t t-set="sc_reason_ec">Emergency contact: name and mobile are required together</t>
                 <t t-set="sc_error_generic">The player could not be created. Please review your inputs and try again.</t>
                 <span hidden="hidden" data-sc-player-add-reasons="1"
@@ -43,6 +47,7 @@
                       t-att-data-last="sc_reason_last" t-att-data-dob="sc_reason_dob" t-att-data-team="sc_reason_team"
                       t-att-data-checking="sc_reason_checking" t-att-data-exact="sc_reason_exact"
                       t-att-data-twin="sc_reason_twin"
+                      t-att-data-near="sc_reason_near"
                       t-att-data-ec="sc_reason_ec" t-att-data-generic="sc_error_generic"
                       t-att-data-team-required="'1' if panel.get('team_required') else '0'"/>
                 <div class="o_sc_filter_grid">
@@ -68,7 +73,10 @@
                            role="alert" data-sc-player-add-field-error="date_of_birth" t-out="panel['error']"/>
                     </div>
                 </div>
-                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="panel['team_props']"/></t>
+                <!-- Task 1672 (addendum 2): from a team page the team is
+                     implicit (the hidden team_ids above, validated by the
+                     server); the Joueurs list keeps the selector. -->
+                <t t-if="not panel.get('team_fixed')" t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="panel['team_props']"/></t>
                 <!-- The existence check (as you type). -->
                 <div class="o_sc_player_check" data-sc-player-check="1" aria-live="polite">
                     <p class="o_sc_hint">Type a first and a last name to look for existing players.</p>
@@ -127,12 +135,13 @@
     <template id="sc_player_check_results" name="App shell: create a player — existence check">
         <div class="o_sc_player_check_results" data-sc-check-results="1"
              t-att-data-sc-exact="'1' if sc_exact else '0'"
-             t-att-data-sc-twin-elsewhere="'1' if sc_twin_elsewhere else '0'" t-att-data-sc-ready="'1' if sc_ready else '0'">
+             t-att-data-sc-twin-elsewhere="'1' if sc_twin_elsewhere else '0'" t-att-data-sc-ready="'1' if sc_ready else '0'"
+             t-att-data-sc-near="'1' if sc_near_rows else '0'">
             <p t-if="not sc_ready" class="o_sc_hint">Type a first and a last name to look for existing players.</p>
             <p t-elif="sc_dob_error" class="o_sc_field_message o_sc_field_error" role="alert">Please enter a valid date.</p>
-            <t t-elif="sc_rows">
+            <t t-elif="sc_rows or sc_near_rows">
                 <p t-if="sc_exact" class="o_sc_field_message o_sc_field_error" role="alert" data-sc-check-exact="1">Same name and date of birth: open or add this player instead.</p>
-                <p t-else="" class="o_sc_hint">Possible matches:</p>
+                <p t-elif="sc_rows" class="o_sc_hint">Possible matches:</p>
                 <!-- Adversarial review 2026-10-22: a same-name player the user
                      can't open — a generic line, never tied to the date of
                      birth (the answer is the same whatever date is typed).
@@ -140,13 +149,19 @@
                      create, « Create » greys out with the same line. -->
                 <p t-if="sc_twin_elsewhere and not sc_exact" class="o_sc_field_message" role="status"
                    data-sc-check-twin-elsewhere="1">A player with this identity already exists — ask a manager.</p>
-                <ul class="o_sc_search_list">
-                    <li t-foreach="sc_rows" t-as="row"
+                <!-- Task 1674: exact / prefix matches, then the near ones
+                     (« Similar players »), same rows and actions. -->
+                <t t-foreach="[(sc_rows, False), (sc_near_rows, True)]" t-as="sc_group">
+                <p t-if="sc_group[1] and sc_group[0]" class="o_sc_hint o_sc_check_near_title" data-sc-check-near="1">Similar players:</p>
+                <ul t-if="sc_group[0]" class="o_sc_search_list" t-att-data-sc-check-group="'near' if sc_group[1] else 'match'">
+                    <li t-foreach="sc_group[0]" t-as="row"
                         t-attf-class="o_sc_search_row #{'o_sc_search_archived' if row['archived'] else ''}"
                         t-att-data-sc-check-player="row['id']" t-att-data-sc-check-exact="'1' if row['exact'] else None">
                         <span class="o_sc_search_link">
                             <span class="o_sc_row_title" t-out="row['title']"/>
                             <span t-if="row['teams']" class="o_sc_row_subtitle" t-out="row['teams']"/>
+                            <!-- Task 1672: the player's own date of birth (namesakes). -->
+                            <span t-if="row['dob']" class="o_sc_row_subtitle o_sc_check_dob" data-sc-check-dob="1"><span>Born on</span> <span t-out="row['dob']"/></span>
                             <span t-if="row['archived']" class="o_sc_chip o_sc_search_flag">Archived player</span>
                         </span>
                         <a t-if="row['url']" t-att-href="row['url']" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
@@ -165,6 +180,7 @@
                         <span t-elif="row['on_team']" class="o_sc_chip o_sc_chip_ghost">On the team</span>
                     </li>
                 </ul>
+                </t>
             </t>
             <p t-else="" class="o_sc_hint" data-sc-check-none="1">No existing player matches.</p>
         </div>

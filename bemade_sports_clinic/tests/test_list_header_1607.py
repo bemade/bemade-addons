@@ -321,11 +321,11 @@ class TestListHeader1607(ListHeader1607Common):
 
     # -- notepad / timesheets ---------------------------------------------------
     def test_notepad_header(self):
+        # Task 1667: the quick-note form is always shown — no header toggle.
         self._login_tp()
         _text, tree = self._get('/my/notepad')
-        add, panel = self.assertPanelFollows(self._header(tree, 'notepad.header'), 'sc_notepad_add')
-        self.assertEqual(add.get('aria-label'), 'Add a note')
-        self.assertEqual((add.get('aria-expanded'), panel.get('open')), ('true', 'open'))
+        self.assertFalse(tree.xpath('//*[@data-sc-section="notepad.header"]'))
+        panel = tree.xpath('//section[@id="sc_notepad_add"]')[0]
         self.assertEqual(panel.xpath('.//form/@action'), ['/my/notepad/add'])
 
     def test_timesheets_sort_in_the_header(self):
@@ -401,9 +401,6 @@ class TestListHeaderI18n1607(ListHeader1607Common):
         _text, tree = self._fr('/my/sc/timesheets')
         header = self._header(tree, 'timesheets.header')
         self.assertIn('Trier les feuilles de temps', header.text_content())
-        text, tree = self._fr('/my/notepad')
-        add = self._header(tree, 'notepad.header').xpath('.//button')[0]
-        self.assertEqual(add.get('aria-label'), 'Ajouter une note')
         _text, tree = self._fr('/my/events')
         header = self._header(tree, 'events.header')
         self.assertIn('Trier les événements', header.text_content())

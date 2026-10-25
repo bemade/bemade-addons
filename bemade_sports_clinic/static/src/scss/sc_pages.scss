@@ -539,3 +539,17 @@ $sc-laptop: 992px;
         filter: none;
     }
 }
+
+// Task 1676: « Afficher les boutons Terminé » off (the default) — the edit
+// cards' « Done » buttons are hidden; the head pencil's ✓ closes the card.
+.o_sc_app[data-sc-hide-done="1"] {
+    .o_sc_edit_done_actions,
+    .o_sc_edit_done {
+        display: none !important;
+    }
+}
+
+// Task 1676: the head pencil while its card is in edit mode (a ✓).
+.o_sc_app [data-sc-edit-toggle].o_sc_edit_toggle_done {
+    color: var(--sc-accent, currentColor);
+}

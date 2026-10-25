@@ -370,6 +370,9 @@ async function post(form, submitter) {
             target += hash;
         }
         navigating = true;
+        // Task 1672: an add panel resets before the page changes (back on
+        // this page, the form is empty again).
+        form.dispatchEvent(new CustomEvent("sc:create-success", { bubbles: true }));
         window.location.assign(target);
     } catch {
         guardShowError(form, texts(form).offline);
@@ -422,6 +425,15 @@ document.addEventListener("change", refreshFrom);
 document.addEventListener("focusout", refreshFrom);
 
 const watched = new WeakSet();
+
+// Task 1672: an add panel reset after a create — no stale error / reason.
+document.addEventListener("sc:form-reset", (ev) => {
+    const form = guardForm(ev.target);
+    if (form && !form.matches("[data-sc-player-add]")) {
+        guardClearError(form);
+        guardRefresh(form);
+    }
+});
 
 export function guardBoot(root = document) {
     for (const form of root.querySelectorAll(".o_sc_app form[data-sc-guard]")) {

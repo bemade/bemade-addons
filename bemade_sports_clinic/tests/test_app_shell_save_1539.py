@@ -79,10 +79,10 @@ class TestAppShellSave1539(AppShellCommon):
     # -- UC-R1 -----------------------------------------------------------
     def test_coach_refused_therapist_fields(self):
         self._login_coach()
-        self.player.sudo().write({'allergy_details': 'Peanuts'})
+        self.player.sudo().write({'medical_history_other': 'Peanuts'})
         # Task 1633: date_of_birth left this list (coaches set it).
-        # Task 1630: the allergy details replace the allergies text.
-        for field, value in (('allergy_details', 'None'), ('sc_status', 'no:no'),
+        # Task 1630 / 1677: « Other medical history » (the allergies are lists).
+        for field, value in (('medical_history_other', 'None'), ('sc_status', 'no:no'),
                              ('training_recommendation', 'Rest'),
                              ('team_info_notes', 'x')):
             resp = self._save(self.player, field, value)
@@ -95,7 +95,7 @@ class TestAppShellSave1539(AppShellCommon):
             self.assertEqual(resp.status_code, 403, field)
         self.player.invalidate_recordset()
         self.injury.invalidate_recordset()
-        self.assertEqual(self.player.sudo().allergy_details, 'Peanuts')
+        self.assertEqual(self.player.sudo().medical_history_other, 'Peanuts')
         self.assertEqual(self.player.match_status, 'yes')
         self.assertEqual(self.injury.stage, 'active')
         self.assertFalse(self.injury.sudo().internal_notes)
@@ -103,7 +103,7 @@ class TestAppShellSave1539(AppShellCommon):
 
     def test_therapist_saves_therapist_fields(self):
         self._login_tp()
-        resp = self._save(self.player, 'allergy_details', ' Pollen ')
+        resp = self._save(self.player, 'medical_history_other', ' Pollen ')
         self.assertEqual(resp.status_code, 200, resp.text)
         self.assertEqual(resp.json()['value'], 'Pollen')
         resp = self._save(self.injury, 'internal_notes', 'TP-only synthetic text')
@@ -130,7 +130,9 @@ class TestAppShellSave1539(AppShellCommon):
 
     # -- UC-R2 -----------------------------------------------------------
     def test_blur_save_one_history_row(self):
-        self._login_coach()
+        # Owner review 2026-10-25 (#1675): the external note is the
+        # therapist's to write in the app (a coach's save is refused).
+        self._login_tp()
         before = self._history_count(self.injury)
         resp = self._save(self.injury, 'external_notes', 'Rest two days (synthetic)')
         self.assertEqual(resp.status_code, 200, resp.text)
@@ -138,7 +140,7 @@ class TestAppShellSave1539(AppShellCommon):
         row = self.env['sports.injury.note.history'].search(
             [('injury_id', '=', self.injury.id)], order='id desc', limit=1)
         self.assertEqual(row.scope, 'external')
-        self.assertEqual(row.author_id, self.coach)
+        self.assertEqual(row.author_id, self.tp)
         # Same value again: no second row.
         resp = self._save(self.injury, 'external_notes', 'Rest two days (synthetic)')
         self.assertEqual(resp.status_code, 200)

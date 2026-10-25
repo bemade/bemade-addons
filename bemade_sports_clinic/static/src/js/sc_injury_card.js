@@ -1,9 +1,8 @@
 /*
  * Task 1616 — the injury card as the injury's page (inert outside .o_sc_app):
  *
- * - button[data-sc-injury-done] (« Done » at the bottom of an open card):
- *   closes the card's open edit groups (Details / Notes / a document) and
- *   the card itself; the read fragments refresh at once (task 1611);
+ * - (task 1676: the bottom « Done » is gone — the card's summary closes
+ *   it; each edit group closes with its pencil's ✓ or its own « Done »);
  * - form[data-sc-doc-upload] (the document picker — the injury card's
  *   « Add documents » sheet AND the player Documents tab, one template:
  *   bemade_sports_clinic.sc_document_upload_form): several files at once —
@@ -24,37 +23,10 @@
  *   (disabled, no second submit) from the submit until the page changes.
  */
 import { _t } from "@web/core/l10n/translation";
-import { anchorEdited } from "@bemade_sports_clinic/js/sc_edit_anchor";
 
 function inShell(node) {
     return Boolean(node && node.closest && node.closest(".o_sc_app"));
 }
-
-// ---------------------------------------------------------------- « Done »
-document.addEventListener("click", (ev) => {
-    const done = ev.target.closest && ev.target.closest("[data-sc-injury-done]");
-    if (!done || !inShell(done)) {
-        return;
-    }
-    const card = done.closest("details.o_sc_injury_item");
-    if (!card) {
-        return;
-    }
-    ev.preventDefault();
-    // Each open edit group closes through its own « Done » (sc_app_ui.js).
-    for (const button of card.querySelectorAll("[data-sc-edit-open] [data-sc-edit-done]")) {
-        button.click();
-    }
-    if (card.contains(document.activeElement)) {
-        document.activeElement.blur();
-    }
-    card.open = false;
-    document.dispatchEvent(new CustomEvent("sc:refresh-now"));
-    // Task 1642: back to the top of the collapsed card once the refresh
-    // and the keyboard have settled (was scrollIntoView « nearest », which
-    // could leave the screen somewhere unrelated).
-    anchorEdited(card);
-});
 
 // ------------------------------------- status-only fields (review 2026-10-18)
 // « Date prévue de résolution » until the injury is resolved, « Date de

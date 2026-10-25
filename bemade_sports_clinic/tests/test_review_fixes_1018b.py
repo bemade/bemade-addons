@@ -45,6 +45,7 @@ from odoo import Command, fields
 from odoo.tests import tagged
 from odoo.tools.misc import mute_logger
 
+from odoo.addons.bemade_sports_clinic.tests.medical_common_1677 import set_medical
 from odoo.addons.bemade_sports_clinic.tests.test_account_security_shell_1620 import (
     SAVED_URL, AccountShellCommon)
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
@@ -67,7 +68,7 @@ class TestAllergiesHeaderOnly1018b(AppShellCommon):
     def setUp(self):
         super().setUp()
         self._switch(True)
-        self.player.sudo().write({'allergy_level': 'minor', 'allergy_details': 'Synthetic allergy'})
+        set_medical(self.player, allergies=[('Synthetic allergy', False)])
 
     def test_medical_card_has_no_allergies(self):
         self._login_tp()
@@ -84,15 +85,16 @@ class TestAllergiesHeaderOnly1018b(AppShellCommon):
     def test_header_keeps_allergies_read_and_edit(self):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s' % self.player.id)
-        # Task 1630: the pill in the header, the details + editor in its popup.
+        # Task 1630: the pill in the header, the details + editor in its popup
+        # (task 1677: the list — plain inputs, no island).
         pill = tree.xpath('//*[@data-sc-section="player.medical"]//button[@data-sc-med-pill="allergy"]')
         self.assertEqual(len(pill), 1)
         sheet = tree.xpath('//dialog[@id="sc_med_player_allergy_%s"]' % self.player.id)
         self.assertEqual(len(sheet), 1)
         self.assertIn('Synthetic allergy', ' '.join(sheet[0].itertext()))
-        self.assertEqual(_island_fields(sheet[0]), ['allergy_level', 'allergy_epipen', 'allergy_details'])
-        # Exactly one allergy-details island on the whole page; no legacy one.
-        self.assertEqual(_island_fields(tree).count('allergy_details'), 1)
+        self.assertEqual(_island_fields(sheet[0]), [])
+        self.assertTrue(sheet[0].xpath('.//form[@data-sc-med-add]'))
+        self.assertNotIn('allergy_details', _island_fields(tree))
         self.assertNotIn('allergies', _island_fields(tree))
 
 

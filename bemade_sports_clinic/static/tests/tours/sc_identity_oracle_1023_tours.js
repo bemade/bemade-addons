@@ -10,6 +10,9 @@ const tours = registry.category("web_tour.tours");
 
 const PANEL = "details#sc_player_add[open] form[data-sc-player-add]";
 const GENERIC = "A player with this identity already exists — ask a manager.";
+// Task 1672 (addendum 3): the generic line sits in the suggestions only; the
+// reason under « Create » points at it.
+const REASON = "Check the existing player above";
 
 function type(selector, value) {
     const el = document.querySelector(selector);
@@ -28,8 +31,12 @@ function greyed(dob) {
             if (submit.getAttribute("aria-disabled") !== "true") {
                 throw new Error(`Create enabled for a hidden namesake (${dob})`);
             }
-            if (line.hidden || line.textContent.trim() !== GENERIC) {
+            if (line.hidden || line.textContent.trim() !== REASON) {
                 throw new Error(`Unexpected reason line: ${line.textContent}`);
+            }
+            const shown = document.querySelector(`${PANEL} [data-sc-check-twin-elsewhere]`);
+            if (!shown || shown.textContent.trim() !== GENERIC) {
+                throw new Error("the generic line is not in the suggestions");
             }
         },
     };

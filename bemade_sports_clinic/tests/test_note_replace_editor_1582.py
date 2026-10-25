@@ -90,9 +90,12 @@ class TestNoteReplaceEditor1582(PlayerInlineCommon):
 
     def test_injury_page_coach_external_only(self):
         self._login_coach()
-        _text, tree = self._get(self.edit_url)
+        text, tree = self._get(self.edit_url)
         props = _autosave_props(tree)
-        self.assertIs(props['external_notes'].get('replace'), True)
+        # Owner review 2026-10-25 (#1675): a coach reads the external note
+        # (no editor), never the internal one.
+        self.assertNotIn('external_notes', props)
+        self.assertIn('T1582 synthetic external v1', text)
         self.assertNotIn('internal_notes', props)
         # Task 1631: the coach's one « History » (external rows only).
         self.assertIsNotNone(self._sheet(tree, 'sc_note_history_sheet_%s' % self.injury.id))
@@ -125,7 +128,9 @@ class TestNoteReplaceEditor1582(PlayerInlineCommon):
         _text, tree = self._get(self._url(tab='injuries', team_id=self.team_a.id))
         item = tree.xpath('//details[@id="injury-%s"]' % self.injury.id)[0]
         props = _autosave_props(item)
-        self.assertIs(props['external_notes'].get('replace'), True)
+        # Owner review 2026-10-25 (#1675): read only for a coach.
+        self.assertNotIn('external_notes', props)
+        self.assertIn('T1582 synthetic external v1', item.text_content())
         self.assertNotIn('internal_notes', props)
         self.assertIsNone(self._sheet(item, 'sc_note_history_sheet_%s_internal' % self.injury.id))
 
@@ -293,7 +298,7 @@ class TestNoteReplaceFr1582(TestAppShellI18n1538):
                          "Écrire l'état actuel de la blessure — remplace le texte précédent")
         # Task 1631: one « Historique » (the Notes head), no scoped sheets.
         self.assertNotIn('historyLabel', props['internal_notes'])
-        links = tree.xpath('//*[@data-sc-edit-card="injury-notes"]//*[@data-sc-sheet-open="sc_note_history_sheet_%s"]'
+        links = tree.xpath('//section[@data-sc-section="injury.notes"]//*[@data-sc-sheet-open="sc_note_history_sheet_%s"]'
                            % self.injury.id)
         self.assertEqual([' '.join(link.text_content().split()) for link in links], ['Historique'])
         titles = {t.strip() for t in tree.xpath('//dialog//h2[contains(@class, "o_sc_sheet_title")]/text()')}

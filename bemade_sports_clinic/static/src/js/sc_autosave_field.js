@@ -264,6 +264,26 @@ export class ScAutosaveField extends Component {
             document.addEventListener("sc:saved", this.onSiblingSaved);
         }
         this.onGroupChange = (ev) => this.applyGroup(ev.target.value || "");
+        // Task 1672: an add panel reset after a successful create (« sc:form-
+        // reset » on its form, sc_list_header.js): a form-mode field goes back
+        // to its default (e.g. the page's team), a draft-mode one is emptied
+        // and its device draft dropped.
+        this.onFormReset = (ev) => {
+            const anchor = this.inputRef.el || (this.props.target && document.getElementById(this.props.target));
+            if (this.isServer || !anchor || !(ev.target instanceof Element) || !ev.target.contains(anchor)) {
+                return;
+            }
+            if (this.isForm) {
+                this.state.value = asText(this.props.value);
+                this.state.query = "";
+                this.state.open = false;
+                this.state.active = -1;
+                this.writeTarget();
+            } else {
+                this.discardDraft();
+            }
+        };
+        document.addEventListener("sc:form-reset", this.onFormReset);
         onMounted(() => {
             this.restore();
             const select = this.groupSelectEl;
@@ -287,6 +307,7 @@ export class ScAutosaveField extends Component {
             clearTimeout(this.timer);
             window.removeEventListener("online", this.onOnline);
             document.removeEventListener("sc:saved", this.onSiblingSaved);
+            document.removeEventListener("sc:form-reset", this.onFormReset);
             const select = this.groupSelectEl;
             if (select) {
                 select.removeEventListener("change", this.onGroupChange);

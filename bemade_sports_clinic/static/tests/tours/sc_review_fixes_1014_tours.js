@@ -163,7 +163,7 @@ tours.add("sc_1014_filters_autosubmit", {
         },
         {
             content: "The date is applied and the panel is still open; pick a team",
-            trigger: `${FORM} details[open] select[name="team_id"]`,
+            trigger: `${FORM} details[open] select[name="team_id"]:not(:visible)`,
             run() {
                 const params = new URLSearchParams(window.location.search);
                 assert(params.get("date_from") === "2026-01-20", `url: ${window.location.search}`);
@@ -175,7 +175,7 @@ tours.add("sc_1014_filters_autosubmit", {
         },
         {
             content: "The team filter is applied at once",
-            trigger: `${FORM} details[open] select[name="team_id"]`,
+            trigger: `${FORM} details[open] select[name="team_id"]:not(:visible)`,
             run() {
                 const params = new URLSearchParams(window.location.search);
                 assert(params.get("team_id") === this.anchor.value && this.anchor.value,

@@ -24,7 +24,7 @@ tours.add("sc_1582_note_replace", {
         {
             content: "Edit the notes card (pencil)",
             // Task 1616: the open injury card's Notes group.
-            trigger: 'details.o_sc_injury_item[open] [data-sc-edit-card="injury-notes"] button[data-sc-edit-toggle]',
+            trigger: 'details.o_sc_injury_item[open] [data-sc-edit-card="injury-notes-external"] button[data-sc-edit-toggle]',
             run: "click",
         },
         {
@@ -98,7 +98,7 @@ tours.add("sc_1582_note_replace", {
         // scopes, each entry labelled), in edit mode too.
         {
             content: "No « History » next to the replace hint; the head's one opens the history",
-            trigger: `[data-sc-edit-card="injury-notes"] .o_sc_edit_card_head [data-sc-sheet-open^="sc_note_history_sheet_"]`,
+            trigger: `section[data-sc-section="injury.notes"] > .o_sc_edit_card_head [data-sc-sheet-open^="sc_note_history_sheet_"]`,
             run(helpers) {
                 assert(
                     !document.querySelector(`${FIELD} [data-sc-sheet-open^="sc_note_history_sheet_"]`),

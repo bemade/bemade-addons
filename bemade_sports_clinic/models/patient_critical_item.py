@@ -1,108 +1,62 @@
-"""Task 1654 — the life-threatening items of a player's allergies / medical
-alerts (hybrid model, owner 2026-10-22).
+"""Task 1677 — a player's allergies and medical conditions as structured
+lists (owner 2026-10-24). Supersedes the #1654 hybrid model (free text +
+structured life-threatening items only).
 
-The free-text details stay the capture field; only what is life-threatening
-becomes a structured item: a name, EpiPen (allergies only) and a short
-« conduite à tenir ». The family's level follows the items:
+ONE model, ``sports.patient.critical.item``, kept from #1654 (its table,
+ACL, team-scoped record rules, immutability and merge / Law 25 handling stay;
+the staging data converts in place) — ``family`` says which list:
 
-* « Urgent – life-threatening » ⇔ at least one item (an item added forces it;
-  Urgent can't be chosen without one — sports.patient._sc_medical_level_rules);
-* the last item removed → « Not urgent » when details remain, else « None
-  known »;
-* EpiPen on the player (``allergy_epipen``) follows the allergy items while
-  there are some.
+* ``allergy``: name + « Risque vital » (``life_threatening``);
+* ``medical_alert`` (a condition): name + « Risque vital » + « Premiers
+  soins » (``first_aid_note``).
+
+EpiPen moved to the player (``allergy_epipen`` + ``allergy_epipen_note``,
+the popup's EpiPen card). The family's level on the player is COMPUTED from
+the list (sports.patient ``_compute_medical_levels``): red « Urgent » = a
+life-threatening item, yellow « Not urgent » = items, none life-threatening,
+« None known » = the empty list confirmed (``*_none_confirmed``), « Not
+specified » otherwise. Adding an item drops the family's « none known ».
 
 Only therapists (portal or internal) and clinic users write; coaches read
 (record rules mirror the player's team access). Each change posts an
 internal note on the player and stamps the family (« Updated on … by … »).
-
-``suggest_critical_items(family, text)`` is the rule-based suggester the
-19.0.1.107.0 migration uses (the hook a later AI suggester replaces, #1657).
 """
-import re
-import unicodedata
-
 from markupsafe import Markup, escape
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, ValidationError
 
-from .medical_alerts import LEVEL_MINOR, LEVEL_NONE, LEVEL_URGENT
+from .medical_alerts import DETAILS_FIELD, ITEM_NAME_MAX, LEVEL_MINOR, LEVEL_NONE, LEVEL_URGENT, fold
 
 FAMILIES = [("allergy", "Allergy"), ("medical_alert", "Medical alert")]
 LEVEL_FIELD = {"allergy": "allergy_level", "medical_alert": "medical_alert_level"}
-DETAILS_FIELD = {"allergy": "allergy_details", "medical_alert": "medical_alert_details"}
-ITEM_NAME_MAX = 60
-
-_SPLIT_RE = re.compile(r"\s*(?:[,;\n/]+|\s+et\s+|\s+and\s+)\s*", re.IGNORECASE)
-_URGENT_CUES = ("epipen", "epi-pen", "epi pen", "severe", "anaphyla", "mortel", "mortelle",
-                "choc", "shock", "life-threatening", "vital", "grave")
-_EPIPEN_CUES = ("epipen", "epi-pen", "epi pen", "auto-injecteur", "auto injecteur")
+NONE_FIELD = {"allergy": "allergy_none_confirmed", "medical_alert": "medical_none_confirmed"}
+ITEM_FIELDS = ("name", "life_threatening", "first_aid_note")
 
 
 def _fold(text):
-    text = unicodedata.normalize("NFKD", str(text or ""))
-    return "".join(ch for ch in text if not unicodedata.combining(ch)).casefold()
-
-
-def _clean_segment(segment):
-    segment = re.sub(r"\(.*?\)", " ", segment)
-    segment = re.sub(r"\b(?:epi-?pen|epi pen|s[eé]v[eè]re|anaphylaxie|anaphylactique|mortelle?|"
-                     r"choc|grave|allergies?|allergiques?|a|à)\b", " ", segment, flags=re.IGNORECASE)
-    segment = re.sub(r"\s+", " ", segment).strip(" .:-–")
-    return segment
-
-
-def suggest_critical_items(family, text, epipen=False):
-    """Rule-based suggestions ``[{name, epipen, action}]`` from a family's
-    free text: the segments (commas, semicolons, lines, « et » / « and »)
-    carrying an urgent cue (EpiPen, sévère / severe, anaphyla*, mortel, choc…),
-    else the whole text as one item. EpiPen when the segment mentions it, or
-    when the player had EpiPen and there is only one item."""
-    raw = (text or "").strip()
-    if not raw:
-        return []
-    segments = [seg for seg in _SPLIT_RE.split(raw) if seg.strip()]
-    picked = [seg for seg in segments if any(cue in _fold(seg) for cue in _URGENT_CUES)]
-    if not picked:
-        picked = [raw]
-    items = []
-    for seg in picked:
-        name = _clean_segment(seg) or seg.strip()
-        name = name[:ITEM_NAME_MAX].strip()
-        if not name:
-            continue
-        mentions = any(cue in _fold(seg) for cue in _EPIPEN_CUES)
-        items.append({"name": name, "epipen": family == "allergy" and mentions, "action": False})
-    if family == "allergy" and epipen and len(items) == 1:
-        items[0]["epipen"] = True
-    seen, unique = set(), []
-    for item in items:
-        key = _fold(item["name"])
-        if key not in seen:
-            seen.add(key)
-            unique.append(item)
-    return unique
+    """Accent- and case-insensitive key of an item's name (merges)."""
+    return fold(text)
 
 
 class PatientCriticalItem(models.Model):
     _name = "sports.patient.critical.item"
-    _description = "Critical medical item (life-threatening allergy / condition)"
+    _description = "Allergy / medical condition of a player"
     _order = "sequence, id"
 
     patient_id = fields.Many2one("sports.patient", string="Player", required=True,
                                  ondelete="cascade", index=True)
     family = fields.Selection(FAMILIES, required=True, default="allergy")
-    name = fields.Char(string="Critical item", required=True)
-    epipen = fields.Boolean(string="EpiPen")
-    action = fields.Text(string="What to do")
+    name = fields.Char(string="Name", required=True)
+    life_threatening = fields.Boolean(string="Life-threatening")
+    first_aid_note = fields.Text(string="First aid")
     sequence = fields.Integer(default=10)
 
-    @api.constrains("epipen", "family")
-    def _check_epipen_allergy_only(self):
+    @api.constrains("name")
+    def _check_name(self):
         for item in self:
-            if item.epipen and item.family != "allergy":
-                raise ValidationError(_("EpiPen goes with an allergy only."))
+            if not (item.name or "").strip():
+                raise ValidationError(_("Please fill in all required fields."))
 
     # ------------------------------------------------------------ rules
     def _sc_check_writer(self):
@@ -131,22 +85,26 @@ class PatientCriticalItem(models.Model):
             for item in self:
                 old = item.patient_id.id if name == "patient_id" else item.family
                 if old != new:
-                    raise AccessError(_("A critical item can't be moved to another player or family."))
+                    raise AccessError(_("A medical item can't be moved to another player or family."))
 
-    def _sc_invalidate_undo(self):
-        """Adversarial review 2026-10-22: an item change drops the family's
-        pending « Undo » snapshots (patient_medical_undo.py)."""
-        for (patient, family) in {(item.patient_id, item.family) for item in self}:
-            patient._sc_medical_undo_invalidate([family])
+    @staticmethod
+    def _sc_clean_vals(vals):
+        if "name" in vals:
+            vals["name"] = (vals["name"] or "").strip()[:ITEM_NAME_MAX * 2]
+        if "first_aid_note" in vals:
+            vals["first_aid_note"] = (vals["first_aid_note"] or "").strip() or False
+        return vals
 
     @api.model_create_multi
     def create(self, vals_list):
         self._sc_check_writer()
-        for vals in vals_list:
-            if vals.get("name"):
-                vals["name"] = vals["name"].strip()[:ITEM_NAME_MAX * 2]
+        vals_list = [self._sc_clean_vals(dict(vals)) for vals in vals_list]
         items = super().create(vals_list)
-        items._sc_invalidate_undo()
+        # An item on the list: « none known » no longer holds.
+        for (patient, family) in {(item.patient_id, item.family) for item in items}:
+            if patient.sudo()[NONE_FIELD[family]]:
+                patient.sudo().with_context(sc_critical_sync=True, tracking_disable=True).write(
+                    {NONE_FIELD[family]: False})
         if not self.env.context.get("sc_critical_quiet"):
             items._sc_sync_patients("added")
         return items
@@ -154,19 +112,20 @@ class PatientCriticalItem(models.Model):
     def write(self, vals):
         self._sc_check_writer()
         self._sc_check_owner_change(vals)
+        vals = self._sc_clean_vals(dict(vals))
+        changed = self.filtered(lambda item: any(
+            name in vals and item[name] != vals[name] for name in ITEM_FIELDS))
         res = super().write(vals)
-        self._sc_invalidate_undo()
-        if not self.env.context.get("sc_critical_quiet"):
-            self._sc_sync_patients("changed")
+        if changed and not self.env.context.get("sc_critical_quiet"):
+            changed._sc_sync_patients("changed")
         return res
 
     def unlink(self):
         self._sc_check_writer()
-        self._sc_invalidate_undo()
         pairs = [(item.patient_id, item.family, item.name) for item in self]
         res = super().unlink()
         if self.env.context.get("sc_critical_quiet"):
-            return res  # Law 25 anonymization / merges: no note, no level change
+            return res  # Law 25 anonymization / merges: no note
         for patient, family, name in pairs:
             if patient.exists():
                 patient.sudo()._sc_critical_sync(family, "removed", name)
@@ -174,19 +133,31 @@ class PatientCriticalItem(models.Model):
 
     def _sc_sync_patients(self, what):
         for item in self:
-            item.patient_id.sudo()._sc_critical_sync(item.family, what, item.name)
+            item.patient_id.sudo()._sc_critical_sync(item.family, what, item.name, item=item)
+
+    def _sc_read_dict(self):
+        """What the popups and the legacy pages show of ONE item."""
+        self.ensure_one()
+        item = self.sudo()
+        return {
+            "id": item.id,
+            "family": item.family,
+            "name": item.name,
+            "life_threatening": bool(item.life_threatening),
+            "first_aid_note": (item.first_aid_note or "").strip(),
+        }
 
 
 class Patient(models.Model):
     _inherit = "sports.patient"
 
     critical_item_ids = fields.One2many("sports.patient.critical.item", "patient_id",
-                                        string="Critical items")
+                                        string="Allergies and conditions")
     allergy_critical_ids = fields.One2many(
-        "sports.patient.critical.item", "patient_id", string="Critical allergies",
+        "sports.patient.critical.item", "patient_id", string="Allergies (list)",
         domain=[("family", "=", "allergy")])
     medical_alert_critical_ids = fields.One2many(
-        "sports.patient.critical.item", "patient_id", string="Critical conditions",
+        "sports.patient.critical.item", "patient_id", string="Medical conditions",
         domain=[("family", "=", "medical_alert")])
     allergy_updated_info = fields.Char(string="Allergies updated", readonly=True, copy=False)
     medical_alert_updated_info = fields.Char(string="Medical alert updated", readonly=True, copy=False)
@@ -200,42 +171,35 @@ class Patient(models.Model):
                           date=fields.Date.to_string(fields.Date.context_today(self)),
                           author=self.env.user.name or "—")
 
-    def _sc_critical_sync(self, family, what, name):
-        """After an item change: the level follows (urgent ⇔ items), EpiPen
-        follows the allergy items, the family is stamped and an internal note
-        records the change."""
+    def _sc_critical_sync(self, family, what, name, item=None):
+        """After an item change: the family is stamped and an internal note
+        records the change (the level follows by its compute)."""
         self.ensure_one()
-        items = self._sc_critical_items(family)
-        level_field = LEVEL_FIELD[family]
-        vals = {}
-        if items:
-            if self[level_field] != LEVEL_URGENT:
-                vals[level_field] = LEVEL_URGENT
-            if family == "allergy":
-                epipen = any(items.mapped("epipen"))
-                if bool(self.allergy_epipen) != epipen:
-                    vals["allergy_epipen"] = epipen
-        elif what == "removed" and self[level_field] == LEVEL_URGENT:
-            vals[level_field] = LEVEL_MINOR if (self[DETAILS_FIELD[family]] or "").strip() else LEVEL_NONE
-            if family == "allergy":
-                vals["allergy_epipen"] = False
-        vals["%s_updated_info" % family] = self._sc_medical_stamp()
-        self.with_context(sc_critical_sync=True, tracking_disable=True).write(vals)
+        self.with_context(sc_critical_sync=True, tracking_disable=True).write(
+            {"%s_updated_info" % family: self._sc_medical_stamp()})
         label = dict(self.env["sports.patient.critical.item"]._fields["family"]._description_selection(self.env))[family]
         verbs = {"added": self.env._("added"), "changed": self.env._("changed"), "removed": self.env._("removed")}
         body = Markup("%s · %s : <b>%s</b>") % (label, verbs.get(what, what), escape(name or ""))
+        if item is not None and item.exists() and item.life_threatening and what != "removed":
+            body += Markup(" (%s)") % self.env._("life-threatening")
         self.message_post(body=body, subtype_xmlid="mail.mt_note")
 
-    def _sc_create_suggested_items(self):
-        """Task 1654: « Urgent » families without items get the suggester's
-        items from their details (player creation)."""
-        Item = self.env["sports.patient.critical.item"].sudo().with_context(sc_critical_quiet=True)
+    @api.depends("critical_item_ids.family", "critical_item_ids.life_threatening",
+                 "allergy_none_confirmed", "medical_none_confirmed")
+    def _compute_medical_levels(self):
+        """Task 1677: red / yellow / grey from the lists. « None known » only
+        for an EMPTY list confirmed; an empty list not confirmed stays « Not
+        specified » (the #1628 To-Do still asks for it)."""
         for patient in self:
+            items = patient.sudo().critical_item_ids
             for family, level_field in LEVEL_FIELD.items():
-                if patient[level_field] != LEVEL_URGENT or patient._sc_critical_items(family):
-                    continue
-                suggestions = suggest_critical_items(
-                    family, patient[DETAILS_FIELD[family]],
-                    epipen=family == "allergy" and patient.allergy_epipen)
-                Item.create([dict(s, patient_id=patient.id, family=family, sequence=10 + n)
-                             for n, s in enumerate(suggestions)])
+                mine = items.filtered(lambda i, f=family: i.family == f)
+                if any(mine.mapped("life_threatening")):
+                    level = LEVEL_URGENT
+                elif mine:
+                    level = LEVEL_MINOR
+                elif patient.sudo()[NONE_FIELD[family]]:
+                    level = LEVEL_NONE
+                else:
+                    level = False
+                patient[level_field] = level

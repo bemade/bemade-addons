@@ -69,9 +69,11 @@ PREF_FIELDS = {
     # Task 1665: « Recevoir le sommaire quotidien par courriel » (the same
     # per-user preference as the backend « Daily Morning Briefing »).
     'digest_daily_enabled': ('1', '0'),
+    # Task 1676: « Afficher les boutons Terminé » (default off).
+    'sc_show_done_buttons': ('1', '0'),
 }
 # Task 1665: the boolean preferences, posted as '1' / '0'.
-PREF_BOOLEANS = ('digest_daily_enabled',)
+PREF_BOOLEANS = ('digest_daily_enabled', 'sc_show_done_buttons')
 # Task 1588: « Plus › Langue » — the user's profile language (``res.users.lang``),
 # allowed values = the request's frontend languages (checked at post time).
 PREF_LANG = 'lang'
@@ -151,7 +153,9 @@ _TP_ROLES = sc_app_roles.TP
 # Task 1603: what an applied follow-up proposal may write (on top of the
 # SAVE_REGISTRY role allowlist and check), and how many changes at once.
 PROPOSAL_FIELDS = {
-    'sports.patient': ('predicted_return_date', 'return_date'),
+    # Task 1670: the last active injury resolved also proposes the statuses
+    # (applied together as one « sc_status » save — the pair rule).
+    'sports.patient': ('predicted_return_date', 'return_date', 'match_status', 'practice_status'),
     # Task 1631: a backward move proposes clearing the resolution date.
     'sports.patient.injury': ('predicted_resolution_date', 'resolution_date'),
 }
@@ -160,6 +164,7 @@ SC_PROPOSAL_SESSION_KEY = 'sc_pending_proposal'
 _STAFF_ROLES = sc_app_roles.STAFF
 _TEXT_TYPES = ('char', 'text', 'html')
 _VALID_STATUS_PAIRS = {('yes', 'yes'), ('no', 'yes'), ('no', 'no_contact'), ('no', 'no')}
+_STATUS_FIELDS = ('match_status', 'practice_status')
 
 
 def sc_state_options(env, country):
@@ -528,9 +533,6 @@ def _assignable_teams():
 def _patient_read(patient, field):
     if field == 'sc_status':
         return '%s:%s' % (patient.match_status or '', patient.practice_status or '')
-    if field == 'allergy_epipen':
-        # Task 1630: the segmented « Yes / No » control's values.
-        return '1' if patient.allergy_epipen else '0'
     if field == 'sc_team_ids':
         # Only the teams this user may assign: the checklist shows (and
         # posts back) those; the player's other teams are not theirs to touch.
@@ -542,11 +544,6 @@ def _patient_read(patient, field):
 def _patient_display(patient, field):
     if field == 'sc_team_ids':
         return ', '.join(patient.sudo().team_ids.mapped('name'))
-    if field in ('allergy_level', 'medical_alert_level'):
-        # Task 1630: « Not specified » for no level.
-        return patient._sc_level_label(patient[field])
-    if field == 'allergy_epipen':
-        return patient.env._("Yes") if patient.allergy_epipen else patient.env._("No")
     return None
 
 
@@ -597,25 +594,6 @@ def _patient_write(ctrl, patient, field, value):
                 raise ValidationError(_(
                     'Date of Birth must not be in the future and not be more than 120 years ago.'))
         patient.write({field: dob})
-        return extra
-    if field in ('allergy_level', 'medical_alert_level'):
-        # Task 1630: « » = Not specified. Task 1653: refused once set (the
-        # model); « None known » empties and locks the details / EpiPen —
-        # answered along (also), so the popup's fields follow in place.
-        new_level = _selection_value(patient, field, value)
-        # Owner review 2026-10-22: « None known » clears — a one-shot
-        # snapshot first, so the answer can offer « Undo ».
-        family = 'allergy' if field == 'allergy_level' else 'medical_alert'
-        snapshot = patient._sc_medical_snapshot(family) if new_level == 'none' else None
-        patient.write({field: new_level})
-        if snapshot:
-            extra['undo'] = patient._sc_medical_undo_offer(family, snapshot)
-        others = dict(patient._SC_MEDICAL_PAIRS)[field]
-        extra['also_fields'] = list(others)
-        extra['also_disabled'] = {name: patient[field] == 'none' for name in others}
-        return extra
-    if field == 'allergy_epipen':
-        patient.write({field: str(value).lower() in _TRUTHY})
         return extra
     if field in ('last_consultation_date', 'return_date', 'predicted_return_date'):
         # Task 1603: « Retour prévu » too (empty = cleared).
@@ -942,12 +920,11 @@ SAVE_REGISTRY = {
             # Task 1633: coaches set it too (a change of an existing one is
             # the confirmed identity correction, task 1600).
             'date_of_birth': _STAFF_ROLES,
-            # Task 1630: the allergy / medical-alert levels, details, EpiPen
-            # and « Other medical history » replace the free-text allergies
-            # (coaches read some of them, never write: 403).
-            'allergy_level': _TP_ROLES, 'allergy_details': _TP_ROLES,
-            'allergy_epipen': _TP_ROLES, 'medical_alert_level': _TP_ROLES,
-            'medical_alert_details': _TP_ROLES, 'medical_history_other': _TP_ROLES,
+            # Task 1630: « Other medical history » (therapists only). Task
+            # 1677: the allergies / conditions are lists, saved by the
+            # popups' own routes (controllers/app_critical_items.py); the
+            # levels are computed, the old details read-only.
+            'medical_history_other': _TP_ROLES,
             'team_info_notes': _TP_ROLES, 'training_recommendation': _TP_ROLES,
             'last_consultation_date': _TP_ROLES,
             # Task 1594: the actual return date — never a coach's (the legacy
@@ -976,7 +953,7 @@ SAVE_REGISTRY = {
         'fields': {
             'sc_injury_date': _STAFF_ROLES,       # virtual: date or 'na'
             'diagnosis': _STAFF_ROLES,            # coach: unverified only
-            'external_notes': _STAFF_ROLES,
+            'external_notes': _TP_ROLES,          # owner 2026-10-25: coaches read only
             'stage': _TP_ROLES,
             'internal_notes': _TP_ROLES,
             'predicted_resolution_date': _TP_ROLES,
@@ -1372,6 +1349,8 @@ class AppShellMixin:
             # Task 1602: forced dark (no toggles) unless the choice is on.
             'sc_theme': self._sc_effective_theme(user),
             'sc_theme_choice': self._sc_theme_choice_enabled(),
+            # Task 1676: the edit cards' « Done » buttons, per user.
+            'sc_show_done': bool(user.sudo().sc_show_done_buttons),
             'sc_langs': self._sc_lang_options(),
             'sc_current_url': path + ('?' + query if query else ''),
             'sc_search_url': '/my/players' if any(t['key'] == 'players' for t in rail) else False,
@@ -2263,6 +2242,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         caller runs it in one savepoint (all or nothing). Returns the
         written (record, field) pairs."""
         done = []
+        statuses = {}  # task 1670: {field: value} of the player's status rows
         for change in changes:
             if not isinstance(change, dict):
                 raise ValidationError(_("Invalid value."))
@@ -2270,7 +2250,9 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             if field not in PROPOSAL_FIELDS.get(model, ()):
                 raise AccessError(_("This change cannot be applied here."))
             spec = SAVE_REGISTRY.get(model)
-            if not spec or not self._sc_save_allowed(spec, field):
+            # Match / practice are saved as the player's one « sc_status ».
+            allowed_as = 'sc_status' if field in _STATUS_FIELDS else field
+            if not spec or not self._sc_save_allowed(spec, allowed_as):
                 raise AccessError(_("This change cannot be applied here."))
             try:
                 record = request.env[model].browse(int(change.get('id'))).exists()
@@ -2285,9 +2267,32 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             if spec.get('sudo_write') and not spec['permission'](self, record):
                 raise AccessError(_("You cannot edit this record."))
             value = change.get('value')
+            if field in _STATUS_FIELDS:
+                statuses[field] = '' if value in (None, False) else str(value)
+                continue
             spec['write'](self, record, field, '' if value in (None, False) else str(value))
             done.append((record, field))
+        if statuses:
+            done += self._sc_apply_statuses(patient, statuses)
         return done
+
+    def _sc_apply_statuses(self, patient, statuses):
+        """Task 1670: the match / practice rows of an applied proposal,
+        written together through the « sc_status » save (one write, tracked
+        like any status change); an invalid pair is refused with the status
+        pills' own reason."""
+        current = patient.sudo()
+        match = statuses.get('match_status', current.match_status)
+        practice = statuses.get('practice_status', current.practice_status)
+        for name, value in (('match_status', match), ('practice_status', practice)):
+            if value not in dict(patient._fields[name].selection):
+                raise ValidationError(_("Invalid value."))
+        if (match, practice) not in _VALID_STATUS_PAIRS:
+            if 'practice_status' in statuses and practice != 'yes' and match == 'yes':
+                raise ValidationError(_("Set Match to No first"))
+            raise ValidationError(_("Requires Practice: Yes"))
+        SAVE_REGISTRY['sports.patient']['write'](self, patient, 'sc_status', '%s:%s' % (match, practice))
+        return [(patient, name) for name in ('match_status', 'practice_status') if name in statuses]
 
     @http.route(['/my/app/apply-proposal'], type='http', auth='user',
                 methods=['POST'], csrf=True, multilang=False)

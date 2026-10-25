@@ -55,7 +55,7 @@ class FragmentsTours:
         self.start_tour(self._player_url('info'), 'sc_1611_player_fragments', login='pc.tp@example.com')
         self.player.invalidate_recordset()
         self.assertEqual(self.player.last_name, 'Zedsynth')
-        self.assertFalse(self.player.allergy_details)
+        self.assertFalse(self.player.sudo().critical_item_ids)
 
     def test_injury_stage(self):
         self.start_tour(self._player_url('injuries', injury=self.injury_b.id), 'sc_1611_injury_stage',

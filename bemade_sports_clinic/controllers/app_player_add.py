@@ -27,9 +27,11 @@ from datetime import timedelta
 from odoo import Command, _, fields, http
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
+from odoo.tools import format_date
 
 from .access_control_mixin import parse_portal_date
-from .app_search import sc_fold, sc_name_matches, sc_words
+from ..models.sc_name_match import NEAR, NameIndex
+from .app_search import sc_fold, sc_words
 from .team_staff_portal import TeamStaffPortal
 
 _logger = logging.getLogger(__name__)
@@ -53,7 +55,7 @@ class AppPlayerAddPortal(TeamStaffPortal):
         # Adversarial review 2026-10-22: at least 2 letters per name part
         # before anything is searched.
         ready = all(len(''.join(words)) >= SC_PLAYER_CHECK_MIN for words in (first_words, last_words))
-        values = {'sc_rows': [], 'sc_exact': False, 'sc_ready': ready,
+        values = {'sc_rows': [], 'sc_near_rows': [], 'sc_exact': False, 'sc_ready': ready,
                   'sc_twin_elsewhere': False, 'sc_team': False, 'sc_dob_error': False}
         try:
             day = parse_portal_date(dob) if (dob or '').strip() else False
@@ -77,10 +79,17 @@ class AppPlayerAddPortal(TeamStaffPortal):
             values['sc_twin_elsewhere'] = env['sports.patient'].with_context(
                 sc_identity_guard=True)._sc_identity_hidden_namesake(first, last)
             out = []
-            for row in Patients.search_read([], ['first_name', 'last_name', 'date_of_birth', 'active']):
-                if not (sc_name_matches(first_words, row['first_name'])
-                        and sc_name_matches(last_words, row['last_name'])):
-                    continue
+            # Task 1674: the shared matcher — exact / prefix (#1650's rule)
+            # first, then the near matches (accents, typos, inversions,
+            # swapped names, compound names) as « Similar players ». Names
+            # only: the S2 rule below is unchanged for every grade.
+            candidates = {row['id']: row for row in Patients.search_read(
+                [], ['first_name', 'last_name', 'date_of_birth', 'active'])}
+            grades = NameIndex([(rid, row['first_name'] or '', row['last_name'] or '')
+                                for rid, row in candidates.items()]).match(first, last)
+            for rid, grade in grades:
+                row = candidates[rid]
+                near = grade == NEAR
                 accessible = admin or row['id'] in own
                 same_name = (sc_fold(row['first_name']).strip(), sc_fold(row['last_name']).strip()) == folded
                 if not (admin or row['id'] in scope):
@@ -100,16 +109,28 @@ class AppPlayerAddPortal(TeamStaffPortal):
                     'id': player.id,
                     'title': player._portal_list_name(),
                     'teams': ', '.join(player.team_ids.mapped('name')),
+                    # Task 1672 (owner): each suggestion's OWN date of birth,
+                    # to tell namesakes apart — the row's data, never the
+                    # typed date (S2: the answer stays the same whatever
+                    # date is typed).
+                    'dob': format_date(env, row['date_of_birth']) if row['date_of_birth'] else '',
                     'archived': not player.active,
                     'exact': exact,
                     'url': '/my/player?player_id=%s' % player.id if accessible else False,
                     'on_team': bool(team and team in player.team_ids),
-                    'sort': (not exact, not player.active, sc_fold(player.last_name), sc_fold(player.first_name),
-                             player.id),
+                    'near': near,
+                    'sort': (near, not exact, not player.active, sc_fold(player.last_name),
+                             sc_fold(player.first_name), player.id),
                 })
             out.sort(key=lambda r: r['sort'])
-            values['sc_rows'] = out[:SC_PLAYER_CHECK_LIMIT]
-        html = env['ir.ui.view']._render_template('bemade_sports_clinic.sc_player_check_results', values)
+            out = out[:SC_PLAYER_CHECK_LIMIT]
+            values['sc_rows'] = [r for r in out if not r['near']]
+            values['sc_near_rows'] = [r for r in out if r['near']]
+        # Task 1672 (addendum 3): in the USER's language (this JSON-ish
+        # fragment route is not language-prefixed; an English user got the
+        # website's French).
+        html = env['ir.ui.view'].with_context(lang=env.user.lang or env.lang)._render_template(
+            'bemade_sports_clinic.sc_player_check_results', values)
         return request.make_response(html, headers=[('Content-Type', 'text/html; charset=utf-8'),
                                                     ('Cache-Control', 'no-store')])
 

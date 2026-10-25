@@ -76,7 +76,10 @@ class TestPlayerAddInline1655(PlayerAdd1655Common):
         self.assertTrue(arch.xpath('.//button[@data-sc-action="player.reactivate"][@formaction="/my/team/%s/player/add"]' % self.team_a.id))
         row = tree.xpath('//li[@data-sc-check-player="%s"]' % self.elodie.id)[0]
         self.assertTrue(row.xpath('.//button[@data-sc-action="player.link"]'))
-        self.assertNotIn('2010', resp.text, 'no date of birth in the check')
+        # Task 1672 (owner, 2026-10-24): each suggestion shows its OWN date
+        # of birth (namesakes); the typed one never filters an out-of-scope
+        # row (test_adversarial_review_1022 AR-S2).
+        self.assertEqual(row.xpath('.//*[@data-sc-check-dob]//text()')[-1].strip(), '02/03/2010')
         self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['0'])
         # DOB refines + the exact twin — in the user's own teams only:
         # Élodie (PC Team B) is outside them, so her date of birth never

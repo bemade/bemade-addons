@@ -73,8 +73,12 @@
                 <meta name="apple-mobile-web-app-title" content="Fit Crew"/>
                 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
             </t>
+            <!-- Task 1676: the head pencil's label while it is a ✓ (sc_app_ui.js). -->
+            <t t-set="sc_edit_done_label">Finish editing</t>
             <div class="o_sc_app" data-sc-app-shell="1"
                  t-att-data-sc-theme="sc_theme or 'dark'"
+                 t-att-data-sc-hide-done="None if sc_show_done else '1'"
+                 t-att-data-sc-edit-done-label="sc_edit_done_label"
                  t-att-data-sc-top="'0' if sc_parent_url else '1'"
                  t-att-data-sc-db="sc_db" t-att-data-sc-uid="sc_uid"
                  t-att-data-sc-rendered-at="sc_rendered_at">

@@ -50,11 +50,12 @@ class TestCardMedPills1652(MedicalCards1630Common):
         with self._presence():
             tree = self._page(self.team_url)
         self.assertTrue(tree.xpath(sheet + '//button[@data-sc-edit-toggle]'))
+        self.assertTrue(tree.xpath(sheet + '//form[@data-sc-med-add]'))
         self._login_coach()
         with self._presence():
             tree = self._page(self.team_url)
         self.assertTrue(tree.xpath(sheet))
-        self.assertFalse(tree.xpath(sheet + '//button[@data-sc-edit-toggle]'))
+        self.assertFalse(tree.xpath(sheet + '//button[@data-sc-edit-toggle] | ' + sheet + '//form'))
 
     def test_non_urgent_player_has_no_pill_nor_sheet(self):
         self._login_tp()

@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.112.2",
+    'version': "19.0.1.117.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -227,6 +227,7 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "views/res_partner_views.xml",
         "views/team_role_mass_assign_wizard_views.xml",
         "views/patient_merge_wizard_views.xml",
+        "views/patient_duplicate_views.xml",
         "views/res_users_views.xml",
         # Task 1538: the portal app shell (behind the app_shell_enabled
         # switch) — components, layout, then the pages that t-call them.
@@ -347,8 +348,9 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             "bemade_sports_clinic/static/src/js/sc_picker.js",
             # Task 1652: the red card pills open the medical popups.
             "bemade_sports_clinic/static/src/js/sc_med_card_pills.js",
-            # Task 1654: add / remove critical medical items in the popups.
-            "bemade_sports_clinic/static/src/js/sc_critical_items.js",
+            # Task 1677: the allergy / condition lists and the EpiPen card
+            # of the medical popups.
+            "bemade_sports_clinic/static/src/js/sc_medical_lists.js",
             # Task 1655: create a player inline (existence check as you type).
             "bemade_sports_clinic/static/src/js/sc_form_guard.js",
             "bemade_sports_clinic/static/src/js/sc_player_add.js",
