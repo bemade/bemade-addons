@@ -115,7 +115,11 @@ class TestMissingFeatures1665(Features1665Common):
         self.assertTrue(self.coach.digest_daily_enabled)
         # The cron skips the opted-out user, not the others.
         (self.tp | self.coach).sudo().write({'digest_send_when_empty': True})
-        self.env['res.users']._cron_send_morning_digests(now=fields.Datetime.now())
+        # Pin the clock past the send time in any user timezone (23:00 UTC is
+        # 19:00 in Montréal): the cron skips users whose local time is still
+        # before the send time, so « now » made this test fail after 00:00 UTC.
+        late_today = fields.Datetime.now().replace(hour=23, minute=0, second=0, microsecond=0)
+        self.env['res.users']._cron_send_morning_digests(now=late_today)
         messages = self.env['mail.message'].search([('subject', '=like', 'Le Fit Crew — daily briefing%')])
         notified = messages.notified_partner_ids
         self.assertNotIn(self.tp.partner_id, notified)
