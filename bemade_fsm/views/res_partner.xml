@@ -41,7 +41,7 @@
         <field name="name">bemade_fsm.contacts.list</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
-            <list editable="bottom">
+            <list editable="bottom" open_form_view="True">
                 <field name="name" />
                 <field name="email" widget="email" />
                 <field name="phone" widget="phone" />
