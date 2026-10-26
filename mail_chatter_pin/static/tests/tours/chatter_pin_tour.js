@@ -81,3 +81,36 @@ registry.category("web_tour.tours").add("mail_chatter_pin_readonly_tour", {
     },
   ],
 });
+
+registry.category("web_tour.tours").add("mail_chatter_pin_same_second_tour", {
+  steps: () => [
+    {
+      content: "Two notes pinned in the same second both show, the tab does not freeze",
+      trigger:
+        ".o-mail-ChatterPinned[data-count='2'] .o-mail-ChatterPinned-title:contains('Pinned (2)')",
+    },
+    {
+      trigger: ".o-mail-ChatterPinned-item:contains('Synthetic first pin')",
+    },
+    {
+      trigger: ".o-mail-ChatterPinned-item:contains('Synthetic second pin')",
+    },
+  ],
+});
+
+registry.category("web_tour.tours").add("mail_chatter_pin_preview_tour", {
+  steps: () => [
+    {
+      content: "Paragraphs and blocks are separated by a space in the preview",
+      trigger:
+        ".o-mail-ChatterPinned-preview:contains('Thanks for the order. Could you confirm')",
+    },
+    {
+      trigger:
+        ".o-mail-ChatterPinned-preview:contains('Example Corp 100 Sample Street')",
+    },
+    {
+      trigger: ".o-mail-ChatterPinned-preview:contains('Line one Line two')",
+    },
+  ],
+});

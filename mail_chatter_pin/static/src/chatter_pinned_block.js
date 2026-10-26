@@ -1,7 +1,24 @@
-import {Component, useState} from "@odoo/owl";
+import {Component, markup, useState} from "@odoo/owl";
 import {_t} from "@web/core/l10n/translation";
+import {htmlReplaceAll} from "@web/core/utils/html";
 import {htmlToTextContentInline} from "@mail/utils/common/format";
 import {useService} from "@web/core/utils/hooks";
+
+const BLOCK_TAG =
+  /<\/?(?:address|blockquote|dd|div|dl|dt|h[1-6]|hr|li|ol|p|pre|table|td|th|tr|ul)\b[^>]*>/gi;
+
+/**
+ * One-line text of an HTML body. Block elements are separated by a space
+ * (``htmlToTextContentInline`` only does it for ``<br>``), so paragraphs and
+ * address lines don't run together.
+ *
+ * @param {string|ReturnType<markup>} body
+ */
+export function pinnedPreviewText(body) {
+  return htmlToTextContentInline(
+    htmlReplaceAll(body || "", BLOCK_TAG, (tag) => markup(` ${tag} `))
+  );
+}
 
 /**
  * Compact list of the messages pinned on a record, shown on top of the chatter.
@@ -35,7 +52,7 @@ export class ChatterPinnedBlock extends Component {
   }
 
   preview(message) {
-    return htmlToTextContentInline(message.body);
+    return pinnedPreviewText(message.body);
   }
 
   toggle() {

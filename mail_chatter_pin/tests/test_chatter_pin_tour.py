@@ -10,7 +10,13 @@ Acceptance criteria:
     the Unpin link nor the Pin/Unpin message action.
 4.  The server state matches the clicks (the note ends unpinned), and no
     message was posted on the record.
+5.  Two messages pinned in the same second (equal ``pinned_at``) both show in
+    a "Pinned (2)" block; the page does not freeze sorting them.
+6.  The 2-line preview separates paragraphs, block elements and line breaks
+    with a space instead of running the words together.
 """
+
+from markupsafe import Markup
 
 from odoo.fields import Command
 from odoo.tests import HttpCase, tagged
@@ -66,3 +72,47 @@ class TestChatterPinTour(HttpCase):
         )
         self.env.invalidate_all()
         self.assertTrue(self.note.pinned_at)
+
+    def _pin_at(self, messages, pinned_at):
+        """Set ``pinned_at`` straight in SQL, like core does when pinning."""
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE mail_message SET pinned_at = %s WHERE id IN %s",
+            (pinned_at, tuple(messages.ids)),
+        )
+        messages.invalidate_recordset(["pinned_at"])
+
+    def test_chatter_pin_same_second_tour(self):
+        first = self.partner.message_post(
+            body="Synthetic first pin",
+            message_type="comment",
+            subtype_xmlid="mail.mt_note",
+        )
+        second = self.partner.message_post(
+            body="Synthetic second pin",
+            message_type="comment",
+            subtype_xmlid="mail.mt_note",
+        )
+        self._pin_at(first | second, "2026-01-15 10:20:30")
+        self.start_tour(
+            "/odoo/res.partner/%s" % self.partner.id,
+            "mail_chatter_pin_same_second_tour",
+            login="admin",
+        )
+
+    def test_chatter_pin_preview_tour(self):
+        message = self.partner.message_post(
+            body=Markup(
+                "<p>Thanks for the order.</p><p>Could you confirm the date?</p>"
+                "<div>Example Corp</div><div>100 Sample Street</div>"
+                "<p>Line one<br>Line two</p>"
+            ),
+            message_type="comment",
+            subtype_xmlid="mail.mt_note",
+        )
+        self._pin_at(message, "2026-01-15 10:20:30")
+        self.start_tour(
+            "/odoo/res.partner/%s" % self.partner.id,
+            "mail_chatter_pin_preview_tour",
+            login="admin",
+        )
