@@ -536,6 +536,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_announcement_deadline': (
                 format_date(env, team.announcement_deadline)
                 if team.announcement_deadline else ''),
+            # Task 1719: the compact « Jusqu'au <date> » line.
+            'sc_announcement_until': (
+                env._("Until %(date)s", date=format_date(env, team.announcement_deadline))
+                if team.announcement_deadline else ''),
             'sc_team_url': '/my/team?team_id=%s' % team.id,
             # Task 1635: the Activities tab counts what its panel lists.
             'sc_team_activities_badge': self._sc_activity_tab_badge(values['team_activities']),

@@ -17337,3 +17337,24 @@ msgstr "Pour ajouter une feuille de temps, ouvrez l'événement concerné."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_timesheets
 msgid "No timesheets. Add one from the event's page."
 msgstr "Aucune feuille de temps. Ajoutez-en une depuis la page de l'événement."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+msgid "<span class=\"o_sc_announcement_heading\">Team announcement</span>"
+msgstr "<span class=\"o_sc_announcement_heading\">Annonce d'équipe</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+msgid "See more"
+msgstr "Voir plus"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+msgid "No current announcement."
+msgstr "Aucune annonce en cours."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "Until %(date)s"
+msgstr "Jusqu'au %(date)s"

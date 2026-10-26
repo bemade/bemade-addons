@@ -278,3 +278,4 @@ from . import test_guide_public_view_1685
 from . import test_timesheets_hint_1725
 from . import test_add_cancel_1724
 from . import test_list_add_link_1718
+from . import test_announcement_compact_1719

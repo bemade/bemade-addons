@@ -66,73 +66,80 @@
                      t-att-hidden="None if sc_active_tab == 'dashboard' else 'hidden'">
 
                 <!-- Team announcement (task 1270): all-staff, TP-authored.
-                     Owner review 2026-10-11: a labelled section with its
-                     « History » link (always) in the header; the card is an
-                     edit card — ONE pencil reveals the compose form (a LOCAL
-                     draft while typing, sc_autosave_field draft mode;
-                     « Publier » posts the unchanged PRG form) and an archive
-                     icon sits next to it. -->
-                <section class="o_sc_section" data-sc-section="team.announcement.area">
-                    <h2 class="o_sc_section_header">
-                        <span>Team announcement</span>
-                        <button type="button" class="o_sc_section_more o_sc_link_btn"
-                                data-sc-sheet-open="sc_announcement_history_sheet">History</button>
-                    </h2>
-                    <div t-attf-class="o_sc_card o_sc_edit_card o_sc_announcement #{'o_sc_announcement_expired' if team.announcement_is_expired else ''} #{'' if team.announcement else 'o_sc_announcement_none'}"
-                         data-sc-edit-card="announcement" data-sc-section="team.announcement">
-                        <div class="o_sc_announcement_head">
-                            <span class="o_sc_announcement_title">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'megaphone'"/></t>
-                                <t t-if="team.announcement_is_expired" t-call="bemade_sports_clinic.sc_status_chip">
-                                    <t t-set="tone" t-value="'ghost'"/>
-                                    <t t-set="label">Expired</t>
-                                </t>
-                            </span>
-                            <span t-if="sc_show_compose" class="o_sc_card_icons">
-                                <t t-set="sc_edit_label">Edit</t>
-                                <t t-set="sc_archive_label">Archive</t>
-                                <button type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1"
-                                        aria-expanded="false" t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label">
-                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
-                                </button>
-                                <!-- Task 1663: archived a moment ago — « Annonce archivée
-                                     — Annuler » (sc_app_ui.js shows the toast; the
-                                     server re-checks the window). -->
-                                <t t-if="sc_announcement_undo">
-                                    <t t-set="sc_archived_label">Announcement archived</t>
-                                    <t t-set="sc_restore_label">Undo</t>
-                                    <form t-attf-action="/my/team/#{team.id}/announcement/restore" method="post" hidden="hidden"
-                                          data-sc-form="announcement.undo" t-att-data-sc-toast-message="sc_archived_label"
-                                          t-att-data-sc-toast-action="sc_restore_label">
-                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                    </form>
-                                </t>
-                                <form t-if="team.announcement" t-attf-action="/my/team/#{team.id}/announcement/dismiss"
-                                      method="post" class="o_sc_inline_form" data-sc-section="team.announcement.archive">
+                     Task 1719 (owner, layout B 2026-10-26): no card, no head
+                     row. ONE title line « Team announcement » · « History » ·
+                     the pencil and archive icons (editors); under it the
+                     megaphone beside the text, clamped to 3 lines with « See
+                     more » (sc_app_ui.js), and one muted « Until <date> »
+                     line; a thin divider before the counters. Empty: a muted
+                     « No current announcement. » for editors (the pencil adds
+                     one); for everyone else the section is not rendered. The
+                     section is the edit card: the pencil reveals the compose
+                     form (a LOCAL draft while typing, sc_autosave_field draft
+                     mode; « Publier » posts the unchanged PRG form). -->
+                <section t-if="team.announcement or sc_show_compose"
+                         t-attf-class="o_sc_section o_sc_announcement #{'o_sc_announcement_expired' if team.announcement_is_expired else ''} #{'' if team.announcement else 'o_sc_announcement_none'}"
+                         data-sc-section="team.announcement.area" data-sc-edit-card="announcement">
+                    <div class="o_sc_announcement_titleline">
+                        <h2 class="o_sc_section_header">
+                            <span class="o_sc_announcement_heading">Team announcement</span>
+                            <button type="button" class="o_sc_section_more o_sc_link_btn"
+                                    data-sc-sheet-open="sc_announcement_history_sheet">History</button>
+                        </h2>
+                        <span t-if="sc_show_compose" class="o_sc_card_icons">
+                            <t t-set="sc_edit_label">Edit</t>
+                            <t t-set="sc_archive_label">Archive</t>
+                            <button type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1"
+                                    aria-expanded="false" t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label">
+                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                            </button>
+                            <!-- Task 1663: archived a moment ago — « Annonce archivée
+                                 — Annuler » (sc_app_ui.js shows the toast; the
+                                 server re-checks the window). -->
+                            <t t-if="sc_announcement_undo">
+                                <t t-set="sc_archived_label">Announcement archived</t>
+                                <t t-set="sc_restore_label">Undo</t>
+                                <form t-attf-action="/my/team/#{team.id}/announcement/restore" method="post" hidden="hidden"
+                                      data-sc-form="announcement.undo" t-att-data-sc-toast-message="sc_archived_label"
+                                      t-att-data-sc-toast-action="sc_restore_label">
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                    <button type="submit" class="o_sc_icon_btn" t-att-aria-label="sc_archive_label" t-att-title="sc_archive_label">
-                                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'archive'"/></t>
-                                    </button>
                                 </form>
-                            </span>
-                        </div>
-                        <div data-sc-edit-view="read">
-                            <t t-if="team.announcement">
-                                <p class="o_sc_pre o_sc_announcement_body" t-out="team.announcement"/>
-                                <p t-if="sc_announcement_deadline" class="o_sc_meta">
-                                    <span>Valid until:</span> <t t-out="sc_announcement_deadline"/>
+                            </t>
+                            <form t-if="team.announcement" t-attf-action="/my/team/#{team.id}/announcement/dismiss"
+                                  method="post" class="o_sc_inline_form" data-sc-section="team.announcement.archive">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <button type="submit" class="o_sc_icon_btn" t-att-aria-label="sc_archive_label" t-att-title="sc_archive_label">
+                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'archive'"/></t>
+                                </button>
+                            </form>
+                        </span>
+                    </div>
+                    <div data-sc-edit-view="read" data-sc-section="team.announcement">
+                        <div t-if="team.announcement" class="o_sc_announcement_content">
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'megaphone'"/></t>
+                            <div class="o_sc_announcement_text">
+                                <p class="o_sc_pre o_sc_announcement_body" data-sc-clamp="3" t-out="team.announcement"/>
+                                <p class="o_sc_meta o_sc_announcement_meta" data-sc-clamp-meta="1"
+                                   t-att-hidden="None if (sc_announcement_until or team.announcement_is_expired) else 'hidden'">
+                                    <t t-if="team.announcement_is_expired" t-call="bemade_sports_clinic.sc_status_chip">
+                                        <t t-set="tone" t-value="'ghost'"/>
+                                        <t t-set="label">Expired</t>
+                                    </t>
+                                    <span t-if="sc_announcement_until" class="o_sc_announcement_until" t-out="sc_announcement_until"/>
+                                    <span class="o_sc_announcement_more_sep" data-sc-clamp-sep="1" hidden="hidden"> · </span>
+                                    <button type="button" class="o_sc_link_btn o_sc_announcement_more" data-sc-clamp-more="1"
+                                            aria-expanded="false" hidden="hidden">See more</button>
                                 </p>
-                            </t>
-                            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
-                                <t t-set="message">No team announcement.</t>
-                            </t>
+                            </div>
                         </div>
-                        <div t-if="sc_show_compose" data-sc-edit-view="edit" hidden="hidden"
-                             data-sc-section="team.announcement.edit">
-                            <t t-call="bemade_sports_clinic.sc_banner">
-                                <t t-set="tone" t-value="'warn'"/>
-                                Visible to all team staff (coaches included) and sent by email — do not include any confidential medical information about a player.
-                            </t>
+                        <p t-else="" class="o_sc_muted o_sc_announcement_empty">No current announcement.</p>
+                    </div>
+                    <div t-if="sc_show_compose" data-sc-edit-view="edit" hidden="hidden"
+                         data-sc-section="team.announcement.edit">
+                        <t t-call="bemade_sports_clinic.sc_banner">
+                            <t t-set="tone" t-value="'warn'"/>
+                            Visible to all team staff (coaches included) and sent by email — do not include any confidential medical information about a player.
+                        </t>
                         <form t-attf-action="/my/team/#{team.id}/announcement" method="post" class="o_sc_form"
                               data-sc-draft-form="1" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"announcement"}]'>
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
@@ -149,7 +156,6 @@
                             </div>
                             <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_announcement'"/></t>
                         </form>
-                        </div>
                     </div>
                     <!-- Task 1581: the shared history sheet, fetched on every
                          open (/my/team/<id>/announcement/history). -->

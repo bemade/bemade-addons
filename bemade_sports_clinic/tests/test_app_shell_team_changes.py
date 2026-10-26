@@ -27,9 +27,9 @@ Acceptance criteria:
   at all when green.
 * UC-AN1 (owner 2026-10-11) The team announcement is a labelled section
   (« TEAM ANNOUNCEMENT », like « RECENT CHANGES ») whose header carries the
-  « History » link — always, with or without a standing announcement, for
-  therapists and coaches; its sheet shows an empty state when there is no
-  history. The card is an edit card: ONE pencil reveals the compose form
+  « History » link; its sheet shows an empty state when there is no
+  history. Task 1719: with no standing announcement the section is only
+  rendered for an author (a coach does not get it). The card is an edit card: ONE pencil reveals the compose form
   (hidden by default) and an archive ICON (no text) sits next to it, both
   for an announcement author only; the archive icon only when there is an
   announcement to archive.
@@ -270,7 +270,7 @@ class TestAppShellTeamChanges(AppShellCommon):
     def _announcement(self, tree):
         area = tree.xpath('//*[@data-sc-section="team.announcement.area"]')
         self.assertEqual(len(area), 1)
-        header = area[0].xpath('./h2[contains(@class, "o_sc_section_header")]')[0]
+        header = area[0].xpath('.//h2[contains(@class, "o_sc_section_header")]')[0]
         self.assertIn('Team announcement', header.text_content())
         links = header.xpath('.//button[@data-sc-sheet-open="sc_announcement_history_sheet"]'
                              '[contains(@class, "o_sc_link_btn")]')
@@ -278,17 +278,23 @@ class TestAppShellTeamChanges(AppShellCommon):
         self.assertEqual(len(tree.xpath(
             '//*[@data-sc-sheet-open="sc_announcement_history_sheet"]')), 1)
         self.assertTrue(tree.xpath('//dialog[@id="sc_announcement_history_sheet"]'))
-        return area[0].xpath('.//*[@data-sc-edit-card="announcement"]')[0]
+        # Task 1719: the section itself is the edit card.
+        return area[0].xpath('descendant-or-self::*[@data-sc-edit-card="announcement"]')[0]
 
     def test_announcement_section_history_pencil_archive(self):
         self._switch(True)
         self.team_a.sudo().write({'announcement': False})
-        for login in (self._login_tp, self._login_coach):
-            login()
-            _text, tree = self._get(self.url)
-            self._announcement(tree)
-            self.assertTrue(tree.xpath('//dialog[@id="sc_announcement_history_sheet"]'
-                                       '//*[contains(@class, "o_sc_empty")]'))
+        # Task 1719 (owner 2026-10-26): with no announcement the section is
+        # only rendered for an author (the pencil adds one); a coach does
+        # not get it at all (was: « History » always, for everyone).
+        self._login_tp()
+        _text, tree = self._get(self.url)
+        self._announcement(tree)
+        self.assertTrue(tree.xpath('//dialog[@id="sc_announcement_history_sheet"]'
+                                   '//*[contains(@class, "o_sc_empty")]'))
+        self._login_coach()
+        _text, tree = self._get(self.url)
+        self.assertFalse(tree.xpath('//*[@data-sc-section="team.announcement.area"]'))
         # Therapist, no announcement: the pencil, no archive icon.
         self._login_tp()
         _text, tree = self._get(self.url)
