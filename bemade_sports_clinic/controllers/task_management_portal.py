@@ -74,14 +74,31 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return {u.id: u.partner_id.id in staff_partner_ids for u in users}
 
     @staticmethod
-    def _activity_team_access_domain(scope_teams):
+    def _activity_team_access_domain(scope_teams, user=None):
         """The team-based access domain of the activities lists (patients,
         teams and events of ``scope_teams``). Task 1409: activities live on
         patients, teams and events only — no injury branch (an explicit
         ?model=sports.patient.injury filter therefore yields an empty
         list). Record rules provide broad CRUD access, the controller
-        enforces team-based security."""
-        return [
+        enforces team-based security.
+
+        Task 1714: with ``user`` (not a coach-only viewer), also every
+        activity on an event ``user`` is assigned to (covering another
+        team's event) and the activities assigned to ``user`` on any event
+        — the portal therapist mail.activity rule's same two branches."""
+        covered = []
+        if user is not None:
+            covered = [
+                '&', '&',
+                ('res_model', '=', 'sports.event'),
+                ('res_id', '!=', False),
+                ('res_id', 'in', user.sudo().sc_assigned_event_ids.ids or [0]),
+                '&', '&',
+                ('res_model', '=', 'sports.event'),
+                ('res_id', '!=', False),
+                ('user_id', '=', user.id),
+            ]
+        return ['|', '|'] * bool(covered) + covered + [
             '|', '|',
             '&', '&',
             ('res_model', '=', 'sports.patient'),
@@ -116,7 +133,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         else:
             domain = ['&', '&', ('user_id', '=', user.id),
                       ('date_deadline', '<', fields.Date.context_today(user))] \
-                + self._activity_team_access_domain(self._activity_scope_teams())
+                + self._activity_team_access_domain(self._activity_scope_teams(), self._activity_cover_user())
             # Task 1664: the notepad reminders count too (as listed).
             domain = ['|'] + domain + ['&', ('date_deadline', '<', fields.Date.context_today(user))] \
                 + self._activity_quick_note_domain(user)
@@ -139,7 +156,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # as the other lists; never a bare search([]) for a non-admin.
         scope_teams = self._activity_scope_teams()
 
-        team_access_domain = self._activity_team_access_domain(scope_teams)
+        team_access_domain = self._activity_team_access_domain(scope_teams, self._activity_cover_user())
 
         # Activities are scoped strictly by the team-based access domain. We used to
         # OR-in `(user_id == self) AND res_model in [...]` so a portal user could see

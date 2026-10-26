@@ -280,3 +280,4 @@ from . import test_add_cancel_1724
 from . import test_list_add_link_1718
 from . import test_announcement_compact_1719
 from . import test_duplicates_display_name_1715
+from . import test_covered_event_activities_1714

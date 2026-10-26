@@ -289,16 +289,29 @@ class AccessControlMixin:
             and not self._is_tp_or_system()
             and not self._is_clinic_admin())
 
-    def _activity_in_scope(self, activity):
+    def _activity_cover_user(self):
+        """Task 1714: the user whose covered events (and own event
+        activities) widen the activity lists — the viewer, unless a
+        coach-only viewer (the #1589 coach rule is unchanged)."""
+        if self._activity_coach_only():
+            return None
+        return http.request.env.user
+
+    def _activity_in_scope(self, activity, covered=True):
         """Is ``activity``'s related patient / team / event in the viewer's
         team scope (``_activity_scope_teams``)? sudo(): only to read the
-        related record's teams for the comparison."""
+        related record's teams for the comparison. Task 1714: an event the
+        viewer is assigned to (covers) is in scope too (``covered``; never
+        for a coach-only viewer)."""
         activity = activity.sudo()
         if activity.res_model not in ('sports.patient', 'sports.team', 'sports.event'):
             return False
         record = http.request.env[activity.res_model].sudo().browse(activity.res_id)
         if not activity.res_id or not record.exists():
             return False
+        if covered and activity.res_model == 'sports.event' \
+                and http.request.env.user in record.assigned_staff_ids:
+            return True
         teams = self._activity_scope_teams()
         if activity.res_model == 'sports.team':
             return bool(teams & record)
@@ -316,7 +329,7 @@ class AccessControlMixin:
         user = env.user
         if self._activity_coach_only():
             return ((activity.user_id == user or activity.create_uid == user)
-                    and self._activity_in_scope(activity))
+                    and self._activity_in_scope(activity, covered=False))
         if activity.user_id == user:
             return True
         return self._activity_in_scope(activity)
