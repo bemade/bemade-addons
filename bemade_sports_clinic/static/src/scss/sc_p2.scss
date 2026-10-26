@@ -707,6 +707,13 @@ $sc-p2-laptop: 992px;
         }
     }
 
+    // Task 1684: in a filter panel a field keeps its own height — an open
+    // picker list (in flow, sc_picker.js) grows its row, and a stretched
+    // neighbour's input (.o_sc_input is flex: 1) grew with it.
+    .o_sc_filters .o_sc_filter_grid {
+        align-items: start;
+    }
+
     // Owner review 2026-10-14: sort / group by are not filters — their own
     // labelled group under the filters.
     .o_sc_filter_group {
