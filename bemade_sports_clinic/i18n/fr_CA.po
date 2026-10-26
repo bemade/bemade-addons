@@ -5865,6 +5865,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_list
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_home
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_timesheets
 msgid "Events"
 msgstr "Événements"
 
@@ -17325,3 +17326,13 @@ msgstr "Retour à l'application"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_knowledge_public_back_to_app
 msgid "App"
 msgstr "Application"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_timesheets
+msgid "To add a timesheet, open the event concerned."
+msgstr "Pour ajouter une feuille de temps, ouvrez l'événement concerné."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_timesheets
+msgid "No timesheets. Add one from the event's page."
+msgstr "Aucune feuille de temps. Ajoutez-en une depuis la page de l'événement."

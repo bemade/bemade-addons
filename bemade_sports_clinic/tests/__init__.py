@@ -275,3 +275,4 @@ from . import test_duplicates_french_1682
 from . import test_events_polish_1679
 from . import test_messages_polish_1678
 from . import test_guide_public_view_1685
+from . import test_timesheets_hint_1725

@@ -100,6 +100,9 @@
                 <t t-set="sort_label">Sort timesheets</t>
                 <t t-set="sort_section" t-value="'timesheets.sort'"/>
             </t>
+            <!-- Task 1725: timesheets are added from their event — say so,
+                 with a link to the events list. -->
+            <p class="o_sc_muted o_sc_list_hint" data-sc-section="timesheets.hint">To add a timesheet, open the event concerned. <a href="/my/events" class="o_sc_link" data-sc-hint-link="events">Events</a></p>
             <!-- Task 1611: a read-fragment list — a time change moves the card
                  to its date group (headings and order as after a reload). -->
             <div t-if="sc_timesheet_groups" class="o_sc_list" data-sc-section="timesheets.list"
@@ -121,9 +124,7 @@
                     </t>
                 </t>
             </div>
-            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
-                <t t-set="message">No timesheets yet.</t>
-            </t>
+            <p t-else="" class="o_sc_empty" data-sc-section="timesheets.empty">No timesheets. Add one from the event's page. <a href="/my/events" class="o_sc_link" data-sc-hint-link="events">Events</a></p>
             <t t-call="bemade_sports_clinic.sc_timesheet_sheets">
                 <t t-set="rows" t-value="sc_timesheet_rows"/>
                 <t t-set="return_url" t-value="sc_timesheets_return"/>

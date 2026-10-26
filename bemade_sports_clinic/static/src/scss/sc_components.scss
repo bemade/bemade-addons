@@ -1014,6 +1014,12 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         text-align: center;
     }
 
+    // Task 1725: a muted one-line hint under a list header.
+    .o_sc_list_hint {
+        margin: 0 0 var(--sc-space-2);
+        font-size: 13px;
+    }
+
     .o_sc_footnote {
         margin: 0;
         text-align: center;
