@@ -118,6 +118,7 @@
                    t-att-hidden="None if panel['error'] and not panel['error_field'] else 'hidden'"
                    t-out="panel['error'] if not panel['error_field'] else ''"/>
                 <div class="o_sc_form_actions">
+                    <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="player.add"
                             data-sc-player-add-submit="1" data-sc-guard-submit="1" aria-disabled="true"
                             t-att-aria-describedby="'%s_reason' % panel['id']">Create</button>

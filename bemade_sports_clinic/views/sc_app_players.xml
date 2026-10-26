@@ -655,6 +655,7 @@
                                     <t t-set="c_email" t-value="sc_contact_add_data.get('email') or ''"/>
                                 </t>
                                 <div class="o_sc_form_actions">
+                                    <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
                                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="contact.add">Add Emergency Contact</button>
                                 </div>
                                 <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_contact_add'"/></t>
@@ -913,6 +914,7 @@
                                t-att-id="'sc_new_injury_diag_%s' % card_patient.id" autocomplete="off"/>
                     </div>
                     <div class="o_sc_form_actions">
+                        <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
                         <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="injury.create">
                             <span t-if="is_treatment_prof">Create</span>
                             <span t-else="">Report</span>
@@ -1412,6 +1414,7 @@
                     <t t-set="props" t-value="sc_draft_props(note_draft_prefix + 'note', 'note', sc_note_label, 'textarea', placeholder=sc_note_placeholder, required=True)"/>
                 </t>
                 <div class="o_sc_form_actions">
+                    <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="notes.submit">Add Note</button>
                 </div>
                 <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_note_add'"/></t>

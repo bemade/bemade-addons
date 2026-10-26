@@ -274,6 +274,14 @@
           header_fragment its read-fragment key (task 1611), when a save
                          can change what it offers
     -->
+    <!-- Task 1724: « Annuler » next to the submit of an inline add panel
+         (details.o_sc_list_add_panel): closes the panel, clears its fields
+         and its device drafts, focus back on the header's « + Ajouter »
+         (sc_list_header.js). -->
+    <template id="sc_list_add_cancel" name="App shell: add panel cancel">
+        <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_list_add_cancel" data-sc-list-add-cancel="1">Cancel</button>
+    </template>
+
     <template id="sc_list_header" name="App shell: list header">
         <div t-if="add_label or sorts or count or header_fragment" class="o_sc_list_header"
              t-att-data-sc-section="header_section or None"
@@ -1021,6 +1029,7 @@
                                 </div>
                                 <p class="o_sc_field_message o_sc_field_error" role="alert" data-sc-med-error="1" hidden="hidden"/>
                                 <div class="o_sc_form_actions">
+                                    <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
                                     <button type="submit" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm"
                                             t-att-data-sc-action="'medical.%s.add.submit' % sc_med_key">Add</button>
                                 </div>

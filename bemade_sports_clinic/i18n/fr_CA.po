@@ -3905,6 +3905,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_role_mass_assign_wizard_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_security
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_list_add_cancel
 msgid "Cancel"
 msgstr "Annuler"
 

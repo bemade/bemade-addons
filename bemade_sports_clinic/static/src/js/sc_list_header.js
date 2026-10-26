@@ -22,6 +22,11 @@
  *   device drafts follow « sc:form-reset »), inner disclosures closed, the
  *   check / guard state cleared, the panel closed (the Notepad's
  *   always-open card stays open).
+ *
+ * Task 1724: « Annuler » (button[data-sc-list-add-cancel], next to the
+ * panel's submit) runs the same reset — fields back to their defaults,
+ * device drafts dropped, the panel closed — and puts the focus back on the
+ * header's « + Ajouter ».
  */
 
 import { focusFirstField } from "@bemade_sports_clinic/js/sc_focus";
@@ -126,5 +131,25 @@ window.addEventListener("pageshow", (ev) => {
     }
     for (const form of document.querySelectorAll(".o_sc_app form[data-sc-submitted]")) {
         resetAddPanel(form);
+    }
+});
+
+// Task 1724: « Annuler » of an inline add panel.
+document.addEventListener("click", (ev) => {
+    const button = ev.target.closest && ev.target.closest("[data-sc-list-add-cancel]");
+    if (!button || !button.closest(".o_sc_app")) {
+        return;
+    }
+    const panel = button.closest("details.o_sc_list_add_panel");
+    const form = button.closest("form");
+    if (!panel || !form) {
+        return;
+    }
+    ev.preventDefault();
+    resetAddPanel(form);
+    panel.open = false;
+    const toggle = togglesOf(panel)[0];
+    if (toggle) {
+        toggle.focus();
     }
 });

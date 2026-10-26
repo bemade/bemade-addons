@@ -337,6 +337,7 @@
                                       placeholder="Explain why this player should be added"/>
                         </div>
                         <div class="o_sc_form_actions">
+                            <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
                             <button type="submit" class="o_sc_btn o_sc_btn_primary">Send the request</button>
                         </div>
                         <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_request_add'"/></t>
