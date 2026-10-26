@@ -79,7 +79,8 @@ function showToast(message, actionLabel, action, duration, options) {
     placeToast(root, toast);
     const { title, tone } = options || {};
     // Task 1678: the title sits above the text (one column), the action
-    // button beside that column.
+    // button beside that column — under it, right-aligned, on a phone or
+    // when it does not fit (sc_p2.scss, review round 1).
     const body = document.createElement("span");
     body.className = "o_sc_toast_body";
     if (title) {

@@ -90,7 +90,7 @@
                     </div>
                 </details>
                 <div class="o_sc_form_actions">
-                    <a href="/my/players" class="o_sc_btn o_sc_btn_ghost">Clear Filters</a>
+                    <a href="/my/players" class="o_sc_btn o_sc_btn_ghost" data-sc-filter-reset="1">Clear Filters</a>
                     <button type="submit" class="o_sc_btn o_sc_btn_primary">
                         <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'search'"/></t>
                         <span>Search</span>

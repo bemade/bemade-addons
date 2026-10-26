@@ -13,7 +13,10 @@ Acceptance criteria:
   team's head therapist — in French « … sera traitée par le thérapeute en
   chef de l'équipe. » (website-aware render).
 * AC-3 Toasts: the title sits above the text (one column), the action
-  button beside it — at 360 px, 390 px and laptop width (tours).
+  button beside it — at 360 px, 390 px and laptop width (tours). Review
+  round 1 (2026-10-26): the text takes the toast's width (never one word
+  per line), the action never overlaps it, and on a phone (≤ 480 px) the
+  action sits under the text, right-aligned.
 * AC-4 French labels: « Couverture » on the event page (its own term, not
   the generic « Thérapeute »), « Commentaire (facultatif) » on the activity
   « Done » sheet, « Personnel assigné » (typo fixed), and the digest

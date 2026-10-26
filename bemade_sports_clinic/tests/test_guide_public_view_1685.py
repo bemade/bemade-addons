@@ -15,6 +15,10 @@ addon CI and ``odoo-dev test``):
   « Sign in »).
 * AC-3 The public sidebar / children routes answer a logged-in portal user
   (the published-read rule).
+* AC-4 (review round 1, 2026-10-26) On a phone the header fits: the title
+  truncates with an ellipsis (``text-truncate`` on its text), and the link
+  shows « ← App » under 576 px (« Application » in French), the full
+  « Back to the app » on wider screens and as its title / aria-label.
 """
 from odoo import Command
 from odoo.tests import HttpCase, tagged
@@ -81,7 +85,9 @@ class TestGuidePublicView1685(HttpCase):
         self.assertIn('o_knowledge_sidebar_container', resp.text)
         self.assertIn('data-sc-guide-back="1"', resp.text)
         self.assertIn('href="/my"', resp.text)
-        self.assertIn('Back to the app', resp.text)
+        # English, or French when the website's default is (a prod copy).
+        text = resp.text.replace('&#39;', "'")
+        self.assertTrue('Back to the app' in text or "Retour à l'application" in text)
         self.assertNotIn('o_knowledge_article_log_in', resp.text)
 
     def test_ac1_back_to_app_in_french(self):
@@ -97,7 +103,29 @@ class TestGuidePublicView1685(HttpCase):
         self.opener.cookies.set('frontend_lang', 'fr_CA')
         resp = self._open(self.page)
         self.assertEqual(resp.status_code, 200)
-        self.assertIn("Retour à l'application", resp.text.replace('&#39;', "'"))
+        text = resp.text.replace('&#39;', "'")
+        self.assertIn("Retour à l'application", text)
+        self.assertIn('<div class="d-inline d-sm-none">Application</div>', text)
+
+    def test_ac4_compact_header(self):
+        from lxml import html as lxml_html
+        self.authenticate('guide.portal.1685', 'guide.portal.1685')
+        resp = self._open(self.section)
+        self.assertEqual(resp.status_code, 200)
+        tree = lxml_html.fromstring(resp.text)
+        link = tree.xpath('//*[@data-sc-guide-back="1"]/a')[0]
+        # The website's language decides (French on a prod copy): compare
+        # the labels with each other, not with one language.
+        full = link.xpath('./div[contains(@class, "d-sm-inline")]/text()')
+        self.assertEqual(len(full), 1)
+        self.assertIn(full[0], ('Back to the app', "Retour à l'application"))
+        self.assertEqual(link.get('aria-label'), full[0])
+        self.assertEqual(link.get('title'), full[0])
+        self.assertTrue(link.xpath('./i[contains(@class, "fa-arrow-left") and contains(@class, "d-sm-none")]'))
+        compact = link.xpath('./div[contains(@class, "d-sm-none")]/text()')
+        self.assertIn(compact, (['App'], ['Application']))
+        title = tree.xpath('//div[contains(@class, "o_knowledge_article_display_name")]/span')[0]
+        self.assertIn('text-truncate', title.get('class').split())
 
     def test_ac2_portal_unpublished_unchanged(self):
         self.authenticate('guide.portal.1685', 'guide.portal.1685')

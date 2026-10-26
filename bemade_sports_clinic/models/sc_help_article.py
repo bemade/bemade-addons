@@ -59,7 +59,12 @@ SC_HELP_KEYS = {
 SC_HELP_TABBED = ('player', 'team')
 
 # Task 1685: the public guide view's header for a logged-in user (see
-# ScHelpArticle._sc_sync_knowledge_public_view).
+# ScHelpArticle._sc_sync_knowledge_public_view). Review round 1 (2026-10-26):
+# on a phone (< 576 px, Bootstrap's sm) the link is « ← App » (the full
+# label stays its title / aria-label) and the title truncates with an
+# ellipsis in the space left — Bootstrap utilities only, the public view's
+# bundle (website_knowledge.assets_public_knowledge) carries them. The two
+# labels are <div>s (inline by class) so each is its own translation term.
 SC_KNOWLEDGE_PUBLIC_PARENT = 'website_knowledge.article_public_content'
 SC_KNOWLEDGE_PUBLIC_VIEW = 'bemade_sports_clinic.sc_knowledge_public_back_to_app'
 SC_KNOWLEDGE_PUBLIC_ARCH = """<data>
@@ -68,9 +73,20 @@ SC_KNOWLEDGE_PUBLIC_ARCH = """<data>
     </xpath>
     <xpath expr="//div[hasclass('o_knowledge_public_virality')]" position="after">
         <div t-if="request and not request.env.user._is_public()"
-             class="o_knowledge_public_virality nav-item text-center o_no_autohide_item" data-sc-guide-back="1">
-            <a href="/my" class="nav-link fw-bold text-nowrap">Back to the app</a>
+             class="o_knowledge_public_virality nav-item text-center o_no_autohide_item flex-shrink-0 ms-2"
+             data-sc-guide-back="1">
+            <a href="/my" class="nav-link fw-bold text-nowrap" title="Back to the app" aria-label="Back to the app">
+                <i class="fa fa-arrow-left me-1 d-sm-none" aria-hidden="true"/>
+                <div class="d-none d-sm-inline">Back to the app</div>
+                <div class="d-inline d-sm-none">App</div>
+            </a>
         </div>
+    </xpath>
+    <xpath expr="//div[hasclass('o_knowledge_article_display_name')]/span[@t-if]" position="attributes">
+        <attribute name="class" add="text-truncate" separator=" "/>
+    </xpath>
+    <xpath expr="//div[hasclass('o_knowledge_article_display_name')]/span[@t-else]" position="attributes">
+        <attribute name="class" add="text-truncate" separator=" "/>
     </xpath>
 </data>"""
 

@@ -17320,3 +17320,8 @@ msgstr "Retrait demandé de l'équipe"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_knowledge_public_back_to_app
 msgid "Back to the app"
 msgstr "Retour à l'application"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_knowledge_public_back_to_app
+msgid "App"
+msgstr "Application"

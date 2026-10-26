@@ -12,6 +12,10 @@
  *   without JS it is still there; with JS it stays in the form (visually
  *   hidden) so « Enter » still submits. The filter panel stays open across
  *   the reload a change causes.
+ * - Review round 1 (2026-10-26, #1679): a filter panel's « Reset » link
+ *   ([data-sc-filter-reset], any filter form: events, calendar, timesheets,
+ *   clinics, players) keeps the panel as it was — open stays open across
+ *   the reload (closed stays closed: the defaults open nothing).
  */
 
 const DATE_TYPES = ["date", "datetime-local", "time", "month", "week"];
@@ -58,6 +62,15 @@ function applyFilters(form) {
         form.submit();
     }
 }
+
+// Review round 1 (#1679): « Reset » keeps an open filter panel open.
+document.addEventListener("click", (ev) => {
+    const link = ev.target instanceof Element && ev.target.closest("a[data-sc-filter-reset]");
+    const form = link && inApp(link) ? link.closest("form") : null;
+    if (form) {
+        rememberOpen(form);
+    }
+});
 
 // A date being typed (keyboard): its « change » is not the final value.
 const typing = new WeakSet();
@@ -117,7 +130,11 @@ function init() {
         button.classList.add("visually-hidden");
         button.tabIndex = -1;
     }
-    for (const form of document.querySelectorAll(".o_sc_app form[data-sc-autosubmit]")) {
+    const forms = new Set(document.querySelectorAll(".o_sc_app form[data-sc-autosubmit]"));
+    for (const link of document.querySelectorAll(".o_sc_app form a[data-sc-filter-reset]")) {
+        forms.add(link.closest("form"));
+    }
+    for (const form of forms) {
         const key = OPEN_KEY + (form.dataset.scSection || "");
         let reopen = false;
         try {

@@ -71,7 +71,7 @@
                         </div>
                     </div>
                     <div class="o_sc_form_actions">
-                        <a href="/my/clinics" class="o_sc_btn o_sc_btn_ghost">Reset</a>
+                        <a href="/my/clinics" class="o_sc_btn o_sc_btn_ghost" data-sc-filter-reset="1">Reset</a>
                         <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-autosubmit-fallback="1">Apply filters</button>
                     </div>
                 </details>
