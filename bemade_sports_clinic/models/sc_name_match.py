@@ -272,12 +272,23 @@ class NameIndex:
 
 
 def duplicate_pairs(rows):
-    """The likely duplicate pairs among ``rows`` ``[(id, first, last, dob)]``:
-    ``[(id_a, id_b, kind, same_dob)]`` with kind 'exact' (same normalised
-    names), 'swapped' (first / last inverted) or 'near'. Candidates are
-    compared within blocks (the last name's phonetic key, its first and last
-    letters, the swapped pair), never all against all."""
-    forms = {rid: (NameForm(first), NameForm(last), dob) for rid, first, last, dob in rows}
+    """The likely duplicate pairs among ``rows`` ``[(id, first, last, dob)]``
+    (or ``[(id, first, last, dob, trusted)]``): ``[(id_a, id_b, kind,
+    same_dob)]`` with kind 'exact' (same normalised names), 'swapped'
+    (first / last inverted) or 'near'. Candidates are compared within blocks
+    (the last name's phonetic key, its first and last letters, the swapped
+    pair), never all against all.
+
+    Task 1715: a row whose ``trusted`` is False (its name fields disagree
+    with its contact name, so ``first`` / ``last`` were split from that
+    name) is never part of an 'exact' or 'swapped' pair — at most 'near'."""
+    forms = {}
+    untrusted = set()
+    for row in rows:
+        rid, first, last, dob = row[:4]
+        forms[rid] = (NameForm(first), NameForm(last), dob)
+        if len(row) > 4 and not row[4]:
+            untrusted.add(rid)
     blocks = {}
 
     def add(key, rid):
@@ -314,6 +325,8 @@ def duplicate_pairs(rows):
                     kind = 'near'
                 else:
                     continue
+                if kind != 'near' and (a in untrusted or b in untrusted):
+                    kind = 'near'
                 out.append((a, b, kind, bool(da and db and da == db)))
     out.sort(key=lambda pair: (not pair[3], {'exact': 0, 'swapped': 1, 'near': 2}[pair[2]], pair[0], pair[1]))
     return out
