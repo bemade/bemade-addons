@@ -17315,3 +17315,8 @@ msgstr "Couverture"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__pending_removal_team_id
 msgid "Removal Requested From"
 msgstr "Retrait demandé de l'équipe"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_knowledge_public_back_to_app
+msgid "Back to the app"
+msgstr "Retour à l'application"

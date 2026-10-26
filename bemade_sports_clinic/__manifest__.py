@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.118.0",
+    'version': "19.0.1.119.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -173,6 +173,7 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "views/sports_clinic_menus.xml",
         "views/sc_help_article_views.xml",
         "data/sc_guide_video_assets.xml",
+        "data/sc_knowledge_public_view.xml",
         # Task 1399: attendance report (pivot/graph/list) + the Reports menu.
         # After the menus (parent = sports_clinic_root), before the event views
         # (their smart-button action points at these views' model).
