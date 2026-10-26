@@ -113,6 +113,43 @@ function showToast(message, actionLabel, action, duration, options) {
     }, duration || (actionLabel ? 8000 : 4000));
 }
 
+// Task 1679: a card the toast is about keeps its bottom (its buttons) above
+// the toast (fixed over the page): the page scrolls up by the overlap, with
+// room made under the page when it is already at its end (removed with the
+// toast). Call it once the card's own scroll is done (an instant one: a
+// smooth scroll still running would end where it was heading). ``fitOnly``:
+// only when the whole card fits above the toast (a tall card being edited
+// keeps its top in view).
+function keepClearOfToast(el, { fitOnly = false } = {}) {
+    const root = app();
+    const toast = root && root.querySelector(".o_sc_toast");
+    if (!el || !toast || toast.hidden) {
+        return;
+    }
+    const gap = 8;
+    const toastTop = toast.getBoundingClientRect().top;
+    const rect = el.getBoundingClientRect();
+    const overlap = rect.bottom - (toastTop - gap);
+    if (overlap <= 0 || (fitOnly && rect.height > toastTop - gap)) {
+        return;
+    }
+    const scroller = document.scrollingElement || document.documentElement;
+    const room = window.scrollY + overlap - (scroller.scrollHeight - window.innerHeight);
+    if (room > 0 && !document.body.dataset.scToastRoom) {
+        document.body.dataset.scToastRoom = "1";
+        document.body.style.paddingBottom = `${Math.ceil(room)}px`;
+        const observer = new MutationObserver(() => {
+            if (toast.hidden) {
+                observer.disconnect();
+                delete document.body.dataset.scToastRoom;
+                document.body.style.paddingBottom = "";
+            }
+        });
+        observer.observe(toast, { attributes: true, attributeFilter: ["hidden"] });
+    }
+    window.scrollBy({ top: overlap, behavior: "instant" });
+}
+
 document.addEventListener("sc:toast", (ev) => {
     const detail = ev.detail || {};
     showToast(detail.message || "", detail.actionLabel, detail.action, detail.duration);
@@ -191,7 +228,9 @@ function offerUndoCreate() {
         url.searchParams.delete("created");
         window.history.replaceState(window.history.state, "", url.toString());
     }
-    card.scrollIntoView({ block: "start" });
+    // Task 1679: instant, then lifted above the toast when it fits.
+    card.scrollIntoView({ block: "start", behavior: "instant" });
+    keepClearOfToast(card, { fitOnly: true });
 }
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", offerUndoCreate);
@@ -542,14 +581,14 @@ function openSheet(id) {
 // on this event — open THAT card in edit (scrolled to), and a toast offers
 // « Add another timesheet » (the add sheet, split shifts). The sheet's own
 // « Edit my timesheet » does the same from inside it.
-function editExistingTimesheet(id) {
+function editExistingTimesheet(id, behavior) {
     const card = document.querySelector(`.o_sc_app [data-sc-timesheet-id="${id}"][data-sc-edit-card]`);
     if (!card) {
         return false;
     }
     setCardEditing(card, true);
-    card.scrollIntoView({ block: "center" });
-    return true;
+    card.scrollIntoView({ block: "center", behavior: behavior || "auto" });
+    return card;
 }
 document.addEventListener("click", (ev) => {
     const root = app();
@@ -567,7 +606,10 @@ document.addEventListener("click", (ev) => {
         return;
     }
     const dialog = edit && edit.closest("dialog");
-    if (!editExistingTimesheet(id)) {
+    // Task 1679: an instant scroll when the toast follows (it then lifts
+    // the card above itself).
+    const card = editExistingTimesheet(id, add ? "instant" : undefined);
+    if (!card) {
         return; // no card on this page: let the sheet open as usual
     }
     ev.preventDefault();
@@ -578,6 +620,8 @@ document.addEventListener("click", (ev) => {
     if (add) {
         showToast(_t("You already have a timesheet for this event."), _t("Add another timesheet"),
             () => openSheet(add.dataset.scSheetOpen || "sc_ts_add_sheet"));
+        // Task 1679: its « Delete » / « Done » never sit under the toast.
+        keepClearOfToast(card);
     }
 }, true);
 

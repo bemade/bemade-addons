@@ -1524,7 +1524,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             sc_event_groups=groups,
             sc_event_filters_open=False,
             sc_event_filter_action='/my/events',
-            sc_event_filter_reset='/my/events?view_type=all&no_default_dates=1',
+            # Task 1679: « Reset » restores the defaults — the list from
+            # today (no ``no_default_dates``), like the « Upcoming » segment.
+            sc_event_filter_reset='/my/events',
             sc_event_filter_list=True,
             sc_event_segments=segments,
             sc_event_segment=segment,
