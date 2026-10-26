@@ -80,8 +80,9 @@ class TestFragmentsEvent1611(FragmentsCommon):
         self._saved(self.event, 'therapist_end', '2026-02-02T13:05')
         rows = self._rows(self._fragment(self._url(), self._ekey('read')))
         self.assertIn('08:15', rows['When'])
-        self.assertIn('07:45', rows['Therapist'])
-        self.assertIn('13:05', rows['Therapist'])
+        # Task 1678: the therapist's hours are labelled « Coverage ».
+        self.assertIn('07:45', rows['Coverage'])
+        self.assertIn('13:05', rows['Coverage'])
         self.assertFragmentMatchesPage(self._url(), self._ekey('read'))
 
     # -- AC-E3 -------------------------------------------------------------

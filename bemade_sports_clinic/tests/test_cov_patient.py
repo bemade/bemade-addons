@@ -213,19 +213,6 @@ class TestCovPatient(TransactionCase):
         p.remove_from_team(self.team.id)
         self.assertNotIn(self.team, p.team_ids)
 
-    def test_schedule_removal_request_activity(self):
-        p = self._patient()
-        p.team_ids = [Command.set([self.team.id])]
-        p._schedule_removal_request_activity({
-            'player_id': p.id, 'team_id': self.team.id,
-            'requested_by_id': self.env.user.id, 'reason': 'because',
-            'is_last_team': True, 'assignee_id': self.therapist_user.id,
-        })
-        acts = self.env['mail.activity'].search([
-            ('res_model', '=', 'sports.patient'), ('res_id', '=', p.id),
-        ])
-        self.assertTrue(acts)
-
     def test_removal_log_message(self):
         # _archive_if_no_teams never archived anything despite its name; all it
         # ever did was pick the chatter line, which is now all it claims to do.

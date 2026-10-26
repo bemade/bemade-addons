@@ -47,7 +47,7 @@
                 <input type="hidden" name="activity_id" value=""/>
                 <input type="hidden" name="return_url" t-att-value="return_url"/>
                 <div class="o_sc_field">
-                    <label for="sc_activity_feedback" class="o_sc_field_label">Feedback (optional)</label>
+                    <label for="sc_activity_feedback" class="o_sc_field_label">Comment (optional)</label>
                     <textarea id="sc_activity_feedback" name="feedback" class="o_sc_input o_sc_textarea" rows="3"/>
                 </div>
                 <div class="o_sc_form_actions">

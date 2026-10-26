@@ -78,16 +78,21 @@ function showToast(message, actionLabel, action, duration, options) {
     }
     placeToast(root, toast);
     const { title, tone } = options || {};
-    const parts = [];
+    // Task 1678: the title sits above the text (one column), the action
+    // button beside that column.
+    const body = document.createElement("span");
+    body.className = "o_sc_toast_body";
     if (title) {
         const strong = document.createElement("strong");
         strong.className = "o_sc_toast_title";
         strong.textContent = title;
-        parts.push(strong);
+        body.appendChild(strong);
     }
     const text = document.createElement("span");
+    text.className = "o_sc_toast_text";
     text.textContent = message;
-    parts.push(text);
+    body.appendChild(text);
+    const parts = [body];
     if (tone) {
         toast.dataset.scToastTone = tone;
     } else {
@@ -152,7 +157,8 @@ function keepClearOfToast(el, { fitOnly = false } = {}) {
 
 document.addEventListener("sc:toast", (ev) => {
     const detail = ev.detail || {};
-    showToast(detail.message || "", detail.actionLabel, detail.action, detail.duration);
+    showToast(detail.message || "", detail.actionLabel, detail.action, detail.duration,
+        { title: detail.title, tone: detail.tone });
 });
 
 // Task 1583: the pending session notification of a POST round-trip

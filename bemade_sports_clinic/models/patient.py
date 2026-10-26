@@ -139,6 +139,10 @@ class Patient(models.Model):
     )
     pending_removal = fields.Boolean(string='Pending Removal', default=False, tracking=True, 
                                     help='Indicates if this player has a pending removal request')
+    # Task 1678: the team the pending removal request is about — its head
+    # therapist gets the To-Do (_cron_handle_pending_removals).
+    pending_removal_team_id = fields.Many2one(
+        'sports.team', string='Removal Requested From', ondelete='set null', copy=False)
     _order = "sort_order, last_name, first_name"
     
     active = fields.Boolean(
@@ -3208,8 +3212,8 @@ class Patient(models.Model):
         team = self.env['sports.team'].browse(team_id)
         current_user = self.env.user
         
-        # Set the pending_removal flag
-        self.write({'pending_removal': True})
+        # Set the pending_removal flag (task 1678: and the team it is about)
+        self.write({'pending_removal': True, 'pending_removal_team_id': team.id or False})
         
         # Log the request with details
         log_message = _(
@@ -3232,55 +3236,12 @@ class Patient(models.Model):
             'tag': 'display_notification',
             'params': {
                 'title': _('Removal Request Submitted'),
-                'message': _('Your removal request has been submitted and will be processed by an administrator.'),
+                'message': _("Your removal request has been submitted to the team's head therapist."),
                 'type': 'success',
                 'sticky': True,
             }
         }
         
-    def _schedule_removal_request_activity(self, request_data):
-        """
-        Scheduled action to create an activity for the head therapist to review the removal request.
-        
-        :param dict request_data: Data for the removal request
-        """
-        player = self.env['sports.patient'].browse(request_data['player_id'])
-        team = self.env['sports.team'].browse(request_data['team_id'])
-        requested_by = self.env['res.users'].browse(request_data['requested_by_id'])
-        reason = request_data['reason']
-        is_last_team = request_data['is_last_team']
-        assignee = self.env['res.users'].browse(request_data['assignee_id'])
-        
-        # Create a more detailed activity
-        note = _("Player Removal Request\n")
-        note += _("====================\n\n")
-        note += _("Player: %s\n") % player.display_name
-        note += _("Team: %s\n") % team.name
-        note += _("Requested by: %s\n\n") % requested_by.name
-        
-        if reason:
-            note += _("Reason for removal request:\n%s\n\n") % reason
-            
-        if is_last_team:
-            note += _("⚠️ WARNING: This is the player's only team. Removing it will leave the player with no team.\n\n")
-            
-        note += _("Please review this request and take appropriate action.")
-        
-        # Create activity for head therapist
-        activity_vals = {
-            'activity_type_id': self.env.ref('mail.mail_activity_data_todo').id,
-            'note': note,
-            'res_id': player.id,
-            'res_model_id': self.env['ir.model']._get('sports.patient').id,
-            'user_id': assignee.id,
-            'summary': _('Player Removal Request: %s') % player.display_name,
-        }
-        
-        # Create the activity
-        self.env['mail.activity'].create(activity_vals)
-    
-
-    
     @api.model
     def _cron_handle_pending_removals(self):
         """
@@ -3317,8 +3278,13 @@ class Patient(models.Model):
             if existing_activity:
                 continue
                 
-            # Find head therapist (role == 'head_therapist') or fallback to any therapist
-            team = player.team_ids[0]
+            # Task 1678: the team the request is about (still one of the
+            # player's teams); older requests, stored without it, fall back
+            # to the player's first team. Its head therapist with a user,
+            # else a therapist of that team, else the superuser.
+            team = player.pending_removal_team_id
+            if team not in player.team_ids:
+                team = player.team_ids[0]
             staff = team.staff_ids
             head_therapist = staff.filtered(lambda s: s.role == 'head_therapist' and s.user_ids)
             if not head_therapist:
@@ -3374,7 +3340,7 @@ class Patient(models.Model):
             ('pending_removal', '=', True), ('team_ids', '=', False)])
         closed = 0
         if players:
-            players.write({'pending_removal': False})
+            players.write({'pending_removal': False, 'pending_removal_team_id': False})
             closed = players._sc_close_removal_requests()
         return players, closed
 
@@ -3534,7 +3500,7 @@ class Patient(models.Model):
         # Prepare and execute the removal (one write for every player)
         update_vals = {'team_ids': [Command.unlink(team.id)]}
         if had_pending:
-            update_vals['pending_removal'] = False
+            update_vals.update(pending_removal=False, pending_removal_team_id=False)
         self.write(update_vals)
         if clear_pending:
             # Task 1600: the official removal closes the open « Player Removal

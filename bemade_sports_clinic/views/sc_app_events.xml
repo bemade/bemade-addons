@@ -411,7 +411,7 @@
                 <div data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(event, 'read')">
                 <dl class="o_sc_kv">
                     <dt>When</dt><dd t-out="sc_event_when or '—'"/>
-                    <t t-if="sc_event_therapist_when"><dt>Therapist</dt><dd t-out="sc_event_therapist_when"/></t>
+                    <t t-if="sc_event_therapist_when"><dt>Coverage</dt><dd t-out="sc_event_therapist_when"/></t>
                     <dt>Teams</dt><dd t-out="sc_event_teams or '—'"/>
                     <dt>Venue</dt><dd t-out="event_sudo.venue_id.name or '—'"/>
                     <!-- Task 1585: the organization's and the assigned staff's

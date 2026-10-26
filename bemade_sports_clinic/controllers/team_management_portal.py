@@ -78,7 +78,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             request.session['notification'] = {
                 'type': 'success',
                 'title': _('Removal Request Submitted'),
-                'message': _('Your request to remove %s from the team has been submitted for review.') % patient.name,
+                'message': _("Your request to remove %s from the team has been submitted to the team's head therapist.") % patient.name,
                 'sticky': False,
             }
             

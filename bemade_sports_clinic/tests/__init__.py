@@ -273,3 +273,4 @@ from . import test_medical_lists_tours_1677
 from . import test_patient_partner_person_1680
 from . import test_duplicates_french_1682
 from . import test_events_polish_1679
+from . import test_messages_polish_1678

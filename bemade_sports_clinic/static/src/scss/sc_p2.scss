@@ -316,6 +316,15 @@ $sc-p2-laptop: 992px;
         gap: var(--sc-space-3);
     }
 
+    // Task 1678: title above the text, the action button beside them.
+    .o_sc_toast_body {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
     // Task 1583: the session notification (title + message; errors marked).
     .o_sc_toast_title {
         font-weight: 600;
@@ -330,6 +339,7 @@ $sc-p2-laptop: 992px;
     }
 
     .o_sc_toast_action {
+        flex: none;
         appearance: none;
         border: 0;
         background: transparent;
