@@ -286,27 +286,6 @@
         <div t-if="add_label or sorts or count or header_fragment" class="o_sc_list_header"
              t-att-data-sc-section="header_section or None"
              t-att-data-sc-fragment="header_fragment or None">
-            <t t-if="add_label">
-                <t t-set="sc_add_text">Add</t>
-                <a t-if="add_url" t-att-href="add_url" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm o_sc_list_add"
-                   t-att-data-sc-action="add_key or None" t-att-aria-label="add_label" t-att-title="add_label">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
-                    <span class="o_sc_list_add_label" t-out="sc_add_text"/>
-                </a>
-                <button t-elif="add_sheet" type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm o_sc_list_add"
-                        t-att-data-sc-sheet-open="add_sheet" t-att-data-sc-action="add_key or None"
-                        t-att-aria-label="add_label" t-att-title="add_label">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
-                    <span class="o_sc_list_add_label" t-out="sc_add_text"/>
-                </button>
-                <button t-elif="add_panel" type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm o_sc_list_add"
-                        t-att-aria-controls="add_panel" t-att-aria-expanded="'true' if add_open else 'false'"
-                        data-sc-list-add-toggle="1" t-att-data-sc-action="add_key or None"
-                        t-att-aria-label="add_label" t-att-title="add_label">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
-                    <span class="o_sc_list_add_label" t-out="sc_add_text"/>
-                </button>
-            </t>
             <span t-if="count" class="o_sc_meta o_sc_list_header_count" t-out="count"/>
             <div t-if="sorts" class="o_sc_sort_menu" t-att-data-sc-section="sort_section or None">
                 <t t-set="sc_sort_current" t-value="([s for s in sorts if s['active']] or sorts)[0]"/>
@@ -326,6 +305,29 @@
                     </a>
                 </div>
             </div>
+            <!-- Task 1718: « + Ajouter » is a green-text link (the
+                 « Historique » style), the LAST item: right-aligned. -->
+            <t t-if="add_label">
+                <t t-set="sc_add_text">Add</t>
+                <a t-if="add_url" t-att-href="add_url" class="o_sc_section_more o_sc_link_btn o_sc_list_add"
+                   t-att-data-sc-action="add_key or None" t-att-aria-label="add_label" t-att-title="add_label">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                    <span class="o_sc_list_add_label" t-out="sc_add_text"/>
+                </a>
+                <button t-elif="add_sheet" type="button" class="o_sc_section_more o_sc_link_btn o_sc_list_add"
+                        t-att-data-sc-sheet-open="add_sheet" t-att-data-sc-action="add_key or None"
+                        t-att-aria-label="add_label" t-att-title="add_label">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                    <span class="o_sc_list_add_label" t-out="sc_add_text"/>
+                </button>
+                <button t-elif="add_panel" type="button" class="o_sc_section_more o_sc_link_btn o_sc_list_add"
+                        t-att-aria-controls="add_panel" t-att-aria-expanded="'true' if add_open else 'false'"
+                        data-sc-list-add-toggle="1" t-att-data-sc-action="add_key or None"
+                        t-att-aria-label="add_label" t-att-title="add_label">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                    <span class="o_sc_list_add_label" t-out="sc_add_text"/>
+                </button>
+            </t>
         </div>
     </template>
 

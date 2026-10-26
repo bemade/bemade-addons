@@ -1196,9 +1196,9 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         gap: var(--sc-space-2);
     }
 
-    // Task 1607: the list header — « + Ajouter » on the left, the sort menu
-    // on the right, ONE line directly above the list (same on phone and
-    // laptop; 44 px targets).
+    // Task 1607: the list header — ONE line directly above the list (same
+    // on phone and laptop; 44 px targets). Task 1718: the sort menu then
+    // « + Ajouter », both on the right.
     .o_sc_list_header {
         display: flex;
         align-items: center;
@@ -1211,20 +1211,39 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         }
     }
 
-    .o_sc_list_add.o_sc_btn_sm {
+    // Task 1718: « + Ajouter » is a green-text link (the « Historique »
+    // style, .o_sc_section_more.o_sc_link_btn), the header's last item,
+    // right-aligned; still a 44 px target. Open panel: an accent underline.
+    .o_sc_list_header .o_sc_list_add.o_sc_link_btn {
         flex: none;
+        margin-left: auto;
         min-height: var(--sc-tap);
-        padding: 0 14px 0 10px;
-        gap: 6px;
+        min-width: var(--sc-tap);
+        padding: 0 4px;
+        gap: 4px;
+        justify-content: flex-end;
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        border-radius: 0;
 
         .o_sc_icon {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
+        }
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: underline;
+            text-underline-offset: 3px;
         }
     }
 
-    .o_sc_list_add[aria-expanded="true"] {
-        box-shadow: inset 0 0 0 2px var(--sc-accent-fg);
+    .o_sc_list_header .o_sc_sort_menu + .o_sc_list_add.o_sc_link_btn {
+        margin-left: 0;
+    }
+
+    .o_sc_list_header .o_sc_list_add[aria-expanded="true"] {
+        border-bottom-color: var(--sc-accent);
     }
 
     .o_sc_list_header_count {

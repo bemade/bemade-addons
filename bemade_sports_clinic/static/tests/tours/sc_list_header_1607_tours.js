@@ -39,9 +39,12 @@ tours.add("sc_1607_players", {
                 const t = toggle.getBoundingClientRect();
                 assert(a.height >= 44 && t.height >= 44, `targets ${a.height} / ${t.height}px tall`);
                 assert(Math.abs(a.top - t.top) < 4, "« + Ajouter » and the sort are not on one line");
-                assert(a.left < t.left, "the sort is not on the right");
+                // Task 1718: « + Ajouter » (a green-text link) is the last
+                // item, right of the sort; both on the right.
+                assert(t.right <= a.left + 0.5, "« + Ajouter » is not right of the sort");
                 const h = header.getBoundingClientRect();
-                assert(t.right <= h.right + 0.5, "the sort overflows the header");
+                assert(a.right <= h.right + 0.5, "« + Ajouter » overflows the header");
+                assert(t.left > h.left + h.width / 3, "the sort is not on the right");
                 assert(document.documentElement.scrollWidth <= window.innerWidth + 0.5,
                     "the page scrolls sideways");
                 // Task 1655: the (closed) create panel sits between them.
