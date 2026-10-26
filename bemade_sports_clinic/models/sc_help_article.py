@@ -58,6 +58,38 @@ SC_HELP_KEYS = {
 # Pages whose help key carries their tab (« player.injuries »).
 SC_HELP_TABBED = ('player', 'team')
 
+# Task 1685: the public guide view's header for a logged-in user (see
+# ScHelpArticle._sc_sync_knowledge_public_view). Review round 1 (2026-10-26):
+# on a phone (< 576 px, Bootstrap's sm) the link is « ← App » (the full
+# label stays its title / aria-label) and the title truncates with an
+# ellipsis in the space left — Bootstrap utilities only, the public view's
+# bundle (website_knowledge.assets_public_knowledge) carries them. The two
+# labels are <div>s (inline by class) so each is its own translation term.
+SC_KNOWLEDGE_PUBLIC_PARENT = 'website_knowledge.article_public_content'
+SC_KNOWLEDGE_PUBLIC_VIEW = 'bemade_sports_clinic.sc_knowledge_public_back_to_app'
+SC_KNOWLEDGE_PUBLIC_ARCH = """<data>
+    <xpath expr="//div[hasclass('o_knowledge_public_virality')]" position="attributes">
+        <attribute name="t-if">not request or request.env.user._is_public()</attribute>
+    </xpath>
+    <xpath expr="//div[hasclass('o_knowledge_public_virality')]" position="after">
+        <div t-if="request and not request.env.user._is_public()"
+             class="o_knowledge_public_virality nav-item text-center o_no_autohide_item flex-shrink-0 ms-2"
+             data-sc-guide-back="1">
+            <a href="/my" class="nav-link fw-bold text-nowrap" title="Back to the app" aria-label="Back to the app">
+                <i class="fa fa-arrow-left me-1 d-sm-none" aria-hidden="true"/>
+                <div class="d-none d-sm-inline">Back to the app</div>
+                <div class="d-inline d-sm-none">App</div>
+            </a>
+        </div>
+    </xpath>
+    <xpath expr="//div[hasclass('o_knowledge_article_display_name')]/span[@t-if]" position="attributes">
+        <attribute name="class" add="text-truncate" separator=" "/>
+    </xpath>
+    <xpath expr="//div[hasclass('o_knowledge_article_display_name')]/span[@t-else]" position="attributes">
+        <attribute name="class" add="text-truncate" separator=" "/>
+    </xpath>
+</data>"""
+
 _URL_RE = re.compile(r'^(https://[^\s"<>]+|/knowledge/article/\d+[^\s"<>]*)$')
 
 
@@ -134,3 +166,43 @@ class ScHelpArticle(models.Model):
             'home': links['home'],
             'map_json': json.dumps(links['map']),
         }
+
+    # ------------------------------------------------------------------
+    # Task 1685: the public guide view's header for a logged-in user
+    # ------------------------------------------------------------------
+    @api.model
+    def _sc_sync_knowledge_public_view(self):
+        """Create / refresh the extension of website_knowledge's public
+        article header: a logged-in (portal) user gets « Back to the app »
+        (/my) instead of « Sign in »; a public visitor keeps « Sign in ».
+
+        website_knowledge is a soft dependency, so the view cannot sit in a
+        data file (its parent may not exist). This runs on every install /
+        update of the module (data/sc_knowledge_public_view.xml): the view
+        is (re)written and its xmlid marked loaded, so the update keeps it —
+        and drops it when website_knowledge is gone. Its French term loads
+        with the module's translations, like any view of the module."""
+        module = self.env['ir.module.module'].sudo()._get('website_knowledge')
+        parent = self.env.ref(SC_KNOWLEDGE_PUBLIC_PARENT, raise_if_not_found=False)
+        if not module or module.state != 'installed' or not parent:
+            return False
+        vals = {
+            'name': 'Sports Clinic: public guide header (logged-in user)',
+            'type': 'qweb',
+            'key': SC_KNOWLEDGE_PUBLIC_VIEW,
+            'inherit_id': parent.id,
+            'mode': 'extension',
+            'priority': 99,
+            'arch_db': SC_KNOWLEDGE_PUBLIC_ARCH,
+        }
+        view = self.env.ref(SC_KNOWLEDGE_PUBLIC_VIEW, raise_if_not_found=False)
+        View = self.env['ir.ui.view'].sudo()
+        if view:
+            view.sudo().write(vals)
+        else:
+            view = View.create(vals)
+            self.env['ir.model.data'].sudo()._update_xmlids([{
+                'xml_id': SC_KNOWLEDGE_PUBLIC_VIEW, 'record': view, 'noupdate': False,
+            }])
+        self.pool.loaded_xmlids.add(SC_KNOWLEDGE_PUBLIC_VIEW)
+        return view

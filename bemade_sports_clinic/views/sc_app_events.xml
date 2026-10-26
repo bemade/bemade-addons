@@ -117,7 +117,8 @@
                     <legend class="o_sc_filter_group_title">Group by</legend>
                     <div class="o_sc_filter_grid">
                         <div class="o_sc_field">
-                            <label for="sc_ev_group" class="o_sc_field_label">Group by</label>
+                            <!-- Task 1679: the legend says it; the label stays for screen readers. -->
+                            <label for="sc_ev_group" class="o_sc_field_label visually-hidden">Group by</label>
                             <select id="sc_ev_group" name="group_by" class="o_sc_input o_sc_select">
                                 <option value="" t-att-selected="'selected' if not group_by else None">None</option>
                                 <option value="team" t-att-selected="'selected' if group_by == 'team' else None">Team</option>
@@ -129,7 +130,7 @@
                     </div>
                 </fieldset>
                 <div class="o_sc_form_actions">
-                    <a t-att-href="sc_event_filter_reset" class="o_sc_btn o_sc_btn_ghost">Reset</a>
+                    <a t-att-href="sc_event_filter_reset" class="o_sc_btn o_sc_btn_ghost" data-sc-filter-reset="1">Reset</a>
                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-autosubmit-fallback="1">Apply filters</button>
                 </div>
             </details>
@@ -410,7 +411,7 @@
                 <div data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(event, 'read')">
                 <dl class="o_sc_kv">
                     <dt>When</dt><dd t-out="sc_event_when or '—'"/>
-                    <t t-if="sc_event_therapist_when"><dt>Therapist</dt><dd t-out="sc_event_therapist_when"/></t>
+                    <t t-if="sc_event_therapist_when"><dt>Coverage</dt><dd t-out="sc_event_therapist_when"/></t>
                     <dt>Teams</dt><dd t-out="sc_event_teams or '—'"/>
                     <dt>Venue</dt><dd t-out="event_sudo.venue_id.name or '—'"/>
                     <!-- Task 1585: the organization's and the assigned staff's

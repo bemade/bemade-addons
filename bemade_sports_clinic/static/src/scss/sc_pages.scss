@@ -395,6 +395,12 @@ $sc-laptop: 992px;
         transform: translateX(-50%);
         bottom: calc(var(--sc-tabs-height) + 16px + env(safe-area-inset-bottom, 0px) + var(--sc-ribbon-h, 0px));
         z-index: 40;
+        // Review round 1 (2026-10-26, #1678): as wide as its content up to
+        // the screen minus the margins. Shrink-to-fit alone measured it
+        // against the half screen right of `left: 50%`, and the text column
+        // (min-width: 0) collapsed to one word per line.
+        width: max-content;
+        box-sizing: border-box;
         max-width: calc(100% - 32px);
         background: var(--sc-surface-2);
         color: var(--sc-fg);
@@ -409,6 +415,7 @@ $sc-laptop: 992px;
         .o_sc_toast {
             bottom: 24px;
             left: calc(50% + var(--sc-rail-width) / 2);
+            max-width: calc(100% - var(--sc-rail-width) - 48px);
         }
     }
 

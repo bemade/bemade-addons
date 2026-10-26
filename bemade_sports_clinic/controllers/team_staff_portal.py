@@ -829,11 +829,17 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         user = http.request.env.user
         is_treatment_prof = self._is_treatment_professional()
 
-        # Show all injuries to treatment professionals, but only active ones to coaches
+        # Show all injuries to treatment professionals. Coaches see the
+        # current ones: active AND unverified (task 1681, owner 2026-10-25 —
+        # every coach of the team sees a report, flagged « Unverified », so
+        # its author lands on it); resolved ones stay hidden. The coach
+        # record rule already drops hidden-from-coaches injuries. Player page
+        # only: dashboards, counts and digests keep their own rules.
         if is_treatment_prof:
             injuries = player.injury_ids
         else:
-            injuries = player.injury_ids.filtered(lambda r: r.stage == 'active')
+            injuries = player.injury_ids.filtered(
+                lambda r: r.stage in ('active', 'unverified'))
 
         # Patient documents for Documents tab (primary association now on patient)
         patient_documents = http.request.env['sports.injury.document'].search([
@@ -1094,8 +1100,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             and player.sudo().create_date
             and player.sudo().create_date >= fields.Datetime.now() - timedelta(minutes=2))
         # Task 1579: a create from the full « new injury » page lands here —
-        # drop its device draft once the injury exists (even when the viewer,
-        # a coach, does not list unverified injuries).
+        # drop its device draft once the injury exists. A sudo browse: the
+        # created id must clear its draft even when the viewer cannot read
+        # it (e.g. a TP report the coach record rule hides from coaches).
         created = env['sports.patient.injury'].sudo().browse(created_id).exists()
         created_draft_clear = bool(
             created and created.patient_id == player and created.create_uid == user)

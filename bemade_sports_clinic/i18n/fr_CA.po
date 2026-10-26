@@ -546,7 +546,7 @@ msgid ""
 "                            <p><strong t-out=\"team['name']\"/></p>\n"
 "                            <div t-if=\"team.get('announcement')\" style=\"margin:6px 0;\">\n"
 "                                <p style=\"margin:0 0 2px 0;\">\n"
-"                                    <strong>Annonce de l'équipe / Team announcement<t t-if=\"team.get('announcement_is_expired')\"> (expirée / expired)</t>:</strong>\n"
+"                                    <strong>Annonce d'équipe / Team announcement<t t-if=\"team.get('announcement_is_expired')\"> (expirée / expired)</t>:</strong>\n"
 "                                </p>\n"
 "                                <p style=\"white-space:pre-wrap;margin:0;\" t-out=\"team['announcement']\"/>\n"
 "                            </div>\n"
@@ -598,6 +598,69 @@ msgid ""
 "                </div>\n"
 "            "
 msgstr ""
+"<div>\n"
+"                    <p>Bonjour, / Hello,</p>\n"
+"                    <p>Votre sommaire quotidien d'équipe : / Your daily team briefing:</p>\n"
+"                    <p style=\"color:#888;font-size:12px;\">\n"
+"                        Changements des dernières <t t-out=\"ctx.get('digest_window_hours') or 24\"/> h /\n"
+"                        Changes over the last <t t-out=\"ctx.get('digest_window_hours') or 24\"/> h.\n"
+"                    </p>\n"
+"                    <t t-foreach=\"ctx.get('digest_teams') or []\" t-as=\"team\">\n"
+"                        <div style=\"margin-bottom:12px;\">\n"
+"                            <p><strong t-out=\"team['name']\"/></p>\n"
+"                            <div t-if=\"team.get('announcement')\" style=\"margin:6px 0;\">\n"
+"                                <p style=\"margin:0 0 2px 0;\">\n"
+"                                    <strong>Annonce d'équipe / Team announcement<t t-if=\"team.get('announcement_is_expired')\"> (expirée / expired)</t>:</strong>\n"
+"                                </p>\n"
+"                                <p style=\"white-space:pre-wrap;margin:0;\" t-out=\"team['announcement']\"/>\n"
+"                            </div>\n"
+"                            <ul>\n"
+"                                <li>\n"
+"                                    <t t-out=\"team['red']\"/> indisponible(s) / no-play<t t-out=\"team['red_delta_str']\"/>\n"
+"                                    ·\n"
+"                                    <t t-out=\"team['yellow']\"/> limité(s) / limited<t t-out=\"team['yellow_delta_str']\"/>\n"
+"                                </li>\n"
+"                                <li t-if=\"team['new_injuries']\">\n"
+"                                    <t t-out=\"team['new_injuries']\"/> nouvelle(s) blessure(s) (<t t-out=\"ctx.get('digest_window_hours') or 24\"/> h) / new injury/injuries\n"
+"                                </li>\n"
+"                                <li t-if=\"team['changes']\">\n"
+"                                    <t t-out=\"team['changes']\"/> joueur(s) avec changements (<t t-out=\"ctx.get('digest_window_hours') or 24\"/> h) / player(s) with changes\n"
+"                                </li>\n"
+"                                <li t-if=\"team['pending_verify']\">\n"
+"                                    <t t-out=\"team['pending_verify']\"/> vérification(s) de blessure en attente / injury verification(s) pending\n"
+"                                </li>\n"
+"                                <li t-if=\"team['pending_removal']\">\n"
+"                                    <t t-out=\"team['pending_removal']\"/> demande(s) de retrait de joueur / player removal request(s)\n"
+"                                </li>\n"
+"                            </ul>\n"
+"                            <p t-if=\"team['url']\">\n"
+"                                <a t-att-href=\"team['url']\">Tableau de bord / Team dashboard</a>\n"
+"                            </p>\n"
+"                        </div>\n"
+"                    </t>\n"
+"                    <t t-if=\"ctx.get('digest_events')\">\n"
+"                        <div style=\"margin-bottom:12px;\">\n"
+"                            <p><strong>Événements à venir (<t t-out=\"ctx.get('digest_events_days') or 14\"/> prochains jours) / Upcoming events (next <t t-out=\"ctx.get('digest_events_days') or 14\"/> days):</strong></p>\n"
+"                            <ul>\n"
+"                                <t t-foreach=\"ctx.get('digest_events') or []\" t-as=\"ev\">\n"
+"                                    <li>\n"
+"                                        <strong t-out=\"ev['name']\"/>\n"
+"                                        <t t-if=\"ev.get('date_label') or ev['date_start']\"> — <t t-out=\"ev.get('date_label') or format_datetime(ev['date_start'])\"/></t>\n"
+"                                        <t t-if=\"ev.get('assigned')\"> · assigné·e (<t t-out=\"ev.get('assigned_label')\"/>) / assigned (<t t-out=\"ev.get('assigned_label')\"/>)</t>\n"
+"                                    </li>\n"
+"                                </t>\n"
+"                            </ul>\n"
+"                            <p style=\"color:#888;font-size:12px;\">\n"
+"                                Les événements non listés sont hors de notre plan de couverture, avisez-nous. /\n"
+"                                Events not listed are outside our coverage plan — please advise us.\n"
+"                            </p>\n"
+"                        </div>\n"
+"                    </t>\n"
+"                    <p style=\"color:#888;font-size:12px;\">\n"
+"                        Aucune donnée médicale n'est incluse. / No medical data is included.\n"
+"                    </p>\n"
+"                </div>\n"
+"            "
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_activity_detail
@@ -1458,7 +1521,7 @@ msgstr "<i class=\"fa fa-user\"/> Réassigner"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_edit
 msgid "<i class=\"fa fa-user-md\"/> Assigned Staff"
-msgstr "<i class=\"fa fa-user-md\"/> Personnnel assigné"
+msgstr "<i class=\"fa fa-user-md\"/> Personnel assigné"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
@@ -2716,7 +2779,7 @@ msgstr "Une demande de retrait est déjà en attente pour ce joueur"
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
 msgid ""
 "A request to remove this player has been submitted to the head therapist."
-msgstr "Une demande de retrait a été soumise au chef de traitement."
+msgstr "Une demande de retrait a été soumise au thérapeute en chef."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -4882,6 +4945,7 @@ msgstr "Date de la blessure"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__dob_a
 msgid "Date of birth"
 msgstr "Date de naissance"
 
@@ -5947,13 +6011,13 @@ msgstr "Père"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.activity_list_table
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_sheets
-msgid "Feedback (optional)"
-msgstr "Feedback (optionnel)"
+msgid "Comment (optional)"
+msgstr "Commentaire (facultatif)"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_activity_detail
 msgid "Feedback (optional):"
-msgstr "Feedback (optionnel):"
+msgstr "Commentaire (facultatif) :"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
@@ -9079,6 +9143,7 @@ msgstr "Matchs autorisés"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_quick_note_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__patient_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__patient_a_id
 msgid "Player"
 msgstr "Joueur"
 
@@ -11506,6 +11571,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_role_mass_assign_line_tree
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__teams_a
 msgid "Teams"
 msgstr "Équipes"
 
@@ -13784,12 +13850,10 @@ msgstr "Votre mot de passe a été changé."
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
-msgid ""
-"Your removal request has been submitted and will be processed by an "
-"administrator."
+msgid "Your removal request has been submitted to the team's head therapist."
 msgstr ""
-"Votre demande de retrait a été soumise et sera traitée par un "
-"administrateur."
+"Votre demande de retrait a été soumise et sera traitée par le thérapeute en "
+"chef de l'équipe."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -13801,10 +13865,12 @@ msgstr ""
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
-msgid "Your request to remove %s from the team has been submitted for review."
+msgid ""
+"Your request to remove %s from the team has been submitted to the team's "
+"head therapist."
 msgstr ""
 "Votre demande de retrait de %s de l'équipe a été soumise et sera traitée par"
-" un administrateur."
+" le thérapeute en chef de l'équipe."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_form
@@ -17227,3 +17293,35 @@ msgstr ""
 #: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
 msgid "life-threatening"
 msgstr "risque vital"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/res_partner.py:0
+msgid "A player's contact must be a person, not a company."
+msgstr "Le contact d'un joueur doit être une personne, pas une société."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_duplicate.py:0
+msgid "One of these players no longer exists."
+msgstr "L'un de ces joueurs n'existe plus."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+msgid "Coverage"
+msgstr "Couverture"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__pending_removal_team_id
+msgid "Removal Requested From"
+msgstr "Retrait demandé de l'équipe"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_knowledge_public_back_to_app
+msgid "Back to the app"
+msgstr "Retour à l'application"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_knowledge_public_back_to_app
+msgid "App"
+msgstr "Application"

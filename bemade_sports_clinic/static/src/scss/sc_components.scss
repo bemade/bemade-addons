@@ -1628,6 +1628,34 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         -webkit-mask-image: $sc-icon-clock;
         mask-image: $sc-icon-clock;
     }
+
+    // Review round 1 (2026-10-26): iOS Safari / Chrome give a native date /
+    // date-time / time input an intrinsic minimum width and ignore
+    // `width: 100%` until its appearance is reset — the « Du » filter and
+    // the timesheet card's date-times stuck out of their box on a phone.
+    // App-wide: the box is its cell's width, the value left-aligned like
+    // the other inputs (iOS centres it), the picker icon kept on desktop.
+    .o_sc_input:is([type="date"], [type="datetime-local"], [type="time"], [type="month"], [type="week"]) {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+        -webkit-appearance: none;
+        appearance: none;
+        text-align: left;
+
+        &::-webkit-date-and-time-value {
+            text-align: left;
+            margin: 0;
+        }
+    }
+
+    // Their grid / flex cells may shrink below the input's own size.
+    .o_sc_field,
+    .o_sc_filter_grid > * {
+        min-width: 0;
+    }
 }
 
 // Owner review 2026-10-14 (#1590): the patient typeahead (portal_patient_combo,

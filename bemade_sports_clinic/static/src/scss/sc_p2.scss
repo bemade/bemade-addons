@@ -310,10 +310,32 @@ $sc-p2-laptop: 992px;
         }
     }
 
+    // Task 1678: title above the text, the action button beside them.
+    // Review round 1 (2026-10-26): the action wraps under the text, right-
+    // aligned, when it does not fit beside it — always on a phone.
     .o_sc_toast {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        gap: var(--sc-space-3);
+        gap: 4px var(--sc-space-3);
+    }
+
+    .o_sc_toast_body {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .o_sc_toast_text {
+        overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 480px) {
+        .o_sc_toast_body {
+            flex-basis: 100%;
+        }
     }
 
     // Task 1583: the session notification (title + message; errors marked).
@@ -330,6 +352,8 @@ $sc-p2-laptop: 992px;
     }
 
     .o_sc_toast_action {
+        flex: none;
+        margin-left: auto;
         appearance: none;
         border: 0;
         background: transparent;
@@ -705,6 +729,13 @@ $sc-p2-laptop: 992px;
         .o_sc_filter_grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
         }
+    }
+
+    // Task 1684: in a filter panel a field keeps its own height — an open
+    // picker list (in flow, sc_picker.js) grows its row, and a stretched
+    // neighbour's input (.o_sc_input is flex: 1) grew with it.
+    .o_sc_filters .o_sc_filter_grid {
+        align-items: start;
     }
 
     // Owner review 2026-10-14: sort / group by are not filters — their own
