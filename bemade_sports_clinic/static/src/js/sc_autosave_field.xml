@@ -7,6 +7,22 @@
              t-att-hidden="isHidden ? 'hidden' : undefined"
              t-att-data-sc-field="props.field or props.name"
              t-att-data-sc-state="state.status" t-att-data-sc-restored="state.restored ? '1' : '0'">
+            <!-- Review round 1 (owner 2026-10-27): an organisation change
+                 that would drop chosen teams asks first (never a browser
+                 confirm); « Cancel » restores the organisation. Round 2: the
+                 warning sits at the top of the field — right under the
+                 Organisation select, above the teams picker (disabled while
+                 it waits for an answer). -->
+            <div t-if="state.groupConfirm" class="o_sc_field_message o_sc_group_confirm" role="alert"
+                 data-sc-org-confirm-box="1">
+                <p class="o_sc_group_confirm_text" t-esc="groupConfirmText"/>
+                <div class="o_sc_group_confirm_actions">
+                    <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-org-cancel="1"
+                            t-on-click="cancelGroup">Cancel</button>
+                    <button type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm" data-sc-org-confirm="1"
+                            t-on-click="confirmGroup">Change organization</button>
+                </div>
+            </div>
             <label class="o_sc_field_label" t-att-for="props.inputId">
                 <!-- Task 1629: labelHidden = the title sits above the field;
                      the label stays as the input's accessible name. -->
@@ -136,19 +152,6 @@
                    data-sc-tags-typed-error="1" t-esc="state.typedError"/>
                 <p t-if="state.groupNotice" class="o_sc_field_message o_sc_hint" role="status"
                    data-sc-tags-group-notice="1" t-esc="state.groupNotice"/>
-                <!-- Review round 1 (owner 2026-10-27): an organisation change
-                     that would drop chosen teams asks first (never a browser
-                     confirm); « Cancel » restores the organisation. -->
-                <div t-if="state.groupConfirm" class="o_sc_field_message o_sc_group_confirm" role="alert"
-                     data-sc-org-confirm-box="1">
-                    <p class="o_sc_group_confirm_text" t-esc="groupConfirmText"/>
-                    <div class="o_sc_group_confirm_actions">
-                        <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-org-cancel="1"
-                                t-on-click="cancelGroup">Cancel</button>
-                        <button type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm" data-sc-org-confirm="1"
-                                t-on-click="confirmGroup">Change organization</button>
-                    </div>
-                </div>
             </div>
             <div t-elif="type === 'date_na'" class="o_sc_date_na">
                 <input t-ref="input" class="o_sc_input" type="date" t-att-id="props.inputId"

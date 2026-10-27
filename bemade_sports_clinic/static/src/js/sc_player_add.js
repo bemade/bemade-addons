@@ -46,6 +46,27 @@ function keyOf(values) {
     return JSON.stringify(values);
 }
 
+/**
+ * Task 1716 (review round 2, owner 2026-10-27): an override is accepted for
+ * the IDENTITY it was shown for — first name, last name, date of birth (and,
+ * for « Create anyway », the matched twins) — never for the whole form: a
+ * team, a contact or anything else changed afterwards keeps it.
+ */
+function identityKey(form) {
+    const { first, last, dob } = fields(form);
+    return JSON.stringify([first, last, dob]);
+}
+
+function acceptKeys(form) {
+    const identity = identityKey(form);
+    return { dob: identity, force: `${identity}|${form.dataset.scCheckedExactIds || ""}` };
+}
+
+function accepted(form) {
+    const keys = acceptKeys(form);
+    return { dob: form.dataset.scDobOkKey === keys.dob, force: form.dataset.scForceKey === keys.force };
+}
+
 function reasons(form) {
     return (form.querySelector("[data-sc-player-add-reasons]") || {}).dataset || {};
 }
@@ -73,10 +94,11 @@ function blocker(form) {
     // Task 1716: a twin and an unlikely date of birth are warnings — each
     // confirmed for THESE values (« Create anyway », « The date is correct »).
     const key = keyOf(values);
-    if (form.dataset.scCheckedKey === key && form.dataset.scCheckedDobWarn === "1" && form.dataset.scDobOkKey !== key) {
+    const ok = accepted(form);
+    if (form.dataset.scCheckedKey === key && form.dataset.scCheckedDobWarn === "1" && !ok.dob) {
         return text.dobWarn;
     }
-    if (form.dataset.scCheckedKey === key && form.dataset.scCheckedExact === "1" && form.dataset.scForceKey !== key) {
+    if (form.dataset.scCheckedKey === key && form.dataset.scCheckedExact === "1" && !ok.force) {
         return text.exact;
     }
     const ec = contact(form);
@@ -89,16 +111,16 @@ function blocker(form) {
     return "";
 }
 
-/** Task 1716: the confirmations posted with the create, for the checked values only. */
+/** Task 1716: the confirmations posted with the create, for the accepted identity only. */
 function syncConfirmations(form) {
-    const key = keyOf(fields(form));
+    const ok = accepted(form);
     const force = form.querySelector("[data-sc-player-add-force]");
     if (force) {
-        force.value = form.dataset.scForceKey === key ? "1" : "0";
+        force.value = ok.force ? "1" : "0";
     }
     const dobOk = form.querySelector("[data-sc-player-add-dob-ok]");
     if (dobOk) {
-        dobOk.value = form.dataset.scDobOkKey === key ? "1" : "0";
+        dobOk.value = ok.dob ? "1" : "0";
     }
 }
 
@@ -188,16 +210,18 @@ async function check(form) {
             return;
         }
         region.innerHTML = await response.text();
-        showAccepted(form);
         const results = region.querySelector("[data-sc-check-results]");
         if (results && results.dataset.scReady === "1") {
             form.dataset.scCheckedKey = keyOf(values);
             form.dataset.scCheckedExact = results.dataset.scExact || "0";
+            form.dataset.scCheckedExactIds = results.dataset.scExactIds || "";
             form.dataset.scCheckedDobWarn = results.dataset.scDobWarn || "0";
             form.dataset.scCheckedNear = results.dataset.scNear || "0";
         } else {
             delete form.dataset.scCheckedKey;
+            delete form.dataset.scCheckedExactIds;
         }
+        showAccepted(form);
     } catch {
         // aborted / offline: the button stays as it was
     } finally {
@@ -306,11 +330,11 @@ document.addEventListener("click", (ev) => {
         return;
     }
     ev.preventDefault();
-    const key = keyOf(fields(form));
+    const keys = acceptKeys(form);
     if (button.matches("[data-sc-player-add-force-btn]")) {
-        form.dataset.scForceKey = key;
+        form.dataset.scForceKey = keys.force;
     } else {
-        form.dataset.scDobOkKey = key;
+        form.dataset.scDobOkKey = keys.dob;
     }
     showAccepted(form);
     refreshSubmit(form);
@@ -318,15 +342,11 @@ document.addEventListener("click", (ev) => {
 
 /**
  * Review round 1 (owner 2026-10-27): an accepted override is no longer a
- * button — « ✓ Accepted by the user » takes its place, for the values it
- * was accepted for (a re-render of the check for the same values keeps it).
+ * button — « ✓ Accepted by the user » takes its place, for the identity it
+ * was accepted for (round 2: a re-check after a team change keeps it).
  */
 function showAccepted(form) {
-    const key = keyOf(fields(form));
-    const accepted = {
-        force: form.dataset.scForceKey === key,
-        dob: form.dataset.scDobOkKey === key,
-    };
+    const ok = accepted(form);
     const buttons = {
         force: "[data-sc-player-add-force-btn]",
         dob: "[data-sc-player-add-dob-confirm]",
@@ -334,13 +354,13 @@ function showAccepted(form) {
     let moveFocus = false;
     for (const [kind, selector] of Object.entries(buttons)) {
         for (const button of form.querySelectorAll(selector)) {
-            if (accepted[kind] && button.contains(document.activeElement)) {
+            if (ok[kind] && button.contains(document.activeElement)) {
                 moveFocus = true;
             }
-            button.hidden = accepted[kind];
+            button.hidden = ok[kind];
         }
         for (const note of form.querySelectorAll(`[data-sc-check-accepted="${kind}"]`)) {
-            note.hidden = !accepted[kind];
+            note.hidden = !ok[kind];
         }
     }
     if (moveFocus) {
@@ -367,6 +387,7 @@ document.addEventListener("sc:form-reset", (ev) => {
     clearTimeout(timers.get(form));
     delete form.dataset.scCheckedKey;
     delete form.dataset.scCheckedExact;
+    delete form.dataset.scCheckedExactIds;
     delete form.dataset.scCheckedDobWarn;
     delete form.dataset.scCheckedNear;
     delete form.dataset.scForceKey;

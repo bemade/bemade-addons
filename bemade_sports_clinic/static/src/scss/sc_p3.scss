@@ -30,9 +30,11 @@ $sc-p3-laptop: 1024px;
 
     @media (min-width: $sc-p3-laptop) {
         // Laptop: both panes side by side; the phone tabs are not needed.
+        // Task 1721 (review round 2, owner 2026-10-27): the worklist keeps a
+        // fixed width (~420 px); the patient / dossier pane takes the rest.
         .o_sc_clinic_panes {
             display: grid;
-            grid-template-columns: minmax(320px, 2fr) 3fr;
+            grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
             gap: var(--sc-space-5);
             align-items: start;
 

@@ -646,6 +646,38 @@ $sc-p2-laptop: 992px;
         font-weight: 700;
     }
 
+    // Review round 2 (owner 2026-10-27): while editing, the EpiPen question
+    // sits on the card's top row, next to the ✓ (the read view is hidden:
+    // no empty header row above it).
+    .o_sc_med_epipen_card[data-sc-edit-open] {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        column-gap: var(--sc-space-2);
+
+        > .o_sc_med_card_row {
+            display: contents;
+
+            > .o_sc_icon_btn {
+                grid-column: 2;
+                grid-row: 1;
+                margin-top: 0;
+            }
+        }
+
+        > .o_sc_med_card_edit {
+            grid-column: 1;
+            grid-row: 1;
+        }
+    }
+
+    // Review round 2: the level pill in the popup's header, next to the title.
+    .o_sc_sheet_head > .o_sc_med_head {
+        flex: 0 1 auto;
+        min-width: 0;
+        margin-right: auto;
+    }
+
     .o_sc_toggle_pill {
         display: inline-flex;
         flex: none;
@@ -681,7 +713,14 @@ $sc-p2-laptop: 992px;
             cursor: pointer;
         }
 
+        // Review round 2 (owner 2026-10-27): a chosen « Oui » is green (the
+        // accent), a chosen « Non » a neutral grey; unchosen, both neutral.
         &:has(> input:checked) {
+            background: var(--sc-line);
+            color: var(--sc-fg);
+        }
+
+        &[data-sc-toggle-opt="yes"]:has(> input:checked) {
             background: var(--sc-accent);
             color: var(--sc-accent-fg);
         }

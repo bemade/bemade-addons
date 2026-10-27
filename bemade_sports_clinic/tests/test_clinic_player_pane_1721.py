@@ -253,3 +253,9 @@ class TestClinicPlayerPanePhone1721(_Tours1721, Pane1721Common):
 class TestClinicPlayerPaneLaptop1721(_Tours1721, Pane1721Common):
     allow_inherited_tests_method = True
     browser_size = '1366x768'
+
+    def test_split_widths(self):
+        # Review round 2 (owner 2026-10-27): a fixed-width worklist, the
+        # dossier takes the remaining width.
+        self._switch(True)
+        self.start_tour(self._dossier_url(), 'sc_1721_split_widths', login='pc.tp@example.com')

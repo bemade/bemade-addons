@@ -378,6 +378,11 @@ export class ScAutosaveField extends Component {
 
     /** Task 1653: disabled by the props, or locked by a sibling's save. */
     get isDisabled() {
+        // Review round 2 (owner 2026-10-27): the teams picker waits while an
+        // organisation change asks « Change organization » / « Cancel ».
+        if (this.state.groupConfirm) {
+            return true;
+        }
         return this.state.locked === undefined || this.state.locked === null
             ? Boolean(this.props.disabled)
             : this.state.locked;
@@ -885,6 +890,7 @@ export class ScAutosaveField extends Component {
         if (dropped.length) {
             const from = this.state.groupConfirm ? this.state.groupConfirm.from : this.state.group;
             this.state.groupConfirm = { from, to: group, names: dropped.map((opt) => opt[1]) };
+            this.state.open = false; // the picker waits for the answer
             this.syncGuardBlock();
             return;
         }

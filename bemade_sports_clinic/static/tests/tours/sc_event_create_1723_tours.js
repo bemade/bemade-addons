@@ -176,6 +176,14 @@ tours.add("sc_1723_org_drop_notice", {
                 assert(document.querySelector(`${TEAMS} [data-sc-org-confirm-box]`).textContent.includes("PC Team A"),
                     "the warning does not name the team");
                 assert(!document.querySelector(`${TEAMS} [data-sc-tags-group-notice]`), "an after-the-fact notice");
+                // Review round 2: right under the Organisation field, above
+                // the teams picker — which waits, disabled.
+                const box = document.querySelector(`${TEAMS} [data-sc-org-confirm-box]`).getBoundingClientRect();
+                const org = document.querySelector(`${FORM} select[name="organization_id"]`).closest(".o_sc_field");
+                const search = document.querySelector(SEARCH);
+                assert(box.top >= org.getBoundingClientRect().bottom - 1, "the warning is not under the organisation");
+                assert(box.bottom <= search.getBoundingClientRect().top + 1, "the warning is not above the teams picker");
+                assert(search.disabled, "the teams picker is not disabled while the warning waits");
             },
         },
         { content: "« Cancel »", trigger: `${TEAMS} [data-sc-org-cancel]`, run: "click" },
@@ -187,6 +195,7 @@ tours.add("sc_1723_org_drop_notice", {
                 assert(select.value === select.dataset.scTourBefore, "the organisation was not restored");
                 assert(document.querySelector(`${FORM} input[name="team_ids"]`).value, "team lost on cancel");
                 assert(document.querySelector(`${TEAMS} .o_sc_tag`), "no team chip");
+                assert(!document.querySelector(SEARCH).disabled, "the teams picker stayed disabled");
             },
         },
         chooseOrg("ZZ Org 1597"),

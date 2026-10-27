@@ -28,6 +28,10 @@ Acceptance criteria:
   hidden muted « ✓ Accepted by the user » next to it
   (``data-sc-check-accepted``) that replaces the button once clicked (the
   browser part in AC-5's tours).
+* AC-7 (review round 2, owner 2026-10-27): an acceptance holds for the
+  IDENTITY accepted — first name, last name, date of birth (and, for
+  « Create anyway », the matched twins, ``data-sc-exact-ids``): a team or a
+  contact changed afterwards keeps it; another date asks again (tours).
 """
 from datetime import date
 
@@ -81,6 +85,8 @@ class TestIdentityWarning1716(Warning1716Common):
         self._login_tp()
         resp, tree = self._check(first='Élodie', last='Synthé-Côté', dob='2010-02-03', team_ids=self.team_a.id)
         self.assertEqual(self._exact(tree), ['1'])
+        # AC-7: the matched twins (an acceptance holds for them only).
+        self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact-ids'), [str(self.elodie.id)])
         box = tree.xpath('//*[@data-sc-check-exact]')[0]
         self.assertIn('A player with this name and date of birth already exists (PC Team B).',
                       ' '.join(box.text_content().split()))

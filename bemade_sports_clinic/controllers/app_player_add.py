@@ -58,7 +58,7 @@ class AppPlayerAddPortal(TeamStaffPortal):
         # before anything is searched.
         ready = all(len(''.join(words)) >= SC_PLAYER_CHECK_MIN for words in (first_words, last_words))
         values = {'sc_rows': [], 'sc_near_rows': [], 'sc_exact': False, 'sc_ready': ready,
-                  'sc_exact_teams': '', 'sc_team': False, 'sc_dob_error': False, 'sc_dob_warning': ''}
+                  'sc_exact_teams': '', 'sc_exact_ids': '', 'sc_team': False, 'sc_dob_error': False, 'sc_dob_warning': ''}
         try:
             day = parse_portal_date(dob) if (dob or '').strip() else False
         except ValidationError:
@@ -119,6 +119,9 @@ class AppPlayerAddPortal(TeamStaffPortal):
                 })
             if exact_players:
                 values['sc_exact_teams'] = env['sports.patient']._sc_identity_twin_teams(exact_players)
+                # Task 1716 (review round 2): the matched twins, so an accepted
+                # « Create anyway » survives a re-check for the same identity.
+                values['sc_exact_ids'] = ','.join(str(i) for i in sorted(exact_players.ids))
             out.sort(key=lambda r: r['sort'])
             out = out[:SC_PLAYER_CHECK_LIMIT]
             values['sc_rows'] = [r for r in out if not r['near']]

@@ -150,7 +150,7 @@
 
     <template id="sc_player_check_results" name="App shell: create a player — existence check">
         <div class="o_sc_player_check_results" data-sc-check-results="1"
-             t-att-data-sc-exact="'1' if sc_exact else '0'"
+             t-att-data-sc-exact="'1' if sc_exact else '0'" t-att-data-sc-exact-ids="sc_exact_ids or ''"
              t-att-data-sc-dob-warn="'1' if sc_dob_warning else '0'" t-att-data-sc-ready="'1' if sc_ready else '0'"
              t-att-data-sc-near="'1' if sc_near_rows else '0'">
             <!-- Task 1716: an unlikely date of birth (today, future, age

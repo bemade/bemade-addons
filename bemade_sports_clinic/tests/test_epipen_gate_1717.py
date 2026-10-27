@@ -22,6 +22,10 @@ Acceptance criteria:
   « EpiPen » label and a segmented Oui / Non slider pill
   (``o_sc_toggle_pill``, a radiogroup named by the label), nothing selected
   while unanswered.
+* AC-8 (review round 2, owner 2026-10-27): the pill reads Non | Oui (Non
+  left); the switch label has its own text (« Carries an EpiPen » / « Porte
+  un EpiPen »); « Non » / « Oui » / the label render in French; the
+  allergies level pill sits in the popup's header, next to its title.
 """
 import importlib.util
 import os
@@ -150,9 +154,16 @@ class TestEpiPenGate1717(EpiPen1717Common):
         self.assertEqual(ask.get('role'), 'radiogroup')
         label = ask.xpath('./span[contains(@class, "o_sc_med_epipen_ask_label")]')[0]
         self.assertEqual(ask.get('aria-labelledby'), label.get('id'))
-        self.assertEqual(label.text_content().strip(), 'EpiPen')
+        self.assertEqual(label.text_content().strip(), 'Carries an EpiPen')
         pill = ask.xpath('./div[contains(@class, "o_sc_toggle_pill")]')[0]
-        self.assertEqual([' '.join(o.text_content().split()) for o in pill.xpath('./label')], ['Yes', 'No'])
+        # AC-8: Non | Oui.
+        self.assertEqual([' '.join(o.text_content().split()) for o in pill.xpath('./label')], ['No', 'Yes'])
+        self.assertEqual(pill.xpath('./label/@data-sc-toggle-opt'), ['no', 'yes'])
+        self.assertEqual(pill.xpath('./label/input/@value'), ['no', 'yes'])
+        # AC-8: the level pill in the popup's header, next to the title.
+        head = sheet.xpath('./div[contains(@class, "o_sc_sheet_head")]')[0]
+        self.assertTrue(head.xpath('./div[contains(@class, "o_sc_med_head")]/*[@data-sc-med-head]'))
+        self.assertFalse(sheet.xpath('.//*[contains(@class, "o_sc_sheet_body")]//*[@data-sc-med-head]'))
         self.assertFalse(pill.xpath('.//input[@checked]'))
         self.assertTrue(sheet.xpath('.//*[@data-sc-med-epipen-first]'))
         self.assertFalse(sheet.xpath('.//button[@data-sc-list-add-toggle]'))
@@ -194,6 +205,11 @@ class TestEpiPenGate1717(EpiPen1717Common):
         with self.assertRaisesRegex(ValidationError, 'EpiPen'):
             self.env['sports.patient.critical.item'].with_user(self.tp).with_context(lang='fr_CA').create({
                 'patient_id': player.id, 'family': 'allergy', 'name': 'Synthetic nut'})
+        # AC-8: the switch in French (the popup's view translation).
+        arch = env.ref('bemade_sports_clinic.sc_medical_sheets').with_context(lang='fr_CA').arch_db
+        self.assertIn('<t t-set="sc_epipen_ask_label">Porte un EpiPen</t>', arch)
+        self.assertIn('<t t-set="sc_epipen_no">Non</t>', arch)
+        self.assertIn('<t t-set="sc_epipen_yes">Oui</t>', arch)
 
 
 class _Tours1717:

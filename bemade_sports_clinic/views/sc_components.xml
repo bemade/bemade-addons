@@ -420,7 +420,9 @@
         (static/src/js/sc_app_ui.js). Variables: sheet_id, title,
         lazy_url (optional: body fetched once, on first open, through
         sc_fetch), lazy_fresh (optional: fetched again on every open, for a
-        history the page itself can change). Body (0) = content (ignored when lazy_url is set; a
+        history the page itself can change), head_extra (optional markup
+        next to the title: the medical popups' level pill, review round 2).
+        Body (0) = content (ignored when lazy_url is set; a
         loading line is shown until the fetch answers).
     -->
     <template id="sc_sheet" name="App shell: sheet">
@@ -429,7 +431,8 @@
                 t-att-data-sc-lazy-fresh="'1' if lazy_url and lazy_fresh else None">
             <div class="o_sc_sheet_head">
                 <h2 class="o_sc_sheet_title" t-att-id="'%s_title' % sheet_id" t-out="title"/>
-                <button type="button" class="o_sc_icon_btn" data-sc-sheet-close="1" aria-label="Close" title="Close">
+                <t t-if="head_extra" t-out="head_extra"/>
+                <button type="button" class="o_sc_icon_btn o_sc_sheet_close" data-sc-sheet-close="1" aria-label="Close" title="Close">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'close'"/></t>
                 </button>
             </div>
@@ -966,15 +969,19 @@
                 <t t-set="sheet_id" t-value="'sc_med_%s' % sc_med_uid"/>
                 <t t-set="lazy_url" t-value="False"/>
                 <t t-set="title" t-value="pill['family_label']"/>
-                <div class="o_sc_med_sheet" t-att-data-sc-section="'medical.%s' % sc_med_key"
-                     t-att-data-sc-med-family="sc_med_key" t-att-data-sc-patient="patient.id"
-                     t-att-data-sc-med-editable="'1' if editable else None">
-                    <!-- The family's pill (computed from the list). -->
+                <!-- The family's pill (computed from the list) — review round
+                     2 (owner 2026-10-27): in the popup's header, next to its
+                     title (no row of its own). -->
+                <t t-set="head_extra">
                     <div class="o_sc_med_head" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-head' % sc_med_key)">
                         <span t-attf-class="o_sc_med_pill o_sc_med_pill_static o_sc_med_#{pill['tone']}"
                               data-sc-med-head="1" t-att-data-sc-med-level="pill['level'] or 'unset'"
                               t-out="pill['level_label']"/>
                     </div>
+                </t>
+                <div class="o_sc_med_sheet" t-att-data-sc-section="'medical.%s' % sc_med_key"
+                     t-att-data-sc-med-family="sc_med_key" t-att-data-sc-patient="patient.id"
+                     t-att-data-sc-med-editable="'1' if editable else None">
 
                     <!-- Allergies: the EpiPen card. -->
                     <section t-if="sc_med_is_allergy" class="o_sc_card o_sc_edit_card o_sc_med_card o_sc_med_epipen_card"
@@ -1007,25 +1014,31 @@
                              card asks first, open on load while unanswered. -->
                         <div t-if="editable" class="o_sc_fields o_sc_med_card_edit" data-sc-edit-view="edit" hidden="hidden">
                             <!-- Review round 1 (owner 2026-10-27): ONE line, a
-                                 slider pill — « EpiPen » on the left, a
-                                 segmented Oui / Non on the right; nothing
+                                 slider pill — the label on the left, a
+                                 segmented pill on the right; nothing
                                  selected until answered (the radios stay the
-                                 inputs sc_medical_lists.js saves). -->
+                                 inputs sc_medical_lists.js saves). Round 2:
+                                 Non | Oui (Oui green, Non grey), on the ✓'s
+                                 line; label and options are t-set texts (an
+                                 extracted term never holds the radio). -->
+                            <t t-set="sc_epipen_ask_label">Carries an EpiPen</t>
+                            <t t-set="sc_epipen_no">No</t>
+                            <t t-set="sc_epipen_yes">Yes</t>
                             <div class="o_sc_med_epipen_ask" role="radiogroup" data-sc-med-epipen-ask="1"
                                  t-att-aria-labelledby="'sc_med_epipen_label_%s' % sc_med_uid">
-                                <span class="o_sc_med_epipen_ask_label" t-att-id="'sc_med_epipen_label_%s' % sc_med_uid" t-out="'EpiPen'"/>
+                                <span class="o_sc_med_epipen_ask_label" t-att-id="'sc_med_epipen_label_%s' % sc_med_uid" t-out="sc_epipen_ask_label"/>
                                 <div class="o_sc_toggle_pill o_sc_med_epipen_choices">
-                                    <label class="o_sc_toggle_pill_opt">
-                                        <input type="radio" t-att-name="'sc_med_epipen_%s' % sc_med_uid" value="yes"
-                                               data-sc-med-set="allergy_epipen_state"
-                                               t-att-checked="'checked' if pill['epipen_state'] == 'yes' else None"/>
-                                        <span>Yes</span>
-                                    </label>
-                                    <label class="o_sc_toggle_pill_opt">
+                                    <label class="o_sc_toggle_pill_opt" data-sc-toggle-opt="no">
                                         <input type="radio" t-att-name="'sc_med_epipen_%s' % sc_med_uid" value="no"
                                                data-sc-med-set="allergy_epipen_state"
                                                t-att-checked="'checked' if pill['epipen_state'] == 'no' else None"/>
-                                        <span>No</span>
+                                        <span t-out="sc_epipen_no"/>
+                                    </label>
+                                    <label class="o_sc_toggle_pill_opt" data-sc-toggle-opt="yes">
+                                        <input type="radio" t-att-name="'sc_med_epipen_%s' % sc_med_uid" value="yes"
+                                               data-sc-med-set="allergy_epipen_state"
+                                               t-att-checked="'checked' if pill['epipen_state'] == 'yes' else None"/>
+                                        <span t-out="sc_epipen_yes"/>
                                     </label>
                                 </div>
                             </div>

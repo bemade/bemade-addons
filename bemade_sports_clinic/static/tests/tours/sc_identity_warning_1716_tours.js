@@ -23,10 +23,18 @@ function type(key, value) {
     el.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-function today() {
+function today(years = 0) {
     const d = new Date();
     const pad = (n) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    return `${d.getFullYear() + years}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// Review round 2: the team of the form (the hidden input the picker writes).
+let savedTeams = "";
+function setTeams(value) {
+    const el = document.querySelector(`${FORM} [data-sc-player-add-teams]`);
+    el.value = value;
+    el.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
 tours.add("sc_1716_twin_create_anyway", {
@@ -60,6 +68,30 @@ tours.add("sc_1716_twin_create_anyway", {
             run() {
                 const button = document.querySelector(`${FORM} [data-sc-player-add-force-btn]`);
                 assert(button.hidden && !button.getClientRects().length, "« Create anyway » still shows");
+            },
+        },
+        {
+            content: "Review round 2: the team removed — « Create » waits for a team",
+            trigger: `${SUBMIT}[aria-disabled="false"]`,
+            run() {
+                savedTeams = document.querySelector(`${FORM} [data-sc-player-add-teams]`).value;
+                assert(savedTeams, "no team in the form");
+                setTeams("");
+            },
+        },
+        {
+            content: "Greyed for the team only; the acceptance stays",
+            trigger: `${SUBMIT}[aria-disabled="true"]`,
+            run() {
+                setTeams(savedTeams);
+            },
+        },
+        {
+            content: "The team back (re-checked): still « ✓ Accepted by the user », no second « Create anyway »",
+            trigger: `${FORM} [data-sc-check-exact] [data-sc-check-accepted="force"]:not([hidden])`,
+            run() {
+                const button = document.querySelector(`${FORM} [data-sc-player-add-force-btn]`);
+                assert(button.hidden, "« Create anyway » asked again after a team change");
             },
         },
         {
@@ -105,6 +137,22 @@ tours.add("sc_1716_dob_today", {
                 const button = document.querySelector(`${FORM} [data-sc-player-add-dob-confirm]`);
                 assert(button.hidden && !button.getClientRects().length, "« The date is correct » still shows");
             },
+        },
+        {
+            content: "Review round 2: another date of birth (age 1, still unlikely) asks again",
+            trigger: `${SUBMIT}[aria-disabled="false"]`,
+            run() {
+                type("dob", today(-1)); // age 1: unlikely too
+            },
+        },
+        {
+            content: "« The date is correct » is back for the new date",
+            trigger: `${FORM} [data-sc-check-dob-warning] [data-sc-player-add-dob-confirm]:not([hidden])`,
+            run: "click",
+        },
+        {
+            content: "Accepted again",
+            trigger: `${FORM} [data-sc-check-dob-warning] [data-sc-check-accepted="dob"]:not([hidden])`,
         },
         {
             content: "Create",

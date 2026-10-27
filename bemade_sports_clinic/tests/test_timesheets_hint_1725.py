@@ -14,6 +14,9 @@ Acceptance criteria:
 * AC-3 French (website-aware): « Pour ajouter une feuille de temps, ouvrez
   l'événement concerné. » / « Aucune feuille de temps. Ajoutez-en une
   depuis la page de l'événement. » and the link reads « Événements ».
+  Review round 2 (owner 2026-10-27): « … ouvrez l'événement concerné :
+  Mes événements sans feuilles de temps » (the link), same in the empty
+  line.
 * AC-4 (review round 1, 2026-10-27) Both « Events » links are app links
   (``o_sc_hint_link``: accent colour, weight 600) opening MY events with
   missing timesheets — the events page's « Missing timesheets » segment
@@ -80,9 +83,9 @@ class TestTimesheetsHint1725(AppShellCommon):
         self.assertTrue(tree.xpath('//*[@data-sc-section="timesheets.list"]'))
         hint = self._hint(tree)
         self.assertIn('o_sc_muted', hint.get('class'))
-        self.assertIn('To add a timesheet, open the event concerned.', self._text(hint))
+        self.assertIn('To add a timesheet, open the event concerned:', self._text(hint))
         self._assert_missing_link(hint)
-        self.assertEqual(self._text(hint.xpath('.//a')[0]), 'Events')
+        self.assertEqual(self._text(hint.xpath('.//a')[0]), 'My events without timesheets')
         # Under the list header, before the list.
         header = tree.xpath('//*[@data-sc-section="timesheets.header"]')[0]
         self.assertIs(header.getnext(), hint)
@@ -96,7 +99,8 @@ class TestTimesheetsHint1725(AppShellCommon):
         self._hint(tree)
         empty = tree.xpath('//p[@data-sc-section="timesheets.empty"]')
         self.assertEqual(len(empty), 1)
-        self.assertIn("No timesheets. Add one from the event's page.", self._text(empty[0]))
+        self.assertIn("No timesheets. Add one from the event's page:", self._text(empty[0]))
+        self.assertEqual(self._text(empty[0].xpath('.//a')[0]), 'My events without timesheets')
         self._assert_missing_link(empty[0])
 
     # -- AC-3 ------------------------------------------------------------
@@ -105,8 +109,9 @@ class TestTimesheetsHint1725(AppShellCommon):
         self._login_tp()
         _text, tree = self._get('/my/sc/timesheets?search=NoSuchSyntheticEvent')
         hint = self._text(self._hint(tree))
-        self.assertIn("Pour ajouter une feuille de temps, ouvrez l'événement concerné.", hint)
-        self.assertIn('Événements', hint)
+        # Review round 2 (owner 2026-10-27): the link says where it goes.
+        self.assertIn("Pour ajouter une feuille de temps, ouvrez l'événement concerné : "
+                      "Mes événements sans feuilles de temps", hint)
         empty = self._text(tree.xpath('//p[@data-sc-section="timesheets.empty"]')[0])
-        self.assertIn("Aucune feuille de temps. Ajoutez-en une depuis la page de l'événement.", empty)
-        self.assertIn('Événements', empty)
+        self.assertIn("Aucune feuille de temps. Ajoutez-en une depuis la page de l'événement : "
+                      "Mes événements sans feuilles de temps", empty)

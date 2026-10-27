@@ -114,3 +114,21 @@ tours.add("sc_1721_note_check_top_right", {
         },
     ],
 });
+
+// Review round 2 (owner 2026-10-27), laptop: the worklist keeps a fixed
+// width (~420 px), the dossier takes the rest of the width.
+tours.add("sc_1721_split_widths", {
+    steps: () => [
+        {
+            content: "Both panes side by side",
+            trigger: `${PANE} [data-sc-section="clinic.dossier.player"] .o_sc_player_row`,
+            run() {
+                const list = document.querySelector('[data-sc-section="clinic.worklist"]').getBoundingClientRect();
+                const pane = document.querySelector(PANE).getBoundingClientRect();
+                assert(list.width >= 320 && list.width <= 440, `worklist ${list.width}px wide`);
+                assert(pane.left > list.right, "the dossier is not right of the worklist");
+                assert(pane.width > list.width, `dossier ${pane.width}px vs worklist ${list.width}px`);
+            },
+        },
+    ],
+});

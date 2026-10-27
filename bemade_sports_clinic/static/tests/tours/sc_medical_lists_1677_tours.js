@@ -49,8 +49,14 @@ function setValue(input, value) {
     input.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
+// Review round 2 (owner 2026-10-27): the level pill sits in the popup's
+// header (next to its title), outside the sheet's body section.
+function headOf(sheet) {
+    return `${sheet.replace("dialog[open] ", "dialog[open]:has(")}) .o_sc_sheet_head [data-sc-med-head]`;
+}
+
 function headTone(sheet) {
-    const head = q(`${sheet} [data-sc-med-head]`);
+    const head = q(headOf(sheet));
     return head && head.dataset.scMedLevel;
 }
 
@@ -66,7 +72,7 @@ tours.add("sc_1677_allergies_tp", {
         },
         {
             content: "The popup: its pill, the EpiPen card, the list",
-            trigger: `${ALLERGY} [data-sc-med-head][data-sc-med-level="minor"]`,
+            trigger: `${headOf(ALLERGY)}[data-sc-med-level="minor"]`,
             run() {
                 assert(q(`${ALLERGY} [data-sc-med-item]`), "the allergy card");
                 assert(!q(`${ALLERGY} select, ${ALLERGY} owl-component`), "a level selector / island");
@@ -147,7 +153,7 @@ tours.add("sc_1677_allergies_tp", {
         },
         {
             content: "The popup's pill turns red, live",
-            trigger: `${ALLERGY} [data-sc-med-head][data-sc-med-level="urgent"]`,
+            trigger: `${headOf(ALLERGY)}[data-sc-med-level="urgent"]`,
         },
         {
             content: "The header pill turns red and names « Arachides »",
@@ -164,7 +170,7 @@ tours.add("sc_1677_allergies_tp", {
         },
         {
             content: "Gone: yellow again",
-            trigger: `${ALLERGY} [data-sc-med-head][data-sc-med-level="minor"]`,
+            trigger: `${headOf(ALLERGY)}[data-sc-med-level="minor"]`,
             async run() {
                 await waitFor(() => document.querySelectorAll(`${ALLERGY} [data-sc-med-item]`).length === 1, "one card left");
                 await waitFor(() => q(`${PILLS} button[data-sc-med-pill="allergy"].o_sc_med_minor`), "the yellow header pill");
