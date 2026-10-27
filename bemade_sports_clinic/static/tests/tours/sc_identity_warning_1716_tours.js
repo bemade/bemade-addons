@@ -1,0 +1,104 @@
+/*
+ * Task 1716 — adding a player: a name + date-of-birth twin is a warning
+ * (« Create anyway »), an unlikely date of birth asks for confirmation
+ * (tests/test_identity_warning_1716.py, phone + laptop).
+ */
+import { registry } from "@web/core/registry";
+
+const tours = registry.category("web_tour.tours");
+
+const FORM = "details#sc_player_add[open] form[data-sc-player-add]";
+const SUBMIT = `${FORM} [data-sc-player-add-submit]`;
+
+function assert(condition, message) {
+    if (!condition) {
+        throw new Error(message);
+    }
+}
+
+function type(key, value) {
+    const el = document.querySelector(`${FORM} [data-sc-player-add-field="${key}"]`);
+    el.value = value;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function today() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+tours.add("sc_1716_twin_create_anyway", {
+    steps: () => [
+        {
+            content: "The panel is open",
+            trigger: `${FORM} [data-sc-player-add-field="first"]`,
+            run() {
+                type("first", "Élodie");
+                type("last", "Synthé-Côté");
+                type("dob", "2010-02-03");
+            },
+        },
+        {
+            content: "The twin warning with its team; « Create » greyed with the reason",
+            trigger: `${FORM} [data-sc-check-exact] [data-sc-player-add-force-btn]`,
+            run() {
+                const box = document.querySelector(`${FORM} [data-sc-check-exact]`);
+                assert(box.textContent.includes("PC Team B"), box.textContent);
+                assert(document.querySelector(SUBMIT).getAttribute("aria-disabled") === "true", "Create not greyed");
+            },
+        },
+        {
+            content: "« Create anyway »",
+            trigger: `${FORM} [data-sc-check-exact] [data-sc-player-add-force-btn]:not([disabled])`,
+            run: "click",
+        },
+        {
+            content: "« Create » is enabled; create",
+            trigger: `${SUBMIT}[aria-disabled="false"]`,
+            run: "click",
+            expectUnloadPage: true,
+        },
+        {
+            content: "The new player's page",
+            trigger: '[data-sc-edit-card="identity"]',
+        },
+    ],
+});
+
+tours.add("sc_1716_dob_today", {
+    steps: () => [
+        {
+            content: "Type a new player born today",
+            trigger: `${FORM} [data-sc-player-add-field="first"]`,
+            run() {
+                type("first", "Todaysyn");
+                type("last", "Dobtour");
+                type("dob", today());
+            },
+        },
+        {
+            content: "The date warning; « Create » greyed",
+            trigger: `${FORM} [data-sc-check-dob-warning] [data-sc-player-add-dob-confirm]`,
+            run() {
+                assert(document.querySelector(SUBMIT).getAttribute("aria-disabled") === "true", "Create not greyed");
+            },
+        },
+        {
+            content: "« The date is correct »",
+            trigger: `${FORM} [data-sc-player-add-dob-confirm]:not([disabled])`,
+            run: "click",
+        },
+        {
+            content: "Create",
+            trigger: `${SUBMIT}[aria-disabled="false"]`,
+            run: "click",
+            expectUnloadPage: true,
+        },
+        {
+            content: "The new player's page",
+            trigger: '[data-sc-edit-card="identity"]',
+        },
+    ],
+});

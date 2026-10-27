@@ -10,7 +10,9 @@ page's Joueurs tab (therapists / clinic admins), like « Add Injury »:
   #1650's rule), refined by the date of birth; archived ones flagged; each
   row « Open », « Add to team » or « Reactivate and add » (the team page's
   guarded link route); ``data-sc-exact`` when a name + date-of-birth twin
-  exists (« Create » stays disabled);
+  exists — task 1716: a warning, « Create » waits for « Create anyway »
+  (``force_create=1``); an unlikely date of birth waits for « The date is
+  correct » (``dob_confirmed=1``);
 * ``POST /my/app/player/create`` — creates the player (the #1639 identity
   guard applies) and the contact, then lands on the player's Infos tab with
   ``created_player=<id>`` (the identity card opens in edit and an « Undo »
@@ -56,29 +58,27 @@ class AppPlayerAddPortal(TeamStaffPortal):
         # before anything is searched.
         ready = all(len(''.join(words)) >= SC_PLAYER_CHECK_MIN for words in (first_words, last_words))
         values = {'sc_rows': [], 'sc_near_rows': [], 'sc_exact': False, 'sc_ready': ready,
-                  'sc_twin_elsewhere': False, 'sc_team': False, 'sc_dob_error': False}
+                  'sc_exact_teams': '', 'sc_team': False, 'sc_dob_error': False, 'sc_dob_warning': ''}
         try:
             day = parse_portal_date(dob) if (dob or '').strip() else False
         except ValidationError:
             day, values['sc_dob_error'] = False, True
+        # Task 1716: a soft warning on an unlikely date of birth.
+        values['sc_dob_warning'] = self._sc_dob_warning(day)
         teams = self._sc_chosen_teams(team_ids)
         values['sc_team'] = teams[:1]
         if values['sc_ready']:
             own_domain = self._prepare_players_domain(self._prepare_teams_domain())
             own = set(env['sports.patient'].search(own_domain).ids)
-            # The user's scope, archived included (the Joueurs page lists
-            # their archived players): the date of birth may refine these.
-            scope = set(env['sports.patient'].with_context(active_test=False).search(own_domain).ids)
             admin = self._is_clinic_admin()
             Patients = env['sports.patient'].sudo().with_context(active_test=False)
             folded = (sc_fold(first).strip(), sc_fold(last).strip())
-            # Security review 2026-10-23: an identical name held by a player
-            # the user can't read — the server refuses the create whatever
-            # the date of birth, so « Create » greys out with the same
-            # generic « ask a manager » line (the model's own test).
-            values['sc_twin_elsewhere'] = env['sports.patient'].with_context(
-                sc_identity_guard=True)._sc_identity_hidden_namesake(first, last)
+            # Task 1716 (owner 2026-10-26): the 2026-10-23 « date-of-birth
+            # oracle » concern is waived — every suggestion, other teams'
+            # included, shows its date of birth and team(s), and the typed
+            # date refines / flags them all alike. A name alone never blocks.
             out = []
+            exact_players = env['sports.patient'].sudo()
             # Task 1674: the shared matcher — exact / prefix (#1650's rule)
             # first, then the near matches (accents, typos, inversions,
             # swapped names, compound names) as « Similar players ». Names
@@ -92,18 +92,13 @@ class AppPlayerAddPortal(TeamStaffPortal):
                 near = grade == NEAR
                 accessible = admin or row['id'] in own
                 same_name = (sc_fold(row['first_name']).strip(), sc_fold(row['last_name']).strip()) == folded
-                if not (admin or row['id'] in scope):
-                    # Adversarial review 2026-10-22: a player the user can't
-                    # open is never filtered, flagged or sorted by the date
-                    # of birth — the answer is the same whatever date is
-                    # typed (no confirming a date by trial).
-                    exact = False
-                else:
-                    if day and row['date_of_birth'] and row['date_of_birth'] != day:
-                        continue
-                    exact = bool(day and row['date_of_birth'] == day and same_name)
+                if day and row['date_of_birth'] and row['date_of_birth'] != day:
+                    continue
+                exact = bool(day and row['date_of_birth'] == day and same_name)
                 values['sc_exact'] = values['sc_exact'] or exact
                 player = Patients.browse(row['id'])
+                if exact:
+                    exact_players |= player
                 team = values['sc_team']
                 out.append({
                     'id': player.id,
@@ -122,6 +117,8 @@ class AppPlayerAddPortal(TeamStaffPortal):
                     'sort': (near, not exact, not player.active, sc_fold(player.last_name),
                              sc_fold(player.first_name), player.id),
                 })
+            if exact_players:
+                values['sc_exact_teams'] = env['sports.patient']._sc_identity_twin_teams(exact_players)
             out.sort(key=lambda r: r['sort'])
             out = out[:SC_PLAYER_CHECK_LIMIT]
             values['sc_rows'] = [r for r in out if not r['near']]
@@ -133,6 +130,24 @@ class AppPlayerAddPortal(TeamStaffPortal):
             'bemade_sports_clinic.sc_player_check_results', values)
         return request.make_response(html, headers=[('Content-Type', 'text/html; charset=utf-8'),
                                                     ('Cache-Control', 'no-store')])
+
+    @staticmethod
+    def _sc_dob_warning(day):
+        """Task 1716: a soft warning when a typed date of birth is today, in
+        the future, or gives an unlikely age (under 3 or over 60); "" else.
+        The user confirms it (``dob_confirmed=1``) or fixes it."""
+        if not day:
+            return ''
+        env = request.env
+        today = fields.Date.context_today(env.user)
+        if day > today:
+            return env._("This date of birth is in the future.")
+        if day == today:
+            return env._("This date of birth is today.")
+        age = today.year - day.year - ((today.month, today.day) < (day.month, day.day))
+        if age < 3 or age > 60:
+            return env._("This date of birth gives an age of %s.", age)
+        return ''
 
     # ----------------------------------------------------------- create
     def _sc_player_add_back(self, post):
@@ -185,6 +200,10 @@ class AppPlayerAddPortal(TeamStaffPortal):
             dob = parse_portal_date(post.get('date_of_birth'))
         except ValidationError as exc:
             return refuse(exc.args[0], 'date_of_birth')
+        # Task 1716: an unlikely date of birth needs the user's confirmation.
+        dob_warning = self._sc_dob_warning(dob)
+        if dob_warning and post.get('dob_confirmed') != '1':
+            return refuse(_("%s Confirm it or fix it.", dob_warning), 'date_of_birth')
         teams = self._sc_chosen_teams(post.get('team_ids'))
         if not teams and not self._is_clinic_admin():
             return refuse(_('Please select at least one team to assign to this player.'))
@@ -200,6 +219,9 @@ class AppPlayerAddPortal(TeamStaffPortal):
         phone_error = self._sc_phone_error(post, 'ec_mobile')
         if phone_error:
             return refuse(phone_error, 'ec_mobile')
+        if post.get('force_create') == '1':
+            # Task 1716: « Créer quand même » over a name + date-of-birth twin.
+            env = env(context=dict(env.context, sc_identity_force_create=True))
         try:
             with env.cr.savepoint():
                 patient = env['sports.patient'].create_portal_patient({

@@ -8,11 +8,12 @@ Acceptance criteria:
 * AR-S1 A portal therapist can't move a critical item of their own player
   onto another team's player, nor to the other family (AccessError); the
   other player stays untouched.
-* AR-S2 The player-add existence check gives a therapist the SAME answer
-  whatever date of birth is typed for a player they can't open (never
-  filtered, never « exact »; an identical name only shows the generic
-  « ask a manager » line). In their own teams the date still refines and
-  flags the twin. At least 2 letters per name part before any search.
+* AR-S2 (rewritten by task 1716, owner 2026-10-26: the « date-of-birth
+  oracle » concern is waived) The player-add existence check treats a
+  player the therapist can't open like their own: the typed date of birth
+  refines the list and flags the exact twin (with its team), and no « ask a
+  manager » line exists any more. At least 2 letters per name part before
+  any search.
 * AR-S3 A coach can't write the « Updated on … by … » stamps.
 * AR-S4 The header search never lists an archived player outside the
   therapist's own teams; their own archived players stay, last and greyed.
@@ -64,33 +65,28 @@ class TestAdversarialPlayerCheck1022(PlayerAdd1655Common):
         return [int(li.get('data-sc-check-player')) for li in tree.xpath('//li[@data-sc-check-player]')]
 
     # -- AR-S2 -------------------------------------------------------------
-    def test_out_of_team_answer_does_not_depend_on_dob(self):
+    def test_out_of_team_answer_follows_the_dob(self):
+        # Task 1716: was test_out_of_team_answer_does_not_depend_on_dob (the
+        # same answer whatever the date + the generic line). Now the right
+        # date flags the twin, a wrong one drops the row, none lists it.
         self._login_tp()
-        answers = []
-        for dob in ('2010-02-03', '2001-01-01', ''):
-            resp, tree = self._check(first='Élodie', last='Synthé-Côté', dob=dob)
-            self.assertEqual(resp.status_code, 200)
-            answers.append(resp.text)
-            self.assertIn(self.elodie.id, self._rows(tree), dob)
-            self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['0'], dob)
-            self.assertFalse(tree.xpath('//li[@data-sc-check-exact]'), dob)
-            flag = tree.xpath('//*[@data-sc-check-twin-elsewhere]')
-            self.assertEqual([' '.join(f.text_content().split()) for f in flag],
-                             ['A player with this identity already exists — ask a manager.'], dob)
-        self.assertEqual(answers[0], answers[1], 'the right and a wrong date give the same answer')
-        self.assertEqual(answers[0], answers[2])
-        # A prefix only (not the same name): no generic line either way.
-        for dob in ('2010-02-03', '2001-01-01'):
-            _resp, tree = self._check(first='elo', last='synthe', dob=dob)
-            self.assertIn(self.elodie.id, self._rows(tree))
-            self.assertFalse(tree.xpath('//*[@data-sc-check-twin-elsewhere]'))
+        resp, tree = self._check(first='Élodie', last='Synthé-Côté', dob='2010-02-03')
+        self.assertIn(self.elodie.id, self._rows(tree))
+        self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['1'])
+        self.assertTrue(tree.xpath('//li[@data-sc-check-player="%s"][@data-sc-check-exact]' % self.elodie.id))
+        self.assertNotIn('ask a manager', resp.text)
+        resp, tree = self._check(first='Élodie', last='Synthé-Côté', dob='2001-01-01')
+        self.assertNotIn(self.elodie.id, self._rows(tree))
+        self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['0'])
+        resp, tree = self._check(first='Élodie', last='Synthé-Côté', dob='')
+        self.assertIn(self.elodie.id, self._rows(tree))
+        self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['0'])
 
     def test_in_team_dob_still_refines_and_flags(self):
         self._login_tp()
         _resp, tree = self._check(first='Pat', last='One', dob='2009-04-05')
         self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['1'])
         self.assertTrue(tree.xpath('//li[@data-sc-check-player="%s"][@data-sc-check-exact]' % self.player.id))
-        self.assertFalse(tree.xpath('//*[@data-sc-check-twin-elsewhere]'))
         _resp, tree = self._check(first='Pat', last='One', dob='2001-01-01')
         self.assertNotIn(self.player.id, self._rows(tree))
         self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['0'])

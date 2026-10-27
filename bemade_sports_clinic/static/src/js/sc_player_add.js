@@ -10,9 +10,9 @@
  * - « Create » stays greyed (aria-disabled, never a dead click) until it can
  *   succeed, with the reason under it (aria-describedby): what is missing
  *   (« Complete: first name, last name, date of birth »), the check still
- *   running, an exact name + date-of-birth twin, a same-name player the
- *   user can't open (security review 2026-10-23), or a half-filled
- *   emergency contact;
+ *   running, an exact name + date-of-birth twin not confirmed with « Create
+ *   anyway », an unlikely date of birth not confirmed (task 1716), or a
+ *   half-filled emergency contact;
  * - the create posts with fetch: ANY refusal of the server (a twin created
  *   meanwhile, an invalid mobile…) shows in the panel — under its field, or
  *   next to « Create » — the panel stays open with every typed value; only
@@ -70,13 +70,14 @@ function blocker(form) {
     if (missing.length) {
         return `${text.missing} ${missing.join(", ")}`;
     }
-    if (form.dataset.scCheckedKey === keyOf(values) && form.dataset.scCheckedExact === "1") {
-        return text.exact;
+    // Task 1716: a twin and an unlikely date of birth are warnings — each
+    // confirmed for THESE values (« Create anyway », « The date is correct »).
+    const key = keyOf(values);
+    if (form.dataset.scCheckedKey === key && form.dataset.scCheckedDobWarn === "1" && form.dataset.scDobOkKey !== key) {
+        return text.dobWarn;
     }
-    // Security review 2026-10-23: a same-name player the user can't open —
-    // the server refuses the create whatever the date of birth.
-    if (form.dataset.scCheckedKey === keyOf(values) && form.dataset.scCheckedTwin === "1") {
-        return text.twin;
+    if (form.dataset.scCheckedKey === key && form.dataset.scCheckedExact === "1" && form.dataset.scForceKey !== key) {
+        return text.exact;
     }
     const ec = contact(form);
     if (Boolean(ec.name) !== Boolean(ec.mobile)) {
@@ -88,9 +89,23 @@ function blocker(form) {
     return "";
 }
 
+/** Task 1716: the confirmations posted with the create, for the checked values only. */
+function syncConfirmations(form) {
+    const key = keyOf(fields(form));
+    const force = form.querySelector("[data-sc-player-add-force]");
+    if (force) {
+        force.value = form.dataset.scForceKey === key ? "1" : "0";
+    }
+    const dobOk = form.querySelector("[data-sc-player-add-dob-ok]");
+    if (dobOk) {
+        dobOk.value = form.dataset.scDobOkKey === key ? "1" : "0";
+    }
+}
+
 function refreshSubmit(form) {
     // Task 1658: the panel's own reasons (check-as-you-type, twins, the
     // emergency contact pair), shown by the shared guard.
+    syncConfirmations(form);
     const busy = posting.has(form);
     const reason = busy ? "" : blocker(form);
     guardRefresh(form, reason, busy);
@@ -177,7 +192,7 @@ async function check(form) {
         if (results && results.dataset.scReady === "1") {
             form.dataset.scCheckedKey = keyOf(values);
             form.dataset.scCheckedExact = results.dataset.scExact || "0";
-            form.dataset.scCheckedTwin = results.dataset.scTwinElsewhere || "0";
+            form.dataset.scCheckedDobWarn = results.dataset.scDobWarn || "0";
             form.dataset.scCheckedNear = results.dataset.scNear || "0";
         } else {
             delete form.dataset.scCheckedKey;
@@ -281,6 +296,26 @@ document.addEventListener(
     true
 );
 
+// Task 1716: « Create anyway » / « The date is correct » in the check.
+document.addEventListener("click", (ev) => {
+    const button =
+        ev.target.closest && ev.target.closest("[data-sc-player-add-force-btn], [data-sc-player-add-dob-confirm]");
+    const form = button && playerForm(button);
+    if (!form) {
+        return;
+    }
+    ev.preventDefault();
+    const key = keyOf(fields(form));
+    if (button.matches("[data-sc-player-add-force-btn]")) {
+        form.dataset.scForceKey = key;
+    } else {
+        form.dataset.scDobOkKey = key;
+    }
+    button.disabled = true;
+    button.setAttribute("aria-pressed", "true");
+    refreshSubmit(form);
+});
+
 // Task 1672: the check's first content, to put back on a reset.
 const checkHints = new WeakMap();
 
@@ -297,8 +332,10 @@ document.addEventListener("sc:form-reset", (ev) => {
     clearTimeout(timers.get(form));
     delete form.dataset.scCheckedKey;
     delete form.dataset.scCheckedExact;
-    delete form.dataset.scCheckedTwin;
+    delete form.dataset.scCheckedDobWarn;
     delete form.dataset.scCheckedNear;
+    delete form.dataset.scForceKey;
+    delete form.dataset.scDobOkKey;
     const region = form.querySelector("[data-sc-player-check]");
     if (region && checkHints.has(region)) {
         region.innerHTML = checkHints.get(region);

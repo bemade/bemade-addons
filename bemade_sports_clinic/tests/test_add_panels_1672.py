@@ -54,16 +54,18 @@ class TestAddPanelsCheckDob1672(PlayerAdd1655Common):
         # No date of birth: no line.
         self.assertFalse(self._dob(tree, self.archived))
 
-    def test_out_of_scope_answer_independent_of_typed_dob(self):
+    def test_out_of_scope_dob_refines(self):
+        # Task 1716 (DOB-oracle concern waived): was
+        # test_out_of_scope_answer_independent_of_typed_dob. Another team's
+        # player shows its own date of birth; a different typed date now
+        # drops it, like the user's own players.
         self._login_tp()
-        answers = []
-        for dob in ('2010-02-03', '2001-01-01', ''):
+        for dob in ('2010-02-03', ''):
             resp, tree = self._check(first='elo', last='synthe', dob=dob)
             self.assertEqual(resp.status_code, 200)
             self.assertEqual(self._dob(tree, self.elodie), ['Born on 02/03/2010'], dob)
-            answers.append(resp.text)
-        self.assertEqual(answers[0], answers[1])
-        self.assertEqual(answers[0], answers[2])
+        _resp, tree = self._check(first='elo', last='synthe', dob='2001-01-01')
+        self.assertFalse(self._dob(tree, self.elodie))
 
 
 @tagged('post_install', '-at_install')
@@ -120,9 +122,15 @@ class TestAddPanelsAddenda1672(PlayerAdd1655Common):
         self._login_tp()
         _text, tree = self._get('/my/players?add=1')
         reasons = tree.xpath('//details[@id="sc_player_add"]//*[@data-sc-player-add-reasons]')[0]
-        self.assertEqual(reasons.get('data-twin'), 'Check the existing player above')
-        resp, tree = self._check(first='Élodie', last='Synthé-Côté')
-        self.assertEqual(resp.text.count('A player with this identity already exists'), 1)
+        # Task 1716: the twin is a warning shown once in the check; the
+        # reason under « Create » only points at it (« Create anyway »). The
+        # name-only « ask a manager » line is gone.
+        self.assertIsNone(reasons.get('data-twin'))
+        self.assertEqual(reasons.get('data-exact'),
+                         'This player already exists — add them to the team or choose « Create anyway » above')
+        resp, tree = self._check(first='Élodie', last='Synthé-Côté', dob='2010-02-03')
+        self.assertEqual(resp.text.count('A player with this name and date of birth already exists'), 1)
+        self.assertNotIn('ask a manager', resp.text)
 
 
 class _Tours1672:

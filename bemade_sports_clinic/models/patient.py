@@ -47,6 +47,9 @@ JERSEY_SORT_LAST = 10 ** 8
 # two players by a portal user (exact-duplicate refusal).
 IDENTITY_FIELDS = ('first_name', 'last_name', 'date_of_birth')
 IDENTITY_CONFIRM_KEY = 'sc_identity_confirmed'
+# Task 1716: « Créer quand même » — a create confirmed over an exact name +
+# date-of-birth twin (the add panel's force_create=1).
+IDENTITY_FORCE_CREATE_KEY = 'sc_identity_force_create'
 
 # Task 1630: allergy / medical-alert levels (no value = « Not specified »).
 MEDICAL_LEVEL_SELECTION = [
@@ -2339,46 +2342,41 @@ class Patient(models.Model):
         return self.env['sports.patient'].sudo().browse([row[0] for row in self.env.cr.fetchall()])
 
     @api.model
-    def _sc_identity_hidden_namesake(self, first_name, last_name, exclude_id=None):
-        """Security review 2026-10-23: True when a guarded user (not a clinic
-        administrator) types the exact name of a player they can't read. The
-        answer never depends on the date of birth, so the identity guard can't
-        be used to confirm another team's player's date of birth by trial."""
-        if not self._sc_identity_guarded() or self._sc_identity_unrestricted():
-            return False
-        namesakes = self._sc_identity_namesakes(first_name, last_name, exclude_id)
-        if not namesakes:
-            return False
-        readable = self.env['sports.patient'].sudo(False).with_context(active_test=False).search_count(
-            [('id', 'in', namesakes.ids)])
-        return readable < len(namesakes)
+    def _sc_identity_twin_teams(self, twins):
+        """Task 1716: the team names of the twins (sudo: names only), for the
+        warning « … already exists (Team X). »."""
+        names = twins.sudo().with_context(active_test=False).team_ids.mapped('name')
+        return ', '.join(sorted(set(names))) or _("no team")
 
     @api.model
     def _sc_check_identity_duplicate(self, first_name, last_name, date_of_birth, exclude_id=None,
                                      identity_changed=True):
         """The identity guard's refusals (#1600 / #1639).
 
-        Security review 2026-10-23 (DOB oracle): for a guarded user who is not
-        a clinic administrator, a create — or a write that changes or fills a
-        first name, last name or date of birth — giving a name shared with a
-        player they can't read is refused with a generic message WHATEVER the
-        date of birth, before anything else can fail: the answer never
-        depends on that player's date of birth. The exact name + date-of-birth
-        refusal only names twins they can read.
+        Task 1716 (owner 2026-10-26, after the 2026-10-23 security review —
+        the « date-of-birth oracle » concern is waived: the date of birth
+        identifies a player and may be shown to other therapists):
+
+        * a name alone never blocks (the « hidden namesake » refusal is gone);
+        * a CREATE with an exact name + date-of-birth twin (any player,
+          archived included) is refused with « A player with this name and
+          date of birth already exists (Team X). » unless confirmed
+          (``sc_identity_force_create`` — the panel's « Créer quand même »);
+        * a WRITE (identity correction) onto a twin is refused (#1639) —
+          now whoever can read the twin: with the oracle concern waived, an
+          unreadable twin no longer needs hiding behind « ask a manager ».
         """
-        if identity_changed and self._sc_identity_hidden_namesake(first_name, last_name, exclude_id):
-            raise ValidationError(_("A player with this identity already exists — ask a manager."))
         twin = self._sc_identity_duplicate(first_name, last_name, date_of_birth, exclude_id)
         if not twin:
             return
-        if self._sc_identity_guarded() and not self._sc_identity_unrestricted():
-            # Only the twins the caller can read (an unchanged identity is
-            # never refused for a player the caller can't read).
-            twins = self._sc_identity_namesakes(first_name, last_name, exclude_id).filtered(
-                lambda p: p.date_of_birth == twin.date_of_birth)
-            if not self.env['sports.patient'].sudo(False).with_context(active_test=False).search_count(
-                    [('id', 'in', twins.ids)]):
+        if exclude_id is None:
+            if self.env.context.get(IDENTITY_FORCE_CREATE_KEY):
                 return
+            twins = self._sc_identity_namesakes(first_name, last_name).filtered(
+                lambda p: p.date_of_birth == twin.date_of_birth)
+            raise ValidationError(_(
+                "A player with this name and date of birth already exists (%s).",
+                self._sc_identity_twin_teams(twins)))
         raise ValidationError(_("Another player already has this name and date of birth."))
 
     def _sc_post_identity_note(self, corrections):

@@ -17370,3 +17370,69 @@ msgstr "Aucun choix ne correspond à « %s » : choisissez dans la liste."
 #: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
 msgid "The teams of another organization were removed."
 msgstr "Les équipes d'une autre organisation ont été retirées."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_player_add.py:0
+msgid "%s Confirm it or fix it."
+msgstr "%s Confirmez-la ou corrigez-la."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_player_add.py:0
+msgid "This date of birth is in the future."
+msgstr "Cette date de naissance est dans le futur."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_player_add.py:0
+msgid "This date of birth is today."
+msgstr "Cette date de naissance est aujourd'hui."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_player_add.py:0
+msgid "This date of birth gives an age of %s."
+msgstr "Cette date de naissance donne un âge de %s ans."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "A player with this name and date of birth already exists (%s)."
+msgstr "Un joueur avec ce nom et cette date de naissance existe déjà (%s)."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "no team"
+msgstr "aucune équipe"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "A player with this name and date of birth already exists ("
+msgstr "Un joueur avec ce nom et cette date de naissance existe déjà ("
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "Add this player to the team"
+msgstr "Ajouter ce joueur à l'équipe"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "Create anyway"
+msgstr "Créer quand même"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "The date is correct"
+msgstr "La date est exacte"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "Confirm or fix the date of birth above"
+msgstr "Confirmez ou corrigez la date de naissance ci-dessus"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "This player already exists — add them to the team or choose « Create anyway » above"
+msgstr "Ce joueur existe déjà — ajoutez-le à l'équipe ou choisissez « Créer quand même » ci-dessus"
