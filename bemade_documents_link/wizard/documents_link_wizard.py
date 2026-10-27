@@ -8,7 +8,7 @@ class DocumentsLinkWizard(models.TransientModel):
     records are linked to the record the user is currently on (resolved from
     the ``active_model`` / ``active_id`` context).
 
-    A document can now be linked to many records (task #3678), so this is a
+    A document can now be linked to many records, so this is a
     checked picker rather than an "unlinked documents only" selector: it
     defaults to the documents already linked to the active record, and saving
     reconciles the selection into ``bemade.documents.link`` rows -- creating

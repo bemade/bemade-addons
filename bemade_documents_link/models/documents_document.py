@@ -19,7 +19,7 @@ class DocumentsDocument(models.Model):
     def _compute_bemade_linked_record_count(self):
         # Rows are unique per (document, res_model, res_id), so their count
         # is exactly the number of distinct records this document is linked
-        # to across every model (task #3678 AC5).
+        # to across every model.
         for document in self:
             document.bemade_linked_record_count = len(document.bemade_link_ids)
 
@@ -48,7 +48,7 @@ class DocumentsDocument(models.Model):
             self.write({"res_model": False, "res_id": False})
 
     def action_link_to_record(self, model=False):
-        """Documents-side entry point (task #3678 defect 1 / AC3): the stock
+        """Documents-side entry point: the stock
         version (enterprise/documents/models/documents_document.py) refuses
         to open the wizard at all when any selected document is already
         linked (``res_model != 'documents.document'``). Since a document can

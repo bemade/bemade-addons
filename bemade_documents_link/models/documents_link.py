@@ -5,7 +5,7 @@ from odoo.fields import Domain
 
 class BemadeDocumentsLink(models.Model):
     """Polymorphic link between a ``documents.document`` and any business
-    record (task #3678): the source of truth for "which records is this
+    record: the source of truth for "which records is this
     document linked to". A single document can be linked to many records
     across many different models -- something the stock Documents module
     can't express, since it only tracks a single ``res_model``/``res_id``

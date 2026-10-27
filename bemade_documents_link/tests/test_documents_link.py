@@ -111,7 +111,7 @@ class TestDocumentsLink(TransactionCase):
         self.assertIn(self.doc, wizard.document_ids)
 
     def test_documents_side_action_on_recordset(self):
-        """Documents-side entry point (#3678 defect 1).
+        """Documents-side entry point.
 
         The Documents app does not render the standard ActionMenus, so the
         documents-side entry point is a custom control-panel button whose JS
@@ -135,7 +135,7 @@ class TestDocumentsLink(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestDocumentsLinkM2M(TransactionCase):
-    """task #3678: a document can be linked to many records across many
+    """A document can be linked to many records across many
     models via the new ``bemade.documents.link`` model."""
 
     @classmethod
