@@ -166,8 +166,14 @@ tours.add("sc_1726_switch_fetch", {
             async run() {
                 await waitFor(() => document.querySelector(`${CONDITION} ${NONE}`).getAttribute("aria-checked") === "true",
                     "aria-checked");
-                await waitFor(() => document.querySelector(`${CONDITION} [data-sc-med-head]`).dataset.scMedLevel === "none",
-                    "the grey « none » head pill");
+                // Review round 2 moved the family pill into the popup's
+                // header (outside the section): read it from the dialog.
+                const head = () => {
+                    const section = document.querySelector(CONDITION);
+                    const pill = section && section.closest("dialog").querySelector("[data-sc-med-head]");
+                    return pill && pill.dataset.scMedLevel;
+                };
+                await waitFor(() => head() === "none", "the grey « none » head pill");
                 assert(window.__sc1726NoReload, "the page reloaded");
             },
         },

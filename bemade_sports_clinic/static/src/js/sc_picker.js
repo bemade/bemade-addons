@@ -321,6 +321,24 @@ document.addEventListener("keydown", (ev) => {
     }
 });
 
+// Review round 3 (owner 2026-10-27): a press on the list (an option, its
+// scrollbar, the hints) or on « × » must not take the focus from the box.
+// It used to: the box's focusout closed the list 150 ms later, so a press
+// held longer than that (a normal trackpad / mouse click) released over a
+// hidden list and the pick was lost — the field kept its former value. The
+// focus now stays in the box and the pick lands on « click », however long
+// the press (the tags field does the same: mousedown.prevent on its list).
+document.addEventListener("mousedown", (ev) => {
+    const target = ev.target;
+    if (!target.closest) {
+        return;
+    }
+    const picker = target.closest(".o_sc_picker");
+    if (picker && !target.closest(".o_sc_picker_input") && picker.contains(document.activeElement)) {
+        ev.preventDefault();
+    }
+});
+
 // Leaving the box without a pick: back to the chosen value's label.
 document.addEventListener("focusout", (ev) => {
     const input = ev.target;
