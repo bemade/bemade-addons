@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="mail_chatter_pin.ChatterPinnedBlock">
+        <div
+      t-if="isInternalUser and messages.length"
+      class="o-mail-ChatterPinned px-2 pt-2"
+      t-att-data-count="messages.length"
+    >
+            <div
+        class="o-mail-ChatterPinned-header d-flex align-items-center cursor-pointer fw-bolder"
+        t-on-click="toggle"
+      >
+                <hr class="flex-grow-1 fs-3" />
+                <div class="d-flex align-items-center px-3">
+                    <i
+            class="fa fa-fw"
+            t-att-class="state.open ? 'fa-caret-down' : 'fa-caret-right'"
+          />
+                    <i class="fa fa-thumb-tack me-1" />
+                    <span class="o-mail-ChatterPinned-title" t-esc="title" />
+                </div>
+                <hr class="flex-grow-1" />
+            </div>
+            <div
+        t-if="state.open"
+        class="o-mail-ChatterPinned-list d-flex flex-column gap-1 py-1"
+      >
+                <div
+          t-foreach="messages"
+          t-as="message"
+          t-key="message.id"
+          class="o-mail-ChatterPinned-item card shadow-sm"
+          t-att-data-message-id="message.id"
+        >
+                    <div class="card-body py-1 px-2">
+                        <div class="d-flex align-items-baseline gap-2 small">
+                            <strong
+                class="o-mail-ChatterPinned-author text-truncate"
+                t-esc="message.authorName"
+              />
+                            <span
+                class="text-muted text-nowrap"
+                t-esc="message.dateSimpleWithDay"
+              />
+                            <span class="flex-grow-1" />
+                            <a
+                t-if="message.canChatterPin(props.thread)"
+                href="#"
+                role="button"
+                class="o-mail-ChatterPinned-unpin text-nowrap"
+                t-on-click.prevent.stop="() => this.onClickUnpin(message)"
+              >Unpin</a>
+                        </div>
+                        <div
+              class="o-mail-ChatterPinned-body cursor-pointer"
+              t-on-click="() => this.onClickMessage(message)"
+            >
+                            <div
+                t-if="state.expanded[message.id]"
+                class="o-mail-ChatterPinned-full"
+                t-out="message.richBody"
+              />
+                            <div
+                t-else=""
+                class="o-mail-ChatterPinned-preview text-break"
+                t-esc="preview(message)"
+              />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>
