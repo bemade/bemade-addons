@@ -17,6 +17,10 @@ Fetch errors
          "name: url" -- the usual cause is a wrong calendar URL.
     AC2  When the server itself cannot be reached or refuses the credentials, it
          raises a UserError carrying the server's error -- never an empty result.
+    AC2b When the credentials work but the account's calendars cannot be listed,
+         the UserError carries the fetch error and does not claim the server is
+         unreachable. Neither message asserts that the URL is wrong: the server
+         may also have refused the query itself.
 
 Connection check
     AC3  ``_caldav_check_connection()`` returns True when the account's principal
@@ -104,6 +108,22 @@ class TestConnectionMixin(TransactionCase):
             with self.assertRaises(UserError) as caught:
                 self._connection()._caldav_fetch_events(START, STOP)
         self.assertIn("401 Unauthorized", str(caught.exception))
+
+    def test_listing_fails_after_login_keeps_fetch_error(self):
+        """AC2b"""
+        with patch("caldav.DAVClient") as dav_client:
+            client = dav_client.return_value
+            client.calendar.return_value.search.side_effect = NotFoundError(
+                "501 expand not supported"
+            )
+            client.principal.return_value.calendars.side_effect = NotFoundError(
+                "calendar-home-set missing"
+            )
+            with self.assertRaises(UserError) as caught:
+                self._connection()._caldav_fetch_events(START, STOP)
+        message = str(caught.exception)
+        self.assertIn("501 expand not supported", message)
+        self.assertNotIn("Could not reach", message)
 
     def test_check_connection_ok_without_calendar_query(self):
         """AC3"""

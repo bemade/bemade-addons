@@ -66,7 +66,7 @@ Usage
 Changelog
 =========
 
-1.0.0 (2026-10-27)
+1.0.1 (2026-10-27)
 ------------------
 
 - The CalDAV connection moves to the new ``base_caldav`` module
@@ -76,6 +76,12 @@ Changelog
 - "Show as free" is synchronized: ``TRANSP`` is pushed from and imported into
   ``show_as``. Previously every imported event came in as busy.
 - The ``caldav`` and ``icalendar`` version pins move to ``base_caldav``.
+- An occurrence of a recurring series whose only change is "show as" is
+  pushed as its own exception.
+- An update reaches every CalDAV-enabled attendee's calendar even when one
+  of those calendars does not hold the event; the push used to stop at the
+  first such calendar.
+- Cancelled events (``STATUS:CANCELLED``) are imported as available.
 
 0.8.2 (2024-11-28)
 ------------------

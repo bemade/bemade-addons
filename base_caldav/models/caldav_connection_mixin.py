@@ -69,9 +69,15 @@ class CaldavConnectionMixin(models.AbstractModel):
         ]
 
     def _caldav_lookup_error(self, client, error):
-        """A UserError explaining why the calendar at the URL could not be read."""
+        """A UserError explaining why the calendar at the URL could not be read.
+
+        Says only what is known: whether the server accepted the credentials,
+        and which calendars the account can reach when those can be listed.
+        A wrong URL is the usual cause, but the server may also have refused
+        the query itself, so the original error is always included.
+        """
         try:
-            calendars = client.principal().calendars()
+            principal = client.principal()
         except Exception:  # noqa: BLE001 -- the server error is the explanation
             return UserError(
                 self.env._(
@@ -80,12 +86,25 @@ class CaldavConnectionMixin(models.AbstractModel):
                     error=error,
                 )
             )
+        try:
+            calendars = principal.calendars()
+        except Exception:  # noqa: BLE001 -- listing is only a hint
+            calendars = None
+        if not calendars:
+            return UserError(
+                self.env._(
+                    "Connected to the CalDAV server, but could not read the "
+                    "calendar at %(url)s: %(error)s",
+                    url=self.caldav_calendar_url,
+                    error=error,
+                )
+            )
         reachable = "\n".join(f"{c.name}: {c.url}" for c in calendars)
         return UserError(
             self.env._(
                 "Connected to the CalDAV server, but could not read the calendar "
-                "at %(url)s (%(error)s). You may need to select another calendar "
-                "URL from those below.\n\n%(calendars)s",
+                "at %(url)s: %(error)s\n\nIf the URL is wrong, these are the "
+                "calendars this account can reach:\n\n%(calendars)s",
                 url=self.caldav_calendar_url,
                 error=error,
                 calendars=reachable,

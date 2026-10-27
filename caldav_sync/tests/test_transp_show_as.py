@@ -17,6 +17,13 @@ Push (Odoo -> server)
          TRANSP:TRANSPARENT; with 'busy', TRANSP:OPAQUE.
     AC4  Changing only show_as on a synced event pushes the update carrying the
          new TRANSP.
+    AC5  Changing only show_as on one occurrence of a recurring series makes it
+         differ from its base event, so it is pushed as its own exception.
+
+Cancelled events (base_caldav's rule, without a person to check against)
+    AC6  A polled event with STATUS:CANCELLED is imported with show_as 'free'.
+         (Declined is per attendee and stays on the attendee's state, not on
+         the event-wide show_as.)
 
 Refactor guard (no new test): caldav_sync's existing suite passes unchanged on
 top of base_caldav -- same res.users field names, ``_get_caldav_client`` and
@@ -133,3 +140,41 @@ class TestTranspShowAs(TransactionCase, CaldavTestCommon):
             event.write({"show_as": "free"})
         save.assert_called()
         self.assertEqual(str(on_server.icalendar_component["transp"]), "TRANSPARENT")
+
+    def test_occurrence_show_as_only_differs_from_base(self):
+        """AC5"""
+        # A whole-hour start, as from the form: a start that falls between
+        # generated occurrences gets the original event detached instead.
+        start = (datetime.now() + timedelta(days=1)).replace(
+            hour=14, minute=0, second=0, microsecond=0
+        )
+        event = (
+            self.env["calendar.event"]
+            .with_user(self.user)
+            .with_context(caldav_no_sync=True)
+            .create(
+                {
+                    "name": "Daily",
+                    "start": start,
+                    "stop": start + timedelta(hours=1),
+                    "partner_ids": [Command.set([self.user.partner_id.id])],
+                    "recurrency": True,
+                    "rrule_type_ui": "daily",
+                    "rrule_type": "daily",
+                    "interval": 1,
+                    "end_type": "count",
+                    "count": 3,
+                }
+            )
+        )
+        occurrences = event.recurrence_id.calendar_event_ids.sorted("start")
+        self.assertEqual(len(occurrences), 3)
+        second = occurrences[1]
+        self.assertFalse(second.differs_from_base_event)
+        second.write({"show_as": "free"})
+        self.assertTrue(second.differs_from_base_event)
+
+    def test_import_cancelled_is_free(self):
+        """AC6"""
+        event = self._poll("transp_cancelled.ics")
+        self.assertEqual(event.show_as, "free")
