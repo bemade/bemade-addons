@@ -58,7 +58,7 @@ class Rows1593Common(AppShellCommon):
         cls.player.write({
             'team_ids': [Command.set([cls.team_a.id, cls.team_c.id])],
             'training_recommendation': 'Synthetic bike only\nSecond line of advice',
-            'predicted_return_date': date(2026, 3, 15),
+            'predicted_return_date': date(2030, 3, 15),
             'last_consultation_date': date(2026, 2, 1),
             'match_status': 'no',
             'practice_status': 'no',
@@ -123,7 +123,7 @@ class TestAppShellRosterRows1593(Rows1593Common):
         self.assertEqual(_text(training[0]), 'Synthetic bike only Second line of advice')
         ret = row.xpath('.//*[@data-sc-row-return]')
         self.assertTrue(ret)
-        self.assertIn('03/15/2026', _text(ret[0]))
+        self.assertIn('03/15/2030', _text(ret[0]))
         # The detail is NOT rendered with the page: a lazy region + control.
         self.assertNotIn('Synthetic external note', _text(row))
         button = row.xpath('.//button[@data-sc-row-expand]')
@@ -259,7 +259,7 @@ class TestAppShellRosterRowsQueries1593(AppShellCommon):
                 'first_name': 'Synthetic', 'last_name': 'Perf %03d' % (start + n),
                 'team_ids': [Command.set([team.id, other.id])],
                 'training_recommendation': 'Synthetic advice %s' % n,
-                'predicted_return_date': date(2026, 5, 1),
+                'predicted_return_date': date(2030, 5, 1),
                 'match_status': 'no', 'practice_status': 'no',
             })
             injury = env['sports.patient.injury'].create({

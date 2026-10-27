@@ -347,6 +347,8 @@
                             <t t-if="sc_hero_injured"><t t-set="label">Predicted return</t></t>
                             <t t-else=""><t t-set="label">Actual return</t></t>
                             <t t-set="value" t-value="sc_display(player, sc_hero_return_field)"/>
+                            <!-- Task 1727: a past « Retour prévu » reads « · Dépassé ». -->
+                            <t t-set="overdue" t-value="sc_hero_injured and player.predicted_return_overdue"/>
                         </t>
                         <!-- Review fixes 2026-10-18 (1018c): an empty date shows a
                              muted placeholder line, so users know where it is
@@ -377,7 +379,7 @@
                     <div t-if="sc_hero_return_edit" class="o_sc_fields o_sc_hero_return" data-sc-section="player.predicted_return">
                         <t t-set="sc_predicted_label">Predicted return</t>
                         <t t-call="bemade_sports_clinic.sc_field_autosave">
-                            <t t-set="props" t-value="sc_field_props(player, 'predicted_return_date', sc_predicted_label, 'date', clearable=True)"/>
+                            <t t-set="props" t-value="sc_field_props(player, 'predicted_return_date', sc_predicted_label, 'date', clearable=True, min=sc_today)"/>
                         </t>
                     </div>
                     <div t-if="sc_hero_return_edit" class="o_sc_fields o_sc_hero_return" data-sc-section="player.return_date.edit">

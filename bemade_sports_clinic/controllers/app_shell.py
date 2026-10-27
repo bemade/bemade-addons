@@ -1371,6 +1371,9 @@ class AppShellMixin:
             'sc_team_row': self._sc_team_row,
             # Task 1539: props builders for the sc_autosave_field component.
             'sc_field_props': self._sc_field_props,
+            # Task 1727: today in the user's timezone (a date input's
+            # « not in the past » min, e.g. « Retour prévu »).
+            'sc_today': fields.Date.to_string(fields.Date.context_today(user)),
             # Owner review 2026-10-10: a card's read view (same strings the
             # save route answers, so an in-place update matches a reload).
             'sc_display': lambda record, field: AppShellPortal._sc_save_display(record, field),
@@ -2287,6 +2290,25 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             done += self._sc_apply_statuses(patient, statuses)
         return done
 
+    @staticmethod
+    def _sc_past_return_changes(patient, changes):
+        """Task 1727: the keys (``model:id:field``, the sheet's row keys) of
+        the posted « Retour prévu » changes dated before today (the user's
+        timezone); an unparsable value is left to the normal save path."""
+        today = fields.Date.context_today(patient)
+        keys = []
+        for change in changes:
+            if not isinstance(change, dict) or change.get('model') != 'sports.patient' \
+                    or change.get('field') != 'predicted_return_date':
+                continue
+            try:
+                value = fields.Date.to_date(change.get('value') or False)
+            except (TypeError, ValueError):
+                continue
+            if value and value < today:
+                keys.append('sports.patient:%s:predicted_return_date' % change.get('id'))
+        return keys
+
     def _sc_apply_statuses(self, patient, statuses):
         """Task 1670: the match / practice rows of an applied proposal,
         written together through the « sc_status » save (one write, tracked
@@ -2335,6 +2357,17 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return self._sc_save_json({'error': 'bad_request'}, 400)
         try:
             patient = self._check_access_to_patient(patient_id)
+            # Task 1727: a « Retour prévu » that has passed since the sheet
+            # opened (or was proposed past) — ask for a new date, nothing
+            # written.
+            stale = self._sc_past_return_changes(patient, parsed)
+            if stale:
+                return self._sc_save_json({
+                    'error': 'invalid',
+                    'needs_date': stale,
+                    'min': fields.Date.to_string(fields.Date.context_today(patient)),
+                    'message': _("This date has passed: pick a new predicted return date, today or later."),
+                }, 400)
             with request.env.cr.savepoint():
                 done = self._sc_apply_changes(patient, parsed)
                 for record, _field in done:

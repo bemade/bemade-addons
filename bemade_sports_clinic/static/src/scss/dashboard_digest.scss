@@ -36,3 +36,13 @@
         }
     }
 }
+
+// Task 1727: a « Retour prévu » already past — the date and « · Dépassé » in
+// orange (app shell, legacy portal cards, the digest; backend and frontend).
+.o_sc_overdue {
+    color: var(--sc-overdue, #c2410c);
+}
+
+.o_sc_overdue_flag {
+    font-weight: 600;
+}

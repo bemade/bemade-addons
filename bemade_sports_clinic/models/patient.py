@@ -37,6 +37,11 @@ _logger = logging.getLogger(__name__)
 # therapist, so a head therapist must be able to action it (task 1260).
 REMOVAL_ROLES = ('therapist', 'head_therapist')
 
+# Task 1727: the context key that lets a SYSTEM copy keep a past « Retour
+# prévu » as-is (the merge wizard, data migrations, tests that need one) —
+# the « not in the past » rule is for people entering a date.
+PAST_RETURN_OK = 'sc_allow_past_predicted_return'
+
 # Task 1421: jersey_sort value for players without a (numeric) jersey number —
 # above any 8-digit number, so « blanks last » on an ascending order.
 JERSEY_SORT_LAST = 10 ** 8
@@ -275,6 +280,9 @@ class Patient(models.Model):
     )
     injured_since = fields.Date(compute="_compute_is_injured")
     predicted_return_date = fields.Date(tracking=True)
+    # Task 1727: an existing « Retour prévu » already past (in the user's
+    # timezone) — flagged « Overdue » wherever the date renders.
+    predicted_return_overdue = fields.Boolean(compute="_compute_predicted_return_overdue")
     return_date = fields.Date(
         tracking=True,
         help="When the player was cleared by medical staff to " "return to match play.",
@@ -2070,6 +2078,8 @@ class Patient(models.Model):
                     # flag keeps it off the shared portal renders (that's #1385).
                     "show_player_status": True,
                     "predicted_return_date": rec.predicted_return_date,
+                    # Task 1727: « · Dépassé » after a past date.
+                    "predicted_return_overdue": rec.predicted_return_overdue,
                     "training_recommendation": rec.training_recommendation,
                     "active_injuries": active_injuries,
                 },
@@ -2277,6 +2287,25 @@ class Patient(models.Model):
         """Task 1680: a player's contact is a person, never a company."""
         if self.sudo().filtered(lambda p: p.partner_id.is_company):
             raise ValidationError(self.env["res.partner"]._sc_patient_company_message())
+
+    @api.constrains("predicted_return_date")
+    def _check_predicted_return_not_past(self):
+        """Task 1727: « Retour prévu » cannot be SET in the past (today,
+        user's timezone, is fine). Only writes to the field run this, so a
+        player whose date has since passed stays editable otherwise; a
+        system copy passes ``PAST_RETURN_OK`` in the context."""
+        if self.env.context.get(PAST_RETURN_OK):
+            return
+        for rec in self:
+            if rec.predicted_return_date and rec.predicted_return_date < fields.Date.context_today(rec):
+                raise ValidationError(_("The predicted return cannot be in the past."))
+
+    @api.depends("predicted_return_date")
+    def _compute_predicted_return_overdue(self):
+        today = fields.Date.context_today(self)
+        for rec in self:
+            rec.predicted_return_overdue = bool(
+                rec.predicted_return_date and rec.predicted_return_date < today)
 
     @api.constrains("match_status", "practice_status")
     def constrain_match_and_practice_status(self):

@@ -881,7 +881,8 @@
                     <div t-if="is_injured" class="text-muted small d-flex align-items-center mb-1">
                         <i class="fa fa-clock-o" title="Estimated Return"></i>
                         <span class="ms-1 d-none d-md-inline">Predicted return:</span>
-                        <span t-if="player.predicted_return_date" class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"></span>
+                        <span t-if="player.predicted_return_date and player.predicted_return_overdue" class="ms-1 o_sc_overdue"><span t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span>
+                        <span t-elif="player.predicted_return_date" class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"></span>
                         <span t-else="" class="ms-1">—</span>
                     </div>
                     <!-- Task 1385: native <details> expandable (collapsed by
@@ -1065,7 +1066,8 @@
                         <div class="mb-2 small">
                             <i class="fa fa-calendar-check-o me-1" aria-hidden="true"/>
                             <span class="fw-bold">Predicted return: </span>
-                            <span t-out="predicted_return_date" t-options="{'widget': 'date'}"/>
+                            <span t-if="predicted_return_overdue" class="o_sc_overdue"><span t-out="predicted_return_date" t-options="{'widget': 'date'}"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span>
+                            <span t-else="" t-out="predicted_return_date" t-options="{'widget': 'date'}"/>
                         </div>
                     </t>
                     <!-- Task 1385 (CR-A #5): the internal digest also drops the
@@ -2423,7 +2425,8 @@
                                             </tr>
                                             <tr t-if="player.predicted_return_date">
                                                 <td><strong>Predicted Return Date:</strong></td>
-                                                <td t-esc="player.predicted_return_date"/>
+                                                <td t-if="player.predicted_return_overdue" class="o_sc_overdue"><t t-esc="player.predicted_return_date"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></td>
+                                                <td t-else="" t-esc="player.predicted_return_date"/>
                                             </tr>
                                             <tr t-if="player.return_date">
                                                 <td><strong>Actual Return Date:</strong></td>

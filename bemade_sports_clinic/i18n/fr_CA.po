@@ -17530,3 +17530,45 @@ msgstr "Répondez d'abord à « EpiPen ? »."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_new_form
 msgid "Turn on N/A if the exact date is unknown"
 msgstr "Activez S/O si la date exacte est inconnue"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_return_overdue_flag
+msgid ""
+"<span class=\"o_sc_overdue_sep\" aria-hidden=\"true\"> · </span><span "
+"class=\"o_sc_overdue_flag\" data-sc-overdue=\"1\">Passed</span>"
+msgstr ""
+"<span class=\"o_sc_overdue_sep\" aria-hidden=\"true\"> · </span><span "
+"class=\"o_sc_overdue_flag\" data-sc-overdue=\"1\">Dépassé</span>"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__predicted_return_overdue
+msgid "Predicted Return Overdue"
+msgstr "Retour prévu dépassé"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "The predicted return cannot be in the past."
+msgstr "Le retour prévu ne peut pas être dans le passé."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "This date has passed: pick a new predicted return date, today or later."
+msgstr ""
+"Cette date est passée : choisissez une nouvelle date de retour prévu, "
+"aujourd'hui ou plus tard."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_return_proposal.py:0
+msgid "The proposed date (%s) has passed: pick a new date, today or later."
+msgstr ""
+"La date proposée (%s) est passée : choisissez une nouvelle date, aujourd'hui"
+" ou plus tard."
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_proposal.js:0
+msgid "Pick a predicted return date, today or later."
+msgstr "Choisissez une date de retour prévu, aujourd'hui ou plus tard."

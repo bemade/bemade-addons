@@ -482,6 +482,16 @@
         edit. Variables: label, value, pre (keep line breaks), empty (text
         when no value, default « — »).
     -->
+    <!--
+        Task 1727 — « Dépassé »: a « Retour prévu » that has already passed
+        (kept as entered; flagged wherever the date renders, coaches
+        included — not a medical pill). Put right after the date, inside an
+        element carrying ``o_sc_overdue`` (the date and the flag in orange).
+    -->
+    <template id="sc_return_overdue_flag" name="App shell: overdue return flag">
+        <span class="o_sc_overdue_sep" aria-hidden="true"> · </span><span class="o_sc_overdue_flag" data-sc-overdue="1">Passed</span>
+    </template>
+
     <template id="sc_field_static" name="App shell: static field">
         <div class="o_sc_field o_sc_field_static">
             <!-- Task 1629: no_label = the value only (its title sits above). -->
@@ -489,7 +499,9 @@
                 <button t-if="history_sheet" type="button" class="o_sc_link_btn o_sc_field_history"
                         t-att-data-sc-sheet-open="history_sheet" t-out="history_label"/>
             </span>
-            <p t-if="value" t-attf-class="o_sc_field_value #{'o_sc_pre' if pre else ''}" t-out="value"/>
+            <!-- Task 1727: overdue = the date has passed (« · Dépassé »). -->
+            <p t-if="value and overdue" t-attf-class="o_sc_field_value o_sc_overdue #{'o_sc_pre' if pre else ''}"><t t-out="value"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></p>
+            <p t-elif="value" t-attf-class="o_sc_field_value #{'o_sc_pre' if pre else ''}" t-out="value"/>
             <p t-else="" class="o_sc_field_value o_sc_muted" t-out="empty or '—'"/>
             <small t-if="static_hint" class="o_sc_hint" t-out="static_hint"/>
         </div>
@@ -799,7 +811,8 @@
         <span t-if="row.get('return_label')" class="o_sc_row_line o_sc_row_return" data-sc-row-return="1">
             <i class="fa fa-clock-o" aria-hidden="true"/>
             <span>Predicted return:</span>
-            <span class="o_sc_row_line_value" t-out="row['return_label']"/>
+            <span t-if="row.get('return_overdue')" class="o_sc_row_line_value o_sc_overdue"><t t-out="row['return_label']"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span>
+            <span t-else="" class="o_sc_row_line_value" t-out="row['return_label']"/>
         </span>
     </template>
 
