@@ -295,3 +295,4 @@ from . import test_retour_prevu_past_tours_1727
 from . import test_retour_prevu_backend_1727
 from . import test_digest_dark_mode_1728
 from . import test_digest_dark_mode_tours_1728
+from . import test_header_edit_phone_tours_1729
