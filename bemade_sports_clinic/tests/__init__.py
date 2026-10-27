@@ -286,3 +286,4 @@ from . import test_venue_org_pickers_1722
 from . import test_event_create_1723
 from . import test_identity_warning_1716
 from . import test_clinic_player_pane_1721
+from . import test_epipen_gate_1717

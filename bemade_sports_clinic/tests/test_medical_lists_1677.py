@@ -297,7 +297,8 @@ class TestMedicalLists1677(MedicalLists1677Common):
         self.assertEqual(read.get('data-sc-fragment'), 'sports.patient:%s:medical-epipen' % self.player.id)
         self.assertIn('Synthetic front pocket', read.text_content())
         self.assertIsNone(card.xpath('.//*[@data-sc-med-epipen-note-field]')[0].get('hidden'))
-        self.assertTrue(card.xpath('.//input[@data-sc-med-set="allergy_epipen"][@checked]'))
+        # Task 1717: Yes / No radios (was a checkbox).
+        self.assertTrue(card.xpath('.//input[@data-sc-med-set="allergy_epipen_state"][@value="yes"][@checked]'))
         # The header pill carries the EpiPen icon.
         pill = self._tree().xpath('//button[@data-sc-med-pill="allergy"]')[0]
         self.assertTrue(pill.xpath('.//*[@data-sc-med-epipen]'))

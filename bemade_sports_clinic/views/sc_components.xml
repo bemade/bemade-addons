@@ -961,15 +961,19 @@
                     <!-- Allergies: the EpiPen card. -->
                     <section t-if="sc_med_is_allergy" class="o_sc_card o_sc_edit_card o_sc_med_card o_sc_med_epipen_card"
                              data-sc-section="medical.allergy.epipen"
-                             t-att-data-sc-edit-card="('med-epipen-%s' % sc_med_uid) if editable else None">
+                             t-att-data-sc-edit-card="('med-epipen-%s' % sc_med_uid) if editable else None"
+                             t-att-data-sc-edit-open-on-load="'1' if editable and pill['epipen_unset'] else None">
                         <div class="o_sc_med_card_row">
                             <div class="o_sc_med_card_read" data-sc-edit-view="read"
                                  t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-epipen')">
-                                <p class="o_sc_med_epipen_line" t-att-data-sc-med-epipen="'1' if pill['epipen'] else None">
+                                <p class="o_sc_med_epipen_line" t-att-data-sc-med-epipen="'1' if pill['epipen'] else None"
+                                   t-att-data-sc-med-epipen-state="pill['epipen_state'] or 'unset'">
                                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
                                     <strong>EpiPen</strong>
                                     <span class="o_sc_med_epipen_value">
-                                        <t t-if="pill['epipen']">Yes</t><t t-else="">No</t>
+                                        <t t-if="pill['epipen_state'] == 'yes'">Yes</t>
+                                        <t t-elif="pill['epipen_state'] == 'no'">No</t>
+                                        <t t-else="">Not provided</t>
                                     </span>
                                 </p>
                                 <p t-if="pill['epipen_note']" class="o_sc_meta o_sc_pre o_sc_med_epipen_note"
@@ -980,12 +984,27 @@
                                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
                             </button>
                         </div>
+                        <!-- Task 1717: EpiPen is answered Yes / No (empty =
+                             not provided, the allergies wait for it): the
+                             card asks first, open on load while unanswered. -->
                         <div t-if="editable" class="o_sc_fields o_sc_med_card_edit" data-sc-edit-view="edit" hidden="hidden">
-                            <label class="o_sc_check">
-                                <input type="checkbox" data-sc-med-set="allergy_epipen"
-                                       t-att-checked="'checked' if pill['epipen'] else None"/>
-                                <span>EpiPen</span>
-                            </label>
+                            <fieldset class="o_sc_med_epipen_ask" data-sc-med-epipen-ask="1">
+                                <legend class="o_sc_field_label">EpiPen?</legend>
+                                <div class="o_sc_segmented o_sc_med_epipen_choices">
+                                    <label class="o_sc_check">
+                                        <input type="radio" t-att-name="'sc_med_epipen_%s' % sc_med_uid" value="yes"
+                                               data-sc-med-set="allergy_epipen_state"
+                                               t-att-checked="'checked' if pill['epipen_state'] == 'yes' else None"/>
+                                        <span>Yes</span>
+                                    </label>
+                                    <label class="o_sc_check">
+                                        <input type="radio" t-att-name="'sc_med_epipen_%s' % sc_med_uid" value="no"
+                                               data-sc-med-set="allergy_epipen_state"
+                                               t-att-checked="'checked' if pill['epipen_state'] == 'no' else None"/>
+                                        <span>No</span>
+                                    </label>
+                                </div>
+                            </fieldset>
                             <div class="o_sc_field" data-sc-med-epipen-note-field="1" t-att-hidden="None if pill['epipen'] else 'hidden'">
                                 <label class="o_sc_field_label" t-att-for="'sc_med_epipen_note_%s' % sc_med_uid">Location / instructions</label>
                                 <input type="text" t-att-id="'sc_med_epipen_note_%s' % sc_med_uid" class="o_sc_input"
@@ -997,8 +1016,13 @@
                         </div>
                     </section>
 
+                    <!-- Task 1717: the allergies wait for the EpiPen answer
+                         (a read fragment: answering shows the Add control). -->
+                    <div class="o_sc_med_add_area" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-add' % sc_med_key)">
+                    <p t-if="sc_med_is_allergy and pill['epipen_unset']" class="o_sc_hint o_sc_med_epipen_first"
+                       data-sc-med-epipen-first="1">Answer « EpiPen? » first: then add the allergies or tick « No known allergy ».</p>
                     <!-- The list: « + Ajouter » and its add panel. -->
-                    <t t-if="editable">
+                    <t t-if="editable and not (sc_med_is_allergy and pill['epipen_unset'])">
                         <t t-set="sc_med_panel" t-value="'sc_med_add_%s' % sc_med_uid"/>
                         <t t-call="bemade_sports_clinic.sc_list_header">
                             <t t-if="sc_med_is_allergy"><t t-set="add_label">Add an allergy</t></t>
@@ -1038,6 +1062,7 @@
                             </form>
                         </details>
                     </t>
+                    </div>
 
                     <!-- The items (a read fragment: read + edit views, plain inputs). -->
                     <ul class="o_sc_med_items" t-att-data-sc-section="'medical.%s.items' % sc_med_key"
@@ -1102,7 +1127,8 @@
                         <t t-if="not pill['items']">
                             <label t-if="editable" class="o_sc_check o_sc_med_none_check">
                                 <input type="checkbox" t-att-data-sc-med-set="'allergy_none_confirmed' if sc_med_is_allergy else 'medical_none_confirmed'"
-                                       t-att-checked="'checked' if pill['none_confirmed'] else None"/>
+                                       t-att-checked="'checked' if pill['none_confirmed'] else None"
+                                       t-att-disabled="'disabled' if sc_med_is_allergy and pill['epipen_unset'] else None"/>
                                 <span t-if="sc_med_is_allergy">No known allergy</span>
                                 <span t-else="">No known condition</span>
                             </label>

@@ -78,8 +78,9 @@ tours.add("sc_1677_allergies_tp", {
             run: "click",
         },
         {
-            content: "Tick EpiPen: its note appears",
-            trigger: `${ALLERGY} [data-sc-section="medical.allergy.epipen"] [data-sc-edit-view="edit"]:not([hidden]) input[data-sc-med-set="allergy_epipen"]`,
+            // Task 1717: « EpiPen? » Yes (radios; was a checkbox).
+            content: "EpiPen: Yes — its note appears",
+            trigger: `${ALLERGY} [data-sc-section="medical.allergy.epipen"] [data-sc-edit-view="edit"]:not([hidden]) input[data-sc-med-set="allergy_epipen_state"][value="yes"]`,
             async run() {
                 const note = q(`${ALLERGY} [data-sc-med-epipen-note-field]`);
                 assert(note.hidden, "the note shows while EpiPen is unticked");

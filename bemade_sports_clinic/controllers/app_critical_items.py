@@ -7,7 +7,8 @@ app's medical popups (therapists only; coaches read).
   life_threatening, first_aid_note) changes one;
 * ``POST /my/app/medical/item/<item_id>/delete`` removes one;
 * ``POST /my/app/medical/<patient_id>/set`` (field, value) saves one field
-  of the player's medical block: ``allergy_epipen``, ``allergy_epipen_note``,
+  of the player's medical block: ``allergy_epipen_state`` (task 1717: yes /
+  no), ``allergy_epipen``, ``allergy_epipen_note``,
   ``allergy_none_confirmed``, ``medical_none_confirmed``.
 
 Each answers ``{ok, family, level, tone, refresh, saved_at[, item_id]}`` —
@@ -30,6 +31,8 @@ from .app_shell import AppShellPortal, _TP_ROLES, _TRUTHY, sc_now_ms
 
 # The player fields the popups save, and the family each belongs to.
 SC_MEDICAL_SET_FIELDS = {
+    # Task 1717: the Yes / No answer (the boolean stays for old clients).
+    'allergy_epipen_state': 'allergy',
     'allergy_epipen': 'allergy',
     'allergy_epipen_note': 'allergy',
     'allergy_none_confirmed': 'allergy',
@@ -157,7 +160,11 @@ class AppCriticalItemsPortal(AppShellPortal):
             patient = self._sc_critical_patient(patient_id)
         except (AccessError, MissingError, UserError, ValueError):
             return self._sc_save_json({'error': 'forbidden'}, 403)
-        if field in _BOOLEAN_FIELDS:
+        if field == 'allergy_epipen_state':
+            written = (value or '').strip()
+            if written not in ('yes', 'no'):
+                return self._sc_save_json({'error': 'invalid', 'message': _("Invalid value.")}, 400)
+        elif field in _BOOLEAN_FIELDS:
             written = _truthy(value)
         else:
             written = (value or '').strip()[:240] or False

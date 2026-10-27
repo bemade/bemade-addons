@@ -7724,6 +7724,7 @@ msgstr "Type de la prochaine activité"
 #: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
 #: code:addons/bemade_sports_clinic/models/patient.py:0
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__allergy_epipen_state__no
 msgid "No"
 msgstr "Non"
 
@@ -13472,6 +13473,7 @@ msgstr "Mot de passe erroné."
 #: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
 #: code:addons/bemade_sports_clinic/models/patient.py:0
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__allergy_epipen_state__yes
 msgid "Yes"
 msgstr "Oui"
 
@@ -17444,3 +17446,38 @@ msgstr "Ce joueur existe déjà — ajoutez-le à l'équipe ou choisissez « Cr�
 #: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
 msgid "Show resolved injuries (%s)"
 msgstr "Afficher les blessures résolues (%s)"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Answer « EpiPen? » (Yes / No) before entering the allergies."
+msgstr "Répondez à « EpiPen ? » (Oui / Non) avant d'inscrire les allergies."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Complete the medical file (allergies/EpiPen)"
+msgstr "Compléter le dossier médical (allergies/EpiPen)"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Not provided"
+msgstr "Non renseigné"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergy_epipen_state
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "EpiPen?"
+msgstr "EpiPen ?"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Answer « EpiPen? » first: then add the allergies or tick « No known allergy »."
+msgstr "Répondez d'abord à « EpiPen ? » : ajoutez ensuite les allergies ou cochez « Aucune allergie connue »."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_mail_activity__sc_epipen_todo
+msgid "EpiPen To-Do"
+msgstr "Tâche EpiPen"

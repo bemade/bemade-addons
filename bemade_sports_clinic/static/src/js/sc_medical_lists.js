@@ -56,8 +56,16 @@ function inputValue(input) {
     return input.value;
 }
 
+function radioGroup(input) {
+    return [...document.querySelectorAll(`input[type="radio"][name="${CSS.escape(input.name)}"]`)];
+}
+
 function revert(input) {
-    if (input.type === "checkbox") {
+    if (input.type === "radio") {
+        for (const radio of radioGroup(input)) {
+            radio.checked = radio.defaultChecked;
+        }
+    } else if (input.type === "checkbox") {
         input.checked = input.defaultChecked;
     } else {
         input.value = input.defaultValue;
@@ -65,7 +73,11 @@ function revert(input) {
 }
 
 function commit(input) {
-    if (input.type === "checkbox") {
+    if (input.type === "radio") {
+        for (const radio of radioGroup(input)) {
+            radio.defaultChecked = radio.checked;
+        }
+    } else if (input.type === "checkbox") {
         input.defaultChecked = input.checked;
     } else {
         input.defaultValue = input.value;
@@ -148,9 +160,14 @@ async function savePlayerField(input) {
     }
     const field = input.dataset.scMedSet;
     const holder = input.closest(".o_sc_med_card_edit, .o_sc_med_none_box") || sheet;
+    if (input.type === "radio" && !input.checked) {
+        return;
+    }
     const value = input.type === "checkbox" ? (input.checked ? "1" : "") : input.value;
-    if (field === "allergy_epipen") {
-        syncEpipenNote(sheet, input.checked);
+    // Task 1717: the Yes / No answer (radios) drives the note like the old box.
+    const epipenOn = field === "allergy_epipen_state" ? value === "yes" : input.checked;
+    if (field === "allergy_epipen" || field === "allergy_epipen_state") {
+        syncEpipenNote(sheet, epipenOn);
     }
     if (input.type === "checkbox" && input.closest("[data-sc-fragment]")) {
         // A focused element pins its read fragment (#1641).
@@ -164,7 +181,7 @@ async function savePlayerField(input) {
             toast: false,
         });
         commit(input);
-        if (field === "allergy_epipen" && !input.checked) {
+        if ((field === "allergy_epipen" || field === "allergy_epipen_state") && !epipenOn) {
             // The note goes with the EpiPen (the server clears it).
             for (const note of sheet.querySelectorAll('[data-sc-med-set="allergy_epipen_note"]')) {
                 note.value = "";
@@ -176,6 +193,10 @@ async function savePlayerField(input) {
         revert(input);
         if (field === "allergy_epipen") {
             syncEpipenNote(sheet, input.checked);
+        }
+        if (field === "allergy_epipen_state") {
+            const checked = sheet.querySelector('[data-sc-med-set="allergy_epipen_state"]:checked');
+            syncEpipenNote(sheet, Boolean(checked && checked.value === "yes"));
         }
         showError(holder, messageOf(error));
     }

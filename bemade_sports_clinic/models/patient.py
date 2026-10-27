@@ -335,7 +335,25 @@ class Patient(models.Model):
         groups=_MEDICAL_ALERT_GROUPS,
     )
     allergy_details = fields.Text(string="Allergy details", groups=_MEDICAL_ALERT_GROUPS)
-    allergy_epipen = fields.Boolean(string="EpiPen", groups=_MEDICAL_ALERT_GROUPS)
+    # Task 1717 (owner 2026-10-26): EpiPen is the allergies gate — empty
+    # (« Not provided », new players only), Yes or No. Allergies can be added,
+    # or « No known allergy » ticked, only once it is answered. The former
+    # boolean stays as a stored compute of it (with an inverse) for the
+    # readers (card pills, merge, the #1677 migrations, the backend form).
+    allergy_epipen_state = fields.Selection(
+        [("yes", "Yes"), ("no", "No")],
+        string="EpiPen?",
+        copy=False,
+        groups=_MEDICAL_ALERT_GROUPS,
+    )
+    allergy_epipen = fields.Boolean(
+        string="EpiPen",
+        compute="_compute_allergy_epipen",
+        inverse="_inverse_allergy_epipen",
+        store=True,
+        readonly=False,
+        groups=_MEDICAL_ALERT_GROUPS,
+    )
     # Task 1677: where the EpiPen is / how to use it (the EpiPen card).
     allergy_epipen_note = fields.Char(string="EpiPen note", groups=_MEDICAL_ALERT_GROUPS)
     # Task 1677: « No known allergy / condition » — the empty list confirmed.
@@ -480,7 +498,7 @@ class Patient(models.Model):
 
     # Task 1654: the medical fields coaches read but never write.
     _SC_MEDICAL_WRITE_FIELDS = (
-        "allergy_level", "allergy_details", "allergy_epipen",
+        "allergy_level", "allergy_details", "allergy_epipen", "allergy_epipen_state",
         "medical_alert_level", "medical_alert_details",
         # Adversarial review 2026-10-22: the « Updated on … by … » stamps
         # (a coach can't forge them through RPC either).
@@ -491,11 +509,73 @@ class Patient(models.Model):
     )
     # Task 1677: the player fields of each family (stamp + internal note).
     _SC_MEDICAL_FAMILY_FIELDS = {
-        "allergy": ("allergy_epipen", "allergy_epipen_note", "allergy_none_confirmed", "allergy_details"),
+        "allergy": ("allergy_epipen_state", "allergy_epipen", "allergy_epipen_note", "allergy_none_confirmed",
+                    "allergy_details"),
         "medical_alert": ("medical_none_confirmed", "medical_alert_details"),
     }
     # Task 1677: computed from the lists — never written.
     _SC_MEDICAL_LEVEL_FIELDS = ("allergy_level", "medical_alert_level")
+
+    @api.depends("allergy_epipen_state")
+    def _compute_allergy_epipen(self):
+        """Task 1717: the former boolean, read from the Yes / No answer."""
+        for rec in self:
+            rec.allergy_epipen = rec.allergy_epipen_state == "yes"
+
+    def _inverse_allergy_epipen(self):
+        """Task 1717: a write of the former boolean answers the question."""
+        for rec in self:
+            state = "yes" if rec.allergy_epipen else "no"
+            if rec.allergy_epipen_state != state:
+                rec.allergy_epipen_state = state
+
+    def _sc_epipen_first_message(self):
+        return self.env._("Answer « EpiPen? » (Yes / No) before entering the allergies.")
+
+    def _sc_epipen_todo_summary(self):
+        return self.env._("Complete the medical file (allergies/EpiPen)")
+
+    def _sc_raise_epipen_todos(self):
+        """Task 1717: at creation, while EpiPen is unanswered, ONE To-Do to
+        the player's creator « Complete the medical file (allergies/EpiPen) »
+        (``sc_epipen_todo``; never twice, never for the superuser / a script)."""
+        user = self.env.user
+        if not user or user.id == SUPERUSER_ID or not user.active:
+            return
+        players = self.sudo().filtered(lambda p: not p.allergy_epipen_state)
+        if not players:
+            return
+        Activity = self.env["mail.activity"].sudo()
+        existing = set(Activity.search([
+            ("res_model", "=", self._name), ("res_id", "in", players.ids),
+            ("sc_epipen_todo", "=", True)]).mapped("res_id"))
+        todo_type = self.env.ref("mail.mail_activity_data_todo", raise_if_not_found=False)
+        model_id = self.env["ir.model"]._get(self._name).id
+        lang = user.lang or self.env.lang
+        for player in players:
+            if player.id in existing:
+                continue
+            Activity.with_context(lang=lang).create({
+                "res_model_id": model_id,
+                "res_id": player.id,
+                "sc_epipen_todo": True,
+                "user_id": user.id,
+                "activity_type_id": todo_type.id if todo_type else False,
+                "summary": self.with_context(lang=lang)._sc_epipen_todo_summary(),
+                "date_deadline": fields.Date.context_today(self),
+                "automated": True,
+            })
+
+    def _sc_close_epipen_todos(self):
+        """Task 1717: EpiPen answered — the To-Do is done."""
+        answered = self.sudo().filtered("allergy_epipen_state")
+        if not answered:
+            return
+        todos = self.env["mail.activity"].sudo().search([
+            ("res_model", "=", self._name), ("res_id", "in", answered.ids),
+            ("sc_epipen_todo", "=", True)])
+        if todos:
+            todos.action_done()
 
     def _sc_check_medical_writer(self, vals):
         """Task 1654: coaches read the medical fields but never write them —
@@ -531,6 +611,7 @@ class Patient(models.Model):
             return
         labels = {
             "allergy_epipen": self.env._("EpiPen"),
+            "allergy_epipen_state": self.env._("EpiPen"),
             "allergy_epipen_note": self.env._("EpiPen note"),
             "allergy_none_confirmed": self.env._("No known allergy"),
             "medical_none_confirmed": self.env._("No known condition"),
@@ -559,9 +640,15 @@ class Patient(models.Model):
         medical_changes = []
         if any(name in vals for names in self._SC_MEDICAL_FAMILY_FIELDS.values() for name in names):
             vals, medical_changes = self._sc_medical_change_note(dict(vals))
-            if vals.get("allergy_epipen") is False and "allergy_epipen_note" not in vals:
+            epipen_off = vals.get("allergy_epipen") is False or (
+                "allergy_epipen_state" in vals and vals["allergy_epipen_state"] != "yes")
+            if epipen_off and "allergy_epipen_note" not in vals:
                 # Task 1677: the note goes with the EpiPen.
                 vals["allergy_epipen_note"] = False
+            # Task 1717: « No known allergy » waits for the EpiPen answer.
+            if vals.get("allergy_none_confirmed") and not self.env.su and "allergy_epipen_state" not in vals \
+                    and any(not rec.sudo().allergy_epipen_state for rec in self):
+                raise ValidationError(self._sc_epipen_first_message())
             for family, none_field in (("allergy", "allergy_none_confirmed"),
                                        ("medical_alert", "medical_none_confirmed")):
                 if vals.get(none_field) and not self._sc_phone_lenient() and not self.env.su and any(
@@ -571,6 +658,8 @@ class Patient(models.Model):
         corrections = self._sc_identity_guard(vals)
         training_history = self._prepare_training_history_vals(vals)
         res = super().write(vals)
+        if "allergy_epipen_state" in vals or "allergy_epipen" in vals:
+            self._sc_close_epipen_todos()
         if medical_changes:
             self._sc_medical_post_notes(medical_changes)
         if training_history:
@@ -2178,6 +2267,8 @@ class Patient(models.Model):
                 tracking_disable=True,
                 mail_create_nosubscribe=True,
             ).recompute_followers()
+        # Task 1717: EpiPen unanswered — the creator's To-Do.
+        res._sc_raise_epipen_todos()
         return res
 
     @api.constrains("partner_id")
@@ -2734,6 +2825,11 @@ class Patient(models.Model):
                 continue
             level_label = self._sc_level_label(level)
             epipen = bool(key == "allergy" and self.allergy_epipen)
+            # Task 1717: EpiPen unanswered — the allergies are « Not
+            # provided » (grey), whatever else; the card asks first.
+            epipen_unset = key == "allergy" and not self.allergy_epipen_state
+            if epipen_unset and not level:
+                level_label = env._("Not provided")
             items = self._sc_critical_items(key)
             urgent = items.filtered("life_threatening")
             pills.append({
@@ -2747,6 +2843,8 @@ class Patient(models.Model):
                 "level_label": level_label,
                 "tone": LEVEL_TONES.get(level, UNSET_TONE),
                 "epipen": epipen,
+                "epipen_state": (self.allergy_epipen_state or "") if key == "allergy" else "",
+                "epipen_unset": epipen_unset,
                 "epipen_note": ((self.allergy_epipen_note or "").strip() if epipen else ""),
                 "none_confirmed": bool(self[none_field]),
                 # Therapists only (owner 2026-10-25).
