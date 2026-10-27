@@ -67,6 +67,8 @@ function revert(input) {
         }
     } else if (input.type === "checkbox") {
         input.checked = input.defaultChecked;
+        // Task 1726: a switch's aria-checked follows (sc_switch.js).
+        input.setAttribute("aria-checked", input.checked ? "true" : "false");
     } else {
         input.value = input.defaultValue;
     }

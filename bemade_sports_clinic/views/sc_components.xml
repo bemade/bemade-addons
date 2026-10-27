@@ -506,6 +506,49 @@
     </template>
 
     <!--
+        Task 1726 — THE switch (on / off): the label on the left, a pill
+        switch on the right, one line. A real <input type="checkbox"
+        role="switch"> (forms post exactly what the former checkbox posted;
+        Space toggles it; sc_switch.js keeps aria-checked in sync).
+        Variables (all optional except the label):
+          sw_label    the label (a t-set BODY, so its msgid stays plain text)
+          sw_name     the input's name (None: no name, e.g. a fetch form's
+                      data-* field)
+          sw_value    the posted value when on (None: the browser's « on »)
+          sw_off      a value posted when OFF: a hidden twin with the same
+                      name, disabled while on — so the form posts ONE value
+          sw_checked  on / off
+          sw_disabled locked (e.g. the #1717 EpiPen gate)
+          sw_reason   the line under the label saying why it is locked
+          sw_hint     a line under the label (always shown)
+          sw_id       the input id
+          sw_attrs    dict of extra attributes on the input (data-*)
+          sw_class    extra classes on the row
+    -->
+    <template id="sc_switch" name="App shell: switch">
+        <label t-attf-class="o_sc_switch #{sw_class or ''}"
+               t-att-data-sc-switch-locked="'1' if sw_disabled else None">
+            <span class="o_sc_switch_text">
+                <span class="o_sc_switch_label" t-out="sw_label"/>
+                <small t-if="sw_hint" class="o_sc_switch_hint" t-out="sw_hint"/>
+                <small t-if="sw_disabled and sw_reason" class="o_sc_switch_hint o_sc_switch_reason"
+                       data-sc-switch-reason="1" t-out="sw_reason"/>
+            </span>
+            <span class="o_sc_switch_control">
+                <input type="checkbox" role="switch" class="o_sc_switch_input"
+                       t-att-id="sw_id" t-att-name="sw_name" t-att-value="sw_value"
+                       t-att-checked="'checked' if sw_checked else None"
+                       t-att-aria-checked="'true' if sw_checked else 'false'"
+                       t-att-disabled="'disabled' if sw_disabled else None"
+                       t-att="sw_attrs or {}"/>
+                <span class="o_sc_switch_track" aria-hidden="true"><span class="o_sc_switch_thumb"/></span>
+            </span>
+            <input t-if="sw_off is not None and sw_name" type="hidden" t-att-name="sw_name" t-att-value="sw_off"
+                   data-sc-switch-off="1" t-att-disabled="'disabled' if sw_checked else None"/>
+        </label>
+    </template>
+
+    <!--
         Task 1539 — confirm sheet (delete an injury, a document, cancel an
         activity…): a sc_sheet holding ONE POST form. Variables: sheet_id,
         title, message, action, hidden (dict name -> value), confirm_label,
@@ -1057,7 +1100,7 @@
                          (a read fragment: answering shows the Add control). -->
                     <div class="o_sc_med_add_area" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-add' % sc_med_key)">
                     <p t-if="sc_med_is_allergy and pill['epipen_unset']" class="o_sc_hint o_sc_med_epipen_first"
-                       data-sc-med-epipen-first="1">Answer « EpiPen? » first: then add the allergies or tick « No known allergy ».</p>
+                       data-sc-med-epipen-first="1">Answer « EpiPen? » first: then add the allergies or turn on « No known allergy ».</p>
                     <!-- The list: « + Ajouter » and its add panel. -->
                     <t t-if="editable and not (sc_med_is_allergy and pill['epipen_unset'])">
                         <t t-set="sc_med_panel" t-value="'sc_med_add_%s' % sc_med_uid"/>
@@ -1081,10 +1124,11 @@
                                     <input type="text" t-att-id="'sc_med_new_name_%s' % sc_med_uid" name="name"
                                            class="o_sc_input" required="required" maxlength="120" autocomplete="off"/>
                                 </div>
-                                <label class="o_sc_check">
-                                    <input type="checkbox" name="life_threatening" value="1"/>
-                                    <span>Life-threatening</span>
-                                </label>
+                                <t t-call="bemade_sports_clinic.sc_switch">
+                                    <t t-set="sw_name" t-value="'life_threatening'"/>
+                                    <t t-set="sw_value" t-value="'1'"/>
+                                    <t t-set="sw_label">Life-threatening</t>
+                                </t>
                                 <div t-if="not sc_med_is_allergy" class="o_sc_field">
                                     <label class="o_sc_field_label" t-att-for="'sc_med_new_aid_%s' % sc_med_uid">First aid</label>
                                     <textarea t-att-id="'sc_med_new_aid_%s' % sc_med_uid" name="first_aid_note"
@@ -1144,11 +1188,11 @@
                                            data-sc-med-item-field="name" maxlength="120" autocomplete="off" required="required"
                                            t-att-value="item['name']"/>
                                 </div>
-                                <label class="o_sc_check">
-                                    <input type="checkbox" data-sc-med-item-field="life_threatening"
-                                           t-att-checked="'checked' if item['life_threatening'] else None"/>
-                                    <span>Life-threatening</span>
-                                </label>
+                                <t t-call="bemade_sports_clinic.sc_switch">
+                                    <t t-set="sw_checked" t-value="item['life_threatening']"/>
+                                    <t t-set="sw_attrs" t-value="{'data-sc-med-item-field': 'life_threatening'}"/>
+                                    <t t-set="sw_label">Life-threatening</t>
+                                </t>
                                 <div t-if="not sc_med_is_allergy" class="o_sc_field">
                                     <label class="o_sc_field_label" t-att-for="'sc_med_item_aid_%s_%s' % (scope, item['id'])">First aid</label>
                                     <textarea t-att-id="'sc_med_item_aid_%s_%s' % (scope, item['id'])" class="o_sc_input o_sc_textarea"
@@ -1163,13 +1207,15 @@
                     <!-- An empty list: « none known » (therapists tick it). -->
                     <div class="o_sc_med_none_box" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-none' % sc_med_key)">
                         <t t-if="not pill['items']">
-                            <label t-if="editable" class="o_sc_check o_sc_med_none_check">
-                                <input type="checkbox" t-att-data-sc-med-set="'allergy_none_confirmed' if sc_med_is_allergy else 'medical_none_confirmed'"
-                                       t-att-checked="'checked' if pill['none_confirmed'] else None"
-                                       t-att-disabled="'disabled' if sc_med_is_allergy and pill['epipen_unset'] else None"/>
-                                <span t-if="sc_med_is_allergy">No known allergy</span>
-                                <span t-else="">No known condition</span>
-                            </label>
+                            <t t-if="editable" t-call="bemade_sports_clinic.sc_switch">
+                                <t t-set="sw_checked" t-value="pill['none_confirmed']"/>
+                                <t t-set="sw_disabled" t-value="sc_med_is_allergy and pill['epipen_unset']"/>
+                                <t t-set="sw_reason">Answer « EpiPen? » first.</t>
+                                <t t-set="sw_attrs" t-value="{'data-sc-med-set': 'allergy_none_confirmed' if sc_med_is_allergy else 'medical_none_confirmed'}"/>
+                                <t t-set="sw_class" t-value="'o_sc_med_none_check'"/>
+                                <t t-if="sc_med_is_allergy" t-set="sw_label">No known allergy</t>
+                                <t t-else="" t-set="sw_label">No known condition</t>
+                            </t>
                             <p t-elif="pill['none_confirmed']" class="o_sc_muted">
                                 <t t-if="sc_med_is_allergy">No known allergy</t>
                                 <t t-else="">No known condition</t>

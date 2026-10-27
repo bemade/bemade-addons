@@ -106,10 +106,13 @@
                             <input type="date" id="sc_ev_to" name="date_to" class="o_sc_input" t-att-value="date_to or ''"/>
                         </div>
                     </t>
-                    <label class="o_sc_check">
-                        <input type="checkbox" name="show_cancelled" value="1" t-att-checked="'checked' if show_cancelled else None"/>
-                        <span>Show cancelled events</span>
-                    </label>
+                    <t t-call="bemade_sports_clinic.sc_switch">
+                        <t t-set="sw_name" t-value="'show_cancelled'"/>
+                        <t t-set="sw_value" t-value="'1'"/>
+                        <t t-set="sw_checked" t-value="show_cancelled"/>
+                        <t t-set="sw_class" t-value="'o_sc_switch_filter'"/>
+                        <t t-set="sw_label">Show cancelled events</t>
+                    </t>
                 </div>
                 <!-- Task 1607: the sort is in the list header (sc_list_header);
                      the group by stays here, in its own labelled group. -->

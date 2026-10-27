@@ -40,7 +40,7 @@
                         <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'diagnosis', 'diagnosis', lbl, 'text', required=True)"/>
                     </t>
                     <t t-set="lbl">Date of Injury</t>
-                    <t t-set="hint">Check N/A if exact date is unknown</t>
+                    <t t-set="hint">Turn on N/A if the exact date is unknown</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave">
                         <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'injury_date', 'injury_date', lbl, 'date_na', value=datetime.date.today().isoformat(), naName='injury_date_na', required=True, hint=hint)"/>
                     </t>
@@ -53,10 +53,11 @@
                         <t t-call="bemade_sports_clinic.sc_field_autosave">
                             <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'parental_consent', 'parental_consent', lbl, 'select', options=sc_consent_options, required=True)"/>
                         </t>
-                        <label class="o_sc_check">
-                            <input type="checkbox" name="hidden_from_coaches" value="1"/>
-                            <span>Hide from coaches</span>
-                        </label>
+                        <t t-call="bemade_sports_clinic.sc_switch">
+                            <t t-set="sw_name" t-value="'hidden_from_coaches'"/>
+                            <t t-set="sw_value" t-value="'1'"/>
+                            <t t-set="sw_label">Hide from coaches</t>
+                        </t>
                     </t>
                 </div>
                 <!-- Owner review 2026-10-25 (#1675): coaches read the external

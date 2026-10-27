@@ -147,8 +147,8 @@ tours.add("sc_1677_allergies_tp", {
             run: "click",
         },
         {
-            content: "Tick « Risque vital »",
-            trigger: `${ALLERGY} [data-sc-med-item]:not(:first-child) [data-sc-edit-view="edit"]:not([hidden]) input[data-sc-med-item-field="life_threatening"]`,
+            content: "Turn on « Risque vital » (task 1726: a switch — tap its row)",
+            trigger: `${ALLERGY} [data-sc-med-item]:not(:first-child) [data-sc-edit-view="edit"]:not([hidden]) label.o_sc_switch:has(input[data-sc-med-item-field="life_threatening"])`,
             run: "click",
         },
         {
@@ -192,7 +192,7 @@ tours.add("sc_1677_conditions_tp", {
         },
         {
             content: "Grey, the « no known condition » box, no EpiPen card",
-            trigger: `${CONDITION} input[data-sc-med-set="medical_none_confirmed"]`,
+            trigger: `${CONDITION} label.o_sc_switch:has(input[data-sc-med-set="medical_none_confirmed"])`,
             run() {
                 assert(headTone(CONDITION) === "unset", `head: ${headTone(CONDITION)}`);
                 assert(!q(`${CONDITION} [data-sc-section="medical.allergy.epipen"]`), "an EpiPen card");
@@ -210,7 +210,7 @@ tours.add("sc_1677_conditions_tp", {
         },
         {
             content: "Risque vital",
-            trigger: `${CONDITION} details[open] form[data-sc-med-add] input[name="life_threatening"]`,
+            trigger: `${CONDITION} details[open] form[data-sc-med-add] label.o_sc_switch:has(input[name="life_threatening"])`,
             run: "click",
         },
         {

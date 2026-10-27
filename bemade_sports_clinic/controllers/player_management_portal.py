@@ -77,7 +77,16 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         countries = canada if canada else request.env['res.country'].search([], order='name')
 
         values = self._prepare_portal_layout_values()
+        # Task 1726: the app form picks the teams with the tag picker (one
+        # hidden ``team_ids`` = the chosen ids, comma separated); a single
+        # team is chosen up front, as the lone checkbox used to be.
+        team_csv = str(all_teams.id) if len(all_teams) == 1 else ''
         values.update({
+            'sc_team_csv': team_csv,
+            'sc_team_props': self._sc_form_props(
+                'sc_new_team_ids', _("Teams"), value=team_csv,
+                options=[(t.id, t.name) for t in all_teams],
+                placeholder=_("Add a team…")),
             'page_name': 'create_player',
             'is_treatment_prof': is_treatment_prof,
             'is_coach': is_coach,
@@ -132,7 +141,10 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
         # Team selection (optional). Restrict to staff teams to avoid tampering
         try:
-            selected_team_ids = [int(tid) for tid in request.httprequest.form.getlist('team_ids')]
+            # One value per checkbox (portal form) or one comma-separated
+            # value (the app's tag picker, task 1726).
+            selected_team_ids = [int(tid) for raw in request.httprequest.form.getlist('team_ids')
+                                 for tid in str(raw).split(',') if tid.strip()]
         except Exception:
             selected_team_ids = []
         allowed_team_ids = self._team_targets().ids

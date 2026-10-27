@@ -161,10 +161,15 @@
                        t-on-input="(ev) => { this.state.value = ev.target.value; this.onInput(); }"
                        t-on-change="(ev) => { this.state.value = ev.target.value; this.onChange(); }"
                        t-on-blur="commit" t-on-keydown="onDateKeydown" t-on-pointerdown="onDatePointer"/>
-                <label class="o_sc_check">
-                    <input type="checkbox" t-att-name="props.naName" value="1" t-att-checked="isNa"
-                           t-att-disabled="isDisabled" t-on-change="onNaToggle"/>
-                    <span t-esc="naLabel"/>
+                <!-- Task 1726: the « N/A » box is the shared switch (sc_switch). -->
+                <label class="o_sc_switch o_sc_switch_inline">
+                    <span class="o_sc_switch_text"><span class="o_sc_switch_label" t-esc="naLabel"/></span>
+                    <span class="o_sc_switch_control">
+                        <input type="checkbox" role="switch" class="o_sc_switch_input" t-att-name="props.naName" value="1"
+                               t-att-checked="isNa" t-att-aria-checked="isNa ? 'true' : 'false'"
+                               t-att-disabled="isDisabled" t-on-change="onNaToggle"/>
+                        <span class="o_sc_switch_track" aria-hidden="true"><span class="o_sc_switch_thumb"/></span>
+                    </span>
                 </label>
             </div>
             <input t-else="" t-ref="input" class="o_sc_input" t-att-type="type"

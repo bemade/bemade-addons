@@ -440,10 +440,12 @@
                                 <p t-if="deactivate_error == 'validation'" class="o_sc_field_message o_sc_field_error"
                                    data-sc-error-for="validation">Type your login exactly as shown above.</p>
                             </div>
-                            <label class="o_sc_check" for="sc_deactivate_blacklist">
-                                <input type="checkbox" name="request_blacklist" id="sc_deactivate_blacklist" checked="checked"/>
-                                Put my email and phone on a block list so I am never contacted again
-                            </label>
+                            <t t-call="bemade_sports_clinic.sc_switch">
+                                <t t-set="sw_name" t-value="'request_blacklist'"/>
+                                <t t-set="sw_id" t-value="'sc_deactivate_blacklist'"/>
+                                <t t-set="sw_checked" t-value="True"/>
+                                <t t-set="sw_label">Put my email and phone on a block list so I am never contacted again</t>
+                            </t>
                             <div class="o_sc_form_actions">
                                 <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
                                 <button type="submit" class="o_sc_btn o_sc_btn_primary o_sc_btn_danger">Delete account</button>

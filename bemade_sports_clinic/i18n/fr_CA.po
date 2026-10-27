@@ -10830,6 +10830,7 @@ msgstr "Afficher tous les thérapeutes"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_calendar
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_list
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_event_filter_bar
 msgid "Show cancelled events"
 msgstr "Afficher les événements annulés"
 
@@ -17478,8 +17479,8 @@ msgstr "EpiPen ?"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
-msgid "Answer « EpiPen? » first: then add the allergies or tick « No known allergy »."
-msgstr "Répondez d'abord à « EpiPen ? » : ajoutez ensuite les allergies ou cochez « Aucune allergie connue »."
+msgid "Answer « EpiPen? » first: then add the allergies or turn on « No known allergy »."
+msgstr "Répondez d'abord à « EpiPen ? » : ajoutez ensuite les allergies ou activez « Aucune allergie connue »."
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_mail_activity__sc_epipen_todo
@@ -17514,3 +17515,18 @@ msgstr "Changer d'organisation"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
 msgid "Carries an EpiPen"
 msgstr "Porte un EpiPen"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_settings
+msgid "Dark mode"
+msgstr "Mode sombre"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Answer « EpiPen? » first."
+msgstr "Répondez d'abord à « EpiPen ? »."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_new_form
+msgid "Turn on N/A if the exact date is unknown"
+msgstr "Activez S/O si la date exacte est inconnue"

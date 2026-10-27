@@ -73,8 +73,8 @@ tours.add("sc_1652_card_pill", {
             },
         },
         {
-            content: "Untick « Risque vital »",
-            trigger: 'dialog[id^="sc_med_card_allergy_"][open] [data-sc-med-item] [data-sc-edit-view="edit"]:not([hidden]) input[data-sc-med-item-field="life_threatening"]',
+            content: "Turn off « Risque vital » (task 1726: a switch — tap its row)",
+            trigger: 'dialog[id^="sc_med_card_allergy_"][open] [data-sc-med-item] [data-sc-edit-view="edit"]:not([hidden]) label.o_sc_switch:has(input[data-sc-med-item-field="life_threatening"])',
             run: "click",
         },
         {

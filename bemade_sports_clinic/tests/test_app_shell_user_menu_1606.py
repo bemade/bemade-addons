@@ -181,7 +181,9 @@ class TestUserMenu1606(UserMenuCommon):
         _text, tree = self._get('/my/app/settings')
         form = tree.xpath('//*[@id="sc_appearance"]//form[@data-sc-pref]')
         self.assertEqual(len(form), 1)
-        self.assertTrue(form[0].xpath('.//button[@name="sc_theme"][@value="light"]'))
+        # Task 1726: a switch posting dark (on) / light (its off twin).
+        self.assertTrue(form[0].xpath('.//input[@role="switch"][@name="sc_theme"][@value="dark"]'))
+        self.assertTrue(form[0].xpath('.//input[@type="hidden"][@name="sc_theme"][@value="light"]'))
         self.assertEqual(form[0].xpath('.//input[@name="redirect"]/@value'),
                          ['/my/app/settings'])
 
@@ -213,7 +215,7 @@ class TestUserMenu1606(UserMenuCommon):
             for href in ('/my/account', '/my/security', '/my/home?classic=1'):
                 self.assertNotIn(href, hrefs)
             self.assertFalse([h for h in hrefs if h.startswith(LOGOUT)])
-            self.assertFalse(main.xpath('.//button[@name="lang"] | .//button[@name="sc_theme"]'))
+            self.assertFalse(main.xpath('.//button[@name="lang"] | .//*[@name="sc_theme"]'))
             # The app entries stay.
             self.assertIn('install', main.xpath('.//a/@data-sc-nav-key'))
 
@@ -284,7 +286,7 @@ class TestUserMenuFrench1606(UserMenuCommon):
                 if where == 'bar':
                     self.assertEqual(trigger.get('aria-label'), 'Menu utilisateur')
             text = self._fr('/my/app/settings')
-            for term in ('Paramètres', 'Langue', 'Apparence', 'Sombre', 'Clair',
+            for term in ('Paramètres', 'Langue', 'Apparence', 'Mode sombre',
                          'Mon compte', 'Sécurité', 'Tableau de bord'):
                 self.assertIn(term, text, term)
             # Review fixes 2026-10-18: no « Portail classique » row.

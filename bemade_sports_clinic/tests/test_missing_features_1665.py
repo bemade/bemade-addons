@@ -99,7 +99,9 @@ class TestMissingFeatures1665(Features1665Common):
         self._login_tp()
         tree = self._tree('/my/app/settings')
         section = tree.xpath('//section[@data-sc-section="settings.morning_summary"]')[0]
-        self.assertEqual(section.xpath('.//button[@value="1"]/@aria-pressed'), ['true'])
+        # Task 1726: a switch (on), its « 0 » twin disabled while on.
+        self.assertEqual(section.xpath('.//input[@role="switch"][@name="digest_daily_enabled"]/@aria-checked'), ['true'])
+        self.assertTrue(section.xpath('.//input[@type="hidden"][@value="0"][@disabled]'))
         self.url_open('/my/app/pref', data={'csrf_token': self._csrf(), 'digest_daily_enabled': '0',
                                             'redirect': '/my/app/settings'}, allow_redirects=False)
         self.tp.invalidate_recordset()
@@ -107,7 +109,8 @@ class TestMissingFeatures1665(Features1665Common):
         self.assertTrue(self.coach.digest_daily_enabled)
         tree = self._tree('/my/app/settings')
         section = tree.xpath('//section[@data-sc-section="settings.morning_summary"]')[0]
-        self.assertEqual(section.xpath('.//button[@value="0"]/@aria-pressed'), ['true'])
+        self.assertEqual(section.xpath('.//input[@role="switch"]/@aria-checked'), ['false'])
+        self.assertFalse(section.xpath('.//input[@type="hidden"][@value="0"][@disabled]'))
         # Never another user's record.
         resp = self.url_open('/my/app/pref', data={'csrf_token': self._csrf(), 'digest_daily_enabled': '0',
                                                    'user_id': self.coach.id}, allow_redirects=False)

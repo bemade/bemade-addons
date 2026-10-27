@@ -1539,16 +1539,16 @@
                                        inputmode="tel" autocomplete="tel"/>
                             </div>
                         </div>
-                        <fieldset t-if="all_teams" class="o_sc_fields">
-                            <legend class="o_sc_field_label">Teams</legend>
-                            <t t-foreach="all_teams" t-as="team_opt">
-                                <label class="o_sc_check">
-                                    <input type="checkbox" name="team_ids" t-att-value="team_opt.id"
-                                           t-att-checked="'checked' if len(all_teams) == 1 else None"/>
-                                    <span t-out="team_opt.name"/>
-                                </label>
+                        <!-- Task 1726: the teams are the type-to-search tag
+                             picker of « Créer un joueur » (« Ajouter une
+                             équipe… »); it fills the hidden team_ids (the
+                             chosen ids, comma separated). -->
+                        <t t-if="all_teams">
+                            <input type="hidden" id="sc_new_team_ids" name="team_ids" t-att-value="sc_team_csv"/>
+                            <t t-call="bemade_sports_clinic.sc_field_autosave">
+                                <t t-set="props" t-value="sc_team_props"/>
                             </t>
-                        </fieldset>
+                        </t>
                         <t t-if="is_treatment_prof">
                             <div class="o_sc_field">
                                 <label for="sc_new_status" class="o_sc_field_label">Match</label>

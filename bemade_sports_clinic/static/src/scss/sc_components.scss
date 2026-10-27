@@ -1205,6 +1205,138 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         }
     }
 
+    // Task 1726: THE switch (sc_switch macro + the autosave « N/A »): the
+    // label on the left, a pill switch on the right, one line, 44 px tall.
+    // The checkbox covers the track (opacity 0): taps, Space and the forms
+    // all go through the real input.
+    .o_sc_switch {
+        --sc-switch-w: 48px;
+        --sc-switch-h: 28px;
+        --sc-switch-pad: 3px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--sc-space-3);
+        min-height: var(--sc-tap);
+        margin: 0;
+        color: var(--sc-fg);
+        font-weight: 600;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+
+        &[data-sc-switch-locked] {
+            cursor: not-allowed;
+
+            .o_sc_switch_label {
+                color: var(--sc-fg-2);
+            }
+        }
+    }
+
+    .o_sc_switch_text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .o_sc_switch_hint {
+        color: var(--sc-fg-2);
+        font-weight: 400;
+        font-size: var(--sc-text-sm);
+    }
+
+    .o_sc_switch_control {
+        position: relative;
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        // The tap target: the full row height, a little wider than the track.
+        min-width: var(--sc-tap);
+        min-height: var(--sc-tap);
+    }
+
+    .o_sc_switch_input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        opacity: 0;
+        cursor: inherit;
+        z-index: 1;
+    }
+
+    .o_sc_switch_track {
+        position: relative;
+        display: block;
+        width: var(--sc-switch-w);
+        height: var(--sc-switch-h);
+        border-radius: 999px;
+        background: var(--sc-surface-2);
+        box-shadow: inset 0 0 0 1px var(--sc-line);
+        transition: background-color 0.15s ease;
+    }
+
+    .o_sc_switch_thumb {
+        position: absolute;
+        top: var(--sc-switch-pad);
+        left: var(--sc-switch-pad);
+        width: calc(var(--sc-switch-h) - 2 * var(--sc-switch-pad));
+        height: calc(var(--sc-switch-h) - 2 * var(--sc-switch-pad));
+        border-radius: 50%;
+        background: var(--sc-fg-2);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    .o_sc_switch_input:checked + .o_sc_switch_track {
+        background: var(--sc-accent);
+        box-shadow: none;
+
+        .o_sc_switch_thumb {
+            background: var(--sc-accent-fg);
+            transform: translateX(calc(var(--sc-switch-w) - var(--sc-switch-h)));
+        }
+    }
+
+    .o_sc_switch_input:focus-visible + .o_sc_switch_track {
+        outline: 2px solid var(--sc-focus);
+        outline-offset: 2px;
+    }
+
+    .o_sc_switch_input:disabled + .o_sc_switch_track {
+        opacity: 0.45;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .o_sc_switch_track,
+        .o_sc_switch_thumb {
+            transition: none;
+        }
+    }
+
+    // Beside another control (the date's « N/A »): label then switch, compact.
+    .o_sc_switch_inline {
+        flex: none;
+        justify-content: flex-start;
+        gap: var(--sc-space-2);
+        font-size: 14px;
+        color: var(--sc-fg-2);
+    }
+
+    // A filter form's switch takes the whole row of the filter grid.
+    .o_sc_switch_filter {
+        grid-column: 1 / -1;
+    }
+
+    // A preference card holding one switch (Paramètres).
+    .o_sc_switch_card {
+        margin: 0;
+        padding: var(--sc-space-1) var(--sc-space-3);
+    }
+
     .o_sc_row_wrap {
         min-width: 0;
     }
@@ -1612,63 +1744,8 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         }
     }
 
-    // On / off switch (owner review 2026-10-10). A link with role="switch" +
-    // aria-checked: the server applies the change and re-renders.
-    .o_sc_switch {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--sc-space-2);
-        min-height: var(--sc-tap);
-        color: var(--sc-fg);
-        font-size: var(--sc-text-md);
-        font-weight: 600;
-        text-decoration: none;
-
-        &:hover,
-        &:focus {
-            color: var(--sc-fg);
-            text-decoration: none;
-        }
-
-        &:focus-visible .o_sc_switch_track {
-            outline: 2px solid var(--sc-focus);
-            outline-offset: 2px;
-        }
-    }
-
-    .o_sc_switch_track {
-        position: relative;
-        flex: none;
-        width: 44px;
-        height: 26px;
-        border-radius: var(--sc-radius-pill);
-        background: var(--sc-surface-2);
-        border: 1px solid var(--sc-line);
-        transition: background-color 0.15s ease;
-    }
-
-    .o_sc_switch_thumb {
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: var(--sc-fg-2);
-        transition: transform 0.15s ease, background-color 0.15s ease;
-    }
-
-    .o_sc_switch[aria-checked="true"] {
-        .o_sc_switch_track {
-            background: var(--sc-accent);
-            border-color: var(--sc-accent);
-        }
-
-        .o_sc_switch_thumb {
-            background: var(--sc-accent-fg);
-            transform: translateX(18px);
-        }
-    }
+    // (Task 1726: the former link « switch » of 2026-10-10 had no user any
+    // more; the shared switch is .o_sc_switch above.)
 
     @media (prefers-reduced-motion: reduce) {
         * {
