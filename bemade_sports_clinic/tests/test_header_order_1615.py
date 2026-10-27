@@ -158,11 +158,13 @@ class TestDossierOrder1615(Clinic1540Common):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/clinic/%s?patient=%s&tab=dossier' % (self.clinic.id, self.player.id))
-        card = tree.xpath('//*[@data-sc-section="clinic.dossier.status"]')[0]
-        # Task 1627: the status pills first, then the live recommendation.
-        blocks = [child for child in card if isinstance(child.tag, str)]
-        self.assertEqual(blocks[0].get('data-sc-section'), 'clinic.dossier.status.pills')
-        self.assertEqual(len(blocks[0].xpath('.//*[@data-sc-pill-select]')), 2)
-        fields = card.xpath('.//owl-component/@props')
-        self.assertEqual(len(fields), 1, fields)
-        self.assertIn('"training_recommendation"', fields[0])
+        # Task 1721: the status card gave way to the team page's player card
+        # (its Match / Pratique quick-change pills, then its lines); the
+        # card comes before the injuries and the notes.
+        card = tree.xpath('//*[@data-sc-section="clinic.dossier.player"]')[0]
+        self.assertEqual(len(card.xpath('.//*[@data-sc-pill-select]')), 2)
+        self.assertFalse(card.xpath('.//owl-component'))
+        order = [el.get('data-sc-section') for el in tree.xpath(
+            '//*[@data-sc-section="clinic.dossier.player" or @data-sc-section="clinic.dossier.injuries"'
+            ' or @data-sc-section="clinic.dossier.notes"]')]
+        self.assertEqual(order, ['clinic.dossier.player', 'clinic.dossier.injuries', 'clinic.dossier.notes'])

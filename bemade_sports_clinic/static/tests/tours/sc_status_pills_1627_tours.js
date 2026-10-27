@@ -136,7 +136,8 @@ tours.add("sc_1627_status_pills", {
     ],
 });
 
-const DOSSIER = '[data-sc-section="clinic.dossier.status"]';
+// Task 1721: the dossier's pills are the player card's.
+const DOSSIER = '[data-sc-section="clinic.dossier.player"]';
 
 tours.add("sc_1627_status_pills_dossier", {
     steps: () => [

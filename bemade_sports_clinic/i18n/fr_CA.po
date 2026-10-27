@@ -6644,6 +6644,7 @@ msgstr "Blessé :"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__injury_ids
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_clinic
 msgid "Injuries"
 msgstr "Blessures"
 
@@ -7785,6 +7786,7 @@ msgstr "Aucun accès"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_row_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_clinic
 msgid "No active injuries."
 msgstr "Aucune blessure active."
 
@@ -17436,3 +17438,9 @@ msgstr "Confirmez ou corrigez la date de naissance ci-dessus"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "This player already exists — add them to the team or choose « Create anyway » above"
 msgstr "Ce joueur existe déjà — ajoutez-le à l'équipe ou choisissez « Créer quand même » ci-dessus"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
+msgid "Show resolved injuries (%s)"
+msgstr "Afficher les blessures résolues (%s)"

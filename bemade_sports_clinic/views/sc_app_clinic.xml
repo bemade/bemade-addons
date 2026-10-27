@@ -188,86 +188,47 @@
                     </t>
                     <t t-else="">
                         <t t-set="patient" t-value="selected_patient"/>
-                        <div class="o_sc_card o_sc_hero" data-sc-section="clinic.dossier.hero" t-att-data-sc-patient-id="patient.id">
-                            <div class="o_sc_hero_top">
-                            <div class="o_sc_hero_head">
-                                <span class="o_sc_avatar" t-out="''.join(part[:1] for part in [patient.first_name or '', patient.last_name or '']).upper()"/>
-                                <div>
-                                    <h2 class="o_sc_hero_title" t-out="patient._portal_heading_name()"/>
-                                    <p class="o_sc_meta">
-                                        <t t-out="', '.join(patient.team_ids.mapped('name'))"/>
-                                        <t t-if="patient.position"> · <t t-out="patient.position"/></t>
-                                    </p>
-                                </div>
-                            </div>
+                        <!-- Task 1721 (owner spec 2026-10-26, MC « Clinique »): the
+                             Dossier pane is (1) the team page's expandable
+                             player card for this patient, (2) the player
+                             form's injuries — « + Ajouter » above, the
+                             resolved ones folded — and (3) the clinical
+                             notes. The medical pills stay under the card
+                             (#1630). -->
+                        <div class="o_sc_list o_sc_clinic_player" data-sc-section="clinic.dossier.player"
+                             t-att-data-sc-patient-id="patient.id" id="clinic-status">
+                            <t t-call="bemade_sports_clinic.sc_player_row">
+                                <t t-set="row" t-value="sc_clinic_player_row"/>
+                                <t t-set="row_scope" t-value="'clinic'"/>
+                            </t>
+                        </div>
+                        <div t-if="sc_can('patient.medical_alerts')" class="o_sc_clinic_medical"
+                             data-sc-section="clinic.dossier.hero">
                             <!-- Task 1630 (owner 2026-10-20): the player page's
-                                 « Allergies » / « Medical alert » pills replace the
-                                 allergies banner; therapists edit in the popups. -->
-                            <t t-if="sc_can('patient.medical_alerts')" t-call="bemade_sports_clinic.sc_medical_pills">
+                                 « Allergies » / « Medical alert » pills;
+                                 therapists edit in the popups. -->
+                            <t t-call="bemade_sports_clinic.sc_medical_pills">
                                 <t t-set="tp" t-value="bool(is_treatment_prof)"/>
                                 <t t-set="scope" t-value="'clinic'"/>
                                 <t t-set="section" t-value="'clinic.dossier.medical'"/>
                             </t>
-                            </div>
-                            <div class="o_sc_actions_row">
-                                <a t-attf-href="/my/player?player_id=#{patient.id}#{dossier_ctx_qs}" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
-                                   data-sc-action="clinic.full_file">
-                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'user'"/></t>
-                                    <span>Full file</span>
-                                </a>
-                                <!-- Task 1590: jumps to the inline « Add Injury » card. -->
-                                <a t-if="is_treatment_prof" href="#sc_clinic_injury_add"
-                                   class="o_sc_btn o_sc_btn_primary o_sc_btn_sm"
-                                   data-sc-action="clinic.injury_new">
-                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'injury'"/></t>
-                                    <span>New injury</span>
-                                </a>
-                            </div>
                         </div>
-                        <!-- Task 1630: the pills' popups (islands, outside the hero). -->
                         <t t-if="sc_can('patient.medical_alerts')" t-call="bemade_sports_clinic.sc_medical_sheets">
                             <t t-set="tp" t-value="bool(is_treatment_prof)"/>
                             <t t-set="scope" t-value="'clinic'"/>
                             <t t-set="editable" t-value="bool(is_treatment_prof)"/>
                         </t>
 
-                        <div class="o_sc_card o_sc_fields" data-sc-section="clinic.dossier.status" id="clinic-status">
-                            <!-- Task 1627: the player page's Match / Practice pill
-                                 dropdowns replace the 4-way changer (read-only,
-                                 coloured pills without the status right); a
-                                 read fragment, so a change recolours them in
-                                 place. -->
-                            <t t-set="sc_status_undo">Status changed</t>
-                            <div class="o_sc_chips" data-sc-section="clinic.dossier.status.pills"
-                                 t-att-data-sc-fragment="sc_fragment_key(patient, 'status')">
-                                <t t-foreach="patient._sc_status_pills()" t-as="pill">
-                                    <t t-call="bemade_sports_clinic.sc_status_pill_select">
-                                        <t t-set="editable" t-value="is_treatment_prof and sc_can('patient.status.edit')"/>
-                                        <t t-set="undo_message" t-value="sc_status_undo"/>
-                                    </t>
-                                </t>
-                            </div>
-                            <t t-set="sc_training_label">Training Recommendation</t>
-                            <t t-if="is_treatment_prof and sc_can('patient.training.edit')" t-call="bemade_sports_clinic.sc_field_autosave">
-                                <t t-set="props" t-value="sc_field_props(patient, 'training_recommendation', sc_training_label, 'textarea', clearable=True, hint=patient.last_training_recommendation_info or None)"/>
-                            </t>
-                            <t t-elif="(patient.training_recommendation or '').strip()" t-call="bemade_sports_clinic.sc_field_static">
-                                <t t-set="label" t-value="sc_training_label"/>
-                                <t t-set="value" t-value="patient.training_recommendation"/>
-                                <t t-set="pre" t-value="True"/>
-                                <t t-set="static_hint" t-value="patient.last_training_recommendation_info"/>
-                            </t>
-                        </div>
-
                         <section class="o_sc_section" data-sc-section="clinic.dossier.injuries" id="clinic-injuries">
                             <t t-call="bemade_sports_clinic.sc_section_header">
-                                <t t-set="title">Active injuries</t>
+                                <t t-set="title">Injuries</t>
                             </t>
                             <!-- Task 1590: the player page's inline cards — add
                                  (coach visibility, then diagnosis), pencil edit
                                  saved field by field, the quick notes with their
                                  « last note » stamp; every create / undo lands
-                                 back here (sc_origin=clinic). -->
+                                 back here (sc_origin=clinic). Task 1721: its
+                                 « + Ajouter » sits right above the list. -->
                             <t t-set="clinic_event" t-value="event"/>
                             <t t-set="card_origin" t-value="'clinic'"/>
                             <t t-set="card_id_prefix" t-value="'clinic-injury-'"/>
@@ -283,9 +244,20 @@
                                     <t t-call="bemade_sports_clinic.sc_injury_card"/>
                                 </t>
                             </div>
-                            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
-                                <t t-set="message">No active injury on file.</t>
-                            </t>
+                            <p t-else="" class="o_sc_empty" data-sc-section="clinic.dossier.no_active">No active injuries.</p>
+                            <!-- Task 1721: the resolved injuries, folded (always
+                                 present: a resolve in this pane refreshes it). -->
+                            <div class="o_sc_clinic_resolved" data-sc-section="clinic.dossier.resolved"
+                                 t-att-data-sc-fragment="sc_fragment_key(patient, 'resolved-injuries')">
+                                <details t-if="sc_resolved_injury_rows" class="o_sc_resolved_injuries" data-sc-resolved-injuries="1">
+                                    <summary class="o_sc_link_btn o_sc_resolved_toggle" t-out="sc_resolved_injuries_label"/>
+                                    <div class="o_sc_list" data-sc-section="clinic.dossier.resolved_list">
+                                        <t t-foreach="sc_resolved_injury_rows" t-as="row">
+                                            <t t-call="bemade_sports_clinic.sc_injury_card"/>
+                                        </t>
+                                    </div>
+                                </details>
+                            </div>
                         </section>
 
                         <section class="o_sc_section" data-sc-section="clinic.dossier.notes" id="clinic-notes">

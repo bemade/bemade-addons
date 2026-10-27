@@ -683,3 +683,36 @@ $sc-p3-laptop: 1024px;
     }
 }
 
+
+// Task 1721: the Clinique dossier — the player card, the medical pills
+// under it, the folded resolved injuries.
+.o_sc_app {
+    .o_sc_clinic_medical {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sc-space-2);
+        margin-top: var(--sc-space-2);
+    }
+
+    .o_sc_resolved_injuries {
+        margin-top: var(--sc-space-2);
+
+        > summary.o_sc_resolved_toggle {
+            list-style: none;
+            display: inline-flex;
+            align-items: center;
+            min-height: var(--sc-tap);
+            color: var(--sc-accent);
+            font-weight: 600;
+            cursor: pointer;
+
+            &::-webkit-details-marker {
+                display: none;
+            }
+        }
+
+        > .o_sc_list {
+            margin-top: var(--sc-space-2);
+        }
+    }
+}

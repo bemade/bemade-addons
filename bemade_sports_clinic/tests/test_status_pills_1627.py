@@ -327,17 +327,22 @@ class TestDossierStatusPills1627(StatusPillsMixin, Clinic1540Common):
     def _url(self):
         return '/my/clinic/%s?patient=%s&tab=dossier' % (self.clinic.id, self.player.id)
 
+    # Task 1721: the dossier's pills are now the player card's (the team
+    # page's row, fragment « row-clinic »), not a status card's.
+    def _status_node(self, tree):
+        node = self._node(tree, self._key('row-clinic'))
+        self.assertIsNotNone(node, 'no player card fragment')
+        return node
+
     # -- AC-6 --------------------------------------------------------------
     def test_dossier_pills_replace_the_changer(self):
         self._login_tp()
         tree = self._page(self._url())
-        card = tree.xpath('//*[@data-sc-section="clinic.dossier.status"]')[0]
-        props = card.xpath('.//owl-component/@props')
-        self.assertEqual(len(props), 1, props)
-        self.assertIn('"training_recommendation"', props[0])
+        card = tree.xpath('//*[@data-sc-section="clinic.dossier.player"]')[0]
+        self.assertFalse(card.xpath('.//owl-component'))
         self.assertFalse(tree.xpath('//owl-component[contains(@props, \'"sc_status"\')]'))
         status = self._status_node(tree)
-        self.assertTrue(status.xpath('ancestor::*[@data-sc-section="clinic.dossier.status"]'))
+        self.assertTrue(status.xpath('ancestor::*[@data-sc-section="clinic.dossier.player"]'))
         self._assert_dropdowns(tree, 'yes:yes')
         self.assertEqual(self._menu_state(tree)['practice'], {'yes': 'yes:yes', 'no_contact': None, 'no': None})
 
@@ -345,12 +350,12 @@ class TestDossierStatusPills1627(StatusPillsMixin, Clinic1540Common):
     def test_dossier_save_refreshes_in_place(self):
         self._login_tp()
         payload = self._saved(self.player, 'sc_status', 'no:no_contact')
-        self.assertRefreshes(payload, self._key('status'))
-        status = self._fragment(self._url(), self._key('status'))
+        self.assertRefreshes(payload, self._key('row-clinic'))
+        status = self._fragment(self._url(), self._key('row-clinic'))
         classes = {key: pill.xpath('.//button')[0].get('class') for key, pill in _pills(status).items()}
         self.assertIn('o_sc_chip_red', classes['match'])
         self.assertIn('o_sc_chip_yellow', classes['practice'])
-        self.assertFragmentMatchesPage(self._url(), self._key('status'))
+        self.assertFragmentMatchesPage(self._url(), self._key('row-clinic'))
 
     def test_dossier_tour(self):
         self.start_tour(self._url(), 'sc_1627_status_pills_dossier', login=self.tp.login)
