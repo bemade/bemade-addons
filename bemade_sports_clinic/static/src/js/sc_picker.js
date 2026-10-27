@@ -20,6 +20,10 @@
  *
  * Never focused on open (#1646); the list sits in the flow under the box so
  * a phone keyboard does not hide it.
+ *
+ * Task 1722: data-sc-picker-empty on the select keeps its empty option
+ * (« À déterminer », « Toutes les organisations ») as a real choice: listed
+ * first (when it matches the typed words) and shown in the box when chosen.
  */
 import { _t, translationIsReady } from "@web/core/l10n/translation";
 
@@ -56,8 +60,15 @@ function pickerOf(select) {
     return next && next.classList.contains("o_sc_picker") ? next : null;
 }
 
+function keepsEmpty(select) {
+    return Boolean(select.dataset.scPickerEmpty);
+}
+
 function labelOf(select) {
     const option = select.selectedOptions && select.selectedOptions[0];
+    if (option && !option.value && keepsEmpty(select)) {
+        return option.textContent.trim();
+    }
     return option && option.value ? option.textContent.trim() : "";
 }
 
@@ -69,7 +80,10 @@ function render(select, picker, query) {
     const list = picker.querySelector(".o_sc_picker_list");
     const words = scWords(query);
     const matches = [...select.options].filter(
-        (option) => option.value && allowed(option) && (!words.length || scNameMatches(words, option.textContent))
+        (option) =>
+            (option.value || (keepsEmpty(select) && option.textContent.trim())) &&
+            allowed(option) &&
+            (!words.length || scNameMatches(words, option.textContent))
     );
     list.replaceChildren();
     for (const [index, option] of matches.slice(0, MAX_SHOWN).entries()) {

@@ -224,6 +224,8 @@ async function createVenue(form) {
             option.textContent = result.name;
             select.appendChild(option);
             select.value = String(result.id);
+            // Task 1722: the picker's box follows the new venue.
+            select.dispatchEvent(new Event("change", { bubbles: true }));
         }
         form.reset();
         const dialog = form.closest("dialog");

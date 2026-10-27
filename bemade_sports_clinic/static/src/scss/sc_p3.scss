@@ -613,6 +613,22 @@ $sc-p3-laptop: 1024px;
         min-width: 0;
     }
 
+    // Task 1722: the event form's venue picker beside « New venue ».
+    .o_sc_inline_form:has(> .o_sc_picker) {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--sc-space-2);
+
+        > .o_sc_picker {
+            flex: 1 1 auto;
+        }
+
+        > .o_sc_btn {
+            flex: none;
+            min-height: var(--sc-tap);
+        }
+    }
+
     .o_sc_picker_box {
         position: relative;
         display: flex;

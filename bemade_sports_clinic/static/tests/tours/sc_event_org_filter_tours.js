@@ -94,7 +94,7 @@ tours.add("sc_1597_event_org_filter", {
         },
         {
             content: "Pick the second organization",
-            trigger: `${FORM} select[data-sc-org-select]`,
+            trigger: `${FORM} select[data-sc-org-select]:not(:visible)`, // Task 1722: the picker's hidden value
             run() {
                 selectOrg(this.anchor, "ZZ Org 1597");
             },
@@ -114,7 +114,7 @@ tours.add("sc_1597_event_org_filter", {
         },
         {
             content: "Back to all organizations: every team is offered again, picks kept",
-            trigger: `${FORM} select[data-sc-org-select]`,
+            trigger: `${FORM} select[data-sc-org-select]:not(:visible)`, // Task 1722: the picker's hidden value
             async run() {
                 this.anchor.value = "";
                 this.anchor.dispatchEvent(new Event("change", { bubbles: true }));

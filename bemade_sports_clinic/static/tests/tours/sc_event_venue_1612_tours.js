@@ -55,7 +55,8 @@ tours.add("sc_1612_event_new_venue", {
         },
         {
             content: "The card's venue field holds the new venue",
-            trigger: `${CARD} .o_sc_autosave[data-sc-field="venue_id"] select`,
+            // Task 1722: the select is the (hidden) value of the venue picker.
+            trigger: `${CARD} .o_sc_autosave[data-sc-field="venue_id"] select:not(:visible)`,
             async run() {
                 const start = Date.now();
                 const shown = () => {
