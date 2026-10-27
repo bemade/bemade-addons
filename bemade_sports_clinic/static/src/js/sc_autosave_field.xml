@@ -130,6 +130,12 @@
                     </t>
                 </ul>
                 <small t-elif="state.open and state.query.trim()" class="o_sc_hint" t-esc="noMatchLabel"/>
+                <!-- Task 1723: typed text that matches nothing; the teams an
+                     organisation change dropped. -->
+                <p t-if="state.typedError" class="o_sc_field_message o_sc_field_error" role="alert"
+                   data-sc-tags-typed-error="1" t-esc="state.typedError"/>
+                <p t-if="state.groupNotice" class="o_sc_field_message o_sc_hint" role="status"
+                   data-sc-tags-group-notice="1" t-esc="state.groupNotice"/>
             </div>
             <div t-elif="type === 'date_na'" class="o_sc_date_na">
                 <input t-ref="input" class="o_sc_input" type="date" t-att-id="props.inputId"

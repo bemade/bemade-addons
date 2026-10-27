@@ -158,6 +158,13 @@ export function guardReason(form) {
     if (missing.length) {
         return `${texts(form).missing} ${missing.join(", ")}`.trim();
     }
+    // Task 1723: a field that refuses its own input (a tags box with typed
+    // text matching nothing) blocks with its message.
+    for (const el of form.querySelectorAll("[data-sc-guard-block]")) {
+        if (el.dataset.scGuardBlock && !el.closest("[hidden]")) {
+            return el.dataset.scGuardBlock;
+        }
+    }
     const message = (rule) =>
         rule.message || ((rule.key && form.querySelector(`[data-sc-guard-msg="${rule.key}"]`)) || {}).textContent || "";
     for (const rule of rules(form)) {
@@ -312,9 +319,15 @@ export function guardRefusal(responseUrl, html, status) {
     if (flash && flash.textContent.trim()) {
         return { message: flash.textContent.trim().replace(/\s+/g, " ") };
     }
-    const fieldError = doc.querySelector("[data-sc-error-for]");
+    // Task 1723: the event form renders its server-side time refusals as
+    // [data-sc-field-error="<field>"] — read both, so a refused create shows
+    // its message and keeps what was typed (never a silent empty reload).
+    const fieldError = doc.querySelector("[data-sc-error-for], [data-sc-field-error]");
     if (fieldError && fieldError.textContent.trim()) {
-        return { message: fieldError.textContent.trim(), field: fieldError.dataset.scErrorFor || "" };
+        return {
+            message: fieldError.textContent.trim(),
+            field: fieldError.dataset.scErrorFor || fieldError.dataset.scFieldError || "",
+        };
     }
     const toast = doc.querySelector('.o_sc_toast[data-sc-notify][data-sc-notify-tone="error"]');
     if (toast) {

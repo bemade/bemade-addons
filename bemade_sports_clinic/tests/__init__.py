@@ -283,3 +283,4 @@ from . import test_duplicates_display_name_1715
 from . import test_covered_event_activities_1714
 from . import test_guide_all_users_1720
 from . import test_venue_org_pickers_1722
+from . import test_event_create_1723

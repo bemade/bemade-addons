@@ -17358,3 +17358,15 @@ msgstr "Aucune annonce en cours."
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
 msgid "Until %(date)s"
 msgstr "Jusqu'au %(date)s"
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
+msgid "Nothing matches « %s »: pick it from the list."
+msgstr "Aucun choix ne correspond à « %s » : choisissez dans la liste."
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
+msgid "The teams of another organization were removed."
+msgstr "Les équipes d'une autre organisation ont été retirées."

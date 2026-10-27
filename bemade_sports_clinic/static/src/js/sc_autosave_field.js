@@ -179,6 +179,11 @@ export class ScAutosaveField extends Component {
             open: false,
             active: -1,
             group: "",
+            // Task 1723 (form mode): typed text matching no option (an inline
+            // error that also blocks the form's submit), and the notice after
+            // an organisation change dropped chosen options.
+            typedError: "",
+            groupNotice: "",
             identity: null, // task 1600: {message, old, new} awaiting confirmation
             // Task 1601: the « updated on … by … » stamp under the field; a
             // save answers the fresh one (``hint``).
@@ -263,7 +268,7 @@ export class ScAutosaveField extends Component {
         if (this.isServer) {
             document.addEventListener("sc:saved", this.onSiblingSaved);
         }
-        this.onGroupChange = (ev) => this.applyGroup(ev.target.value || "");
+        this.onGroupChange = (ev) => this.applyGroup(ev.target.value || "", { notify: true });
         // Task 1672: an add panel reset after a successful create (« sc:form-
         // reset » on its form, sc_list_header.js): a form-mode field goes back
         // to its default (e.g. the page's team), a draft-mode one is emptied
@@ -689,6 +694,61 @@ export class ScAutosaveField extends Component {
     onTagsInput() {
         this.state.open = true;
         this.state.active = -1;
+        this.setTypedError("");
+    }
+
+    /**
+     * Task 1723 (form mode): the text left typed in the search box when the
+     * focus leaves it (a tap on « Créer » included). An option whose label
+     * is exactly that text (accents, case and spaces ignored) is picked —
+     * never a silent drop; anything else is an inline error that also keeps
+     * the form from submitting (``data-sc-guard-block``, read by the form
+     * guard) until the text is picked, fixed or cleared.
+     */
+    commitTyped() {
+        if (!this.isForm || this.type !== "tags") {
+            return;
+        }
+        const typed = this.state.query.trim();
+        if (!typed) {
+            this.setTypedError("");
+            return;
+        }
+        const norm = (text) => fold(text).trim().replace(/\s+/g, " ");
+        const exact = this.groupOptions.find((opt) => !this.isChecked(opt[0]) && norm(opt[1]) === norm(typed));
+        if (exact) {
+            this.state.query = "";
+            this.onCheck(exact[0], true);
+            this.setTypedError("");
+            return;
+        }
+        const already = this.options.find((opt) => this.isChecked(opt[0]) && norm(opt[1]) === norm(typed));
+        if (already) {
+            this.state.query = "";
+            this.setTypedError("");
+            return;
+        }
+        this.setTypedError(_t("Nothing matches « %s »: pick it from the list.", typed));
+    }
+
+    setTypedError(message) {
+        if (this.state.typedError === message) {
+            return;
+        }
+        this.state.typedError = message;
+        const input = this.inputRef.el;
+        const root = input && input.closest(".o_sc_tags_field");
+        if (root) {
+            if (message) {
+                root.dataset.scGuardBlock = message;
+                input.setAttribute("aria-invalid", "true");
+            } else {
+                delete root.dataset.scGuardBlock;
+                input.removeAttribute("aria-invalid");
+            }
+            // The form guard follows (reason line, greyed submit).
+            input.dispatchEvent(new Event("change", { bubbles: true }));
+        }
     }
 
     /** Focus left the field (not to its own list): the list closes. */
@@ -697,6 +757,7 @@ export class ScAutosaveField extends Component {
         if (ev.relatedTarget && root.contains(ev.relatedTarget)) {
             return;
         }
+        this.commitTyped();
         setTimeout(() => {
             if (!root.contains(document.activeElement)) {
                 this.closeTags();
@@ -713,6 +774,8 @@ export class ScAutosaveField extends Component {
      */
     addTag(key, ev) {
         this.state.query = "";
+        this.setTypedError("");
+        this.state.groupNotice = "";
         this.onCheck(key, true);
         this.closeTags();
         const pointer = Boolean(ev && ev.detail > 0);
@@ -771,8 +834,9 @@ export class ScAutosaveField extends Component {
      * Task 1608: narrow the options to ``group`` (« » = all) and drop the
      * chosen options of another group (an event never mixes organizations).
      */
-    applyGroup(group) {
+    applyGroup(group, { notify = false } = {}) {
         this.state.group = group;
+        this.state.groupNotice = "";
         if (!group) {
             return;
         }
@@ -783,6 +847,10 @@ export class ScAutosaveField extends Component {
         });
         if (keep.length !== this.checkedKeys.length) {
             this.onPick(keep.join(","));
+            // Task 1723: never a silent drop — say it, under the field.
+            if (notify) {
+                this.state.groupNotice = _t("The teams of another organization were removed.");
+            }
         }
     }
 
