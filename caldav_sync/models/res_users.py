@@ -1,7 +1,5 @@
 import logging
 
-import caldav
-
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
@@ -9,11 +7,9 @@ _logger = logging.getLogger(__name__)
 
 
 class ResUsers(models.Model):
-    _inherit = "res.users"
+    _name = "res.users"
+    _inherit = ["res.users", "caldav.connection.mixin"]
 
-    caldav_calendar_url = fields.Char(string="CalDAV Calendar URL")
-    caldav_username = fields.Char(string="CalDAV Username")
-    caldav_password = fields.Char(string="CalDAV Password")
     is_caldav_enabled = fields.Boolean(compute="_compute_is_caldav_enabled", store=True)
 
     @api.depends("caldav_username", "caldav_password", "caldav_calendar_url")
@@ -38,14 +34,6 @@ class ResUsers(models.Model):
             except Exception as e:
                 rec.is_caldav_enabled = False
                 _logger.error("Failed to validate CalDAV credentials: %s", e)
-
-    def _get_caldav_client(self):
-        self.ensure_one()
-        return caldav.DAVClient(
-            url=self.caldav_calendar_url,
-            username=self.caldav_username,
-            password=self.caldav_password,
-        )
 
     def _get_caldav_events(self):
         self.ensure_one()
