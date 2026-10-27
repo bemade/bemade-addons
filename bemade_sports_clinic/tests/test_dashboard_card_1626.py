@@ -163,8 +163,12 @@ class TestDashboardCard1626(Dashboard1626Common):
         line = self._dashboard_row(tree).xpath('.//*[@data-sc-row-training]')[0]
         self.assertTrue(line.xpath('.//i[contains(@class, "fa-heartbeat")]'))
         self.assertFalse(line.xpath('.//i[contains(@class, "fa-graduation-cap")]'))
-        text, _tree = self._get('/my/player/%s/recent-changes?detail=1' % self.player.id)
-        self.assertIn('fa-heartbeat', text)
+        text, tree = self._get('/my/player/%s/recent-changes?detail=1' % self.player.id)
+        # Task 1651: the expanded detail shows the recommendation like the
+        # other player cards (heading, no icon); the face keeps the icon.
+        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_row_detail_training")]'
+                                   '/h3[contains(@class, "o_sc_change_detail_sub")]'))
+        self.assertNotIn('fa-heartbeat', text)
         self.assertNotIn('fa-graduation-cap', text)
 
     def test_no_view_uses_graduation_cap(self):

@@ -202,11 +202,13 @@ class TestAppShellRosterRows1593(Rows1593Common):
         self.assertIn('Synthetic external note', resp.text)
         self.assertNotIn('Synthetic hidden diagnosis', resp.text)
         self.assertNotIn('Synthetic internal note', resp.text)
-        # The whole training recommendation + the last consultation.
+        # The whole training recommendation; task 1669: no last consultation
+        # on cards (it stays in the player file).
         detail = lxml_html.fromstring(resp.text)
         self.assertIn('Second line of advice',
                       _text(detail.xpath('//*[@data-sc-row-detail-section="training"]')[0]))
-        self.assertIn('02/01/2026', _text(detail))
+        self.assertNotIn('02/01/2026', _text(detail))
+        self.assertNotIn('Last consultation', _text(detail))
         self.assertEqual(detail.xpath('//a[contains(@class, "o_sc_section_more")]/@href'),
                          ['/my/player?player_id=%s&team_id=%s' % (self.player.id, self.team_a.id)])
 
@@ -331,4 +333,4 @@ class TestAppShellRosterRowsI18n1593(TestAppShellI18n1538):
         self.assertEqual(_text(row.xpath('.//button[@data-sc-row-expand]')[0]), 'Détails')
         text = self._fr('/my/player/%s/row-detail' % healthy.id)
         self.assertIn('Aucune blessure active.', text)
-        self.assertIn('Dernière consultation', text)
+        self.assertNotIn('Dernière consultation', text)  # task 1669

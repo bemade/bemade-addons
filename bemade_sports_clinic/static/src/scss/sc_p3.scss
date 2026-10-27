@@ -417,3 +417,253 @@ $sc-p3-laptop: 1024px;
         color: currentColor;
     }
 }
+
+// Task 1635 — the open-activity count on a page tab (the player and team
+// pages' « Activities »): a tiny pill after the label. Neutral = the tab's
+// own text colour (readable on the Mauve active tab and in dark mode); red
+// = the app bar clock badge's colour (one of them is overdue). The player
+// page's five tabs already scroll sideways on a phone (sc_p2); the pill
+// never shrinks.
+.o_sc_app {
+    .o_sc_page_tabs > a {
+        gap: 6px;
+    }
+
+    .o_sc_tab_badge {
+        flex: 0 0 auto;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: var(--sc-radius-pill);
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 16px;
+        text-align: center;
+        border: 1px solid currentColor;
+    }
+
+    .o_sc_tab_badge_neutral {
+        background: transparent;
+        color: inherit;
+    }
+
+    .o_sc_tab_badge_red {
+        background: var(--sc-bad);
+        border-color: var(--sc-bad);
+        color: var(--sc-tone-fg);
+    }
+}
+
+// Task 1647: the tab bars fit a phone's width — compact tabs sharing the
+// width (up to five), the count pill before the label, a short label where
+// one is given (« Docs »). Six or more tabs, or a screen under 340 px,
+// still scroll sideways (.o_sc_page_tabs_scroll / below).
+.o_sc_app {
+    .o_sc_tab_label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_sc_tab_label_short {
+        display: none;
+    }
+
+    @media (max-width: 991.98px) {
+        // Shared by content: a short label (Info) gives room to a long
+        // one with its pill (Activités 3).
+        .o_sc_page_tabs:not(.o_sc_page_tabs_scroll) > a {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding: 0 6px;
+            gap: 4px;
+            font-size: 12px;
+        }
+
+        .o_sc_tab_label_long {
+            display: none;
+        }
+
+        .o_sc_tab_label_short {
+            display: inline;
+        }
+    }
+
+    @media (max-width: 339.98px) {
+        .o_sc_page_tabs {
+            overflow-x: auto;
+            scrollbar-width: none;
+
+            > a,
+            &:not(.o_sc_page_tabs_scroll) > a {
+                flex: 0 0 auto;
+                padding: 0 12px;
+            }
+        }
+    }
+}
+
+// Task 1650: the header search sheet — full screen on a phone, the centred
+// sheet on a laptop; results grouped, archived / locked players greyed.
+.o_sc_app {
+    .o_sc_search_sheet[open] {
+        display: flex;
+        flex-direction: column;
+        max-height: 85vh;
+        max-height: 85dvh;
+
+        > .o_sc_sheet_head,
+        > .o_sc_search_box {
+            flex: none;
+        }
+
+        > .o_sc_search_body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .o_sc_search_sheet[open] {
+            height: 100vh;
+            height: 100dvh;
+            max-height: 100dvh;
+            margin: 0;
+            border-radius: 0;
+            padding-top: env(safe-area-inset-top, 0px);
+        }
+    }
+
+    .o_sc_search_box {
+        padding: var(--sc-space-3) var(--sc-space-4) 0;
+    }
+
+    .o_sc_search_group + .o_sc_search_group {
+        margin-top: var(--sc-space-3);
+    }
+
+    .o_sc_search_group_title {
+        margin: 0 0 var(--sc-space-1);
+        font-size: var(--sc-text-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--sc-fg-2);
+    }
+
+    .o_sc_search_list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .o_sc_search_row {
+        display: flex;
+        align-items: center;
+        gap: var(--sc-space-2);
+        border-bottom: 1px solid var(--sc-line);
+    }
+
+    .o_sc_search_link {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        column-gap: var(--sc-space-2);
+        min-height: var(--sc-tap);
+        padding: var(--sc-space-2) var(--sc-space-1);
+        color: var(--sc-fg);
+        text-decoration: none;
+        border-radius: var(--sc-radius-sm);
+    }
+
+    a.o_sc_search_link:hover,
+    .o_sc_search_active {
+        background: var(--sc-hover);
+        outline: 2px solid var(--sc-focus);
+        outline-offset: -2px;
+    }
+
+    .o_sc_search_locked .o_sc_search_link,
+    .o_sc_search_archived .o_sc_search_link {
+        color: var(--sc-fg-3);
+    }
+
+    .o_sc_search_add {
+        flex: none;
+    }
+}
+
+// Task 1648: the type-to-filter picker of the link fields (sc_picker.js) —
+// the select stays (hidden) as the form value; the list sits in the flow
+// under the box (a phone keyboard does not hide it).
+.o_sc_app {
+    select.o_sc_picker_native {
+        display: none;
+    }
+
+    .o_sc_picker {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-1);
+        min-width: 0;
+    }
+
+    .o_sc_picker_box {
+        position: relative;
+        display: flex;
+        align-items: center;
+
+        .o_sc_picker_input {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding-right: var(--sc-tap);
+        }
+
+        .o_sc_picker_clear {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+    }
+
+    .o_sc_picker_list {
+        list-style: none;
+        margin: 0;
+        padding: 4px;
+        max-height: 40vh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        background: var(--sc-surface);
+        border: 1px solid var(--sc-line);
+        border-radius: var(--sc-radius-sm);
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    .o_sc_picker_option {
+        min-height: var(--sc-tap);
+        display: flex;
+        align-items: center;
+        padding: 0 var(--sc-space-2);
+        border-radius: var(--sc-radius-sm);
+        cursor: pointer;
+
+        &:hover,
+        &.o_sc_picker_option_active {
+            background: var(--sc-hover);
+        }
+
+        &[aria-selected="true"] {
+            font-weight: 600;
+        }
+    }
+}
+

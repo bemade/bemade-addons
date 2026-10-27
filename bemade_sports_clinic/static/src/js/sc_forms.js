@@ -12,10 +12,10 @@
  *   without JS it is still there; with JS it stays in the form (visually
  *   hidden) so « Enter » still submits. The filter panel stays open across
  *   the reload a change causes.
- * - the team page's « Add a player » card: ONE set of name fields — the
- *   « Create a new player » form takes the values entered in the search
- *   fields above it (its hidden inputs, [data-sc-copy-from]); its button is
- *   enabled once a first and a last name are there.
+ * - Review round 1 (2026-10-26, #1679): a filter panel's « Reset » link
+ *   ([data-sc-filter-reset], any filter form: events, calendar, timesheets,
+ *   clinics, players) keeps the panel as it was — open stays open across
+ *   the reload (closed stays closed: the defaults open nothing).
  */
 
 const DATE_TYPES = ["date", "datetime-local", "time", "month", "week"];
@@ -62,6 +62,15 @@ function applyFilters(form) {
         form.submit();
     }
 }
+
+// Review round 1 (#1679): « Reset » keeps an open filter panel open.
+document.addEventListener("click", (ev) => {
+    const link = ev.target instanceof Element && ev.target.closest("a[data-sc-filter-reset]");
+    const form = link && inApp(link) ? link.closest("form") : null;
+    if (form) {
+        rememberOpen(form);
+    }
+});
 
 // A date being typed (keyboard): its « change » is not the final value.
 const typing = new WeakSet();
@@ -116,57 +125,16 @@ document.addEventListener("change", (ev) => {
     }
 });
 
-// ------------------------------------- « Add a player »: one set of fields
-function syncCreateForm(searchForm) {
-    const card = searchForm.closest("[data-sc-section]");
-    const create = card && card.querySelector('form[data-sc-form="player.create"]');
-    if (!create) {
-        return;
-    }
-    for (const hidden of create.querySelectorAll("input[data-sc-copy-from]")) {
-        const source = searchForm.querySelector(`[name="${hidden.dataset.scCopyFrom}"]`);
-        if (source) {
-            hidden.value = source.value;
-        }
-    }
-    const first = create.querySelector('input[name="first_name"]');
-    const last = create.querySelector('input[name="last_name"]');
-    const ready = Boolean(first && last && first.value.trim() && last.value.trim());
-    const button = create.querySelector('button[data-sc-action="player.create"]');
-    if (button) {
-        button.disabled = !ready;
-    }
-    const hint = create.querySelector("[data-sc-create-hint]");
-    if (hint) {
-        hint.hidden = ready;
-    }
-}
-
-document.addEventListener("input", (ev) => {
-    const searchForm = ev.target.closest && ev.target.closest('form[data-sc-form="player.search"]');
-    if (searchForm && inApp(searchForm)) {
-        syncCreateForm(searchForm);
-    }
-});
-
-document.addEventListener("submit", (ev) => {
-    const create = ev.target;
-    if (!(create instanceof HTMLFormElement) || create.dataset.scForm !== "player.create" || !inApp(create)) {
-        return;
-    }
-    const card = create.closest("[data-sc-section]");
-    const searchForm = card && card.querySelector('form[data-sc-form="player.search"]');
-    if (searchForm) {
-        syncCreateForm(searchForm);
-    }
-});
-
 function init() {
     for (const button of document.querySelectorAll(".o_sc_app [data-sc-autosubmit-fallback]")) {
         button.classList.add("visually-hidden");
         button.tabIndex = -1;
     }
-    for (const form of document.querySelectorAll(".o_sc_app form[data-sc-autosubmit]")) {
+    const forms = new Set(document.querySelectorAll(".o_sc_app form[data-sc-autosubmit]"));
+    for (const link of document.querySelectorAll(".o_sc_app form a[data-sc-filter-reset]")) {
+        forms.add(link.closest("form"));
+    }
+    for (const form of forms) {
         const key = OPEN_KEY + (form.dataset.scSection || "");
         let reopen = false;
         try {

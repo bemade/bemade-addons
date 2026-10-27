@@ -10,7 +10,8 @@ Acceptance criteria covered here:
 * UC-P3 (AC2/AC5) Player page in the shell: segmented tabs per role
   (Aperçu · Blessures · Infos · Contacts[TP] · Documents · Notes[TP] ·
   Activités); ``?tab=`` deep-links a panel and the legacy #fragments open
-  theirs; hidden injuries, internal notes, allergies, DOB and the team notes
+  theirs; hidden injuries, internal notes, allergies (task 1630: a « None »
+  level and « Other medical history »), DOB and the team notes
   never reach a coach's HTML; the status pair is an instant-save field for
   therapists only; removal / removal-request sheets post to today's routes;
   every activity sheet carries its CSRF token and return URL; a created note
@@ -44,7 +45,12 @@ class PlayersCommon1539(AppShellCommon):
         super().setUpClass()
         env = cls.env
         cls.player.sudo().write({
-            'jersey_number': '12', 'position': 'Goalie', 'allergies': 'Synthetic allergy',
+            # Task 1630: a « None » allergy level — a coach never sees it
+            # (task 1677: « no known allergy » ticked, the level follows).
+            # The details are the « old text » a therapist reads while the
+            # player is « to validate ».
+            'jersey_number': '12', 'position': 'Goalie', 'allergy_none_confirmed': True,
+            'allergy_details': 'Synthetic allergy', 'medical_alert_review': True, 'medical_history_other': 'Synthetic history',
             'team_info_notes': 'Synthetic team note', 'date_of_birth': '2010-05-06',
             'training_recommendation': 'Bike 15 min (synthetic)',
         })
@@ -101,8 +107,9 @@ class TestAppShellPlayersList1539(PlayersCommon1539):
         self._login_tp()
         _text, tree = self._get('/my/players')
         # Task 1607 (deliberate update): « + Ajouter » is in the list header.
-        action = tree.xpath('//div[contains(@class, "o_sc_list_header")]//a[@data-sc-action="players.create"]')
-        self.assertEqual(action[0].get('href'), '/my/player/create')
+        action = tree.xpath('//div[contains(@class, "o_sc_list_header")]//button[@data-sc-action="players.create"]')
+        # Task 1655: it opens the inline create panel.
+        self.assertEqual(action[0].get('aria-controls'), 'sc_player_add')
 
     def test_filters_keep_their_params(self):
         self._switch(True)
@@ -176,8 +183,10 @@ class TestAppShellPlayer1539(PlayersCommon1539):
                          ['injuries', 'info', 'documents', 'activities'])
         for secret in ('Hidden synthetic injury', 'Internal synthetic text',
                        'TP-only synthetic remark', 'Synthetic allergy',
-                       'Synthetic team note', '2010'):
+                       'Synthetic history', 'Synthetic team note'):
             self.assertNotIn(secret, text, secret)
+        # Task 1633: the date of birth is no longer therapist-only.
+        self.assertIn('2010', text)
         self.assertNotIn('sc_status', self._owl_fields(tree))
         self.assertNotIn('training_recommendation', self._owl_fields(tree))
         self.assertIn('Bike 15 min (synthetic)', text)
@@ -202,7 +211,8 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         pills = tree.xpath('//*[@data-sc-pill-select][@data-sc-field="sc_status"]')
         self.assertEqual([p.get('data-sc-old-value') for p in pills], ['yes:yes', 'yes:yes'])
         self.assertEqual(owl['training_recommendation']['mode'], 'server')
-        for visible in ('Hidden synthetic injury', 'Synthetic allergy', 'Synthetic team note'):
+        for visible in ('Hidden synthetic injury', 'Synthetic allergy', 'Synthetic team note',
+                        'Synthetic history'):
             self.assertIn(visible, text, visible)
         # Legacy #patient-info / #team-info open the Info tab.
         aliases = tree.xpath('//nav[@data-sc-tabs]/a[@data-sc-tab="info"]/@data-sc-tab-aliases')
@@ -325,10 +335,11 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         self.assertIsNotNone(self._shell(tree))
         keys = self._owl_keys(tree)
         for field in ('first_name', 'last_name', 'jersey_number', 'position', 'email', 'phone',
-                      'street', 'city', 'zip', 'state_id'):
+                      'street', 'city', 'zip', 'state_id', 'date_of_birth'):  # dob: task 1633
             self.assertIn('sports.patient.%s' % field, keys, field)
-        for field in ('allergies', 'sc_status', 'date_of_birth', 'team_info_notes',
-                      'training_recommendation'):
+        for field in ('allergies', 'allergy_level', 'allergy_details', 'allergy_epipen',
+                      'medical_alert_level', 'medical_alert_details', 'medical_history_other',
+                      'sc_status', 'team_info_notes', 'training_recommendation'):
             self.assertNotIn('sports.patient.%s' % field, keys, field)
         for field in ('name', 'contact_type', 'mobile', 'email'):
             self.assertIn('sports.patient.contact.%s' % field, keys, field)
@@ -340,8 +351,14 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&tab=info' % self.player.id)
         keys = self._owl_keys(tree)
-        for field in ('allergies', 'date_of_birth', 'team_info_notes',
-                      'training_recommendation', 'last_consultation_date', 'sc_team_ids'):
+        # Task 1677: the allergies / conditions are lists in the header's
+        # popups (no island); « Other medical history » stays an island.
+        for field in ('allergy_level', 'allergy_details', 'allergy_epipen', 'medical_alert_level',
+                      'medical_alert_details'):
+            self.assertNotIn('sports.patient.%s' % field, keys, field)
+        for field in ('medical_history_other', 'date_of_birth',
+                      'team_info_notes', 'training_recommendation', 'last_consultation_date',
+                      'sc_team_ids'):
             self.assertIn('sports.patient.%s' % field, keys, field)
         # Task 1627: the status posts from the header's pills (no island).
         self.assertNotIn('sports.patient.sc_status', keys)
@@ -361,7 +378,7 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         self.assertIn(resp.status_code, (302, 303))
         self.player.invalidate_recordset()
         self.assertEqual(self.player.first_name, 'Pat')
-        self.assertEqual(self.player.sudo().allergies, 'Synthetic allergy')
+        self.assertEqual(self.player.sudo().allergy_details, 'Synthetic allergy')
         self.assertEqual(self.player.match_status, 'yes')
 
     def test_primary_contact_add_form_when_none(self):
@@ -374,24 +391,25 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         self.assertEqual(form.get('action'), '/my/player/contact/save')
 
     def test_create_search_first(self):
+        # Task 1655: in the app the separate page is retired for therapists —
+        # the Joueurs list's inline panel searches as you type, then creates
+        # (test_player_add_inline_1655.py); a coach keeps the page (#1633).
         self._switch(True)
         self._login_tp()
-        _text, tree = self._get('/my/player/create')
-        self.assertTrue(tree.xpath('//form[@data-sc-form="player.search"]'))
-        self.assertFalse(tree.xpath('//form[@data-sc-form="player.create"]'))
-        _text, tree = self._get('/my/player/create?first_name=Pat&last_name=One')
-        self.assertTrue(tree.xpath('//*[@data-sc-player-id="%s"]' % self.player.id))
-        self.assertFalse(tree.xpath('//form[@data-sc-form="player.create"]'))
-        _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic')
-        form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
-        self.assertEqual(form.get('action'), '/my/player/create/save')
-        self.assertEqual(form.xpath('.//input[@name="first_name"]/@value'), ['Nobody'])
-        self.assertTrue(form.xpath('.//input[@name="date_of_birth"]'))
-        # A coach's create form has no date of birth (field ACL).
+        resp = self.url_open('/my/player/create', allow_redirects=False)
+        self.assertIn(resp.status_code, (302, 303))
+        self.assertTrue(resp.headers['Location'].endswith('/my/players?add=1'))
         self._login_coach()
         _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic')
         form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
-        self.assertFalse(form.xpath('.//input[@name="date_of_birth"]'))
+        self.assertEqual(form.get('action'), '/my/player/create/save')
+        self.assertTrue(form.xpath('.//input[@name="date_of_birth"][@required]'))
+        # Task 1633: a coach's create form has the date of birth too,
+        # required as for therapists (owner review 2026-10-21).
+        self._login_coach()
+        _text, tree = self._get('/my/player/create?first_name=Nobody&last_name=Synthetic')
+        form = tree.xpath('//form[@data-sc-form="player.create"]')[0]
+        self.assertTrue(form.xpath('.//input[@name="date_of_birth"][@required]'))
 
     def test_contact_forms_in_shell(self):
         # Owner review 2026-10-10: added / edited inline on the Contacts tab.

@@ -14,7 +14,13 @@ Acceptance criteria:
   context kept.
 * UC-IJ3 A therapist's create without a visibility answer creates nothing
   and comes back with an error. A coach's report lands « Unverified »,
-  visible to coaches.
+  visible to coaches. Task 1681 (owner 2026-10-25): following the redirect,
+  the coach lands on the open card of the report (status « Unverified »,
+  the diagnosis editable) with its « Undo » form — and no therapist action
+  (Verify / status pick / internal notes). Every coach of the player's team
+  sees it; a coach of another team does not; a hidden-from-coaches
+  unverified injury and a resolved injury stay hidden from coaches. The
+  legacy player page applies the same rule.
 * UC-IJ4 The just-created injury offers a 2-minute « Undo »: the creator,
   within 2 minutes, with no treatment note or document on it, deletes it;
   anyone else, later, or once it carries a note or document, is refused
@@ -34,7 +40,7 @@ Acceptance criteria:
 from datetime import timedelta
 from urllib.parse import urlparse
 
-from odoo import fields
+from odoo import Command, fields
 from odoo.tests import tagged
 from odoo.tools.misc import mute_logger
 
@@ -131,6 +137,87 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         self.assertEqual(report.stage, 'unverified')
         self.assertFalse(report.hidden_from_coaches)
 
+    # -- UC-IJ3 / task 1681 ----------------------------------------------
+    def _coach(self, login, team):
+        user = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': login, 'login': login, 'password': login,
+            'group_ids': [Command.set([
+                self.env.ref('base.group_portal').id,
+                self.env.ref('bemade_sports_clinic.group_portal_team_coach').id,
+            ])],
+        })
+        self.env['sports.team.staff'].create({
+            'team_id': team.id, 'partner_id': user.partner_id.id, 'role': 'coach'})
+        return user
+
+    def _injury(self, diagnosis, stage, hidden=False):
+        injury = self.env['sports.patient.injury'].create({
+            'patient_id': self.player.id, 'diagnosis': diagnosis,
+            'hidden_from_coaches': hidden,
+        })
+        injury.with_context(mail_notrack=True).write({'stage': stage})
+        return injury
+
+    def test_coach_lands_on_own_unverified_report_1681(self):
+        self._login_coach()
+        resp = self._create(diagnosis='Synthetic calf 1681')
+        self.assertEqual(resp.status_code, 303, resp.text[:300])
+        report = self._new_injury('Synthetic calf 1681')
+        self.assertEqual(report.stage, 'unverified')
+        location = resp.headers['Location']
+        self.assertIn('created=%s' % report.id, location)
+        parts = urlparse(location)
+        text, tree = self._get('%s?%s' % (parts.path, parts.query))
+        item = tree.xpath('//details[@id="injury-%s"]' % report.id)
+        self.assertTrue(item, 'the coach must see the card of the report just made')
+        item = item[0]
+        self.assertIsNotNone(item.get('open'))
+        self.assertEqual(item.get('data-sc-created-injury'), str(report.id))
+        self.assertTrue(item.xpath('.//form[@data-sc-form="injury.undo"]'))
+        # « Unverified » status chip, diagnosis editable, no therapist action.
+        stages = dict(report._fields['stage']._description_selection(self.env))
+        self.assertIn(stages['unverified'], item.xpath('.//summary')[0].text_content())
+        self.assertIn('"diagnosis"', ' '.join(self._fields_in(item)))
+        self.assertFalse(item.xpath('.//*[@data-sc-injury-quick]'))
+        self.assertFalse(item.xpath('.//*[@data-sc-edit-card="injury-notes-internal"]'))
+        fields_ = ' '.join(self._fields_in(item))
+        self.assertNotIn('"internal_notes"', fields_)
+        self.assertNotIn('"hidden_from_coaches"', fields_)
+        self.assertNotIn('No injuries recorded', text)
+
+    def test_unverified_visible_to_team_coaches_only_1681(self):
+        report = self._injury('Synthetic report 1681', 'unverified')
+        hidden = self._injury('Synthetic hidden 1681', 'unverified', hidden=True)
+        resolved = self._injury('Synthetic healed 1681', 'resolved')
+        self._coach('pc.coach2.1681@example.com', self.team_a)
+        self._coach('pc.coachb.1681@example.com', self.team_b)
+        self.authenticate('pc.coach2.1681@example.com', 'pc.coach2.1681@example.com')
+        _text, tree = self._get(self._tab())
+        self.assertTrue(tree.xpath('//details[@id="injury-%s"]' % report.id))
+        self.assertTrue(tree.xpath('//details[@id="injury-%s"]' % self.injury.id))
+        self.assertFalse(tree.xpath('//details[@id="injury-%s"]' % hidden.id))
+        self.assertFalse(tree.xpath('//details[@id="injury-%s"]' % resolved.id))
+        # A coach of another team: not this player's page at all, and never
+        # the report.
+        self.authenticate('pc.coachb.1681@example.com', 'pc.coachb.1681@example.com')
+        resp = self.url_open('/my/player?player_id=%s&tab=injuries' % self.player.id)
+        self.assertNotIn('Synthetic report 1681', resp.text)
+        # A therapist still sees everything.
+        self._login_tp()
+        _text, tree = self._get(self._tab())
+        for injury in (report, hidden, resolved):
+            self.assertTrue(tree.xpath('//details[@id="injury-%s"]' % injury.id), injury.diagnosis)
+
+    def test_legacy_page_same_rule_1681(self):
+        self._injury('Synthetic legacy report 1681', 'unverified')
+        self._injury('Synthetic legacy healed 1681', 'resolved')
+        self._switch(False)
+        self._login_coach()
+        resp = self.url_open('/my/player?player_id=%s&team_id=%s' % (self.player.id, self.team_a.id))
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('Synthetic legacy report 1681', resp.text)
+        self.assertNotIn('Synthetic legacy healed 1681', resp.text)
+
     # -- UC-IJ4 ----------------------------------------------------------
     def _undo(self, injury):
         return self.url_open('/my/injury/%s/undo-create' % injury.id, data={
@@ -182,7 +269,8 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         reads = ' '.join(r.text_content() for r in item.xpath('.//*[@data-sc-edit-view="read"]'))
         self.assertIn('Synthetic ext', reads)
         self.assertIn('Synthetic int', reads)
-        self.assertEqual(len(item.xpath('.//button[@data-sc-edit-toggle]')), 2)
+        # Task 1675: Details + one pencil per note (external, internal).
+        self.assertEqual(len(item.xpath('.//button[@data-sc-edit-toggle]')), 3)
         edits = item.xpath('.//*[@data-sc-edit-view="edit"]')
         self.assertTrue(all(edit.get('hidden') == 'hidden' for edit in edits))
         fields_ = ' '.join(f for edit in edits for f in self._fields_in(edit))
@@ -200,7 +288,10 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         self.assertNotIn('Synthetic int', item.text_content())
         self.assertFalse(item.xpath('.//*[contains(@class, "o_sc_consent_todo")]'))
         fields_ = ' '.join(self._fields_in(item))
-        self.assertIn('"external_notes"', fields_)
+        # Owner review 2026-10-25 (#1675): the coach reads the external note
+        # (no editor, no pencil on it).
+        self.assertIn('Synthetic ext', item.text_content())
+        self.assertNotIn('"external_notes"', fields_)
         self.assertNotIn('"internal_notes"', fields_)
         self.assertNotIn('"parental_consent"', fields_)
 

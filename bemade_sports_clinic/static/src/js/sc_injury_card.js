@@ -1,9 +1,8 @@
 /*
  * Task 1616 — the injury card as the injury's page (inert outside .o_sc_app):
  *
- * - button[data-sc-injury-done] (« Done » at the bottom of an open card):
- *   closes the card's open edit groups (Details / Notes / a document) and
- *   the card itself; the read fragments refresh at once (task 1611);
+ * - (task 1676: the bottom « Done » is gone — the card's summary closes
+ *   it; each edit group closes with its pencil's ✓ or its own « Done »);
  * - form[data-sc-doc-upload] (the document picker — the injury card's
  *   « Add documents » sheet AND the player Documents tab, one template:
  *   bemade_sports_clinic.sc_document_upload_form): several files at once —
@@ -19,35 +18,15 @@
  *   doc_description) in the input's file order. Round 2 (1018c): the
  *   shared fields ([data-sc-doc-shared-group]) show only while no file is
  *   listed; hidden from the first row on, shown again when it is emptied.
+ *   Task 1644: in a sheet (the player tab too) the head and the actions
+ *   stay pinned, the files scroll between; Upload turns « Uploading… »
+ *   (disabled, no second submit) from the submit until the page changes.
  */
 import { _t } from "@web/core/l10n/translation";
 
 function inShell(node) {
     return Boolean(node && node.closest && node.closest(".o_sc_app"));
 }
-
-// ---------------------------------------------------------------- « Done »
-document.addEventListener("click", (ev) => {
-    const done = ev.target.closest && ev.target.closest("[data-sc-injury-done]");
-    if (!done || !inShell(done)) {
-        return;
-    }
-    const card = done.closest("details.o_sc_injury_item");
-    if (!card) {
-        return;
-    }
-    ev.preventDefault();
-    // Each open edit group closes through its own « Done » (sc_app_ui.js).
-    for (const button of card.querySelectorAll("[data-sc-edit-open] [data-sc-edit-done]")) {
-        button.click();
-    }
-    if (card.contains(document.activeElement)) {
-        document.activeElement.blur();
-    }
-    card.open = false;
-    document.dispatchEvent(new CustomEvent("sc:refresh-now"));
-    card.scrollIntoView({ block: "nearest" });
-});
 
 // ------------------------------------- status-only fields (review 2026-10-18)
 // « Date prévue de résolution » until the injury is resolved, « Date de
@@ -296,6 +275,79 @@ document.addEventListener(
     (ev) => {
         const form = uploadForm(ev.target);
         if (form && !checkFiles(form)) {
+            ev.preventDefault();
+            ev.stopPropagation();
+        }
+    },
+    true
+);
+
+// Task 1644: « Uploading… » — the files go as a plain form POST (the page
+// navigates when they are stored): from the submit on, the button says so,
+// Upload and Cancel are disabled and a second submit is refused. A page
+// shown again from the back / forward cache starts idle again.
+export function setUploadBusy(form, busy) {
+    const submit = form.querySelector("[data-sc-doc-submit]");
+    const cancel = form.querySelector("[data-sc-sheet-close]");
+    if (busy) {
+        form.dataset.scBusy = "1";
+        form.setAttribute("aria-busy", "true");
+    } else {
+        delete form.dataset.scBusy;
+        form.removeAttribute("aria-busy");
+    }
+    for (const button of [submit, cancel]) {
+        if (button) {
+            button.disabled = busy;
+        }
+    }
+    if (submit) {
+        const idle = submit.querySelector(".o_sc_btn_idle");
+        const label = submit.querySelector(".o_sc_btn_busy");
+        if (idle && label) {
+            idle.hidden = busy;
+            label.hidden = !busy;
+        }
+    }
+}
+
+document.addEventListener("submit", (ev) => {
+    const form = uploadForm(ev.target);
+    if (!form || ev.defaultPrevented) {
+        return;
+    }
+    if (form.dataset.scBusy) {
+        ev.preventDefault(); // already sending
+        return;
+    }
+    // The buttons carry no name: disabling them leaves the POST unchanged.
+    setUploadBusy(form, true);
+});
+
+window.addEventListener("pageshow", () => {
+    for (const form of document.querySelectorAll("form[data-sc-doc-upload][data-sc-busy]")) {
+        setUploadBusy(form, false);
+    }
+});
+
+// Escape does not drop a busy upload's sheet either.
+document.addEventListener(
+    "cancel",
+    (ev) => {
+        if (ev.target instanceof HTMLDialogElement && ev.target.querySelector("form[data-sc-doc-upload][data-sc-busy]")) {
+            ev.preventDefault();
+        }
+    },
+    true
+);
+
+// The sheet's close button (×) of a busy upload is held too.
+document.addEventListener(
+    "click",
+    (ev) => {
+        const close = ev.target.closest && ev.target.closest("dialog [data-sc-sheet-close]");
+        const form = close && close.closest("dialog").querySelector("form[data-sc-doc-upload][data-sc-busy]");
+        if (form) {
             ev.preventDefault();
             ev.stopPropagation();
         }

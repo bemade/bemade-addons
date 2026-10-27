@@ -32,7 +32,7 @@ registry.category("web_tour.tours").add("sc_1585_tap_links", {
         {
             content: "Edit the mobile",
             trigger: `${CARD} [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="mobile"] input`,
-            run: "edit 555 010 0777",
+            run: "edit 514 555 0177", // task 1645: a valid number, saved formatted
         },
         {
             content: "Leave the field (saves)",
@@ -50,13 +50,13 @@ registry.category("web_tour.tours").add("sc_1585_tap_links", {
         },
         {
             content: "The link dials the new number, without a reload",
-            trigger: `${MOBILE}[href="tel:5550100777"]`,
+            trigger: `${MOBILE}[href="tel:+15145550177"]`,
             run() {
                 if (!window.__scTapNoReload) {
                     throw new Error("the page reloaded");
                 }
                 const link = document.querySelector(MOBILE);
-                if (link.textContent.trim() !== "555 010 0777") {
+                if (link.textContent.trim() !== "+1 514-555-0177") {
                     throw new Error(`link text is « ${link.textContent} »`);
                 }
             },

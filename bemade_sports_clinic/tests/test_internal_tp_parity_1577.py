@@ -168,22 +168,24 @@ class TestInternalTpParity1577(Parity1577Common):
         resp = self._post('/my/player/create/save', {
             'first_name': 'Ivy', 'last_name': 'Internal',
             'team_ids': str(self.team_a.id),
-            'allergies': 'P77 peanuts',
+            # Task 1630 / 1677: « Other medical history » (the allergies are
+            # lists, filled on the player page).
+            'medical_history_other': 'P77 fracture',
         })
         location = resp.headers.get('Location', '')
         self.assertIn('/my/player?player_id=', location)
         patient = self.env['sports.patient'].search([('last_name', '=', 'Internal')])
         self.assertEqual(patient.team_ids, self.team_a)
-        self.assertEqual(patient.allergies, 'P77 peanuts')
+        self.assertEqual(patient.medical_history_other, 'P77 fracture')
 
     def test_player_edit_shows_tp_fields(self):
         self._login_itp()
         text, _tree = self._get('/my/player/edit?patient_id=%s' % self.player.id)
-        self.assertIn('name="allergies"', text)
+        self.assertIn('name="medical_history_other"', text)
         self.assertIn('name="team_info_notes"', text)
         self._login_coach()
         text, _tree = self._get('/my/player/edit?patient_id=%s' % self.player.id)
-        self.assertNotIn('name="allergies"', text)
+        self.assertNotIn('name="medical_history_other"', text)
 
     # -- UC-P4 -----------------------------------------------------------
     def test_team_add_player_directly(self):

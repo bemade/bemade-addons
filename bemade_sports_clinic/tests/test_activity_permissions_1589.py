@@ -362,7 +362,9 @@ class TestActivityPermissions1589(ActivityPermissionsCommon):
         bar = tree.xpath('//div[contains(@class, "o_sc_actionbar")]')
         self.assertTrue(bar)
         actions = set(bar[0].xpath('.//@data-sc-action'))
-        self.assertEqual(actions, {'activity.cancel', 'activity.reschedule', 'activity.complete'})
+        # Task 1664 (deliberate update): « Réassigner » on the detail page too.
+        self.assertEqual(actions, {'activity.cancel', 'activity.reschedule', 'activity.complete',
+                                   'activity.reassign'})
         self.assertTrue(tree.xpath('//*[@data-sc-edit-card="activity"]'))
         # Someone who may open but not act (forced) gets no bar / pencil / row actions.
         with patch.object(AccessControlMixin, '_activity_act_access', return_value=False), \

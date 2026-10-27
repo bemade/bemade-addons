@@ -102,7 +102,7 @@
         <record id="mail_template_urgent_summary" model="mail.template">
             <field name="name">Urgent Aggregated Updates (PHI-free)</field>
             <field name="model_id" ref="base.model_res_partner"/>
-            <field name="subject">FitCrew — mises à jour urgentes / urgent updates</field>
+            <field name="subject">Le Fit Crew — mises à jour urgentes / urgent updates</field>
             <field name="body_html" type="html">
                 <div>
                     <p>Bonjour, / Hello,</p>
@@ -145,7 +145,7 @@
         <record id="mail_template_morning_digest" model="mail.template">
             <field name="name">Daily Morning Briefing (PHI-free)</field>
             <field name="model_id" ref="base.model_res_partner"/>
-            <field name="subject">FitCrew — sommaire quotidien / daily briefing</field>
+            <field name="subject">Le Fit Crew — sommaire quotidien / daily briefing</field>
             <field name="body_html" type="html">
                 <div>
                     <p>Bonjour, / Hello,</p>
@@ -159,7 +159,7 @@
                             <p><strong t-out="team['name']"/></p>
                             <div t-if="team.get('announcement')" style="margin:6px 0;">
                                 <p style="margin:0 0 2px 0;">
-                                    <strong>Annonce de l'équipe / Team announcement<t t-if="team.get('announcement_is_expired')"> (expirée / expired)</t>:</strong>
+                                    <strong>Annonce d'équipe / Team announcement<t t-if="team.get('announcement_is_expired')"> (expirée / expired)</t>:</strong>
                                 </p>
                                 <p style="white-space:pre-wrap;margin:0;" t-out="team['announcement']"/>
                             </div>
@@ -195,6 +195,7 @@
                                     <li>
                                         <strong t-out="ev['name']"/>
                                         <t t-if="ev.get('date_label') or ev['date_start']"> — <t t-out="ev.get('date_label') or format_datetime(ev['date_start'])"/></t>
+                                        <t t-if="ev.get('assigned')"> · assigné·e (<t t-out="ev.get('assigned_label')"/>) / assigned (<t t-out="ev.get('assigned_label')"/>)</t>
                                     </li>
                                 </t>
                             </ul>
@@ -213,7 +214,7 @@
         <record id="mail_template_event_cancelled" model="mail.template">
             <field name="name">Event Cancelled - Assigned Staff Notice</field>
             <field name="model_id" ref="bemade_sports_clinic.model_sports_event"/>
-            <field name="subject">Event cancelled: {{ object.name }}</field>
+            <field name="subject">Le Fit Crew — Event cancelled: {{ object.name }}</field>
             <!-- Bilingual body (owner call, dev-review 2026-07-04 round 2):
                  mail.template body_html is whole-value translated, so static
                  per-language bodies would have to be maintained as full
@@ -230,6 +231,24 @@
                         <t t-out="', '.join(object.team_ids.mapped('name'))"/></li>
                     <li t-if="ctx.get('cancel_reason')"><strong>Raison / Reason:</strong>
                         <t t-out="ctx.get('cancel_reason')"/></li>
+                </ul>
+            </field>
+        </record>
+        <!-- Task 1665: the mirror of the cancellation notice — bilingual
+             body, per-language subject (po), no health data. -->
+        <record id="mail_template_event_revived" model="mail.template">
+            <field name="name">Event Restored - Assigned Staff Notice</field>
+            <field name="model_id" ref="bemade_sports_clinic.model_sports_event"/>
+            <field name="subject">Le Fit Crew — Event restored: {{ object.name }}</field>
+            <field name="body_html" type="html">
+                <p>L'événement auquel vous êtes assigné a été rétabli. /
+                   The event you are assigned to has been restored.</p>
+                <ul>
+                    <li><strong>Événement / Event:</strong> <t t-out="object.name or ''"/></li>
+                    <li t-if="object.date_start"><strong>Date:</strong>
+                        <t t-out="format_datetime(object.date_start) or ''"/></li>
+                    <li t-if="object.team_ids"><strong>Équipe(s) / Team(s):</strong>
+                        <t t-out="', '.join(object.team_ids.mapped('name'))"/></li>
                 </ul>
             </field>
         </record>

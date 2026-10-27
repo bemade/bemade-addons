@@ -18,17 +18,48 @@
 #
 
 from odoo import http, _, fields
-from odoo.exceptions import UserError, AccessError, MissingError
+from odoo.exceptions import UserError, AccessError, MissingError, ValidationError
 from odoo.http import request
 from odoo.tools import format_date
 
-from ..models import sc_app_nav
+from ..models import sc_app_nav, sc_app_roles
 from datetime import datetime, time
 import time as systime
 import logging
 import pytz
 
 _logger = logging.getLogger(__name__)
+
+# Task 1640: the date range a portal / app form may post (the browser's
+# date inputs carry the same 4-digit-year bounds, sc_date_bounds.js).
+PORTAL_MIN_YEAR = 1900
+PORTAL_MAX_YEAR = 9999
+
+
+def _check_portal_year(year):
+    if not PORTAL_MIN_YEAR <= year <= PORTAL_MAX_YEAR:
+        raise ValidationError(_("Please enter a valid date."))
+
+
+def parse_portal_date(value):
+    """Task 1640: a posted date (``YYYY-MM-DD``) as a ``date``; empty →
+    False. A malformed value (« 202610-10-10 ») or a year outside
+    1900..9999 raises a ValidationError with a clear message, never the
+    ORM's generic error."""
+    if value in ('', None, False):
+        return False
+    if isinstance(value, str):
+        value = value.strip()
+        if not value:
+            return False
+    try:
+        day = fields.Date.to_date(value)
+    except (TypeError, ValueError):
+        raise ValidationError(_("Please enter a valid date.")) from None
+    if not day:
+        raise ValidationError(_("Please enter a valid date."))
+    _check_portal_year(day.year)
+    return day
 
 
 class AccessControlMixin:
@@ -48,7 +79,9 @@ class AccessControlMixin:
     def _parse_portal_datetime(self, val):
         """Parse a datetime-local input (YYYY-MM-DDTHH:MM[:SS]) from the portal
         as user-local time and convert to a UTC string for fields.Datetime.
-        Returns False if empty; returns the raw value if it can't be parsed.
+        Returns False if empty. Task 1640: an unparsable value or a year
+        outside 1900..9999 raises a ValidationError (« Please enter a valid
+        date. ») — the raw string is no longer handed to the ORM.
         """
         if not val:
             return False
@@ -64,9 +97,18 @@ class AccessControlMixin:
                     dt = datetime.strptime(val, '%Y-%m-%d %H:%M')
                 except ValueError:
                     dt = datetime.strptime(val, '%Y-%m-%d %H:%M:%S')
-        except ValueError:
-            # Fallback: let the ORM try to coerce whatever string was provided.
+        except (TypeError, ValueError):
+            # Any other shape the ORM itself reads (a bare date) passes
+            # through as before; the rest is refused clearly (task 1640).
+            try:
+                coerced = fields.Datetime.to_datetime(val)
+            except (TypeError, ValueError):
+                coerced = None
+            if not coerced:
+                raise ValidationError(_("Please enter a valid date.")) from None
+            _check_portal_year(coerced.year)
             return val
+        _check_portal_year(dt.year)
 
         user_tz = http.request.env.tz
         local_dt = user_tz.localize(dt)
@@ -307,7 +349,25 @@ class AccessControlMixin:
         'sports.team': ('/my/team?team_id=%s', 'teams'),
         'sports.event': ('/my/event/%s', 'calendar'),
         'sports.patient.injury': ('/my/injury/edit?injury_id=%s', 'injury'),
+        # Task 1664: a notepad reminder links to its note (its owner only).
+        'sports.quick.note': ('/my/notepad#note-%s', 'note'),
     }
+
+    @staticmethod
+    def _activity_quick_note_domain(user):
+        """Task 1664: the notepad reminders assigned to ``user`` (the
+        « Note rapide en attente » To-Dos on ``sports.quick.note``). The
+        mail.activity rules keep them to notes the user may read (a
+        therapist: their own notes)."""
+        return ['&', '&', ('res_model', '=', 'sports.quick.note'),
+                ('res_id', '!=', False), ('user_id', '=', user.id)]
+
+    def _check_quick_note_owner(self, note_id):
+        """Task 1664: the notepad lists the viewer's OWN notes only."""
+        note = request.env['sports.quick.note'].sudo().browse(note_id).exists()
+        if not note or note.user_id != request.env.user:
+            raise AccessError(_("You do not have access to this note."))
+        return note
 
     def _sc_activity_record_link(self, record):
         """``{'model', 'id', 'name', 'url', 'icon'}`` of ONE related record
@@ -328,6 +388,7 @@ class AccessControlMixin:
             'sports.team': self._check_team_access,
             'sports.event': self._check_access_to_event,
             'sports.patient.injury': self._check_access_to_injury,
+            'sports.quick.note': self._check_quick_note_owner,
         }
         try:
             checks[model](record.id)
@@ -345,6 +406,9 @@ class AccessControlMixin:
             link['name'] = record._portal_list_name(with_jersey=False)
         elif model == 'sports.patient.injury':
             link['name'] = record.diagnosis or record.display_name
+        elif model == 'sports.quick.note':
+            # Task 1664: never the note's text in a row — just « Bloc-notes ».
+            link['name'] = request.env._("Notepad")
         else:
             link['name'] = record.display_name
         return link
@@ -450,7 +514,19 @@ class AccessControlMixin:
             'model': 'sports.team',
         } for team in teams}
 
-    def _sc_player_row_extras(self, players, team_links=True, team=None):
+    def _sc_status_editable(self):
+        """Task 1634: may the viewer change Match / Practice from a player
+        card? The player page's rule (#1627): a treatment professional (or
+        clinic administrator) holding ``patient.status.edit``; the save
+        route re-checks."""
+        user = request.env.user
+        if not (self._is_treatment_professional() or self._is_clinic_admin()):
+            return False
+        return sc_app_roles.can('patient.status.edit', user._sc_app_roles(),
+                                is_system=user.has_group('base.group_system'))
+
+    def _sc_player_row_extras(self, players, team_links=True, team=None, status_edit=False,
+                              labels=None):
         """The legacy card's content for each row of ``players`` (task 1593),
         ``{player_id: {...}}`` — computed for the whole list at once (the
         teams, their names and the readable set in a few queries, never per
@@ -467,12 +543,37 @@ class AccessControlMixin:
 
         Task 1592: ``clock`` — the activity clock chip (``_sc_activity_clocks``,
         ONE grouped query for the whole list), opening the player page's
-        Activities tab (with the team context when given); None at 0."""
+        Activities tab (with the team context when given); None at 0.
+
+        Task 1634: ``status`` — the Match / Practice / injuries line
+        (``_sc_row_status``) and, when ``status_edit`` (the viewer may change
+        them, ``_sc_status_editable``), ``pills`` — the quick-change
+        dropdowns (``_sc_status_pills``); the selection labels are computed
+        ONCE for the whole list (or given: ``labels``).
+
+        Task 1630 (review round 1): ``status['medical']`` — the RED
+        allergy / medical-alert pills of the card
+        (``sports.patient._sc_card_medical_pills``: ONE batched read as the
+        viewer, nothing when the viewer may not read the fields)."""
         env = request.env
+        labels = labels or env['sports.patient']._sc_status_labels()
         links = self._sc_team_links(players.sudo().team_ids) if team_links else {}
         team_qs = '&team_id=%s' % team.id if team else ''
         clocks = self._sc_activity_clocks(
             players, lambda p: '/my/player?player_id=%s%s&tab=activities' % (p.id, team_qs))
+        medical = players._sc_card_medical_pills()
+        # Task 1652: a red card pill opens the player page's popup — the
+        # page renders those sheets once per player (sc_app_layout, outside
+        # the read fragments); the pill falls back to the player's Info tab.
+        seen = getattr(request, '_sc_card_med_ids', None)
+        if seen is None:
+            seen = request._sc_card_med_ids = []
+        for player_id, pills in medical.items():
+            if player_id not in seen:
+                seen.append(player_id)
+            for pill in pills:
+                pill['sheet'] = 'sc_med_card_%s_%s' % (pill['key'], player_id)
+                pill['fallback'] = '/my/player?player_id=%s&tab=info' % player_id
         extras = {}
         for player in players:
             injured = (player.stage or 'healthy') != 'healthy'
@@ -491,6 +592,8 @@ class AccessControlMixin:
                 'team_links': [links[t.id] for t in player.sudo().team_ids if t.id in links],
                 'detail_url': detail_url,
                 'clock': clocks.get(player.id),
+                'status': dict(player._sc_row_status(labels), medical=medical.get(player.id, [])),
+                'pills': player._sc_status_pills(labels) if status_edit else None,
             }
         return extras
 
@@ -546,6 +649,26 @@ class AccessControlMixin:
                 'label': label,
             }
         return clocks
+
+    @staticmethod
+    def _sc_activity_tab_badge(activities):
+        """Task 1635 — the Activities tab's count pill (``sc_page_tabs``'
+        optional 5th tuple item): ``{'count', 'tone', 'label'}``, or None at
+        0. ``activities`` is the recordset the tab itself lists — searched
+        as the viewer, so the record rules make the count per viewer (no
+        second, rule-bypassing query). Red when one of them is overdue
+        (deadline before today in the viewer's timezone)."""
+        count = len(activities)
+        if not count:
+            return None
+        env = request.env
+        today = fields.Date.context_today(env.user)
+        overdue = len(activities.filtered(
+            lambda a: a.date_deadline and a.date_deadline < today))
+        label = (env._("%(count)s open activities, %(overdue)s overdue",
+                       count=count, overdue=overdue)
+                 if overdue else env._("%(count)s open activities", count=count))
+        return {'count': count, 'tone': 'red' if overdue else 'neutral', 'label': label}
 
     @classmethod
     def _activity_scope_teams(cls):
@@ -663,6 +786,86 @@ class AccessControlMixin:
     @staticmethod
     def _portal_flash_scope(scope):
         return [str(part) for part in (scope if isinstance(scope, (list, tuple)) else (scope,))]
+
+    # Task 1655 — the inline « create a player » panel (Joueurs list + team page)
+    def _sc_player_add_allowed(self):
+        user = request.env.user
+        return bool(self._is_clinic_admin() or user.has_group('base.group_system')
+                    or self._is_treatment_professional())
+
+    def _sc_player_add_panel(self, team=None, panel_id='sc_player_add', section='players.add'):
+        """Render values of ``sc_player_add_panel`` (None when the viewer may
+        not create players)."""
+        if not self._sc_player_add_allowed():
+            return None
+        env = request.env
+        targets = self._team_targets()
+        error, data = self._portal_pop_flash(('player_add',))
+        data = data or {}
+        # A link carrying the former team-page search (?add_first= …) opens
+        # the panel with those values.
+        args = request.httprequest.args
+        legacy = {'add_first': 'first_name', 'add_last': 'last_name', 'add_dob': 'date_of_birth'}
+        if not error and any(key in args for key in legacy):
+            data = {field: (args.get(key) or '').strip() for key, field in legacy.items()}
+        if data.get('team_ids') is not None:
+            chosen = str(data.get('team_ids') or '')
+        elif team and team in targets:
+            chosen = str(team.id)
+        elif len(targets) == 1:
+            chosen = str(targets.id)
+        else:
+            chosen = ''
+        target_id = '%s_team_ids' % panel_id
+        return {
+            'id': panel_id,
+            'section': section,
+            'team_id': team.id if team else '',
+            # Task 1672 (addendum 2): opened from a team page the user may
+            # assign to, the team is implicit (no selector).
+            'team_fixed': bool(team and team in targets),
+            'open': bool(error) or args.get('add') == '1' or any(key in args for key in legacy),
+            'error': error,
+            # Owner review 2026-10-22: the field a refusal is about (its
+            # message sits under it), else next to « Create ».
+            'error_field': (data.get('sc_error_field') or '') if error else '',
+            # A therapist creates into one of their teams (an admin may not).
+            'team_required': not self._is_clinic_admin(),
+            'data': data,
+            'team_target': target_id,
+            'team_csv': chosen,
+            'team_props': self._sc_form_props(
+                target_id, env._("Teams"), value=chosen,
+                options=[(t.id, t.name) for t in targets],
+                placeholder=env._("Add a team…")),
+            'relationship_types': env['sports.patient.contact']._fields['contact_type']._description_selection(env),
+            # Owner review 2026-10-22: the team page's Joueurs tab is a
+            # client-side tab (the address may still read the dashboard):
+            # a refusal comes back to THAT tab, never to the dashboard.
+            'return_url': ('/my/team?team_id=%s&tab=players' % team.id if team
+                           else request.httprequest.full_path.rstrip('?')),
+        }
+
+    def _sc_chosen_teams(self, csv):
+        ids = []
+        for part in str(csv or '').split(','):
+            part = part.strip()
+            if part.isdigit():
+                ids.append(int(part))
+        targets = self._team_targets()
+        return targets.filtered(lambda t: t.id in ids)
+
+    @staticmethod
+    def _sc_phone_error(post, *keys):
+        """Task 1645: « Invalid phone number. » when one of the posted
+        ``keys`` is a phone the clinic rule refuses, else None — checked
+        before anything is written, so the form comes back with the typed
+        values (the models refuse it too)."""
+        from ..models.sc_phone import sc_phone_is_valid
+        for key in keys:
+            if (post.get(key) or '').strip() and not sc_phone_is_valid(request.env, post.get(key)):
+                return _("Invalid phone number.")
+        return None
 
     def _portal_flash(self, error, form_data=None, scope=None):
         """Stash a validation error + submitted form data for a PRG redirect
@@ -859,7 +1062,7 @@ class AccessControlMixin:
     @staticmethod
     def _is_treatment_professional():
         """Portal OR internal treatment professional (task 1411) — exactly the
-        groups the TP-only patient fields (team_info_notes, allergies) are
+        groups the TP-only patient fields (team_info_notes, medical_history_other) are
         restricted to, so a template guarded by this never reads a field the
         user may not see."""
         user = request.env.user

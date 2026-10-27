@@ -15,7 +15,10 @@ Checklist (``_sc_incomplete_items``):
 * an emergency contact with a phone number (any ``contact_ids`` row with a
   ``mobile``);
 * for a player aged 14 or more — or whose date of birth is missing — the
-  player's own email and phone, each listed separately.
+  player's own email and phone, each listed separately;
+* task 1630: the allergy level and the medical-alert level, each listed
+  while « Not specified ». Task 1677: a family is complete once its list
+  has an item or « none known » is ticked (the level is computed).
 
 Assignee (``_sc_incomplete_todo_assignee``), so the To-Do lands with someone
 who can both see the player in the portal app and edit these fields:
@@ -42,6 +45,7 @@ INCOMPLETE_TODO_GRACE_HOURS = 48
 INCOMPLETE_TODO_PERSONAL_AGE = 14
 INCOMPLETE_TODO_ITEMS = (
     'first_name', 'last_name', 'date_of_birth', 'emergency_contact', 'email', 'phone',
+    'allergy_level', 'medical_alert_level',
 )
 TP_GROUPS = (
     'bemade_sports_clinic.group_sports_clinic_treatment_professional',
@@ -85,6 +89,12 @@ class Patient(models.Model):
                 missing.append('email')
             if not (player.phone or '').strip():
                 missing.append('phone')
+        # Task 1630 / 1677: a family left « Not specified » (empty list, not
+        # confirmed).
+        if not player.allergy_level:
+            missing.append('allergy_level')
+        if not player.medical_alert_level:
+            missing.append('medical_alert_level')
         return missing
 
     def _sc_incomplete_labels(self):
@@ -97,6 +107,8 @@ class Patient(models.Model):
             'emergency_contact': _("Emergency contact with a phone number"),
             'email': _("Player's email"),
             'phone': _("Player's phone"),
+            'allergy_level': _("Allergies"),
+            'medical_alert_level': _("Medical alert"),
         }
 
     def _sc_incomplete_todo_texts(self, missing, lang):
@@ -127,6 +139,34 @@ class Patient(models.Model):
             lambda u: self._sc_is_assignable(u) and not u.share)
         return admins.sorted('id')[:1]
 
+    def _sc_todo_route(self, preferred_teams=None):
+        """Task 1664: the ONE routing of the automatic To-Dos about this
+        player (« Vérifier la blessure », « Compléter la fiche »). Walk the
+        player's teams — ``preferred_teams`` first (the creator's teams, when
+        known), then the others by id — and, within each team, its head
+        therapist(s) then therapist(s) (staff order) holding an active user
+        account. Nobody on any team → the first active clinic administrator.
+        Empty only when there is no clinic administrator either."""
+        self.ensure_one()
+        teams = self.sudo().team_ids
+        preferred = (preferred_teams or self.env['sports.team']).sudo() & teams
+        for team in preferred.sorted('id') | (teams - preferred).sorted('id'):
+            staff = team.staff_ids.filtered(lambda s: s.role in THERAPIST_ROLES).sorted(
+                lambda s: (THERAPIST_ROLES.index(s.role), s.sequence, s.id))
+            for row in staff:
+                users = row.user_ids.filtered(self._sc_is_assignable)
+                if users:
+                    return users.sorted('id')[:1]
+        return self._sc_first_clinic_admin()
+
+    @api.model
+    def _sc_user_teams(self, user):
+        """The teams ``user`` staffs (sudo; empty for no user)."""
+        if not user or not user.partner_id:
+            return self.env['sports.team']
+        return self.env['sports.team.staff'].sudo().search(
+            [('partner_id', '=', user.partner_id.id)]).team_id
+
     def _sc_incomplete_todo_assignee(self):
         """See the module docstring. Empty when nobody qualifies."""
         self.ensure_one()
@@ -137,14 +177,8 @@ class Patient(models.Model):
             if creator.has_group(CLINIC_ADMIN_GROUP) or (
                     creator.partner_id in teams.staff_ids.partner_id):
                 return creator
-        for team in teams:
-            staff = team.staff_ids.filtered(lambda s: s.role in THERAPIST_ROLES).sorted(
-                lambda s: (THERAPIST_ROLES.index(s.role), s.sequence, s.id))
-            for row in staff:
-                users = row.user_ids.filtered(self._sc_is_assignable)
-                if users:
-                    return users.sorted('id')[:1]
-        return self._sc_first_clinic_admin()
+        # Task 1664: the shared routing (the creator's teams first).
+        return player._sc_todo_route(self._sc_user_teams(creator))
 
     # ------------------------------------------------------------------
     # Cron

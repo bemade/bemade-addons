@@ -9,8 +9,9 @@
  * follow-up. This module shows it in the layout's #sc_proposal_sheet:
  *
  * - each item is a row « label · current → proposed »; ``editable`` rows
- *   carry a date input (prefilled with the proposed date), ``tickable`` rows
- *   a checkbox (``checked`` by default);
+ *   carry a date input (prefilled with the proposed date) — task 1670: a
+ *   ``type: 'selection'`` row a select of its ``options`` —, ``tickable``
+ *   rows a checkbox (``checked`` by default);
  * - « Apply » posts the ticked rows to /my/app/apply-proposal
  *   ({patient_id, changes: JSON [{model, id, field, value}]}), which
  *   re-validates and writes them through the normal save paths; on success
@@ -64,7 +65,19 @@ function buildRow(item) {
     const change = el("div", "o_sc_proposal_change");
     change.append(el("span", "o_sc_proposal_current", item.current_display || "—"));
     change.append(el("span", "o_sc_proposal_arrow", "→"));
-    if (item.editable) {
+    if (item.type === "selection" && Array.isArray(item.options)) {
+        // Task 1670: a status row — the field's own choices.
+        const select = el("select", "o_sc_input o_sc_proposal_select");
+        for (const option of item.options) {
+            const node = el("option", null, option.label);
+            node.value = option.value;
+            select.append(node);
+        }
+        select.value = item.proposed || "";
+        select.dataset.scProposalValue = "1";
+        select.setAttribute("aria-label", item.label);
+        change.append(select);
+    } else if (item.editable) {
         const input = el("input", "o_sc_input o_sc_proposal_date");
         input.type = "date";
         input.value = item.proposed || "";

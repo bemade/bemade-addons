@@ -11,6 +11,9 @@
  *   burst of saves), matches them against the keys the page carries and GETs
  *   the page's OWN URL with « X-Sc-Fragments: k1,k2 » — the route renders as
  *   for a reload and answers {fragments: {key: html}, missing, title};
+ * - task 1634: a node with data-sc-fragment-keep is never emptied when its
+ *   key is missing from the fresh render (a player card stays put until the
+ *   next visit);
  * - swaps each node in place, NEVER one that holds an OWL island
  *   (owl-component), the focused element or an open sheet: such a key is
  *   kept « stale » and retried once the element lets go (focus out, « Done »);
@@ -33,7 +36,9 @@
  * or the DOM event « sc:refresh » {detail: {patterns, immediate}}.
  * After a swap the document receives « sc:fragments » {detail: {keys}}.
  */
+import { _t } from "@web/core/l10n/translation";
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { scLeavePage } from "@bemade_sports_clinic/js/sc_confirm";
 
 export const FRAGMENTS_HEADER = "X-Sc-Fragments";
 const DEBOUNCE_MS = 300;
@@ -223,6 +228,11 @@ export function applyFragments(payload) {
     }
     for (const key of (payload && payload.missing) || []) {
         for (const el of nodesFor(key)) {
+            if (el.dataset.scFragmentKeep) {
+                // Task 1634: a player card whose player the fresh render
+                // lists elsewhere stays as it is (it moves on the next visit).
+                continue;
+            }
             if (el.dataset.scFragmentMode === "list") {
                 const empty = document.createElement(el.tagName);
                 lists.push([el, empty, key]);
@@ -278,7 +288,13 @@ async function run() {
             headers: { [FRAGMENTS_HEADER]: keys.slice(0, MAX_KEYS).join(",") },
             toast: false,
         });
-    } catch {
+    } catch (error) {
+        // Task 1656: this page is no longer readable (access lost, e.g. from
+        // another tab): leave it, with a neutral note, instead of an error.
+        if (error && error.status === 403) {
+            scLeavePage(_t("You no longer have access to this page."));
+            return;
+        }
         // Offline / error: what shows stays as it is; the next visit of the
         // page is fresh (the save marked the session dirty).
         return;

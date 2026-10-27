@@ -32,6 +32,7 @@
             <t t-elif="icon == 'back'"><path d="M15 18l-6-6 6-6"/></t>
             <t t-elif="icon == 'chevron'"><path d="M9 18l6-6-6-6"/></t>
             <t t-elif="icon == 'search'"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></t>
+            <t t-elif="icon == 'help'"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></t>
             <t t-elif="icon == 'moon'"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></t>
             <t t-elif="icon == 'sun'"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></t>
             <t t-elif="icon == 'up'"><path d="M18 15l-6-6-6 6"/></t>
@@ -53,6 +54,7 @@
             <t t-elif="icon == 'mail'"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></t>
             <t t-elif="icon == 'check'"><path d="M20 6L9 17l-5-5"/></t>
             <t t-elif="icon == 'filter'"><path d="M22 3H2l8 9.5V19l4 2v-8.5z"/></t>
+            <t t-elif="icon == 'epipen'"><rect x="9" y="2" width="6" height="14" rx="2"/><path d="M12 16v6M9 6h6M10 19h4"/></t>
             <t t-elif="icon == 'sort'"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></t>
             <t t-else=""><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></t>
         </svg>
@@ -90,13 +92,47 @@
     <!-- Player row status line, under the name so it never crowds the row on
          a phone: the legacy card's Match / Practice badges, active-injury
          count and ⚡ recent-changes flag. Variables: row_status (from
-         sports.patient._sc_row_status, optional), row_changed (bool). -->
+         sports.patient._sc_row_status, optional), row_changed (bool).
+         Task 1634: row_pills (sports.patient._sc_status_pills, a status
+         editor's cards only) renders the badges as compact quick-change
+         dropdowns (sc_status_pill_select, compact) — buttons, so ONLY in a
+         link row (sc_link_row), never inside an <a> (sc_entity_row);
+         row_scope keeps their menu ids unique on the page. -->
     <template id="sc_player_status_line" name="App shell: player status line">
         <t t-set="sc_injuries_title">Active injuries</t>
         <span class="o_sc_row_status">
             <t t-if="row_status">
-                <t t-foreach="row_status['pills']" t-as="pill">
+                <t t-if="row_pills">
+                    <t t-set="sc_status_undo">Status changed</t>
+                    <t t-foreach="row_pills" t-as="pill">
+                        <t t-call="bemade_sports_clinic.sc_status_pill_select">
+                            <t t-set="editable" t-value="True"/>
+                            <t t-set="compact" t-value="True"/>
+                            <t t-set="scope" t-value="row_scope"/>
+                            <t t-set="undo_message" t-value="sc_status_undo"/>
+                        </t>
+                    </t>
+                </t>
+                <t t-else="" t-foreach="row_status['pills']" t-as="pill">
                     <span t-attf-class="o_sc_status_pill o_sc_chip_#{pill['tone']}" t-att-title="pill['title']"><i t-if="pill['icon']" t-attf-class="fa #{pill['icon']}" aria-hidden="true"/> <t t-out="pill['label']"/></span>
+                </t>
+                <!-- Task 1630 (review round 1): the RED allergy / medical-alert
+                     pills (row_status['medical'], _sc_card_medical_pills).
+                     Task 1652: a tap opens the player page's popup (the
+                     page-level sc_medical_sheets, scope « card »;
+                     sc_med_card_pills.js), never the card / its link; no
+                     sheet on the page = the player's Info tab. -->
+                <t t-foreach="row_status.get('medical') or ()" t-as="med">
+                    <button type="button" class="o_sc_med_pill o_sc_med_card_pill o_sc_med_urgent"
+                            t-att-data-sc-med-card-sheet="med.get('sheet')"
+                            t-att-data-sc-med-fallback="med.get('fallback')"
+                            aria-haspopup="dialog" t-att-aria-label="med['title']"
+                            t-att-data-sc-med-pill="med['key']" data-sc-med-level="urgent" t-att-title="med['title']">
+                        <span class="o_sc_med_pill_label" t-out="med['label']"/>
+                        <span t-if="med['epipen']" class="o_sc_med_epipen" data-sc-med-epipen="1">
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
+                        </span>
+                    </button>
                 </t>
                 <span t-if="row_status['injuries']" class="o_sc_injury_count" t-att-title="sc_injuries_title"><i class="fa fa-chain-broken" aria-hidden="true"/> <t t-out="row_status['injuries']"/></span>
             </t>
@@ -126,15 +162,20 @@
           fragment so the next pick posts fresh values;
         - editable: False -> the same coloured pill, read-only (a span, no
           menu);
-        - undo_message: the « Annuler » toast's message after a pick.
+        - undo_message: the « Annuler » toast's message after a pick;
+        - task 1634: compact -> the player cards' small pill (the short
+          label « Match » / « Practice », the full « Match: Yes » as its
+          title / accessible name, a small chevron); scope -> a key making
+          the menu id unique when one record's pills show several times on
+          a page (the cards' row scope).
 
         The menu is the shell's generic menu popup (sc_user_menu.js:
         keyboard, Escape, outside tap, one open at a time).
     -->
     <template id="sc_status_pill_select" name="App shell: status pill select">
         <t t-set="sc_pill_target" t-value="pill['target']"/>
-        <t t-set="sc_pill_menu_id" t-value="'sc-pill-%s-%s-%s' % (sc_pill_target['model'].replace('.', '-'), sc_pill_target['id'], pill['key'])"/>
-        <span t-if="editable" class="o_sc_pill_select_wrap" data-sc-pill-select="1"
+        <t t-set="sc_pill_menu_id" t-value="'sc-pill-%s-%s-%s%s' % (sc_pill_target['model'].replace('.', '-'), sc_pill_target['id'], pill['key'], ('-%s' % scope) if scope else '')"/>
+        <span t-if="editable" t-attf-class="o_sc_pill_select_wrap#{' o_sc_pill_select_compact' if compact else ''}" data-sc-pill-select="1"
               t-att-data-sc-pill-key="pill['key']"
               t-att-data-sc-model="sc_pill_target['model']"
               t-att-data-sc-record-id="sc_pill_target['id']"
@@ -145,9 +186,10 @@
             <button type="button" t-attf-class="o_sc_status_pill o_sc_pill_select o_sc_chip_#{pill['tone']}"
                     data-sc-menu-toggle="1" aria-haspopup="menu" aria-expanded="false"
                     t-att-aria-controls="sc_pill_menu_id" t-att-title="pill['title']"
+                    t-att-aria-label="pill['text'] if compact else None"
                     t-att-data-sc-pill-value="pill['value']">
                 <i t-if="pill['icon']" t-attf-class="fa #{pill['icon']}" aria-hidden="true"/>
-                <span class="o_sc_pill_text" t-out="pill['text']"/>
+                <span class="o_sc_pill_text" t-out="pill['label'] if compact else pill['text']"/>
                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
             </button>
             <span t-att-id="sc_pill_menu_id" class="o_sc_menu_popup o_sc_pill_popup" role="menu" data-sc-menu-popup="1"
@@ -299,8 +341,10 @@
 
     <!-- « Done » of an edit card's edit view. -->
     <template id="sc_edit_card_done" name="App shell: edit card done">
-        <div class="o_sc_form_actions">
-            <button type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm" data-sc-edit-done="1">Done</button>
+        <!-- Task 1676: hidden unless the user shows the « Done » buttons
+             (Paramètres); the head pencil's ✓ closes the card either way. -->
+        <div class="o_sc_form_actions o_sc_edit_done_actions">
+            <button type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm o_sc_edit_done" data-sc-edit-done="1">Done</button>
         </div>
     </template>
 
@@ -359,8 +403,21 @@
     </template>
 
     <!-- Banner. Variables: title, tone (info|warn). Body (0) = text. -->
+    <!-- Task 1658 — the form guard's slots (sc_form_guard.js): the
+         server-error slot and the reason line under the primary action
+         (aria-describedby). Call it right after the form's actions.
+         Variables: guard_id (unique on the page). -->
+    <template id="sc_form_guard_slots" name="App shell: form guard slots">
+        <p class="o_sc_field_message o_sc_field_error" role="alert" data-sc-guard-error="1" hidden="hidden"/>
+        <p class="o_sc_hint o_sc_guard_reason" t-att-id="'%s_reason' % guard_id" data-sc-guard-reason="1"
+           aria-live="polite" hidden="hidden"/>
+    </template>
+
     <template id="sc_banner" name="App shell: banner">
-        <div t-attf-class="o_sc_banner o_sc_banner_#{tone or 'info'}" role="status">
+        <!-- Task 1658: flash_error marks a refusal banner (the form guard
+             reads it from the page a guarded form's fetch landed on). -->
+        <div t-attf-class="o_sc_banner o_sc_banner_#{tone or 'info'}" role="status"
+             t-att-data-sc-flash-error="'1' if flash_error else None">
             <strong t-if="title" class="o_sc_banner_title" t-out="title"/>
             <t t-out="0"/>
         </div>
@@ -394,7 +451,9 @@
 
     <!--
         Task 1542 — segmented page tabs (deep-linkable). Variables: tabs =
-        [(key, label, url[, aliases])], active (key). Task 1539: the optional
+        [(key, label, url[, aliases[, badge]])], active (key). Task 1635: the
+        optional 5th item is a count pill after the label, {'count', 'tone'
+        ('neutral' | 'red'), 'label' (its aria-label)}; None = no pill. Task 1539: the optional
         4th item lists legacy #fragment names that open this tab (e.g. the
         player page's « #patient-info » after a POST round-trip). Every tab is a real link (the
         server renders the active panel); sc_app_ui.js switches panels in
@@ -402,12 +461,23 @@
         <section data-sc-tab-panel="key">.
     -->
     <template id="sc_page_tabs" name="App shell: page tabs">
-        <nav t-attf-class="o_sc_segmented o_sc_segmented_full o_sc_page_tabs #{'o_sc_page_tabs_scroll' if len(tabs) &gt; 4 else ''}" role="tablist" data-sc-tabs="1">
+        <!-- Task 1647: the count pill comes BEFORE the label (every width);
+             an optional 6th item is a short label shown on a phone (« Docs »),
+             the full one staying the tab's title / accessible name. Up to 5
+             tabs fit the phone's width; more scroll sideways. -->
+        <nav t-attf-class="o_sc_segmented o_sc_segmented_full o_sc_page_tabs #{'o_sc_page_tabs_scroll' if len(tabs) &gt; 5 else ''}" role="tablist" data-sc-tabs="1">
             <t t-foreach="tabs" t-as="tab">
+                <t t-set="sc_tab_badge" t-value="tab[4] if len(tab) &gt; 4 else None"/>
+                <t t-set="sc_tab_short" t-value="tab[5] if len(tab) &gt; 5 else None"/>
                 <a t-att-href="tab[2]" role="tab" t-att-data-sc-tab="tab[0]"
                    t-att-data-sc-tab-aliases="tab[3] if len(tab) &gt; 3 and tab[3] else None"
+                   t-att-title="tab[1] if sc_tab_short else None"
                    t-att-aria-selected="'true' if tab[0] == active else 'false'"
-                   t-att-aria-pressed="'true' if tab[0] == active else 'false'" t-out="tab[1]"/>
+                   t-att-aria-pressed="'true' if tab[0] == active else 'false'"><span t-if="sc_tab_badge"
+                        t-attf-class="o_sc_tab_badge o_sc_tab_badge_#{sc_tab_badge['tone']}" role="img"
+                        t-att-aria-label="sc_tab_badge['label']" t-att-title="sc_tab_badge['label']"
+                        t-out="sc_tab_badge['count']"/><span t-attf-class="o_sc_tab_label #{'o_sc_tab_label_long' if sc_tab_short else ''}" t-out="tab[1]"/><span
+                        t-if="sc_tab_short" class="o_sc_tab_label o_sc_tab_label_short" aria-hidden="true" t-out="sc_tab_short"/></a>
             </t>
         </nav>
     </template>
@@ -450,7 +520,7 @@
     <template id="sc_confirm_sheet" name="App shell: confirm sheet">
         <t t-call="bemade_sports_clinic.sc_sheet">
             <t t-set="lazy_url" t-value="False"/>
-            <form t-att-action="action" method="post" class="o_sc_form">
+            <form t-att-action="action" method="post" class="o_sc_form" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <t t-foreach="(hidden or {}).items()" t-as="hid">
                     <input type="hidden" t-att-name="hid[0]" t-att-value="hid[1]"/>
@@ -462,6 +532,7 @@
                     <button type="submit" t-attf-class="o_sc_btn #{'o_sc_btn_danger' if danger else 'o_sc_btn_primary'}"
                             data-sc-confirm-submit="1" t-out="confirm_label"/>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="sheet_id"/></t>
             </form>
         </t>
     </template>
@@ -680,7 +751,14 @@
     <template id="sc_player_row" name="App shell: player row">
         <t t-set="sc_row_detail_id" t-value="'sc-row-detail-%s-%s' % (row_scope or 'row', row['id'])"/>
         <div class="o_sc_row_group o_sc_player_row" t-att-data-sc-player-id="row['id']">
+            <!-- Task 1634: the face (dot, pills, ⚡, lines) is the read
+                 fragment « sports.patient:<id>:row-<scope> » — unique on the
+                 page, refreshed in place by a status pick; the lazy detail
+                 below stays out of it. « keep »: a fresh render listing the
+                 player in another section never empties the card (it moves
+                 on the next visit). -->
             <t t-call="bemade_sports_clinic.sc_link_row">
+                <t t-set="row_attrs" t-value="{'data-sc-fragment': 'sports.patient:%s:row-%s' % (row['id'], row_scope or 'row'), 'data-sc-fragment-keep': '1'}"/>
                 <t t-set="href" t-value="row['url']"/>
                 <t t-set="dot" t-value="row['dot']"/>
                 <t t-set="title" t-value="row['title']"/>
@@ -689,6 +767,7 @@
                 <t t-set="meta">
                     <t t-call="bemade_sports_clinic.sc_player_status_line">
                         <t t-set="row_status" t-value="row.get('status')"/>
+                        <t t-set="row_pills" t-value="row.get('pills')"/>
                         <t t-set="row_changed" t-value="row.get('changed')"/>
                     </t>
                     <t t-call="bemade_sports_clinic.sc_player_row_lines"/>
@@ -790,10 +869,256 @@
                 </button>
                 <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-sheet-open="sc_activity_cancel_sheet"
                         t-att-data-sc-activity-id="activity.id" data-sc-action="activity.cancel">
-                    <span>Cancel</span>
+                    <span>Delete</span>
                 </button>
             </div>
         </div>
+    </template>
+
+    <!--
+        Task 1630 (owner + MC 2026-10-21) — the « Allergies » and « Medical
+        alert » pills of a player (the player header, the clinic dossier):
+        each coloured by its level — « None » grey, « Not urgent » yellow,
+        « Urgent – life-threatening » red, « Not specified » a muted
+        outline — the allergies one with the EpiPen icon when ticked. A pill
+        opens its popup (sc_medical_sheets). A READ fragment (no island):
+        a save refreshes it in place. Variables: patient, scope (unique ids
+        per page: 'player' / 'clinic'), tp (the viewer is a therapist: both
+        pills, every level; a coach gets the non-urgent / urgent ones only),
+        section (data-sc-section of the holder).
+    -->
+    <template id="sc_medical_pills" name="App shell: medical pills">
+        <div class="o_sc_med_pills" t-att-data-sc-section="section or 'medical.pills'"
+             t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-pills')">
+            <t t-foreach="patient._sc_medical_pills(tp=tp)" t-as="pill">
+                <button type="button" t-attf-class="o_sc_med_pill o_sc_med_#{pill['tone']}"
+                        t-att-data-sc-sheet-open="'sc_med_%s_%s_%s' % (scope, pill['key'], patient.id)"
+                        t-att-data-sc-med-pill="pill['key']" t-att-data-sc-med-level="pill['level'] or 'unset'"
+                        aria-haspopup="dialog" t-att-title="pill['text']"
+                        t-att-aria-label="('%s · EpiPen' % pill['text']) if pill['epipen'] else pill['text']">
+                    <span class="o_sc_med_pill_label" t-out="pill['label']"/>
+                    <span t-if="pill['epipen']" class="o_sc_med_epipen" data-sc-med-epipen="1">
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
+                    </span>
+                </button>
+            </t>
+        </div>
+    </template>
+
+    <!--
+        Task 1630 / 1677 — the popups of sc_medical_pills (sc_sheet: a bottom
+        sheet on a phone, a dialog on a laptop). Task 1677 (owner 2026-10-24):
+        tight structured lists —
+
+        * the head: the family's title (the sheet's) + its pill (red / yellow /
+          grey, computed), refreshed in place on every change;
+        * allergies only: the EpiPen card — a checkbox + a note (where it is,
+          how to use it) shown only when ticked; pencil ↔ ✓ (#1676);
+        * the list: « + Ajouter » (the list header's add panel, #1672) and one
+          card per item — name + « Risque vital » (+ « Premiers soins » for a
+          condition); its pencil opens the edit view (the fields, saved on
+          change; the trash can; the pencil turned ✓ closes it);
+        * an empty list: a small « No known allergy / condition » checkbox
+          (ticked = confirmed, the file is complete for #1628);
+        * « Old text (to validate) »: the former free text, read-only, while
+          the player is flagged « to validate ».
+
+        Plain inputs, no island: the read parts are read fragments
+        (sc_fragments.js), the inputs are saved by sc_medical_lists.js
+        (controllers/app_critical_items.py). A coach (``editable`` false)
+        reads the same popup without any control. Variables: patient, scope,
+        tp, editable.
+    -->
+    <template id="sc_medical_sheets" name="App shell: medical sheets">
+        <t t-foreach="patient._sc_medical_pills(tp=tp)" t-as="pill">
+            <t t-set="sc_med_key" t-value="pill['key']"/>
+            <t t-set="sc_med_uid" t-value="'%s_%s_%s' % (scope, sc_med_key, patient.id)"/>
+            <t t-set="sc_med_is_allergy" t-value="sc_med_key == 'allergy'"/>
+            <t t-call="bemade_sports_clinic.sc_sheet">
+                <t t-set="sheet_id" t-value="'sc_med_%s' % sc_med_uid"/>
+                <t t-set="lazy_url" t-value="False"/>
+                <t t-set="title" t-value="pill['family_label']"/>
+                <div class="o_sc_med_sheet" t-att-data-sc-section="'medical.%s' % sc_med_key"
+                     t-att-data-sc-med-family="sc_med_key" t-att-data-sc-patient="patient.id"
+                     t-att-data-sc-med-editable="'1' if editable else None">
+                    <!-- The family's pill (computed from the list). -->
+                    <div class="o_sc_med_head" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-head' % sc_med_key)">
+                        <span t-attf-class="o_sc_med_pill o_sc_med_pill_static o_sc_med_#{pill['tone']}"
+                              data-sc-med-head="1" t-att-data-sc-med-level="pill['level'] or 'unset'"
+                              t-out="pill['level_label']"/>
+                    </div>
+
+                    <!-- Allergies: the EpiPen card. -->
+                    <section t-if="sc_med_is_allergy" class="o_sc_card o_sc_edit_card o_sc_med_card o_sc_med_epipen_card"
+                             data-sc-section="medical.allergy.epipen"
+                             t-att-data-sc-edit-card="('med-epipen-%s' % sc_med_uid) if editable else None">
+                        <div class="o_sc_med_card_row">
+                            <div class="o_sc_med_card_read" data-sc-edit-view="read"
+                                 t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-epipen')">
+                                <p class="o_sc_med_epipen_line" t-att-data-sc-med-epipen="'1' if pill['epipen'] else None">
+                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
+                                    <strong>EpiPen</strong>
+                                    <span class="o_sc_med_epipen_value">
+                                        <t t-if="pill['epipen']">Yes</t><t t-else="">No</t>
+                                    </span>
+                                </p>
+                                <p t-if="pill['epipen_note']" class="o_sc_meta o_sc_pre o_sc_med_epipen_note"
+                                   data-sc-med-epipen-note="1" t-out="pill['epipen_note']"/>
+                            </div>
+                            <button t-if="editable" type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1"
+                                    data-sc-action="medical.epipen.edit" aria-expanded="false" aria-label="Edit" title="Edit">
+                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                            </button>
+                        </div>
+                        <div t-if="editable" class="o_sc_fields o_sc_med_card_edit" data-sc-edit-view="edit" hidden="hidden">
+                            <label class="o_sc_check">
+                                <input type="checkbox" data-sc-med-set="allergy_epipen"
+                                       t-att-checked="'checked' if pill['epipen'] else None"/>
+                                <span>EpiPen</span>
+                            </label>
+                            <div class="o_sc_field" data-sc-med-epipen-note-field="1" t-att-hidden="None if pill['epipen'] else 'hidden'">
+                                <label class="o_sc_field_label" t-att-for="'sc_med_epipen_note_%s' % sc_med_uid">Location / instructions</label>
+                                <input type="text" t-att-id="'sc_med_epipen_note_%s' % sc_med_uid" class="o_sc_input"
+                                       data-sc-med-set="allergy_epipen_note" maxlength="240" autocomplete="off"
+                                       t-att-value="pill['epipen_note']"/>
+                            </div>
+                            <p class="o_sc_field_message o_sc_field_error" role="alert" data-sc-med-error="1" hidden="hidden"/>
+                            <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                        </div>
+                    </section>
+
+                    <!-- The list: « + Ajouter » and its add panel. -->
+                    <t t-if="editable">
+                        <t t-set="sc_med_panel" t-value="'sc_med_add_%s' % sc_med_uid"/>
+                        <t t-call="bemade_sports_clinic.sc_list_header">
+                            <t t-if="sc_med_is_allergy"><t t-set="add_label">Add an allergy</t></t>
+                            <t t-else=""><t t-set="add_label">Add a condition</t></t>
+                            <t t-set="add_panel" t-value="sc_med_panel"/>
+                            <t t-set="add_key" t-value="'medical.%s.add' % sc_med_key"/>
+                        </t>
+                        <details class="o_sc_card o_sc_disclosure o_sc_list_add_panel o_sc_med_add_panel"
+                                 t-att-id="sc_med_panel" t-att-data-sc-section="'medical.%s.add' % sc_med_key">
+                            <summary class="o_sc_disclosure_summary">
+                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                                <span t-if="sc_med_is_allergy">Add an allergy</span>
+                                <span t-else="">Add a condition</span>
+                            </summary>
+                            <form class="o_sc_form" data-sc-med-add="1" t-att-data-sc-patient="patient.id"
+                                  t-att-data-sc-family="sc_med_key">
+                                <div class="o_sc_field">
+                                    <label class="o_sc_field_label" t-att-for="'sc_med_new_name_%s' % sc_med_uid">Name</label>
+                                    <input type="text" t-att-id="'sc_med_new_name_%s' % sc_med_uid" name="name"
+                                           class="o_sc_input" required="required" maxlength="120" autocomplete="off"/>
+                                </div>
+                                <label class="o_sc_check">
+                                    <input type="checkbox" name="life_threatening" value="1"/>
+                                    <span>Life-threatening</span>
+                                </label>
+                                <div t-if="not sc_med_is_allergy" class="o_sc_field">
+                                    <label class="o_sc_field_label" t-att-for="'sc_med_new_aid_%s' % sc_med_uid">First aid</label>
+                                    <textarea t-att-id="'sc_med_new_aid_%s' % sc_med_uid" name="first_aid_note"
+                                              class="o_sc_input o_sc_textarea" rows="2"/>
+                                </div>
+                                <p class="o_sc_field_message o_sc_field_error" role="alert" data-sc-med-error="1" hidden="hidden"/>
+                                <div class="o_sc_form_actions">
+                                    <button type="submit" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm"
+                                            t-att-data-sc-action="'medical.%s.add.submit' % sc_med_key">Add</button>
+                                </div>
+                            </form>
+                        </details>
+                    </t>
+
+                    <!-- The items (a read fragment: read + edit views, plain inputs). -->
+                    <ul class="o_sc_med_items" t-att-data-sc-section="'medical.%s.items' % sc_med_key"
+                        t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-items' % sc_med_key)"
+                        data-sc-fragment-mode="list" t-att-hidden="None if pill['items'] else 'hidden'">
+                        <li t-foreach="pill['items']" t-as="item" t-att-data-sc-fragment-item="'item-%s' % item['id']"
+                            t-attf-class="o_sc_card o_sc_med_card o_sc_med_item #{'o_sc_edit_card' if editable else ''}"
+                            t-att-data-sc-med-item="item['id']"
+                            t-att-data-sc-med-vital="'1' if item['life_threatening'] else '0'"
+                            t-att-data-sc-edit-card="('med-item-%s-%s' % (scope, item['id'])) if editable else None">
+                            <div class="o_sc_med_card_row">
+                                <div class="o_sc_med_card_read" data-sc-edit-view="read"
+                                     t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-item-%s' % item['id'])">
+                                    <p class="o_sc_med_item_line">
+                                        <span t-attf-class="o_sc_med_dot o_sc_med_#{'urgent' if item['life_threatening'] else 'minor'}" aria-hidden="true"/>
+                                        <span class="o_sc_med_item_name" t-out="item['name']"/>
+                                        <span t-if="item['life_threatening']" class="o_sc_chip o_sc_med_vital_chip"
+                                              data-sc-med-vital-chip="1">Life-threatening</span>
+                                    </p>
+                                    <p t-if="item['first_aid_note']" class="o_sc_pre o_sc_med_first_aid" data-sc-med-first-aid="1">
+                                        <strong>First aid</strong>
+                                        <span t-out="item['first_aid_note']"/>
+                                    </p>
+                                </div>
+                                <button t-if="editable" type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1"
+                                        data-sc-action="medical.item.edit" aria-expanded="false" aria-label="Edit" title="Edit">
+                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                                </button>
+                            </div>
+                            <div t-if="editable" class="o_sc_fields o_sc_med_card_edit" data-sc-edit-view="edit" hidden="hidden">
+                                <div class="o_sc_field">
+                                    <label class="o_sc_field_label" t-att-for="'sc_med_item_name_%s_%s' % (scope, item['id'])">Name</label>
+                                    <input type="text" t-att-id="'sc_med_item_name_%s_%s' % (scope, item['id'])" class="o_sc_input"
+                                           data-sc-med-item-field="name" maxlength="120" autocomplete="off" required="required"
+                                           t-att-value="item['name']"/>
+                                </div>
+                                <label class="o_sc_check">
+                                    <input type="checkbox" data-sc-med-item-field="life_threatening"
+                                           t-att-checked="'checked' if item['life_threatening'] else None"/>
+                                    <span>Life-threatening</span>
+                                </label>
+                                <div t-if="not sc_med_is_allergy" class="o_sc_field">
+                                    <label class="o_sc_field_label" t-att-for="'sc_med_item_aid_%s_%s' % (scope, item['id'])">First aid</label>
+                                    <textarea t-att-id="'sc_med_item_aid_%s_%s' % (scope, item['id'])" class="o_sc_input o_sc_textarea"
+                                              rows="2" data-sc-med-item-field="first_aid_note" t-out="item['first_aid_note']"/>
+                                </div>
+                                <p class="o_sc_field_message o_sc_field_error" role="alert" data-sc-med-error="1" hidden="hidden"/>
+                                <div class="o_sc_med_item_actions">
+                                    <button type="button" class="o_sc_icon_btn o_sc_med_item_delete"
+                                            t-att-data-sc-med-item-delete="item['id']" data-sc-action="medical.item.delete"
+                                            aria-label="Delete" title="Delete">
+                                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'trash'"/></t>
+                                    </button>
+                                </div>
+                                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <!-- An empty list: « none known » (therapists tick it). -->
+                    <div class="o_sc_med_none_box" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-none' % sc_med_key)">
+                        <t t-if="not pill['items']">
+                            <label t-if="editable" class="o_sc_check o_sc_med_none_check">
+                                <input type="checkbox" t-att-data-sc-med-set="'allergy_none_confirmed' if sc_med_is_allergy else 'medical_none_confirmed'"
+                                       t-att-checked="'checked' if pill['none_confirmed'] else None"/>
+                                <span t-if="sc_med_is_allergy">No known allergy</span>
+                                <span t-else="">No known condition</span>
+                            </label>
+                            <p t-elif="pill['none_confirmed']" class="o_sc_muted">
+                                <t t-if="sc_med_is_allergy">No known allergy</t>
+                                <t t-else="">No known condition</t>
+                            </p>
+                        </t>
+                    </div>
+
+                    <!-- The former free text, read-only, until MC validates.
+                         Therapists only (owner 2026-10-25): the legacy
+                         allergies text was never shown to coaches. -->
+                    <div t-if="tp" class="o_sc_med_legacy" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-legacy' % sc_med_key)">
+                        <t t-if="pill['legacy_text']">
+                            <p class="o_sc_field_label">Old text (to validate)</p>
+                            <p class="o_sc_pre o_sc_muted" data-sc-med-legacy="1" t-out="pill['legacy_text']"/>
+                        </t>
+                    </div>
+
+                    <!-- Task 1654: who changed this family last. -->
+                    <div t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-stamp' % sc_med_key)">
+                        <p t-if="pill.get('stamp')" class="o_sc_meta" data-sc-med-stamp="1" t-out="pill['stamp']"/>
+                    </div>
+                </div>
+            </t>
+        </t>
     </template>
 
 </odoo>

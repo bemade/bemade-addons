@@ -20,3 +20,5 @@ from . import test_triage_row_data
 from . import test_triage_tour
 from . import test_transport_permissions
 from . import test_transport_remove_mailbox
+from . import test_app_landing
+from . import test_triage_unread_per_user

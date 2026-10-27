@@ -2,7 +2,7 @@
 Synthetic fixtures only.
 
 Use case: on the player page a therapist edits the player's name, date of
-birth, allergies or teams; the title, the hero and the dependent rows show the
+birth, allergies (task 1630: the medical pills) or teams; the title, the hero and the dependent rows show the
 new data at once — they used to wait for a reload (or « Done »).
 
 Acceptance criteria (each: the save refreshes the fragment, and the fragment
@@ -65,19 +65,26 @@ class TestFragmentsPlayer1611(FragmentsCommon):
 
     # -- AC-P3 -------------------------------------------------------------
     def test_allergies_banner_shows_and_hides(self):
+        # Task 1630: the allergies banner became the « Allergies » pill (its
+        # tone follows the level) and the popup. Task 1677: the level follows
+        # the list — an item added through the popup's route.
         self._login_tp()
         tree = self._page(self._url())
-        holder = self._node(tree, self._key('allergies'))
+        holder = self._node(tree, self._key('medical-pills'))
         self.assertIsNotNone(holder, 'the holder is rendered even without allergies')
-        self.assertFalse(holder.xpath('.//*[contains(@class, "o_sc_banner")]'))
-        payload = self._saved(self.player, 'allergies', 'Synthetic peanuts')
-        self.assertRefreshes(payload, self._key('allergies'))
-        banner = self._fragment(self._url(), self._key('allergies'))
-        self.assertIn('Synthetic peanuts', self._text(banner))
-        self.assertTrue(banner.xpath('.//*[contains(@class, "o_sc_banner")]'))
-        self._saved(self.player, 'allergies', '')
-        banner = self._fragment(self._url(), self._key('allergies'))
-        self.assertFalse(banner.xpath('.//*[contains(@class, "o_sc_banner")]'))
+        pill = holder.xpath('.//button[@data-sc-med-pill="allergy"]')[0]
+        self.assertEqual(pill.get('data-sc-med-level'), 'unset')
+        resp = self.url_open('/my/app/medical/item/add', data={
+            'patient_id': self.player.id, 'family': 'allergy', 'name': 'Synthetic peanuts',
+            'csrf_token': self._csrf()}, allow_redirects=False)
+        self.assertEqual(resp.status_code, 200, resp.text)
+        payload = resp.json()
+        self.assertRefreshes(payload, self._key('medical-pills'))
+        pills = self._fragment(self._url(), self._key('medical-pills'))
+        self.assertIn('o_sc_med_minor', pills.xpath('.//button[@data-sc-med-pill="allergy"]')[0].get('class'))
+        self.assertRefreshes(payload, self._key('medical-allergy-items'))
+        items = self._fragment(self._url(), self._key('medical-allergy-items'))
+        self.assertIn('Synthetic peanuts', self._text(items))
 
     # -- AC-P4 -------------------------------------------------------------
     def test_teams_refresh_links_memberships_and_actions(self):

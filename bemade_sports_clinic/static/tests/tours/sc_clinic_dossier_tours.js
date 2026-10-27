@@ -74,7 +74,7 @@ tours.add("sc_1590_clinic_injury_edit", {
             // Task 1616: one pencil per group — the new injury opens its
             // Details; the notes are the Notes group's.
             content: "The Notes pencil",
-            trigger: `${NEW_CARD} [data-sc-edit-card="injury-notes"] button[data-sc-edit-toggle]`,
+            trigger: `${NEW_CARD} [data-sc-edit-card="injury-notes-external"] button[data-sc-edit-toggle]`,
             run: "click",
         },
         {
@@ -101,12 +101,12 @@ tours.add("sc_1590_clinic_injury_edit", {
         },
         {
             content: "« Done » of the Notes (task 1611: no reload)",
-            trigger: `${NEW_CARD} [data-sc-edit-card="injury-notes"] [data-sc-edit-done]`,
+            trigger: `${NEW_CARD} [data-sc-edit-card="injury-notes-external"] [data-sc-edit-done]`,
             run: "click",
         },
         {
             content: "Same clinic, same patient, file tab; the card reads the note",
-            trigger: `[data-sc-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-sc-edit-card="injury-notes"] [data-sc-edit-view="read"]:not([hidden])`,
+            trigger: `[data-sc-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-sc-edit-card="injury-notes-external"] [data-sc-edit-view="read"]:not([hidden])`,
             run() {
                 onClinicDossier();
                 assert(this.anchor.textContent.includes(QUICK_NOTE), "the read view misses the note");

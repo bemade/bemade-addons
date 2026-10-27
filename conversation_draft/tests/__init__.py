@@ -12,3 +12,5 @@ from . import test_reply_templates_url
 from . import test_chatter_send_message_tour
 from . import test_draft_notification_scope
 from . import test_draft_attachment_access
+from . import test_draft_signature
+from . import test_draft_signature_tour

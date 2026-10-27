@@ -12,6 +12,10 @@ private composer.
 - Recipients carry a To/Cc/Bcc mode, pre-filled from the conversation's external
   participants; a participant without an address stays visible and is flagged.
   Bcc never leaks back into the conversation.
+- A new draft starts with the acting user's own signature as ordinary text in
+  the body (an empty paragraph to type in, then the signature), unless it is
+  sent from a team mailbox. Nothing is appended at send time, so the user can
+  edit or delete it.
 - Pick a mail template to seed the draft, or insert it after the text already
   there.
 - Sending goes through the conversation's own reply seam and is exactly-once in

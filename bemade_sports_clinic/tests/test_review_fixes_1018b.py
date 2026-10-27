@@ -6,8 +6,8 @@ Acceptance criteria:
 
 * F1 Allergies only in the player header: the Medical card (Infos tab) has
   no allergies row in its read view and no allergies field in its edit
-  view; the header keeps the allergies banner (read) and the allergies
-  field behind its pencil (therapists).
+  view; the header keeps the allergies (task 1630: the « Allergies » pill,
+  edited in its popup by therapists).
 * F2 One document picker: the player Documents tab and the injury card's
   « Add documents » sheet render the SAME upload component
   (``form[data-sc-doc-upload]``: drop zone with a ``multiple`` file input,
@@ -45,6 +45,7 @@ from odoo import Command, fields
 from odoo.tests import tagged
 from odoo.tools.misc import mute_logger
 
+from odoo.addons.bemade_sports_clinic.tests.medical_common_1677 import set_medical
 from odoo.addons.bemade_sports_clinic.tests.test_account_security_shell_1620 import (
     SAVED_URL, AccountShellCommon)
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
@@ -67,7 +68,7 @@ class TestAllergiesHeaderOnly1018b(AppShellCommon):
     def setUp(self):
         super().setUp()
         self._switch(True)
-        self.player.sudo().allergies = 'Synthetic allergy'
+        set_medical(self.player, allergies=[('Synthetic allergy', False)])
 
     def test_medical_card_has_no_allergies(self):
         self._login_tp()
@@ -76,21 +77,25 @@ class TestAllergiesHeaderOnly1018b(AppShellCommon):
         self.assertEqual(len(medical), 1)
         read = medical[0].xpath('.//*[@data-sc-edit-view="read"]')[0]
         self.assertNotIn('Allergies', [' '.join(dt.itertext()).strip() for dt in read.xpath('.//dt')])
-        self.assertNotIn('allergies', _island_fields(medical[0]))
+        for field in ('allergies', 'allergy_level', 'allergy_details'):
+            self.assertNotIn(field, _island_fields(medical[0]))
         # The other medical fields stay.
         self.assertIn('return_date', _island_fields(medical[0]))
 
     def test_header_keeps_allergies_read_and_edit(self):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s' % self.player.id)
-        banner = tree.xpath('//*[@data-sc-section="player.allergies"]')
-        self.assertEqual(len(banner), 1)
-        self.assertIn('Synthetic allergy', ' '.join(banner[0].itertext()))
-        edit = tree.xpath('//*[@data-sc-section="player.allergies.edit"]')
-        self.assertEqual(len(edit), 1)
-        self.assertEqual(_island_fields(edit[0]), ['allergies'])
-        # Exactly one allergies island on the whole page.
-        self.assertEqual(_island_fields(tree).count('allergies'), 1)
+        # Task 1630: the pill in the header, the details + editor in its popup
+        # (task 1677: the list — plain inputs, no island).
+        pill = tree.xpath('//*[@data-sc-section="player.medical"]//button[@data-sc-med-pill="allergy"]')
+        self.assertEqual(len(pill), 1)
+        sheet = tree.xpath('//dialog[@id="sc_med_player_allergy_%s"]' % self.player.id)
+        self.assertEqual(len(sheet), 1)
+        self.assertIn('Synthetic allergy', ' '.join(sheet[0].itertext()))
+        self.assertEqual(_island_fields(sheet[0]), [])
+        self.assertTrue(sheet[0].xpath('.//form[@data-sc-med-add]'))
+        self.assertNotIn('allergy_details', _island_fields(tree))
+        self.assertNotIn('allergies', _island_fields(tree))
 
 
 class DocPicker1018bMixin(InjuryCard1616Mixin):
@@ -127,7 +132,7 @@ class TestDocumentPicker1018b(DocPicker1018bMixin, AppShellCommon):
     def test_player_tab_and_card_share_the_picker(self):
         self._login_tp()
         _text, tree = self._get(self._docs_tab())
-        tab = tree.xpath('//details[@id="sc_documents_upload"]//form[@data-sc-doc-upload]')
+        tab = tree.xpath('//dialog[@id="sc_documents_upload"]//form[@data-sc-doc-upload]')
         self.assertEqual(len(tab), 1, 'the player tab uses the shared picker')
         self.assertEqual(tab[0].get('data-sc-form'), 'player.documents.upload')
         cards = tree.xpath('//dialog[@id="sc_injury_%s_documents_add"]//form[@data-sc-doc-upload]'
@@ -355,7 +360,12 @@ class TestAllTeamsForEveryone1018b(AllTeams1608Common):
     def test_tp_creates_event_for_a_team_they_do_not_cover(self):
         self._login_tp()
         self.assertNotIn(self.team_c, self.env['sports.team'].with_user(self.tp).search([]))
+        # Review fixes 2026-10-24 (owner policy): on a team they do not
+        # staff, only a clinic admin assigns staff — with an assignee (even
+        # themselves) the create is refused; without, it goes through.
         resp = self._create(self.team_c)
+        self.assertFalse(self.env['sports.event'].search([('name', '=', 'SC 1018b Event')]))
+        resp = self._create(self.team_c, assigned_staff_ids='')
         self.assertEqual(resp.status_code, 303, resp.text[:300])
         event = self.env['sports.event'].search([('name', '=', 'SC 1018b Event')])
         self.assertEqual(len(event), 1, resp.headers.get('Location'))
@@ -376,10 +386,20 @@ class TestAllTeamsForEveryone1018b(AllTeams1608Common):
         self._login_tp()
         event = self.event  # PC Team A
         event.invalidate_recordset()
-        resp = self.url_open('/my/app/save/sports.event/%s' % event.id, data={
-            'field': 'team_ids', 'value': str(self.team_free.id), 'csrf_token': self._csrf(),
-            'write_date': fields.Datetime.to_string(event.sudo().write_date),
-        }, allow_redirects=False)
+
+        def _save():
+            event.invalidate_recordset()
+            return self.url_open('/my/app/save/sports.event/%s' % event.id, data={
+                'field': 'team_ids', 'value': str(self.team_free.id), 'csrf_token': self._csrf(),
+                'write_date': fields.Datetime.to_string(event.sudo().write_date),
+            }, allow_redirects=False)
+        # Review fixes 2026-10-24 (owner policy): moving an event WITH
+        # assignees onto a team they do not staff assigns staff there —
+        # clinic admin only. Without assignees the teams stay free.
+        resp = _save()
+        self.assertEqual(resp.status_code, 400, resp.text[:300])
+        event.sudo().write({'assigned_staff_ids': [Command.clear()]})
+        resp = _save()
         self.assertEqual(resp.status_code, 200, resp.text[:300])
         self.assertTrue(resp.json()['ok'], resp.text)
         event.invalidate_recordset()
@@ -405,7 +425,7 @@ class TestAllTeamsForEveryone1018b(AllTeams1608Common):
     @mute_logger('odoo.http')
     def test_one_organization_rule_still_applies(self):
         self._login_tp()
-        self._create(self.team_a | self.team_c, name='SC 1018b Mixed')
+        self._create(self.team_a | self.team_c, name='SC 1018b Mixed', assigned_staff_ids='')
         self.assertFalse(self.env['sports.event'].search([('name', '=', 'SC 1018b Mixed')]))
         text, _tree = self._get('/my/event/create')
         self.assertIn('same organization', text)

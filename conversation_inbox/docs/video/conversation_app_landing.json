@@ -1,0 +1,16 @@
+{
+  "stepsFile": "../../static/tests/tours/conversation_app_landing.steps.js",
+  "startPath": "/odoo/discuss",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "lang": "fr_CA",
+  "voice": "fr_FR-siwis-medium",
+  "title": "Ouvrir l'application Conversations",
+  "introNarration": "Dans cette démonstration, nous voyons ce qui s'affiche lorsque vous ouvrez l'application Conversations : la liste des conversations de votre équipe, prête à être traitée.",
+  "outroTitle": "À vous de jouer",
+  "outroNarration": "L'application s'ouvre maintenant sur les conversations partagées. Votre boîte de réception personnelle reste à un clic, dans la barre de l'application.",
+  "stepOverrides": {
+    "facet-my-list": {"containsText": "Ma liste"},
+    "facet-open": {"containsText": "Ouverte"}
+  }
+}

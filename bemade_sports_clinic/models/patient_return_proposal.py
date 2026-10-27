@@ -20,6 +20,9 @@ them through the normal save paths (``SAVE_REGISTRY``)::
             'editable': bool,              # the proposed date can be changed
             'tickable': bool,              # the row can be unticked
             'checked': bool,               # ticked by default
+            # Task 1670: a SELECTION row (match / practice status) adds
+            'type': 'selection',           # (absent = a date row)
+            'options': [{'value', 'label'}, ...],  # the field's choices
         }, ...],
     }
 
@@ -65,6 +68,27 @@ class SportsPatient(models.Model):
             'proposed_display': (self._sc_proposal_date_display(proposed) if proposed
                                  else self.env._("No date")),
             'editable': bool(editable),
+            'tickable': bool(tickable),
+            'checked': bool(checked),
+        }
+
+    def _sc_proposal_selection_item(self, record, field, label, current, proposed,
+                                    tickable=True, checked=True):
+        """Task 1670: a row proposing a SELECTION value (match / practice
+        status), editable among the field's own choices (request language)."""
+        labels = dict(record._fields[field]._description_selection(self.env))
+        return {
+            'model': record._name,
+            'id': record.id,
+            'field': field,
+            'label': str(label),
+            'type': 'selection',
+            'current': current or '',
+            'proposed': proposed or '',
+            'current_display': labels.get(current, '—') if current else '—',
+            'proposed_display': labels.get(proposed, '—') if proposed else '—',
+            'options': [{'value': value, 'label': str(text)} for value, text in labels.items()],
+            'editable': True,
             'tickable': bool(tickable),
             'checked': bool(checked),
         }
@@ -139,7 +163,10 @@ class SportsPatient(models.Model):
     def _after_last_active_resolved(self, injury):
         """``injury`` was resolved and the player has no active injury left:
         propose clearing Retour prévu (when set) and setting the actual
-        return date to the resolution date (editable). None otherwise."""
+        return date to the resolution date (editable) — and (task 1670)
+        Match / Practice back to « Yes » when they differ (each editable
+        among the field's choices; the pair rule is checked on apply). None
+        otherwise."""
         self.ensure_one()
         injury = injury.sudo()
         if injury.stage != 'resolved' or self._sc_active_injuries():
@@ -156,13 +183,19 @@ class SportsPatient(models.Model):
             items.append(self._sc_proposal_item(
                 self, 'return_date', env._("Actual return date"),
                 patient.return_date, resolution, editable=True))
-        return self._sc_proposal(
-            'last_resolved',
-            env._("No active injury left"),
-            env._("This was the player's last active injury. Clear the predicted return "
-                  "and set the actual return date?"),
-            items,
-        )
+        # Task 1670 (owner default): Match : Oui / Pratique : Oui.
+        statuses = [
+            self._sc_proposal_selection_item(self, field, label, patient[field], 'yes')
+            for field, label in (('match_status', env._("Match")), ('practice_status', env._("Practice")))
+            if patient[field] != 'yes'
+        ]
+        if statuses:
+            message = env._("This was the player's last active injury. Clear the predicted return, "
+                            "set the actual return date and reset their statuses?")
+        else:
+            message = env._("This was the player's last active injury. Clear the predicted return "
+                            "and set the actual return date?")
+        return self._sc_proposal('last_resolved', env._("No active injury left"), message, items + statuses)
 
     def _after_injury_moved_back(self, injury, previous):
         """Task 1631 (owner decision 2026-10-20): ``injury`` was moved BACK

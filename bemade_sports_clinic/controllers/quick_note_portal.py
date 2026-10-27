@@ -202,7 +202,18 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # scoped pickers the update route validates against).
         def _options(records, label):
             return [('', '—')] + [(rec.id, label(rec)) for rec in records]
+
+        # Task 1648: the narrowing data of the link pickers (a team narrows
+        # the players and events, a player the injuries) — ids only.
+        def _teams(rec):
+            return ','.join(str(i) for i in rec.sudo().team_ids.ids)
+        sc_qn_meta = {
+            'patient_id': {str(p.id): {'teams': _teams(p)} for p in values['patients']},
+            'injury_id': {str(i.id): {'player': str(i.sudo().patient_id.id)} for i in values['injuries']},
+            'event_id': {str(e.id): {'teams': _teams(e)} for e in values['events']},
+        }
         return {
+            'sc_qn_meta': sc_qn_meta,
             'sc_qn_options': {
                 'team_id': _options(values['teams'], lambda r: r.name),
                 'patient_id': _options(values['patients'], lambda r: r._portal_list_name()),

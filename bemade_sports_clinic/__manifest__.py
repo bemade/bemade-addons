@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.94.2",
+    'version': "19.0.1.119.1",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -146,6 +146,9 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "security/ir.model.access.csv",
         "security/sports_clinic_rules.xml",
         "security/sports_clinic_portal_rules.xml",
+        "security/sports_treatment_note_rules.xml",
+        "security/portal_access_sweep_rules.xml",
+        "security/critical_item_rules.xml",
         "security/mail_activity_portal_rules.xml",
         "security/sports_event_rules.xml",
         "security/partner_access.xml",
@@ -168,6 +171,9 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "views/sports_team_views.xml",
         "views/sports_patient_injury_views.xml",
         "views/sports_clinic_menus.xml",
+        "views/sc_help_article_views.xml",
+        "data/sc_guide_video_assets.xml",
+        "data/sc_knowledge_public_view.xml",
         # Task 1399: attendance report (pivot/graph/list) + the Reports menu.
         # After the menus (parent = sports_clinic_root), before the event views
         # (their smart-button action points at these views' model).
@@ -222,11 +228,14 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "views/res_partner_views.xml",
         "views/team_role_mass_assign_wizard_views.xml",
         "views/patient_merge_wizard_views.xml",
+        "views/patient_duplicate_views.xml",
         "views/res_users_views.xml",
         # Task 1538: the portal app shell (behind the app_shell_enabled
         # switch) — components, layout, then the pages that t-call them.
         "views/sc_components.xml",
         "views/sc_app_layout.xml",
+        "views/sc_app_search.xml",
+        "views/sc_app_player_add.xml",
         "views/sc_app_pages.xml",
         "views/sc_app_account.xml",
         # Task 1542: team page, install page, offline page.
@@ -316,12 +325,36 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             "bemade_sports_clinic/static/src/scss/sc_p2.scss",
             "bemade_sports_clinic/static/src/js/sc_fetch.js",
             "bemade_sports_clinic/static/src/js/sc_draft_store.js",
+            # Task 1656: the confirm sheet + leaving a page whose access ended.
+            "bemade_sports_clinic/static/src/js/sc_confirm.js",
+            # Task 1646: the focus rule of add panels / edit views.
+            "bemade_sports_clinic/static/src/js/sc_focus.js",
+            # Task 1640: 4-digit year cap (min / max) on date inputs — app
+            # shell and legacy portal pages alike.
+            "bemade_sports_clinic/static/src/js/sc_date_bounds.js",
             # Task 1585: tap-to-call / tap-to-email hrefs.
             "bemade_sports_clinic/static/src/js/sc_contact_href.js",
             "bemade_sports_clinic/static/src/js/sc_app_ui.js",
+            # Task 1642: after an edit, back to the top of the edited block.
+            "bemade_sports_clinic/static/src/js/sc_edit_anchor.js",
             # Task 1606: the user menu (rail footer / app-bar avatar).
             "bemade_sports_clinic/static/src/js/sc_user_menu.js",
+            "bemade_sports_clinic/static/src/js/sc_help.js",
+            # Task 1660: guide videos on the public Knowledge article pages.
+            "bemade_sports_clinic/static/src/js/sc_guide_video.js",
             "bemade_sports_clinic/static/src/js/sc_list_header.js",
+            # Task 1650: the header search (magnifier, « / », Ctrl/⌘-K).
+            "bemade_sports_clinic/static/src/js/sc_search.js",
+            # Task 1648: the type-to-filter picker of the link fields.
+            "bemade_sports_clinic/static/src/js/sc_picker.js",
+            # Task 1652: the red card pills open the medical popups.
+            "bemade_sports_clinic/static/src/js/sc_med_card_pills.js",
+            # Task 1677: the allergy / condition lists and the EpiPen card
+            # of the medical popups.
+            "bemade_sports_clinic/static/src/js/sc_medical_lists.js",
+            # Task 1655: create a player inline (existence check as you type).
+            "bemade_sports_clinic/static/src/js/sc_form_guard.js",
+            "bemade_sports_clinic/static/src/js/sc_player_add.js",
             # Task 1611: read fragments (in-place refresh after a save) and
             # the « back shows current data » check.
             "bemade_sports_clinic/static/src/js/sc_fragments.js",

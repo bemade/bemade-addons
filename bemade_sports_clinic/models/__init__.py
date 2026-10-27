@@ -2,6 +2,7 @@ from . import data_recycle_model
 from . import data_recycle_record
 from . import mail_followers
 from . import mail_activity
+from . import sc_phone
 from . import patient
 from . import patient_injury
 from . import injury_note_history
@@ -39,3 +40,6 @@ from . import sale_order_line
 from . import event_cancel_wizard
 from . import patient_merge_wizard
 from . import ir_http
+from . import patient_critical_item
+from . import sc_help_article
+from . import patient_duplicate

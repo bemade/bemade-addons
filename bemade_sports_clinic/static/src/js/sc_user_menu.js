@@ -1,8 +1,8 @@
 /*
  * Task 1606 — the app shell's user menu (« Paramètres », « Se déconnecter »).
  *
- * Two triggers, one per width: the rail footer (name + initials, laptop) and
- * the initials avatar at the right of the app bar (phone). Each is a
+ * One trigger at every width (task 1638: the rail footer menu is gone): the
+ * initials avatar at the right end of the app bar, a
  * button[data-sc-user-menu-toggle][aria-haspopup="menu"] whose aria-controls
  * names its popup ([data-sc-user-menu-popup], rendered hidden).
  *
@@ -10,7 +10,7 @@
  *   on the first / last item;
  * - in the menu: ArrowDown / ArrowUp (wrapping), Home / End move the focus;
  *   Escape closes and gives the focus back to the trigger; Tab closes;
- * - a tap outside closes it; opening one closes the other.
+ * - a tap outside closes it; opening one menu closes any other.
  *
  * The items are plain links: « Se déconnecter » keeps the logout route (and
  * sc_app_ui.js still clears the device drafts on it). Inert outside .o_sc_app.
@@ -197,12 +197,5 @@ document.addEventListener("keydown", (ev) => {
     }
 });
 
-// Crossing the laptop width (rotation, window resize) swaps the visible
-// trigger: never leave the hidden one's popup open. (Not on every resize:
-// a phone's toolbar collapsing on scroll fires those.)
-const laptop = window.matchMedia && window.matchMedia("(min-width: 992px)");
-if (laptop && laptop.addEventListener) {
-    laptop.addEventListener("change", () => closeAll());
-}
 // Back / forward cache: a restored page shows the menu closed.
 window.addEventListener("pageshow", () => closeAll());

@@ -5,6 +5,8 @@ from odoo.http import request
 from odoo.tools.misc import format_date
 import logging
 
+from .sc_patient_owner_guard import sc_check_patient_unchanged
+
 _logger = logging.getLogger(__name__)
 
 
@@ -13,6 +15,9 @@ _logger = logging.getLogger(__name__)
 # PATIENT with a technical injury_id link; the summary carries the
 # « [Injury: <diagnosis>] » prefix, so callers match the marker with ilike).
 VERIFY_INJURY_SUMMARY = "Verify injury"
+# Task 1661: the To-Do summary is now translated (« Vérifier la blessure »
+# in fr_CA); the lookups match both the English marker and the French one.
+VERIFY_INJURY_SUMMARY_FR = "Vérifier la blessure"
 
 
 def legacy_change_emails_enabled(env):
@@ -344,8 +349,17 @@ class PatientInjury(models.Model):
         the injuries in self (task 1409: keyed on injury_id + summary marker)."""
         return [
             ('injury_id', 'in', self.ids or [0]),
+            '|',
             ('summary', 'ilike', VERIFY_INJURY_SUMMARY),
+            ('summary', 'ilike', VERIFY_INJURY_SUMMARY_FR),
         ]
+
+    def _verify_activity_summary(self):
+        """« [Injury: <diagnosis>] Verify injury », rendered in the context
+        language (call it with the ASSIGNEE's lang — task 1661: the suffix is
+        translated too, fr_CA « Vérifier la blessure »)."""
+        self.ensure_one()
+        return self._activity_summary_prefix() + self.env._("Verify injury")
         
     @api.model
     def _sc_clear_resolved_predicted_dates(self):
@@ -606,8 +620,27 @@ class PatientInjury(models.Model):
             remaining.append(vals)
         return remaining
 
+    def _sc_check_external_notes_writer(self, vals_list):
+        """Owner decision 2026-10-25 (#1675): the external note is written by
+        treatment professionals only. A share (portal) user who is not a
+        portal therapist — a coach — gets an AccessError for any
+        ``external_notes`` in ``vals``, whatever the path (app, legacy
+        portal, RPC). Internal users and the superuser (imports, merges,
+        crons, the controllers' sudo writes) are not concerned."""
+        if self.env.su or not any('external_notes' in vals for vals in vals_list):
+            return
+        user = self.env.user
+        if not user.share:
+            return
+        if user.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
+            return
+        raise AccessError(_("Only treatment professionals can edit an injury's external notes."))
+
     def write(self, vals):
         """Override write to refresh follower subtypes when internal notes change."""
+        # Adversarial review 2026-10-22: never moved onto another player.
+        sc_check_patient_unchanged(self, vals)
+        self._sc_check_external_notes_writer([vals])
         # Detect suppression context (portal coach flows)
         suppress_followers = bool(
             self.env.context.get('mail_create_nosubscribe')
@@ -783,7 +816,9 @@ class PatientInjury(models.Model):
             is_treatment_prof = False
             treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
             for user in users:
-                if treatment_prof_group in user.group_ids:
+                # Task 1639: all_group_ids (implied groups too): a clinic
+                # admin is a therapist through « Administrator ».
+                if treatment_prof_group in user.all_group_ids:
                     is_treatment_prof = True
                     break
             
@@ -883,7 +918,9 @@ class PatientInjury(models.Model):
     @api.model
     def _cron_create_injury_verification_tasks(self):
         """Create verification activities for unverified injuries.
-        Assign to head therapist(s) of the injury's team, falling back to therapists.
+        Task 1664: routed by sports.patient._sc_todo_route (the player's
+        teams, the reporter's first; head therapist, then therapist; else a
+        clinic administrator).
         Runs with sudo to avoid portal ACL constraints from coach-created injuries.
         Deduplicates by checking for existing open 'Verify injury' activities on the same injury.
 
@@ -902,23 +939,12 @@ class PatientInjury(models.Model):
         todo_type = self.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
         patient_model_rec = self.env['ir.model']._get('sports.patient')
 
+        Patient = self.env['sports.patient']
         for injury in injuries:
             if not injury.patient_id:
                 continue
-            # Determine target team: the patient's first team
-            team = injury.patient_id.team_ids[:1]
-            if not team:
-                continue
-
-            # Find staff for this team prioritized by head_therapist then therapist
-            staff = self.env['sports.team.staff'].sudo().search([
-                ('team_id', '=', team.id),
-                ('role', 'in', ['head_therapist', 'therapist'])
-            ])
-            if not staff:
-                continue
-
             # Already has an open verification To-Do (keyed on injury_id)?
+            # ONE To-Do per injury.
             existing = Activity.search(
                 injury._verify_activity_domain() + [('active', '=', True)],
                 limit=1,
@@ -926,25 +952,27 @@ class PatientInjury(models.Model):
             if existing:
                 continue
 
-            # Choose a single assignee: prefer first head therapist user, else first therapist user
-            head_users = staff.filtered(lambda s: s.role == 'head_therapist').mapped('user_ids')[:1]
-            therapist_users = staff.filtered(lambda s: s.role == 'therapist').mapped('user_ids')[:1]
-            assignee = head_users or therapist_users
+            # Task 1664: the shared routing — the player's teams (the
+            # reporter's teams first), head therapist then therapist with a
+            # user account, else a clinic administrator. A player whose first
+            # team has no therapist account no longer goes without a To-Do.
+            assignee = injury.patient_id._sc_todo_route(
+                Patient._sc_user_teams(injury.create_uid))
             if not assignee:
                 continue
 
             # The prefix is stored text: render it in the ASSIGNEE's language
             # (the reader), not the cron user's.
-            prefix = injury.with_context(
+            summary = injury.with_context(
                 lang=assignee.lang or self.env.user.lang
-            )._activity_summary_prefix()
+            )._verify_activity_summary()
             vals = {
                 'res_model_id': patient_model_rec.id,
                 'res_id': injury.patient_id.id,
                 'injury_id': injury.id,
                 'user_id': assignee.id,
                 'activity_type_id': todo_type.id if todo_type else False,
-                'summary': prefix + VERIFY_INJURY_SUMMARY,
+                'summary': summary,
                 'note': _("Please verify this injury and set the appropriate status."),
                 'date_deadline': fields.Date.context_today(self),
                 'automated': True,
@@ -954,6 +982,7 @@ class PatientInjury(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        self._sc_check_external_notes_writer(vals_list)
         # Review fixes 2026-10-18: an injury created already resolved carries
         # no predicted resolution date (same rule as resolving one).
         vals_list = [dict(vals, predicted_resolution_date=False)

@@ -113,19 +113,21 @@ class TestAppShellInjury1539(AppShellCommon):
         self.assertIsNotNone(self._shell(tree))
         owl = self._owl(tree)
         prefix = 'sports.patient.%s.new_injury.' % self.player.id
-        for name in ('diagnosis', 'injury_date', 'external_notes'):
+        for name in ('diagnosis', 'injury_date'):
             self.assertEqual(owl[name]['mode'], 'draft', name)
             self.assertEqual(owl[name]['draftKey'], prefix + name)
         self.assertEqual(owl['injury_date']['naName'], 'injury_date_na')
-        for name in ('internal_notes', 'parental_consent', 'predicted_resolution_date'):
+        # Owner review 2026-10-25 (#1675): a coach's report has no external note.
+        for name in ('external_notes', 'internal_notes', 'parental_consent', 'predicted_resolution_date'):
             self.assertNotIn(name, owl, name)
         form = tree.xpath('//form[@data-sc-form="injury.new"]')[0]
         self.assertEqual(form.get('action'), '/my/patient/injury/create')
         self._login_tp()
         _text, tree = self._get(self.new_url)
         owl = self._owl(tree)
-        for name in ('internal_notes', 'parental_consent', 'predicted_resolution_date'):
+        for name in ('external_notes', 'internal_notes', 'parental_consent', 'predicted_resolution_date'):
             self.assertIn(name, owl, name)
+        self.assertEqual(owl['external_notes']['draftKey'], prefix + 'external_notes')
         # Opening the page (twice) created nothing.
         self.assertEqual(self.env['sports.patient.injury'].search_count(
             [('patient_id', '=', self.player.id)]), count)
@@ -181,7 +183,8 @@ class TestAppShellInjury1539(AppShellCommon):
         text, tree = self._get(self.edit_url)
         tree = self._card(tree)
         owl = self._owl(tree)
-        self.assertEqual(set(owl), {'sc_injury_date', 'external_notes'})
+        # Owner review 2026-10-25 (#1675): the external note reads, no editor.
+        self.assertEqual(set(owl), {'sc_injury_date'})
         self.assertIn('Visible synthetic remark', text)
         self.assertNotIn('TP-only synthetic remark', text)
         self.assertFalse(tree.xpath('.//*[@data-sc-action="injury.delete"]'))

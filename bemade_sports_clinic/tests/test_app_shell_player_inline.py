@@ -146,7 +146,7 @@ class TestPlayerInline(PlayerInlineCommon):
         self.assertFalse(teams.xpath('.//button[@data-sc-edit-toggle]'))
         self.assertFalse(teams.xpath('.//*[@data-sc-edit-view="edit"]'))
         with mute_logger('odoo.http'):
-            for field, value in (('sc_team_ids', str(self.team_a.id)), ('allergies', 'x')):
+            for field, value in (('sc_team_ids', str(self.team_a.id)), ('medical_history_other', 'x')):
                 self.assertEqual(self._save(self.player, field, value).status_code, 403, field)
 
     # -- UC-4 ------------------------------------------------------------
@@ -253,7 +253,7 @@ class TestPlayerInline(PlayerInlineCommon):
         self._login_tp()
         resp = self._post_form('/my/player/contact/save', {
             'patient_id': self.player.id, 'name': 'Synthetic Guardian',
-            'contact_type': 'father', 'mobile': '555-0100', 'email': '',
+            'contact_type': 'father', 'mobile': '514-555-0100', 'email': '',  # task 1645: valid
             'return_url': self._url(tab='info'),
         })
         self.assertIn(resp.status_code, (302, 303))
@@ -310,7 +310,7 @@ class TestPlayerInline(PlayerInlineCommon):
             self.assertIn('"sports.patient.contact"', ' '.join(self._fields_in(card[0])))
             self.assertFalse(card[0].xpath('.//*[@data-sc-action="contact.delete"]'))
         self.assertTrue(tree.xpath('//form[@data-sc-form="contact.add"]'))
-        resp = self._save(second, 'mobile', '555-0199')
+        resp = self._save(second, 'mobile', '514-555-0199')  # task 1645: a valid number
         self.assertEqual(resp.status_code, 200, resp.text)
 
     def _post_form(self, url, data):

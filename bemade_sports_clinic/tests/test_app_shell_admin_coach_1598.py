@@ -107,7 +107,7 @@ class TestAppShellAdminCoach1598(AppShellCommon):
             self.assertFalse(registry.can(key, coach_roles), key)
             self.assertFalse(registry.can(key, frozenset({'coach'})), key)
         # Not flagged: stays TP-only even for a system admin.
-        for key in ('players.create', 'players.add_to_team', 'patient.allergies', 'notes.add',
+        for key in ('players.create', 'players.add_to_team', 'patient.medical_history', 'notes.add',
                     'injury.delete'):
             self.assertFalse(registry.can(key, coach_roles, is_system=True), key)
         # exclude still wins.

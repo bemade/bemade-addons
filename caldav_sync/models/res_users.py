@@ -20,20 +20,7 @@ class ResUsers(models.Model):
         access the principal, without fetching events to avoid timeouts.
         """
         for rec in self:
-            # If any required field is empty, CalDAV is disabled
-            if not (
-                rec.caldav_username and rec.caldav_password and rec.caldav_calendar_url
-            ):
-                rec.is_caldav_enabled = False
-                continue
-            try:
-                client = rec._get_caldav_client()
-                # Just try to access the principal, which is a lightweight operation
-                client.principal()
-                rec.is_caldav_enabled = True
-            except Exception as e:
-                rec.is_caldav_enabled = False
-                _logger.error("Failed to validate CalDAV credentials: %s", e)
+            rec.is_caldav_enabled = rec._caldav_check_connection()
 
     def _get_caldav_events(self):
         self.ensure_one()

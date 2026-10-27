@@ -15,6 +15,12 @@
                     <field name="phone" widget="phone"/>
                     <field name="predicted_return_date"/>
                     <field name="return_date"/>
+                    <!-- Task 1630: pre-filled from the former allergies text. -->
+                    <filter name="medical_alert_review" string="Alerts to validate"
+                            domain="[('medical_alert_review', '=', True)]"/>
+                    <!-- Task 1645: phones the reformat could not read. -->
+                    <filter name="sc_phone_invalid" string="Phone numbers to fix"
+                            domain="[('sc_phone_invalid', '=', True)]"/>
                     <filter name="groupby_team_ids" context="{'group_by': 'team_ids'}"/>
                     <filter name="groupby_jersey_number" string="Jersey Number" context="{'group_by': 'jersey_number'}"/>
                 </search>
@@ -144,7 +150,6 @@
                                     <button type="object" name="action_consulted_today"
                                             class="fa fa-refresh" title="Set to Today's Date"/>
                                 </span>
-                                <field name="allergies"/>
                             </group>
                             <group>
                                 <separator string="Team Information"/>
@@ -167,6 +172,44 @@
                                 <field name="predicted_return_date"/>
                                 <field name="return_date"/>
                                 <field name="team_info_notes"/>
+                            </group>
+                            <!-- Task 1630: allergies + medical alert, « Other medical
+                                 history », « To validate ». Task 1677: each family is a
+                                 list (name, life-threatening, first aid for a condition);
+                                 the levels are computed from it, the former details are
+                                 read-only (the old text to validate). -->
+                            <group name="health" string="Health">
+                                <field name="allergy_level"/>
+                                <field name="allergy_epipen"/>
+                                <field name="allergy_epipen_note" invisible="not allergy_epipen"/>
+                                <field name="allergy_none_confirmed"/>
+                                <field name="medical_alert_level"/>
+                                <field name="medical_none_confirmed"/>
+                                <field name="medical_history_other"/>
+                            </group>
+                            <group name="critical" string="Allergies and conditions" colspan="2">
+                                <field name="allergy_critical_ids" context="{'default_family': 'allergy'}">
+                                    <list editable="bottom">
+                                        <field name="sequence" widget="handle"/>
+                                        <field name="family" column_invisible="True"/>
+                                        <field name="name"/>
+                                        <field name="life_threatening"/>
+                                    </list>
+                                </field>
+                                <field name="medical_alert_critical_ids" context="{'default_family': 'medical_alert'}">
+                                    <list editable="bottom">
+                                        <field name="sequence" widget="handle"/>
+                                        <field name="family" column_invisible="True"/>
+                                        <field name="name"/>
+                                        <field name="life_threatening"/>
+                                        <field name="first_aid_note"/>
+                                    </list>
+                                </field>
+                                <field name="allergy_details" readonly="1" invisible="not allergy_details"/>
+                                <field name="medical_alert_details" readonly="1" invisible="not medical_alert_details"/>
+                                <field name="allergy_updated_info"/>
+                                <field name="medical_alert_updated_info"/>
+                                <field name="medical_alert_review"/>
                             </group>
                              <notebook>
                                  <page string="Injuries">
@@ -261,5 +304,52 @@
                 </form>
             </field>
         </record>
+        <!-- Task 1630: « Medical alerts to validate » — the players whose
+             allergy / medical-alert levels were pre-filled from the former
+             free-text field (the original text is in the details). The
+             clinic checks each one and unticks « To validate ». -->
+        <record id="sports_patient_view_list_medical_review" model="ir.ui.view">
+            <field name="name">sports.patient.view.list.medical.review</field>
+            <field name="model">sports.patient</field>
+            <field name="priority">90</field>
+            <field name="arch" type="xml">
+                <list string="Medical alerts to validate" editable="bottom" create="0" delete="0">
+                    <field name="first_name" readonly="1"/>
+                    <field name="last_name" readonly="1"/>
+                    <field name="team_ids" widget="many2many_tags" readonly="1"/>
+                    <!-- Task 1677: the levels are computed from the lists (edited
+                         on the form, « Open »); the former details read-only. -->
+                    <field name="allergy_level"/>
+                    <field name="allergy_epipen" readonly="1"/>
+                    <field name="allergy_critical_ids" widget="many2many_tags" readonly="1" optional="show"/>
+                    <field name="medical_alert_level"/>
+                    <field name="medical_alert_critical_ids" widget="many2many_tags" readonly="1" optional="show"/>
+                    <field name="allergy_details" readonly="1" optional="show"/>
+                    <field name="medical_alert_details" readonly="1" optional="show"/>
+                    <field name="medical_alert_review" widget="boolean_toggle"/>
+                    <!-- Task 1665: open the player's form (critical items and
+                         every medical field are edited there). -->
+                    <button name="action_view_patient_form" type="object" string="Open"
+                            icon="fa-external-link" class="btn-link"/>
+                </list>
+            </field>
+        </record>
+        <record id="action_patient_medical_review" model="ir.actions.act_window">
+            <field name="name">Medical alerts to validate</field>
+            <field name="res_model">sports.patient</field>
+            <field name="view_mode">list,form</field>
+            <field name="view_id" ref="sports_patient_view_list_medical_review"/>
+            <field name="search_view_id" ref="sports_patient_view_search"/>
+            <field name="context">{'search_default_medical_alert_review': 1}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">No medical alert to validate.</p>
+            </field>
+        </record>
+        <menuitem id="sports_clinic_medical_review_menu"
+                  name="Medical alerts to validate"
+                  parent="sports_clinic_staff_menu"
+                  groups="bemade_sports_clinic.group_sports_clinic_admin"
+                  action="action_patient_medical_review"
+                  sequence="30"/>
     </data>
 </odoo>

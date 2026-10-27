@@ -34,7 +34,10 @@ function typeAndLeave(input, value) {
 
 const CARD = "details.o_sc_injury_item[open]";
 const DETAILS = `${CARD} section[data-sc-edit-card="injury-details"]`;
-const NOTES = `${CARD} section[data-sc-edit-card="injury-notes"]`;
+// Task 1675: the Notes section holds one edit card per note.
+const NOTES = `${CARD} section[data-sc-section="injury.notes"]`;
+const NOTES_EXT = `${NOTES} [data-sc-edit-card="injury-notes-external"]`;
+const NOTES_INT = `${NOTES} [data-sc-edit-card="injury-notes-internal"]`;
 const DOCS = `${CARD} section[data-sc-section="injury.documents"]`;
 const ADD_SHEET = 'dialog[id$="_documents_add"]';
 
@@ -103,31 +106,43 @@ tours.add("sc_1616_card_sections", {
             run: "click",
         },
         {
-            content: "The Notes pencil edits the notes only",
+            content: "The external-note pencil edits that note only",
             trigger: `${DETAILS}:not([data-sc-edit-open]) [data-sc-edit-view="read"]:not([hidden])`,
             run() {
-                el(`${NOTES} button[data-sc-edit-toggle]`).click();
+                el(`${NOTES_EXT} button[data-sc-edit-toggle]`).click();
             },
         },
         {
-            content: "Notes in edit mode (both notes), Details reading",
-            trigger: `${NOTES}[data-sc-edit-open] .o_sc_autosave[data-sc-field="internal_notes"]`,
+            content: "External note in edit mode; internal note and Details reading",
+            trigger: `${NOTES_EXT}[data-sc-edit-open] .o_sc_autosave[data-sc-field="external_notes"]`,
             run() {
                 assert(!editShown(DETAILS), "Details opened too");
-                assert(el(`${NOTES} .o_sc_autosave[data-sc-field="external_notes"]`), "external notes");
+                assert(!editShown(NOTES_INT), "the internal note opened too");
+                el(`${NOTES_INT} button[data-sc-edit-toggle]`).click();
             },
         },
         {
-            content: "The card's « Done » closes the groups and the card",
-            trigger: `${CARD} [data-sc-injury-done]`,
-            run: "click",
+            content: "The internal-note pencil opens the internal note too",
+            trigger: `${NOTES_INT}[data-sc-edit-open] .o_sc_autosave[data-sc-field="internal_notes"]`,
+        },
+        {
+            // Task 1676: no bottom « Done » — each group closes with its ✓,
+            // the card with its summary.
+            content: "The ✓ of each open note closes it, the summary closes the card",
+            trigger: `${NOTES_INT}[data-sc-edit-open] button[data-sc-edit-toggle][data-sc-edit-toggle-done]`,
+            run() {
+                assert(!el(`${CARD} [data-sc-injury-done]`), "the bottom « Done » is back");
+                el(`${NOTES_INT} button[data-sc-edit-toggle]`).click();
+                el(`${NOTES_EXT} button[data-sc-edit-toggle]`).click();
+                el(`${CARD} > summary`).click();
+            },
         },
         {
             content: "Closed",
             trigger: "details.o_sc_injury_item:not([open])",
             run() {
                 assert(!document.querySelector(`${CARD}`), "a card is still open");
-                assert(!document.querySelector('section[data-sc-edit-card="injury-notes"][data-sc-edit-open]'),
+                assert(!document.querySelector('[data-sc-edit-card^="injury-notes-"][data-sc-edit-open]'),
                     "the Notes group stayed in edit mode");
             },
         },

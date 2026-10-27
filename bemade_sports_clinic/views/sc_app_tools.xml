@@ -47,7 +47,7 @@
                         </div>
                         <div class="o_sc_field">
                             <label for="sc_ts_team" class="o_sc_field_label">Team</label>
-                            <select id="sc_ts_team" name="team_id" class="o_sc_input o_sc_select">
+                            <select id="sc_ts_team" data-sc-picker="1" data-sc-picker-key="team-filter" name="team_id" class="o_sc_input o_sc_select">
                                 <option value="">All teams</option>
                                 <t t-foreach="teams" t-as="team_opt">
                                     <option t-att-value="team_opt.id" t-att-selected="'selected' if team_id == team_opt.id else None" t-out="team_opt.name"/>
@@ -57,7 +57,7 @@
                         <!-- Owner review 2026-10-11: the legacy portal's other filters. -->
                         <div class="o_sc_field">
                             <label for="sc_ts_org" class="o_sc_field_label">Organization</label>
-                            <select id="sc_ts_org" name="organization_id" class="o_sc_input o_sc_select">
+                            <select id="sc_ts_org" data-sc-picker="1" data-sc-picker-key="org" name="organization_id" class="o_sc_input o_sc_select">
                                 <option value="">All organizations</option>
                                 <t t-foreach="organizations" t-as="org_opt">
                                     <option t-att-value="org_opt.id" t-att-selected="'selected' if organization_id == org_opt.id else None" t-out="org_opt.name"/>
@@ -80,7 +80,7 @@
                         </div>
                     </fieldset>
                     <div class="o_sc_form_actions">
-                        <a href="/my/sc/timesheets" class="o_sc_btn o_sc_btn_ghost">Reset</a>
+                        <a href="/my/sc/timesheets" class="o_sc_btn o_sc_btn_ghost" data-sc-filter-reset="1">Reset</a>
                         <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-autosubmit-fallback="1">Apply filters</button>
                     </div>
                 </details>
@@ -138,11 +138,15 @@
         The notepad's optional link selects. Variables: prefix (id prefix),
         selected (dict: team_id, patient_id, injury_id, event_id).
     -->
+    <!-- Task 1648: each link is a type-to-filter picker (sc_picker.js) on a
+         plain select (the POST is unchanged; without JS, the select); a team
+         narrows the players and events, a player the injuries. -->
     <template id="sc_notepad_links" name="App shell: notepad links">
-        <div class="o_sc_filter_grid">
+        <div class="o_sc_filter_grid" data-sc-picker-scope="1">
             <div class="o_sc_field">
                 <label class="o_sc_field_label" t-att-for="'%s_team' % prefix">Team</label>
-                <select name="team_id" t-att-id="'%s_team' % prefix" class="o_sc_input o_sc_select">
+                <select name="team_id" t-att-id="'%s_team' % prefix" class="o_sc_input o_sc_select"
+                        data-sc-picker="1" data-sc-picker-key="team">
                     <option value="">—</option>
                     <t t-foreach="teams" t-as="team_opt">
                         <option t-att-value="team_opt.id" t-att-selected="'selected' if selected.get('team_id') == team_opt.id else None" t-out="team_opt.name"/>
@@ -151,30 +155,37 @@
             </div>
             <div class="o_sc_field">
                 <label class="o_sc_field_label" t-att-for="'%s_patient' % prefix">Player</label>
-                <t t-set="combo_empty_label">—</t>
-                <t t-call="bemade_sports_clinic.portal_patient_combo">
-                    <t t-set="combo_name" t-value="'patient_id'"/>
-                    <t t-set="combo_id" t-value="'%s_patient' % prefix"/>
-                    <t t-set="combo_class" t-value="'o_sc_input o_sc_select'"/>
-                    <t t-set="combo_patients" t-value="patients"/>
-                    <t t-set="combo_selected_id" t-value="selected.get('patient_id')"/>
-                </t>
+                <select name="patient_id" t-att-id="'%s_patient' % prefix" class="o_sc_input o_sc_select"
+                        data-sc-picker="1" data-sc-picker-key="player">
+                    <option value="">—</option>
+                    <t t-foreach="patients" t-as="patient_opt">
+                        <option t-att-value="patient_opt.id"
+                                t-att-data-sc-teams="','.join(str(i) for i in patient_opt.sudo().team_ids.ids)"
+                                t-att-selected="'selected' if selected.get('patient_id') == patient_opt.id else None"
+                                t-out="patient_opt._portal_list_name()"/>
+                    </t>
+                </select>
             </div>
             <div class="o_sc_field">
                 <label class="o_sc_field_label" t-att-for="'%s_injury' % prefix">Injury</label>
-                <select name="injury_id" t-att-id="'%s_injury' % prefix" class="o_sc_input o_sc_select">
+                <select name="injury_id" t-att-id="'%s_injury' % prefix" class="o_sc_input o_sc_select"
+                        data-sc-picker="1" data-sc-picker-key="injury">
                     <option value="">—</option>
                     <t t-foreach="injuries" t-as="injury_opt">
-                        <option t-att-value="injury_opt.id" t-att-selected="'selected' if selected.get('injury_id') == injury_opt.id else None" t-out="injury_opt.display_name"/>
+                        <option t-att-value="injury_opt.id" t-att-data-sc-player="injury_opt.sudo().patient_id.id"
+                                t-att-selected="'selected' if selected.get('injury_id') == injury_opt.id else None" t-out="injury_opt.display_name"/>
                     </t>
                 </select>
             </div>
             <div class="o_sc_field">
                 <label class="o_sc_field_label" t-att-for="'%s_event' % prefix">Event</label>
-                <select name="event_id" t-att-id="'%s_event' % prefix" class="o_sc_input o_sc_select">
+                <select name="event_id" t-att-id="'%s_event' % prefix" class="o_sc_input o_sc_select"
+                        data-sc-picker="1" data-sc-picker-key="event">
                     <option value="">—</option>
                     <t t-foreach="events" t-as="event_opt">
-                        <option t-att-value="event_opt.id" t-att-selected="'selected' if selected.get('event_id') == event_opt.id else None" t-out="event_opt.name"/>
+                        <option t-att-value="event_opt.id"
+                                t-att-data-sc-teams="','.join(str(i) for i in event_opt.sudo().team_ids.ids)"
+                                t-att-selected="'selected' if selected.get('event_id') == event_opt.id else None" t-out="event_opt.name"/>
                     </t>
                 </select>
             </div>
@@ -211,13 +222,13 @@
                 <t t-set="lbl">Note</t>
                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'note', lbl, 'textarea')"/></t>
                 <t t-set="lbl">Team</t>
-                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'team_id', lbl, 'select', options=sc_qn_options['team_id'])"/></t>
+                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'team_id', lbl, 'select', options=sc_qn_options['team_id'], picker=True, pickerKey='team')"/></t>
                 <t t-set="lbl">Player</t>
-                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'patient_id', lbl, 'select', options=sc_qn_options['patient_id'])"/></t>
+                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'patient_id', lbl, 'select', options=sc_qn_options['patient_id'], picker=True, pickerKey='player', optionMeta=sc_qn_meta['patient_id'])"/></t>
                 <t t-set="lbl">Injury</t>
-                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'injury_id', lbl, 'select', options=sc_qn_options['injury_id'])"/></t>
+                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'injury_id', lbl, 'select', options=sc_qn_options['injury_id'], picker=True, pickerKey='injury', optionMeta=sc_qn_meta['injury_id'])"/></t>
                 <t t-set="lbl">Event</t>
-                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'event_id', lbl, 'select', options=sc_qn_options['event_id'])"/></t>
+                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'event_id', lbl, 'select', options=sc_qn_options['event_id'], picker=True, pickerKey='event', optionMeta=sc_qn_meta['event_id'])"/></t>
                 <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
             </div>
             <div class="o_sc_card_actions">
@@ -230,7 +241,9 @@
                 <t t-else="">
                     <form t-att-action="'/my/notepad/%s/archive' % row['id']" method="post" class="o_sc_inline_form">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                        <button type="submit" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-action="note.archive">Done</button>
+                        <!-- Task 1648: « Archiver » (was « Terminer », taken
+                             for the editing « Done »). -->
+                        <button type="submit" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-action="note.archive">Archive</button>
                     </form>
                 </t>
                 <button type="button" class="o_sc_btn o_sc_btn_danger o_sc_btn_sm" t-att-data-sc-sheet-open="'sc_qn_delete_%s' % row['id']"
@@ -256,18 +269,11 @@
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
             <div t-if="success == 'note_added'" t-att-data-sc-draft-clear="sc_quick_note_prefix" hidden="hidden"/>
 
-            <!-- Task 1607: « + Ajouter » right above the notes opens / closes
-                 the quick-add form (docked open, as before). -->
-            <t t-call="bemade_sports_clinic.sc_list_header">
-                <t t-set="header_section" t-value="'notepad.header'"/>
-                <t t-set="add_label">Add a note</t>
-                <t t-set="add_panel" t-value="'sc_notepad_add'"/>
-                <t t-set="add_open" t-value="True"/>
-                <t t-set="add_key" t-value="'notepad.add'"/>
-            </t>
-            <details class="o_sc_card o_sc_list_add_panel" id="sc_notepad_add" data-sc-section="notepad.add" open="open">
-                <summary class="o_sc_disclosure_summary"><span>Quick note</span></summary>
-            <form action="/my/notepad/add" method="post" class="o_sc_form" id="quick-add" data-sc-form="note.add">
+            <!-- Task 1667: the quick-note form is always there — no « + Ajouter »
+                 header toggle, no collapsible wrapper (it replaced #1607's
+                 docked-open panel). « Link this note » stays a disclosure. -->
+            <section class="o_sc_card o_sc_notepad_add" id="sc_notepad_add" data-sc-section="notepad.add">
+            <form action="/my/notepad/add" method="post" class="o_sc_form" id="quick-add" data-sc-form="note.add" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"note"}]'>
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <t t-set="sc_qn_label">Quick note</t>
                 <t t-set="sc_qn_placeholder">Type a note to self…</t>
@@ -284,8 +290,9 @@
                 <div class="o_sc_form_actions">
                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="note.add">Add</button>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_quick_note_add'"/></t>
             </form>
-            </details>
+            </section>
 
             <div t-if="sc_note_rows" class="o_sc_list" data-sc-section="notepad.list">
                 <t t-foreach="sc_note_rows" t-as="row">

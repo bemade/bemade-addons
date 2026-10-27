@@ -23,12 +23,19 @@
  */
 import { _t } from "@web/core/l10n/translation";
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { focusFirstField } from "@bemade_sports_clinic/js/sc_focus";
 import { scSetDisplay } from "@bemade_sports_clinic/js/sc_contact_href";
+import { anchorEdited } from "@bemade_sports_clinic/js/sc_edit_anchor";
 import {
     clearAllDrafts,
     purgeForeignDrafts,
     removeDraftsWithPrefix,
 } from "@bemade_sports_clinic/js/sc_draft_store";
+
+// Task 1676: the pencil ↔ ✓ swap (setToggleDone). Declared up here: the
+// load-time handlers below (e.g. offerUndoCreatePlayer) already open cards.
+const SC_CHECK_PATH = "M20 6L9 17l-5-5";
+const scPencils = new WeakMap();
 
 function app() {
     return document.querySelector(".o_sc_app[data-sc-app-shell]");
@@ -36,23 +43,57 @@ function app() {
 
 // ---------------------------------------------------------------- toast
 let toastTimer = null;
+// Owner review 2026-10-22: a toast shown while a modal popup is open (the
+// medical popup's « Details cleared · Undo ») goes INTO that popup — the
+// page behind a modal <dialog> is inert, its « Undo » could not be tapped.
+// It goes back to its place when the popup closes (and stays visible).
+let toastHome = null;
+function placeToast(root, toast) {
+    if (!toastHome && !toast.closest("dialog")) {
+        toastHome = toast.parentElement;
+    }
+    const modal = [...root.querySelectorAll("dialog[open]")].pop();
+    if (modal && toast.parentElement !== modal) {
+        modal.appendChild(toast);
+    } else if (!modal && toastHome && toast.parentElement !== toastHome) {
+        toastHome.appendChild(toast);
+    }
+}
+document.addEventListener(
+    "close",
+    (ev) => {
+        const toast = ev.target instanceof HTMLDialogElement && ev.target.querySelector(":scope > .o_sc_toast");
+        if (toast && toastHome) {
+            toastHome.appendChild(toast);
+        }
+    },
+    true
+);
+
 function showToast(message, actionLabel, action, duration, options) {
     const root = app();
     const toast = root && root.querySelector(".o_sc_toast");
     if (!toast) {
         return;
     }
+    placeToast(root, toast);
     const { title, tone } = options || {};
-    const parts = [];
+    // Task 1678: the title sits above the text (one column), the action
+    // button beside that column — under it, right-aligned, on a phone or
+    // when it does not fit (sc_p2.scss, review round 1).
+    const body = document.createElement("span");
+    body.className = "o_sc_toast_body";
     if (title) {
         const strong = document.createElement("strong");
         strong.className = "o_sc_toast_title";
         strong.textContent = title;
-        parts.push(strong);
+        body.appendChild(strong);
     }
     const text = document.createElement("span");
+    text.className = "o_sc_toast_text";
     text.textContent = message;
-    parts.push(text);
+    body.appendChild(text);
+    const parts = [body];
     if (tone) {
         toast.dataset.scToastTone = tone;
     } else {
@@ -78,9 +119,47 @@ function showToast(message, actionLabel, action, duration, options) {
     }, duration || (actionLabel ? 8000 : 4000));
 }
 
+// Task 1679: a card the toast is about keeps its bottom (its buttons) above
+// the toast (fixed over the page): the page scrolls up by the overlap, with
+// room made under the page when it is already at its end (removed with the
+// toast). Call it once the card's own scroll is done (an instant one: a
+// smooth scroll still running would end where it was heading). ``fitOnly``:
+// only when the whole card fits above the toast (a tall card being edited
+// keeps its top in view).
+function keepClearOfToast(el, { fitOnly = false } = {}) {
+    const root = app();
+    const toast = root && root.querySelector(".o_sc_toast");
+    if (!el || !toast || toast.hidden) {
+        return;
+    }
+    const gap = 8;
+    const toastTop = toast.getBoundingClientRect().top;
+    const rect = el.getBoundingClientRect();
+    const overlap = rect.bottom - (toastTop - gap);
+    if (overlap <= 0 || (fitOnly && rect.height > toastTop - gap)) {
+        return;
+    }
+    const scroller = document.scrollingElement || document.documentElement;
+    const room = window.scrollY + overlap - (scroller.scrollHeight - window.innerHeight);
+    if (room > 0 && !document.body.dataset.scToastRoom) {
+        document.body.dataset.scToastRoom = "1";
+        document.body.style.paddingBottom = `${Math.ceil(room)}px`;
+        const observer = new MutationObserver(() => {
+            if (toast.hidden) {
+                observer.disconnect();
+                delete document.body.dataset.scToastRoom;
+                document.body.style.paddingBottom = "";
+            }
+        });
+        observer.observe(toast, { attributes: true, attributeFilter: ["hidden"] });
+    }
+    window.scrollBy({ top: overlap, behavior: "instant" });
+}
+
 document.addEventListener("sc:toast", (ev) => {
     const detail = ev.detail || {};
-    showToast(detail.message || "", detail.actionLabel, detail.action);
+    showToast(detail.message || "", detail.actionLabel, detail.action, detail.duration,
+        { title: detail.title, tone: detail.tone });
 });
 
 // Task 1583: the pending session notification of a POST round-trip
@@ -156,12 +235,78 @@ function offerUndoCreate() {
         url.searchParams.delete("created");
         window.history.replaceState(window.history.state, "", url.toString());
     }
-    card.scrollIntoView({ block: "start" });
+    // Task 1679: instant, then lifted above the toast when it fits.
+    card.scrollIntoView({ block: "start", behavior: "instant" });
+    keepClearOfToast(card, { fitOnly: true });
 }
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", offerUndoCreate);
 } else {
     offerUndoCreate();
+}
+
+// Task 1663: a team announcement just archived — « Announcement archived ·
+// Undo » for the pills' undo time (~8 s; the server re-checks its window);
+// the address loses ?announcement_archived= so a reload does not offer it.
+function offerUndoAnnouncement() {
+    const form = document.querySelector('.o_sc_app form[data-sc-form="announcement.undo"]');
+    if (form) {
+        showToast(form.dataset.scToastMessage, form.dataset.scToastAction, () => form.submit(), 8000);
+    }
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("announcement_archived")) {
+        url.searchParams.delete("announcement_archived");
+        window.history.replaceState(window.history.state, "", url.toString());
+    }
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", offerUndoAnnouncement);
+} else {
+    offerUndoAnnouncement();
+}
+
+// Task 1656: a toast kept for this page by the previous one (it was left
+// after its viewer lost access to it: sc_confirm.js scLeavePage).
+function showPendingToast() {
+    let message = null;
+    try {
+        message = window.sessionStorage.getItem("sc_pending_toast:v1");
+        window.sessionStorage.removeItem("sc_pending_toast:v1");
+    } catch {
+        return;
+    }
+    if (message && app()) {
+        showToast(message);
+    }
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", showPendingToast);
+} else {
+    showPendingToast();
+}
+
+// Task 1655: a player just created inline — the identity card opens in edit
+// and « Player created · Undo » is offered for the undo window; the address
+// loses ?created_player= so a reload offers neither again.
+function offerUndoCreatePlayer() {
+    const form = document.querySelector('.o_sc_app form[data-sc-form="player.undo"]');
+    if (form) {
+        showToast(form.dataset.scToastMessage, form.dataset.scToastAction, () => form.submit(), SC_UNDO_CREATE_MS);
+    }
+    for (const card of document.querySelectorAll(".o_sc_app [data-sc-edit-card][data-sc-edit-open-on-load]")) {
+        setCardEditing(card, true);
+        card.scrollIntoView({ block: "start" });
+    }
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("created_player")) {
+        url.searchParams.delete("created_player");
+        window.history.replaceState(window.history.state, "", url.toString());
+    }
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", offerUndoCreatePlayer);
+} else {
+    offerUndoCreatePlayer();
 }
 
 // A link to « …#<details id> » opens that inline card (e.g. Overview's
@@ -180,6 +325,50 @@ if (document.readyState === "loading") {
     openHashedDetails();
 }
 window.addEventListener("hashchange", openHashedDetails);
+
+// Task 1676: while its card is in edit mode the head pencil is a ✓
+// (« Finish editing ») that closes the card — the same close path as
+// « Done » (refresh, #1642 anchoring), whether or not the user shows the
+// « Done » buttons (Paramètres).
+function setToggleDone(toggle, editing) {
+    const svg = toggle.querySelector("svg");
+    if (editing) {
+        if (!scPencils.has(toggle)) {
+            scPencils.set(toggle, {
+                icon: svg ? svg.innerHTML : null,
+                label: toggle.getAttribute("aria-label"),
+                title: toggle.getAttribute("title"),
+            });
+        }
+        if (svg) {
+            svg.innerHTML = `<path d="${SC_CHECK_PATH}"/>`;
+        }
+        // The label comes translated from the layout (a card may open on
+        // load, before the JS translations are there).
+        const root = app();
+        const label = (root && root.dataset.scEditDoneLabel) || "✓";
+        toggle.setAttribute("aria-label", label);
+        toggle.setAttribute("title", label);
+        toggle.classList.add("o_sc_edit_toggle_done");
+        toggle.dataset.scEditToggleDone = "1";
+        return;
+    }
+    const saved = scPencils.get(toggle);
+    if (saved) {
+        if (svg && saved.icon !== null) {
+            svg.innerHTML = saved.icon;
+        }
+        for (const [attr, value] of [["aria-label", saved.label], ["title", saved.title]]) {
+            if (value === null) {
+                toggle.removeAttribute(attr);
+            } else {
+                toggle.setAttribute(attr, value);
+            }
+        }
+    }
+    toggle.classList.remove("o_sc_edit_toggle_done");
+    delete toggle.dataset.scEditToggleDone;
+}
 
 // Inline-edit cards: ONE pencil per card toggles its edit view; « Done »
 // closes it and (task 1611) refreshes the read fragments at once — no reload.
@@ -201,12 +390,11 @@ function setCardEditing(card, editing) {
     const toggle = card.querySelector("[data-sc-edit-toggle]");
     if (toggle) {
         toggle.setAttribute("aria-expanded", editing ? "true" : "false");
+        setToggleDone(toggle, editing);
     }
     if (editing) {
-        const first = edit.querySelector("input, textarea, select");
-        if (first) {
-            first.focus({ preventScroll: true });
-        }
+        // Task 1646: a text field only (never a picker), nothing on a phone.
+        focusFirstField(edit);
     }
 }
 
@@ -229,7 +417,13 @@ document.addEventListener("click", (ev) => {
         const closing = Boolean(card.dataset.scEditOpen);
         setCardEditing(card, !closing);
         if (closing) {
+            // Task 1676: the ✓ closes like « Done » — focus out of the card,
+            // read fragments refreshed, back to the block's top (#1642).
+            if (card.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
             document.dispatchEvent(new CustomEvent("sc:refresh-now"));
+            anchorEdited(card);
         }
         return;
     }
@@ -252,6 +446,33 @@ document.addEventListener("sc:fetch-error", (ev) => {
 window.addEventListener("offline", () => app() && showToast(_t("You are offline.")));
 window.addEventListener("online", () => app() && showToast(_t("Back online.")));
 
+// Task 1643 addendum: a neutralized test DB's banner (#oe_neutralize_banner)
+// is pinned at the bottom on a phone (sc_tokens.scss); the tabs rise by its
+// height. No banner (prod) = 0.
+function measureRibbon() {
+    const banner = document.getElementById("oe_neutralize_banner");
+    if (!banner || !app()) {
+        return;
+    }
+    const update = () => {
+        const fixed = getComputedStyle(banner).position === "fixed";
+        document.documentElement.style.setProperty(
+            "--sc-ribbon-h",
+            fixed ? `${banner.getBoundingClientRect().height}px` : "0px"
+        );
+    };
+    update();
+    if (window.ResizeObserver) {
+        new ResizeObserver(update).observe(banner);
+    }
+    window.addEventListener("resize", update);
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", measureRibbon);
+} else {
+    measureRibbon();
+}
+
 // ------------------------------------------------------------ lazy load
 async function loadLazy(container, url, target) {
     if (!url || container.dataset.scLoaded === "1") {
@@ -261,6 +482,8 @@ async function loadLazy(container, url, target) {
     try {
         const html = await scFetch(url, { as: "html" });
         target.innerHTML = html;
+        // Task 1640: listeners may enhance the injected body (date bounds).
+        target.dispatchEvent(new CustomEvent("sc:lazy-loaded", { bubbles: true }));
         // A fragment with its own empty state (task 1581 histories) keeps it.
         // Task 1614: [data-sc-lazy-filled] = content even without a link
         // (a digest day whose players have no page link).
@@ -319,6 +542,18 @@ document.addEventListener("click", (ev) => {
     }
 });
 
+// Task 1634: a player card's face is a read fragment (a status pick swaps
+// it): its fresh « Details » control follows the region it controls, which
+// stays open or closed under the card.
+document.addEventListener("sc:fragments", () => {
+    for (const toggle of document.querySelectorAll(".o_sc_app [data-sc-row-expand]")) {
+        const region = document.getElementById(toggle.dataset.scRowExpand);
+        if (region) {
+            toggle.setAttribute("aria-expanded", region.hidden ? "false" : "true");
+        }
+    }
+});
+
 // --------------------------------------------------------------- sheets
 function refetchSheet(dialog, url) {
     const body = dialog.querySelector(".o_sc_sheet_body");
@@ -348,6 +583,54 @@ function openSheet(id) {
         loadLazy(dialog, dialog.dataset.scLazyUrl, dialog.querySelector(".o_sc_sheet_body"));
     }
 }
+
+// Task 1665: « Add My Timesheet » when I already have an editable timesheet
+// on this event — open THAT card in edit (scrolled to), and a toast offers
+// « Add another timesheet » (the add sheet, split shifts). The sheet's own
+// « Edit my timesheet » does the same from inside it.
+function editExistingTimesheet(id, behavior) {
+    const card = document.querySelector(`.o_sc_app [data-sc-timesheet-id="${id}"][data-sc-edit-card]`);
+    if (!card) {
+        return false;
+    }
+    setCardEditing(card, true);
+    card.scrollIntoView({ block: "center", behavior: behavior || "auto" });
+    return card;
+}
+document.addEventListener("click", (ev) => {
+    const root = app();
+    if (!root || !root.contains(ev.target)) {
+        return;
+    }
+    const add = ev.target.closest('[data-sc-action="timesheet.add"][data-sc-sheet-open]');
+    const edit = !add && ev.target.closest("[data-sc-ts-edit]");
+    if (!add && !edit) {
+        return;
+    }
+    const holder = root.querySelector("[data-sc-ts-existing-id]");
+    const id = edit ? edit.dataset.scTsEdit : holder && holder.dataset.scTsExistingId;
+    if (!id) {
+        return;
+    }
+    const dialog = edit && edit.closest("dialog");
+    // Task 1679: an instant scroll when the toast follows (it then lifts
+    // the card above itself).
+    const card = editExistingTimesheet(id, add ? "instant" : undefined);
+    if (!card) {
+        return; // no card on this page: let the sheet open as usual
+    }
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    if (dialog) {
+        dialog.close();
+    }
+    if (add) {
+        showToast(_t("You already have a timesheet for this event."), _t("Add another timesheet"),
+            () => openSheet(add.dataset.scSheetOpen || "sc_ts_add_sheet"));
+        // Task 1679: its « Delete » / « Done » never sit under the toast.
+        keepClearOfToast(card);
+    }
+}, true);
 
 document.addEventListener("click", (ev) => {
     const root = app();

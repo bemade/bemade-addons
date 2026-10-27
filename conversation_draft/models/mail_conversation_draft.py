@@ -265,6 +265,7 @@ class MailConversationDraft(models.Model):
         vals = {
             "conversation_id": conversation.id,
             "transport_id": transport.id or False,
+            "body": conversation._draft_default_body(transport),
             "recipient_ids": [
                 Command.create(recipient_vals)
                 for recipient_vals in conversation._draft_default_recipients()

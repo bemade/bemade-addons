@@ -40,8 +40,18 @@
 -->
 <odoo>
 
+    <!-- Task 1643: the frontend layout with ONE viewport meta, the shell's
+         (viewport-fit=cover, as in the installed app): web.frontend_layout
+         emits its own and the shell's used to come second. -->
+    <template id="sc_frontend_layout" name="Sports Clinic App: frontend layout"
+              inherit_id="web.frontend_layout" primary="True">
+        <xpath expr="//head/meta[@name='viewport']" position="attributes">
+            <attribute name="content">width=device-width, initial-scale=1, viewport-fit=cover</attribute>
+        </xpath>
+    </template>
+
     <template id="sc_app_layout" name="Sports Clinic App Layout">
-        <t t-call="web.frontend_layout">
+        <t t-call="bemade_sports_clinic.sc_frontend_layout">
             <t t-set="no_header" t-value="True"/>
             <t t-set="no_footer" t-value="True"/>
             <t t-set="no_livechat" t-value="True"/>
@@ -52,7 +62,6 @@
             <t t-set="body_classname" t-value="'o_sc_app_body o_sc_app_body_%s' % (sc_theme or 'dark')"/>
             <t t-set="title" t-value="sc_title"/>
             <t t-set="head">
-                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
                 <meta name="theme-color" t-att-content="'#120e12' if sc_theme != 'light' else '#243925'"/>
                 <!-- Task 1540: Teko / DM Sans are self-hosted (@font-face in
                      sc_tokens.scss) — no Google Fonts request. -->
@@ -64,8 +73,12 @@
                 <meta name="apple-mobile-web-app-title" content="Fit Crew"/>
                 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
             </t>
+            <!-- Task 1676: the head pencil's label while it is a ✓ (sc_app_ui.js). -->
+            <t t-set="sc_edit_done_label">Finish editing</t>
             <div class="o_sc_app" data-sc-app-shell="1"
                  t-att-data-sc-theme="sc_theme or 'dark'"
+                 t-att-data-sc-hide-done="None if sc_show_done else '1'"
+                 t-att-data-sc-edit-done-label="sc_edit_done_label"
                  t-att-data-sc-top="'0' if sc_parent_url else '1'"
                  t-att-data-sc-db="sc_db" t-att-data-sc-uid="sc_uid"
                  t-att-data-sc-rendered-at="sc_rendered_at">
@@ -85,18 +98,6 @@
                             </a>
                         </t>
                     </nav>
-                    <!-- Task 1606: the user menu (Paramètres, Se déconnecter). -->
-                    <div class="o_sc_user_menu o_sc_user_menu_rail" data-sc-user-menu="rail">
-                        <button type="button" class="o_sc_rail_me" data-sc-user-menu-toggle="1"
-                                aria-haspopup="menu" aria-expanded="false" aria-controls="sc_user_menu_rail">
-                            <span class="o_sc_avatar" aria-hidden="true" t-out="sc_user_initials"/>
-                            <span class="o_sc_rail_me_name" t-out="sc_user_name"/>
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'up'"/></t>
-                        </button>
-                        <t t-call="bemade_sports_clinic.sc_user_menu_popup">
-                            <t t-set="sc_menu_id" t-value="'sc_user_menu_rail'"/>
-                        </t>
-                    </div>
                 </aside>
 
                 <div class="o_sc_main">
@@ -145,12 +146,29 @@
                                       t-att-title="sc_clock_badge_label">0</span>
                             </a>
                         </t>
-                        <a t-if="sc_search_url" t-att-href="sc_search_url" class="o_sc_icon_btn"
-                           aria-label="Search for a player" title="Search for a player">
+                        <!-- Task 1660: « ? » — this page's user-guide article, in a
+                             new tab (sc_help.js follows the page's tab). -->
+                        <t t-if="sc_help and sc_help['url']">
+                            <t t-set="sc_help_label">Help on this page</t>
+                            <a t-att-href="sc_help['url']" target="_blank" rel="noopener"
+                               class="o_sc_icon_btn o_sc_appbar_help" data-sc-help="1"
+                               t-att-data-sc-help-key="sc_help['key']" t-att-data-sc-help-base="sc_help['base']"
+                               t-att-data-sc-help-home="sc_help['home'] or ''" t-att-data-sc-help-map="sc_help['map_json']"
+                               t-att-aria-label="sc_help_label" t-att-title="sc_help_label">
+                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'help'"/></t>
+                            </a>
+                        </t>
+                        <!-- Task 1650: the magnifier opens the search sheet
+                             (sc_search.js); the link stays the no-JS way. -->
+                        <a t-if="sc_search_url" t-att-href="sc_search_url" class="o_sc_icon_btn o_sc_appbar_search"
+                           data-sc-search-open="1" aria-haspopup="dialog" aria-controls="sc_search_sheet"
+                           aria-label="Search" title="Search">
                             <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'search'"/></t>
                         </a>
-                        <!-- Task 1606: phone only (the rail footer holds it on a
-                             laptop) — the initials open the user menu. -->
+                        <!-- Task 1606: the initials open the user menu. Task 1638:
+                             the ONLY user menu, at every width — the top right
+                             of the bar, last (like the phone and the back end);
+                             the rail has no footer menu any more. -->
                         <div class="o_sc_user_menu o_sc_user_menu_bar" data-sc-user-menu="bar">
                             <t t-set="sc_user_menu_label">User menu</t>
                             <button type="button" class="o_sc_icon_btn o_sc_appbar_me" data-sc-user-menu-toggle="1"
@@ -178,9 +196,30 @@
                     <main class="o_sc_content" id="sc_content">
                         <t t-out="0"/>
                     </main>
+                    <t t-if="sc_search_url" t-call="bemade_sports_clinic.sc_app_search_sheet"/>
+                    <!-- Task 1652: the popups of the red medical pills on this
+                         page's player cards — once per player, outside every
+                         read fragment (they hold islands). -->
+                    <t t-if="sc_card_med_patients and sc_can('patient.medical_alerts')">
+                        <t t-set="sc_card_med_is_tp" t-value="sc_card_med_tp()"/>
+                        <t t-foreach="sc_card_med_patients()" t-as="sc_card_med_patient">
+                            <t t-call="bemade_sports_clinic.sc_medical_sheets">
+                                <t t-set="patient" t-value="sc_card_med_patient"/>
+                                <t t-set="scope" t-value="'card'"/>
+                                <t t-set="tp" t-value="sc_card_med_is_tp"/>
+                                <t t-set="editable" t-value="sc_card_med_is_tp"/>
+                            </t>
+                        </t>
+                    </t>
                     <!-- Task 1542: status toast (sc_fetch errors, offline).
                          Task 1583: it also shows the pending session
                          notification of a POST round-trip on load. -->
+                    <!-- Task 1658: the form guard's shared texts (sc_form_guard.js). -->
+                    <t t-set="sc_guard_missing">Complete:</t>
+                    <t t-set="sc_guard_generic">This could not be saved. Please check the form and try again.</t>
+                    <t t-set="sc_guard_offline">No connection. Nothing was sent; try again when you are back online.</t>
+                    <span hidden="hidden" data-sc-guard-texts="1" t-att-data-missing="sc_guard_missing"
+                          t-att-data-generic="sc_guard_generic" t-att-data-offline="sc_guard_offline"/>
                     <div class="o_sc_toast" role="status" aria-live="polite" hidden="hidden"
                          t-att-data-sc-notify="sc_notification and (sc_notification['message'] or sc_notification['title']) or None"
                          t-att-data-sc-notify-title="sc_notification and sc_notification['message'] and sc_notification['title'] or None"
@@ -197,7 +236,7 @@
                             </button>
                         </div>
                         <div class="o_sc_sheet_body">
-                            <form class="o_sc_form" data-sc-injury-resolve-form="1">
+                            <form class="o_sc_form" data-sc-injury-resolve-form="1" data-sc-guard="1" data-sc-guard-rules='[{"type":"not_future","field":"resolution_date","key":"future"}]'>
                                 <p class="o_sc_confirm_message" data-sc-injury-resolve-name="1"/>
                                 <div class="o_sc_field">
                                     <label class="o_sc_field_label" for="sc_injury_resolve_date">Resolution Date</label>
@@ -209,6 +248,8 @@
                                     <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
                                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-injury-resolve-confirm="1">Resolve</button>
                                 </div>
+                                <span hidden="hidden" data-sc-guard-msg="future">The resolution date cannot be in the future.</span>
+                                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_injury_resolve'"/></t>
                             </form>
                         </div>
                     </dialog>
@@ -250,8 +291,8 @@
         </t>
     </template>
 
-    <!-- Task 1606: the user menu's popup (one per trigger: rail footer on a
-         laptop, app-bar avatar on a phone). sc_app_ui.js opens / closes it
+    <!-- Task 1606: the user menu's popup (task 1638: one, under the app-bar
+         avatar, at every width). sc_app_ui.js opens / closes it
          (tap, Enter / Space, the arrow keys, Escape, an outside tap).
          ``sc_menu_id``: the id the trigger's aria-controls names. -->
     <template id="sc_user_menu_popup" name="App shell: user menu popup">
@@ -268,6 +309,12 @@
                    t-att-aria-current="'page' if page_name == 'sc_app_settings' else None">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'settings'"/></t>
                     <span>Settings</span>
+                </a>
+                <!-- Task 1660: the user guide (new tab). -->
+                <a t-if="sc_help and sc_help['home']" role="menuitem" t-att-href="sc_help['home']" target="_blank" rel="noopener"
+                   class="o_sc_user_menu_item" tabindex="-1" data-sc-help-home-link="1">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'help'"/></t>
+                    <span>Help</span>
                 </a>
                 <a role="menuitem" href="/web/session/logout?redirect=/" class="o_sc_user_menu_item" tabindex="-1">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'logout'"/></t>

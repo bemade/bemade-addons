@@ -4,7 +4,7 @@
 Acceptance criteria covered here (AC3 / AC5):
 
 * UC-R1 Per-role allowlists are enforced SERVER-SIDE: a coach posting a
-  therapist-only field (player allergies, the status pair, injury stage /
+  therapist-only field (player allergy details, the status pair, injury stage /
   internal notes / visibility / predicted date) gets 403 and nothing is
   written, although the ORM would let a coach write the injury.
 * UC-R2 A blur save writes ONE field and adds exactly ONE note-history row
@@ -79,10 +79,12 @@ class TestAppShellSave1539(AppShellCommon):
     # -- UC-R1 -----------------------------------------------------------
     def test_coach_refused_therapist_fields(self):
         self._login_coach()
-        self.player.sudo().write({'allergies': 'Peanuts'})
-        for field, value in (('allergies', 'None'), ('sc_status', 'no:no'),
+        self.player.sudo().write({'medical_history_other': 'Peanuts'})
+        # Task 1633: date_of_birth left this list (coaches set it).
+        # Task 1630 / 1677: « Other medical history » (the allergies are lists).
+        for field, value in (('medical_history_other', 'None'), ('sc_status', 'no:no'),
                              ('training_recommendation', 'Rest'),
-                             ('team_info_notes', 'x'), ('date_of_birth', '2010-01-01')):
+                             ('team_info_notes', 'x')):
             resp = self._save(self.player, field, value)
             self.assertEqual(resp.status_code, 403, field)
         for field, value in (('stage', 'resolved'), ('internal_notes', 'Coach text'),
@@ -93,7 +95,7 @@ class TestAppShellSave1539(AppShellCommon):
             self.assertEqual(resp.status_code, 403, field)
         self.player.invalidate_recordset()
         self.injury.invalidate_recordset()
-        self.assertEqual(self.player.sudo().allergies, 'Peanuts')
+        self.assertEqual(self.player.sudo().medical_history_other, 'Peanuts')
         self.assertEqual(self.player.match_status, 'yes')
         self.assertEqual(self.injury.stage, 'active')
         self.assertFalse(self.injury.sudo().internal_notes)
@@ -101,7 +103,7 @@ class TestAppShellSave1539(AppShellCommon):
 
     def test_therapist_saves_therapist_fields(self):
         self._login_tp()
-        resp = self._save(self.player, 'allergies', ' Pollen ')
+        resp = self._save(self.player, 'medical_history_other', ' Pollen ')
         self.assertEqual(resp.status_code, 200, resp.text)
         self.assertEqual(resp.json()['value'], 'Pollen')
         resp = self._save(self.injury, 'internal_notes', 'TP-only synthetic text')
@@ -128,7 +130,9 @@ class TestAppShellSave1539(AppShellCommon):
 
     # -- UC-R2 -----------------------------------------------------------
     def test_blur_save_one_history_row(self):
-        self._login_coach()
+        # Owner review 2026-10-25 (#1675): the external note is the
+        # therapist's to write in the app (a coach's save is refused).
+        self._login_tp()
         before = self._history_count(self.injury)
         resp = self._save(self.injury, 'external_notes', 'Rest two days (synthetic)')
         self.assertEqual(resp.status_code, 200, resp.text)
@@ -136,7 +140,7 @@ class TestAppShellSave1539(AppShellCommon):
         row = self.env['sports.injury.note.history'].search(
             [('injury_id', '=', self.injury.id)], order='id desc', limit=1)
         self.assertEqual(row.scope, 'external')
-        self.assertEqual(row.author_id, self.coach)
+        self.assertEqual(row.author_id, self.tp)
         # Same value again: no second row.
         resp = self._save(self.injury, 'external_notes', 'Rest two days (synthetic)')
         self.assertEqual(resp.status_code, 200)
@@ -273,10 +277,11 @@ class TestAppShellSave1539(AppShellCommon):
     # -- UC-R7 -----------------------------------------------------------
     def test_coach_edits_primary_contact(self):
         self._login_coach()
-        resp = self._save(self.contact, 'mobile', '555-0100')
+        # Task 1645: a valid number, stored formatted.
+        resp = self._save(self.contact, 'mobile', '514-555-0100')
         self.assertEqual(resp.status_code, 200, resp.text)
         self.contact.invalidate_recordset()
-        self.assertEqual(self.contact.mobile, '555-0100')
+        self.assertEqual(self.contact.mobile, '+1 514-555-0100')
         resp = self._save(self.contact, 'name', '')
         self.assertEqual(resp.status_code, 400)
 

@@ -397,7 +397,7 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
     def test_single_notes_history(self):
         self._login_tp()
         _text, tree = self._get(self._url())
-        notes = self._card(tree).xpath('.//section[@data-sc-edit-card="injury-notes"]')[0]
+        notes = self._card(tree).xpath('.//section[@data-sc-section="injury.notes"]')[0]
         opens = notes.xpath('.//*[starts-with(@data-sc-sheet-open, "sc_note_history_sheet_")]')
         self.assertEqual(len(opens), 1)
         self.assertEqual(opens[0].get('data-sc-sheet-open'), 'sc_note_history_sheet_%s' % self.injury.id)
@@ -458,7 +458,7 @@ class TestInjuryCardFrench1631(InjuryCard1631Mixin, FragmentsCommon):
         self.assertEqual(labels['resolution_date'], 'Date de résolution')
         self.assertEqual(labels['predicted_resolution_date'], 'Date prévue de résolution')
         bodies = ' '.join(self.injury.sudo().message_ids.mapped(lambda m: str(m.body or '')))
-        self.assertIn('Blessure ramenée à Actif par', bodies)
+        self.assertIn('Blessure ramenée à Active par', bodies)
 
 
 @tagged('post_install', '-at_install')

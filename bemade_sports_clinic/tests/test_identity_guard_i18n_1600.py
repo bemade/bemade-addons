@@ -65,7 +65,9 @@ class TestIdentityGuardI18n1600(TestAppShellI18n1538):
         }, allow_redirects=False)
         text = self._text('/my/player/edit?patient_id=%s' % self.player.id)
         self.assertIn("Confirmez la correction d'identité.", text)
-        with self.assertRaisesRegex(ValidationError, 'Un autre joueur a déjà ce nom et cette date de naissance.'):
+        # Security review 2026-10-23: Dana is on another team — the generic
+        # refusal (test_identity_oracle_1023).
+        with self.assertRaisesRegex(ValidationError, 'Un joueur avec cette identité existe déjà — demandez à un responsable.'):
             self.player.with_user(self.tp).with_context(lang='fr_CA', sc_identity_confirmed=True).write(
                 {'first_name': 'Dana', 'last_name': 'Synthetic', 'date_of_birth': '2010-01-02'})
         # The app-shell confirmation (JSON, the user's language).

@@ -127,8 +127,9 @@ class TestReviewFixes1014Save(AppShellCommon):
         self.injury.sudo().write({'internal_notes': 'Synthetic internal v1'})
         self._login_coach()
         loaded = self._wd(self.injury)
+        # Owner review 2026-10-25 (#1675): the external note is refused too.
         resp = self._save(self.injury, 'external_notes', 'Coach external', write_date=loaded)
-        self.assertEqual(resp.status_code, 200, resp.text)
+        self.assertEqual(resp.status_code, 403, resp.text)
         for write_date in (loaded, None):
             resp = self._save(self.injury, 'internal_notes', 'Coach text', write_date=write_date,
                               old_value='Synthetic internal v1')
@@ -283,32 +284,26 @@ class TestReviewFixes1014Pages(AppShellCommon):
                           '/details[@data-sc-section="team.add_player"]')[0]
 
     def test_add_player_one_set_of_fields(self):
+        # Task 1655 (deliberate update): ONE set of name fields still — the
+        # inline create panel (search as you type, then create); a former
+        # ?add_first= link opens it pre-filled.
         self._login_tp()
         url = '/my/team?team_id=%s&tab=players' % self.team_a.id
         _text_, tree = self._get(url + '&add_first=Sam&add_last=Newplayer&add_dob=2011-03-04')
         card = self._add_card(tree)
-        visible = card.xpath('.//input[not(@type="hidden")]/@name')
-        self.assertEqual(sorted(visible), ['add_dob', 'add_first', 'add_last'])
-        create = card.xpath('.//form[@data-sc-form="player.create"]')[0]
-        hidden = {i.get('name'): (i.get('value'), i.get('data-sc-copy-from'))
-                  for i in create.xpath('.//input[@type="hidden"][@data-sc-copy-from]')}
-        self.assertEqual(hidden, {
-            'first_name': ('Sam', 'add_first'),
-            'last_name': ('Newplayer', 'add_last'),
-            'date_of_birth': ('2011-03-04', 'add_dob'),
-        })
-        button = create.xpath('.//button[@data-sc-action="player.create"]')[0]
-        self.assertIsNone(button.get('disabled'))
-        self.assertEqual(create.xpath('.//*[@data-sc-create-hint]/@hidden'), ['hidden'])
+        self.assertEqual(card.get('open'), 'open')
+        form = card.xpath('.//form[@data-sc-player-add]')[0]
+        values = {name: form.xpath('.//input[@name="%s"]/@value' % name)
+                  for name in ('first_name', 'last_name', 'date_of_birth')}
+        self.assertEqual(values, {'first_name': ['Sam'], 'last_name': ['Newplayer'],
+                                  'date_of_birth': ['2011-03-04']})
+        # « Create » waits for the live check (owner review 2026-10-22:
+        # greyed with aria-disabled, its reason under it).
+        self.assertEqual(form.xpath('.//button[@data-sc-action="player.add"]/@aria-disabled'), ['true'])
         # The labels « First name » / « Last name » appear once each.
         labels = [_text(lbl) for lbl in card.xpath('.//label')]
         self.assertEqual(labels.count('First name'), 1)
         self.assertEqual(labels.count('Last name'), 1)
-        # Only a last name searched: the button waits for a first name.
-        _text_, tree = self._get(url + '&add_last=Newplayer')
-        create = self._add_card(tree).xpath('.//form[@data-sc-form="player.create"]')[0]
-        self.assertEqual(create.xpath('.//button[@data-sc-action="player.create"]/@disabled'), ['disabled'])
-        self.assertFalse(create.xpath('.//*[@data-sc-create-hint]/@hidden'))
 
 
 @tagged('post_install', '-at_install')
@@ -357,8 +352,10 @@ class TestReviewFixes1014I18n(TestAppShellI18n1538):
         self.assertIn('Trier les événements', text)
         tree = lxml_html.fromstring(self._fr(
             '/my/team?team_id=%s&tab=players&add_last=Newplayer' % self.team_a.id))
-        hint = tree.xpath('//*[@data-sc-create-hint]')[0]
-        self.assertEqual(_text(hint), 'Entrez un prénom et un nom ci-dessus pour créer un nouveau joueur.')
+        # Task 1655: the inline create panel's reason line (owner review
+        # 2026-10-22: what is missing, in French).
+        hint = tree.xpath('//*[@data-sc-player-add-reason]')[0]
+        self.assertEqual(_text(hint), 'Complétez : prénom, date de naissance')
         self.opener.cookies.set('frontend_lang', 'fr_CA')
         resp = self.url_open('/my/event/create/submit', data={
             'csrf_token': self._csrf(), 'name': 'Synthetic bad times', 'event_type': 'game',

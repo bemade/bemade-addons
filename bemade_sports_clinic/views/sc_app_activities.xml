@@ -42,25 +42,26 @@
             <t t-set="sheet_id" t-value="'sc_activity_complete_sheet'"/>
             <t t-set="title">Complete Activity</t>
             <t t-set="lazy_url" t-value="False"/>
-            <form method="post" action="/my/activity/complete" class="o_sc_form" data-sc-form="activity.complete">
+            <form method="post" action="/my/activity/complete" class="o_sc_form" data-sc-form="activity.complete" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="activity_id" value=""/>
                 <input type="hidden" name="return_url" t-att-value="return_url"/>
                 <div class="o_sc_field">
-                    <label for="sc_activity_feedback" class="o_sc_field_label">Feedback (optional)</label>
+                    <label for="sc_activity_feedback" class="o_sc_field_label">Comment (optional)</label>
                     <textarea id="sc_activity_feedback" name="feedback" class="o_sc_input o_sc_textarea" rows="3"/>
                 </div>
                 <div class="o_sc_form_actions">
                     <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
                     <button type="submit" class="o_sc_btn o_sc_btn_primary">Complete Activity</button>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_complete'"/></t>
             </form>
         </t>
         <t t-call="bemade_sports_clinic.sc_sheet">
             <t t-set="sheet_id" t-value="'sc_activity_reschedule_sheet'"/>
             <t t-set="title">Reschedule Activity</t>
             <t t-set="lazy_url" t-value="False"/>
-            <form method="post" action="/my/activity/reschedule" class="o_sc_form" data-sc-form="activity.reschedule">
+            <form method="post" action="/my/activity/reschedule" class="o_sc_form" data-sc-form="activity.reschedule" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="activity_id" value=""/>
                 <input type="hidden" name="return_url" t-att-value="return_url"/>
@@ -73,35 +74,39 @@
                     <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
                     <button type="submit" class="o_sc_btn o_sc_btn_primary">Reschedule</button>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_reschedule'"/></t>
             </form>
         </t>
         <t t-call="bemade_sports_clinic.sc_sheet">
             <t t-set="sheet_id" t-value="'sc_activity_cancel_sheet'"/>
-            <t t-set="title">Cancel Activity</t>
+            <!-- Task 1663: « Supprimer » (it deletes the activity) — never
+                 « Annuler », which is the undo everywhere else. -->
+            <t t-set="title">Delete activity</t>
             <t t-set="lazy_url" t-value="False"/>
-            <form method="post" action="/my/activity/cancel" class="o_sc_form" data-sc-form="activity.cancel">
+            <form method="post" action="/my/activity/cancel" class="o_sc_form" data-sc-form="activity.cancel" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="activity_id" value=""/>
                 <input type="hidden" name="return_url" t-att-value="return_url"/>
-                <p class="o_sc_confirm_message">Are you sure you want to cancel this activity? This action cannot be undone.</p>
+                <p class="o_sc_confirm_message">Delete this activity?</p>
                 <div class="o_sc_form_actions">
                     <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">No</button>
-                    <button type="submit" class="o_sc_btn o_sc_btn_danger">Yes, Cancel Activity</button>
+                    <button type="submit" class="o_sc_btn o_sc_btn_danger" data-sc-action="activity.cancel.confirm">Yes, delete</button>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_cancel'"/></t>
             </form>
         </t>
         <t t-if="can_reassign" t-call="bemade_sports_clinic.sc_sheet">
             <t t-set="sheet_id" t-value="'sc_activity_reassign_sheet'"/>
             <t t-set="title">Reassign Activity</t>
             <t t-set="lazy_url" t-value="False"/>
-            <form method="post" action="/my/activity/reassign" class="o_sc_form" data-sc-form="activity.reassign">
+            <form method="post" action="/my/activity/reassign" class="o_sc_form" data-sc-form="activity.reassign" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="activity_id" value=""/>
                 <input type="hidden" name="return_url" t-att-value="return_url"/>
                 <p class="o_sc_meta"><span>Currently assigned to:</span> <strong data-sc-current-assignee="1"/></p>
                 <div class="o_sc_field">
                     <label for="sc_activity_new_user" class="o_sc_field_label">Assign to:</label>
-                    <select id="sc_activity_new_user" name="new_user_id" class="o_sc_input o_sc_select" required="required">
+                    <select id="sc_activity_new_user" data-sc-picker="1" data-sc-picker-key="user" name="new_user_id" class="o_sc_input o_sc_select" required="required">
                         <option value="">Select a person…</option>
                         <t t-foreach="available_users" t-as="au">
                             <option t-att-value="au.id" t-out="au.name"/>
@@ -112,6 +117,7 @@
                     <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
                     <button type="submit" class="o_sc_btn o_sc_btn_primary">Reassign Activity</button>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_reassign'"/></t>
             </form>
         </t>
     </template>
@@ -136,7 +142,7 @@
                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                 <span>Add Activity</span>
             </summary>
-            <form action="/my/activity/save" method="post" class="o_sc_form" data-sc-form="activity.add">
+            <form action="/my/activity/save" method="post" class="o_sc_form" data-sc-form="activity.add" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="model" t-att-value="add_model"/>
                 <input type="hidden" name="res_id" t-att-value="add_res_id"/>
@@ -163,7 +169,7 @@
                 </div>
                 <div class="o_sc_field">
                     <label for="sc_add_activity_user" class="o_sc_field_label">Assigned To</label>
-                    <select id="sc_add_activity_user" name="user_id" class="o_sc_input o_sc_select" required="required">
+                    <select id="sc_add_activity_user" data-sc-picker="1" data-sc-picker-key="user" name="user_id" class="o_sc_input o_sc_select" required="required">
                         <t t-foreach="assignable_users" t-as="au">
                             <option t-att-value="au.id" t-out="au.name"
                                     t-att-selected="'selected' if au.id == request.env.user.id else None"/>
@@ -173,6 +179,7 @@
                 <div class="o_sc_form_actions">
                     <button type="submit" class="o_sc_btn o_sc_btn_primary">Add Activity</button>
                 </div>
+                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_add'"/></t>
             </form>
         </details>
     </template>
@@ -197,7 +204,9 @@
             <t t-set="sc_title" t-value="sc_nav_labels['activities']"/>
             <t t-set="sc_active_nav" t-value="'activities'"/>
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
-            <t t-set="sc_can_reassign" t-value="show_assignee and sc_can('activities.reassign')"/>
+            <!-- Task 1664: « Réassigner » on every list (Mes activités too),
+                 same right as before (the route re-checks). -->
+            <t t-set="sc_can_reassign" t-value="sc_can('activities.reassign')"/>
             <t t-if="simplified">
                 <t t-call="bemade_sports_clinic.sc_activities_header"/>
                 <t t-call="bemade_sports_clinic.sc_activity_list">
@@ -283,7 +292,7 @@
                     <label for="sc_act_user" class="o_sc_field_label">Assigned To</label>
                     <t t-set="sc_users" t-value="available_users if activity else assignable_users"/>
                     <t t-set="sc_selected_user" t-value="activity.user_id.id if activity else default_user_id"/>
-                    <select id="sc_act_user" name="user_id" class="o_sc_input o_sc_select" required="required"
+                    <select id="sc_act_user" data-sc-picker="1" data-sc-picker-key="user" name="user_id" class="o_sc_input o_sc_select" required="required"
                             data-sc-assignee-select="1" t-att-data-sc-no-access="sc_no_access_ids">
                         <t t-foreach="sc_users" t-as="au">
                             <option t-att-value="au.id" t-out="au.name"
@@ -361,7 +370,7 @@
                     <t t-set="lbl">Due Date</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'date_deadline', lbl, 'date')"/></t>
                     <t t-set="lbl">Assigned To</t>
-                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'user_id', lbl, 'select', options=sc_activity_user_options)"/></t>
+                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'user_id', lbl, 'select', options=sc_activity_user_options, picker=True, pickerKey='user')"/></t>
                     <t t-set="lbl">Note</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'note', lbl, 'textarea', clearable=True)"/></t>
                     <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
@@ -382,21 +391,25 @@
                     </t>
                 </div>
             </section>
-            <!-- Task 1589: Cancel / Reschedule / Done only for who may act on
+            <!-- Task 1589: Delete / Reschedule / Done only for who may act on
                  the activity (the routes re-check). -->
             <div t-if="sc_activity_editable" class="o_sc_actionbar">
                 <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-open="sc_activity_cancel_sheet"
-                        t-att-data-sc-activity-id="activity.id" data-sc-action="activity.cancel">Cancel</button>
+                        t-att-data-sc-activity-id="activity.id" data-sc-action="activity.cancel">Delete</button>
                 <button type="button" class="o_sc_btn o_sc_btn_ghost"
                         data-sc-sheet-open="sc_activity_reschedule_sheet" t-att-data-sc-activity-id="activity.id"
                         data-sc-action="activity.reschedule">Reschedule</button>
+                <!-- Task 1664: « Réassigner » on the detail page too. -->
+                <button t-if="sc_can('activities.reassign')" type="button" class="o_sc_btn o_sc_btn_ghost"
+                        data-sc-sheet-open="sc_activity_reassign_sheet" data-sc-action="activity.reassign"
+                        t-att-data-sc-activity-id="activity.id" t-att-data-sc-current-user="activity.sudo().user_id.name or ''">Reassign</button>
                 <button type="button" class="o_sc_btn o_sc_btn_primary" data-sc-sheet-open="sc_activity_complete_sheet"
                         t-att-data-sc-activity-id="activity.id" data-sc-action="activity.complete">Done</button>
             </div>
             <t t-call="bemade_sports_clinic.sc_activity_sheets">
                 <t t-set="return_url" t-value="sc_related_url or '/my/activities'"/>
-                <t t-set="available_users" t-value="False"/>
-                <t t-set="can_reassign" t-value="False"/>
+                <t t-set="available_users" t-value="sc_activity_reassign_users"/>
+                <t t-set="can_reassign" t-value="sc_activity_editable and sc_can('activities.reassign')"/>
                 <t t-set="today" t-value="today"/>
             </t>
         </t>

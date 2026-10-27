@@ -21,8 +21,9 @@ class TestCompanySignature(CompanySignatureCommon):
             self.assertIn(text, sig)
         self.assertIn(self.company_a.name, sig)
         self.assertNotIn("{{", sig)
-        self.assertIn(self.u_noemp.name, self.u_noemp.signature)
-        self.assertIn(self.u_noemp.email, self.u_noemp.signature)
+        # employees only: a user without an employee file keeps their own
+        self.assertEqual(self.u_noemp.signature, "<p>Perso sig_noemp</p>")
+        self.assertFalse(self.u_noemp.sudo().personal_signature_backup)
         self.assertIn("Perso", self.u_portal.signature)
         self.assertIn("Perso", self.u_b.signature)
 
@@ -70,7 +71,7 @@ class TestCompanySignature(CompanySignatureCommon):
     def test_template_change_and_notice_propagate(self):
         self._enable()
         notice = "Fermé pour inventaire les 26–27 nov."
-        users = self.u_full | self.u_nomobile | self.u_noemp
+        users = self.u_full | self.u_nomobile
         self.company_a.sudo().company_signature_template += "<p>%s</p>" % notice
         for user in users:
             self.assertIn(notice, user.signature)
@@ -109,10 +110,12 @@ class TestCompanySignature(CompanySignatureCommon):
                 "signature": "<p>libre</p>",
             }
         )
-        self.assertNotIn("libre", user.signature)
-        self.assertIn("Sig brand new", user.signature)
+        # no employee file yet: not enforced
+        self.assertEqual(user.signature, "<p>libre</p>")
         self._make_employee(user, self.company_a, {"job_title": "Technicien"})
         self.assertIn("Technicien", user.signature)
+        self.assertIn("Sig brand new", user.signature)
+        self.assertEqual(user.sudo().personal_signature_backup, "<p>libre</p>")
 
     def test_values_are_escaped(self):
         self._enable()
@@ -178,14 +181,16 @@ class TestCompanySignature(CompanySignatureCommon):
         self.assertEqual(user.signature, "<p>new</p>")
 
     def test_archived_and_share_transitions(self):
-        self.u_noemp.active = False
+        self.u_nomobile.active = False
         self._enable()
         self.assertEqual(
-            self.u_noemp.sudo().personal_signature_backup, "<p>Perso sig_noemp</p>"
+            self.u_nomobile.sudo().personal_signature_backup,
+            "<p>Perso sig_nomobile</p>",
         )
         self._enable(enabled=False)
-        self.assertTrue(self.u_noemp.sudo().signature_is_generated)
+        self.assertTrue(self.u_nomobile.sudo().signature_is_generated)
         # portal -> internal while enforced: personal signature is backed up
+        self._make_employee(self.u_portal, self.company_a, {"job_title": "Rep"})
         self._enable()
         self.u_portal.write(
             {"group_ids": [(6, 0, self.env.ref("base.group_user").ids)]}
@@ -242,3 +247,32 @@ class TestCompanySignature(CompanySignatureCommon):
         )
         self.assertIn("Perso", self.u_b.sudo().personal_signature_backup)
         self.assertIn("Mover", self.u_b.signature)
+
+    def test_default_template_has_no_text_colour(self):
+        """Text inherits its colour (readable in the dark-mode editor)."""
+        company = self.env["res.company"].create({"name": "Fresh Co"})
+        template = company.sudo().company_signature_template
+        self.assertIn("{{name}}", template)
+        self.assertNotIn("color", template)
+
+    def test_paragraphs_are_single_spaced(self):
+        """Each template paragraph is one line, not a line plus a blank one."""
+        self._enable()
+        sig = self.u_full.signature
+        self.assertIn("<p", sig)
+        self.assertNotRegex(sig, r"<p(?![^>]*margin: 0px)[^>]*>")
+
+    def test_compact_keeps_explicit_margins(self):
+        compact = self.env["res.company"]._company_signature_compact
+        self.assertEqual(
+            compact(
+                '<p>a</p><p style="color: red">b</p>'
+                '<p style="margin: 12px 0px 0px 0px;">c</p>'
+                "<div><p>d</p></div><h3>e</h3>"
+            ),
+            '<p style="margin: 0px;">a</p>'
+            '<p style="margin: 0px; color: red">b</p>'
+            '<p style="margin: 12px 0px 0px 0px;">c</p>'
+            '<div><p style="margin: 0px;">d</p></div><h3>e</h3>',
+        )
+        self.assertEqual(compact(""), "")

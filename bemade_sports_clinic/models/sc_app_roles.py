@@ -36,7 +36,7 @@ Registries
   feature gates (e.g. the bookings addon). Templates render
   ``visible_nav(roles, placement, ctx)`` and never branch on groups.
 * ``VISIBILITY_REGISTRY``: fields and page sections, asked from QWeb with
-  ``sc_can('patient.allergies')``. A key that names ``model`` + ``field`` is a
+  ``sc_can('patient.medical_alerts')``. A key that names ``model`` + ``field`` is a
   field key: whatever it hides from a role MUST already be unreadable for that
   role server-side (field ``groups=`` / ACL / record rule) — the tests assert
   it. **The registry decides what is SHOWN, never what is ALLOWED**; security
@@ -163,9 +163,16 @@ NAV_REGISTRY = (
 # ---------------------------------------------------------------------------
 VISIBILITY_REGISTRY = {
     # Field keys (model + field): hidden => server-side unreadable (tested).
-    'patient.dob': {'include': TP, 'model': 'sports.patient', 'field': 'date_of_birth'},
-    'patient.age': {'include': TP, 'model': 'sports.patient', 'field': 'age'},
-    'patient.allergies': {'include': TP, 'model': 'sports.patient', 'field': 'allergies'},
+    # Task 1633: coaches too (their teams' players — the coach record rule).
+    'patient.dob': {'include': STAFF, 'model': 'sports.patient', 'field': 'date_of_birth'},
+    'patient.age': {'include': STAFF, 'model': 'sports.patient', 'field': 'age'},
+    # Task 1630: the allergy / medical-alert pills — every staff role reads
+    # them (a coach: only the non-urgent / urgent ones, the template's rule;
+    # editing is the therapists' pencil, gated by ``is_treatment_prof``).
+    'patient.medical_alerts': {'include': STAFF, 'model': 'sports.patient', 'field': 'allergy_level'},
+    # « Other medical history » (the Infos tab): therapists only.
+    'patient.medical_history': {'include': TP, 'model': 'sports.patient',
+                                'field': 'medical_history_other'},
     'patient.internal_notes': {'include': TP, 'model': 'sports.patient',
                                'field': 'team_info_notes'},
     'patient.contacts': {'include': TP, 'model': 'sports.patient', 'field': 'contact_ids'},

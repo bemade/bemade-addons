@@ -14,7 +14,10 @@ Acceptance criteria:
   briefing cron run without error on that team; the coach's view of the
   captured digest has no internal note.
 - A coach can still report an injury and edit an injury's external fields
-  through the portal; a coach posting ``internal_notes`` is ignored.
+  through the portal; a coach posting ``internal_notes`` is ignored. #1675
+  (owner 2026-10-25): the external NOTE is no longer one of them — a
+  coach's posted ``external_notes`` is dropped too (legacy portal: with a
+  warning flash), never a 500.
 - A TP still sees the internal note on the team page player card.
 
 All fixtures are synthetic.
@@ -131,6 +134,8 @@ class TestInternalNotesCoachFlows1544(PortalCovCommon):
             self.env['sports.patient.injury'].search_count(
                 [('patient_id', '=', self.player.id)]), before + 1)
         self.assertFalse(created.internal_notes, 'a coach cannot set internal notes')
+        self.assertFalse(created.external_notes, '#1675: nor the external note')
+        self.assertIn('data-sc-warning="external_notes_readonly"', resp.text)
 
     def test_coach_edits_injury(self):
         self._login_coach()
@@ -140,8 +145,9 @@ class TestInternalNotesCoachFlows1544(PortalCovCommon):
             'internal_notes': 'ZZ coach sneaky',
         })
         self.assertEqual(resp.status_code, 200)
+        self.assertIn('warning=external_notes_readonly', resp.url)
         self.injury.invalidate_recordset()
-        self.assertEqual(self.injury.external_notes, 'ZZ coach ext edit')
+        self.assertEqual(self.injury.external_notes, 'ZZ ext visible', '#1675: coaches no longer write it')
         self.assertEqual(self.injury.internal_notes, SECRET, 'internal notes untouched')
 
     def test_coach_partial_save(self):
@@ -151,6 +157,7 @@ class TestInternalNotesCoachFlows1544(PortalCovCommon):
             'external_notes': 'ZZ partial ext', 'internal_notes': 'ZZ coach sneaky',
         })
         self.assertIn(resp.status_code, (200, 204))
+        self.assertIn('warning=external_notes_readonly', resp.url)
         self.injury.invalidate_recordset()
-        self.assertEqual(self.injury.external_notes, 'ZZ partial ext')
+        self.assertEqual(self.injury.external_notes, 'ZZ ext visible', '#1675: coaches no longer write it')
         self.assertEqual(self.injury.internal_notes, SECRET)

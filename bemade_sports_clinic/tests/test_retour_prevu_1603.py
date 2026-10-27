@@ -327,7 +327,7 @@ class TestRetourPrevuApp1603(RetourPrevuFixtures, FragmentsCommon):
                    'field': 'predicted_resolution_date', 'value': '2030-07-04'}
         self.assertEqual(self._apply([foreign]).status_code, 403)
         # A field outside the proposal allowlist (even one the save route allows).
-        self.assertEqual(self._apply([dict(change, field='allergies', value='x')]).status_code, 403)
+        self.assertEqual(self._apply([dict(change, field='allergy_details', value='x')]).status_code, 403)
         self.assertEqual(self._apply([dict(change, model='res.partner')]).status_code, 403)
         # Malformed.
         resp = self.url_open('/my/app/apply-proposal', data={
@@ -338,7 +338,7 @@ class TestRetourPrevuApp1603(RetourPrevuFixtures, FragmentsCommon):
         self.assertEqual(resp.status_code, 400)
         self.player.invalidate_recordset()
         self.assertFalse(self.player.predicted_return_date)
-        self.assertFalse(self.player.allergies)
+        self.assertFalse(self.player.allergy_details)
 
     # -- AC-7 ------------------------------------------------------------
     def test_create_with_predicted_date_carries_the_proposal(self):

@@ -102,11 +102,12 @@ class TestAppShellPencil(AppShellCommon):
         for name in ('stage', 'parental_consent', 'hidden_from_coaches'):
             self.assertNotIn(name, names)
             self.assertTrue(tree.xpath('//*[@data-sc-pill-select][@data-sc-field="%s"]' % name), name)
-        notes, edit = self._card(tree, 'injury-notes')
-        self.assertEqual({f['field'] for f in self._fields(edit)}, {'external_notes', 'internal_notes'})
-        read = notes.xpath('.//*[@data-sc-edit-view="read"]')[0].text_content()
-        self.assertIn('Synthetic ext', read)
-        self.assertIn('Synthetic int', read)
+        # Task 1675: one edit card per note.
+        for scope, text_ in (('external', 'Synthetic ext'), ('internal', 'Synthetic int')):
+            card, edit = self._card(tree, 'injury-notes-%s' % scope)
+            self.assertEqual([f['field'] for f in self._fields(edit)], ['%s_notes' % scope])
+            self.assertIn(text_, card.xpath('.//*[@data-sc-edit-view="read"]')[0].text_content())
+        notes = tree.xpath('//section[@data-sc-section="injury.notes"]')[0]
         # Task 1616: the injury page is the open card (per-injury sheet ids).
         self.assertTrue(notes.xpath('.//*[@data-sc-sheet-open="sc_note_history_sheet_%s"]'
                                     '[not(ancestor::*[@data-sc-edit-view="edit"])]' % self.injury.id))
@@ -118,8 +119,15 @@ class TestAppShellPencil(AppShellCommon):
         _text, tree = self._get(self.injury_url)
         _details, edit = self._card(tree, 'injury-details')
         self.assertEqual({f['field'] for f in self._fields(edit)}, {'sc_injury_date'})
-        notes, edit = self._card(tree, 'injury-notes')
-        self.assertEqual({f['field'] for f in self._fields(edit)}, {'external_notes'})
+        # Owner review 2026-10-25 (#1675): the external note reads, without
+        # a pencil or an editor, for a coach.
+        card = tree.xpath('//*[@data-sc-edit-card="injury-notes-external"]')[0]
+        self.assertFalse(card.xpath('.//button[@data-sc-edit-toggle]'))
+        self.assertFalse(card.xpath('.//*[@data-sc-edit-view="edit"]'))
+        self.assertFalse(self._fields(card))
+        self.assertIn('Synthetic ext', card.xpath('.//*[@data-sc-edit-view="read"]')[0].text_content())
+        self.assertFalse(tree.xpath('//*[@data-sc-edit-card="injury-notes-internal"]'))
+        notes = tree.xpath('//section[@data-sc-section="injury.notes"]')[0]
         self.assertNotIn('Synthetic int', notes.text_content())
 
     # -- UC-PE3 ----------------------------------------------------------
@@ -290,11 +298,18 @@ class TestAppShellPencil(AppShellCommon):
                     ('sports.patient.injury', 'parental_consent'): 'flags',
                     ('sports.patient.injury', 'hidden_from_coaches'): 'flags',
                 }
+                # Task 1634: and the player cards' pills, in each card's
+                # « row-<scope> » read fragment.
+                card_homes = {('sports.patient', 'sc_status')}
                 for pill in tree.xpath('//*[@data-sc-pill-select]'):
-                    home = homes.get((pill.get('data-sc-model'), pill.get('data-sc-field')))
+                    target = (pill.get('data-sc-model'), pill.get('data-sc-field'))
+                    home = homes.get(target)
                     self.assertTrue(home, '%s: %s' % (url, pill.get('data-sc-field')))
-                    self.assertTrue(pill.xpath('ancestor::*[@data-sc-fragment="%s:%s:%s"]' % (
-                        pill.get('data-sc-model'), pill.get('data-sc-record-id'), home)), url)
+                    base = '%s:%s:' % (pill.get('data-sc-model'), pill.get('data-sc-record-id'))
+                    keys = pill.xpath('ancestor::*[@data-sc-fragment]/@data-sc-fragment')
+                    self.assertTrue(base + home in keys or (
+                        target in card_homes and any(k.startswith(base + 'row-') for k in keys)),
+                        '%s: %s' % (url, keys))
 
 
 @tagged('post_install', '-at_install')

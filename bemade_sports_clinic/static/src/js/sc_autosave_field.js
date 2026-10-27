@@ -78,6 +78,8 @@ import { registry } from "@web/core/registry";
 import { _t } from "@web/core/l10n/translation";
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
 import { readDraft, removeDraft, writeDraft } from "@bemade_sports_clinic/js/sc_draft_store";
+import { DATE_BOUNDS, isValidDateValue } from "@bemade_sports_clinic/js/sc_date_bounds";
+import { scConfirm, scLeavePage } from "@bemade_sports_clinic/js/sc_confirm";
 
 const DRAFT_DEBOUNCE = 300;
 // Owner review 2026-10-14: inputs whose value is only complete once the
@@ -138,6 +140,20 @@ export class ScAutosaveField extends Component {
         recordId: { type: Number, optional: true },
         field: { type: String, optional: true },
         writeDate: { type: String, optional: true },
+        // Task 1640: per-field date bounds (default 1900 .. 9999 — the
+        // 4-digit year cap).
+        min: { type: String, optional: true },
+        max: { type: String, optional: true },
+        // Task 1648: the type-to-filter picker on a select (sc_picker.js).
+        picker: { type: Boolean, optional: true },
+        pickerKey: { type: String, optional: true },
+        optionMeta: { type: Object, optional: true },
+        // Task 1653: the empty option of a select is shown, never chosen.
+        lockEmpty: { type: Boolean, optional: true },
+        // Task 1656: {access: [keys], title ("%s" = the tag), message,
+        // confirm, cancel} — removing the LAST chosen « access » tag (the
+        // player's only team the viewer staffs) asks first.
+        confirmRemove: { type: Object, optional: true },
         "*": true,
     };
 
@@ -148,6 +164,8 @@ export class ScAutosaveField extends Component {
             // Task 1582: in replace mode ``value`` is the NEW text being
             // written (empty on edit) and ``current`` the text the server holds.
             value: this.props.replace ? "" : asText(this.props.value),
+            // Task 1653: null = follow props.disabled.
+            locked: null,
             current: asText(this.props.value),
             status: "idle", // idle | dirty | draft | saving | saved | queued | error | conflict
             restored: false,
@@ -226,6 +244,10 @@ export class ScAutosaveField extends Component {
             if (Array.isArray(also[this.props.field].options)) {
                 this.state.options = also[this.props.field].options;
             }
+            // Task 1653: a sibling's save may lock / unlock this field.
+            if (also[this.props.field].disabled !== undefined) {
+                this.state.locked = Boolean(also[this.props.field].disabled);
+            }
             if (["dirty", "saving"].includes(this.state.status)) {
                 return;
             }
@@ -242,6 +264,26 @@ export class ScAutosaveField extends Component {
             document.addEventListener("sc:saved", this.onSiblingSaved);
         }
         this.onGroupChange = (ev) => this.applyGroup(ev.target.value || "");
+        // Task 1672: an add panel reset after a successful create (« sc:form-
+        // reset » on its form, sc_list_header.js): a form-mode field goes back
+        // to its default (e.g. the page's team), a draft-mode one is emptied
+        // and its device draft dropped.
+        this.onFormReset = (ev) => {
+            const anchor = this.inputRef.el || (this.props.target && document.getElementById(this.props.target));
+            if (this.isServer || !anchor || !(ev.target instanceof Element) || !ev.target.contains(anchor)) {
+                return;
+            }
+            if (this.isForm) {
+                this.state.value = asText(this.props.value);
+                this.state.query = "";
+                this.state.open = false;
+                this.state.active = -1;
+                this.writeTarget();
+            } else {
+                this.discardDraft();
+            }
+        };
+        document.addEventListener("sc:form-reset", this.onFormReset);
         onMounted(() => {
             this.restore();
             const select = this.groupSelectEl;
@@ -265,6 +307,7 @@ export class ScAutosaveField extends Component {
             clearTimeout(this.timer);
             window.removeEventListener("online", this.onOnline);
             document.removeEventListener("sc:saved", this.onSiblingSaved);
+            document.removeEventListener("sc:form-reset", this.onFormReset);
             const select = this.groupSelectEl;
             if (select) {
                 select.removeEventListener("change", this.onGroupChange);
@@ -309,7 +352,7 @@ export class ScAutosaveField extends Component {
 
     /** « Clear » is offered while there is something to clear. */
     get canClear() {
-        if (!this.props.clearable || this.props.disabled) {
+        if (!this.props.clearable || this.isDisabled) {
             return false;
         }
         return Boolean(this.isReplace ? this.state.current : this.state.value);
@@ -322,6 +365,24 @@ export class ScAutosaveField extends Component {
     /** A date / date-time / time input: saved only once complete. */
     get isDateLike() {
         return DATE_LIKE_TYPES.includes(this.type);
+    }
+
+    /** Task 1653: disabled by the props, or locked by a sibling's save. */
+    get isDisabled() {
+        return this.state.locked === undefined || this.state.locked === null
+            ? Boolean(this.props.disabled)
+            : this.state.locked;
+    }
+
+    /** Task 1640: the input's bounds (props, else the 4-digit-year cap). */
+    get dateBounds() {
+        const bounds = DATE_BOUNDS[this.type === "date_na" ? "date" : this.type] || {};
+        return { min: this.props.min || bounds.min, max: this.props.max || bounds.max };
+    }
+
+    /** Task 1640: a value worth keeping (empty, or an in-range date). */
+    isKeepable(value) {
+        return !this.isDateLike || isValidDateValue(this.type, value);
     }
 
     /** The browser holds a half-typed (invalid) date / time. */
@@ -399,6 +460,12 @@ export class ScAutosaveField extends Component {
         }
         const draft = readDraft(this.key);
         if (!draft) {
+            return;
+        }
+        if (!this.isKeepable(draft.value)) {
+            // Task 1640: a draft holding an out-of-range / malformed date
+            // (« 202610-10-10 ») is dropped, never brought back.
+            removeDraft(this.key);
             return;
         }
         if (this.isServer) {
@@ -603,7 +670,7 @@ export class ScAutosaveField extends Component {
 
     /** Focus / click in the search box: the full list opens (browse). */
     openTags() {
-        if (this.props.disabled || this.state.open) {
+        if (this.isDisabled || this.state.open) {
             return;
         }
         this.state.open = true;
@@ -728,6 +795,27 @@ export class ScAutosaveField extends Component {
         }
     }
 
+    /** Task 1656: removing a tag that would end the viewer's access asks. */
+    async onRemoveTag(key) {
+        const rule = this.props.confirmRemove;
+        const access = new Set((rule && rule.access) || []);
+        const others = this.checkedKeys.filter((k) => String(k) !== String(key) && access.has(String(k)));
+        if (rule && access.has(String(key)) && !others.length) {
+            const label = (this.options.find((opt) => String(opt[0]) === String(key)) || [key, key])[1];
+            const go = await scConfirm({
+                title: String(rule.title || "").replace("%s", label),
+                message: rule.message,
+                confirm: rule.confirm,
+                cancel: rule.cancel,
+            });
+            if (!go) {
+                return; // the tag stays, nothing saved
+            }
+            this.leaving = true;
+        }
+        this.onCheck(key, false);
+    }
+
     onCheck(key, checked) {
         const keys = new Set(this.checkedKeys);
         if (checked) {
@@ -739,7 +827,7 @@ export class ScAutosaveField extends Component {
     }
 
     onPick(value) {
-        if (this.props.disabled || String(value) === this.state.value) {
+        if (this.isDisabled || String(value) === this.state.value) {
             return;
         }
         const previous = this.state.value;
@@ -774,8 +862,51 @@ export class ScAutosaveField extends Component {
         );
     }
 
+    /**
+     * Owner review 2026-10-22: the toast of a save the SERVER can undo
+     * (« Details cleared · Undo »): ``undo`` = {url, token, message, action,
+     * ms}. The restore answers like a save of this field (its siblings, the
+     * pills and the lists follow, « sc:saved »).
+     */
+    offerServerUndo(undo) {
+        const { model, recordId, field } = this.props;
+        document.dispatchEvent(
+            new CustomEvent("sc:toast", {
+                detail: {
+                    message: undo.message || _t("Change saved"),
+                    actionLabel: undo.action || _t("Undo"),
+                    duration: undo.ms,
+                    action: async () => {
+                        try {
+                            const result = await scFetch(undo.url, {
+                                method: "POST",
+                                data: { token: undo.token },
+                                toast: false,
+                            });
+                            document.dispatchEvent(
+                                new CustomEvent("sc:saved", {
+                                    detail: { model, recordId, field: result.field || field, result, source: "server-undo" },
+                                })
+                            );
+                        } catch (error) {
+                            document.dispatchEvent(
+                                new CustomEvent("sc:toast", {
+                                    detail: {
+                                        message:
+                                            (error && error.payload && error.payload.message) ||
+                                            _t("This change can no longer be undone."),
+                                    },
+                                })
+                            );
+                        }
+                    },
+                },
+            })
+        );
+    }
+
     keepDraft() {
-        if (norm(this.state.value) === norm(this.props.value)) {
+        if (norm(this.state.value) === norm(this.props.value) || !this.isKeepable(this.state.value)) {
             removeDraft(this.key);
             this.state.status = "idle";
             return;
@@ -871,10 +1002,19 @@ export class ScAutosaveField extends Component {
                         write_date: this.writeDate,
                         old_value: this.lastSaved,
                     },
-                    confirm ? { confirm: "1" } : {}
+                    confirm ? { confirm: "1" } : {},
+                    this.leaving ? { leaving: "1" } : {}
                 ),
                 toast: false,
             });
+            // Task 1656: the save ended the viewer's access to this record
+            // (the popup's « Remove and leave », or a stale page): leave it.
+            if (result && result.lost_access) {
+                this.state.status = "saved";
+                scLeavePage(result.message);
+                return true;
+            }
+            this.leaving = false;
             this.writeDate = result.write_date;
             // The value typed meanwhile (a save waiting) is never overwritten.
             const changedSince = this.state.value !== sent;
@@ -915,6 +1055,11 @@ export class ScAutosaveField extends Component {
                     },
                 })
             );
+            // Owner review 2026-10-22: « None known » cleared the family —
+            // the answer carries a one-shot « Undo » (the server restores).
+            if (result.undo) {
+                this.offerServerUndo(result.undo);
+            }
             return true;
         } catch (error) {
             if (error.status === 428 && error.payload && error.payload.confirm_identity) {

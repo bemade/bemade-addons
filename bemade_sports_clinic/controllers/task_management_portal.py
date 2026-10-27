@@ -3,7 +3,7 @@ from odoo import http, fields, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
-from .access_control_mixin import AccessControlMixin
+from .access_control_mixin import AccessControlMixin, parse_portal_date
 from .app_shell import AppShellMixin
 from ..models import sc_app_nav, sc_app_roles
 from datetime import date, timedelta
@@ -117,6 +117,9 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             domain = ['&', '&', ('user_id', '=', user.id),
                       ('date_deadline', '<', fields.Date.context_today(user))] \
                 + self._activity_team_access_domain(self._activity_scope_teams())
+            # Task 1664: the notepad reminders count too (as listed).
+            domain = ['|'] + domain + ['&', ('date_deadline', '<', fields.Date.context_today(user))] \
+                + self._activity_quick_note_domain(user)
             count = env['mail.activity'].search_count(domain)
             response = request.make_json_response({'count': count})
         response.headers['Cache-Control'] = 'no-store'
@@ -160,6 +163,9 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # is assigned to AND can actually open. The per-context callers pass a
             # `model` and hit the branch above, keeping their broad context scope.
             domain = ['&', ('user_id', '=', user.id)] + team_access_domain
+            # Task 1664: plus MY notepad reminders (« Note rapide en attente »)
+            # — on notes I may read (the mail.activity rules: my own notes).
+            domain = ['|'] + domain + self._activity_quick_note_domain(user)
         
         # Search for activities with both assignment and team-based access control
         activities = request.env['mail.activity'].search(domain, order='date_deadline asc')
@@ -294,7 +300,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'activity_updated': env._("Activity updated."),
                 'activity_reassigned': env._("Activity reassigned."),
                 'activity_done': env._("Activity marked as done."),
-                'activity_cancelled': env._("Activity cancelled."),
+                'activity_cancelled': env._("Activity deleted."),
             }.get(params.get('success')),
             'error': {
                 'missing_fields': env._("Please fill in all required fields."),
@@ -561,7 +567,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'summary': summary,
             'note': post.get('note', ''),
             'user_id': int(user_id),
-            'date_deadline': date_deadline,
+            'date_deadline': parse_portal_date(date_deadline),  # task 1640
             'res_model_id': model_id,
             'res_id': int(res_id),
         }
@@ -610,7 +616,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         if 'note' in post:
             update_vals['note'] = post['note']
         if 'date_deadline' in post:
-            update_vals['date_deadline'] = post['date_deadline']
+            update_vals['date_deadline'] = parse_portal_date(post['date_deadline'])  # task 1640
 
         # Assignee change from the edit page (task 1500): honoured, and
         # validated with the SAME per-actor rule as save / reassign. Outside
@@ -906,6 +912,8 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 # one act rule.
                 'sc_activity_editable': self._activity_act_access(activity),
                 'sc_activity_user_options': [(u.id, u.name) for u in users],
+                # Task 1664: the reassign sheet of the detail page.
+                'sc_activity_reassign_users': assignable.sorted('name'),
             })
         return self._sc_render('bemade_sports_clinic.portal_activity_detail',
                                'bemade_sports_clinic.sc_app_activity_detail', values)

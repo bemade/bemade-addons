@@ -70,6 +70,18 @@ msgid "%(count)s on the list"
 msgstr "%(count)s sur la liste"
 
 #. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
+msgid "%(count)s open activities"
+msgstr "%(count)s activités ouvertes"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
+msgid "%(count)s open activities, %(overdue)s overdue"
+msgstr "%(count)s activités ouvertes, dont %(overdue)s en retard"
+
+#. module: bemade_sports_clinic
 #. odoo-javascript
 #: code:addons/bemade_sports_clinic/static/src/js/sc_clinic_worklist.js:0
 msgid "%s waiting"
@@ -263,6 +275,12 @@ msgstr "%(count)s joueurs ont été retirés de l'équipe %(team)s."
 #: code:addons/bemade_sports_clinic/models/res_users.py:0
 msgid "%(name)s %(when)s"
 msgstr ""
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/res_users.py:0
+msgid "%(name)s %(when)s · assigned (%(team)s) / assigné·e (%(team)s)"
+msgstr "%(name)s %(when)s · assigné·e (%(team)s) / assigned (%(team)s)"
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -528,7 +546,7 @@ msgid ""
 "                            <p><strong t-out=\"team['name']\"/></p>\n"
 "                            <div t-if=\"team.get('announcement')\" style=\"margin:6px 0;\">\n"
 "                                <p style=\"margin:0 0 2px 0;\">\n"
-"                                    <strong>Annonce de l'équipe / Team announcement<t t-if=\"team.get('announcement_is_expired')\"> (expirée / expired)</t>:</strong>\n"
+"                                    <strong>Annonce d'équipe / Team announcement<t t-if=\"team.get('announcement_is_expired')\"> (expirée / expired)</t>:</strong>\n"
 "                                </p>\n"
 "                                <p style=\"white-space:pre-wrap;margin:0;\" t-out=\"team['announcement']\"/>\n"
 "                            </div>\n"
@@ -564,6 +582,7 @@ msgid ""
 "                                    <li>\n"
 "                                        <strong t-out=\"ev['name']\"/>\n"
 "                                        <t t-if=\"ev.get('date_label') or ev['date_start']\"> — <t t-out=\"ev.get('date_label') or format_datetime(ev['date_start'])\"/></t>\n"
+"                                        <t t-if=\"ev.get('assigned')\"> · assigné·e (<t t-out=\"ev.get('assigned_label')\"/>) / assigned (<t t-out=\"ev.get('assigned_label')\"/>)</t>\n"
 "                                    </li>\n"
 "                                </t>\n"
 "                            </ul>\n"
@@ -579,6 +598,69 @@ msgid ""
 "                </div>\n"
 "            "
 msgstr ""
+"<div>\n"
+"                    <p>Bonjour, / Hello,</p>\n"
+"                    <p>Votre sommaire quotidien d'équipe : / Your daily team briefing:</p>\n"
+"                    <p style=\"color:#888;font-size:12px;\">\n"
+"                        Changements des dernières <t t-out=\"ctx.get('digest_window_hours') or 24\"/> h /\n"
+"                        Changes over the last <t t-out=\"ctx.get('digest_window_hours') or 24\"/> h.\n"
+"                    </p>\n"
+"                    <t t-foreach=\"ctx.get('digest_teams') or []\" t-as=\"team\">\n"
+"                        <div style=\"margin-bottom:12px;\">\n"
+"                            <p><strong t-out=\"team['name']\"/></p>\n"
+"                            <div t-if=\"team.get('announcement')\" style=\"margin:6px 0;\">\n"
+"                                <p style=\"margin:0 0 2px 0;\">\n"
+"                                    <strong>Annonce d'équipe / Team announcement<t t-if=\"team.get('announcement_is_expired')\"> (expirée / expired)</t>:</strong>\n"
+"                                </p>\n"
+"                                <p style=\"white-space:pre-wrap;margin:0;\" t-out=\"team['announcement']\"/>\n"
+"                            </div>\n"
+"                            <ul>\n"
+"                                <li>\n"
+"                                    <t t-out=\"team['red']\"/> indisponible(s) / no-play<t t-out=\"team['red_delta_str']\"/>\n"
+"                                    ·\n"
+"                                    <t t-out=\"team['yellow']\"/> limité(s) / limited<t t-out=\"team['yellow_delta_str']\"/>\n"
+"                                </li>\n"
+"                                <li t-if=\"team['new_injuries']\">\n"
+"                                    <t t-out=\"team['new_injuries']\"/> nouvelle(s) blessure(s) (<t t-out=\"ctx.get('digest_window_hours') or 24\"/> h) / new injury/injuries\n"
+"                                </li>\n"
+"                                <li t-if=\"team['changes']\">\n"
+"                                    <t t-out=\"team['changes']\"/> joueur(s) avec changements (<t t-out=\"ctx.get('digest_window_hours') or 24\"/> h) / player(s) with changes\n"
+"                                </li>\n"
+"                                <li t-if=\"team['pending_verify']\">\n"
+"                                    <t t-out=\"team['pending_verify']\"/> vérification(s) de blessure en attente / injury verification(s) pending\n"
+"                                </li>\n"
+"                                <li t-if=\"team['pending_removal']\">\n"
+"                                    <t t-out=\"team['pending_removal']\"/> demande(s) de retrait de joueur / player removal request(s)\n"
+"                                </li>\n"
+"                            </ul>\n"
+"                            <p t-if=\"team['url']\">\n"
+"                                <a t-att-href=\"team['url']\">Tableau de bord / Team dashboard</a>\n"
+"                            </p>\n"
+"                        </div>\n"
+"                    </t>\n"
+"                    <t t-if=\"ctx.get('digest_events')\">\n"
+"                        <div style=\"margin-bottom:12px;\">\n"
+"                            <p><strong>Événements à venir (<t t-out=\"ctx.get('digest_events_days') or 14\"/> prochains jours) / Upcoming events (next <t t-out=\"ctx.get('digest_events_days') or 14\"/> days):</strong></p>\n"
+"                            <ul>\n"
+"                                <t t-foreach=\"ctx.get('digest_events') or []\" t-as=\"ev\">\n"
+"                                    <li>\n"
+"                                        <strong t-out=\"ev['name']\"/>\n"
+"                                        <t t-if=\"ev.get('date_label') or ev['date_start']\"> — <t t-out=\"ev.get('date_label') or format_datetime(ev['date_start'])\"/></t>\n"
+"                                        <t t-if=\"ev.get('assigned')\"> · assigné·e (<t t-out=\"ev.get('assigned_label')\"/>) / assigned (<t t-out=\"ev.get('assigned_label')\"/>)</t>\n"
+"                                    </li>\n"
+"                                </t>\n"
+"                            </ul>\n"
+"                            <p style=\"color:#888;font-size:12px;\">\n"
+"                                Les événements non listés sont hors de notre plan de couverture, avisez-nous. /\n"
+"                                Events not listed are outside our coverage plan — please advise us.\n"
+"                            </p>\n"
+"                        </div>\n"
+"                    </t>\n"
+"                    <p style=\"color:#888;font-size:12px;\">\n"
+"                        Aucune donnée médicale n'est incluse. / No medical data is included.\n"
+"                    </p>\n"
+"                </div>\n"
+"            "
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_activity_detail
@@ -1417,7 +1499,7 @@ msgstr "<i class=\"fa fa-upload\"/> Téléverser"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 msgid "<i class=\"fa fa-upload\"/> Upload Document"
-msgstr "<i class=\"fa fa-upload\"/> Téléverser le document"
+msgstr "<i class=\"fa fa-upload\"/> Téléverser un document"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_teams
@@ -1432,14 +1514,14 @@ msgstr "<i class=\"fa fa-user\"/> Informations du patient"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.activity_list_table
 msgid "<i class=\"fa fa-user\"/> Reassign"
-msgstr "<i class=\"fa fa-user\"/> Reassigner"
+msgstr "<i class=\"fa fa-user\"/> Réassigner"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_create
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_edit
 msgid "<i class=\"fa fa-user-md\"/> Assigned Staff"
-msgstr "<i class=\"fa fa-user-md\"/> Personnnel assigné"
+msgstr "<i class=\"fa fa-user-md\"/> Personnel assigné"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_worklist
@@ -2126,7 +2208,7 @@ msgid ""
 "<span class=\"fw-bold\">Team announcement</span>\n"
 "                                    <span class=\"badge text-bg-secondary\" invisible=\"not announcement_is_expired\">Expired</span>"
 msgstr ""
-"<span class=\"fw-bold\">Annonce de l'équipe</span>\n"
+"<span class=\"fw-bold\">Annonce d'équipe</span>\n"
 "                                    <span class=\"badge text-bg-secondary\" invisible=\"not announcement_is_expired\">Expirée</span>"
 
 #. module: bemade_sports_clinic
@@ -2307,6 +2389,7 @@ msgstr "<span>Notes archivées</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_timesheet_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_row
 msgid "<span>Delete</span>"
 msgstr "<span>Supprimer</span>"
 
@@ -2566,7 +2649,7 @@ msgstr "<strong>Adresse :</strong>"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.team_digest_render
 msgid "<strong>Team announcement</strong>"
-msgstr "<strong>Annonce de l'équipe</strong>"
+msgstr "<strong>Annonce d'équipe</strong>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_clinic_detail
@@ -2696,7 +2779,7 @@ msgstr "Une demande de retrait est déjà en attente pour ce joueur"
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
 msgid ""
 "A request to remove this player has been submitted to the head therapist."
-msgstr "Une demande de retrait a été soumise au chef de traitement."
+msgstr "Une demande de retrait a été soumise au thérapeute en chef."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -2798,7 +2881,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_injury_view_search_audit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_search
 msgid "Active"
-msgstr "Actif"
+msgstr "Active"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__active_injury_count
@@ -2944,6 +3027,7 @@ msgstr "Date de retour réelle"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_notepad
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_list_header
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
 msgid "Add"
 msgstr "Ajouter"
 
@@ -3128,7 +3212,7 @@ msgstr "Informations d'adresse"
 #. module: bemade_sports_clinic
 #: model:ir.ui.menu,name:bemade_sports_clinic.sports_clinic_staff_menu
 msgid "Admin"
-msgstr "Personnel"
+msgstr "Administration"
 
 #. module: bemade_sports_clinic
 #: model:res.groups,name:bemade_sports_clinic.group_sports_clinic_admin
@@ -3241,12 +3325,14 @@ msgstr ""
 "portail). Utilisé pour filtrer la sélection du personnel."
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergies
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
+#: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Allergies"
 msgstr ""
 
@@ -3446,6 +3532,7 @@ msgstr "Appliquer les filtres"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_quick_note_card
 msgid "Archive"
 msgstr "Archiver"
 
@@ -3582,7 +3669,7 @@ msgstr "Assigné"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_search
 msgid "Assigned Staff"
-msgstr "Assigné à"
+msgstr "Personnel assigné"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.activity_list_table
@@ -3770,6 +3857,8 @@ msgstr ""
 "rapport de présences."
 
 #. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
 #. odoo-javascript
 #: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic._timesheet_card
@@ -4110,6 +4199,7 @@ msgstr "Les cliniques sont réservées aux thérapeutes."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_sheet
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_security
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_sheet
 msgid "Close"
 msgstr "Fermer"
 
@@ -4354,6 +4444,7 @@ msgstr "La fin de la couverture doit être après son début."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_add_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_new_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_event_recurrence_wizard
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "Create"
 msgstr "Créer"
 
@@ -4508,6 +4599,7 @@ msgstr "Créé le"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__create_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__create_uid
 msgid "Created by"
 msgstr "Créé par"
 
@@ -4546,6 +4638,7 @@ msgstr "Créé par"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__create_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__create_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__create_date
 msgid "Created on"
 msgstr "Créé le"
 
@@ -4595,7 +4688,7 @@ msgstr ""
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
 msgid "Dismiss"
-msgstr "Annuler"
+msgstr "Ignorer"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_create_player
@@ -4851,6 +4944,8 @@ msgstr "Date de la blessure"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__dob_a
 msgid "Date of birth"
 msgstr "Date de naissance"
 
@@ -5158,6 +5253,7 @@ msgstr "Traitées"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__display_name
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__display_name
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__display_name
 msgid "Display Name"
 msgstr "Nom affiché"
 
@@ -5181,7 +5277,7 @@ msgstr ""
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_line__role__doctor
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__team_role_mass_assign_wizard__bulk_role__doctor
 msgid "Doctor"
-msgstr "Docteur"
+msgstr "Médecin"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__document_count
@@ -5219,7 +5315,7 @@ msgstr "Nom du document"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
 msgid "Document uploaded successfully."
-msgstr "Document téléchargé avec succès."
+msgstr "Document téléversé avec succès."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -5295,6 +5391,7 @@ msgstr "Chaque partenaire ne peut être lié qu'à une seule équipe."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_quick_note_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_timesheet_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_row
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
 msgid "Edit"
 msgstr "Modifier"
 
@@ -5514,7 +5611,7 @@ msgstr "Erreur"
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
 msgid "Error requesting removal: %s"
-msgstr "Erreur lors de la demande de suppression: %s"
+msgstr "Erreur lors de la demande de retrait : %s"
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -5590,6 +5687,7 @@ msgstr "Fin de l'événement:"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_form_calendar_popup
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
 msgid "Event Name"
 msgstr "Nom de l'événement"
 
@@ -5646,6 +5744,7 @@ msgstr "Horaires de l'événement"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_search
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
 msgid "Event Type"
 msgstr "Type d'événement"
 
@@ -5664,13 +5763,13 @@ msgstr "Événement annulé. Raison : %s"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_event.py:0
-msgid "Event cancelled: %s"
-msgstr "Événement annulé : %s"
+msgid "Le Fit Crew — Event cancelled: %s"
+msgstr "Le Fit Crew — Événement annulé : %s"
 
 #. module: bemade_sports_clinic
 #: model:mail.template,subject:bemade_sports_clinic.mail_template_event_cancelled
-msgid "Event cancelled: {{ object.name }}"
-msgstr "Événement annulé : {{ object.name }}"
+msgid "Le Fit Crew — Event cancelled: {{ object.name }}"
+msgstr "Le Fit Crew — Événement annulé : {{ object.name }}"
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -5695,8 +5794,8 @@ msgstr "Couverture d'événement · %s"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_event.py:0
-msgid "Event deleted: %s"
-msgstr "Événement supprimé : %s"
+msgid "Le Fit Crew — Event deleted: %s"
+msgstr "Le Fit Crew — Événement supprimé : %s"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_event__duration
@@ -5765,6 +5864,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_breadcrumbs_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_list
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_home
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
 msgid "Events"
 msgstr "Événements"
 
@@ -5870,7 +5970,7 @@ msgstr "Notes externes (visibles par les entraîneurs)"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
 msgid "Failed to upload document. Please try again."
-msgstr "Échec du téléchargement du document. Veuillez réessayer."
+msgstr "Échec du téléversement du document. Veuillez réessayer."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
@@ -5911,13 +6011,13 @@ msgstr "Père"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.activity_list_table
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_sheets
-msgid "Feedback (optional)"
-msgstr "Feedback (optionnel)"
+msgid "Comment (optional)"
+msgstr "Commentaire (facultatif)"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_activity_detail
 msgid "Feedback (optional):"
-msgstr "Feedback (optionnel):"
+msgstr "Commentaire (facultatif) :"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
@@ -5969,6 +6069,7 @@ msgstr "Prénom <span class=\"text-danger\">*</span>"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_players
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "First name"
 msgstr "Prénom"
 
@@ -5998,23 +6099,23 @@ msgstr "Première visite"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/res_users.py:0
-msgid "FitCrew — daily briefing / sommaire quotidien"
+msgid "Le Fit Crew — daily briefing / sommaire quotidien"
 msgstr ""
 
 #. module: bemade_sports_clinic
 #: model:mail.template,subject:bemade_sports_clinic.mail_template_urgent_summary
-msgid "FitCrew — mises à jour urgentes / urgent updates"
+msgid "Le Fit Crew — mises à jour urgentes / urgent updates"
 msgstr ""
 
 #. module: bemade_sports_clinic
 #: model:mail.template,subject:bemade_sports_clinic.mail_template_morning_digest
-msgid "FitCrew — sommaire quotidien / daily briefing"
+msgid "Le Fit Crew — sommaire quotidien / daily briefing"
 msgstr ""
 
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
-msgid "FitCrew — urgent updates / mises à jour urgentes (%s)"
+msgid "Le Fit Crew — urgent updates / mises à jour urgentes (%s)"
 msgstr ""
 
 #. module: bemade_sports_clinic
@@ -6180,7 +6281,7 @@ msgstr "Grouper par"
 #. module: bemade_sports_clinic
 #: model:ir.actions.server,name:bemade_sports_clinic.ir_cron_handle_pending_removals_ir_actions_server
 msgid "Handle Pending Player Removals"
-msgstr "Gérer les suppressions en attente des joueurs"
+msgstr "Gérer les retraits de joueurs en attente"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_wizard__has_blocked_contacts
@@ -6423,6 +6524,7 @@ msgstr "Je suis arrivé(e)"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__id
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__id
 msgid "ID"
 msgstr "Identifiant"
 
@@ -6505,7 +6607,7 @@ msgstr ""
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient__pending_removal
 msgid "Indicates if this player has a pending removal request"
-msgstr "Indique si ce joueur a une demande de suppression en attente"
+msgstr "Indique si ce joueur a une demande de retrait en attente"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_treatment_note__author_initials
@@ -6988,6 +7090,7 @@ msgstr "Dernière activité de joueur visible par le professionnel de la santé"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__write_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__write_uid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__write_uid
 msgid "Last Updated by"
 msgstr "Dernière mise à jour par"
 
@@ -7027,6 +7130,7 @@ msgstr "Dernière mise à jour par"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_org_staff_promote_wizard_line__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__write_date
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__write_date
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__write_date
 msgid "Last Updated on"
 msgstr "Dernière mise à jour le"
 
@@ -7056,6 +7160,7 @@ msgstr "Dernière note interne"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_players
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "Last name"
 msgstr "Nom de famille"
 
@@ -7332,6 +7437,7 @@ msgstr "Équipes manquantes (noms)"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_contact_fields
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "Mobile"
 msgstr "Cellulaire"
 
@@ -7481,6 +7587,9 @@ msgstr "S/O"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_contact_fields
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_account
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__name
 msgid "Name"
 msgstr "Nom"
 
@@ -7555,6 +7664,7 @@ msgstr "Nouveau mot de passe"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_venue_sheet
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
 msgid "New venue"
 msgstr "Nouveau lieu"
 
@@ -7599,6 +7709,7 @@ msgid "Next Activity Type"
 msgstr "Type de la prochaine activité"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__match_status__no
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__practice_status__no
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_injury__parental_consent__no
@@ -7607,6 +7718,9 @@ msgstr "Type de la prochaine activité"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_add_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_sheets
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+#: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "No"
 msgstr "Non"
 
@@ -7683,7 +7797,7 @@ msgstr "Aucune blessure active au dossier."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activities
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 msgid "No activities found"
-msgstr "Aucun activités trouvé"
+msgstr "Aucune activité trouvée"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
@@ -7844,7 +7958,7 @@ msgstr "Aucun document disponible"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
 msgid "No documents uploaded"
-msgstr "Aucun document téléchargé"
+msgstr "Aucun document téléversé"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
@@ -8141,6 +8255,7 @@ msgstr "Note mise à jour."
 #: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_breadcrumbs_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_home
+#: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
 msgid "Notepad"
 msgstr "Bloc-notes"
 
@@ -8290,8 +8405,9 @@ msgstr ""
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/sports_team.py:0
-msgid "Only internal users can change a team's parent organization."
+msgid "Only clinic administrators can change a team's parent organization."
 msgstr ""
+"Seuls les administrateurs de la clinique peuvent changer l'organisation d'une équipe."
 
 #. module: bemade_sports_clinic
 #: model:ir.model.constraint,message:bemade_sports_clinic.constraint_sports_organization_staff_override_override_team_unique
@@ -8348,6 +8464,23 @@ msgstr ""
 msgid "Only treatment professionals can dismiss the team announcement."
 msgstr ""
 "Seuls les professionnels de la santé peuvent archiver l'annonce d'équipe."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_injury.py:0
+msgid "Only treatment professionals can edit an injury's external notes."
+msgstr ""
+"Seuls les thérapeutes peuvent modifier les notes externes d'une blessure."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_injury
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_created
+msgid ""
+"Only treatment professionals can edit the external notes: your change to "
+"them was not saved."
+msgstr ""
+"Seuls les thérapeutes peuvent modifier les notes externes : votre "
+"modification n'a pas été enregistrée."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -8696,7 +8829,7 @@ msgstr "Données de partenaire associées à l'utilisateur"
 #: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_clinics
 msgid "Past"
-msgstr "Passées"
+msgstr "Passés"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_breadcrumbs_sports_clinic
@@ -8719,7 +8852,7 @@ msgstr "Feuilles de temps passées"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_treatment_note_search
 msgid "Patient"
-msgstr "Patient dans une clinique de médecine sportive."
+msgstr "Patient"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_form
@@ -8874,7 +9007,7 @@ msgstr "En pause"
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__pending_removal
 msgid "Pending Removal"
-msgstr "Suppression en attente"
+msgstr "Retrait en attente"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
@@ -9009,6 +9142,8 @@ msgstr "Matchs autorisés"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_quick_note_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__patient_id
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__patient_a_id
 msgid "Player"
 msgstr "Joueur"
 
@@ -9016,7 +9151,7 @@ msgstr "Joueur"
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Player %(player)s removed from team %(team)s by %(user)s"
-msgstr "Joueur %(player)s supprimé de l'équipe %(team)s par %(user)s"
+msgstr "Joueur %(player)s retiré de l'équipe %(team)s par %(user)s"
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -9029,7 +9164,7 @@ msgstr ""
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Player %s has been requested for removal from the team. Please review."
 msgstr ""
-"Joueur %s a été demandé pour être supprimé de l'équipe. Veuillez examiner."
+"Le retrait du joueur %s de l'équipe a été demandé. Veuillez examiner la demande."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -9064,26 +9199,26 @@ msgstr "Joueur associé"
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Player Removal Request"
-msgstr "Demande de suppression de joueur"
+msgstr "Demande de retrait de joueur"
 
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Player Removal Request\n"
-msgstr "Demande de suppression de joueur\n"
+msgstr "Demande de retrait de joueur\n"
 
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Player Removal Request: %s"
-msgstr "Demande de suppression de joueur: %s"
+msgstr "Demande de retrait de joueur : %s"
 
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Player Removed"
-msgstr "Joueur supprimé"
+msgstr "Joueur retiré"
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -9104,7 +9239,7 @@ msgstr "Joueur ajouté à l'équipe."
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
 msgid "Player has been successfully removed from the team."
-msgstr "Joueur supprimé avec succès de l'équipe."
+msgstr "Joueur retiré de l'équipe avec succès."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -9134,7 +9269,7 @@ msgstr "Joueur ou équipe introuvable."
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Player successfully removed from team."
-msgstr "Joueur supprimé avec succès de l'équipe."
+msgstr "Joueur retiré de l'équipe avec succès."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -9142,8 +9277,7 @@ msgstr "Joueur supprimé avec succès de l'équipe."
 msgid ""
 "Player successfully removed from team. A removal request has been created."
 msgstr ""
-"Joueur supprimé avec succès de l'équipe. Une demande de suppression a été "
-"créée."
+"Joueur retiré de l'équipe avec succès. Une demande de retrait a été créée."
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_merge_wizard__dst_patient_id
@@ -9182,6 +9316,7 @@ msgstr "Joueur : %s\n"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_player_removal_line_list
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
 msgid "Players"
 msgstr "Joueurs"
 
@@ -9229,9 +9364,11 @@ msgstr "Veuillez entrer une date de naissance valide (AAAA-MM-JJ)."
 
 #. module: bemade_sports_clinic
 #. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
 #: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
 #: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_note_edit_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
 msgid "Please enter a valid date."
 msgstr "Veuillez saisir une date valide."
 
@@ -9241,6 +9378,8 @@ msgstr "Veuillez saisir une date valide."
 #: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_activity
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_activities
+#: code:addons/bemade_sports_clinic/controllers/app_critical_items.py:0
+#: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
 msgid "Please fill in all required fields."
 msgstr "Veuillez remplir tous les champs obligatoires."
 
@@ -9272,7 +9411,7 @@ msgstr "Veuillez fournir une raison d'annulation."
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
 msgid "Please provide a reason for the removal request"
-msgstr "Veuillez fournir une raison pour la demande de suppression"
+msgstr "Veuillez fournir une raison pour la demande de retrait"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_create
@@ -9317,7 +9456,7 @@ msgstr "Veuillez voir le thérapeute."
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
 msgid "Please select a file to upload."
-msgstr "Veuillez select a file to upload."
+msgstr "Veuillez sélectionner un fichier à téléverser."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -9744,7 +9883,7 @@ msgid ""
 "%s\n"
 "\n"
 msgstr ""
-"Motif de la demande de suppression :\n"
+"Motif de la demande de retrait :\n"
 "%s\n"
 "\n"
 
@@ -9752,7 +9891,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_activity_reassign_modal
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_sheets
 msgid "Reassign Activity"
-msgstr "Reassigner l'activité"
+msgstr "Réassigner l'activité"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_activity_reassign_modal
@@ -9951,6 +10090,7 @@ msgstr "Enregistré pour"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_contact_fields
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
 msgid "Relationship"
 msgstr "Relation"
 
@@ -9965,7 +10105,7 @@ msgstr "Retrait non autorisé"
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Removal Request Submitted"
-msgstr "Demande de suppression soumise"
+msgstr "Demande de retrait soumise"
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -9974,8 +10114,7 @@ msgid ""
 "Removal request submitted for player %(player)s from team %(team)s by "
 "%(user)s"
 msgstr ""
-"Demande de suppression soumise pour le joueur %(player)s de l'équipe "
-"%(team)s par %(user)s"
+"Demande de retrait soumise pour le joueur %(player)s de l'équipe %(team)s par %(user)s"
 
 #. module: bemade_sports_clinic
 #. odoo-javascript
@@ -9983,6 +10122,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_player_removal_line__selected
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_player_removal_wizard_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
 msgid "Remove"
 msgstr "Retirer"
 
@@ -10024,7 +10164,7 @@ msgstr "Retiré de la dernière équipe %s. Le joueur n'a plus d'équipe."
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Removed from team %s by %s"
-msgstr "Le joueur a été supprimé de l'équipe %s par %s"
+msgstr "Le joueur a été retiré de l'équipe %s par %s"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,help:bemade_sports_clinic.field_sports_team_digest__digest_html
@@ -10180,7 +10320,7 @@ msgstr "Résoudre l'inscription"
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_injury__stage__resolved
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_injury_view_search_audit
 msgid "Resolved"
-msgstr "Résolu"
+msgstr "Résolue"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_digest__timezone
@@ -10478,6 +10618,8 @@ msgstr "Filtre de portée"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_teams
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_timesheets
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_sheet
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
 msgid "Search"
 msgstr "Rechercher"
 
@@ -10610,6 +10752,7 @@ msgstr "Envoyer les notifications urgentes agrégées"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_contact__sequence
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_staff__sequence
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_team_user_rank__sequence
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__sequence
 msgid "Sequence"
 msgstr "Séquence"
 
@@ -11005,7 +11148,7 @@ msgstr "État pour les nouveaux événements"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_search
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_timesheets
 msgid "Status"
-msgstr "Étape"
+msgstr "Statut"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
@@ -11036,6 +11179,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_status_line
 msgid "Status changed"
 msgstr "Statut modifié"
 
@@ -11320,7 +11464,7 @@ msgstr "Statut par équipe"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/res_users.py:0
-msgid "Team announcement / Annonce de l'équipe:"
+msgid "Team announcement / Annonce d'équipe:"
 msgstr ""
 
 #. module: bemade_sports_clinic
@@ -11426,6 +11570,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_staff_grant_view_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_role_mass_assign_line_tree
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__teams_a
 msgid "Teams"
 msgstr "Équipes"
 
@@ -11921,8 +12067,9 @@ msgstr "Produit de couverture thérapeute (BC fournisseur)"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_create
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
 msgid "Therapist End"
-msgstr "Fin du thérapeute"
+msgstr "Fin de la couverture"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__therapist_end
@@ -11943,6 +12090,7 @@ msgstr "Partenaire thérapeute"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_create
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
 msgid "Therapist Start"
 msgstr "Début de la couverture"
 
@@ -12410,7 +12558,7 @@ msgstr "Suivez les soins et le progrès de vos patients."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_create
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_event_edit
 msgid "Training"
-msgstr "Formation"
+msgstr "Entraînement"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__training_recommendation
@@ -12421,6 +12569,7 @@ msgstr "Formation"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_row_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_detail_head
 msgid "Training Recommendation"
 msgstr "Recommandation d'entraînement"
 
@@ -12817,7 +12966,7 @@ msgstr "Jusqu'à"
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_injury__stage__unverified
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_injury_view_search_audit
 msgid "Unverified"
-msgstr "Non vérifié"
+msgstr "Non vérifiée"
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -12876,8 +13025,9 @@ msgstr "Date de téléversement"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 msgid "Upload Document"
-msgstr "Télécharger un document"
+msgstr "Téléverser un document"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
@@ -12887,7 +13037,7 @@ msgstr "Téléverser un document"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
 msgid "Upload New Document"
-msgstr "Télécharger un nouveau document"
+msgstr "Téléverser un nouveau document"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_injury_document__created_by_id
@@ -13309,11 +13459,15 @@ msgid "Wrong password."
 msgstr "Mot de passe erroné."
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__match_status__yes
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__practice_status__yes
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_injury__parental_consent__yes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_add_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+#: code:addons/bemade_sports_clinic/models/patient.py:0
 msgid "Yes"
 msgstr "Oui"
 
@@ -13322,7 +13476,7 @@ msgstr "Oui"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_activity_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_sheets
 msgid "Yes, Cancel Activity"
-msgstr "Oui, Annuler l'activité"
+msgstr "Oui, annuler l'activité"
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__practice_status__no_contact
@@ -13696,12 +13850,10 @@ msgstr "Votre mot de passe a été changé."
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
-msgid ""
-"Your removal request has been submitted and will be processed by an "
-"administrator."
+msgid "Your removal request has been submitted to the team's head therapist."
 msgstr ""
-"Votre demande de retrait a été soumise et sera traitée par un "
-"administrateur."
+"Votre demande de retrait a été soumise et sera traitée par le thérapeute en "
+"chef de l'équipe."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -13713,10 +13865,12 @@ msgstr ""
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
-msgid "Your request to remove %s from the team has been submitted for review."
+msgid ""
+"Your request to remove %s from the team has been submitted to the team's "
+"head therapist."
 msgstr ""
 "Votre demande de retrait de %s de l'équipe a été soumise et sera traitée par"
-" un administrateur."
+" le thérapeute en chef de l'équipe."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.clinic_kiosk_form
@@ -14492,8 +14646,8 @@ msgstr "Ouvrez cette page dans Chrome."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_install
-msgid "Open this page in Safari."
-msgstr "Ouvrez cette page dans Safari."
+msgid "Open this page in Safari or Chrome."
+msgstr "Ouvrez cette page dans Safari ou Chrome."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
@@ -14513,6 +14667,7 @@ msgstr "Changements récents"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+#: code:addons/bemade_sports_clinic/controllers/app_critical_items.py:0
 msgid "Record not found."
 msgstr "Enregistrement introuvable."
 
@@ -14610,13 +14765,13 @@ msgstr "Votre texte non publié a été gardé sur cet appareil."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_install
-msgid "at the bottom of the screen."
-msgstr "au bas de l'écran."
+msgid "at the bottom of the screen (Safari) or in the address bar (Chrome)."
+msgstr "au bas de l'écran (Safari) ou dans la barre d'adresse (Chrome)."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_install
-msgid "iPhone and iPad (Safari)"
-msgstr "iPhone et iPad (Safari)"
+msgid "iPhone and iPad (Safari or Chrome)"
+msgstr "iPhone et iPad (Safari ou Chrome)"
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -14730,6 +14885,7 @@ msgstr "<span>Filtres</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_injury_new
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_new_form
 msgid "<span>Hide from coaches</span>"
 msgstr "<span>Cacher aux entraîneurs</span>"
 
@@ -14748,7 +14904,7 @@ msgstr "<span>Pratique :</span>"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_row
 msgid "<span>Reassign</span>"
-msgstr "<span>Réaffecter</span>"
+msgstr "<span>Réassigner</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_row
@@ -14811,7 +14967,7 @@ msgstr "Activité marquée comme faite."
 #: code:addons/bemade_sports_clinic/controllers/task_management_portal.py:0
 #: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
 msgid "Activity reassigned."
-msgstr "Activité réaffectée."
+msgstr "Activité réassignée."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -14877,6 +15033,8 @@ msgstr "Date inconnue"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_quick_note_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_timesheet_sheets
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
 msgid "Delete"
 msgstr "Supprimer"
 
@@ -14962,6 +15120,7 @@ msgstr "Statut de la blessure"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+#: code:addons/bemade_sports_clinic/controllers/app_critical_items.py:0
 msgid "Invalid value."
 msgstr "Valeur invalide."
 
@@ -15143,10 +15302,14 @@ msgid "Today (%(count)s)"
 msgstr "Aujourd'hui (%(count)s)"
 
 #. module: bemade_sports_clinic
+#. odoo-python
 #. odoo-javascript
+#: code:addons/bemade_sports_clinic/models/patient_medical_undo.py:0
 #: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
 #: code:addons/bemade_sports_clinic/static/src/js/sc_status_pills.js:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 msgid "Undo"
 msgstr "Annuler"
 
@@ -15264,24 +15427,22 @@ msgstr ""
 "Changements récents</span>"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_change_detail
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_row_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_detail_head
 msgid ""
 "<i class=\"fa fa-clock-o\" title=\"Estimated Return\"/>\n"
-"                <span class=\"ms-1\">Predicted return:</span>"
+"            <span class=\"ms-1\">Predicted return:</span>"
 msgstr ""
 "<i class=\"fa fa-clock-o\" title=\"Retour estimé\"/>\n"
-"                <span class=\"ms-1\">Retour prévu :</span>"
+"            <span class=\"ms-1\">Retour prévu :</span>"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_change_detail
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_row_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_detail_head
 msgid ""
 "<i class=\"fa fa-stethoscope\" title=\"Last Consultation Date\"/>\n"
-"                <span class=\"ms-1\">Last consultation:</span>"
+"            <span class=\"ms-1\">Last consultation:</span>"
 msgstr ""
 "<i class=\"fa fa-stethoscope\" title=\"Date de la dernière consultation\"/>\n"
-"                <span class=\"ms-1\">Dernière consultation :</span>"
+"            <span class=\"ms-1\">Dernière consultation :</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_change_detail
@@ -15315,7 +15476,7 @@ msgstr "Blessures résolues"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 msgid "<span>Team announcement</span>"
-msgstr "<span>Annonce de l'équipe</span>"
+msgstr "<span>Annonce d'équipe</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
@@ -15466,16 +15627,20 @@ msgstr "<span>Archivé</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
 msgid "On the team"
 msgstr "Dans l'équipe"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
 msgid "Add to team"
 msgstr "Ajouter à l'équipe"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
 msgid "Reactivate and add"
 msgstr "Réactiver et ajouter"
 
@@ -15620,6 +15785,7 @@ msgstr "Dernière mise à jour de la recommandation d'entraînement"
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/patient.py:0
+#: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
 msgid "Updated on %(date)s by %(author)s"
 msgstr "Mis à jour le %(date)s par %(author)s"
 
@@ -15751,8 +15917,21 @@ msgstr "<small class=\"o_sc_hint\">Plusieurs fichiers à la fois — 10 Mo maxim
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
-msgid "<span class=\"o_sc_dropzone_text\">Choose files or drop them here</span>"
-msgstr "<span class=\"o_sc_dropzone_text\">Choisissez des fichiers ou déposez-les ici</span>"
+msgid ""
+"<span class=\"o_sc_dropzone_text\">Choose files or drop them here</span>\n"
+"                    <span class=\"o_sc_dropzone_text_touch\">Add files</span>"
+msgstr ""
+"<span class=\"o_sc_dropzone_text\">Choisissez des fichiers ou déposez-les ici</span>\n"
+"                    <span class=\"o_sc_dropzone_text_touch\">Ajouter des fichiers</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
+msgid ""
+"<span class=\"o_sc_btn_idle\">Upload</span>\n"
+"                    <span class=\"o_sc_btn_busy\" hidden=\"hidden\"><span class=\"o_sc_spinner\" aria-hidden=\"true\"/>Uploading…</span>"
+msgstr ""
+"<span class=\"o_sc_btn_idle\">Téléverser</span>\n"
+"                    <span class=\"o_sc_btn_busy\" hidden=\"hidden\"><span class=\"o_sc_spinner\" aria-hidden=\"true\"/>Téléversement…</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
@@ -15926,3 +16105,1223 @@ msgstr ""
 "Technique (tâche 1628) : une tâche « Fiche incomplète » a déjà été émise "
 "pour ce joueur. Une tâche marquée comme faite ou annulée n'est jamais émise "
 "de nouveau."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "%(head)s: %(details)s"
+msgstr "%(head)s : %(details)s"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "%(what)s (%(qualifiers)s)"
+msgstr "%(what)s (%(qualifiers)s)"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "%(what)s: %(level)s"
+msgstr "%(what)s : %(level)s"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid ""
+"<i class=\"fa fa-exclamation-triangle\"/> <strong>Allergies / medical "
+"alert</strong>"
+msgstr ""
+"<i class=\"fa fa-exclamation-triangle\"/> <strong>Allergies / alerte "
+"médicale</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "<span>EpiPen</span>"
+msgstr "<span>EpiPen</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid "<strong>Allergies / medical alert:</strong>"
+msgstr "<strong>Allergies / alerte médicale :</strong>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_search
+msgid "Alerts to validate"
+msgstr "Alertes à valider"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergies
+msgid "Allergies (legacy)"
+msgstr "Allergies (ancien champ)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergy_details
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Allergy details"
+msgstr "Détails des allergies"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_incomplete_todo.py:0
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergy_level
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Allergy level"
+msgstr "Niveau d'allergies"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+msgid "Edit in the app."
+msgstr "Modifier dans l'application."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergy_epipen
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "EpiPen"
+msgstr "EpiPen"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_form
+msgid "Health"
+msgstr "Santé"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+#: code:addons/bemade_sports_clinic/models/patient_incomplete_todo.py:0
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_critical_item__family__medical_alert
+msgid "Medical alert"
+msgstr "Alerte médicale"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__medical_alert_details
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Medical alert details"
+msgstr "Détails de l'alerte médicale"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__medical_alert_level
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Medical alert level"
+msgstr "Niveau d'alerte médicale"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.act_window,name:bemade_sports_clinic.action_patient_medical_review
+#: model:ir.ui.menu,name:bemade_sports_clinic.sports_clinic_medical_review_menu
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_list_medical_review
+msgid "Medical alerts to validate"
+msgstr "Alertes médicales à valider"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "No details."
+msgstr "Aucun détail."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.actions.act_window,help:bemade_sports_clinic.action_patient_medical_review
+msgid "No medical alert to validate."
+msgstr "Aucune alerte médicale à valider."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__allergy_level__none
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__medical_alert_level__none
+msgid "None known"
+msgstr "Aucune"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Not specified"
+msgstr "Non renseigné"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__allergy_level__minor
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__medical_alert_level__minor
+msgid "Not urgent"
+msgstr "Non urgente"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__medical_history_other
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_player_form_body
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+msgid "Other medical history"
+msgstr "Autres antécédents médicaux"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient__medical_alert_review
+msgid ""
+"Pre-filled from the former free-text allergies field: check the levels and "
+"details, then untick."
+msgstr ""
+"Prérempli à partir de l'ancien champ texte des allergies : vérifiez les "
+"niveaux et les détails, puis décochez."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__medical_alert_review
+msgid "To validate"
+msgstr "À valider"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__allergy_level__urgent
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__medical_alert_level__urgent
+msgid "Urgent – life-threatening"
+msgstr "Urgente – risque vital"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
+#: code:addons/bemade_sports_clinic/models/sc_phone.py:0
+msgid "Invalid phone number."
+msgstr "Numéro de téléphone invalide."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__sc_phone_invalid
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_contact__sc_phone_invalid
+msgid "Phone number to fix"
+msgstr "Numéro à corriger"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_search
+msgid "Phone numbers to fix"
+msgstr "Numéros à corriger"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sc_phone_mixin
+msgid "Sports clinic: phone normalization"
+msgstr "Clinique sportive : normalisation des numéros de téléphone"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sports_patient__sc_phone_invalid
+msgid ""
+"The player's phone or an emergency contact's mobile is not a valid phone "
+"number."
+msgstr ""
+"Le téléphone du joueur ou le cellulaire d'un contact d'urgence n'est pas un "
+"numéro de téléphone valide."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "Archived player"
+msgstr "Joueur archivé"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
+msgid "No results"
+msgstr "Aucun résultat"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_sheet
+msgid "Players, teams, events…"
+msgstr "Joueurs, équipes, événements…"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
+msgid "Type at least 2 letters"
+msgstr "Tapez au moins 2 lettres"
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_picker.js:0
+msgid "Cleared: not in the chosen team."
+msgstr "Effacé : pas dans l'équipe choisie."
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_picker.js:0
+msgid "Cleared: not one of the chosen player's injuries."
+msgstr "Effacé : pas une des blessures du joueur choisi."
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_picker.js:0
+msgid "Keep typing to narrow the list."
+msgstr "Continuez à taper pour réduire la liste."
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_picker.js:0
+msgid "Type to search…"
+msgstr "Tapez pour chercher…"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Please choose a level."
+msgstr "Choisissez un niveau."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Choose a level other than « None known » to add details."
+msgstr "Choisissez un autre niveau que « Aucune » pour ajouter des détails."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "— Choose —"
+msgstr "— Choisir —"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "<span>Create a player</span>"
+msgstr "<span>Créer un joueur</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "<span>Emergency contact (optional)</span>"
+msgstr "<span>Contact d'urgence (facultatif)</span>"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_player_add.py:0
+msgid "An emergency contact needs a name and a mobile."
+msgstr "Un contact d'urgence doit avoir un nom et un cellulaire."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "No existing player matches."
+msgstr "Aucun joueur existant ne correspond."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_list_medical_review
+msgid "Open"
+msgstr "Ouvrir"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+msgid "Player created"
+msgstr "Joueur créé"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "Possible matches:"
+msgstr "Joueurs possibles :"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "Same name and date of birth: open or add this player instead."
+msgstr "Même nom et même date de naissance : ouvrez ou ajoutez plutôt ce joueur."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "Type a first and a last name to look for existing players."
+msgstr "Tapez un prénom et un nom pour chercher les joueurs existants."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
+msgid "Remove %s?"
+msgstr "Retirer %s ?"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
+msgid ""
+"You will no longer have access to this player: you are not a member of any "
+"of their other teams."
+msgstr ""
+"Vous n'aurez plus accès à ce joueur, car vous n'êtes membre d'aucune de ses "
+"autres équipes."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
+msgid "Remove and leave"
+msgstr "Retirer et quitter"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "%(player)s removed from %(team)s"
+msgstr "%(player)s retiré de %(team)s"
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_fragments.js:0
+msgid "You no longer have access to this page."
+msgstr "Vous n'avez plus accès à cette page."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Add a life-threatening item"
+msgstr "Ajouter un élément à risque vital"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Add the life-threatening item first: « Urgent » needs at least one."
+msgstr ""
+"Ajoutez d'abord l'élément à risque vital : « Urgent » en exige au moins un."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergy_updated_info
+msgid "Allergies updated"
+msgstr "Allergies mises à jour"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_critical_item__family__allergy
+msgid "Allergy"
+msgstr "Allergie"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergy_critical_ids
+msgid "Critical allergies"
+msgstr "Allergies critiques"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__medical_alert_critical_ids
+msgid "Critical conditions"
+msgstr "Conditions critiques"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__name
+msgid "Critical item"
+msgstr "Élément critique"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__critical_item_ids
+msgid "Critical items"
+msgstr "Éléments critiques"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_patient_critical_item
+msgid "Critical medical item (life-threatening allergy / condition)"
+msgstr "Élément médical critique (allergie / condition à risque vital)"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
+msgid "EpiPen goes with an allergy only."
+msgstr "L'EpiPen ne s'applique qu'à une allergie."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__family
+msgid "Family"
+msgstr "Famille"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__life_threatening
+msgid "Life-threatening"
+msgstr "Risque vital"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_form
+msgid "Life-threatening items"
+msgstr "Éléments à risque vital"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__medical_alert_updated_info
+msgid "Medical alert updated"
+msgstr "Alerte médicale mise à jour"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_critical_items.py:0
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+#: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
+msgid "Only the therapists can change the medical information."
+msgstr "Seuls les thérapeutes peuvent modifier les informations médicales."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__action
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "What to do"
+msgstr "Conduite à tenir"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
+msgid "added"
+msgstr "ajouté"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
+msgid "changed"
+msgstr "modifié"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
+msgid "removed"
+msgstr "retiré"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "A player already has this name and date of birth: %(name)s (#%(id)s)."
+msgstr ""
+"Un joueur porte déjà ce nom et cette date de naissance : %(name)s (#%(id)s)."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "Checking for existing players…"
+msgstr "Vérification des joueurs existants…"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
+msgid "Complete:"
+msgstr "Complétez :"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_medical_undo.py:0
+msgid "Details cleared"
+msgstr "Détails effacés"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "Emergency contact: name and mobile are required together"
+msgstr "Contact d'urgence : nom et cellulaire requis ensemble"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__patient_b_id
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Possible duplicate"
+msgstr "Doublon possible"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_medical_undo__snapshot
+msgid "Snapshot"
+msgstr "Instantané"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid ""
+"The player could not be created. Please review your inputs and try again."
+msgstr ""
+"Le joueur n'a pas pu être créé. Vérifiez les informations saisies et "
+"réessayez."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_medical_undo.py:0
+msgid "These details were changed since; they can no longer be restored."
+msgstr ""
+"Ces détails ont été modifiés depuis ; ils ne peuvent plus être restaurés."
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_critical_items.py:0
+#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
+msgid "This change can no longer be undone."
+msgstr "Ce changement ne peut plus être annulé."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "This player already exists — open them or add them to the team above"
+msgstr "Ce joueur existe déjà — ouvrez-le ou ajoutez-le à l'équipe ci-dessus"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_medical_undo__token
+msgid "Token"
+msgstr "Jeton"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_patient_medical_undo
+msgid "Undo snapshot of a cleared allergy / medical alert"
+msgstr "Instantané d'annulation d'une allergie / alerte médicale effacée"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "date of birth"
+msgstr "date de naissance"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "first name"
+msgstr "prénom"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "last name"
+msgstr "nom"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "team"
+msgstr "équipe"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_patient_owner_guard.py:0
+msgid "This record can't be moved to another player."
+msgstr "Cet élément ne peut pas être déplacé vers un autre joueur."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
+msgid "A critical item can't be moved to another player or family."
+msgstr "Un élément critique ne peut pas être déplacé vers un autre joueur ou une autre famille."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "A player with this identity already exists — ask a manager."
+msgstr "Un joueur avec cette identité existe déjà — demandez à un responsable."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_player_add.py:0
+msgid "Please choose a relationship from the list."
+msgstr "Veuillez choisir une relation dans la liste."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_injury.py:0
+msgid "Verify injury"
+msgstr "Vérifier la blessure"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
+msgid "Earlier"
+msgstr "Passées"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_sheets
+msgid "Delete activity"
+msgstr "Supprimer l'activité"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_sheets
+msgid "Delete this activity?"
+msgstr "Supprimer cette activité ?"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_sheets
+msgid "Yes, delete"
+msgstr "Oui, supprimer"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+msgid "Announcement archived"
+msgstr "Annonce archivée"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/task_management_portal.py:0
+#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
+msgid "Activity deleted."
+msgstr "Activité supprimée."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "Announcement restored."
+msgstr "Annonce restaurée."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "This announcement can no longer be restored."
+msgstr "Cette annonce ne peut plus être restaurée."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "Restored"
+msgstr "Restaurée"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_player_add.py:0
+msgid "Player creation undone."
+msgstr "Création du joueur annulée."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
+msgid ""
+"This player can no longer be undone; remove or archive them from their page."
+msgstr ""
+"Ce joueur ne peut plus être annulé ; retirez-le ou archivez-le depuis sa fiche."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+msgid "Which team?"
+msgstr "De quelle équipe ?"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+msgid "<option value=\"\">Choose a team…</option>"
+msgstr "<option value=\"\">Choisissez une équipe…</option>"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "Please choose the team."
+msgstr "Veuillez choisir l'équipe."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
+msgid "You do not have access to this note."
+msgstr "Vous n'avez pas accès à cette note."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_detail
+msgid "Reassign"
+msgstr "Réassigner"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_settings
+msgid "On"
+msgstr "Activé"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_settings
+msgid "Off"
+msgstr "Désactivé"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_settings
+msgid "Receive the daily summary by email"
+msgstr "Recevoir le sommaire quotidien par courriel"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+msgid "Restore event"
+msgstr "Rétablir l'événement"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+msgid "Restore this event? The assigned staff will be notified by email."
+msgstr "Rétablir cet événement ? Le personnel assigné sera avisé par courriel."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+msgid "Yes, restore"
+msgstr "Oui, rétablir"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+msgid "Edit my timesheet"
+msgstr "Modifier ma feuille de temps"
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_app_ui.js:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+msgid "You already have a timesheet for this event."
+msgstr "Vous avez déjà une feuille de temps pour cet événement."
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_app_ui.js:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+msgid "Add another timesheet"
+msgstr "Ajouter une autre feuille"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
+msgid "Event restored."
+msgstr "Événement rétabli."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
+msgid "You don't have permission to restore events."
+msgstr "Vous n'avez pas la permission de rétablir des événements."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
+msgid "Event restored via portal by %s."
+msgstr "Événement rétabli depuis le portail par %s."
+
+#. module: bemade_sports_clinic
+#: model:mail.template,subject:bemade_sports_clinic.mail_template_event_revived
+msgid "Le Fit Crew — Event restored: {{ object.name }}"
+msgstr "Le Fit Crew — Événement rétabli : {{ object.name }}"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "Le Fit Crew — Event restored: %s"
+msgstr "Le Fit Crew — Événement rétabli : %s"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "The event \"%s\" you were assigned to has been restored."
+msgstr "L'événement « %s » auquel vous êtes assigné a été rétabli."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "%s (resolved)"
+msgstr "%s (résolue)"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_user_menu_popup
+msgid "<span>Help</span>"
+msgstr "<span>Aide</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
+msgid "Help on this page"
+msgstr "Aide sur cette page"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "User guide"
+msgstr "Guide d'utilisation"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_more
+msgid "Articles and videos"
+msgstr "Articles et vidéos"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.act_window,name:bemade_sports_clinic.sc_help_article_action
+#: model:ir.ui.menu,name:bemade_sports_clinic.sc_help_article_menu
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_help_article_view_list
+msgid "App help"
+msgstr "Aide de l'application"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sc_help_article
+msgid "App help: page to guide article"
+msgstr "Aide de l'application : page vers article du guide"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sc_help_article__url
+msgid "Article URL"
+msgstr "URL de l'article"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sc_help_article__note
+msgid "Internal note (e.g. the article's title)."
+msgstr "Note interne (p. ex. le titre de l'article)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sc_help_article__key
+msgid "Key"
+msgstr "Clé"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.actions.act_window,help:bemade_sports_clinic.sc_help_article_action
+msgid "Map an app page to its user-guide article."
+msgstr ""
+"Associez une page de l'application à son article du guide d'utilisation."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.constraint,message:bemade_sports_clinic.constraint_sc_help_article_key_unique
+msgid "One article per page key."
+msgstr "Un seul article par clé de page."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_config_settings__sc_help_home_url
+msgid ""
+"Public page of the user guide's home article (/knowledge/article/<id>). Empty: no « Aide » entry in the app."
+msgstr ""
+"Page publique de l'article d'accueil du guide d'utilisation (/knowledge/article/<id>). Vide : aucune entrée « Aide » dans l'application."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid ""
+"Public page of the user guide's home article (/knowledge/article/<id>). The page-by-page articles: Sports Clinic › Administration › App help."
+msgstr ""
+"Page publique de l'article d'accueil du guide d'utilisation (/knowledge/article/<id>). Les articles page par page : Clinique sportive › Administration › Aide de l'application."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_help_article.py:0
+msgid ""
+"The help link must be a public guide article (/knowledge/article/<id>) or an https address."
+msgstr ""
+"Le lien d'aide doit être un article public du guide (/knowledge/article/<id>) ou une adresse https."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sc_help_article__url
+msgid ""
+"The public guide article: /knowledge/article/<id> (or an https address)."
+msgstr ""
+"L'article public du guide : /knowledge/article/<id> (ou une adresse https)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__sc_help_home_url
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "User Guide Home"
+msgstr "Accueil du guide d'utilisation"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.actions.act_window,help:bemade_sports_clinic.sc_help_article_action
+msgid ""
+"Keys: home, teams, team, team.players, players, player, player.injuries, player.info,\n"
+"               player.documents, player.notes, player.activities, injury, notepad, activities, events,\n"
+"               event, calendar, timesheets, clinics, clinic, settings, account, install, search.\n"
+"               An unmapped page opens the guide home (Settings › Sports Clinic › User Guide Home)."
+msgstr ""
+"Clés : home, teams, team, team.players, players, player, player.injuries, player.info,\n"
+"               player.documents, player.notes, player.activities, injury, notepad, activities, events,\n"
+"               event, calendar, timesheets, clinics, clinic, settings, account, install, search.\n"
+"               Une page non associée ouvre l'accueil du guide (Paramètres › Clinique sportive › Accueil du guide d'utilisation)."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_sc_help_article__key
+msgid ""
+"The page's help key: home, teams, team, team.players, players, player, player.injuries, player.info, player.documents, player.notes, player.activities, injury, notepad, activities, events, event, calendar, timesheets, clinics, clinic, settings, account, install, search."
+msgstr ""
+"La clé d'aide de la page : home, teams, team, team.players, players, player, player.injuries, player.info, player.documents, player.notes, player.activities, injury, notepad, activities, events, event, calendar, timesheets, clinics, clinic, settings, account, install, search."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+msgid ""
+"<span hidden=\"hidden\" data-sc-guard-msg=\"coverage\">The coverage end must be after its start.</span>\n"
+"                    <span hidden=\"hidden\" data-sc-guard-msg=\"travel\">The travel end must be after its start.</span>"
+msgstr ""
+"<span hidden=\"hidden\" data-sc-guard-msg=\"coverage\">La fin de la couverture doit être après son début.</span>\n"
+"                    <span hidden=\"hidden\" data-sc-guard-msg=\"travel\">La fin du déplacement doit être après son début.</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event_form
+msgid ""
+"<span hidden=\"hidden\" data-sc-guard-msg=\"dates\">The end must be after the start.</span>\n"
+"                <span hidden=\"hidden\" data-sc-guard-msg=\"coverage\">The coverage end must be after its start.</span>\n"
+"                <span hidden=\"hidden\" data-sc-guard-msg=\"assign\">Only the clinic administration can assign staff to an event of a team you're not part of.</span>"
+msgstr ""
+"<span hidden=\"hidden\" data-sc-guard-msg=\"dates\">La fin doit être après le début.</span>\n"
+"                <span hidden=\"hidden\" data-sc-guard-msg=\"coverage\">La fin de la couverture doit être après son début.</span>\n"
+"                <span hidden=\"hidden\" data-sc-guard-msg=\"assign\">Seule l'administration de la clinique peut assigner du personnel à un événement d'une équipe dont vous ne faites pas partie.</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
+msgid ""
+"<span hidden=\"hidden\" data-sc-guard-msg=\"future\">The resolution date cannot be in the future.</span>"
+msgstr ""
+"<span hidden=\"hidden\" data-sc-guard-msg=\"future\">La date de résolution ne peut pas être dans le futur.</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
+msgid "No connection. Nothing was sent; try again when you are back online."
+msgstr ""
+"Aucune connexion. Rien n'a été envoyé ; réessayez une fois de retour en ligne."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
+msgid "This could not be saved. Please check the form and try again."
+msgstr "Impossible d'enregistrer. Vérifiez le formulaire et réessayez."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid ""
+"Only the clinic administration can assign staff to an event of a team "
+"you're not part of."
+msgstr ""
+"Seule l'administration de la clinique peut assigner du personnel à un "
+"événement d'une équipe dont vous ne faites pas partie."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sports_event.py:0
+msgid "Only treatment professionals can be assigned to an event."
+msgstr "Seuls des professionnels de la santé peuvent être assignés à un événement."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_users__sc_show_done_buttons
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_settings
+msgid "Show « Done » buttons"
+msgstr "Afficher les boutons Terminé"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_settings
+msgid "When off, tap ✓ at the top of a card to finish editing."
+msgstr "Désactivé : touchez ✓ en haut d'une carte pour terminer la modification."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
+msgid "Delete injury"
+msgstr "Supprimer la blessure"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
+msgid "Finish editing"
+msgstr "Terminer la modification"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_return_proposal.py:0
+msgid ""
+"This was the player's last active injury. Clear the predicted return, set "
+"the actual return date and reset their statuses?"
+msgstr ""
+"C'était la dernière blessure active du joueur. Retirer le retour prévu, "
+"inscrire la date de retour réelle et remettre ses statuts ?"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "<span>Born on</span>"
+msgstr "<span>Né(e) le</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "Check the existing player above"
+msgstr "Vérifiez le joueur existant ci-dessus"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_players
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_results
+msgid "Close results"
+msgstr "Résultats approchants"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "Similar players:"
+msgstr "Joueurs similaires :"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "Check the similar players above before creating"
+msgstr "Vérifiez les joueurs similaires ci-dessus avant de créer"
+
+#. module: bemade_sports_clinic
+#: model:ir.actions.act_window,name:bemade_sports_clinic.action_sports_patient_duplicate
+#: model:ir.ui.menu,name:bemade_sports_clinic.sports_clinic_patient_duplicate_menu
+msgid "Possible duplicates"
+msgstr "Doublons possibles"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_duplicate_view_list
+msgid "Find duplicates"
+msgstr "Rechercher les doublons"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_duplicate_view_list
+msgid "Merge…"
+msgstr "Fusionner…"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__dismissed
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_duplicate_view_list
+msgid "Not a duplicate"
+msgstr "Pas un doublon"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_duplicate__kind__exact
+msgid "Same name"
+msgstr "Même nom"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_duplicate__kind__swapped
+msgid "First and last name swapped"
+msgstr "Prénom et nom inversés"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient_duplicate__kind__near
+msgid "Similar name"
+msgstr "Nom semblable"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__same_dob
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_duplicate_view_search
+msgid "Same date of birth"
+msgstr "Même date de naissance"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_patient_duplicate
+msgid "Possible duplicate players"
+msgstr "Doublons de joueurs possibles"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__dob_b
+msgid "Date of birth (duplicate)"
+msgstr "Date de naissance (doublon)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__kind
+msgid "Kind"
+msgstr "Type"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__kind_sequence
+msgid "Kind Sequence"
+msgstr "Ordre du type"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.actions.act_window,help:bemade_sports_clinic.action_sports_patient_duplicate
+msgid "No possible duplicate listed."
+msgstr "Aucun doublon possible listé."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_duplicate_view_search
+msgid "Not duplicates"
+msgstr "Pas des doublons"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_duplicate__teams_b
+msgid "Teams (duplicate)"
+msgstr "Équipes (doublon)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.constraint,message:bemade_sports_clinic.constraint_sports_patient_duplicate_pair_unique
+msgid "This pair is already listed."
+msgstr "Cette paire est déjà listée."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_duplicate_view_search
+msgid "To review"
+msgstr "À examiner"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.actions.act_window,help:bemade_sports_clinic.action_sports_patient_duplicate
+msgid "Use « Find duplicates » to look for players entered twice."
+msgstr "Utilisez « Rechercher les doublons » pour trouver les joueurs entrés deux fois."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "<span>Life-threatening</span>"
+msgstr "<span>Risque vital</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "<strong>First aid</strong>"
+msgstr "<strong>Premiers soins</strong>"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
+msgid "A medical item can't be moved to another player or family."
+msgstr ""
+"Un élément médical ne peut pas être déplacé vers un autre joueur ou une "
+"autre liste."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Add a condition"
+msgstr "Ajouter une condition"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Add an allergy"
+msgstr "Ajouter une allergie"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergy_critical_ids
+msgid "Allergies (list)"
+msgstr "Allergies (liste)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__critical_item_ids
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_form
+msgid "Allergies and conditions"
+msgstr "Allergies et conditions"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_sports_patient_critical_item
+msgid "Allergy / medical condition of a player"
+msgstr "Allergie / condition médicale d'un joueur"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergy_epipen_note
+msgid "EpiPen note"
+msgstr "Note EpiPen"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__first_aid_note
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "First aid"
+msgstr "Premiers soins"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Location / instructions"
+msgstr "Emplacement / instructions"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__medical_alert_critical_ids
+msgid "Medical conditions"
+msgstr "Conditions médicales"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergy_none_confirmed
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "No known allergy"
+msgstr "Aucune allergie connue"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__medical_none_confirmed
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "No known condition"
+msgstr "Aucune condition connue"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Old text (to validate)"
+msgstr "Ancien texte (à valider)"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid ""
+"Remove the items of the list first: « none known » is for an empty list."
+msgstr ""
+"Retirez d'abord les éléments de la liste : « aucune connue » vaut pour une "
+"liste vide."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+#: code:addons/bemade_sports_clinic/models/patient_critical_item.py:0
+msgid "life-threatening"
+msgstr "risque vital"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/res_partner.py:0
+msgid "A player's contact must be a person, not a company."
+msgstr "Le contact d'un joueur doit être une personne, pas une société."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient_duplicate.py:0
+msgid "One of these players no longer exists."
+msgstr "L'un de ces joueurs n'existe plus."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
+msgid "Coverage"
+msgstr "Couverture"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__pending_removal_team_id
+msgid "Removal Requested From"
+msgstr "Retrait demandé de l'équipe"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_knowledge_public_back_to_app
+msgid "Back to the app"
+msgstr "Retour à l'application"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_knowledge_public_back_to_app
+msgid "App"
+msgstr "Application"

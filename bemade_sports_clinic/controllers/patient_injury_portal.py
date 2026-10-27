@@ -7,7 +7,7 @@ from odoo import http, fields, _
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
-from .access_control_mixin import AccessControlMixin
+from .access_control_mixin import AccessControlMixin, parse_portal_date
 from .app_shell import AppShellMixin
 from datetime import datetime, timedelta
 from urllib.parse import quote as url_quote
@@ -226,13 +226,22 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'diagnosis': post.get('diagnosis', ''),
             'external_notes': post.get('external_notes', ''),
         }
-        
+        # Owner review 2026-10-25 (#1675): coaches read the external note
+        # but never write it — a coach's report carries the diagnosis only.
+        # In the app a posted external note is ignored; on the legacy portal
+        # (switch off) too, with a flash on the « created » page (the model
+        # refuses the field from a coach: never let it reach create()).
+        external_dropped = False
+        if self._sc_drops_external_notes(is_treatment_prof):
+            posted_external = vals.pop('external_notes')
+            external_dropped = bool((posted_external or '').strip()) and not self._sc_app_shell_active()
+
         # Handle injury date and injury_date_na checkbox
         if post.get('injury_date_na'):
             vals['injury_date_na'] = True
             vals['injury_date'] = False  # Clear injury_date if N/A is checked
         elif post.get('injury_date'):
-            vals['injury_date'] = post.get('injury_date')
+            vals['injury_date'] = parse_portal_date(post.get('injury_date'))  # task 1640
             vals['injury_date_na'] = False
         
         # Handle optional fields
@@ -240,7 +249,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             vals['parental_consent'] = post.get('parental_consent')
         
         if post.get('predicted_resolution_date'):
-            vals['predicted_resolution_date'] = post.get('predicted_resolution_date')
+            vals['predicted_resolution_date'] = parse_portal_date(post.get('predicted_resolution_date'))  # task 1640
             
         # Handle internal notes for treatment professionals
         if is_treatment_prof and post.get('internal_notes'):
@@ -329,6 +338,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 injuries_url, 'created=%s' % injury.id) + '#injury-%s' % injury.id)
         values = {
             'return_url': return_url,
+            'warning': 'external_notes_readonly' if external_dropped else None,
         }
         return request.render('bemade_sports_clinic.portal_injury_created', values)
         
@@ -514,6 +524,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'page_name': 'edit_injury',
             'error': post.get('error'),
             'success': post.get('success'),
+            'warning': post.get('warning'),
             'team': team,
             'team_context_id': team_context_id,
             'clinic_event': clinic_event,
@@ -579,7 +590,16 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'diagnosis': post.get('diagnosis', injury.diagnosis or ''),
             'external_notes': post.get('external_notes', injury.external_notes or ''),
         })
-        
+        # #1675: a coach never writes the external note (the app's injury
+        # card is read-only for them; the legacy form shows it read-only).
+        # A changed value posted anyway (a stale page) is dropped; on the
+        # legacy portal the form says so (warning=external_notes_readonly).
+        external_dropped = False
+        if self._sc_drops_external_notes(is_treatment_prof):
+            posted_external = vals.pop('external_notes')
+            external_dropped = (not self._sc_app_shell_active() and (posted_external or '').strip()
+                                != (injury.external_notes or '').strip())
+
         # Handle injury date and N/A checkbox
         if post.get('injury_date_na'):
             vals['injury_date_na'] = True
@@ -587,16 +607,16 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         else:
             vals['injury_date_na'] = False
             if post.get('injury_date'):
-                vals['injury_date'] = post.get('injury_date')
+                vals['injury_date'] = parse_portal_date(post.get('injury_date'))  # task 1640
         
 
         
         # Handle resolution dates
         if post.get('predicted_resolution_date'):
-            vals['predicted_resolution_date'] = post.get('predicted_resolution_date')
+            vals['predicted_resolution_date'] = parse_portal_date(post.get('predicted_resolution_date'))  # task 1640
         
         if post.get('resolution_date'):
-            vals['resolution_date'] = post.get('resolution_date')
+            vals['resolution_date'] = parse_portal_date(post.get('resolution_date'))  # task 1640
         
         # Fields only treatment professionals can update
         if is_treatment_prof:
@@ -624,11 +644,13 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # page — the modal's form) ⇒ back to the clinic, same patient, card in
         # view. Every other caller keeps today's stay-on-the-form behaviour.
         posted_return_url = self._local_return_url(post.get('return_url'), None)
+        flash = 'success=injury_updated' + (
+            '&warning=external_notes_readonly' if external_dropped else '')
         if self._is_clinic_page_url(posted_return_url):
-            return request.redirect(self._url_with_query(posted_return_url, 'success=injury_updated'))
+            return request.redirect(self._url_with_query(posted_return_url, flash))
 
         # Save stays on the edit form so the user can keep editing; Done (return_url) is how they leave.
-        edit_url = f'/my/injury/edit?injury_id={injury_id}&success=injury_updated'
+        edit_url = f'/my/injury/edit?injury_id={injury_id}&{flash}'
         team_id = post.get('team_id')
         if team_id:
             edit_url += f'&team_id={team_id}'   # preserve team nav context on re-render
@@ -655,6 +677,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
           success=injury_updated, else to the edit form as the full save does.
         """
         is_tp = self._is_treatment_professional()
+        # #1675: a coach never writes the external note either; on the
+        # legacy portal a changed value is dropped with a warning flash.
+        drop_external = self._sc_drops_external_notes(is_tp)
+        external_dropped = False
         vals = {}
         for fname in self._PARTIAL_INJURY_FIELDS:
             if fname not in post:
@@ -662,16 +688,31 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             if fname == 'internal_notes' and not is_tp:
                 continue
             value = post.get(fname)
+            if fname == 'external_notes' and drop_external:
+                external_dropped = (not self._sc_app_shell_active() and (value or '').strip()
+                                    != (injury.external_notes or '').strip())
+                continue
             vals[fname] = value if (value or '').strip() else False
         if vals:
             injury.sudo().write(vals)
+        flash = 'success=injury_updated' + (
+            '&warning=external_notes_readonly' if external_dropped else '')
         edit_url = self._with_clinic(
-            f'/my/injury/edit?injury_id={injury.id}&success=injury_updated',
+            f'/my/injury/edit?injury_id={injury.id}&{flash}',
             self._clinic_context(post))
         return_url = self._local_return_url(post.get('return_url'), None)
         if return_url:
-            return request.redirect(self._url_with_query(return_url, 'success=injury_updated'))
+            return request.redirect(self._url_with_query(return_url, flash))
         return request.redirect(edit_url)
+
+    def _sc_drops_external_notes(self, is_tp):
+        """#1675 (owner 2026-10-25): the injury routes drop a posted
+        ``external_notes`` of a non-therapist — in the app always, on the
+        legacy portal for a share user (a coach: the model refuses the field
+        from them). An internal non-therapist on the legacy portal keeps it."""
+        if is_tp:
+            return False
+        return self._sc_app_shell_active() or request.env.user.share
 
     def _add_treatment_note(self, patient, note_content, injury=None, event=None):
         """Helper method to add a treatment note to a patient, optionally linked
@@ -791,11 +832,10 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             note.id: self._sc_note_edit_props(note)
             for note in notes if note._can_portal_edit(user)
         }
-        injuries = patient.injury_ids
         return {
             'sc_note_props': note_props,
-            'sc_injury_choices': [(i.id, i.display_name or i.diagnosis or str(i.id))
-                                  for i in injuries],
+            # Task 1665: the same list as the note edit picker.
+            'sc_injury_choices': self._sc_note_injury_options(patient),
             'sc_note_draft_prefix': 'sports.patient.%s.new_note.' % patient.id,
             'sc_flash': {
                 'success': {

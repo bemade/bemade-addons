@@ -4,14 +4,30 @@
  * button[data-sc-list-add-toggle][aria-controls=<details id>] opens / closes
  * that <details> (the add form right under the header, its own <summary>
  * hidden: the header is the one control). Opening moves the focus to the
- * panel's first field. aria-expanded follows the panel however it opens —
+ * panel's first TEXT field — task 1646: never a select / picker, and
+ * nothing at all on a phone (sc_focus.js). aria-expanded follows the panel however it opens —
  * the button, a « …#<id> » link (sc_app_ui.js), a script — through the
  * <details> « toggle » event. The sort menu is sc_user_menu.js's popup.
  * Inert outside .o_sc_app.
+ *
+ * Task 1672:
+ * - a panel the header toggles never opens / closes from its own title
+ *   (<summary>): a tap mid-entry no longer collapses the form; the header
+ *   « + Ajouter » stays THE control (aria-expanded / aria-controls kept),
+ *   inner disclosures (« Contact d'urgence », « Lier cette note ») work;
+ * - after a successful create (« sc:create-success » on the form — the form
+ *   guard's fetch post, the player create — or, for a native POST, coming
+ *   back to the page from the browser cache) the panel is reset: fields
+ *   back to their defaults (a form-mode field — the page's team — and the
+ *   device drafts follow « sc:form-reset »), inner disclosures closed, the
+ *   check / guard state cleared, the panel closed (the Notepad's
+ *   always-open card stays open).
  */
 
-const FOCUSABLE =
-    'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])';
+import { focusFirstField } from "@bemade_sports_clinic/js/sc_focus";
+import { removeDraftsWithPrefix } from "@bemade_sports_clinic/js/sc_draft_store";
+
+const RESETTABLE = "details.o_sc_list_add_panel, .o_sc_notepad_add";
 
 function togglesOf(panel) {
     return [...document.querySelectorAll("[data-sc-list-add-toggle]")].filter(
@@ -31,12 +47,7 @@ document.addEventListener("click", (ev) => {
     ev.preventDefault();
     panel.open = !panel.open;
     if (panel.open) {
-        const field = [...panel.querySelectorAll(FOCUSABLE)].find(
-            (el) => el.offsetParent !== null && !el.closest("summary")
-        );
-        if (field) {
-            field.focus({ preventScroll: true });
-        }
+        focusFirstField(panel);
         panel.scrollIntoView({ block: "nearest" });
     }
 });
@@ -55,3 +66,65 @@ document.addEventListener(
     },
     true
 );
+
+// Task 1672: the title of a header-toggled panel never toggles it.
+document.addEventListener(
+    "click",
+    (ev) => {
+        const summary = ev.target.closest && ev.target.closest("summary");
+        const panel = summary && summary.parentElement;
+        if (!panel || !panel.matches("details.o_sc_list_add_panel") || !panel.id || !panel.closest(".o_sc_app")) {
+            return;
+        }
+        if (togglesOf(panel).length) {
+            ev.preventDefault();
+        }
+    },
+    true
+);
+
+/** Task 1672: an add panel back to an empty form (see the header). */
+export function resetAddPanel(form) {
+    const panel = form && form.closest && form.closest(RESETTABLE);
+    if (!panel || !panel.closest(".o_sc_app")) {
+        return false;
+    }
+    form.reset();
+    for (const details of form.querySelectorAll("details")) {
+        details.open = false;
+    }
+    for (const node of form.querySelectorAll("[aria-invalid]")) {
+        node.removeAttribute("aria-invalid");
+    }
+    if (form.dataset.scDraftPrefix) {
+        removeDraftsWithPrefix(form.dataset.scDraftPrefix);
+    }
+    delete form.dataset.scSubmitted;
+    // OWL fields, the form guard, the player check follow this event.
+    form.dispatchEvent(new CustomEvent("sc:form-reset", { bubbles: true }));
+    if (panel.tagName === "DETAILS" && togglesOf(panel).length) {
+        panel.open = false;
+    }
+    return true;
+}
+
+document.addEventListener("sc:create-success", (ev) => {
+    resetAddPanel(ev.target);
+});
+
+// A native POST (no fetch): remember the submit; coming back to this page
+// from the browser cache shows the form as it was posted — reset it.
+document.addEventListener("submit", (ev) => {
+    const form = ev.target;
+    if (!ev.defaultPrevented && form.closest && form.closest(RESETTABLE) && form.closest(".o_sc_app")) {
+        form.dataset.scSubmitted = "1";
+    }
+});
+window.addEventListener("pageshow", (ev) => {
+    if (!ev.persisted) {
+        return;
+    }
+    for (const form of document.querySelectorAll(".o_sc_app form[data-sc-submitted]")) {
+        resetAddPanel(form);
+    }
+});

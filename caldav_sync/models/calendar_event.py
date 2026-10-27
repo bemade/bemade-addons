@@ -162,7 +162,9 @@ class CalendarEvent(models.Model):
         slot = tz.localize(datetime.combine(local_date, local_time))
         return slot.astimezone(utc).replace(tzinfo=None)
 
-    @api.depends("name", "description", "partner_ids", "location", "videocall_location")
+    @api.depends(
+        "name", "description", "partner_ids", "location", "videocall_location", "show_as"
+    )
     def _compute_differs_from_base_event(self):
         base_events = self.filtered("is_base_event")
         non_base_events = self - base_events
@@ -174,6 +176,7 @@ class CalendarEvent(models.Model):
             "partner_ids",
             "location",
             "videocall_location",
+            "show_as",
         ]
         for event in non_base_events:
             base_event = event.recurrence_id.base_event_id
@@ -293,7 +296,7 @@ class CalendarEvent(models.Model):
             base_event = self._get_caldav_base_event_by_uid(calendar, self.caldav_uid)
             if not base_event:
                 _logger.debug(f"Failed to find base event for {self} on CalDAV server.")
-                return
+                continue
             if self.recurrence_id:
                 tz = timezone(self.event_tz or self.env.user.tz or "UTC")
                 start = utc.localize(self.start).astimezone(tz)
@@ -314,7 +317,7 @@ class CalendarEvent(models.Model):
                         _logger.debug(
                             f"Failed to find base event for {self} on CalDAV server."
                         )
-                        return
+                        continue
                     index = self._get_subcomponent_index_for_recurrence(base_event)
                     if index:
                         ical_event = base_event.icalendar_instance.subcomponents[index]
@@ -1025,7 +1028,7 @@ class CalendarEvent(models.Model):
             "location": self._extract_component_text(component, "location"),
             "videocall_location": self._extract_component_text(component, "conference"),
             "caldav_uid": str(component.get("uid")),
-            "show_as": busy.transp_to_show_as(component.get("transp")),
+            "show_as": "busy" if busy.is_busy(component) else "free",
             "partner_ids": [(6, 0, attendee_ids.ids)],
         }
 

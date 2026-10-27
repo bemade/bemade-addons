@@ -114,7 +114,8 @@ class TestListHeader1607(ListHeader1607Common):
         _text, tree = self._get('/my/players?first_name=Pat&page=2&success=1')
         header = self._header(tree, 'players.header')
         add = self._add(header)
-        self.assertEqual((add.tag, add.get('href')), ('a', '/my/player/create'))
+        # Task 1655: the inline create panel (was a link to /my/player/create).
+        self.assertEqual((add.tag, add.get('aria-controls')), ('button', 'sc_player_add'))
         self.assertEqual(add.get('aria-label'), 'Create a player')
         self.assertEqual(add.get('data-sc-action'), 'players.create')
         self.assertTrue(header.xpath('.//*[contains(@class, "o_sc_list_header_count")]'))
@@ -126,7 +127,9 @@ class TestListHeader1607(ListHeader1607Common):
         self.assertEqual(header.xpath('.//*[@data-sc-section="players.sort"]//button/@aria-controls'),
                          ['sc_players_sort'])
         # The header sits right above the list.
-        self.assertEqual(header.getnext().get('data-sc-section'), 'players.list')
+        # Task 1655: the (closed) inline create panel, then the list.
+        self.assertEqual(header.getnext().get('data-sc-section'), 'players.add')
+        self.assertEqual(header.getnext().getnext().get('data-sc-section'), 'players.list')
 
     def test_players_header_coach_has_no_add(self):
         self._login_coach()
@@ -226,11 +229,11 @@ class TestListHeader1607(ListHeader1607Common):
     # -- team ----------------------------------------------------------------
     def test_team_roster_header(self):
         self._login_tp()
-        _text, tree = self._get('/my/team?team_id=%s&tab=players&add_first=Pat&add_last=One' % self.team_a.id)
+        _text, tree = self._get('/my/team?team_id=%s&tab=players&add=1' % self.team_a.id)
         header = self._header(tree, 'team.roster.header')
         add, panel = self.assertPanelFollows(header, 'sc_add_player')
         self.assertEqual((add.get('aria-label'), add.get('data-sc-action')), ('Add a player', 'team.add_player'))
-        # A search keeps the panel open (as before).
+        # Task 1655: ?add=1 opens the inline create panel.
         self.assertEqual((add.get('aria-expanded'), panel.get('open')), ('true', 'open'))
         sorts = self._sorts(header)
         self.assertEqual(sorted(sorts), ['number', 'status'])
@@ -281,13 +284,20 @@ class TestListHeader1607(ListHeader1607Common):
             ('injuries', 'injury.new.header', 'sc_new_injury', 'Add Injury'),
             ('notes', 'notes.add.header', 'sc_note_add', 'Add Treatment Note'),
             ('activities', 'activity.add.header', 'sc_activity_add', 'Add Activity'),
-            ('documents', 'documents.upload.header', 'sc_documents_upload', 'Upload a document'),
         )
         for tab, section, panel_id, label in expected:
             panel = tree.xpath('//section[@data-sc-tab-panel="%s"]' % tab)[0]
             add, _details = self.assertPanelFollows(self._header(panel, section), panel_id)
             self.assertEqual(add.get('aria-label'), label, tab)
             self.assertEqual(add.get('aria-expanded'), 'false', tab)
+        # Task 1644: the Documents « + Ajouter » opens a sheet (like the
+        # injury card's « Add documents »), not an inline panel.
+        panel = tree.xpath('//section[@data-sc-tab-panel="documents"]')[0]
+        add = self._add(self._header(panel, 'documents.upload.header'))
+        self.assertEqual(add.get('data-sc-sheet-open'), 'sc_documents_upload')
+        self.assertEqual(add.get('aria-label'), 'Upload a document')
+        self.assertEqual(len(panel.xpath('.//dialog[@id="sc_documents_upload"]//form[@data-sc-doc-upload]')), 1)
+        self.assertFalse(tree.xpath('//details[@id="sc_documents_upload"]'))
         contacts = tree.xpath('//section[@data-sc-section="player.info.emergency_contacts"]')[0]
         add, _details = self.assertPanelFollows(self._header(contacts, 'contact.add.header'), 'sc_contact_add')
         self.assertEqual(add.get('aria-label'), 'Add Emergency Contact')
@@ -311,11 +321,11 @@ class TestListHeader1607(ListHeader1607Common):
 
     # -- notepad / timesheets ---------------------------------------------------
     def test_notepad_header(self):
+        # Task 1667: the quick-note form is always shown — no header toggle.
         self._login_tp()
         _text, tree = self._get('/my/notepad')
-        add, panel = self.assertPanelFollows(self._header(tree, 'notepad.header'), 'sc_notepad_add')
-        self.assertEqual(add.get('aria-label'), 'Add a note')
-        self.assertEqual((add.get('aria-expanded'), panel.get('open')), ('true', 'open'))
+        self.assertFalse(tree.xpath('//*[@data-sc-section="notepad.header"]'))
+        panel = tree.xpath('//section[@id="sc_notepad_add"]')[0]
         self.assertEqual(panel.xpath('.//form/@action'), ['/my/notepad/add'])
 
     def test_timesheets_sort_in_the_header(self):
@@ -391,9 +401,6 @@ class TestListHeaderI18n1607(ListHeader1607Common):
         _text, tree = self._fr('/my/sc/timesheets')
         header = self._header(tree, 'timesheets.header')
         self.assertIn('Trier les feuilles de temps', header.text_content())
-        text, tree = self._fr('/my/notepad')
-        add = self._header(tree, 'notepad.header').xpath('.//button')[0]
-        self.assertEqual(add.get('aria-label'), 'Ajouter une note')
         _text, tree = self._fr('/my/events')
         header = self._header(tree, 'events.header')
         self.assertIn('Trier les événements', header.text_content())

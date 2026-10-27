@@ -449,9 +449,10 @@
                                             </div>
                                         </div>
 
-                                        <div t-if="selected_patient.allergies" class="alert alert-warning mt-3 mb-0 py-2">
-                                            <strong>Allergies:</strong>
-                                            <t t-esc="selected_patient.allergies"/>
+                                        <!-- Task 1630: the allergy / medical-alert lines. -->
+                                        <div t-foreach="selected_patient._sc_medical_summary_lines(tp=True)" t-as="med_line"
+                                             class="alert alert-warning mt-3 mb-0 py-2" data-sc-legacy-medical="clinic">
+                                            <t t-esc="med_line['text']"/>
                                         </div>
 
                                         <!-- Task 1411: training recommendation, editable inline by a
