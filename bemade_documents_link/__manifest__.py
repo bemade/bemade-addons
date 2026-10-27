@@ -20,6 +20,9 @@
             "bemade_documents_link/static/src/link_document_cog_menu/*.xml",
             "bemade_documents_link/static/src/link_to_record/*.js",
         ],
+        "web.assets_tests": [
+            "bemade_documents_link/static/tests/tours/*.js",
+        ],
     },
     "installable": True,
     "auto_install": False,
