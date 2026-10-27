@@ -84,6 +84,4 @@ class DocumentsLinkWizard(models.TransientModel):
             )
         if to_add:
             to_add.write({"is_editable_attachment": True})
-            # Surface newly-linked docs under a product's smart button (#3678).
-            to_add._bemade_sync_product_document()
         return {"type": "ir.actions.act_window_close"}

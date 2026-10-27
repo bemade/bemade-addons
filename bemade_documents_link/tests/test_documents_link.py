@@ -1,10 +1,12 @@
 import base64
+import json
 import os
-import unittest
 
 from odoo.modules.migration import load_script
 from odoo.tests import Form, tagged
+from odoo.exceptions import UserError
 from odoo.tests.common import TransactionCase
+from odoo.tools import mute_logger
 
 
 @tagged("post_install", "-at_install")
@@ -157,6 +159,19 @@ class TestDocumentsLinkM2M(TransactionCase):
         ).create({"document_ids": [(6, 0, doc.ids)]})
         wizard.action_link()
 
+    def _docside_link(self, doc, model, record_id):
+        wizard = self.env["documents.link_to_record_wizard"].create(
+            {"document_ids": [(6, 0, doc.ids)]}
+        )
+        wizard.write({
+            "model_id": self.env["ir.model"]._get_id(model),
+            "resource_ref": f"{model},{record_id}",
+        })
+        return wizard.link_to()
+
+    def _visible(self, record, doc):
+        return doc.attachment_id in record._get_mail_thread_data_attachments()
+
     def test_link_one_document_to_many_records_different_models(self):
         """Test plan #1: link one document to a res.partner and to a
         res.users (two different mail.thread models)."""
@@ -231,8 +246,6 @@ class TestDocumentsLinkM2M(TransactionCase):
         self._link(doc, "res.partner", self.partner_a.id)
         self.assertEqual(len(doc.bemade_link_ids), 1)
 
-        from odoo.tools import mute_logger
-
         with self.assertRaises(Exception), mute_logger("odoo.sql_db"):
             with self.env.cr.savepoint():
                 self.env["bemade.documents.link"].create({
@@ -266,31 +279,19 @@ class TestDocumentsLinkM2M(TransactionCase):
         self.assertFalse(doc_a.res_model)
         self.assertEqual(doc_b.res_model, "res.partner")
 
-    def test_documents_side_repeat_flow(self):
-        """Test plan #6: link_to() creates a link row and returns an
-        act_window re-opening the same wizard on the same documents;
-        action_link_to_record no longer refuses an already-linked document."""
-        doc = self._make_doc("Repeat Flow Doc")
+    def test_documents_side_link_closes(self):
+        """The Documents-side link dialog closes once the link is made, and an
+        already-linked document is still accepted by action_link_to_record."""
+        doc = self._make_doc("Closing Flow Doc")
         self._link(doc, "res.partner", self.partner_a.id)
 
-        # Already-linked document is still accepted (no refusal notification).
         action = doc.action_link_to_record()
         self.assertEqual(action["type"], "ir.actions.act_window")
         self.assertEqual(action["res_model"], "documents.link_to_record_wizard")
 
-        wizard = self.env["documents.link_to_record_wizard"].create({
-            "document_ids": [(6, 0, doc.ids)],
-        })
-        wizard.write({
-            "model_id": self.env["ir.model"]._get_id("res.partner"),
-            "resource_ref": f"res.partner,{self.partner_b.id}",
-        })
-        result = wizard.link_to()
+        result = self._docside_link(doc, "res.partner", self.partner_b.id)
 
-        self.assertEqual(result["type"], "ir.actions.act_window")
-        self.assertEqual(result["res_model"], "documents.link_to_record_wizard")
-        self.assertEqual(result["context"]["default_document_ids"], doc.ids)
-        self.assertEqual(len(doc.bemade_link_ids), 2)
+        self.assertEqual(result, {"type": "ir.actions.act_window_close"})
         self.assertEqual(
             set(doc.bemade_link_ids.mapped("res_id")),
             {self.partner_a.id, self.partner_b.id},
@@ -349,100 +350,128 @@ class TestDocumentsLinkM2M(TransactionCase):
         wizard = form.save()
         self.assertIn(doc, wizard.document_ids)
 
+    def test_partner_chatter_and_button(self):
+        """Linking to a contact lists the file in its chatter and counts it in
+        its Documents button, without touching the document's owner contact."""
+        doc = self._make_doc("Partner Doc")
+        self._link(doc, "res.partner", self.partner_a.id)
+        self.assertTrue(self._visible(self.partner_a, doc))
+        self.assertEqual(self.partner_a.document_count, 1)
+        action = self.partner_a.action_see_documents()
+        json.dumps(action["domain"])
+        self.assertIn(doc, self.env["documents.document"].search(action["domain"]))
+        self.assertFalse(doc.partner_id)
 
-@tagged("post_install", "-at_install")
-class TestDocumentsLinkProductBridge(TransactionCase):
-    """#3678 defect 2: linking an existing document to a product must make it
-    appear under the product's "Documents" smart button, which reads the
-    ``product.document`` model (not ``documents.document``)."""
+    def test_secondary_links_visible(self):
+        """A document linked to several records of several models shows on all
+        of them, and its native primary does not move."""
+        doc = self._make_doc("Shared Doc")
+        other = self.env["mail.blacklist"].create({"email": "a@example.com"})
+        self._link(doc, "res.partner", self.partner_a.id)
+        self._link(doc, "res.partner", self.partner_b.id)
+        self._link(doc, "mail.blacklist", other.id)
+        for record in (self.partner_a, self.partner_b, other):
+            self.assertTrue(self._visible(record, doc), record)
+        for partner in (self.partner_a, self.partner_b):
+            self.assertEqual(partner.document_count, 1)
+            self.assertIn(
+                doc,
+                self.env["documents.document"].search(
+                    partner.action_see_documents()["domain"]
+                ),
+            )
+        self.assertEqual(doc.res_model, "res.partner")
+        self.assertEqual(doc.res_id, self.partner_a.id)
 
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        if "product.document" not in cls.env:
-            raise unittest.SkipTest("documents_product not installed")
-        # Enable the documents/product bridge and give products a workspace.
-        cls.folder = cls.env["documents.document"].create(
-            {"name": "Product WS", "type": "folder"}
-        )
-        cls.env.company.write({
-            "product_folder_id": cls.folder.id,
-            "documents_product_settings": True,
-        })
-        cls.template = cls.env["product.template"].create({"name": "Bridge Product"})
-        cls.product = cls.template.product_variant_id
+    def test_documents_side_parity(self):
+        doc = self._make_doc("Parity Doc")
+        self._link(doc, "res.partner", self.partner_a.id)
+        self._docside_link(doc, "res.partner", self.partner_b.id)
+        self.assertTrue(self._visible(self.partner_a, doc))
+        self.assertTrue(self._visible(self.partner_b, doc))
+        self.assertEqual(self.partner_b.document_count, 1)
 
-    def _make_doc(self, name="Doc"):
-        return self.env["documents.document"].create({
-            "name": name,
-            "type": "binary",
-            "datas": base64.b64encode(b"hello").decode(),
-        })
-
-    def _product_document_count(self):
-        """Mirror the smart button: count product.document in the template's
-        documents domain (what action_open_documents / the stat button show)."""
-        return self.env["product.document"].search_count(
-            self.template._get_product_document_domain()
-        )
-
-    def test_record_side_link_feeds_product_smart_button(self):
-        """Record-side wizard: linking a document to a product template creates a
-        product.document so it shows under the product's Documents smart button.
-        Fails on the old behavior (which only set res_model/res_id on
-        documents.document, never creating a product.document)."""
-        doc = self._make_doc("Spec Sheet")
-        self.assertEqual(self._product_document_count(), 0)
-
+    def test_unlink_only_from_that_record(self):
+        doc = self._make_doc("Unlink Doc")
+        self._link(doc, "res.partner", self.partner_a.id)
+        self._link(doc, "res.partner", self.partner_b.id)
         wizard = self.env["documents.link.wizard"].with_context(
-            active_model="product.template",
-            active_id=self.template.id,
-        ).create({"document_ids": [(6, 0, doc.ids)]})
+            active_model="res.partner", active_id=self.partner_b.id
+        ).create({})
+        self.assertEqual(wizard.document_ids, doc)
+        wizard.document_ids = [(5, 0, 0)]
         wizard.action_link()
+        self.assertFalse(self._visible(self.partner_b, doc))
+        self.assertEqual(self.partner_b.document_count, 0)
+        self.assertTrue(self._visible(self.partner_a, doc))
+        self.assertEqual(self.partner_a.document_count, 1)
+        self.assertTrue(doc.exists())
 
-        self.assertEqual(doc.res_model, "product.template")
-        self.assertEqual(doc.res_id, self.template.id)
-        # The whole point: it now appears under the product's smart button.
+    def test_unlink_primary_repoints(self):
+        doc = self._make_doc("Primary Removed Doc")
+        self._link(doc, "res.partner", self.partner_a.id)
+        self._link(doc, "res.partner", self.partner_b.id)
+        doc.bemade_link_ids.filtered(
+            lambda link: link.res_id == self.partner_a.id
+        ).unlink()
+        self.assertEqual(doc.res_id, self.partner_b.id)
+        self.assertFalse(self._visible(self.partner_a, doc))
+        attachments = self.partner_b._get_mail_thread_data_attachments()
+        self.assertEqual(attachments.filtered(lambda a: a == doc.attachment_id), doc.attachment_id)
+        self.assertEqual(len(attachments), len(set(attachments.ids)))
+
+    def test_idempotent(self):
+        doc = self._make_doc("Idempotent Doc")
+        self._link(doc, "res.partner", self.partner_a.id)
+        self._link(doc, "res.partner", self.partner_a.id)
+        self._docside_link(doc, "res.partner", self.partner_a.id)
+        self.assertEqual(len(doc.bemade_link_ids), 1)
+        attachments = self.partner_a._get_mail_thread_data_attachments()
+        self.assertEqual(attachments.ids.count(doc.attachment_id.id), 1)
         self.assertEqual(
-            self._product_document_count(), 1,
-            "Linked document should appear under the product Documents button",
+            self.env["documents.document"].search_count(
+                [("attachment_id", "=", doc.attachment_id.id)]
+            ),
+            1,
         )
-        # And it reuses the SAME underlying attachment (one file, two facades).
-        pdoc = self.env["product.document"].search(
-            self.template._get_product_document_domain()
-        )
-        self.assertEqual(pdoc.ir_attachment_id, doc.attachment_id)
 
-    def test_documents_side_link_feeds_product_smart_button(self):
-        """Documents-side wizard (link_to_record_wizard.link_to): same outcome —
-        the linked document surfaces under the product smart button."""
-        doc = self._make_doc("Docside Spec")
-        self.assertEqual(self._product_document_count(), 0)
-
-        wizard = self.env["documents.link_to_record_wizard"].create({
-            "document_ids": [(6, 0, doc.ids)],
-        })
-        wizard.write({
-            "model_id": self.env["ir.model"]._get_id("product.template"),
-            "resource_ref": f"product.template,{self.template.id}",
-        })
-        wizard.link_to()
-
-        self.assertEqual(doc.res_model, "product.template")
-        self.assertEqual(doc.res_id, self.template.id)
+    def test_native_primary_mirror_row(self):
+        doc = self._make_doc("Native Primary Doc")
+        doc.write({"res_model": "res.partner", "res_id": self.partner_a.id})
+        self._link(doc, "res.partner", self.partner_b.id)
         self.assertEqual(
-            self._product_document_count(), 1,
-            "Doc linked from the Documents side should appear under the product",
+            set(doc.bemade_link_ids.mapped("res_id")),
+            {self.partner_a.id, self.partner_b.id},
         )
+        wizard = self.env["documents.link.wizard"].with_context(
+            active_model="res.partner", active_id=self.partner_a.id
+        ).create({})
+        self.assertEqual(wizard.document_ids, doc)
 
-    def test_link_is_idempotent(self):
-        """Re-linking the same document must not create duplicate
-        product.document rows."""
-        doc = self._make_doc("Idem Doc")
-        for _i in range(2):
-            wizard = self.env["documents.link.wizard"].with_context(
-                active_model="product.template",
-                active_id=self.template.id,
-            ).create({"document_ids": [(6, 0, doc.ids)]})
-            wizard.action_link()
-        self.assertEqual(self._product_document_count(), 1)
+    def test_shared_delete_guard(self):
+        shared = self._make_doc("Shared Delete Doc")
+        self._link(shared, "res.partner", self.partner_a.id)
+        self._link(shared, "res.partner", self.partner_b.id)
+        with self.assertRaises(UserError), mute_logger("odoo.sql_db"):
+            shared.attachment_id._delete_and_notify()
+        self.assertTrue(shared.exists())
+
+        single = self._make_doc("Single Delete Doc")
+        self._link(single, "res.partner", self.partner_a.id)
+        single.attachment_id._delete_and_notify()
+        self.assertFalse(single.exists())
+
+    def test_migration_mirrors_native_primary(self):
+        doc = self._make_doc("Migration 2.1 Doc")
+        self._link(doc, "res.partner", self.partner_b.id)
+        doc.write({"res_model": "res.partner", "res_id": self.partner_a.id})
+        self.assertEqual(len(doc.bemade_link_ids), 1)
+        pyfile = os.path.join(
+            "bemade_documents_link", "migrations", "19.0.2.1.0", "post-migration.py"
+        )
+        name, _ext = os.path.splitext(os.path.basename(pyfile))
+        mod = load_script(pyfile, name)
+        mod.migrate(self.env.cr, "19.0.2.0.1")
+        self.assertEqual(len(doc.bemade_link_ids), 2)
+        mod.migrate(self.env.cr, "19.0.2.0.1")
+        self.assertEqual(len(doc.bemade_link_ids), 2)

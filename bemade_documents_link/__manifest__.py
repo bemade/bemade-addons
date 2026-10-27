@@ -1,6 +1,6 @@
 {
     "name": "Documents - Link Existing",
-    "version": "19.0.2.0.1",
+    "version": "19.0.2.1.0",
     "summary": "Link an existing Documents record (incl. spreadsheets) to any "
                "number of mail.thread records, from either side.",
     "category": "Productivity/Documents",
