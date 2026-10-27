@@ -130,7 +130,7 @@
                             </p>
                         </div>
                     </t>
-                    <p style="color:#888;font-size:12px;">
+                    <p style="color:#767676;font-size:12px;">
                         Aucune donnée médicale n'est incluse. / No medical data is included.
                     </p>
                 </div>
@@ -150,7 +150,7 @@
                 <div>
                     <p>Bonjour, / Hello,</p>
                     <p>Votre sommaire quotidien d'équipe : / Your daily team briefing:</p>
-                    <p style="color:#888;font-size:12px;">
+                    <p style="color:#767676;font-size:12px;">
                         Changements des dernières <t t-out="ctx.get('digest_window_hours') or 24"/> h /
                         Changes over the last <t t-out="ctx.get('digest_window_hours') or 24"/> h.
                     </p>
@@ -199,13 +199,13 @@
                                     </li>
                                 </t>
                             </ul>
-                            <p style="color:#888;font-size:12px;">
+                            <p style="color:#767676;font-size:12px;">
                                 Les événements non listés sont hors de notre plan de couverture, avisez-nous. /
                                 Events not listed are outside our coverage plan — please advise us.
                             </p>
                         </div>
                     </t>
-                    <p style="color:#888;font-size:12px;">
+                    <p style="color:#767676;font-size:12px;">
                         Aucune donnée médicale n'est incluse. / No medical data is included.
                     </p>
                 </div>

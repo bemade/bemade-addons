@@ -1118,7 +1118,7 @@ class Patient(models.Model):
                     )
                 )
             parts.append(Markup("").join(lines))
-        parts.append(Markup('<p style="color:#888;font-size:12px;">%s</p>') % escape(
+        parts.append(Markup('<p style="color:#767676;font-size:12px;">%s</p>') % escape(
             _("No medical data is included. / Aucune donnée médicale n'est incluse.")
         ))
         return Markup("").join(parts)

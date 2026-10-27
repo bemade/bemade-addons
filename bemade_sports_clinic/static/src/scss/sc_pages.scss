@@ -538,6 +538,18 @@ $sc-laptop: 992px;
             color: var(--sc-fg-2) !important;
         }
 
+        // Task 1728: inside a .card-body, Odoo's frontend gives .text-muted
+        // the LIGHT theme's grey (bootstrap_review_frontend's card-body rule,
+        // `.card-body:not(.card[data-vxml] .card-body) .text-muted`, !important
+        // and more specific than the rule above): the digest's training
+        // recommendation, « Retour prévu » and injury lines were dark grey on
+        // the dark card (~1.2:1). Same selector, scoped to the shell, so the
+        // muted token wins in both themes.
+        .card-body:not(.card[data-vxml] .card-body) .text-muted,
+        .card-body .text-muted {
+            color: var(--sc-fg-2) !important;
+        }
+
         // Task 1614: the digest's « Show details » link and its team
         // announcement (alert-info / alert-secondary) on the shell surface.
         .text-primary {
