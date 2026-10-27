@@ -101,6 +101,13 @@ tours.add("sc_1726_switch_filter", {
 
 const NA_SCOPE = ".o_sc_date_na";
 const NA = 'input[role="switch"][name="injury_date_na"]';
+// The date input is rendered by the OWL field, so its disabled state is
+// the proof that the field took the toggle. aria-checked alone is not:
+// sc_switch.js syncs it synchronously in the change capture listener,
+// while OWL patches the field on the NEXT animation frame. On a busy CI
+// runner (no frame within the tour's 50 ms) the step matched in that gap
+// and asserted the date before OWL had disabled it.
+const DATE = 'input[type="date"]';
 
 tours.add("sc_1726_switch_autosave", {
     steps: () => [
@@ -115,10 +122,7 @@ tours.add("sc_1726_switch_autosave", {
         },
         {
             content: "On: the date is disabled",
-            trigger: row(NA_SCOPE, `${NA}[aria-checked="true"]:checked`),
-            run() {
-                assert(document.querySelector('.o_sc_date_na input[type="date"]').disabled, "the date");
-            },
+            trigger: row(`${NA_SCOPE}:has(${DATE}:disabled)`, `${NA}[aria-checked="true"]:checked`),
         },
         {
             content: "Tap it again",
@@ -127,10 +131,7 @@ tours.add("sc_1726_switch_autosave", {
         },
         {
             content: "Off: the date is back",
-            trigger: row(NA_SCOPE, `${NA}[aria-checked="false"]:not(:checked)`),
-            run() {
-                assert(!document.querySelector('.o_sc_date_na input[type="date"]').disabled, "the date");
-            },
+            trigger: row(`${NA_SCOPE}:has(${DATE}:enabled)`, `${NA}[aria-checked="false"]:not(:checked)`),
         },
     ],
 });
