@@ -1,3 +1,13 @@
+## 1.0.0 (2026-10-27)
+
+- The CalDAV connection moves to the new `base_caldav` module
+  (`caldav.connection.mixin`), now a dependency. User settings keep the
+  same fields, so no data migration is needed; `_get_caldav_client()` and
+  `_get_caldav_events()` keep working.
+- "Show as free" is synchronized: `TRANSP` is pushed from and imported into
+  `show_as`. Previously every imported event came in as busy.
+- The `caldav` and `icalendar` version pins move to `base_caldav`.
+
 ## 0.8.2 (2024-11-28)
 
 - Restructured module:

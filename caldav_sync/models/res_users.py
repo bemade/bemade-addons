@@ -7,6 +7,7 @@ _logger = logging.getLogger(__name__)
 
 
 class ResUsers(models.Model):
+    _name = "res.users"
     _inherit = ["res.users", "caldav.connection.mixin"]
 
     is_caldav_enabled = fields.Boolean(compute="_compute_is_caldav_enabled", store=True)
