@@ -282,7 +282,9 @@ class Patient(models.Model):
     predicted_return_date = fields.Date(tracking=True)
     # Task 1727: an existing « Retour prévu » already past (in the user's
     # timezone) — flagged « Overdue » wherever the date renders.
-    predicted_return_overdue = fields.Boolean(compute="_compute_predicted_return_overdue")
+    predicted_return_overdue = fields.Boolean(
+        compute="_compute_predicted_return_overdue",
+        search="_search_predicted_return_overdue")
     return_date = fields.Date(
         tracking=True,
         help="When the player was cleared by medical staff to " "return to match play.",
@@ -2306,6 +2308,20 @@ class Patient(models.Model):
         for rec in self:
             rec.predicted_return_overdue = bool(
                 rec.predicted_return_date and rec.predicted_return_date < today)
+
+    def _search_predicted_return_overdue(self, operator, value):
+        """Task 1727: the backend « Retour prévu dépassé » filter."""
+        if operator != 'in':
+            return NotImplemented
+        today = fields.Date.context_today(self)
+        overdue = [('predicted_return_date', '<', today)]
+        if True in value and False in value:
+            return []
+        if True in value:
+            return overdue
+        if False in value:
+            return ['|', ('predicted_return_date', '=', False), ('predicted_return_date', '>=', today)]
+        return [('id', 'in', [])]
 
     @api.constrains("match_status", "practice_status")
     def constrain_match_and_practice_status(self):

@@ -17542,6 +17542,7 @@ msgstr ""
 
 #. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__predicted_return_overdue
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_search
 msgid "Predicted Return Overdue"
 msgstr "Retour prévu dépassé"
 
@@ -17572,3 +17573,12 @@ msgstr ""
 #: code:addons/bemade_sports_clinic/static/src/js/sc_proposal.js:0
 msgid "Pick a predicted return date, today or later."
 msgstr "Choisissez une date de retour prévu, aujourd'hui ou plus tard."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_form
+msgid ""
+"<span class=\"badge rounded-pill text-bg-warning o_sc_overdue_badge\" "
+"invisible=\"not predicted_return_overdue\">Passed</span>"
+msgstr ""
+"<span class=\"badge rounded-pill text-bg-warning o_sc_overdue_badge\" "
+"invisible=\"not predicted_return_overdue\">Dépassé</span>"

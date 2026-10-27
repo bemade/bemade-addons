@@ -292,3 +292,4 @@ from . import test_switches_tours_1726
 from . import test_org_pick_round3
 from . import test_retour_prevu_past_1727
 from . import test_retour_prevu_past_tours_1727
+from . import test_retour_prevu_backend_1727

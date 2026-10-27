@@ -21,6 +21,9 @@
                     <!-- Task 1645: phones the reformat could not read. -->
                     <filter name="sc_phone_invalid" string="Phone numbers to fix"
                             domain="[('sc_phone_invalid', '=', True)]"/>
+                    <!-- Task 1727: a past « Retour prévu ». -->
+                    <filter name="predicted_return_overdue" string="Predicted Return Overdue"
+                            domain="[('predicted_return_overdue', '=', True)]"/>
                     <filter name="groupby_team_ids" context="{'group_by': 'team_ids'}"/>
                     <filter name="groupby_jersey_number" string="Jersey Number" context="{'group_by': 'jersey_number'}"/>
                 </search>
@@ -42,7 +45,11 @@
                     <field name="match_status" optional="hide"/>
                     <field name="practice_status" optional="hide"/>
                     <field name="stage" optional="show"/>
-                    <field name="predicted_return_date" widget="date"/>
+                    <!-- Task 1727: a past « Retour prévu » is highlighted. -->
+                    <field name="predicted_return_overdue" column_invisible="1"/>
+                    <field name="predicted_return_date" widget="date"
+                           decoration-warning="predicted_return_overdue"
+                           decoration-bf="predicted_return_overdue"/>
                     <field name="return_date" widget="date"/>
                     <field name="activity_ids" widget="list_activity"/>
                 </list>
@@ -65,7 +72,11 @@
                     <field name="match_status" optional="hide"/>
                     <field name="practice_status" optional="hide"/>
                     <field name="stage" optional="show"/>
-                    <field name="predicted_return_date" widget="date"/>
+                    <!-- Task 1727: a past « Retour prévu » is highlighted. -->
+                    <field name="predicted_return_overdue" column_invisible="1"/>
+                    <field name="predicted_return_date" widget="date"
+                           decoration-warning="predicted_return_overdue"
+                           decoration-bf="predicted_return_overdue"/>
                     <field name="return_date" widget="date"/>
                     <field name="activity_ids" widget="list_activity"/>
                     <button name="action_view_patient_form" type="object"
@@ -169,7 +180,14 @@
                                            class="text-muted fst-italic o_sc_last_note_stamp"
                                            invisible="not last_training_recommendation_info"/>
                                 </div>
-                                <field name="predicted_return_date"/>
+                                <!-- Task 1727: « Dépassé » badge next to a past date. -->
+                                <field name="predicted_return_overdue" invisible="1"/>
+                                <label for="predicted_return_date"/>
+                                <div class="o_row">
+                                    <field name="predicted_return_date"/>
+                                    <span class="badge rounded-pill text-bg-warning o_sc_overdue_badge"
+                                          invisible="not predicted_return_overdue">Passed</span>
+                                </div>
                                 <field name="return_date"/>
                                 <field name="team_info_notes"/>
                             </group>
