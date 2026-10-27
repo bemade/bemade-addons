@@ -18,6 +18,10 @@ Acceptance criteria:
   To-Do to that creator « Complete the medical file (allergies/EpiPen) »;
   never twice; never for the superuser; done when EpiPen is answered.
 * AC-6 French: « Non renseigné », « EpiPen ? », the gate message, the To-Do.
+* AC-7 (review round 1, owner 2026-10-27): the answer is ONE line — the
+  « EpiPen » label and a segmented Oui / Non slider pill
+  (``o_sc_toggle_pill``, a radiogroup named by the label), nothing selected
+  while unanswered.
 """
 import importlib.util
 import os
@@ -141,6 +145,15 @@ class TestEpiPenGate1717(EpiPen1717Common):
         self.assertEqual(card.xpath('.//*[@data-sc-med-epipen-state]/@data-sc-med-epipen-state'), ['unset'])
         self.assertEqual(sorted(card.xpath('.//input[@type="radio"][@data-sc-med-set="allergy_epipen_state"]/@value')),
                          ['no', 'yes'])
+        # AC-7: one line — the label, then the Oui / Non slider pill, empty.
+        ask = card.xpath('.//*[@data-sc-med-epipen-ask]')[0]
+        self.assertEqual(ask.get('role'), 'radiogroup')
+        label = ask.xpath('./span[contains(@class, "o_sc_med_epipen_ask_label")]')[0]
+        self.assertEqual(ask.get('aria-labelledby'), label.get('id'))
+        self.assertEqual(label.text_content().strip(), 'EpiPen')
+        pill = ask.xpath('./div[contains(@class, "o_sc_toggle_pill")]')[0]
+        self.assertEqual([' '.join(o.text_content().split()) for o in pill.xpath('./label')], ['Yes', 'No'])
+        self.assertFalse(pill.xpath('.//input[@checked]'))
         self.assertTrue(sheet.xpath('.//*[@data-sc-med-epipen-first]'))
         self.assertFalse(sheet.xpath('.//button[@data-sc-list-add-toggle]'))
         self.assertTrue(sheet.xpath('.//input[@data-sc-med-set="allergy_none_confirmed"][@disabled]'))

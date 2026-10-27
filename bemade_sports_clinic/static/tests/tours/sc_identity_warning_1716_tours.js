@@ -55,6 +55,14 @@ tours.add("sc_1716_twin_create_anyway", {
             run: "click",
         },
         {
+            content: "Review round 1: the button gave way to « ✓ Accepted by the user »",
+            trigger: `${FORM} [data-sc-check-exact] [data-sc-check-accepted="force"]:not([hidden])`,
+            run() {
+                const button = document.querySelector(`${FORM} [data-sc-player-add-force-btn]`);
+                assert(button.hidden && !button.getClientRects().length, "« Create anyway » still shows");
+            },
+        },
+        {
             content: "« Create » is enabled; create",
             trigger: `${SUBMIT}[aria-disabled="false"]`,
             run: "click",
@@ -89,6 +97,14 @@ tours.add("sc_1716_dob_today", {
             content: "« The date is correct »",
             trigger: `${FORM} [data-sc-player-add-dob-confirm]:not([disabled])`,
             run: "click",
+        },
+        {
+            content: "Review round 1: the button gave way to « ✓ Accepted by the user »",
+            trigger: `${FORM} [data-sc-check-dob-warning] [data-sc-check-accepted="dob"]:not([hidden])`,
+            run() {
+                const button = document.querySelector(`${FORM} [data-sc-player-add-dob-confirm]`);
+                assert(button.hidden && !button.getClientRects().length, "« The date is correct » still shows");
+            },
         },
         {
             content: "Create",

@@ -80,7 +80,7 @@ tours.add("sc_1677_allergies_tp", {
         {
             // Task 1717: « EpiPen? » Yes (radios; was a checkbox).
             content: "EpiPen: Yes — its note appears",
-            trigger: `${ALLERGY} [data-sc-section="medical.allergy.epipen"] [data-sc-edit-view="edit"]:not([hidden]) input[data-sc-med-set="allergy_epipen_state"][value="yes"]`,
+            trigger: `${ALLERGY} [data-sc-section="medical.allergy.epipen"] [data-sc-edit-view="edit"]:not([hidden]) .o_sc_toggle_pill label:has(input[data-sc-med-set="allergy_epipen_state"][value="yes"])`,
             async run() {
                 const note = q(`${ALLERGY} [data-sc-med-epipen-note-field]`);
                 assert(note.hidden, "the note shows while EpiPen is unticked");
@@ -159,7 +159,7 @@ tours.add("sc_1677_allergies_tp", {
         },
         {
             content: "The trash can",
-            trigger: `${ALLERGY} [data-sc-med-item]:not(:first-child) [data-sc-edit-view="edit"]:not([hidden]) button[data-sc-med-item-delete]`,
+            trigger: `${ALLERGY} [data-sc-med-item]:not(:first-child)[data-sc-edit-open] .o_sc_med_card_row button[data-sc-med-item-delete]:visible`,
             run: "click",
         },
         {

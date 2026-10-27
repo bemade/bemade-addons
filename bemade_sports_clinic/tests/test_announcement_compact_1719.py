@@ -74,6 +74,10 @@ class TestAnnouncementCompact1719(Announcement1719Common):
         more = content.xpath('.//button[@data-sc-clamp-more]')[0]
         self.assertEqual(more.get('hidden'), 'hidden')
         self.assertEqual(' '.join(more.text_content().split()), 'See more')
+        # Review round 1 (owner 2026-10-27): « See less », hidden until expanded.
+        less = content.xpath('.//button[@data-sc-clamp-less]')[0]
+        self.assertEqual(less.get('hidden'), 'hidden')
+        self.assertEqual(' '.join(less.text_content().split()), 'See less')
         meta = content.xpath('.//*[@data-sc-clamp-meta]')[0]
         self.assertIsNone(meta.get('hidden'))
         meta_text = ' '.join(meta.text_content().split())
@@ -132,6 +136,7 @@ class TestAnnouncementCompact1719(Announcement1719Common):
         self.assertIn("Annonce d'équipe", text)
         self.assertIn('Historique', text)
         self.assertIn('Voir plus', text)
+        self.assertIn('Voir moins', text)
         self.assertIn("Jusqu'au", text)
         self.team_a.sudo().write({'announcement': False})
         _text, tree = self._get(self.url)

@@ -137,6 +137,17 @@
         </details>
     </template>
 
+    <!-- Task 1716 (review round 1, owner 2026-10-27): once an override
+         (« Create anyway », « The date is correct ») is clicked, the button
+         gives way to this muted « ✓ Accepted by the user » (sc_player_add.js;
+         re-applied when the check re-renders for the same values). -->
+    <template id="sc_player_check_accepted" name="App shell: create a player — override accepted">
+        <span class="o_sc_meta o_sc_check_accepted" t-att-data-sc-check-accepted="accepted_key" hidden="hidden">
+            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'check'"/></t>
+            <span>Accepted by the user</span>
+        </span>
+    </template>
+
     <template id="sc_player_check_results" name="App shell: create a player — existence check">
         <div class="o_sc_player_check_results" data-sc-check-results="1"
              t-att-data-sc-exact="'1' if sc_exact else '0'"
@@ -147,6 +158,7 @@
             <p t-if="sc_dob_warning" class="o_sc_field_message o_sc_check_dob_warning" role="status" data-sc-check-dob-warning="1">
                 <span t-out="sc_dob_warning"/>
                 <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-player-add-dob-confirm="1">The date is correct</button>
+                <t t-call="bemade_sports_clinic.sc_player_check_accepted"><t t-set="accepted_key" t-value="'dob'"/></t>
             </p>
             <p t-if="not sc_ready" class="o_sc_hint">Type a first and a last name to look for existing players.</p>
             <p t-elif="sc_dob_error" class="o_sc_field_message o_sc_field_error" role="alert">Please enter a valid date.</p>
@@ -158,6 +170,7 @@
                 <div t-if="sc_exact" class="o_sc_field_message o_sc_check_exact" role="alert" data-sc-check-exact="1">
                     <p class="o_sc_check_exact_text">A player with this name and date of birth already exists (<t t-out="sc_exact_teams"/>).</p>
                     <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-player-add-force-btn="1">Create anyway</button>
+                    <t t-call="bemade_sports_clinic.sc_player_check_accepted"><t t-set="accepted_key" t-value="'force'"/></t>
                 </div>
                 <p t-elif="sc_rows" class="o_sc_hint">Possible matches:</p>
                 <!-- Task 1674: exact / prefix matches, then the near ones

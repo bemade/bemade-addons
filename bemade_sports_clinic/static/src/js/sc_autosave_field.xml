@@ -136,6 +136,19 @@
                    data-sc-tags-typed-error="1" t-esc="state.typedError"/>
                 <p t-if="state.groupNotice" class="o_sc_field_message o_sc_hint" role="status"
                    data-sc-tags-group-notice="1" t-esc="state.groupNotice"/>
+                <!-- Review round 1 (owner 2026-10-27): an organisation change
+                     that would drop chosen teams asks first (never a browser
+                     confirm); « Cancel » restores the organisation. -->
+                <div t-if="state.groupConfirm" class="o_sc_field_message o_sc_group_confirm" role="alert"
+                     data-sc-org-confirm-box="1">
+                    <p class="o_sc_group_confirm_text" t-esc="groupConfirmText"/>
+                    <div class="o_sc_group_confirm_actions">
+                        <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-org-cancel="1"
+                                t-on-click="cancelGroup">Cancel</button>
+                        <button type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm" data-sc-org-confirm="1"
+                                t-on-click="confirmGroup">Change organization</button>
+                    </div>
+                </div>
             </div>
             <div t-elif="type === 'date_na'" class="o_sc_date_na">
                 <input t-ref="input" class="o_sc_input" type="date" t-att-id="props.inputId"

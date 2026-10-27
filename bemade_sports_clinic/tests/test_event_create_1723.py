@@ -13,6 +13,10 @@ Acceptance criteria:
   with it (never a silent drop).
 * AC-3 Changing the organisation drops the other organisation's teams and
   says so (« The teams of another organization were removed. »).
+  Superseded by review round 1 (owner 2026-10-27): it WARNS BEFORE dropping
+  them — an inline warning naming the teams with « Change organization » /
+  « Cancel » (never a browser confirm); « Cancel » keeps the organisation
+  and the teams; the submit waits for the answer.
 * AC-4 Typed-then-picked keeps working.
 * AC-5 Both an internal user in en_CA (MC's shape: internal administrator,
   no team staff) and a portal therapist, phone and laptop.

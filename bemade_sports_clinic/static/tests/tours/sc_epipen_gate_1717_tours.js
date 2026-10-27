@@ -30,7 +30,9 @@ tours.add("sc_1717_epipen_first", {
         },
         {
             content: "Not provided; the question shows; no Add control",
-            trigger: `${CARD} [data-sc-edit-view="edit"]:not([hidden]) input[type="radio"][value="no"]`,
+            // Review round 1: the slider pill's « Non » (its radio is drawn
+            // invisible under the label).
+            trigger: `${CARD} [data-sc-edit-view="edit"]:not([hidden]) .o_sc_toggle_pill label:has(input[type="radio"][value="no"])`,
             run() {
                 assert(document.querySelector(`${CARD} [data-sc-med-epipen-state="unset"]`), "state not unset");
                 assert(document.querySelector(`${ALLERGY} [data-sc-med-epipen-first]`), "no « answer first » hint");

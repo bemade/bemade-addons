@@ -129,6 +129,9 @@
                                     <span class="o_sc_announcement_more_sep" data-sc-clamp-sep="1" hidden="hidden"> · </span>
                                     <button type="button" class="o_sc_link_btn o_sc_announcement_more" data-sc-clamp-more="1"
                                             aria-expanded="false" hidden="hidden">See more</button>
+                                    <!-- Review round 1 (owner 2026-10-27): « See less » folds it back. -->
+                                    <button type="button" class="o_sc_link_btn o_sc_announcement_more" data-sc-clamp-less="1"
+                                            aria-expanded="true" hidden="hidden">See less</button>
                                 </p>
                             </div>
                         </div>

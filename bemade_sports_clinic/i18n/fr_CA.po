@@ -17481,3 +17481,27 @@ msgstr "Répondez d'abord à « EpiPen ? » : ajoutez ensuite les allergies ou c
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_mail_activity__sc_epipen_todo
 msgid "EpiPen To-Do"
 msgstr "Tâche EpiPen"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+msgid "See less"
+msgstr "Voir moins"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_accepted
+msgid "<span>Accepted by the user</span>"
+msgstr "<span>Accepté par l'usager</span>"
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
+msgid ""
+"Changing the organization removes the teams of the other organization: %s."
+msgstr ""
+"Changer d'organisation retire les équipes de l'autre organisation : %s."
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
+msgid "Change organization"
+msgstr "Changer d'organisation"

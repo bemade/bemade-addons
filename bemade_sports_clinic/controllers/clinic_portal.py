@@ -1076,7 +1076,8 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         editable = values['editable_note_ids']
         for note in values['treatment_notes']:
             if note.id in editable:
-                note_props[note.id] = self._sc_note_edit_props(note)
+                # Task 1721 (review round 1): the pane's own injury list.
+                note_props[note.id] = self._sc_note_edit_props(note, active_only=True)
         # Task 1590: the dossier's injuries are the player page's inline
         # cards (pencil edit, field-by-field saving): the current ones
         # (active AND unverified, so a just-created report shows), newest
@@ -1150,9 +1151,10 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_clinic_player_row': player_row,
             'sc_is_tp_view': tp_view,
             'team_context_id': event.team_ids.id if len(event.team_ids) == 1 else False,
-            # Task 1665: the same list as the note edit picker.
+            # Task 1665: the same list as the note edit picker. Task 1721
+            # (review round 1): what the pane shows — the active injuries.
             'sc_note_injury_choices': (
-                self._sc_note_injury_options(selected) if selected else []),
+                self._sc_note_injury_options(selected, active_only=True) if selected else []),
             'sc_note_draft_prefix': (
                 'sports.patient.%s.new_note.' % selected.id if selected else ''),
             # The resolve sheet (#1418) is always rendered in the shell: a

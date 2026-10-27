@@ -9,7 +9,9 @@ Acceptance criteria:
   stable ``o_sc_list_add`` hook, the plus icon and « Add » (« Ajouter »), and
   is no longer a filled button (no ``o_sc_btn`` / ``o_sc_btn_primary``).
 * AC-2 It is the LAST item of the header (right-aligned, after the count and
-  the sort menu).
+  the sort menu). Superseded by review round 1 (owner 2026-10-27): it is
+  the FIRST item (just above the list's top-left edge, where the filled
+  button sat) and carries no « + » icon — AC-1's « the plus icon » too.
 * AC-3 The toggle/aria behaviour is unchanged (``aria-controls``,
   ``aria-expanded``, ``data-sc-list-add-toggle``; ``data-sc-sheet-open``).
 * AC-4 Form submit buttons inside the panels stay filled.
@@ -35,10 +37,10 @@ class TestListAddLink1718(ListHeader1607Common):
         self.assertIn('o_sc_link_btn', classes)
         self.assertNotIn('o_sc_btn', classes)
         self.assertNotIn('o_sc_btn_primary', classes)
-        self.assertTrue(add.xpath('.//*[contains(@class, "o_sc_icon")]'))
+        # Review round 1: no « + » icon, the FIRST item of its header.
+        self.assertFalse(add.xpath('.//*[contains(@class, "o_sc_icon")]'))
         self.assertEqual(' '.join(add.text_content().split()), 'Add')
-        # The last item of its header.
-        self.assertIsNone(add.getnext())
+        self.assertIsNone(add.getprevious())
 
     def test_link_style_everywhere(self):
         self._login_tp()

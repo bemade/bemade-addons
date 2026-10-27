@@ -24,6 +24,10 @@ Acceptance criteria:
 * AC-5 Browser (phone + laptop): exact twin → « Create » greyed with the
   reason → « Create anyway » → created; DOB today → « The date is correct »
   → created.
+* AC-6 (review round 1, owner 2026-10-27): each override button has a
+  hidden muted « ✓ Accepted by the user » next to it
+  (``data-sc-check-accepted``) that replaces the button once clicked (the
+  browser part in AC-5's tours).
 """
 from datetime import date
 
@@ -81,6 +85,10 @@ class TestIdentityWarning1716(Warning1716Common):
         self.assertIn('A player with this name and date of birth already exists (PC Team B).',
                       ' '.join(box.text_content().split()))
         self.assertTrue(box.xpath('.//button[@data-sc-player-add-force-btn]'))
+        # AC-6: its « Accepted by the user » note, hidden until clicked.
+        note = box.xpath('.//*[@data-sc-check-accepted="force"]')[0]
+        self.assertEqual(note.get('hidden'), 'hidden')
+        self.assertEqual(' '.join(note.text_content().split()), 'Accepted by the user')
         row = tree.xpath('//li[@data-sc-check-player="%s"]' % self.elodie.id)[0]
         link = row.xpath('.//button[@data-sc-action="player.link"]')[0]
         self.assertEqual(' '.join(link.text_content().split()), 'Add this player to the team')

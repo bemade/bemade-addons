@@ -241,8 +241,9 @@
                  recommendation (autosave + stamp + History), both return
                  dates (#1603 proposals intact) and « Remove player ».
                  Coaches: read view only, no pencil. Task 1630: the
-                 « Allergies » / « Medical alert » pills sit left of the
-                 pencil, each opening its popup (therapists edit there). -->
+                 « Allergies » / « Medical alert » pills, each opening its
+                 popup (therapists edit there) — review round 2: under the
+                 Match / Practice pills. -->
             <t t-set="sc_hero_status_edit" t-value="is_treatment_prof and sc_can('patient.status.edit')"/>
             <t t-set="sc_hero_training_edit" t-value="is_treatment_prof and sc_can('patient.training.edit')"/>
             <t t-set="sc_hero_return_edit" t-value="is_treatment_prof and sc_can('patient.return.edit')"/>
@@ -271,12 +272,6 @@
                         </p>
                     </div>
                 </div>
-                <t t-if="sc_hero_medical" t-call="bemade_sports_clinic.sc_medical_pills">
-                    <t t-set="patient" t-value="player"/>
-                    <t t-set="scope" t-value="'player'"/>
-                    <t t-set="tp" t-value="sc_hero_medical_tp"/>
-                    <t t-set="section" t-value="'player.medical'"/>
-                </t>
                 </div>
                 <!-- The header group's pencil (therapists only), top right. -->
                 <t t-if="sc_hero_editable">
@@ -309,6 +304,16 @@
                                 </t>
                             </t>
                         </div>
+                        <!-- Review round 2 (owner 2026-10-27): the « Allergies » /
+                             « Medical alert » pills INSIDE the card, on the
+                             line under Match / Practice — the same spot as on
+                             every player card (were top right). -->
+                        <t t-if="sc_hero_medical" t-call="bemade_sports_clinic.sc_medical_pills">
+                            <t t-set="patient" t-value="player"/>
+                            <t t-set="scope" t-value="'player'"/>
+                            <t t-set="tp" t-value="sc_hero_medical_tp"/>
+                            <t t-set="section" t-value="'player.medical'"/>
+                        </t>
                     </div>
                     <!-- Task 1615: the training recommendation right under the
                          play status (read; its stamp and History). Task 1629:

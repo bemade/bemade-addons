@@ -23,6 +23,8 @@ Acceptance criteria:
 * AC-I6 Clinic dossier: a resolved injury drops out of « Active injuries »
   (list fragment).
 """
+from lxml import html as lxml_html
+
 from odoo.tests import tagged
 
 from odoo.addons.bemade_sports_clinic.tests.fragments_common_1611 import FragmentsCommon, FragmentsMixin
@@ -145,14 +147,21 @@ class TestFragmentsDossier1611(FragmentsMixin, ClinicDossier1590Common):
     def test_resolved_injury_drops_out_of_active_list(self):
         from odoo.addons.bemade_sports_clinic.tests.fragments_common_1611 import FragmentsCommon, FragmentsMixin
         self._login_tp()
-        key = 'sports.patient:%s:active-injuries' % self.player.id
+        # Task 1721 (review round 1): ONE list fragment holds the active
+        # cards and the resolved fold-out — a resolved card moves into the
+        # fold-out (it no longer sits in the active list).
+        key = 'sports.patient:%s:injury-lists' % self.player.id
         item = 'sports.patient.injury:%s:card' % self.injury.id
         tree = self._get(self._dossier_url())[1]
         node = tree.xpath('//*[@data-sc-fragment="%s"]' % key)[0]
         self.assertEqual(node.get('data-sc-fragment-mode'), 'list')
-        self.assertTrue(node.xpath('.//*[@data-sc-fragment-item="%s"]' % item))
+        self.assertTrue(node.xpath('.//*[@data-sc-section="clinic.dossier.injury_list"]'
+                                   '//*[@data-sc-fragment-item="%s"]' % item))
         payload = self._saved(self.injury, 'stage', 'resolved')
         self.assertRefreshes(payload, key)
         answer = self._fragments(self._dossier_url(), [key])
-        self.assertIn(key, answer['missing'] + list(answer['fragments']))
-        self.assertNotIn(item, ''.join(answer['fragments'].values()))
+        fresh = lxml_html.fragment_fromstring(answer['fragments'][key])
+        self.assertFalse(fresh.xpath('.//*[@data-sc-section="clinic.dossier.injury_list"]'
+                                     '//*[@data-sc-fragment-item="%s"]' % item))
+        self.assertTrue(fresh.xpath('.//details[@data-sc-resolved-injuries]'
+                                    '//*[@data-sc-fragment-item="%s"]' % item))

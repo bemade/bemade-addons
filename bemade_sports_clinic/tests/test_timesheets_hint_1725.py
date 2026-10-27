@@ -14,6 +14,11 @@ Acceptance criteria:
 * AC-3 French (website-aware): « Pour ajouter une feuille de temps, ouvrez
   l'événement concerné. » / « Aucune feuille de temps. Ajoutez-en une
   depuis la page de l'événement. » and the link reads « Événements ».
+* AC-4 (review round 1, 2026-10-27) Both « Events » links are app links
+  (``o_sc_hint_link``: accent colour, weight 600) opening MY events with
+  missing timesheets — the events page's « Missing timesheets » segment
+  (``view_type=missing_timesheets``, the viewer as ``assigned_user_id``,
+  ``no_default_dates=1``) — and that page shows the segment active.
 """
 from odoo import Command
 from odoo.tests import tagged
@@ -49,6 +54,25 @@ class TestTimesheetsHint1725(AppShellCommon):
         self.opener.cookies.set('frontend_lang', 'fr_CA')
         self.tp.write({'lang': 'fr_CA'})
 
+    def _missing_url(self):
+        return ('/my/events?view_type=missing_timesheets&assigned_user_id=%s&no_default_dates=1'
+                % self.tp.id)
+
+    def _assert_missing_link(self, node):
+        links = node.xpath('.//a')
+        self.assertEqual(len(links), 1)
+        # website may prefix the language (/fr/…) on CI.
+        self.assertTrue(links[0].get('href').endswith(self._missing_url()), links[0].get('href'))
+        self.assertIn('o_sc_hint_link', links[0].get('class'))
+
+    # -- AC-4 ------------------------------------------------------------
+    def test_link_opens_missing_timesheets(self):
+        self._login_tp()
+        _text, tree = self._get(self._missing_url())
+        chip = tree.xpath('//a[@data-sc-view="missing_timesheets"]')
+        self.assertEqual(len(chip), 1)
+        self.assertEqual(chip[0].get('aria-pressed'), 'true')
+
     # -- AC-1 ------------------------------------------------------------
     def test_hint_with_rows(self):
         self._login_tp()
@@ -57,7 +81,7 @@ class TestTimesheetsHint1725(AppShellCommon):
         hint = self._hint(tree)
         self.assertIn('o_sc_muted', hint.get('class'))
         self.assertIn('To add a timesheet, open the event concerned.', self._text(hint))
-        self.assertEqual(hint.xpath('.//a/@href'), ['/my/events'])
+        self._assert_missing_link(hint)
         self.assertEqual(self._text(hint.xpath('.//a')[0]), 'Events')
         # Under the list header, before the list.
         header = tree.xpath('//*[@data-sc-section="timesheets.header"]')[0]
@@ -73,7 +97,7 @@ class TestTimesheetsHint1725(AppShellCommon):
         empty = tree.xpath('//p[@data-sc-section="timesheets.empty"]')
         self.assertEqual(len(empty), 1)
         self.assertIn("No timesheets. Add one from the event's page.", self._text(empty[0]))
-        self.assertEqual(empty[0].xpath('.//a/@href'), ['/my/events'])
+        self._assert_missing_link(empty[0])
 
     # -- AC-3 ------------------------------------------------------------
     def test_french(self):

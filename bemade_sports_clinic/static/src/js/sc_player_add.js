@@ -188,6 +188,7 @@ async function check(form) {
             return;
         }
         region.innerHTML = await response.text();
+        showAccepted(form);
         const results = region.querySelector("[data-sc-check-results]");
         if (results && results.dataset.scReady === "1") {
             form.dataset.scCheckedKey = keyOf(values);
@@ -311,10 +312,44 @@ document.addEventListener("click", (ev) => {
     } else {
         form.dataset.scDobOkKey = key;
     }
-    button.disabled = true;
-    button.setAttribute("aria-pressed", "true");
+    showAccepted(form);
     refreshSubmit(form);
 });
+
+/**
+ * Review round 1 (owner 2026-10-27): an accepted override is no longer a
+ * button — « ✓ Accepted by the user » takes its place, for the values it
+ * was accepted for (a re-render of the check for the same values keeps it).
+ */
+function showAccepted(form) {
+    const key = keyOf(fields(form));
+    const accepted = {
+        force: form.dataset.scForceKey === key,
+        dob: form.dataset.scDobOkKey === key,
+    };
+    const buttons = {
+        force: "[data-sc-player-add-force-btn]",
+        dob: "[data-sc-player-add-dob-confirm]",
+    };
+    let moveFocus = false;
+    for (const [kind, selector] of Object.entries(buttons)) {
+        for (const button of form.querySelectorAll(selector)) {
+            if (accepted[kind] && button.contains(document.activeElement)) {
+                moveFocus = true;
+            }
+            button.hidden = accepted[kind];
+        }
+        for (const note of form.querySelectorAll(`[data-sc-check-accepted="${kind}"]`)) {
+            note.hidden = !accepted[kind];
+        }
+    }
+    if (moveFocus) {
+        const submit = form.querySelector('button[type="submit"]:not([formaction])');
+        if (submit) {
+            submit.focus({ preventScroll: true });
+        }
+    }
+}
 
 // Task 1672: the check's first content, to put back on a reset.
 const checkHints = new WeakMap();

@@ -1,6 +1,6 @@
 /*
  * Task 1723 — creating an event: a typed team is picked or refused clearly,
- * an organisation change says what it dropped, a server refusal shows its
+ * an organisation change warns before dropping teams, a server refusal shows its
  * message and keeps what was typed (tests/test_event_create_1723.py).
  */
 import { registry } from "@web/core/registry";
@@ -147,25 +147,57 @@ tours.add("sc_1723_server_refusal_kept", {
     ],
 });
 
-// An organisation change drops the other organisation's teams — and says so.
+// Review round 1 (owner 2026-10-27): an organisation change that would drop
+// the chosen teams WARNS FIRST (inline, never a browser confirm); « Cancel »
+// keeps the organisation and the teams, « Change organization » drops them.
+function chooseOrg(label) {
+    return {
+        content: `Choose the organisation « ${label} »`,
+        trigger: `${FORM} select[name="organization_id"]:not(:visible)`,
+        run() {
+            const option = [...this.anchor.options].find((opt) => opt.textContent.includes(label));
+            this.anchor.dataset.scTourBefore = this.anchor.value;
+            this.anchor.value = option.value;
+            this.anchor.dispatchEvent(new Event("change", { bubbles: true }));
+        },
+    };
+}
+
 tours.add("sc_1723_org_drop_notice", {
     steps: () => [
         ...typeTeam("team a"),
         { content: "Pick it", trigger: `${TEAMS} .o_sc_tags_option:contains("PC Team A")`, run: "click" },
+        chooseOrg("ZZ Org 1597"),
         {
-            content: "Choose the other organisation",
-            trigger: `${FORM} select[name="organization_id"]:not(:visible)`,
+            content: "A warning first: the team is still there, the submit waits",
+            trigger: `${TEAMS} [data-sc-org-confirm-box] [data-sc-org-cancel]`,
             run() {
-                const option = [...this.anchor.options].find((opt) => opt.textContent.includes("ZZ Org 1597"));
-                this.anchor.value = option.value;
-                this.anchor.dispatchEvent(new Event("change", { bubbles: true }));
+                assert(document.querySelector(`${FORM} input[name="team_ids"]`).value, "team dropped before confirming");
+                assert(document.querySelector(`${TEAMS} [data-sc-org-confirm-box]`).textContent.includes("PC Team A"),
+                    "the warning does not name the team");
+                assert(!document.querySelector(`${TEAMS} [data-sc-tags-group-notice]`), "an after-the-fact notice");
             },
         },
+        { content: "« Cancel »", trigger: `${TEAMS} [data-sc-org-cancel]`, run: "click" },
         {
-            content: "The team is dropped and the notice says so",
-            trigger: `${TEAMS} [data-sc-tags-group-notice]`,
+            content: "The former organisation and the team are kept",
+            trigger: `${TEAMS}:not(:has([data-sc-org-confirm-box]))`,
+            run() {
+                const select = document.querySelector(`${FORM} select[name="organization_id"]`);
+                assert(select.value === select.dataset.scTourBefore, "the organisation was not restored");
+                assert(document.querySelector(`${FORM} input[name="team_ids"]`).value, "team lost on cancel");
+                assert(document.querySelector(`${TEAMS} .o_sc_tag`), "no team chip");
+            },
+        },
+        chooseOrg("ZZ Org 1597"),
+        { content: "« Change organization »", trigger: `${TEAMS} [data-sc-org-confirm]`, run: "click" },
+        {
+            content: "The team is dropped once confirmed",
+            trigger: `${TEAMS}:not(:has([data-sc-org-confirm-box]))`,
             run() {
                 assert(!document.querySelector(`${FORM} input[name="team_ids"]`).value, "team kept");
+                const select = document.querySelector(`${FORM} select[name="organization_id"]`);
+                assert(select.selectedOptions[0].textContent.includes("ZZ Org 1597"), "organisation not changed");
             },
         },
     ],

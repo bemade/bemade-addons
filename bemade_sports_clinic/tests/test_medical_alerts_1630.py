@@ -86,7 +86,12 @@ class TestMedicalHeader1630(MedicalCommon):
         hero = tree.xpath(HERO)[0]
         top = hero.xpath('./*[contains(@class, "o_sc_hero_top")]')[0]
         self.assertTrue(top.xpath('./*[contains(@class, "o_sc_hero_head")]'))
-        holder = top.xpath('./*[@data-sc-section="player.medical"]')[0]
+        # Review round 2 (owner 2026-10-27): inside the card, on the line
+        # under the Match / Practice pills (no longer top right).
+        self.assertFalse(top.xpath('./*[@data-sc-section="player.medical"]'))
+        status = hero.xpath('.//*[@data-sc-section="player.status"]')[0]
+        holder = status.xpath('./*[@data-sc-section="player.medical"]')[0]
+        self.assertEqual(holder.getprevious().get('data-sc-section'), 'player.status.readonly')
         self.assertEqual(holder.get('data-sc-fragment'), 'sports.patient:%s:medical-pills' % self.player.id)
         self.assertFalse(holder.xpath('.//owl-component'))
         pills = self._pills(tree)
@@ -313,13 +318,17 @@ class TestMedicalDossier1630(Clinic1540Common):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/clinic/%s?patient=%s&tab=dossier' % (self.clinic.id, self.player.id))
-        hero = tree.xpath('//*[@data-sc-section="clinic.dossier.hero"]')[0]
-        pills = hero.xpath('.//*[@data-sc-section="clinic.dossier.medical"]//button[@data-sc-med-pill]')
+        # Review round 2 (owner 2026-10-27): the pills are INSIDE the player
+        # card (its own medical line), opening the page's « card » sheets.
+        hero = tree.xpath('//*[@data-sc-section="clinic.dossier.player"]')[0]
+        self.assertFalse(tree.xpath('//*[@data-sc-section="clinic.dossier.medical"]'))
+        pills = hero.xpath('.//*[@data-sc-row-med]//button[@data-sc-med-pill]')
         self.assertEqual([p.get('data-sc-med-pill') for p in pills], ['allergy', 'medical_alert'])
         self.assertIn('o_sc_med_minor', pills[0].get('class'))
         self.assertIn('o_sc_med_none', pills[1].get('class'))
         self.assertEqual(pills[1].get('data-sc-med-level'), 'unset')
-        sheet = tree.xpath('//dialog[@id="sc_med_clinic_allergy_%s"]' % self.player.id)[0]
+        sheet = tree.xpath('//dialog[@id="%s"]' % pills[0].get('data-sc-med-card-sheet'))[0]
+        self.assertEqual(sheet.get('id'), 'sc_med_card_allergy_%s' % self.player.id)
         self.assertIn('Synthetic pollen', sheet.text_content())
         self.assertTrue(sheet.xpath('.//button[@data-sc-edit-toggle]'))
         self.assertFalse(hero.xpath('.//*[contains(@class, "o_sc_banner")]'), 'no allergies banner')

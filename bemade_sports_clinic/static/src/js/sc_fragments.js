@@ -22,7 +22,9 @@
  *   render empties and hides its node;
  * - data-sc-fragment-mode="list": the container's live items
  *   (data-sc-fragment-item) are KEPT — their islands survive — and only
- *   re-ordered / dropped / regrouped as in the fresh render; while an item is
+ *   re-ordered / dropped / regrouped as in the fresh render (an item may
+ *   move between the list's sub-lists; a details[data-sc-keep-open] keeps
+ *   its open state); while an item is
  *   being edited (or holds the focus) the list waits (retried after « Done »);
  * - « Done » of an edit card refreshes at once (``sc:refresh-now``);
  * - back / forward (owner decision 2026-10-17): every page carries its server
@@ -188,6 +190,17 @@ function reconcileList(live, fresh, key) {
     if ([...liveItems.values()].some(itemBusy)) {
         stale.add(key);
         return false;
+    }
+    // Task 1721 (review round 1): a fold-out of the list
+    // (details[data-sc-keep-open], e.g. the resolved injuries) stays as the
+    // user left it.
+    for (const fold of live.querySelectorAll("details[data-sc-keep-open]")) {
+        const twin = [...fresh.querySelectorAll("details[data-sc-keep-open]")].find(
+            (el) => el.dataset.scKeepOpen === fold.dataset.scKeepOpen
+        );
+        if (twin) {
+            twin.open = fold.open;
+        }
     }
     const active = document.activeElement;
     for (const slot of [...fresh.querySelectorAll("[data-sc-fragment-item]")]) {

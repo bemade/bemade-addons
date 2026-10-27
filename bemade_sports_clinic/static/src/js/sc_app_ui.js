@@ -764,8 +764,9 @@ function measureClamp(text) {
     more.hidden = !clamped;
     const sep = box.querySelector("[data-sc-clamp-sep]");
     const meta = box.querySelector("[data-sc-clamp-meta]");
+    const less = box.querySelector("[data-sc-clamp-less]");
     const hasOther = meta && [...meta.children].some(
-        (child) => child !== more && child !== sep && !child.hidden
+        (child) => child !== more && child !== less && child !== sep && !child.hidden
     );
     if (sep) {
         sep.hidden = !(clamped && hasOther);
@@ -789,28 +790,59 @@ function setupClamps() {
     }
 }
 
+// « See more » expands the text in place; review round 1 (owner
+// 2026-10-27): « See less » ([data-sc-clamp-less]) folds it back.
+function clampMetaVisible(box) {
+    const meta = box.querySelector("[data-sc-clamp-meta]");
+    if (meta) {
+        meta.hidden = ![...meta.children].some((child) => !child.hidden && !child.matches("[data-sc-clamp-sep]"));
+    }
+}
+
 document.addEventListener("click", (ev) => {
-    const more = ev.target.closest && ev.target.closest("[data-sc-clamp-more]");
-    if (!more || !more.closest(".o_sc_app")) {
+    const button = ev.target.closest && ev.target.closest("[data-sc-clamp-more], [data-sc-clamp-less]");
+    if (!button || !button.closest(".o_sc_app")) {
         return;
     }
-    const box = more.closest("[data-sc-clamp-meta]")?.parentElement;
+    const box = button.closest("[data-sc-clamp-meta]")?.parentElement;
     const text = box && box.querySelector("[data-sc-clamp]");
     if (!text) {
         return;
     }
     ev.preventDefault();
-    text.dataset.scClampOpen = "1";
-    more.hidden = true;
-    more.setAttribute("aria-expanded", "true");
+    const more = box.querySelector("[data-sc-clamp-more]");
+    const less = box.querySelector("[data-sc-clamp-less]");
     const sep = box.querySelector("[data-sc-clamp-sep]");
-    if (sep) {
-        sep.hidden = true;
+    const meta = box.querySelector("[data-sc-clamp-meta]");
+    const hasOther = meta && [...meta.children].some(
+        (child) => child !== more && child !== less && child !== sep && !child.hidden
+    );
+    if (button.matches("[data-sc-clamp-more]")) {
+        text.dataset.scClampOpen = "1";
+        if (more) {
+            more.hidden = true;
+            more.setAttribute("aria-expanded", "true");
+        }
+        if (less) {
+            less.hidden = false;
+            less.focus({ preventScroll: true });
+        }
+        if (sep) {
+            sep.hidden = !(less && hasOther);
+        }
+        clampMetaVisible(box);
+        return;
+    }
+    delete text.dataset.scClampOpen;
+    if (less) {
+        less.hidden = true;
+    }
+    if (more) {
+        more.setAttribute("aria-expanded", "false");
     }
     measureClamp(text);
-    const meta = box.querySelector("[data-sc-clamp-meta]");
-    if (meta) {
-        meta.hidden = ![...meta.children].some((child) => child !== more && child !== sep && !child.hidden);
+    if (more && !more.hidden) {
+        more.focus({ preventScroll: true });
     }
 });
 

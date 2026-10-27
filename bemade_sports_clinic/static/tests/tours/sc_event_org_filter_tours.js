@@ -100,6 +100,12 @@ tours.add("sc_1597_event_org_filter", {
             },
         },
         {
+            // Task 1723 (review round 1): a change that drops teams asks first.
+            content: "Confirm « Change organization »",
+            trigger: `${TEAMS} [data-sc-org-confirm-box] button[data-sc-org-confirm]`,
+            run: "click",
+        },
+        {
             content: "Only its teams remain; the other organization's team is dropped",
             trigger: `${TEAMS} .o_sc_tag:contains("ZZ Team C 1597")`,
             async run() {

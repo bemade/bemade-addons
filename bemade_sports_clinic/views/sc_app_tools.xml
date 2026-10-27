@@ -101,8 +101,10 @@
                 <t t-set="sort_section" t-value="'timesheets.sort'"/>
             </t>
             <!-- Task 1725: timesheets are added from their event — say so,
-                 with a link to the events list. -->
-            <p class="o_sc_muted o_sc_list_hint" data-sc-section="timesheets.hint">To add a timesheet, open the event concerned. <a href="/my/events" class="o_sc_link" data-sc-hint-link="events">Events</a></p>
+                 with a link to the events list. Review round 1: an app link
+                 (accent, 600) to MY events missing a timesheet (the events
+                 page's « Feuilles de temps manquantes » segment). -->
+            <p class="o_sc_muted o_sc_list_hint" data-sc-section="timesheets.hint">To add a timesheet, open the event concerned. <a t-attf-href="/my/events?view_type=missing_timesheets&amp;assigned_user_id=#{request.env.user.id}&amp;no_default_dates=1" class="o_sc_link o_sc_hint_link" data-sc-hint-link="events">Events</a></p>
             <!-- Task 1611: a read-fragment list — a time change moves the card
                  to its date group (headings and order as after a reload). -->
             <div t-if="sc_timesheet_groups" class="o_sc_list" data-sc-section="timesheets.list"
@@ -124,7 +126,7 @@
                     </t>
                 </t>
             </div>
-            <p t-else="" class="o_sc_empty" data-sc-section="timesheets.empty">No timesheets. Add one from the event's page. <a href="/my/events" class="o_sc_link" data-sc-hint-link="events">Events</a></p>
+            <p t-else="" class="o_sc_empty" data-sc-section="timesheets.empty">No timesheets. Add one from the event's page. <a t-attf-href="/my/events?view_type=missing_timesheets&amp;assigned_user_id=#{request.env.user.id}&amp;no_default_dates=1" class="o_sc_link o_sc_hint_link" data-sc-hint-link="events">Events</a></p>
             <t t-call="bemade_sports_clinic.sc_timesheet_sheets">
                 <t t-set="rows" t-value="sc_timesheet_rows"/>
                 <t t-set="return_url" t-value="sc_timesheets_return"/>

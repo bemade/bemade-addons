@@ -1,6 +1,6 @@
 /*
  * Task 1719 — the compact team announcement: « See more » only on an
- * overflowing text, expands it in place; the pencil of an empty announcement
+ * overflowing text, expands it in place, « See less » folds it back; the pencil of an empty announcement
  * opens the compose form (tests/test_announcement_compact_1719.py).
  */
 import { registry } from "@web/core/registry";
@@ -16,6 +16,7 @@ function assert(condition, message) {
 const AREA = '[data-sc-section="team.announcement.area"]';
 const BODY = `${AREA} .o_sc_announcement_body`;
 const MORE = `${AREA} button[data-sc-clamp-more]`;
+const LESS = `${AREA} button[data-sc-clamp-less]`;
 
 tours.add("sc_1719_see_more", {
     steps: () => [
@@ -51,6 +52,23 @@ tours.add("sc_1719_see_more", {
                 assert(body.scrollHeight <= body.clientHeight + 1, "still clamped");
                 assert(document.querySelector(MORE).hidden, "« See more » still shown");
                 assert(document.querySelector(MORE).getAttribute("aria-expanded") === "true", "aria-expanded");
+                // Review round 1 (owner 2026-10-27): « See less » folds it back.
+                assert(!document.querySelector(LESS).hidden, "no « See less »");
+            },
+        },
+        {
+            content: "« See less »",
+            trigger: `${LESS}:not([hidden])`,
+            run: "click",
+        },
+        {
+            content: "Clamped again; « See more » back, « See less » gone",
+            trigger: `${BODY}:not([data-sc-clamp-open])`,
+            run() {
+                const body = document.querySelector(BODY);
+                assert(body.scrollHeight > body.clientHeight + 1, "not clamped again");
+                assert(!document.querySelector(MORE).hidden, "« See more » not back");
+                assert(document.querySelector(LESS).hidden, "« See less » still shown");
             },
         },
     ],

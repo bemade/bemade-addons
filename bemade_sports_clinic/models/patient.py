@@ -20,6 +20,7 @@ from .medical_alerts import (
     LEVEL_NONE,
     LEVEL_TONES,
     LEVEL_URGENT,
+    LEVELS,
     UNSET_TONE,
     DETAILS_FIELD,
 )
@@ -2866,15 +2867,22 @@ class Patient(models.Model):
         return label
 
     # Review round 1 (owner 2026-10-22): the pills a player CARD shows.
-    _SC_CARD_MEDICAL_FIELDS = ("allergy_level", "allergy_epipen", "medical_alert_level")
+    _SC_CARD_MEDICAL_FIELDS = ("allergy_level", "allergy_epipen", "allergy_epipen_state",
+                               "medical_alert_level")
 
-    def _sc_card_medical_pills(self):
-        """Task 1630 / 1652 / 1677: the RED medical pills of player cards
-        (dashboard, roster, /my/players): ``{player_id: [{key, label, epipen,
-        title}]}``, players without a life-threatening item absent. Each
-        names the family's life-threatening items (the allergy one carries
-        the EpiPen icon). Shown to therapists and coaches alike (a coach
-        sees red, owner's rule); yellow / grey never show on a card.
+    def _sc_card_medical_pills(self, tp=None):
+        """Task 1630 / 1652 / 1677: the medical pills of player cards
+        (dashboard, roster, /my/players, the clinic pane): ``{player_id:
+        [{key, label, tone, level, epipen, title}]}``.
+
+        Review round 2 (owner 2026-10-27): the « Allergies » and « Medical
+        alert » pills sit INSIDE every player card, coloured by level — red
+        (life-threatening), yellow (not urgent), grey (none / not filled
+        in) — exactly the header pills' visibility (``_sc_medical_pills``):
+        a therapist (``tp``; default: the viewer) gets both, always; a coach
+        the yellow / red ones only (owner + MC 2026-10-21), players without
+        one absent. A red pill names the family's life-threatening items
+        (the allergy one carries the EpiPen icon).
 
         ONE batched read for the whole recordset, as the CURRENT user (never
         sudo: the fields are group-restricted). A viewer failing the
@@ -2891,12 +2899,15 @@ class Patient(models.Model):
             records.fetch(list(self._SC_CARD_MEDICAL_FIELDS))
         except AccessError:
             return {}
+        if tp is None:
+            tp = self._sc_viewer_is_tp()
         env = self.env
         specs = (
             ("allergy", env._("Allergies"), "allergy_level"),
             ("medical_alert", env._("Medical alert"), "medical_alert_level"),
         )
-        urgent_label = self._sc_level_label(LEVEL_URGENT)
+        level_labels = {level: self._sc_level_label(level) for level in (False,) + LEVELS}
+        not_provided = env._("Not provided")
         result = {}
         # The life-threatening items, ONE read.
         empty = env["sports.patient.critical.item"]
@@ -2908,17 +2919,26 @@ class Patient(models.Model):
         for record in records:
             pills = []
             for key, label, level_field in specs:
-                if record[level_field] != LEVEL_URGENT:
+                level = record[level_field] or False
+                if not tp and level not in COACH_LEVELS:
                     continue
+                level_label = level_labels.get(level, level)
+                if key == "allergy" and not record.allergy_epipen_state and not level:
+                    # Task 1717: EpiPen unanswered — « Not provided ».
+                    level_label = not_provided
                 epipen = bool(key == "allergy" and record.allergy_epipen)
-                title = env._("%(what)s: %(level)s", what=label, level=urgent_label)
-                items = by_family.get((record.id, key), empty)
-                names = self._sc_critical_label(items)
-                if names:
-                    title = "%s — %s" % (title, ", ".join(items.mapped("name")))
+                title = env._("%(what)s: %(level)s", what=label, level=level_label)
+                names = ""
+                if level == LEVEL_URGENT:
+                    items = by_family.get((record.id, key), empty)
+                    names = self._sc_critical_label(items)
+                    if names:
+                        title = "%s — %s" % (title, ", ".join(items.mapped("name")))
                 pills.append({
                     "key": key,
                     "label": names or label,
+                    "tone": LEVEL_TONES.get(level, UNSET_TONE),
+                    "level": level,
                     "epipen": epipen,
                     "title": ("%s · EpiPen" % title) if epipen else title,
                 })

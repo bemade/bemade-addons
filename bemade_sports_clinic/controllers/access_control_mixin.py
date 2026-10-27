@@ -564,8 +564,9 @@ class AccessControlMixin:
         dropdowns (``_sc_status_pills``); the selection labels are computed
         ONCE for the whole list (or given: ``labels``).
 
-        Task 1630 (review round 1): ``status['medical']`` — the RED
-        allergy / medical-alert pills of the card
+        Task 1630 (review round 1): ``status['medical']`` — the
+        allergy / medical-alert pills of the card (review round 2, owner
+        2026-10-27: every level, grey included, for a therapist)
         (``sports.patient._sc_card_medical_pills``: ONE batched read as the
         viewer, nothing when the viewer may not read the fields)."""
         env = request.env
@@ -574,7 +575,9 @@ class AccessControlMixin:
         team_qs = '&team_id=%s' % team.id if team else ''
         clocks = self._sc_activity_clocks(
             players, lambda p: '/my/player?player_id=%s%s&tab=activities' % (p.id, team_qs))
-        medical = players._sc_card_medical_pills()
+        # Review round 2 (owner 2026-10-27): both pills in EVERY card, grey
+        # included (a therapist; a coach: yellow / red only).
+        medical = players._sc_card_medical_pills(tp=bool(self._is_treatment_professional()))
         # Task 1652: a red card pill opens the player page's popup — the
         # page renders those sheets once per player (sc_app_layout, outside
         # the read fragments); the pill falls back to the player's Info tab.

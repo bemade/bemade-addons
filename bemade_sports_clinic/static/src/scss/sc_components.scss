@@ -215,6 +215,21 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         min-width: 0;
     }
 
+    // Task 1721 (review round 1, owner 2026-10-27): the clinic page uses the
+    // whole width on a laptop (worklist left, patient pane right); long text
+    // inside its cards keeps a readable line length. Phone: unchanged.
+    @media (min-width: $sc-laptop) {
+        .o_sc_content.o_sc_content_wide {
+            max-width: none;
+
+            .o_sc_pre,
+            .o_sc_note_text,
+            .o_sc_row_line_text {
+                max-width: 90ch;
+            }
+        }
+    }
+
     .o_sc_tabs {
         position: fixed;
         left: 0;
@@ -1020,6 +1035,60 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         font-size: 13px;
     }
 
+    // Task 1716 (review round 1): an accepted override in the add-player
+    // check — a small muted « ✓ Accepted by the user » instead of its button.
+    .o_sc_check_accepted:not([hidden]) {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 13px;
+
+        .o_sc_icon {
+            width: 14px;
+            height: 14px;
+            color: var(--sc-accent);
+        }
+    }
+
+    // Task 1723 (review round 1): an organisation change that would drop
+    // chosen teams — an inline warning with its two answers.
+    .o_sc_group_confirm {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-2);
+        padding: var(--sc-space-2) var(--sc-space-3);
+        border: 1px solid var(--sc-line);
+        border-left: 3px solid var(--sc-warn);
+        border-radius: var(--sc-radius-sm);
+
+        .o_sc_group_confirm_text {
+            margin: 0;
+        }
+
+        .o_sc_group_confirm_actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: var(--sc-space-2);
+
+            .o_sc_btn {
+                min-height: var(--sc-tap);
+            }
+        }
+    }
+
+    // Task 1725 (review round 1): the hint's « Événements » is an app link.
+    a.o_sc_hint_link {
+        color: var(--sc-accent);
+        font-weight: 600;
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+    }
+
     .o_sc_footnote {
         margin: 0;
         text-align: center;
@@ -1211,35 +1280,26 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         }
     }
 
-    // Task 1718: « + Ajouter » is a green-text link (the « Historique »
-    // style, .o_sc_section_more.o_sc_link_btn), the header's last item,
-    // right-aligned; still a 44 px target. Open panel: an accent underline.
+    // Task 1718: « Ajouter » is a green-text link (the « Historique »
+    // style, .o_sc_section_more.o_sc_link_btn); still a 44 px target. Review
+    // round 1 (owner 2026-10-27): no « + » icon, the header's FIRST item —
+    // left-aligned, just above the list's top-left edge (the sort menu keeps
+    // the right). Open panel: an accent underline.
     .o_sc_list_header .o_sc_list_add.o_sc_link_btn {
         flex: none;
-        margin-left: auto;
         min-height: var(--sc-tap);
         min-width: var(--sc-tap);
-        padding: 0 4px;
-        gap: 4px;
-        justify-content: flex-end;
+        padding: 0 4px 0 0;
+        justify-content: flex-start;
         text-decoration: none;
         border-bottom: 2px solid transparent;
         border-radius: 0;
-
-        .o_sc_icon {
-            width: 16px;
-            height: 16px;
-        }
 
         &:hover,
         &:focus-visible {
             text-decoration: underline;
             text-underline-offset: 3px;
         }
-    }
-
-    .o_sc_list_header .o_sc_sort_menu + .o_sc_list_add.o_sc_link_btn {
-        margin-left: 0;
     }
 
     .o_sc_list_header .o_sc_list_add[aria-expanded="true"] {

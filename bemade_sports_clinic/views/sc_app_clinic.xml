@@ -135,6 +135,8 @@
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-set="sc_title" t-value="event.name"/>
             <t t-set="sc_active_nav" t-value="'clinic'"/>
+            <!-- Task 1721 (review round 1): the whole width on a laptop. -->
+            <t t-set="sc_content_class" t-value="'o_sc_content_wide'"/>
 
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
             <div t-if="success == 'note_added' and sc_note_draft_prefix"
@@ -193,8 +195,9 @@
                              player card for this patient, (2) the player
                              form's injuries — « + Ajouter » above, the
                              resolved ones folded — and (3) the clinical
-                             notes. The medical pills stay under the card
-                             (#1630). -->
+                             notes. Review round 2 (owner 2026-10-27): the
+                             medical pills are INSIDE the card (sc_player_row,
+                             their popups the page's « card » sheets). -->
                         <div class="o_sc_list o_sc_clinic_player" data-sc-section="clinic.dossier.player"
                              t-att-data-sc-patient-id="patient.id" id="clinic-status">
                             <t t-call="bemade_sports_clinic.sc_player_row">
@@ -202,22 +205,6 @@
                                 <t t-set="row_scope" t-value="'clinic'"/>
                             </t>
                         </div>
-                        <div t-if="sc_can('patient.medical_alerts')" class="o_sc_clinic_medical"
-                             data-sc-section="clinic.dossier.hero">
-                            <!-- Task 1630 (owner 2026-10-20): the player page's
-                                 « Allergies » / « Medical alert » pills;
-                                 therapists edit in the popups. -->
-                            <t t-call="bemade_sports_clinic.sc_medical_pills">
-                                <t t-set="tp" t-value="bool(is_treatment_prof)"/>
-                                <t t-set="scope" t-value="'clinic'"/>
-                                <t t-set="section" t-value="'clinic.dossier.medical'"/>
-                            </t>
-                        </div>
-                        <t t-if="sc_can('patient.medical_alerts')" t-call="bemade_sports_clinic.sc_medical_sheets">
-                            <t t-set="tp" t-value="bool(is_treatment_prof)"/>
-                            <t t-set="scope" t-value="'clinic'"/>
-                            <t t-set="editable" t-value="bool(is_treatment_prof)"/>
-                        </t>
 
                         <section class="o_sc_section" data-sc-section="clinic.dossier.injuries" id="clinic-injuries">
                             <t t-call="bemade_sports_clinic.sc_section_header">
@@ -236,27 +223,35 @@
                                 <t t-set="card_patient" t-value="patient"/>
                                 <t t-set="card_add_id" t-value="'sc_clinic_injury_add'"/>
                             </t>
-                            <!-- Task 1611: a read-fragment list — a card resolved here
-                                 drops out (once closed), the others re-order. -->
-                            <div t-if="sc_injury_rows" class="o_sc_list" data-sc-section="clinic.dossier.injury_list"
-                                 t-att-data-sc-fragment="sc_fragment_key(patient, 'active-injuries')" data-sc-fragment-mode="list">
-                                <t t-foreach="sc_injury_rows" t-as="row">
-                                    <t t-call="bemade_sports_clinic.sc_injury_card"/>
-                                </t>
-                            </div>
-                            <p t-else="" class="o_sc_empty" data-sc-section="clinic.dossier.no_active">No active injuries.</p>
-                            <!-- Task 1721: the resolved injuries, folded (always
-                                 present: a resolve in this pane refreshes it). -->
-                            <div class="o_sc_clinic_resolved" data-sc-section="clinic.dossier.resolved"
-                                 t-att-data-sc-fragment="sc_fragment_key(patient, 'resolved-injuries')">
-                                <details t-if="sc_resolved_injury_rows" class="o_sc_resolved_injuries" data-sc-resolved-injuries="1">
-                                    <summary class="o_sc_link_btn o_sc_resolved_toggle" t-out="sc_resolved_injuries_label"/>
-                                    <div class="o_sc_list" data-sc-section="clinic.dossier.resolved_list">
-                                        <t t-foreach="sc_resolved_injury_rows" t-as="row">
-                                            <t t-call="bemade_sports_clinic.sc_injury_card"/>
-                                        </t>
-                                    </div>
-                                </details>
+                            <!-- Task 1611: a read-fragment list. Review round 1
+                                 (owner 2026-10-27): ONE list fragment holds the
+                                 active cards, the empty line AND the resolved
+                                 fold-out with its count, so a stage change moves
+                                 the card between them in place (its islands
+                                 kept) — a resolved card set back to « Actif »
+                                 joins the active list without a reload. -->
+                            <div class="o_sc_clinic_injuries" data-sc-section="clinic.dossier.injury_lists"
+                                 t-att-data-sc-fragment="sc_fragment_key(patient, 'injury-lists')" data-sc-fragment-mode="list">
+                                <div t-if="sc_injury_rows" class="o_sc_list" data-sc-section="clinic.dossier.injury_list">
+                                    <t t-foreach="sc_injury_rows" t-as="row">
+                                        <t t-call="bemade_sports_clinic.sc_injury_card"/>
+                                    </t>
+                                </div>
+                                <p t-else="" class="o_sc_empty" data-sc-section="clinic.dossier.no_active">No active injuries.</p>
+                                <!-- Task 1721: the resolved injuries, folded; the
+                                     fold stays open across a refresh
+                                     (data-sc-keep-open, sc_fragments.js). -->
+                                <div class="o_sc_clinic_resolved" data-sc-section="clinic.dossier.resolved">
+                                    <details t-if="sc_resolved_injury_rows" class="o_sc_resolved_injuries"
+                                             data-sc-resolved-injuries="1" data-sc-keep-open="resolved-injuries">
+                                        <summary class="o_sc_link_btn o_sc_resolved_toggle" t-out="sc_resolved_injuries_label"/>
+                                        <div class="o_sc_list" data-sc-section="clinic.dossier.resolved_list">
+                                            <t t-foreach="sc_resolved_injury_rows" t-as="row">
+                                                <t t-call="bemade_sports_clinic.sc_injury_card"/>
+                                            </t>
+                                        </div>
+                                    </details>
+                                </div>
                             </div>
                         </section>
 
