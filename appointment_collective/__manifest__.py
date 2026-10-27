@@ -8,7 +8,7 @@
 
 {
     "name": "Collective Appointments",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "license": "LGPL-3",
     "development_status": "Beta",
     "category": "Services/Appointment",
@@ -60,7 +60,7 @@ modules that change it -- Flexible (one-off) slots, busy time imported by
 ``calendar_busy_subscription`` -- apply to every staff user of a collective
 type unchanged.
 """,
-    "installable": True,
+    "installable": False,  # until implemented (#4935)
     "application": False,
     "auto_install": False,
 }

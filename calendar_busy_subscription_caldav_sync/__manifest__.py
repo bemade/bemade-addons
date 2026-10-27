@@ -8,7 +8,7 @@
 
 {
     "name": "Calendar Busy Subscriptions: CalDAV Sync",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "license": "LGPL-3",
     "development_status": "Beta",
     "category": "Productivity",
@@ -33,7 +33,7 @@ This module excludes busy blocks from everything ``caldav_sync`` sends to a
 server: creation, update and deletion. Nothing else about either module
 changes.
 """,
-    "installable": True,
+    "installable": False,  # until implemented (#4935)
     "application": False,
     "auto_install": True,
 }

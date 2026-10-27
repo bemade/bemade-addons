@@ -8,7 +8,7 @@
 
 {
     "name": "Calendar Busy Subscriptions",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "license": "LGPL-3",
     "development_status": "Beta",
     "category": "Productivity",
@@ -119,7 +119,7 @@ Known limits
   in particular can lag behind the live calendar.
 * An ICS feed is downloaded whole on every refresh.
 """,
-    "installable": True,
+    "installable": False,  # until implemented (#4935)
     "application": False,
     "auto_install": False,
 }

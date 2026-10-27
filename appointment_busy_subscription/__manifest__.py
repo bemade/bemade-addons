@@ -8,7 +8,7 @@
 
 {
     "name": "Appointments: Busy Subscriptions",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "license": "LGPL-3",
     "development_status": "Beta",
     "category": "Services/Appointment",
@@ -44,7 +44,7 @@ The horizon is never extended beyond the furthest booking window that asked
 for it, so a user who is staff only on short-window appointment types keeps
 the default horizon.
 """,
-    "installable": True,
+    "installable": False,  # until implemented (#4935)
     "application": False,
     "auto_install": True,
 }
