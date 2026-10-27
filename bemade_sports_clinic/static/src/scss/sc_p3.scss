@@ -30,9 +30,11 @@ $sc-p3-laptop: 1024px;
 
     @media (min-width: $sc-p3-laptop) {
         // Laptop: both panes side by side; the phone tabs are not needed.
+        // Task 1721 (review round 2, owner 2026-10-27): the worklist keeps a
+        // fixed width (~420 px); the patient / dossier pane takes the rest.
         .o_sc_clinic_panes {
             display: grid;
-            grid-template-columns: minmax(320px, 2fr) 3fr;
+            grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
             gap: var(--sc-space-5);
             align-items: start;
 
@@ -613,6 +615,22 @@ $sc-p3-laptop: 1024px;
         min-width: 0;
     }
 
+    // Task 1722: the event form's venue picker beside « New venue ».
+    .o_sc_inline_form:has(> .o_sc_picker) {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--sc-space-2);
+
+        > .o_sc_picker {
+            flex: 1 1 auto;
+        }
+
+        > .o_sc_btn {
+            flex: none;
+            min-height: var(--sc-tap);
+        }
+    }
+
     .o_sc_picker_box {
         position: relative;
         display: flex;
@@ -667,3 +685,36 @@ $sc-p3-laptop: 1024px;
     }
 }
 
+
+// Task 1721: the Clinique dossier — the player card, the medical pills
+// under it, the folded resolved injuries.
+.o_sc_app {
+    .o_sc_clinic_medical {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sc-space-2);
+        margin-top: var(--sc-space-2);
+    }
+
+    .o_sc_resolved_injuries {
+        margin-top: var(--sc-space-2);
+
+        > summary.o_sc_resolved_toggle {
+            list-style: none;
+            display: inline-flex;
+            align-items: center;
+            min-height: var(--sc-tap);
+            color: var(--sc-accent);
+            font-weight: 600;
+            cursor: pointer;
+
+            &::-webkit-details-marker {
+                display: none;
+            }
+        }
+
+        > .o_sc_list {
+            margin-top: var(--sc-space-2);
+        }
+    }
+}

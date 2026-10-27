@@ -81,13 +81,12 @@ class TestPlayerAddInline1655(PlayerAdd1655Common):
         # row (test_adversarial_review_1022 AR-S2).
         self.assertEqual(row.xpath('.//*[@data-sc-check-dob]//text()')[-1].strip(), '02/03/2010')
         self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['0'])
-        # DOB refines + the exact twin — in the user's own teams only:
-        # Élodie (PC Team B) is outside them, so her date of birth never
-        # changes the answer, only a generic line (adversarial review
-        # 2026-10-22, test_adversarial_review_1022).
+        # DOB refines + the exact twin. Task 1716 (DOB-oracle concern
+        # waived): also for Élodie (PC Team B, outside the user's teams) —
+        # was « never exact, a generic line » (adversarial review 2026-10-22).
         resp, tree = self._check(first='Élodie', last='Synthé-Côté', dob='2010-02-03')
-        self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['0'])
-        self.assertTrue(tree.xpath('//*[@data-sc-check-twin-elsewhere]'))
+        self.assertEqual(tree.xpath('//*[@data-sc-check-results]/@data-sc-exact'), ['1'])
+        self.assertFalse(tree.xpath('//*[@data-sc-check-twin-elsewhere]'))
         self.assertNotIn(self.archived.id, [int(li.get('data-sc-check-player'))
                                             for li in tree.xpath('//li[@data-sc-check-player]')])
         # On the team.

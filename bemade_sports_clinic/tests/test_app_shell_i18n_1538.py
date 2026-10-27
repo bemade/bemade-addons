@@ -84,5 +84,6 @@ class TestAppShellI18n1538(AppShellCommon):
             self.assertIn(term, text.replace('&#39;', "'"), term)
         # Task 1606: the settings moved to « Paramètres ».
         text = self._fr('/my/app/settings')
-        for term in ('Apparence', 'Sombre', 'Clair', 'Mon compte', 'Sécurité'):
+        # Task 1726: « Apparence » is a « Mode sombre » switch.
+        for term in ('Apparence', 'Mode sombre', 'Mon compte', 'Sécurité'):
             self.assertIn(term, text.replace('&#39;', "'"), term)

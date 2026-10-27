@@ -6,7 +6,7 @@ for good (« Not a duplicate »). Nothing is ever merged automatically."""
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-from .sc_name_match import duplicate_pairs
+from .sc_name_match import compact, duplicate_pairs
 
 
 class SportsPatientDuplicate(models.Model):
@@ -44,16 +44,31 @@ class SportsPatientDuplicate(models.Model):
             pair.teams_a = ', '.join(pair.patient_a_id.team_ids.mapped('name'))
             pair.teams_b = ', '.join(pair.patient_b_id.team_ids.mapped('name'))
 
+    @api.model
+    def _sc_match_row(self, row):
+        """Task 1715: the name the matcher compares is the one users see —
+        the player's display name (its contact's name). When the first /
+        last name fields agree with it (normalised: accents, case, spaces,
+        hyphens), they are used as they are (first vs last, so « swapped »
+        and the near checks keep working). When they disagree (a
+        half-overwritten record), the display name is split first word /
+        rest and the row is untrusted: never « Same name » / « swapped »,
+        at most « Similar name ». -> ``(id, first, last, dob, trusted)``."""
+        first, last = row['first_name'] or '', row['last_name'] or ''
+        display = (row.get('name') or '').strip()
+        if not display or compact('%s %s' % (first, last)) == compact(display):
+            return (row['id'], first, last, row['date_of_birth'], True)
+        head, _sep, rest = display.partition(' ')
+        return (row['id'], head, rest.strip(), row['date_of_birth'], False)
+
     def action_find_duplicates(self):
         # Review 2026-10-25: no @api.model: the list-header button calls it with
         # the (empty) selection, which @api.model rejected as an extra argument.
         """Recompute the open pairs (dismissed ones stay dismissed) and show
         the list."""
         patients = self.env['sports.patient'].search_read(
-            [], ['first_name', 'last_name', 'date_of_birth'])
-        found = duplicate_pairs([
-            (row['id'], row['first_name'] or '', row['last_name'] or '', row['date_of_birth'])
-            for row in patients])
+            [], ['first_name', 'last_name', 'date_of_birth', 'name'])
+        found = duplicate_pairs([self._sc_match_row(row) for row in patients])
         existing = self.with_context(active_test=False).search([])
         dismissed = {(p.patient_a_id.id, p.patient_b_id.id) for p in existing if p.dismissed}
         existing.filtered(lambda p: not p.dismissed).unlink()

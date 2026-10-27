@@ -106,10 +106,13 @@
                             <input type="date" id="sc_ev_to" name="date_to" class="o_sc_input" t-att-value="date_to or ''"/>
                         </div>
                     </t>
-                    <label class="o_sc_check">
-                        <input type="checkbox" name="show_cancelled" value="1" t-att-checked="'checked' if show_cancelled else None"/>
-                        <span>Show cancelled events</span>
-                    </label>
+                    <t t-call="bemade_sports_clinic.sc_switch">
+                        <t t-set="sw_name" t-value="'show_cancelled'"/>
+                        <t t-set="sw_value" t-value="'1'"/>
+                        <t t-set="sw_checked" t-value="show_cancelled"/>
+                        <t t-set="sw_class" t-value="'o_sc_switch_filter'"/>
+                        <t t-set="sw_label">Show cancelled events</t>
+                    </t>
                 </div>
                 <!-- Task 1607: the sort is in the list header (sc_list_header);
                      the group by stays here, in its own labelled group. -->
@@ -453,7 +456,7 @@
                     <t t-set="lbl">Therapist End</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(event, 'therapist_end', lbl, 'datetime-local')"/></t>
                     <t t-set="lbl">Venue</t>
-                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(event, 'venue_id', lbl, 'select', options=opts['venues'])"/></t>
+                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(event, 'venue_id', lbl, 'select', options=opts['venues'], picker=True, pickerKey='venue')"/></t>
                     <button type="button" class="o_sc_link_btn" data-sc-sheet-open="sc_venue_sheet" data-sc-action="venue.new">New venue</button>
                     <t t-set="lbl">Teams</t>
                     <t t-set="sc_add_team">Add a team…</t>
@@ -646,7 +649,8 @@
                     <div class="o_sc_field">
                         <label class="o_sc_field_label" for="sc_event_venue">Venue</label>
                         <div class="o_sc_inline_form">
-                            <select id="sc_event_venue" name="venue_id" class="o_sc_input o_sc_select" data-sc-venue-select="1">
+                            <select id="sc_event_venue" name="venue_id" class="o_sc_input o_sc_select" data-sc-venue-select="1"
+                                    data-sc-picker="1" data-sc-picker-key="venue" data-sc-picker-empty="1">
                                 <option value="">To be determined</option>
                                 <t t-foreach="venues" t-as="venue">
                                     <option t-att-value="venue.id" t-att-selected="'selected' if venue.id == sc_form['venue_id'] else None" t-out="venue.name"/>
@@ -694,7 +698,8 @@
                          organizations. -->
                     <div t-if="organizations" class="o_sc_field">
                         <label class="o_sc_field_label" for="sc_event_org">Organization</label>
-                        <select id="sc_event_org" name="organization_id" class="o_sc_input o_sc_select" data-sc-org-select="1">
+                        <select id="sc_event_org" name="organization_id" class="o_sc_input o_sc_select" data-sc-org-select="1"
+                                data-sc-picker="1" data-sc-picker-key="org" data-sc-picker-empty="1">
                             <option value="">All organizations</option>
                             <t t-foreach="organizations" t-as="org">
                                 <option t-att-value="org.id" t-att-selected="'selected' if org.id == sc_form['organization_id'] else None" t-out="org.name"/>

@@ -31,3 +31,11 @@ class MailActivity(models.Model):
         copy=False,
         help="Technical: set by the incomplete-player cron (task 1628).",
     )
+    # Task 1717: the « Complete the medical file (allergies/EpiPen) » To-Do
+    # raised at a player's creation while EpiPen is unanswered; closed when
+    # it is answered (keyed on this flag, never on the translated summary).
+    sc_epipen_todo = fields.Boolean(
+        string="EpiPen To-Do",
+        copy=False,
+        help="Technical: the creator's « complete the medical file » To-Do (task 1717).",
+    )

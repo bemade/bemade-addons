@@ -153,7 +153,7 @@ tours.add("sc_1611_player_fragments", {
         },
         {
             content: "The trash can",
-            trigger: `dialog[open] [data-sc-section="medical.allergy"] [data-sc-med-item] [data-sc-edit-view="edit"]:not([hidden]) button[data-sc-med-item-delete]`,
+            trigger: `dialog[open] [data-sc-section="medical.allergy"] [data-sc-med-item][data-sc-edit-open] .o_sc_med_card_row button[data-sc-med-item-delete]:visible`,
             run: "click",
         },
         {

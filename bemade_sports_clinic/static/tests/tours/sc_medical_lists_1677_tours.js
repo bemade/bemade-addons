@@ -49,8 +49,14 @@ function setValue(input, value) {
     input.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
+// Review round 2 (owner 2026-10-27): the level pill sits in the popup's
+// header (next to its title), outside the sheet's body section.
+function headOf(sheet) {
+    return `${sheet.replace("dialog[open] ", "dialog[open]:has(")}) .o_sc_sheet_head [data-sc-med-head]`;
+}
+
 function headTone(sheet) {
-    const head = q(`${sheet} [data-sc-med-head]`);
+    const head = q(headOf(sheet));
     return head && head.dataset.scMedLevel;
 }
 
@@ -66,7 +72,7 @@ tours.add("sc_1677_allergies_tp", {
         },
         {
             content: "The popup: its pill, the EpiPen card, the list",
-            trigger: `${ALLERGY} [data-sc-med-head][data-sc-med-level="minor"]`,
+            trigger: `${headOf(ALLERGY)}[data-sc-med-level="minor"]`,
             run() {
                 assert(q(`${ALLERGY} [data-sc-med-item]`), "the allergy card");
                 assert(!q(`${ALLERGY} select, ${ALLERGY} owl-component`), "a level selector / island");
@@ -78,8 +84,9 @@ tours.add("sc_1677_allergies_tp", {
             run: "click",
         },
         {
-            content: "Tick EpiPen: its note appears",
-            trigger: `${ALLERGY} [data-sc-section="medical.allergy.epipen"] [data-sc-edit-view="edit"]:not([hidden]) input[data-sc-med-set="allergy_epipen"]`,
+            // Task 1717: « EpiPen? » Yes (radios; was a checkbox).
+            content: "EpiPen: Yes — its note appears",
+            trigger: `${ALLERGY} [data-sc-section="medical.allergy.epipen"] [data-sc-edit-view="edit"]:not([hidden]) .o_sc_toggle_pill label:has(input[data-sc-med-set="allergy_epipen_state"][value="yes"])`,
             async run() {
                 const note = q(`${ALLERGY} [data-sc-med-epipen-note-field]`);
                 assert(note.hidden, "the note shows while EpiPen is unticked");
@@ -140,13 +147,13 @@ tours.add("sc_1677_allergies_tp", {
             run: "click",
         },
         {
-            content: "Tick « Risque vital »",
-            trigger: `${ALLERGY} [data-sc-med-item]:not(:first-child) [data-sc-edit-view="edit"]:not([hidden]) input[data-sc-med-item-field="life_threatening"]`,
+            content: "Turn on « Risque vital » (task 1726: a switch — tap its row)",
+            trigger: `${ALLERGY} [data-sc-med-item]:not(:first-child) [data-sc-edit-view="edit"]:not([hidden]) label.o_sc_switch:has(input[data-sc-med-item-field="life_threatening"])`,
             run: "click",
         },
         {
             content: "The popup's pill turns red, live",
-            trigger: `${ALLERGY} [data-sc-med-head][data-sc-med-level="urgent"]`,
+            trigger: `${headOf(ALLERGY)}[data-sc-med-level="urgent"]`,
         },
         {
             content: "The header pill turns red and names « Arachides »",
@@ -158,12 +165,12 @@ tours.add("sc_1677_allergies_tp", {
         },
         {
             content: "The trash can",
-            trigger: `${ALLERGY} [data-sc-med-item]:not(:first-child) [data-sc-edit-view="edit"]:not([hidden]) button[data-sc-med-item-delete]`,
+            trigger: `${ALLERGY} [data-sc-med-item]:not(:first-child)[data-sc-edit-open] .o_sc_med_card_row button[data-sc-med-item-delete]:visible`,
             run: "click",
         },
         {
             content: "Gone: yellow again",
-            trigger: `${ALLERGY} [data-sc-med-head][data-sc-med-level="minor"]`,
+            trigger: `${headOf(ALLERGY)}[data-sc-med-level="minor"]`,
             async run() {
                 await waitFor(() => document.querySelectorAll(`${ALLERGY} [data-sc-med-item]`).length === 1, "one card left");
                 await waitFor(() => q(`${PILLS} button[data-sc-med-pill="allergy"].o_sc_med_minor`), "the yellow header pill");
@@ -185,7 +192,7 @@ tours.add("sc_1677_conditions_tp", {
         },
         {
             content: "Grey, the « no known condition » box, no EpiPen card",
-            trigger: `${CONDITION} input[data-sc-med-set="medical_none_confirmed"]`,
+            trigger: `${CONDITION} label.o_sc_switch:has(input[data-sc-med-set="medical_none_confirmed"])`,
             run() {
                 assert(headTone(CONDITION) === "unset", `head: ${headTone(CONDITION)}`);
                 assert(!q(`${CONDITION} [data-sc-section="medical.allergy.epipen"]`), "an EpiPen card");
@@ -203,7 +210,7 @@ tours.add("sc_1677_conditions_tp", {
         },
         {
             content: "Risque vital",
-            trigger: `${CONDITION} details[open] form[data-sc-med-add] input[name="life_threatening"]`,
+            trigger: `${CONDITION} details[open] form[data-sc-med-add] label.o_sc_switch:has(input[name="life_threatening"])`,
             run: "click",
         },
         {

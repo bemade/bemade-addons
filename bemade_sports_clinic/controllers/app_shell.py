@@ -1557,15 +1557,23 @@ class AppShellMixin:
         return json.dumps(props, default=str)
 
     @staticmethod
-    def _sc_note_injury_options(patient):
+    def _sc_note_injury_options(patient, active_only=False, keep=None):
         """Task 1665: the ONE injury list of the treatment-note forms (add
         AND edit, player page and clinic dossier): every injury of the player,
         the unresolved ones first (newest first), then the resolved ones
         suffixed « (résolue) ». ``[(id, label)]``; sudo: labels only, of the
-        player's own injuries (the forms are gated by their routes)."""
+        player's own injuries (the forms are gated by their routes).
+
+        Task 1721 (review round 1, owner 2026-10-27): ``active_only`` — the
+        clinic pane, whose list shows only the active / unverified injuries
+        (the resolved ones folded): the same injuries, plus ``keep`` (a
+        note's linked injury when editing it, still « (résolue) » if it is)."""
         env = request.env
         injuries = patient.sudo().injury_ids.sorted(
             lambda i: (i.stage == 'resolved', -(i.id or 0)))
+        if active_only:
+            keep_id = keep.id if keep else 0
+            injuries = injuries.filtered(lambda i: i.stage != 'resolved' or i.id == keep_id)
         options = []
         for injury in injuries:
             label = injury.diagnosis or injury.display_name
@@ -1574,13 +1582,16 @@ class AppShellMixin:
             options.append((injury.id, label))
         return options
 
-    def _sc_note_edit_props(self, note):
+    def _sc_note_edit_props(self, note, active_only=False):
         """Task 1587: the pencil edit fields of a treatment-note card — the
         text, the date and the linked injury. Task 1665: the same injury list
-        as the add form (all the player's injuries, resolved ones last)."""
+        as the add form (all the player's injuries, resolved ones last);
+        task 1721: ``active_only`` in the clinic pane (its add form's list,
+        plus the note's own injury)."""
         env = request.env
+        note_sudo = note.sudo()
         options = [('', env._("General note"))] + self._sc_note_injury_options(
-            note.sudo().patient_id)
+            note_sudo.patient_id, active_only=active_only, keep=note_sudo.injury_id)
         return [
             self._sc_field_props(note, 'note', env._("Note"), 'textarea'),
             self._sc_field_props(note, 'date', env._("Date"), 'date'),

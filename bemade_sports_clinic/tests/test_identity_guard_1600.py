@@ -139,10 +139,11 @@ class TestIdentityGuardModel1600(IdentityCommon):
     # ----- AC-c (model) -----
     def test_duplicate_identity_refused_for_portal(self):
         writer = self.player.with_user(self.tp).with_context(sc_identity_confirmed=True)
-        # Security review 2026-10-23: Dana is on another team (not readable):
-        # the generic refusal, whatever the date of birth
-        # (test_identity_oracle_1023).
-        with self.assertRaisesRegex(ValidationError, 'A player with this identity already exists'):
+        # Task 1716 (owner 2026-10-26, DOB-oracle concern waived): Dana is
+        # on another team (not readable) — a write onto her exact name +
+        # date of birth gets the plain twin refusal (was the generic « ask a
+        # manager » of the 2026-10-23 review).
+        with self.assertRaisesRegex(ValidationError, 'Another player already has this name and date of birth'):
             writer.write({'first_name': ' dana ', 'last_name': 'SYNTHETIC', 'date_of_birth': '2010-01-02'})
         self.player.invalidate_recordset()
         self.assertEqual(self.player.first_name, 'Pat')
@@ -150,8 +151,8 @@ class TestIdentityGuardModel1600(IdentityCommon):
         self.other.active = False
         with self.assertRaises(ValidationError):
             writer.write({'first_name': 'Dana', 'last_name': 'Synthetic', 'date_of_birth': '2010-01-02'})
-        # Create through the portal path.
-        with self.assertRaises(ValidationError):
+        # Create through the portal path: the twin warning (task 1716).
+        with self.assertRaisesRegex(ValidationError, 'already exists'):
             self.env['sports.patient'].with_user(self.tp).create_portal_patient({
                 'first_name': 'Dana', 'last_name': 'Synthetic', 'date_of_birth': '2010-01-02',
                 'team_ids': [Command.set([self.team_a.id])]})
@@ -206,9 +207,9 @@ class TestIdentityGuardLegacy1600(IdentityCommon):
         }, allow_redirects=False)
         self.assertEqual(resp.status_code, 303)
         self.assertIn('/my/player/create', resp.headers['Location'])
-        # Security review 2026-10-23: Dana is on another team — the generic
-        # refusal (test_identity_oracle_1023).
-        self.assertIn('A player with this identity already exists — ask a manager.',
+        # Task 1716: Dana is on another team — the twin message with her
+        # team (was the generic « ask a manager », review 2026-10-23).
+        self.assertIn('A player with this name and date of birth already exists (PC Team B).',
                       self.url_open('/my/player/create').text)
         self.assertEqual(self.env['res.partner'].search_count([]), partners,
                          "no orphan contact left behind")
@@ -329,9 +330,9 @@ class TestIdentityGuardAppShell1600(IdentityCommon):
         self._login_tp()
         resp = self._app_save('last_name', 'Synthetic', confirm='1')
         self.assertEqual(resp.status_code, 400, resp.text)
-        # Security review 2026-10-23: Dana is on another team — the generic
-        # refusal (test_identity_oracle_1023).
-        self.assertIn('A player with this identity already exists', resp.json()['message'])
+        # Task 1716: Dana is on another team — the plain twin refusal (was
+        # the generic « ask a manager », review 2026-10-23).
+        self.assertEqual(resp.json()['message'], 'Another player already has this name and date of birth.')
 
 
 @tagged('-at_install', 'post_install')

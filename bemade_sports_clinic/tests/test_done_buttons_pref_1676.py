@@ -65,7 +65,9 @@ class TestDoneButtonsPref1676(Done1676Common):
         self._login_tp()
         _text, tree = self._get('/my/app/settings')
         section = tree.xpath('//section[@data-sc-section="settings.done_buttons"]')[0]
-        self.assertEqual(section.xpath('.//button[@value="0"]/@aria-pressed'), ['true'])
+        # Task 1726: a switch, off by default.
+        self.assertEqual(section.xpath('.//input[@role="switch"][@name="sc_show_done_buttons"]/@aria-checked'),
+                         ['false'])
         self.assertEqual(self._app(tree).get('data-sc-hide-done'), '1')
         resp = self.url_open('/my/app/pref', data={'csrf_token': self._csrf(), 'sc_show_done_buttons': '1',
                                                    'redirect': '/my/app/settings'}, allow_redirects=False)
@@ -75,7 +77,7 @@ class TestDoneButtonsPref1676(Done1676Common):
         self.assertFalse(self.coach.sc_show_done_buttons)
         _text, tree = self._get('/my/app/settings')
         section = tree.xpath('//section[@data-sc-section="settings.done_buttons"]')[0]
-        self.assertEqual(section.xpath('.//button[@value="1"]/@aria-pressed'), ['true'])
+        self.assertEqual(section.xpath('.//input[@role="switch"]/@aria-checked'), ['true'])
         self.assertIsNone(self._app(tree).get('data-sc-hide-done'))
         with mute_logger('odoo.http'):
             resp = self.url_open('/my/app/pref', data={'csrf_token': self._csrf(), 'sc_show_done_buttons': '1',

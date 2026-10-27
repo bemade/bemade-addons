@@ -152,15 +152,17 @@ class TestNearMatchApp1674(PlayerAdd1655Common):
         self.assertIn(self.jonathan.id, self._rows(tree, 'match'))
         self.assertIn(self.jonathan_twin.id, self._rows(tree, 'near'))
 
-    def test_check_near_s2_out_of_scope(self):
+    def test_check_near_out_of_scope(self):
+        # Task 1716 (DOB-oracle concern waived): was the S2 « same answer
+        # whatever the date ». A near match of another team is listed with
+        # the right date or none, dropped with a wrong one — like the user's
+        # own players.
         self._login_tp()
-        answers = []
-        for dob in ('2010-02-03', '2001-01-01', ''):
-            resp, tree = self._check(first='Elodei', last='Synthe-Cote', dob=dob)
+        for dob in ('2010-02-03', ''):
+            _resp, tree = self._check(first='Elodei', last='Synthe-Cote', dob=dob)
             self.assertIn(self.elodie.id, self._rows(tree, 'near'), dob)
-            answers.append(resp.text)
-        self.assertEqual(answers[0], answers[1])
-        self.assertEqual(answers[0], answers[2])
+        _resp, tree = self._check(first='Elodei', last='Synthe-Cote', dob='2001-01-01')
+        self.assertNotIn(self.elodie.id, self._rows(tree, 'near'))
 
     # -- AC-3 --------------------------------------------------------------
     def test_header_search_close_results(self):

@@ -128,9 +128,11 @@ class TestClinicDossierInline1590(ClinicDossier1590Common):
         self.assertFalse(tree.xpath('//dialog[starts-with(@id, "sc_clinic_injury_")]'))
         self.assertNotIn('/form/fragment', text)
         self.assertNotIn('/my/patient/injury/new/fragment', text)
-        # « New injury » in the hero jumps to the inline card.
-        self.assertEqual(tree.xpath('//a[@data-sc-action="clinic.injury_new"]/@href'),
-                         ['#sc_clinic_injury_add'])
+        # Task 1721: no hero « New injury » any more — the injuries' own
+        # « + Ajouter » (right above the list) opens the inline card.
+        self.assertFalse(tree.xpath('//a[@data-sc-action="clinic.injury_new"]'))
+        self.assertTrue(tree.xpath('//section[@data-sc-section="clinic.dossier.injuries"]'
+                                   '//button[@data-sc-list-add-toggle][@aria-controls="sc_clinic_injury_add"]'))
 
     # -- UC-CD2 ----------------------------------------------------------
     def test_create_lands_back_on_dossier(self):
@@ -239,11 +241,16 @@ class TestClinicDossierInline1590(ClinicDossier1590Common):
         resolved.with_context(mail_notrack=True).write({'stage': 'resolved'})
         self._login_tp()
         _text, tree = self._get(self._dossier_url())
-        ids = tree.xpath('//section[@data-sc-section="clinic.dossier.injuries"]'
+        # Task 1721: the resolved one is no longer absent — it is folded
+        # under « Show resolved injuries (N) », out of the active list.
+        ids = tree.xpath('//*[@data-sc-section="clinic.dossier.injury_list"]'
                          '//details[@data-sc-edit-card="injury"]/@data-sc-injury-id')
         self.assertIn(str(unverified.id), ids)
         self.assertIn(str(self.injury.id), ids)
         self.assertNotIn(str(resolved.id), ids)
+        folded = tree.xpath('//details[@data-sc-resolved-injuries]'
+                            '//details[@data-sc-edit-card="injury"]/@data-sc-injury-id')
+        self.assertEqual(folded, [str(resolved.id)])
         # A coach's report from the player page (unverified) shows in the
         # therapist's dossier as soon as it exists.
         self._login_coach()

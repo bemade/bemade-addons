@@ -29,6 +29,13 @@
         pressed.forEach(function (button) {
             button.setAttribute("aria-pressed", button.value === theme ? "true" : "false");
         });
+        // Task 1726: « Paramètres › Apparence » is a switch (on = dark).
+        app.querySelectorAll("input[data-sc-theme-switch]").forEach(function (input) {
+            input.checked = theme === "dark";
+            if (window.scSwitchSync) {
+                window.scSwitchSync(input);
+            }
+        });
     }
 
     document.addEventListener("submit", function (ev) {

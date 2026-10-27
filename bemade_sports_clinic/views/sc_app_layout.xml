@@ -193,7 +193,7 @@
                         </ol>
                     </nav>
 
-                    <main class="o_sc_content" id="sc_content">
+                    <main t-attf-class="o_sc_content #{sc_content_class or ''}" id="sc_content">
                         <t t-out="0"/>
                     </main>
                     <t t-if="sc_search_url" t-call="bemade_sports_clinic.sc_app_search_sheet"/>

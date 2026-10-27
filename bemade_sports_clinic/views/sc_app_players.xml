@@ -241,8 +241,9 @@
                  recommendation (autosave + stamp + History), both return
                  dates (#1603 proposals intact) and « Remove player ».
                  Coaches: read view only, no pencil. Task 1630: the
-                 « Allergies » / « Medical alert » pills sit left of the
-                 pencil, each opening its popup (therapists edit there). -->
+                 « Allergies » / « Medical alert » pills, each opening its
+                 popup (therapists edit there) — review round 2: under the
+                 Match / Practice pills. -->
             <t t-set="sc_hero_status_edit" t-value="is_treatment_prof and sc_can('patient.status.edit')"/>
             <t t-set="sc_hero_training_edit" t-value="is_treatment_prof and sc_can('patient.training.edit')"/>
             <t t-set="sc_hero_return_edit" t-value="is_treatment_prof and sc_can('patient.return.edit')"/>
@@ -271,12 +272,6 @@
                         </p>
                     </div>
                 </div>
-                <t t-if="sc_hero_medical" t-call="bemade_sports_clinic.sc_medical_pills">
-                    <t t-set="patient" t-value="player"/>
-                    <t t-set="scope" t-value="'player'"/>
-                    <t t-set="tp" t-value="sc_hero_medical_tp"/>
-                    <t t-set="section" t-value="'player.medical'"/>
-                </t>
                 </div>
                 <!-- The header group's pencil (therapists only), top right. -->
                 <t t-if="sc_hero_editable">
@@ -309,6 +304,16 @@
                                 </t>
                             </t>
                         </div>
+                        <!-- Review round 2 (owner 2026-10-27): the « Allergies » /
+                             « Medical alert » pills INSIDE the card, on the
+                             line under Match / Practice — the same spot as on
+                             every player card (were top right). -->
+                        <t t-if="sc_hero_medical" t-call="bemade_sports_clinic.sc_medical_pills">
+                            <t t-set="patient" t-value="player"/>
+                            <t t-set="scope" t-value="'player'"/>
+                            <t t-set="tp" t-value="sc_hero_medical_tp"/>
+                            <t t-set="section" t-value="'player.medical'"/>
+                        </t>
                     </div>
                     <!-- Task 1615: the training recommendation right under the
                          play status (read; its stamp and History). Task 1629:
@@ -655,6 +660,7 @@
                                     <t t-set="c_email" t-value="sc_contact_add_data.get('email') or ''"/>
                                 </t>
                                 <div class="o_sc_form_actions">
+                                    <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
                                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="contact.add">Add Emergency Contact</button>
                                 </div>
                                 <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_contact_add'"/></t>
@@ -913,6 +919,7 @@
                                t-att-id="'sc_new_injury_diag_%s' % card_patient.id" autocomplete="off"/>
                     </div>
                     <div class="o_sc_form_actions">
+                        <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
                         <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="injury.create">
                             <span t-if="is_treatment_prof">Create</span>
                             <span t-else="">Report</span>
@@ -1412,6 +1419,7 @@
                     <t t-set="props" t-value="sc_draft_props(note_draft_prefix + 'note', 'note', sc_note_label, 'textarea', placeholder=sc_note_placeholder, required=True)"/>
                 </t>
                 <div class="o_sc_form_actions">
+                    <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="notes.submit">Add Note</button>
                 </div>
                 <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_note_add'"/></t>
@@ -1531,16 +1539,16 @@
                                        inputmode="tel" autocomplete="tel"/>
                             </div>
                         </div>
-                        <fieldset t-if="all_teams" class="o_sc_fields">
-                            <legend class="o_sc_field_label">Teams</legend>
-                            <t t-foreach="all_teams" t-as="team_opt">
-                                <label class="o_sc_check">
-                                    <input type="checkbox" name="team_ids" t-att-value="team_opt.id"
-                                           t-att-checked="'checked' if len(all_teams) == 1 else None"/>
-                                    <span t-out="team_opt.name"/>
-                                </label>
+                        <!-- Task 1726: the teams are the type-to-search tag
+                             picker of « Créer un joueur » (« Ajouter une
+                             équipe… »); it fills the hidden team_ids (the
+                             chosen ids, comma separated). -->
+                        <t t-if="all_teams">
+                            <input type="hidden" id="sc_new_team_ids" name="team_ids" t-att-value="sc_team_csv"/>
+                            <t t-call="bemade_sports_clinic.sc_field_autosave">
+                                <t t-set="props" t-value="sc_team_props"/>
                             </t>
-                        </fieldset>
+                        </t>
                         <t t-if="is_treatment_prof">
                             <div class="o_sc_field">
                                 <label for="sc_new_status" class="o_sc_field_label">Match</label>

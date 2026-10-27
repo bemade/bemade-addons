@@ -94,10 +94,16 @@ tours.add("sc_1597_event_org_filter", {
         },
         {
             content: "Pick the second organization",
-            trigger: `${FORM} select[data-sc-org-select]`,
+            trigger: `${FORM} select[data-sc-org-select]:not(:visible)`, // Task 1722: the picker's hidden value
             run() {
                 selectOrg(this.anchor, "ZZ Org 1597");
             },
+        },
+        {
+            // Task 1723 (review round 1): a change that drops teams asks first.
+            content: "Confirm « Change organization »",
+            trigger: `${TEAMS} [data-sc-org-confirm-box] button[data-sc-org-confirm]`,
+            run: "click",
         },
         {
             content: "Only its teams remain; the other organization's team is dropped",
@@ -114,7 +120,7 @@ tours.add("sc_1597_event_org_filter", {
         },
         {
             content: "Back to all organizations: every team is offered again, picks kept",
-            trigger: `${FORM} select[data-sc-org-select]`,
+            trigger: `${FORM} select[data-sc-org-select]:not(:visible)`, // Task 1722: the picker's hidden value
             async run() {
                 this.anchor.value = "";
                 this.anchor.dispatchEvent(new Event("change", { bubbles: true }));

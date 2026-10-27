@@ -3905,6 +3905,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_role_mass_assign_wizard_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_security
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_list_add_cancel
 msgid "Cancel"
 msgstr "Annuler"
 
@@ -6642,6 +6643,7 @@ msgstr "Blessé :"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__injury_ids
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_clinic
 msgid "Injuries"
 msgstr "Blessures"
 
@@ -7721,6 +7723,7 @@ msgstr "Type de la prochaine activité"
 #: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
 #: code:addons/bemade_sports_clinic/models/patient.py:0
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__allergy_epipen_state__no
 msgid "No"
 msgstr "Non"
 
@@ -7783,6 +7786,7 @@ msgstr "Aucun accès"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_row_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_clinic
 msgid "No active injuries."
 msgstr "Aucune blessure active."
 
@@ -10826,6 +10830,7 @@ msgstr "Afficher tous les thérapeutes"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_calendar
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_list
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_event_filter_bar
 msgid "Show cancelled events"
 msgstr "Afficher les événements annulés"
 
@@ -13468,6 +13473,7 @@ msgstr "Mot de passe erroné."
 #: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
 #: code:addons/bemade_sports_clinic/models/patient.py:0
+#: model:ir.model.fields.selection,name:bemade_sports_clinic.selection__sports_patient__allergy_epipen_state__yes
 msgid "Yes"
 msgstr "Oui"
 
@@ -17325,3 +17331,202 @@ msgstr "Retour à l'application"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_knowledge_public_back_to_app
 msgid "App"
 msgstr "Application"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_timesheets
+msgid "To add a timesheet, open the event concerned:"
+msgstr "Pour ajouter une feuille de temps, ouvrez l'événement concerné :"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_timesheets
+msgid "No timesheets. Add one from the event's page:"
+msgstr "Aucune feuille de temps. Ajoutez-en une depuis la page de l'événement :"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_timesheets
+msgid "My events without timesheets"
+msgstr "Mes événements sans feuilles de temps"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+msgid "<span class=\"o_sc_announcement_heading\">Team announcement</span>"
+msgstr "<span class=\"o_sc_announcement_heading\">Annonce d'équipe</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+msgid "See more"
+msgstr "Voir plus"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+msgid "No current announcement."
+msgstr "Aucune annonce en cours."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
+msgid "Until %(date)s"
+msgstr "Jusqu'au %(date)s"
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
+msgid "Nothing matches « %s »: pick it from the list."
+msgstr "Aucun choix ne correspond à « %s » : choisissez dans la liste."
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
+msgid "The teams of another organization were removed."
+msgstr "Les équipes d'une autre organisation ont été retirées."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_player_add.py:0
+msgid "%s Confirm it or fix it."
+msgstr "%s Confirmez-la ou corrigez-la."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_player_add.py:0
+msgid "This date of birth is in the future."
+msgstr "Cette date de naissance est dans le futur."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_player_add.py:0
+msgid "This date of birth is today."
+msgstr "Cette date de naissance est aujourd'hui."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_player_add.py:0
+msgid "This date of birth gives an age of %s."
+msgstr "Cette date de naissance donne un âge de %s ans."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "A player with this name and date of birth already exists (%s)."
+msgstr "Un joueur avec ce nom et cette date de naissance existe déjà (%s)."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "no team"
+msgstr "aucune équipe"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "A player with this name and date of birth already exists ("
+msgstr "Un joueur avec ce nom et cette date de naissance existe déjà ("
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "Add this player to the team"
+msgstr "Ajouter ce joueur à l'équipe"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "Create anyway"
+msgstr "Créer quand même"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_results
+msgid "The date is correct"
+msgstr "La date est exacte"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "Confirm or fix the date of birth above"
+msgstr "Confirmez ou corrigez la date de naissance ci-dessus"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_add_panel
+msgid "This player already exists — add them to the team or choose « Create anyway » above"
+msgstr "Ce joueur existe déjà — ajoutez-le à l'équipe ou choisissez « Créer quand même » ci-dessus"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/clinic_portal.py:0
+msgid "Show resolved injuries (%s)"
+msgstr "Afficher les blessures résolues (%s)"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Answer « EpiPen? » (Yes / No) before entering the allergies."
+msgstr "Répondez à « EpiPen ? » (Oui / Non) avant d'inscrire les allergies."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+msgid "Complete the medical file (allergies/EpiPen)"
+msgstr "Compléter le dossier médical (allergies/EpiPen)"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/patient.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Not provided"
+msgstr "Non renseigné"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__allergy_epipen_state
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "EpiPen?"
+msgstr "EpiPen ?"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Answer « EpiPen? » first: then add the allergies or turn on « No known allergy »."
+msgstr "Répondez d'abord à « EpiPen ? » : ajoutez ensuite les allergies ou activez « Aucune allergie connue »."
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_mail_activity__sc_epipen_todo
+msgid "EpiPen To-Do"
+msgstr "Tâche EpiPen"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
+msgid "See less"
+msgstr "Voir moins"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_check_accepted
+msgid "<span>Accepted by the user</span>"
+msgstr "<span>Accepté par l'usager</span>"
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
+msgid ""
+"Changing the organization removes the teams of the other organization: %s."
+msgstr ""
+"Changer d'organisation retire les équipes de l'autre organisation : %s."
+
+#. module: bemade_sports_clinic
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
+msgid "Change organization"
+msgstr "Changer d'organisation"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Carries an EpiPen"
+msgstr "Porte un EpiPen"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_settings
+msgid "Dark mode"
+msgstr "Mode sombre"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
+msgid "Answer « EpiPen? » first."
+msgstr "Répondez d'abord à « EpiPen ? »."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_new_form
+msgid "Turn on N/A if the exact date is unknown"
+msgstr "Activez S/O si la date exacte est inconnue"

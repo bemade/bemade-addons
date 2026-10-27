@@ -62,6 +62,20 @@ class User(models.Model):
         inverse="_inverse_accessible_team_ids",
     )
 
+    # Task 1714: inverse of sports.event.assigned_staff_ids (the events the
+    # user covers). Exists so the portal mail.activity record rule can list
+    # every activity on an event the user is assigned to (another team's
+    # event included). active_test off: an archived event's activities stay
+    # reachable, like the event's own m2m.
+    sc_assigned_event_ids = fields.Many2many(
+        comodel_name="sports.event",
+        relation="sports_event_staff_rel",
+        column1="user_id",
+        column2="event_id",
+        string="Assigned Events",
+        context={"active_test": False},
+    )
+
     # Task 1244: inverse of sports.quick.note.user_id. Exists so the portal
     # mail.activity record rule can traverse user -> own quick notes and let a
     # therapist read the stale-note reminder raised on their own note.

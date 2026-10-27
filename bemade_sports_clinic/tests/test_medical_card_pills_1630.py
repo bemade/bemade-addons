@@ -17,7 +17,11 @@ Acceptance criteria:
   (``data-sc-med-card-sheet``), rendered ONCE on the page, outside every
   read fragment; the Info tab as the fallback.
 * CARD-3 « Not urgent » (yellow), « None » (grey) and « Not specified »
-  never show on a card.
+  never show on a card. Superseded by review round 2 (owner 2026-10-27):
+  BOTH pills sit inside every card for a therapist, coloured by level —
+  red, yellow, grey (none / not filled in) — on their own line under the
+  Match / Practice line; a coach keeps the header's rule (yellow / red
+  only, owner + MC 2026-10-21).
 * CARD-4 A viewer without read access to the fields (the field-group check
   fails) gets no pill and no AccessError.
 * CARD-5 The levels are read in ONE batched read for the whole list.
@@ -103,13 +107,21 @@ class TestMedicalCardPills1630(MedicalCards1630Common):
             self.assertEqual(len(rows), 1, login.__name__)
             self._assert_red(rows[0], (login.__name__, 'watch'), epipen=False)
 
-    def test_only_the_red_one(self):
+    def test_red_and_yellow_for_a_coach(self):
+        # Review round 2: a coach sees the yellow one too (never a grey one).
         set_medical(self.player, allergies=[('Synthetic peanut', True)], conditions=[('Synthetic epilepsy', False)])
         self._login_coach()
         with self._presence():
             tree = self._page(self.team_url)
         for scope in ('dash', 'roster'):
-            self.assertEqual(list(self._med(self._row(tree, scope))), ['allergy'], scope)
+            pills = self._med(self._row(tree, scope))
+            self.assertEqual(list(pills), ['allergy', 'medical_alert'], scope)
+            self.assertIn('o_sc_med_urgent', pills['allergy'].get('class'))
+            self.assertIn('o_sc_med_minor', pills['medical_alert'].get('class'))
+        set_medical(self.player, allergies=[('Synthetic peanut', True)], conditions=[], none_condition=True)
+        with self._presence():
+            tree = self._page(self.team_url)
+        self.assertEqual(list(self._med(self._row(tree, 'roster'))), ['allergy'])
 
     def test_pills_refresh_with_the_row_fragment(self):
         self._login_tp()
@@ -122,31 +134,55 @@ class TestMedicalCardPills1630(MedicalCards1630Common):
         payload = resp.json()
         self.assertRefreshes(payload, key)
         node = self._fragment(self.team_url, key)
-        self.assertEqual(list(self._med(node)), ['medical_alert'])
+        # Review round 2: still both pills, the allergy one now yellow.
+        pills = self._med(node)
+        self.assertEqual(list(pills), ['allergy', 'medical_alert'])
+        self.assertIn('o_sc_med_minor', pills['allergy'].get('class'))
+        self.assertIn('o_sc_med_urgent', pills['medical_alert'].get('class'))
 
-    # -- CARD-3 ----------------------------------------------------------
-    def test_yellow_grey_unset_show_nothing(self):
-        for level, state in (('minor', dict(allergies=[('Synthetic peanut', False)],
-                                            conditions=[('Synthetic epilepsy', False)])),
-                             ('none', dict(allergies=[], conditions=[], none_allergy=True, none_condition=True)),
-                             (False, dict(allergies=[], conditions=[], none_allergy=False, none_condition=False))):
+    # -- CARD-3 (review round 2) -------------------------------------------
+    def test_every_level_in_the_card_for_a_therapist(self):
+        for level, tone, state in (
+                ('minor', 'o_sc_med_minor', dict(allergies=[('Synthetic peanut', False)],
+                                                 conditions=[('Synthetic epilepsy', False)])),
+                ('none', 'o_sc_med_none', dict(allergies=[], conditions=[], none_allergy=True, none_condition=True)),
+                ('unset', 'o_sc_med_none', dict(allergies=[], conditions=[], none_allergy=False,
+                                                none_condition=False))):
             set_medical(self.player, **state)
-            for login in (self._login_tp, self._login_coach):
-                login()
-                with self._presence():
-                    tree = self._page(self.team_url)
-                tree_players = self._page('/my/players')
-                for node in self._all_rows(tree, self.player) + self._all_rows(tree_players, self.player):
-                    self.assertFalse(node.xpath(MED), (level, login.__name__))
-                for node in self._all_rows(tree, self.other):
-                    self.assertFalse(node.xpath(MED), 'other: yellow / grey')
+            self._login_tp()
+            with self._presence():
+                tree = self._page(self.team_url)
+            tree_players = self._page('/my/players')
+            rows = self._all_rows(tree, self.player) + self._all_rows(tree_players, self.player)
+            self.assertGreaterEqual(len(rows), 3)
+            for node in rows:
+                pills = self._med(node)
+                self.assertEqual(list(pills), ['allergy', 'medical_alert'], level)
+                for key, pill in pills.items():
+                    self.assertIn(tone, pill.get('class'), (level, key))
+                    self.assertEqual(pill.get('data-sc-med-level'), level, (level, key))
+                    # Its own line, right under the Match / Practice line.
+                    line = pill.getparent()
+                    self.assertEqual(line.get('data-sc-row-med'), '1')
+                    self.assertIn('o_sc_row_status', line.getprevious().get('class'))
+                    # The popup is on the page.
+                    self.assertTrue(node.getroottree().xpath('//dialog[@id="%s"]'
+                                                             % pill.get('data-sc-med-card-sheet')))
+            # A coach: no grey pill (owner + MC 2026-10-21).
+            self._login_coach()
+            with self._presence():
+                tree = self._page(self.team_url)
+            for node in self._all_rows(tree, self.player):
+                self.assertEqual(bool(node.xpath(MED)), level == 'minor', (level, 'coach'))
 
     # -- CARD-4 ----------------------------------------------------------
     def test_no_field_access_shows_nothing(self):
         Patient = self.env['sports.patient']
         players = (self.player | self.other)
         self.assertEqual(players.with_user(self.plain)._sc_card_medical_pills(), {})
-        self.assertEqual(sorted(players.with_user(self.tp)._sc_card_medical_pills()), [self.player.id])
+        # Review round 2: a therapist gets both players (grey included).
+        self.assertEqual(sorted(players.with_user(self.tp)._sc_card_medical_pills()),
+                         sorted(players.ids))
         # A sudo recordset is still checked as the CURRENT user.
         self.assertEqual(players.with_user(self.plain).sudo()._sc_card_medical_pills(), {})
         # Rendered: the field-group check fails for the viewer -> no pill, no error.

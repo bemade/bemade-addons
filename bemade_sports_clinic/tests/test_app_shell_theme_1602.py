@@ -68,7 +68,12 @@ class TestAppShellTheme1602(AppShellCommon):
                                    '//button[@name="sc_theme"]'))
         _text, tree = self._get('/my/app/settings')  # task 1606: out of « Plus »
         self._assert_theme(tree, 'light')
-        self.assertTrue(tree.xpath('//*[@id="sc_appearance"]//button[@name="sc_theme"]'))
+        # Task 1726: « Apparence » is a switch (on = dark), off here.
+        switch = tree.xpath('//*[@id="sc_appearance"]//input[@role="switch"][@name="sc_theme"]')
+        self.assertEqual(len(switch), 1)
+        self.assertIsNone(switch[0].get('checked'))
+        self.assertEqual(tree.xpath('//*[@id="sc_appearance"]//input[@type="hidden"][@name="sc_theme"]/@value'),
+                         ['light'])
 
     # -- UC-T3 -----------------------------------------------------------
     def test_pref_answer_reports_effective_theme(self):

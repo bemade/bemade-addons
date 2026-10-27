@@ -124,9 +124,9 @@ class TestCoachDob1633(PlayerInlineCommon):
             'field': 'date_of_birth', 'value': '2010-01-02', 'confirm': '1',
             'write_date': self._wd(), 'csrf_token': self._csrf()}, allow_redirects=False)
         self.assertEqual(resp.status_code, 400, resp.text)
-        # Security review 2026-10-23: Dana is on another team — the generic
-        # refusal (test_identity_oracle_1023).
-        self.assertIn('A player with this identity already exists', resp.json()['message'])
+        # Task 1716: Dana is on another team — the plain twin refusal (was
+        # the generic « ask a manager », review 2026-10-23).
+        self.assertEqual(resp.json()['message'], 'Another player already has this name and date of birth.')
         self.player.invalidate_recordset()
         self.assertEqual(self.player.date_of_birth, date(2008, 3, 4))
 

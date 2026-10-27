@@ -297,7 +297,8 @@ class TestMedicalLists1677(MedicalLists1677Common):
         self.assertEqual(read.get('data-sc-fragment'), 'sports.patient:%s:medical-epipen' % self.player.id)
         self.assertIn('Synthetic front pocket', read.text_content())
         self.assertIsNone(card.xpath('.//*[@data-sc-med-epipen-note-field]')[0].get('hidden'))
-        self.assertTrue(card.xpath('.//input[@data-sc-med-set="allergy_epipen"][@checked]'))
+        # Task 1717: Yes / No radios (was a checkbox).
+        self.assertTrue(card.xpath('.//input[@data-sc-med-set="allergy_epipen_state"][@value="yes"][@checked]'))
         # The header pill carries the EpiPen icon.
         pill = self._tree().xpath('//button[@data-sc-med-pill="allergy"]')[0]
         self.assertTrue(pill.xpath('.//*[@data-sc-med-epipen]'))
@@ -417,7 +418,13 @@ class TestMedicalLists1677(MedicalLists1677Common):
                 self.assertTrue(edit.xpath('.//input[@data-sc-med-item-field="life_threatening"]'))
                 self.assertEqual(bool(edit.xpath('.//textarea[@data-sc-med-item-field="first_aid_note"]')),
                                  key == 'medical_alert')
-                self.assertTrue(edit.xpath('.//button[@data-sc-med-item-delete]'))
+                # Review round 1 (owner 2026-10-27): the trash sits next to the
+                # ✓ (the card's top row), not at the bottom of the edit view.
+                self.assertFalse(edit.xpath('.//button[@data-sc-med-item-delete]'))
+                row = card.xpath('./div[contains(@class, "o_sc_med_card_row")]')[0]
+                buttons = row.xpath('./button')
+                self.assertEqual([bool(b.get('data-sc-med-item-delete')) for b in buttons], [True, False])
+                self.assertTrue(buttons[1].get('data-sc-edit-toggle'))
                 read = card.xpath('.//*[@data-sc-edit-view="read"]')[0]
                 self.assertEqual(read.get('data-sc-fragment'),
                                  'sports.patient:%s:medical-item-%s' % (pid, card.get('data-sc-med-item')))
@@ -470,15 +477,22 @@ class TestMedicalLists1677(MedicalLists1677Common):
                     conditions=[('Synthetic asthma', False)], epipen=True)
         pills = self.player.with_user(self.coach)._sc_card_medical_pills()[self.player.id]
         self.assertEqual([(p['key'], p['label'], p['epipen']) for p in pills],
-                         [('allergy', 'Synthetic peanut', True)])
+                         [('allergy', 'Synthetic peanut', True), ('medical_alert', 'Medical alert', False)])
         self.assertNotIn('Synthetic kiwi', pills[0]['title'])
         set_medical(self.player, allergies=[('Synthetic kiwi', False)],
                     conditions=[('Synthetic epilepsy', True), ('Synthetic diabetes', True), ('Synthetic asthma', True)])
+        # Review round 2 (owner 2026-10-27): a therapist gets both pills,
+        # each with its tone; only a red one names its items.
         pills = self.player.with_user(self.tp)._sc_card_medical_pills()[self.player.id]
-        self.assertEqual([(p['key'], p['label'], p['epipen']) for p in pills],
-                         [('medical_alert', 'Synthetic epilepsy · Synthetic diabetes +1', False)])
+        self.assertEqual([(p['key'], p['label'], p['epipen'], p['tone']) for p in pills],
+                         [('allergy', 'Allergies', True, 'minor'),
+                          ('medical_alert', 'Synthetic epilepsy · Synthetic diabetes +1', False, 'urgent')])
         set_medical(self.player, allergies=[('Synthetic kiwi', False)], conditions=[])
-        self.assertEqual(self.player.with_user(self.tp)._sc_card_medical_pills(), {})
+        pills = self.player.with_user(self.tp)._sc_card_medical_pills()[self.player.id]
+        self.assertEqual([(p['key'], p['tone']) for p in pills], [('allergy', 'minor'), ('medical_alert', 'none')])
+        # A coach: the yellow one only.
+        pills = self.player.with_user(self.coach)._sc_card_medical_pills()[self.player.id]
+        self.assertEqual([p['key'] for p in pills], ['allergy'])
 
     def test_summary_lines(self):
         set_medical(self.player, allergies=[('Synthetic peanut', True), ('Synthetic kiwi', False)],

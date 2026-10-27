@@ -42,6 +42,8 @@ class FragmentsTourCommon(AppShellCommon):
     def setUp(self):
         super().setUp()
         self._switch(True)
+        # Task 1717: the tour adds an allergy — EpiPen answered first.
+        self.player.sudo().write({'allergy_epipen_state': 'no'})
 
 
 class FragmentsTours:

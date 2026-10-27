@@ -365,8 +365,12 @@ class TestTrainingStampClinic1601(Clinic1540Common):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/clinic/%s?patient=%s' % (self.clinic.id, self.player.id))
-        fields_ = self._owl_fields(tree)
-        self.assertEqual(fields_['training_recommendation']['hint'], stamp)
+        # Task 1721: the dossier's training editor gave way to the team
+        # page's player card, which shows the recommendation (read); the
+        # stamp lives in the player page's editor (and the card's details).
+        self.assertNotIn('training_recommendation', self._owl_fields(tree))
+        card = tree.xpath('//*[@data-sc-section="clinic.dossier.player"]')[0]
+        self.assertIn('Synthetic clinic', card.text_content())
         # Legacy (switch off) dossier: the stamp under the textarea.
         self._switch(False)
         text = self.url_open('/my/clinic/%s?patient=%s' % (self.clinic.id, self.player.id)).text

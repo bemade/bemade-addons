@@ -126,6 +126,8 @@ class TestInternalParity1639(Parity1639Common):
 
     @mute_logger('odoo.http')
     def test_feature_parity(self):
+        # Task 1717: the allergies wait for the EpiPen answer.
+        self.player.sudo().write({'allergy_epipen_state': 'no'})
         for login, user in self._logins():
             login()
             who = user.name

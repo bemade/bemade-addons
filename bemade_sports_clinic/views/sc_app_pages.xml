@@ -249,47 +249,54 @@
                 <t t-call="bemade_sports_clinic.sc_section_header">
                     <t t-set="title">Appearance</t>
                 </t>
-                <form method="post" action="/my/app/pref" data-sc-pref="1" class="o_sc_segmented o_sc_segmented_full">
+                <!-- Task 1726: a switch (on = dark); sc_switch.js posts on change. -->
+                <form method="post" action="/my/app/pref" data-sc-pref="1" class="o_sc_card o_sc_switch_card">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="redirect" value="/my/app/settings"/>
-                    <button type="submit" name="sc_theme" value="dark"
-                            t-att-aria-pressed="'true' if sc_theme == 'dark' else 'false'">Dark</button>
-                    <button type="submit" name="sc_theme" value="light"
-                            t-att-aria-pressed="'true' if sc_theme == 'light' else 'false'">Light</button>
+                    <t t-call="bemade_sports_clinic.sc_switch">
+                        <t t-set="sw_name" t-value="'sc_theme'"/>
+                        <t t-set="sw_value" t-value="'dark'"/>
+                        <t t-set="sw_off" t-value="'light'"/>
+                        <t t-set="sw_checked" t-value="sc_theme == 'dark'"/>
+                        <t t-set="sw_attrs" t-value="{'data-sc-switch-submit': '1', 'data-sc-theme-switch': '1'}"/>
+                        <t t-set="sw_label">Dark mode</t>
+                    </t>
                 </form>
             </section>
 
             <!-- Task 1665: the morning summary opt-out, for every app role
                  (the user's own preference; default on). -->
             <section class="o_sc_section" id="sc_morning_summary" data-sc-section="settings.morning_summary">
-                <t t-call="bemade_sports_clinic.sc_section_header">
-                    <t t-set="title">Receive the daily summary by email</t>
-                </t>
-                <form method="post" action="/my/app/pref" class="o_sc_segmented o_sc_segmented_full">
+                <form method="post" action="/my/app/pref" class="o_sc_card o_sc_switch_card">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="redirect" value="/my/app/settings"/>
-                    <button type="submit" name="digest_daily_enabled" value="1"
-                            t-att-aria-pressed="'true' if request.env.user.digest_daily_enabled else 'false'">On</button>
-                    <button type="submit" name="digest_daily_enabled" value="0"
-                            t-att-aria-pressed="'false' if request.env.user.digest_daily_enabled else 'true'">Off</button>
+                    <t t-call="bemade_sports_clinic.sc_switch">
+                        <t t-set="sw_name" t-value="'digest_daily_enabled'"/>
+                        <t t-set="sw_value" t-value="'1'"/>
+                        <t t-set="sw_off" t-value="'0'"/>
+                        <t t-set="sw_checked" t-value="request.env.user.digest_daily_enabled"/>
+                        <t t-set="sw_attrs" t-value="{'data-sc-switch-submit': '1'}"/>
+                        <t t-set="sw_label">Receive the daily summary by email</t>
+                    </t>
                 </form>
             </section>
 
             <!-- Task 1676: the edit cards' « Done » buttons (default hidden:
                  the pencil turns into a ✓ that closes the card). -->
             <section class="o_sc_section" id="sc_done_buttons" data-sc-section="settings.done_buttons">
-                <t t-call="bemade_sports_clinic.sc_section_header">
-                    <t t-set="title">Show « Done » buttons</t>
-                </t>
-                <form method="post" action="/my/app/pref" class="o_sc_segmented o_sc_segmented_full">
+                <form method="post" action="/my/app/pref" class="o_sc_card o_sc_switch_card">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="redirect" value="/my/app/settings"/>
-                    <button type="submit" name="sc_show_done_buttons" value="1"
-                            t-att-aria-pressed="'true' if sc_show_done else 'false'">On</button>
-                    <button type="submit" name="sc_show_done_buttons" value="0"
-                            t-att-aria-pressed="'false' if sc_show_done else 'true'">Off</button>
+                    <t t-call="bemade_sports_clinic.sc_switch">
+                        <t t-set="sw_name" t-value="'sc_show_done_buttons'"/>
+                        <t t-set="sw_value" t-value="'1'"/>
+                        <t t-set="sw_off" t-value="'0'"/>
+                        <t t-set="sw_checked" t-value="sc_show_done"/>
+                        <t t-set="sw_attrs" t-value="{'data-sc-switch-submit': '1'}"/>
+                        <t t-set="sw_hint">When off, tap ✓ at the top of a card to finish editing.</t>
+                        <t t-set="sw_label">Show « Done » buttons</t>
+                    </t>
                 </form>
-                <p class="o_sc_meta">When off, tap ✓ at the top of a card to finish editing.</p>
             </section>
 
             <section class="o_sc_section" id="sc_account">

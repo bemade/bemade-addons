@@ -90,6 +90,10 @@ SC_KNOWLEDGE_PUBLIC_ARCH = """<data>
     </xpath>
 </data>"""
 
+# Task 1720: a configured /knowledge/article/<id> opens through the app's
+# /my/guide/<id> (the public guide view for every logged-in user).
+_KNOWLEDGE_ARTICLE_RE = re.compile(r'^/knowledge/article/(\d+)')
+
 _URL_RE = re.compile(r'^(https://[^\s"<>]+|/knowledge/article/\d+[^\s"<>]*)$')
 
 
@@ -145,11 +149,19 @@ class ScHelpArticle(models.Model):
         user through this helper only)."""
         home = (self.env['ir.config_parameter'].sudo().get_param(SC_HELP_HOME_PARAM) or '').strip()
         links = {
-            rec.key: rec.url.strip()
+            rec.key: self._sc_guide_url(rec.url.strip())
             for rec in self.sudo().search([])
             if self._sc_url_available(rec.url.strip())
         }
-        return {'home': home if self._sc_url_available(home) else False, 'map': links}
+        return {'home': self._sc_guide_url(home) if self._sc_url_available(home) else False, 'map': links}
+
+    @api.model
+    def _sc_guide_url(self, url):
+        """Task 1720: ``/knowledge/article/<id>…`` -> ``/my/guide/<id>…`` (the
+        public guide view for every logged-in user, internal included). Only
+        called on an available URL, so website_knowledge is installed; an
+        https address is returned unchanged."""
+        return _KNOWLEDGE_ARTICLE_RE.sub(r'/my/guide/\1', url, count=1)
 
     @api.model
     def _sc_help_for(self, page, tab=None):

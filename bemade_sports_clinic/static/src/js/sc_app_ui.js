@@ -745,3 +745,110 @@ if (document.readyState === "loading") {
 } else {
     init();
 }
+
+// Task 1719: a text clamped to N lines (CSS, [data-sc-clamp]) offers « See
+// more » ([data-sc-clamp-more], with its « · » separator and its muted meta
+// line, all in the clamped text's parent) only when it really overflows;
+// the link expands it in place. Measured whenever the text gets a size (a
+// hidden tab panel, the edit view closing, a resize).
+function measureClamp(text) {
+    const box = text.parentElement;
+    if (!box || text.dataset.scClampOpen || !text.getClientRects().length) {
+        return;
+    }
+    const more = box.querySelector("[data-sc-clamp-more]");
+    if (!more) {
+        return;
+    }
+    const clamped = text.scrollHeight > text.clientHeight + 1;
+    more.hidden = !clamped;
+    const sep = box.querySelector("[data-sc-clamp-sep]");
+    const meta = box.querySelector("[data-sc-clamp-meta]");
+    const less = box.querySelector("[data-sc-clamp-less]");
+    const hasOther = meta && [...meta.children].some(
+        (child) => child !== more && child !== less && child !== sep && !child.hidden
+    );
+    if (sep) {
+        sep.hidden = !(clamped && hasOther);
+    }
+    if (meta) {
+        meta.hidden = !(clamped || hasOther);
+    }
+}
+
+const scClampObserver = window.ResizeObserver
+    ? new ResizeObserver((entries) => entries.forEach((entry) => measureClamp(entry.target)))
+    : null;
+
+function setupClamps() {
+    for (const text of document.querySelectorAll(".o_sc_app [data-sc-clamp]:not([data-sc-clamp-ready])")) {
+        text.dataset.scClampReady = "1";
+        measureClamp(text);
+        if (scClampObserver) {
+            scClampObserver.observe(text);
+        }
+    }
+}
+
+// « See more » expands the text in place; review round 1 (owner
+// 2026-10-27): « See less » ([data-sc-clamp-less]) folds it back.
+function clampMetaVisible(box) {
+    const meta = box.querySelector("[data-sc-clamp-meta]");
+    if (meta) {
+        meta.hidden = ![...meta.children].some((child) => !child.hidden && !child.matches("[data-sc-clamp-sep]"));
+    }
+}
+
+document.addEventListener("click", (ev) => {
+    const button = ev.target.closest && ev.target.closest("[data-sc-clamp-more], [data-sc-clamp-less]");
+    if (!button || !button.closest(".o_sc_app")) {
+        return;
+    }
+    const box = button.closest("[data-sc-clamp-meta]")?.parentElement;
+    const text = box && box.querySelector("[data-sc-clamp]");
+    if (!text) {
+        return;
+    }
+    ev.preventDefault();
+    const more = box.querySelector("[data-sc-clamp-more]");
+    const less = box.querySelector("[data-sc-clamp-less]");
+    const sep = box.querySelector("[data-sc-clamp-sep]");
+    const meta = box.querySelector("[data-sc-clamp-meta]");
+    const hasOther = meta && [...meta.children].some(
+        (child) => child !== more && child !== less && child !== sep && !child.hidden
+    );
+    if (button.matches("[data-sc-clamp-more]")) {
+        text.dataset.scClampOpen = "1";
+        if (more) {
+            more.hidden = true;
+            more.setAttribute("aria-expanded", "true");
+        }
+        if (less) {
+            less.hidden = false;
+            less.focus({ preventScroll: true });
+        }
+        if (sep) {
+            sep.hidden = !(less && hasOther);
+        }
+        clampMetaVisible(box);
+        return;
+    }
+    delete text.dataset.scClampOpen;
+    if (less) {
+        less.hidden = true;
+    }
+    if (more) {
+        more.setAttribute("aria-expanded", "false");
+    }
+    measureClamp(text);
+    if (more && !more.hidden) {
+        more.focus({ preventScroll: true });
+    }
+});
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", setupClamps);
+} else {
+    setupClamps();
+}
+document.addEventListener("sc:fragments", setupClamps);

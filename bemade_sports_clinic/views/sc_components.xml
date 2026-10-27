@@ -116,24 +116,6 @@
                 <t t-else="" t-foreach="row_status['pills']" t-as="pill">
                     <span t-attf-class="o_sc_status_pill o_sc_chip_#{pill['tone']}" t-att-title="pill['title']"><i t-if="pill['icon']" t-attf-class="fa #{pill['icon']}" aria-hidden="true"/> <t t-out="pill['label']"/></span>
                 </t>
-                <!-- Task 1630 (review round 1): the RED allergy / medical-alert
-                     pills (row_status['medical'], _sc_card_medical_pills).
-                     Task 1652: a tap opens the player page's popup (the
-                     page-level sc_medical_sheets, scope « card »;
-                     sc_med_card_pills.js), never the card / its link; no
-                     sheet on the page = the player's Info tab. -->
-                <t t-foreach="row_status.get('medical') or ()" t-as="med">
-                    <button type="button" class="o_sc_med_pill o_sc_med_card_pill o_sc_med_urgent"
-                            t-att-data-sc-med-card-sheet="med.get('sheet')"
-                            t-att-data-sc-med-fallback="med.get('fallback')"
-                            aria-haspopup="dialog" t-att-aria-label="med['title']"
-                            t-att-data-sc-med-pill="med['key']" data-sc-med-level="urgent" t-att-title="med['title']">
-                        <span class="o_sc_med_pill_label" t-out="med['label']"/>
-                        <span t-if="med['epipen']" class="o_sc_med_epipen" data-sc-med-epipen="1">
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
-                        </span>
-                    </button>
-                </t>
                 <span t-if="row_status['injuries']" class="o_sc_injury_count" t-att-title="sc_injuries_title"><i class="fa fa-chain-broken" aria-hidden="true"/> <t t-out="row_status['injuries']"/></span>
             </t>
             <t t-if="row_changed" t-call="bemade_sports_clinic.sc_recent_pill"/>
@@ -254,7 +236,7 @@
     <!--
         Task 1607 — the list header: ONE line directly above a list, the same
         on every page (the app bar carries no list action any more).
-        « + Ajouter » on the left — always that label; add_label (the full
+        « Ajouter » on the left — always that label; add_label (the full
         action, « Add Injury », « Create a player »…) is its accessible name —
         and the sort, condensed into a menu, on the right. Variables (all
         optional; nothing set renders nothing):
@@ -274,28 +256,37 @@
           header_fragment its read-fragment key (task 1611), when a save
                          can change what it offers
     -->
+    <!-- Task 1724: « Annuler » next to the submit of an inline add panel
+         (details.o_sc_list_add_panel): closes the panel, clears its fields
+         and its device drafts, focus back on the header's « + Ajouter »
+         (sc_list_header.js). -->
+    <template id="sc_list_add_cancel" name="App shell: add panel cancel">
+        <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_list_add_cancel" data-sc-list-add-cancel="1">Cancel</button>
+    </template>
+
     <template id="sc_list_header" name="App shell: list header">
         <div t-if="add_label or sorts or count or header_fragment" class="o_sc_list_header"
              t-att-data-sc-section="header_section or None"
              t-att-data-sc-fragment="header_fragment or None">
+            <!-- Task 1718: « Ajouter » is a green-text link (the
+                 « Historique » style). Review round 1 (owner 2026-10-27): no
+                 « + » icon, and the FIRST item — just above the top-left edge
+                 of the list, where the filled button sat. -->
             <t t-if="add_label">
                 <t t-set="sc_add_text">Add</t>
-                <a t-if="add_url" t-att-href="add_url" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm o_sc_list_add"
+                <a t-if="add_url" t-att-href="add_url" class="o_sc_section_more o_sc_link_btn o_sc_list_add"
                    t-att-data-sc-action="add_key or None" t-att-aria-label="add_label" t-att-title="add_label">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                     <span class="o_sc_list_add_label" t-out="sc_add_text"/>
                 </a>
-                <button t-elif="add_sheet" type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm o_sc_list_add"
+                <button t-elif="add_sheet" type="button" class="o_sc_section_more o_sc_link_btn o_sc_list_add"
                         t-att-data-sc-sheet-open="add_sheet" t-att-data-sc-action="add_key or None"
                         t-att-aria-label="add_label" t-att-title="add_label">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                     <span class="o_sc_list_add_label" t-out="sc_add_text"/>
                 </button>
-                <button t-elif="add_panel" type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm o_sc_list_add"
+                <button t-elif="add_panel" type="button" class="o_sc_section_more o_sc_link_btn o_sc_list_add"
                         t-att-aria-controls="add_panel" t-att-aria-expanded="'true' if add_open else 'false'"
                         data-sc-list-add-toggle="1" t-att-data-sc-action="add_key or None"
                         t-att-aria-label="add_label" t-att-title="add_label">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                     <span class="o_sc_list_add_label" t-out="sc_add_text"/>
                 </button>
             </t>
@@ -429,7 +420,9 @@
         (static/src/js/sc_app_ui.js). Variables: sheet_id, title,
         lazy_url (optional: body fetched once, on first open, through
         sc_fetch), lazy_fresh (optional: fetched again on every open, for a
-        history the page itself can change). Body (0) = content (ignored when lazy_url is set; a
+        history the page itself can change), head_extra (optional markup
+        next to the title: the medical popups' level pill, review round 2).
+        Body (0) = content (ignored when lazy_url is set; a
         loading line is shown until the fetch answers).
     -->
     <template id="sc_sheet" name="App shell: sheet">
@@ -438,7 +431,8 @@
                 t-att-data-sc-lazy-fresh="'1' if lazy_url and lazy_fresh else None">
             <div class="o_sc_sheet_head">
                 <h2 class="o_sc_sheet_title" t-att-id="'%s_title' % sheet_id" t-out="title"/>
-                <button type="button" class="o_sc_icon_btn" data-sc-sheet-close="1" aria-label="Close" title="Close">
+                <t t-if="head_extra" t-out="head_extra"/>
+                <button type="button" class="o_sc_icon_btn o_sc_sheet_close" data-sc-sheet-close="1" aria-label="Close" title="Close">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'close'"/></t>
                 </button>
             </div>
@@ -509,6 +503,49 @@
     -->
     <template id="sc_field_autosave" name="App shell: autosave field">
         <owl-component name="bemade_sports_clinic.sc_autosave_field" t-att-props="props"/>
+    </template>
+
+    <!--
+        Task 1726 — THE switch (on / off): the label on the left, a pill
+        switch on the right, one line. A real <input type="checkbox"
+        role="switch"> (forms post exactly what the former checkbox posted;
+        Space toggles it; sc_switch.js keeps aria-checked in sync).
+        Variables (all optional except the label):
+          sw_label    the label (a t-set BODY, so its msgid stays plain text)
+          sw_name     the input's name (None: no name, e.g. a fetch form's
+                      data-* field)
+          sw_value    the posted value when on (None: the browser's « on »)
+          sw_off      a value posted when OFF: a hidden twin with the same
+                      name, disabled while on — so the form posts ONE value
+          sw_checked  on / off
+          sw_disabled locked (e.g. the #1717 EpiPen gate)
+          sw_reason   the line under the label saying why it is locked
+          sw_hint     a line under the label (always shown)
+          sw_id       the input id
+          sw_attrs    dict of extra attributes on the input (data-*)
+          sw_class    extra classes on the row
+    -->
+    <template id="sc_switch" name="App shell: switch">
+        <label t-attf-class="o_sc_switch #{sw_class or ''}"
+               t-att-data-sc-switch-locked="'1' if sw_disabled else None">
+            <span class="o_sc_switch_text">
+                <span class="o_sc_switch_label" t-out="sw_label"/>
+                <small t-if="sw_hint" class="o_sc_switch_hint" t-out="sw_hint"/>
+                <small t-if="sw_disabled and sw_reason" class="o_sc_switch_hint o_sc_switch_reason"
+                       data-sc-switch-reason="1" t-out="sw_reason"/>
+            </span>
+            <span class="o_sc_switch_control">
+                <input type="checkbox" role="switch" class="o_sc_switch_input"
+                       t-att-id="sw_id" t-att-name="sw_name" t-att-value="sw_value"
+                       t-att-checked="'checked' if sw_checked else None"
+                       t-att-aria-checked="'true' if sw_checked else 'false'"
+                       t-att-disabled="'disabled' if sw_disabled else None"
+                       t-att="sw_attrs or {}"/>
+                <span class="o_sc_switch_track" aria-hidden="true"><span class="o_sc_switch_thumb"/></span>
+            </span>
+            <input t-if="sw_off is not None and sw_name" type="hidden" t-att-name="sw_name" t-att-value="sw_off"
+                   data-sc-switch-off="1" t-att-disabled="'disabled' if sw_checked else None"/>
+        </label>
     </template>
 
     <!--
@@ -583,31 +620,36 @@
                  t-att-data-sc-edit-card="('note-%s' % note.id) if edit_props else None">
             <!-- Task 1611: the meta line and the « modified » stamp are read
                  fragments (a save of the note — or of its linked injury's
-                 diagnosis — refreshes them in place). -->
-            <div class="o_sc_meta o_sc_note_meta" t-att-data-sc-fragment="sc_fragment_key(note, 'meta')">
-                <span t-out="note.portal_when_label"/>
-                <span>·</span>
-                <span class="o_sc_note_author" t-out="note.sudo().user_id.name"/>
-                <t t-if="note.injury_id">
+                 diagnosis — refreshes them in place). Task 1721 (review
+                 round 1, owner 2026-10-27): the pencil / ✓ sits at the top
+                 right of the card, on the meta line (the standard edit-card
+                 head) — it no longer drops to the left when editing. -->
+            <div class="o_sc_note_head">
+                <div class="o_sc_meta o_sc_note_meta" t-att-data-sc-fragment="sc_fragment_key(note, 'meta')">
+                    <span t-out="note.portal_when_label"/>
                     <span>·</span>
-                    <a t-if="injury_url" t-att-href="injury_url" t-out="note.injury_id.diagnosis or note.injury_id.display_name"/>
-                    <span t-else="" t-out="note.injury_id.diagnosis"/>
-                </t>
-                <t t-else="">
-                    <span t-out="'·'"/>
-                    <span>General note</span>
-                </t>
-            </div>
-            <t t-if="edit_props">
-                <t t-set="sc_edit_label">Edit</t>
-                <div class="o_sc_note_body">
-                    <p class="o_sc_pre o_sc_note_text" data-sc-edit-view="read"
-                       t-att-data-sc-display="sc_display_key(note, 'note')" t-out="note.note"/>
-                    <button type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1" aria-expanded="false"
+                    <span class="o_sc_note_author" t-out="note.sudo().user_id.name"/>
+                    <t t-if="note.injury_id">
+                        <span>·</span>
+                        <a t-if="injury_url" t-att-href="injury_url" t-out="note.injury_id.diagnosis or note.injury_id.display_name"/>
+                        <span t-else="" t-out="note.injury_id.diagnosis"/>
+                    </t>
+                    <t t-else="">
+                        <span t-out="'·'"/>
+                        <span>General note</span>
+                    </t>
+                </div>
+                <t t-if="edit_props">
+                    <t t-set="sc_edit_label">Edit</t>
+                    <button type="button" class="o_sc_icon_btn o_sc_note_edit_toggle" data-sc-edit-toggle="1" aria-expanded="false"
                             t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label">
                         <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
                     </button>
-                </div>
+                </t>
+            </div>
+            <t t-if="edit_props">
+                <p class="o_sc_pre o_sc_note_text" data-sc-edit-view="read"
+                   t-att-data-sc-display="sc_display_key(note, 'note')" t-out="note.note"/>
                 <div class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
                     <t t-foreach="edit_props" t-as="field_props">
                         <t t-call="bemade_sports_clinic.sc_field_autosave">
@@ -720,6 +762,35 @@
         detail) and « Retour prévu » for an injured player (the date, « — »
         when unset). Variable: row (_sc_player_row_extras keys).
     -->
+    <!--
+        Task 1630 / 1652 — the « Allergies » / « Medical alert » pills of a
+        player CARD. Review round 2 (owner 2026-10-27): INSIDE every card,
+        on their own line right under the Match / Practice line, even when
+        empty — red (life-threatening), yellow (not urgent), grey (none /
+        not filled in); a therapist sees both, a coach the yellow / red ones
+        (``_sc_card_medical_pills``). A tap opens the page-level popup
+        (sc_medical_sheets, scope « card »; sc_med_card_pills.js), never the
+        card / its link; no sheet on the page = the player's Info tab.
+        Variable: row_status (its ``medical`` list).
+    -->
+    <template id="sc_player_med_line" name="App shell: player card medical pills">
+        <span t-if="row_status and row_status.get('medical')" class="o_sc_row_status o_sc_row_med" data-sc-row-med="1">
+            <t t-foreach="row_status['medical']" t-as="med">
+                <button type="button" t-attf-class="o_sc_med_pill o_sc_med_card_pill o_sc_med_#{med.get('tone') or 'urgent'}"
+                        t-att-data-sc-med-card-sheet="med.get('sheet')"
+                        t-att-data-sc-med-fallback="med.get('fallback')"
+                        aria-haspopup="dialog" t-att-aria-label="med['title']"
+                        t-att-data-sc-med-pill="med['key']" t-att-data-sc-med-level="med.get('level') or 'unset'"
+                        t-att-title="med['title']">
+                    <span class="o_sc_med_pill_label" t-out="med['label']"/>
+                    <span t-if="med['epipen']" class="o_sc_med_epipen" data-sc-med-epipen="1">
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
+                    </span>
+                </button>
+            </t>
+        </span>
+    </template>
+
     <template id="sc_player_row_lines" name="App shell: player row lines">
         <span t-if="row.get('training')" class="o_sc_row_line o_sc_row_training" data-sc-row-training="1">
             <i class="fa fa-heartbeat" aria-hidden="true"/>
@@ -769,6 +840,9 @@
                         <t t-set="row_status" t-value="row.get('status')"/>
                         <t t-set="row_pills" t-value="row.get('pills')"/>
                         <t t-set="row_changed" t-value="row.get('changed')"/>
+                    </t>
+                    <t t-call="bemade_sports_clinic.sc_player_med_line">
+                        <t t-set="row_status" t-value="row.get('status')"/>
                     </t>
                     <t t-call="bemade_sports_clinic.sc_player_row_lines"/>
                     <button t-if="row.get('detail_url')" type="button" class="o_sc_row_expand"
@@ -938,28 +1012,36 @@
                 <t t-set="sheet_id" t-value="'sc_med_%s' % sc_med_uid"/>
                 <t t-set="lazy_url" t-value="False"/>
                 <t t-set="title" t-value="pill['family_label']"/>
-                <div class="o_sc_med_sheet" t-att-data-sc-section="'medical.%s' % sc_med_key"
-                     t-att-data-sc-med-family="sc_med_key" t-att-data-sc-patient="patient.id"
-                     t-att-data-sc-med-editable="'1' if editable else None">
-                    <!-- The family's pill (computed from the list). -->
+                <!-- The family's pill (computed from the list) — review round
+                     2 (owner 2026-10-27): in the popup's header, next to its
+                     title (no row of its own). -->
+                <t t-set="head_extra">
                     <div class="o_sc_med_head" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-head' % sc_med_key)">
                         <span t-attf-class="o_sc_med_pill o_sc_med_pill_static o_sc_med_#{pill['tone']}"
                               data-sc-med-head="1" t-att-data-sc-med-level="pill['level'] or 'unset'"
                               t-out="pill['level_label']"/>
                     </div>
+                </t>
+                <div class="o_sc_med_sheet" t-att-data-sc-section="'medical.%s' % sc_med_key"
+                     t-att-data-sc-med-family="sc_med_key" t-att-data-sc-patient="patient.id"
+                     t-att-data-sc-med-editable="'1' if editable else None">
 
                     <!-- Allergies: the EpiPen card. -->
                     <section t-if="sc_med_is_allergy" class="o_sc_card o_sc_edit_card o_sc_med_card o_sc_med_epipen_card"
                              data-sc-section="medical.allergy.epipen"
-                             t-att-data-sc-edit-card="('med-epipen-%s' % sc_med_uid) if editable else None">
+                             t-att-data-sc-edit-card="('med-epipen-%s' % sc_med_uid) if editable else None"
+                             t-att-data-sc-edit-open-on-load="'1' if editable and pill['epipen_unset'] else None">
                         <div class="o_sc_med_card_row">
                             <div class="o_sc_med_card_read" data-sc-edit-view="read"
                                  t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-epipen')">
-                                <p class="o_sc_med_epipen_line" t-att-data-sc-med-epipen="'1' if pill['epipen'] else None">
+                                <p class="o_sc_med_epipen_line" t-att-data-sc-med-epipen="'1' if pill['epipen'] else None"
+                                   t-att-data-sc-med-epipen-state="pill['epipen_state'] or 'unset'">
                                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
                                     <strong>EpiPen</strong>
                                     <span class="o_sc_med_epipen_value">
-                                        <t t-if="pill['epipen']">Yes</t><t t-else="">No</t>
+                                        <t t-if="pill['epipen_state'] == 'yes'">Yes</t>
+                                        <t t-elif="pill['epipen_state'] == 'no'">No</t>
+                                        <t t-else="">Not provided</t>
                                     </span>
                                 </p>
                                 <p t-if="pill['epipen_note']" class="o_sc_meta o_sc_pre o_sc_med_epipen_note"
@@ -970,12 +1052,39 @@
                                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
                             </button>
                         </div>
+                        <!-- Task 1717: EpiPen is answered Yes / No (empty =
+                             not provided, the allergies wait for it): the
+                             card asks first, open on load while unanswered. -->
                         <div t-if="editable" class="o_sc_fields o_sc_med_card_edit" data-sc-edit-view="edit" hidden="hidden">
-                            <label class="o_sc_check">
-                                <input type="checkbox" data-sc-med-set="allergy_epipen"
-                                       t-att-checked="'checked' if pill['epipen'] else None"/>
-                                <span>EpiPen</span>
-                            </label>
+                            <!-- Review round 1 (owner 2026-10-27): ONE line, a
+                                 slider pill — the label on the left, a
+                                 segmented pill on the right; nothing
+                                 selected until answered (the radios stay the
+                                 inputs sc_medical_lists.js saves). Round 2:
+                                 Non | Oui (Oui green, Non grey), on the ✓'s
+                                 line; label and options are t-set texts (an
+                                 extracted term never holds the radio). -->
+                            <t t-set="sc_epipen_ask_label">Carries an EpiPen</t>
+                            <t t-set="sc_epipen_no">No</t>
+                            <t t-set="sc_epipen_yes">Yes</t>
+                            <div class="o_sc_med_epipen_ask" role="radiogroup" data-sc-med-epipen-ask="1"
+                                 t-att-aria-labelledby="'sc_med_epipen_label_%s' % sc_med_uid">
+                                <span class="o_sc_med_epipen_ask_label" t-att-id="'sc_med_epipen_label_%s' % sc_med_uid" t-out="sc_epipen_ask_label"/>
+                                <div class="o_sc_toggle_pill o_sc_med_epipen_choices">
+                                    <label class="o_sc_toggle_pill_opt" data-sc-toggle-opt="no">
+                                        <input type="radio" t-att-name="'sc_med_epipen_%s' % sc_med_uid" value="no"
+                                               data-sc-med-set="allergy_epipen_state"
+                                               t-att-checked="'checked' if pill['epipen_state'] == 'no' else None"/>
+                                        <span t-out="sc_epipen_no"/>
+                                    </label>
+                                    <label class="o_sc_toggle_pill_opt" data-sc-toggle-opt="yes">
+                                        <input type="radio" t-att-name="'sc_med_epipen_%s' % sc_med_uid" value="yes"
+                                               data-sc-med-set="allergy_epipen_state"
+                                               t-att-checked="'checked' if pill['epipen_state'] == 'yes' else None"/>
+                                        <span t-out="sc_epipen_yes"/>
+                                    </label>
+                                </div>
+                            </div>
                             <div class="o_sc_field" data-sc-med-epipen-note-field="1" t-att-hidden="None if pill['epipen'] else 'hidden'">
                                 <label class="o_sc_field_label" t-att-for="'sc_med_epipen_note_%s' % sc_med_uid">Location / instructions</label>
                                 <input type="text" t-att-id="'sc_med_epipen_note_%s' % sc_med_uid" class="o_sc_input"
@@ -987,8 +1096,13 @@
                         </div>
                     </section>
 
+                    <!-- Task 1717: the allergies wait for the EpiPen answer
+                         (a read fragment: answering shows the Add control). -->
+                    <div class="o_sc_med_add_area" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-add' % sc_med_key)">
+                    <p t-if="sc_med_is_allergy and pill['epipen_unset']" class="o_sc_hint o_sc_med_epipen_first"
+                       data-sc-med-epipen-first="1">Answer « EpiPen? » first: then add the allergies or turn on « No known allergy ».</p>
                     <!-- The list: « + Ajouter » and its add panel. -->
-                    <t t-if="editable">
+                    <t t-if="editable and not (sc_med_is_allergy and pill['epipen_unset'])">
                         <t t-set="sc_med_panel" t-value="'sc_med_add_%s' % sc_med_uid"/>
                         <t t-call="bemade_sports_clinic.sc_list_header">
                             <t t-if="sc_med_is_allergy"><t t-set="add_label">Add an allergy</t></t>
@@ -1010,10 +1124,11 @@
                                     <input type="text" t-att-id="'sc_med_new_name_%s' % sc_med_uid" name="name"
                                            class="o_sc_input" required="required" maxlength="120" autocomplete="off"/>
                                 </div>
-                                <label class="o_sc_check">
-                                    <input type="checkbox" name="life_threatening" value="1"/>
-                                    <span>Life-threatening</span>
-                                </label>
+                                <t t-call="bemade_sports_clinic.sc_switch">
+                                    <t t-set="sw_name" t-value="'life_threatening'"/>
+                                    <t t-set="sw_value" t-value="'1'"/>
+                                    <t t-set="sw_label">Life-threatening</t>
+                                </t>
                                 <div t-if="not sc_med_is_allergy" class="o_sc_field">
                                     <label class="o_sc_field_label" t-att-for="'sc_med_new_aid_%s' % sc_med_uid">First aid</label>
                                     <textarea t-att-id="'sc_med_new_aid_%s' % sc_med_uid" name="first_aid_note"
@@ -1021,12 +1136,14 @@
                                 </div>
                                 <p class="o_sc_field_message o_sc_field_error" role="alert" data-sc-med-error="1" hidden="hidden"/>
                                 <div class="o_sc_form_actions">
+                                    <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
                                     <button type="submit" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm"
                                             t-att-data-sc-action="'medical.%s.add.submit' % sc_med_key">Add</button>
                                 </div>
                             </form>
                         </details>
                     </t>
+                    </div>
 
                     <!-- The items (a read fragment: read + edit views, plain inputs). -->
                     <ul class="o_sc_med_items" t-att-data-sc-section="'medical.%s.items' % sc_med_key"
@@ -1051,6 +1168,14 @@
                                         <span t-out="item['first_aid_note']"/>
                                     </p>
                                 </div>
+                                <!-- Review round 1 (owner 2026-10-27): the trash sits
+                                     next to the ✓, top right, shown while editing
+                                     (allergies and conditions alike). -->
+                                <button t-if="editable" type="button" class="o_sc_icon_btn o_sc_med_item_delete"
+                                        t-att-data-sc-med-item-delete="item['id']" data-sc-action="medical.item.delete"
+                                        aria-label="Delete" title="Delete">
+                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'trash'"/></t>
+                                </button>
                                 <button t-if="editable" type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1"
                                         data-sc-action="medical.item.edit" aria-expanded="false" aria-label="Edit" title="Edit">
                                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
@@ -1063,24 +1188,17 @@
                                            data-sc-med-item-field="name" maxlength="120" autocomplete="off" required="required"
                                            t-att-value="item['name']"/>
                                 </div>
-                                <label class="o_sc_check">
-                                    <input type="checkbox" data-sc-med-item-field="life_threatening"
-                                           t-att-checked="'checked' if item['life_threatening'] else None"/>
-                                    <span>Life-threatening</span>
-                                </label>
+                                <t t-call="bemade_sports_clinic.sc_switch">
+                                    <t t-set="sw_checked" t-value="item['life_threatening']"/>
+                                    <t t-set="sw_attrs" t-value="{'data-sc-med-item-field': 'life_threatening'}"/>
+                                    <t t-set="sw_label">Life-threatening</t>
+                                </t>
                                 <div t-if="not sc_med_is_allergy" class="o_sc_field">
                                     <label class="o_sc_field_label" t-att-for="'sc_med_item_aid_%s_%s' % (scope, item['id'])">First aid</label>
                                     <textarea t-att-id="'sc_med_item_aid_%s_%s' % (scope, item['id'])" class="o_sc_input o_sc_textarea"
                                               rows="2" data-sc-med-item-field="first_aid_note" t-out="item['first_aid_note']"/>
                                 </div>
                                 <p class="o_sc_field_message o_sc_field_error" role="alert" data-sc-med-error="1" hidden="hidden"/>
-                                <div class="o_sc_med_item_actions">
-                                    <button type="button" class="o_sc_icon_btn o_sc_med_item_delete"
-                                            t-att-data-sc-med-item-delete="item['id']" data-sc-action="medical.item.delete"
-                                            aria-label="Delete" title="Delete">
-                                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'trash'"/></t>
-                                    </button>
-                                </div>
                                 <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
                             </div>
                         </li>
@@ -1089,12 +1207,15 @@
                     <!-- An empty list: « none known » (therapists tick it). -->
                     <div class="o_sc_med_none_box" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-none' % sc_med_key)">
                         <t t-if="not pill['items']">
-                            <label t-if="editable" class="o_sc_check o_sc_med_none_check">
-                                <input type="checkbox" t-att-data-sc-med-set="'allergy_none_confirmed' if sc_med_is_allergy else 'medical_none_confirmed'"
-                                       t-att-checked="'checked' if pill['none_confirmed'] else None"/>
-                                <span t-if="sc_med_is_allergy">No known allergy</span>
-                                <span t-else="">No known condition</span>
-                            </label>
+                            <t t-if="editable" t-call="bemade_sports_clinic.sc_switch">
+                                <t t-set="sw_checked" t-value="pill['none_confirmed']"/>
+                                <t t-set="sw_disabled" t-value="sc_med_is_allergy and pill['epipen_unset']"/>
+                                <t t-set="sw_reason">Answer « EpiPen? » first.</t>
+                                <t t-set="sw_attrs" t-value="{'data-sc-med-set': 'allergy_none_confirmed' if sc_med_is_allergy else 'medical_none_confirmed'}"/>
+                                <t t-set="sw_class" t-value="'o_sc_med_none_check'"/>
+                                <t t-if="sc_med_is_allergy" t-set="sw_label">No known allergy</t>
+                                <t t-else="" t-set="sw_label">No known condition</t>
+                            </t>
                             <p t-elif="pill['none_confirmed']" class="o_sc_muted">
                                 <t t-if="sc_med_is_allergy">No known allergy</t>
                                 <t t-else="">No known condition</t>

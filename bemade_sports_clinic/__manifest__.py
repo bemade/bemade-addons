@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.119.1",
+    'version': "19.0.1.124.1",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -369,6 +369,8 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             "bemade_sports_clinic/static/src/js/sc_forms.js",
             "bemade_sports_clinic/static/src/js/sc_app_nav.js",
             "bemade_sports_clinic/static/src/js/sc_sw_register.js",
+            # Task 1726: the shared switch (aria-checked, off twin, submit).
+            "bemade_sports_clinic/static/src/js/sc_switch.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.xml",
             # Task 1539: the shell's activity sheets (replaces, in the shell

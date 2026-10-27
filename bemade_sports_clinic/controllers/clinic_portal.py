@@ -60,6 +60,7 @@ from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 
 from .access_control_mixin import AccessControlMixin
 from .app_shell import AppShellMixin
+from .team_management_portal import SC_STAGE_TONES
 
 _logger = logging.getLogger(__name__)
 
@@ -1075,7 +1076,8 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         editable = values['editable_note_ids']
         for note in values['treatment_notes']:
             if note.id in editable:
-                note_props[note.id] = self._sc_note_edit_props(note)
+                # Task 1721 (review round 1): the pane's own injury list.
+                note_props[note.id] = self._sc_note_edit_props(note, active_only=True)
         # Task 1590: the dossier's injuries are the player page's inline
         # cards (pencil edit, field-by-field saving): the current ones
         # (active AND unverified, so a just-created report shows), newest
@@ -1085,25 +1087,51 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         tp_view = self._sc_injury_tp_view(is_tp)
         created_id = self._int_or_none(kw.get('created')) or 0
         opened_id = self._int_or_none(kw.get('injury')) or 0
-        current = request.env['sports.patient.injury']
+        current = resolved = request.env['sports.patient.injury']
         if selected:
-            current = selected.injury_ids.filtered(
-                lambda i: i.stage in ('active', 'unverified')).sorted(lambda i: (
-                    -(i.injury_date or date.min).toordinal(), -i.id))
+            # Task 1721: the player form's Blessures order (active / unverified
+            # first, newest first); the others (resolved) folded under « Show
+            # resolved injuries (N) ».
+            ordered = selected.injury_ids.sorted(lambda i: (
+                i.stage not in ('active', 'unverified'),
+                -(i.injury_date or date.min).toordinal(), -i.id))
+            current = ordered.filtered(lambda i: i.stage in ('active', 'unverified'))
+            resolved = ordered - current
         # Task 1592: the cards' activity clocks (one query), opening the
         # player page's Activities tab (an injury has no activities section
         # of its own — task 1409), in the clinic context.
-        injury_clocks = self._sc_activity_clocks(current, lambda i: (
+        injury_clocks = self._sc_activity_clocks(current | resolved, lambda i: (
             '/my/player?player_id=%s%s&tab=activities' % (i.patient_id.id, values['dossier_ctx_qs'])))
         # Task 1616: the cards' Documents (one query) and their own address.
-        injury_documents = self._sc_injury_card_documents(current)
+        injury_documents = self._sc_injury_card_documents(current | resolved)
         dossier_url = '/my/clinic/%s?patient=%s&tab=dossier' % (event.id, selected.id) if selected else None
-        injury_rows = [
-            self._sc_injury_card_row(
+
+        def _card(injury):
+            return self._sc_injury_card_row(
                 injury, values['dossier_ctx_qs'], is_tp, tp_view,
                 opened_id=opened_id, created_id=created_id, clocks=injury_clocks,
                 list_url=dossier_url, anchor_prefix='clinic-injury-', documents=injury_documents)
-            for injury in current]
+        injury_rows = [_card(injury) for injury in current]
+        resolved_rows = [_card(injury) for injury in resolved]
+        # Task 1721: the team page's expandable player card for the selected
+        # patient (status dot, Match / Pratique quick-change, training
+        # recommendation, « Retour prévu », « Details », activity clock).
+        player_row = None
+        if selected:
+            team = (selected.sudo().team_ids & event_sudo.team_ids)[:1] or selected.sudo().team_ids[:1]
+            extras = self._sc_player_row_extras(
+                selected, team_links=True, team=team or None, status_edit=self._sc_status_editable())
+            stage = selected.stage or 'healthy'
+            stage_labels = dict(env['sports.patient']._fields['stage']._description_selection(env))
+            player_row = dict(extras[selected.id], **{
+                'id': selected.id,
+                'title': selected._portal_list_name(),
+                'subtitle': selected.position or '',
+                'dot': SC_STAGE_TONES.get(stage, 'green'),
+                'chip': stage_labels.get(stage, ''),
+                'url': '/my/player?player_id=%s%s' % (selected.id, values['dossier_ctx_qs']),
+                'pending_removal': bool(selected.pending_removal),
+            })
         staff = event_sudo.assigned_staff_ids
         return {
             'sc_clinic_tabs': tabs,
@@ -1117,11 +1145,16 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_worklist_props': json.dumps(worklist_props, default=str),
             'sc_note_props': note_props,
             'sc_injury_rows': injury_rows,
+            'sc_resolved_injury_rows': resolved_rows,
+            'sc_resolved_injuries_label': (
+                env._("Show resolved injuries (%s)", len(resolved_rows)) if resolved_rows else ''),
+            'sc_clinic_player_row': player_row,
             'sc_is_tp_view': tp_view,
             'team_context_id': event.team_ids.id if len(event.team_ids) == 1 else False,
-            # Task 1665: the same list as the note edit picker.
+            # Task 1665: the same list as the note edit picker. Task 1721
+            # (review round 1): what the pane shows — the active injuries.
             'sc_note_injury_choices': (
-                self._sc_note_injury_options(selected) if selected else []),
+                self._sc_note_injury_options(selected, active_only=True) if selected else []),
             'sc_note_draft_prefix': (
                 'sports.patient.%s.new_note.' % selected.id if selected else ''),
             # The resolve sheet (#1418) is always rendered in the shell: a

@@ -7,6 +7,22 @@
              t-att-hidden="isHidden ? 'hidden' : undefined"
              t-att-data-sc-field="props.field or props.name"
              t-att-data-sc-state="state.status" t-att-data-sc-restored="state.restored ? '1' : '0'">
+            <!-- Review round 1 (owner 2026-10-27): an organisation change
+                 that would drop chosen teams asks first (never a browser
+                 confirm); « Cancel » restores the organisation. Round 2: the
+                 warning sits at the top of the field — right under the
+                 Organisation select, above the teams picker (disabled while
+                 it waits for an answer). -->
+            <div t-if="state.groupConfirm" class="o_sc_field_message o_sc_group_confirm" role="alert"
+                 data-sc-org-confirm-box="1">
+                <p class="o_sc_group_confirm_text" t-esc="groupConfirmText"/>
+                <div class="o_sc_group_confirm_actions">
+                    <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-org-cancel="1"
+                            t-on-click="cancelGroup">Cancel</button>
+                    <button type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm" data-sc-org-confirm="1"
+                            t-on-click="confirmGroup">Change organization</button>
+                </div>
+            </div>
             <label class="o_sc_field_label" t-att-for="props.inputId">
                 <!-- Task 1629: labelHidden = the title sits above the field;
                      the label stays as the input's accessible name. -->
@@ -130,6 +146,12 @@
                     </t>
                 </ul>
                 <small t-elif="state.open and state.query.trim()" class="o_sc_hint" t-esc="noMatchLabel"/>
+                <!-- Task 1723: typed text that matches nothing; the teams an
+                     organisation change dropped. -->
+                <p t-if="state.typedError" class="o_sc_field_message o_sc_field_error" role="alert"
+                   data-sc-tags-typed-error="1" t-esc="state.typedError"/>
+                <p t-if="state.groupNotice" class="o_sc_field_message o_sc_hint" role="status"
+                   data-sc-tags-group-notice="1" t-esc="state.groupNotice"/>
             </div>
             <div t-elif="type === 'date_na'" class="o_sc_date_na">
                 <input t-ref="input" class="o_sc_input" type="date" t-att-id="props.inputId"
@@ -139,10 +161,15 @@
                        t-on-input="(ev) => { this.state.value = ev.target.value; this.onInput(); }"
                        t-on-change="(ev) => { this.state.value = ev.target.value; this.onChange(); }"
                        t-on-blur="commit" t-on-keydown="onDateKeydown" t-on-pointerdown="onDatePointer"/>
-                <label class="o_sc_check">
-                    <input type="checkbox" t-att-name="props.naName" value="1" t-att-checked="isNa"
-                           t-att-disabled="isDisabled" t-on-change="onNaToggle"/>
-                    <span t-esc="naLabel"/>
+                <!-- Task 1726: the « N/A » box is the shared switch (sc_switch). -->
+                <label class="o_sc_switch o_sc_switch_inline">
+                    <span class="o_sc_switch_text"><span class="o_sc_switch_label" t-esc="naLabel"/></span>
+                    <span class="o_sc_switch_control">
+                        <input type="checkbox" role="switch" class="o_sc_switch_input" t-att-name="props.naName" value="1"
+                               t-att-checked="isNa" t-att-aria-checked="isNa ? 'true' : 'false'"
+                               t-att-disabled="isDisabled" t-on-change="onNaToggle"/>
+                        <span class="o_sc_switch_track" aria-hidden="true"><span class="o_sc_switch_thumb"/></span>
+                    </span>
                 </label>
             </div>
             <input t-else="" t-ref="input" class="o_sc_input" t-att-type="type"

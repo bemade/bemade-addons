@@ -180,8 +180,8 @@
                                  read-only (the old text to validate). -->
                             <group name="health" string="Health">
                                 <field name="allergy_level"/>
-                                <field name="allergy_epipen"/>
-                                <field name="allergy_epipen_note" invisible="not allergy_epipen"/>
+                                <field name="allergy_epipen_state" widget="radio" options="{'horizontal': true}"/>
+                                <field name="allergy_epipen_note" invisible="allergy_epipen_state != 'yes'"/>
                                 <field name="allergy_none_confirmed"/>
                                 <field name="medical_alert_level"/>
                                 <field name="medical_none_confirmed"/>

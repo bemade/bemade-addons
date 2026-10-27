@@ -74,6 +74,8 @@ class TestFragmentsPlayer1611(FragmentsCommon):
         self.assertIsNotNone(holder, 'the holder is rendered even without allergies')
         pill = holder.xpath('.//button[@data-sc-med-pill="allergy"]')[0]
         self.assertEqual(pill.get('data-sc-med-level'), 'unset')
+        # Task 1717: the allergies wait for the EpiPen answer.
+        self.player.sudo().write({'allergy_epipen_state': 'no'})
         resp = self.url_open('/my/app/medical/item/add', data={
             'patient_id': self.player.id, 'family': 'allergy', 'name': 'Synthetic peanuts',
             'csrf_token': self._csrf()}, allow_redirects=False)

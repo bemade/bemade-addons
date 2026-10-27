@@ -127,6 +127,13 @@ async function pick(pill, item) {
         toggle.blur();
     }
     item.blur();
+    // Task 1721 (review round 1): WebKit leaves a tap's focus on the card's
+    // <summary> — a focused card never moves in its list (sc_fragments.js),
+    // e.g. a resolved injury set back to « Actif » joining the active ones.
+    const held = document.activeElement;
+    if (held && held !== document.body && held.closest && held.closest("[data-sc-fragment-item]")) {
+        held.blur();
+    }
     const value = item.dataset.scPillPost;
     const previous = pill.dataset.scOldValue;
     const { scModel, scRecordId, scField } = pill.dataset;

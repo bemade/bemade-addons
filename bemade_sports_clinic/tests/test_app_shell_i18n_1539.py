@@ -61,7 +61,7 @@ class TestAppShellI18n1539(TestAppShellI18n1538):
         text = self._fr_text('/my/patient/injury/new?patient_id=%s' % self.player.id)
         # Review fixes 2026-10-18: the create button reads « Créer ».
         for term in ("Gardée sur cet appareil jusqu'à sa création", 'Créer',
-                     'Cochez S/O si la date exacte est inconnue'):
+                     'Activez S/O si la date exacte est inconnue'):
             self.assertIn(term, text, term)
         text = self._fr_text('/my/injury/edit?injury_id=%s' % self.injury.id)
         for term in ('Statut de la blessure', 'Visibilité', 'Entraîneurs', 'Masquée',

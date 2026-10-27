@@ -14,9 +14,8 @@ Acceptance criteria:
   tab with a confirmation.
 * UC-AP4 « Create a new player » creates a NEW player with that name and
   date of birth (even when a similar name exists), on this team, and opens
-  the new player's page (Info tab, team context) to complete it. The exact
-  name of a player the therapist can't read is refused (security review
-  2026-10-23, « ask a manager »).
+  the new player's page (Info tab, team context) to complete it. Task 1716:
+  the exact name of a player the therapist can't read no longer blocks.
 * UC-AP5 A coach gets the « Request an addition » form inline instead.
 """
 from datetime import date
@@ -106,16 +105,15 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
     # -- UC-AP4 ----------------------------------------------------------
     def test_create_new_opens_player(self):
         self._login_tp()
-        # Security review 2026-10-23: the other Sam (PC Team B) is not
-        # readable by the therapist — creating a namesake is refused with the
-        # generic « ask a manager », whatever the date of birth
-        # (test_identity_oracle_1023).
+        # Task 1716 (owner 2026-10-26): a name alone never blocks — the
+        # other Sam (PC Team B, another date of birth) no longer refuses the
+        # namesake (was the generic « ask a manager », review 2026-10-23).
         resp = self.url_open('/my/team/%s/player/add' % self.team_a.id, data={
             'csrf_token': self._csrf(), 'first_name': 'Sam', 'last_name': 'Synthetic',
             'date_of_birth': '2011-03-04', 'force_new': '1', 'sc_inline': '1',
         }, allow_redirects=False)
         self.assertEqual(resp.status_code, 303, resp.text[:200])
-        self.assertFalse(self.env['sports.patient'].sudo().search([
+        self.assertTrue(self.env['sports.patient'].sudo().search([
             ('first_name', '=', 'Sam'), ('last_name', '=', 'Synthetic'), ('id', '!=', self.other.id)]))
         resp = self.url_open('/my/team/%s/player/add' % self.team_a.id, data={
             'csrf_token': self._csrf(), 'first_name': 'Samuel', 'last_name': 'Synthetic',

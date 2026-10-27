@@ -20,6 +20,10 @@
  *
  * Never focused on open (#1646); the list sits in the flow under the box so
  * a phone keyboard does not hide it.
+ *
+ * Task 1722: data-sc-picker-empty on the select keeps its empty option
+ * (« À déterminer », « Toutes les organisations ») as a real choice: listed
+ * first (when it matches the typed words) and shown in the box when chosen.
  */
 import { _t, translationIsReady } from "@web/core/l10n/translation";
 
@@ -56,8 +60,15 @@ function pickerOf(select) {
     return next && next.classList.contains("o_sc_picker") ? next : null;
 }
 
+function keepsEmpty(select) {
+    return Boolean(select.dataset.scPickerEmpty);
+}
+
 function labelOf(select) {
     const option = select.selectedOptions && select.selectedOptions[0];
+    if (option && !option.value && keepsEmpty(select)) {
+        return option.textContent.trim();
+    }
     return option && option.value ? option.textContent.trim() : "";
 }
 
@@ -69,7 +80,10 @@ function render(select, picker, query) {
     const list = picker.querySelector(".o_sc_picker_list");
     const words = scWords(query);
     const matches = [...select.options].filter(
-        (option) => option.value && allowed(option) && (!words.length || scNameMatches(words, option.textContent))
+        (option) =>
+            (option.value || (keepsEmpty(select) && option.textContent.trim())) &&
+            allowed(option) &&
+            (!words.length || scNameMatches(words, option.textContent))
     );
     list.replaceChildren();
     for (const [index, option] of matches.slice(0, MAX_SHOWN).entries()) {
@@ -304,6 +318,24 @@ document.addEventListener("keydown", (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
         closeList(picker);
+    }
+});
+
+// Review round 3 (owner 2026-10-27): a press on the list (an option, its
+// scrollbar, the hints) or on « × » must not take the focus from the box.
+// It used to: the box's focusout closed the list 150 ms later, so a press
+// held longer than that (a normal trackpad / mouse click) released over a
+// hidden list and the pick was lost — the field kept its former value. The
+// focus now stays in the box and the pick lands on « click », however long
+// the press (the tags field does the same: mousedown.prevent on its list).
+document.addEventListener("mousedown", (ev) => {
+    const target = ev.target;
+    if (!target.closest) {
+        return;
+    }
+    const picker = target.closest(".o_sc_picker");
+    if (picker && !target.closest(".o_sc_picker_input") && picker.contains(document.activeElement)) {
+        ev.preventDefault();
     }
 });
 
