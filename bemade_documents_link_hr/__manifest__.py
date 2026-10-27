@@ -1,6 +1,6 @@
 {
     "name": "Documents - Link Existing (Employees)",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "summary": "Show documents linked to an employee in its Documents button.",
     "category": "Productivity/Documents",
     "author": "Bemade Inc.",

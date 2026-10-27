@@ -37,7 +37,18 @@ class TestHrLink(TransactionCase):
         self.assertEqual(self.employee.document_count, before + 1)
         action = self.employee.action_open_documents()
         json.dumps(action["domain"])
-        self.assertIn(doc, self.env["documents.document"].search(action["domain"]))
+        found = self.env["documents.document"].search(action["domain"])
+        self.assertIn(doc, found)
+        own = self._doc(partner_id=self.employee.work_contact_id.id)
+        self.employee.invalidate_recordset(["document_count"])
+        action = self.employee.action_open_documents()
+        found = self.env["documents.document"].search(action["domain"])
+        self.assertIn(own, found)
+        self.assertIn(doc, found)
+        self.assertEqual(
+            action["context"]["default_partner_id"], self.employee.work_contact_id.id
+        )
+        self.assertEqual(len(found), self.employee.document_count)
         self.assertIn(doc.attachment_id, self.employee._get_mail_thread_data_attachments())
 
     def test_settings_on(self):

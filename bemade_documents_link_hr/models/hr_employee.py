@@ -33,8 +33,9 @@ class HrEmployee(models.Model):
         action = super().action_open_documents()
         self.ensure_one()
         linked = self._bemade_linked_documents_domain()
-        if action.get("type") == "ir.actions.act_window":
-            # Settings off: documents of the work contact, plus linked ones.
+        if not self.company_id.documents_hr_settings:
+            # Settings off: the stock client action filters on the work contact
+            # and carries the upload defaults; keep its context, add linked docs.
             action["domain"] = list(Domain(action["domain"]) | linked)
             return action
         # Settings on: the stock action opens the employee folder. Keep it
