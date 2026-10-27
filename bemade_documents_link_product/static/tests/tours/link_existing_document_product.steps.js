@@ -1,5 +1,14 @@
 export default [
   {
+    id: "open_product",
+    title: "Ouvrir la fiche du produit",
+    narration: "Ouvrez la fiche du produit auquel vous voulez lier un document.",
+    selector: ".o_kanban_record, .o_data_row",
+    containsText: "Produit demo",
+    action: "click",
+    videoOnly: true,
+  },
+  {
     id: "open_cog",
     title: "Ouvrir le menu d'actions de la fiche produit",
     narration:
@@ -43,7 +52,8 @@ export default [
     title: "Constater le bouton « Documents »",
     narration:
       "La fiche se met à jour : le document est compté dans le bouton « Documents » en haut de la fiche.",
-    selector: ".o-form-buttonbox .oe_stat_button .o_stat_value:contains('1')",
+    selector: ".o-form-buttonbox .oe_stat_button .o_stat_value",
+    containsText: "1",
     action: "assert",
   },
   {
