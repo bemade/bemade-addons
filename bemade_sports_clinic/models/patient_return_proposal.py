@@ -20,6 +20,10 @@ them through the normal save paths (``SAVE_REGISTRY``)::
             'editable': bool,              # the proposed date can be changed
             'tickable': bool,              # the row can be unticked
             'checked': bool,               # ticked by default
+            # Task 1727: a « Retour prévu » row adds
+            'min': 'YYYY-MM-DD',           # today: its date input's min
+            'needs_date': bool,            # the proposed date has passed —
+            'hint': str,                   # pick a new one (why, shown on the row)
             # Task 1670: a SELECTION row (match / practice status) adds
             'type': 'selection',           # (absent = a date row)
             'options': [{'value', 'label'}, ...],  # the field's choices
@@ -57,7 +61,7 @@ class SportsPatient(models.Model):
 
     def _sc_proposal_item(self, record, field, label, current, proposed,
                           editable=False, tickable=True, checked=True):
-        return {
+        item = {
             'model': record._name,
             'id': record.id,
             'field': field,
@@ -71,6 +75,22 @@ class SportsPatient(models.Model):
             'tickable': bool(tickable),
             'checked': bool(checked),
         }
+        if record._name == 'sports.patient' and field == 'predicted_return_date':
+            # Task 1727: « Retour prévu » is never set in the past — the row's
+            # date input starts at today; a proposed date that has already
+            # passed asks for a new one (an empty, editable date + the reason)
+            # instead of failing on « Apply ».
+            today = fields.Date.context_today(self)
+            item['min'] = fields.Date.to_string(today)
+            if proposed and fields.Date.to_date(proposed) < today:
+                item.update({
+                    'proposed': '',
+                    'editable': True,
+                    'needs_date': True,
+                    'hint': self.env._("The proposed date (%s) has passed: pick a new date, today or later.",
+                                       self._sc_proposal_date_display(proposed)),
+                })
+        return item
 
     def _sc_proposal_selection_item(self, record, field, label, current, proposed,
                                     tickable=True, checked=True):

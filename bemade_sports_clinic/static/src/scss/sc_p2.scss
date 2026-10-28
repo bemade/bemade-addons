@@ -1712,6 +1712,75 @@ $sc-p2-laptop: 992px;
     }
 }
 
+// Task 1729: on a phone the header's edit rows never overlap (« Effacer »
+// sat on the training title's « Historique »). Each field takes the full
+// width; its label text stays above it and its actions (save state,
+// « Effacer ») go on their own line under it, right-aligned; the title's
+// « Historique » wraps under the title when short (.o_sc_edit_card_title
+// wraps). The label box is dissolved (display: contents) so its parts can
+// be placed around the input; it stays the input's <label> (accessible name).
+@media (max-width: 767.98px) {
+    .o_sc_app [data-sc-section="player.header.edit"] {
+        .o_sc_autosave {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 5px var(--sc-space-3);
+            text-align: start;
+
+            > * {
+                flex: 1 1 100%;
+                min-width: 0;
+                order: 0;
+            }
+
+            > .o_sc_field_label {
+                display: contents;
+
+                > span:first-child {
+                    flex: 1 1 100%;
+                    order: 0;
+                }
+
+                > .o_sc_save_state,
+                > .o_sc_clear_btn,
+                > .o_sc_field_history {
+                    flex: 0 0 auto;
+                    order: 2;
+                }
+
+                > .o_sc_save_state {
+                    margin-left: auto;
+                }
+
+                > .o_sc_save_state + .o_sc_clear_btn {
+                    margin-left: 0;
+                }
+            }
+
+            > .o_sc_input,
+            > .o_sc_textarea,
+            > .o_sc_date_na {
+                order: 1;
+                width: 100%;
+                max-width: none;
+            }
+
+            > .o_sc_hint,
+            > .o_sc_field_message {
+                order: 3;
+            }
+        }
+
+        // The training label row is no longer laid over the title line.
+        [data-sc-section="player.training.edit"] .o_sc_autosave > .o_sc_field_label {
+            position: static;
+            min-height: 0;
+        }
+    }
+}
+
 @keyframes o_sc_spin {
     to {
         transform: rotate(360deg);

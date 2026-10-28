@@ -233,7 +233,7 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
         # Play OK: the header's read view shows « Retour réel » (not the
         # predicted return), for coaches and therapists.
         self.player.write({'match_status': 'yes', 'practice_status': 'yes',
-                           'predicted_return_date': '2026-10-30', 'return_date': '2026-11-02'})
+                           'predicted_return_date': '2030-10-30', 'return_date': '2026-11-02'})
         for login in (self._login_coach, self._login_tp):
             login()
             _text, tree = self._get(self._url())

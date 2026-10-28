@@ -19,12 +19,18 @@
  *   (the autosave islands and data-sc-display read views follow, the read
  *   fragments refresh — task 1611) and the toast confirms;
  * - « Dismiss », the close button, Escape or the backdrop: nothing written.
+ * - Task 1727: a « Retour prévu » row's date input starts at ``item.min``
+ *   (today); a row whose proposed date has passed (``needs_date``) opens
+ *   empty with its ``hint``, and « Apply » asks for a date (today or later)
+ *   instead of posting — the same when the server answers ``needs_date``
+ *   (the date passed while the sheet was open).
  *
  * Sources: an « sc:saved » whose result carries ``propose``; the
  * data-sc-proposal JSON a POST round-trip left on the sheet (shown on load);
  * the « sc:propose » DOM event ({detail: proposal}); or openProposal() from
  * other modules (task 1604's « Résoudre »).
  */
+import { _t } from "@web/core/l10n/translation";
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
 
 const APPLY_URL = "/my/app/apply-proposal";
@@ -83,12 +89,61 @@ function buildRow(item) {
         input.value = item.proposed || "";
         input.dataset.scProposalValue = "1";
         input.setAttribute("aria-label", item.label);
+        if (item.min) {
+            input.min = item.min;
+        }
         change.append(input);
     } else {
         change.append(el("strong", "o_sc_proposal_proposed", item.proposed_display || "—"));
     }
     row.append(change);
+    if (item.needs_date) {
+        row.dataset.scProposalNeedsDate = "1";
+    }
+    if (item.hint) {
+        row.append(el("p", "o_sc_hint o_sc_proposal_hint", item.hint));
+    }
     return row;
+}
+
+/** Task 1727: ask for a new date on the row ``key`` (min = ``min``). */
+function askDate(dialog, key, min) {
+    const row = [...dialog.querySelectorAll("[data-sc-proposal-item]")].find(
+        (node) => node.dataset.scProposalItem === key
+    );
+    const input = row && row.querySelector('input[type="date"][data-sc-proposal-value]');
+    if (!input) {
+        return null;
+    }
+    if (min) {
+        input.min = min;
+    }
+    if (input.value && input.min && input.value < input.min) {
+        input.value = "";
+    }
+    row.dataset.scProposalNeedsDate = "1";
+    input.setAttribute("aria-invalid", "true");
+    return input;
+}
+
+/** Task 1727: the rows still missing a date (today or later), asked for. */
+function missingDates(dialog) {
+    const asked = [];
+    for (const row of dialog.querySelectorAll("[data-sc-proposal-item]")) {
+        const input = row.querySelector('input[type="date"][data-sc-proposal-value]');
+        const box = row.querySelector("[data-sc-proposal-tick]");
+        if (!input || !input.min || (box && !box.checked)) {
+            continue;
+        }
+        const past = input.value && input.value < input.min;
+        const empty = !input.value && row.dataset.scProposalNeedsDate === "1";
+        if (past || empty) {
+            asked.push(askDate(dialog, row.dataset.scProposalItem));
+        } else {
+            input.removeAttribute("aria-invalid");
+        }
+    }
+    return asked.filter(Boolean);
 }
 
 let current = null;
@@ -186,6 +241,13 @@ export async function applyProposal() {
     }
     const button = dialog.querySelector("[data-sc-proposal-apply]");
     const error = dialog.querySelector("[data-sc-proposal-error]");
+    const missing = missingDates(dialog);
+    if (missing.length) {
+        error.textContent = _t("Pick a predicted return date, today or later.");
+        error.hidden = false;
+        missing[0].focus();
+        return false;
+    }
     button.disabled = true;
     error.hidden = true;
     try {
@@ -201,12 +263,18 @@ export async function applyProposal() {
         }
         return true;
     } catch (err) {
-        const message = err && err.payload && err.payload.message;
+        const payload = (err && err.payload) || {};
+        const message = payload.message;
         if (message) {
             error.textContent = message;
         }
         error.hidden = false;
         button.disabled = false;
+        // Task 1727: the date passed meanwhile — ask for a new one.
+        const asked = (payload.needs_date || []).map((key) => askDate(dialog, key, payload.min)).filter(Boolean);
+        if (asked.length) {
+            asked[0].focus();
+        }
         return false;
     }
 }

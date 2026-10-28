@@ -844,6 +844,12 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         white-space: nowrap;
     }
 
+    // Task 1727: a past « Retour prévu » (the date + « · Dépassé »).
+    .o_sc_overdue,
+    .o_sc_row_line_value.o_sc_overdue {
+        color: var(--sc-overdue);
+    }
+
     .o_sc_row_expand {
         align-self: flex-start;
         display: inline-flex;

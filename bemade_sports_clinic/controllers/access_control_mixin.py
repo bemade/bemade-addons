@@ -549,6 +549,8 @@ class AccessControlMixin:
           truncates it; the expanded detail shows it whole);
         * ``injured`` / ``return_label``: « Retour prévu » for an injured
           player — the date, or « — » when unset (the legacy hint);
+        * ``return_overdue`` (task 1727): that date has passed — the row
+          reads « … · Dépassé » in orange;
         * ``team_links``: the player's teams as links (``_sc_team_links``),
           empty when ``team_links`` is False (a team's own page, as legacy);
         * ``detail_url``: the lazy expanded detail (``row-detail`` route),
@@ -605,6 +607,8 @@ class AccessControlMixin:
                 'training': text,
                 'injured': injured,
                 'return_label': return_label,
+                # Task 1727: a past « Retour prévu » reads « · Dépassé ».
+                'return_overdue': bool(injured and player.predicted_return_overdue),
                 'team_links': [links[t.id] for t in player.sudo().team_ids if t.id in links],
                 'detail_url': detail_url,
                 'clock': clocks.get(player.id),

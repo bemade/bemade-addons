@@ -499,7 +499,8 @@
         <div t-if="player.stage != 'healthy'" class="text-muted small d-flex align-items-center mb-2">
             <i class="fa fa-clock-o" title="Estimated Return"/>
             <span class="ms-1">Predicted return:</span>
-            <span t-if="player.predicted_return_date" class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/>
+            <span t-if="player.predicted_return_date and player.predicted_return_overdue" class="ms-1 o_sc_overdue"><span t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span>
+            <span t-elif="player.predicted_return_date" class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/>
             <span t-else="" class="ms-1">—</span>
         </div>
     </template>

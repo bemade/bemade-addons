@@ -290,3 +290,9 @@ from . import test_epipen_gate_1717
 from . import test_switches_1726
 from . import test_switches_tours_1726
 from . import test_org_pick_round3
+from . import test_retour_prevu_past_1727
+from . import test_retour_prevu_past_tours_1727
+from . import test_retour_prevu_backend_1727
+from . import test_digest_dark_mode_1728
+from . import test_digest_dark_mode_tours_1728
+from . import test_header_edit_phone_tours_1729

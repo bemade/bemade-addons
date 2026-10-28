@@ -63,7 +63,7 @@
                         </div>
                         <div t-if="player.get('predicted_return_date')" class="text-muted small d-flex align-items-center mb-1">
                             <i class="fa fa-clock-o" title="Estimated Return"></i>
-                            <span class="ms-1"><span>Predicted return:</span> <t t-esc="player['predicted_return_date']"/></span>
+                            <span class="ms-1"><span>Predicted return:</span> <t t-if="player.get('predicted_return_overdue')"><span class="o_sc_overdue"><t t-esc="player['predicted_return_date']"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span></t><t t-else="" t-esc="player['predicted_return_date']"/></span>
                         </div>
                         <details class="mt-2 o_sc_card_detail">
                             <summary class="o_sc_card_summary text-primary small">

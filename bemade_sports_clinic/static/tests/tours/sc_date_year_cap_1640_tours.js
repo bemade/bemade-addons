@@ -134,7 +134,11 @@ tours.add("sc_1640_player", {
                 const inputs = [...document.querySelectorAll('.o_sc_autosave input[type="date"]')];
                 assert(inputs.length >= 1, "no autosave date input");
                 for (const input of inputs) {
-                    assertBounds(input, `autosave ${input.id || input.name}`);
+                    // Task 1727: « Retour prévu » starts at today (its own
+                    // min, a 4-digit year) — the default max still applies.
+                    const own = input.id.endsWith("_predicted_return_date") ? input.getAttribute("min") : MIN;
+                    assert(/^\d{4}-\d{2}-\d{2}$/.test(own), `autosave ${input.id}: min=${own}`);
+                    assertBounds(input, `autosave ${input.id || input.name}`, own);
                 }
             },
         },

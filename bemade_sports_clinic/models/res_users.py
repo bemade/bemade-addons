@@ -682,7 +682,7 @@ class User(models.Model):
                     "Your daily team briefing / Votre sommaire quotidien d'équipe:"
                 )
             ),
-            Markup('<p style="color:#888;font-size:12px;">%s</p>')
+            Markup('<p style="color:#767676;font-size:12px;">%s</p>')
             % escape(
                 _(
                     "Changes over the last %(hours)s h / Changements des "
@@ -815,7 +815,7 @@ class User(models.Model):
             )
             parts.append(Markup("").join(ev_lines))
         parts.append(
-            Markup('<p style="color:#888;font-size:12px;">%s</p>')
+            Markup('<p style="color:#767676;font-size:12px;">%s</p>')
             % escape(
                 _(
                     "No medical data is included. / Aucune donnée médicale n'est "

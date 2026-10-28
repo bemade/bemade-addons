@@ -280,22 +280,22 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         other = self.env['sports.patient.injury'].create({
             'patient_id': self.player.id, 'diagnosis': 'Synthetic knee 1631'})
         other.with_context(mail_notrack=True).write(
-            {'stage': 'active', 'predicted_resolution_date': D('2026-04-01')})
+            {'stage': 'active', 'predicted_resolution_date': D('2030-04-01')})
         self.injury.sudo().with_context(mail_notrack=True).write(
-            {'predicted_resolution_date': D('2026-05-01')})
-        self.player.sudo().write({'predicted_return_date': D('2026-05-01')})
+            {'predicted_resolution_date': D('2030-05-01')})
+        self.player.sudo().write({'predicted_return_date': D('2030-05-01')})
         self._login_tp()
         proposal = self._saved(self.injury, 'stage', 'unverified')['propose']
         self.assertEqual(proposal['kind'], 'moved_back')
         self.assertEqual(len(proposal['items']), 1, proposal['items'])
         item = proposal['items'][0]
         self.assertEqual((item['model'], item['field']), ('sports.patient', 'predicted_return_date'))
-        self.assertEqual((item['current'], item['proposed']), ('2026-05-01', '2026-04-01'))
+        self.assertEqual((item['current'], item['proposed']), ('2030-05-01', '2030-04-01'))
 
     def test_active_to_unverified_last_one_clears_retour_prevu(self):
         self.injury.sudo().with_context(mail_notrack=True).write(
-            {'predicted_resolution_date': D('2026-05-01')})
-        self.player.sudo().write({'predicted_return_date': D('2026-05-01')})
+            {'predicted_resolution_date': D('2030-05-01')})
+        self.player.sudo().write({'predicted_return_date': D('2030-05-01')})
         self._login_tp()
         proposal = self._saved(self.injury, 'stage', 'unverified')['propose']
         item = self._by_key(proposal)[('sports.patient', self.player.id, 'predicted_return_date')]
@@ -307,7 +307,7 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         other = self.env['sports.patient.injury'].create({
             'patient_id': self.player.id, 'diagnosis': 'Synthetic knee 1631'})
         other.with_context(mail_notrack=True).write(
-            {'stage': 'active', 'predicted_resolution_date': D('2026-04-01')})
+            {'stage': 'active', 'predicted_resolution_date': D('2030-04-01')})
         self.player.sudo().write({'return_date': D('2026-03-10')})
         self._login_tp()
         proposal = self._saved(self.injury, 'stage', 'unverified')['propose']
@@ -318,7 +318,7 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
             ('sports.patient', self.player.id, 'predicted_return_date'),
         })
         self.assertEqual(items[('sports.patient', self.player.id, 'predicted_return_date')]['proposed'],
-                         '2026-04-01')
+                         '2030-04-01')
 
     def test_moving_back_never_fires_a_forward_builder(self):
         """Résolu -> Actif with a matching Retour prévu: nothing to propose
