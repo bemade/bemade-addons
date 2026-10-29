@@ -75,6 +75,14 @@
                         Some recipients have no email address and will not
                         receive this reply.
                     </div>
+                    <div
+            class="alert alert-info"
+            role="alert"
+            invisible="not reply_to_message_id"
+          >
+                        In reply to: <field name="reply_to_label" class="oe_inline" />
+                    </div>
+                    <field name="reply_to_message_id" invisible="1" />
                     <group>
                         <group>
                             <field name="conversation_id" readonly="1" />
@@ -123,6 +131,114 @@
                     </notebook>
                 </sheet>
                 <chatter />
+            </form>
+        </field>
+    </record>
+
+    <record id="mail_conversation_draft_view_form_dialog" model="ir.ui.view">
+        <field name="name">mail.conversation.draft.view.form.dialog</field>
+        <field name="model">mail.conversation.draft</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <form string="Reply" js_class="conversation_draft_dialog_form">
+                <field name="state" invisible="1" />
+                <field name="has_reply_templates" invisible="1" />
+                <field name="has_unreachable_recipients" invisible="1" />
+                <field name="reply_to_message_id" invisible="1" />
+                <field name="conversation_id" invisible="1" />
+                <div
+          class="alert alert-info"
+          role="alert"
+          invisible="not reply_to_message_id"
+        >
+                    In reply to: <field name="reply_to_label" class="oe_inline" />
+                </div>
+                <div
+          class="alert alert-warning"
+          role="alert"
+          invisible="not has_unreachable_recipients or state != 'draft'"
+        >
+                    Some recipients have no email address and will not
+                    receive this reply.
+                </div>
+                <div
+          class="alert alert-info"
+          role="alert"
+          invisible="state != 'sending'"
+        >
+                    This reply is being sent by <field
+            name="sent_by_id"
+            readonly="1"
+            class="oe_inline"
+          />.
+                </div>
+                <group>
+                    <field name="transport_id" readonly="state != 'draft'" />
+                    <field name="subject" readonly="state != 'draft'" />
+                </group>
+                <field
+          name="body"
+          type="html"
+          options="{'collaborative': true, 'resizable': false}"
+          placeholder="Write the reply..."
+          readonly="state != 'draft'"
+        />
+                <notebook>
+                    <page string="Recipients" name="recipients">
+                        <field name="recipient_ids" readonly="state != 'draft'">
+                            <list
+                editable="bottom"
+                decoration-danger="not is_reachable"
+              >
+                                <field name="mode" />
+                                <field name="partner_id" />
+                                <field name="email" />
+                                <field
+                  name="is_reachable"
+                  string="Reachable"
+                  readonly="1"
+                />
+                            </list>
+                        </field>
+                    </page>
+                    <page string="Attachments" name="attachments">
+                        <field
+              name="attachment_ids"
+              widget="many2many_binary"
+              readonly="state != 'draft'"
+            />
+                    </page>
+                </notebook>
+                <footer>
+                    <button
+            name="action_send"
+            string="Send"
+            type="object"
+            class="btn-primary"
+            invisible="state != 'draft'"
+          />
+                    <button
+            name="action_use_template"
+            string="Use template"
+            type="object"
+            invisible="state != 'draft' or not has_reply_templates"
+          />
+                    <button
+            name="action_discard"
+            string="Discard"
+            type="object"
+            invisible="state != 'draft'"
+            confirm="Discard this reply draft?"
+          />
+                    <button
+            name="action_open_full_view"
+            string="Open full view"
+            type="object"
+            class="btn-link ms-auto"
+            icon="fa-external-link"
+          />
+                    <button string="Close" special="cancel" class="btn-secondary" />
+                </footer>
             </form>
         </field>
     </record>
