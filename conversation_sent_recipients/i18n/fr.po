@@ -24,7 +24,7 @@ msgstr "Un destinataire ne peut figurer qu'une fois par message et par mode."
 #. module: conversation_sent_recipients
 #: model:ir.model.fields.selection,name:conversation_sent_recipients.selection__mail_conversation_sent_recipient__mode__cc
 msgid "Cc"
-msgstr ""
+msgstr "Cc"
 
 #. module: conversation_sent_recipients
 #. odoo-javascript
@@ -35,7 +35,7 @@ msgstr "Cc :"
 #. module: conversation_sent_recipients
 #: model:ir.model,name:conversation_sent_recipients.model_mail_conversation
 msgid "Conversation"
-msgstr ""
+msgstr "Conversation"
 
 #. module: conversation_sent_recipients
 #: model:ir.model,name:conversation_sent_recipients.model_conversation_transport
@@ -71,7 +71,7 @@ msgstr "Courriel"
 #: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation_sent_recipient__id
 #: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_message__id
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #. module: conversation_sent_recipients
 #: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation_sent_recipient__write_uid
@@ -87,12 +87,12 @@ msgstr "Mis à jour le"
 #: model:ir.model,name:conversation_sent_recipients.model_mail_message
 #: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation_sent_recipient__message_id
 msgid "Message"
-msgstr ""
+msgstr "Message"
 
 #. module: conversation_sent_recipients
 #: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation_sent_recipient__mode
 msgid "Mode"
-msgstr ""
+msgstr "Mode"
 
 #. module: conversation_sent_recipients
 #: model:ir.model.fields,field_description:conversation_sent_recipients.field_mail_conversation_sent_recipient__name

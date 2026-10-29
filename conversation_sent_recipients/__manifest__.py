@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Sent Recipients",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Discuss",
     "summary": "Show who a mail sent from a conversation went to (To and Cc).",
     "description": """
