@@ -1,0 +1,211 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* product_supplierinfo_tracking
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-29 11:56+0000\n"
+"PO-Revision-Date: 2026-10-29 11:56+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: product_supplierinfo_tracking
+#. odoo-python
+#: code:addons/product_supplierinfo_tracking/models/product_supplier_info.py:0
+msgid "%(label)s: %(value)s"
+msgstr "%(label)s : %(value)s"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,field_description:product_supplierinfo_tracking.field_product_supplierinfo__currency_id
+msgid "Currency"
+msgstr "Devise"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,field_description:product_supplierinfo_tracking.field_product_supplierinfo__discount
+msgid "Discount (%)"
+msgstr "Remise (%)"
+
+#. module: product_supplierinfo_tracking
+#: model_terms:ir.ui.view,arch_db:product_supplierinfo_tracking.product_supplierinfo_list_view_discounted
+msgid "Discounted Price"
+msgstr "Prix remisé"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,field_description:product_supplierinfo_tracking.field_product_supplierinfo__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,field_description:product_supplierinfo_tracking.field_product_supplierinfo__date_end
+msgid "End Date"
+msgstr "Date de fin"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,help:product_supplierinfo_tracking.field_product_supplierinfo__date_end
+msgid "End date for this vendor price"
+msgstr "Date de fin pour ce prix fournisseur"
+
+#. module: product_supplierinfo_tracking
+#. odoo-python
+#: code:addons/product_supplierinfo_tracking/models/product_supplier_info.py:0
+msgid "Ending"
+msgstr "Fin"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,help:product_supplierinfo_tracking.field_product_supplierinfo__product_id
+msgid ""
+"If not set, the vendor price will apply to all variants of this product."
+msgstr ""
+"S'il n'est pas défini, le prix fournisseur s'appliquera à toutes les "
+"variantes de ce produit."
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,field_description:product_supplierinfo_tracking.field_product_supplierinfo__delay
+msgid "Lead Time"
+msgstr "Délai"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,help:product_supplierinfo_tracking.field_product_supplierinfo__delay
+msgid ""
+"Lead time in days between the confirmation of the purchase order and the "
+"receipt of the products in your warehouse. Used by the scheduler for "
+"automatic computation of the purchase order planning."
+msgstr ""
+"Délai (en jours) entre la confirmation du bon de commande et la réception "
+"des produits dans votre entrepôt. Utilisé par le planificateur pour calculer"
+" le planning des bons de commande automatiquement."
+
+#. module: product_supplierinfo_tracking
+#. odoo-python
+#: code:addons/product_supplierinfo_tracking/models/product_supplier_info.py:0
+msgid "Minimum qty"
+msgstr "Quantité minimale"
+
+#. module: product_supplierinfo_tracking
+#. odoo-python
+#: code:addons/product_supplierinfo_tracking/models/product_supplier_info.py:0
+msgid "No"
+msgstr "Non"
+
+#. module: product_supplierinfo_tracking
+#. odoo-python
+#: code:addons/product_supplierinfo_tracking/models/product_supplier_info.py:0
+msgid "Price %(operation)s for %(product)s"
+msgstr "Prix %(operation)s pour %(product)s"
+
+#. module: product_supplierinfo_tracking
+#. odoo-python
+#: code:addons/product_supplierinfo_tracking/models/product_supplier_info.py:0
+msgid "Price modified for %(product)s"
+msgstr "Prix modifié pour %(product)s"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,field_description:product_supplierinfo_tracking.field_product_supplierinfo__product_tmpl_id
+msgid "Product Template"
+msgstr "Modèle de produit"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,field_description:product_supplierinfo_tracking.field_product_supplierinfo__product_id
+msgid "Product Variant"
+msgstr "Variante de produit"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,field_description:product_supplierinfo_tracking.field_product_supplierinfo__min_qty
+msgid "Quantity"
+msgstr "Quantité"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,field_description:product_supplierinfo_tracking.field_product_supplierinfo__date_start
+msgid "Start Date"
+msgstr "Date de début"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,help:product_supplierinfo_tracking.field_product_supplierinfo__date_start
+msgid "Start date for this vendor price"
+msgstr "Date de début pour ce prix fournisseur"
+
+#. module: product_supplierinfo_tracking
+#. odoo-python
+#: code:addons/product_supplierinfo_tracking/models/product_supplier_info.py:0
+msgid "Starting"
+msgstr "Début"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model,name:product_supplierinfo_tracking.model_product_supplierinfo
+msgid "Supplier Pricelist"
+msgstr "Liste de prix du fournisseur"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,help:product_supplierinfo_tracking.field_product_supplierinfo__price
+msgid "The price to purchase a product"
+msgstr "Le prix pour acheter un produit"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,help:product_supplierinfo_tracking.field_product_supplierinfo__min_qty
+msgid ""
+"The quantity to purchase from this vendor to benefit from the unit price. If"
+" a vendor unit is set, quantity should be specified in this unit, otherwise "
+"it should be specified in the default unit of the product."
+msgstr ""
+"Quantité à acheter auprès de ce fournisseur pour bénéficier du prix "
+"unitaire. Si une unité fournisseur est définie, la quantité doit être "
+"spécifiée dans cette unité, sinon elle doit être indiquée dans l'unité par "
+"défaut du produit."
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,help:product_supplierinfo_tracking.field_product_supplierinfo__product_code
+msgid ""
+"This vendor's product code will be used when printing a request for "
+"quotation. Keep empty to use the internal one."
+msgstr ""
+"Le code de produit du fournisseur sera utilisé lors de l'impression d'une "
+"demande de prix. Laissez le champ vide si vous voulez utiliser la référence "
+"interne."
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,help:product_supplierinfo_tracking.field_product_supplierinfo__product_name
+msgid ""
+"This vendor's product name will be used when printing a request for "
+"quotation. Keep empty to use the internal one."
+msgstr ""
+"Le nom de produit du fournisseur sera utilisé lors de l'impression d'une "
+"demande de prix. Laissez le champ vide si vous voulez utiliser la référence "
+"interne."
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,field_description:product_supplierinfo_tracking.field_product_supplierinfo__product_uom_id
+msgid "Unit"
+msgstr "Unité"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,field_description:product_supplierinfo_tracking.field_product_supplierinfo__price
+msgid "Unit Price"
+msgstr "Prix unitaire"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,field_description:product_supplierinfo_tracking.field_product_supplierinfo__partner_id
+msgid "Vendor"
+msgstr "Fournisseur"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,field_description:product_supplierinfo_tracking.field_product_supplierinfo__product_code
+msgid "Vendor Product Code"
+msgstr "Code du produit du fournisseur"
+
+#. module: product_supplierinfo_tracking
+#: model:ir.model.fields,field_description:product_supplierinfo_tracking.field_product_supplierinfo__product_name
+msgid "Vendor Product Name"
+msgstr "Nom du produit du fournisseur"
+
+#. module: product_supplierinfo_tracking
+#. odoo-python
+#: code:addons/product_supplierinfo_tracking/models/product_supplier_info.py:0
+msgid "Yes"
+msgstr "Oui"
