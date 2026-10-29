@@ -23,8 +23,8 @@ msgstr "Alerter en cas d'échec d'une action planifiée"
 
 #. module: bemade_cron_failure_alert
 #: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_res_config_settings__cron_failure_alert_user_id
-msgid "Assign to"
-msgstr "Assigner à"
+msgid "Assign failure alerts to"
+msgstr "Assigner les alertes d'échec à"
 
 #. module: bemade_cron_failure_alert
 #: model_terms:ir.ui.view,arch_db:bemade_cron_failure_alert.res_config_settings_view_form

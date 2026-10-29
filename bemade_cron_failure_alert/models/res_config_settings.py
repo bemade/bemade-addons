@@ -14,7 +14,7 @@ class ResConfigSettings(models.TransientModel):
     )
     cron_failure_alert_user_id = fields.Many2one(
         "res.users",
-        string="Assign to",
+        string="Assign failure alerts to",
         config_parameter=PARAM_USER,
         domain=[("share", "=", False)],
         help="User who receives a To-Do activity for each alert.",
