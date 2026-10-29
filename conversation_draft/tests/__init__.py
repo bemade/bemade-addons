@@ -16,3 +16,4 @@ from . import test_draft_signature
 from . import test_draft_signature_tour
 from . import test_reply_popup
 from . import test_reply_popup_tour
+from . import test_draft_collaboration_js
