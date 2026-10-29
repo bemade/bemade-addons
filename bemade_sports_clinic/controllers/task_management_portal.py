@@ -114,6 +114,21 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             ('res_id', 'in', scope_teams.mapped('event_ids.id') or [0])
         ]
 
+    def _sc_my_activities_domain(self, extra=None):
+        """« My Activities » (bare /my/activities): the activities assigned
+        to me AND in my team scope (task 1714: with my covered events), OR
+        my notepad reminders (task 1664) — AND ``extra`` (e.g. a deadline
+        bound). ONE definition shared by the list, the app bar clock's
+        overdue badge and the dashboard's « À faire » (task 1624)."""
+        user = request.env.user
+        mine = ['&', ('user_id', '=', user.id)] + self._activity_team_access_domain(
+            self._activity_scope_teams(), self._activity_cover_user())
+        domain = ['|'] + mine + self._activity_quick_note_domain(user)
+        extra = list(extra or [])
+        if extra:
+            domain = ['&'] * len(extra) + extra + domain
+        return domain
+
     @http.route(['/my/activities/overdue/count'], type='http', auth='user', website=True,
                 methods=['GET'], multilang=False, sitemap=False)
     def sc_activities_overdue_count(self, **kw):
@@ -131,13 +146,8 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                                 is_system=user.has_group('base.group_system')):
             response = request.make_json_response({'error': 'forbidden'}, status=403)
         else:
-            domain = ['&', '&', ('user_id', '=', user.id),
-                      ('date_deadline', '<', fields.Date.context_today(user))] \
-                + self._activity_team_access_domain(self._activity_scope_teams(), self._activity_cover_user())
-            # Task 1664: the notepad reminders count too (as listed).
-            domain = ['|'] + domain + ['&', ('date_deadline', '<', fields.Date.context_today(user))] \
-                + self._activity_quick_note_domain(user)
-            count = env['mail.activity'].search_count(domain)
+            count = env['mail.activity'].search_count(self._sc_my_activities_domain(
+                [('date_deadline', '<', fields.Date.context_today(user))]))
             response = request.make_json_response({'count': count})
         response.headers['Cache-Control'] = 'no-store'
         return response
@@ -179,10 +189,10 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # above), causing 403s. ANDing keeps My Activities to records the user
             # is assigned to AND can actually open. The per-context callers pass a
             # `model` and hit the branch above, keeping their broad context scope.
-            domain = ['&', ('user_id', '=', user.id)] + team_access_domain
             # Task 1664: plus MY notepad reminders (« Note rapide en attente »)
             # — on notes I may read (the mail.activity rules: my own notes).
-            domain = ['|'] + domain + self._activity_quick_note_domain(user)
+            # Task 1624: the one shared definition.
+            domain = self._sc_my_activities_domain()
         
         # Search for activities with both assignment and team-based access control
         activities = request.env['mail.activity'].search(domain, order='date_deadline asc')

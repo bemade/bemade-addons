@@ -243,7 +243,8 @@ class TestActivityClockRows1592(Clock1592Common):
     def test_team_row_clock(self):
         self._login_tp()
         href = '/my/team?team_id=%s&tab=activities' % self.team_a.id
-        for url in ('/my/home', '/my/teams'):
+        # Task 1624 (deliberate update): « My teams » left the home.
+        for url in ('/my/teams',):
             _text_, tree = self._get(url)
             main = tree.xpath('//a[@data-sc-team-id="%s"]' % self.team_a.id)
             self.assertEqual(len(main), 1, url)

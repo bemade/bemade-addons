@@ -57,6 +57,8 @@ class TestAppShellHomeNav(Parity1577Common):
             'date_start': start,
             'date_end': start + timedelta(hours=2),
             'team_ids': [Command.set([cls.team_a.id])],
+            # Task 1624: « Upcoming coverage » lists a therapist's ASSIGNED events.
+            'assigned_staff_ids': [Command.set([cls.tp.id])],
         })
 
     def setUp(self):
@@ -75,7 +77,7 @@ class TestAppShellHomeNav(Parity1577Common):
     # -- UC-H2 -----------------------------------------------------------
     def test_upcoming_event_comes_back_home(self):
         _text, tree = self._get(HOME)
-        hrefs = tree.xpath('//*[@data-sc-section="home.upcoming"]//a/@href')
+        hrefs = tree.xpath('//*[@data-sc-section="dashboard.coverage"]//a/@href')
         href = [h for h in hrefs if h.startswith('/my/event/%s' % self.upcoming.id)]
         self.assertEqual(len(href), 1, hrefs)
         self.assertEqual(self._return_url(href[0]), HOME)
@@ -93,7 +95,7 @@ class TestAppShellHomeNav(Parity1577Common):
     # -- UC-H3 -----------------------------------------------------------
     def test_calendar_link_comes_back_home(self):
         _text, tree = self._get(HOME)
-        more = tree.xpath('//*[@data-sc-section="home.upcoming"]'
+        more = tree.xpath('//*[@data-sc-section="dashboard.coverage"]'
                           '//a[starts-with(@href, "/my/events")]/@href')
         self.assertEqual(len(more), 1, more)
         self.assertEqual(self._return_url(more[0]), HOME)

@@ -9,85 +9,10 @@
 -->
 <odoo>
 
-    <!-- /my/home (shell) — « Tableau de bord » (task 1623; the « Équipes »
-         menu entry is the teams list, /my/teams) -->
-    <template id="sc_app_home" name="Sports Clinic App: home">
-        <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">Dashboard</t>
+    <!-- /my/home (shell) — « Tableau de bord »: task 1624 moved it to
+         views/sc_app_dashboard.xml (configurable widget sections). -->
 
-            <section t-if="sc_can('home.clinic_teaser')" class="o_sc_section" data-sc-section="home.clinic_teaser">
-                <t t-call="bemade_sports_clinic.sc_entity_row">
-                    <t t-set="href" t-value="'/my/clinics'"/>
-                    <t t-set="lead_icon" t-value="'clinic'"/>
-                    <t t-set="title">Clinics today</t>
-                    <t t-set="subtitle">Open the waiting list</t>
-                    <!-- Live count (review 2026-09-29): sc_live_count.js polls the
-                         JSON route every 20 s while the tab is visible and
-                         updates the chip (text + tone) in place. -->
-                    <span t-attf-class="o_sc_chip o_sc_chip_#{'mauve' if sc_clinics_today else 'ghost'}"
-                          data-sc-live-count-url="/my/clinics/today/count"
-                          data-sc-live-poll="20"
-                          data-sc-live-tone-on="mauve"
-                          data-sc-live-tone-off="ghost"
-                          t-out="sc_clinics_today or 0"/>
-                </t>
-            </section>
-
-            <section t-if="sc_can('home.team_status')" class="o_sc_section" data-sc-section="home.team_status">
-                <div class="o_sc_stats">
-                    <t t-call="bemade_sports_clinic.sc_stat_tile">
-                        <t t-set="tone" t-value="'red'"/>
-                        <t t-set="value" t-value="sc_stat_injured"/>
-                        <t t-set="label">Injured players</t>
-                    </t>
-                    <t t-call="bemade_sports_clinic.sc_stat_tile">
-                        <t t-set="tone" t-value="'yellow'"/>
-                        <t t-set="value" t-value="sc_stat_returning"/>
-                        <t t-set="label">Returning</t>
-                    </t>
-                    <t t-call="bemade_sports_clinic.sc_stat_tile">
-                        <t t-set="tone" t-value="'green'"/>
-                        <t t-set="value" t-value="sc_stat_available"/>
-                        <t t-set="label">Available</t>
-                    </t>
-                </div>
-                <t t-call="bemade_sports_clinic.sc_section_header">
-                    <t t-set="title">My teams</t>
-                    <t t-set="more_url" t-value="'/my/teams' if sc_teams_count else False"/>
-                    <t t-set="more_label">See all</t>
-                </t>
-                <div t-if="sc_team_rows" class="o_sc_list">
-                    <t t-foreach="sc_team_rows" t-as="row">
-                        <t t-call="bemade_sports_clinic.sc_team_list_row"/>
-                    </t>
-                </div>
-                <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
-                    <t t-set="message">You are not on any team yet.</t>
-                </t>
-            </section>
-
-            <section t-if="sc_can('home.upcoming')" class="o_sc_section" data-sc-section="home.upcoming">
-                <t t-call="bemade_sports_clinic.sc_section_header">
-                    <t t-set="title">Upcoming</t>
-                    <t t-set="more_url" t-value="'/my/events?return_url=%2Fmy%2Fhome'"/>
-                    <t t-set="more_label">Calendar</t>
-                </t>
-                <t t-if="sc_upcoming" t-call="bemade_sports_clinic.sc_card">
-                    <dl class="o_sc_kv">
-                        <t t-foreach="sc_upcoming" t-as="ev">
-                            <dt t-out="ev['when']"/>
-                            <dd><a t-att-href="ev['url']"><strong t-out="ev['kind']"/> <t t-out="ev['name']"/></a></dd>
-                        </t>
-                    </dl>
-                </t>
-                <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
-                    <t t-set="message">Nothing scheduled soon.</t>
-                </t>
-            </section>
-        </t>
-    </template>
-
-    <!-- One team row (home « My teams », /my/teams). Variable: row
+    <!-- One team row (/my/teams; task 1624: no longer on the home). Variable: row
          (_sc_team_row). Task 1592: a link row (sc_link_row) so the activity
          clock chip is its own link; data-sc-team-id on the main link. -->
     <template id="sc_team_list_row" name="App shell: team list row">

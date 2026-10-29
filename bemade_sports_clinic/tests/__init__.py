@@ -296,3 +296,9 @@ from . import test_retour_prevu_backend_1727
 from . import test_digest_dark_mode_1728
 from . import test_digest_dark_mode_tours_1728
 from . import test_header_edit_phone_tours_1729
+from . import test_dashboard_layout_1624
+from . import test_dashboard_scope_1624
+from . import test_dashboard_widgets_1624
+from . import test_dashboard_perf_1624
+from . import test_dashboard_i18n_1624
+from . import test_dashboard_tours_1624

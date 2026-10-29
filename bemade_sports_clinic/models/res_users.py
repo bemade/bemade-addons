@@ -172,6 +172,15 @@ class User(models.Model):
         copy=False,
     )
 
+    # Task 1624: the app dashboard's layout (models/sc_dashboard.py) —
+    # {"v": 1, "instances": [...]}. Not self-writable: only the validated
+    # « Configurer » path (sc.dashboard._sc_layout_save, sudo) writes it.
+    sc_dashboard_layout = fields.Json(
+        string="App Dashboard Layout",
+        groups="base.group_system",
+        copy=False,
+    )
+
     # Task 1605: the user's colour on the events calendar (dot before each
     # event title, legend). Handed out automatically the first time the user
     # shows up in the calendar feed (``_sc_calendar_colors``), then stable;
