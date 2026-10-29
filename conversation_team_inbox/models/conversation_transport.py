@@ -53,6 +53,9 @@ class ConversationTransport(models.Model):
         """The Message-Id the outgoing mail answers: the latest message of
         the conversation a correspondent has actually seen (an inbound email
         or something we sent), never an internal note."""
+        explicit = self._explicit_reply_message_id(conversation)
+        if explicit:
+            return explicit
         previous = conversation.message_ids.filtered(
             lambda m: m.id != message.id
             and m.message_id

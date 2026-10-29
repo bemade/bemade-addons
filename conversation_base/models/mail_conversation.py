@@ -829,6 +829,7 @@ class MailConversation(models.Model):
         cc=None,
         bcc=None,
         attachment_ids=None,
+        reply_to_message=None,
     ):
         """Reply (or reply-all, when ``recipients`` includes the Cc
         participants) on this conversation's primary transport (or the
@@ -842,6 +843,12 @@ class MailConversation(models.Model):
         passed on to ``transport._send`` only when set, so a transport
         implementing the older ``_send`` signature keeps working for every
         caller that does not use them.
+
+        ``reply_to_message`` (a ``mail.message`` of this conversation)
+        makes the reply an answer to that specific message: it is posted
+        with it as ``parent_id`` and the transport threads the outgoing
+        email against its RFC822 id instead of the default (the newest
+        message the correspondent has seen).
         """
         self.ensure_one()
         transport = self._get_sendable_transport(transport)
@@ -852,6 +859,11 @@ class MailConversation(models.Model):
             post_kwargs["subject"] = subject
         if attachment_ids:
             post_kwargs["attachment_ids"] = list(attachment_ids)
+        if reply_to_message:
+            post_kwargs["parent_id"] = reply_to_message.id
+            transport = transport.with_context(
+                conversation_reply_to_message_id=reply_to_message.id
+            )
         message = self.message_post(**post_kwargs)
         message.write({"transport_id": transport.id})
         send_kwargs = {"recipients": recipients}

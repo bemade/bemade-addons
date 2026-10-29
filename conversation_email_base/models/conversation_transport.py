@@ -924,6 +924,9 @@ class ConversationTransport(models.Model):
         (the notification-safety marker), so for those the conversation's
         ``primary_transport_id`` is what identifies the transport.
         """
+        explicit = self._explicit_reply_message_id(conversation)
+        if explicit:
+            return explicit
         previous = conversation.message_ids.filtered(
             lambda m: m.id != message.id
             and m.external_id

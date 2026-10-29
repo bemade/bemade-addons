@@ -99,3 +99,34 @@ class TestTeamInboxSend(TeamInboxCommon):
         with self.mock_smtplib_connection():
             conversation.action_reply("<p>Two</p>")
         self.assertEqual(self._sent_message()["In-Reply-To"], "<ti-s5b@client.example>")
+
+
+    def test_reply_to_a_specific_message_threads_under_it(self):
+        conversation = self._inbound("<ti-t1@client.example>")
+        self._inbound(
+            "<ti-t2@client.example>",
+            subject="Re: Quote request",
+            in_reply_to="<ti-t1@client.example>",
+        )
+        first = conversation.message_ids.filtered(
+            lambda m: m.message_id == "<ti-t1@client.example>"
+        )
+        self.assertTrue(first)
+        with self.mock_smtplib_connection():
+            reply = conversation.action_reply(
+                "<p>About the first.</p>", reply_to_message=first
+            )
+        sent = self._sent_message()
+        self.assertEqual(sent["In-Reply-To"], "<ti-t1@client.example>")
+        self.assertEqual(reply.parent_id, first)
+
+    def test_reply_without_a_target_answers_the_newest_message(self):
+        conversation = self._inbound("<ti-t3@client.example>")
+        self._inbound(
+            "<ti-t4@client.example>",
+            subject="Re: Quote request",
+            in_reply_to="<ti-t3@client.example>",
+        )
+        with self.mock_smtplib_connection():
+            conversation.action_reply("<p>Both noted.</p>")
+        self.assertEqual(self._sent_message()["In-Reply-To"], "<ti-t4@client.example>")
