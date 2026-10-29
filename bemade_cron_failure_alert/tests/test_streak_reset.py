@@ -4,7 +4,8 @@ Acceptance criteria:
 
 1. A successful run ends the failure streak (Odoo resets the counter) and
    raises no alert.
-2. The next failure after that is a new streak and raises a new alert.
+2. The next failure after that is a new streak and raises a new alert (a new
+   channel message; the still-open To-Do gets it added, see test_todo_dedup).
 """
 
 from odoo.tests import tagged
@@ -28,4 +29,4 @@ class TestStreakReset(CronAlertCase):
         self._run_cron()
         self.assertEqual(self.cron.failure_count, 1)
         self.assertEqual(len(self._alert_messages()), 2, "New streak, new alert.")
-        self.assertEqual(len(self._alert_activities()), 2)
+        self.assertEqual(len(self._alert_activities()), 1, "Added to the open To-Do.")

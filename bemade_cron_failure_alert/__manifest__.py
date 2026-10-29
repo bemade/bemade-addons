@@ -24,7 +24,9 @@ out has no traceback; the alert then points to the server log time).
 
 There is exactly one alert per failure streak plus one on deactivation, never
 one per run. A successful run ends the streak, so the next failure alerts
-again.
+again. Each scheduled action keeps a single open To-Do per user: while it is
+not marked done, a new alert is added on top of its note (and its deadline
+moves to today) instead of creating another one.
 
 Configuration
 -------------
@@ -32,7 +34,7 @@ Configuration
 *Settings > General Settings > Discuss > Scheduled action failures*:
 
 * **Alert on scheduled action failures** - turns the alerts on;
-* **Assign to** - the user who receives the To-Do activity;
+* **Assign failure alerts to** - the user who receives the To-Do activity;
 * **Post in channel** - the Discuss channel that receives the message.
 
 With the option on but neither a user nor a channel set, failures are only

@@ -107,15 +107,7 @@ class IrCron(models.Model):
         summary, body = cron._cron_failure_alert_content(job, error, deactivated)
 
         if user:
-            cron.env["mail.activity"].create(
-                {
-                    "activity_type_id": cron.env.ref("mail.mail_activity_data_todo").id,
-                    "summary": summary,
-                    "note": body,
-                    "user_id": user.id,
-                    "date_deadline": fields.Date.context_today(cron.with_user(user)),
-                }
-            )
+            cron._cron_failure_alert_todo(job, user, summary, body)
         if channel:
             channel.message_post(
                 body=Markup("<p><b>%s</b></p>") % summary + body,
@@ -123,6 +115,53 @@ class IrCron(models.Model):
                 message_type="comment",
                 subtype_xmlid="mail.mt_comment",
             )
+
+    @api.model
+    def _cron_failure_alert_link(self, cron_id):
+        return "/odoo/action-base.ir_cron_act/%s" % cron_id
+
+    @api.model
+    def _cron_failure_alert_todo(self, job, user, summary, body):
+        """Create the alert To-Do, or add the alert to the one still open.
+
+        A scheduled action has at most one open alert To-Do per user: a new
+        alert (new failure streak, switch-off) goes on top of its note.
+        """
+        todo_type = self.env.ref("mail.mail_activity_data_todo")
+        today = fields.Date.context_today(self.with_user(user))
+        # free-standing To-Do (ir.cron is not a mail.thread): found by the
+        # link to the scheduled action that every alert note carries
+        open_todo = self.env["mail.activity"].search(
+            [
+                ("res_model", "=", False),
+                ("activity_type_id", "=", todo_type.id),
+                ("user_id", "=", user.id),
+                ("note", "ilike", '%s"' % self._cron_failure_alert_link(job["id"])),
+            ],
+            order="id desc",
+            limit=1,
+        )
+        if open_todo:
+            open_todo.write(
+                {
+                    "summary": summary,
+                    "note": Markup("<p><b>%s</b></p>") % summary
+                    + body
+                    + Markup("<hr/>")
+                    + (open_todo.note or ""),
+                    "date_deadline": today,
+                }
+            )
+            return open_todo
+        return self.env["mail.activity"].create(
+            {
+                "activity_type_id": todo_type.id,
+                "summary": summary,
+                "note": body,
+                "user_id": user.id,
+                "date_deadline": today,
+            }
+        )
 
     @api.model
     def _cron_failure_alert_record(self, model, value):
@@ -139,8 +178,8 @@ class IrCron(models.Model):
         name = job["cron_name"]
         now = fields.Datetime.to_string(self.env.cr.now().replace(microsecond=0))
         values = {
-            "link": Markup('<a href="/odoo/action-base.ir_cron_act/%s">%s</a>')
-            % (job["id"], name),
+            "link": Markup('<a href="%s">%s</a>')
+            % (self._cron_failure_alert_link(job["id"]), name),
             "count": MIN_FAILURE_COUNT_BEFORE_DEACTIVATION,
             "time": now,
         }
