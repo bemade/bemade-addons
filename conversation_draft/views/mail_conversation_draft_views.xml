@@ -99,7 +99,8 @@
                     <field
             name="body"
             type="html"
-            options="{'collaborative': true, 'resizable': false}"
+            widget="conversation_draft_html"
+            options="{'collaborative': true, 'collaborative_trigger': 'start', 'resizable': false}"
             placeholder="Write the reply..."
             readonly="state != 'draft'"
           />
@@ -179,7 +180,8 @@
                 <field
           name="body"
           type="html"
-          options="{'collaborative': true, 'resizable': false}"
+          widget="conversation_draft_html"
+          options="{'collaborative': true, 'collaborative_trigger': 'start', 'resizable': false}"
           placeholder="Write the reply..."
           readonly="state != 'draft'"
         />
