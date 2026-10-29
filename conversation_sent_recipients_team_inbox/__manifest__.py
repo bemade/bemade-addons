@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Sent Recipients - Team Inbox",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Discuss",
     "summary": "Record the recipients a team mailbox send really went out to.",
     "author": "Bemade Inc.",
