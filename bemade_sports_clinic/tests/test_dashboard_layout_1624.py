@@ -3,13 +3,16 @@ Synthetic fixtures only (public repository).
 
 Acceptance criteria:
 
-* UC-L1 Registry: the 7 round-1 widgets, in the owner's default order
-  (Aujourd'hui, À faire, Changements récents, Joueurs à surveiller,
-  Annonces, Indicateurs, Couvertures à venir); each names a visibility key,
-  a template that exists and a builder the controller defines.
-* UC-L2 Role gating: a coach gets the 7 widgets but not the therapist-only
-  « À faire » lines (injuries to verify, removal requests); a therapist gets
-  them all; a user without an app role gets no widget.
+* UC-L1 Registry: the round-1 widgets, in the owner's default order
+  (review round 1, 2026-10-29: Aujourd'hui, Indicateurs, À faire,
+  Changements récents, Joueurs à surveiller, Joueurs que je suis, Annonces,
+  Couvertures à venir, Feuilles de temps manquantes); each names a
+  visibility key, a template that exists and a builder the controller
+  defines.
+* UC-L2 Role gating: a coach gets every widget but « Feuilles de temps
+  manquantes », and only the activity lines of « À faire » (review round 1:
+  no injuries to verify, removal requests nor overdue returns); a therapist
+  gets them all; a user without an app role gets no widget.
 * UC-L3 No saved layout (or an invalid one, or another ``v``) = the code
   default; the stored layout carries ``v``.
 * UC-L4 Save is validated server-side: an unknown widget, a widget the role
@@ -33,7 +36,9 @@ from odoo.addons.bemade_sports_clinic.controllers.app_dashboard import AppDashbo
 from odoo.addons.bemade_sports_clinic.models import sc_dashboard
 from odoo.addons.bemade_sports_clinic.tests.dashboard_common_1624 import Dashboard1624Common
 
-ORDER = ['today', 'todo', 'recent_changes', 'watch', 'announcements', 'indicators', 'coverage']
+ORDER = ['today', 'indicators', 'todo', 'recent_changes', 'watch', 'followed', 'announcements',
+         'coverage', 'missing_timesheets']
+COACH_ORDER = [key for key in ORDER if key != 'missing_timesheets']
 URL = '/my/app/dashboard/configure'
 
 
@@ -51,10 +56,11 @@ class TestDashboardLayout1624(Dashboard1624Common):
 
     # -- UC-L2 ---------------------------------------------------------------
     def test_role_gating(self):
-        for user in (self.coach, self.tp, self.itp, self.cadmin):
+        for user in (self.tp, self.itp, self.cadmin):
             keys = [spec['key'] for spec in self._dash(user)._sc_widgets()]
             self.assertEqual(keys, ORDER, user.login)
-        self.assertEqual(self._dash(self.coach)._sc_todo_kinds(), ['activities', 'returns'])
+        self.assertEqual([spec['key'] for spec in self._dash(self.coach)._sc_widgets()], COACH_ORDER)
+        self.assertEqual(self._dash(self.coach)._sc_todo_kinds(), ['activities'])
         self.assertEqual(self._dash(self.tp)._sc_todo_kinds(), list(sc_dashboard.TODO_KINDS))
         self.assertEqual(self._dash(self.plain)._sc_widgets(), [])
 
@@ -73,13 +79,16 @@ class TestDashboardLayout1624(Dashboard1624Common):
     def test_save_refuses_bad_input(self):
         dash = self._dash(self.coach)
         layout = dash._sc_layout()
+        by_id = {inst['id']: inst for inst in layout}
         stored = self.coach.sudo().sc_dashboard_layout
         cases = [
             layout + [{'id': 'future', 'widget': 'future', 'settings': {}}],
+            # A therapist-only widget for a coach.
+            layout + [{'id': 'missing_timesheets', 'widget': 'missing_timesheets', 'settings': {}}],
             [dict(layout[0], id='BAD ID')],
-            [dict(layout[3], settings={'level': 'purple'})],
-            [dict(layout[1], settings={'kinds': ['activities', 'hack']})],
-            [dict(layout[6], settings={'days': 365})],
+            [dict(by_id['watch'], settings={'level': 'purple'})],
+            [dict(by_id['todo'], settings={'kinds': ['activities', 'hack']})],
+            [dict(by_id['coverage'], settings={'days': 365})],
             [dict(layout[0], id='todo-9')],  # an id that is not its widget's
         ]
         for case in cases:
@@ -127,12 +136,12 @@ class TestDashboardLayout1624(Dashboard1624Common):
     # -- UC-L6 ---------------------------------------------------------------
     def test_move_and_reset(self):
         dash = self._dash(self.tp)
-        dash._sc_layout_move('todo', -1)
-        self.assertEqual([inst['id'] for inst in dash._sc_layout()][:2], ['todo', 'today'])
-        dash._sc_layout_move('todo', -1)  # already first: no-op
-        dash._sc_layout_move('coverage', 1)  # already last: no-op
+        dash._sc_layout_move('indicators', -1)
+        self.assertEqual([inst['id'] for inst in dash._sc_layout()][:2], ['indicators', 'today'])
+        dash._sc_layout_move('indicators', -1)  # already first: no-op
+        dash._sc_layout_move('missing_timesheets', 1)  # already last: no-op
         dash._sc_layout_move('today', 1)
-        self.assertEqual([inst['id'] for inst in dash._sc_layout()][:3], ['todo', 'recent_changes', 'today'])
+        self.assertEqual([inst['id'] for inst in dash._sc_layout()][:3], ['indicators', 'todo', 'today'])
         dash._sc_layout_update('today', enabled=False)
         dash._sc_layout_reset()
         self.assertFalse(self.tp.sudo().sc_dashboard_layout)
@@ -169,7 +178,7 @@ class TestDashboardLayout1624(Dashboard1624Common):
         self.assertIn('watch-2', [i['id'] for i in self._dash(self.tp)._sc_layout()])
         self._post('/move', {'instance_id': 'watch-2', 'step': 'up'}, fetch=False)
         ids = [i['id'] for i in self._dash(self.tp)._sc_layout()]
-        self.assertLess(ids.index('watch-2'), ids.index('coverage'))
+        self.assertLess(ids.index('watch-2'), ids.index('missing_timesheets'))
         self._post('/remove', {'instance_id': 'watch-2'}, fetch=False)
         self.assertNotIn('watch-2', [i['id'] for i in self._dash(self.tp)._sc_layout()])
         self._post('/reset', {}, fetch=False)

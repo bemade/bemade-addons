@@ -9,12 +9,18 @@ Acceptance criteria:
 * UC-I2 The « Configurer » page (switches, ▲ / ▼ labels, « Réglages »,
   « Portée », filters, « + Ajouter une section », « Rétablir par défaut »)
   is French, and so is a refusal (a Python string).
+* UC-I3 (review round 1, 2026-10-29) « Joueurs que je suis », « Feuilles de
+  temps manquantes » (+ « Ajouter ma feuille de temps », « Jours en
+  arrière »), the event « Détails » and the « Suivre » toggle are French;
+  a coach reads « Événements à venir ».
 """
+from datetime import timedelta
+
 import json
 
 from lxml import html as lxml_html
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.tests import tagged
 
 from odoo.addons.bemade_sports_clinic.tests.dashboard_common_1624 import Dashboard1624Common
@@ -74,3 +80,28 @@ class TestDashboardI18n1624(Dashboard1624Common):
             headers={'X-Requested-With': 'XMLHttpRequest'})
         self.assertEqual(resp.status_code, 400)
         self.assertIn('désactivée', json.loads(resp.text)['error'])
+
+    def test_round1_in_french(self):
+        start = fields.Datetime.now() - timedelta(days=2)
+        self.env['sports.event'].create({
+            'name': 'DB Missing FR', 'event_type': 'game',
+            'date_start': start, 'date_end': start + timedelta(hours=2),
+            'team_ids': [Command.set(self.team_a.ids)],
+            'assigned_staff_ids': [Command.set(self.tp.ids)], 'state': 'confirmed'})
+        self._login_tp()
+        text = self._fr('/my/home')
+        for term in ('Joueurs que je suis', 'Feuilles de temps manquantes',
+                     'Ajouter ma feuille de temps', '(30 derniers jours)', 'Détails',
+                     'Personnel assigné', "Ouvrir l'événement", 'Vous ne suivez encore aucun joueur'):
+            self.assertIn(term, text, term)
+        for term in ('Players I follow', 'Missing timesheets', 'Add My Timesheet', 'Open the event'):
+            self.assertNotIn(term, text, term)
+        text = self._fr('/my/player/%s/row-detail' % self.red.id)
+        self.assertIn('Suivre', text)
+        self.assertNotIn('>Follow<', text)
+        text = self._fr('/my/app/dashboard/configure')
+        self.assertIn('Jours en arrière', text)
+        self._login_coach()
+        text = self._fr('/my/home')
+        self.assertIn('Événements à venir', text)
+        self.assertNotIn('Couvertures à venir', text)

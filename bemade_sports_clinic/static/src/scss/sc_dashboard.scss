@@ -74,10 +74,67 @@ $sc-dash-laptop: 1024px;
         margin-top: var(--sc-space-2);
     }
 
-    .o_sc_dw_events dd {
+    // Review round 1: event rows (time, the event, its « Details » fold-out).
+    .o_sc_dw_events {
         display: flex;
         flex-direction: column;
+        gap: var(--sc-space-3);
+    }
+
+    .o_sc_dw_event {
+        display: grid;
+        grid-template-columns: minmax(64px, max-content) minmax(0, 1fr);
+        gap: 0 var(--sc-space-3);
         min-width: 0;
+    }
+
+    .o_sc_dw_event_when {
+        color: var(--sc-fg-2);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .o_sc_dw_event_main {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        min-width: 0;
+
+        > * {
+            max-width: 100%;
+        }
+    }
+
+    .o_sc_dw_ts_add {
+        margin-top: var(--sc-space-1);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+
+        .o_sc_icon {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    .o_sc_dw_event_details {
+        width: 100%;
+
+        > summary {
+            cursor: pointer;
+            min-height: 32px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .o_sc_kv {
+            margin: var(--sc-space-1) 0;
+        }
+
+        .o_sc_dw_event_desc {
+            margin: 0 0 var(--sc-space-1);
+            overflow-wrap: anywhere;
+        }
     }
 
     .o_sc_dw_venue {
@@ -91,10 +148,26 @@ $sc-dash-laptop: 1024px;
         color: var(--sc-tone-fg);
     }
 
+    // Review round 1: « À faire » lines fold out into their cards.
     .o_sc_dw_todo_line {
-        display: flex;
-        flex-direction: column;
         min-width: 0;
+
+        > summary {
+            cursor: pointer;
+            list-style: none;
+
+            &::-webkit-details-marker {
+                display: none;
+            }
+
+            .o_sc_icon {
+                transition: transform 0.15s ease;
+            }
+        }
+
+        &[open] > summary .o_sc_icon {
+            transform: rotate(180deg);
+        }
     }
 
     .o_sc_dw_todo_head {
@@ -102,27 +175,41 @@ $sc-dash-laptop: 1024px;
         color: inherit;
     }
 
-    .o_sc_dw_todo_items {
-        list-style: none;
-        margin: 0;
-        padding: 0 0 var(--sc-space-2) 40px;
+    .o_sc_dw_todo_body {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: var(--sc-space-2);
+        padding: 0 0 var(--sc-space-3);
+        min-width: 0;
+    }
 
-        a {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: baseline;
-            gap: 0 var(--sc-space-2);
-            min-height: 36px;
-            padding: 6px 0;
-            color: var(--sc-fg);
-            text-decoration: none;
+    // Review round 1: « Suivre / Ne plus suivre ».
+    .o_sc_follow {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+
+        .o_sc_icon {
+            width: 16px;
+            height: 16px;
         }
 
-        .o_sc_dw_todo_item_title {
-            font-weight: 600;
+        &[data-sc-followed="1"] .o_sc_icon {
+            fill: currentColor;
+        }
+    }
+
+    .o_sc_row_detail_follow {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: var(--sc-space-2);
+    }
+
+    .o_sc_hero_top {
+        .o_sc_hero_follow {
+            margin-left: auto;
+            align-self: flex-start;
         }
     }
 

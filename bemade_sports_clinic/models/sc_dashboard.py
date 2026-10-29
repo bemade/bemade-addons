@@ -86,19 +86,28 @@ WATCH_LEVEL_LABELS = dict(zip(WATCH_LEVELS, _WATCH_LEVEL_TERMS))
 # sports.team._dashboard_upcoming_events_days()).
 COVERAGE_DAYS = (0, 7, 14, 30)
 
+# Feuilles de temps manquantes: how many days back.
+MISSING_DAYS_BACK = (7, 14, 30, 60, 90)
+
 # Widget-specific settings: name -> kind ('multi' = a subset of choices,
 # 'choice' = one of them).
 FILTERS = {
     'kinds': {'type': 'multi', 'choices': TODO_KINDS},
     'level': {'type': 'choice', 'choices': WATCH_LEVELS},
     'days': {'type': 'choice', 'choices': COVERAGE_DAYS},
+    'days_back': {'type': 'choice', 'choices': MISSING_DAYS_BACK},
 }
+# The settings posted / stored as integers.
+INT_FILTERS = ('days', 'days_back')
 
 
-def _widget(key, title, scoped=True, filters=(), defaults=None):
+def _widget(key, title, scoped=True, filters=(), defaults=None, title_coach=None):
     return {
         'key': key,
         'title': title,
+        # Review round 1 (owner 2026-10-29): a coach's own wording (the
+        # coverage widget lists their teams' events, not coverage).
+        'title_coach': title_coach,
         'can': 'dashboard.%s' % key,
         'template': 'bemade_sports_clinic.sc_dw_%s' % key,
         'builder': '_sc_dw_%s' % key,
@@ -108,21 +117,33 @@ def _widget(key, title, scoped=True, filters=(), defaults=None):
     }
 
 
-# Round 1 (owner 2026-10-29); the order is the default layout's order.
+# The order is the default layout's order (review round 1, owner
+# 2026-10-29: Aujourd'hui, Indicateurs, À faire, Changements récents,
+# Joueurs à surveiller, Joueurs que je suis, Annonces, Couvertures /
+# Événements à venir, Feuilles de temps manquantes). A saved layout keeps
+# its own order; a widget it does not hold yet joins it at the end.
 WIDGETS = (
     _widget('today', _lt('Today'), scoped=False),
+    _widget('indicators', _lt('Indicators')),
     _widget('todo', _lt('To do'), filters=('kinds',), defaults={'kinds': list(TODO_KINDS)}),
     _widget('recent_changes', _lt('Recent changes')),
     _widget('watch', _lt('Players to watch'), filters=('level',),
             defaults={'level': 'red_yellow'}),
+    _widget('followed', _lt('Players I follow')),
     _widget('announcements', _lt('Announcements')),
-    _widget('indicators', _lt('Indicators')),
-    _widget('coverage', _lt('Upcoming coverage'), filters=('days',), defaults={'days': 0}),
+    _widget('coverage', _lt('Upcoming coverage'), filters=('days',), defaults={'days': 0},
+            title_coach=_lt('Upcoming events')),
+    _widget('missing_timesheets', _lt('Missing timesheets'), filters=('days_back',),
+            defaults={'days_back': 30}),
 )
 WIDGETS_BY_KEY = {spec['key']: spec for spec in WIDGETS}
 
 
-def widget_title(spec):
+def widget_title(spec, viewer=None):
+    """The widget's default title for this viewer: a coach (no therapist
+    role) gets ``title_coach`` when the widget has one."""
+    if spec.get('title_coach') and viewer is not None and not viewer['is_tp']:
+        return str(spec['title_coach'])
     return str(spec['title'])
 
 
@@ -275,7 +296,7 @@ class ScDashboard(models.AbstractModel):
                     raise ValidationError(self.env._("Invalid setting."))
                 clean[name] = [c for c in kind['choices'] if c in values]
             else:
-                if name == 'days':
+                if name in INT_FILTERS:
                     try:
                         value = int(value or 0)
                     except (TypeError, ValueError):
@@ -544,3 +565,36 @@ class ScDashboard(models.AbstractModel):
             data['returns'] = players.sorted(
                 key=lambda p: (p.predicted_return_date, p.last_name or '', p.id))
         return data
+
+    @api.model
+    def _sc_data_missing_timesheets(self, teams, days_back, explicit_scope):
+        """« Feuilles de temps manquantes » (review round 1): my past events
+        (started in the last ``days_back`` days) assigned to me with no
+        timesheet of mine — the events page's predicate
+        (sports.event._sc_missing_timesheet_domain) — never cancelled;
+        filtered by team only when a scope is chosen (an assignment can be
+        on a team I do not staff, as « Couvertures à venir »). Newest first."""
+        Event = self.env['sports.event']
+        now = fields.Datetime.now()
+        domain = Event._sc_missing_timesheet_domain() + [
+            ('state', '!=', 'cancelled'),
+            ('date_start', '<=', now),
+            ('date_start', '>=', now - timedelta(days=days_back)),
+        ]
+        if explicit_scope:
+            domain.append(('team_ids', 'in', teams.ids or [0]))
+        return Event.search(domain, order='date_start desc, id desc')
+
+    @api.model
+    def _sc_data_followed(self, teams, explicit_scope):
+        """« Joueurs que je suis » (review round 1): MY followed players I can
+        still read (a lost access hides them), active, those of the scoped
+        teams when a scope is chosen; by name."""
+        ids = self.env.user.sudo().sc_followed_patient_ids.ids
+        if not ids:
+            return self.env['sports.patient']
+        domain = [('id', 'in', ids), ('active', '=', True)]
+        if explicit_scope:
+            domain.append(('team_ids', 'in', teams.ids or [0]))
+        return self.env['sports.patient'].search(domain).sorted(
+            key=lambda p: (p.last_name or '', p.first_name or '', p.id))

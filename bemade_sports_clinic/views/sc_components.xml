@@ -16,6 +16,7 @@
     <template id="sc_icon" name="App shell: icon">
         <svg viewBox="0 0 24 24" class="o_sc_icon" aria-hidden="true" focusable="false">
             <t t-if="icon == 'teams'"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></t>
+            <t t-elif="icon == 'star'"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></t>
             <t t-elif="icon == 'players'"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></t>
             <t t-elif="icon == 'clinic'"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></t>
             <t t-elif="icon == 'activities'"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></t>
@@ -428,7 +429,8 @@
     <template id="sc_sheet" name="App shell: sheet">
         <dialog t-att-id="sheet_id" class="o_sc_sheet" t-att-aria-labelledby="'%s_title' % sheet_id"
                 t-att-data-sc-lazy-url="lazy_url or None"
-                t-att-data-sc-lazy-fresh="'1' if lazy_url and lazy_fresh else None">
+                t-att-data-sc-lazy-fresh="'1' if lazy_url and lazy_fresh else None"
+                t-att-data-sc-sheet-open-on-load="'1' if open_on_load else None">
             <div class="o_sc_sheet_head">
                 <h2 class="o_sc_sheet_title" t-att-id="'%s_title' % sheet_id" t-out="title"/>
                 <t t-if="head_extra" t-out="head_extra"/>
@@ -1253,6 +1255,29 @@
                 </div>
             </t>
         </t>
+    </template>
+
+    <!--
+        Task 1624 review round 1 (owner 2026-10-29) — « Suivre / Ne plus
+        suivre » a player: a personal follow (the dashboard's « Joueurs que
+        je suis »). Saved by fetch, no reload (sc_follow.js; without JS the
+        form posts). Nothing for a role that may not follow. Variable:
+        player (read as the viewer).
+    -->
+    <template id="sc_follow_toggle" name="App shell: follow toggle">
+        <t t-set="sc_follow_state" t-value="player._sc_follow_state()"/>
+        <form t-if="sc_follow_state is not None" t-att-action="'/my/player/%s/follow' % player.id" method="post"
+              class="o_sc_inline_form o_sc_follow_form">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+            <input type="hidden" name="follow" t-att-value="'0' if sc_follow_state else '1'"/>
+            <button type="submit" t-attf-class="o_sc_btn o_sc_btn_sm o_sc_follow #{'o_sc_btn_primary' if sc_follow_state else 'o_sc_btn_ghost'}"
+                    t-att-data-sc-follow="player.id" t-att-data-sc-followed="'1' if sc_follow_state else '0'"
+                    t-att-aria-pressed="'true' if sc_follow_state else 'false'" data-sc-action="player.follow">
+                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'star'"/></t>
+                <span data-sc-follow-label="on" t-att-hidden="None if sc_follow_state else 'hidden'">Unfollow</span>
+                <span data-sc-follow-label="off" t-att-hidden="'hidden' if sc_follow_state else None">Follow</span>
+            </button>
+        </form>
     </template>
 
 </odoo>

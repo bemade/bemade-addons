@@ -302,3 +302,4 @@ from . import test_dashboard_widgets_1624
 from . import test_dashboard_perf_1624
 from . import test_dashboard_i18n_1624
 from . import test_dashboard_tours_1624
+from . import test_dashboard_round1_1624

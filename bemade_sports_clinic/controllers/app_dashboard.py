@@ -21,9 +21,9 @@ from datetime import timedelta
 from urllib.parse import quote
 
 from odoo import fields, http
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 from odoo.http import request
-from odoo.tools import format_date, format_datetime
+from odoo.tools import format_date, format_datetime, html2plaintext
 
 from ..models import sc_dashboard
 from .task_management_portal import TaskManagementPortal
@@ -31,8 +31,8 @@ from .team_management_portal import TeamManagementPortal
 
 CONFIGURE_URL = '/my/app/dashboard/configure'
 HOME_RETURN = 'return_url=%2Fmy%2Fhome'
-TODO_ITEMS_SHOWN = 5
-# Player rows shown before « See the N others » (the rest folded).
+# Rows / cards shown before « See the N others » (the rest folded): the
+# player lists, the events and each « À faire » line's cards.
 ROWS_SHOWN = 8
 
 
@@ -67,6 +67,9 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
             'status_edit': self._sc_status_editable(),
             'kinds': dict(env['sports.event']._fields['event_type']._description_selection(env)),
             'tz': env.user.tz or env.context.get('tz'),
+            # Review round 1: page-level parts a widget asks for (the
+            # activity cards' sheets, once per page).
+            'activity_sheets': False,
         }
         sections = []
         for instance in Dash._sc_layout(viewer):
@@ -81,7 +84,7 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
                 'id': instance['id'],
                 'widget': spec['key'],
                 'template': spec['template'],
-                'title': instance['title'] or sc_dashboard.widget_title(spec),
+                'title': instance['title'] or sc_dashboard.widget_title(spec, viewer),
                 'scope_label': self._sc_dash_scope_label(instance, teams) if spec['scoped'] else '',
                 'no_scope': bool(spec['scoped'] and not teams),
                 'row_scope': 'dash-%s' % instance['id'],
@@ -93,11 +96,23 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
                 env._("See the %(count)s others", count=len(rows) - ROWS_SHOWN)
                 if len(rows) > ROWS_SHOWN else '')
             sections.append(section)
-        return {
+        values = {
             'page_name': 'home',
             'sc_dash_sections': sections,
             'sc_dash_configure_url': CONFIGURE_URL,
+            # Review round 1: the injury cards of « À faire » (as on the
+            # player page / clinic dossier).
+            'sc_is_tp_view': self._sc_injury_tp_view(viewer['is_tp']),
+            'sc_dash_activity_sheets': ctx['activity_sheets'],
+            'today_date': fields.Date.context_today(env.user),
         }
+        values.update(self._sc_injury_card_options())
+        if ctx['activity_sheets']:
+            values.update({
+                'sc_dash_available_users': self._activity_assignable_users_for(env.user),
+                'sc_dash_today': fields.Date.to_string(values['today_date']),
+            })
+        return values
 
     @staticmethod
     def _sc_dash_explicit(instance):
@@ -128,11 +143,17 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
             players, team_links=True, team=None, status_edit=ctx['status_edit'],
             labels=ctx['labels'])
         scope_ids = set(teams.ids)
+        universe_ids = set(ctx['universe'].ids)
         rows = []
         for player in players:
-            team = player.sudo().team_ids.filtered(lambda t: t.id in scope_ids)[:1]
+            player_teams = player.sudo().team_ids
+            team = (player_teams.filtered(lambda t: t.id in scope_ids)[:1]
+                    or player_teams.filtered(lambda t: t.id in universe_ids)[:1])
             row = self._sc_player_row(player, team.with_env(request.env), ctx['stage_labels'],
                                       with_position=False, extras=extras)
+            if not team:
+                # A followed player off my teams (a therapist reads them).
+                row['url'] = '/my/player?player_id=%s' % player.id
             if changed:
                 row['changed'] = True
                 # Task 1626: the change detail, not the plain row detail.
@@ -150,20 +171,39 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
                 teams, ctx['viewer'])
         return ctx['changes'][key]
 
+    def _sc_dash_span(self, start, end, ctx):
+        """« ven. 31 oct. · 18:00 – 20:00 » (the event page's format)."""
+        env = request.env
+        start = format_datetime(env, start, tz=ctx['tz'], dt_format='EEE d MMM · HH:mm') if start else ''
+        end = format_datetime(env, end, tz=ctx['tz'], dt_format='HH:mm') if end else ''
+        return ' – '.join(part for part in (start, end) if part)
+
     def _sc_dash_event_row(self, event, ctx, fmt='EEE d MMM · HH:mm'):
         env = request.env
         if event.event_type == 'clinic' and ctx['viewer']['is_tp']:
             url = '/my/clinic/%s' % event.id
         else:
             url = '/my/event/%s?%s' % (event.id, HOME_RETURN)
+        # sudo: the event itself is read as the viewer (the search); its
+        # venue / teams / staff names, as on the event page.
+        sudo = event.sudo()
         return {
             'id': event.id,
             'when': format_datetime(env, event.date_start, tz=ctx['tz'], dt_format=fmt),
             'kind': ctx['kinds'].get(event.event_type, ''),
             'name': event.name or '',
-            'venue': event.sudo().venue_id.name or '',
-            'teams': ', '.join(event.sudo().team_ids.mapped('name')),
+            'venue': sudo.venue_id.name or '',
+            'teams': ', '.join(sudo.team_ids.mapped('name')),
             'url': url,
+            # Review round 1 (owner 2026-10-29): the « Details » fold-out.
+            'details': {
+                'when': self._sc_dash_span(sudo.date_start, sudo.date_end, ctx),
+                # The coverage time is a therapist field (as on the event page).
+                'coverage': (self._sc_dash_span(sudo.therapist_start, sudo.therapist_end, ctx)
+                             if ctx['viewer']['is_tp'] else ''),
+                'staff': ', '.join(sudo.assigned_staff_ids.mapped('name')),
+                'description': html2plaintext(sudo.description or '').strip(),
+            },
         }
 
     # -- the widgets (sc_dashboard.WIDGETS 'builder') ---------------------
@@ -180,70 +220,66 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
         return values
 
     def _sc_dw_todo(self, instance, teams, ctx):
+        """« À faire »: one line per kind; review round 1 (owner 2026-10-29):
+        each line folds out inline into its real cards — the activity cards
+        of the Activités page (their sheets once on the page), the injury
+        cards of the player page, the player cards."""
         env = request.env
         Dash = env['sc.dashboard']
         kinds = [kind for kind in instance['settings'].get('kinds') or ()
                  if kind in Dash._sc_todo_kinds(ctx['viewer'])]
+        scope = 'dash-%s' % instance['id']
         lines = []
         if 'activities' in kinds and env['mail.activity'].has_access('read'):
             today = fields.Date.context_today(env.user)
-            overdue = due_today = 0
-            for deadline, count in env['mail.activity']._read_group(
-                    self._sc_my_activities_domain([('date_deadline', '<=', today)]),
-                    ['date_deadline:day'], ['__count']):
-                if deadline and fields.Date.to_date(deadline) < today:
-                    overdue += count
-                else:
-                    due_today += count
+            activities = env['mail.activity'].search(
+                self._sc_my_activities_domain([('date_deadline', '<=', today)]),
+                order='date_deadline asc, id asc')
+            overdue = activities.filtered(lambda a: a.date_deadline < today)
+            due_today = activities - overdue
             if overdue:
-                lines.append({'kind': 'activities_overdue', 'tone': 'red', 'count': overdue,
-                              'label': env._("Overdue activities"),
-                              'url': '/my/activities?tab=overdue', 'items': []})
+                lines.append({'kind': 'activities_overdue', 'tone': 'red',
+                              'label': env._("Overdue activities"), 'card': 'activity',
+                              'url': '/my/activities?tab=overdue', 'cards': overdue})
             if due_today:
-                lines.append({'kind': 'activities_today', 'tone': 'mauve', 'count': due_today,
-                              'label': env._("Activities due today"),
-                              'url': '/my/activities?tab=today', 'items': []})
+                lines.append({'kind': 'activities_today', 'tone': 'mauve',
+                              'label': env._("Activities due today"), 'card': 'activity',
+                              'url': '/my/activities?tab=today', 'cards': due_today})
+            if activities:
+                ctx['activity_sheets'] = True
         data = Dash._sc_data_todo(teams, kinds, ctx['viewer'])
         if data.get('verify'):
             injuries = data['verify']
+            tp_view = self._sc_injury_tp_view(ctx['viewer']['is_tp'])
+            documents = self._sc_injury_card_documents(injuries)
             lines.append({
-                'kind': 'verify', 'tone': 'yellow', 'count': len(injuries),
-                'label': env._("Injuries to verify"), 'url': False,
-                'items': [{
-                    'title': injury.sudo().patient_id._portal_list_name(),
-                    'sub': injury.diagnosis or '',
-                    'url': self._sc_injury_card_url(injury),
-                } for injury in injuries[:TODO_ITEMS_SHOWN]],
+                'kind': 'verify', 'tone': 'yellow', 'label': env._("Injuries to verify"),
+                'card': 'injury', 'url': False,
+                'cards': [self._sc_injury_card_row(
+                    injury, '', ctx['viewer']['is_tp'], tp_view, documents=documents)
+                    for injury in injuries],
             })
         if data.get('removals'):
             players = data['removals']
+            removal_teams = players.sudo().pending_removal_team_id.with_env(env)
             lines.append({
-                'kind': 'removals', 'tone': 'ghost', 'count': len(players),
-                'label': env._("Removal requests"), 'url': False,
-                'items': [{
-                    'title': player._portal_list_name(),
-                    'sub': player.sudo().pending_removal_team_id.name or '',
-                    'url': '/my/team?team_id=%s&tab=players' % player.sudo().pending_removal_team_id.id,
-                } for player in players[:TODO_ITEMS_SHOWN]],
+                'kind': 'removals', 'tone': 'ghost', 'label': env._("Removal requests"),
+                'card': 'player', 'url': False,
+                'cards': self._sc_dash_player_rows(players, removal_teams, ctx),
             })
         if data.get('returns'):
-            players = data['returns']
             lines.append({
-                'kind': 'returns', 'tone': 'orange', 'count': len(players),
-                'label': env._("Overdue returns"), 'url': False,
-                'items': [{
-                    'title': player._portal_list_name(),
-                    'sub': env._("Predicted return: %(date)s", date=format_date(
-                        env, player.predicted_return_date)),
-                    'url': '/my/player?player_id=%s' % player.id,
-                    'overdue': True,
-                } for player in players[:TODO_ITEMS_SHOWN]],
+                'kind': 'returns', 'tone': 'orange', 'label': env._("Overdue returns"),
+                'card': 'player', 'url': False,
+                'cards': self._sc_dash_player_rows(data['returns'], teams, ctx),
             })
         for line in lines:
-            line['more'] = max(0, line['count'] - len(line['items'])) if line['items'] else 0
-            line['more_label'] = (env._("and %(count)s more", count=line['more'])
-                                  if line['more'] else '')
-        return {'lines': lines}
+            line['count'] = len(line['cards'])
+            line['row_scope'] = '%s-%s' % (scope, line['kind'])
+            line['more_label'] = (
+                env._("See the %(count)s others", count=line['count'] - ROWS_SHOWN)
+                if line['count'] > ROWS_SHOWN else '')
+        return {'lines': lines, 'card_id_prefix': '%s-injury-' % scope}
 
     def _sc_dw_recent_changes(self, instance, teams, ctx):
         env = request.env
@@ -296,8 +332,43 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
             'no_scope': not teams and (explicit or not ctx['viewer']['is_tp']),
             'rows': [self._sc_dash_event_row(event, ctx) for event in events],
             'window_label': env._("(next %(days)s days)", days=days),
-            'empty_label': env._("No upcoming events in the next %(days)s days.", days=days),
+            'empty_label': (
+                env._("No upcoming coverage in the next %(days)s days.", days=days)
+                if ctx['viewer']['is_tp']
+                else env._("No upcoming events in the next %(days)s days.", days=days)),
             'calendar_url': '/my/events?%s' % HOME_RETURN,
+        }
+
+    def _sc_dw_followed(self, instance, teams, ctx):
+        """« Joueurs que je suis » (review round 1): my followed players,
+        the full expandable cards; the « Portée » filters them."""
+        explicit = self._sc_dash_explicit(instance)
+        players = request.env['sc.dashboard']._sc_data_followed(teams, explicit)
+        return {
+            # Nothing chosen = all my followed players, staffed team or not.
+            'no_scope': bool(explicit and not teams),
+            'rows': self._sc_dash_player_rows(players, teams, ctx),
+        }
+
+    def _sc_dw_missing_timesheets(self, instance, teams, ctx):
+        """« Feuilles de temps manquantes » (review round 1, therapists):
+        my past assigned events without a timesheet of mine; « Ajouter ma
+        feuille de temps » opens the event page with its add sheet open."""
+        env = request.env
+        explicit = self._sc_dash_explicit(instance)
+        days_back = instance['settings'].get('days_back') or 30
+        events = env['sc.dashboard']._sc_data_missing_timesheets(teams, days_back, explicit)
+        rows = []
+        for event in events:
+            row = self._sc_dash_event_row(event, ctx)
+            row['add_url'] = '/my/event/%s?add_timesheet=1&%s' % (event.id, HOME_RETURN)
+            rows.append(row)
+        return {
+            'no_scope': bool(explicit and not teams),
+            'rows': rows,
+            'window_label': env._("(last %(days)s days)", days=days_back),
+            'list_url': ('/my/events?view_type=missing_timesheets&assigned_user_id=%s'
+                         '&no_default_dates=1' % env.uid),
         }
 
     # ------------------------------------------------------------------
@@ -322,7 +393,7 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
             row = {
                 'id': instance['id'],
                 'widget': spec['key'],
-                'widget_title': sc_dashboard.widget_title(spec),
+                'widget_title': sc_dashboard.widget_title(spec, viewer),
                 'title': instance['title'],
                 'enabled': instance['enabled'],
                 'removable': instance['id'] != spec['key'],
@@ -356,12 +427,17 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
                     (days, env._("Default (%(days)s days)", days=default_days) if not days
                      else env._("%(days)s days", days=days), (settings.get('days') or 0) == days)
                     for days in sc_dashboard.COVERAGE_DAYS]
+            if 'days_back' in spec['filters']:
+                row['days_back_choices'] = [
+                    (days, env._("%(days)s days", days=days), settings.get('days_back') == days)
+                    for days in sc_dashboard.MISSING_DAYS_BACK]
             rows.append(row)
         values = self._prepare_portal_layout_values()
         values.update({
             'page_name': 'sc_app_dashboard_configure',
             'sc_dash_rows': rows,
-            'sc_dash_add_choices': [(spec['key'], sc_dashboard.widget_title(spec)) for spec in allowed],
+            'sc_dash_add_choices': [(spec['key'], sc_dashboard.widget_title(spec, viewer))
+                                    for spec in allowed],
             'sc_dash_error': request.session.pop('sc_dash_error', None),
         })
         return self._sc_shell_response(
@@ -407,6 +483,8 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
                 settings['level'] = post.get('level')
             if 'days' in post:
                 settings['days'] = post.get('days')
+            if 'days_back' in post:
+                settings['days_back'] = post.get('days_back')
             enabled = None
             if 'enabled' in post:
                 enabled = post.get('enabled') not in ('0', '', 'false')
@@ -438,3 +516,34 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
         def run(Dash):
             Dash._sc_layout_reset()
         return self._sc_dash_post(run)
+
+    # ------------------------------------------------------------------
+    # « Suivre / Ne plus suivre » (review round 1, owner 2026-10-29)
+    # ------------------------------------------------------------------
+    @http.route(['/my/player/<int:player_id>/follow'], type='http', auth='user', website=True,
+                methods=['POST'], multilang=False, sitemap=False)
+    def sc_player_follow(self, player_id, follow='1', **post):
+        """Follow (``follow=1``) / unfollow (``0``) a player for ME — the
+        player cards' and the player page's toggle (sc_follow.js, fetch).
+        JSON ``{ok, followed}``; 403 for a role without the toggle or a
+        player I cannot read. Without JS: back to where it came from."""
+        env = request.env
+        wants_json = self._sc_dash_wants_json()
+        player = env['sports.patient'].browse(player_id)
+        on = str(follow) not in ('0', '', 'false')
+        try:
+            if not player._sc_follow_allowed():
+                raise AccessError(env._("You cannot follow players."))
+            if on:
+                # An unreadable / unknown player: refused, nothing stored.
+                if not env['sports.patient'].search_count([('id', '=', player_id)], limit=1):
+                    raise AccessError(env._("You cannot follow this player."))
+            player._sc_follow(on)
+        except AccessError as error:
+            if wants_json:
+                return request.make_json_response(
+                    {'ok': False, 'error': str(error.args[0] if error.args else error)}, status=403)
+            raise
+        if wants_json:
+            return request.make_json_response({'ok': True, 'followed': on})
+        return request.redirect('/my/player?player_id=%s' % player_id)

@@ -83,7 +83,7 @@ tours.add("sc_1624_dashboard_configure", {
             trigger: `${ITEM("coverage")}`,
             run() {
                 const ids = [...document.querySelectorAll("li[data-sc-dash-item]")].map((el) => el.dataset.scDashItem);
-                assert(ids.indexOf("coverage") < ids.indexOf("indicators"), `order: ${ids}`);
+                assert(ids.indexOf("coverage") < ids.indexOf("announcements"), `order: ${ids}`);
             },
         },
         {
@@ -152,12 +152,12 @@ tours.add("sc_1624_dashboard_configure", {
             expectUnloadPage: true,
         },
         {
-            content: "Today is gone, coverage before indicators, the new section titled and scoped",
+            content: "Today is gone, coverage before announcements, the new section titled and scoped",
             trigger: 'section[data-sc-instance="watch-2"]',
             run() {
                 const ids = SECTION_IDS();
                 assert(!ids.includes("today"), `today switched off: ${ids}`);
-                assert(ids.indexOf("coverage") < ids.indexOf("indicators"), `order: ${ids}`);
+                assert(ids.indexOf("coverage") < ids.indexOf("announcements"), `order: ${ids}`);
                 assert(ids.indexOf("watch-2") > ids.indexOf("watch"), `new after base: ${ids}`);
                 const section = this.anchor;
                 assert(section.querySelector(".o_sc_dw_title_text").textContent.trim() === "Watch C only", "title");

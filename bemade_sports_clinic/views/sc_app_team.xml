@@ -490,6 +490,10 @@
          Task 1669: no last consultation on cards (it stays in the player
          file). Expects player. -->
     <template id="sc_player_detail_head" name="App shell: player detail head">
+        <!-- Task 1624 review round 1: « Suivre / Ne plus suivre ». -->
+        <div class="o_sc_row_detail_follow" data-sc-row-detail-section="follow">
+            <t t-call="bemade_sports_clinic.sc_follow_toggle"/>
+        </div>
         <div t-if="(player.training_recommendation or '').strip()" class="o_sc_row_detail_training" data-sc-row-detail-section="training">
             <h3 class="o_sc_change_detail_sub">Training Recommendation</h3>
             <p class="o_sc_pre" t-out="player.training_recommendation"/>

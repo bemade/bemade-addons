@@ -13,8 +13,8 @@ Acceptance criteria:
 * UC-W2 À faire: my overdue / today activities — the SAME count as the app
   bar clock's badge (one shared domain); injuries to verify (therapist);
   pending removal requests where the user may act (therapist of the team);
-  « Dépassé » returns; the kinds filter hides a kind; a coach never gets
-  the therapist lines.
+  « Dépassé » returns (therapist, review round 1); the kinds filter hides a
+  kind; a coach never gets the therapist lines.
 * UC-W3 Changements récents: the recent-change cards of every scoped team
   (one list, team links on each card), the change detail behind
   « Details »; a single-team scope offers « Historique ».
@@ -71,7 +71,9 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         self._login_tp()
         text, tree = self._get('/my/home')
         ids = [s.get('data-sc-instance') for s in self._sections(tree)]
-        self.assertEqual(ids, ['todo', 'recent_changes', 'watch', 'announcements', 'coverage', 'indicators'])
+        # Review round 1: the new default order (Indicateurs second).
+        self.assertEqual(ids, ['indicators', 'todo', 'recent_changes', 'watch', 'followed', 'coverage',
+                               'announcements', 'missing_timesheets'])
         title = self._section(tree, 'todo').xpath('.//*[contains(@class, "o_sc_dw_title_text")]')[0]
         self.assertEqual(title.text_content().strip(), 'Synthetic chores')
         self.assertNotIn('My teams', text)
@@ -145,13 +147,14 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         todo = self._section(tree, 'todo')
         self.assertFalse(todo.xpath('.//*[@data-sc-todo="verify"]'))
         self.assertTrue(todo.xpath('.//*[@data-sc-todo="returns"]'))
-        # A coach: no therapist lines, the returns line stays.
+        # A coach: no therapist lines (review round 1: the overdue returns
+        # are a therapist line too — they update those dates).
         self._login_coach()
         _text, tree = self._get('/my/home')
         todo = self._section(tree, 'todo')
         self.assertFalse(todo.xpath('.//*[@data-sc-todo="verify"]'))
         self.assertFalse(todo.xpath('.//*[@data-sc-todo="removals"]'))
-        self.assertTrue(todo.xpath('.//*[@data-sc-todo="returns"]'))
+        self.assertFalse(todo.xpath('.//*[@data-sc-todo="returns"]'))
 
     def test_removals_only_where_user_may_act(self):
         # Coach role on Team C only for the itp: not a removal role there.
@@ -291,7 +294,7 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         self._login_tp()
         _text, tree = self._get('/my/home')
         ids = [s.get('data-sc-instance') for s in self._sections(tree)]
-        self.assertEqual(ids.index(new_id), ids.index('coverage') - 1)
+        self.assertEqual(ids.index(new_id), ids.index('missing_timesheets') - 1)
         self.assertLess(ids.index('watch'), ids.index(new_id))
         second = self._section(tree, new_id)
         self.assertIn('Watch C only', second.text_content())

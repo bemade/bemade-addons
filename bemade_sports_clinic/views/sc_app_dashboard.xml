@@ -31,6 +31,14 @@
                     <t t-set="message">Every section is switched off. Use « Configure » to show some.</t>
                 </t>
             </div>
+            <!-- Review round 1: the sheets of the « À faire » activity cards
+                 (Fait, Reprogrammer, …), once on the page; back home after. -->
+            <t t-if="sc_dash_activity_sheets" t-call="bemade_sports_clinic.sc_activity_sheets">
+                <t t-set="return_url" t-value="'/my/home'"/>
+                <t t-set="available_users" t-value="sc_dash_available_users"/>
+                <t t-set="can_reassign" t-value="sc_can('activities.reassign')"/>
+                <t t-set="today" t-value="sc_dash_today"/>
+            </t>
         </t>
     </template>
 
@@ -49,6 +57,8 @@
                    class="o_sc_section_more o_sc_link_btn" data-sc-action="dashboard.history">History</a>
                 <a t-if="section.get('calendar_url')" t-att-href="section['calendar_url']"
                    class="o_sc_section_more" data-sc-action="dashboard.calendar">Calendar</a>
+                <a t-if="section.get('list_url')" t-att-href="section['list_url']"
+                   class="o_sc_section_more" data-sc-action="dashboard.list">See all</a>
             </h2>
             <p t-if="section['scope_label']" class="o_sc_meta o_sc_dw_scope" data-sc-dw-scope="1" t-out="section['scope_label']"/>
             <t t-if="section['no_scope']" t-call="bemade_sports_clinic.sc_empty_state">
@@ -77,58 +87,78 @@
                   t-out="section['clinics_today'] or 0"/>
         </t>
         </div>
-        <t t-if="section['rows']" t-call="bemade_sports_clinic.sc_card">
-            <dl class="o_sc_kv o_sc_dw_events">
-                <t t-foreach="section['rows']" t-as="ev">
-                    <dt t-out="ev['when']"/>
-                    <dd t-att-data-sc-event-id="ev['id']">
-                        <a t-att-href="ev['url']"><strong t-out="ev['kind']"/> <t t-out="ev['name']"/></a>
-                        <small t-if="ev['venue']" class="o_sc_meta o_sc_dw_venue" t-out="ev['venue']"/>
-                    </dd>
-                </t>
-            </dl>
+        <t t-if="section['rows']" t-call="bemade_sports_clinic.sc_dw_event_list">
+            <t t-set="sc_dw_sub" t-value="'venue'"/>
         </t>
         <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
             <t t-set="message">Nothing on your schedule today.</t>
         </t>
     </template>
 
-    <!-- « À faire »: one line per kind (a count chip), its first items as
-         links. -->
+    <!-- « À faire »: one line per kind (a count chip); review round 1
+         (owner 2026-10-29): each line folds out inline into its real cards —
+         the activity cards (sc_activity_row, their sheets once on the home),
+         the injury cards (sc_injury_card), the player cards
+         (sc_player_row) — ROWS_SHOWN of them, the others under « See the N
+         others ». -->
     <template id="sc_dw_todo" name="App dashboard: to do">
         <div t-if="section['lines']" class="o_sc_list o_sc_dw_todo_lines">
             <t t-foreach="section['lines']" t-as="line">
-                <div class="o_sc_dw_todo_line" t-att-data-sc-todo="line['kind']">
-                    <a t-if="line['url']" t-att-href="line['url']" class="o_sc_entity_row o_sc_dw_todo_head">
+                <details class="o_sc_disclosure o_sc_dw_todo_line" t-att-data-sc-todo="line['kind']">
+                    <summary class="o_sc_entity_row o_sc_dw_todo_head">
                         <span class="o_sc_row_text"><span class="o_sc_row_title" t-out="line['label']"/></span>
                         <span class="o_sc_row_trailing">
                             <span t-attf-class="o_sc_chip o_sc_chip_#{line['tone']}" t-out="line['count']"/>
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'chevron'"/></t>
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
                         </span>
-                    </a>
-                    <div t-else="" class="o_sc_entity_row o_sc_dw_todo_head">
-                        <span class="o_sc_row_text"><span class="o_sc_row_title" t-out="line['label']"/></span>
-                        <span class="o_sc_row_trailing">
-                            <span t-attf-class="o_sc_chip o_sc_chip_#{line['tone']}" t-out="line['count']"/>
-                        </span>
+                    </summary>
+                    <div class="o_sc_dw_todo_body">
+                        <t t-set="sc_dw_cards" t-value="line['cards'][:section['rows_shown']]"/>
+                        <t t-call="bemade_sports_clinic.sc_dw_todo_cards"/>
+                        <details t-if="line['more_label']" class="o_sc_disclosure o_sc_dw_more" data-sc-dw-more="1">
+                            <summary class="o_sc_disclosure_summary" t-out="line['more_label']"/>
+                            <t t-set="sc_dw_cards" t-value="line['cards'][section['rows_shown']:]"/>
+                            <t t-call="bemade_sports_clinic.sc_dw_todo_cards"/>
+                        </details>
+                        <a t-if="line['url']" t-att-href="line['url']" class="o_sc_section_more o_sc_dw_todo_all"
+                           data-sc-action="dashboard.todo.all">See all</a>
                     </div>
-                    <ul t-if="line['items']" class="o_sc_dw_todo_items">
-                        <li t-foreach="line['items']" t-as="item">
-                            <a t-att-href="item['url']">
-                                <span class="o_sc_dw_todo_item_title" t-out="item['title']"/>
-                                <small t-if="item['sub']" t-attf-class="o_sc_meta #{'o_sc_overdue' if item.get('overdue') else ''}">
-                                    <t t-out="item['sub']"/><t t-if="item.get('overdue')" t-call="bemade_sports_clinic.sc_return_overdue_flag"/>
-                                </small>
-                            </a>
-                        </li>
-                        <li t-if="line['more']" class="o_sc_muted o_sc_dw_todo_more" t-out="line['more_label']"/>
-                    </ul>
-                </div>
+                </details>
             </t>
         </div>
         <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
             <t t-set="message">Nothing to do right now.</t>
         </t>
+    </template>
+
+    <!-- The cards of one « À faire » line. Variables: line, sc_dw_cards,
+         section. -->
+    <template id="sc_dw_todo_cards" name="App dashboard: to do cards">
+        <div class="o_sc_list">
+            <t t-if="line['card'] == 'activity'">
+                <t t-foreach="sc_dw_cards" t-as="activity">
+                    <t t-set="related_links" t-value="sc_activity_related(activity)"/>
+                    <t t-call="bemade_sports_clinic.sc_activity_row">
+                        <t t-set="show_assignee" t-value="False"/>
+                        <t t-set="can_reassign" t-value="sc_can('activities.reassign')"/>
+                    </t>
+                </t>
+            </t>
+            <t t-elif="line['card'] == 'injury'">
+                <t t-foreach="sc_dw_cards" t-as="row">
+                    <t t-call="bemade_sports_clinic.sc_injury_card">
+                        <t t-set="card_id_prefix" t-value="section['card_id_prefix']"/>
+                    </t>
+                </t>
+            </t>
+            <t t-else="">
+                <t t-foreach="sc_dw_cards" t-as="row">
+                    <t t-call="bemade_sports_clinic.sc_player_row">
+                        <t t-set="row_scope" t-value="line['row_scope']"/>
+                    </t>
+                </t>
+            </t>
+        </div>
     </template>
 
     <!-- A widget's player rows: the first ROWS_SHOWN, the others folded
@@ -224,35 +254,86 @@
 
     <!-- « Couvertures à venir »: the next N days (a per-instance setting). -->
     <template id="sc_dw_coverage" name="App dashboard: upcoming coverage">
-        <t t-if="section['rows']">
-            <t t-call="bemade_sports_clinic.sc_card">
-                <t t-set="sc_dw_events" t-value="section['rows'][:section['rows_shown']]"/>
-                <t t-call="bemade_sports_clinic.sc_dw_coverage_rows"/>
-            </t>
-            <details t-if="len(section['rows']) &gt; section['rows_shown']" class="o_sc_disclosure o_sc_dw_more" data-sc-dw-more="1">
-                <summary class="o_sc_disclosure_summary" t-out="section['more_rows_label']"/>
-                <t t-call="bemade_sports_clinic.sc_card">
-                    <t t-set="sc_dw_events" t-value="section['rows'][section['rows_shown']:]"/>
-                    <t t-call="bemade_sports_clinic.sc_dw_coverage_rows"/>
-                </t>
-            </details>
+        <t t-if="section['rows']" t-call="bemade_sports_clinic.sc_dw_event_list">
+            <t t-set="sc_dw_sub" t-value="'teams'"/>
         </t>
         <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
             <t t-set="message" t-value="section['empty_label']"/>
         </t>
     </template>
 
-    <!-- Event rows of « Couvertures à venir ». Variable: sc_dw_events. -->
-    <template id="sc_dw_coverage_rows" name="App dashboard: coverage rows">
-        <dl class="o_sc_kv o_sc_dw_events">
-            <t t-foreach="sc_dw_events" t-as="ev">
-                <dt t-out="ev['when']"/>
-                <dd t-att-data-sc-event-id="ev['id']">
-                    <a t-att-href="ev['url']"><strong t-out="ev['kind']"/> <t t-out="ev['name']"/></a>
-                    <small t-if="ev['teams']" class="o_sc_meta o_sc_dw_venue" t-out="ev['teams']"/>
-                </dd>
+    <!-- A widget's event rows (_sc_dash_event_row): the first ROWS_SHOWN,
+         the others folded. Variables: section, sc_dw_sub ('venue' / 'teams':
+         the line under the name). -->
+    <template id="sc_dw_event_list" name="App dashboard: event list">
+        <t t-call="bemade_sports_clinic.sc_card">
+            <t t-set="sc_dw_events" t-value="section['rows'][:section['rows_shown']]"/>
+            <t t-call="bemade_sports_clinic.sc_dw_event_rows"/>
+        </t>
+        <details t-if="len(section['rows']) &gt; section['rows_shown']" class="o_sc_disclosure o_sc_dw_more" data-sc-dw-more="1">
+            <summary class="o_sc_disclosure_summary" t-out="section['more_rows_label']"/>
+            <t t-call="bemade_sports_clinic.sc_card">
+                <t t-set="sc_dw_events" t-value="section['rows'][section['rows_shown']:]"/>
+                <t t-call="bemade_sports_clinic.sc_dw_event_rows"/>
             </t>
-        </dl>
+        </details>
+    </template>
+
+    <!-- Event rows: the time, the event (a link to it), a sub-line, then
+         (review round 1, owner 2026-10-29) a « Details » fold-out — time
+         span, coverage time (therapists), venue, teams, assigned staff,
+         description — and, on « Feuilles de temps manquantes », « Add my
+         timesheet ». Variables: sc_dw_events, sc_dw_sub. -->
+    <template id="sc_dw_event_rows" name="App dashboard: event rows">
+        <div class="o_sc_dw_events">
+            <t t-foreach="sc_dw_events" t-as="ev">
+                <div class="o_sc_dw_event" t-att-data-sc-event-id="ev['id']">
+                    <div class="o_sc_dw_event_when" t-out="ev['when']"/>
+                    <div class="o_sc_dw_event_main">
+                        <a t-att-href="ev['url']" class="o_sc_dw_event_link"><strong t-out="ev['kind']"/> <t t-out="ev['name']"/></a>
+                        <small t-if="ev[sc_dw_sub]" class="o_sc_meta o_sc_dw_venue" t-out="ev[sc_dw_sub]"/>
+                        <a t-if="ev.get('add_url')" t-att-href="ev['add_url']" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm o_sc_dw_ts_add"
+                           data-sc-action="dashboard.timesheet.add">
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                            <span>Add My Timesheet</span>
+                        </a>
+                        <details class="o_sc_dw_event_details" t-att-data-sc-event-details="ev['id']">
+                            <summary class="o_sc_link_btn o_sc_dw_event_details_toggle">Details</summary>
+                            <dl class="o_sc_kv">
+                                <dt>When</dt><dd data-sc-ev-field="when" t-out="ev['details']['when'] or '—'"/>
+                                <t t-if="ev['details']['coverage']"><dt>Coverage</dt><dd data-sc-ev-field="coverage" t-out="ev['details']['coverage']"/></t>
+                                <dt>Venue</dt><dd data-sc-ev-field="venue" t-out="ev['venue'] or '—'"/>
+                                <dt>Teams</dt><dd data-sc-ev-field="teams" t-out="ev['teams'] or '—'"/>
+                                <dt>Assigned Staff</dt><dd data-sc-ev-field="staff" t-out="ev['details']['staff'] or '—'"/>
+                            </dl>
+                            <p t-if="ev['details']['description']" class="o_sc_pre o_sc_dw_event_desc"
+                               data-sc-ev-field="description" t-out="ev['details']['description']"/>
+                            <a t-att-href="ev['url']" class="o_sc_section_more" data-sc-action="dashboard.event.open">Open the event</a>
+                        </details>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </template>
+
+    <!-- « Joueurs que je suis » (review round 1): my followed players, the
+         full expandable cards. -->
+    <template id="sc_dw_followed" name="App dashboard: players I follow">
+        <t t-if="section['rows']" t-call="bemade_sports_clinic.sc_dw_player_list"/>
+        <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+            <t t-set="message">You do not follow any player yet. Use « Follow » on a player's card or page.</t>
+        </t>
+    </template>
+
+    <!-- « Feuilles de temps manquantes » (review round 1, therapists): my
+         past assigned events without a timesheet of mine. -->
+    <template id="sc_dw_missing_timesheets" name="App dashboard: missing timesheets">
+        <t t-if="section['rows']" t-call="bemade_sports_clinic.sc_dw_event_list">
+            <t t-set="sc_dw_sub" t-value="'teams'"/>
+        </t>
+        <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+            <t t-set="message">No missing timesheet. Well done!</t>
+        </t>
     </template>
 
     <!-- /my/app/dashboard/configure — « Configurer le tableau de bord ».
@@ -356,6 +437,13 @@
                                         <label class="o_sc_field_label" t-att-for="'sc_dash_%s_level' % row['id']">Players</label>
                                         <select name="level" class="o_sc_input" t-att-id="'sc_dash_%s_level' % row['id']">
                                             <option t-foreach="row['level_choices']" t-as="choice" t-att-value="choice[0]"
+                                                    t-att-selected="'selected' if choice[2] else None" t-out="choice[1]"/>
+                                        </select>
+                                    </t>
+                                    <t t-if="row.get('days_back_choices')">
+                                        <label class="o_sc_field_label" t-att-for="'sc_dash_%s_days_back' % row['id']">Days back</label>
+                                        <select name="days_back" class="o_sc_input" t-att-id="'sc_dash_%s_days_back' % row['id']">
+                                            <option t-foreach="row['days_back_choices']" t-as="choice" t-att-value="choice[0]"
                                                     t-att-selected="'selected' if choice[2] else None" t-out="choice[1]"/>
                                         </select>
                                     </t>

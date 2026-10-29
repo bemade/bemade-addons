@@ -272,6 +272,11 @@
                         </p>
                     </div>
                 </div>
+                <!-- Task 1624 review round 1: « Suivre / Ne plus suivre »
+                     (personal, outside the hero's read fragment). -->
+                <div class="o_sc_hero_follow" data-sc-section="player.follow">
+                    <t t-call="bemade_sports_clinic.sc_follow_toggle"/>
+                </div>
                 </div>
                 <!-- The header group's pencil (therapists only), top right. -->
                 <t t-if="sc_hero_editable">

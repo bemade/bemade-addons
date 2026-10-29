@@ -549,6 +549,10 @@
                 <t t-set="sheet_id" t-value="'sc_ts_add_sheet'"/>
                 <t t-set="title">Add My Timesheet</t>
                 <t t-set="lazy_url" t-value="False"/>
+                <!-- Task 1624 review round 1: the dashboard's « Feuilles de
+                     temps manquantes » links here with ?add_timesheet=1 —
+                     the sheet opens on load (sc_app_ui.js init). -->
+                <t t-set="open_on_load" t-value="request.params.get('add_timesheet') == '1'"/>
                 <!-- Task 1665: already a timesheet of mine here — say so; this
                      sheet is then « Add another timesheet » (split shifts). -->
                 <div t-if="sc_my_open_timesheet_id" class="o_sc_ts_existing" data-sc-ts-existing="1"

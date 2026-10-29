@@ -78,7 +78,9 @@ class TestAppShellHomeNav(Parity1577Common):
     def test_upcoming_event_comes_back_home(self):
         _text, tree = self._get(HOME)
         hrefs = tree.xpath('//*[@data-sc-section="dashboard.coverage"]//a/@href')
-        href = [h for h in hrefs if h.startswith('/my/event/%s' % self.upcoming.id)]
+        # Task 1624 review round 1: the row's link and its « Details »
+        # fold-out's « Open the event » — the same address.
+        href = sorted({h for h in hrefs if h.startswith('/my/event/%s' % self.upcoming.id)})
         self.assertEqual(len(href), 1, hrefs)
         self.assertEqual(self._return_url(href[0]), HOME)
         _text, tree = self._get(href[0])

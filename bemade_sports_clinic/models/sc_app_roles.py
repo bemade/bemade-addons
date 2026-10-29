@@ -189,10 +189,18 @@ VISIBILITY_REGISTRY = {
     'dashboard.announcements': {'include': STAFF},
     'dashboard.indicators': {'include': STAFF},
     'dashboard.coverage': {'include': STAFF},
+    # Review round 1 (owner 2026-10-29): my followed players (every staff
+    # role) and my past events without a timesheet (therapists only).
+    'dashboard.followed': {'include': STAFF},
+    'dashboard.missing_timesheets': {'include': TP},
     'dashboard.todo.activities': {'include': STAFF},
     'dashboard.todo.verify': {'include': TP},
     'dashboard.todo.removals': {'include': TP, 'system': True},
-    'dashboard.todo.returns': {'include': STAFF},
+    # Review round 1 (owner 2026-10-29): therapists update the « Retour
+    # prévu » dates — the overdue ones are their to-do, not a coach's.
+    'dashboard.todo.returns': {'include': TP},
+    # Review round 1: « Suivre / Ne plus suivre » a player (personal).
+    'patient.follow': {'include': STAFF},
     # Task 1542 — team page sections / actions. Each one is ALSO gated in the
     # template by the controller's existing server-side value (the model or
     # route check that refuses the action), so the registry can only HIDE:

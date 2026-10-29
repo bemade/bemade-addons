@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.126.0",
+    'version': "19.0.1.126.1",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -119,8 +119,11 @@ The app dashboard (/my/home) is made of widget sections each user may show,
 hide, reorder, duplicate and limit to some organisations / teams from its
 « Configurer » page (one registry: ``models/sc_dashboard.py``; the layout is
 stored per user, versioned). A scope only ever narrows what the user may
-already access. Round 1: Today, To do, Recent changes, Players to watch,
-Announcements, Indicators, Upcoming coverage.
+already access. Round 1: Today, Indicators, To do (each line folds out into
+its activity / injury / player cards), Recent changes, Players to watch,
+Players I follow (a personal « Follow » on the player cards and page),
+Announcements, Upcoming coverage (« Upcoming events » for coaches) and, for
+therapists, Missing timesheets.
     """,
     "category": "Services/Medical",
     "author": "Bemade Inc.",
@@ -382,6 +385,8 @@ Announcements, Indicators, Upcoming coverage.
             "bemade_sports_clinic/static/src/js/sc_switch.js",
             # Task 1624: « Configurer » the dashboard (saves as you go).
             "bemade_sports_clinic/static/src/js/sc_dashboard_config.js",
+            # Task 1624 review round 1: « Suivre » a player (fetch toggle).
+            "bemade_sports_clinic/static/src/js/sc_follow.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.xml",
             # Task 1539: the shell's activity sheets (replaces, in the shell
