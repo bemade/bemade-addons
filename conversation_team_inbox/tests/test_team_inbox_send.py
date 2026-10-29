@@ -100,7 +100,6 @@ class TestTeamInboxSend(TeamInboxCommon):
             conversation.action_reply("<p>Two</p>")
         self.assertEqual(self._sent_message()["In-Reply-To"], "<ti-s5b@client.example>")
 
-
     def test_reply_to_a_specific_message_threads_under_it(self):
         conversation = self._inbound("<ti-t1@client.example>")
         self._inbound(

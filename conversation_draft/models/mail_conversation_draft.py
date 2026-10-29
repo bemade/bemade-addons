@@ -634,6 +634,9 @@ class MailConversationDraft(models.Model):
             "view_mode": "form",
             "views": [(False, "form")],
             "target": "current",
+            # The client merges the pop-up's context into the action a button
+            # returns: clear the pop-up flags so the full form behaves as one.
+            "context": {DIALOG_CONTEXT_KEY: False, "dialog_size": False},
         }
 
     def action_open_dialog(self):

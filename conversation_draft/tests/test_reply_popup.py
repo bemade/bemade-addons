@@ -196,6 +196,16 @@ class TestReplyPopup(DraftCommon):
         result, _seen = self._send_capturing(draft)
         self.assertEqual(result, {"type": "ir.actions.client", "tag": "reload"})
 
+    def test_full_view_from_the_dialog_sends_like_the_full_form(self):
+        draft = self._open_draft()
+        dialog_context = {"conversation_draft_dialog": True, "dialog_size": "extra-large"}
+        action = draft.with_context(**dialog_context).action_open_full_view()
+        # The client merges the pop-up's context under the returned action's.
+        context = {**dialog_context, **action["context"]}
+        self.assertFalse(context.get("dialog_size"))
+        result, _seen = self._send_capturing(draft, **context)
+        self.assertEqual(result, {"type": "ir.actions.client", "tag": "reload"})
+
     def test_failed_send_keeps_the_draft_target_and_text(self):
         action = self.conversation.with_user(self.user_a).action_open_draft(
             message_id=self.inbound.id

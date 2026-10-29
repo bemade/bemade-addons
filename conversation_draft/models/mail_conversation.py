@@ -1,10 +1,9 @@
 from markupsafe import Markup
 
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.tools.mail import is_html_empty
-
-from odoo.exceptions import UserError
 
 from .mail_conversation_draft import (
     ACTIVE_STATES,

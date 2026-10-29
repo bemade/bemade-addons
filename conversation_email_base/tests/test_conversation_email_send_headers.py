@@ -103,7 +103,6 @@ class TestConversationEmailSendHeaders(TransactionCase):
         self._assert_plain(lines, "Message-Id", OWN_ID)
         self.assertNotIn(b"=?", b"\r\n".join(lines))
 
-
     def _two_inbound(self):
         conversation = self.env["mail.conversation"].create(
             {"name": "Thread", "primary_transport_id": self.transport.id}
