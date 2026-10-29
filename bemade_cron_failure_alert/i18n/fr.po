@@ -1,0 +1,129 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_cron_failure_alert
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-29 14:22+0000\n"
+"PO-Revision-Date: 2026-10-29 14:22+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_res_config_settings__cron_failure_alert
+msgid "Alert on scheduled action failures"
+msgstr "Alerter en cas d'échec d'une action planifiée"
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_res_config_settings__cron_failure_alert_user_id
+msgid "Assign to"
+msgstr "Assigner à"
+
+#. module: bemade_cron_failure_alert
+#: model_terms:ir.ui.view,arch_db:bemade_cron_failure_alert.res_config_settings_view_form
+msgid "Be told when a scheduled action fails or is switched off"
+msgstr "Être averti quand une action planifiée échoue ou est désactivée"
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model,name:bemade_cron_failure_alert.model_res_config_settings
+msgid "Config Settings"
+msgstr "Paramètres de configuration"
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model.fields,help:bemade_cron_failure_alert.field_res_config_settings__cron_failure_alert_channel_id
+msgid "Discuss channel where each alert is posted."
+msgstr "Canal Discussion où chaque alerte est publiée."
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_ir_cron__display_name
+#: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_res_config_settings__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_ir_cron__id
+#: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_res_config_settings__id
+msgid "ID"
+msgstr ""
+
+#. module: bemade_cron_failure_alert
+#. odoo-python
+#: code:addons/bemade_cron_failure_alert/models/ir_cron.py:0
+msgid ""
+"No error text was captured (for example, the run timed out). See the server "
+"log around %(time)s UTC."
+msgstr ""
+"Aucun message d'erreur n'a été capturé (par exemple, l'exécution a dépassé "
+"le délai). Consultez le journal du serveur vers %(time)s UTC."
+
+#. module: bemade_cron_failure_alert
+#. odoo-python
+#: code:addons/bemade_cron_failure_alert/models/ir_cron.py:0
+msgid ""
+"Odoo switched off the scheduled action %(link)s after it failed %(count)s "
+"times in a row over more than a week (last failure: %(time)s UTC). It will "
+"not run again until it is re-enabled."
+msgstr ""
+"Odoo a désactivé l'action planifiée %(link)s après %(count)s échecs "
+"consécutifs sur plus d'une semaine (dernier échec : %(time)s UTC). Elle ne "
+"s'exécutera plus tant qu'elle n'aura pas été réactivée."
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_res_config_settings__cron_failure_alert_channel_id
+msgid "Post in channel"
+msgstr "Publier dans le canal"
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model.fields,help:bemade_cron_failure_alert.field_res_config_settings__cron_failure_alert
+msgid ""
+"Raise an alert on the first failure of a scheduled action and when Odoo "
+"switches one off after repeated failures."
+msgstr ""
+"Lever une alerte au premier échec d'une action planifiée et quand Odoo en "
+"désactive une après des échecs répétés."
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model,name:bemade_cron_failure_alert.model_ir_cron
+msgid "Scheduled Actions"
+msgstr "Actions planifiées"
+
+#. module: bemade_cron_failure_alert
+#. odoo-python
+#: code:addons/bemade_cron_failure_alert/models/ir_cron.py:0
+msgid "Scheduled action failed: %(name)s"
+msgstr "Échec d'une action planifiée : %(name)s"
+
+#. module: bemade_cron_failure_alert
+#: model_terms:ir.ui.view,arch_db:bemade_cron_failure_alert.res_config_settings_view_form
+msgid "Scheduled action failures"
+msgstr "Échecs des actions planifiées"
+
+#. module: bemade_cron_failure_alert
+#. odoo-python
+#: code:addons/bemade_cron_failure_alert/models/ir_cron.py:0
+msgid "Scheduled action switched off: %(name)s"
+msgstr "Action planifiée désactivée : %(name)s"
+
+#. module: bemade_cron_failure_alert
+#. odoo-python
+#: code:addons/bemade_cron_failure_alert/models/ir_cron.py:0
+msgid ""
+"The scheduled action %(link)s failed at %(time)s UTC. Odoo will retry it at "
+"its next scheduled time; no other alert will be sent until it succeeds "
+"again, unless Odoo switches it off."
+msgstr ""
+"L'action planifiée %(link)s a échoué à %(time)s UTC. Odoo la relancera à sa "
+"prochaine heure prévue ; aucune autre alerte ne sera envoyée avant qu'elle "
+"réussisse de nouveau, sauf si Odoo la désactive."
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model.fields,help:bemade_cron_failure_alert.field_res_config_settings__cron_failure_alert_user_id
+msgid "User who receives a To-Do activity for each alert."
+msgstr "Utilisateur qui reçoit une activité À faire pour chaque alerte."
