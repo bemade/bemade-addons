@@ -39,6 +39,10 @@ const PASS_THROUGH_KEYS = new Set([
  * typed in that window is wiped. While this editor is catching up, input is
  * held instead of applied; once the document is in sync, the held text is
  * typed into it and travels to the other editors like any other change.
+ *
+ * Once in sync, a colleague's steps are integrated with the caret remapped
+ * (DraftHistoryPlugin.withRemappedSelection): Odoo puts the caret back at its
+ * old offset, which is one character short after a remote insert before it.
  */
 export class DraftCollaborationPlugin extends CollaborationOdooPlugin {
   static shared = [...CollaborationOdooPlugin.shared, "flushCatchUp", "isCatchingUp"];
@@ -47,6 +51,7 @@ export class DraftCollaborationPlugin extends CollaborationOdooPlugin {
   setup() {
     this.catchUpHolds = new Set();
     this.heldInput = [];
+    this.remapSelectionAroundExternalSteps();
     super.setup();
     if (!this.collaborationChannelName) {
       // Not a saved record: no collaboration, nothing to catch up with.
@@ -62,6 +67,28 @@ export class DraftCollaborationPlugin extends CollaborationOdooPlugin {
   destroy() {
     clearInterval(this.catchUpTimer);
     super.destroy();
+  }
+
+  /**
+   * Every path that integrates a colleague's steps (live steps, missing
+   * steps, the steps buffered during a reset) goes through this plugin's
+   * `collaboration.onExternalHistorySteps`; run it with the caret tracked.
+   */
+  remapSelectionAroundExternalSteps() {
+    const {collaboration, history} = this.dependencies;
+    if (!history.withRemappedSelection) {
+      return;
+    }
+    this.dependencies = {
+      ...this.dependencies,
+      collaboration: {
+        ...collaboration,
+        onExternalHistorySteps: (steps) =>
+          history.withRemappedSelection(() =>
+            collaboration.onExternalHistorySteps(steps)
+          ),
+      },
+    };
   }
 
   // ------------------------------------------------------------------
