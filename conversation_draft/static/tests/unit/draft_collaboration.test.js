@@ -4,9 +4,10 @@
 // Two people edit the same reply draft at once. The peer network is
 // simulated in the page (same approach as html_editor's own collaboration
 // tests): each editor is a real html_editor instance with the draft's
-// collaboration plugin, and opening a "data channel" between two editors is
-// what a WebRTC connection does in the browser.
-import {CollaborationOdooPlugin} from "@html_editor/others/collaboration/collaboration_odoo_plugin";
+// plugins, and opening a "data channel" between two editors is what a WebRTC
+// connection does in the browser. Delivery can be held and released, which
+// is what lets both editors type at the same moment: steps made while the
+// network is "in flight" are concurrent, exactly as on two machines.
 import {COLLABORATION_PLUGINS, MAIN_PLUGINS} from "@html_editor/plugin_sets";
 import {Wysiwyg} from "@html_editor/wysiwyg";
 import {beforeEach, describe, expect, test} from "@odoo/hoot";
@@ -17,14 +18,8 @@ import {patch} from "@web/core/utils/patch";
 import {getSelection, setSelection} from "@html_editor/../tests/_helpers/selection";
 import {insertText} from "@html_editor/../tests/_helpers/user_actions";
 import {defineMailModels} from "@mail/../tests/mail_test_helpers";
-import {
-  DraftCollaborationPlugin,
-  NO_PEER_WINDOW,
-} from "@conversation_draft/draft_collaboration_plugin";
-
-const DRAFT_COLLABORATION_PLUGINS = COLLABORATION_PLUGINS.map((Plugin) =>
-  Plugin === CollaborationOdooPlugin ? DraftCollaborationPlugin : Plugin
-);
+import {NO_PEER_WINDOW} from "@conversation_draft/draft_collaboration_plugin";
+import {withDraftPlugins} from "@conversation_draft/draft_html_field";
 
 class Peer {
   constructor(peerId, pool) {
@@ -37,6 +32,10 @@ class Peer {
   }
   text() {
     return this.editor.editable.textContent;
+  }
+  /** The first text node of the draft. */
+  get textNode() {
+    return this.editor.editable.querySelector("p").firstChild;
   }
   /** What a WebRTC data channel opening between two editors does. */
   async openDataChannel(other) {
@@ -90,7 +89,8 @@ class Editors extends Component {
       deleteChannel: noop,
     };
     return {
-      Plugins: [...MAIN_PLUGINS, ...DRAFT_COLLABORATION_PLUGINS],
+      // As the draft body widget does.
+      Plugins: withDraftPlugins([...MAIN_PLUGINS, ...COLLABORATION_PLUGINS]),
       content: markup(this.props.content.replace("[]", "")),
       collaboration: {
         peerId,
@@ -136,7 +136,14 @@ class Editors extends Component {
               return super.notifyAllPeers(name, ...args);
             },
             async _channelNotify(toPeerId, payload) {
-              pool.peers[toPeerId].ptp.handleNotification(structuredClone(payload));
+              // What is sent is what the peer gets, even if delivered later.
+              const sent = structuredClone(payload);
+              const deliver = () => pool.peers[toPeerId].ptp.handleNotification(sent);
+              if (pool.held) {
+                pool.inFlight.push(deliver);
+              } else {
+                deliver();
+              }
             },
             _createPeer() {
               throw new Error("No real WebRTC in this test.");
@@ -167,7 +174,20 @@ async function openEditors(
   peerIds,
   content = `<p data-last-history-steps="1">a[]</p>`
 ) {
-  const pool = {peers: {}, resolvers: {}, serverBody: content.replace("[]", "")};
+  const pool = {
+    peers: {},
+    resolvers: {},
+    serverBody: content.replace("[]", ""),
+    /** While held, what is sent stays on the wire until deliver(). */
+    held: false,
+    inFlight: [],
+    /** The wire delivers everything sent so far, in order. */
+    deliver() {
+      for (const deliver of pool.inFlight.splice(0)) {
+        deliver();
+      }
+    },
+  };
   const ready = [];
   for (const peerId of peerIds) {
     pool.peers[peerId] = new Peer(peerId, pool);
@@ -176,7 +196,41 @@ async function openEditors(
   await mountWithCleanup(Editors, {props: {peerIds, pool, content}});
   await Promise.all(ready);
   await animationFrame();
-  return pool.peers;
+  return {...pool.peers, pool};
+}
+
+/** Two editors on the draft, connected and in sync. */
+async function openSyncedPair() {
+  const {p1, p2, pool} = await openEditors(["p1", "p2"]);
+  await p1.openDataChannel(p2);
+  await advanceTime(200);
+  await animationFrame();
+  expect(p1.plugin.isCatchingUp()).toBe(false);
+  expect(p2.plugin.isCatchingUp()).toBe(false);
+  return {p1, p2, pool};
+}
+
+/**
+ * Both type at the same moment, one letter each per tick; the network
+ * delivers what was sent every `every` ticks.
+ */
+async function typeTogether(pool, [p1, text1], [p2, text2], {every = 1} = {}) {
+  pool.held = true;
+  const ticks = Math.max(text1.length, text2.length);
+  for (let i = 0; i < ticks; i++) {
+    if (i < text1.length) {
+      await p1.typeKeys(text1[i]);
+    }
+    if (i < text2.length) {
+      await p2.typeKeys(text2[i]);
+    }
+    if ((i + 1) % every === 0) {
+      pool.deliver();
+    }
+  }
+  pool.deliver();
+  pool.held = false;
+  await animationFrame();
 }
 
 defineMailModels();
@@ -262,5 +316,65 @@ describe("two people on one reply draft", () => {
     p1.editor.shared.collaborationOdoo.flushCatchUp();
     expect(p1.plugin.isCatchingUp()).toBe(false);
     expect(p1.editor.getContent()).toInclude("az");
+  });
+
+  test("two people typing at the same moment keep both texts, each in one piece", async () => {
+    const {p1, p2, pool} = await openSyncedPair();
+    // Both start together and type at the same pace; every step crosses the
+    // network while the other person's next letter is already typed.
+    await typeTogether(pool, [p1, " M3-simultane"], [p2, " A3-simultane"]);
+
+    expect(p1.text()).toBe(p2.text());
+    expect(p1.text()).toMatch(
+      /^a( M3-simultane A3-simultane| A3-simultane M3-simultane)$/
+    );
+
+    // Each caret stayed at the end of its own words.
+    await typeTogether(pool, [p1, "!"], [p2, "?"]);
+    expect(p1.text()).toBe(p2.text());
+    expect(p1.text()).toInclude("M3-simultane!");
+    expect(p1.text()).toInclude("A3-simultane?");
+  });
+
+  test("the same, when the network delivers in bursts", async () => {
+    const {p1, p2, pool} = await openSyncedPair();
+    // Several letters on each side are in flight before any arrives.
+    await typeTogether(pool, [p1, " M6-lent"], [p2, " A6-lent"], {every: 3});
+
+    expect(p1.text()).toBe(p2.text());
+    expect(p1.text()).toMatch(/^a( M6-lent A6-lent| A6-lent M6-lent)$/);
+
+    await typeTogether(pool, [p1, "!"], [p2, "?"], {every: 3});
+    expect(p1.text()).toBe(p2.text());
+    expect(p1.text()).toInclude("M6-lent!");
+    expect(p1.text()).toInclude("A6-lent?");
+  });
+
+  test("a colleague who starts typing at the same spot does not split a word", async () => {
+    const {p1, p2, pool} = await openSyncedPair();
+    // P1 is in the middle of a word when p2 starts typing right there.
+    await p1.typeKeys(" A5-pre");
+    await animationFrame();
+    expect(p2.text()).toBe("a A5-pre");
+
+    await typeTogether(pool, [p1, "mier"], [p2, " M5-second"]);
+
+    // P1's word stays whole and p2's text follows it, on both sides.
+    expect(p1.text()).toBe("a A5-premier M5-second");
+    expect(p2.text()).toBe("a A5-premier M5-second");
+  });
+
+  test("the caret follows a colleague's inserts before it", async () => {
+    const {p1, p2, pool} = await openSyncedPair();
+    // P1 writes at the start of the draft while p2 keeps writing at its end.
+    setSelection({anchorNode: p1.textNode, anchorOffset: 0});
+    await typeTogether(pool, [p1, "Head "], [p2, "tail"]);
+
+    expect(p1.text()).toBe("Head atail");
+    expect(p2.text()).toBe("Head atail");
+    // P2's caret moved along with the text pushed by p1's inserts.
+    await p2.typeKeys("!");
+    await animationFrame();
+    expect(p1.text()).toBe("Head atail!");
   });
 });

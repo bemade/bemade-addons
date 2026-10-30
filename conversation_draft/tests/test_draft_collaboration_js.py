@@ -3,6 +3,8 @@
 #     typing live, without first clicking into it.
 #   * Typing while an editor catches up with a colleague's document is kept,
 #     on both sides, and applied before a save.
+#   * Two people typing at the same moment both keep their text, each in one
+#     piece and in order, and each caret stays with its own text.
 # The editors run in the browser (hoot suite
 # static/tests/unit/draft_collaboration.test.js); this case runs that suite
 # headless and checks that its tests ran and passed.
@@ -14,7 +16,7 @@ from odoo.tests import HttpCase, tagged
 from odoo.tests.common import ChromeBrowser
 
 SUITE = "@conversation_draft"
-EXPECTED_TESTS = 4
+EXPECTED_TESTS = 8
 
 # Hoot's dry run starts the JS modules of EVERY installed addon, not only this
 # suite's dependencies. An addon that fetches at import time gets this
