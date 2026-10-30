@@ -25,10 +25,27 @@ export default [
     action: "click",
   },
   {
-    id: "draft-open",
+    id: "draft-popup",
     title: "Afficher le brouillon de réponse",
-    narration: "Le brouillon de réponse s'ouvre, avec le texte du message à envoyer.",
-    selector: ".o_field_widget[name='body']",
+    narration:
+      "Le brouillon de réponse s'ouvre dans une fenêtre, avec le texte du message à envoyer.",
+    selector: ".modal .o_field_widget[name='body']",
+    action: "assert",
+  },
+  {
+    id: "open-full-view",
+    title: "Ouvrir le brouillon en plein écran",
+    narration:
+      "Le lien « Ouvrir en plein écran » affiche le brouillon sur toute la page, là où se trouvent les commentaires internes.",
+    selector: ".modal-footer button[name='action_open_full_view']",
+    action: "click",
+  },
+  {
+    id: "draft-open",
+    title: "Afficher le brouillon en plein écran",
+    narration:
+      "Le brouillon occupe maintenant toute la page, avec son fil de discussion.",
+    selector: ".o_form_view .o_field_widget[name='body']",
     action: "assert",
   },
   {
