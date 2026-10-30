@@ -13,6 +13,9 @@ Acceptance criteria:
   temps manquantes » (+ « Ajouter ma feuille de temps », « Jours en
   arrière »), the event « Détails » and the « Suivre » toggle are French;
   a coach reads « Événements à venir ».
+* UC-I4 (review round 2, 2026-10-29) the zones of « Configurer » (Gauche,
+  Droite, Bas — Python labels), « Déplacer vers » and the drag handle's
+  label are French.
 """
 from datetime import timedelta
 
@@ -105,3 +108,11 @@ class TestDashboardI18n1624(Dashboard1624Common):
         text = self._fr('/my/home')
         self.assertIn('Événements à venir', text)
         self.assertNotIn('Couvertures à venir', text)
+
+    def test_zones_in_french(self):
+        self._login_tp()
+        text = self._fr('/my/app/dashboard/configure')
+        for term in ('Gauche', 'Droite', 'Bas', 'Déplacer vers', 'Glisser pour déplacer'):
+            self.assertIn(term, text, term)
+        for term in ('>Left<', '>Right<', '>Bottom<', 'Move to', 'Drag to move'):
+            self.assertNotIn(term, text, term)

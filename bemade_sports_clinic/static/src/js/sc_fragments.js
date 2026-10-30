@@ -20,6 +20,8 @@
  *   a <select> keeps its element and its value (options refreshed); an edit
  *   card's read view keeps its hidden state; a key missing from the fresh
  *   render empties and hides its node;
+ * - task 1624 round 2: data-sc-fragment-keep-empty on a list — it carries
+ *   its own empty state, so it stays shown without items;
  * - data-sc-fragment-mode="list": the container's live items
  *   (data-sc-fragment-item) are KEPT — their islands survive — and only
  *   re-ordered / dropped / regrouped as in the fresh render (an item may
@@ -246,7 +248,11 @@ export function applyFragments(payload) {
                 // lists elsewhere stays as it is (it moves on the next visit).
                 continue;
             }
-            if (el.dataset.scFragmentMode === "list") {
+            if (el.dataset.scFragmentMode === "list" && el.dataset.scFragmentKeepEmpty) {
+                // Task 1624 round 2: a whole section gone from the fresh
+                // render (switched off elsewhere) hides.
+                emptyNode(el, key);
+            } else if (el.dataset.scFragmentMode === "list") {
                 const empty = document.createElement(el.tagName);
                 lists.push([el, empty, key]);
             } else {
@@ -258,7 +264,9 @@ export function applyFragments(payload) {
     for (const [el, fresh, key] of lists) {
         if (reconcileList(el, fresh, key)) {
             swapped.push(key);
-            if (!el.querySelector("[data-sc-fragment-item]")) {
+            // Task 1624 round 2: data-sc-fragment-keep-empty — a list that
+            // renders its own empty state (a dashboard section) stays shown.
+            if (!el.querySelector("[data-sc-fragment-item]") && !el.dataset.scFragmentKeepEmpty) {
                 el.hidden = true;
             }
         }

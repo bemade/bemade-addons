@@ -28,21 +28,46 @@ $sc-dash-laptop: 1024px;
         flex-direction: column;
         gap: var(--sc-space-5);
         min-width: 0;
+        // Review round 2: sc_dashboard_live.js keeps a toggled fold-out's
+        // header in place itself; the browser's own anchoring would pick
+        // another node and fight it.
+        overflow-anchor: none;
+    }
+
+    // Review round 2 (owner 2026-10-29): the three zones. Phone: left,
+    // right, bottom, one under the other. Laptop: left and right are two
+    // independent columns side by side, bottom spans both underneath.
+    .o_sc_dash_zone {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-5);
+        min-width: 0;
     }
 
     @media (min-width: $sc-dash-laptop) {
-        // Laptop: two flowing columns (the sections read down the first
-        // column, then the second) — no gap under a short section.
         .o_sc_dash {
-            display: block;
-            column-count: 2;
-            column-gap: var(--sc-space-6);
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-areas: "left right" "bottom bottom";
+            align-items: start;
+            gap: var(--sc-space-5) var(--sc-space-6);
+        }
 
-            > .o_sc_dw {
-                break-inside: avoid;
-                display: block;
-                margin-bottom: var(--sc-space-5);
-            }
+        .o_sc_dash_zone_left {
+            grid-area: left;
+        }
+
+        .o_sc_dash_zone_right {
+            grid-area: right;
+        }
+
+        .o_sc_dash_zone_bottom {
+            grid-area: bottom;
+        }
+
+        // Only one side column in use: it takes the full width.
+        .o_sc_dash_zone.o_sc_dash_zone_solo {
+            grid-column: 1 / -1;
         }
     }
 
@@ -70,39 +95,48 @@ $sc-dash-laptop: 1024px;
         }
     }
 
-    .o_sc_dw_more {
-        margin-top: var(--sc-space-2);
-    }
-
-    // Review round 1: event rows (time, the event, its « Details » fold-out).
-    .o_sc_dw_events {
+    // Review round 2 (owner 2026-10-29): a widget's body stacks its parts
+    // (the « Cliniques aujourd'hui » row, the cards, « Voir les N autres »,
+    // « Tout voir ») with the card-list gap — nothing touches.
+    .o_sc_dw_body {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
-    }
-
-    .o_sc_dw_event {
-        display: grid;
-        grid-template-columns: minmax(64px, max-content) minmax(0, 1fr);
-        gap: 0 var(--sc-space-3);
+        gap: 6px;
         min-width: 0;
+
+        > .o_sc_dw_clinics > .o_sc_entity_row {
+            margin: 0;
+        }
     }
 
-    .o_sc_dw_event_when {
-        color: var(--sc-fg-2);
+    .o_sc_dw_more {
+        margin: 0;
+
+        > .o_sc_list {
+            margin-top: 6px;
+        }
+
+        > summary {
+            min-height: 32px;
+        }
+    }
+
+    .o_sc_dw_count {
         font-variant-numeric: tabular-nums;
     }
 
-    .o_sc_dw_event_main {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2px;
+    // Review round 2: the quick « Retour prévu » under a « Retours
+    // dépassés » card.
+    .o_sc_row_quick {
+        border-top: 1px solid var(--sc-line);
+        padding: var(--sc-space-2) var(--sc-space-3);
         min-width: 0;
+    }
 
-        > * {
-            max-width: 100%;
-        }
+    // Review round 2: event cards = player cards (sc_link_row in a row
+    // group, the shared « Details » expander).
+    .o_sc_dw_events {
+        gap: 6px;
     }
 
     .o_sc_dw_ts_add {
@@ -118,15 +152,6 @@ $sc-dash-laptop: 1024px;
     }
 
     .o_sc_dw_event_details {
-        width: 100%;
-
-        > summary {
-            cursor: pointer;
-            min-height: 32px;
-            display: inline-flex;
-            align-items: center;
-        }
-
         .o_sc_kv {
             margin: var(--sc-space-1) 0;
         }
@@ -137,10 +162,15 @@ $sc-dash-laptop: 1024px;
         }
     }
 
-    .o_sc_dw_venue {
+    .o_sc_dw_venue .o_sc_row_line_text {
+        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .o_sc_event_row .o_sc_dw_ts_add {
+        align-self: flex-start;
     }
 
     .o_sc_chip_orange {
@@ -178,8 +208,8 @@ $sc-dash-laptop: 1024px;
     .o_sc_dw_todo_body {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-2);
-        padding: 0 0 var(--sc-space-3);
+        gap: 6px;
+        padding: 6px 0 var(--sc-space-3);
         min-width: 0;
     }
 
@@ -235,6 +265,97 @@ $sc-dash-laptop: 1024px;
         margin: 0 0 var(--sc-space-3);
     }
 
+    // Review round 2: the zones of « Configurer » (as on the dashboard).
+    .o_sc_dash_cfg_zones {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-4);
+        margin-bottom: var(--sc-space-4);
+        min-width: 0;
+    }
+
+    .o_sc_dash_cfg_zone {
+        min-width: 0;
+
+        > .o_sc_dash_cfg {
+            min-height: 56px;
+            margin: 0;
+            padding: var(--sc-space-2);
+            border: 1px dashed var(--sc-line);
+            border-radius: var(--sc-radius-md);
+        }
+    }
+
+    .o_sc_dash_cfg_zone_title {
+        margin-bottom: var(--sc-space-2);
+    }
+
+    @media (min-width: $sc-dash-laptop) {
+        .o_sc_dash_cfg_zones {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-areas: "left right" "bottom bottom";
+            align-items: stretch;
+            gap: var(--sc-space-4) var(--sc-space-5);
+        }
+
+        .o_sc_dash_cfg_zone_left {
+            grid-area: left;
+        }
+
+        .o_sc_dash_cfg_zone_right {
+            grid-area: right;
+        }
+
+        .o_sc_dash_cfg_zone_bottom {
+            grid-area: bottom;
+        }
+    }
+
+    // The drag handle: laptop widths only; phones, touch and keyboard use
+    // ▲ / ▼ and « Move to ».
+    .o_sc_dash_cfg_grip::before {
+        content: "⋮⋮";
+    }
+
+    .o_sc_dash_cfg_drag {
+        display: none;
+        cursor: grab;
+        color: var(--sc-fg-3);
+        letter-spacing: -3px;
+        font-weight: 700;
+    }
+
+    @media (min-width: $sc-dash-laptop) {
+        .o_sc_dash_cfg_drag {
+            display: inline-flex;
+        }
+    }
+
+    .o_sc_dash_cfg_item.o_dragged {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+        cursor: grabbing;
+    }
+
+    .o_sc_dash_cfg_placeholder {
+        opacity: 0.35;
+    }
+
+    .o_sc_dash_cfg_zone_form {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin: 0 0 var(--sc-space-1);
+
+        .o_sc_input {
+            width: auto;
+            min-width: 0;
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+    }
+
     .o_sc_dash_cfg {
         list-style: none;
         margin: 0 0 var(--sc-space-4);
@@ -250,7 +371,8 @@ $sc-dash-laptop: 1024px;
         align-items: start;
         gap: 0 var(--sc-space-2);
 
-        > .o_sc_dash_cfg_remove {
+        > .o_sc_dash_cfg_remove,
+        > .o_sc_dash_cfg_zone_form {
             grid-column: 2;
             justify-self: start;
         }
@@ -258,6 +380,12 @@ $sc-dash-laptop: 1024px;
 
     .o_sc_dash_cfg_off .o_sc_dash_cfg_switch .o_sc_switch_label {
         color: var(--sc-fg-3);
+    }
+
+    .o_sc_dash_cfg_head {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
     .o_sc_dash_cfg_moves {

@@ -23,9 +23,19 @@
                     <span>Configure</span>
                 </a>
             </div>
+            <!-- Review round 2 (owner 2026-10-29): three zones — left and
+                 right side by side on a laptop (independent columns: a
+                 fold-out never moves a section to the other column),
+                 bottom full width under both; a phone reads left, right,
+                 bottom. -->
             <div class="o_sc_dash" data-sc-dashboard="1">
-                <t t-foreach="sc_dash_sections" t-as="section">
-                    <t t-call="bemade_sports_clinic.sc_dw_section"/>
+                <t t-foreach="sc_dash_zones" t-as="zone">
+                    <div t-if="zone['sections']" t-attf-class="o_sc_dash_zone o_sc_dash_zone_#{zone['zone']} #{'o_sc_dash_zone_solo' if zone.get('solo') else ''}"
+                         t-att-data-sc-zone="zone['zone']">
+                        <t t-foreach="zone['sections']" t-as="section">
+                            <t t-call="bemade_sports_clinic.sc_dw_section"/>
+                        </t>
+                    </div>
                 </t>
                 <t t-if="not sc_dash_sections" t-call="bemade_sports_clinic.sc_empty_state">
                     <t t-set="message">Every section is switched off. Use « Configure » to show some.</t>
@@ -45,13 +55,23 @@
     <!-- The frame of one widget instance: the title (custom or the widget's),
          the scope line, then the widget's own body (section['template']). -->
     <template id="sc_dw_section" name="App dashboard: section">
+        <!-- Review round 2 (owner 2026-10-29): « Joueurs que je suis » is a
+             LIST read fragment (sc_fragments.js): a follow / unfollow
+             anywhere on the page refreshes it in place — its cards kept,
+             added, dropped; the count and the empty state follow. -->
+        <t t-set="sc_dw_live" t-value="section.get('fragment_key')"/>
         <section t-attf-class="o_sc_section o_sc_dw o_sc_dw_#{section['widget']}"
                  t-att-data-sc-widget="section['widget']" t-att-data-sc-instance="section['id']"
-                 t-att-data-sc-section="'dashboard.%s' % section['widget']">
+                 t-att-data-sc-section="'dashboard.%s' % section['widget']"
+                 t-att-data-sc-fragment="sc_dw_live or None"
+                 t-att-data-sc-fragment-mode="'list' if sc_dw_live else None"
+                 t-att-data-sc-fragment-keep-empty="'1' if sc_dw_live else None">
             <h2 class="o_sc_section_header o_sc_dw_header">
                 <span class="o_sc_dw_title">
                     <span class="o_sc_dw_title_text" t-out="section['title']"/>
                     <small t-if="section.get('window_label')" class="o_sc_section_sub" t-out="section['window_label']"/>
+                    <small t-if="section.get('count_label')" class="o_sc_section_sub o_sc_dw_count"
+                           data-sc-dw-count="1" t-out="section['count_label']"/>
                 </span>
                 <a t-if="section.get('history_url')" t-att-href="section['history_url']"
                    class="o_sc_section_more o_sc_link_btn" data-sc-action="dashboard.history">History</a>
@@ -61,17 +81,23 @@
                    class="o_sc_section_more" data-sc-action="dashboard.list">See all</a>
             </h2>
             <p t-if="section['scope_label']" class="o_sc_meta o_sc_dw_scope" data-sc-dw-scope="1" t-out="section['scope_label']"/>
-            <t t-if="section['no_scope']" t-call="bemade_sports_clinic.sc_empty_state">
-                <t t-set="message">No team in this section's scope. Choose teams in « Configure ».</t>
-            </t>
-            <t t-else="" t-call="{{ section['template'] }}"/>
+            <!-- Review round 2 (owner 2026-10-29): one body box, so the
+                 first card of every widget sits one card gap under what is
+                 above it (the « Cliniques aujourd'hui » row touched the
+                 first event card). -->
+            <div class="o_sc_dw_body">
+                <t t-if="section['no_scope']" t-call="bemade_sports_clinic.sc_empty_state">
+                    <t t-set="message">No team in this section's scope. Choose teams in « Configure ».</t>
+                </t>
+                <t t-else="" t-call="{{ section['template'] }}"/>
+            </div>
         </section>
     </template>
 
     <!-- « Aujourd'hui »: my events / clinics of the day; the live clinics
          chip (therapists, the former home teaser). -->
     <template id="sc_dw_today" name="App dashboard: today">
-        <div t-if="section['show_clinics']" data-sc-section="home.clinic_teaser">
+        <div t-if="section['show_clinics']" class="o_sc_dw_clinics" data-sc-section="home.clinic_teaser">
         <t t-call="bemade_sports_clinic.sc_entity_row">
             <t t-set="href" t-value="'/my/clinics'"/>
             <t t-set="lead_icon" t-value="'clinic'"/>
@@ -108,7 +134,11 @@
                     <summary class="o_sc_entity_row o_sc_dw_todo_head">
                         <span class="o_sc_row_text"><span class="o_sc_row_title" t-out="line['label']"/></span>
                         <span class="o_sc_row_trailing">
-                            <span t-attf-class="o_sc_chip o_sc_chip_#{line['tone']}" t-out="line['count']"/>
+                            <!-- Review round 2: a read fragment — a quick « Retour prévu »
+                                 edit refreshes the count in place. -->
+                            <span t-attf-class="o_sc_chip o_sc_chip_#{line['tone']}" data-sc-todo-count="1"
+                                  t-att-data-sc-fragment="'sc.dashboard:todo:%s' % line['row_scope']"
+                                  t-out="line['count']"/>
                             <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
                         </span>
                     </summary>
@@ -168,15 +198,18 @@
             <t t-foreach="section['rows'][:section['rows_shown']]" t-as="row">
                 <t t-call="bemade_sports_clinic.sc_player_row">
                     <t t-set="row_scope" t-value="section['row_scope']"/>
+                    <t t-set="row_item" t-value="sc_dw_live and 'p%s' % row['id']"/>
                 </t>
             </t>
         </div>
-        <details t-if="len(section['rows']) &gt; section['rows_shown']" class="o_sc_disclosure o_sc_dw_more" data-sc-dw-more="1">
+        <details t-if="len(section['rows']) &gt; section['rows_shown']" class="o_sc_disclosure o_sc_dw_more" data-sc-dw-more="1"
+                 t-att-data-sc-keep-open="'%s-more' % section['id']">
             <summary class="o_sc_disclosure_summary" t-out="section['more_rows_label']"/>
             <div class="o_sc_list">
                 <t t-foreach="section['rows'][section['rows_shown']:]" t-as="row">
                     <t t-call="bemade_sports_clinic.sc_player_row">
                         <t t-set="row_scope" t-value="section['row_scope']"/>
+                        <t t-set="row_item" t-value="sc_dw_live and 'p%s' % row['id']"/>
                     </t>
                 </t>
             </div>
@@ -266,50 +299,66 @@
          the others folded. Variables: section, sc_dw_sub ('venue' / 'teams':
          the line under the name). -->
     <template id="sc_dw_event_list" name="App dashboard: event list">
-        <t t-call="bemade_sports_clinic.sc_card">
-            <t t-set="sc_dw_events" t-value="section['rows'][:section['rows_shown']]"/>
-            <t t-call="bemade_sports_clinic.sc_dw_event_rows"/>
-        </t>
+        <t t-set="sc_dw_events" t-value="section['rows'][:section['rows_shown']]"/>
+        <t t-call="bemade_sports_clinic.sc_dw_event_rows"/>
         <details t-if="len(section['rows']) &gt; section['rows_shown']" class="o_sc_disclosure o_sc_dw_more" data-sc-dw-more="1">
             <summary class="o_sc_disclosure_summary" t-out="section['more_rows_label']"/>
-            <t t-call="bemade_sports_clinic.sc_card">
-                <t t-set="sc_dw_events" t-value="section['rows'][section['rows_shown']:]"/>
-                <t t-call="bemade_sports_clinic.sc_dw_event_rows"/>
-            </t>
+            <t t-set="sc_dw_events" t-value="section['rows'][section['rows_shown']:]"/>
+            <t t-call="bemade_sports_clinic.sc_dw_event_rows"/>
         </details>
     </template>
 
-    <!-- Event rows: the time, the event (a link to it), a sub-line, then
-         (review round 1, owner 2026-10-29) a « Details » fold-out — time
-         span, coverage time (therapists), venue, teams, assigned staff,
-         description — and, on « Feuilles de temps manquantes », « Add my
-         timesheet ». Variables: sc_dw_events, sc_dw_sub. -->
+    <!-- Event cards. Review round 2 (owner 2026-10-29): the player-card
+         pattern exactly (sc_player_row) — a link row (sc_link_row) whose
+         « › » opens the event, the time / kind / venue (or teams) under the
+         name, and the shared « Details ⌄ / ⌃ » expander
+         ([data-sc-row-expand], sc_app_ui.js) unfolding the time span,
+         coverage time (therapists), venue, teams, assigned staff and
+         description UNDER the row (server-rendered: no lazy fetch); on
+         « Feuilles de temps manquantes », « Add my timesheet ». Variables:
+         sc_dw_events, sc_dw_sub ('venue' / 'teams'), section. -->
     <template id="sc_dw_event_rows" name="App dashboard: event rows">
-        <div class="o_sc_dw_events">
+        <div class="o_sc_list o_sc_dw_events">
             <t t-foreach="sc_dw_events" t-as="ev">
-                <div class="o_sc_dw_event" t-att-data-sc-event-id="ev['id']">
-                    <div class="o_sc_dw_event_when" t-out="ev['when']"/>
-                    <div class="o_sc_dw_event_main">
-                        <a t-att-href="ev['url']" class="o_sc_dw_event_link"><strong t-out="ev['kind']"/> <t t-out="ev['name']"/></a>
-                        <small t-if="ev[sc_dw_sub]" class="o_sc_meta o_sc_dw_venue" t-out="ev[sc_dw_sub]"/>
-                        <a t-if="ev.get('add_url')" t-att-href="ev['add_url']" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm o_sc_dw_ts_add"
-                           data-sc-action="dashboard.timesheet.add">
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
-                            <span>Add My Timesheet</span>
-                        </a>
-                        <details class="o_sc_dw_event_details" t-att-data-sc-event-details="ev['id']">
-                            <summary class="o_sc_link_btn o_sc_dw_event_details_toggle">Details</summary>
-                            <dl class="o_sc_kv">
-                                <dt>When</dt><dd data-sc-ev-field="when" t-out="ev['details']['when'] or '—'"/>
-                                <t t-if="ev['details']['coverage']"><dt>Coverage</dt><dd data-sc-ev-field="coverage" t-out="ev['details']['coverage']"/></t>
-                                <dt>Venue</dt><dd data-sc-ev-field="venue" t-out="ev['venue'] or '—'"/>
-                                <dt>Teams</dt><dd data-sc-ev-field="teams" t-out="ev['teams'] or '—'"/>
-                                <dt>Assigned Staff</dt><dd data-sc-ev-field="staff" t-out="ev['details']['staff'] or '—'"/>
-                            </dl>
-                            <p t-if="ev['details']['description']" class="o_sc_pre o_sc_dw_event_desc"
-                               data-sc-ev-field="description" t-out="ev['details']['description']"/>
-                            <a t-att-href="ev['url']" class="o_sc_section_more" data-sc-action="dashboard.event.open">Open the event</a>
-                        </details>
+                <t t-set="sc_ev_detail_id" t-value="'sc-row-detail-%s-ev-%s' % (section['row_scope'], ev['id'])"/>
+                <div class="o_sc_row_group o_sc_event_row" t-att-data-sc-event-row="ev['id']">
+                    <t t-call="bemade_sports_clinic.sc_link_row">
+                        <t t-set="href" t-value="ev['url']"/>
+                        <t t-set="lead_icon" t-value="'calendar'"/>
+                        <t t-set="dot" t-value="False"/>
+                        <t t-set="title" t-value="ev['name'] or ev['kind']"/>
+                        <t t-set="subtitle" t-value="' · '.join(part for part in (ev['when'], ev['kind'] if ev['name'] else '') if part)"/>
+                        <t t-set="links" t-value="None"/>
+                        <t t-set="main_attrs" t-value="{'data-sc-event-id': ev['id']}"/>
+                        <t t-set="meta">
+                            <span t-if="ev[sc_dw_sub]" class="o_sc_row_line o_sc_dw_venue" data-sc-ev-sub="1">
+                                <span class="o_sc_row_line_text" t-out="ev[sc_dw_sub]"/>
+                            </span>
+                            <a t-if="ev.get('add_url')" t-att-href="ev['add_url']" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm o_sc_dw_ts_add"
+                               data-sc-action="dashboard.timesheet.add">
+                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                                <span>Add My Timesheet</span>
+                            </a>
+                            <button type="button" class="o_sc_row_expand"
+                                    t-att-data-sc-row-expand="sc_ev_detail_id" t-att-aria-controls="sc_ev_detail_id"
+                                    aria-expanded="false">
+                                <span>Details</span>
+                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
+                            </button>
+                        </t>
+                    </t>
+                    <div t-att-id="sc_ev_detail_id" class="o_sc_row_detail o_sc_dw_event_details"
+                         t-att-data-sc-event-details="ev['id']" data-sc-row-detail="1" hidden="hidden">
+                        <dl class="o_sc_kv">
+                            <dt>When</dt><dd data-sc-ev-field="when" t-out="ev['details']['when'] or '—'"/>
+                            <t t-if="ev['details']['coverage']"><dt>Coverage</dt><dd data-sc-ev-field="coverage" t-out="ev['details']['coverage']"/></t>
+                            <dt>Venue</dt><dd data-sc-ev-field="venue" t-out="ev['venue'] or '—'"/>
+                            <dt>Teams</dt><dd data-sc-ev-field="teams" t-out="ev['teams'] or '—'"/>
+                            <dt>Assigned Staff</dt><dd data-sc-ev-field="staff" t-out="ev['details']['staff'] or '—'"/>
+                        </dl>
+                        <p t-if="ev['details']['description']" class="o_sc_pre o_sc_dw_event_desc"
+                           data-sc-ev-field="description" t-out="ev['details']['description']"/>
+                        <a t-att-href="ev['url']" class="o_sc_section_more" data-sc-action="dashboard.event.open">Open the event</a>
                     </div>
                 </div>
             </t>
@@ -352,128 +401,159 @@
                 <t t-out="sc_dash_error"/>
             </t>
             <p class="o_sc_meta o_sc_dash_cfg_intro">Show, hide, reorder and limit each section to some teams. Changes are saved as you go.</p>
-            <ol class="o_sc_dash_cfg" data-sc-section="dashboard.configure">
-                <t t-foreach="sc_dash_rows" t-as="row">
-                    <li t-attf-class="o_sc_card o_sc_dash_cfg_item #{'' if row['enabled'] else 'o_sc_dash_cfg_off'}"
-                        t-att-id="'sc-dash-%s' % row['id']" t-att-data-sc-dash-item="row['id']"
-                        t-att-data-sc-dash-widget="row['widget']">
-                        <div class="o_sc_dash_cfg_head">
-                            <div class="o_sc_dash_cfg_moves">
-                                <t t-set="sc_up_label">Move up</t>
-                                <t t-set="sc_down_label">Move down</t>
-                                <form action="/my/app/dashboard/configure/move" method="post" class="o_sc_inline_form">
-                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                    <input type="hidden" name="instance_id" t-att-value="row['id']"/>
-                                    <button type="submit" name="step" value="up" class="o_sc_icon_btn"
-                                            data-sc-dash-move="up" t-att-disabled="'disabled' if row['first'] else None"
-                                            t-att-aria-label="sc_up_label" t-att-title="sc_up_label">
-                                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'up'"/></t>
+            <!-- Review round 2 (owner 2026-10-29): the three zones as on the
+                 dashboard — left and right side by side on a laptop, bottom
+                 under both; stacked on a phone. Laptop: drag a row by its
+                 handle within a zone or to another one (sc_dashboard_config.js,
+                 Odoo's sortable helper; the drop saves by fetch). Keyboard
+                 and phone: ▲ / ▼ within the zone and « Move to ». -->
+            <div class="o_sc_dash_cfg_zones" data-sc-section="dashboard.configure" data-sc-dash-zones="1">
+                <section t-foreach="sc_dash_cfg_zones" t-as="cfg_zone"
+                         t-attf-class="o_sc_dash_cfg_zone o_sc_dash_cfg_zone_#{cfg_zone['zone']}"
+                         t-att-data-sc-dash-cfg-zone="cfg_zone['zone']">
+                    <h2 class="o_sc_section_header o_sc_dash_cfg_zone_title" t-out="cfg_zone['label']"/>
+                    <ol class="o_sc_dash_cfg" t-att-data-sc-dash-zone="cfg_zone['zone']">
+                        <t t-foreach="cfg_zone['rows']" t-as="row">
+                            <li t-attf-class="o_sc_card o_sc_dash_cfg_item #{'' if row['enabled'] else 'o_sc_dash_cfg_off'}"
+                                t-att-id="'sc-dash-%s' % row['id']" t-att-data-sc-dash-item="row['id']"
+                                t-att-data-sc-dash-widget="row['widget']">
+                                <div class="o_sc_dash_cfg_head">
+                                    <t t-set="sc_drag_label">Drag to move</t>
+                                    <button type="button" class="o_sc_icon_btn o_sc_dash_cfg_drag" data-sc-dash-drag="1"
+                                            t-att-aria-label="sc_drag_label" t-att-title="sc_drag_label" tabindex="-1">
+                                        <span class="o_sc_dash_cfg_grip" aria-hidden="true"/>
                                     </button>
-                                </form>
-                                <form action="/my/app/dashboard/configure/move" method="post" class="o_sc_inline_form">
-                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                    <input type="hidden" name="instance_id" t-att-value="row['id']"/>
-                                    <button type="submit" name="step" value="down" class="o_sc_icon_btn"
-                                            data-sc-dash-move="down" t-att-disabled="'disabled' if row['last'] else None"
-                                            t-att-aria-label="sc_down_label" t-att-title="sc_down_label">
-                                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        <form action="/my/app/dashboard/configure/save" method="post" class="o_sc_form o_sc_dash_cfg_form"
-                              t-att-data-sc-dash-instance="row['id']">
-                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                            <input type="hidden" name="instance_id" t-att-value="row['id']"/>
-                            <t t-call="bemade_sports_clinic.sc_switch">
-                                <t t-set="sw_label" t-value="row['title'] or row['widget_title']"/>
-                                <t t-set="sw_hint" t-value="row['widget_title'] if row['title'] else None"/>
-                                <t t-set="sw_name" t-value="'enabled'"/>
-                                <t t-set="sw_value" t-value="'1'"/>
-                                <t t-set="sw_off" t-value="'0'"/>
-                                <t t-set="sw_checked" t-value="row['enabled']"/>
-                                <t t-set="sw_id" t-value="'sc_dash_%s_enabled' % row['id']"/>
-                                <t t-set="sw_class" t-value="'o_sc_dash_cfg_switch'"/>
-                            </t>
-                            <details class="o_sc_disclosure o_sc_dash_cfg_settings">
-                                <summary class="o_sc_disclosure_summary" data-sc-dash-settings="1">
-                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
-                                    <span>Section settings</span>
-                                </summary>
-                                <div class="o_sc_dash_cfg_fields">
-                                    <label class="o_sc_field_label" t-att-for="'sc_dash_%s_title' % row['id']">Title</label>
-                                    <input type="text" name="title" class="o_sc_input" maxlength="80"
-                                           t-att-id="'sc_dash_%s_title' % row['id']" t-att-value="row['title']"
-                                           t-att-placeholder="row['widget_title']"/>
-                                    <t t-if="row['scoped']">
-                                        <fieldset class="o_sc_dash_cfg_scope" data-sc-dash-scope="1">
-                                            <legend class="o_sc_field_label">Scope</legend>
-                                            <small class="o_sc_hint">Nothing chosen: all your teams.</small>
-                                            <input type="hidden" name="scope_org_ids" t-att-id="row['org_target']" t-att-value="row['org_csv']"/>
-                                            <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="row['org_props']"/></t>
-                                            <input type="hidden" name="scope_team_ids" t-att-id="row['team_target']" t-att-value="row['team_csv']"/>
-                                            <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="row['team_props']"/></t>
-                                        </fieldset>
-                                    </t>
-                                    <t t-if="row.get('kind_choices')">
-                                        <fieldset class="o_sc_dash_cfg_kinds">
-                                            <legend class="o_sc_field_label">Show</legend>
-                                            <input type="hidden" name="kinds_present" value="1"/>
-                                            <t t-foreach="row['kind_choices']" t-as="choice">
-                                                <t t-call="bemade_sports_clinic.sc_switch">
-                                                    <t t-set="sw_label" t-value="choice[1]"/>
-                                                    <t t-set="sw_name" t-value="'kinds'"/>
-                                                    <t t-set="sw_value" t-value="choice[0]"/>
-                                                    <t t-set="sw_off" t-value="None"/>
-                                                    <t t-set="sw_hint" t-value="None"/>
-                                                    <t t-set="sw_checked" t-value="choice[2]"/>
-                                                    <t t-set="sw_id" t-value="'sc_dash_%s_kind_%s' % (row['id'], choice[0])"/>
-                                                    <t t-set="sw_class" t-value="None"/>
-                                                </t>
-                                            </t>
-                                        </fieldset>
-                                    </t>
-                                    <t t-if="row.get('level_choices')">
-                                        <label class="o_sc_field_label" t-att-for="'sc_dash_%s_level' % row['id']">Players</label>
-                                        <select name="level" class="o_sc_input" t-att-id="'sc_dash_%s_level' % row['id']">
-                                            <option t-foreach="row['level_choices']" t-as="choice" t-att-value="choice[0]"
-                                                    t-att-selected="'selected' if choice[2] else None" t-out="choice[1]"/>
-                                        </select>
-                                    </t>
-                                    <t t-if="row.get('days_back_choices')">
-                                        <label class="o_sc_field_label" t-att-for="'sc_dash_%s_days_back' % row['id']">Days back</label>
-                                        <select name="days_back" class="o_sc_input" t-att-id="'sc_dash_%s_days_back' % row['id']">
-                                            <option t-foreach="row['days_back_choices']" t-as="choice" t-att-value="choice[0]"
-                                                    t-att-selected="'selected' if choice[2] else None" t-out="choice[1]"/>
-                                        </select>
-                                    </t>
-                                    <t t-if="row.get('days_choices')">
-                                        <label class="o_sc_field_label" t-att-for="'sc_dash_%s_days' % row['id']">Period</label>
-                                        <select name="days" class="o_sc_input" t-att-id="'sc_dash_%s_days' % row['id']">
-                                            <option t-foreach="row['days_choices']" t-as="choice" t-att-value="choice[0]"
-                                                    t-att-selected="'selected' if choice[2] else None" t-out="choice[1]"/>
-                                        </select>
-                                    </t>
+                                    <div class="o_sc_dash_cfg_moves">
+                                        <t t-set="sc_up_label">Move up</t>
+                                        <t t-set="sc_down_label">Move down</t>
+                                        <form action="/my/app/dashboard/configure/move" method="post" class="o_sc_inline_form">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <input type="hidden" name="instance_id" t-att-value="row['id']"/>
+                                            <button type="submit" name="step" value="up" class="o_sc_icon_btn"
+                                                    data-sc-dash-move="up" t-att-disabled="'disabled' if row['first'] else None"
+                                                    t-att-aria-label="sc_up_label" t-att-title="sc_up_label">
+                                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'up'"/></t>
+                                            </button>
+                                        </form>
+                                        <form action="/my/app/dashboard/configure/move" method="post" class="o_sc_inline_form">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <input type="hidden" name="instance_id" t-att-value="row['id']"/>
+                                            <button type="submit" name="step" value="down" class="o_sc_icon_btn"
+                                                    data-sc-dash-move="down" t-att-disabled="'disabled' if row['last'] else None"
+                                                    t-att-aria-label="sc_down_label" t-att-title="sc_down_label">
+                                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
-                            </details>
-                            <div class="o_sc_dash_cfg_actions">
-                                <span class="o_sc_hint o_sc_dash_cfg_status" data-sc-dash-status="1" aria-live="polite"/>
-                                <button type="submit" class="o_sc_btn o_sc_btn_ghost o_sc_dash_cfg_save" data-sc-dash-save="1">Save</button>
-                            </div>
-                            <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_dash_%s' % row['id']"/></t>
-                        </form>
-                        <form t-if="row['removable']" action="/my/app/dashboard/configure/remove" method="post"
-                              class="o_sc_inline_form o_sc_dash_cfg_remove">
-                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                            <input type="hidden" name="instance_id" t-att-value="row['id']"/>
-                            <button type="submit" class="o_sc_btn o_sc_btn_ghost" data-sc-dash-remove="1">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'trash'"/></t>
-                                <span>Remove</span>
-                            </button>
-                        </form>
-                    </li>
-                </t>
-            </ol>
+                                <form action="/my/app/dashboard/configure/save" method="post" class="o_sc_form o_sc_dash_cfg_form"
+                                      t-att-data-sc-dash-instance="row['id']">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="instance_id" t-att-value="row['id']"/>
+                                    <t t-call="bemade_sports_clinic.sc_switch">
+                                        <t t-set="sw_label" t-value="row['title'] or row['widget_title']"/>
+                                        <t t-set="sw_hint" t-value="row['widget_title'] if row['title'] else None"/>
+                                        <t t-set="sw_name" t-value="'enabled'"/>
+                                        <t t-set="sw_value" t-value="'1'"/>
+                                        <t t-set="sw_off" t-value="'0'"/>
+                                        <t t-set="sw_checked" t-value="row['enabled']"/>
+                                        <t t-set="sw_id" t-value="'sc_dash_%s_enabled' % row['id']"/>
+                                        <t t-set="sw_class" t-value="'o_sc_dash_cfg_switch'"/>
+                                    </t>
+                                    <details class="o_sc_disclosure o_sc_dash_cfg_settings">
+                                        <summary class="o_sc_disclosure_summary" data-sc-dash-settings="1">
+                                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
+                                            <span>Section settings</span>
+                                        </summary>
+                                        <div class="o_sc_dash_cfg_fields">
+                                            <label class="o_sc_field_label" t-att-for="'sc_dash_%s_title' % row['id']">Title</label>
+                                            <input type="text" name="title" class="o_sc_input" maxlength="80"
+                                                   t-att-id="'sc_dash_%s_title' % row['id']" t-att-value="row['title']"
+                                                   t-att-placeholder="row['widget_title']"/>
+                                            <t t-if="row['scoped']">
+                                                <fieldset class="o_sc_dash_cfg_scope" data-sc-dash-scope="1">
+                                                    <legend class="o_sc_field_label">Scope</legend>
+                                                    <small class="o_sc_hint">Nothing chosen: all your teams.</small>
+                                                    <input type="hidden" name="scope_org_ids" t-att-id="row['org_target']" t-att-value="row['org_csv']"/>
+                                                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="row['org_props']"/></t>
+                                                    <input type="hidden" name="scope_team_ids" t-att-id="row['team_target']" t-att-value="row['team_csv']"/>
+                                                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="row['team_props']"/></t>
+                                                </fieldset>
+                                            </t>
+                                            <t t-if="row.get('kind_choices')">
+                                                <fieldset class="o_sc_dash_cfg_kinds">
+                                                    <legend class="o_sc_field_label">Show</legend>
+                                                    <input type="hidden" name="kinds_present" value="1"/>
+                                                    <t t-foreach="row['kind_choices']" t-as="choice">
+                                                        <t t-call="bemade_sports_clinic.sc_switch">
+                                                            <t t-set="sw_label" t-value="choice[1]"/>
+                                                            <t t-set="sw_name" t-value="'kinds'"/>
+                                                            <t t-set="sw_value" t-value="choice[0]"/>
+                                                            <t t-set="sw_off" t-value="None"/>
+                                                            <t t-set="sw_hint" t-value="None"/>
+                                                            <t t-set="sw_checked" t-value="choice[2]"/>
+                                                            <t t-set="sw_id" t-value="'sc_dash_%s_kind_%s' % (row['id'], choice[0])"/>
+                                                            <t t-set="sw_class" t-value="None"/>
+                                                        </t>
+                                                    </t>
+                                                </fieldset>
+                                            </t>
+                                            <t t-if="row.get('level_choices')">
+                                                <label class="o_sc_field_label" t-att-for="'sc_dash_%s_level' % row['id']">Players</label>
+                                                <select name="level" class="o_sc_input" t-att-id="'sc_dash_%s_level' % row['id']">
+                                                    <option t-foreach="row['level_choices']" t-as="choice" t-att-value="choice[0]"
+                                                            t-att-selected="'selected' if choice[2] else None" t-out="choice[1]"/>
+                                                </select>
+                                            </t>
+                                            <t t-if="row.get('days_back_choices')">
+                                                <label class="o_sc_field_label" t-att-for="'sc_dash_%s_days_back' % row['id']">Days back</label>
+                                                <select name="days_back" class="o_sc_input" t-att-id="'sc_dash_%s_days_back' % row['id']">
+                                                    <option t-foreach="row['days_back_choices']" t-as="choice" t-att-value="choice[0]"
+                                                            t-att-selected="'selected' if choice[2] else None" t-out="choice[1]"/>
+                                                </select>
+                                            </t>
+                                            <t t-if="row.get('days_choices')">
+                                                <label class="o_sc_field_label" t-att-for="'sc_dash_%s_days' % row['id']">Period</label>
+                                                <select name="days" class="o_sc_input" t-att-id="'sc_dash_%s_days' % row['id']">
+                                                    <option t-foreach="row['days_choices']" t-as="choice" t-att-value="choice[0]"
+                                                            t-att-selected="'selected' if choice[2] else None" t-out="choice[1]"/>
+                                                </select>
+                                            </t>
+                                        </div>
+                                    </details>
+                                    <div class="o_sc_dash_cfg_actions">
+                                        <span class="o_sc_hint o_sc_dash_cfg_status" data-sc-dash-status="1" aria-live="polite"/>
+                                        <button type="submit" class="o_sc_btn o_sc_btn_ghost o_sc_dash_cfg_save" data-sc-dash-save="1">Save</button>
+                                    </div>
+                                    <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_dash_%s' % row['id']"/></t>
+                                </form>
+                                <form action="/my/app/dashboard/configure/move" method="post"
+                                      class="o_sc_inline_form o_sc_dash_cfg_zone_form" data-sc-dash-zone-form="1">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="instance_id" t-att-value="row['id']"/>
+                                    <label class="o_sc_hint" t-att-for="'sc_dash_%s_zone' % row['id']">Move to</label>
+                                    <select name="zone" class="o_sc_input o_sc_dash_cfg_zone_select"
+                                            t-att-id="'sc_dash_%s_zone' % row['id']" data-sc-dash-zone-select="1">
+                                        <option t-foreach="sc_dash_zone_choices" t-as="choice" t-att-value="choice[0]"
+                                                t-att-selected="'selected' if choice[0] == row['zone'] else None"
+                                                t-out="choice[1]"/>
+                                    </select>
+                                    <button type="submit" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-dash-zone-go="1">OK</button>
+                                </form>
+                                <form t-if="row['removable']" action="/my/app/dashboard/configure/remove" method="post"
+                                      class="o_sc_inline_form o_sc_dash_cfg_remove">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="instance_id" t-att-value="row['id']"/>
+                                    <button type="submit" class="o_sc_btn o_sc_btn_ghost" data-sc-dash-remove="1">
+                                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'trash'"/></t>
+                                        <span>Remove</span>
+                                    </button>
+                                </form>
+                            </li>
+                        </t>
+                    </ol>
+                </section>
+            </div>
 
             <form action="/my/app/dashboard/configure/add" method="post" class="o_sc_card o_sc_form o_sc_dash_cfg_add"
                   data-sc-section="dashboard.add">
@@ -482,6 +562,14 @@
                 <div class="o_sc_dash_cfg_add_row">
                     <select name="widget" id="sc_dash_add_widget" class="o_sc_input">
                         <option t-foreach="sc_dash_add_choices" t-as="choice" t-att-value="choice[0]" t-out="choice[1]"/>
+                    </select>
+                    <!-- Review round 2: which zone (default: the shorter column). -->
+                    <t t-set="sc_add_zone_label">Zone</t>
+                    <select name="zone" id="sc_dash_add_zone" class="o_sc_input" t-att-aria-label="sc_add_zone_label"
+                            t-att-title="sc_add_zone_label">
+                        <option t-foreach="sc_dash_zone_choices" t-as="choice" t-att-value="choice[0]"
+                                t-att-selected="'selected' if choice[0] == sc_dash_add_zone else None"
+                                t-out="choice[1]"/>
                     </select>
                     <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-dash-add="1">
                         <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>

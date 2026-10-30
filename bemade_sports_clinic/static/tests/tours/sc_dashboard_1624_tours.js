@@ -79,11 +79,11 @@ tours.add("sc_1624_dashboard_configure", {
             expectUnloadPage: true,
         },
         {
-            content: "Coverage is now above Indicators",
+            content: "Coverage is now above « To do » (round 2: within its zone)",
             trigger: `${ITEM("coverage")}`,
             run() {
                 const ids = [...document.querySelectorAll("li[data-sc-dash-item]")].map((el) => el.dataset.scDashItem);
-                assert(ids.indexOf("coverage") < ids.indexOf("announcements"), `order: ${ids}`);
+                assert(ids.indexOf("coverage") < ids.indexOf("todo"), `order: ${ids}`);
             },
         },
         {
@@ -152,13 +152,14 @@ tours.add("sc_1624_dashboard_configure", {
             expectUnloadPage: true,
         },
         {
-            content: "Today is gone, coverage before announcements, the new section titled and scoped",
+            content: "Today is gone, coverage before « To do », the new section titled and scoped",
             trigger: 'section[data-sc-instance="watch-2"]',
             run() {
                 const ids = SECTION_IDS();
                 assert(!ids.includes("today"), `today switched off: ${ids}`);
-                assert(ids.indexOf("coverage") < ids.indexOf("announcements"), `order: ${ids}`);
-                assert(ids.indexOf("watch-2") > ids.indexOf("watch"), `new after base: ${ids}`);
+                assert(ids.indexOf("coverage") < ids.indexOf("todo"), `order: ${ids}`);
+                // Round 2: added to the shorter column (a tie: the left one).
+                assert(this.anchor.closest("[data-sc-zone]").dataset.scZone === "left", "watch-2 in the left zone");
                 const section = this.anchor;
                 assert(section.querySelector(".o_sc_dw_title_text").textContent.trim() === "Watch C only", "title");
                 assert(section.querySelector("[data-sc-dw-scope]").textContent.includes("DB Team C"), "scope line");

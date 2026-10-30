@@ -3,10 +3,11 @@ Synthetic fixtures only (public repository).
 
 Acceptance criteria:
 
-* UC-L1 Registry: the round-1 widgets, in the owner's default order
-  (review round 1, 2026-10-29: Aujourd'hui, Indicateurs, À faire,
-  Changements récents, Joueurs à surveiller, Joueurs que je suis, Annonces,
-  Couvertures à venir, Feuilles de temps manquantes); each names a
+* UC-L1 Registry: the widgets, in the owner's default order, zone by zone
+  (review round 2, 2026-10-29 — left: Aujourd'hui, À faire, Couvertures à
+  venir, Feuilles de temps manquantes; right: Indicateurs, Annonces,
+  Joueurs que je suis; bottom: Changements récents, Joueurs à surveiller);
+  each names a
   visibility key, a template that exists and a builder the controller
   defines.
 * UC-L2 Role gating: a coach gets every widget but « Feuilles de temps
@@ -22,7 +23,8 @@ Acceptance criteria:
 * UC-L5 Multiple instances: « + Ajouter une section » appends a new
   instance (``watch-2``) with its own settings and custom title; added
   instances can be removed, a base instance cannot (only switched off).
-* UC-L6 Reorder (up / down) and « Rétablir par défaut » (reset).
+* UC-L6 Reorder (up / down, within the zone since round 2) and « Rétablir
+  par défaut » (reset).
 * UC-L7 The routes: a POST to save / move / add / remove / reset changes the
   layout (JSON answer for the page's fetch, PRG otherwise) and a refusal is
   answered 400 with the message (fetch) — never a stored bad value.
@@ -36,8 +38,8 @@ from odoo.addons.bemade_sports_clinic.controllers.app_dashboard import AppDashbo
 from odoo.addons.bemade_sports_clinic.models import sc_dashboard
 from odoo.addons.bemade_sports_clinic.tests.dashboard_common_1624 import Dashboard1624Common
 
-ORDER = ['today', 'indicators', 'todo', 'recent_changes', 'watch', 'followed', 'announcements',
-         'coverage', 'missing_timesheets']
+ORDER = ['today', 'todo', 'coverage', 'missing_timesheets', 'indicators', 'announcements',
+         'followed', 'recent_changes', 'watch']
 COACH_ORDER = [key for key in ORDER if key != 'missing_timesheets']
 URL = '/my/app/dashboard/configure'
 
@@ -104,11 +106,14 @@ class TestDashboardLayout1624(Dashboard1624Common):
         ]}
         layout = self._dash(self.tp)._sc_layout()
         self.assertEqual(layout[0]['id'], 'watch')
+        # Round 2: a v1 layout is migrated (its first half to the left).
+        self.assertEqual(layout[0]['zone'], 'left')
         self.assertFalse(layout[0]['enabled'])
         self.assertEqual(layout[0]['title'], 'Mine')
         self.assertEqual(layout[0]['settings']['level'], 'red')
         self.assertNotIn('later', [inst['id'] for inst in layout])
-        # The other base instances join at the end, in registry order.
+        # The other base instances join their default zone's end, in
+        # registry order.
         self.assertEqual([inst['id'] for inst in layout[1:]], [k for k in ORDER if k != 'watch'])
 
     # -- UC-L5 ---------------------------------------------------------------
@@ -136,12 +141,14 @@ class TestDashboardLayout1624(Dashboard1624Common):
     # -- UC-L6 ---------------------------------------------------------------
     def test_move_and_reset(self):
         dash = self._dash(self.tp)
-        dash._sc_layout_move('indicators', -1)
-        self.assertEqual([inst['id'] for inst in dash._sc_layout()][:2], ['indicators', 'today'])
-        dash._sc_layout_move('indicators', -1)  # already first: no-op
-        dash._sc_layout_move('missing_timesheets', 1)  # already last: no-op
+        dash._sc_layout_move('todo', -1)
+        self.assertEqual([inst['id'] for inst in dash._sc_layout()][:2], ['todo', 'today'])
+        dash._sc_layout_move('todo', -1)  # already first: no-op
+        dash._sc_layout_move('missing_timesheets', 1)  # last of its zone: no-op
+        dash._sc_layout_move('indicators', -1)  # first of its zone: no-op
         dash._sc_layout_move('today', 1)
-        self.assertEqual([inst['id'] for inst in dash._sc_layout()][:3], ['indicators', 'todo', 'today'])
+        self.assertEqual([inst['id'] for inst in dash._sc_layout()][:3], ['todo', 'coverage', 'today'])
+        self.assertEqual(self._instance(self.tp, 'indicators')['zone'], 'right')
         dash._sc_layout_update('today', enabled=False)
         dash._sc_layout_reset()
         self.assertFalse(self.tp.sudo().sc_dashboard_layout)

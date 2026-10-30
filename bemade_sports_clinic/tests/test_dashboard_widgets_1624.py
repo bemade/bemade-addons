@@ -71,9 +71,9 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         self._login_tp()
         text, tree = self._get('/my/home')
         ids = [s.get('data-sc-instance') for s in self._sections(tree)]
-        # Review round 1: the new default order (Indicateurs second).
-        self.assertEqual(ids, ['indicators', 'todo', 'recent_changes', 'watch', 'followed', 'coverage',
-                               'announcements', 'missing_timesheets'])
+        # Review round 2: the default, zone by zone (left, right, bottom).
+        self.assertEqual(ids, ['coverage', 'todo', 'missing_timesheets', 'indicators', 'announcements',
+                               'followed', 'recent_changes', 'watch'])
         title = self._section(tree, 'todo').xpath('.//*[contains(@class, "o_sc_dw_title_text")]')[0]
         self.assertEqual(title.text_content().strip(), 'Synthetic chores')
         self.assertNotIn('My teams', text)
@@ -294,8 +294,9 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         self._login_tp()
         _text, tree = self._get('/my/home')
         ids = [s.get('data-sc-instance') for s in self._sections(tree)]
-        self.assertEqual(ids.index(new_id), ids.index('missing_timesheets') - 1)
-        self.assertLess(ids.index('watch'), ids.index(new_id))
+        # Round 2: added to the shorter column (right), then one up.
+        self.assertEqual(self._instance(self.tp, new_id)['zone'], 'right')
+        self.assertEqual(ids.index(new_id), ids.index('followed') - 1)
         second = self._section(tree, new_id)
         self.assertIn('Watch C only', second.text_content())
         self.assertIn('DB Team C', second.xpath('.//*[@data-sc-dw-scope]')[0].text_content())

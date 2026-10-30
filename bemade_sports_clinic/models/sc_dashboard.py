@@ -25,18 +25,27 @@ Per-user layout
 ``res.users.sc_dashboard_layout`` (JSON, written by the « Configurer » page
 only, through ``sc.dashboard._sc_layout_save``)::
 
-    {"v": 1, "instances": [
-        {"id": "watch", "widget": "watch", "enabled": true, "title": "",
+    {"v": 2, "instances": [
+        {"id": "watch", "widget": "watch", "zone": "bottom", "enabled": true, "title": "",
          "settings": {"scope_team_ids": [], "scope_org_ids": [], "level": "red_yellow"}},
-        {"id": "watch-2", "widget": "watch", "enabled": true,
+        {"id": "watch-2", "widget": "watch", "zone": "right", "enabled": true,
          "title": "Joueurs à surveiller — Bourget", "settings": {...}},
         ...]}
+
+* Zones (review round 2, owner 2026-10-29): every instance sits in one of
+  three ``ZONES`` — ``left`` / ``right`` (two independent columns side by
+  side on a laptop) and ``bottom`` (full width under both). On a phone the
+  page reads left, then right, then bottom. The instance list is kept in
+  that order (zone, then position in the zone).
+* ``v: 1`` layouts (no zones) still load: their instances keep their order,
+  the first half (rounded up) goes left, the rest right — the two flowing
+  columns they used to fill. The next save writes ``v: 2``.
 
 * Several instances of one widget are allowed, each with its own settings
   and an optional custom title. Every widget keeps its BASE instance (id =
   the widget key): it can be switched off, never removed; the instances
   added with « + Ajouter une section » can be removed.
-* A missing / invalid layout (or another ``v``) falls back to the code
+* A missing / invalid layout (or an unknown ``v``) falls back to the code
   default; unknown widget keys and widgets the user's roles do not allow
   are ignored (forward compatible); a widget added to the registry later
   joins every saved layout at the end.
@@ -65,7 +74,9 @@ from . import sc_app_roles
 
 _lt = LazyTranslate(__name__)
 
-LAYOUT_VERSION = 1
+LAYOUT_VERSION = 2
+# The versions a stored layout may have (older ones are migrated on load).
+LAYOUT_VERSIONS = (1, 2)
 MAX_INSTANCES = 30
 TITLE_MAX = 80
 _ID_RE = re.compile(r'^[a-z0-9_-]{1,40}$')
@@ -89,6 +100,12 @@ COVERAGE_DAYS = (0, 7, 14, 30)
 # Feuilles de temps manquantes: how many days back.
 MISSING_DAYS_BACK = (7, 14, 30, 60, 90)
 
+# Review round 2 (owner 2026-10-29): the three zones of the page, in their
+# phone reading order.
+ZONES = ('left', 'right', 'bottom')
+_ZONE_TERMS = (_lt('Left'), _lt('Right'), _lt('Bottom'))
+ZONE_LABELS = dict(zip(ZONES, _ZONE_TERMS))
+
 # Widget-specific settings: name -> kind ('multi' = a subset of choices,
 # 'choice' = one of them).
 FILTERS = {
@@ -101,10 +118,12 @@ FILTERS = {
 INT_FILTERS = ('days', 'days_back')
 
 
-def _widget(key, title, scoped=True, filters=(), defaults=None, title_coach=None):
+def _widget(key, title, zone, scoped=True, filters=(), defaults=None, title_coach=None):
     return {
         'key': key,
         'title': title,
+        # Review round 2: the zone of its base instance in the default layout.
+        'zone': zone,
         # Review round 1 (owner 2026-10-29): a coach's own wording (the
         # coverage widget lists their teams' events, not coverage).
         'title_coach': title_coach,
@@ -117,24 +136,26 @@ def _widget(key, title, scoped=True, filters=(), defaults=None, title_coach=None
     }
 
 
-# The order is the default layout's order (review round 1, owner
-# 2026-10-29: Aujourd'hui, Indicateurs, À faire, Changements récents,
-# Joueurs à surveiller, Joueurs que je suis, Annonces, Couvertures /
-# Événements à venir, Feuilles de temps manquantes). A saved layout keeps
-# its own order; a widget it does not hold yet joins it at the end.
+# The order is the default layout's order, zone by zone. Review round 2
+# (owner 2026-10-29): the default = the owner's own layout, every section on
+# — left: Aujourd'hui, À faire, Couvertures / Événements à venir, Feuilles
+# de temps manquantes; right: Indicateurs, Annonces, Joueurs que je suis;
+# bottom (full width): Changements récents, Joueurs à surveiller. A saved
+# layout keeps its own order; a widget it does not hold yet joins the end
+# of its default zone.
 WIDGETS = (
-    _widget('today', _lt('Today'), scoped=False),
-    _widget('indicators', _lt('Indicators')),
-    _widget('todo', _lt('To do'), filters=('kinds',), defaults={'kinds': list(TODO_KINDS)}),
-    _widget('recent_changes', _lt('Recent changes')),
-    _widget('watch', _lt('Players to watch'), filters=('level',),
-            defaults={'level': 'red_yellow'}),
-    _widget('followed', _lt('Players I follow')),
-    _widget('announcements', _lt('Announcements')),
-    _widget('coverage', _lt('Upcoming coverage'), filters=('days',), defaults={'days': 0},
+    _widget('today', _lt('Today'), 'left', scoped=False),
+    _widget('todo', _lt('To do'), 'left', filters=('kinds',), defaults={'kinds': list(TODO_KINDS)}),
+    _widget('coverage', _lt('Upcoming coverage'), 'left', filters=('days',), defaults={'days': 0},
             title_coach=_lt('Upcoming events')),
-    _widget('missing_timesheets', _lt('Missing timesheets'), filters=('days_back',),
+    _widget('missing_timesheets', _lt('Missing timesheets'), 'left', filters=('days_back',),
             defaults={'days_back': 30}),
+    _widget('indicators', _lt('Indicators'), 'right'),
+    _widget('announcements', _lt('Announcements'), 'right'),
+    _widget('followed', _lt('Players I follow'), 'right'),
+    _widget('recent_changes', _lt('Recent changes'), 'bottom'),
+    _widget('watch', _lt('Players to watch'), 'bottom', filters=('level',),
+            defaults={'level': 'red_yellow'}),
 )
 WIDGETS_BY_KEY = {spec['key']: spec for spec in WIDGETS}
 
@@ -245,8 +266,14 @@ class ScDashboard(models.AbstractModel):
     # ------------------------------------------------------------------
     # Layout
     # ------------------------------------------------------------------
+    @staticmethod
+    def _sc_zone_sorted(instances):
+        """The instances in page order: zone by zone (``ZONES``), each zone
+        in its own order (a stable sort)."""
+        return sorted(instances, key=lambda inst: ZONES.index(inst['zone']))
+
     @api.model
-    def _sc_default_instance(self, spec, instance_id=None):
+    def _sc_default_instance(self, spec, instance_id=None, zone=None):
         settings = {'scope_team_ids': [], 'scope_org_ids': []} if spec['scoped'] else {}
         for name in spec['filters']:
             default = spec['defaults'].get(name)
@@ -254,6 +281,7 @@ class ScDashboard(models.AbstractModel):
         return {
             'id': instance_id or spec['key'],
             'widget': spec['key'],
+            'zone': zone or spec['zone'],
             'enabled': True,
             'title': '',
             'settings': settings,
@@ -314,11 +342,15 @@ class ScDashboard(models.AbstractModel):
         this user (see the module docstring for the rules)."""
         viewer = viewer or self._sc_viewer()
         allowed = {spec['key']: spec for spec in self._sc_widgets(viewer)}
-        if not (isinstance(raw, dict) and raw.get('v') == LAYOUT_VERSION
+        if not (isinstance(raw, dict) and raw.get('v') in LAYOUT_VERSIONS
                 and isinstance(raw.get('instances'), list)):
             if strict:
                 raise ValidationError(self.env._("Invalid dashboard layout."))
             return self._sc_layout_default(viewer)
+        if raw['v'] != LAYOUT_VERSION:
+            if strict:
+                raise ValidationError(self.env._("Invalid dashboard layout."))
+            raw = self._sc_layout_migrate(raw)
         universe = self._sc_scope_universe(viewer)
         universe_ids = set(universe.ids)
         org_ids = set(universe.sudo().parent_id.ids)
@@ -347,9 +379,15 @@ class ScDashboard(models.AbstractModel):
             title = item.get('title') or ''
             if not isinstance(title, str):
                 title = ''
+            zone = item.get('zone')
+            if zone not in ZONES:
+                if strict:
+                    raise ValidationError(self.env._("Invalid dashboard layout."))
+                zone = spec['zone']
             clean.append({
                 'id': instance_id,
                 'widget': key,
+                'zone': zone,
                 'enabled': bool(item.get('enabled', True)),
                 'title': ' '.join(title.split())[:TITLE_MAX],
                 'settings': self._sc_clean_settings(
@@ -358,11 +396,22 @@ class ScDashboard(models.AbstractModel):
         if len(clean) > MAX_INSTANCES and strict:
             raise ValidationError(self.env._("Too many sections."))
         # Every widget keeps its base instance (a widget added to the
-        # registry later joins the saved layouts at the end).
+        # registry later joins the saved layouts at the end of its zone).
         for key, spec in allowed.items():
             if key not in seen:
                 clean.append(self._sc_default_instance(spec))
-        return clean
+        return self._sc_zone_sorted(clean)
+
+    @api.model
+    def _sc_layout_migrate(self, raw):
+        """A ``v: 1`` layout (no zones) -> ``v: 2``: the order kept, the first
+        half (rounded up) in the left column, the rest in the right one —
+        where they flowed in the two automatic columns."""
+        items = [dict(item) for item in raw.get('instances') or [] if isinstance(item, dict)]
+        half = (len(items) + 1) // 2
+        for index, item in enumerate(items):
+            item['zone'] = 'left' if index < half else 'right'
+        return {'v': LAYOUT_VERSION, 'instances': items}
 
     @api.model
     def _sc_layout(self, viewer=None):
@@ -384,13 +433,25 @@ class ScDashboard(models.AbstractModel):
         return self._sc_layout()
 
     @api.model
-    def _sc_layout_add(self, widget_key, viewer=None):
-        """A new instance of ``widget_key`` at the end; returns its id."""
+    def _sc_layout_add_zone(self, layout):
+        """« Ajouter une section »'s default zone: the shorter of the two
+        columns (fewer shown sections; left on a tie)."""
+        count = {zone: sum(1 for inst in layout if inst['zone'] == zone and inst['enabled'])
+                 for zone in ('left', 'right')}
+        return 'right' if count['right'] < count['left'] else 'left'
+
+    @api.model
+    def _sc_layout_add(self, widget_key, viewer=None, zone=None):
+        """A new instance of ``widget_key`` at the end of ``zone`` (default:
+        the shorter column); returns its id."""
         viewer = viewer or self._sc_viewer()
         spec = {s['key']: s for s in self._sc_widgets(viewer)}.get(widget_key)
         if spec is None:
             raise ValidationError(self.env._("This section is not available to you."))
+        if zone is not None and zone not in ZONES:
+            raise ValidationError(self.env._("Invalid dashboard layout."))
         layout = self._sc_layout(viewer)
+        zone = zone or self._sc_layout_add_zone(layout)
         ids = {inst['id'] for inst in layout}
         new_id = None
         for n in range(2, MAX_INSTANCES + 2):
@@ -400,8 +461,8 @@ class ScDashboard(models.AbstractModel):
                 break
         if new_id is None or len(layout) >= MAX_INSTANCES:
             raise ValidationError(self.env._("Too many sections."))
-        layout.append(self._sc_default_instance(spec, new_id))
-        self._sc_layout_save(layout, viewer)
+        layout.append(self._sc_default_instance(spec, new_id, zone=zone))
+        self._sc_layout_save(self._sc_zone_sorted(layout), viewer)
         return new_id
 
     @api.model
@@ -416,14 +477,38 @@ class ScDashboard(models.AbstractModel):
 
     @api.model
     def _sc_layout_move(self, instance_id, step, viewer=None):
+        """▲ / ▼: one step up / down WITHIN its zone (no-op at its edge)."""
         layout = self._sc_layout(viewer)
-        index = next((i for i, inst in enumerate(layout) if inst['id'] == instance_id), None)
-        if index is None:
+        target = next((inst for inst in layout if inst['id'] == instance_id), None)
+        if target is None:
             raise ValidationError(self.env._("This section no longer exists."))
-        target = index + (1 if step > 0 else -1)
-        if 0 <= target < len(layout):
-            layout[index], layout[target] = layout[target], layout[index]
+        zone = [inst for inst in layout if inst['zone'] == target['zone']]
+        index = zone.index(target)
+        other = index + (1 if step > 0 else -1)
+        if 0 <= other < len(zone):
+            i, j = layout.index(zone[index]), layout.index(zone[other])
+            layout[i], layout[j] = layout[j], layout[i]
             self._sc_layout_save(layout, viewer)
+
+    @api.model
+    def _sc_layout_place(self, instance_id, zone, position=None, viewer=None):
+        """Put an instance in ``zone`` at ``position`` (its index among that
+        zone's instances once placed; None / too large = the end) — the
+        drag-and-drop drop and « Déplacer vers »."""
+        if zone not in ZONES:
+            raise ValidationError(self.env._("Invalid dashboard layout."))
+        layout = self._sc_layout(viewer)
+        target = next((inst for inst in layout if inst['id'] == instance_id), None)
+        if target is None:
+            raise ValidationError(self.env._("This section no longer exists."))
+        rest = [inst for inst in layout if inst is not target]
+        target['zone'] = zone
+        by_zone = {z: [inst for inst in rest if inst['zone'] == z] for z in ZONES}
+        members = by_zone[zone]
+        if position is None or not 0 <= position <= len(members):
+            position = len(members)
+        members.insert(position, target)
+        self._sc_layout_save([inst for z in ZONES for inst in by_zone[z]], viewer)
 
     @api.model
     def _sc_layout_update(self, instance_id, enabled=None, title=None, settings=None, viewer=None):
@@ -456,10 +541,17 @@ class ScDashboard(models.AbstractModel):
     @api.model
     def _sc_my_events_domain(self, viewer=None):
         """The events of « Aujourd'hui » / « Couvertures à venir »: assigned
-        to me (a therapist), my teams' events (a coach). Never cancelled."""
+        to me (a therapist) on ANY team — a coverage of a team I do not
+        staff included (owner 2026-10-29; the callers filter by team only
+        for a chosen « Portée ») —, my teams' events (a coach). Never
+        cancelled. « Me » = every login sharing my partner, as the « missing
+        timesheets » predicate (sports.event._sc_missing_timesheet_domain)."""
         viewer = viewer or self._sc_viewer()
         if viewer['is_tp']:
-            domain = [('assigned_staff_ids', 'in', [self.env.uid])]
+            user = self.env.user
+            mine = self.env['res.users'].sudo().search(
+                [('partner_id', '=', user.partner_id.id)]).ids or [user.id]
+            domain = [('assigned_staff_ids', 'in', mine)]
         else:
             staffed = self.env.user.partner_id.sudo().team_staff_rel_ids.team_id.ids
             domain = [('team_ids', 'in', staffed or [0])]

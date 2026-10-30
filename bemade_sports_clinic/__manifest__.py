@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.126.1",
+    'version': "19.0.1.126.2",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -387,6 +387,9 @@ therapists, Missing timesheets.
             "bemade_sports_clinic/static/src/js/sc_dashboard_config.js",
             # Task 1624 review round 1: « Suivre » a player (fetch toggle).
             "bemade_sports_clinic/static/src/js/sc_follow.js",
+            # Task 1624 review round 2: the dashboard's two fixed columns,
+            # scroll anchoring of its fold-outs, the quick « Retour prévu ».
+            "bemade_sports_clinic/static/src/js/sc_dashboard_live.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.xml",
             # Task 1539: the shell's activity sheets (replaces, in the shell

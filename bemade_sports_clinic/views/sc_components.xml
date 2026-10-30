@@ -813,8 +813,12 @@
         <span t-if="row.get('return_label')" class="o_sc_row_line o_sc_row_return" data-sc-row-return="1">
             <i class="fa fa-clock-o" aria-hidden="true"/>
             <span>Predicted return:</span>
-            <span t-if="row.get('return_overdue')" class="o_sc_row_line_value o_sc_overdue"><t t-out="row['return_label']"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span>
-            <span t-else="" class="o_sc_row_line_value" t-out="row['return_label']"/>
+            <!-- Task 1624 review round 2: data-sc-row-return-value — a
+                 save of « Retour prévu » on this page updates the date and
+                 drops « Dépassé » in place (sc_dashboard_live.js). -->
+            <span t-if="row.get('return_overdue')" class="o_sc_row_line_value o_sc_overdue"
+                  t-att-data-sc-row-return-value="row['id']"><span data-sc-row-return-date="1" t-out="row['return_label']"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span>
+            <span t-else="" class="o_sc_row_line_value" t-att-data-sc-row-return-value="row['id']"><span data-sc-row-return-date="1" t-out="row['return_label']"/></span>
         </span>
     </template>
 
@@ -832,11 +836,15 @@
         title, subtitle, dot, status, changed, pending_removal, training,
         return_label, team_links, detail_url), row_scope (a short key making
         the detail's id unique when one player is listed twice on a page).
+        Task 1624 round 2: row_item (the card's data-sc-fragment-item in a
+        LIST read fragment), row['return_edit_props'] (the quick « Retour
+        prévu » field under the card).
         Body (0) = extra trailing chips.
     -->
     <template id="sc_player_row" name="App shell: player row">
         <t t-set="sc_row_detail_id" t-value="'sc-row-detail-%s-%s' % (row_scope or 'row', row['id'])"/>
-        <div class="o_sc_row_group o_sc_player_row" t-att-data-sc-player-id="row['id']">
+        <div class="o_sc_row_group o_sc_player_row" t-att-data-sc-player-id="row['id']"
+             t-att-data-sc-fragment-item="row_item or None">
             <!-- Task 1634: the face (dot, pills, ⚡, lines) is the read
                  fragment « sports.patient:<id>:row-<scope> » — unique on the
                  page, refreshed in place by a status pick; the lazy detail
@@ -876,6 +884,14 @@
                     <t t-set="label">Removal pending</t>
                 </t>
             </t>
+            <!-- Task 1624 review round 2 (owner 2026-10-29): a quick
+                 « Retour prévu » edit under the card (the dashboard's
+                 « Retours dépassés »): the header's autosave date field and
+                 rules (#1727: not in the past). Outside the face fragment —
+                 an island never sits in a fragment. -->
+            <div t-if="row.get('return_edit_props')" class="o_sc_row_quick" data-sc-row-quick="predicted_return_date">
+                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="row['return_edit_props']"/></t>
+            </div>
             <div t-if="row.get('detail_url')" t-att-id="sc_row_detail_id" class="o_sc_row_detail"
                  t-att-data-sc-lazy-url="row['detail_url']" data-sc-row-detail="1" hidden="hidden">
                 <div class="o_sc_lazy_body">

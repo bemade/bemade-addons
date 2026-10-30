@@ -536,7 +536,8 @@ document.addEventListener("click", (ev) => {
     const open = region.hidden;
     region.hidden = !open;
     toggle.setAttribute("aria-expanded", open ? "true" : "false");
-    toggle.closest(".o_sc_player_row")?.classList.toggle("o_sc_row_open", open);
+    // Task 1624 round 2: any row group (player or event card).
+    toggle.closest(".o_sc_row_group")?.classList.toggle("o_sc_row_open", open);
     if (open && region.dataset.scLazyUrl) {
         loadLazy(region, region.dataset.scLazyUrl, region.querySelector(".o_sc_lazy_body"));
     }

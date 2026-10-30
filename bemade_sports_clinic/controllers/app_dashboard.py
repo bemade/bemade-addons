@@ -83,6 +83,7 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
             section = {
                 'id': instance['id'],
                 'widget': spec['key'],
+                'zone': instance['zone'],
                 'template': spec['template'],
                 'title': instance['title'] or sc_dashboard.widget_title(spec, viewer),
                 'scope_label': self._sc_dash_scope_label(instance, teams) if spec['scoped'] else '',
@@ -99,6 +100,10 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
         values = {
             'page_name': 'home',
             'sc_dash_sections': sections,
+            # Review round 2 (owner 2026-10-29): the three zones, in page
+            # order (left / right side by side on a laptop, bottom under
+            # both; one column on a phone: left, right, bottom).
+            'sc_dash_zones': self._sc_dash_zones(sections),
             'sc_dash_configure_url': CONFIGURE_URL,
             # Review round 1: the injury cards of « À faire » (as on the
             # player page / clinic dossier).
@@ -113,6 +118,17 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
                 'sc_dash_today': fields.Date.to_string(values['today_date']),
             })
         return values
+
+    @staticmethod
+    def _sc_dash_zones(sections):
+        """The sections by zone, in page order; a side column alone (the
+        other one empty) is ``solo``: full width on a laptop."""
+        zones = [{'zone': zone, 'sections': [sec for sec in sections if sec['zone'] == zone]}
+                 for zone in sc_dashboard.ZONES]
+        left, right = zones[0], zones[1]
+        left['solo'] = not right['sections']
+        right['solo'] = not left['sections']
+        return zones
 
     @staticmethod
     def _sc_dash_explicit(instance):
@@ -268,10 +284,11 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
                 'cards': self._sc_dash_player_rows(players, removal_teams, ctx),
             })
         if data.get('returns'):
+            cards = self._sc_dash_player_rows(data['returns'], teams, ctx)
+            self._sc_dash_return_quick_edit(cards, data['returns'], '%s-returns' % scope)
             lines.append({
                 'kind': 'returns', 'tone': 'orange', 'label': env._("Overdue returns"),
-                'card': 'player', 'url': False,
-                'cards': self._sc_dash_player_rows(data['returns'], teams, ctx),
+                'card': 'player', 'url': False, 'cards': cards,
             })
         for line in lines:
             line['count'] = len(line['cards'])
@@ -280,6 +297,25 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
                 env._("See the %(count)s others", count=line['count'] - ROWS_SHOWN)
                 if line['count'] > ROWS_SHOWN else '')
         return {'lines': lines, 'card_id_prefix': '%s-injury-' % scope}
+
+    def _sc_dash_return_quick_edit(self, cards, players, row_scope):
+        """Review round 2 (owner 2026-10-29): each « Retours dépassés » card
+        gets the player header's « Retour prévu » autosave field — the same
+        save route, field rules (therapists: ``SAVE_REGISTRY``) and #1727
+        « not in the past » rule (``min`` = today; the model refuses a past
+        date, shown inline). The line is therapist-only already; a player I
+        cannot write gets no field."""
+        env = request.env
+        today = fields.Date.to_string(fields.Date.context_today(env.user))
+        label = env._("Predicted return")
+        writable = {player.id: player for player in players._filtered_access('write')}
+        for card in cards:
+            player = writable.get(card['id'])
+            if not player:
+                continue
+            card['return_edit_props'] = self._sc_field_props(
+                player, 'predicted_return_date', label, 'date', clearable=True, min=today,
+                inputId='sc_%s_return_%s' % (row_scope.replace('-', '_'), player.id))
 
     def _sc_dw_recent_changes(self, instance, teams, ctx):
         env = request.env
@@ -344,10 +380,16 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
         the full expandable cards; the « Portée » filters them."""
         explicit = self._sc_dash_explicit(instance)
         players = request.env['sc.dashboard']._sc_data_followed(teams, explicit)
+        rows = self._sc_dash_player_rows(players, teams, ctx)
         return {
             # Nothing chosen = all my followed players, staffed team or not.
             'no_scope': bool(explicit and not teams),
-            'rows': self._sc_dash_player_rows(players, teams, ctx),
+            'rows': rows,
+            # Review round 2 (owner 2026-10-29): a LIST read fragment — a
+            # follow / unfollow on the page refreshes every instance (each
+            # with its own scope): cards added / dropped, count, empty state.
+            'fragment_key': 'sc.dashboard:followed:%s' % instance['id'],
+            'count_label': '(%s)' % len(rows) if rows else '',
         }
 
     def _sc_dw_missing_timesheets(self, instance, teams, ctx):
@@ -387,18 +429,22 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
         todo_kinds = Dash._sc_todo_kinds(viewer)
         default_days = env['sports.team']._dashboard_upcoming_events_days()
         rows = []
-        for index, instance in enumerate(layout):
+        zone_choices = [(zone, str(sc_dashboard.ZONE_LABELS[zone])) for zone in sc_dashboard.ZONES]
+        for instance in layout:
             spec = sc_dashboard.WIDGETS_BY_KEY[instance['widget']]
             settings = instance['settings']
+            zone_ids = [inst['id'] for inst in layout if inst['zone'] == instance['zone']]
             row = {
                 'id': instance['id'],
                 'widget': spec['key'],
+                'zone': instance['zone'],
                 'widget_title': sc_dashboard.widget_title(spec, viewer),
                 'title': instance['title'],
                 'enabled': instance['enabled'],
                 'removable': instance['id'] != spec['key'],
-                'first': index == 0,
-                'last': index == len(layout) - 1,
+                # ▲ / ▼ move within the zone (review round 2).
+                'first': zone_ids[0] == instance['id'],
+                'last': zone_ids[-1] == instance['id'],
                 'scoped': spec['scoped'],
                 'filters': spec['filters'],
                 'settings': settings,
@@ -436,6 +482,12 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
         values.update({
             'page_name': 'sc_app_dashboard_configure',
             'sc_dash_rows': rows,
+            # Review round 2: the rows by zone, as on the dashboard.
+            'sc_dash_cfg_zones': [
+                {'zone': zone, 'label': label, 'rows': [row for row in rows if row['zone'] == zone]}
+                for zone, label in zone_choices],
+            'sc_dash_zone_choices': zone_choices,
+            'sc_dash_add_zone': Dash._sc_layout_add_zone(layout),
             'sc_dash_add_choices': [(spec['key'], sc_dashboard.widget_title(spec, viewer))
                                     for spec in allowed],
             'sc_dash_error': request.session.pop('sc_dash_error', None),
@@ -496,14 +548,26 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
 
     @http.route([CONFIGURE_URL + '/move'], type='http', auth='user', website=True,
                 methods=['POST'])
-    def sc_dashboard_configure_move(self, instance_id=None, step=None, **post):
-        return self._sc_dash_post(
-            lambda Dash: Dash._sc_layout_move(instance_id, -1 if step == 'up' else 1), instance_id)
+    def sc_dashboard_configure_move(self, instance_id=None, step=None, zone=None, position=None,
+                                    **post):
+        """▲ / ▼ (``step``) within the zone; or (review round 2) a ``zone``
+        and an optional ``position`` in it — « Déplacer vers » and the
+        drag-and-drop drop."""
+        def run(Dash):
+            if zone:
+                try:
+                    index = int(position) if position not in (None, '') else None
+                except (TypeError, ValueError):
+                    raise ValidationError(request.env._("Invalid dashboard layout.")) from None
+                Dash._sc_layout_place(instance_id, zone, index)
+            else:
+                Dash._sc_layout_move(instance_id, -1 if step == 'up' else 1)
+        return self._sc_dash_post(run, instance_id)
 
     @http.route([CONFIGURE_URL + '/add'], type='http', auth='user', website=True,
                 methods=['POST'])
-    def sc_dashboard_configure_add(self, widget=None, **post):
-        return self._sc_dash_post(lambda Dash: Dash._sc_layout_add(widget))
+    def sc_dashboard_configure_add(self, widget=None, zone=None, **post):
+        return self._sc_dash_post(lambda Dash: Dash._sc_layout_add(widget, zone=zone or None))
 
     @http.route([CONFIGURE_URL + '/remove'], type='http', auth='user', website=True,
                 methods=['POST'])

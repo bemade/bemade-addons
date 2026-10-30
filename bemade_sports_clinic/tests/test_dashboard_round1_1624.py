@@ -44,8 +44,9 @@ from odoo.addons.bemade_sports_clinic.models import sc_dashboard
 from odoo.addons.bemade_sports_clinic.models.patient import PAST_RETURN_OK
 from odoo.addons.bemade_sports_clinic.tests.dashboard_common_1624 import Dashboard1624Common, _player
 
-TP_ORDER = ['today', 'indicators', 'todo', 'recent_changes', 'watch', 'followed',
-            'announcements', 'coverage', 'missing_timesheets']
+# Review round 2 (owner 2026-10-29): the default is now zone by zone.
+TP_ORDER = ['today', 'todo', 'coverage', 'missing_timesheets', 'indicators', 'announcements',
+            'followed', 'recent_changes', 'watch']
 COACH_ORDER = [key for key in TP_ORDER if key != 'missing_timesheets']
 XHR = {'X-Requested-With': 'XMLHttpRequest'}
 
@@ -123,9 +124,11 @@ class TestDashboardRound1_1624(Dashboard1624Common):
         old = ['today', 'todo', 'recent_changes', 'watch', 'announcements', 'indicators', 'coverage']
         self.tp.sudo().sc_dashboard_layout = {'v': 1, 'instances': [
             {'id': key, 'widget': key, 'enabled': True, 'settings': {}} for key in old]}
-        ids = [i['id'] for i in self._dash(self.tp)._sc_layout()]
-        self.assertEqual(ids[:7], old)
-        self.assertEqual(sorted(ids[7:]), ['followed', 'missing_timesheets'])
+        layout = self._dash(self.tp)._sc_layout()
+        # Round 2: the v1 order kept, its first half left, the rest right;
+        # the widgets it did not hold join their default zone's end.
+        self.assertEqual([i['id'] for i in layout if i['zone'] == 'left'], old[:4] + ['missing_timesheets'])
+        self.assertEqual([i['id'] for i in layout if i['zone'] == 'right'], old[4:] + ['followed'])
         self._dash(self.tp)._sc_layout_reset()
         self.assertEqual([i['id'] for i in self._dash(self.tp)._sc_layout()], TP_ORDER)
 
@@ -196,7 +199,7 @@ class TestDashboardRound1_1624(Dashboard1624Common):
         _text, tree = self._get('/my/home')
         for instance_id, event in (('coverage', self.ev_soon), ('today', self.ev_today)):
             section = self._section(tree, instance_id)
-            details = section.xpath('.//details[@data-sc-event-details="%s"]' % event.id)
+            details = section.xpath('.//*[@data-sc-event-details="%s"]' % event.id)
             self.assertEqual(len(details), 1, instance_id)
             fields_shown = details[0].xpath('.//*[@data-sc-ev-field]/@data-sc-ev-field')
             for key in ('when', 'teams', 'staff'):
@@ -206,7 +209,7 @@ class TestDashboardRound1_1624(Dashboard1624Common):
             # The link to the event stays.
             self.assertTrue(section.xpath('.//a[contains(@href, "/my/event/%s")]' % event.id))
         coverage = self._section(tree, 'coverage').xpath(
-            './/details[@data-sc-event-details="%s"]' % self.ev_soon.id)[0]
+            './/*[@data-sc-event-details="%s"]' % self.ev_soon.id)[0]
         self.assertIn('Synthetic bring the tape', coverage.text_content())
         self.assertIn('coverage', coverage.xpath('.//*[@data-sc-ev-field]/@data-sc-ev-field'))
 

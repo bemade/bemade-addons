@@ -2395,6 +2395,7 @@ msgstr "<span>Supprimer</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_row
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_dw_event_rows
 msgid "<span>Details</span>"
 msgstr "<span>Détails</span>"
 
@@ -5120,7 +5121,6 @@ msgstr "Description détaillée de l'événement"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_patient_view_list_embedded
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_injury_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_dw_event_rows
 msgid "Details"
 msgstr "Détails"
 
@@ -18011,3 +18011,31 @@ msgid ""
 msgstr ""
 "Vous ne suivez encore aucun joueur. Utilisez « Suivre » sur la carte ou la "
 "page d'un joueur."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_dashboard.py:0
+msgid "Bottom"
+msgstr "Bas"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_dashboard_configure
+msgid "Drag to move"
+msgstr "Glisser pour déplacer"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_dashboard.py:0
+msgid "Left"
+msgstr "Gauche"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_dashboard_configure
+msgid "Move to"
+msgstr "Déplacer vers"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/sc_dashboard.py:0
+msgid "Right"
+msgstr "Droite"
