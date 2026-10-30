@@ -41,8 +41,10 @@ class TestAppShellI18n1538(AppShellCommon):
         self._theme_choice(True)  # task 1602: the theme labels need the toggles
         self._login_tp()
         text = self._fr('/my/home')
+        # Task 1624 (deliberate update): the dashboard's widget sections
+        # replaced « Mes équipes » / « À venir » on the home.
         for term in ('Équipes', 'Joueurs', 'Clinique', 'Activités', 'Plus',
-                     'Mes équipes', 'À venir', 'Blessés', 'Disponibles',
+                     'Aujourd&#39;hui', 'Couvertures à venir', 'Blessés', 'Disponibles',
                      'Basculer le thème'):
             self.assertIn(term, text, term)
         self.assertNotIn('>My teams<', text)

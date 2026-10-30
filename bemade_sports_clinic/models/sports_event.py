@@ -434,6 +434,23 @@ class SportsEvent(models.Model):
         return not self._sc_assign_refusal(user or self.env.user, self.sudo().team_ids.ids)
 
     @api.model
+    def _sc_missing_timesheet_domain(self, user=None):
+        """« Missing timesheets »: events assigned to ``user`` (default: the
+        current one) with no timesheet of theirs. ``user`` stands for every
+        login sharing its partner (one person, several logins). ONE
+        definition: the events page's « missing timesheets » segment
+        (AccessControlMixin._prepare_events_domain) and the dashboard's
+        « Feuilles de temps manquantes » (task 1624 review round 1). The
+        callers add the date bounds and the cancelled filter."""
+        user = user or self.env.user
+        shared = self.env['res.users'].sudo().search(
+            [('partner_id', '=', user.partner_id.id)]).ids or [user.id]
+        return [
+            ('assigned_staff_ids', 'in', shared),
+            '!', ('timesheet_ids.user_id', 'in', shared),
+        ]
+
+    @api.model
     def _sc_check_assignment(self, user, old_staff, new_staff, old_teams, new_teams):
         """Refuse (ValidationError) an assignment change:
 

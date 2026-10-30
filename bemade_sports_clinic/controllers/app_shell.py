@@ -1203,8 +1203,6 @@ SW_PRECACHE_STATIC = (
 SW_SOURCE = 'bemade_sports_clinic/static/src/sw/sc_service_worker.js'
 SC_MIDNIGHT = '#120e12'
 
-HOME_TEAMS_LIMIT = 8
-HOME_UPCOMING_LIMIT = 5
 
 
 class AppShellMixin:
@@ -1949,46 +1947,10 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         if kw.get('classic') or not self._sc_app_shell_active():
             return super().home(**kw)
         values = self._prepare_portal_layout_values()
-        values.update(self._sc_home_values())
+        # Task 1624: the configurable widget sections (controllers/app_dashboard.py).
+        values.update(self._sc_dashboard_values())
         return self._sc_shell_response('bemade_sports_clinic.sc_app_home',
                                        self._sc_app_values(values, 'sc_app_home'))
-
-    def _sc_home_values(self):
-        env = request.env
-        user = env.user
-        roles = user._sc_app_roles()
-        values = {'page_name': 'home'}
-        teams = env['sports.team']
-        # ACLs decide: a role the registry shows a section to may still lack
-        # the model access (e.g. an internal user with only a staff row) —
-        # skip the section's data rather than 403 the whole home.
-        if sc_app_roles.can('home.team_status', roles) and teams.has_access('read'):
-            role = 'tp' if roles & sc_app_roles.TP else 'coach'
-            order = 'last_player_activity_%s_at desc nulls last, name, id' % role
-            if self._is_clinic_admin():
-                # Task 1577 (owner decision 2026-09-28): a clinic admin's home
-                # lists EVERY team, the ones they staff first; the count and
-                # the stat tiles follow the same set.
-                teams = self._staffed_first(teams.search([], order=order))
-            else:
-                teams = teams.search(
-                    [('staff_ids.user_ids', '=', user.id)], order=order)
-            players = teams.patient_ids
-            clocks = self._sc_team_clocks(teams[:HOME_TEAMS_LIMIT])
-            values.update({
-                'sc_teams_count': len(teams),
-                'sc_team_rows': [self._sc_team_row(team, clocks=clocks)
-                                 for team in teams[:HOME_TEAMS_LIMIT]],
-                'sc_stat_injured': len(players.filtered(lambda p: p.stage == 'no_play')),
-                'sc_stat_returning': len(players.filtered(lambda p: p.stage == 'practice_ok')),
-                'sc_stat_available': len(players.filtered(lambda p: p.stage == 'healthy')),
-            })
-        events_readable = env['sports.event'].has_access('read')
-        if sc_app_roles.can('home.upcoming', roles) and events_readable:
-            values['sc_upcoming'] = self._sc_upcoming_rows(teams)
-        if sc_app_roles.can('home.clinic_teaser', roles) and events_readable:
-            values['sc_clinics_today'] = self._sc_clinics_today_count()
-        return values
 
     @http.route(['/my/clinics/today/count'], type='http', auth='user', website=True,
                 methods=['GET'], multilang=False, sitemap=False)
@@ -2021,31 +1983,6 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             ('date_start', '<=', self._date_bound_to_utc(today, end_of_day=True)),
         ]
         return request.env['sports.event'].search_count(domain)
-
-    def _sc_upcoming_rows(self, teams):
-        env = request.env
-        user = env.user
-        now = fields.Datetime.now()
-        horizon = now + timedelta(days=env['sports.team']._dashboard_upcoming_events_days())
-        domain = self._prepare_events_domain() + [
-            ('date_start', '>=', now),
-            ('date_start', '<=', horizon),
-            '|', ('team_ids', 'in', teams.ids or [0]),
-            ('assigned_staff_ids', 'in', [user.id]),
-        ]
-        events = env['sports.event'].search(domain, order='date_start, id',
-                                            limit=HOME_UPCOMING_LIMIT)
-        kinds = dict(env['sports.event']._fields['event_type']._description_selection(env))
-        rows = []
-        for event in events:
-            rows.append({
-                'when': format_datetime(env, event.date_start, tz=user.tz or env.context.get('tz'),
-                                        dt_format='EEE d MMM · HH:mm'),
-                'kind': kinds.get(event.event_type, ''),
-                'name': event.name or '',
-                'url': '/my/event/%s?return_url=%%2Fmy%%2Fhome' % event.id,
-            })
-        return rows
 
     # ------------------------------------------------------------------
     # /my/app/more — « Plus »

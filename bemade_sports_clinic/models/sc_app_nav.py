@@ -363,6 +363,9 @@ PAGES = {page.key: page for page in (
     # (sc_app_nav.js), else the home.
     _static('sc_app_settings', '/my/app/settings', _lt('Settings'),
             parent=lambda v: ('sc_app_home', {})),
+    # Task 1624: « Configurer » the dashboard — a sub-page of the home.
+    _static('sc_app_dashboard_configure', '/my/app/dashboard/configure',
+            _lt('Configure the dashboard'), parent=lambda v: ('sc_app_home', {})),
     # Task 1620: the core « Mon compte » / « Sécurité » routes rendered in
     # the shell — sub-pages of « Paramètres ». No path on purpose: they are
     # never a return_url / « came from » target (test_app_shell_nav_1579).

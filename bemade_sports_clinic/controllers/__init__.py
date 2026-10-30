@@ -15,3 +15,4 @@ from . import app_search
 from . import app_player_add
 from . import app_critical_items
 from . import knowledge_public
+from . import app_dashboard

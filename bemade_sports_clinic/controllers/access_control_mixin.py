@@ -146,13 +146,10 @@ class AccessControlMixin:
         elif view_type == 'unassigned':
             base_domain.append(('assigned_staff_ids', '=', False))
         elif view_type == 'missing_timesheets':
-            shared_users = http.request.env['res.users'].search([('partner_id', '=', partner.id)])
-            shared_user_ids = shared_users.ids or [user.id]
-            base_domain.extend([
-                ('assigned_staff_ids', 'in', shared_user_ids),
-                '!',
-                ('timesheet_ids.user_id', 'in', shared_user_ids),
-            ])
+            # Task 1624 review round 1: the one shared definition (the
+            # dashboard's « Feuilles de temps manquantes » uses it too).
+            base_domain.extend(
+                http.request.env['sports.event']._sc_missing_timesheet_domain(user))
         # 'all' view uses base domain only
 
         # Drop cancelled events from the default surfaces unless explicitly

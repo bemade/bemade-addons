@@ -176,11 +176,31 @@ VISIBILITY_REGISTRY = {
     'patient.internal_notes': {'include': TP, 'model': 'sports.patient',
                                'field': 'team_info_notes'},
     'patient.contacts': {'include': TP, 'model': 'sports.patient', 'field': 'contact_ids'},
-    # Home sections.
-    'home.team_status': {'include': STAFF},
-    'home.upcoming': {'include': STAFF},
     # Therapist working surface: /my/clinics denies everyone else server-side.
+    # Task 1624: the live « Clinics today » chip of the « Today » widget.
     'home.clinic_teaser': {'include': TP},
+    # Task 1624 — the dashboard widgets (models/sc_dashboard.py WIDGETS) and
+    # the « To do » lines. Each line is ALSO bound by its data's access
+    # (record rules, _may_remove_from_team) — the registry only hides.
+    'dashboard.today': {'include': STAFF},
+    'dashboard.todo': {'include': STAFF},
+    'dashboard.recent_changes': {'include': STAFF},
+    'dashboard.watch': {'include': STAFF},
+    'dashboard.announcements': {'include': STAFF},
+    'dashboard.indicators': {'include': STAFF},
+    'dashboard.coverage': {'include': STAFF},
+    # Review round 1 (owner 2026-10-29): my followed players (every staff
+    # role) and my past events without a timesheet (therapists only).
+    'dashboard.followed': {'include': STAFF},
+    'dashboard.missing_timesheets': {'include': TP},
+    'dashboard.todo.activities': {'include': STAFF},
+    'dashboard.todo.verify': {'include': TP},
+    'dashboard.todo.removals': {'include': TP, 'system': True},
+    # Review round 1 (owner 2026-10-29): therapists update the « Retour
+    # prévu » dates — the overdue ones are their to-do, not a coach's.
+    'dashboard.todo.returns': {'include': TP},
+    # Review round 1: « Suivre / Ne plus suivre » a player (personal).
+    'patient.follow': {'include': STAFF},
     # Task 1542 — team page sections / actions. Each one is ALSO gated in the
     # template by the controller's existing server-side value (the model or
     # route check that refuses the action), so the registry can only HIDE:

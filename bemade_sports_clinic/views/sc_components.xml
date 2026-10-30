@@ -16,6 +16,7 @@
     <template id="sc_icon" name="App shell: icon">
         <svg viewBox="0 0 24 24" class="o_sc_icon" aria-hidden="true" focusable="false">
             <t t-if="icon == 'teams'"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></t>
+            <t t-elif="icon == 'star'"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></t>
             <t t-elif="icon == 'players'"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></t>
             <t t-elif="icon == 'clinic'"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></t>
             <t t-elif="icon == 'activities'"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></t>
@@ -428,7 +429,8 @@
     <template id="sc_sheet" name="App shell: sheet">
         <dialog t-att-id="sheet_id" class="o_sc_sheet" t-att-aria-labelledby="'%s_title' % sheet_id"
                 t-att-data-sc-lazy-url="lazy_url or None"
-                t-att-data-sc-lazy-fresh="'1' if lazy_url and lazy_fresh else None">
+                t-att-data-sc-lazy-fresh="'1' if lazy_url and lazy_fresh else None"
+                t-att-data-sc-sheet-open-on-load="'1' if open_on_load else None">
             <div class="o_sc_sheet_head">
                 <h2 class="o_sc_sheet_title" t-att-id="'%s_title' % sheet_id" t-out="title"/>
                 <t t-if="head_extra" t-out="head_extra"/>
@@ -811,8 +813,12 @@
         <span t-if="row.get('return_label')" class="o_sc_row_line o_sc_row_return" data-sc-row-return="1">
             <i class="fa fa-clock-o" aria-hidden="true"/>
             <span>Predicted return:</span>
-            <span t-if="row.get('return_overdue')" class="o_sc_row_line_value o_sc_overdue"><t t-out="row['return_label']"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span>
-            <span t-else="" class="o_sc_row_line_value" t-out="row['return_label']"/>
+            <!-- Task 1624 review round 2: data-sc-row-return-value — a
+                 save of « Retour prévu » on this page updates the date and
+                 drops « Dépassé » in place (sc_dashboard_live.js). -->
+            <span t-if="row.get('return_overdue')" class="o_sc_row_line_value o_sc_overdue"
+                  t-att-data-sc-row-return-value="row['id']"><span data-sc-row-return-date="1" t-out="row['return_label']"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span>
+            <span t-else="" class="o_sc_row_line_value" t-att-data-sc-row-return-value="row['id']"><span data-sc-row-return-date="1" t-out="row['return_label']"/></span>
         </span>
     </template>
 
@@ -830,11 +836,15 @@
         title, subtitle, dot, status, changed, pending_removal, training,
         return_label, team_links, detail_url), row_scope (a short key making
         the detail's id unique when one player is listed twice on a page).
+        Task 1624 round 2: row_item (the card's data-sc-fragment-item in a
+        LIST read fragment), row['return_edit_props'] (the quick « Retour
+        prévu » field under the card).
         Body (0) = extra trailing chips.
     -->
     <template id="sc_player_row" name="App shell: player row">
         <t t-set="sc_row_detail_id" t-value="'sc-row-detail-%s-%s' % (row_scope or 'row', row['id'])"/>
-        <div class="o_sc_row_group o_sc_player_row" t-att-data-sc-player-id="row['id']">
+        <div class="o_sc_row_group o_sc_player_row" t-att-data-sc-player-id="row['id']"
+             t-att-data-sc-fragment-item="row_item or None">
             <!-- Task 1634: the face (dot, pills, ⚡, lines) is the read
                  fragment « sports.patient:<id>:row-<scope> » — unique on the
                  page, refreshed in place by a status pick; the lazy detail
@@ -874,6 +884,14 @@
                     <t t-set="label">Removal pending</t>
                 </t>
             </t>
+            <!-- Task 1624 review round 2 (owner 2026-10-29): a quick
+                 « Retour prévu » edit under the card (the dashboard's
+                 « Retours dépassés »): the header's autosave date field and
+                 rules (#1727: not in the past). Outside the face fragment —
+                 an island never sits in a fragment. -->
+            <div t-if="row.get('return_edit_props')" class="o_sc_row_quick" data-sc-row-quick="predicted_return_date">
+                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="row['return_edit_props']"/></t>
+            </div>
             <div t-if="row.get('detail_url')" t-att-id="sc_row_detail_id" class="o_sc_row_detail"
                  t-att-data-sc-lazy-url="row['detail_url']" data-sc-row-detail="1" hidden="hidden">
                 <div class="o_sc_lazy_body">
@@ -1253,6 +1271,29 @@
                 </div>
             </t>
         </t>
+    </template>
+
+    <!--
+        Task 1624 review round 1 (owner 2026-10-29) — « Suivre / Ne plus
+        suivre » a player: a personal follow (the dashboard's « Joueurs que
+        je suis »). Saved by fetch, no reload (sc_follow.js; without JS the
+        form posts). Nothing for a role that may not follow. Variable:
+        player (read as the viewer).
+    -->
+    <template id="sc_follow_toggle" name="App shell: follow toggle">
+        <t t-set="sc_follow_state" t-value="player._sc_follow_state()"/>
+        <form t-if="sc_follow_state is not None" t-att-action="'/my/player/%s/follow' % player.id" method="post"
+              class="o_sc_inline_form o_sc_follow_form">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+            <input type="hidden" name="follow" t-att-value="'0' if sc_follow_state else '1'"/>
+            <button type="submit" t-attf-class="o_sc_btn o_sc_btn_sm o_sc_follow #{'o_sc_btn_primary' if sc_follow_state else 'o_sc_btn_ghost'}"
+                    t-att-data-sc-follow="player.id" t-att-data-sc-followed="'1' if sc_follow_state else '0'"
+                    t-att-aria-pressed="'true' if sc_follow_state else 'false'" data-sc-action="player.follow">
+                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'star'"/></t>
+                <span data-sc-follow-label="on" t-att-hidden="None if sc_follow_state else 'hidden'">Unfollow</span>
+                <span data-sc-follow-label="off" t-att-hidden="'hidden' if sc_follow_state else None">Follow</span>
+            </button>
+        </form>
     </template>
 
 </odoo>

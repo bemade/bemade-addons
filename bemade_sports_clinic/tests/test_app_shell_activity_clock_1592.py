@@ -243,7 +243,8 @@ class TestActivityClockRows1592(Clock1592Common):
     def test_team_row_clock(self):
         self._login_tp()
         href = '/my/team?team_id=%s&tab=activities' % self.team_a.id
-        for url in ('/my/home', '/my/teams'):
+        # Task 1624 (deliberate update): « My teams » left the home.
+        for url in ('/my/teams',):
             _text_, tree = self._get(url)
             main = tree.xpath('//a[@data-sc-team-id="%s"]' % self.team_a.id)
             self.assertEqual(len(main), 1, url)
@@ -382,9 +383,13 @@ class TestActivityClockQueries1592(Clock1592Common):
             self.assertEqual((rg_small, rg_big), (1, 1), template)
             self.assertLess(q_big - q_small, 10, '%s: %s vs %s' % (template, q_small, q_big))
         # The teams list, the home and the events list: one each.
-        for url in ('/my/teams', '/my/home', '/my/events?no_default_dates=1'):
+        for url in ('/my/teams', '/my/events?no_default_dates=1'):
             _queries, groups = self._measure(url)
             self.assertEqual(groups, 1, url)
+        # Task 1624 review round 1: the home's « À faire » reads the activity
+        # cards themselves (ONE search for its fold-outs), no grouped count.
+        _queries, groups = self._measure('/my/home')
+        self.assertLessEqual(groups, 1, '/my/home')
         # The player page's injury cards: one.
         player = self.env['sports.patient'].search([('last_name', '=', 'Clock 100')])
         _queries, groups = self._measure('/my/player?player_id=%s' % player.id)

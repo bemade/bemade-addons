@@ -172,6 +172,31 @@ class User(models.Model):
         copy=False,
     )
 
+    # Task 1624: the app dashboard's layout (models/sc_dashboard.py) —
+    # {"v": 2, "instances": [...]} (round 2: each with its zone). Not
+    # self-writable: only the validated « Configurer » path
+    # (sc.dashboard._sc_layout_save, sudo) writes it.
+    sc_dashboard_layout = fields.Json(
+        string="App Dashboard Layout",
+        groups="base.group_system",
+        copy=False,
+    )
+
+    # Task 1624, review round 1 (owner 2026-10-29): the players this user
+    # follows (« Suivre », the dashboard's « Joueurs que je suis »). A
+    # relation on the user, not a new model: nothing to share, nothing to
+    # rule. Private by construction — system group only, so neither another
+    # user nor the user themselves reads or writes it over RPC; the app reads
+    # and writes it for ``env.user`` only, through
+    # sports.patient._sc_follow / sc_followed_by_me (readability checked).
+    sc_followed_patient_ids = fields.Many2many(
+        'sports.patient',
+        'sc_user_followed_patient_rel', 'user_id', 'patient_id',
+        string="Followed Players",
+        groups="base.group_system",
+        copy=False,
+    )
+
     # Task 1605: the user's colour on the events calendar (dot before each
     # event title, legend). Handed out automatically the first time the user
     # shows up in the calendar feed (``_sc_calendar_colors``), then stable;

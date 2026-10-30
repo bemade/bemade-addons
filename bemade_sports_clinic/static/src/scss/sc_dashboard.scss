@@ -1,0 +1,464 @@
+// Task 1624 — the app dashboard (configurable widget sections) and its
+// « Configurer » page. Everything scoped under .o_sc_app.
+
+$sc-dash-laptop: 1024px;
+
+.o_sc_app {
+    // ------------------------------------------------------------ dashboard
+    .o_sc_dash_head {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: var(--sc-space-2);
+
+        .o_sc_dash_configure {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--sc-space-2);
+            min-height: var(--sc-tap);
+
+            .o_sc_icon {
+                width: 18px;
+                height: 18px;
+            }
+        }
+    }
+
+    .o_sc_dash {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-5);
+        min-width: 0;
+        // Review round 2: sc_dashboard_live.js keeps a toggled fold-out's
+        // header in place itself; the browser's own anchoring would pick
+        // another node and fight it.
+        overflow-anchor: none;
+    }
+
+    // Review round 2 (owner 2026-10-29): the three zones. Phone: left,
+    // right, bottom, one under the other. Laptop: left and right are two
+    // independent columns side by side, bottom spans both underneath.
+    .o_sc_dash_zone {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-5);
+        min-width: 0;
+    }
+
+    @media (min-width: $sc-dash-laptop) {
+        .o_sc_dash {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-areas: "left right" "bottom bottom";
+            align-items: start;
+            gap: var(--sc-space-5) var(--sc-space-6);
+        }
+
+        .o_sc_dash_zone_left {
+            grid-area: left;
+        }
+
+        .o_sc_dash_zone_right {
+            grid-area: right;
+        }
+
+        .o_sc_dash_zone_bottom {
+            grid-area: bottom;
+        }
+
+        // Only one side column in use: it takes the full width.
+        .o_sc_dash_zone.o_sc_dash_zone_solo {
+            grid-column: 1 / -1;
+        }
+    }
+
+    .o_sc_dw {
+        min-width: 0;
+        margin: 0;
+
+        .o_sc_dw_header {
+            margin-bottom: 2px;
+        }
+
+        .o_sc_dw_title {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .o_sc_dw_scope {
+            margin: 0 0 var(--sc-space-2);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    // Review round 2 (owner 2026-10-29): a widget's body stacks its parts
+    // (the « Cliniques aujourd'hui » row, the cards, « Voir les N autres »,
+    // « Tout voir ») with the card-list gap — nothing touches.
+    .o_sc_dw_body {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+
+        > .o_sc_dw_clinics > .o_sc_entity_row {
+            margin: 0;
+        }
+    }
+
+    .o_sc_dw_more {
+        margin: 0;
+
+        > .o_sc_list {
+            margin-top: 6px;
+        }
+
+        > summary {
+            min-height: 32px;
+        }
+    }
+
+    .o_sc_dw_count {
+        font-variant-numeric: tabular-nums;
+    }
+
+    // Review round 2: the quick « Retour prévu » under a « Retours
+    // dépassés » card.
+    .o_sc_row_quick {
+        border-top: 1px solid var(--sc-line);
+        padding: var(--sc-space-2) var(--sc-space-3);
+        min-width: 0;
+    }
+
+    // Review round 2: event cards = player cards (sc_link_row in a row
+    // group, the shared « Details » expander).
+    .o_sc_dw_events {
+        gap: 6px;
+    }
+
+    .o_sc_dw_ts_add {
+        margin-top: var(--sc-space-1);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+
+        .o_sc_icon {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    .o_sc_dw_event_details {
+        .o_sc_kv {
+            margin: var(--sc-space-1) 0;
+        }
+
+        .o_sc_dw_event_desc {
+            margin: 0 0 var(--sc-space-1);
+            overflow-wrap: anywhere;
+        }
+    }
+
+    .o_sc_dw_venue .o_sc_row_line_text {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_sc_event_row .o_sc_dw_ts_add {
+        align-self: flex-start;
+    }
+
+    .o_sc_chip_orange {
+        background: var(--sc-overdue);
+        color: var(--sc-tone-fg);
+    }
+
+    // Review round 1: « À faire » lines fold out into their cards.
+    .o_sc_dw_todo_line {
+        min-width: 0;
+
+        > summary {
+            cursor: pointer;
+            list-style: none;
+
+            &::-webkit-details-marker {
+                display: none;
+            }
+
+            .o_sc_icon {
+                transition: transform 0.15s ease;
+            }
+        }
+
+        &[open] > summary .o_sc_icon {
+            transform: rotate(180deg);
+        }
+    }
+
+    .o_sc_dw_todo_head {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .o_sc_dw_todo_body {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 6px 0 var(--sc-space-3);
+        min-width: 0;
+    }
+
+    // Review round 1: « Suivre / Ne plus suivre ».
+    .o_sc_follow {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+
+        .o_sc_icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        &[data-sc-followed="1"] .o_sc_icon {
+            fill: currentColor;
+        }
+    }
+
+    .o_sc_row_detail_follow {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: var(--sc-space-2);
+    }
+
+    .o_sc_hero_top {
+        .o_sc_hero_follow {
+            margin-left: auto;
+            align-self: flex-start;
+        }
+    }
+
+    .o_sc_dw_announcements {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+
+        .o_sc_dw_announcement:last-child {
+            border-bottom: 0;
+            padding-bottom: 0;
+        }
+    }
+
+    .o_sc_dw_announcement_team {
+        font-weight: 600;
+        color: var(--sc-accent);
+        text-decoration: none;
+    }
+
+    // ------------------------------------------------------------ configure
+    .o_sc_dash_cfg_intro {
+        margin: 0 0 var(--sc-space-3);
+    }
+
+    // Review round 2: the zones of « Configurer » (as on the dashboard).
+    .o_sc_dash_cfg_zones {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-4);
+        margin-bottom: var(--sc-space-4);
+        min-width: 0;
+    }
+
+    .o_sc_dash_cfg_zone {
+        min-width: 0;
+
+        > .o_sc_dash_cfg {
+            min-height: 56px;
+            margin: 0;
+            padding: var(--sc-space-2);
+            border: 1px dashed var(--sc-line);
+            border-radius: var(--sc-radius-md);
+        }
+    }
+
+    .o_sc_dash_cfg_zone_title {
+        margin-bottom: var(--sc-space-2);
+    }
+
+    @media (min-width: $sc-dash-laptop) {
+        .o_sc_dash_cfg_zones {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-areas: "left right" "bottom bottom";
+            align-items: stretch;
+            gap: var(--sc-space-4) var(--sc-space-5);
+        }
+
+        .o_sc_dash_cfg_zone_left {
+            grid-area: left;
+        }
+
+        .o_sc_dash_cfg_zone_right {
+            grid-area: right;
+        }
+
+        .o_sc_dash_cfg_zone_bottom {
+            grid-area: bottom;
+        }
+    }
+
+    // The drag handle: laptop widths only; phones, touch and keyboard use
+    // ▲ / ▼ and « Move to ».
+    .o_sc_dash_cfg_grip::before {
+        content: "⋮⋮";
+    }
+
+    .o_sc_dash_cfg_drag {
+        display: none;
+        cursor: grab;
+        color: var(--sc-fg-3);
+        letter-spacing: -3px;
+        font-weight: 700;
+    }
+
+    @media (min-width: $sc-dash-laptop) {
+        .o_sc_dash_cfg_drag {
+            display: inline-flex;
+        }
+    }
+
+    .o_sc_dash_cfg_item.o_dragged {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+        cursor: grabbing;
+    }
+
+    .o_sc_dash_cfg_placeholder {
+        opacity: 0.35;
+    }
+
+    .o_sc_dash_cfg_zone_form {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin: 0 0 var(--sc-space-1);
+
+        .o_sc_input {
+            width: auto;
+            min-width: 0;
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+    }
+
+    .o_sc_dash_cfg {
+        list-style: none;
+        margin: 0 0 var(--sc-space-4);
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+    }
+
+    .o_sc_dash_cfg_item {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start;
+        gap: 0 var(--sc-space-2);
+
+        > .o_sc_dash_cfg_remove,
+        > .o_sc_dash_cfg_zone_form {
+            grid-column: 2;
+            justify-self: start;
+        }
+    }
+
+    .o_sc_dash_cfg_off .o_sc_dash_cfg_switch .o_sc_switch_label {
+        color: var(--sc-fg-3);
+    }
+
+    .o_sc_dash_cfg_head {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .o_sc_dash_cfg_moves {
+        display: flex;
+        flex-direction: column;
+
+        .o_sc_icon_btn[disabled] {
+            opacity: 0.3;
+        }
+    }
+
+    .o_sc_dash_cfg_form {
+        gap: var(--sc-space-1);
+        min-width: 0;
+    }
+
+    .o_sc_dash_cfg_fields {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-2);
+        padding: var(--sc-space-2) 0;
+
+        fieldset {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sc-space-2);
+            margin: 0;
+            padding: 0;
+            border: 0;
+            min-width: 0;
+        }
+
+        legend {
+            margin: 0;
+            float: none;
+        }
+    }
+
+    .o_sc_dash_cfg_actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: var(--sc-space-2);
+        min-height: 0;
+
+        .o_sc_dash_cfg_status:empty {
+            display: none;
+        }
+    }
+
+    .o_sc_dash_cfg_add {
+        margin-bottom: var(--sc-space-4);
+    }
+
+    .o_sc_dash_cfg_add_row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sc-space-2);
+
+        .o_sc_input {
+            flex: 1 1 180px;
+            min-width: 0;
+        }
+
+        .o_sc_btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--sc-space-2);
+        }
+    }
+
+    .o_sc_dash_cfg_reset,
+    .o_sc_dash_cfg_back {
+        margin: 0 0 var(--sc-space-3);
+    }
+}

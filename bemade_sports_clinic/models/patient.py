@@ -3574,6 +3574,26 @@ class Patient(models.Model):
         )
         return any(role.role in REMOVAL_ROLES for role in user_staff_roles)
 
+    @api.model
+    def _sc_teams_may_remove(self, teams):
+        """Task 1624: the subset of ``teams`` where ``_may_remove_from_team``
+        is True, in ONE staff query (the dashboard's « À faire » removal
+        requests over many teams). Same policy, batched."""
+        user = self.env.user
+        if user.has_group('base.group_system') or user.has_group(
+                'bemade_sports_clinic.group_sports_clinic_admin'):
+            return teams
+        if not (user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+                or user.has_group('bemade_sports_clinic.group_portal_treatment_professional')):
+            return teams.browse()
+        rows = self.env['sports.team.staff'].sudo().search([
+            ('team_id', 'in', teams.ids or [0]),
+            ('user_ids', 'in', [user.id]),
+            ('role', 'in', list(REMOVAL_ROLES)),
+        ])
+        ok = set(rows.team_id.ids)
+        return teams.filtered(lambda team: team.id in ok)
+
     def remove_from_team(self, team_id, clear_pending=True, reason=None):
         """
         Public method to remove players from a team with proper permission checks.

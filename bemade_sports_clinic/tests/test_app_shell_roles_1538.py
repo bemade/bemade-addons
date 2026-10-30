@@ -153,7 +153,10 @@ class TestAppShellRoles1538(TransactionCase):
         self.assertTrue(registry.can('patient.medical_alerts', tp_roles))
         self.assertFalse(registry.can('patient.medical_history', coach_roles))
         self.assertTrue(registry.can('patient.medical_history', tp_roles))
-        self.assertTrue(registry.can('home.team_status', coach_roles))
+        # Task 1624: the dashboard widgets replaced the home's fixed sections.
+        self.assertTrue(registry.can('dashboard.indicators', coach_roles))
+        self.assertFalse(registry.can('dashboard.todo.verify', coach_roles))
+        self.assertTrue(registry.can('dashboard.todo.verify', tp_roles))
         self.assertFalse(registry.can('home.clinic_teaser', coach_roles))
         self.assertTrue(registry.can('home.clinic_teaser', tp_roles))
         with self.assertRaises(KeyError):

@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.125.3",
+    'version': "19.0.1.126.2",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -114,6 +114,16 @@ bundle), timesheets, the notepad and the daily digests; the portal bookings
 pages join through the ``bemade_sports_clinic_bookings`` glue addon. The
 sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
 (SIL OFL 1.1) from its own CSS-only bundle — no off-domain request.
+
+The app dashboard (/my/home) is made of widget sections each user may show,
+hide, reorder, duplicate and limit to some organisations / teams from its
+« Configurer » page (one registry: ``models/sc_dashboard.py``; the layout is
+stored per user, versioned). A scope only ever narrows what the user may
+already access. Round 1: Today, Indicators, To do (each line folds out into
+its activity / injury / player cards), Recent changes, Players to watch,
+Players I follow (a personal « Follow » on the player cards and page),
+Announcements, Upcoming coverage (« Upcoming events » for coaches) and, for
+therapists, Missing timesheets.
     """,
     "category": "Services/Medical",
     "author": "Bemade Inc.",
@@ -237,6 +247,8 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
         "views/sc_app_search.xml",
         "views/sc_app_player_add.xml",
         "views/sc_app_pages.xml",
+        # Task 1624: the dashboard (/my/home) widgets + « Configurer ».
+        "views/sc_app_dashboard.xml",
         "views/sc_app_account.xml",
         # Task 1542: team page, install page, offline page.
         "views/sc_app_team.xml",
@@ -371,6 +383,13 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             "bemade_sports_clinic/static/src/js/sc_sw_register.js",
             # Task 1726: the shared switch (aria-checked, off twin, submit).
             "bemade_sports_clinic/static/src/js/sc_switch.js",
+            # Task 1624: « Configurer » the dashboard (saves as you go).
+            "bemade_sports_clinic/static/src/js/sc_dashboard_config.js",
+            # Task 1624 review round 1: « Suivre » a player (fetch toggle).
+            "bemade_sports_clinic/static/src/js/sc_follow.js",
+            # Task 1624 review round 2: the dashboard's two fixed columns,
+            # scroll anchoring of its fold-outs, the quick « Retour prévu ».
+            "bemade_sports_clinic/static/src/js/sc_dashboard_live.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.xml",
             # Task 1539: the shell's activity sheets (replaces, in the shell
@@ -378,6 +397,7 @@ sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
             "bemade_sports_clinic/static/src/js/sc_activities.js",
             # Task 1540: P3 styles, the live clinic waiting list.
             "bemade_sports_clinic/static/src/scss/sc_p3.scss",
+            "bemade_sports_clinic/static/src/scss/sc_dashboard.scss",
             # Task 1620: « Mon compte » / « Sécurité » in the shell.
             "bemade_sports_clinic/static/src/scss/sc_account.scss",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.js",
