@@ -572,8 +572,13 @@ class ScDashboard(models.AbstractModel):
         (the scoped ones)."""
         viewer = viewer or self._sc_viewer()
         now = fields.Datetime.now()
+        # Today's events belong to « Aujourd'hui »: start after the viewer's
+        # today, so an event never shows in both (and the window doesn't depend
+        # on the hour of the day).
+        _today_start, today_end = self._sc_today_bounds()
+        start = max(now, today_end)
         domain = self._sc_my_events_domain(viewer) + [
-            ('date_start', '>=', now), ('date_start', '<=', now + timedelta(days=days))]
+            ('date_start', '>', start), ('date_start', '<=', now + timedelta(days=days))]
         if explicit_scope or not viewer['is_tp']:
             domain.append(('team_ids', 'in', teams.ids or [0]))
         return self.env['sports.event'].search(domain, order='date_start, id')
