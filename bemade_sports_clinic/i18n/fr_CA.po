@@ -12429,8 +12429,8 @@ msgstr "Feuille de temps supprimée."
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
-msgid "Timesheet saved."
-msgstr "Feuille de temps enregistrée."
+msgid "Timesheet sent."
+msgstr "Feuille de temps envoyée."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -18039,3 +18039,29 @@ msgstr "Déplacer vers"
 #: code:addons/bemade_sports_clinic/models/sc_dashboard.py:0
 msgid "Right"
 msgstr "Droite"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "Submitted ✓"
+msgstr "Soumise ✓"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "Billed"
+msgstr "Facturée"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_timesheet_card
+msgid "Sent"
+msgstr "Envoyée"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_timesheet_card
+msgid ""
+"Your timesheet for this event has already been sent — your changes are saved"
+" automatically."
+msgstr ""
+"Votre feuille de temps pour cet événement est déjà envoyée — vos "
+"modifications s'enregistrent automatiquement."

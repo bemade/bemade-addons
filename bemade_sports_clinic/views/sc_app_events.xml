@@ -268,7 +268,10 @@
                     </p>
                 </div>
                 <span class="o_sc_card_icons">
-                    <span t-attf-class="o_sc_chip #{'o_sc_chip_green' if row['state'] == 'invoiced' else 'o_sc_chip_ghost'}" t-out="row['state_label']"/>
+                    <!-- Task 1731: « Soumise ✓ » (green: sent, nothing left to
+                         do) / « Facturée » — the proof the timesheet is sent. -->
+                    <span t-attf-class="o_sc_chip o_sc_ts_state #{'o_sc_chip_green' if row['state'] == 'submitted' else 'o_sc_chip_mauve'}"
+                          t-att-data-sc-ts-state="row['state']" t-out="row['state_label']"/>
                     <t t-if="row['editable']">
                         <t t-set="sc_edit_label">Edit</t>
                         <button type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1" aria-expanded="false"
@@ -285,14 +288,20 @@
                 </t>
             </dl>
             <div t-if="row['editable']" class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
+                <!-- Task 1731: there is no « send » step — say so where the
+                     therapist edits (« Ajouter ma feuille de temps » opens
+                     her existing card here, #1665), and each save reads
+                     « Envoyée · hh:mm » (savedLabel). -->
+                <p class="o_sc_meta o_sc_ts_sent_hint" data-sc-ts-sent-hint="1">Your timesheet for this event has already been sent — your changes are saved automatically.</p>
+                <t t-set="sent_lbl">Sent</t>
                 <t t-set="lbl">Travel Start</t>
-                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'travel_start', lbl, 'datetime-local')"/></t>
+                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'travel_start', lbl, 'datetime-local', savedLabel=sent_lbl)"/></t>
                 <t t-set="lbl">Coverage Start</t>
-                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'coverage_start', lbl, 'datetime-local')"/></t>
+                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'coverage_start', lbl, 'datetime-local', savedLabel=sent_lbl)"/></t>
                 <t t-set="lbl">Coverage End</t>
-                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'coverage_end', lbl, 'datetime-local')"/></t>
+                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'coverage_end', lbl, 'datetime-local', savedLabel=sent_lbl)"/></t>
                 <t t-set="lbl">Travel End</t>
-                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'travel_end', lbl, 'datetime-local')"/></t>
+                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'travel_end', lbl, 'datetime-local', savedLabel=sent_lbl)"/></t>
                 <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
             </div>
             <div t-if="row['editable']" class="o_sc_card_actions">

@@ -1554,7 +1554,8 @@ class AppShellMixin:
             extra['options'] = AppShellMixin._sc_options(extra['options'])
         for key, value in extra.items():
             if value is not None:
-                props[key] = str(value) if key in ('hint', 'placeholder', 'undoMessage', 'historyLabel') else value
+                props[key] = str(value) if key in ('hint', 'placeholder', 'undoMessage', 'historyLabel',
+                                                   'savedLabel') else value
         return json.dumps(props, default=str)
 
     @staticmethod
@@ -1851,7 +1852,12 @@ class AppShellMixin:
         user = env.user
         tz = user.tz or env.context.get('tz')
         event = ts.event_id.sudo()
-        states = dict(ts._fields['state']._description_selection(env))
+        # Task 1731: the card's chip says the timesheet is SENT — there is no
+        # separate send step (created = submitted), the chip is the proof.
+        states = {
+            'submitted': env._("Submitted ✓"),
+            'invoiced': env._("Billed"),
+        }
 
         def _when(value, fmt='EEE d MMM · HH:mm'):
             return format_datetime(env, value, tz=tz, dt_format=fmt) if value else '—'
@@ -1866,7 +1872,8 @@ class AppShellMixin:
                 event.partner_id.name or '',
             ) if part),
             'state': ts.state,
-            'state_label': states.get(ts.state, ts.state or ''),
+            'state_label': states.get(ts.state) or dict(
+                ts._fields['state']._description_selection(env)).get(ts.state, ts.state or ''),
             'lines': [
                 (env._("Travel Start"), _when(ts.travel_start)),
                 (env._("Coverage Start"), _when(ts.coverage_start)),

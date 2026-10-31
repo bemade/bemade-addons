@@ -154,6 +154,9 @@ export class ScAutosaveField extends Component {
         // confirm, cancel} — removing the LAST chosen « access » tag (the
         // player's only team the viewer staffs) asks first.
         confirmRemove: { type: Object, optional: true },
+        // Task 1731: the « saved » wording of this field (« Envoyée » on a
+        // timesheet card: a save there IS the sending) — « <label> · hh:mm ».
+        savedLabel: { type: String, optional: true },
         "*": true,
     };
 
@@ -429,6 +432,11 @@ export class ScAutosaveField extends Component {
             case "saving":
                 return _t("Saving…");
             case "saved":
+                if (this.props.savedLabel) {
+                    return this.state.savedAt
+                        ? `${this.props.savedLabel} · ${this.state.savedAt}`
+                        : this.props.savedLabel;
+                }
                 return this.state.savedAt ? _t("Saved · %s", this.state.savedAt) : _t("Saved");
             case "queued":
                 return _t("Offline — pending");
