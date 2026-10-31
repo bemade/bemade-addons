@@ -1,0 +1,18 @@
+// Task 1732 — the booking form's answers on « Mes rendez-vous ».
+// Scoped under .o_sc_app (the shell); no inline style in the views.
+
+.o_sc_app {
+    .o_sc_booking_answers {
+        margin-top: var(--sc-space-2);
+
+        dt {
+            white-space: normal;
+        }
+    }
+
+    // The calendar's booking details (sc_calendar, shared component):
+    // a multi-line answer keeps its line breaks.
+    .o_sc_calendar_detail .o_sc_kv dd {
+        white-space: pre-line;
+    }
+}

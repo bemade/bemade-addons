@@ -81,10 +81,80 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
                     env._("Client"), env._("Appointment type"), env._("Status"),
                     env._("Email"), env._("Phone")))],
         }
+        # Task 1732: the booking's question answers, after the contacts.
+        props['detailKeys'] += [
+            [self._sc_booking_answer_key(question.id), question.name]
+            for question in self._sc_booking_questions()]
         return self._sc_bookings_shell(
             response, 'bemade_sports_clinic_bookings.sc_app_bookings_calendar',
             {'sc_calendar_props': json.dumps(props),
              'sc_booking_segments': self._sc_booking_segments(None)})
+
+    # ------------------------------------------------------------------
+    # Task 1732: the booking's question answers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _sc_booking_answers(booking):
+        """The answers of ONE already-filtered (sudo) booking, grouped per
+        question in the question order: ``[{'question_id', 'label',
+        'value'}]``. A selection answer shows its label (a checkbox
+        question its labels joined), a text answer its text as typed;
+        empty answers are left out."""
+        by_question = {}
+        # Inputs are stored newest first; a checkbox question's choices
+        # follow the question's own answer order, the rest the typing order.
+        inputs = booking.appointment_answer_input_ids.sorted(lambda a: (
+            a.value_answer_id.sequence, a.value_answer_id.id, a.id))
+        for answer in inputs:
+            question = answer.question_id
+            if answer.value_answer_id:
+                value = answer.value_answer_id.name or ''
+            else:
+                value = (answer.value_text_box or '').strip()
+            if value:
+                by_question.setdefault(question, []).append(value)
+        questions = sorted(by_question, key=lambda q: (q.sequence, q.id))
+        return [{
+            'question_id': question.id,
+            'label': question.name,
+            'value': ', '.join(by_question[question]),
+        } for question in questions]
+
+    @staticmethod
+    def _sc_booking_answer_key(question_id):
+        return 'answer_%d' % question_id
+
+    def _sc_booking_questions(self):
+        """The questions the calendar details may show for the session
+        user: those of their appointment types plus any question answered
+        on one of their bookings (a question since removed from a type)."""
+        user = request.env.user
+        questions = request.env['appointment.type'].sudo().search(
+            [('staff_user_ids', 'in', user.ids)]).question_ids
+        questions |= request.env['appointment.answer.input'].sudo().with_context(active_test=False).search([
+            ('calendar_event_id', 'any', self._get_booking_base_domain()),
+        ]).question_id
+        return questions.sorted(lambda q: (q.sequence, q.id))
+
+    @http.route()
+    def portal_my_bookings_calendar_data(self, start=None, end=None, **kwargs):
+        response = super().portal_my_bookings_calendar_data(start=start, end=end, **kwargs)
+        if not self._sc_app_shell_active():
+            return response
+        payload = json.loads(response.get_data(as_text=True) or '[]')
+        if not payload:
+            return response
+        # The rows are the bookings the parent's search (as the session
+        # user, record rule applied) returned; sudo only to read them.
+        bookings = request.env['calendar.event'].sudo().with_context(active_test=False).browse(
+            [item['id'] for item in payload])
+        answers = {booking.id: self._sc_booking_answers(booking) for booking in bookings}
+        for item in payload:
+            for answer in answers.get(item['id'], ()):
+                item[self._sc_booking_answer_key(answer['question_id'])] = answer['value']
+        return request.make_response(
+            json.dumps(payload), headers=[('Content-Type', 'application/json')])
 
     @staticmethod
     def _sc_booking_segments(list_params=None):
@@ -144,6 +214,8 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
                 'email_href': sc_contact_href('mailto', details['email']),
                 'status': details['status'],
                 'cancelled': details['cancelled'],
+                # Task 1732: the booking form's answers.
+                'answers': self._sc_booking_answers(booking),
             })
         list_params = self._sc_booking_filter_params(qcontext) + [('sortby', explicit_sortby or '')]
         return {
