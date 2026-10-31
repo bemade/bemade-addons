@@ -256,7 +256,9 @@ class AppPlayerAddPortal(TeamStaffPortal):
         if not patient:
             return request.redirect(back)
         deadline = fields.Datetime.now() - timedelta(minutes=SC_PLAYER_UNDO_MINUTES)
-        documents = request.env['sports.injury.document'].sudo().search_count([('patient_id', '=', patient.id)])
+        # Task 1432: archived documents count too (the unlink would cascade).
+        documents = request.env['sports.injury.document'].sudo().with_context(
+            active_test=False).search_count([('patient_id', '=', patient.id)])
         notes = request.env['sports.treatment.note'].sudo().search_count([('patient_id', '=', patient.id)])
         allowed = (
             patient.create_uid == request.env.user

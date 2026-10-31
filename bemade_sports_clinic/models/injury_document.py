@@ -27,6 +27,38 @@ class InjuryDocument(models.Model):
     ], string='Category', default='other', required=True)
     created_by_id = fields.Many2one('res.users', string='Uploaded By', default=lambda self: self.env.user, required=True)
     create_date = fields.Datetime(string='Upload Date')
+    # Task 1432: a portal « Delete » archives the document (a clinic
+    # administrator restores it from the backend); archived documents leave
+    # every portal list, count and download.
+    active = fields.Boolean(default=True)
+
+    def _sc_can_manage(self, user=None):
+        """Task 1432 (owner decision 2026-10-31): who may edit / delete
+        (archive) this document from the portal — its uploader, a clinic
+        administrator or a system administrator. Everybody else reads it
+        only. The caller still checks the player / injury access."""
+        self.ensure_one()
+        user = user or self.env.user
+        return bool(
+            self.sudo().created_by_id == user
+            or user.has_group('bemade_sports_clinic.group_sports_clinic_admin')
+            or user.has_group('base.group_system'))
+
+    def _sc_portal_archive(self, user=None):
+        """Task 1432: archive from the portal (already permission-checked
+        by the caller) and leave an internal note on the player — « Document
+        « name » deleted by user » — that notifies nobody."""
+        user = user or self.env.user
+        for doc in self.sudo():
+            doc.active = False
+            doc.patient_id.message_post(
+                body=self.env._("Document « %(name)s » deleted by %(user)s",
+                                name=doc.name, user=user.name),
+                message_type='comment',
+                subtype_xmlid='mail.mt_note',
+                author_id=user.partner_id.id,
+            )
+        return True
     
     @api.model_create_multi
     def create(self, vals_list):

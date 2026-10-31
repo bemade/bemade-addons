@@ -396,7 +396,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             record.create_uid == request.env.user
             and record.create_date and record.create_date >= deadline
             and not record.treatment_note_ids
-            and not record.document_ids
+            # Task 1432: an archived document still blocks it (cascade).
+            and not record.with_context(active_test=False).document_ids
         )
         if not allowed:
             _logger.info("Undo of injury %s refused for user %s", injury.id, request.env.user.id)
@@ -1232,7 +1233,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         """Download a document attached to an injury"""
         document = request.env['sports.injury.document'].sudo().browse(int(document_id))
         
-        if not document.exists():
+        # Task 1432: an archived (portal-deleted) document is gone.
+        if not document.exists() or not document.active:
             raise request.not_found()
             
         try:
@@ -1258,7 +1260,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def download_patient_document(self, document_id, **post):
         """Download a document linked to a patient (injury optional)."""
         document = request.env['sports.injury.document'].sudo().browse(int(document_id))
-        if not document.exists():
+        # Task 1432: an archived (portal-deleted) document is gone.
+        if not document.exists() or not document.active:
             raise request.not_found()
         try:
             # Access check based on patient (primary link)
@@ -1392,43 +1395,59 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     @http.route(['/my/injury/document/delete/<int:document_id>'], type='http', auth='user',
                 website=True, methods=['POST'], csrf=True)
     def delete_injury_document(self, document_id, **post):
-        """Delete a document attached to an injury.
+        """Delete a document — of an injury or of the player (injury-less).
 
         Task 1544: POST + CSRF only (a GET used to delete, so a crafted link or
-        image could remove a document for a logged-in TP)."""
+        image could remove a document for a logged-in TP).
+
+        Task 1432 (owner decision 2026-10-31): only the document's uploader or
+        a clinic administrator may delete it, and « delete » ARCHIVES it (a
+        clinic administrator restores it from the backend), with an internal
+        note on the player. Player-level documents (no injury) work too (they
+        used to 404). A refusal comes back with « permission denied » — never
+        a 404 / 500 for a document the user can see."""
         document = request.env['sports.injury.document'].sudo().browse(int(document_id))
-        
-        if not document.exists():
+
+        if not document.exists() or not document.active:
             raise request.not_found()
-            
+
         try:
-            # Check access to the injury this document belongs to
-            injury = self._check_access_to_injury(document.injury_id.id)
-        except UserError:
+            # The injury's access, or (no injury) the player's — as the download.
+            if document.injury_id:
+                self._check_access_to_injury(document.injury_id.id)
+            else:
+                self._check_access_to_patient(document.patient_id.id)
+        except (UserError, AccessError):
             raise request.not_found()
-            
+
         # Keep the team/clinic nav context across the round-trip (task 1410).
         ctx_qs = _nav_ctx_qs(post, self._clinic_context(post))
 
-        # Task 1616: the injury card posts where to come back (the card).
+        # Task 1616: the injury card posts where to come back (the card);
+        # task 1432: the player Documents tab too.
         return_url = self._safe_return_url(post.get('return_url'), None)
+        if document.injury_id:
+            fallback = f'/my/injury/documents?injury_id={document.injury_id.id}{ctx_qs}'
+        else:
+            fallback = f'/my/player?player_id={document.patient_id.id}{ctx_qs}&tab=documents'
 
-        # Check if user is a treatment professional (only they can delete documents)
-        is_treatment_prof = self._is_treatment_professional()
-        if not is_treatment_prof:
-            if return_url:
-                return request.redirect(self._url_with_query(return_url, 'error=permission_denied'))
-            return request.redirect(f'/my/injury/documents?injury_id={document.injury_id.id}{ctx_qs}&error=permission_denied')
-            
-        # Delete the document
-        injury_id = document.injury_id.id
-        document.sudo().unlink()
-        
-        if return_url:
-            return request.redirect(self._url_with_query(return_url, 'success=document_deleted'))
-        # Redirect back to documents page with success message
-        return request.redirect(f'/my/injury/documents?injury_id={injury_id}{ctx_qs}&success=document_deleted')
-        
+        def _back(query):
+            return request.redirect(self._url_with_query(return_url or fallback, query))
+
+        # A treatment professional (or an administrator) who uploaded it, or
+        # a clinic administrator.
+        user = request.env.user
+        allowed = (
+            (self._is_treatment_professional() or self._is_clinic_admin())
+            and document._sc_can_manage(user)
+        )
+        if not allowed:
+            _logger.info("Document %s delete refused for user %s", document.id, user.id)
+            return _back('error=permission_denied')
+
+        document._sc_portal_archive(user)
+        return _back('success=document_deleted')
+
     @http.route(['/my/injury/verify'], type='http', auth='user', website=True, methods=['POST'])
     def verify_injury(self, injury_id, **post):
         """Verify an injury (change status from unverified to active)"""

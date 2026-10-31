@@ -7226,6 +7226,7 @@ msgstr "Lier cette note (facultatif)"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_note_add_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
 msgid "Link to Injury (optional)"
@@ -15095,6 +15096,7 @@ msgstr "Supprimer ce contact ?"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_injury_documents
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
 msgid "Delete this document?"
 msgstr "Supprimer ce document ?"
@@ -18065,3 +18067,14 @@ msgid ""
 msgstr ""
 "Votre feuille de temps pour cet événement est déjà envoyée — vos "
 "modifications s'enregistrent automatiquement."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+msgid "-- None --"
+msgstr "-- Aucune --"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/injury_document.py:0
+msgid "Document « %(name)s » deleted by %(user)s"
+msgstr "Document « %(name)s » supprimé par %(user)s"

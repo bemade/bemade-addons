@@ -318,7 +318,8 @@ class TestAppShellDocuments1539(AppShellCommon):
             'csrf_token': self._csrf(), 'team_id': self.team_a.id}, allow_redirects=False)
         self.assertIn(resp.status_code, (302, 303))
         self.assertIn('success=document_deleted', resp.headers['Location'])
-        self.assertFalse(self.doc.exists())
+        self.doc.invalidate_recordset()
+        self.assertFalse(self.doc.active)  # task 1432: archived, not unlinked
 
     def test_coach_list_only(self):
         self._switch(True)

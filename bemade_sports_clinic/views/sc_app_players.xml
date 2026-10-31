@@ -757,14 +757,55 @@
                         <t t-set="upload_cancel" t-value="True"/>
                     </t>
                 </t>
+                <!-- Task 1432: per document, « Edit » (the pencil: name,
+                     category, description, injury link — saved as you go)
+                     and « Delete » (archived, with a confirmation) for its
+                     uploader or a clinic administrator; read-only for the
+                     others. -->
                 <div t-if="sc_document_rows" class="o_sc_list" data-sc-section="player.documents">
                     <t t-foreach="sc_document_rows" t-as="drow">
-                        <t t-call="bemade_sports_clinic.sc_document_row">
-                            <t t-set="doc" t-value="drow['doc']"/>
-                            <t t-set="meta" t-value="drow['meta']"/>
-                            <t t-set="download_url" t-value="'/my/patient/document/download/%s' % drow['doc'].id"/>
-                            <t t-set="delete_sheet" t-value="False"/>
-                        </t>
+                        <t t-set="doc" t-value="drow['doc']"/>
+                        <t t-set="sc_doc_edit" t-value="is_treatment_prof and sc_can('documents.upload') and drow.get('can_manage')"/>
+                        <t t-set="sc_doc_delete" t-value="is_treatment_prof and sc_can('documents.delete') and drow.get('can_manage')"/>
+                        <div t-attf-class="o_sc_player_doc #{'o_sc_edit_card' if sc_doc_edit else ''}"
+                             t-att-data-sc-edit-card="('player-document-%s' % doc.id) if sc_doc_edit else None">
+                            <t t-call="bemade_sports_clinic.sc_document_row">
+                                <t t-set="meta" t-value="drow['meta']"/>
+                                <t t-set="download_url" t-value="'/my/patient/document/download/%s' % doc.id"/>
+                                <t t-set="delete_sheet" t-value="sc_doc_delete and ('sc_delete_player_document_%s' % doc.id)"/>
+                                <t t-set="edit_toggle" t-value="sc_doc_edit"/>
+                                <t t-set="fragment_key" t-value="sc_fragment_key(doc, 'tabrow')"/>
+                            </t>
+                            <div t-if="sc_doc_edit" class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
+                                <t t-set="lbl">Name</t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave">
+                                    <t t-set="props" t-value="sc_field_props(doc, 'name', lbl)"/>
+                                </t>
+                                <t t-set="lbl">Category</t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave">
+                                    <t t-set="props" t-value="sc_field_props(doc, 'category', lbl, 'select', options=sc_document_category_options)"/>
+                                </t>
+                                <t t-set="lbl">Description</t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave">
+                                    <t t-set="props" t-value="sc_field_props(doc, 'description', lbl, 'textarea', clearable=True)"/>
+                                </t>
+                                <t t-set="lbl">Link to Injury (optional)</t>
+                                <t t-set="sc_doc_no_injury">-- None --</t>
+                                <t t-call="bemade_sports_clinic.sc_field_autosave">
+                                    <t t-set="props" t-value="sc_field_props(doc, 'injury_id', lbl, 'select', options=[('', sc_doc_no_injury)] + list(sc_injury_choices or []))"/>
+                                </t>
+                                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                            </div>
+                            <t t-if="sc_doc_delete" t-call="bemade_sports_clinic.sc_confirm_sheet">
+                                <t t-set="sheet_id" t-value="'sc_delete_player_document_%s' % doc.id"/>
+                                <t t-set="title">Delete this document?</t>
+                                <t t-set="message" t-value="doc.name"/>
+                                <t t-set="action" t-value="'/my/injury/document/delete/%s' % doc.id"/>
+                                <t t-set="hidden" t-value="{'return_url': documents_tab_return}"/>
+                                <t t-set="confirm_label">Delete</t>
+                                <t t-set="danger" t-value="True"/>
+                            </t>
+                        </div>
                     </t>
                 </div>
                 <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
@@ -1291,16 +1332,20 @@
                         <div t-if="row['documents']" class="o_sc_list o_sc_injury_doc_list">
                             <t t-foreach="row['documents']" t-as="drow">
                                 <t t-set="doc" t-value="drow['doc']"/>
-                                <div t-attf-class="o_sc_injury_doc #{'o_sc_edit_card' if sc_card_upload else ''}"
-                                     t-att-data-sc-edit-card="('document-%s' % doc.id) if sc_card_upload else None">
+                                <!-- Task 1432: edit / delete for the document's
+                                     uploader or a clinic administrator only. -->
+                                <t t-set="sc_doc_edit" t-value="sc_card_upload and drow.get('can_manage')"/>
+                                <t t-set="sc_doc_delete" t-value="sc_card_doc_delete and drow.get('can_manage')"/>
+                                <div t-attf-class="o_sc_injury_doc #{'o_sc_edit_card' if sc_doc_edit else ''}"
+                                     t-att-data-sc-edit-card="('document-%s' % doc.id) if sc_doc_edit else None">
                                     <t t-call="bemade_sports_clinic.sc_document_row">
                                         <t t-set="meta" t-value="drow['meta']"/>
                                         <t t-set="download_url" t-value="'/my/injury/document/download/%s' % doc.id"/>
-                                        <t t-set="delete_sheet" t-value="sc_card_doc_delete and ('sc_delete_document_%s' % doc.id)"/>
-                                        <t t-set="edit_toggle" t-value="sc_card_upload"/>
+                                        <t t-set="delete_sheet" t-value="sc_doc_delete and ('sc_delete_document_%s' % doc.id)"/>
+                                        <t t-set="edit_toggle" t-value="sc_doc_edit"/>
                                         <t t-set="fragment_key" t-value="sc_fragment_key(doc, 'row')"/>
                                     </t>
-                                    <div t-if="sc_card_upload" class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
+                                    <div t-if="sc_doc_edit" class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
                                         <t t-set="lbl">Name</t>
                                         <t t-call="bemade_sports_clinic.sc_field_autosave">
                                             <t t-set="props" t-value="sc_field_props(doc, 'name', lbl)"/>
@@ -1315,7 +1360,7 @@
                                         </t>
                                         <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
                                     </div>
-                                    <t t-if="sc_card_doc_delete" t-call="bemade_sports_clinic.sc_confirm_sheet">
+                                    <t t-if="sc_doc_delete" t-call="bemade_sports_clinic.sc_confirm_sheet">
                                         <t t-set="sheet_id" t-value="'sc_delete_document_%s' % doc.id"/>
                                         <t t-set="title">Delete this document?</t>
                                         <t t-set="message" t-value="doc.name"/>

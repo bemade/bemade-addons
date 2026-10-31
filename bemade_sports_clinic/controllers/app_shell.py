@@ -854,8 +854,11 @@ _DOCUMENT_LEGACY_CATEGORIES = {'xray': 'medical_imaging', 'mri': 'medical_imagin
 
 
 def _document_check(ctrl, document):
-    """The injury's (or, unlinked, the player's) access — as the download."""
+    """The injury's (or, unlinked, the player's) access — as the download.
+    Task 1432: an archived (portal-deleted) document is gone."""
     doc = document.sudo()
+    if not doc.active:
+        raise MissingError(_("Record not found."))
     if doc.injury_id:
         ctrl._check_access_to_injury(doc.injury_id.id)
     else:
@@ -864,8 +867,14 @@ def _document_check(ctrl, document):
 
 def _document_permission(ctrl, document):
     """Portal therapists hold a READ-ONLY ACL on documents (the upload is
-    sudo too): whoever may upload may rename / re-file them."""
+    sudo too): whoever may upload may rename / re-file them. Task 1432
+    (owner decision 2026-10-31): only the document's uploader or a clinic
+    administrator (``_sc_can_manage``)."""
     user = request.env.user
+    if not document.sudo()._sc_can_manage(user):
+        return False
+    if ctrl._is_clinic_admin():
+        return True
     return bool(ctrl._is_treatment_professional() and sc_app_roles.can(
         'documents.upload', user._sc_app_roles(), is_system=user.has_group('base.group_system')))
 
@@ -887,6 +896,18 @@ def _document_write(ctrl, document, field, value):
         if not category:
             raise ValidationError(_("Invalid value."))
         document.sudo().write({'category': category})
+    elif field == 'injury_id':
+        # Task 1432: re-link to one of the player's own injuries, or none
+        # (a player document).
+        injury = False
+        if value not in (None, False, ''):
+            try:
+                injury = int(value)
+            except (TypeError, ValueError):
+                injury = 0
+            if injury not in document.sudo().patient_id.injury_ids.ids:
+                raise ValidationError(_("The selected injury does not belong to this player."))
+        document.sudo().write({'injury_id': injury})
     else:
         document.sudo().write({'description': (value or '').strip() or False})
     return {}
@@ -1040,7 +1061,9 @@ SAVE_REGISTRY = {
     # Task 1616: a document of an injury card — re-filed after a multi-file
     # upload (one category / description applied to all of them).
     'sports.injury.document': {
-        'fields': {'name': _TP_ROLES, 'category': _TP_ROLES, 'description': _TP_ROLES},
+        'fields': {'name': _TP_ROLES, 'category': _TP_ROLES, 'description': _TP_ROLES,
+                   # Task 1432: the player Documents tab re-links it.
+                   'injury_id': _TP_ROLES},
         'check': _document_check,
         'write': _document_write,
         'read': _document_read,
@@ -1691,10 +1714,13 @@ class AppShellMixin:
             return {}
         labels = dict(env['sports.injury.document']._fields['category']._description_selection(env))
         out = {}
+        user = env.user
         for doc in env['sports.injury.document'].sudo().search(
                 [('injury_id', 'in', injuries.ids)], order='create_date desc, id desc'):
             out.setdefault(doc.injury_id.id, []).append({
                 'doc': doc,
+                # Task 1432: edit / delete for its uploader or an admin only.
+                'can_manage': doc._sc_can_manage(user),
                 'meta': ' · '.join(part for part in (
                     labels.get(doc.category, ''), format_date(env, doc.create_date),
                     doc.created_by_id.display_name or '') if part),

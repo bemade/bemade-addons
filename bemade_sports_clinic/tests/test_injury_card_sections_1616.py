@@ -90,6 +90,8 @@ class InjuryCard1616Mixin:
             'patient_id': self.player.id, 'injury_id': (injury or self.injury).id,
             'name': name, 'file_name': name, 'category': 'other',
             'file_content': 'U3ludGhldGlj',  # base64 of « Synthetic »
+            # Task 1432: edit / delete belong to the uploader (or an admin).
+            'created_by_id': self.tp.id,
         }, **extra))
 
     def _location(self, resp):
@@ -369,7 +371,9 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         path, query, frag = self._location(resp)
         self.assertEqual((path, query['injury'], query['success'], frag),
                          ('/my/player', [str(self.injury.id)], ['document_deleted'], 'injury-%s' % self.injury.id))
-        self.assertFalse(doc.exists())
+        # Task 1432: « delete » archives (an admin restores it).
+        self.assertTrue(doc.exists())
+        self.assertFalse(doc.active)
 
     # -- AC-8 ------------------------------------------------------------
     def test_delete_injury_back_to_the_list(self):
