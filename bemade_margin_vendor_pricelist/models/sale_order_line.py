@@ -55,16 +55,20 @@ class SaleOrderLine(models.Model):
         non_product_lines.gross_profit_percent = 0.0
         for line in self - non_product_lines:
             stock_missing = line._determine_missing_stock()
-            if float_is_zero(
-                stock_missing, precision_rounding=line.product_uom_id.rounding
-            ):
+            # the UoM can be blank while the line is being edited (onchange)
+            rounding = (
+                line.product_uom_id.rounding
+                or line.product_id.uom_id.rounding
+                or 0.01
+            )
+            if float_is_zero(stock_missing, precision_rounding=rounding):
                 # everything is coming from stock, use inventory valuation
                 line.purchase_price_actual = line.purchase_price
             elif (
                 float_compare(
                     line.product_uom_qty,
                     stock_missing,
-                    precision_rounding=line.product_uom_id.rounding,
+                    precision_rounding=rounding,
                 )
                 == 0
             ):
