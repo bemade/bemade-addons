@@ -2,6 +2,8 @@ from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
 import base64
 
+from markupsafe import Markup
+
 
 class InjuryDocument(models.Model):
     _name = 'sports.injury.document'
@@ -46,14 +48,20 @@ class InjuryDocument(models.Model):
 
     def _sc_portal_archive(self, user=None):
         """Task 1432: archive from the portal (already permission-checked
-        by the caller) and leave an internal note on the player — « Document
-        « name » deleted by user » — that notifies nobody."""
+        by the caller) and leave an internal note on the player that
+        notifies nobody. Owner decision 2026-10-31: the note is BILINGUAL
+        whatever the deleter's language (the player chatter is shared by
+        French and English staff) — « Document « X » supprimé par Y /
+        Document "X" deleted by Y » — so it is a fixed string, not a
+        translated term; the names are escaped."""
         user = user or self.env.user
         for doc in self.sudo():
             doc.active = False
             doc.patient_id.message_post(
-                body=self.env._("Document « %(name)s » deleted by %(user)s",
-                                name=doc.name, user=user.name),
+                body=Markup(
+                    'Document « %(name)s » supprimé par %(user)s'
+                    ' / Document "%(name)s" deleted by %(user)s'
+                ) % {'name': doc.name or '', 'user': user.name or ''},
                 message_type='comment',
                 subtype_xmlid='mail.mt_note',
                 author_id=user.partner_id.id,

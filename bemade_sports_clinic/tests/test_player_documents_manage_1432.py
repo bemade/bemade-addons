@@ -17,7 +17,10 @@ Acceptance criteria:
 * AC-2 The uploader deletes a player-level AND an injury-level document: it
   is archived (not unlinked), the user comes back to the page she came from
   with « Document deleted. », and the player gets the internal note
-  « Document « name » deleted by user » (no follower notified).
+  « Document « name » deleted by user » (no follower notified). Owner
+  decision 2026-10-31: the note is BILINGUAL — « Document « X » supprimé
+  par Y / Document "X" deleted by Y » — whatever the deleter's language,
+  with the document and user names HTML-escaped.
 * AC-3 Another therapist (not the uploader) cannot: the edit is refused
   (403) and the delete comes back with « permission denied » (never a 404 /
   500); the record is unchanged. A coach cannot either.
@@ -32,6 +35,7 @@ Acceptance criteria:
 * AC-8 fr_CA (website-aware): the tab's « Modifier » / « Supprimer » labels,
   « Supprimer ce document ? » and the link field render in French.
 """
+import html
 import json
 
 from lxml import html as lxml_html
@@ -146,6 +150,7 @@ class TestPlayerDocuments1432(PlayerDocuments1432Common):
 
     # -- AC-2 ------------------------------------------------------------
     def test_uploader_archives_player_doc_with_note(self):
+        self.tp.write({'lang': 'en_US'})
         Message = self.env['mail.message']
         before = Message.search([('model', '=', 'sports.patient'), ('res_id', '=', self.player.id)])
         self._login_tp()
@@ -160,13 +165,29 @@ class TestPlayerDocuments1432(PlayerDocuments1432Common):
         notes = Message.search([('model', '=', 'sports.patient'), ('res_id', '=', self.player.id)]) - before
         self.assertEqual(len(notes), 1)
         self.assertEqual(notes.subtype_id, self.env.ref('mail.mt_note'))
-        self.assertIn('SC1432 player doc.pdf', notes.body)
-        self.assertIn(self.tp.name, notes.body)
+        # Owner decision 2026-10-31: bilingual whatever the deleter's lang
+        # (the therapist here is en_US).
+        body = html.unescape(notes.body)
+        self.assertIn('Document « SC1432 player doc.pdf » supprimé par %s' % self.tp.name, body)
+        self.assertIn('Document "SC1432 player doc.pdf" deleted by %s' % self.tp.name, body)
         self.assertEqual(notes.author_id, self.tp.partner_id)
         self.assertFalse(notes.notified_partner_ids, 'nobody notified')
         # The page says so.
         text, _tree = self._get(location)
         self.assertIn('Document deleted.', text)
+
+    def test_archive_note_escapes_names(self):
+        """The bilingual note is built as markup: names are escaped."""
+        self.doc_player.name = 'SC1432 <b>x</b> & y.pdf'
+        Message = self.env['mail.message']
+        before = Message.search([('model', '=', 'sports.patient'), ('res_id', '=', self.player.id)])
+        self.doc_player._sc_portal_archive(self.tp)
+        note = Message.search([('model', '=', 'sports.patient'), ('res_id', '=', self.player.id)]) - before
+        self.assertEqual(len(note), 1)
+        self.assertNotIn('<b>x</b>', note.body)
+        self.assertIn('SC1432 &lt;b&gt;x&lt;/b&gt; &amp; y.pdf', note.body)
+        self.assertIn('supprimé par', note.body)
+        self.assertIn('deleted by', note.body)
 
     def test_uploader_archives_injury_doc(self):
         self._login_tp()
@@ -340,3 +361,18 @@ class TestPlayerDocumentsFr1432(PlayerDocuments1432Common):
         options = [json.loads(p) for p in item.xpath('.//owl-component/@props')
                    if json.loads(p)['field'] == 'injury_id'][0]['options']
         self.assertEqual(options[0][1], '-- Aucune --')
+
+    def test_french_deleter_note_bilingual(self):
+        """Owner decision 2026-10-31: a fr_CA deleter writes the same
+        bilingual note."""
+        Message = self.env['mail.message']
+        before = Message.search([('model', '=', 'sports.patient'), ('res_id', '=', self.player.id)])
+        self._login_tp()
+        self.opener.cookies.set('frontend_lang', 'fr_CA')
+        resp = self._delete(self.doc_player, return_url=self._tab_url())
+        self.assertIn(resp.status_code, (302, 303))
+        note = Message.search([('model', '=', 'sports.patient'), ('res_id', '=', self.player.id)]) - before
+        self.assertEqual(len(note), 1)
+        body = html.unescape(note.body)
+        self.assertIn('Document « SC1432 player doc.pdf » supprimé par %s' % self.tp.name, body)
+        self.assertIn('Document "SC1432 player doc.pdf" deleted by %s' % self.tp.name, body)

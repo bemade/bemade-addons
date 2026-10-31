@@ -18073,9 +18073,3 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 msgid "-- None --"
 msgstr "-- Aucune --"
-
-#. module: bemade_sports_clinic
-#. odoo-python
-#: code:addons/bemade_sports_clinic/models/injury_document.py:0
-msgid "Document « %(name)s » deleted by %(user)s"
-msgstr "Document « %(name)s » supprimé par %(user)s"
