@@ -3963,8 +3963,9 @@ msgstr "Changements capturés (vue interne)"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_injury_documents
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
 msgid "Category"
 msgstr "Catégorie"
 

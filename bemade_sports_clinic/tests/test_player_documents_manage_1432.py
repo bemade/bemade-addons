@@ -334,6 +334,9 @@ class TestPlayerDocumentsFr1432(PlayerDocuments1432Common):
         self.assertIn('Supprimer ce document ?', ' '.join(dialog.text_content().split()))
         labels = {json.loads(p)['field']: json.loads(p)['label'] for p in item.xpath('.//owl-component/@props')}
         self.assertEqual(labels['injury_id'], 'Lien vers la blessure (optionnel)')
+        # Pre-review click-through 2026-10-31: « Category » was left in English.
+        self.assertEqual(labels['name'], 'Nom')
+        self.assertEqual(labels['category'], 'Catégorie')
         options = [json.loads(p) for p in item.xpath('.//owl-component/@props')
                    if json.loads(p)['field'] == 'injury_id'][0]['options']
         self.assertEqual(options[0][1], '-- Aucune --')
