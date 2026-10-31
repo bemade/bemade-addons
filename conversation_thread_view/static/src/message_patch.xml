@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.Message" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('o-mail-Message')]" position="attributes">
+            <attribute
+        name="t-att-data-thread-view-kind"
+      >conversationThreadKind</attribute>
+        </xpath>
+        <xpath expr="//*[hasclass('o-mail-Message-header')]" position="inside">
+            <span
+        t-if="isConversationInternalNote"
+        class="o-conversationThreadView-noteBadge badge text-bg-warning ms-2"
+      >
+                Internal note
+            </span>
+        </xpath>
+    </t>
+</templates>

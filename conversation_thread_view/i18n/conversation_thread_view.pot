@@ -1,0 +1,87 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* conversation_thread_view
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-31 18:17+0000\n"
+"PO-Revision-Date: 2026-10-31 18:17+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: conversation_thread_view
+#. odoo-javascript
+#: code:addons/conversation_thread_view/static/src/thread_view.xml:0
+msgid "Assignee"
+msgstr ""
+
+#. module: conversation_thread_view
+#: model:ir.model,name:conversation_thread_view.model_mail_conversation
+msgid "Conversation"
+msgstr ""
+
+#. module: conversation_thread_view
+#: model:ir.model.fields,field_description:conversation_thread_view.field_mail_conversation__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: conversation_thread_view
+#. odoo-javascript
+#: code:addons/conversation_thread_view/static/src/thread_view.xml:0
+msgid "Form view"
+msgstr ""
+
+#. module: conversation_thread_view
+#. odoo-javascript
+#: code:addons/conversation_thread_view/static/src/thread_view.xml:0
+msgid "Forward"
+msgstr ""
+
+#. module: conversation_thread_view
+#: model:ir.model.fields,field_description:conversation_thread_view.field_mail_conversation__id
+msgid "ID"
+msgstr ""
+
+#. module: conversation_thread_view
+#. odoo-javascript
+#: code:addons/conversation_thread_view/static/src/message_patch.xml:0
+msgid "Internal note"
+msgstr ""
+
+#. module: conversation_thread_view
+#. odoo-javascript
+#: code:addons/conversation_thread_view/static/src/thread_view.xml:0
+msgid "Log note"
+msgstr ""
+
+#. module: conversation_thread_view
+#: model_terms:ir.ui.view,arch_db:conversation_thread_view.mail_conversation_view_form
+msgid ""
+"Opens this conversation laid out as an email thread. The form stays "
+"available."
+msgstr ""
+
+#. module: conversation_thread_view
+#. odoo-javascript
+#: code:addons/conversation_thread_view/static/src/thread_view.xml:0
+msgid "Reply"
+msgstr ""
+
+#. module: conversation_thread_view
+#. odoo-javascript
+#: code:addons/conversation_thread_view/static/src/thread_view.xml:0
+msgid "Team"
+msgstr ""
+
+#. module: conversation_thread_view
+#. odoo-python
+#: code:addons/conversation_thread_view/models/mail_conversation.py:0
+#: model_terms:ir.ui.view,arch_db:conversation_thread_view.mail_conversation_view_form
+msgid "Thread view"
+msgstr ""
