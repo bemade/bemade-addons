@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Draft",
-    "version": "19.0.1.4.1",
+    "version": "19.0.1.5.4",
     "category": "Discuss",
     "summary": "Shared, collaboratively edited reply drafts on a conversation.",
     "author": "Bemade Inc.",
@@ -44,6 +44,9 @@
         ],
         "web.assets_tests": [
             "conversation_draft/static/tests/tours/**/*",
+        ],
+        "web.assets_unit_tests": [
+            "conversation_draft/static/tests/unit/**/*",
         ],
     },
     "installable": True,

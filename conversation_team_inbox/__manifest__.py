@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Team Inbox",
-    "version": "19.0.1.0.1",
+    "version": "19.0.1.1.0",
     "category": "Discuss",
     "summary": "Shared team inbox: a per-team email alias that creates team "
     "conversations, answered from the team address.",
