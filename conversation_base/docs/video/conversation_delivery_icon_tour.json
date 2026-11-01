@@ -1,0 +1,12 @@
+{
+  "stepsFile": "../../static/tests/tours/conversation_delivery_icon_tour.steps.js",
+  "startPath": "/odoo/action-conversation_base.mail_conversation_action",
+  "lang": "fr_CA",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "voice": "fr_FR-siwis-medium",
+  "title": "Une réponse livrée n'affiche plus d'icône d'échec",
+  "introNarration": "Dans cette démonstration, nous voyons qu'une réponse envoyée depuis une conversation n'affiche plus d'icône qui laisse croire à un échec d'envoi.",
+  "outroTitle": "À vous de jouer",
+  "outroNarration": "Un message bien livré reste sans icône d'échec. Si un envoi échoue réellement, vous le voyez toujours."
+}
