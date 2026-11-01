@@ -14,12 +14,18 @@ Acceptance criteria:
 * UC-A4 Visibility = the booking's: another staff user sees neither the
   booking nor its answers (list and feed).
 * UC-A5 fr_CA: the answers section label renders in French.
+* UC-A6 (owner decision 2026-10-31, round 4) The answer to the type's MAIN
+  phone question (``appointment.type._get_main_phone_question``) is left
+  out — it is already the client's « Téléphone » — in the list rows, the
+  calendar detail keys + feed (one helper). The question stays on the
+  type (it is how Odoo collects the phone).
 """
 from datetime import timedelta
 
 from odoo import Command
 from odoo.tests import tagged
 
+from ..controllers.bookings import BookingShellPortal
 from .common import BookingsShellCommon
 
 
@@ -40,7 +46,10 @@ class _BookingAnswersCommon(BookingsShellCommon):
             'name': 'Areas', 'sequence': 4, 'question_type': 'checkbox',
             'answer_ids': [Command.create({'name': 'Knee'}), Command.create({'name': 'Ankle'})],
         })
-        cls.apt_type.question_ids = [Command.set((cls.q_reason | cls.q_sport | cls.q_details | cls.q_areas).ids)]
+        # The type's main phone question (the first phone-type one).
+        cls.q_phone = Question.create({'name': 'Phone number', 'sequence': 0, 'question_type': 'phone'})
+        cls.apt_type.question_ids = [Command.set(
+            (cls.q_phone | cls.q_reason | cls.q_sport | cls.q_details | cls.q_areas).ids)]
         Input = env['appointment.answer.input']
         base = {'calendar_event_id': cls.booking_soon.id, 'appointment_type_id': cls.apt_type.id,
                 'partner_id': cls.client.id}
@@ -51,6 +60,7 @@ class _BookingAnswersCommon(BookingsShellCommon):
             dict(base, question_id=cls.q_reason.id, value_answer_id=cls.q_reason.answer_ids[0].id),
             dict(base, question_id=cls.q_areas.id, value_answer_id=cls.q_areas.answer_ids[0].id),
             dict(base, question_id=cls.q_areas.id, value_answer_id=cls.q_areas.answer_ids[1].id),
+            dict(base, question_id=cls.q_phone.id, value_text_box='+1 514-555-0199'),
         ])
         cls.other_tp = env['res.users'].with_context(no_reset_password=True).create({
             'name': 'BK Other Therapist', 'login': 'bk.other@example.com', 'password': 'bk-other-pass',
@@ -105,6 +115,26 @@ class TestBookingAnswers(_BookingAnswersCommon):
         self.assertEqual(soon['answer_%d' % self.q_details.id], 'Pain since Monday\nWorse on stairs')
         self.assertEqual(soon['answer_%d' % self.q_areas.id], 'Knee, Ankle')
         self.assertFalse([key for key in feed[self.booking_past.id] if key.startswith('answer_')])
+
+    def test_main_phone_answer_hidden(self):
+        """UC-A6: the main phone question's answer is not repeated."""
+        self.assertEqual(self.apt_type._get_main_phone_question(), self.q_phone)
+        values = BookingShellPortal._sc_booking_answers(self.booking_soon.sudo())
+        self.assertEqual([v['question_id'] for v in values],
+                         [self.q_reason.id, self.q_sport.id, self.q_details.id, self.q_areas.id])
+        self._switch(True)
+        self.authenticate('bk.tp@example.com', 'bk-tp-pass')
+        text, tree = self._get('/my/bookings?filterby=all')
+        section = self._row(tree, self.booking_soon).xpath('.//*[@data-sc-booking-answers]')[0]
+        self.assertNotIn('Phone number', section.text_content())
+        self.assertNotIn('514-555-0199', section.text_content())
+        _text, tree = self._get('/my/bookings/calendar')
+        keys = [entry[0] for entry in self._calendar_props(tree)['detailKeys']]
+        self.assertNotIn('answer_%d' % self.q_phone.id, keys)
+        feed = {row['id']: row for row in self._feed()}
+        self.assertNotIn('answer_%d' % self.q_phone.id, feed[self.booking_soon.id])
+        # The question itself stays on the type.
+        self.assertIn(self.q_phone, self.apt_type.question_ids)
 
     def test_feed_switch_off_unchanged(self):
         self.authenticate('bk.tp@example.com', 'bk-tp-pass')

@@ -100,7 +100,12 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
         question in the question order: ``[{'question_id', 'label',
         'value'}]``. A selection answer shows its label (a checkbox
         question its labels joined), a text answer its text as typed;
-        empty answers are left out."""
+        empty answers are left out. Owner decision 2026-10-31: the answer
+        to the type's MAIN phone question is left out too — it is already
+        the client's phone (Odoo writes it on the partner), so the list and
+        the calendar details do not repeat it."""
+        main_phone = booking.appointment_type_id._get_main_phone_question() \
+            if booking.appointment_type_id else booking.env['appointment.question']
         by_question = {}
         # Inputs are stored newest first; a checkbox question's choices
         # follow the question's own answer order, the rest the typing order.
@@ -108,6 +113,8 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
             a.value_answer_id.sequence, a.value_answer_id.id, a.id))
         for answer in inputs:
             question = answer.question_id
+            if question in main_phone:
+                continue
             if answer.value_answer_id:
                 value = answer.value_answer_id.name or ''
             else:
@@ -130,12 +137,18 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
         user: those of their appointment types plus any question answered
         on one of their bookings (a question since removed from a type)."""
         user = request.env.user
-        questions = request.env['appointment.type'].sudo().search(
-            [('staff_user_ids', 'in', user.ids)]).question_ids
-        questions |= request.env['appointment.answer.input'].sudo().with_context(active_test=False).search([
+        types = request.env['appointment.type'].sudo().search([('staff_user_ids', 'in', user.ids)])
+        questions = types.question_ids
+        answers = request.env['appointment.answer.input'].sudo().with_context(active_test=False).search([
             ('calendar_event_id', 'any', self._get_booking_base_domain()),
-        ]).question_id
-        return questions.sorted(lambda q: (q.sequence, q.id))
+        ])
+        questions |= answers.question_id
+        # Owner decision 2026-10-31: a type's main phone question is never
+        # shown (its answer is the client's « Téléphone »).
+        types |= answers.appointment_type_id
+        main_phones = request.env['appointment.question'].sudo().union(
+            *[t._get_main_phone_question() for t in types])
+        return (questions - main_phones).sorted(lambda q: (q.sequence, q.id))
 
     @http.route()
     def portal_my_bookings_calendar_data(self, start=None, end=None, **kwargs):
