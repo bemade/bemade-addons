@@ -1722,6 +1722,10 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # Task 1665: same right as the cancel.
             'sc_can_restore': values['can_edit'] and event_sudo.state == 'cancelled',
             'sc_can_activities': is_tp or user.has_group('bemade_sports_clinic.group_portal_team_coach'),
+            # Task 1736: the hero's activities clock — the same count as the
+            # event's row in « Events » (MY activities on it, task 1592).
+            'sc_event_clock': self._sc_activity_clocks(
+                event, lambda e: '/my/event/activities?event_id=%s' % e.id).get(event.id),
             'sc_flash': {'success': success, 'error': error},
         }
 

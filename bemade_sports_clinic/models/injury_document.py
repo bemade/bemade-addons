@@ -67,7 +67,25 @@ class InjuryDocument(models.Model):
                 author_id=user.partner_id.id,
             )
         return True
-    
+
+    def _sc_portal_restore(self, user=None):
+        """Task 1736: « Annuler » of a portal archive (the app's undo toast;
+        already permission-checked by the caller) — back in the lists, and
+        the same bilingual internal note on the player (task 1432)."""
+        user = user or self.env.user
+        for doc in self.sudo():
+            doc.active = True
+            doc.patient_id.message_post(
+                body=Markup(
+                    'Document « %(name)s » restauré par %(user)s'
+                    ' / Document "%(name)s" restored by %(user)s'
+                ) % {'name': doc.name or '', 'user': user.name or ''},
+                message_type='comment',
+                subtype_xmlid='mail.mt_note',
+                author_id=user.partner_id.id,
+            )
+        return True
+
     @api.model_create_multi
     def create(self, vals_list):
         """Ensure backward compatibility: if an injury is provided but patient is missing,

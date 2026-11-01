@@ -86,13 +86,12 @@
                             <button type="button" class="o_sc_section_more o_sc_link_btn"
                                     data-sc-sheet-open="sc_announcement_history_sheet">History</button>
                         </h2>
-                        <span t-if="sc_show_compose" class="o_sc_card_icons">
-                            <t t-set="sc_edit_label">Edit</t>
-                            <t t-set="sc_archive_label">Archive</t>
-                            <button type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1"
-                                    aria-expanded="false" t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
-                            </button>
+                        <!-- Task 1736 (owner 2026-11-01): the shared top bar —
+                             archive (visible in read mode, the undo toast below),
+                             then the pencil, rightmost. -->
+                        <t t-if="sc_show_compose" t-call="bemade_sports_clinic.sc_card_icons">
+                            <t t-set="ci_archive" t-value="team.announcement and {'action': '/my/team/%s/announcement/dismiss' % team.id, 'section': 'team.announcement.archive'}"/>
+                            <t t-set="ci_editable" t-value="True"/>
                             <!-- Task 1663: archived a moment ago — « Annonce archivée
                                  — Annuler » (sc_app_ui.js shows the toast; the
                                  server re-checks the window). -->
@@ -105,14 +104,7 @@
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 </form>
                             </t>
-                            <form t-if="team.announcement" t-attf-action="/my/team/#{team.id}/announcement/dismiss"
-                                  method="post" class="o_sc_inline_form" data-sc-section="team.announcement.archive">
-                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                <button type="submit" class="o_sc_icon_btn" t-att-aria-label="sc_archive_label" t-att-title="sc_archive_label">
-                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'archive'"/></t>
-                                </button>
-                            </form>
-                        </span>
+                        </t>
                     </div>
                     <div data-sc-edit-view="read" data-sc-section="team.announcement">
                         <div t-if="team.announcement" class="o_sc_announcement_content">

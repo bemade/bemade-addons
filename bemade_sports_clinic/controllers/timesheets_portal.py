@@ -3,6 +3,7 @@ from odoo import http, _, fields
 from odoo.exceptions import AccessError, UserError
 from datetime import datetime
 import pytz
+from urllib.parse import quote as url_quote
 import logging
 
 from .access_control_mixin import AccessControlMixin
@@ -261,5 +262,32 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return_url = self._safe_return_url(return_url, None)
 
         target = return_url or '/my/sc/timesheets'
+        # Task 1736 (owner 2026-11-01): the app shell's archive icon (it IS
+        # an archive) — no banner, « Timesheet archived · Undo » instead.
+        if post.get('sc_undo'):
+            undo = '/my/sc/timesheet/%s/restore?return_url=%s' % (ts.id, url_quote(target, safe=''))
+            self._sc_offer_undo(http.request.env._("Timesheet archived."), undo)
+            return http.request.redirect(target)
         separator = '&' if '?' in target else '?'
         return http.request.redirect(f'{target}{separator}deleted=1')
+
+    @http.route(['/my/sc/timesheet/<int:ts_id>/restore'], type='http', auth='user', website=True, methods=['POST'])
+    def restore_timesheet(self, ts_id, **post):
+        """Task 1736: « Annuler » of a timesheet just archived from the app
+        (the archive icon's undo toast) — the same rule as the archive: the
+        caller's own, not invoiced."""
+        user = http.request.env.user
+        if not self._is_tp_or_system():
+            raise AccessError(_("You don't have permission to restore timesheets."))
+        ts = http.request.env['sports.event.timesheet'].with_context(active_test=False).browse(ts_id)
+        if not ts.exists() or ts.user_id.id != user.id:
+            raise AccessError(_("You can only restore your own timesheets."))
+        if ts.state == 'invoiced':
+            raise UserError(_('This timesheet is invoiced and cannot be changed.'))
+        if not ts.active:
+            ts.write({'active': True})
+        target = self._safe_return_url(post.get('return_url'), None) or '/my/sc/timesheets'
+        http.request.session['notification'] = {
+            'type': 'success', 'title': '', 'message': http.request.env._("Timesheet restored."),
+        }
+        return http.request.redirect(target)

@@ -338,12 +338,12 @@
                         <span t-elif="act_state == 'today'" class="o_sc_chip o_sc_chip_yellow">Today</span>
                         <span t-else="" class="o_sc_chip o_sc_chip_ghost">Planned</span>
                     </span>
-                    <t t-if="sc_activity_editable">
-                        <t t-set="sc_edit_label">Edit</t>
-                        <button type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1" aria-expanded="false"
-                                t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label">
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
-                        </button>
+                    <!-- Task 1736 (owner 2026-11-01): the shared top bar — the
+                         red trash (it asks first) next to the ✓ while
+                         editing, the pencil. -->
+                    <t t-call="bemade_sports_clinic.sc_card_icons">
+                        <t t-set="ci_trash" t-value="sc_activity_editable and {'sheet': 'sc_activity_cancel_sheet', 'key': 'activity.cancel', 'attrs': {'data-sc-activity-id': activity.id}}"/>
+                        <t t-set="ci_editable" t-value="sc_activity_editable"/>
                     </t>
                 </div>
                 <div data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(activity, 'read')">
@@ -392,11 +392,10 @@
                     </t>
                 </div>
             </section>
-            <!-- Task 1589: Delete / Reschedule / Done only for who may act on
-                 the activity (the routes re-check). -->
+            <!-- Task 1589: Reschedule / Done only for who may act on the
+                 activity (the routes re-check). Task 1736: the delete is the
+                 card's trash; « Done » last, as on the activity rows. -->
             <div t-if="sc_activity_editable" class="o_sc_actionbar">
-                <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-open="sc_activity_cancel_sheet"
-                        t-att-data-sc-activity-id="activity.id" data-sc-action="activity.cancel">Delete</button>
                 <button type="button" class="o_sc_btn o_sc_btn_ghost"
                         data-sc-sheet-open="sc_activity_reschedule_sheet" t-att-data-sc-activity-id="activity.id"
                         data-sc-action="activity.reschedule">Reschedule</button>

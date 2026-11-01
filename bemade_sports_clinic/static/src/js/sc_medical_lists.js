@@ -7,7 +7,7 @@
  * - an item card's edit view (its pencil, sc_app_ui.js; the pencil turns
  *   into the ✓ that closes it, #1676): each [data-sc-med-item-field] input
  *   is saved on change; [data-sc-med-item-delete] (the trash can) removes
- *   the item;
+ *   the item — task 1736: once confirmed (scConfirm: it cannot be undone);
  * - [data-sc-med-set] inputs (the EpiPen card, « none known ») save one
  *   field of the player; the EpiPen note shows only while EpiPen is ticked.
  *
@@ -16,6 +16,8 @@
  * « list » fragment — the open cards keep their state), the cards follow in
  * place, without a reload.
  */
+import { _t } from "@web/core/l10n/translation";
+import { scConfirm } from "@bemade_sports_clinic/js/sc_confirm";
 import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
 import { resetAddPanel } from "@bemade_sports_clinic/js/sc_list_header";
 
@@ -240,6 +242,17 @@ document.addEventListener("click", async (ev) => {
     }
     ev.preventDefault();
     const card = button.closest("[data-sc-med-item]");
+    // Task 1736 (owner 2026-11-01): a permanent delete asks first.
+    const nameInput = card && card.querySelector('[data-sc-med-item-field="name"]');
+    const ok = await scConfirm({
+        title: _t("Delete this item?"),
+        message: (nameInput && nameInput.value) || "",
+        confirm: _t("Delete"),
+        cancel: _t("Cancel"),
+    });
+    if (!ok || !button.isConnected) {
+        return;
+    }
     button.disabled = true;
     button.blur(); // a focused element pins its read fragment (#1641)
     try {

@@ -1484,7 +1484,54 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return _back('error=permission_denied')
 
         document._sc_portal_archive(user)
+        # Task 1736 (owner 2026-11-01): the app shell's archive icon — no
+        # banner, an « Document archived · Undo » toast instead.
+        if post.get('sc_undo'):
+            undo = '/my/injury/document/restore/%s' % document.id
+            if return_url:
+                undo += '?return_url=%s' % url_quote(return_url, safe='')
+            self._sc_offer_undo(request.env._("Document archived."), undo)
+            return request.redirect(return_url or fallback)
         return _back('success=document_deleted')
+
+    @http.route(['/my/injury/document/restore/<int:document_id>'], type='http', auth='user',
+                website=True, methods=['POST'], csrf=True)
+    def restore_injury_document(self, document_id, **post):
+        """Task 1736: « Annuler » of a document just archived from the app
+        (the archive icon's undo toast) — the same right as the archive (its
+        uploader or a clinic administrator, with access to the injury / the
+        player); the player's chatter says it is back."""
+        document = request.env['sports.injury.document'].sudo().with_context(
+            active_test=False).browse(int(document_id))
+        if not document.exists():
+            raise request.not_found()
+        try:
+            if document.injury_id:
+                self._check_access_to_injury(document.injury_id.id)
+            else:
+                self._check_access_to_patient(document.patient_id.id)
+        except (UserError, AccessError):
+            raise request.not_found()
+        ctx_qs = _nav_ctx_qs(post, self._clinic_context(post))
+        return_url = self._safe_return_url(post.get('return_url'), None)
+        if document.injury_id:
+            fallback = f'/my/injury/documents?injury_id={document.injury_id.id}{ctx_qs}'
+        else:
+            fallback = f'/my/player?player_id={document.patient_id.id}{ctx_qs}&tab=documents'
+        user = request.env.user
+        allowed = (
+            (self._is_treatment_professional() or self._is_clinic_admin())
+            and document._sc_can_manage(user)
+        )
+        if not allowed:
+            _logger.info("Document %s restore refused for user %s", document.id, user.id)
+            return request.redirect(self._url_with_query(return_url or fallback, 'error=permission_denied'))
+        if not document.active:
+            document._sc_portal_restore(user)
+        request.session['notification'] = {
+            'type': 'success', 'title': '', 'message': request.env._("Document restored."),
+        }
+        return request.redirect(return_url or fallback)
 
     @http.route(['/my/injury/verify'], type='http', auth='user', website=True, methods=['POST'])
     def verify_injury(self, injury_id, **post):

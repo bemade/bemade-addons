@@ -365,11 +365,30 @@ $sc-dash-laptop: 1024px;
         gap: var(--sc-space-3);
     }
 
+    // Task 1736: a third column for the item's top bar (the red trash of
+    // « Retirer », right of the section switch; empty for a default section).
     .o_sc_dash_cfg_item {
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-columns: auto minmax(0, 1fr) auto;
         align-items: start;
         gap: 0 var(--sc-space-2);
+
+        > .o_sc_dash_cfg_head {
+            grid-column: 1;
+            grid-row: 1 / span 2;
+        }
+
+        > .o_sc_dash_cfg_form {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        > .o_sc_card_icons {
+            grid-column: 3;
+            grid-row: 1;
+            margin-left: 0;
+            margin-right: calc(var(--sc-space-2) * -1);
+        }
 
         > .o_sc_dash_cfg_remove,
         > .o_sc_dash_cfg_zone_form {

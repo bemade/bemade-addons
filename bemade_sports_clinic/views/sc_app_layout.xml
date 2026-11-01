@@ -224,6 +224,16 @@
                          t-att-data-sc-notify="sc_notification and (sc_notification['message'] or sc_notification['title']) or None"
                          t-att-data-sc-notify-title="sc_notification and sc_notification['message'] and sc_notification['title'] or None"
                          t-att-data-sc-notify-tone="sc_notification and sc_notification['tone'] or None"/>
+                    <!-- Task 1736: an archive's « Annuler » (the card archive
+                         icons: a timesheet, a document, a quick note) — the
+                         toast's action posts this form (sc_app_ui.js). -->
+                    <t t-if="sc_notification and sc_notification.get('undo_url')">
+                        <t t-set="sc_notify_undo_label">Undo</t>
+                        <form t-att-action="sc_notification['undo_url']" method="post" hidden="hidden"
+                              data-sc-form="sc.undo" t-att-data-sc-toast-action="sc_notify_undo_label">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        </form>
+                    </t>
                     <!-- Task 1604: « Resolve » confirms the resolution date
                          (sc_injury_quick.js fills the injury and posts to
                          /my/injury/<id>/resolve). Therapists only. -->

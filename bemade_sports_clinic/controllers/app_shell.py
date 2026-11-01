@@ -1306,10 +1306,27 @@ class AppShellMixin:
             notif = request.session.pop('notification', None)
         if not isinstance(notif, dict) or not (notif.get('message') or notif.get('title')):
             return False
+        # Task 1736: an archive's « Annuler » (_sc_offer_undo) — a same-site
+        # POST route only.
+        undo_url = notif.get('undo_url')
+        if not (isinstance(undo_url, str) and undo_url.startswith('/') and not undo_url.startswith('//')):
+            undo_url = False
         return {
             'message': str(notif.get('message') or ''),
             'title': str(notif.get('title') or ''),
             'tone': 'error' if notif.get('type') in ('danger', 'warning', 'error') else 'success',
+            'undo_url': undo_url,
+        }
+
+    @staticmethod
+    def _sc_offer_undo(message, undo_url):
+        """Task 1736 (owner 2026-11-01): a recoverable action of a card's
+        archive icon (a timesheet, a document, a quick note) — the next
+        shell page shows « <message> · Annuler » as its toast; « Annuler »
+        posts to ``undo_url`` (a same-site restore route that re-checks
+        the rights)."""
+        request.session['notification'] = {
+            'type': 'success', 'title': '', 'message': message, 'undo_url': undo_url,
         }
 
     @staticmethod
