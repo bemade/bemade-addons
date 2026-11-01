@@ -1,6 +1,6 @@
 {
     'name': 'Sports Clinic Bookings on the App Shell',
-    'version': '19.0.1.5.0',
+    'version': '19.0.1.6.0',
     'summary': "Glue: the portal bookings pages (appointment_portal_staff) on the Sports Clinic app shell.",
     'description': """
 Sports Clinic Bookings on the App Shell
@@ -41,6 +41,19 @@ role), ``/my/bookings`` and ``/my/bookings/calendar`` render on the shell:
   one the customer's cancel link uses): the person who booked receives the
   standard cancellation email, with the staff member's optional message in
   it, and the slot can be booked again. Anyone else gets a 404.
+* the staff member's « Booking emails » (task 1734), in the app settings
+  for staff members: **All** (every booking mail, minus the second
+  invitation a confirmation used to send), **Daily summary** (default:
+  one email from 06:30 local time — today's bookings with their form
+  answers, bookings made and cancelled since the last one; nothing when
+  empty — plus an email at once for a booking or cancellation later the
+  same day), or **None** (the app only). Only the booking SYSTEM mails to
+  the staff (invitation, update, reminder, booked / cancelled
+  notification — also the staff copies of the « Date updated » and
+  cancellation emails a staff change / cancel sends, task 1737) are held
+  back; clients' mails, real messages and non-booking events are
+  unchanged. A staff member who cancels a booking for later today gets no
+  « Booking cancelled » notice about their own cancellation.
 
 With the switch off (or for a user without an app role) both pages render
 exactly the ``appointment_portal_staff`` templates. The bookings addon
@@ -52,7 +65,10 @@ itself is unchanged; the routes, domains and record rules are its own.
     'license': 'LGPL-3',
     'depends': ['bemade_sports_clinic', 'appointment_portal_staff'],
     'data': [
+        'data/ir_cron.xml',
         'views/sc_app_bookings.xml',
+        'views/sc_app_settings.xml',
+        'views/sc_booking_mails.xml',
     ],
     'assets': {
         'web.assets_frontend': [

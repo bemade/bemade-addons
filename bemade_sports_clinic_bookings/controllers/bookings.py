@@ -122,37 +122,9 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
 
     @staticmethod
     def _sc_booking_answers(booking):
-        """The answers of ONE already-filtered (sudo) booking, grouped per
-        question in the question order: ``[{'question_id', 'label',
-        'value'}]``. A selection answer shows its label (a checkbox
-        question its labels joined), a text answer its text as typed;
-        empty answers are left out. Owner decision 2026-10-31: the answer
-        to the type's MAIN phone question is left out too — it is already
-        the client's phone (Odoo writes it on the partner), so the list and
-        the calendar details do not repeat it."""
-        main_phone = booking.appointment_type_id._get_main_phone_question() \
-            if booking.appointment_type_id else booking.env['appointment.question']
-        by_question = {}
-        # Inputs are stored newest first; a checkbox question's choices
-        # follow the question's own answer order, the rest the typing order.
-        inputs = booking.appointment_answer_input_ids.sorted(lambda a: (
-            a.value_answer_id.sequence, a.value_answer_id.id, a.id))
-        for answer in inputs:
-            question = answer.question_id
-            if question in main_phone:
-                continue
-            if answer.value_answer_id:
-                value = answer.value_answer_id.name or ''
-            else:
-                value = (answer.value_text_box or '').strip()
-            if value:
-                by_question.setdefault(question, []).append(value)
-        questions = sorted(by_question, key=lambda q: (q.sequence, q.id))
-        return [{
-            'question_id': question.id,
-            'label': question.name,
-            'value': ', '.join(by_question[question]),
-        } for question in questions]
+        """The answers of ONE already-filtered (sudo) booking (see
+        ``calendar.event._sc_booking_answer_values``)."""
+        return booking._sc_booking_answer_values()
 
     @staticmethod
     def _sc_booking_answer_key(question_id):
@@ -200,6 +172,24 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
                 item['sc_cancel_url'] = manage[item['id']]['cancel']
         return request.make_response(
             json.dumps(payload), headers=[('Content-Type', 'application/json')])
+
+    # ------------------------------------------------------------------
+    # Task 1734: « Paramètres » › « Courriels de rendez-vous »
+    # ------------------------------------------------------------------
+
+    @http.route('/my/app/pref/booking-emails', type='http', auth='user', website=True,
+                methods=['POST'], multilang=False)
+    def sc_booking_email_pref(self, sc_booking_email_pref=None, **kwargs):
+        """The CALLER's own booking-email preference (all / digest /
+        none); anything else is refused, nothing written. CSRF enforced by
+        the http POST route."""
+        allowed = dict(request.env['res.users']._fields['sc_booking_email_pref'].selection)
+        if sc_booking_email_pref not in allowed:
+            return request.make_json_response({'error': 'bad_request'}, status=400)
+        request.env.user.write({'sc_booking_email_pref': sc_booking_email_pref})
+        if 'application/json' in request.httprequest.headers.get('Accept', ''):
+            return request.make_json_response({'sc_booking_email_pref': sc_booking_email_pref})
+        return request.redirect('/my/app/settings#sc_booking_emails', code=303)
 
     @staticmethod
     def _sc_booking_segments(list_params=None):

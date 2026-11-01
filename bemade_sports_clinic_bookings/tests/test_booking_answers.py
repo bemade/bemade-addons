@@ -17,15 +17,14 @@ Acceptance criteria:
 * UC-A6 (owner decision 2026-10-31, round 4) The answer to the type's MAIN
   phone question (``appointment.type._get_main_phone_question``) is left
   out — it is already the client's « Téléphone » — in the list rows, the
-  calendar detail keys + feed (one helper). The question stays on the
-  type (it is how Odoo collects the phone).
+  calendar detail keys + feed and the digest rows (one helper). The
+  question stays on the type (it is how Odoo collects the phone).
 """
 from datetime import timedelta
 
 from odoo import Command
 from odoo.tests import tagged
 
-from ..controllers.bookings import BookingShellPortal
 from .common import BookingsShellCommon
 
 
@@ -119,7 +118,7 @@ class TestBookingAnswers(_BookingAnswersCommon):
     def test_main_phone_answer_hidden(self):
         """UC-A6: the main phone question's answer is not repeated."""
         self.assertEqual(self.apt_type._get_main_phone_question(), self.q_phone)
-        values = BookingShellPortal._sc_booking_answers(self.booking_soon.sudo())
+        values = self.booking_soon.sudo()._sc_booking_answer_values()
         self.assertEqual([v['question_id'] for v in values],
                          [self.q_reason.id, self.q_sport.id, self.q_details.id, self.q_areas.id])
         self._switch(True)
