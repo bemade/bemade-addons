@@ -43,3 +43,43 @@ registry.category("web_tour.tours").add("sc_1540_bookings", {
         },
     ],
 });
+
+/*
+ * Task 1732 — the booking form's answers in the list row and in the
+ * calendar details (multi-line answer kept on several lines).
+ */
+registry.category("web_tour.tours").add("sc_1732_booking_answers", {
+    steps: () => [
+        {
+            content: "The answers are under the booking row",
+            trigger: '[data-sc-booking-id] [data-sc-booking-answers] dd:contains("Soccer")',
+        },
+        {
+            content: "Open the calendar segment",
+            trigger: '[data-sc-tabs] a[data-sc-tab="calendar"]',
+            run: "click",
+            expectUnloadPage: true,
+        },
+        {
+            content: "Open the booking's details",
+            trigger: '.o_sc_calendar_box[data-sc-calendar-ready="1"] :is(.fc-event, .fc-list-event)',
+            run: "click",
+        },
+        {
+            content: "The answers are in the details; a multi-line one keeps its breaks",
+            trigger: '[data-sc-calendar-detail] .o_sc_kv dd:contains("Worse on stairs")',
+            run() {
+                const dd = [...document.querySelectorAll("[data-sc-calendar-detail] .o_sc_kv dd")].find((el) =>
+                    el.textContent.includes("Worse on stairs")
+                );
+                const ws = getComputedStyle(dd).whiteSpace;
+                if (!["pre-line", "pre-wrap"].includes(ws)) {
+                    throw new Error(`white-space is « ${ws} »`);
+                }
+                if (!document.querySelector('[data-sc-calendar-detail] .o_sc_kv dd')) {
+                    throw new Error("no details");
+                }
+            },
+        },
+    ],
+});
