@@ -306,3 +306,4 @@ from . import test_dashboard_round1_1624
 from . import test_dashboard_round2_1624
 from . import test_timesheet_sent_state_1731
 from . import test_player_documents_manage_1432
+from . import test_injury_history_followup_notes_1735

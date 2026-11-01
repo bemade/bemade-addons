@@ -6128,6 +6128,12 @@ msgid "Le Fit Crew — urgent updates / mises à jour urgentes (%s)"
 msgstr ""
 
 #. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/patient_injury_portal.py:0
+msgid "Follow-up note"
+msgstr "Note de suivi"
+
+#. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__message_follower_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_follower_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__message_follower_ids

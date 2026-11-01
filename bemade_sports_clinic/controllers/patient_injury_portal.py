@@ -9,7 +9,9 @@ from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from .access_control_mixin import AccessControlMixin, parse_portal_date
 from .app_shell import AppShellMixin
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
+
+import pytz
 from urllib.parse import quote as url_quote
 
 _logger = logging.getLogger(__name__)
@@ -1076,6 +1078,37 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         histories = request.env['sports.injury.note.history'].search(domain)
         return histories, requested_scope, is_treatment_prof
 
+    def _injury_followup_note_entries(self, injury):
+        """Task 1735: [(sort key, history entry)] of the player's Notes-tab
+        notes (``sports.treatment.note``) linked to ``injury`` — therapists
+        only (the caller checks; a coach holds no treatment-note ACL). They
+        count as INTERNAL entries with a « Follow-up note » chip.
+
+        Deliberately NOT sudo: the treatment-note portal record rule keeps
+        the therapist to the patients of the teams they staff.
+
+        Sort key: a note written on its own date sorts at its write time
+        (``create_date``, the moment shown); a back-dated note has no time,
+        so it sorts at the END of its date (viewer's tz), shown date-only —
+        the same « when » as the Notes tab (``portal_when_label``)."""
+        Note = request.env['sports.treatment.note']
+        notes = Note.search([('injury_id', '=', injury.id)])
+        label = request.env._("Follow-up note")
+        tz = pytz.timezone(request.env.user.tz or request.env.context.get('tz') or 'UTC')
+        keyed = []
+        for note in notes:
+            written = note.create_date
+            if written and note.date == fields.Date.context_today(note, timestamp=written):
+                moment = written
+            else:
+                moment = tz.localize(datetime.combine(note.date, time.max)).astimezone(
+                    pytz.utc).replace(tzinfo=None)
+            entry = self._sc_history_entry(
+                None, note.user_id.name, note.note, action=label, tone='green', scope='internal')
+            entry['when'] = note.portal_when_label or ''
+            keyed.append(((moment, 0, note.id), entry))
+        return keyed
+
     @http.route(['/my/injury/<int:injury_id>/notes/history/fragment'], type='http',
                 auth='user', website=True, methods=['GET'])
     def injury_note_history_fragment(self, injury_id, scope=None, **kw):
@@ -1092,12 +1125,17 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         env = request.env
         histories, scope, is_treatment_prof = self._injury_note_history(injury, scope)
         scope_labels = {'internal': env._("Internal"), 'external': env._("External")}
-        entries = [self._sc_history_entry(
+        # Task 1735: (sort key, entry) from both sources, merged newest first.
+        keyed = [((row.note_datetime or row.create_date, 1, row.id), self._sc_history_entry(
             row.note_datetime, row.author_id.name, row.content,
             action=scope_labels.get(row.scope) if is_treatment_prof else None,
             tone='mauve' if row.scope == 'internal' else 'ghost',
             scope=row.scope,
-        ) for row in histories]
+        )) for row in histories]
+        if is_treatment_prof and scope in ('all', 'internal'):
+            keyed += self._injury_followup_note_entries(injury)
+        keyed.sort(key=lambda pair: pair[0], reverse=True)
+        entries = [entry for _key, entry in keyed]
         base = '/my/injury/%s/notes/history/fragment' % injury.id
         return request.render('bemade_sports_clinic.sc_note_history_fragment', {
             'entries': entries,
