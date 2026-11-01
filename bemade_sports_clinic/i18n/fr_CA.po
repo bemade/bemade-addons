@@ -7993,6 +7993,11 @@ msgid "No emergency contacts found"
 msgstr "Aucun contact d'urgence trouvé"
 
 #. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_events
+msgid "No events assigned to you."
+msgstr "Aucun événement ne vous est assigné."
+
+#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_events_list
 msgid "No events found"
 msgstr "Aucun événement trouvé"
@@ -14423,6 +14428,11 @@ msgstr "Sécurité"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_dw_todo
 msgid "See all"
 msgstr "Tout voir"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_events
+msgid "See all events"
+msgstr "Voir tous les événements"
 
 #. module: bemade_sports_clinic
 #. odoo-javascript

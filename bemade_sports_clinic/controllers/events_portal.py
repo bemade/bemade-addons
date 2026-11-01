@@ -67,7 +67,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return active_users.sorted('name')
 
     @http.route(['/my/events', '/my/events/page/<int:page>'], type='http', auth='user', website=True)
-    def view_events(self, page=1, view_type='all', team_id=None, organization_id=None, assigned_user_id=None,
+    def view_events(self, page=1, view_type=None, team_id=None, organization_id=None, assigned_user_id=None,
                    date_from=None, date_to=None, sortby=None, group_by=None, search=None, no_default_dates=None,
                    show_cancelled=None, **kw):
         """Main events view with filtering and pagination"""
@@ -80,6 +80,13 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         
         if not (is_therapist or is_coach or user.has_group('base.group_system')):
             raise AccessError(_("You don't have access to events."))
+
+        # Task 1730: a treatment professional opens on « My events ».
+        view_default = self._sc_event_default_view()
+        if view_default:
+            view_type = view_default['view_type']
+            assigned_user_id = view_default['assigned_user_id']
+        view_type = view_type or 'all'
         
         # Default date filter: from today (in the *user's* timezone), matching
         # the internal "Upcoming" behavior. fields.Date.today() / datetime.today()
@@ -313,6 +320,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'grouped_events': grouped_events,
             'desc_visible': desc_visible,
             'assigned_staff_by_event': assigned_staff_by_event,
+            'sc_event_view_default': view_default,
         }
 
         # Task 1540: the app shell (switch on) or today's template (off).
@@ -337,6 +345,11 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
         if not (is_therapist or is_coach or user.has_group('base.group_system')):
             raise AccessError(_("You don't have access to events."))
+        # Task 1730: a treatment professional opens on « My events », as on
+        # the list.
+        view_default = self._sc_event_default_view()
+        if view_default:
+            assigned_user_id = view_default['assigned_user_id']
         values = {
             'page_name': 'events_calendar',
             # Sudo-widened choices, matching the list view (task 1226): this
@@ -350,7 +363,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'assigned_user_id': int(assigned_user_id) if assigned_user_id else None,
             'date_from': date_from,
             'date_to': date_to,
-            'view_type': kw.get('view_type') or 'all',
+            'view_type': view_default.get('view_type') or kw.get('view_type') or 'all',
+            'sc_event_view_default': view_default,
             'show_cancelled': bool(kw.get('show_cancelled')),
             'search': kw.get('search'),
             'is_therapist': is_therapist,
@@ -1394,6 +1408,28 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         env = http.request.env
         return dict(env['sports.event']._fields['event_type']._description_selection(env))
 
+    def _sc_event_default_view(self):
+        """Task 1730: the view the events list / calendar opens on when its
+        URL names none (no ``view_type`` and no ``assigned_user_id``): a
+        treatment professional (portal or internal, the same check as the
+        filter bar's « Missing timesheets » chip) lands on « My events »,
+        everyone else on « All » (the empty dict: nothing to add) — coaches,
+        and administrators (the clinic administrator group implies the
+        professional one; they keep the whole schedule). Every
+        link the pages build (view chips, pager, filter form, segments)
+        names its view explicitly, so « All » sticks once chosen."""
+        args = http.request.httprequest.args
+        if 'view_type' in args or 'assigned_user_id' in args:
+            return {}
+        user = http.request.env.user
+        if (user.has_group('bemade_sports_clinic.group_sports_clinic_admin')
+                or user.has_group('base.group_system')):
+            return {}
+        if (user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+                or user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')):
+            return {'view_type': 'my', 'assigned_user_id': str(user.id)}
+        return {}
+
     @staticmethod
     def _sc_event_url(path, args):
         """``path`` with ``args`` as its query string (empty values dropped)."""
@@ -1427,6 +1463,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return {
             'sc_event_views': views,
             'sc_event_view': view_type,
+            # Task 1730: the « All » view's link (the « My events » empty
+            # state points at it).
+            'sc_event_all_url': url(**view_over['all']),
             'sc_event_type': event_type or '',
             'sc_event_chips': chips,
         }
@@ -1447,6 +1486,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         base_args = {key: val for key, val in req_args.items()
                      if key not in ('event_type', 'page', 'date_from', 'date_to', 'sortby',
                                     'no_default_dates', 'segment')}
+        # Task 1730: the default view, named in every link built here.
+        base_args.update(values.get('sc_event_view_default') or {})
         segment = 'past' if (req_args.get('segment') == 'past' or (
             values['no_default_dates'] and values['sortby'] == 'date_desc')) else 'upcoming'
 
@@ -1470,6 +1511,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # list's own parameters (its default « from today » would clip it).
         calendar_args = {key: val for key, val in req_args.items()
                          if key not in SC_EVENT_LIST_ONLY_ARGS + ('event_type', 'return_url')}
+        calendar_args.update(values.get('sc_event_view_default') or {})
         calendar_args.update({'event_type': event_type or '', 'return_url': back_url or ''})
         urls = {
             'upcoming': _url(segment='', no_default_dates='', sortby='', date_to=''),
@@ -1556,6 +1598,9 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         back_url = self._sc_events_back_url()
         base_args = {key: val for key, val in req_args.items()
                      if key not in SC_EVENT_LIST_ONLY_ARGS + ('event_type', 'return_url')}
+        # Task 1730: the default view, handed to the feed and named in every
+        # link built here.
+        base_args.update(values.get('sc_event_view_default') or {})
         params = {key: val for key, val in base_args.items() if val}
         if event_type:
             params['event_type'] = event_type
@@ -1580,8 +1625,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
         view_type = values.get('view_type') or 'all'
         bar = self._sc_event_filter_bar(_url, event_types, event_type, view_type)
+        # Task 1730: « My events » names the user as the professional; that
+        # is the view chip's doing, not a filter of the panel's.
+        mine = view_type == 'my' and values.get('assigned_user_id') == env.user.id
         filters_open = any(values.get(key) for key in (
-            'organization_id', 'team_id', 'assigned_user_id', 'show_cancelled', 'search'))
+            'organization_id', 'team_id', 'show_cancelled', 'search')) or (
+            bool(values.get('assigned_user_id')) and not mine)
         return dict(
             bar,
             sc_events_back_url=back_url,

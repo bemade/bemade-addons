@@ -181,6 +181,9 @@
                     <t t-call="bemade_sports_clinic.sc_event_list_row"/>
                 </t>
             </div>
+            <!-- Task 1730: « My events » (a therapist's default view) empty
+                 points at « All ». -->
+            <p t-elif="sc_event_view == 'my'" class="o_sc_empty" data-sc-section="events.empty_mine">No events assigned to you. <a t-att-href="sc_event_all_url" class="o_sc_link o_sc_hint_link" data-sc-view-link="all">See all events</a></p>
             <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
                 <t t-set="message">No events found.</t>
             </t>
