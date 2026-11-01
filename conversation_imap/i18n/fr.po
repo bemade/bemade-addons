@@ -143,12 +143,12 @@ msgstr "SMTP avec STARTTLS (ancien)"
 #. module: conversation_imap
 #: model:ir.model.fields.selection,name:conversation_imap.selection__conversation_transport__smtp_encryption__ssl
 msgid "SSL/TLS"
-msgstr ""
+msgstr "SSL/TLS"
 
 #. module: conversation_imap
 #: model:ir.model.fields.selection,name:conversation_imap.selection__conversation_transport__smtp_encryption__starttls
 msgid "STARTTLS"
-msgstr ""
+msgstr "STARTTLS"
 
 #. module: conversation_imap
 #: model:ir.model.fields,help:conversation_imap.field_conversation_transport__provider
