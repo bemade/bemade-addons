@@ -32,6 +32,10 @@ Acceptance criteria:
   card and the player's document count, and both download routes refuse it.
 * AC-7 Backend: the archived document is found with the « Archived » filter
   and restored by setting it active again.
+* AC-9 Review round 1 (owner 2026-11-01): the document's top-bar icons
+  follow the other cards (medical list items) — download, then the red
+  trash next to the pencil / ✓ (rightmost); with a pencil, the trash shows
+  while editing.
 * AC-8 fr_CA (website-aware): the tab's « Modifier » / « Supprimer » labels,
   « Supprimer ce document ? » and the link field render in French.
 """
@@ -283,6 +287,26 @@ class TestPlayerDocuments1432(PlayerDocuments1432Common):
         self.assertFalse(tree.xpath('//*[@data-sc-edit-card="document-%s"]' % self.doc_injury.id))
         self.assertFalse(tree.xpath('//dialog[@id="sc_delete_document_%s"]' % self.doc_injury.id))
         self.assertFalse(tree.xpath('//dialog[starts-with(@id, "sc_delete_player_document_")]'))
+
+    # -- AC-9 (review round 1, owner 2026-11-01) --------------------------
+    def test_top_bar_order_matches_other_cards(self):
+        """The document's top-bar icons follow the other cards (the medical
+        list items, owner review 2026-10-27): read actions first, then the
+        red trash next to the pencil / ✓, which is the rightmost button —
+        on the Documents tab and on the injury card alike."""
+        self._login_tp()
+        _text, tree = self._get(self._tab_url())
+        rows = [self._tab_item(tree, self.doc_player)]
+        rows += tree.xpath('//*[@data-sc-edit-card="document-%s"]' % self.doc_injury.id)
+        self.assertEqual(len(rows), 2)
+        for row in rows:
+            trailing = row.xpath('.//*[contains(@class, "o_sc_doc_row")]/*[contains(@class, "o_sc_row_trailing")]')[0]
+            self.assertEqual(
+                [child.get('data-sc-action') for child in trailing],
+                ['documents.download', 'documents.delete', 'documents.edit'])
+            trash = trailing.xpath('./*[@data-sc-action="documents.delete"]')[0]
+            self.assertIn('o_sc_icon_btn_danger', trash.get('class').split())
+            self.assertIn('o_sc_doc_delete', trash.get('class').split())
 
     # -- AC-6 ------------------------------------------------------------
     def test_archived_hidden_everywhere(self):

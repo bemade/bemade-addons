@@ -1181,6 +1181,20 @@ $sc-p2-laptop: 992px;
         gap: var(--sc-space-2);
     }
 
+    // Review round 1 of #1432 (owner 2026-11-01): like the medical list
+    // items, a document's trash sits next to its ✓ and shows while the
+    // document is being edited (without a pencil, it always shows).
+    .o_sc_edit_card:not([data-sc-edit-open]) > .o_sc_doc_row .o_sc_doc_delete {
+        display: none;
+    }
+
+    // Same colours as the other cards: the entity row greys its trailing
+    // icons (sc_components.scss), which hid the red trash and the green ✓ —
+    // a document's icon buttons take their button's colour.
+    .o_sc_entity_row.o_sc_doc_row > .o_sc_row_trailing .o_sc_icon_btn .o_sc_icon {
+        color: inherit;
+    }
+
     // Task 1676: only « Delete injury » now, on the left.
     .o_sc_injury_card_actions {
         display: flex;

@@ -603,19 +603,25 @@
                 <span class="o_sc_row_subtitle" t-out="meta"/>
                 <span t-if="doc.description" class="o_sc_row_subtitle" t-out="doc.description"/>
             </span>
+            <!-- Review round 1 of #1432 (owner 2026-11-01): the same top-bar
+                 order as the other cards (the medical list items, owner
+                 review 2026-10-27) — the download first, then the red trash
+                 next to the pencil / ✓, which is the rightmost button; with a
+                 pencil, the trash shows while the document is being edited
+                 (sc_p2.scss). -->
             <span class="o_sc_row_trailing">
-                <button t-if="edit_toggle" type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1"
-                        aria-expanded="false" data-sc-action="documents.edit" aria-label="Edit" title="Edit">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
-                </button>
                 <a t-att-href="download_url" class="o_sc_icon_btn" data-sc-action="documents.download"
                    aria-label="Download" title="Download">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'download'"/></t>
                 </a>
-                <button t-if="delete_sheet" type="button" class="o_sc_icon_btn o_sc_icon_btn_danger"
+                <button t-if="delete_sheet" type="button" class="o_sc_icon_btn o_sc_icon_btn_danger o_sc_doc_delete"
                         t-att-data-sc-sheet-open="delete_sheet" data-sc-action="documents.delete"
                         aria-label="Delete" title="Delete">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'trash'"/></t>
+                </button>
+                <button t-if="edit_toggle" type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1"
+                        aria-expanded="false" data-sc-action="documents.edit" aria-label="Edit" title="Edit">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
                 </button>
             </span>
         </div>
