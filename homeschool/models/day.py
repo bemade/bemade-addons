@@ -2,6 +2,7 @@
 from datetime import timedelta
 
 from odoo import api, fields, models
+from odoo.fields import Domain
 from odoo.tools import format_date
 
 from .block import NO_HOURS_KINDS
@@ -10,6 +11,7 @@ from .markdown_mixin import markdown_html_field
 JOURNAL_STATES = [
     ("future", "Not yet"),
     ("off", "Day off"),
+    ("empty", "Empty"),
     ("incomplete", "Incomplete"),
     ("done", "Done"),
 ]
@@ -59,7 +61,11 @@ class Day(models.Model):
     deliverable_done_count = fields.Integer(compute="_compute_deliverable_counts")
 
     journal_ids = fields.One2many("homeschool.journal", "day_id")
-    journal_state = fields.Selection(JOURNAL_STATES, compute="_compute_journal_state", store=True)
+    journal_state = fields.Selection(
+        JOURNAL_STATES, compute="_compute_journal_state", search="_search_journal_state",
+        help="Not stored: « today » is not a dependency Odoo can track, so a stored value went stale "
+             "on days created ahead of time. Computed on read, searched through a plain domain.",
+    )
 
     _student_date_unique = models.Constraint(
         "unique(student_id, date)", "There is already a day for this student on that date."
@@ -111,15 +117,24 @@ class Day(models.Model):
     def _compute_journal_state(self):
         """``incomplete`` while an hour-bearing, non-skipped block lacks its minutes or its
         adult-present minutes, or while the day has no journal entry — the same rule as the
-        journal API's ``status``. ``NO_HOURS_KINDS`` blocks never count."""
+        journal API's ``status``. ``NO_HOURS_KINDS`` blocks never count. A day with no
+        hour-bearing block and no entry is ``empty`` (nothing was planned nor written: there
+        is nothing to close)."""
         today = fields.Date.context_today(self)
         for rec in self:
             if rec.is_off:
                 rec.journal_state = "off"
             elif rec.date and rec.date > today:
                 rec.journal_state = "future"
+            elif not rec.journal_ids and not rec._hour_blocks():
+                rec.journal_state = "empty"
             else:
                 rec.journal_state = "incomplete" if (rec._pending_blocks() or not rec.journal_ids) else "done"
+
+    def _hour_blocks(self):
+        """The day's hour-bearing blocks (``NO_HOURS_KINDS`` excepted)."""
+        self.ensure_one()
+        return self.block_ids.filtered(lambda b: b.kind not in NO_HOURS_KINDS)
 
     def _pending_blocks(self):
         """The hour-bearing blocks of the day still waiting for their minutes or their
@@ -129,6 +144,35 @@ class Day(models.Model):
             lambda b: b.kind not in NO_HOURS_KINDS and b.status != "skipped"
             and not (b.actuals_recorded and b.adult_recorded)
         )
+
+    # the same rules as ``_hour_blocks`` and ``_pending_blocks``, as domains on homeschool.block
+    _HOUR_BLOCK_DOMAIN = [("kind", "not in", NO_HOURS_KINDS)]
+    _PENDING_BLOCK_DOMAIN = [
+        ("kind", "not in", NO_HOURS_KINDS), ("status", "!=", "skipped"),
+        "|", ("actuals_recorded", "=", False), ("adult_recorded", "=", False),
+    ]
+
+    @api.model
+    def _search_journal_state(self, operator, value):
+        """``journal_state`` as a plain domain, one per value (``empty``, ``incomplete`` and
+        ``done`` partition the non-off days up to today)."""
+        if operator not in ("=", "!=", "in", "not in"):
+            raise NotImplementedError("Unsupported operator %r on journal_state" % operator)
+        values = {value} if isinstance(value, str) else set(value or ())
+        if operator in ("!=", "not in"):
+            values = {state for state, _ in JOURNAL_STATES} - values
+        today = fields.Date.context_today(self)
+        past = [("is_off", "=", False), ("date", "<=", today)]
+        per_state = {
+            "off": [("is_off", "=", True)],
+            "future": [("is_off", "=", False), ("date", ">", today)],
+            "empty": past + [("journal_ids", "=", False), ("block_ids", "not any", self._HOUR_BLOCK_DOMAIN)],
+            # no entry with an hour-bearing block, or a pending block (always hour-bearing)
+            "incomplete": past + ["|", "&", ("journal_ids", "=", False), ("block_ids", "any", self._HOUR_BLOCK_DOMAIN),
+                                  ("block_ids", "any", self._PENDING_BLOCK_DOMAIN)],
+            "done": past + [("journal_ids", "!=", False), ("block_ids", "not any", self._PENDING_BLOCK_DOMAIN)],
+        }
+        return Domain.OR(Domain(per_state[state]) for state in per_state if state in values)
 
     def action_open_close_wizard(self):
         """« Fermer la journée »: the wizard on this day, first hour-bearing block."""

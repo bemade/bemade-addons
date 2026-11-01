@@ -33,6 +33,7 @@
                 <a
           t-else=""
           href="#"
+          title="Open the linked record"
           class="o_conversation_link badge text-bg-info"
           t-on-click="(ev) => this.openLink(ev, item)"
           t-out="item.name"

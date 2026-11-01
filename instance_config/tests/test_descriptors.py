@@ -402,6 +402,27 @@ class TestDescriptors(InstanceConfigCase):
         fields_reported = [g[1] for g in report.unhandled]
         self.assertEqual(len(fields_reported), len(set(fields_reported)))
 
+    def test_undescribed_target_gap_logs_no_translation_warning(self):
+        """The gap message is only built when the gap is first recorded.
+
+        Translating it eagerly, once per record, logs "no translation
+        language detected" for every row when no language is in context,
+        which floods install/test logs."""
+        self.env["res.company"].create(
+            [{"name": f"Gap Co {i}"} for i in range(3)])
+        registry = DescriptorRegistry({
+            "res.company": {"key": "name", "order": 10},
+        })
+        handler = RecordHandler(registry.get("res.company"), registry)
+        report = Report()
+        env = self.env(context={})
+        with self.assertNoLogs("odoo.tools.translate", level="WARNING"):
+            handler.read(env, report)
+        gaps = [g[1] for g in report.unhandled
+                if "has no descriptor" in g[1]]
+        self.assertTrue(gaps)
+        self.assertEqual(len(gaps), len(set(gaps)))
+
     def test_descriptor_only_model_round_trips(self):
         """AC-9: adding a model needs no Python."""
         registry = DescriptorRegistry({

@@ -65,6 +65,34 @@ class TestAccountCreditHold(MailCase):
 
         return self.env["account_followup.followup.line"].create(vals)
 
+    def _post_overdue_invoice(self, days_overdue=45):
+        """Give the partner an open receivable that is ``days_overdue`` late.
+
+        Since Odoo Enterprise fcb65c4704 (2026-10-08) a partner's
+        ``followup_line_id`` is recomputed from its unreconciled move lines as
+        soon as it is written: the inverse stores the chosen level on those
+        lines, then drops the cached value. With no open lines there is nowhere
+        to store it, so a level written on a partner without overdue invoices
+        does not stick. Tests that set a level must therefore start the way
+        production does, from an overdue posted invoice.
+        """
+        due = fields.Date.context_today(self.partner) - timedelta(days=days_overdue)
+        invoice = self.env["account.move"].create(
+            {
+                "partner_id": self.partner.id,
+                "move_type": "out_invoice",
+                "invoice_date": due,
+                "invoice_date_due": due,
+                "invoice_line_ids": [
+                    Command.create(
+                        {"name": "Overdue item", "quantity": 1.0, "price_unit": 100.0}
+                    )
+                ],
+            }
+        )
+        invoice.action_post()
+        return invoice
+
     def test_credit_hold_basic_functionality(self):
         """Test basic credit hold functionality"""
         # Initially partner should not be on hold
@@ -178,6 +206,7 @@ class TestAccountCreditHold(MailCase):
 
     def test_followup_integration(self):
         """Test integration with followup system"""
+        self._post_overdue_invoice()
         # Set partner to in_need_of_action status and assign followup line
         self.partner.write(
             {
@@ -204,6 +233,7 @@ class TestAccountCreditHold(MailCase):
 
     def test_followup_report_options(self):
         """Test that followup report includes credit hold information"""
+        self._post_overdue_invoice()
         # Set up partner with followup line
         self.partner.write(
             {

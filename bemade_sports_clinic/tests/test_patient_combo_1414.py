@@ -233,7 +233,8 @@ class TestPatientCombo1414(HttpCase):
         self.assertEqual(note.patient_id, self.ana)
 
     # ==================================================================
-    # lists « Last, First », headings « First Last »
+    # lists AND headings « Last, First » (owner review 2026-10-11; headings
+    # were « First Last » until then)
     # ==================================================================
     def test_worklist_rows_last_first_headings_unchanged(self):
         self._login()
@@ -241,10 +242,10 @@ class TestPatientCombo1414(HttpCase):
         doc = self._doc(url)
         rows = doc.cssselect('ul.o_sc_worklist .o_sc_worklist_row a')
         self.assertEqual([a.text_content().strip() for a in rows], ['Äbel, Zoé'])
-        # Dossier header: the single-patient heading keeps « First Last ».
+        # Dossier header: the single-patient heading reads « Last, First » too.
         headers = [h.text_content().strip() for h in doc.cssselect('#clinic-dossier h5')]
-        self.assertIn('Zoé Äbel', headers)
-        self.assertNotIn('Äbel, Zoé', headers)
+        self.assertIn('Äbel, Zoé', headers)
+        self.assertNotIn('Zoé Äbel', headers)
         # The auto-refresh fragment renders the same rows.
         resp = self.url_open('/my/clinic/%s/worklist/fragment?patient=%s' % (self.clinic.id, self.zoe.id))
         self.assertEqual(resp.status_code, 200)
@@ -255,7 +256,7 @@ class TestPatientCombo1414(HttpCase):
     def test_player_page_heading_and_player_cards(self):
         self._login()
         doc = self._doc('/my/player?player_id=%s' % self.zoe.id)
-        self.assertEqual([h.text_content().strip() for h in doc.cssselect('h1')][:1], ['Zoé Äbel'])
+        self.assertEqual([h.text_content().strip() for h in doc.cssselect('h1')][:1], ['Äbel, Zoé'])
         doc = self._doc('/my/players')
         names = [a.text_content().strip() for a in doc.cssselect('.card-header a.fw-bold')]
         self.assertIn('Äbel, Zoé', names)

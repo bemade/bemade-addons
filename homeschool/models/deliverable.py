@@ -2,6 +2,9 @@
 from odoo import api, fields, models
 from odoo.exceptions import AccessError
 
+# the most ruled lines a card of the printed list can hold
+MAX_ANSWER_LINES = 12
+
 
 class Deliverable(models.Model):
     """One line of the day's « liste du jour »: what the student is expected to hand over,
@@ -21,9 +24,16 @@ class Deliverable(models.Model):
     detail = fields.Text(help="What exactly, how much, where it goes.")
     when = fields.Char(help="A moment of the day as written on the paper list: '9 h', 'after lunch', 'bonus'.")
     bonus = fields.Boolean(help="Optional extra: not counted against the day.")
+    answer_lines = fields.Integer(string="Answer lines", default=0,
+                                  help="Ruled lines printed under the deliverable for a written answer (0–12).")
     done = fields.Boolean()
     done_at = fields.Datetime(readonly=True)
     done_by = fields.Many2one("res.users", readonly=True)
+
+    _answer_lines_range = models.Constraint(
+        "check(answer_lines >= 0 and answer_lines <= %d)" % MAX_ANSWER_LINES,
+        "A deliverable's answer lines must be between 0 and 12.",
+    )
 
     # the only field a portal user may write; see write()
     PORTAL_WRITABLE = frozenset({"done"})

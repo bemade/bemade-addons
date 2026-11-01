@@ -20,7 +20,8 @@ Acceptance criteria covered here:
   server-side (the announcement is unchanged).
 * UC-T5 (AC2) The dashboard rows are role-filtered as today: a change only
   therapists may see (TP stamp) is listed for the therapist and NOT for the
-  coach; changed rows lazy-load the SAME fragment route as the legacy card.
+  coach; changed rows lazy-load the SAME fragment route as the legacy card
+  (``detail=1``: the card's whole expandable, see test_app_shell_team_changes).
 * UC-T6 (AC2) Activities tab hidden for a staff role « other » (no
   mail.activity ACL), as today.
 """
@@ -125,34 +126,25 @@ class TestAppShellTeam1542(AppShellCommon):
 
     # -- UC-T3 -----------------------------------------------------------
     def test_primary_action_per_role(self):
+        """Owner review 2026-10-11: « Add a player » / « Request an addition »
+        are inline cards at the top of the Players tab (details:
+        test_app_shell_team_add_player), no longer app-bar actions."""
         self._switch(True)
-        self._login_tp()
-        _text, tree = self._get(self.url)
-        add = tree.xpath('//header//a[@data-sc-action="team.add_player"]')
-        self.assertTrue(add)
-        self.assertEqual(add[0].get('href'), '/my/team/%s/player/add_link' % self.team_a.id)
-        self.assertFalse(tree.xpath('//dialog[@id="sc_request_add_sheet"]'))
-
+        for login, card in ((self._login_tp, 'team.add_player'), (self._login_coach, 'team.request_add'),
+                            (self._login_itp, 'team.add_player')):
+            login()
+            _text, tree = self._get(self.url)
+            self.assertIsNotNone(self._shell(tree))
+            self.assertFalse(tree.xpath('//header//*[@data-sc-action="team.add_player"]'))
+            self.assertFalse(tree.xpath('//header//*[@data-sc-action="team.request_add"]'))
+            panel = self._panel(tree, 'players')
+            self.assertTrue(panel.xpath('.//details[@data-sc-section="%s"]' % card), card)
+            other = 'team.request_add' if card == 'team.add_player' else 'team.add_player'
+            self.assertFalse(panel.xpath('.//details[@data-sc-section="%s"]' % other), other)
         self._login_coach()
         _text, tree = self._get(self.url)
-        self.assertFalse(tree.xpath('//*[@data-sc-action="team.add_player"]'))
-        req = tree.xpath('//header//button[@data-sc-action="team.request_add"]')
-        self.assertTrue(req)
-        self.assertEqual(req[0].get('data-sc-sheet-open'), 'sc_request_add_sheet')
-        form = tree.xpath('//dialog[@id="sc_request_add_sheet"]//form')
-        self.assertEqual(form[0].get('action'),
-                         '/my/team/%s/player/request_add' % self.team_a.id)
-
-        # Task 1577: an internal therapist has the portal therapist's
-        # primary action — add directly, no request sheet.
-        self._login_itp()
-        _text, tree = self._get(self.url)
-        self.assertIsNotNone(self._shell(tree))
-        add = tree.xpath('//header//a[@data-sc-action="team.add_player"]')
-        self.assertTrue(add)
-        self.assertEqual(add[0].get('href'), '/my/team/%s/player/add_link' % self.team_a.id)
-        self.assertFalse(tree.xpath('//*[@data-sc-action="team.request_add"]'))
-        self.assertFalse(tree.xpath('//dialog[@id="sc_request_add_sheet"]'))
+        form = self._panel(tree, 'players').xpath('.//details[@data-sc-section="team.request_add"]//form')
+        self.assertEqual(form[0].get('action'), '/my/team/%s/player/request_add' % self.team_a.id)
 
     # -- UC-T4 -----------------------------------------------------------
     def test_announcement_controls_per_role(self):
@@ -185,14 +177,20 @@ class TestAppShellTeam1542(AppShellCommon):
 
     # -- UC-T5 -----------------------------------------------------------
     def test_dashboard_rows_role_filtered(self):
+        # Only players with changes to show are listed (presence, see
+        # test_app_shell_team_changes UC-RC12); presence is mocked as « all ».
         self._switch(True)
+        Patient = type(self.env['sports.patient'])
+        everyone = {'players': {self.player.id, self.player_tp_only.id}, 'injuries': set()}
         self._login_tp()
-        _text, tree = self._get(self.url)
+        with patch.object(Patient, '_dashboard_card_presence', return_value=everyone):
+            _text, tree = self._get(self.url)
         tp_rows = self._row_ids(tree, 'team.recent_changes')
         self.assertIn(self.player.id, tp_rows)
         self.assertIn(self.player_tp_only.id, tp_rows)
         self._login_coach()
-        _text, tree = self._get(self.url)
+        with patch.object(Patient, '_dashboard_card_presence', return_value=everyone):
+            _text, tree = self._get(self.url)
         coach_rows = self._row_ids(tree, 'team.recent_changes')
         self.assertIn(self.player.id, coach_rows)
         self.assertNotIn(self.player_tp_only.id, coach_rows)
@@ -203,8 +201,13 @@ class TestAppShellTeam1542(AppShellCommon):
         with patch.object(type(self.env['sports.patient']), '_dashboard_card_presence',
                           return_value={'players': {self.player.id}, 'injuries': set()}):
             _text, tree = self._get(self.url)
-        urls = tree.xpath('//details[@data-sc-player-id="%s"]/@data-sc-lazy-url' % self.player.id)
-        self.assertEqual(urls, ['/my/player/%s/recent-changes' % self.player.id])
+        # Task 1626: the card is a player row; its « Details » region holds
+        # the lazy URL.
+        urls = tree.xpath('//*[@data-sc-section="team.recent_changes"]'
+                          '//*[@data-sc-player-id="%s"]//*[@data-sc-row-detail]/@data-sc-lazy-url'
+                          % self.player.id)
+        self.assertEqual(urls, ['/my/player/%s/recent-changes?detail=1&team_id=%s'
+                                % (self.player.id, self.team_a.id)])
         resp = self.url_open(urls[0])
         self.assertEqual(resp.status_code, 200)
 

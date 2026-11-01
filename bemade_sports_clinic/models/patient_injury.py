@@ -1,9 +1,11 @@
 from odoo import models, fields, api, _
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from odoo.exceptions import ValidationError, UserError, AccessError
 from odoo.http import request
 from odoo.tools.misc import format_date
 import logging
+
+from .sc_patient_owner_guard import sc_check_patient_unchanged
 
 _logger = logging.getLogger(__name__)
 
@@ -13,6 +15,9 @@ _logger = logging.getLogger(__name__)
 # PATIENT with a technical injury_id link; the summary carries the
 # « [Injury: <diagnosis>] » prefix, so callers match the marker with ilike).
 VERIFY_INJURY_SUMMARY = "Verify injury"
+# Task 1661: the To-Do summary is now translated (« Vérifier la blessure »
+# in fr_CA); the lookups match both the English marker and the French one.
+VERIFY_INJURY_SUMMARY_FR = "Vérifier la blessure"
 
 
 def legacy_change_emails_enabled(env):
@@ -26,6 +31,25 @@ def legacy_change_emails_enabled(env):
     if raw is None or raw is False:
         return False
     return str(raw).strip().lower() not in ('', '0', 'false', 'none')
+
+
+def history_author_uid(env):
+    """The authenticated author of an audit-history row (tasks 1241, 1601).
+
+    Portal saves often go through ``record.sudo().write(vals)``, which rebinds
+    the environment to the superuser; an audit trail must credit the human
+    behind the request, so when running as sudo inside an HTTP request the
+    session uid is recovered instead."""
+    if env.su and request and request.session and request.session.uid:
+        return request.session.uid
+    return env.uid
+
+
+def history_stamp_date(record, when):
+    """``when`` (a UTC datetime) as the reader's local date, formatted in the
+    reader's lang — the date half of the « … on <date> by <author> » stamps
+    (tasks 1406, 1601)."""
+    return format_date(record.env, fields.Date.context_today(record, timestamp=when))
 
 
 external_tracking_fields = {
@@ -47,6 +71,15 @@ note_history_scope_by_field = {
     "internal_notes": "internal",
     "external_notes": "external",
 }
+
+# Task 1631 (owner decision 2026-10-20): a note cleared (« Effacer ») and
+# rewritten by the SAME user in the same scope within this many minutes
+# replaces the empty « Cleared » history row instead of stacking a new one.
+NOTE_CLEAR_OVERWRITE_MINUTES = 60
+
+# Task 1631: the stage order — a move to an earlier stage is a « backward »
+# move (a correction), which proposes to undo the dates that followed.
+STAGE_ORDER = {"unverified": 0, "active": 1, "resolved": 2}
 
 # --- Team-dashboard propagation (task 1272) ---------------------------------
 # Injury field changes that are clinically/externally visible -> bump BOTH the
@@ -102,11 +135,17 @@ class PatientInjury(models.Model):
     # record access to their teams' non-hidden injuries, so without field
     # groups they could read this through JSON-RPC. Code that builds coach-
     # facing output must not read it as the coach (see _card_injury_detail).
+    # Task 1582: each note is ONE « current state » text — a save replaces
+    # it, every version stays in sports.injury.note.history.
     internal_notes = fields.Text(
         tracking=True,
+        help="Current state (replaces the previous text; the history keeps the versions)",
         groups="base.group_user,bemade_sports_clinic.group_portal_treatment_professional",
     )
-    external_notes = fields.Text(tracking=True)
+    external_notes = fields.Text(
+        tracking=True,
+        help="Current state (replaces the previous text; the history keeps the versions)",
+    )
     predicted_resolution_date = fields.Date(tracking=True)
     resolution_date = fields.Date(
         tracking=True, help="The date when the injury was actually resolved."
@@ -272,17 +311,27 @@ class PatientInjury(models.Model):
             raise AccessError(_("Only treatment professionals can verify injuries."))
             
         self.write({'stage': 'active'})
-        message = _("Injury verified by %s") % self.env.user.name
-        self.message_post(body=message)
-        # Close any open verification activities for this injury. Task 1409:
-        # they live on the patient and are keyed by the technical injury_id
-        # link (whatever their res_model).
+        self._after_verify()
+        return True
+
+    def _after_verify(self):
+        """What verifying an injury does besides the stage (task 1612: the
+        « Verify » button AND the app's status selector call it): log
+        « Injury verified by … » and close the open verification To-Dos."""
+        for injury in self:
+            injury.message_post(body=_("Injury verified by %s") % self.env.user.name)
+        self._close_verify_activities()
+
+    def _close_verify_activities(self):
+        """Close the open verification To-Dos about the injuries in self.
+        Task 1409: they live on the patient and are keyed by the technical
+        injury_id link (whatever their res_model). Task 1604: called on ANY
+        transition out of « unverified » (see ``write``), not only a verify."""
         verif_acts = self.env['mail.activity'].sudo().search(
             self._verify_activity_domain() + [('active', '=', True)]
         )
         if verif_acts:
             verif_acts.action_done()
-        return True
 
     def _activity_summary_prefix(self):
         """User-visible context prefix for an activity about this injury
@@ -300,22 +349,165 @@ class PatientInjury(models.Model):
         the injuries in self (task 1409: keyed on injury_id + summary marker)."""
         return [
             ('injury_id', 'in', self.ids or [0]),
+            '|',
             ('summary', 'ilike', VERIFY_INJURY_SUMMARY),
+            ('summary', 'ilike', VERIFY_INJURY_SUMMARY_FR),
         ]
+
+    def _verify_activity_summary(self):
+        """« [Injury: <diagnosis>] Verify injury », rendered in the context
+        language (call it with the ASSIGNEE's lang — task 1661: the suffix is
+        translated too, fr_CA « Vérifier la blessure »)."""
+        self.ensure_one()
+        return self._activity_summary_prefix() + self.env._("Verify injury")
         
-    def action_resolve_injury(self):
-        """Mark an injury as resolved."""
+    @api.model
+    def _sc_clear_resolved_predicted_dates(self):
+        """Review fixes 2026-10-18 (post-migrate 19.0.1.86.0): null the
+        predicted resolution date of every already-RESOLVED injury, in SQL —
+        no tracking, no chatter, no digest bump (a data cleanup, not a
+        change anyone made). Unresolved injuries are left alone (even those
+        carrying a resolution date). Returns the number of rows cleared."""
+        self.env.flush_all()
+        self.env.cr.execute("""
+            UPDATE sports_patient_injury
+               SET predicted_resolution_date = NULL
+             WHERE stage = 'resolved'
+               AND predicted_resolution_date IS NOT NULL
+        """)
+        count = self.env.cr.rowcount
+        self.invalidate_model(['predicted_resolution_date'])
+        return count
+
+    def action_resolve_injury(self, resolution_date=None):
+        """Mark an injury as resolved, on ``resolution_date`` (task 1604: the
+        app's « Résoudre » confirms a date) or today."""
         self.ensure_one()
         if self.stage == "resolved":
             return True
-            
+
         self.write({
             'stage': 'resolved',
-            'resolution_date': fields.Date.context_today(self)
+            'resolution_date': resolution_date or fields.Date.context_today(self)
         })
         message = _("Injury marked as resolved by %s") % self.env.user.name
         self.message_post(body=message)
         return True
+
+    # ------------------------------------------------------------------
+    # Task 1631 — the injury card's pill dropdowns and backward moves
+    # ------------------------------------------------------------------
+    _SC_STAGE_TONES = {'unverified': 'yellow', 'active': 'red', 'resolved': 'green'}
+    _SC_CONSENT_TONES = {'yes': 'green', 'no': 'red', 'na': 'ghost', '': 'yellow'}
+    _SC_VISIBILITY_TONES = {'0': 'ghost', '1': 'yellow'}
+
+    def _sc_pill_target(self, field, old_value):
+        self.ensure_one()
+        return {
+            'model': self._name,
+            'id': self.id,
+            'field': field,
+            'write_date': fields.Datetime.to_string(self.sudo().write_date),
+            'old_value': old_value,
+        }
+
+    @staticmethod
+    def _sc_pill(key, text, menu_label, value, tone, options, target):
+        return {
+            'key': key, 'label': menu_label, 'menu_label': menu_label,
+            'value': value, 'text': text, 'title': text, 'tone': tone, 'icon': '',
+            'options': options, 'target': target,
+        }
+
+    def _sc_stage_pill(self):
+        """Task 1631: the card header's status pill (``sc_status_pill_select``).
+        Every transition is offered (fixing a mistake is the point):
+        « Actif » from « Non vérifié » is the verify action and « Résolu »
+        from an unresolved status the resolve sheet (``action``, handled by
+        sc_injury_quick.js); the other (backward) picks post ``stage``."""
+        self.ensure_one()
+        env = self.env
+        stage = self.stage
+        labels = dict(self._fields['stage']._description_selection(env))
+        options = []
+        for value, label in labels.items():
+            action = None
+            if value == 'active' and stage == 'unverified':
+                action = 'injury.verify'
+            elif value == 'resolved' and stage != 'resolved':
+                action = 'injury.resolve'
+            options.append({
+                'value': value, 'label': label, 'icon': '',
+                'tone': self._SC_STAGE_TONES.get(value, 'ghost'),
+                'checked': value == stage, 'disabled': False, 'hint': '',
+                'post': value, 'action': action,
+                'from': stage if action == 'injury.resolve' else None,
+            })
+        return self._sc_pill(
+            'stage', labels.get(stage, ''), env._("Injury status"), stage,
+            self._SC_STAGE_TONES.get(stage, 'ghost'), options,
+            self._sc_pill_target('stage', stage))
+
+    def _sc_flag_pills(self):
+        """Task 1631: the Details row's « Consentement parental » and
+        « Visibilité » pills, ``[consent, visibility]`` (blank consent =
+        yellow « To be specified », pickable)."""
+        self.ensure_one()
+        env = self.env
+        consent = self.parental_consent or ''
+        consent_labels = dict(self._fields['parental_consent']._description_selection(env))
+        consent_labels[''] = env._("To be specified")
+        consent_options = [{
+            'value': value, 'label': label, 'icon': '',
+            'tone': self._SC_CONSENT_TONES[value],
+            'checked': value == consent, 'disabled': False, 'hint': '', 'post': value,
+        } for value, label in consent_labels.items()]
+        hidden = '1' if self.hidden_from_coaches else '0'
+        visibility_labels = {'0': env._("Coaches"), '1': env._("Hidden")}
+        visibility_options = [{
+            'value': value, 'label': label, 'icon': '',
+            'tone': self._SC_VISIBILITY_TONES[value],
+            'checked': value == hidden, 'disabled': False, 'hint': '', 'post': value,
+        } for value, label in visibility_labels.items()]
+        return [
+            self._sc_pill(
+                'consent',
+                env._("Parental consent: %(value)s", value=consent_labels[consent]),
+                env._("Parental consent"), consent, self._SC_CONSENT_TONES[consent],
+                consent_options, self._sc_pill_target('parental_consent', consent)),
+            self._sc_pill(
+                'visibility',
+                env._("Visibility: %(value)s", value=visibility_labels[hidden]),
+                env._("Visibility"), hidden, self._SC_VISIBILITY_TONES[hidden],
+                visibility_options, self._sc_pill_target('hidden_from_coaches', hidden)),
+        ]
+
+    def _sc_predicted_before_resolve(self):
+        """Task 1631: the predicted resolution date the last resolve wiped
+        (read from the mail tracking of ``predicted_resolution_date``: the
+        newest change to « empty » gives its old value), or False when the
+        field holds a date or no such tracking exists."""
+        self.ensure_one()
+        if self.predicted_resolution_date:
+            return False
+        field = self.env['ir.model.fields']._get(self._name, 'predicted_resolution_date')
+        tracking = self.env['mail.tracking.value'].sudo().search([
+            ('field_id', '=', field.id),
+            ('mail_message_id.model', '=', self._name),
+            ('mail_message_id.res_id', '=', self.id),
+        ], order='id desc', limit=1)
+        if not tracking or tracking.new_value_datetime or not tracking.old_value_datetime:
+            return False
+        return tracking.old_value_datetime.date()
+
+    def _sc_log_moved_back(self):
+        """Task 1631: « Injury moved back to <status> by <user> » on the
+        injury's chatter (a backward move from the app's status pill)."""
+        labels = dict(self._fields['stage']._description_selection(self.env))
+        for injury in self:
+            injury.message_post(body=_(
+                "Injury moved back to %(stage)s by %(user)s",
+                stage=labels.get(injury.stage, injury.stage), user=self.env.user.name))
 
     # Task 1269 dead-code cleanup: a first ``create`` was defined here and
     # immediately shadowed by the fuller ``@api.model_create_multi`` override
@@ -330,15 +522,9 @@ class PatientInjury(models.Model):
 
     def _note_history_author_id(self):
         """Resolve the authenticated author for note-history rows (task 1241).
-
-        Portal saves go through ``injury.sudo().write(vals)``, which rebinds
-        the environment to the superuser; the audit trail must credit the
-        human behind the request, so when running as sudo inside an HTTP
-        request we recover the session uid instead.
-        """
-        if self.env.su and request and request.session and request.session.uid:
-            return request.session.uid
-        return self.env.uid
+        Task 1601: shared with the training recommendation history
+        (``history_author_uid``)."""
+        return history_author_uid(self.env)
 
     def _last_note_history(self, scope):
         """The newest sports.injury.note.history row of ``scope`` for this
@@ -355,10 +541,9 @@ class PatientInjury(models.Model):
         is gone (task 1406)."""
         if not row:
             return ''
-        when = fields.Date.context_today(self, timestamp=row.note_datetime)
         return _(
             'Last note on %(date)s by %(author)s',
-            date=format_date(self.env, when),
+            date=history_stamp_date(self, row.note_datetime),
             author=row.author_id.name or '—',
         )
 
@@ -377,11 +562,14 @@ class PatientInjury(models.Model):
         doesn't change the field produces no row (task 1241).
 
         Task 1404: comparison is strip-normalized so whitespace-only diffs
-        log nothing, and an essentially-empty NEW value — including a genuine
-        clear — logs nothing (customer decision; the traceability trade-off on
-        clear events is explicitly accepted). Stored content stays raw
-        (un-stripped); normalization is for comparison only. The invariant is
-        that no history row ever has essentially-empty content."""
+        log nothing. Stored content stays raw (un-stripped); normalization is
+        for comparison only.
+
+        Owner review 2026-10-14 (supersedes 1404's « a clear logs nothing »):
+        a genuine clear — a non-empty note made essentially empty — IS
+        recorded, as ONE empty-content row (the history shows it « Cleared »,
+        like the training recommendation's). Empty -> whitespace-only still
+        logs nothing (nothing was there to clear)."""
         changed_fields = [f for f in note_history_scope_by_field if f in vals]
         if not changed_fields:
             return []
@@ -394,20 +582,65 @@ class PatientInjury(models.Model):
                 new_norm = (vals.get(fname) or "").strip()
                 if old_norm == new_norm:
                     continue
-                if not new_norm:
-                    # Clears and whitespace-only writes log nothing.
-                    continue
                 history_vals.append({
                     'injury_id': rec.id,
                     'scope': note_history_scope_by_field[fname],
-                    'content': vals.get(fname),
+                    # A clear: an empty row (rendered « Cleared »).
+                    'content': vals.get(fname) if new_norm else '',
                     'author_id': author_id,
                     'note_datetime': now,
                 })
         return history_vals
 
+    def _overwrite_recent_clears(self, history_vals):
+        """Task 1631 (owner decision 2026-10-20): for each NON-EMPTY history
+        row about to be created, when the newest row of that injury + scope
+        is an EMPTY one (« Cleared ») by the same author, less than
+        ``NOTE_CLEAR_OVERWRITE_MINUTES`` old, that row is rewritten (content
+        + time, through sudo: the model is read-only for every group) and
+        the dashboards bumped as for a new row. Returns the vals still to
+        create. A clear that stays empty is never touched."""
+        History = self.env['sports.injury.note.history'].sudo()
+        limit = fields.Datetime.now() - timedelta(minutes=NOTE_CLEAR_OVERWRITE_MINUTES)
+        remaining = []
+        for vals in history_vals:
+            if not (vals.get('content') or '').strip():
+                remaining.append(vals)
+                continue
+            last = History.search([
+                ('injury_id', '=', vals['injury_id']), ('scope', '=', vals['scope']),
+            ], order='note_datetime desc, id desc', limit=1)
+            if (last and last.author_id.id == vals['author_id']
+                    and not (last.content or '').strip()
+                    and last.note_datetime >= limit):
+                last.write({'content': vals['content'], 'note_datetime': vals['note_datetime']})
+                if not self.env.context.get('dashboard_bump'):
+                    last._bump_dashboards()
+                continue
+            remaining.append(vals)
+        return remaining
+
+    def _sc_check_external_notes_writer(self, vals_list):
+        """Owner decision 2026-10-25 (#1675): the external note is written by
+        treatment professionals only. A share (portal) user who is not a
+        portal therapist — a coach — gets an AccessError for any
+        ``external_notes`` in ``vals``, whatever the path (app, legacy
+        portal, RPC). Internal users and the superuser (imports, merges,
+        crons, the controllers' sudo writes) are not concerned."""
+        if self.env.su or not any('external_notes' in vals for vals in vals_list):
+            return
+        user = self.env.user
+        if not user.share:
+            return
+        if user.has_group('bemade_sports_clinic.group_portal_treatment_professional'):
+            return
+        raise AccessError(_("Only treatment professionals can edit an injury's external notes."))
+
     def write(self, vals):
         """Override write to refresh follower subtypes when internal notes change."""
+        # Adversarial review 2026-10-22: never moved onto another player.
+        sc_check_patient_unchanged(self, vals)
+        self._sc_check_external_notes_writer([vals])
         # Detect suppression context (portal coach flows)
         suppress_followers = bool(
             self.env.context.get('mail_create_nosubscribe')
@@ -423,8 +656,29 @@ class PatientInjury(models.Model):
         if not self.env.context.get('skip_note_history'):
             note_history_vals = self._prepare_note_history_vals(vals)
 
+        # Task 1604 (from 1612): whatever moves an injury out of
+        # « unverified » (verify, the app's status selector straight to
+        # « Resolved », the backend) closes its « Verify injury » To-Do.
+        leaving_unverified = self.browse()
+        if vals.get('stage') and vals['stage'] != 'unverified':
+            leaving_unverified = self.filtered(lambda i: i.stage == 'unverified')
+
+        # Review fixes 2026-10-18 (injury dates rule): resolving an injury —
+        # whatever the path (app stage save, quick « Résoudre »,
+        # action_resolve_injury, the backend) — clears its predicted
+        # resolution date: once resolved only the real date matters.
+        if vals.get('stage') == 'resolved' and vals.get('predicted_resolution_date') is not False:
+            vals = dict(vals, predicted_resolution_date=False)
+
         res = super().write(vals)
 
+        if leaving_unverified:
+            leaving_unverified._close_verify_activities()
+
+        if note_history_vals:
+            # Task 1631: a note written right after its clear (same user,
+            # same scope, within the hour) overwrites the empty row.
+            note_history_vals = self._overwrite_recent_clears(note_history_vals)
         if note_history_vals:
             # sudo: history rows are only ever created by server code; no
             # group holds create rights on the model.
@@ -432,7 +686,10 @@ class PatientInjury(models.Model):
 
         # Update subscriptions if internal_notes changes (unless suppressed)
         if not suppress_followers and 'internal_notes' in vals:
-            for rec in self:
+            # sudo (owner review 2026-10-14): follower-subtype upkeep reads
+            # the followers' users and groups, which a portal therapist saving
+            # the internal notes may not read (res.groups ACL -> 403).
+            for rec in self.sudo():
                 rec._manage_treatment_professional_subscriptions()
 
         # Task 1272: propagate non-note injury changes to the owning player's
@@ -559,7 +816,9 @@ class PatientInjury(models.Model):
             is_treatment_prof = False
             treatment_prof_group = self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
             for user in users:
-                if treatment_prof_group in user.group_ids:
+                # Task 1639: all_group_ids (implied groups too): a clinic
+                # admin is a therapist through « Administrator ».
+                if treatment_prof_group in user.all_group_ids:
                     is_treatment_prof = True
                     break
             
@@ -659,7 +918,9 @@ class PatientInjury(models.Model):
     @api.model
     def _cron_create_injury_verification_tasks(self):
         """Create verification activities for unverified injuries.
-        Assign to head therapist(s) of the injury's team, falling back to therapists.
+        Task 1664: routed by sports.patient._sc_todo_route (the player's
+        teams, the reporter's first; head therapist, then therapist; else a
+        clinic administrator).
         Runs with sudo to avoid portal ACL constraints from coach-created injuries.
         Deduplicates by checking for existing open 'Verify injury' activities on the same injury.
 
@@ -678,23 +939,12 @@ class PatientInjury(models.Model):
         todo_type = self.env.ref('mail.mail_activity_data_todo', raise_if_not_found=False)
         patient_model_rec = self.env['ir.model']._get('sports.patient')
 
+        Patient = self.env['sports.patient']
         for injury in injuries:
             if not injury.patient_id:
                 continue
-            # Determine target team: the patient's first team
-            team = injury.patient_id.team_ids[:1]
-            if not team:
-                continue
-
-            # Find staff for this team prioritized by head_therapist then therapist
-            staff = self.env['sports.team.staff'].sudo().search([
-                ('team_id', '=', team.id),
-                ('role', 'in', ['head_therapist', 'therapist'])
-            ])
-            if not staff:
-                continue
-
             # Already has an open verification To-Do (keyed on injury_id)?
+            # ONE To-Do per injury.
             existing = Activity.search(
                 injury._verify_activity_domain() + [('active', '=', True)],
                 limit=1,
@@ -702,25 +952,27 @@ class PatientInjury(models.Model):
             if existing:
                 continue
 
-            # Choose a single assignee: prefer first head therapist user, else first therapist user
-            head_users = staff.filtered(lambda s: s.role == 'head_therapist').mapped('user_ids')[:1]
-            therapist_users = staff.filtered(lambda s: s.role == 'therapist').mapped('user_ids')[:1]
-            assignee = head_users or therapist_users
+            # Task 1664: the shared routing — the player's teams (the
+            # reporter's teams first), head therapist then therapist with a
+            # user account, else a clinic administrator. A player whose first
+            # team has no therapist account no longer goes without a To-Do.
+            assignee = injury.patient_id._sc_todo_route(
+                Patient._sc_user_teams(injury.create_uid))
             if not assignee:
                 continue
 
             # The prefix is stored text: render it in the ASSIGNEE's language
             # (the reader), not the cron user's.
-            prefix = injury.with_context(
+            summary = injury.with_context(
                 lang=assignee.lang or self.env.user.lang
-            )._activity_summary_prefix()
+            )._verify_activity_summary()
             vals = {
                 'res_model_id': patient_model_rec.id,
                 'res_id': injury.patient_id.id,
                 'injury_id': injury.id,
                 'user_id': assignee.id,
                 'activity_type_id': todo_type.id if todo_type else False,
-                'summary': prefix + VERIFY_INJURY_SUMMARY,
+                'summary': summary,
                 'note': _("Please verify this injury and set the appropriate status."),
                 'date_deadline': fields.Date.context_today(self),
                 'automated': True,
@@ -730,6 +982,12 @@ class PatientInjury(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        self._sc_check_external_notes_writer(vals_list)
+        # Review fixes 2026-10-18: an injury created already resolved carries
+        # no predicted resolution date (same rule as resolving one).
+        vals_list = [dict(vals, predicted_resolution_date=False)
+                     if vals.get('stage') == 'resolved' else vals
+                     for vals in vals_list]
         # Determine context before creating to avoid mail.followers writes
         # when portal/coach creates. "Treatment professional" covers BOTH
         # internal and portal TPs — the latter must also create injuries

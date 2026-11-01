@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.company.signature</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="mail.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//block[@id='emails']" position="inside">
+                <setting
+          id="company_signature_setting"
+          string="Company-standard Signature"
+          help="Generate the email signature of every employee from one template. They can no longer edit their own signature."
+          company_dependent="1"
+          groups="base.group_system"
+        >
+                    <field name="company_signature_enforced" />
+                    <div
+            class="content-group mt16 w-100"
+            invisible="not company_signature_enforced"
+          >
+                        <label
+              for="company_signature_template"
+              string="Template"
+              class="o_form_label d-block"
+            />
+                        <field
+              name="company_signature_template"
+              options="{'codeview': true, 'height': 220, 'resizable': true}"
+              class="d-block w-100 border border-secondary"
+            />
+                        <label
+              for="company_signature_notice"
+              class="o_form_label d-block mt16"
+            />
+                        <field
+              name="company_signature_notice"
+              options="{'height': 80, 'resizable': true}"
+              class="d-block w-100 border border-secondary"
+            />
+                        <div class="mt8">
+                            <label
+                for="company_signature_notice_until"
+                class="o_form_label me-2"
+              />
+                            <field name="company_signature_notice_until" />
+                        </div>
+                    </div>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>

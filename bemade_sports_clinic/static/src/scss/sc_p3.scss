@@ -30,9 +30,11 @@ $sc-p3-laptop: 1024px;
 
     @media (min-width: $sc-p3-laptop) {
         // Laptop: both panes side by side; the phone tabs are not needed.
+        // Task 1721 (review round 2, owner 2026-10-27): the worklist keeps a
+        // fixed width (~420 px); the patient / dossier pane takes the rest.
         .o_sc_clinic_panes {
             display: grid;
-            grid-template-columns: minmax(320px, 2fr) 3fr;
+            grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
             gap: var(--sc-space-5);
             align-items: start;
 
@@ -218,6 +220,92 @@ $sc-p3-laptop: 1024px;
         }
     }
 
+    // Task 1605: the therapist colour dot (one colour, conic slices for
+    // several, grey when unassigned) replaces FullCalendar's own dot; the
+    // legend under the calendar filters on tap.
+    .o_sc_staff_dot {
+        display: inline-block;
+        flex: none;
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 50%;
+        vertical-align: middle;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+    }
+
+    .o_sc_staff_dot_none {
+        background: var(--sc-fg-3);
+    }
+
+    // Only on a calendar that opted in (bookings keeps FullCalendar's dot).
+    .o_sc_calendar_staff .o_sc_calendar {
+        .fc-daygrid-event-dot,
+        .fc-list-event-dot {
+            display: none;
+        }
+
+        .fc-daygrid-event .o_sc_staff_dot {
+            margin: 0 0.25rem 0 0.125rem;
+        }
+
+        .fc-timegrid-event .o_sc_staff_dot {
+            margin-right: 0.25rem;
+            box-shadow: 0 0 0 1px var(--sc-surface);
+        }
+    }
+
+    .o_sc_staff_legend {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2);
+        margin-top: var(--sc-space-3);
+
+        .o_sc_staff_legend_title {
+            color: var(--sc-fg-2);
+            margin-right: var(--sc-space-1);
+        }
+    }
+
+    .o_sc_staff_legend_item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        min-height: 36px;
+        max-width: 100%;
+        padding: 0.25rem 0.75rem;
+        border: 1px solid var(--sc-line);
+        border-radius: var(--sc-radius-pill);
+        background: var(--sc-surface);
+        color: var(--sc-fg);
+        font: inherit;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+
+        &.o_sc_staff_legend_active {
+            border-color: var(--sc-accent);
+            background: var(--sc-bar-active-bg);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--sc-focus);
+            outline-offset: 2px;
+        }
+    }
+
+    button.o_sc_staff_legend_item {
+        cursor: pointer;
+
+        &:hover {
+            background: var(--sc-hover);
+        }
+    }
+
+    .o_sc_staff_legend_static {
+        border-style: dashed;
+        color: var(--sc-fg-2);
+    }
+
     // -------------------------------------------------------- notepad
     .o_sc_quick_note {
         .o_sc_note_text {
@@ -236,6 +324,33 @@ $sc-p3-laptop: 1024px;
     }
 }
 
+// Task 1585: tap-to-call / tap-to-email links (player and emergency
+// contact phones / emails, bookings, the event page's staff and
+// organization). An empty value (no href) reads as plain text.
+.o_sc_app {
+    a.o_sc_contact_link[href] {
+        color: var(--sc-accent);
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .o_sc_contact_sub {
+        margin-left: 6px;
+    }
+
+    .o_sc_contact_person {
+        display: block;
+    }
+
+    .o_sc_row_contacts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px 12px;
+        font-size: var(--sc-text-sm);
+    }
+}
+
 @keyframes o_sc_pulse {
     0%,
     100% {
@@ -249,5 +364,357 @@ $sc-p3-laptop: 1024px;
 @media (prefers-reduced-motion: reduce) {
     .o_sc_app .o_sc_live i {
         animation: none;
+    }
+}
+
+// Task 1592 — the activity clock: the app bar's clock + overdue badge, and
+// the clock chip of player / team / event rows and injury cards.
+.o_sc_app {
+    .o_sc_appbar_clock {
+        position: relative;
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .o_sc_appbar_badge {
+        position: absolute;
+        top: 4px;
+        right: 2px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: var(--sc-radius-pill);
+        background: var(--sc-bad);
+        color: var(--sc-tone-fg);
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 18px;
+        text-align: center;
+        pointer-events: none;
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    .o_sc_activity_clock {
+        gap: 4px;
+        text-decoration: none;
+
+        &.o_sc_chip_ghost {
+            color: var(--sc-fg);
+        }
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: none;
+            filter: brightness(1.1);
+        }
+    }
+
+    .o_sc_row_trailing .o_sc_activity_clock .o_sc_icon,
+    .o_sc_activity_clock .o_sc_icon {
+        width: 14px;
+        height: 14px;
+        color: currentColor;
+    }
+}
+
+// Task 1635 — the open-activity count on a page tab (the player and team
+// pages' « Activities »): a tiny pill after the label. Neutral = the tab's
+// own text colour (readable on the Mauve active tab and in dark mode); red
+// = the app bar clock badge's colour (one of them is overdue). The player
+// page's five tabs already scroll sideways on a phone (sc_p2); the pill
+// never shrinks.
+.o_sc_app {
+    .o_sc_page_tabs > a {
+        gap: 6px;
+    }
+
+    .o_sc_tab_badge {
+        flex: 0 0 auto;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: var(--sc-radius-pill);
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 16px;
+        text-align: center;
+        border: 1px solid currentColor;
+    }
+
+    .o_sc_tab_badge_neutral {
+        background: transparent;
+        color: inherit;
+    }
+
+    .o_sc_tab_badge_red {
+        background: var(--sc-bad);
+        border-color: var(--sc-bad);
+        color: var(--sc-tone-fg);
+    }
+}
+
+// Task 1647: the tab bars fit a phone's width — compact tabs sharing the
+// width (up to five), the count pill before the label, a short label where
+// one is given (« Docs »). Six or more tabs, or a screen under 340 px,
+// still scroll sideways (.o_sc_page_tabs_scroll / below).
+.o_sc_app {
+    .o_sc_tab_label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_sc_tab_label_short {
+        display: none;
+    }
+
+    @media (max-width: 991.98px) {
+        // Shared by content: a short label (Info) gives room to a long
+        // one with its pill (Activités 3).
+        .o_sc_page_tabs:not(.o_sc_page_tabs_scroll) > a {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding: 0 6px;
+            gap: 4px;
+            font-size: 12px;
+        }
+
+        .o_sc_tab_label_long {
+            display: none;
+        }
+
+        .o_sc_tab_label_short {
+            display: inline;
+        }
+    }
+
+    @media (max-width: 339.98px) {
+        .o_sc_page_tabs {
+            overflow-x: auto;
+            scrollbar-width: none;
+
+            > a,
+            &:not(.o_sc_page_tabs_scroll) > a {
+                flex: 0 0 auto;
+                padding: 0 12px;
+            }
+        }
+    }
+}
+
+// Task 1650: the header search sheet — full screen on a phone, the centred
+// sheet on a laptop; results grouped, archived / locked players greyed.
+.o_sc_app {
+    .o_sc_search_sheet[open] {
+        display: flex;
+        flex-direction: column;
+        max-height: 85vh;
+        max-height: 85dvh;
+
+        > .o_sc_sheet_head,
+        > .o_sc_search_box {
+            flex: none;
+        }
+
+        > .o_sc_search_body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .o_sc_search_sheet[open] {
+            height: 100vh;
+            height: 100dvh;
+            max-height: 100dvh;
+            margin: 0;
+            border-radius: 0;
+            padding-top: env(safe-area-inset-top, 0px);
+        }
+    }
+
+    .o_sc_search_box {
+        padding: var(--sc-space-3) var(--sc-space-4) 0;
+    }
+
+    .o_sc_search_group + .o_sc_search_group {
+        margin-top: var(--sc-space-3);
+    }
+
+    .o_sc_search_group_title {
+        margin: 0 0 var(--sc-space-1);
+        font-size: var(--sc-text-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--sc-fg-2);
+    }
+
+    .o_sc_search_list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .o_sc_search_row {
+        display: flex;
+        align-items: center;
+        gap: var(--sc-space-2);
+        border-bottom: 1px solid var(--sc-line);
+    }
+
+    .o_sc_search_link {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        column-gap: var(--sc-space-2);
+        min-height: var(--sc-tap);
+        padding: var(--sc-space-2) var(--sc-space-1);
+        color: var(--sc-fg);
+        text-decoration: none;
+        border-radius: var(--sc-radius-sm);
+    }
+
+    a.o_sc_search_link:hover,
+    .o_sc_search_active {
+        background: var(--sc-hover);
+        outline: 2px solid var(--sc-focus);
+        outline-offset: -2px;
+    }
+
+    .o_sc_search_locked .o_sc_search_link,
+    .o_sc_search_archived .o_sc_search_link {
+        color: var(--sc-fg-3);
+    }
+
+    .o_sc_search_add {
+        flex: none;
+    }
+}
+
+// Task 1648: the type-to-filter picker of the link fields (sc_picker.js) —
+// the select stays (hidden) as the form value; the list sits in the flow
+// under the box (a phone keyboard does not hide it).
+.o_sc_app {
+    select.o_sc_picker_native {
+        display: none;
+    }
+
+    .o_sc_picker {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-1);
+        min-width: 0;
+    }
+
+    // Task 1722: the event form's venue picker beside « New venue ».
+    .o_sc_inline_form:has(> .o_sc_picker) {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--sc-space-2);
+
+        > .o_sc_picker {
+            flex: 1 1 auto;
+        }
+
+        > .o_sc_btn {
+            flex: none;
+            min-height: var(--sc-tap);
+        }
+    }
+
+    .o_sc_picker_box {
+        position: relative;
+        display: flex;
+        align-items: center;
+
+        .o_sc_picker_input {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding-right: var(--sc-tap);
+        }
+
+        .o_sc_picker_clear {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+    }
+
+    .o_sc_picker_list {
+        list-style: none;
+        margin: 0;
+        padding: 4px;
+        max-height: 40vh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        background: var(--sc-surface);
+        border: 1px solid var(--sc-line);
+        border-radius: var(--sc-radius-sm);
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    .o_sc_picker_option {
+        min-height: var(--sc-tap);
+        display: flex;
+        align-items: center;
+        padding: 0 var(--sc-space-2);
+        border-radius: var(--sc-radius-sm);
+        cursor: pointer;
+
+        &:hover,
+        &.o_sc_picker_option_active {
+            background: var(--sc-hover);
+        }
+
+        &[aria-selected="true"] {
+            font-weight: 600;
+        }
+    }
+}
+
+
+// Task 1721: the Clinique dossier — the player card, the medical pills
+// under it, the folded resolved injuries.
+.o_sc_app {
+    .o_sc_clinic_medical {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--sc-space-2);
+        margin-top: var(--sc-space-2);
+    }
+
+    .o_sc_resolved_injuries {
+        margin-top: var(--sc-space-2);
+
+        > summary.o_sc_resolved_toggle {
+            list-style: none;
+            display: inline-flex;
+            align-items: center;
+            min-height: var(--sc-tap);
+            color: var(--sc-accent);
+            font-weight: 600;
+            cursor: pointer;
+
+            &::-webkit-details-marker {
+                display: none;
+            }
+        }
+
+        > .o_sc_list {
+            margin-top: var(--sc-space-2);
+        }
     }
 }

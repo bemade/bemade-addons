@@ -40,8 +40,11 @@ from unittest.mock import patch
 
 from odoo.tests.common import HttpCase, TransactionCase
 from odoo.tools import config
+from odoo.tools.misc import mute_logger
 
 from odoo.addons.health_check_k8s.controllers.health import HealthController
+
+HEALTH_LOGGER = "odoo.addons.health_check_k8s.controllers.health"
 
 
 class TestHealthCheckEndpoint(HttpCase):
@@ -95,7 +98,10 @@ class TestHealthCheckUnit(TransactionCase):
                     query = "SELECT pg_sleep(0.1)"
                 return original_execute(cr_self, query, *args, **kwargs)
 
-            with patch.object(new_cr.__class__, "execute", slow_execute):
+            with (
+                patch.object(new_cr.__class__, "execute", slow_execute),
+                mute_logger("odoo.sql_db", HEALTH_LOGGER),
+            ):
                 result = self.controller._check_database(cr=new_cr)
 
             self.assertFalse(result["ok"])
@@ -112,7 +118,10 @@ class TestHealthCheckUnit(TransactionCase):
 
     def test_check_filestore_failure(self):
         """Use Case 3: Filestore check returns ok=False when path is not writable."""
-        with patch.object(config, "filestore", return_value="/nonexistent/path"):
+        with (
+            patch.object(config, "filestore", return_value="/nonexistent/path"),
+            mute_logger(HEALTH_LOGGER),
+        ):
             result = self.controller._check_filestore(dbname=self.env.cr.dbname)
 
         self.assertFalse(result["ok"])

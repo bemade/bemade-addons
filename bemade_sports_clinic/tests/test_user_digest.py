@@ -205,7 +205,7 @@ class TestUserMorningDigest(TransactionCase):
 
     def _digest_messages(self):
         return self.env["mail.message"].search([
-            ("subject", "=like", "FitCrew — daily briefing%"),
+            ("subject", "=like", "Le Fit Crew — daily briefing%"),
         ])
 
     def _notified(self, partner):
@@ -276,8 +276,13 @@ class TestUserMorningDigest(TransactionCase):
         self.assertEqual(tp_line["changes"], 1)
 
     def test_pending_verify_and_removal_counts(self):
-        line = self._line_for(self.coach_a, self.team_a)
+        line = self._line_for(self.therapist_a, self.team_a)
         self.assertEqual(line["pending_verify"], 1)
+        self.assertEqual(line["pending_removal"], 1)
+        # Task 1589: a coach line counts only the coach's own (assigned or
+        # created) verifications — none here.
+        line = self._line_for(self.coach_a, self.team_a)
+        self.assertEqual(line["pending_verify"], 0)
         self.assertEqual(line["pending_removal"], 1)
 
     def test_team_ordering_and_event_dedup(self):
@@ -422,17 +427,16 @@ class TestUserMorningDigest(TransactionCase):
         self.assertIn("Alpha Team", blob)
         self.assertIn("Shared Match", blob)
         self.assertIn("(+3)", blob)
-        # Task 1396: the dashboard backlink is per RECIPIENT. Every user in this
-        # fixture is an internal user, so the briefing must carry the BACKEND
-        # action link (before 1396 it always sent the portal link, which is the
-        # mirror bug this task fixed). Per-recipient selection across both
-        # account types is covered in test_dashboard_url_per_recipient.py.
+        # Task 1396: the dashboard backlink is per RECIPIENT. Task 1639: the
+        # internal users of this fixture who hold a clinic role (staff on the
+        # team) get the APP link, like portal users (the blob holds every
+        # recipient's mail, so it is only asserted present);
+        # the backend link is only for internal users with no clinic role
+        # (test_dashboard_url_per_recipient.py, test_internal_parity_1639.py).
         self.assertFalse(any(self.Users.browse(
             [self.coach_a.id, self.therapist_a.id, self.multi.id]
         ).mapped("share")))
-        action = self.env.ref("bemade_sports_clinic.action_view_team")
-        self.assertIn("/odoo/action-%s/%s" % (action.id, self.team_a.id), blob)
-        self.assertNotIn("/my/team?team_id=", blob)
+        self.assertIn("/my/team?team_id=%s" % self.team_a.id, blob)
 
     def test_template_renders_counts_no_phi(self):
         template = self.env.ref(

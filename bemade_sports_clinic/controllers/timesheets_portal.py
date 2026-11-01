@@ -196,7 +196,15 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             success = env._("Timesheet updated.")
         elif params.get('deleted'):
             success = env._("Timesheet deleted.")
+        # Owner review 2026-10-11: « Group by » is back (date / organization
+        # / team), one titled group each, from the legacy route's groups.
+        groups = []
+        if values.get('group_by') and values.get('grouped'):
+            groups = [{'key': str(index), 'label': group['label'],
+                       'rows': [self._sc_timesheet_row(ts) for ts in group['items']]}
+                      for index, group in enumerate(values['grouped'])]
         return {
+            'sc_timesheet_groups': groups,
             'sc_timesheet_rows': [self._sc_timesheet_row(ts) for ts in values['timesheets']],
             'sc_timesheets_return': current,
             'sc_flash': {'success': success, 'error': None},

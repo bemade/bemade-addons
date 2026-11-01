@@ -70,7 +70,7 @@
                                             <h5>Attachments</h5>
                                             <div class="list-group">
                                                 <t t-foreach="attachments" t-as="attachment">
-                                                    <a t-attf-href="/web/content/#{attachment.id}?download=true" 
+                                                    <a t-attf-href="/my/activity/#{activity.id}/attachment/#{attachment.id}" download="" 
                                                        class="list-group-item list-group-item-action">
                                                         <i class="fa fa-paperclip mr-2"/>
                                                         <span t-field="attachment.name"/>

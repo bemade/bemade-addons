@@ -3,6 +3,9 @@
 // rail). Everything is scoped under .o_sc_app — see sc_tokens.scss.
 
 $sc-laptop: 992px;
+// Picker icons (owner review 2026-10-14), used as CSS masks: a calendar and a clock.
+$sc-icon-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3V2zm12 8H5v9h14v-9zM5 6v2h14V6H5zm2 6h4v4H7v-4z'/%3E%3C/svg%3E");
+$sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm1 3v4.6l3.2 3.2-1.4 1.4L11 12.4V7h2z'/%3E%3C/svg%3E");
 
 .o_sc_app {
     min-height: 100vh;
@@ -42,7 +45,7 @@ $sc-laptop: 992px;
     // ------------------------------------------------------------------
     .o_sc_main {
         min-width: 0;
-        padding-bottom: calc(var(--sc-tabs-height) + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(var(--sc-tabs-height) + env(safe-area-inset-bottom, 0px) + var(--sc-ribbon-h, 0px));
     }
 
     .o_sc_rail {
@@ -152,16 +155,38 @@ $sc-laptop: 992px;
         flex: none;
     }
 
+    // Task 1579: the breadcrumb trail is the LAPTOP's navigation; phones get
+    // the back chevron + context line. Both are rendered on every sub-page,
+    // the screen width decides (no user setting).
     .o_sc_crumbs {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: var(--sc-space-1);
+        display: none;
         padding: 6px var(--sc-space-4);
         background: var(--sc-surface);
         border-bottom: 1px solid var(--sc-line);
         font-size: var(--sc-text-sm);
         color: var(--sc-fg-2);
+
+        ol {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: var(--sc-space-1);
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        li {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--sc-space-1);
+            min-width: 0;
+        }
+
+        li + li::before {
+            content: "›";
+            opacity: 0.5;
+        }
 
         a {
             padding: 4px 2px;
@@ -173,10 +198,6 @@ $sc-laptop: 992px;
                 color: var(--sc-fg);
                 text-decoration: underline;
             }
-        }
-
-        .o_sc_crumb_sep {
-            opacity: 0.5;
         }
 
         .o_sc_crumb_current {
@@ -194,11 +215,27 @@ $sc-laptop: 992px;
         min-width: 0;
     }
 
+    // Task 1721 (review round 1, owner 2026-10-27): the clinic page uses the
+    // whole width on a laptop (worklist left, patient pane right); long text
+    // inside its cards keeps a readable line length. Phone: unchanged.
+    @media (min-width: $sc-laptop) {
+        .o_sc_content.o_sc_content_wide {
+            max-width: none;
+
+            .o_sc_pre,
+            .o_sc_note_text,
+            .o_sc_row_line_text {
+                max-width: 90ch;
+            }
+        }
+    }
+
     .o_sc_tabs {
         position: fixed;
         left: 0;
         right: 0;
-        bottom: 0;
+        // Task 1643 addendum: above a test DB's neutralize banner (0 on prod).
+        bottom: var(--sc-ribbon-h, 0px);
         z-index: 20;
         display: flex;
         background: var(--sc-bar);
@@ -232,39 +269,6 @@ $sc-laptop: 992px;
         }
     }
 
-    // App-bar primary action: a compact « + » on phones so the title keeps
-    // the room (the label squeezed « Shawinigan… » to « SH… »); icon +
-    // label from laptop width. The label stays the accessible name.
-    .o_sc_appbar_action {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        flex: none;
-        min-width: var(--sc-tap);
-        min-height: var(--sc-tap);
-        padding: 0 10px;
-
-        .o_sc_icon {
-            width: 20px;
-            height: 20px;
-        }
-    }
-
-    .o_sc_appbar_action_label {
-        display: none;
-    }
-
-    @media (min-width: $sc-laptop) {
-        .o_sc_appbar_action {
-            padding: 0 14px;
-        }
-
-        .o_sc_appbar_action_label {
-            display: inline;
-        }
-    }
-
     @media (min-width: $sc-laptop) {
         .o_sc_main {
             margin-left: var(--sc-rail-width);
@@ -272,6 +276,11 @@ $sc-laptop: 992px;
         }
 
         .o_sc_tabs {
+            display: none;
+        }
+
+        // « More » entries already on the rail (marked by the template).
+        .o_sc_content [data-sc-in-rail] {
             display: none;
         }
 
@@ -285,8 +294,17 @@ $sc-laptop: 992px;
         }
 
         .o_sc_crumbs {
+            display: block;
             padding-left: var(--sc-space-5);
             padding-right: var(--sc-space-5);
+        }
+
+        // Laptop: the trail replaces the context line. Task 1618 (owner
+        // review 2026-10-18): the back chevron ALWAYS shows on a laptop
+        // sub-page, left of the title next to the trail (back = the
+        // previous in-app page, like the phone, else the parent).
+        .o_sc_appbar_context {
+            display: none;
         }
 
         .o_sc_rail {
@@ -362,23 +380,134 @@ $sc-laptop: 992px;
         }
     }
 
-    .o_sc_rail_me {
-        margin-top: auto;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 12px;
-        border-top: 1px solid var(--sc-line);
-        font-size: var(--sc-text-sm);
-        color: var(--sc-bar-fg-2);
+    // Task 1606: the user menu. Task 1638: one trigger at every width, the
+    // initials avatar at the right end of the app bar (the rail footer
+    // menu is gone).
+    .o_sc_user_menu {
+        position: relative;
         min-width: 0;
     }
 
-    .o_sc_rail_me_name {
+    .o_sc_user_menu_bar {
+        flex: none;
+    }
+
+    .o_sc_appbar_me .o_sc_avatar {
+        width: 30px;
+        height: 30px;
+        font-size: var(--sc-text-xs);
+    }
+
+    .o_sc_appbar_me[aria-expanded="true"] .o_sc_avatar {
+        box-shadow: 0 0 0 2px var(--sc-bar-active);
+    }
+
+    .o_sc_user_menu_popup {
+        position: absolute;
+        z-index: 40;
+        min-width: 220px;
+        max-width: calc(100vw - 24px);
+        padding: 6px;
+        background: var(--sc-surface);
+        color: var(--sc-fg);
+        border: 1px solid var(--sc-line);
+        border-radius: var(--sc-radius-md);
+        box-shadow: var(--sc-shadow);
+        text-transform: none;
+        letter-spacing: normal;
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    // Drops down from the avatar, right-aligned with the bar (every width).
+    .o_sc_user_menu_bar .o_sc_user_menu_popup {
+        top: calc(100% + 6px);
+        right: 0;
+    }
+
+    .o_sc_user_menu_head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px 10px;
+        margin-bottom: 4px;
+        border-bottom: 1px solid var(--sc-line);
         min-width: 0;
+    }
+
+    .o_sc_user_menu_who {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .o_sc_user_menu_name,
+    .o_sc_user_menu_role {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .o_sc_user_menu_name {
+        font-weight: 600;
+        font-size: var(--sc-text-sm);
+    }
+
+    .o_sc_user_menu_role {
+        font-size: var(--sc-text-xs);
+        color: var(--sc-fg-2);
+    }
+
+    .o_sc_user_menu_items {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .o_sc_user_menu_item {
+        display: flex;
+        align-items: center;
+        gap: var(--sc-space-3);
+        min-height: var(--sc-tap);
+        padding: 0 10px;
+        border-radius: var(--sc-radius-sm);
+        color: var(--sc-fg);
+        font-weight: 500;
+        text-decoration: none;
+
+        .o_sc_icon {
+            width: 18px;
+            height: 18px;
+            flex: none;
+        }
+
+        &:hover,
+        &:focus-visible {
+            background: var(--sc-hover);
+            color: var(--sc-fg);
+        }
+
+        &[aria-current="page"] {
+            color: var(--sc-accent);
+        }
+    }
+
+    // Narrow phones (360 px): logo + title + clock + search + avatar (task
+    // 1607: no page action in the bar any more) — slimmer icon buttons and
+    // gaps keep the title readable. The buttons stay 44 px tall.
+    @media (max-width: 399.98px) {
+        .o_sc_appbar {
+            gap: 4px;
+            padding-left: calc(var(--sc-space-2) + env(safe-area-inset-left, 0px));
+            padding-right: calc(var(--sc-space-2) + env(safe-area-inset-right, 0px));
+
+            .o_sc_icon_btn,
+            .o_sc_logo {
+                width: 40px;
+            }
+        }
     }
 
     .o_sc_avatar {
@@ -404,11 +533,18 @@ $sc-laptop: 992px;
         min-width: 0;
     }
 
+    // The « more » link sits right after the title (owner review 2026-10-10:
+    // right-aligned, it looked orphaned over an empty list or read as part of
+    // the next column). min-height = the link's, so a header with and without
+    // a link line up side by side.
     .o_sc_section_header {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        justify-content: space-between;
-        gap: var(--sc-space-2);
+        justify-content: flex-start;
+        column-gap: var(--sc-space-3);
+        row-gap: 0;
+        min-height: 32px;
         margin-top: 6px;
         font-family: var(--sc-font-title);
         font-weight: 500;
@@ -511,10 +647,112 @@ $sc-laptop: 992px;
         }
     }
 
+    // Task 1595 — link row (sc_link_row): the title is the main link, its
+    // ::after stretched over the row so a tap anywhere opens it; every
+    // other interactive element is layered above it (own tap target).
+    .o_sc_link_row {
+        position: relative;
+
+        .o_sc_link_row_main {
+            color: inherit;
+
+            &::after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                z-index: 0;
+                border-radius: inherit;
+                cursor: pointer;
+            }
+
+            // The focus ring outlines the whole row, not the title text.
+            &:focus-visible {
+                outline: none;
+
+                &::after {
+                    outline: 2px solid var(--sc-focus);
+                    outline-offset: -2px;
+                }
+            }
+        }
+
+        a:not(.o_sc_link_row_main),
+        button,
+        summary,
+        input,
+        select,
+        textarea,
+        label {
+            position: relative;
+            z-index: 1;
+        }
+    }
+
+    // Secondary links line (sc_row_links): related records, team links…
+    .o_sc_row_links {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 2px 12px;
+        margin-top: 4px;
+        font-size: var(--sc-text-sm);
+    }
+
+    .o_sc_row_link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        min-height: 24px;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        color: var(--sc-fg);
+        font-weight: 600;
+
+        .o_sc_icon {
+            flex: none;
+            width: 14px;
+            height: 14px;
+            color: var(--sc-fg-3);
+        }
+    }
+
+    a.o_sc_row_link {
+        text-decoration: underline;
+        text-decoration-color: var(--sc-line);
+        text-underline-offset: 3px;
+
+        &:hover {
+            text-decoration-color: currentColor;
+        }
+    }
+
+    .o_sc_row_link_plain {
+        color: var(--sc-fg-2);
+        font-weight: 400;
+    }
+
+    // The activity detail's « Related Record » value (no row above it).
+    .o_sc_kv dd.o_sc_row_links {
+        margin-top: 0;
+        font-size: inherit;
+    }
+
     .o_sc_row_text {
         display: flex;
         flex-direction: column;
         min-width: 0;
+    }
+
+    // A long chip inside the text column (e.g. a temporary-access label):
+    // starts under the subtitle and wraps instead of widening the row.
+    .o_sc_row_chip_line {
+        display: flex;
+        margin-top: var(--sc-space-1);
+
+        .o_sc_chip {
+            white-space: normal;
+            line-height: 1.3;
+        }
     }
 
     .o_sc_row_title {
@@ -523,11 +761,170 @@ $sc-laptop: 992px;
         overflow-wrap: anywhere;
     }
 
+    // Owner review 2026-10-14: the related record's name inside an activity
+    // title is its own link (above the row's stretched main link).
+    .o_sc_row_title_link {
+        color: inherit;
+        text-decoration: underline;
+        text-decoration-color: var(--sc-secondary);
+        text-underline-offset: 3px;
+
+        &:hover {
+            color: var(--sc-secondary);
+        }
+    }
+
     .o_sc_row_subtitle {
         font-size: var(--sc-text-sm);
         color: var(--sc-fg-2);
         margin-top: 2px;
         overflow-wrap: anywhere;
+    }
+
+    // Player row status line (sc_player_status_line): the legacy card's
+    // Match / Practice badges, injury count and ⚡ « Changements récents »
+    // flag, under the name so they wrap instead of crowding a phone row.
+    .o_sc_row_status {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 6px;
+        margin-top: 4px;
+    }
+
+    .o_sc_status_pill,
+    .o_sc_injury_count {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 1px 8px;
+        border: 1px solid transparent;
+        border-radius: var(--sc-radius-pill);
+        font-size: var(--sc-text-xs);
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .o_sc_injury_count {
+        border-color: var(--sc-line);
+        color: var(--sc-fg-2);
+    }
+
+    // Task 1593 — player row (sc_player_row): the legacy card's lines and
+    // the « Details » control under the status line; the expanded detail
+    // spans the whole row group, under the row.
+    .o_sc_row_line {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        min-width: 0;
+        margin-top: 4px;
+        font-size: var(--sc-text-sm);
+        color: var(--sc-fg-2);
+
+        > .fa {
+            flex: none;
+            width: 14px;
+            text-align: center;
+            color: var(--sc-fg-3);
+        }
+    }
+
+    // One line on every width: the full text is in the expanded detail.
+    .o_sc_row_training .o_sc_row_line_text {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_sc_row_line_value {
+        color: var(--sc-fg);
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    // Task 1727: a past « Retour prévu » (the date + « · Dépassé »).
+    .o_sc_overdue,
+    .o_sc_row_line_value.o_sc_overdue {
+        color: var(--sc-overdue);
+    }
+
+    .o_sc_row_expand {
+        align-self: flex-start;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        min-height: 32px;
+        margin-top: 2px;
+        padding: 0 4px 0 0;
+        border: 0;
+        background: none;
+        color: var(--sc-fg);
+        font-size: var(--sc-text-sm);
+        font-weight: 600;
+        cursor: pointer;
+
+        .o_sc_icon {
+            width: 16px;
+            height: 16px;
+            color: var(--sc-fg-3);
+            transition: transform .15s ease;
+        }
+
+        &[aria-expanded="true"] .o_sc_icon {
+            transform: rotate(180deg);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--sc-focus);
+            outline-offset: 2px;
+            border-radius: var(--sc-radius-sm, 4px);
+        }
+    }
+
+    // Task 1626: while « Details » is open, the face's training and
+    // « Retour prévu » lines hide — the detail shows them whole, so each
+    // item is in one place only. Face only (the row's link row), never
+    // inside the detail region.
+    .o_sc_player_row.o_sc_row_open > .o_sc_link_row {
+        [data-sc-row-training],
+        [data-sc-row-return] {
+            display: none;
+        }
+    }
+
+    .o_sc_row_detail {
+        border-top: 1px solid var(--sc-line);
+        padding: var(--sc-space-2) var(--sc-space-3) var(--sc-space-3);
+        min-width: 0;
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    // Expanded recent-changes detail: « Active injuries » / « Resolved
+    // injuries » subtitles above the injury cards.
+    .o_sc_change_detail_sub {
+        margin: 12px 0 6px;
+        font-size: var(--sc-text-xs);
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        color: var(--sc-fg-2);
+    }
+
+    .o_sc_recent_pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 1px 8px;
+        border-radius: var(--sc-radius-pill);
+        background: var(--sc-warn);
+        color: var(--sc-tone-fg);
+        font-size: var(--sc-text-xs);
+        font-weight: 600;
     }
 
     .o_sc_row_trailing {
@@ -636,6 +1033,66 @@ $sc-laptop: 992px;
         color: var(--sc-fg-3);
         font-size: 13px;
         text-align: center;
+    }
+
+    // Task 1725: a muted one-line hint under a list header.
+    .o_sc_list_hint {
+        margin: 0 0 var(--sc-space-2);
+        font-size: 13px;
+    }
+
+    // Task 1716 (review round 1): an accepted override in the add-player
+    // check — a small muted « ✓ Accepted by the user » instead of its button.
+    .o_sc_check_accepted:not([hidden]) {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 13px;
+
+        .o_sc_icon {
+            width: 14px;
+            height: 14px;
+            color: var(--sc-accent);
+        }
+    }
+
+    // Task 1723 (review round 1): an organisation change that would drop
+    // chosen teams — an inline warning with its two answers.
+    .o_sc_group_confirm {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-2);
+        padding: var(--sc-space-2) var(--sc-space-3);
+        border: 1px solid var(--sc-line);
+        border-left: 3px solid var(--sc-warn);
+        border-radius: var(--sc-radius-sm);
+
+        .o_sc_group_confirm_text {
+            margin: 0;
+        }
+
+        .o_sc_group_confirm_actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: var(--sc-space-2);
+
+            .o_sc_btn {
+                min-height: var(--sc-tap);
+            }
+        }
+    }
+
+    // Task 1725 (review round 1): the hint's « Événements » is an app link.
+    a.o_sc_hint_link {
+        color: var(--sc-accent);
+        font-weight: 600;
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
     }
 
     .o_sc_footnote {
@@ -754,6 +1211,138 @@ $sc-laptop: 992px;
         }
     }
 
+    // Task 1726: THE switch (sc_switch macro + the autosave « N/A »): the
+    // label on the left, a pill switch on the right, one line, 44 px tall.
+    // The checkbox covers the track (opacity 0): taps, Space and the forms
+    // all go through the real input.
+    .o_sc_switch {
+        --sc-switch-w: 48px;
+        --sc-switch-h: 28px;
+        --sc-switch-pad: 3px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--sc-space-3);
+        min-height: var(--sc-tap);
+        margin: 0;
+        color: var(--sc-fg);
+        font-weight: 600;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+
+        &[data-sc-switch-locked] {
+            cursor: not-allowed;
+
+            .o_sc_switch_label {
+                color: var(--sc-fg-2);
+            }
+        }
+    }
+
+    .o_sc_switch_text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .o_sc_switch_hint {
+        color: var(--sc-fg-2);
+        font-weight: 400;
+        font-size: var(--sc-text-sm);
+    }
+
+    .o_sc_switch_control {
+        position: relative;
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        // The tap target: the full row height, a little wider than the track.
+        min-width: var(--sc-tap);
+        min-height: var(--sc-tap);
+    }
+
+    .o_sc_switch_input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        opacity: 0;
+        cursor: inherit;
+        z-index: 1;
+    }
+
+    .o_sc_switch_track {
+        position: relative;
+        display: block;
+        width: var(--sc-switch-w);
+        height: var(--sc-switch-h);
+        border-radius: 999px;
+        background: var(--sc-surface-2);
+        box-shadow: inset 0 0 0 1px var(--sc-line);
+        transition: background-color 0.15s ease;
+    }
+
+    .o_sc_switch_thumb {
+        position: absolute;
+        top: var(--sc-switch-pad);
+        left: var(--sc-switch-pad);
+        width: calc(var(--sc-switch-h) - 2 * var(--sc-switch-pad));
+        height: calc(var(--sc-switch-h) - 2 * var(--sc-switch-pad));
+        border-radius: 50%;
+        background: var(--sc-fg-2);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    .o_sc_switch_input:checked + .o_sc_switch_track {
+        background: var(--sc-accent);
+        box-shadow: none;
+
+        .o_sc_switch_thumb {
+            background: var(--sc-accent-fg);
+            transform: translateX(calc(var(--sc-switch-w) - var(--sc-switch-h)));
+        }
+    }
+
+    .o_sc_switch_input:focus-visible + .o_sc_switch_track {
+        outline: 2px solid var(--sc-focus);
+        outline-offset: 2px;
+    }
+
+    .o_sc_switch_input:disabled + .o_sc_switch_track {
+        opacity: 0.45;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .o_sc_switch_track,
+        .o_sc_switch_thumb {
+            transition: none;
+        }
+    }
+
+    // Beside another control (the date's « N/A »): label then switch, compact.
+    .o_sc_switch_inline {
+        flex: none;
+        justify-content: flex-start;
+        gap: var(--sc-space-2);
+        font-size: 14px;
+        color: var(--sc-fg-2);
+    }
+
+    // A filter form's switch takes the whole row of the filter grid.
+    .o_sc_switch_filter {
+        grid-column: 1 / -1;
+    }
+
+    // A preference card holding one switch (Paramètres).
+    .o_sc_switch_card {
+        margin: 0;
+        padding: var(--sc-space-1) var(--sc-space-3);
+    }
+
     .o_sc_row_wrap {
         min-width: 0;
     }
@@ -804,10 +1393,471 @@ $sc-laptop: 992px;
         }
     }
 
+    // List header: count on the left, a control (e.g. a sort switch) on the
+    // right; wraps on a narrow phone.
+    .o_sc_list_bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--sc-space-2);
+    }
+
+    // Task 1607: the list header — ONE line directly above the list (same
+    // on phone and laptop; 44 px targets). Task 1718: the sort menu then
+    // « + Ajouter », both on the right.
+    .o_sc_list_header {
+        display: flex;
+        align-items: center;
+        gap: var(--sc-space-2);
+        min-height: var(--sc-tap);
+        min-width: 0;
+
+        &:empty {
+            display: none;
+        }
+    }
+
+    // Task 1718: « Ajouter » is a green-text link (the « Historique »
+    // style, .o_sc_section_more.o_sc_link_btn); still a 44 px target. Review
+    // round 1 (owner 2026-10-27): no « + » icon, the header's FIRST item —
+    // left-aligned, just above the list's top-left edge (the sort menu keeps
+    // the right). Open panel: an accent underline.
+    .o_sc_list_header .o_sc_list_add.o_sc_link_btn {
+        flex: none;
+        min-height: var(--sc-tap);
+        min-width: var(--sc-tap);
+        padding: 0 4px 0 0;
+        justify-content: flex-start;
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        border-radius: 0;
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+    }
+
+    .o_sc_list_header .o_sc_list_add[aria-expanded="true"] {
+        border-bottom-color: var(--sc-accent);
+    }
+
+    .o_sc_list_header_count {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_sc_sort_menu {
+        position: relative;
+        margin-left: auto;
+        flex: 0 1 auto;
+        min-width: 0;
+    }
+
+    .o_sc_sort_toggle {
+        appearance: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        max-width: 100%;
+        min-height: var(--sc-tap);
+        padding: 0 10px;
+        border: 1px solid var(--sc-line);
+        border-radius: var(--sc-radius-sm);
+        background: var(--sc-surface);
+        color: var(--sc-fg-2);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+
+        .o_sc_icon {
+            width: 16px;
+            height: 16px;
+            flex: none;
+        }
+
+        &[aria-expanded="true"] {
+            border-color: var(--sc-accent);
+            color: var(--sc-fg);
+        }
+    }
+
+    .o_sc_sort_current {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_sc_menu_popup {
+        position: absolute;
+        z-index: 40;
+        top: calc(100% + 6px);
+        right: 0;
+        min-width: 200px;
+        max-width: calc(100vw - 24px);
+        padding: 6px;
+        background: var(--sc-surface);
+        color: var(--sc-fg);
+        border: 1px solid var(--sc-line);
+        border-radius: var(--sc-radius-md);
+        box-shadow: var(--sc-shadow);
+        display: flex;
+        flex-direction: column;
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    .o_sc_menu_item {
+        display: flex;
+        align-items: center;
+        gap: var(--sc-space-2);
+        min-height: var(--sc-tap);
+        padding: 0 10px;
+        border-radius: var(--sc-radius-sm);
+        color: var(--sc-fg);
+        font-weight: 500;
+        text-decoration: none;
+        white-space: nowrap;
+
+        .o_sc_icon {
+            width: 16px;
+            height: 16px;
+            flex: none;
+            visibility: hidden;
+        }
+
+        &[aria-checked="true"] {
+            color: var(--sc-accent);
+            font-weight: 600;
+
+            .o_sc_icon {
+                visibility: visible;
+            }
+        }
+
+        &:hover,
+        &:focus-visible {
+            background: var(--sc-hover);
+            text-decoration: none;
+        }
+    }
+
+    // Task 1627 — a status pill that is its own dropdown
+    // (sc_status_pill_select): the row pills' tones (.o_sc_status_pill +
+    // .o_sc_chip_<tone>), a chevron, a tap-sized hit area; its menu is the
+    // shared .o_sc_menu_popup, opened under the pill's left edge.
+    .o_sc_pill_select_wrap {
+        position: relative;
+        display: inline-flex;
+        vertical-align: middle;
+
+        &[aria-busy="true"] .o_sc_pill_select {
+            opacity: 0.6;
+            cursor: progress;
+        }
+    }
+
+    .o_sc_pill_select {
+        appearance: none;
+        min-height: 32px;
+        padding: 2px 8px 2px 10px;
+        font: inherit;
+        font-size: var(--sc-text-xs);
+        font-weight: 600;
+        line-height: 1.2;
+        cursor: pointer;
+
+        .o_sc_icon {
+            width: 14px;
+            height: 14px;
+            flex: none;
+            transition: transform 0.15s ease;
+        }
+
+        &[aria-expanded="true"] .o_sc_icon {
+            transform: rotate(180deg);
+        }
+
+        &:hover {
+            filter: brightness(1.08);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--sc-focus);
+            outline-offset: 2px;
+        }
+    }
+
+    // Task 1634 — the player cards' compact variant: the row badges' size
+    // (.o_sc_status_pill) plus a small chevron; the hit area grows past the
+    // drawn pill (::before) so a phone tap still lands without crowding the
+    // card's status line.
+    .o_sc_pill_select_compact .o_sc_pill_select {
+        min-height: 22px;
+        padding: 1px 5px 1px 8px;
+        gap: 3px;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset: -5px -2px;
+        }
+
+        .o_sc_icon {
+            width: 12px;
+            height: 12px;
+        }
+    }
+
+    .o_sc_pill_popup {
+        left: 0;
+        right: auto;
+        min-width: 220px;
+    }
+
+    // Review 2026-10-20 (#1631): flipped by sc_user_menu.js when it would
+    // run past the content area's right edge.
+    .o_sc_menu_popup.o_sc_popup_end {
+        left: auto;
+        right: 0;
+    }
+    .o_sc_menu_popup.o_sc_popup_up {
+        top: auto;
+        bottom: calc(100% + 6px);
+    }
+
+    .o_sc_pill_option {
+        appearance: none;
+        width: 100%;
+        border: 0;
+        background: transparent;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+
+        .o_sc_pill_swatch {
+            flex: none;
+            width: 10px;
+            height: 10px;
+            padding: 0;
+            border-radius: 50%;
+        }
+
+        // Greyed (an invalid pair): muted text, faded swatch; the hint
+        // keeps a readable contrast (dark mode is forced, #1602).
+        &[aria-disabled="true"] {
+            color: var(--sc-fg-3);
+            cursor: not-allowed;
+
+            .o_sc_pill_swatch {
+                opacity: 0.35;
+            }
+
+            &:hover {
+                background: transparent;
+            }
+        }
+    }
+
+    .o_sc_pill_option_text {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 4px 0;
+        white-space: normal;
+    }
+
+    .o_sc_pill_hint {
+        color: var(--sc-fg-2);
+        font-size: var(--sc-text-xs);
+        font-weight: 400;
+    }
+
+    // The event page's timesheets section (task 1607): its read-fragment
+    // holders take no room while empty, nor does the section when all are.
+    .o_sc_event_timesheets {
+        > [data-sc-fragment]:empty {
+            display: none;
+        }
+
+        &:not(:has(> [data-sc-fragment]:not(:empty))) {
+            display: none;
+        }
+    }
+
+    // The inline add panel the header's « + Ajouter » opens: its own
+    // <summary> is hidden (the header is the one control) and, closed, it
+    // takes no room.
+    .o_sc_list_add_panel {
+        > summary {
+            display: none;
+        }
+
+        &:not([open]) {
+            display: none;
+        }
+    }
+
+    // Owner review 2026-10-22: the inline « create a player » panel's
+    // « Create » is greyed until it can succeed; the reason sits under it.
+    .o_sc_player_add {
+        .o_sc_btn[aria-disabled="true"] {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .o_sc_player_add_reason {
+            margin-top: var(--sc-space-2);
+        }
+
+        .o_sc_reason_flash {
+            animation: o_sc_reason_flash 0.6s ease-out;
+        }
+    }
+
+    // Task 1658: the same rule app-wide — every guarded form's primary
+    // action (sc_form_guard.js).
+    form[data-sc-guard] {
+        [data-sc-guard-submit][aria-disabled="true"],
+        .o_sc_form_actions .o_sc_btn[type="submit"][aria-disabled="true"] {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .o_sc_guard_reason {
+            margin-top: var(--sc-space-2);
+        }
+
+        .o_sc_reason_flash {
+            animation: o_sc_reason_flash 0.6s ease-out;
+        }
+    }
+
+    @keyframes o_sc_reason_flash {
+        0% {
+            color: var(--sc-accent);
+        }
+        100% {
+            color: inherit;
+        }
+    }
+
+    // (Task 1726: the former link « switch » of 2026-10-10 had no user any
+    // more; the shared switch is .o_sc_switch above.)
+
     @media (prefers-reduced-motion: reduce) {
         * {
             animation: none !important;
             transition: none !important;
         }
     }
+
+    // Owner review 2026-10-14: the date / date-time / time picker icon is
+    // visible in dark mode — the brand purple (--sc-secondary: light mauve on
+    // dark, mauve on light) drawn through a mask, app-wide. Firefox paints
+    // its own icon from the colour scheme (dark = light icon).
+    color-scheme: dark;
+
+    &[data-sc-theme="light"] {
+        color-scheme: light;
+    }
+
+    input[type="date"],
+    input[type="datetime-local"],
+    input[type="month"],
+    input[type="week"],
+    input[type="time"] {
+        &::-webkit-calendar-picker-indicator {
+            width: 18px;
+            height: 18px;
+            padding: 2px;
+            cursor: pointer;
+            opacity: 1;
+            background: var(--sc-secondary);
+            -webkit-mask: $sc-icon-calendar center / 18px 18px no-repeat;
+            mask: $sc-icon-calendar center / 18px 18px no-repeat;
+        }
+
+        &:hover::-webkit-calendar-picker-indicator,
+        &:focus::-webkit-calendar-picker-indicator {
+            background: var(--sc-accent);
+        }
+    }
+
+    input[type="time"]::-webkit-calendar-picker-indicator {
+        -webkit-mask-image: $sc-icon-clock;
+        mask-image: $sc-icon-clock;
+    }
+
+    // Review round 1 (2026-10-26): iOS Safari / Chrome give a native date /
+    // date-time / time input an intrinsic minimum width and ignore
+    // `width: 100%` until its appearance is reset — the « Du » filter and
+    // the timesheet card's date-times stuck out of their box on a phone.
+    // App-wide: the box is its cell's width, the value left-aligned like
+    // the other inputs (iOS centres it), the picker icon kept on desktop.
+    .o_sc_input:is([type="date"], [type="datetime-local"], [type="time"], [type="month"], [type="week"]) {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+        -webkit-appearance: none;
+        appearance: none;
+        text-align: left;
+
+        &::-webkit-date-and-time-value {
+            text-align: left;
+            margin: 0;
+        }
+    }
+
+    // Their grid / flex cells may shrink below the input's own size.
+    .o_sc_field,
+    .o_sc_filter_grid > * {
+        min-width: 0;
+    }
+}
+
+// Owner review 2026-10-14 (#1590): the patient typeahead (portal_patient_combo,
+// Bootstrap list-group) rendered white-on-white in the dark app, and inside a
+// sheet its absolutely-positioned list was clipped by the sheet's scroll box.
+// Theme it with the app tokens and let the list flow inside sheets.
+.o_sc_app .o_sc_patient_combo {
+    .o_sc_combo_input,
+    .form-control {
+        background-color: var(--sc-surface-2);
+        color: var(--sc-fg);
+        border-color: var(--sc-line);
+        &::placeholder {
+            color: var(--sc-fg-3);
+        }
+    }
+    .o_sc_combo_list,
+    .list-group-item {
+        background-color: var(--sc-surface);
+        color: var(--sc-fg);
+        border-color: var(--sc-line);
+    }
+    .list-group-item:hover,
+    .list-group-item.active,
+    .o_sc_combo_item[aria-selected="true"] {
+        background-color: var(--sc-mauve);
+        color: #fff;
+    }
+    .o_sc_combo_group {
+        background-color: var(--sc-surface-2);
+        color: var(--sc-fg-2);
+    }
+}
+.o_sc_app .o_sc_sheet .o_sc_patient_combo .o_sc_combo_list {
+    position: static;
+    max-height: 40vh;
 }

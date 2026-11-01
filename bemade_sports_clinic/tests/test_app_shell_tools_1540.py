@@ -17,6 +17,7 @@ Acceptance criteria covered here:
   inside the shell card, re-gated per role (a coach never sees internal
   notes); the full history lists the snapshots with links.
 """
+import json
 from datetime import date, datetime, timedelta
 
 from odoo.tests import tagged
@@ -76,9 +77,10 @@ class TestAppShellTools1540(Tools1540Common):
         self.assertIsNotNone(self._shell(tree))
         self.assertEqual(tree.xpath('//*[@data-sc-timesheet-id]/@data-sc-timesheet-id'),
                          [str(self.timesheet.id)])
-        form = tree.xpath('//dialog[@id="sc_ts_edit_%s"]//form' % self.timesheet.id)[0]
-        self.assertEqual(form.get('action'), '/my/sc/timesheet/%s/edit' % self.timesheet.id)
-        self.assertEqual(form.xpath('.//input[@name="return_url"]/@value'), ['/my/sc/timesheets'])
+        # Owner review 2026-10-11: edited in place (pencil card).
+        self.assertTrue(tree.xpath('//*[@data-sc-edit-card="timesheet-%s"]' % self.timesheet.id))
+        form = tree.xpath('//dialog[@id="sc_ts_delete_%s"]//form' % self.timesheet.id)[0]
+        self.assertEqual(form.get('action'), '/my/sc/timesheet/%s/delete' % self.timesheet.id)
         self.assertTrue(form.xpath('.//input[@name="csrf_token"]'))
         resp = self._post('/my/sc/timesheet/%s/delete' % self.timesheet.id,
                           {'return_url': '/my/sc/timesheets'})
@@ -108,15 +110,16 @@ class TestAppShellTools1540(Tools1540Common):
         add = tree.xpath('//form[@data-sc-form="note.add"]')[0]
         self.assertEqual(add.get('action'), '/my/notepad/add')
         self.assertTrue(add.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'))
-        for sheet, action in (('sc_qn_edit_%s' % self.my_note.id, '/my/notepad/%s/update' % self.my_note.id),
-                              ('sc_qn_delete_%s' % self.my_note.id, '/my/notepad/%s/delete' % self.my_note.id)):
+        for sheet, action in (('sc_qn_delete_%s' % self.my_note.id, '/my/notepad/%s/delete' % self.my_note.id),):
             form = tree.xpath('//dialog[@id="%s"]//form' % sheet)[0]
             self.assertEqual(form.get('action'), action)
             self.assertTrue(form.xpath('.//input[@name="csrf_token"]'))
-        # The edit sheet keeps the note's current links.
-        edit = tree.xpath('//dialog[@id="sc_qn_edit_%s"]//select[@name="team_id"]/option[@selected]/@value'
-                          % self.my_note.id)
-        self.assertEqual(edit, [str(self.team_a.id)])
+        # The pencil card's fields carry the note's current links (owner
+        # review 2026-10-11, was an edit sheet).
+        props = [p for p in tree.xpath('//*[@data-sc-edit-card="quick-note-%s"]//owl-component/@props'
+                                       % self.my_note.id) if '"team_id"' in p]
+        self.assertEqual(len(props), 1)
+        self.assertEqual(json.loads(props[0])['value'], self.team_a.id)
         resp = self._post('/my/notepad/add', {'note': 'SC 1540 added through the shell'})
         self.assertEqual(resp.status_code, 303)
         _text, tree = self._get(resp.headers['Location'])

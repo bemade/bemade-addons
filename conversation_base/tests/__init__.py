@@ -4,6 +4,7 @@ from . import test_conversation_capture
 from . import test_conversation_gateway
 from . import test_conversation_actions
 from . import test_mime
+from . import test_display_html
 from . import test_triage_facets
 from . import test_triage_order
 from . import test_snooze_cron
@@ -17,3 +18,8 @@ from . import test_triage_members
 from . import test_triage_actions
 from . import test_triage_row_data
 from . import test_triage_tour
+from . import test_transport_permissions
+from . import test_transport_remove_mailbox
+from . import test_app_landing
+from . import test_triage_unread_per_user
+from . import test_saved_filter_names

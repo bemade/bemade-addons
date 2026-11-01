@@ -47,6 +47,7 @@ All three end on the dossier of the resolved patient. Every
 import hashlib
 import json
 import logging
+from datetime import date
 from urllib.parse import quote
 
 from psycopg2 import IntegrityError
@@ -59,6 +60,7 @@ from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 
 from .access_control_mixin import AccessControlMixin
 from .app_shell import AppShellMixin
+from .team_management_portal import SC_STAGE_TONES
 
 _logger = logging.getLogger(__name__)
 
@@ -311,16 +313,32 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
     @staticmethod
     def _attendance_counts_line(counts):
-        """One translatable sentence for the counts (python-side on purpose:
-        a QWeb text node mixed with four t-esc's would extract as four
-        fragments no translator can act on)."""
-        line = _(
-            "%(expected)s expected · %(arrived)s arrived · %(seen)s seen · %(no_show)s no-show",
-            **counts)
+        """The counts, one translatable fragment per count (python-side on
+        purpose: QWeb text mixed with t-esc's extracts as fragments no
+        translator can act on). Task 1612: each count agrees in number —
+        Odoo has no plural forms, so 0, 1 and N are three msgids each
+        (fr_CA: « 0 vu », « 1 arrivé », « 2 arrivés »)."""
+        def part(count, zero, one, many):
+            if count == 0:
+                return zero
+            if count == 1:
+                return one
+            return many % count
+
+        parts = [
+            part(counts.get('expected', 0), _("0 expected"), _("1 expected"),
+                 _("%s expected")),
+            part(counts.get('arrived', 0), _("0 arrived"), _("1 arrived"),
+                 _("%s arrived")),
+            part(counts.get('seen', 0), _("0 seen"), _("1 seen"), _("%s seen")),
+            part(counts.get('no_show', 0), _("0 no-shows"), _("1 no-show"),
+                 _("%s no-shows")),
+        ]
         if counts.get('unregistered'):
             # #1418: appended only when there is something to say.
-            line += ' · ' + _("%(unregistered)s unregistered", **counts)
-        return line
+            parts.append(part(counts['unregistered'], '', _("1 unregistered"),
+                              _("%s unregistered")))
+        return ' · '.join(parts)
 
     # ------------------------------------------------------------------
     # portal home counter
@@ -784,7 +802,14 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         else:
             return self._clinic_redirect(event, 'error=no_team',
                                          anchor='attendance-%s' % attendance.id)
-        row, patient = attendance.action_create_patient(team)
+        try:
+            # Task 1600: the exact-duplicate refusal (same name + date of
+            # birth as another file) — nothing is created.
+            with request.env.cr.savepoint():
+                row, patient = attendance.action_create_patient(team)
+        except ValidationError:
+            return self._clinic_redirect(event, 'error=duplicate_identity',
+                                         anchor='attendance-%s' % attendance.id)
         return self._clinic_redirect(event, 'success=signin_patient_created',
                                      patient_id=patient.id, anchor='clinic-dossier')
 
@@ -927,7 +952,9 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         labels = {
             'today': env._("Today"),
             'upcoming': env._("Upcoming"),
-            'past': env._("Past"),
+            # Task 1661: its own msgid — the events segment « Past » is
+            # « Passés » (événements), past clinics are « Passées ».
+            'past': env._("Earlier"),
             'all': env._("All dates"),
         }
         rows = []
@@ -978,6 +1005,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'identity_confirmed': env._("Identity confirmed."),
             'injury_updated': env._("Injury updated."),
             'injury_created': env._("Injury created."),
+            'injury_undone': env._("Injury creation undone."),
             'player_updated': env._("Player updated."),
             'note_updated': env._("Treatment note updated."),
             'signin_linked': env._("Sign-in linked to the patient's file."),
@@ -1001,12 +1029,18 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'unregistered_row': env._(
                 "This sign-in is not registered yet — link it to a file, create the player, or remove it."),
             'no_team': env._("Pick the team the new player belongs to."),
+            'duplicate_identity': env._("Another player already has this name and date of birth."),
             'invalid_status_combo': env._(
                 "Invalid status combination: a player who can play a match can also practice."),
             'not_author': env._("You can only edit your own treatment notes."),
             'invalid_date': env._("Please enter a valid date."),
+            'injury_visibility': env._("Please choose whether coaches can see this injury."),
+            'injury_diagnosis': env._("Please enter a diagnosis."),
+            'undo_expired': env._("This injury can no longer be undone; delete it from its card."),
         }.get(kw.get('error'))
-        return {'success': success, 'error': error}
+        # Task 1616: the dossier's injury cards (documents, deletion).
+        card = AppShellMixin._sc_injury_card_flash(kw)
+        return {'success': success or card['success'], 'error': error or card['error']}
 
     def _sc_clinic_values(self, event, values, kw):
         """/my/clinic/<id> in the shell: phone = two tabs (waiting list ·
@@ -1042,21 +1076,61 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         editable = values['editable_note_ids']
         for note in values['treatment_notes']:
             if note.id in editable:
-                note_props[note.id] = self._sc_field_props(
-                    note, 'note', env._("Note"), 'textarea')
-        injury_rows = []
-        stage_labels = values['injury_stage_labels']
-        for injury in values['active_injuries']:
-            injury_rows.append({
-                'id': injury.id,
-                'title': injury.diagnosis or env._("Unnamed injury"),
-                'subtitle': ' · '.join(part for part in (
-                    stage_labels.get(injury.stage, injury.stage),
-                    format_date(env, injury.injury_date) if injury.injury_date and not injury.injury_date_na else '',
-                ) if part),
-                'hidden': injury.hidden_from_coaches,
-                'fragment_url': '/my/injury/%s/form/fragment?clinic_id=%s&patient=%s' % (
-                    injury.id, event.id, selected.id),
+                # Task 1721 (review round 1): the pane's own injury list.
+                note_props[note.id] = self._sc_note_edit_props(note, active_only=True)
+        # Task 1590: the dossier's injuries are the player page's inline
+        # cards (pencil edit, field-by-field saving): the current ones
+        # (active AND unverified, so a just-created report shows), newest
+        # first; ?created=<id> opens the new one in edit mode with its
+        # « Undo », ?injury=<id> opens one read-only.
+        is_tp = values['is_treatment_prof']
+        tp_view = self._sc_injury_tp_view(is_tp)
+        created_id = self._int_or_none(kw.get('created')) or 0
+        opened_id = self._int_or_none(kw.get('injury')) or 0
+        current = resolved = request.env['sports.patient.injury']
+        if selected:
+            # Task 1721: the player form's Blessures order (active / unverified
+            # first, newest first); the others (resolved) folded under « Show
+            # resolved injuries (N) ».
+            ordered = selected.injury_ids.sorted(lambda i: (
+                i.stage not in ('active', 'unverified'),
+                -(i.injury_date or date.min).toordinal(), -i.id))
+            current = ordered.filtered(lambda i: i.stage in ('active', 'unverified'))
+            resolved = ordered - current
+        # Task 1592: the cards' activity clocks (one query), opening the
+        # player page's Activities tab (an injury has no activities section
+        # of its own — task 1409), in the clinic context.
+        injury_clocks = self._sc_activity_clocks(current | resolved, lambda i: (
+            '/my/player?player_id=%s%s&tab=activities' % (i.patient_id.id, values['dossier_ctx_qs'])))
+        # Task 1616: the cards' Documents (one query) and their own address.
+        injury_documents = self._sc_injury_card_documents(current | resolved)
+        dossier_url = '/my/clinic/%s?patient=%s&tab=dossier' % (event.id, selected.id) if selected else None
+
+        def _card(injury):
+            return self._sc_injury_card_row(
+                injury, values['dossier_ctx_qs'], is_tp, tp_view,
+                opened_id=opened_id, created_id=created_id, clocks=injury_clocks,
+                list_url=dossier_url, anchor_prefix='clinic-injury-', documents=injury_documents)
+        injury_rows = [_card(injury) for injury in current]
+        resolved_rows = [_card(injury) for injury in resolved]
+        # Task 1721: the team page's expandable player card for the selected
+        # patient (status dot, Match / Pratique quick-change, training
+        # recommendation, « Retour prévu », « Details », activity clock).
+        player_row = None
+        if selected:
+            team = (selected.sudo().team_ids & event_sudo.team_ids)[:1] or selected.sudo().team_ids[:1]
+            extras = self._sc_player_row_extras(
+                selected, team_links=True, team=team or None, status_edit=self._sc_status_editable())
+            stage = selected.stage or 'healthy'
+            stage_labels = dict(env['sports.patient']._fields['stage']._description_selection(env))
+            player_row = dict(extras[selected.id], **{
+                'id': selected.id,
+                'title': selected._portal_list_name(),
+                'subtitle': selected.position or '',
+                'dot': SC_STAGE_TONES.get(stage, 'green'),
+                'chip': stage_labels.get(stage, ''),
+                'url': '/my/player?player_id=%s%s' % (selected.id, values['dossier_ctx_qs']),
+                'pending_removal': bool(selected.pending_removal),
             })
         staff = event_sudo.assigned_staff_ids
         return {
@@ -1069,11 +1143,18 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_clinic_teams': ', '.join(event_sudo.team_ids.mapped('name')),
             'sc_clinic_staff': ', '.join(staff.mapped('name')),
             'sc_worklist_props': json.dumps(worklist_props, default=str),
-            'sc_status_options': self._sc_status_options(),
             'sc_note_props': note_props,
             'sc_injury_rows': injury_rows,
-            'sc_note_injury_choices': [
-                (inj.id, inj.diagnosis or inj.display_name) for inj in values['active_injuries']],
+            'sc_resolved_injury_rows': resolved_rows,
+            'sc_resolved_injuries_label': (
+                env._("Show resolved injuries (%s)", len(resolved_rows)) if resolved_rows else ''),
+            'sc_clinic_player_row': player_row,
+            'sc_is_tp_view': tp_view,
+            'team_context_id': event.team_ids.id if len(event.team_ids) == 1 else False,
+            # Task 1665: the same list as the note edit picker. Task 1721
+            # (review round 1): what the pane shows — the active injuries.
+            'sc_note_injury_choices': (
+                self._sc_note_injury_options(selected, active_only=True) if selected else []),
             'sc_note_draft_prefix': (
                 'sports.patient.%s.new_note.' % selected.id if selected else ''),
             # The resolve sheet (#1418) is always rendered in the shell: a
@@ -1081,6 +1162,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_resolve_teams': self._creatable_teams(event),
             'sc_resolve_groups': self._addable_patients(event),
             'sc_flash': self._sc_clinic_flash(kw),
+            **self._sc_injury_card_options(),
         }
 
     # ------------------------------------------------------------------

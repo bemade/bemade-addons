@@ -1,0 +1,5 @@
+// Message actions (Reply, Forward, Split, ...) are always visible in the thread
+// view instead of appearing on hover, as in an email client.
+.o-conversationThreadView .o-mail-Message-actions.invisible {
+  visibility: visible !important;
+}

@@ -269,9 +269,10 @@ class TestClinicNotesEdit1413(HttpCase):
         tracked = self.note_tp.message_ids.tracking_value_ids.mapped('field_id.name')
         self.assertIn('note', tracked)
         self.assertIn('injury_id', tracked)
-        # « modified on … by <initials> » — by the editor (NT), visible on both pages.
+        # « modified on … by <full name> » (owner review 2026-10-11: full
+        # name, date + time) — by the editor, visible on both pages.
         self.assertTrue(self.note_tp.modified_label)
-        self.assertIn('NT', self.note_tp.modified_label)
+        self.assertIn('Nina Therapist', self.note_tp.modified_label)
         html = self.url_open(resp.headers['Location']).text
         self.assertIn('Treatment note updated.', html)
         self.assertIn('o_sc_note_modified', html)
@@ -311,7 +312,7 @@ class TestClinicNotesEdit1413(HttpCase):
         self.note_tp.invalidate_recordset()
         self.assertEqual(self.note_tp.note, 'Synthetic note by TP one — admin revised')
         self.assertEqual(self.note_tp.user_id, self.tp)  # author never changes
-        self.assertIn('AA', self.note_tp.modified_label)
+        self.assertIn('Ada Admin', self.note_tp.modified_label)
 
     def test_other_tp_refused_not_author(self):
         self.authenticate('ne.tp2@example.com', 'ne-tp2-pass')

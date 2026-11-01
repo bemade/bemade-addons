@@ -80,6 +80,7 @@
     --sc-ok: #a4c754;
     --sc-warn: #e9b949;
     --sc-bad: #ec6a6a;
+    --sc-overdue: #fb923c; // task 1727: a past « Retour prévu »
     --sc-tone-fg: #120e12;
     --sc-bar: #0d0a0e;
     --sc-bar-fg: #e5e5e5;
@@ -105,6 +106,7 @@
     --sc-ok: #5f8f2b;
     --sc-warn: #b8860b;
     --sc-bad: #c0392b;
+    --sc-overdue: #c2410c; // task 1727: a past « Retour prévu »
     --sc-tone-fg: #ffffff;
     --sc-bar: #243925;
     --sc-bar-fg: #ffffff;
@@ -136,5 +138,45 @@ body.o_sc_app_body {
     background: #120e12;
     &.o_sc_app_body_light {
         background: #f4f5f2;
+    }
+}
+
+// Task 1643: in the mobile BROWSER (not the installed app) the app bar and
+// the tabs must stay pinned while the address bar collapses / expands. The
+// window is the only scroller: the frontend layout's html / body
+// « height: 100% » (a viewport-sized box the page overflows) gives way to a
+// growing box, and #wrapwrap never scrolls, clips or transforms (each would
+// break the app bar's « sticky » or re-base the tabs' « fixed »). Scoped to
+// the shell's body; the legacy portal keeps the stock layout.
+html:has(> body.o_sc_app_body),
+body.o_sc_app_body {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+}
+
+body.o_sc_app_body > #wrapwrap {
+    overflow: visible !important;
+    transform: none !important;
+    filter: none !important;
+    contain: none !important;
+    will-change: auto !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+// Task 1643 addendum: on a neutralized (test) database the red banner
+// (#oe_neutralize_banner, web.neutralize_banner — absent on prod) sat over
+// the bottom tabs on a phone. Phone width: the banner is pinned at the very
+// bottom and the tabs (and what floats above them) rise by its height,
+// --sc-ribbon-h, measured by sc_app_ui.js. The banner stays fully visible.
+@media (max-width: 991.98px) {
+    body.o_sc_app_body #oe_neutralize_banner {
+        position: fixed !important;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 25;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 }

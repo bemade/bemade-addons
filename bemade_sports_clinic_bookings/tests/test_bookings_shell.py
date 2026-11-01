@@ -10,7 +10,14 @@ Acceptance criteria:
   the unchanged feed; « Réservations » is in the navigation.
 * UC-B3 The feed keeps its shape; no inline script / style in this addon's
   shell views.
-* UC-B4 fr_CA: the shell bookings page renders in French.
+* UC-B4 fr_CA: the shell bookings page renders in French (task 1596: the
+  sort control too).
+* UC-B5 (task 1585) Tap to call / write: each row shows the client's phone
+  as a ``tel:`` link (``+`` and digits only) and email as a ``mailto:``
+  link — no longer inside the subtitle; a client without a phone gets no
+  phone link. The calendar's detail keys mark email / phone as ``mailto`` /
+  ``tel`` so the details render them as links (browser half: the
+  ``sc_1540_bookings`` tour).
 """
 import re
 
@@ -50,11 +57,32 @@ class TestBookingsShell(BookingsShellCommon):
         self.assertIsNotNone(self._shell(tree))
         props = self._calendar_props(tree)
         self.assertEqual(props['feedUrl'], '/my/bookings/calendar/data')
-        self.assertIn('client', [key for key, _label in props['detailKeys']])
+        self.assertIn('client', [entry[0] for entry in props['detailKeys']])
         self.assertNotIn('/web/static/lib/fullcalendar', text)
         start = self.booking_soon.start.strftime('%Y-%m-%dT00:00:00Z')
         feed = self.url_open('/my/bookings/calendar/data?start=%s&end=2099-01-01T00:00:00Z' % start).json()
         self.assertIn(self.booking_soon.id, [row['id'] for row in feed])
+
+    def test_tap_links(self):
+        self._switch(True)
+        self.authenticate('bk.tp@example.com', 'bk-tp-pass')
+        _text, tree = self._get('/my/bookings')
+        row = tree.xpath('//*[@data-sc-booking-id="%s"]' % self.booking_soon.id)[0]
+        self.assertEqual(row.xpath('.//a[@data-sc-booking-link="phone"]/@href'), ['tel:+15550100321'])
+        self.assertEqual(row.xpath('.//a[@data-sc-booking-link="email"]/@href'), ['mailto:quinn@bk.example.com'])
+        subtitle = row.xpath('.//*[contains(@class, "o_sc_row_subtitle")]')[0].text_content()
+        self.assertNotIn('quinn@bk.example.com', subtitle)
+        self.client.write({'phone': False})
+        _text, tree = self._get('/my/bookings')
+        row = tree.xpath('//*[@data-sc-booking-id="%s"]' % self.booking_soon.id)[0]
+        self.assertFalse(row.xpath('.//a[@data-sc-booking-link="phone"]'))
+        self.assertTrue(row.xpath('.//a[@data-sc-booking-link="email"][@href]'))
+        _text, tree = self._get('/my/bookings/calendar')
+        kinds = {entry[0]: (entry[2] if len(entry) > 2 else None)
+                 for entry in self._calendar_props(tree)['detailKeys']}
+        self.assertEqual(kinds['email'], 'mailto')
+        self.assertEqual(kinds['phone'], 'tel')
+        self.assertIsNone(kinds['client'])
 
     def test_lint_no_inline_script_or_style(self):
         views = self.env['ir.ui.view'].search([('key', '=like', 'bemade_sports_clinic_bookings.%')])
@@ -70,7 +98,8 @@ class TestBookingsShell(BookingsShellCommon):
         env = self.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic', 'bemade_sports_clinic_bookings'], ['fr_CA'], overwrite=True)
+            ['bemade_sports_clinic', 'bemade_sports_clinic_bookings', 'appointment_portal_staff'],
+            ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):
@@ -80,5 +109,7 @@ class TestBookingsShell(BookingsShellCommon):
         self.authenticate('bk.tp@example.com', 'bk-tp-pass')
         self.opener.cookies.set('frontend_lang', 'fr_CA')
         text, _tree = self._get('/my/bookings')
-        for term in ('À venir', 'Passées', 'Calendrier', 'Tous les types', 'Filtres', 'Réservations'):
+        for term in ('À venir', 'Passées', 'Calendrier', 'Tous les types', 'Filtres', 'Réservations',
+                     # Task 1596: the sort control.
+                     'Trier les réservations', 'Date (plus ancienne d', 'Date (plus récente d'):
             self.assertIn(term, text, term)

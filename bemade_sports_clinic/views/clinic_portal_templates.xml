@@ -199,6 +199,7 @@
                         <t t-elif="error == 'permission_denied'">You do not have permission to add treatment notes.</t>
                         <t t-elif="error == 'unregistered_row'">This sign-in is not registered yet — link it to a file, create the player, or remove it.</t>
                         <t t-elif="error == 'no_team'">Pick the team the new player belongs to.</t>
+                        <t t-elif="error == 'duplicate_identity'">Another player already has this name and date of birth.</t>
                         <t t-else="" t-esc="error"/>
                     </div>
 
@@ -448,9 +449,10 @@
                                             </div>
                                         </div>
 
-                                        <div t-if="selected_patient.allergies" class="alert alert-warning mt-3 mb-0 py-2">
-                                            <strong>Allergies:</strong>
-                                            <t t-esc="selected_patient.allergies"/>
+                                        <!-- Task 1630: the allergy / medical-alert lines. -->
+                                        <div t-foreach="selected_patient._sc_medical_summary_lines(tp=True)" t-as="med_line"
+                                             class="alert alert-warning mt-3 mb-0 py-2" data-sc-legacy-medical="clinic">
+                                            <t t-esc="med_line['text']"/>
                                         </div>
 
                                         <!-- Task 1411: training recommendation, editable inline by a
@@ -463,11 +465,18 @@
                                                 <textarea name="training_recommendation" id="clinic_training_recommendation"
                                                           class="form-control form-control-sm" rows="2"
                                                           t-esc="selected_patient.training_recommendation or ''"/>
+                                                <!-- Task 1601: last SAVED change — date + author. -->
+                                                <small t-if="selected_patient.last_training_recommendation_info"
+                                                       class="text-muted d-block mt-1 o_sc_last_note_stamp"
+                                                       t-esc="selected_patient.last_training_recommendation_info"/>
                                                 <button type="submit" class="btn btn-sm bg-o-color-1 text-white mt-2">Save</button>
                                             </form>
                                             <div t-elif="(selected_patient.training_recommendation or '').strip()">
                                                 <strong>Training Recommendation:</strong>
                                                 <span style="white-space: pre-wrap;" t-esc="selected_patient.training_recommendation"/>
+                                                <small t-if="selected_patient.last_training_recommendation_info"
+                                                       class="text-muted d-block mt-1 o_sc_last_note_stamp"
+                                                       t-esc="selected_patient.last_training_recommendation_info"/>
                                             </div>
                                         </div>
                                     </div>
@@ -528,7 +537,7 @@
                                                     <span class="o_sc_injury_date_label"><i class="fa fa-calendar me-1" aria-hidden="true"/>Injured on:</span>
                                                     <span t-field="injury.injury_date"/>
                                                 </span>
-                                                <span t-if="injury.predicted_resolution_date">
+                                                <span t-if="injury.predicted_resolution_date and injury.stage != 'resolved'">
                                                     <span class="o_sc_injury_return_label"><i class="fa fa-calendar-check-o me-1" aria-hidden="true"/>Expected return:</span>
                                                     <span t-field="injury.predicted_resolution_date"/>
                                                 </span>
@@ -544,6 +553,7 @@
                                                     <label class="form-label small mb-1" t-attf-for="clinic_injury_external_#{injury.id}">External Notes (visible to coaches)</label>
                                                     <textarea name="external_notes" t-attf-id="clinic_injury_external_#{injury.id}"
                                                               class="form-control form-control-sm" rows="2"
+                                                              placeholder="Current state (replaces the previous text; the history keeps the versions)"
                                                               t-esc="injury.external_notes or ''"/>
                                                     <!-- Task 1406: last SAVED external note — date + author. -->
                                                     <small t-if="injury.last_external_note_info"
@@ -554,6 +564,7 @@
                                                     <label class="form-label small mb-1" t-attf-for="clinic_injury_internal_#{injury.id}">Internal Notes</label>
                                                     <textarea name="internal_notes" t-attf-id="clinic_injury_internal_#{injury.id}"
                                                               class="form-control form-control-sm" rows="2"
+                                                              placeholder="Current state (replaces the previous text; the history keeps the versions)"
                                                               t-esc="injury.internal_notes or ''"/>
                                                     <!-- Task 1406: last SAVED internal note — date + author (TP-only, same guard as the field). -->
                                                     <small t-if="injury.last_internal_note_info"
@@ -658,11 +669,11 @@
                                                     </tr>
                                                     <t t-foreach="treatment_notes" t-as="note">
                                                         <tr>
-                                                            <td><span t-field="note.date"/></td>
+                                                            <td><span t-esc="note.portal_when_label"/></td>
                                                             <td class="text-center">
                                                                 <span class="badge text-bg-light border o_sc_note_author"
                                                                       t-att-data-author="note.sudo().user_id.name"
-                                                                      t-esc="note.author_initials"/>
+                                                                      t-esc="note.sudo().user_id.name"/>
                                                             </td>
                                                             <td>
                                                                 <t t-esc="note.note"/>

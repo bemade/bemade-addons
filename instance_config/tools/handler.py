@@ -15,8 +15,6 @@ what makes the round trip possible, and what stops a setting being applied but
 never read back -- the failure mode where a later export silently drops it.
 """
 
-from odoo import _
-
 #: Registry of handler classes, in application order.
 _HANDLERS = []
 
@@ -82,8 +80,8 @@ class Report:
     def gap(self, domain, detail):
         self.unhandled.append((domain, detail))
 
-    def summary(self):
-        return _(
+    def summary(self, env):
+        return env._(
             "%(changed)s change(s), %(skipped)s field(s) skipped by rule, "
             "%(gaps)s unhandled item(s)",
             changed=len(self.changes),

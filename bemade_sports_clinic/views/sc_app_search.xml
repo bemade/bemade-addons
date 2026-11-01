@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1650 — the app header's search: the sheet (opened by the magnifier,
+    « / » or Ctrl/⌘-K; sc_search.js) and its results fragment
+    (GET /my/app/search, controllers/app_search.py).
+-->
+<odoo>
+    <template id="sc_app_search_sheet" name="App shell: search sheet">
+        <t t-set="sc_search_label">Search</t>
+        <t t-set="sc_search_placeholder">Players, teams, events…</t>
+        <dialog id="sc_search_sheet" class="o_sc_sheet o_sc_search_sheet" aria-labelledby="sc_search_sheet_title"
+                data-sc-search-sheet="1">
+            <div class="o_sc_sheet_head">
+                <h2 class="o_sc_sheet_title" id="sc_search_sheet_title" t-out="sc_search_label"/>
+                <button type="button" class="o_sc_icon_btn" data-sc-sheet-close="1" aria-label="Close" title="Close">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'close'"/></t>
+                </button>
+            </div>
+            <div class="o_sc_search_box">
+                <input type="search" id="sc_search_input" class="o_sc_input" autocomplete="off"
+                       enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="true"
+                       aria-controls="sc_search_results" t-att-aria-label="sc_search_label"
+                       t-att-placeholder="sc_search_placeholder" data-sc-search-input="1"/>
+            </div>
+            <div class="o_sc_sheet_body o_sc_search_body" id="sc_search_results" data-sc-search-body="1"
+                 aria-live="polite">
+                <t t-call="bemade_sports_clinic.sc_app_search_results">
+                    <t t-set="sc_too_short" t-value="True"/>
+                </t>
+            </div>
+        </dialog>
+    </template>
+
+    <template id="sc_app_search_results" name="App shell: search results">
+        <div class="o_sc_search_results" data-sc-search-results="1">
+            <p t-if="sc_too_short" class="o_sc_hint o_sc_search_hint">Type at least 2 letters</p>
+            <t t-else="">
+                <p t-if="not (sc_players or sc_near_players or sc_teams or sc_events)" class="o_sc_empty">No results</p>
+                <!-- Task 1674: the players, then the near matches (« Close
+                     results »), same rows and the same scope / lock rules. -->
+                <t t-set="sc_close_title">Close results</t>
+                <t t-set="sc_players_title">Players</t>
+                <t t-foreach="[('players', sc_players_title, sc_players), ('players_near', sc_close_title, sc_near_players)]" t-as="sc_group">
+                <section t-if="sc_group[2]" class="o_sc_search_group" t-att-data-sc-search-group="sc_group[0]">
+                    <h3 class="o_sc_search_group_title" t-out="sc_group[1]"/>
+                    <ul class="o_sc_search_list">
+                        <li t-foreach="sc_group[2]" t-as="row"
+                            t-attf-class="o_sc_search_row #{'o_sc_search_archived' if row['archived'] else ''} #{'' if row['accessible'] else 'o_sc_search_locked'}"
+                            t-att-data-sc-search-player="row['id']">
+                            <a t-if="row['url']" t-att-href="row['url']" class="o_sc_search_link" data-sc-search-result="1">
+                                <span class="o_sc_row_title" t-out="row['title']"/>
+                                <span t-if="row['teams']" class="o_sc_row_subtitle" t-out="row['teams']"/>
+                                <span t-if="row['archived']" class="o_sc_chip o_sc_search_flag">Archived player</span>
+                            </a>
+                            <t t-else="">
+                                <span class="o_sc_search_link" aria-disabled="true">
+                                    <span class="o_sc_row_title" t-out="row['title']"/>
+                                    <span t-if="row['teams']" class="o_sc_row_subtitle" t-out="row['teams']"/>
+                                    <span t-if="row['archived']" class="o_sc_chip o_sc_search_flag">Archived player</span>
+                                </span>
+                                <a t-att-href="row['add_url']" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm o_sc_search_add"
+                                   data-sc-search-result="1">Add to team</a>
+                            </t>
+                        </li>
+                    </ul>
+                </section>
+                </t>
+                <section t-if="sc_teams" class="o_sc_search_group" data-sc-search-group="teams">
+                    <h3 class="o_sc_search_group_title">Teams</h3>
+                    <ul class="o_sc_search_list">
+                        <li t-foreach="sc_teams" t-as="row" class="o_sc_search_row">
+                            <a t-att-href="row['url']" class="o_sc_search_link" data-sc-search-result="1">
+                                <span class="o_sc_row_title" t-out="row['title']"/>
+                                <span t-if="row['subtitle']" class="o_sc_row_subtitle" t-out="row['subtitle']"/>
+                            </a>
+                        </li>
+                    </ul>
+                </section>
+                <section t-if="sc_events" class="o_sc_search_group" data-sc-search-group="events">
+                    <h3 class="o_sc_search_group_title">Events</h3>
+                    <ul class="o_sc_search_list">
+                        <li t-foreach="sc_events" t-as="row" class="o_sc_search_row">
+                            <a t-att-href="row['url']" class="o_sc_search_link" data-sc-search-result="1">
+                                <span class="o_sc_row_title" t-out="row['title']"/>
+                                <span t-if="row['subtitle']" class="o_sc_row_subtitle" t-out="row['subtitle']"/>
+                            </a>
+                        </li>
+                    </ul>
+                </section>
+            </t>
+        </div>
+    </template>
+</odoo>

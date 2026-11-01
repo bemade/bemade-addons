@@ -65,7 +65,12 @@ class TestTeamDigest(TransactionCase):
     def _flatten_role(players):
         chunks = []
         for p in players:
-            for it in p.get("items", []):
+            # Injury changes live inside their injury's card (owner layout
+            # 2026-10-11); the player's own list keeps the rest.
+            items = list(p.get("items", []))
+            for card in p.get("active_injuries", []) + p.get("resolved_injuries", []):
+                items += card.get("items") or []
+            for it in items:
                 chunks.append(it.get("value") or "")
                 for sub in it.get("sub_items", []) or []:
                     chunks.append(sub.get("value") or "")

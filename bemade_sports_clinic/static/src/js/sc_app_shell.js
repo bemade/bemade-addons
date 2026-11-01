@@ -3,11 +3,10 @@
  *
  * Vanilla JS, progressive enhancement only (matches the other plain-JS
  * portal helpers of this module). The theme toggle in the app bar and the
- * « Plus › Apparence / Navigation » controls are ordinary POST forms to
- * /my/app/pref (marked data-sc-pref) that redirect back — they work without
- * this script. With it, the post goes through fetch (JSON answer) and the
- * page switches in place: no reload for the theme, a reload for the
- * navigation mode (the app bar is server-rendered for it).
+ * « Paramètres › Apparence » controls (task 1606; « Plus » before) are ordinary POST forms to /my/app/pref
+ * (marked data-sc-pref) that redirect back — they work without this script.
+ * With it, the post goes through fetch (JSON answer) and the theme switches
+ * in place, no reload. (Task 1579 removed the navigation-mode setting.)
  *
  * Inert outside the shell: it only acts on forms inside .o_sc_app.
  */
@@ -29,6 +28,13 @@
         var pressed = app.querySelectorAll('button[name="sc_theme"][aria-pressed]');
         pressed.forEach(function (button) {
             button.setAttribute("aria-pressed", button.value === theme ? "true" : "false");
+        });
+        // Task 1726: « Paramètres › Apparence » is a switch (on = dark).
+        app.querySelectorAll("input[data-sc-theme-switch]").forEach(function (input) {
+            input.checked = theme === "dark";
+            if (window.scSwitchSync) {
+                window.scSwitchSync(input);
+            }
         });
     }
 
@@ -62,10 +68,6 @@
                 return resp.json();
             })
             .then(function (prefs) {
-                if (prefs.sc_nav_mode && prefs.sc_nav_mode !== app.getAttribute("data-sc-nav")) {
-                    window.location.reload();
-                    return;
-                }
                 if (prefs.sc_theme) {
                     applyTheme(app, prefs.sc_theme);
                 }

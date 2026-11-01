@@ -7,9 +7,10 @@ Acceptance criteria covered here (AC6, with AC1 / AC3 / AC5 in a browser):
 * UC-B1 Navigation: bottom tabs at phone width (390 px), left rail on a
   laptop (1366 px).
 * UC-B2 The app-bar theme toggle switches in place (no reload) and persists;
-  « Plus › Navigation › Fil d'Ariane » gives the crumb row on a sub-page.
+  a laptop shows the crumb row on a sub-page, no back chevron (task 1579:
+  the width decides; « Plus » has no « Navigation » setting any more).
 * UC-B3 Team tabs switch in place and keep ?tab= in the address bar; the
-  digest-history sheet opens and lazy-loads.
+  « History » link goes to the digest list page (task 1579, no sheet).
 * UC-B4 (AC3) Announcement draft: type -> leave -> return -> « Brouillon
   restauré » with the text -> Publier -> the draft is gone and EXACTLY ONE
   history row was created; logout clears the device drafts.
@@ -42,7 +43,7 @@ class TestAppShellToursPhone1542(_TourCommon):
     browser_size = '390x844'
 
     def test_nav_phone(self):
-        self.start_tour('/my/home', 'sc_1542_nav_phone', login='pc.coach@example.com')
+        self.start_tour('/my/teams', 'sc_1542_nav_phone', login='pc.coach@example.com')
 
     def test_team_tabs_phone(self):
         self.start_tour(self.team_url, 'sc_1542_team_tabs', login='pc.tp@example.com')
@@ -90,12 +91,12 @@ class TestAppShellToursLaptop1542(_TourCommon):
         })
 
     def test_nav_laptop(self):
-        self.start_tour('/my/home', 'sc_1542_nav_laptop', login='pc.tp@example.com')
+        self.start_tour('/my/teams', 'sc_1542_nav_laptop', login='pc.tp@example.com')
 
     def test_prefs_theme_and_crumbs(self):
+        self._theme_choice(True)  # task 1602: the toggle is hidden otherwise
         self.start_tour('/my/home', 'sc_1542_prefs', login='pc.coach@example.com')
         self.assertEqual(self.coach.sc_theme, 'light')
-        self.assertEqual(self.coach.sc_nav_mode, 'crumbs')
 
     def test_team_tabs_internal_therapist(self):
         self.start_tour(self.team_url, 'sc_1542_team_tabs', login='t1542.admin@example.com')

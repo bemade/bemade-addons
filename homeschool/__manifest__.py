@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Homeschool",
-    "version": "19.0.8.0.0",
+    "version": "19.0.8.5.0",
     "category": "Education",
     "summary": "Plan, teach and track a home-schooled child: curriculum items, "
     "days built from movable blocks, material, traces (portfolio), indicators, journal.",
@@ -80,6 +80,16 @@ What it models
   as Next is clicked, then ends on the day's journal entry. Opening, pause and
   debrief get no screen and never hold the day open; a blank adult field keeps
   the day *Incomplete* and the final screen names the blocks concerned.
+* **« Fermer la semaine »** — from Track › Close the week (or the review form),
+  a two-step wizard: first every weekly indicator of the student's week on one
+  screen (the journal's indicator notes above as context, the last value and the
+  threshold beside each line, the monthly ones when the month needs them) — a
+  blank writes no row, ``2,5`` is accepted, a value already recorded is
+  pre-loaded and clearing it deletes it; ``R3-PARENTS`` (mean of D and M) and
+  ``R1-ADULTE`` are computed on Next. Then the Sunday questions on the week's
+  review (reused whatever its kind, else created weekly), with the adult hours,
+  the days without a journal entry, the indicators still blank and an alert
+  when R3-PARENTS stays below 3 two weeks in a row.
 * **The week file is rendered from the records**: the nightly export returns
   ``tracking/journal/<ISO>/<ISO>.md`` for every week holding a day (« Semaine N »,
   the weekly review, one section per day with the recorded blocks, the entry's
@@ -166,6 +176,7 @@ Conventions
         "views/block_views.xml",
         "views/day_views.xml",
         "views/close_day_wizard_views.xml",
+        "views/close_week_wizard_views.xml",
         "views/deliverable_views.xml",
         "views/reading_views.xml",
         "views/item_views.xml",

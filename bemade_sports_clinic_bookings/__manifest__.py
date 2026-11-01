@@ -1,6 +1,6 @@
 {
     'name': 'Sports Clinic Bookings on the App Shell',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.4.0',
     'summary': "Glue: the portal bookings pages (appointment_portal_staff) on the Sports Clinic app shell.",
     'description': """
 Sports Clinic Bookings on the App Shell
@@ -16,11 +16,20 @@ When the app shell is active (system switch
 role), ``/my/bookings`` and ``/my/bookings/calendar`` render on the shell:
 
 * the list: upcoming / past / all segments, the appointment-type filter,
-  one row per booking (client, type, time, status; cancelled badged) — the
-  same search, filters and query parameters as the portal page;
+  one row per booking (client, type, time, status; cancelled badged; the
+  client's phone and email as tap-to-call / tap-to-email links) — the
+  same search, filters and query parameters as the portal page; a date
+  sort control (oldest / newest first) whose choice, like the filters,
+  survives switching segments;
 * the calendar: the shell's shared calendar component (FullCalendar from
   Odoo's lazy bundle) on the unchanged ``/my/bookings/calendar/data`` feed,
-  a booking's details shown under the calendar.
+  a booking's details shown under the calendar (phone / email as tap
+  links).
+* the booking form's answers (task 1732): each row, and a booking's
+  details under the calendar, show the questions the client answered when
+  booking (question → answer, in the question order; a selection by its
+  label; multi-line text kept) — any question of the appointment type,
+  nothing when there are no answers. Same visibility as the booking.
 
 With the switch off (or for a user without an app role) both pages render
 exactly the ``appointment_portal_staff`` templates. The bookings addon
@@ -35,6 +44,9 @@ itself is unchanged; the routes, domains and record rules are its own.
         'views/sc_app_bookings.xml',
     ],
     'assets': {
+        'web.assets_frontend': [
+            'bemade_sports_clinic_bookings/static/src/scss/sc_bookings.scss',
+        ],
         'web.assets_tests': [
             'bemade_sports_clinic_bookings/static/tests/tours/**/*',
         ],

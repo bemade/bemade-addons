@@ -1,6 +1,6 @@
 import logging
-from odoo import http, fields, _
-from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo import http, fields, _, Command
+from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from .access_control_mixin import AccessControlMixin
@@ -21,6 +21,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         Shows a search UI first; only renders the full create form when a search
         is attempted and yields no matching players.
         """
+        # Task 1655: in the app the page is retired — the Joueurs list's
+        # inline panel creates players (search as you type, then create).
+        pending = request.session.get('portal_flash')
+        if self._sc_app_shell_active() and self._sc_player_add_allowed() and not (
+                isinstance(pending, dict) and pending.get('scope') == ['player_create']):
+            return request.redirect('/my/players?add=1')
         user = request.env.user
         is_treatment_prof = self._is_treatment_professional()
         is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
@@ -71,7 +77,16 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         countries = canada if canada else request.env['res.country'].search([], order='name')
 
         values = self._prepare_portal_layout_values()
+        # Task 1726: the app form picks the teams with the tag picker (one
+        # hidden ``team_ids`` = the chosen ids, comma separated); a single
+        # team is chosen up front, as the lone checkbox used to be.
+        team_csv = str(all_teams.id) if len(all_teams) == 1 else ''
         values.update({
+            'sc_team_csv': team_csv,
+            'sc_team_props': self._sc_form_props(
+                'sc_new_team_ids', _("Teams"), value=team_csv,
+                options=[(t.id, t.name) for t in all_teams],
+                placeholder=_("Add a team…")),
             'page_name': 'create_player',
             'is_treatment_prof': is_treatment_prof,
             'is_coach': is_coach,
@@ -93,7 +108,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
         # PRG: a failed create submit stashed the error + input; re-show the full
         # create form (not the search step) with the error and the entered values.
-        flash_error, flash_data = self._portal_pop_flash()
+        flash_error, flash_data = self._portal_pop_flash(('player_create',))
         if flash_error:
             values.update(flash_data)
             values.update({
@@ -110,6 +125,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     @http.route(['/my/player/create/save'], type='http', auth='user', website=True, methods=['POST'])
     def create_player_submit(self, **post):
         """Handle standalone player creation submit."""
+        # Task 1639: the identity guard (duplicates) for internal users too.
+        request.update_context(sc_identity_guard=True)
         user = request.env.user
         is_treatment_prof = self._is_treatment_professional()
         is_coach = user.has_group('bemade_sports_clinic.group_portal_team_coach')
@@ -119,12 +136,15 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         dob = (post.get('date_of_birth') or '').strip()
 
         if not first_name or not last_name:
-            self._portal_flash(_('First name and last name are required'), post)
+            self._portal_flash(_('First name and last name are required'), None, ('player_create',))
             return request.redirect('/my/player/create')
 
         # Team selection (optional). Restrict to staff teams to avoid tampering
         try:
-            selected_team_ids = [int(tid) for tid in request.httprequest.form.getlist('team_ids')]
+            # One value per checkbox (portal form) or one comma-separated
+            # value (the app's tag picker, task 1726).
+            selected_team_ids = [int(tid) for raw in request.httprequest.form.getlist('team_ids')
+                                 for tid in str(raw).split(',') if tid.strip()]
         except Exception:
             selected_team_ids = []
         allowed_team_ids = self._team_targets().ids
@@ -132,7 +152,13 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
         # Require at least one team for treatment professionals to ensure access control
         if is_treatment_prof and not selected_team_ids:
-            self._portal_flash(_('Please select at least one team to assign to this player.'), post)
+            self._portal_flash(_('Please select at least one team to assign to this player.'), None, ('player_create',))
+            return request.redirect('/my/player/create')
+
+        # Task 1645: the player's phone and the emergency contact's mobile.
+        phone_error = self._sc_phone_error(post, 'phone', 'ec_mobile')
+        if phone_error:
+            self._portal_flash(phone_error, None, ('player_create',))
             return request.redirect('/my/player/create')
 
         # Validate DOB format and range if provided
@@ -142,7 +168,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 dob_date = fields.Date.to_date(dob)
             except Exception:
                 _logger.info('Invalid date_of_birth provided on create: %s', dob)
-                self._portal_flash(_('Please enter a valid Date of Birth (YYYY-MM-DD).'), post)
+                self._portal_flash(_('Please enter a valid Date of Birth (YYYY-MM-DD).'), None, ('player_create',))
                 return request.redirect('/my/player/create')
 
             # Range checks: not in the future, not older than 120 years
@@ -150,7 +176,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             min_dob = today - relativedelta(years=120)
             if dob_date > today or dob_date < min_dob:
                 self._portal_flash(
-                    _('Date of Birth must not be in the future and not be more than 120 years ago.'), post)
+                    _('Date of Birth must not be in the future and not be more than 120 years ago.'), None, ('player_create',))
                 return request.redirect('/my/player/create')
 
         vals = {
@@ -187,9 +213,8 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         if is_treatment_prof:
             if selected_team_ids:
                 vals['team_ids'] = [(6, 0, list(set(selected_team_ids)))]
-            if 'allergies' in post:
-                _all = (post.get('allergies') or '').strip()
-                vals['allergies'] = _all if _all else False
+            # Task 1630: the allergy / medical-alert block.
+            vals.update(request.env['sports.patient']._sc_medical_vals_from_post(post))
             if 'team_info_notes' in post:
                 _notes = (post.get('team_info_notes') or '').strip()
                 vals['team_info_notes'] = _notes if _notes else False
@@ -206,16 +231,19 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
         # Use public create method with permission checks
         try:
-            patient = request.env['sports.patient'].create_portal_patient(vals)
+            # Task 1600: a refused create leaves nothing behind (the partner
+            # is created before the patient).
+            with request.env.cr.savepoint():
+                patient = request.env['sports.patient'].create_portal_patient(vals)
         except ValidationError as ve:
             _logger.info('ValidationError during player create: %s', ve)
-            self._portal_flash(str(ve) or _('Invalid combination of match and practice status.'), post)
+            self._portal_flash(str(ve) or _('Invalid combination of match and practice status.'), None, ('player_create',))
             return request.redirect('/my/player/create')
         except Exception as e:
             _logger.exception('Error creating patient from portal create')
             self._portal_flash(
                 self._user_error_text(e, 'patient')
-                or _('There was an error creating the player. Please review your inputs and try again.'), post)
+                or _('There was an error creating the player. Please review your inputs and try again.'), None, ('player_create',))
             return request.redirect('/my/player/create')
 
         # Optionally create a primary emergency contact if provided (TPs and coaches)
@@ -295,6 +323,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Clinic navigation context (task 1410): validated, dropped if invalid.
         clinic_event = self._clinic_context(post)
 
+        # Owner review 2026-10-10: in the app shell every field is edited
+        # inline on the player page — this page is retired there.
+        if self._sc_app_shell_active():
+            return request.redirect(self._sc_player_tab_url(
+                patient.id, 'info', team_context_id, clinic_event))
+
         # Build default return_url based on validated team context if not explicitly provided
         return_url = self._local_return_url(
             post.get('return_url') or request.httprequest.args.get('return_url'), None)
@@ -318,7 +352,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # Basic fields
             patient_info['date_of_birth'] = patient.date_of_birth
             patient_info['age'] = patient.age
-            patient_info['allergies'] = patient.allergies
+            # Task 1630: the allergy / medical-alert block (edit form).
+            for _name in patient.SC_MEDICAL_FIELDS:
+                patient_info[_name] = patient[_name]
             patient_info['team_info_notes'] = patient.team_info_notes
             
             # Status fields
@@ -370,8 +406,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'clinic_event': clinic_event,
         }
 
-        # PRG: surface a stashed validation error + the rejected input.
-        flash_error, flash_data = self._portal_pop_flash()
+        # PRG: surface a stashed validation error + the rejected input — of
+        # THIS player's form only (task 1600: scoped + expiring).
+        flash_error, flash_data = self._portal_pop_flash(('player_edit', patient.id))
         if flash_error:
             values['error'] = flash_error
             values['form_data'] = flash_data
@@ -379,45 +416,44 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 values['return_url'] = self._safe_return_url(
                     flash_data['return_url'], values.get('return_url'))
 
-        # Task 1539: the app shell (switch on: field-by-field autosave through
-        # /my/app/save) or today's template (off). Shell-only values are
-        # computed only for the shell.
-        if self._sc_app_shell_active():
-            values.update(self._sc_player_edit_values(patient, values))
-        return self._sc_render('bemade_sports_clinic.portal_edit_player',
-                               'bemade_sports_clinic.sc_app_player_edit', values)
+        # The shell redirects to the player page above (owner review
+        # 2026-10-10): this is today's page only.
+        return request.render('bemade_sports_clinic.portal_edit_player', values)
 
-    def _sc_player_edit_values(self, patient, values):
-        env = request.env
-        primary_contact = env['sports.patient.contact'].search([
-            ('patient_id', '=', patient.id)], order='sequence,id', limit=1)
-        edit_url = '/my/player/edit?patient_id=%s' % patient.id
-        if values.get('team_context_id'):
-            edit_url += '&team_id=%s' % values['team_context_id']
-        edit_url = self._with_clinic(edit_url, values.get('clinic_event'))
-        return {
-            'sc_primary_contact': primary_contact,
-            'sc_state_options': [('', '')] + [(st.id, st.name) for st in values['states']],
-            'sc_status_options': self._sc_status_options(),
-            'sc_edit_url': edit_url,
-            'sc_contact_type_options': [
-                (key, label) for key, label in env['sports.patient.contact']._fields[
-                    'contact_type']._description_selection(env)],
-        }
-    
     @http.route(['/my/player/save'], type='http', auth='user', website=True, methods=['POST'])
     def edit_player_submit(self, **post):
-        """Process the form submission to update player information"""
+        """Process the form submission to update player information.
+
+        Task 1600:
+        * a validation error flashes the posted form for THIS player only
+          (scope ``('player_edit', id)``, expiring);
+        * the patient write and the team removals run in one savepoint — a
+          refused save changes nothing;
+        * first / last name and date of birth are written only when they
+          changed; changing an existing value needs ``identity_confirmed=1``
+          (the form's confirm step), which the model records on the file;
+        * an unticked team (one the user may assign) goes through the
+          official removal path (``remove_from_team(clear_pending=True)``);
+          the player's other teams are never touched;
+        * a save that leaves the user without access to the player lands on
+          the players list with a toast, never on a 403.
+        """
+        # Task 1639: the identity guard for internal users too.
+        request.update_context(sc_identity_guard=True)
         patient_id = post.get('patient_id')
         
         if not patient_id:
             return request.redirect('/my/players')
             
         patient = self._check_access_to_patient(patient_id)
+        flash_scope = ('player_edit', patient.id)
+
+        def flash(message):
+            self._portal_flash(message, None, flash_scope)
 
         # Validation round-trips go back to the edit form in the same team /
         # clinic nav context (task 1410); both are re-validated by the form.
-        edit_url = '/my/player/edit?patient_id=%s' % patient_id
+        edit_url = '/my/player/edit?patient_id=%s' % patient.id
         if post.get('team_id'):
             try:
                 edit_url += '&team_id=%s' % int(post.get('team_id'))
@@ -429,32 +465,42 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         is_treatment_prof = self._is_treatment_professional()
         is_coach = request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')
         
+        # Task 1645: the phone and the emergency contact's mobile.
+        phone_error = self._sc_phone_error(post, 'phone', 'ec_mobile')
+        if phone_error:
+            flash(phone_error)
+            return request.redirect(edit_url)
+
         # If DOB is being changed/provided, validate format upfront to avoid unhelpful errors
         dob_str = (post.get('date_of_birth') or '').strip()
+        dob_date = None
         if dob_str:
             try:
                 dob_date = fields.Date.to_date(dob_str)
             except Exception:
-                self._portal_flash(_('Please enter a valid Date of Birth (YYYY-MM-DD).'), post)
+                flash(_('Please enter a valid Date of Birth (YYYY-MM-DD).'))
                 return request.redirect(edit_url)
 
             # Range checks: not in the future, not older than 120 years
             today = fields.Date.context_today(request.env.user) or fields.Date.today()
             min_dob = today - relativedelta(years=120)
             if dob_date > today or dob_date < min_dob:
-                self._portal_flash(
-                    _('Date of Birth must not be in the future and not be more than 120 years ago.'), post)
+                flash(_('Date of Birth must not be in the future and not be more than 120 years ago.'))
                 return request.redirect(edit_url)
 
         # Prepare values for patient update
         vals = {}
+        current = patient.sudo()
         
-        # Basic information - any portal user with access can update these
-        if post.get('first_name') and post.get('last_name'):
-            vals.update({
-                'first_name': post.get('first_name'),
-                'last_name': post.get('last_name'),
-            })
+        # Basic information - any portal user with access can update these.
+        # Task 1600: only what changed (an unchanged name is not re-written).
+        first_name = (post.get('first_name') or '').strip()
+        last_name = (post.get('last_name') or '').strip()
+        if first_name and last_name:
+            if first_name != (current.first_name or '').strip():
+                vals['first_name'] = first_name
+            if last_name != (current.last_name or '').strip():
+                vals['last_name'] = last_name
             
         # Contact information
         if post.get('email'):
@@ -497,29 +543,29 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             _num = (post.get('jersey_number') or '').strip()
             vals['jersey_number'] = _num if _num else False
 
+        removed_teams = request.env['sports.team']
         # Additional fields that only treatment professionals can update
         if is_treatment_prof:
-            # Team assignments via multi-select
+            # Team assignments via the checklist. Task 1600: a diff against the
+            # player's teams that the user may assign — added teams are linked,
+            # unticked ones go through the official removal path below, and the
+            # player's other teams (not the user's to touch) are kept.
             try:
-                team_id_list = [int(tid) for tid in request.httprequest.form.getlist('team_ids')]
+                team_id_list = {int(tid) for tid in request.httprequest.form.getlist('team_ids')}
             except Exception:
-                team_id_list = []
-            # Defense-in-depth: restrict to teams where current user is staff
-            allowed_team_ids = self._team_targets().ids
-            filtered_team_ids = [tid for tid in team_id_list if tid in allowed_team_ids]
-            # Always set the M2M command, even if empty, to allow clearing all teams
-            vals['team_ids'] = [(6, 0, list(set(filtered_team_ids)))]
-            if post.get('date_of_birth'):
-                vals.update({
-                    'date_of_birth': post.get('date_of_birth'),
-                })
+                team_id_list = set()
+            allowed = self._team_targets()
+            posted = allowed.filtered(lambda t: t.id in team_id_list)
+            current_teams = current.team_ids
+            added = posted - current_teams
+            removed_teams = (current_teams & allowed) - posted
+            if added:
+                vals['team_ids'] = [Command.link(team.id) for team in added]
+            if dob_date and dob_date != current.date_of_birth:
+                vals['date_of_birth'] = dob_date
                 
-            # Medical information
-            if 'allergies' in post:
-                _all = (post.get('allergies') or '').strip()
-                vals.update({
-                    'allergies': _all if _all else False,
-                })
+            # Medical information (task 1630: the allergy / medical-alert block)
+            vals.update(request.env['sports.patient']._sc_medical_vals_from_post(post))
                 
             if 'team_info_notes' in post:
                 _notes = (post.get('team_info_notes') or '').strip()
@@ -549,16 +595,39 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 _tr = (post.get('training_recommendation') or '').strip()
                 vals['training_recommendation'] = _tr if _tr else False
 
-        # Update the patient - no sudo needed as field-level security is in place
-        if vals:
+        # Update the patient - no sudo needed as field-level security is in
+        # place. Task 1600: the identity confirmation is passed on only when
+        # the form's confirm step posted it.
+        writer = patient
+        if post.get('identity_confirmed') == '1':
+            writer = writer.with_context(sc_identity_confirmed=True)
+        if vals or removed_teams:
             try:
-                patient.write(vals)
+                with request.env.cr.savepoint():
+                    if vals:
+                        writer.write(vals)
+                    for team in removed_teams:
+                        patient.remove_from_team(team.id, clear_pending=True)
+                    patient.flush_recordset()
             except ValidationError as ve:
-                self._portal_flash(str(ve) or _('Invalid combination of match and practice status.'), post)
+                flash(str(ve) or _('Invalid combination of match and practice status.'))
                 return request.redirect(edit_url)
             except Exception as e:
-                self._portal_flash(self._user_error_text(e, 'patient') or _('An unexpected error occurred.'), post)
+                flash(self._user_error_text(e, 'patient') or _('An unexpected error occurred.'))
                 return request.redirect(edit_url)
+
+        # Task 1600: unticking the user's last team on this player ends their
+        # access — land on the players list with a toast, never on a 403.
+        try:
+            self._check_access_to_patient(patient.id)
+        except (AccessError, MissingError):
+            request.session['notification'] = {
+                'type': 'success',
+                'title': _('Player updated'),
+                'message': _("The player is no longer on any of your teams."),
+                'sticky': False,
+            }
+            return request.redirect('/my/players')
 
         # Update or create primary emergency contact (TPs and coaches), regardless of patient field changes
         if is_treatment_prof or is_coach:
@@ -687,6 +756,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def add_contact_form(self, patient_id, **post):
         """Show form to add a new emergency contact for a player"""
         patient = self._check_access_to_patient(patient_id)
+        if self._sc_app_shell_active():
+            # Owner review 2026-10-10: added inline on the Contacts tab.
+            return request.redirect(self._sc_player_tab_url(patient.id, 'info'))
             
         # Task 1544: same-site paths only (rendered as a link, then posted back).
         return_url = self._safe_return_url(
@@ -709,17 +781,14 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
 
         # PRG: surface a stashed validation error + re-prefill the entered fields.
-        flash_error, flash_data = self._portal_pop_flash()
+        flash_error, flash_data = self._portal_pop_flash(('contact_add', patient.id))
         if flash_error:
             values['error'] = flash_error
             values.update(flash_data)
 
-        # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            for key in ('contact', 'name', 'contact_type', 'mobile', 'email'):
-                values.setdefault(key, None)
-        return self._sc_render('bemade_sports_clinic.portal_add_contact',
-                               'bemade_sports_clinic.sc_app_contact_form', values)
+        # The shell redirects to the Contacts tab above (owner review
+        # 2026-10-10): this is today's page only.
+        return request.render('bemade_sports_clinic.portal_add_contact', values)
     
     @http.route(['/my/player/contact/save'], type='http', auth='user', website=True, methods=['POST'])
     def add_contact_submit(self, **post):
@@ -741,7 +810,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         
         # Required fields
         if not post.get('name') or not post.get('contact_type'):
-            self._portal_flash(_("Name and contact type are required fields"), post)
+            self._portal_flash(_("Name and contact type are required fields"), post, ('contact_add', patient.id))
+            return request.redirect('/my/player/contact/add?patient_id=%s' % patient_id)
+        # Task 1645: a mobile the clinic's phone rule refuses.
+        phone_error = self._sc_phone_error(post, 'mobile')
+        if phone_error:
+            self._portal_flash(phone_error, post, ('contact_add', patient.id))
             return request.redirect('/my/player/contact/add?patient_id=%s' % patient_id)
         
         # Prepare values for contact creation
@@ -775,6 +849,9 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return request.redirect('/my/players')
             
         patient = self._check_access_to_patient(contact.patient_id.id)
+        if self._sc_app_shell_active():
+            # Owner review 2026-10-10: edited inline on the Contacts tab.
+            return request.redirect(self._sc_player_tab_url(patient.id, 'info'))
             
         # Task 1544: same-site paths only (rendered as a link, then posted back).
         return_url = self._safe_return_url(
@@ -797,17 +874,14 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
 
         # PRG: surface a stashed validation error + re-prefill the entered fields.
-        flash_error, flash_data = self._portal_pop_flash()
+        flash_error, flash_data = self._portal_pop_flash(('contact_edit', contact.id))
         if flash_error:
             values['error'] = flash_error
             values.update(flash_data)
 
-        # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
-            for key in ('contact', 'name', 'contact_type', 'mobile', 'email'):
-                values.setdefault(key, None)
-        return self._sc_render('bemade_sports_clinic.portal_edit_contact',
-                               'bemade_sports_clinic.sc_app_contact_form', values)
+        # The shell redirects to the Contacts tab above (owner review
+        # 2026-10-10): this is today's page only.
+        return request.render('bemade_sports_clinic.portal_edit_contact', values)
     
     @http.route(['/my/player/contact/update'], type='http', auth='user', website=True, methods=['POST'])
     def edit_contact_submit(self, **post):
@@ -834,7 +908,12 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         
         # Required fields
         if not post.get('name') or not post.get('contact_type'):
-            self._portal_flash(_("Name and contact type are required fields"), post)
+            self._portal_flash(_("Name and contact type are required fields"), post, ('contact_edit', contact.id))
+            return request.redirect('/my/player/contact/edit?contact_id=%s' % contact.id)
+        # Task 1645: a mobile the clinic's phone rule refuses.
+        phone_error = self._sc_phone_error(post, 'mobile')
+        if phone_error:
+            self._portal_flash(phone_error, post, ('contact_edit', contact.id))
             return request.redirect('/my/player/contact/edit?contact_id=%s' % contact.id)
         
         # Prepare values for contact update

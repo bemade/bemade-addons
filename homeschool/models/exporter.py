@@ -50,6 +50,13 @@ def _lines(text):
 
 
 JOURNAL_WEEK_PREFIX = "tracking/journal/"
+# the week file's section heading per review kind (the file is French by design)
+REVIEW_HEADINGS = {
+    "weekly": "Revue de la semaine",
+    "six_weeks": "Revue des six semaines",
+    "january": "Revue de janvier",
+    "june": "Revue de juin",
+}
 
 
 _logger = logging.getLogger(__name__)
@@ -256,12 +263,15 @@ class RepositoryExporter(models.AbstractModel):
         sunday = monday + timedelta(days=6)
         fr = lambda d: babel_format_date(d, "EEE d MMM", locale="fr_CA")
         lines = ["# Semaine %d · %s (%s → %s)" % (self._week_number(student, monday, first_day), iso_week, fr(monday), fr(sunday)), ""]
-        review = self.env["homeschool.review"].search(
-            [("student_id", "=", student.id), ("kind", "=", "weekly"), ("iso_week", "=", iso_week)], order="date desc", limit=1)
-        if review:
-            lines += ["## Revue de la semaine", ""]
-            for label, value in (("Dose tenue ?", review.answer_dose), ("Plafond visible respecté ?", review.answer_cap),
-                                 ("Semaine notée telle quelle ?", review.answer_recorded),
+        # every review of the week, whatever its kind, by date; empty answers are skipped
+        # (the retired « Semaine consignée » question thus shows on old reviews only)
+        reviews = self.env["homeschool.review"].search(
+            [("student_id", "=", student.id), ("iso_week", "=", iso_week)], order="date, id")
+        for review in reviews:
+            lines += ["## " + REVIEW_HEADINGS.get(review.kind, "Revue"), ""]
+            for label, value in (("Dose gardée ?", review.answer_dose),
+                                 ("Plafond souple — on a arrêté aux bons moments ?", review.answer_cap),
+                                 ("Semaine consignée telle quelle ?", review.answer_recorded),
                                  ("Ajustement pour la semaine prochaine", review.adjustment), ("Notes", review.notes)):
                 if value:
                     lines.append("- **%s :** %s" % (label, " ".join(_lines(value))))

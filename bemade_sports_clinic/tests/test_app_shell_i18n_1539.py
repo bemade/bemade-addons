@@ -43,29 +43,34 @@ class TestAppShellI18n1539(TestAppShellI18n1538):
         for term in ('Filtres', 'Effacer les filtres', 'Créer un joueur', 'Rechercher'):
             self.assertIn(term, text, term)
         text = self._fr_text('/my/player?player_id=%s' % self.player.id)
-        for term in ('Aperçu', 'Blessures', 'Infos', 'Nouvelle blessure', 'Modifier le joueur',
-                     'Statut de jeu', 'Prochains événements', 'Blessures actives',
+        # Owner review 2026-10-11: no « Aperçu » tab (status in the header,
+        # training on Infos, the page opens on « Blessures »).
+        for term in ('Blessures', 'Infos', 'Ajouter une blessure',
                      "Appartenance à l'équipe", 'Ajouter une note de traitement',
-                     'Ajouter une activité', 'Match + pratique', 'Aucun jeu'):
+                     # Task 1627: the Match / Practice pill dropdowns.
+                     'Ajouter une activité', 'Match : Oui', 'Pratique : Oui', 'Mettre d\'abord Match à Non'):
             self.assertIn(term, text, term)
-        text = self._fr_text('/my/player/edit?patient_id=%s' % self.player.id)
-        for term in ('Sauvegarde au fil de la saisie', 'Informations médicales', 'Code postal',
-                     'Enregistrer les équipes', 'Terminé'):
+        # The retired edit page's fields, inline on the Info tab (2026-10-10).
+        text = self._fr_text('/my/player?player_id=%s&tab=info' % self.player.id)
+        for term in ('Informations médicales', 'Code postal', 'Terminé'):
             self.assertIn(term, text, term)
 
     def test_injury_pages_in_french(self):
         self._switch(True)
         self._login_tp()
         text = self._fr_text('/my/patient/injury/new?patient_id=%s' % self.player.id)
-        for term in ("Gardée sur cet appareil jusqu'à sa création", 'Créer une blessure',
-                     'Cochez S/O si la date exacte est inconnue'):
+        # Review fixes 2026-10-18: the create button reads « Créer ».
+        for term in ("Gardée sur cet appareil jusqu'à sa création", 'Créer',
+                     'Activez S/O si la date exacte est inconnue'):
             self.assertIn(term, text, term)
         text = self._fr_text('/my/injury/edit?injury_id=%s' % self.injury.id)
         for term in ('Statut de la blessure', 'Visibilité', 'Entraîneurs', 'Masquée',
                      'Historique des notes', 'Oui, supprimer la blessure', 'Supprimer'):
             self.assertIn(term, text, term)
         text = self._fr_text('/my/injury/documents?injury_id=%s' % self.injury.id)
-        for term in ('Téléverser un document', 'Taille max 10 Mo', 'Téléverser'):
+        # Review fixes 2026-10-18 b: the shared multi-file picker's hints.
+        for term in ('Téléverser un document', 'Plusieurs fichiers à la fois — 10 Mo maximum chacun',
+                     'Appliquée à chaque fichier ajouté', 'Téléverser'):
             self.assertIn(term, text, term)
 
     def test_activities_in_french(self):

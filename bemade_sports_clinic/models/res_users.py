@@ -1,9 +1,13 @@
 from odoo import models, fields, api, _, Command
+from odoo.exceptions import ValidationError
 from odoo.tools import format_datetime
 
 from . import sc_app_roles
 from datetime import time, timedelta
 import logging
+
+import colorsys
+import re
 
 import pytz
 
@@ -21,6 +25,32 @@ DIGEST_BASELINE_MIN_AGE = timedelta(hours=1)
 # Roles that receive a per-team line, and how they scope role-visible activity.
 DIGEST_COACH_ROLES = {"head_coach", "coach"}
 DIGEST_TP_ROLES = {"head_therapist", "therapist", "doctor"}
+# Task 1636: a TP assigned to an upcoming event is a recipient even without a
+# team staff row (portal or internal treatment-professional group).
+DIGEST_TP_GROUP_XMLIDS = sc_app_roles._TP_GROUPS
+
+# Task 1605: the events calendar's colour per therapist. Hand-picked for the
+# dark app surface (#1d1a20: every colour >= 3:1), no greys (grey = an
+# unassigned event), ordered so the first ones handed out are far apart.
+SC_CALENDAR_PALETTE = (
+    "#ef5350", "#26c6da", "#ffca28", "#7c8cff", "#66bb6a", "#e057e0",
+    "#ff9248", "#42a5f5", "#c0e04a", "#a77bff", "#2ed3a0", "#ff6fa8",
+    "#f4a99a", "#8fdcf0", "#e8e08a", "#b8b0ff", "#a6e3a1", "#f2a6e6",
+    "#d9a066", "#8cb4ff", "#b5a642", "#4fb3a9", "#e0c3a0", "#c62f8a",
+)
+SC_CALENDAR_COLOR_RE = re.compile(r"^#[0-9a-f]{6}$")
+
+
+def _sc_generated_colors():
+    """Further colours once the palette is exhausted: golden-angle hues,
+    light enough for the dark surface (endless, deterministic)."""
+    index = 0
+    while True:
+        hue = (index * 137.508) % 360 / 360
+        lightness = (0.68, 0.6, 0.76)[index % 3]
+        red, green, blue = colorsys.hls_to_rgb(hue, lightness, 0.62)
+        yield "#%02x%02x%02x" % (round(red * 255), round(green * 255), round(blue * 255))
+        index += 1
 
 
 class User(models.Model):
@@ -30,6 +60,20 @@ class User(models.Model):
         comodel_name="sports.team",
         compute="_compute_accessible_team_ids",
         inverse="_inverse_accessible_team_ids",
+    )
+
+    # Task 1714: inverse of sports.event.assigned_staff_ids (the events the
+    # user covers). Exists so the portal mail.activity record rule can list
+    # every activity on an event the user is assigned to (another team's
+    # event included). active_test off: an archived event's activities stay
+    # reachable, like the event's own m2m.
+    sc_assigned_event_ids = fields.Many2many(
+        comodel_name="sports.event",
+        relation="sports_event_staff_rel",
+        column1="user_id",
+        column2="event_id",
+        string="Assigned Events",
+        context={"active_test": False},
     )
 
     # Task 1244: inverse of sports.quick.note.user_id. Exists so the portal
@@ -91,20 +135,23 @@ class User(models.Model):
         string="Portal Roster Sort",
         copy=False,
     )
-
-    # Task 1538: portal app shell preferences (self-writable; set from
-    # « Plus › Apparence / Navigation » and the app-bar theme toggle through
-    # /my/app/pref, which accepts these two fields only).
-    sc_nav_mode = fields.Selection(
+    # Owner review 2026-10-10: the app shell's « Players » list order, toggled
+    # by the list's switch (same contract as roster_sort_mode). Unset = most
+    # injured first.
+    players_sort_mode = fields.Selection(
         selection=[
-            ("back", "Back + context"),
-            ("crumbs", "Breadcrumbs"),
+            ("status", "By status"),
+            ("name", "Alphabetical"),
         ],
-        string="Portal App Navigation",
-        default="back",
-        required=True,
+        string="Portal Players Sort",
         copy=False,
     )
+
+    # Task 1538: portal app shell preference (self-writable; set from
+    # « Plus › Apparence » and the app-bar theme toggle through /my/app/pref,
+    # which accepts this field only). Task 1579 removed the navigation-mode
+    # setting: the screen width decides (back + context on a phone, the
+    # breadcrumb trail on a laptop).
     sc_theme = fields.Selection(
         selection=[
             ("dark", "Dark"),
@@ -116,6 +163,84 @@ class User(models.Model):
         copy=False,
     )
 
+    # Task 1676: « Afficher les boutons Terminé » (Paramètres). Off by
+    # default: the edit cards' « Done » buttons are hidden and the head
+    # pencil turns into a ✓ that closes the card (it does in both modes).
+    sc_show_done_buttons = fields.Boolean(
+        string="Show « Done » buttons",
+        default=False,
+        copy=False,
+    )
+
+    # Task 1624: the app dashboard's layout (models/sc_dashboard.py) —
+    # {"v": 2, "instances": [...]} (round 2: each with its zone). Not
+    # self-writable: only the validated « Configurer » path
+    # (sc.dashboard._sc_layout_save, sudo) writes it.
+    sc_dashboard_layout = fields.Json(
+        string="App Dashboard Layout",
+        groups="base.group_system",
+        copy=False,
+    )
+
+    # Task 1624, review round 1 (owner 2026-10-29): the players this user
+    # follows (« Suivre », the dashboard's « Joueurs que je suis »). A
+    # relation on the user, not a new model: nothing to share, nothing to
+    # rule. Private by construction — system group only, so neither another
+    # user nor the user themselves reads or writes it over RPC; the app reads
+    # and writes it for ``env.user`` only, through
+    # sports.patient._sc_follow / sc_followed_by_me (readability checked).
+    sc_followed_patient_ids = fields.Many2many(
+        'sports.patient',
+        'sc_user_followed_patient_rel', 'user_id', 'patient_id',
+        string="Followed Players",
+        groups="base.group_system",
+        copy=False,
+    )
+
+    # Task 1605: the user's colour on the events calendar (dot before each
+    # event title, legend). Handed out automatically the first time the user
+    # shows up in the calendar feed (``_sc_calendar_colors``), then stable;
+    # an admin may override it on the user form. Internal users read it;
+    # the portal gets it through the feed (sudo, as the names).
+    sc_calendar_color = fields.Char(
+        string="Calendar Colour",
+        groups="base.group_user",
+        copy=False,
+        help="Colour of this person's events on the portal calendar (#rrggbb). "
+             "Chosen automatically; change it to override.",
+    )
+
+    @api.model
+    def _sc_normalize_calendar_color(self, vals):
+        if vals.get("sc_calendar_color"):
+            vals["sc_calendar_color"] = vals["sc_calendar_color"].strip().lower()
+        return vals
+
+    @api.constrains("sc_calendar_color")
+    def _check_sc_calendar_color(self):
+        for user in self:
+            if user.sc_calendar_color and not SC_CALENDAR_COLOR_RE.match(user.sc_calendar_color):
+                raise ValidationError(_(
+                    "The calendar colour must be a hexadecimal colour like #ef5350."))
+
+    def _sc_calendar_colors(self):
+        """``{user id: '#rrggbb'}`` for these users, handing a colour to the
+        ones without (task 1605): the first palette colour nobody holds
+        (users taken by id), then generated hues — never a colour already
+        held while one is free. Stored, hence stable across sessions."""
+        users = self.sudo().with_context(active_test=False)
+        missing = users.filtered(lambda user: not user.sc_calendar_color).sorted("id")
+        if missing:
+            held = set(users.search([("sc_calendar_color", "!=", False)]).mapped("sc_calendar_color"))
+            candidates = (colour for colour in SC_CALENDAR_PALETTE if colour not in held)
+            generated = (colour for colour in _sc_generated_colors()
+                         if colour not in held and colour not in SC_CALENDAR_PALETTE)
+            for user in missing:
+                colour = next(candidates, None) or next(generated)
+                held.add(colour)
+                user.sc_calendar_color = colour
+        return {user.id: user.sc_calendar_color for user in users}
+
     @property
     def SELF_READABLE_FIELDS(self):
         return super().SELF_READABLE_FIELDS + [
@@ -123,8 +248,9 @@ class User(models.Model):
             "digest_send_when_empty",
             "teams_sort_mode",
             "roster_sort_mode",
-            "sc_nav_mode",
+            "players_sort_mode",
             "sc_theme",
+            "sc_show_done_buttons",
         ]
 
     @property
@@ -134,9 +260,19 @@ class User(models.Model):
             "digest_send_when_empty",
             "teams_sort_mode",
             "roster_sort_mode",
-            "sc_nav_mode",
+            "players_sort_mode",
             "sc_theme",
+            "sc_show_done_buttons",
         ]
+
+    def _sc_backend_link_recipient(self):
+        """Task 1639: True when this user's notification links should open
+        the BACKEND — an internal user with no clinic role. Every clinic
+        role (internal therapist, clinic admin, coach, portal therapist)
+        gets the app."""
+        self.ensure_one()
+        # « internal » is any backend user, not a clinic role.
+        return not self.share and not (set(self._sc_app_roles()) - {"internal"})
 
     def _sc_app_roles(self):
         """The user's portal-app role SET (task 1538) — see
@@ -191,6 +327,8 @@ class User(models.Model):
     
     def write(self, vals):
         """Override write to trigger treatment professional group assignment when portal access is granted."""
+        if vals.get('sc_calendar_color'):  # task 1605
+            vals = self._sc_normalize_calendar_color(dict(vals))
         # Process user updates for portal access changes
 
         # Archiving a user (portal-access revoke) must scrub the person from
@@ -255,6 +393,8 @@ class User(models.Model):
         """Override create to trigger treatment professional group assignment when portal users are created."""
         # Process user creation for portal access
         
+        # Task 1605: a calendar colour is stored lower case.
+        vals_list = [self._sc_normalize_calendar_color(dict(vals)) for vals in vals_list]
         # Create the users first
         users = super().create(vals_list)
         
@@ -360,9 +500,11 @@ class User(models.Model):
             return snaps[1]
         return recent
 
-    def _digest_pending_verify_count(self, team):
+    def _digest_pending_verify_count(self, team, role=None):
         """Open 'Verify injury' to-do activities on the team's injuries (the
-        count only — the underlying activities are untouched)."""
+        count only — the underlying activities are untouched). Task 1589: a
+        coach line counts only the ones assigned to or created by the
+        recipient (a coach never learns of other staff's activities)."""
         injuries = (
             self.env["sports.patient.injury"]
             .sudo()
@@ -372,11 +514,12 @@ class User(models.Model):
             return 0
         # Task 1409: verification To-Dos live on the patient, keyed by the
         # technical injury_id link (+ the summary marker, as before).
-        return (
-            self.env["mail.activity"]
-            .sudo()
-            .search_count(injuries._verify_activity_domain())
-        )
+        domain = injuries._verify_activity_domain()
+        if role == "coach":
+            domain = domain + [
+                "|", ("user_id", "=", self.id), ("create_uid", "=", self.id),
+            ]
+        return self.env["mail.activity"].sudo().search_count(domain)
 
     def _digest_build_team_line(self, staff, role, now, cutoff, base_url):
         """Build one PHI-free per-team summary dict for the recipient, scoped to
@@ -408,13 +551,16 @@ class User(models.Model):
                 lambda p: p[act_field] and p[act_field] >= cutoff
             )
         )
-        pending_verify = self._digest_pending_verify_count(team)
+        pending_verify = self._digest_pending_verify_count(team, role)
         pending_removal = len(patients.filtered("pending_removal"))
 
         # Task 1396: the dashboard link follows the RECIPIENT, not the surface.
         # Here ``self`` IS the recipient user, so ``share`` is the exact signal
         # — no partner-side inference and no multi-user ambiguity.
-        url = team._dashboard_url(base_url, internal=not self.share)
+        # Task 1639: anyone with a clinic role (internal therapist, clinic
+        # admin, coach, portal therapist) gets the app link; the backend
+        # link only for an internal user with no clinic role.
+        url = team._dashboard_url(base_url, internal=self._sc_backend_link_recipient())
         # Task 1270 (slice F): the full team announcement text rides in the
         # briefing, under the all-staff framing. This is an intentional,
         # author-written all-staff broadcast (NOT player PHI) — it carries its
@@ -453,12 +599,18 @@ class User(models.Model):
 
         Only eligible staff lines are included: silent_notifications and
         archived/revoked access are dropped (``_is_follower_eligible``); the
-        ``other`` role is skipped; doctors are scoped as TP."""
+        ``other`` role is skipped; doctors are scoped as TP.
+
+        Task 1636: the events the user is ASSIGNED to (``assigned_staff_ids``,
+        same window + states via ``_dashboard_upcoming_events_domain``) join
+        the list; one not already brought in by a staff team is flagged
+        ``assigned`` with its teams as ``assigned_label``."""
         self.ensure_one()
         partner = self.partner_id
         team_lines = []
         seen_events = self.env["sports.event"].sudo()
         events = []
+        assigned_ids = set()
         for staff in partner.sudo().team_staff_rel_ids:
             if not staff._is_follower_eligible():
                 continue
@@ -475,6 +627,15 @@ class User(models.Model):
                 if ev not in seen_events:
                     seen_events |= ev
                     events.append(ev)
+        assigned_events = self.env["sports.event"].sudo().search(
+            self.env["sports.team"]._dashboard_upcoming_events_domain()
+            + [("assigned_staff_ids", "in", self.ids)]
+        )
+        for ev in assigned_events:
+            if ev not in seen_events:
+                seen_events |= ev
+                events.append(ev)
+                assigned_ids.add(ev.id)
         team_lines.sort(key=lambda l: (-l["changes"], l["name"] or ""))
         events.sort(key=lambda e: e.date_start or fields.Datetime.now())
         tz_name = self._digest_resolve_timezone()
@@ -487,10 +648,18 @@ class User(models.Model):
                     self.env, ev.date_start, tz=tz_name,
                     dt_format="EEE d MMM, HH 'h' mm", lang_code=ev_lang,
                 )
+            assigned = ev.id in assigned_ids
+            assigned_label = ""
+            if assigned:
+                assigned_label = ", ".join(
+                    n for n in ev.team_ids.mapped("name") if n
+                ) or (ev.partner_id.name or "")
             event_data.append({
                 "name": ev.name,
                 "date_start": ev.date_start,
                 "date_label": date_label,
+                "assigned": assigned,
+                "assigned_label": assigned_label,
             })
         return team_lines, event_data
 
@@ -538,7 +707,7 @@ class User(models.Model):
                     "Your daily team briefing / Votre sommaire quotidien d'équipe:"
                 )
             ),
-            Markup('<p style="color:#888;font-size:12px;">%s</p>')
+            Markup('<p style="color:#767676;font-size:12px;">%s</p>')
             % escape(
                 _(
                     "Changes over the last %(hours)s h / Changements des "
@@ -560,7 +729,7 @@ class User(models.Model):
                 lines.append(
                     Markup("<p><strong>%s%s</strong></p>")
                     % (
-                        escape(_("Team announcement / Annonce de l'équipe:")),
+                        escape(_("Team announcement / Annonce d'équipe:")),
                         escape(expired_suffix),
                     )
                 )
@@ -639,15 +808,22 @@ class User(models.Model):
                     if ev["date_start"]
                     else ""
                 )
-                ev_items.append(
-                    escape(
-                        _(
-                            "%(name)s %(when)s",
-                            name=ev["name"] or "",
-                            when=when,
-                        )
+                if ev.get("assigned"):
+                    # Task 1636: an event reached only through an assignment.
+                    label = _(
+                        "%(name)s %(when)s · assigned (%(team)s) / "
+                        "assigné·e (%(team)s)",
+                        name=ev["name"] or "",
+                        when=when,
+                        team=ev.get("assigned_label") or "",
                     )
-                )
+                else:
+                    label = _(
+                        "%(name)s %(when)s",
+                        name=ev["name"] or "",
+                        when=when,
+                    )
+                ev_items.append(escape(label))
             ev_lines.append(
                 Markup("<ul>%s</ul>")
                 % Markup("").join(Markup("<li>%s</li>") % it for it in ev_items)
@@ -664,7 +840,7 @@ class User(models.Model):
             )
             parts.append(Markup("").join(ev_lines))
         parts.append(
-            Markup('<p style="color:#888;font-size:12px;">%s</p>')
+            Markup('<p style="color:#767676;font-size:12px;">%s</p>')
             % escape(
                 _(
                     "No medical data is included. / Aucune donnée médicale n'est "
@@ -710,7 +886,7 @@ class User(models.Model):
                 team_lines, events, window_hours, events_days
             )
         subject = self.with_context(lang=lang).env._(
-            "FitCrew — daily briefing / sommaire quotidien"
+            "Le Fit Crew — daily briefing / sommaire quotidien"
         )
         try:
             self.env["mail.thread"].sudo().with_context(lang=lang).message_notify(
@@ -726,18 +902,45 @@ class User(models.Model):
 
     @api.model
     def _digest_eligible_users(self):
-        """Active users who are sports-clinic staff in a coach/TP role."""
+        """Active users who are sports-clinic staff in a coach/TP role, plus
+        (task 1636) active treatment professionals assigned to an upcoming
+        event in the window, even without a team staff row. One search for the
+        windowed assigned events, one for the users — never one per user."""
         staff = (
             self.env["sports.team.staff"]
             .sudo()
             .search([("role", "in", list(DIGEST_COACH_ROLES | DIGEST_TP_ROLES))])
         )
+        users = self.browse()
         partners = staff.partner_id
-        if not partners:
-            return self.browse()
-        return self.sudo().search(
-            [("partner_id", "in", partners.ids), ("active", "=", True)]
+        if partners:
+            users = self.sudo().search(
+                [("partner_id", "in", partners.ids), ("active", "=", True)]
+            )
+        tp_group_ids = [
+            g.id
+            for g in (
+                self.env.ref(xmlid, raise_if_not_found=False)
+                for xmlid in DIGEST_TP_GROUP_XMLIDS
+            )
+            if g
+        ]
+        assigned = (
+            self.env["sports.event"]
+            .sudo()
+            .search(
+                self.env["sports.team"]._dashboard_upcoming_events_domain()
+                + [("assigned_staff_ids", "!=", False)]
+            )
+            .assigned_staff_ids
         )
+        if assigned and tp_group_ids:
+            users |= self.sudo().search([
+                ("id", "in", assigned.ids),
+                ("active", "=", True),
+                ("all_group_ids", "in", tp_group_ids),
+            ])
+        return users
 
     @api.model
     def _cron_send_morning_digests(self, now=None):

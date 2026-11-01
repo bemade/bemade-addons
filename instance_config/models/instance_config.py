@@ -31,7 +31,7 @@ class InstanceConfig(models.AbstractModel):
     def apply_document(self, document, dry_run=False):
         """Apply a parsed document. Returns the change report."""
         report = engine.write(self.env, document, dry_run=dry_run)
-        _logger.info("instance.config: %s%s", report.summary(),
+        _logger.info("instance.config: %s%s", report.summary(self.env),
                      " (dry run)" if dry_run else "")
         for domain, detail in report.unhandled:
             _logger.warning("instance.config: [%s] %s", domain, detail)

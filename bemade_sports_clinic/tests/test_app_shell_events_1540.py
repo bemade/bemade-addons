@@ -71,7 +71,8 @@ class TestAppShellEvents1540(Events1540Common):
         self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'), ['upcoming', 'past', 'calendar'])
         ids = [int(x) for x in tree.xpath('//*[@data-sc-event-id]/@data-sc-event-id')]
         self.assertIn(self.event.id, ids)
-        self.assertEqual(tree.xpath('//header//a[@data-sc-action="events.create"]/@href'), ['/my/event/create'])
+        # Task 1607 (deliberate update): « + Ajouter » is in the list header.
+        self.assertEqual(tree.xpath('//div[contains(@class, "o_sc_list_header")]//a[@data-sc-action="events.create"]/@href'), ['/my/event/create'])
         game = tree.xpath('//a[@data-sc-event-type="game"]/@href')[0]
         self.assertIn('event_type=game', game)
         _text, tree = self._get('/my/events?no_default_dates=1&event_type=clinic')
@@ -100,13 +101,18 @@ class TestAppShellEvents1540(Events1540Common):
         cards = tree.xpath('//*[@data-sc-timesheet-id]/@data-sc-timesheet-id')
         self.assertEqual(cards, [str(self.timesheet.id)])
         for sheet, action in (('sc_ts_add_sheet', '/my/event/%s/timesheet/add' % self.event.id),
-                              ('sc_ts_edit_%s' % self.timesheet.id, '/my/sc/timesheet/%s/edit' % self.timesheet.id),
                               ('sc_ts_delete_%s' % self.timesheet.id, '/my/sc/timesheet/%s/delete' % self.timesheet.id),
                               ('sc_event_cancel_sheet', '/my/event/%s/cancel' % self.event.id)):
             form = tree.xpath('//dialog[@id="%s"]//form' % sheet)[0]
             self.assertEqual(form.get('action'), action)
             self.assertTrue(form.xpath('.//input[@name="csrf_token"]'), sheet)
-        self.assertEqual(tree.xpath('//header//button/@data-sc-sheet-open'), ['sc_ts_add_sheet'])
+        # Task 1607 (deliberate update): « + Ajouter » in the timesheets list
+        # header (was in the app bar).
+        self.assertEqual(tree.xpath('//div[contains(@class, "o_sc_list_header")]//button/@data-sc-sheet-open'),
+                         ['sc_ts_add_sheet'])
+        self.assertFalse(tree.xpath('//header//button/@data-sc-sheet-open'))
+        # The own timesheet is edited in place (pencil card, owner review 2026-10-11).
+        self.assertTrue(tree.xpath('//*[@data-sc-edit-card="timesheet-%s"]' % self.timesheet.id))
 
     def test_detail_coach_no_timesheets(self):
         self._switch(True)
@@ -141,12 +147,15 @@ class TestAppShellEvents1540(Events1540Common):
         self.assertIn(self.tp, event.assigned_staff_ids)
         self.assertIn('Line one', event.description)
         self.assertIn('<br', str(event.description))
-        _text, tree = self._get('/my/event/%s/edit' % event.id)
-        form = tree.xpath('//form[@data-sc-event-form]')[0]
-        self.assertEqual(form.get('action'), '/my/event/%s/save' % event.id)
-        self.assertEqual(form.xpath('.//input[@name="team_ids"]/@value'), [str(self.team_a.id)])
-        self.assertEqual(form.xpath('.//textarea[@name="description"]/text()')[0].strip(),
-                         'Line one\nLine two')
+        # Owner review 2026-10-11: edited in place on the event page (pencil
+        # card, test_app_shell_pencil UC-PE9); the edit page leads there.
+        resp = self.url_open('/my/event/%s/edit' % event.id, allow_redirects=False)
+        self.assertIn(resp.status_code, (302, 303))
+        _text, tree = self._get('/my/event/%s' % event.id)
+        props = {json.loads(p)['field']: json.loads(p) for p in tree.xpath(
+            '//*[@data-sc-edit-card="event"]//owl-component/@props')}
+        self.assertEqual(props['team_ids']['value'], str(self.team_a.id))
+        self.assertEqual(props['description']['value'], 'Line one\nLine two')
         resp = self._post('/my/event/%s/save' % event.id, {
             'name': 'SC 1540 Edited', 'team_ids': str(self.team_a.id), 'assigned_staff_ids': '',
             'description': '', 'description_format': 'text',

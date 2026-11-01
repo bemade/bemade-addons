@@ -78,3 +78,52 @@ class TestConversationInboxRouteViaAlias(TransactionCase):
             )
         mocked_route.assert_called_once()
         self.assertEqual(result, fake_conversation.id)
+
+
+class TestRouteViaAliasDoesNotFlagFiler(TransactionCase):
+    """The user routing their own inbox item through the gateway has just
+    read it: the inbound post must flag everyone else, not them."""
+
+    def test_filer_is_not_flagged_unread(self):
+        from odoo.addons.mail.tests.common import mail_new_test_user
+
+        filer = mail_new_test_user(self.env, login="route_filer", groups="base.group_user")
+        other = mail_new_test_user(self.env, login="route_other", groups="base.group_user")
+        customer = self.env["res.partner"].create(
+            {"name": "Route Customer", "email": "route.customer@example.com"}
+        )
+        transport = self.env["conversation.transport"].create(
+            {"name": "Route Transport", "browsable": True}
+        )
+        team = self.env["mail.conversation.team"].create(
+            {"name": "Route Team", "member_ids": [(6, 0, [filer.id, other.id])]}
+        )
+        conversation = self.env["mail.conversation"].create(
+            {"name": "Routed", "team_id": team.id}
+        )
+
+        def gateway(model_self, raw, model="mail.conversation"):
+            # The gateway posts the mail as an external-authored message,
+            # in the context the caller handed down.
+            conversation.with_context(**model_self.env.context).message_post(
+                body="<p>hi</p>", author_id=customer.id, message_type="comment"
+            )
+            return conversation
+
+        with patch.object(
+            type(transport),
+            "_fetch",
+            return_value={"external_id": "ext-3", "rfc822": b"raw"},
+            autospec=True,
+        ), patch.object(
+            type(self.env["mail.conversation"]),
+            "_route_via_alias",
+            side_effect=gateway,
+            autospec=True,
+        ):
+            self.env["mail.conversation"].with_user(filer).action_route_via_alias(
+                transport.id, "ext-3"
+            )
+        members = {m.user_id: m.unread for m in conversation.sudo().member_ids}
+        self.assertTrue(members[other])
+        self.assertFalse(members.get(filer, False))

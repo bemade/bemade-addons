@@ -295,6 +295,7 @@
         <field name="arch" type="xml">
             <form string="Review">
                 <header>
+                    <button name="action_open_close_week_wizard" type="object" string="Close the week" class="btn-primary"/>
                     <button name="action_record_adult_hours" type="object" string="Record adult hours (R1-ADULTE)" class="btn-secondary"/>
                 </header>
                 <sheet>
@@ -303,7 +304,7 @@
                         <group><field name="adult_hours"/><field name="missing_indicator_ids" widget="many2many_tags"/><field name="days_without_journal"/></group>
                     </group>
                     <group>
-                        <field name="answer_dose"/><field name="answer_cap"/><field name="answer_recorded"/><field name="adjustment"/><field name="notes"/>
+                        <field name="answer_dose"/><field name="answer_cap"/><field name="adjustment"/><field name="notes"/>
                     </group>
                 </sheet>
                 <chatter/>

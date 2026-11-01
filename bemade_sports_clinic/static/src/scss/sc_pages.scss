@@ -36,6 +36,13 @@ $sc-laptop: 992px;
         position: sticky;
         top: calc(var(--sc-appbar-height) + env(safe-area-inset-top, 0px));
         z-index: 10;
+
+        // Owner review 2026-10-11: the active page tab is Mauve (the brand
+        // secondary), not the green accent of the other toggles.
+        > a[aria-pressed="true"] {
+            background: var(--sc-secondary);
+            color: #ffffff;
+        }
     }
 
     .o_sc_section_sub {
@@ -58,6 +65,14 @@ $sc-laptop: 992px;
         color: var(--sc-accent);
         cursor: pointer;
         min-height: 32px;
+    }
+
+    .o_sc_section_more.o_sc_link_btn {
+        font-family: var(--sc-font-text);
+        font-size: var(--sc-text-sm);
+        letter-spacing: 0;
+        text-transform: none;
+        padding: 0;
     }
 
     .o_sc_btn_sm {
@@ -83,37 +98,116 @@ $sc-laptop: 992px;
         color: var(--sc-fg-2);
     }
 
-    // Announcement
+    // Announcement — task 1719 (layout B): no card; a title line, the
+    // megaphone beside the text clamped to 3 lines, a muted « Until » line,
+    // a thin divider before the counters.
     .o_sc_announcement {
-        border-left: 4px solid var(--sc-secondary);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding-bottom: var(--sc-space-4);
+        border-bottom: 1px solid var(--sc-line);
     }
 
-    .o_sc_announcement_expired {
-        border-left-color: var(--sc-line);
-
-        .o_sc_announcement_body {
-            text-decoration: line-through;
-            opacity: 0.7;
-        }
-    }
-
-    .o_sc_announcement_head {
+    .o_sc_announcement_titleline {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: var(--sc-space-2);
+        gap: 2px;
+        min-width: 0;
+
+        .o_sc_section_header {
+            flex: 1 1 auto;
+            min-width: 0;
+            margin-top: 0;
+        }
+
+        .o_sc_announcement_heading {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .o_sc_card_icons {
+            gap: 0;
+            margin-right: -10px;
+        }
+
+        .o_sc_icon_btn {
+            width: 40px;
+            min-width: 40px;
+            height: var(--sc-tap);
+
+            .o_sc_icon {
+                width: 18px;
+                height: 18px;
+            }
+        }
     }
 
-    .o_sc_announcement_title {
+    .o_sc_card_icons {
         display: inline-flex;
         align-items: center;
-        gap: var(--sc-space-2);
+        gap: 2px;
+        margin-left: auto;
 
-        .o_sc_icon {
+        .o_sc_inline_form {
+            display: inline-flex;
+        }
+    }
+
+    .o_sc_announcement_content {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding-top: 2px;
+
+        > .o_sc_icon {
+            flex: none;
             width: 18px;
             height: 18px;
+            margin-top: 2px;
             color: var(--sc-secondary);
         }
+    }
+
+    .o_sc_announcement_text {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .o_sc_announcement_body {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.4;
+    }
+
+    .o_sc_announcement_body[data-sc-clamp]:not([data-sc-clamp-open]) {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .o_sc_announcement_meta {
+        font-size: var(--sc-text-xs);
+        color: var(--sc-fg-3);
+
+        .o_sc_announcement_more {
+            min-height: 0;
+            font-size: inherit;
+        }
+    }
+
+    .o_sc_announcement_empty {
+        margin: 0;
+        font-size: 13px;
+    }
+
+    .o_sc_announcement_expired .o_sc_announcement_body {
+        text-decoration: line-through;
+        opacity: 0.7;
     }
 
     .o_sc_card_actions {
@@ -271,6 +365,14 @@ $sc-laptop: 992px;
         &::backdrop {
             background: rgba(0, 0, 0, 0.55);
         }
+
+        // Task 1644: with ``website`` installed, its ``section > *
+        // { position: relative }`` beat the browser's own « fixed » of an
+        // open modal sheet placed right under a <section> (the injury card's
+        // « Add documents »): the sheet scrolled away with the page.
+        &:modal {
+            position: fixed;
+        }
     }
 
     @media (min-width: $sc-laptop) {
@@ -323,13 +425,46 @@ $sc-laptop: 992px;
         }
     }
 
+    // Task 1581: the shared history entry / sheet body (sc_history_entry).
+    .o_sc_history_fragment {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+    }
+
+    .o_sc_history_meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .o_sc_history_body {
+        margin: 4px 0 0;
+    }
+
+    .o_sc_history_cleared {
+        margin: 4px 0 0;
+        font-style: italic;
+    }
+
+    .o_sc_history_entry[data-sc-history-state="archived"] .o_sc_history_body {
+        color: var(--sc-fg-2);
+    }
+
     // Toast
     .o_sc_toast {
         position: fixed;
         left: 50%;
         transform: translateX(-50%);
-        bottom: calc(var(--sc-tabs-height) + 16px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(var(--sc-tabs-height) + 16px + env(safe-area-inset-bottom, 0px) + var(--sc-ribbon-h, 0px));
         z-index: 40;
+        // Review round 1 (2026-10-26, #1678): as wide as its content up to
+        // the screen minus the margins. Shrink-to-fit alone measured it
+        // against the half screen right of `left: 50%`, and the text column
+        // (min-width: 0) collapsed to one word per line.
+        width: max-content;
+        box-sizing: border-box;
         max-width: calc(100% - 32px);
         background: var(--sc-surface-2);
         color: var(--sc-fg);
@@ -344,6 +479,7 @@ $sc-laptop: 992px;
         .o_sc_toast {
             bottom: 24px;
             left: calc(50% + var(--sc-rail-width) / 2);
+            max-width: calc(100% - var(--sc-rail-width) - 48px);
         }
     }
 
@@ -402,6 +538,30 @@ $sc-laptop: 992px;
             color: var(--sc-fg-2) !important;
         }
 
+        // Task 1728: inside a .card-body, Odoo's frontend gives .text-muted
+        // the LIGHT theme's grey (bootstrap_review_frontend's card-body rule,
+        // `.card-body:not(.card[data-vxml] .card-body) .text-muted`, !important
+        // and more specific than the rule above): the digest's training
+        // recommendation, « Retour prévu » and injury lines were dark grey on
+        // the dark card (~1.2:1). Same selector, scoped to the shell, so the
+        // muted token wins in both themes.
+        .card-body:not(.card[data-vxml] .card-body) .text-muted,
+        .card-body .text-muted {
+            color: var(--sc-fg-2) !important;
+        }
+
+        // Task 1614: the digest's « Show details » link and its team
+        // announcement (alert-info / alert-secondary) on the shell surface.
+        .text-primary {
+            color: var(--sc-accent) !important;
+        }
+
+        .alert {
+            --bs-alert-bg: var(--sc-surface-2);
+            --bs-alert-color: var(--sc-fg);
+            --bs-alert-border-color: var(--sc-line);
+        }
+
         .card,
         .list-group-item,
         .modal-content,
@@ -409,6 +569,15 @@ $sc-laptop: 992px;
             background: var(--sc-surface);
             color: var(--sc-fg);
             border-color: var(--sc-line);
+        }
+
+        // Task 1614: Odoo's frontend paints every .card-body with a 90 %
+        // white (bootstrap_review_frontend) — light shell text on near-white.
+        // !important: that rule's :not(.card[data-vxml] .card-body) outweighs
+        // any selector of ours.
+        .card-body {
+            background-color: transparent !important;
+            color: var(--sc-fg) !important;
         }
 
         .card-header,
@@ -438,6 +607,12 @@ $sc-laptop: 992px;
             min-height: 36px;
         }
 
+        .list-group-item-action:hover,
+        .list-group-item-action:focus {
+            background: var(--sc-hover);
+            color: var(--sc-fg);
+        }
+
         .btn-close {
             filter: invert(0.8);
         }
@@ -446,4 +621,18 @@ $sc-laptop: 992px;
     &[data-sc-theme="light"] .o_sc_legacy .btn-close {
         filter: none;
     }
+}
+
+// Task 1676: « Afficher les boutons Terminé » off (the default) — the edit
+// cards' « Done » buttons are hidden; the head pencil's ✓ closes the card.
+.o_sc_app[data-sc-hide-done="1"] {
+    .o_sc_edit_done_actions,
+    .o_sc_edit_done {
+        display: none !important;
+    }
+}
+
+// Task 1676: the head pencil while its card is in edit mode (a ✓).
+.o_sc_app [data-sc-edit-toggle].o_sc_edit_toggle_done {
+    color: var(--sc-accent, currentColor);
 }

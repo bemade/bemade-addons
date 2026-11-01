@@ -1,5 +1,11 @@
+import logging
+
 from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
+
+from ..tools import display, mime
+
+_logger = logging.getLogger(__name__)
 
 
 class ConversationTransport(models.Model):
@@ -61,8 +67,10 @@ class ConversationTransport(models.Model):
         help="Allow users of this account to archive, trash or mark "
         "messages read on the REAL mailbox from the inbox viewer "
         "(_archive_remote/_trash_remote/_mark_read_remote). Off by "
-        "default: mailbox writes must be enabled explicitly per account, "
-        "shared accounts included.",
+        "default: mailbox writes must be enabled explicitly per account. "
+        "On a shared account (no owner) only a Conversations manager can "
+        "switch this on, and deleting additionally needs the 'Delete shared "
+        "mail' permission.",
     )
     artifact_only = fields.Boolean(
         default=False,
@@ -87,6 +95,22 @@ class ConversationTransport(models.Model):
         "mailbox, where filing is the point.",
     )
 
+    record_link_mode = fields.Selection(
+        [("auto", "One-click filing"), ("suggest", "Suggest"), ("off", "Off")],
+        string="Link Replies to Odoo Records",
+        default="suggest",
+        required=True,
+        help="What to do when an inbound message in this mailbox is a "
+        "reply to mail Odoo itself sent (its headers name an Odoo record). "
+        "Applies to personal mailboxes only: a shared mailbox is always "
+        "Off. Suggest: preselect that record in the capture dialog; you "
+        "still confirm. One-click filing: file and link the message "
+        "without the dialog, but only when 'File Replies in Odoo by "
+        "Default' is also on (otherwise it behaves like Suggest); filing "
+        "still needs a click on New Conversation or Link to a Record, and "
+        "Add to Existing only preselects. Off: do nothing.",
+    )
+
     archive_on_capture = fields.Boolean(
         string="Archive After Filing",
         default=False,
@@ -95,6 +119,166 @@ class ConversationTransport(models.Model):
         "conversation, linked to a record, or a filed reply). Off by "
         "default. A transport whose provider cannot archive reports a warning.",
     )
+
+    can_trash_mail = fields.Boolean(
+        string="Can Delete Mail",
+        compute="_compute_can_trash_mail",
+        help="Whether the current user may delete (move to Trash) mail on "
+        "this account: always on a personal account, only with the 'Delete "
+        "shared mail' permission on a shared one.",
+    )
+
+    # ------------------------------------------------------------
+    # Mailbox permission model. Archive / mark read are open to anyone who
+    # can use the transport; deleting in a SHARED mailbox and enabling
+    # write-back on one are gated by groups. The server is authoritative,
+    # the views only mirror it.
+    # ------------------------------------------------------------
+
+    @api.depends_context("uid")
+    @api.depends("user_id")
+    def _compute_can_trash_mail(self):
+        for transport in self:
+            transport.can_trash_mail = transport._user_can_trash_mail()
+
+    def _user_can_trash_mail(self):
+        self.ensure_one()
+        return bool(
+            self.user_id
+            or self.env.su
+            or self.env.user.has_group("conversation_base.group_delete_shared_mail")
+        )
+
+    def _check_shared_write_back_allowed(self, vals=None):
+        """Refuse the transition of a record into the "shared and
+        ``mailbox_writable``" state unless the current user is a
+        Conversations manager. ``vals`` are the values about to be written
+        (``None`` for a record being created, checked as it stands).
+
+        A record that is already in that state is left alone, so an
+        unrelated edit by a non-manager still works; switching write-back
+        off is not restricted either. Setting an owner on a shared account
+        is refused too (ownership takeover), whatever its write-back state.
+        """
+        if self.env.su or self.env.user.has_group(
+            "conversation_base.group_conversation_manager"
+        ):
+            return
+        for transport in self:
+            if vals is None:
+                owner, writable = transport.user_id, transport.mailbox_writable
+                was_shared_writable = False
+            else:
+                owner = (
+                    self.env["res.users"].browse(vals["user_id"])
+                    if "user_id" in vals
+                    else transport.user_id
+                )
+                writable = vals.get("mailbox_writable", transport.mailbox_writable)
+                was_shared_writable = (
+                    transport.mailbox_writable and not transport.user_id
+                )
+            if vals is not None and owner and not transport.user_id:
+                # Taking ownership of a shared account, whatever its
+                # write-back state, would turn it into the taker's personal
+                # account (and let them enable write-back and delete in the
+                # shared mailbox). Only a manager converts shared to personal.
+                raise AccessError(
+                    self.env._(
+                        "Only a Conversations manager can assign an owner "
+                        "to a shared mail account (%(transport)s).",
+                        transport=transport.display_name or transport.name or "",
+                    )
+                )
+            if writable and not owner and not was_shared_writable:
+                raise AccessError(
+                    self.env._(
+                        "Only a Conversations manager can enable mailbox "
+                        "actions (archive, delete, mark read) on a shared "
+                        "mail account (%(transport)s).",
+                        transport=transport.display_name or transport.name or "",
+                    )
+                )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        # Checked after the fact: the record is rolled back with the
+        # exception, and the check then sees real defaults (``user_id``
+        # defaults are context-driven) rather than guessing them from vals.
+        if any(vals.get("mailbox_writable") for vals in vals_list):
+            records.filtered("mailbox_writable")._check_shared_write_back_allowed()
+        return records
+
+    def write(self, vals):
+        if "mailbox_writable" in vals or "user_id" in vals:
+            self._check_shared_write_back_allowed(vals)
+        return super().write(vals)
+
+    # ------------------------------------------------------------
+    # Removing a mailbox. A removed mailbox is archived, never deleted:
+    # ``mail.message.transport_id`` / ``external_id`` and
+    # ``mail.conversation.primary_transport_id`` are the capture-idempotency
+    # and correlation keys of mail already filed from it, and a plain unlink
+    # would null them (the default ``set null`` ondelete). Nothing is sent to
+    # the remote mailbox.
+    # ------------------------------------------------------------
+
+    def _clear_credentials(self):
+        """Wipe every stored secret of this transport. Providers override
+        this to drop their own (password, OAuth tokens, ...); runs with
+        elevated rights because the owner cannot read those fields."""
+
+    def action_remove_mailbox(self):
+        """Disconnect the mailbox from Odoo: stop all use of it, clear its
+        credentials and archive the record. Allowed to the owner of a
+        personal transport and to administrators; a shared transport is an
+        administrator's to manage."""
+        if not self.env.su and not self.env.user.has_group("base.group_system"):
+            if any(transport.user_id != self.env.user for transport in self):
+                raise AccessError(
+                    self.env._("You can only remove your own mailboxes.")
+                )
+        for transport in self.sudo():
+            transport._clear_credentials()
+            transport.write(
+                {
+                    "active": False,
+                    "browsable": False,
+                    "searchable": False,
+                    "sendable": False,
+                    "pushable": False,
+                    "mailbox_writable": False,
+                }
+            )
+        return self._action_after_remove()
+
+    def _action_after_remove(self):
+        """Where the client goes once a mailbox is removed. A feature module
+        that owns a list of mailboxes overrides this to land on it."""
+        return {"type": "ir.actions.act_window_close"}
+
+    @api.ondelete(at_uninstall=False)
+    def _unlink_except_referenced(self):
+        """Refuse to delete a transport mail was filed from (see above)."""
+        for transport in self.sudo():
+            if (
+                self.env["mail.message"].sudo().search_count(
+                    [("transport_id", "=", transport.id)], limit=1
+                )
+                or self.env["mail.conversation"]
+                .sudo()
+                .with_context(active_test=False)
+                .search_count([("primary_transport_id", "=", transport.id)], limit=1)
+            ):
+                raise UserError(
+                    self.env._(
+                        "%(transport)s has mail filed from it and cannot be "
+                        "deleted. Remove it instead: the filed conversations "
+                        "are kept.",
+                        transport=transport.display_name,
+                    )
+                )
 
     # ------------------------------------------------------------
     # Abstract hook interface. Every hook raises NotImplementedError on the
@@ -148,6 +332,28 @@ class ConversationTransport(models.Model):
         IMAP UID rather than an RFC id."""
         self.ensure_one()
         raise NotImplementedError
+
+    def _explicit_reply_message_id(self, conversation):
+        """The RFC822 Message-Id of the message the current send is an
+        explicit answer to (``action_reply(reply_to_message=...)``), or
+        False when the send is a plain, conversation-wide reply.
+
+        Transports thread an outgoing mail against this id when it is set,
+        and fall back to their own rule (the newest message a correspondent
+        has seen) otherwise. Only a message of ``conversation`` counts: the
+        id comes from the context, so it is checked rather than trusted.
+        """
+        message_id = self.env.context.get("conversation_reply_to_message_id")
+        if not message_id:
+            return False
+        target = self.env["mail.message"].sudo().browse(message_id).exists()
+        if (
+            target
+            and target.model == conversation._name
+            and target.res_id == conversation.id
+        ):
+            return target.message_id or False
+        return False
 
     def _send(self, conversation, message, recipients=None, cc=None, bcc=None):
         """Send ``message`` (an already-posted ``mail.message`` on
@@ -217,6 +423,80 @@ class ConversationTransport(models.Model):
         raise NotImplementedError
 
     # ------------------------------------------------------------
+    # Odoo-origin header resolution (task #4144). Transport-agnostic: it
+    # works on the normalized stub, so every provider benefits.
+    # ------------------------------------------------------------
+
+    def _record_link_active(self):
+        """Single gate: personal mailbox and not switched Off. Shared or
+        Off means no fetch, no parse and no query."""
+        self.ensure_one()
+        return bool(self.user_id) and self.record_link_mode != "off"
+
+    def _resolve_record_from_headers(self, stub):
+        """Resolve a normalized stub's Odoo-origin headers to the record it
+        replies to. Header-only and bounded; never raises.
+
+        Returns ``("link", record)``, ``("existing", conversation)`` or
+        ``(False, None)``. A tattoo is only trusted when an exact local
+        ``mail.message.message_id`` matches (the foreign or deleted case
+        degrades to no suggestion); the record is the local message's own
+        ``model``/``res_id`` and must exist and be readable by the current
+        user (never sudo), so nothing unreadable is ever disclosed. A match
+        on a conversation message stops the scan: the reply belongs to that
+        conversation, not to an older business record.
+        """
+        self.ensure_one()
+        try:
+            candidates = mime.odoo_header_candidates(
+                stub.get("message_id"),
+                stub.get("in_reply_to"),
+                stub.get("references"),
+                stub.get("x_odoo_objects"),
+            )
+            msgids = [c["msgid"] for c in candidates if c["msgid"]]
+            if not msgids:
+                return False, None
+            found = {}
+            for msg in (
+                self.env["mail.message"]
+                .sudo()
+                .search_fetch(
+                    [("message_id", "in", msgids)],
+                    ["message_id", "model", "res_id"],
+                    order="id desc",
+                )
+            ):
+                found.setdefault(msg.message_id, msg)
+            for candidate in candidates:
+                msg = found.get(candidate["msgid"]) if candidate["msgid"] else None
+                if not msg:
+                    continue
+                model, res_id = msg.model, msg.res_id
+                if not model or not res_id or model not in self.env:
+                    continue
+                if model == "mail.conversation":
+                    conv = self.env[model].browse(res_id)
+                    if conv.exists() and conv.has_access("read"):
+                        return "existing", conv
+                    # Unreadable or gone: still the conversation's reply,
+                    # so do not fall through to an older record.
+                    return False, None
+                comodel = self.env[model]
+                if (
+                    comodel._transient
+                    or comodel._abstract
+                    or not self.env["ir.model"]._get(model)
+                ):
+                    continue
+                record = comodel.browse(res_id)
+                if record.exists() and record.has_access("read"):
+                    return "link", record
+        except Exception:  # noqa: BLE001 - any failure means no suggestion
+            _logger.debug("Odoo-origin header resolution failed", exc_info=True)
+        return False, None
+
+    # ------------------------------------------------------------
     # RPC entry points for the OWL inbox viewer (conversation_inbox).
     # Explicit-id @api.model entry points rather than instance methods, so
     # the client can call them without first browsing/loading the record.
@@ -246,17 +526,35 @@ class ConversationTransport(models.Model):
                 )
             )
         raw = transport._fetch(external_id)
-        return transport._normalize(raw)
+        stub = transport._normalize(raw)
+        # The viewer renders the body as HTML: whatever the provider's
+        # _normalize produced, the browser only ever gets the strict
+        # display profile (see tools/display.py). Every other key stays
+        # plain data that the client escapes.
+        if isinstance(stub, dict) and "body" in stub:
+            stub = dict(stub, body=display.sanitize_display_html(stub["body"]))
+        return stub
 
-    def _mailbox_action(self, hook, external_id):
+    def _mailbox_action(self, hook, external_id, deleting=False):
         """Gate + dispatch one mailbox write (AC5): the transport must be
         browsable and ``mailbox_writable``; an unimplemented hook becomes
-        a clear UserError rather than a traceback or a silent no-op."""
+        a clear UserError rather than a traceback or a silent no-op.
+        ``deleting`` additionally requires, on a shared transport, the
+        'Delete shared mail' permission (checked before the hook runs)."""
         self.ensure_one()
         if not (self.browsable and self.mailbox_writable):
             raise UserError(
                 self.env._(
                     "%(transport)s does not allow mailbox actions.",
+                    transport=self.display_name,
+                )
+            )
+        if deleting and not self._user_can_trash_mail():
+            raise AccessError(
+                self.env._(
+                    "You are not allowed to delete mail in the shared mail "
+                    "account %(transport)s. Ask an administrator for "
+                    "the 'Delete shared mail' permission.",
                     transport=self.display_name,
                 )
             )
@@ -278,7 +576,9 @@ class ConversationTransport(models.Model):
 
     @api.model
     def trash_item(self, transport_id, external_id):
-        return self.browse(transport_id)._mailbox_action("_trash_remote", external_id)
+        return self.browse(transport_id)._mailbox_action(
+            "_trash_remote", external_id, deleting=True
+        )
 
     @api.model
     def mark_read_item(self, transport_id, external_id):

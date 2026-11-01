@@ -1,0 +1,19 @@
+{
+  "stepsFile": "../../static/tests/tours/send_with_signature.steps.js",
+  "startPath": "/odoo/action-base.action_partner_form",
+  "login": { "path": "/web/login", "formSelector": "form" },
+  "viewport": { "width": 1280, "height": 800 },
+  "voice": "fr_FR-siwis-medium",
+  "title": "Envoyer un courriel avec la signature de l'entreprise",
+  "introNarration": "Voici comment envoyer un courriel à un contact depuis Odoo avec la signature standard de l'entreprise, remplie automatiquement à votre nom.",
+  "outroTitle": "Une signature uniforme, sans effort",
+  "outroNarration": "Chaque courriel sort avec la même signature, à jour avec vos coordonnées, sans que vous ayez à la taper ni à la copier.",
+  "narrationOverrides": {
+    "open-contact": "Ouvrez un contact, par exemple l'un de vos clients, depuis la liste des contacts.",
+    "open-composer": "Dans le fil de discussion, cliquez sur Envoyer un message pour écrire un courriel au contact.",
+    "see-signature": "Sous votre message, vous voyez la signature de l'entreprise, remplie avec votre nom, votre titre et votre numéro de téléphone. Vous n'avez rien à taper.",
+    "type-message": "Écrivez votre message comme d'habitude.",
+    "send": "Cliquez sur Envoyer. Le courriel part avec la signature ajoutée une seule fois, au bas du message.",
+    "message-posted": "Le message apparaît maintenant dans le fil de discussion du contact."
+  }
+}

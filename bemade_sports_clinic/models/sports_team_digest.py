@@ -4,6 +4,8 @@ import logging
 
 import pytz
 
+from odoo.tools import format_date
+
 _logger = logging.getLogger(__name__)
 
 # Config params (global). The capture time is the team-local clock time at/after
@@ -131,6 +133,62 @@ class SportsTeamDigest(models.Model):
                 },
             )
 
+    # ------------------------------------------- history row counts (task 1614)
+    def _sc_counts(self, role):
+        """Counts shown under a history date: ``{players, changes,
+        new_injuries}``.
+
+        A therapist reads the stored counts (the TP superset captured with the
+        snapshot). Those also count internal notes and hidden-from-coaches
+        injuries, so a coach's counts are taken from the coach re-gated
+        snapshot instead: players with at least one change a coach may read,
+        those changes, and the new injuries a coach may see.
+        """
+        self.ensure_one()
+        if role != "coach":
+            return {
+                "players": self.player_count,
+                "changes": self.change_count,
+                "new_injuries": self.new_injury_count,
+            }
+        players = changes = new_injuries = 0
+        for player in self._render_for_role("coach"):
+            cards = player["active_injuries"] + player["resolved_injuries"]
+            own = len(player["items"]) + sum(len(c["items"]) for c in cards)
+            if own:
+                players += 1
+                changes += own
+            new_injuries += sum(1 for c in player["active_injuries"] if c.get("is_new"))
+        return {"players": players, "changes": changes, "new_injuries": new_injuries}
+
+    def _sc_counts_label(self, role):
+        """« 2 players · 5 changes · 1 new injury », or « No changes »."""
+        counts = self._sc_counts(role)
+        if not counts["players"] and not counts["changes"]:
+            return self.env._("No changes")
+        n = counts["players"]
+        parts = [self.env._("1 player") if n == 1
+                 else self.env._("%(count)s players", count=n)]
+        n = counts["changes"]
+        parts.append(self.env._("1 change") if n == 1
+                     else self.env._("%(count)s changes", count=n))
+        n = counts["new_injuries"]
+        if n:
+            parts.append(self.env._("1 new injury") if n == 1
+                         else self.env._("%(count)s new injuries", count=n))
+        return " · ".join(parts)
+
+    def _sc_snapshot_line(self):
+        """The legacy page's explainer, restored in the app shell (task 1614):
+        « Snapshot of <date> (<tz>) — changes over the last 24 h »."""
+        self.ensure_one()
+        return self.env._(
+            "Snapshot of %(date)s%(tz)s — changes over the last %(hours)s h",
+            date=format_date(self.env, self.snapshot_date),
+            tz=" (%s)" % self.timezone if self.timezone else "",
+            hours=(self.item_data or {}).get("window_hours") or SNAPSHOT_WINDOW_HOURS,
+        )
+
     # -------------------------------------------------------- role re-gate (read)
     def _render_for_role(self, role):
         """Return the role-appropriate, render-ready per-player structures from
@@ -165,39 +223,52 @@ class SportsTeamDigest(models.Model):
                         ]
                     kept.append(it)
                 items = kept
-            # Task 1385: active-injury detail for the static section, role-gated
-            # (coach drops hidden-from-coaches injuries — tagged "internal" at
-            # capture). Historical snapshots that predate 1385 simply have no
-            # active_injuries key (forward-only) -> empty static section.
+            # Task 1385: injury detail cards, role-gated (coach drops
+            # hidden-from-coaches injuries — tagged "internal" at capture — and
+            # every internal note: the stored snapshot is the TP superset).
+            # Snapshots predating 1385 have no active_injuries, those predating
+            # the 2026-10-11 layout no resolved_injuries / last_change
+            # (forward-only).
             active_injuries = player.get("active_injuries", []) or []
+            resolved_injuries = player.get("resolved_injuries", []) or []
             if role == "coach":
-                active_injuries = [
-                    a for a in active_injuries if a.get("visibility") != "internal"
-                ]
-                # Task 1385 (CR-D2): the stored snapshot is the TP superset, so a
-                # non-hidden injury still carries its internal_notes. Strip them
-                # from the coach read — coaches see external notes only.
-                active_injuries = [
-                    {**a, "internal_notes": ""} for a in active_injuries
-                ]
-            # Task 1385: apply the same injury de-dup as the live card — only the
-            # detail-field change items (category "injury") of an injury shown in
-            # the static section are dropped (they are marked up top). Notes,
-            # new-injury units, player-level and non-shown-injury changes stay.
-            shown_injury_ids = {
-                a.get("injury_id") for a in active_injuries if a.get("injury_id")
-            }
-            deduped = [
-                it for it in items
-                if not (
-                    it.get("category") == "injury"
-                    and it.get("injury_id")
-                    and it.get("injury_id") in shown_injury_ids
+                active_injuries, resolved_injuries = (
+                    [{**a, "internal_notes": ""} for a in group
+                     if a.get("visibility") != "internal"]
+                    for group in (active_injuries, resolved_injuries)
                 )
+            # Owner layout 2026-10-11 (same as the live detail): every change
+            # of an injury with a card goes INSIDE that card; the general list
+            # keeps the rest. Active cards: most recently changed first,
+            # unchanged ones last (latest injury first).
+            card_ids = {
+                a.get("injury_id")
+                for a in active_injuries + resolved_injuries if a.get("injury_id")
+            }
+            general = [
+                it for it in items
+                if not (it.get("injury_id") and it.get("injury_id") in card_ids)
             ]
+
+            def with_items(card):
+                own = [it for it in items
+                       if it.get("injury_id") and it.get("injury_id") == card.get("injury_id")]
+                return {**card, "items": own, "changed": bool(own)}
+
+            def recency(card):
+                return (bool(card["items"]), card.get("last_change") or "",
+                        card.get("injury_date") or "")
+
+            active_injuries = sorted(
+                (with_items(a) for a in active_injuries), key=recency, reverse=True)
+            resolved_injuries = sorted(
+                (card for card in map(with_items, resolved_injuries) if card["items"]),
+                key=recency, reverse=True)
             # Keep rendering a player who has either a change feed OR standing
-            # active injuries / card fields to show.
-            if not deduped and not active_injuries and not player.get("predicted_return_date") and not player.get("training_recommendation"):
+            # injuries / card fields to show.
+            if not general and not active_injuries and not resolved_injuries \
+                    and not player.get("predicted_return_date") \
+                    and not player.get("training_recommendation"):
                 continue
             synopsis = (player.get("synopsis") or {}).get(role) or []
             result.append(
@@ -209,11 +280,16 @@ class SportsTeamDigest(models.Model):
                     "jersey_number": player.get("jersey_number") or "",
                     "position": player.get("position"),
                     "predicted_return_date": player.get("predicted_return_date", ""),
+                    # Task 1727: already passed on the snapshot's day (« · Dépassé »).
+                    "predicted_return_overdue": bool(
+                        player.get("predicted_return_date") and self.snapshot_date
+                        and player["predicted_return_date"] < fields.Date.to_string(self.snapshot_date)),
                     "training_recommendation": player.get("training_recommendation", ""),
                     "last_consultation_date": player.get("last_consultation_date", ""),
                     "active_injuries": active_injuries,
+                    "resolved_injuries": resolved_injuries,
                     "changed_recently": bool(player.get("changed_recently")),
-                    "items": deduped,
+                    "items": general,
                     "synopsis": synopsis,
                 }
             )
@@ -325,14 +401,31 @@ class SportsTeamDigest(models.Model):
             changed_injuries = self.env["sports.patient"]._dashboard_injury_presence(
                 patient, "tp", cutoff
             )
-            active_injuries = []
-            for inj in patient.injury_ids.filtered(lambda i: i.stage == "active"):
+            # Owner layout 2026-10-11: each card is frozen with its latest
+            # change time (most recently changed first at read), and resolved
+            # injuries with changes in the slice get a card of their own.
+            last_change = patient._sc_injury_last_change(patient.injury_ids, cutoff)
+            changed_ids = {it["injury"].id for it in tp_items if it.get("injury")}
+
+            def freeze(inj):
                 detail = patient._card_injury_detail(inj, cutoff)
                 detail["changed"] = inj.id in changed_injuries
                 detail["visibility"] = (
                     "internal" if inj.hidden_from_coaches else "external"
                 )
-                active_injuries.append(detail)
+                when = last_change.get(inj.id)
+                detail["last_change"] = fields.Datetime.to_string(when) if when else ""
+                return detail
+
+            active_injuries = [
+                freeze(inj)
+                for inj in patient.injury_ids.filtered(lambda i: i.stage == "active")
+            ]
+            resolved_injuries = [
+                freeze(inj)
+                for inj in patient.injury_ids.filtered(
+                    lambda i: i.stage == "resolved" and i.id in changed_ids)
+            ]
             # Task 1385 (CR-A #5): a new injury is a static "Nouvelle" flag now,
             # not a feed row — so a player whose only activity is a freshly
             # reported injury still belongs in the digest even with no tp_items.
@@ -358,6 +451,7 @@ class SportsTeamDigest(models.Model):
                         if patient.last_consultation_date else ""
                     ),
                     "active_injuries": active_injuries,
+                    "resolved_injuries": resolved_injuries,
                     "changed_recently": bool(tp_items or has_new_injury),
                     "items": serialized,
                     "synopsis": {

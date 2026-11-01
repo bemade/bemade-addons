@@ -11,7 +11,7 @@ Acceptance criteria covered here:
   phone tabs (waiting list · file), the live component with its first data in
   its props, and the no-JS list inside it; the file shows the instant status
   pair, the note form docked open posting to /my/injury/note/add WITH
-  ``event_id``, the injury sheets loading the unchanged fragment routes;
+  ``event_id``, the injuries as inline pencil cards (task 1590);
   the add / resolve / kiosk sheets post to today's routes with a CSRF token.
 * UC-C3 Roles: a coach is refused on both pages as today; an internal
   therapist and a clinic administrator (#1577) get the shell pages.
@@ -158,16 +158,21 @@ class TestAppShellClinic1540(Clinic1540Common):
         dossier = tree.xpath('//section[@data-sc-tab-panel="dossier"]')[0]
         self.assertIsNone(dossier.get('hidden'))
         fields_ = self._owl_fields(tree)
-        self.assertTrue(fields_['sc_status']['instant'])
+        # Task 1627: the instant status pair is the Match / Practice pill
+        # dropdowns (no autosave field).
+        self.assertNotIn('sc_status', fields_)
+        self.assertEqual(len(dossier.xpath('.//*[@data-sc-pill-select][@data-sc-field="sc_status"]')), 2)
         form = tree.xpath('//form[@data-sc-form="notes.add"]')[0]
         self.assertEqual(form.get('action'), '/my/injury/note/add')
         self.assertEqual(form.xpath('.//input[@name="event_id"]/@value'), [str(self.clinic.id)])
         self.assertEqual(form.getparent().get('open'), 'open')
-        lazy = tree.xpath('//dialog[@id="sc_clinic_injury_%s"]/@data-sc-lazy-url' % self.injury.id)
-        self.assertEqual(lazy, ['/my/injury/%s/form/fragment?clinic_id=%s&patient=%s' % (
-            self.injury.id, self.clinic.id, self.player.id)])
-        # The unchanged fragment answers for the shell sheet.
-        resp = self.url_open(lazy[0])
+        # Task 1590: the injuries are inline pencil cards (no fragment sheet).
+        self.assertTrue(tree.xpath('//details[@id="clinic-injury-%s"][@data-sc-edit-card="injury"]'
+                                   % self.injury.id))
+        self.assertFalse(tree.xpath('//dialog[@id="sc_clinic_injury_%s"]' % self.injury.id))
+        # The legacy fragment route still answers (the legacy page uses it).
+        resp = self.url_open('/my/injury/%s/form/fragment?clinic_id=%s&patient=%s' % (
+            self.injury.id, self.clinic.id, self.player.id))
         self.assertEqual(resp.status_code, 200)
 
     @staticmethod

@@ -33,6 +33,9 @@
                             <t t-if="request.params.get('error') == 'invalid_user'">
                                 You do not have permission to assign activities to other users.
                             </t>
+                            <t t-if="request.params.get('error') == 'not_allowed'">
+                                You cannot change this activity.
+                            </t>
                         </div>
                         
                         <t t-set="today_date" t-value="datetime.datetime.strptime(today, '%Y-%m-%d').date()"/>
@@ -231,7 +234,7 @@
                     <div class="modal-body">
                         <p>Are you sure you want to mark this activity as completed?</p>
                         <div class="form-group">
-                            <label for="feedback">Feedback (optional)</label>
+                            <label for="feedback">Comment (optional)</label>
                             <textarea id="complete_feedback" class="form-control" rows="3" placeholder="Add any feedback or notes about completing this activity..."></textarea>
                         </div>
                     </div>
@@ -671,6 +674,9 @@
                             </t>
                             <t t-if="request.params.get('error') == 'invalid_user'">
                                 You do not have permission to assign activities to other users.
+                            </t>
+                            <t t-if="request.params.get('error') == 'not_allowed'">
+                                You cannot change this activity.
                             </t>
                         </div>
                         

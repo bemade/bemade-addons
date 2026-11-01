@@ -41,6 +41,8 @@ class SportsTeamNoteHistory(models.Model):
             ("set", "Posted"),
             ("edit", "Edited"),
             ("dismiss", "Archivée / Archived"),
+            # Task 1663: « Annuler » right after an archive puts it back.
+            ("restore", "Restaurée / Restored"),
         ],
         string="Action",
         required=True,

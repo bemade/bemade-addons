@@ -66,9 +66,11 @@ class TestAppShellInternal1538(AppShellCommon):
         self.assertIsNotNone(self._shell(tree))
         self.assertNotIn('o_portal_my_home', text)
         tabs = self._nav_keys(tree, 'o_sc_tabs')
-        self.assertIn('clinic', tabs)
+        self.assertIn('notepad', tabs)
         self.assertEqual(tabs[-1], 'more')
-        self.assertIn('PC Team A', text)
+        self.assertIn('clinic', self._nav_keys(tree, 'o_sc_rail_nav'))
+        # Task 1624 (deliberate update): the dashboard's sections, no team list.
+        self.assertTrue(tree.xpath('//section[@data-sc-widget="indicators"]'))
         self.assertTrue(tree.xpath('//*[@data-sc-section="home.clinic_teaser"]'))
         _text, tree = self._get('/my/teams')
         self.assertIsNotNone(self._shell(tree))

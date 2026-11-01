@@ -11,3 +11,5 @@ from . import test_task_report
 from . import test_settings
 from . import test_equipment
 from . import test_quotation_duplication
+from . import test_fsm_contacts_list_view
+from . import test_task_report_state_dots

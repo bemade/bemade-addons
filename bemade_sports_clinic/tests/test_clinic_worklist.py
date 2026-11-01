@@ -305,7 +305,7 @@ class TestClinicWorklist(HttpCase):
         self._login_tp()
         resp = self.url_open('/my/clinic/%s' % self.clinic_today.id)
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('Ada Attendee', resp.text)
+        self.assertIn('Attendee, Ada', resp.text)
         # Selection is server-rendered: an explicit ?patient= opens that dossier.
         resp = self.url_open('/my/clinic/%s?patient=%s' % (
             self.clinic_today.id, self.patient_a.id))

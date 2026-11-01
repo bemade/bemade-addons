@@ -13,6 +13,7 @@
                         <div class="form-group">
                             <label>First Name <span class="text-danger">*</span></label>
                             <input type="text" name="first_name" class="form-control" required="required"
+                                   t-att-data-sc-original="patient and patient.first_name or None"
                                    t-att-value="(form_data and form_data.get('first_name')) or (patient and patient.first_name) or first_name or ''"/>
                         </div>
                     </div>
@@ -20,6 +21,7 @@
                         <div class="form-group">
                             <label>Last Name <span class="text-danger">*</span></label>
                             <input type="text" name="last_name" class="form-control" required="required"
+                                   t-att-data-sc-original="patient and patient.last_name or None"
                                    t-att-value="(form_data and form_data.get('last_name')) or (patient and patient.last_name) or last_name or ''"/>
                         </div>
                     </div>
@@ -69,6 +71,7 @@
                             <div class="form-group">
                                 <label>Date of Birth <span class="text-danger">*</span></label>
                                 <input type="date" name="date_of_birth" class="form-control" required="required"
+                                       t-att-data-sc-original="(patient and patient_info and patient_info.get('date_of_birth')) or None"
                                        t-att-value="(form_data and form_data.get('date_of_birth')) or (patient_info and patient_info.get('date_of_birth')) or ''"/>
                             </div>
                         </div>
@@ -77,11 +80,15 @@
 
                 <!-- TP-only additional info placed within Player Details -->
                 <t t-if="is_treatment_prof">
-                    <div class="row mb-3">
+                    <!-- Task 1630: « Other medical history ». Task 1677: the
+                         allergies and medical conditions are lists, edited in
+                         the app's popups (no level / details here any more). -->
+                    <t t-set="sc_med_src" t-value="form_data or patient_info or {}"/>
+                    <div class="row mb-3" data-sc-legacy-medical="form">
                         <div class="col-12">
                             <div class="form-group">
-                                <label for="allergies">Allergies</label>
-                                <textarea name="allergies" id="allergies" class="form-control" rows="2" placeholder="Enter allergies information here"><t t-esc="(form_data and form_data.get('allergies')) or (patient_info and patient_info.get('allergies')) or ''"/></textarea>
+                                <label for="medical_history_other">Other medical history</label>
+                                <textarea name="medical_history_other" id="medical_history_other" class="form-control" rows="2"><t t-esc="sc_med_src.get('medical_history_other') or ''"/></textarea>
                             </div>
                         </div>
                     </div>
@@ -313,6 +320,7 @@
                                                 <input class="form-check-input" type="checkbox"
                                                        t-att-id="'team_ids_' + str(t.id)"
                                                        name="team_ids" t-att-value="t.id"
+                                                       t-att-data-sc-was-checked="'1' if (patient and t.id in patient.team_ids.ids) else None"
                                                        t-att-checked="'checked' if ((form_data and form_data.get('team_ids') and (str(t.id) in (form_data.get('team_ids') if isinstance(form_data.get('team_ids'), list) else [form_data.get('team_ids')]))) or (not form_data and patient and (t.id in patient.team_ids.ids)) or (prefill_team_id and t.id == prefill_team_id)) else None"/>
                                                 <label class="form-check-label" t-att-for="'team_ids_' + str(t.id)">
                                                     <t t-esc="t.name"/>
@@ -371,8 +379,102 @@
                                 </div>
                             </div>
                             
+                            <!-- Task 1600: set by the confirm step below when an
+                                 existing name / date of birth is corrected. -->
+                            <input type="hidden" name="identity_confirmed" value="0"/>
+
                             <!-- Unified form content via shared partial -->
                             <t t-call="bemade_sports_clinic.portal_player_form_body"/>
+
+                            <!-- Task 1600: the confirm step of a save that corrects
+                                 the player's identity and/or removes them from
+                                 teams. Filled and shown by the script below. -->
+                            <div id="sc-save-confirm" class="card border-warning mb-3 d-none" role="alertdialog" aria-labelledby="sc-save-confirm-title">
+                                <div class="card-body">
+                                    <h5 id="sc-save-confirm-title" class="card-title">Please confirm</h5>
+                                    <div id="sc-confirm-identity" class="d-none">
+                                        <p class="fw-bold mb-1">Correct this player's identity?</p>
+                                        <ul id="sc-confirm-identity-list" class="mb-1"></ul>
+                                        <p class="text-muted small">The change will be noted in the player's file.</p>
+                                    </div>
+                                    <div id="sc-confirm-teams" class="d-none">
+                                        <p class="fw-bold mb-1">Remove the player from these teams?</p>
+                                        <ul id="sc-confirm-teams-list" class="mb-1"></ul>
+                                        <p class="text-muted small">Any open removal request for the player is closed.</p>
+                                    </div>
+                                    <div class="d-flex flex-column flex-sm-row gap-2">
+                                        <button type="button" id="sc-confirm-cancel" class="btn btn-secondary">Back to the form</button>
+                                        <button type="button" id="sc-confirm-ok" class="btn bg-o-color-1 text-white">Confirm and save</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <script type="text/javascript">
+//<![CDATA[
+                                (function() {
+                                    var form = document.getElementById('edit-player-form');
+                                    var panel = document.getElementById('sc-save-confirm');
+                                    if (!form || !panel) { return; }
+                                    function labelOf(input) {
+                                        var group = input.closest('.form-group, .form-check');
+                                        var label = group && group.querySelector('label');
+                                        var node = label && label.firstChild;
+                                        return ((node && node.textContent) || input.name).trim();
+                                    }
+                                    function fill(listId, items) {
+                                        var list = document.getElementById(listId);
+                                        list.textContent = '';
+                                        items.forEach(function (text) {
+                                            var li = document.createElement('li');
+                                            li.textContent = text;
+                                            list.appendChild(li);
+                                        });
+                                        list.parentNode.classList.toggle('d-none', !items.length);
+                                    }
+                                    function identityChanges() {
+                                        var out = [];
+                                        form.querySelectorAll('input[data-sc-original]').forEach(function (input) {
+                                            var old = (input.dataset.scOriginal || '').trim();
+                                            var val = (input.value || '').trim();
+                                            if (old && val && old !== val) {
+                                                out.push(labelOf(input) + ' : ' + old + ' \u2192 ' + val);
+                                            }
+                                        });
+                                        return out;
+                                    }
+                                    function teamRemovals() {
+                                        var out = [];
+                                        form.querySelectorAll('input[name="team_ids"][data-sc-was-checked]').forEach(function (box) {
+                                            if (!box.checked) { out.push(labelOf(box)); }
+                                        });
+                                        return out;
+                                    }
+                                    var submitter = null;
+                                    form.addEventListener('submit', function (ev) {
+                                        if (ev.defaultPrevented || form.dataset.scConfirmed === '1') { return; }
+                                        var identity = identityChanges();
+                                        var teams = teamRemovals();
+                                        if (!identity.length && !teams.length) { return; }
+                                        ev.preventDefault();
+                                        submitter = ev.submitter || null;
+                                        fill('sc-confirm-identity-list', identity);
+                                        fill('sc-confirm-teams-list', teams);
+                                        panel.dataset.scIdentity = identity.length ? '1' : '0';
+                                        panel.classList.remove('d-none');
+                                        panel.scrollIntoView({block: 'center'});
+                                    });
+                                    document.getElementById('sc-confirm-cancel').addEventListener('click', function () {
+                                        panel.classList.add('d-none');
+                                    });
+                                    document.getElementById('sc-confirm-ok').addEventListener('click', function () {
+                                        if (panel.dataset.scIdentity === '1') {
+                                            form.querySelector('input[name="identity_confirmed"]').value = '1';
+                                        }
+                                        form.dataset.scConfirmed = '1';
+                                        if (form.requestSubmit) { form.requestSubmit(submitter || undefined); } else { form.submit(); }
+                                    });
+                                })();
+//]]>
+                            </script>
 
                             <!-- Client-side validation for status fields -->
                             <t t-if="is_treatment_prof">

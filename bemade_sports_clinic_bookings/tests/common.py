@@ -23,7 +23,9 @@ class BookingsShellCommon(HttpCase):
             'email': 'bk.tp@example.com', 'tz': 'America/Toronto',
             'group_ids': [Command.set([portal, tp_g])],
         })
-        cls.client = env['res.partner'].create({'name': 'Quinn Client', 'email': 'quinn@bk.example.com'})
+        cls.client = env['res.partner'].create({
+            'name': 'Quinn Client', 'email': 'quinn@bk.example.com', 'phone': '+1 555 010 0321',
+        })
         cls.apt_type = env['appointment.type'].create({
             'appointment_duration': 1,
             'appointment_tz': 'America/Toronto',

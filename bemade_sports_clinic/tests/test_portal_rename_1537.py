@@ -75,7 +75,9 @@ class TestPortalRename1537(PortalCovCommon):
     # ----- AC1 / AC3: portal coach -----
 
     def test_coach_rename_orm(self):
-        self.player.with_user(self.coach).write({'first_name': 'Renamed'})
+        # Task 1600: a portal identity correction is a confirmed step.
+        self.player.with_user(self.coach).with_context(sc_identity_confirmed=True).write(
+            {'first_name': 'Renamed'})
         self._assert_renamed('Renamed', 'One')
 
     def test_coach_rename_portal_post(self):
@@ -84,6 +86,7 @@ class TestPortalRename1537(PortalCovCommon):
             'csrf_token': self._csrf(),
             'patient_id': self.player.id,
             'first_name': 'Coachfirst', 'last_name': 'Coachlast',
+            'identity_confirmed': '1',  # task 1600: the form's confirm step
         }, allow_redirects=False)
         self._assert_player_page_redirect(resp)
         self._assert_renamed('Coachfirst', 'Coachlast')
@@ -91,7 +94,8 @@ class TestPortalRename1537(PortalCovCommon):
     # ----- AC2 / AC3: portal therapist -----
 
     def test_tp_rename_orm(self):
-        self.player.with_user(self.tp).write({'first_name': 'Tpfirst'})
+        self.player.with_user(self.tp).with_context(sc_identity_confirmed=True).write(
+            {'first_name': 'Tpfirst'})
         self._assert_renamed('Tpfirst', 'One')
 
     def test_tp_rename_portal_post(self):
@@ -100,6 +104,7 @@ class TestPortalRename1537(PortalCovCommon):
             'csrf_token': self._csrf(),
             'patient_id': self.player.id,
             'first_name': 'Tpfirst', 'last_name': 'Tplast',
+            'identity_confirmed': '1',  # task 1600: the form's confirm step
             # The TP edit form re-posts the team selection.
             'team_ids': self.team_a.id,
         }, allow_redirects=False)

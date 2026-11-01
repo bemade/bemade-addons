@@ -64,6 +64,33 @@ class Task(models.Model):
         copy=False,
     )
 
+    # Work order (SVR) report: dot colour = the state's native screen colour,
+    # label = 3-way grouping (done / waiting / not done).
+    _REPORT_STATE_COLOURS = {
+        "01_in_progress": "#6c757d",
+        "02_changes_requested": "#f0ad4e",
+        "03_approved": "#28a745",
+        "04_waiting_normal": "#17a2b8",
+        "1_done": "#28a745",
+        "1_canceled": "#dc3545",
+    }
+
+    def _get_report_state_indicator(self, lang=None):
+        """Return ``(label, hex colour)`` for the work order report Status column.
+
+        :param lang: language code of the report; the label is translated in it
+                     (records rendered under ``t-lang`` keep the user's language).
+        """
+        self.ensure_one()
+        env = self.with_context(lang=lang).env if lang else self.env
+        if self.state == "1_done":
+            label = env._("Done")
+        elif self.state in ("03_approved", "04_waiting_normal"):
+            label = env._("Waiting")
+        else:
+            label = env._("Not done")
+        return label, self._REPORT_STATE_COLOURS.get(self.state, "#6c757d")
+
     def _apply_template_to_self(self, template=None):
         """Apply a task template to this task record.
 

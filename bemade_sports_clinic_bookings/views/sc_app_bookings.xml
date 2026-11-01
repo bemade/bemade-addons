@@ -18,6 +18,8 @@
             </t>
             <form method="get" action="/my/bookings" class="o_sc_filters" data-sc-section="bookings.filters">
                 <input type="hidden" name="filterby" t-att-value="filterby"/>
+                <!-- Task 1596: an explicit sort choice survives a filter change. -->
+                <input t-if="sc_booking_sortby" type="hidden" name="sortby" t-att-value="sc_booking_sortby"/>
                 <details class="o_sc_disclosure" t-att-open="'open' if (selected_type_id or date_from or date_to) else None">
                     <summary class="o_sc_disclosure_summary">
                         <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
@@ -48,6 +50,16 @@
                     </div>
                 </details>
             </form>
+            <!-- Task 1596: date sort (appointment_portal_staff's searchbar_sortings);
+                 each link keeps the segment and the filters. Task 1607: in the
+                 shell's list header, condensed to the right (no add here). -->
+            <t t-call="bemade_sports_clinic.sc_list_header">
+                <t t-set="header_section" t-value="'bookings.header'"/>
+                <t t-set="sorts" t-value="sc_booking_sorts"/>
+                <t t-set="sort_id" t-value="'sc_bookings_sort'"/>
+                <t t-set="sort_label">Sort bookings</t>
+                <t t-set="sort_section" t-value="'bookings.sort'"/>
+            </t>
             <div t-if="sc_booking_rows" class="o_sc_list" data-sc-section="bookings.list">
                 <t t-foreach="sc_booking_rows" t-as="row">
                     <div class="o_sc_entity_row o_sc_entity_row_static" t-att-data-sc-booking-id="row['id']">
@@ -55,6 +67,19 @@
                         <span class="o_sc_row_text">
                             <span class="o_sc_row_title" t-out="row['title']"/>
                             <span class="o_sc_row_subtitle" t-out="row['subtitle']"/>
+                            <!-- Task 1585: the client's phone / email, tap to call / write. -->
+                            <span t-if="row['phone'] or row['email']" class="o_sc_row_contacts">
+                                <a t-if="row['phone']" class="o_sc_contact_link" t-att-href="row['phone_href']" data-sc-booking-link="phone" t-out="row['phone']"/>
+                                <a t-if="row['email']" class="o_sc_contact_link" t-att-href="row['email_href']" data-sc-booking-link="email" t-out="row['email']"/>
+                            </span>
+                            <!-- Task 1732: the booking form's answers (question → answer). -->
+                            <dl t-if="row['answers']" class="o_sc_kv o_sc_booking_answers" data-sc-booking-answers="1"
+                                aria-label="Booking form answers">
+                                <t t-foreach="row['answers']" t-as="answer">
+                                    <dt t-out="answer['label']"/>
+                                    <dd class="o_sc_pre" t-att-data-sc-booking-answer="answer['question_id']" t-out="answer['value']"/>
+                                </t>
+                            </dl>
                         </span>
                         <span class="o_sc_row_trailing">
                             <span t-if="row['cancelled']" class="o_sc_chip o_sc_chip_red">Cancelled</span>

@@ -27,6 +27,32 @@ _ENVELOPE_CACHE = LRU(512)
 
 DEFAULT_PAGE_SIZE = 25
 
+# RFC 5322 identification fields: one or more <msg-id> tokens each. The
+# stdlib's default policy treats In-Reply-To and References as unstructured
+# text, so a msg-id longer than the 78-character line length (an ordinary
+# Odoo- or Exchange-generated id) comes out RFC 2047 encoded
+# (``=?utf-8?q?=3C...?=``). A mail client compares the raw token against the
+# Message-Ids it knows, so an encoded id threads nowhere. These fields must
+# go out verbatim; same workaround as Odoo core's ir_mail_server (bpo-35805).
+_IDENTIFICATION_HEADERS = frozenset({"message-id", "in-reply-to", "references"})
+
+
+class _OutgoingPolicy(email.policy.EmailPolicy):
+    """The default policy, except identification fields are never folded
+    nor encoded."""
+
+    def _fold(self, name, value, *args, **kwargs):
+        policy = self
+        if name.lower() in _IDENTIFICATION_HEADERS:
+            # A clone, not a separate module-level policy: the generator
+            # flattens with the caller's linesep (smtplib uses CRLF), which
+            # only ``self`` carries.
+            policy = self.clone(max_line_length=None)
+        return super(_OutgoingPolicy, policy)._fold(name, value, *args, **kwargs)
+
+
+_OUTGOING_POLICY = _OutgoingPolicy()
+
 # One LIST response line, e.g. b'(\\HasNoChildren \\Trash) "/" "[Gmail]/Trash"':
 # attribute flags, hierarchy delimiter (or NIL), then the mailbox name.
 _LIST_RESPONSE_RE = re.compile(
@@ -352,15 +378,29 @@ class ConversationTransport(models.Model):
     # ------------------------------------------------------------
 
     def _browse(self, query=None, page=1):
+        """``query`` is what a person typed into the inbox viewer: a plain
+        word or phrase, never IMAP syntax. It is translated here (see
+        ``_imap_term_search``) so no caller has to know the protocol."""
         self.ensure_one()
         if not self._is_email_transport():
             return super()._browse(query=query, page=page)
-        page = max(page, 1)
+        term = self._imap_clean_term(query)
+        return self._imap_browse(page, term=term)
+
+    def _imap_browse(self, page, term=None, raw_query=None):
+        """Shared page assembly. ``term`` is a plain user term;
+        ``raw_query`` is an already-built IMAP SEARCH string from engine
+        code (``_search_remote``). Neither: the newest page of the folder."""
+        page = max(page or 1, 1)
         page_size = self._imap_page_size()
         with self._imap_connection() as connection:
-            if query:
+            if term:
                 page_uids, has_more = self._imap_query_page(
-                    connection, query, page, page_size
+                    connection, None, page, page_size, term=term
+                )
+            elif raw_query:
+                page_uids, has_more = self._imap_query_page(
+                    connection, raw_query, page, page_size
                 )
             else:
                 page_uids, has_more = self._imap_sequence_page(
@@ -373,6 +413,14 @@ class ConversationTransport(models.Model):
             "page_size": page_size,
             "has_more": has_more,
         }
+
+    @staticmethod
+    def _imap_clean_term(query):
+        """The user's term, trimmed; NUL is not representable in an IMAP
+        literal. Empty means "no search"."""
+        if not query or not isinstance(query, str):
+            return ""
+        return query.replace("\x00", "").strip()
 
     def _imap_sequence_page(self, connection, page, page_size):
         """One page of UIDs, newest first, without ever asking the server
@@ -417,15 +465,44 @@ class ConversationTransport(models.Model):
         uids.reverse()  # newest first
         return uids, low > 1
 
-    def _imap_query_page(self, connection, query, page, page_size):
-        """One page of UIDs matching an explicit search query. A query is
-        the user's own narrowing, so it is issued as-is and paged in
-        Python; a query broad enough to still overrun imaplib's line limit
-        surfaces as an ask-for-something-narrower error rather than an
-        opaque protocol failure."""
+    def _imap_term_search(self, connection, term):
+        """``UID SEARCH CHARSET UTF-8 TEXT {n}`` with the term sent as an
+        IMAP *literal*.
+
+        A literal is length-prefixed raw data, so the server never parses
+        it: quotes, backslashes, parentheses and words like ``ALL``,
+        ``OR`` or ``DELETED`` are just characters to match, and cannot
+        widen or break the search (no escaping to get wrong). UTF-8 is
+        declared as the charset so ``réparation`` matches. ``TEXT``
+        matches the term in the headers (subject, sender name and
+        address) or the body. SEARCH never alters a flag or a message.
+        """
+        connection.literal = term.encode("utf-8")
+        return connection.uid("search", "CHARSET", "UTF-8", "TEXT")
+
+    def _imap_query_page(self, connection, query, page, page_size, term=None):
+        """One page of UIDs matching a search, paged in Python. ``term``
+        is a plain user term (sent as a literal, see ``_imap_term_search``);
+        otherwise ``query`` is an engine-built IMAP SEARCH string. A search
+        broad enough to still overrun imaplib's line limit surfaces as an
+        ask-for-something-narrower error rather than an opaque protocol
+        failure."""
         try:
-            typ, data = connection.uid("search", None, query)
+            if term:
+                typ, data = self._imap_term_search(connection, term)
+            else:
+                typ, data = connection.uid("search", None, query)
         except imaplib.IMAP4.error as error:
+            # imaplib's "got more than N bytes" is its line limit: the
+            # result was too big. Any other protocol error (a refused
+            # charset, a BAD) is a failure, not "too many results".
+            if "got more than" not in str(error):
+                raise UserError(
+                    self.env._(
+                        "IMAP search failed for %(transport)s.",
+                        transport=self.display_name,
+                    )
+                ) from error
             raise UserError(
                 self.env._(
                     "The search returned too many results on "
@@ -451,7 +528,7 @@ class ConversationTransport(models.Model):
         if not self._is_email_transport():
             return super()._search_remote(criteria)
         query = self._imap_build_search_query(criteria or {})
-        return self._browse(query=query, page=1)
+        return self._imap_browse(1, raw_query=query)
 
     def _imap_build_search_query(self, criteria):
         """Translate a light criteria dict (``subject``, ``from_``, ``to``,
@@ -588,6 +665,7 @@ class ConversationTransport(models.Model):
             "attachments": mime.extract_attachments(message),
             "in_reply_to": (message.get("In-Reply-To") or "").strip(),
             "references": (message.get("References") or "").strip(),
+            "x_odoo_objects": (message.get("X-Odoo-Objects") or "").strip(),
         }
 
     def _email_message_is_mine(self, message, conversation):
@@ -723,7 +801,7 @@ class ConversationTransport(models.Model):
                     transport=self.display_name,
                 )
             )
-        outgoing = EmailMessage()
+        outgoing = EmailMessage(policy=_OUTGOING_POLICY)
         outgoing["Subject"] = subject or ""
         outgoing["From"] = self.login
         if to_emails:
@@ -846,6 +924,9 @@ class ConversationTransport(models.Model):
         (the notification-safety marker), so for those the conversation's
         ``primary_transport_id`` is what identifies the transport.
         """
+        explicit = self._explicit_reply_message_id(conversation)
+        if explicit:
+            return explicit
         previous = conversation.message_ids.filtered(
             lambda m: m.id != message.id
             and m.external_id

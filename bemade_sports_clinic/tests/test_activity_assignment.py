@@ -216,6 +216,17 @@ class TestActivityAssignment(PortalCovCommon):
             'date_deadline': '2026-12-31',
         }, **kw)
 
+    def _coach_team_activity(self):
+        """Task 1589: a coach acts only on the activities assigned to them or
+        created by them — a team activity the coach created from the portal
+        (sudo keeps the uid), assigned to the therapist."""
+        return self.env['mail.activity'].with_user(self.coach).sudo().create({
+            'res_model_id': self.env['ir.model']._get('sports.team').id,
+            'res_id': self.team_a.id,
+            'activity_type_id': self.env.ref('mail.mail_activity_data_todo').id,
+            'summary': 'Coach team task', 'user_id': self.tp.id,
+        }).with_env(self.env)
+
     def _activity_exists(self, summary):
         return bool(self.env['mail.activity'].search_count(
             [('summary', '=', summary)]))
@@ -338,6 +349,7 @@ class TestActivityAssignment(PortalCovCommon):
         """AC2 + item 9: the /my/activities reassign modal offers the coach
         the team-A staff only; /my/activity/reassign accepts in-rule and
         rejects out-of-rule assignees."""
+        self.act_team = self._coach_team_activity()
         self._login_coach()
         resp = self.url_open(
             f'/my/activities?model=sports.team&res_id={self.team_a.id}')
@@ -366,6 +378,7 @@ class TestActivityAssignment(PortalCovCommon):
         /my/activity/update — for a TP (any assignable user) and for a coach
         (team staff); outside the rule the assignee is unchanged and the
         edit page is re-shown with error=invalid_user."""
+        self.act_team = self._coach_team_activity()
         # TP: may move the activity to a TP off the team.
         self._login_tp()
         resp = self.url_open(f'/my/activity/{self.act_player.id}/edit')

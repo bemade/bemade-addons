@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="mail_conversation_view_form" model="ir.ui.view">
+        <field name="name">mail.conversation.view.form.thread.view</field>
+        <field name="model">mail.conversation</field>
+        <field name="inherit_id" ref="conversation_base.mail_conversation_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//form/header" position="inside">
+                <button
+          name="action_open_thread_view"
+          string="Thread view"
+          type="object"
+          invisible="not id"
+          help="Opens this conversation laid out as an email thread. The form stays available."
+        />
+            </xpath>
+        </field>
+    </record>
+</odoo>

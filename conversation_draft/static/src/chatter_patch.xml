@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.Chatter" t-inherit-mode="extension">
+        <xpath
+      expr="//button[hasclass('o-mail-Chatter-sendMessage')]"
+      position="attributes"
+    >
+            <attribute name="t-if">!hideSendMessage</attribute>
+        </xpath>
+        <xpath expr="//button[hasclass('o-mail-Chatter-logNote')]" position="before">
+            <button
+        t-if="showConversationReply"
+        class="o-mail-Chatter-conversationReply btn btn-primary text-nowrap me-1"
+        t-att-class="{'my-2': !props.compactHeight}"
+        t-att-disabled="!state.thread.canPostMessage"
+        t-on-click="onClickConversationReply"
+      >
+                Reply
+            </button>
+        </xpath>
+    </t>
+</templates>

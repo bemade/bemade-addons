@@ -16,6 +16,9 @@ Acceptance criteria
    missing indicators listed, days without a journal entry listed, free notes.
 5. The weekly review lists which weekly indicators have no value for the week
    (replaces ``report.py review``).
+6. A review's stored ``name`` stays English (« Six weeks — 2026-W41 », stable for exports
+   and search); its ``display_name`` (breadcrumb, many2one, the close-week wizard's link)
+   uses the kind label in the user's language: « Six semaines — 2026-W41 » in fr_CA.
 """
 from datetime import date, timedelta
 
@@ -86,3 +89,18 @@ class TestIndicatorsReviews(HomeschoolCase):
         self.make_day(date(2026, 1, 7), is_off=True)
         review.invalidate_recordset(["days_without_journal"])
         self.assertEqual(review.days_without_journal, "2026-01-06, 2026-01-08, 2026-01-09")
+
+    def test_review_display_name_in_the_users_language(self):
+        self.env["res.lang"]._activate_lang("fr_CA")
+        self.env["ir.module.module"]._load_module_terms(["homeschool"], ["fr_CA"])
+        Review = self.env["homeschool.review"]
+        six = Review.create({"student_id": self.student.id, "date": date(2026, 10, 11), "kind": "six_weeks"})
+        weekly = Review.create({"student_id": self.student.id, "date": date(2026, 10, 11), "kind": "weekly"})
+        self.assertEqual(six.name, "Six weeks — 2026-W41", "the stored name stays English")
+        self.assertEqual(six.with_context(lang="fr_CA").display_name, "Six semaines — 2026-W41")
+        self.assertEqual(weekly.with_context(lang="fr_CA").display_name, "Hebdomadaire (dimanche) — 2026-W41")
+        self.assertEqual(six.with_context(lang="en_US").display_name, "Six weeks — 2026-W41")
+        self.assertEqual(six.with_context(lang="fr_CA").name, "Six weeks — 2026-W41")
+        # many2one / breadcrumb path
+        self.assertEqual(dict(Review.with_context(lang="fr_CA").browse(six.id).read(["display_name"])[0])["display_name"],
+                         "Six semaines — 2026-W41")

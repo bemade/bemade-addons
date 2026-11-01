@@ -48,6 +48,7 @@ from odoo.addons.data_cleaning_fuzzy.models.data_merge_model import (
     THRESHOLD_PARAM,
 )
 from odoo.tests.common import TransactionCase
+from odoo.tools.misc import mute_logger
 
 
 class TestTrigramCandidates(TransactionCase):
@@ -95,6 +96,7 @@ class TestTrigramCandidates(TransactionCase):
         strict = self._pairs()
         self.assertTrue(strict < loose, "raising the threshold must narrow the set")
 
+    @mute_logger("odoo.addons.data_cleaning_fuzzy.models.data_merge_model")
     def test_malformed_threshold_falls_back_to_default(self):
         """Criterion 4 - must not degrade to 0.0."""
         param = self.env["ir.config_parameter"].sudo()

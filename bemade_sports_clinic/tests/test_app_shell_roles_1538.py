@@ -88,7 +88,7 @@ class TestAppShellRoles1538(TransactionCase):
         tp_tabs = self._keys(self.tp._sc_app_roles(), 'tab')
         both_tabs = self._keys(self.both._sc_app_roles(), 'tab')
         self.assertEqual(coach_tabs, ['teams', 'players', 'activities', 'more'])
-        self.assertEqual(tp_tabs, ['teams', 'players', 'clinic', 'activities', 'more'])
+        self.assertEqual(tp_tabs, ['teams', 'players', 'notepad', 'activities', 'more'])
         self.assertEqual(both_tabs, tp_tabs)
         self.assertEqual(self._keys(self.plain._sc_app_roles(), 'tab'), [])
 
@@ -147,9 +147,16 @@ class TestAppShellRoles1538(TransactionCase):
     def test_sc_can_matches_registry(self):
         coach_roles = self.coach._sc_app_roles()
         tp_roles = self.tp._sc_app_roles()
-        self.assertFalse(registry.can('patient.allergies', coach_roles))
-        self.assertTrue(registry.can('patient.allergies', tp_roles))
-        self.assertTrue(registry.can('home.team_status', coach_roles))
+        # Task 1630: the medical pills for every staff role, « Other medical
+        # history » for therapists only.
+        self.assertTrue(registry.can('patient.medical_alerts', coach_roles))
+        self.assertTrue(registry.can('patient.medical_alerts', tp_roles))
+        self.assertFalse(registry.can('patient.medical_history', coach_roles))
+        self.assertTrue(registry.can('patient.medical_history', tp_roles))
+        # Task 1624: the dashboard widgets replaced the home's fixed sections.
+        self.assertTrue(registry.can('dashboard.indicators', coach_roles))
+        self.assertFalse(registry.can('dashboard.todo.verify', coach_roles))
+        self.assertTrue(registry.can('dashboard.todo.verify', tp_roles))
         self.assertFalse(registry.can('home.clinic_teaser', coach_roles))
         self.assertTrue(registry.can('home.clinic_teaser', tp_roles))
         with self.assertRaises(KeyError):

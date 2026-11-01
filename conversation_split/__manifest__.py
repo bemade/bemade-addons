@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Split",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Discuss",
     "summary": "Split a conversation from a chosen message onward into a new "
     "conversation (a reassignment of messages, never a copy).",

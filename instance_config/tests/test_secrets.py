@@ -37,6 +37,7 @@ AC-9  Resolution is lazy -- a reference in a section not being applied need
 
 from odoo.exceptions import UserError
 from odoo.tests import tagged
+from odoo.tools.misc import mute_logger
 
 from ..tools.secrets import (
     SecretRef, SecretSource, dump_document, load_document,
@@ -65,7 +66,8 @@ class TestSecrets(InstanceConfigCase):
         """AC-3: names the path, never substitutes a blank."""
         spec = self.secrets_file({"mail": {}})
         source = SecretSource.from_spec(spec)
-        with self.assertRaises(UserError) as caught:
+        with mute_logger("odoo.tools.translate"), \
+                self.assertRaises(UserError) as caught:
             source.resolve(SecretRef("mail.outgoing.primary"))
         self.assertIn("mail.outgoing.primary", str(caught.exception))
 
@@ -73,7 +75,8 @@ class TestSecrets(InstanceConfigCase):
         """AC-8: an empty credential is never intentional."""
         spec = self.secrets_file({"mail": {"outgoing": {"primary": ""}}})
         source = SecretSource.from_spec(spec)
-        with self.assertRaises(UserError):
+        with mute_logger("odoo.tools.translate"), \
+                self.assertRaises(UserError):
             source.resolve(SecretRef("mail.outgoing.primary"))
 
     def test_missing_source_yields_no_resolver(self):
@@ -83,7 +86,8 @@ class TestSecrets(InstanceConfigCase):
 
     def test_unknown_scheme_raises(self):
         """AC-4: a typo'd scheme fails loudly rather than silently."""
-        with self.assertRaises(UserError):
+        with mute_logger("odoo.tools.translate"), \
+                self.assertRaises(UserError):
             SecretSource.from_spec("vault:/some/path")
 
     def test_secret_never_appears_in_repr_or_errors(self):
@@ -93,7 +97,8 @@ class TestSecrets(InstanceConfigCase):
         ref = SecretRef("mail.outgoing.primary")
         source.resolve(ref)
         self.assertNotIn("s3cr3t", repr(ref))
-        with self.assertRaises(UserError) as caught:
+        with mute_logger("odoo.tools.translate"), \
+                self.assertRaises(UserError) as caught:
             source.resolve(SecretRef("mail.outgoing.absent"))
         self.assertNotIn("s3cr3t", str(caught.exception))
 

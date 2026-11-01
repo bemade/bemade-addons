@@ -67,22 +67,23 @@ tours.add("sc_1540_clinic", {
         },
         {
             content: "The note is on the file",
-            trigger: '[data-sc-section="clinic.dossier.note_list"] .o_sc_note_card textarea',
+            trigger: '[data-sc-section="clinic.dossier.note_list"] .o_sc_note_card .o_sc_note_text',
             run() {
-                // The author's own note is an autosave field (a textarea).
+                // The author's own note reads as text with a pencil (owner
+                // review 2026-10-11); its autosave field is in the edit view.
                 const texts = [...document.querySelectorAll(".o_sc_note_card textarea, .o_sc_note_card .o_sc_note_text")]
                     .map((el) => el.value || el.textContent);
                 assert(texts.some((text) => text.includes(NOTE)), `notes: ${texts}`);
             },
         },
         {
-            content: "Open the injury sheet",
-            trigger: '[data-sc-section="clinic.dossier.injuries"] a[data-sc-injury-id]',
+            content: "Open the injury card (task 1590: inline, no sheet)",
+            trigger: '[data-sc-section="clinic.dossier.injuries"] details[data-sc-edit-card="injury"] > summary',
             run: "click",
         },
         {
-            content: "The unchanged injury form fragment is loaded in the sheet",
-            trigger: "dialog.o_sc_sheet[open] .o_sc_sheet_body form",
+            content: "The card's read view is shown, with its pencil",
+            trigger: '[data-sc-section="clinic.dossier.injuries"] details[data-sc-edit-card="injury"][open] button[data-sc-edit-toggle]',
         },
     ],
 });
@@ -97,9 +98,20 @@ tours.add("sc_1540_event_timesheet", {
             expectUnloadPage: true,
         },
         {
-            content: "« Ajouter ma feuille de temps » (app bar)",
-            trigger: 'header button[data-sc-sheet-open="sc_ts_add_sheet"]',
+            content: "« + Ajouter » (Add My Timesheet) in the timesheets list header",
+            trigger: '[data-sc-section="event.timesheets"] .o_sc_list_header button.o_sc_list_add[data-sc-sheet-open="sc_ts_add_sheet"]',
             run: "click",
+        },
+        {
+            // Task 1665: with my timesheet already on the event, the button
+            // opens it in edit and the toast offers « Add another timesheet ».
+            content: "The add sheet (or the toast's « Add another timesheet »)",
+            trigger: 'dialog#sc_ts_add_sheet[open], .o_sc_toast:not([hidden]) button[data-sc-toast-action]',
+            run() {
+                if (!document.querySelector("dialog#sc_ts_add_sheet[open]")) {
+                    this.anchor.click();
+                }
+            },
         },
         {
             content: "Submit the prefilled timesheet (today's route, CSRF)",
@@ -168,6 +180,59 @@ tours.add("sc_1540_notepad", {
                     }
                 }
                 assert(drafts.length === 0, `drafts left: ${drafts}`);
+            },
+        },
+    ],
+});
+
+// ------------- task 1587: a note's pencil edit changes its date and injury
+const NOTE_CARD = '[data-sc-edit-card^="note-"]';
+
+tours.add("sc_1587_note_date_injury", {
+    steps: () => [
+        {
+            content: "Open the note's pencil",
+            trigger: `${NOTE_CARD} button[data-sc-edit-toggle]`,
+            run: "click",
+        },
+        {
+            content: "Change the note's date",
+            trigger: `${NOTE_CARD} .o_sc_autosave[data-sc-field="date"] input[type="date"]`,
+            run() {
+                this.anchor.value = "2026-02-14";
+                this.anchor.dispatchEvent(new Event("input", { bubbles: true }));
+                this.anchor.dispatchEvent(new Event("change", { bubbles: true }));
+            },
+        },
+        {
+            content: "The date is saved",
+            trigger: `${NOTE_CARD} .o_sc_autosave[data-sc-field="date"][data-sc-state="saved"]`,
+        },
+        {
+            content: "Link the note to another injury of the player",
+            trigger: `${NOTE_CARD} .o_sc_autosave[data-sc-field="injury_id"] select`,
+            run() {
+                const option = [...this.anchor.options].find((opt) => opt.text === "Synthetic strain");
+                assert(option, "the player's open injury is offered");
+                assert(this.anchor.options[0].value === "", "« General note » comes first");
+                this.anchor.value = option.value;
+                this.anchor.dispatchEvent(new Event("change", { bubbles: true }));
+            },
+        },
+        {
+            content: "The injury is saved",
+            trigger: `${NOTE_CARD} .o_sc_autosave[data-sc-field="injury_id"][data-sc-state="saved"]`,
+        },
+        {
+            content: "Done: the card closes (task 1611: no reload, the meta line is a read fragment)",
+            trigger: `${NOTE_CARD} [data-sc-edit-done]`,
+            run: "click",
+        },
+        {
+            content: "The meta line shows the new injury",
+            trigger: `${NOTE_CARD} .o_sc_note_meta:contains("Synthetic strain")`,
+            run() {
+                assert(!this.anchor.textContent.includes("Synthetic old bruise"), "old injury still shown");
             },
         },
     ],

@@ -3,16 +3,17 @@ Synthetic fixtures only.
 
 Acceptance criteria covered here:
 
-* UC-P1 ``sc_nav_mode`` (back | crumbs, default back) and ``sc_theme``
-  (dark | light, default dark) are self-readable and self-writable by a
-  portal user, and by nobody else's hand.
-* UC-P2 ``POST /my/app/pref`` (CSRF) sets ONLY those two fields on the
+* UC-P1 ``sc_theme`` (dark | light, default dark) is self-readable and
+  self-writable by a portal user, and by nobody else's hand. (Task 1579
+  removed ``sc_nav_mode``: the screen width decides the navigation.)
+* UC-P2 ``POST /my/app/pref`` (CSRF) sets ONLY that field on the
   CALLER's own record: another field → 400, a bad value → 400, another user's
   record → 403, nothing written in either case. A JSON caller gets JSON; a
   plain form post is redirected back (no-JS path).
-* UC-P3 (AC4) « Plus » (``/my/app/more``) lists the role-scoped app entries
-  and the stock portal links (account, security, the classic portal home
-  with every other app's documents, logout) so nothing becomes unreachable.
+* UC-P3 (AC4) « Plus » (``/my/app/more``) lists the role-scoped app entries;
+  the stock portal links (account, security, the classic portal home with
+  every other app's documents) live on « Paramètres » (``/my/app/settings``,
+  task 1606) and logout in the user menu, so nothing becomes unreachable.
 """
 from lxml import html as lxml_html
 
@@ -34,24 +35,23 @@ class TestAppShellPrefs1538(AppShellCommon):
 
     # -- UC-P1 -----------------------------------------------------------
     def test_prefs_self_writable_and_defaults(self):
-        self.assertEqual(self.coach.sc_nav_mode, 'back')
         self.assertEqual(self.coach.sc_theme, 'dark')
-        self.coach.with_user(self.coach).write({'sc_nav_mode': 'crumbs', 'sc_theme': 'light'})
-        self.assertEqual(self.coach.sc_nav_mode, 'crumbs')
+        self.coach.with_user(self.coach).write({'sc_theme': 'light'})
         self.assertEqual(self.coach.sc_theme, 'light')
         with self.assertRaises(AccessError):
             self.tp.with_user(self.coach).write({'sc_theme': 'light'})
 
     # -- UC-P2 -----------------------------------------------------------
     def test_pref_route_sets_own_prefs_json(self):
+        self._theme_choice(True)  # task 1602: else the answer is the forced dark
         self._login_coach()
         resp = self._post_pref({'sc_theme': 'light'})
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json().get('sc_theme'), 'light')
         self.assertEqual(self.coach.sc_theme, 'light')
+        # Task 1579: the navigation-mode key is refused like any other.
         resp = self._post_pref({'sc_nav_mode': 'crumbs'})
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(self.coach.sc_nav_mode, 'crumbs')
+        self.assertEqual(resp.status_code, 400)
 
     def test_pref_route_form_post_redirects_back(self):
         self._login_coach()
@@ -105,17 +105,25 @@ class TestAppShellPrefs1538(AppShellCommon):
 
     def test_more_lists_stock_portal_links(self):
         self._switch(True)
+        self._theme_choice(True)  # task 1602: the Appearance block needs it
         for login in (self._login_coach, self._login_tp):
             login()
-            tree = self._more()
+            self.assertIn('/my/events', set(self._more().xpath('//main//a/@href')))
+            # Task 1606: the stock links moved to « Paramètres », logout to
+            # the user menu (in the layout, outside <main>).
+            resp = self.url_open('/my/app/settings')
+            self.assertEqual(resp.status_code, 200)
+            tree = lxml_html.fromstring(resp.text)
             hrefs = set(tree.xpath('//main//a/@href'))
-            for href in ('/my/account', '/my/security', '/my/home?classic=1',
-                         '/my/events'):
+            for href in ('/my/account', '/my/security'):
                 self.assertIn(href, hrefs)
-            self.assertTrue([h for h in hrefs if h.startswith('/web/session/logout')])
-            # Appearance + navigation preference controls.
+            # Review fixes 2026-10-18: no classic-portal link on Settings.
+            self.assertNotIn('/my/home?classic=1', hrefs)
+            menu = set(tree.xpath('//*[@data-sc-user-menu-popup]//a/@href'))
+            self.assertTrue([h for h in menu if h.startswith('/web/session/logout')])
+            # Appearance control; no navigation setting (task 1579).
             self.assertTrue(tree.xpath('//form[@data-sc-pref]//*[@name="sc_theme"]'))
-            self.assertTrue(tree.xpath('//form[@data-sc-pref]//*[@name="sc_nav_mode"]'))
+            self.assertFalse(tree.xpath('//*[@name="sc_nav_mode"]'))
 
     def test_more_role_scoped_entries(self):
         self._switch(True)

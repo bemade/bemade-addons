@@ -7,7 +7,9 @@ Acceptance criteria
    ``went_badly``, ``notes`` (Markdown), ``indicator_notes`` (free text: conflicts,
    withdrawal, spontaneous engagement, recovery delay — tallied on Sunday), and
    ``corrections`` (dated appended text — past entries are never edited in place:
-   writing to a past day's fields appends a dated correction instead).
+   writing to a past day's fields appends a dated correction instead). A field of a past
+   entry that is still **empty** takes its first text in place (nothing to correct);
+   writing an empty value over an empty field is a no-op.
 2. It is a separate model from the day, with **no** portal access rule and no
    ``ir.model.access`` line for portal groups; a portal user reading it raises
    AccessError even by direct id.
@@ -44,14 +46,11 @@ class TestJournal(HomeschoolCase):
         today = fields.Date.context_today(self.Day)
         day = self.make_day(today - timedelta(days=3))
         entry = self.env["homeschool.journal"].create({"day_id": day.id, "went_well": "original", "went_badly": "bad"})
-        entry.write({"went_well": "rewritten", "indicator_notes": "R3 1"})
-        self.assertEqual(entry.went_well, "original", "past entries are never edited in place")
+        entry.write({"went_well": "rewritten", "went_badly": "worse"})
+        self.assertEqual((entry.went_well, entry.went_badly), ("original", "bad"), "past entries are never edited in place")
         self.assertIn(fields.Date.to_string(today), entry.corrections)
         self.assertIn("rewritten", entry.corrections)
-        self.assertIn("R3 1", entry.corrections)
-        entry.write({"notes": "a note today"})  # non-frozen fields? notes is frozen too
-        self.assertFalse(entry.notes)
-        self.assertIn("a note today", entry.corrections)
+        self.assertIn("worse", entry.corrections)
         entry.with_context(journal_force_edit=True).write({"went_well": "import"})
         self.assertEqual(entry.went_well, "import", "the importer may write in place")
 
@@ -83,3 +82,51 @@ class TestJournal(HomeschoolCase):
         self.assertEqual(Journal.search_count([("student_id", "=", self.student.id)]), 2, "idempotent")
         self.assertEqual(jan5.went_well, "French went fine.")
         self.assertFalse(jan5.corrections, "the importer writes in place, no correction noise")
+
+    def test_past_entry_empty_field_fills_in_place(self):
+        """Closing a day late: a field still empty takes the text in place; only a change
+        to text already there becomes a correction line."""
+        today = fields.Date.context_today(self.Day)
+        today_str = fields.Date.to_string(today)
+        day = self.make_day(today - timedelta(days=5))
+        Journal = self.env["homeschool.journal"]
+        entry = Journal.create({"day_id": day.id, "notes": "- first"})
+        # 1. an empty field: in place, no correction
+        entry.write({"went_well": "the reading"})
+        self.assertEqual(entry.went_well, "the reading")
+        self.assertFalse(entry.corrections)
+        # 2. a filled field: a dated correction, the field unchanged
+        entry.write({"went_well": "the reading, after all"})
+        self.assertEqual(entry.went_well, "the reading")
+        self.assertEqual(entry.corrections, "- **%s** (What worked): the reading, after all" % today_str)
+        # 3. a mixed write: the empty one in place, the filled one corrected, the rest lands
+        other_day = self.make_day(today - timedelta(days=6))
+        entry.write({"went_badly": "the math", "notes": "- second"})
+        self.assertEqual(entry.went_badly, "the math")
+        self.assertEqual(entry.notes, "- first")
+        self.assertEqual(entry.corrections.splitlines()[-1], "- **%s** (Notes): - second" % today_str)
+        self.assertNotIn("the math", entry.corrections)
+        # whitespace-only counts as empty
+        blank = Journal.create({"day_id": other_day.id, "went_well": "x", "indicator_notes": "   "})
+        blank.write({"indicator_notes": "R3 1"})
+        self.assertEqual(blank.indicator_notes, "R3 1")
+        self.assertFalse(blank.corrections)
+        # an empty value over an empty field: no-op, no correction line
+        blank.write({"went_badly": False})
+        blank.write({"went_badly": ""})
+        self.assertFalse(blank.went_badly)
+        self.assertFalse(blank.corrections)
+        # append_note on a past entry with the field empty fills it
+        blank.append_note("notes", "- late")
+        self.assertEqual(blank.notes, "- late")
+        self.assertFalse(blank.corrections)
+        blank.append_note("notes", "- later")
+        self.assertEqual(blank.notes, "- late")
+        self.assertEqual(blank.corrections, "- **%s** (Notes): - later" % today_str)
+
+    def test_today_entry_unchanged(self):
+        day = self.make_day(fields.Date.context_today(self.Day))
+        entry = self.env["homeschool.journal"].create({"day_id": day.id, "went_well": "fine"})
+        entry.write({"went_well": "finer", "notes": "- n"})
+        self.assertEqual((entry.went_well, entry.notes), ("finer", "- n"))
+        self.assertFalse(entry.corrections)

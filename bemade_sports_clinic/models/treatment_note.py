@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from odoo import models, fields, api, _
 from odoo.exceptions import AccessError, ValidationError
-from odoo.tools.misc import format_date
+from odoo.tools.misc import format_date, format_datetime
 
 
 # Task 1413: the fields a portal edit may touch — the write() guard below only
@@ -50,6 +50,29 @@ class TreatmentNote(models.Model):
              "that was never edited after being added.")
     modified_by_name = fields.Char(
         string='Modified By', compute='_compute_modified_label')
+    # Owner review 2026-10-11: the portal shows the author's full name and
+    # « <date> <time> » (the time the note was written).
+    portal_when_label = fields.Char(
+        string='Written On', compute='_compute_portal_when_label',
+        help="Portal caption: the note's date with the time it was written "
+             "(viewer's time zone); the date alone when the note is dated "
+             "another day than it was written (e.g. backdated).")
+
+    # Babel pattern: « 11 oct. 2026 14:32 » / « 11 Oct 2026 14:32 ».
+    _PORTAL_DATETIME_FORMAT = "d MMM y HH:mm"
+
+    def _portal_datetime(self, moment):
+        return format_datetime(self.env, moment, tz=self.env.user.tz or self.env.context.get('tz'),
+                               dt_format=self._PORTAL_DATETIME_FORMAT)
+
+    @api.depends('date', 'create_date')
+    def _compute_portal_when_label(self):
+        for record in self:
+            written = record.create_date
+            if written and record.date == fields.Date.context_today(record, timestamp=written):
+                record.portal_when_label = record._portal_datetime(written)
+            else:
+                record.portal_when_label = format_date(record.env, record.date) if record.date else ''
 
     @api.depends('injury_id')
     def _compute_note_type(self):
@@ -92,12 +115,12 @@ class TreatmentNote(models.Model):
                 record.modified_by_name = ''
                 continue
             editor = record.sudo().write_uid
-            when = fields.Date.context_today(record, timestamp=record.write_date)
             record.modified_by_name = editor.name or ''
+            # Owner review 2026-10-11: date + time and the full name.
             record.modified_label = _(
-                'modified on %(date)s by %(initials)s',
-                date=format_date(record.env, when),
-                initials=self._initials(editor.name))
+                'modified on %(when)s by %(name)s',
+                when=record._portal_datetime(record.write_date),
+                name=editor.name or '')
 
     # ------------------------------------------------------------------
     # Task 1413: portal edit permission — author or clinic admin

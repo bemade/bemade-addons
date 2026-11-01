@@ -19,6 +19,11 @@
                         <div t-if="error" class="alert alert-danger">
                             <t t-esc="error"/>
                         </div>
+
+                        <!-- #1675 (owner 2026-10-25): a coach's changed external note is not saved. -->
+                        <div t-if="warning == 'external_notes_readonly'" class="alert alert-warning" data-sc-warning="external_notes_readonly">
+                            Only treatment professionals can edit the external notes: your change to them was not saved.
+                        </div>
                         
                         <!-- Task 1412: the form body is a sub-template, shared with the
                              clinic dossier's « open injury » modal (rendered alone, modal=True). -->
@@ -237,6 +242,7 @@
                                     <t t-set="label">Internal Notes (Medical Staff Only)</t>
                                 </t>
                                 <textarea name="internal_notes" id="internal_notes" class="form-control"
+                                    placeholder="Current state (replaces the previous text; the history keeps the versions)"
                                     rows="3"><t t-esc="injury.internal_notes"/></textarea>
                                 <small class="text-muted">Notes visible only to treatment professionals</small>
                                 <!-- Task 1406: date + author of the last SAVED internal note (from the history). -->
@@ -273,11 +279,15 @@
                     <div class="row">
                         <div class="col-lg-12">
                             <div class="form-group">
+                                <!-- #1675 (owner 2026-10-25): coaches read the external note, therapists edit it. -->
                                 <t t-call="bemade_sports_clinic.portal_field_label_clear">
                                     <t t-set="target_id" t-value="'external_notes'"/>
                                     <t t-set="label">External Notes</t>
+                                    <t t-set="readonly" t-value="not is_treatment_prof"/>
                                 </t>
                                 <textarea name="external_notes" id="external_notes" class="form-control"
+                                    placeholder="Current state (replaces the previous text; the history keeps the versions)"
+                                    t-att-readonly="None if is_treatment_prof else 'readonly'"
                                     rows="4"><t t-esc="injury.external_notes"/></textarea>
                                 <small class="text-muted">Notes visible to all team members</small>
                                 <!-- Task 1406: date + author of the last SAVED external note (from the history). -->
@@ -440,11 +450,11 @@
                                             </tr>
                                             <t t-foreach="notes" t-as="note">
                                                 <tr>
-                                                    <td><span t-field="note.date"/></td>
+                                                    <td><span t-esc="note.portal_when_label"/></td>
                                                     <td class="text-center">
                                                         <span class="badge text-bg-light border o_sc_note_author"
                                                               t-att-data-author="note.sudo().user_id.name"
-                                                              t-esc="note.author_initials"/>
+                                                              t-esc="note.sudo().user_id.name"/>
                                                     </td>
                                                     <td>
                                                         <t t-if="note.injury_id">
@@ -638,6 +648,10 @@
             <div class="container pt-3">
                 <div class="row">
                     <div class="col-lg-12 text-center">
+                        <!-- #1675: a coach's posted external note is not saved. -->
+                        <div t-if="warning == 'external_notes_readonly'" class="alert alert-warning" data-sc-warning="external_notes_readonly">
+                            Only treatment professionals can edit the external notes: your change to them was not saved.
+                        </div>
                         <div class="alert alert-success">
                             <h3><i class="fa fa-check-circle"></i> Injury Report Submitted</h3>
                             <p class="mt-3">Your injury report has been successfully submitted.</p>

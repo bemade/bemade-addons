@@ -32,8 +32,13 @@ AC5  Conflicts are computed over fields the acting user can actually READ.
 AC6  team_info_notes: destination text kept, each source's text appended under a
      '--- Merged from <name> (ID <id>) ---' provenance header. Destination-only
      and source-only cases both behave (no stray header, no leading separator).
-AC7  allergies: same concatenation rule. An allergy recorded ONLY on the source
-     must appear on the survivor -- this is the safety-critical case.
+AC7  allergies (task 1630: the allergy details, the medical-alert details and
+     « Other medical history »): same concatenation rule. An allergy recorded
+     ONLY on the source must appear on the survivor -- this is the
+     safety-critical case.
+AC11 Task 1630: the allergy / medical-alert LEVEL is the more severe of the
+     players' (« Not specified » loses to any level); EpiPen and « To
+     validate » are OR-ed; none of them is reported as a conflict.
 AC8  Concatenation is not duplicated when both patients carry identical text --
      the survivor must not read 'Peanut allergy / Peanut allergy'.
 AC9  Free-text concatenation is applied with tracking disabled, consistent with
@@ -215,34 +220,34 @@ class TestPatientMergeConflicts(TransactionCase):
     def test_source_only_allergy_survives(self):
         """AC7: safety-critical."""
         dst = self._patient('Alexandre')
-        src = self._patient('Alex', allergies='Aspirin')
+        src = self._patient('Alex', allergy_details='Aspirin')
 
         self._wizard(dst | src, dst).action_merge()
 
-        self.assertIn('Aspirin', dst.allergies or '',
+        self.assertIn('Aspirin', dst.allergy_details or '',
                       "an allergy recorded only on the source must survive")
 
     def test_differing_allergies_both_survive(self):
         """AC7: the real 'Aspirin' vs 'ASA' case -- both must be kept."""
-        dst = self._patient('Alexandre', allergies='Aspirin')
-        src = self._patient('Alex', allergies='ASA')
+        dst = self._patient('Alexandre', allergy_details='Aspirin')
+        src = self._patient('Alex', allergy_details='ASA')
 
         wizard = self._wizard(dst | src, dst)
         self.assertTrue(wizard.has_conflicts,
                         "differing allergies must be flagged for reconciliation")
         wizard.action_merge()
 
-        self.assertIn('Aspirin', dst.allergies)
-        self.assertIn('ASA', dst.allergies)
+        self.assertIn('Aspirin', dst.allergy_details)
+        self.assertIn('ASA', dst.allergy_details)
 
     def test_identical_text_not_duplicated(self):
         """AC8."""
-        dst = self._patient('Alexandre', allergies='Peanut allergy')
-        src = self._patient('Alex', allergies='Peanut allergy')
+        dst = self._patient('Alexandre', allergy_details='Peanut allergy')
+        src = self._patient('Alex', allergy_details='Peanut allergy')
 
         self._wizard(dst | src, dst).action_merge()
 
-        self.assertEqual(dst.allergies, 'Peanut allergy',
+        self.assertEqual(dst.allergy_details, 'Peanut allergy',
                          "identical text must not be duplicated")
 
     def test_concatenation_does_not_notify(self):
@@ -334,3 +339,54 @@ class TestPatientMergeConflicts(TransactionCase):
         blank = self._patient('Blank')
         self.assertFalse(self._wizard(blank | src, blank).has_conflicts,
                          "a source-only number fills the blank, no conflict")
+
+    # -- Task 1630 / 1677 ----------------------------------------------------
+    def _items(self, patient, *rows):
+        self.env['sports.patient.critical.item'].with_context(sc_critical_quiet=True).create([
+            {'patient_id': patient.id, 'family': family, 'name': name, 'life_threatening': vital,
+             'first_aid_note': aid} for family, name, vital, aid in rows])
+
+    def test_lists_merged_epipen_or(self):
+        """AC11 (task 1677): the lists are merged (one item per family +
+        name, life-threatening if either was, first-aid notes joined); the
+        levels follow; EpiPen / « to validate »: OR."""
+        dst = self._patient('Alexandre', allergy_none_confirmed=True)
+        self._items(dst, ('medical_alert', 'Synthetic asthma', False, 'Synthetic inhaler'))
+        src = self._patient('Alex', allergy_epipen=True, medical_alert_review=True)
+        self._items(src, ('allergy', 'Synthetic peanut', True, False),
+                    ('medical_alert', 'synthetic ASTHMA', True, 'Synthetic call 911'))
+        other = self._patient('Al')
+        wizard = self._wizard(dst | src | other, dst)
+        self.assertFalse(wizard.has_conflicts, "levels are resolved by rule")
+        wizard.action_merge()
+        dst.invalidate_recordset()
+        self.assertEqual([(i.family, i.name, i.life_threatening) for i in dst.critical_item_ids.sorted('family')],
+                         [('allergy', 'Synthetic peanut', True), ('medical_alert', 'Synthetic asthma', True)])
+        self.assertEqual(dst.medical_alert_critical_ids.first_aid_note, 'Synthetic inhaler\nSynthetic call 911')
+        self.assertEqual((dst.allergy_level, dst.medical_alert_level), ('urgent', 'urgent'))
+        self.assertFalse(dst.allergy_none_confirmed, '« none known » with items')
+        self.assertTrue(dst.allergy_epipen)
+        self.assertTrue(dst.medical_alert_review)
+
+    def test_none_known_kept_without_items(self):
+        """AC11: « none known » survives a merge with an empty file."""
+        dst = self._patient('Alexandre')
+        src = self._patient('Alex', allergy_none_confirmed=True)
+        self._wizard(dst | src, dst).action_merge()
+        self.assertEqual(dst.allergy_level, 'none')
+        self.assertFalse(dst.allergy_epipen)
+
+    def test_medical_texts_combined(self):
+        """AC7 (task 1630): the alert details and « Other medical history »."""
+        dst = self._patient('Alexandre', medical_alert_details='Synthetic asthma',
+                            medical_history_other='Synthetic fracture')
+        src = self._patient('Alex', medical_alert_details='Synthetic epilepsy',
+                            medical_history_other='Synthetic surgery')
+        wizard = self._wizard(dst | src, dst)
+        self.assertTrue(wizard.has_conflicts)
+        wizard.action_merge()
+        for value in ('Synthetic asthma', 'Synthetic epilepsy'):
+            self.assertIn(value, dst.medical_alert_details)
+        for value in ('Synthetic fracture', 'Synthetic surgery'):
+            self.assertIn(value, dst.medical_history_other)
+        self.assertIn('--- Merged from', dst.medical_history_other)

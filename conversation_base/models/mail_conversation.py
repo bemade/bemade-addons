@@ -257,12 +257,16 @@ class MailConversation(models.Model):
     def _triage_unread_recipients(self):
         """Users who should see this conversation as unread after an
         inbound message: the assignee, the team's internal members and
-        everyone who already has a member row."""
+        everyone who already has a member row. A user who is filing the
+        message themselves (context ``triage_unread_skip_user_id``) has just
+        read it, so they are left out."""
         self.ensure_one()
         conversation = self.sudo()
         users = conversation.user_id | conversation.team_id.member_ids
         users = users.filtered(lambda u: u.active and not u.share)
-        return users | conversation.member_ids.user_id
+        users |= conversation.member_ids.user_id
+        skip_id = self.env.context.get("triage_unread_skip_user_id")
+        return users.filtered(lambda u: u.id != skip_id) if skip_id else users
 
     def _triage_mark_unread_for_inbound(self):
         """Flag the conversation unread for its recipients. Touches only
@@ -711,7 +715,11 @@ class MailConversation(models.Model):
             post_kwargs["email_from"] = stub.get("email_from") or stub.get(
                 "author"
             )
-        message = conversation.message_post(**post_kwargs)
+        # The user filing the item has just read it: the post must not
+        # flag the conversation unread for them (everyone else still is).
+        message = conversation.with_context(
+            triage_unread_skip_user_id=self.env.uid
+        ).message_post(**post_kwargs)
         # transport_id stays FALSY here by design: it is the model-contract
         # marker for "internal note" (mail.message docstring), and the
         # notification-safety invariant this quiet capture leans on is the
@@ -821,6 +829,7 @@ class MailConversation(models.Model):
         cc=None,
         bcc=None,
         attachment_ids=None,
+        reply_to_message=None,
     ):
         """Reply (or reply-all, when ``recipients`` includes the Cc
         participants) on this conversation's primary transport (or the
@@ -834,6 +843,12 @@ class MailConversation(models.Model):
         passed on to ``transport._send`` only when set, so a transport
         implementing the older ``_send`` signature keeps working for every
         caller that does not use them.
+
+        ``reply_to_message`` (a ``mail.message`` of this conversation)
+        makes the reply an answer to that specific message: it is posted
+        with it as ``parent_id`` and the transport threads the outgoing
+        email against its RFC822 id instead of the default (the newest
+        message the correspondent has seen).
         """
         self.ensure_one()
         transport = self._get_sendable_transport(transport)
@@ -844,6 +859,11 @@ class MailConversation(models.Model):
             post_kwargs["subject"] = subject
         if attachment_ids:
             post_kwargs["attachment_ids"] = list(attachment_ids)
+        if reply_to_message:
+            post_kwargs["parent_id"] = reply_to_message.id
+            transport = transport.with_context(
+                conversation_reply_to_message_id=reply_to_message.id
+            )
         message = self.message_post(**post_kwargs)
         message.write({"transport_id": transport.id})
         send_kwargs = {"recipients": recipients}
@@ -990,7 +1010,10 @@ class MailConversation(models.Model):
         return True
 
     def action_triage_mark_read(self):
-        self._triage_my_members().write({"unread": False})
+        """Mark the conversations read for *me*. Also what opening one in the
+        form does: a user without a member row gets one (read), so later
+        inbound messages flag them unread like everyone who opened it."""
+        self._triage_my_members().filtered("unread").write({"unread": False})
         return True
 
     def action_triage_mark_unread(self):

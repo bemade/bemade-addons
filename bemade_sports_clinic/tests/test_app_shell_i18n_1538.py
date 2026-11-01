@@ -38,10 +38,13 @@ class TestAppShellI18n1538(AppShellCommon):
 
     def test_home_in_french(self):
         self._switch(True)
+        self._theme_choice(True)  # task 1602: the theme labels need the toggles
         self._login_tp()
         text = self._fr('/my/home')
+        # Task 1624 (deliberate update): the dashboard's widget sections
+        # replaced « Mes équipes » / « À venir » on the home.
         for term in ('Équipes', 'Joueurs', 'Clinique', 'Activités', 'Plus',
-                     'Mes équipes', 'À venir', 'Blessés', 'Disponibles',
+                     'Aujourd&#39;hui', 'Couvertures à venir', 'Blessés', 'Disponibles',
                      'Basculer le thème'):
             self.assertIn(term, text, term)
         self.assertNotIn('>My teams<', text)
@@ -50,15 +53,39 @@ class TestAppShellI18n1538(AppShellCommon):
         self._switch(True)
         self._login_coach()
         text = self._fr('/my/teams')
-        for term in ('Mes équipes', 'Activité récente', 'Alphabétique', 'Retour'):
+        for term in ('Mes équipes', 'Récemment actives', 'Alphabétique'):
             self.assertIn(term, text, term)
+        self.assertNotIn('Activité récente', text)
+
+    def test_players_sort_switch_in_french(self):
+        self._switch(True)
+        self._login_tp()
+        text = self._fr('/my/players')
+        # Same label as the team roster's sort (owner review 2026-10-10).
+        self.assertIn('Par statut', text)
+        self.assertNotIn('Plus blessés', text)
+
+    def test_contact_practice_in_french(self):
+        self._switch(True)
+        self._login_tp()
+        text = self._fr('/my/player?player_id=%s' % self.player.id)
+        # Task 1627: the 4-way changer (« Pratique contact ») is gone; the
+        # Practice pill offers the model's values.
+        self.assertIn('Oui, sans contact', text)
+        self.assertIn('Pratique : Oui', text)
+        self.assertNotIn('Pratique seulement', text)
 
     def test_more_in_french(self):
         self._switch(True)
+        self._theme_choice(True)  # task 1602: the theme labels need the toggles
         self._login_tp()
         text = self._fr('/my/app/more')
-        for term in ('Apparence', 'Sombre', 'Clair', 'Navigation',
-                     'Retour + contexte', "Fil d'Ariane", 'Mon compte', 'Sécurité',
-                     'Événements et calendrier', 'Bloc-notes', 'Feuilles de temps',
-                     'Déconnexion'):
+        # Task 1579: no « Navigation » setting any more.
+        for term in ('Événements et calendrier', 'Bloc-notes', 'Feuilles de temps',
+                     'Paramètres', 'Se déconnecter'):
+            self.assertIn(term, text.replace('&#39;', "'"), term)
+        # Task 1606: the settings moved to « Paramètres ».
+        text = self._fr('/my/app/settings')
+        # Task 1726: « Apparence » is a « Mode sombre » switch.
+        for term in ('Apparence', 'Mode sombre', 'Mon compte', 'Sécurité'):
             self.assertIn(term, text.replace('&#39;', "'"), term)

@@ -6,3 +6,14 @@ from . import test_draft_comments
 from . import test_draft_access
 from . import test_draft_template
 from . import test_draft_triage_view
+from . import test_reply_templates
+from . import test_reply_templates_tour
+from . import test_reply_templates_url
+from . import test_chatter_send_message_tour
+from . import test_draft_notification_scope
+from . import test_draft_attachment_access
+from . import test_draft_signature
+from . import test_draft_signature_tour
+from . import test_reply_popup
+from . import test_reply_popup_tour
+from . import test_draft_collaboration_js

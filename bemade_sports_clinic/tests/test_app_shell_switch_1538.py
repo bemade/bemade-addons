@@ -9,9 +9,11 @@ Acceptance criteria covered here:
   « Clinique », a therapist gets « Clinique »; both get « Réservations » only
   when the bookings card is enabled; the website/portal header and footer are
   NOT rendered; a user without any clinic role keeps the stock portal.
-* UC-S3 (AC3) ``sc_nav_mode='crumbs'`` renders the crumb row on a sub-page,
-  ``back`` (default) renders the back chevron + context line instead.
-* UC-S4 (AC2) The theme attribute follows ``sc_theme`` (dark by default).
+* UC-S3 (AC3) A sub-page renders the back chevron + context line AND the
+  crumb row (task 1579: the screen width decides which one shows — the
+  former ``sc_nav_mode`` setting is gone).
+* UC-S4 (AC2) The theme attribute follows ``sc_theme`` (dark by default)
+  when the theme choice is enabled (task 1602: forced dark otherwise).
 * UC-S5 The stock portal home stays reachable from the shell
   (``/my/home?classic=1``).
 """
@@ -25,12 +27,17 @@ from odoo.addons.bemade_sports_clinic.controllers.app_shell import AppShellMixin
 from odoo.addons.bemade_sports_clinic.tests.portal_cov_common import PortalCovCommon
 
 SWITCH = 'bemade_sports_clinic.app_shell_enabled'
+THEME_CHOICE = 'bemade_sports_clinic.sc_theme_choice_enabled'
 
 
 class AppShellCommon(PortalCovCommon):
 
     def _switch(self, on):
         self.env['ir.config_parameter'].sudo().set_param(SWITCH, 'True' if on else False)
+
+    def _theme_choice(self, on):
+        """Task 1602: the dark / light choice (off = forced dark)."""
+        self.env['ir.config_parameter'].sudo().set_param(THEME_CHOICE, 'True' if on else False)
 
     def _get(self, url):
         resp = self.url_open(url)
@@ -87,16 +94,19 @@ class TestAppShellSwitch1538(AppShellCommon):
         self.assertEqual(self._nav_keys(tree, 'o_sc_tabs'),
                          ['teams', 'players', 'activities', 'more'])
         self.assertNotIn('clinic', self._nav_keys(tree, 'o_sc_rail_nav'))
-        # The team the coach staffs is listed on the home.
-        self.assertIn('PC Team A', text)
+        # Task 1624 (deliberate update): the home is the configurable
+        # dashboard — « My teams » left it (still under « Teams »).
+        self.assertTrue(tree.xpath('//section[@data-sc-widget="indicators"]'))
         self.assertNotIn('PC Team B', text)
 
     def test_switch_on_tp_tabs_with_clinic(self):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/home')
+        # Owner review 2026-10-10: « Clinic » left the phone tabs for
+        # « More »; the laptop rail keeps it.
         self.assertEqual(self._nav_keys(tree, 'o_sc_tabs'),
-                         ['teams', 'players', 'clinic', 'activities', 'more'])
+                         ['teams', 'players', 'notepad', 'activities', 'more'])
         self.assertIn('clinic', self._nav_keys(tree, 'o_sc_rail_nav'))
         # The therapist-only home section.
         self.assertTrue(tree.xpath('//*[@data-sc-section="home.clinic_teaser"]'))
@@ -144,32 +154,26 @@ class TestAppShellSwitch1538(AppShellCommon):
         text, tree = self._get('/my/teams')
         self.assertIsNotNone(self._shell(tree))
         self.assertIn('PC Team A', text)
-        rows = tree.xpath('//a[contains(@class, "o_sc_entity_row")][@data-sc-team-id]')
+        # Task 1592 (deliberate update): a team row is a link row now (its
+        # activity clock is its own link); the team id is on the main link.
+        rows = tree.xpath('//*[contains(@class, "o_sc_entity_row")]//a[@data-sc-team-id]')
         self.assertTrue(rows)
         # Sticky sort (task 1401) survives in the shell.
         self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_sort")]'))
 
     # -- UC-S3 -----------------------------------------------------------
-    def test_nav_mode_back_is_default(self):
+    def test_sub_page_renders_back_and_crumbs(self):
+        # Task 1579 (deliberate update): both are rendered, CSS shows one per
+        # screen width; no per-user navigation mode any more.
         self._switch(True)
         self._login_coach()
-        self.assertEqual(self.coach.sc_nav_mode, 'back')
-        _text, tree = self._get('/my/teams')
+        _text, tree = self._get('/my/team?team_id=%s' % self.team_a.id)
         self.assertTrue(tree.xpath('//a[contains(@class, "o_sc_back")]'))
         self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_appbar_context")]'))
-        self.assertFalse(tree.xpath('//nav[contains(@class, "o_sc_crumbs")]'))
-        self.assertEqual(self._shell(tree).get('data-sc-nav'), 'back')
-
-    def test_nav_mode_crumbs(self):
-        self._switch(True)
-        self.coach.sc_nav_mode = 'crumbs'
-        self._login_coach()
-        _text, tree = self._get('/my/teams')
         crumbs = tree.xpath('//nav[contains(@class, "o_sc_crumbs")]')
         self.assertTrue(crumbs)
-        self.assertTrue(crumbs[0].xpath('.//a[@href="/my/home"]'))
-        self.assertFalse(tree.xpath('//a[contains(@class, "o_sc_back")]'))
-        self.assertEqual(self._shell(tree).get('data-sc-nav'), 'crumbs')
+        self.assertTrue(crumbs[0].xpath('.//a[@href="/my/teams"]'))
+        self.assertIsNone(self._shell(tree).get('data-sc-nav'))
 
     def test_top_level_page_shows_logo_not_back(self):
         self._switch(True)
@@ -181,6 +185,7 @@ class TestAppShellSwitch1538(AppShellCommon):
     # -- UC-S4 -----------------------------------------------------------
     def test_theme_attribute_follows_preference(self):
         self._switch(True)
+        self._theme_choice(True)
         self._login_tp()
         self.assertEqual(self.tp.sc_theme, 'dark')
         _text, tree = self._get('/my/home')

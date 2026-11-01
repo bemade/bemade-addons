@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Draft",
-    "version": "19.0.1.1.0",
+    "version": "19.0.1.5.4",
     "category": "Discuss",
     "summary": "Shared, collaboratively edited reply drafts on a conversation.",
     "author": "Bemade Inc.",
@@ -31,14 +31,22 @@
     ],
     "data": [
         "security/ir.model.access.csv",
+        "data/mail_notification_scope_data.xml",
         "views/mail_conversation_draft_views.xml",
         "wizards/mail_conversation_draft_template_views.xml",
         "views/mail_conversation_views.xml",
         "views/mail_conversation_triage_views.xml",
+        "views/mail_reply_template_views.xml",
     ],
     "assets": {
         "web.assets_backend": [
             "conversation_draft/static/src/**/*",
+        ],
+        "web.assets_tests": [
+            "conversation_draft/static/tests/tours/**/*",
+        ],
+        "web.assets_unit_tests": [
+            "conversation_draft/static/tests/unit/**/*",
         ],
     },
     "installable": True,

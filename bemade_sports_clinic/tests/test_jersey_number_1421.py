@@ -68,7 +68,8 @@ class TestJerseyNumberModel(TransactionCase):
         self.assertEqual(p._jersey_label(), '#12')
         self.assertEqual(p._portal_list_name(), '#12 Tremblay, Émile')
         self.assertEqual(p._portal_list_name(with_jersey=False), 'Tremblay, Émile')
-        self.assertEqual(p._portal_heading_name(), '#12 Émile Tremblay')
+        # Owner review 2026-10-11: headings read « Last, First » too.
+        self.assertEqual(p._portal_heading_name(), '#12 Tremblay, Émile')
         # ``name`` itself (breadcrumbs, chatter) stays « First Last ».
         self.assertEqual(p.name, 'Émile Tremblay')
 
@@ -76,7 +77,7 @@ class TestJerseyNumberModel(TransactionCase):
         p = self._patient('Émile', 'Tremblay')
         self.assertEqual(p._jersey_label(), '')
         self.assertEqual(p._portal_list_name(), 'Tremblay, Émile')
-        self.assertEqual(p._portal_heading_name(), 'Émile Tremblay')
+        self.assertEqual(p._portal_heading_name(), 'Tremblay, Émile')
         self.assertNotIn('#', p._portal_list_name())
         self.assertNotIn('#', p._portal_heading_name())
 
@@ -337,13 +338,13 @@ class TestJerseyNumberPortal(PortalCovCommon):
     def test_player_heading_and_dossier(self):
         self._login_tp()
         doc = self._doc('/my/player?player_id=%s' % self.twelve.id)
-        self.assertEqual(self._texts(doc.cssselect('h1'))[:1], ['#12 Bob Btwelve'])
+        self.assertEqual(self._texts(doc.cssselect('h1'))[:1], ['#12 Btwelve, Bob'])
         doc = self._doc('/my/player?player_id=%s' % self.player.id)
-        self.assertEqual(self._texts(doc.cssselect('h1'))[:1], ['Pat One'])
+        self.assertEqual(self._texts(doc.cssselect('h1'))[:1], ['One, Pat'])
         # Clinic dossier card + worklist row.
         doc = self._doc('/my/clinic/%s?patient=%s' % (self.clinic.id, self.twelve.id))
         headers = self._texts(doc.cssselect('#clinic-dossier h5'))
-        self.assertIn('#12 Bob Btwelve', headers)
+        self.assertIn('#12 Btwelve, Bob', headers)
         rows = self._texts(doc.cssselect('ul.o_sc_worklist .o_sc_worklist_row a'))
         self.assertEqual(rows, ['#12 Btwelve, Bob'])
 
@@ -363,10 +364,10 @@ class TestJerseyNumberPortal(PortalCovCommon):
         self._login_tp()
         doc = self._doc('/my/player/create?first_name=Bob&last_name=Btwelve')
         labels = self._texts(doc.cssselect('.list-group-item .fw-bold'))
-        self.assertIn('#12 Bob Btwelve', labels)
+        self.assertIn('#12 Btwelve, Bob', labels)
         doc = self._doc('/my/team/%s/player/add_link?first_name=Pat&last_name=One' % self.team_a.id)
         labels = self._texts(doc.cssselect('.list-group-item strong'))
-        self.assertIn('Pat One', labels)
+        self.assertIn('One, Pat', labels)
 
     # ------------------------------------------------------------------
     # AC4 — roster sort

@@ -2,9 +2,9 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_patient_user,User Access for Patients,model_sports_patient,group_sports_clinic_user,1,1,1,0
 access_patient_treatment_pro,Treatment Professional Access for Patients,model_sports_patient,group_sports_clinic_treatment_professional,1,1,1,1
 access_patient_admin,Admin Access for Patients,model_sports_patient,group_sports_clinic_admin,1,1,1,1
-access_patient_portal,Portal Access for Patients,model_sports_patient,base.group_portal,1,1,1,0
+access_patient_portal,Portal Access for Patients,model_sports_patient,base.group_portal,1,0,0,0
+access_patient_portal_coach,Portal Coach Access for Patients,model_sports_patient,bemade_sports_clinic.group_portal_team_coach,1,1,1,0
 access_patient_portal_tp,Portal Treatment Professional Access for Patients,model_sports_patient,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
-access_treatment_note_portal_coach,Portal Coach Access for Treatment Notes,model_sports_treatment_note,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
 access_sports_event_user,User Access for Sports Events,model_sports_event,base.group_user,1,1,1,1
 access_sports_event_portal_treatment_professional,Portal Treatment Professional Access for Sports Events,model_sports_event,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,0
 access_sports_event_portal_team_coach,Portal Team Coach Access for Sports Events,model_sports_event,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
@@ -21,12 +21,12 @@ access_team_admin,Admin Access for Teams,model_sports_team,group_sports_clinic_a
 access_team_treatment_pro,Treatment Professional Access for Teams,model_sports_team,group_sports_clinic_treatment_professional,1,1,1,0
 access_team_portal,Portal Access for Teams,model_sports_team,base.group_portal,1,0,0,0
 access_team_portal_tp,Portal Treatment Professional Access for Teams,model_sports_team,bemade_sports_clinic.group_portal_treatment_professional,1,1,0,0
-access_team_staff_user,User Access for Team Staff,model_sports_team_staff,group_sports_clinic_user,1,1,1,1
+access_team_staff_user,User Read Access for Team Staff,model_sports_team_staff,group_sports_clinic_user,1,0,0,0
 access_team_staff_portal,Portal Access for Team Staff,model_sports_team_staff,base.group_portal,1,0,0,0
 access_team_staff_admin,Admin Access for Team Staff,model_sports_team_staff,group_sports_clinic_admin,1,1,1,1
 access_treatment_note_user,User Access for Treatment Notes,model_sports_treatment_note,group_sports_clinic_user,1,0,0,0
 access_treatment_note_treatment_pro,Treatment Professional Access for Treatment Notes,model_sports_treatment_note,group_sports_clinic_treatment_professional,1,1,1,1
-access_treatment_note_portal,Portal Access for Treatment Notes,model_sports_treatment_note,base.group_portal,1,0,0,0
+access_treatment_note_portal_tp,Portal Treatment Professional Read Access for Treatment Notes,model_sports_treatment_note,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
 access_treatment_note_admin,Admin Access for Treatment Notes,model_sports_treatment_note,group_sports_clinic_admin,1,1,1,1
 access_injury_document_user,User Access for Injury Documents,model_sports_injury_document,group_sports_clinic_user,1,1,1,1
 access_injury_document_treatment_pro,Treatment Professional Access for Injury Documents,model_sports_injury_document,group_sports_clinic_treatment_professional,1,1,1,1
@@ -108,10 +108,10 @@ access_sports_team_user_rank_portal_tp,Portal TP Access for Personal Team Order,
 access_sports_team_user_rank_portal_coach,Portal Coach Access for Personal Team Order,model_sports_team_user_rank,bemade_sports_clinic.group_portal_team_coach,1,1,1,1
 access_sports_team_user_rank_internal,Internal User Access for Personal Team Order,model_sports_team_user_rank,base.group_user,1,1,1,1
 access_sports_organization_staff_user,User Read Access for Organization Staff,model_sports_organization_staff,group_sports_clinic_user,1,0,0,0
-access_sports_organization_staff_tp,Treatment Professional Access for Organization Staff,model_sports_organization_staff,group_sports_clinic_treatment_professional,1,1,1,1
+access_sports_organization_staff_tp,Treatment Professional Read Access for Organization Staff,model_sports_organization_staff,group_sports_clinic_treatment_professional,1,0,0,0
 access_sports_organization_staff_admin,Admin Access for Organization Staff,model_sports_organization_staff,group_sports_clinic_admin,1,1,1,1
 access_sports_organization_staff_override_user,User Read Access for Organization Staff Overrides,model_sports_organization_staff_override,group_sports_clinic_user,1,0,0,0
-access_sports_organization_staff_override_tp,Treatment Professional Access for Organization Staff Overrides,model_sports_organization_staff_override,group_sports_clinic_treatment_professional,1,1,1,1
+access_sports_organization_staff_override_tp,Treatment Professional Read Access for Organization Staff Overrides,model_sports_organization_staff_override,group_sports_clinic_treatment_professional,1,0,0,0
 access_sports_organization_staff_override_admin,Admin Access for Organization Staff Overrides,model_sports_organization_staff_override,group_sports_clinic_admin,1,1,1,1
 access_sports_organization_staff_team_user,User Read Access for Organization Staff Team Status,model_sports_organization_staff_team,group_sports_clinic_user,1,0,0,0
 access_sports_organization_staff_team_tp,Treatment Professional Read Access for Organization Staff Team Status,model_sports_organization_staff_team,group_sports_clinic_treatment_professional,1,0,0,0
@@ -120,6 +120,26 @@ access_team_org_staff_promote_wizard_admin,Admin Access for Org Staff Promote Wi
 access_team_org_staff_promote_wizard_admin2,Clinic Admin Access for Org Staff Promote Wizard,model_team_org_staff_promote_wizard,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1
 access_team_org_staff_promote_wizard_line_admin,Admin Access for Org Staff Promote Wizard Line,model_team_org_staff_promote_wizard_line,base.group_system,1,1,1,1
 access_team_org_staff_promote_wizard_line_admin2,Clinic Admin Access for Org Staff Promote Wizard Line,model_team_org_staff_promote_wizard_line,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1
-access_sports_staff_grant_user,User Access for Temporary Staff Access,model_sports_staff_grant,group_sports_clinic_user,1,1,1,1
+access_sports_staff_grant_user,User Read Access for Temporary Staff Access,model_sports_staff_grant,group_sports_clinic_user,1,0,0,0
 access_sports_staff_grant_admin,Admin Access for Temporary Staff Access,model_sports_staff_grant,group_sports_clinic_admin,1,1,1,1
 access_sports_clinic_kiosk_device_system,System Access for Clinic Kiosk Device,model_sports_clinic_kiosk_device,base.group_system,1,1,1,1
+access_training_history_user,User Access for Training Recommendation History,model_sports_patient_training_history,group_sports_clinic_user,1,0,0,0
+access_training_history_treatment_pro,Treatment Professional Access for Training Recommendation History,model_sports_patient_training_history,group_sports_clinic_treatment_professional,1,0,0,0
+access_training_history_admin,Admin Access for Training Recommendation History,model_sports_patient_training_history,group_sports_clinic_admin,1,0,0,0
+access_training_history_system,System Access for Training Recommendation History,model_sports_patient_training_history,base.group_system,1,1,1,1
+access_training_history_portal_tp,Portal Treatment Prof Access for Training Recommendation History,model_sports_patient_training_history,bemade_sports_clinic.group_portal_treatment_professional,1,0,0,0
+access_training_history_portal_coach,Portal Coach Access for Training Recommendation History,model_sports_patient_training_history,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
+access_critical_item_user,Clinic User Access for Critical Medical Items,model_sports_patient_critical_item,group_sports_clinic_user,1,1,1,1
+access_critical_item_itp,Internal TP Access for Critical Medical Items,model_sports_patient_critical_item,group_sports_clinic_treatment_professional,1,1,1,1
+access_critical_item_admin,Admin Access for Critical Medical Items,model_sports_patient_critical_item,group_sports_clinic_admin,1,1,1,1
+access_critical_item_portal_tp,Portal TP Access for Critical Medical Items,model_sports_patient_critical_item,bemade_sports_clinic.group_portal_treatment_professional,1,1,1,1
+access_critical_item_portal_coach,Portal Coach Read Access for Critical Medical Items,model_sports_patient_critical_item,bemade_sports_clinic.group_portal_team_coach,1,0,0,0
+access_team_staff_system,System Admin Access for Team Staff,model_sports_team_staff,base.group_system,1,1,1,1
+access_sports_organization_staff_system,System Admin Access for Organization Staff,model_sports_organization_staff,base.group_system,1,1,1,1
+access_sports_organization_staff_override_system,System Admin Access for Organization Staff Overrides,model_sports_organization_staff_override,base.group_system,1,1,1,1
+access_sports_staff_grant_system,System Admin Access for Temporary Staff Access,model_sports_staff_grant,base.group_system,1,1,1,1
+access_sports_organization_staff_team_system,System Admin Access for Organization Staff Team Status,model_sports_organization_staff_team,base.group_system,1,1,1,1
+access_sc_help_article_admin,Clinic Admin Access for App Help Articles,model_sc_help_article,group_sports_clinic_admin,1,1,1,1
+access_sc_help_article_system,System Admin Access for App Help Articles,model_sc_help_article,base.group_system,1,1,1,1
+access_sports_patient_duplicate_admin,Clinic Admin Access for Possible Duplicates,model_sports_patient_duplicate,bemade_sports_clinic.group_sports_clinic_admin,1,1,1,1
+access_sports_patient_duplicate_system,System Access for Possible Duplicates,model_sports_patient_duplicate,base.group_system,1,1,1,1

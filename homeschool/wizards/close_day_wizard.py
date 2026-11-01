@@ -56,7 +56,7 @@ class CloseDayWizard(models.TransientModel):
     # ------------------------------------------------------------------
     def _hour_blocks(self):
         self.ensure_one()
-        return self.day_id.block_ids.filtered(lambda b: b.kind not in NO_HOURS_KINDS).sorted(lambda b: (b.sequence, b.id))
+        return self.day_id._hour_blocks().sorted(lambda b: (b.sequence, b.id)) if self.day_id else self.day_id.block_ids
 
     @api.depends("day_id.block_ids.kind", "day_id.block_ids.sequence")
     def _compute_blocks(self):
@@ -127,11 +127,20 @@ class CloseDayWizard(models.TransientModel):
 
     @api.model
     def action_open_today(self):
-        """Track › Close the day: today's day of the company's single student."""
+        """Track › Close the day, for the company's single student: today's day when it holds
+        an hour-bearing block, else the most recent past *Incomplete* day. Never creates a
+        day (opening the menu on a Sunday used to leave an empty « incomplete » day)."""
         students = self.env["homeschool.student"].search([("company_id", "=", self.env.company.id)], limit=2)
         if len(students) != 1:
             raise UserError(self.env._("This company has %(count)s students: open the day and close it from its form.", count=len(students)))
-        day = self.env["homeschool.day"]._get_or_create(students, fields.Date.context_today(self))
+        Day = self.env["homeschool.day"]
+        today = fields.Date.context_today(self)
+        day = Day.search([("student_id", "=", students.id), ("date", "=", today)], limit=1)
+        if not (day and day._hour_blocks()):
+            day = Day.search([("student_id", "=", students.id), ("date", "<", today),
+                              ("journal_state", "=", "incomplete")], order="date desc", limit=1)
+        if not day:
+            raise UserError(self.env._("Nothing to close: no incomplete day."))
         return self.create({"day_id": day.id})._reopen()
 
     # ------------------------------------------------------------------
@@ -160,15 +169,22 @@ class CloseDayWizard(models.TransientModel):
         return vals
 
     def action_next(self):
-        """Write the current block (minutes only when given, status, the texts that
-        changed) and move to the next screen."""
+        """Write the current block (status, both minutes, the texts that changed) and move
+        to the next screen. A block done or partial needs both minute fields — a blank one
+        would leave the day incomplete with no hint until the last screen; a block that did
+        not happen is skipped instead."""
         self.ensure_one()
         block = self.block_id
         if block:
+            minutes_total = self._minutes(self.minutes_total)
+            minutes_adult = self._minutes(self.minutes_adult_present)
+            # 0 is a value; False is a blank (identity checks: 0 == False)
+            if self.status in ("done", "partial") and (minutes_total is False or minutes_adult is False):
+                raise UserError(self.env._("Enter the minutes (total and with an adult), or click « Skip this block »."))
             vals = {
                 "status": self.status,
-                "minutes_total": self._minutes(self.minutes_total),
-                "minutes_adult_present": self._minutes(self.minutes_adult_present),
+                "minutes_total": minutes_total,
+                "minutes_adult_present": minutes_adult,
             }
             vals.update(self._changed_texts(block, (("went_well", "went_well"), ("went_badly", "went_badly"), ("note", "note"))))
             block.write(vals)
@@ -207,4 +223,5 @@ class CloseDayWizard(models.TransientModel):
                 raise UserError(self.env._("Write at least one line in the journal before finishing."))
             self.env["homeschool.journal"].create(dict(vals, day_id=day.id))
         day.block_ids.filtered(lambda b: b.kind in NO_HOURS_KINDS and b.status == "planned").write({"status": "done"})
-        return {"type": "ir.actions.act_window_close"}
+        # close the dialog and reload the screen behind it (the Days list showed the old state)
+        return {"type": "ir.actions.client", "tag": "soft_reload"}

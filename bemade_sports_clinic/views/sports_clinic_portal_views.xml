@@ -688,6 +688,17 @@
                     <span class="fw-bold">Internal notes:</span>
                     <span style="white-space: pre-wrap;" t-esc="inj['internal_notes']"/>
                 </div>
+                <!-- App shell detail (owner layout 2026-10-11): this injury's
+                     own changes inside its card. Absent on the legacy card. -->
+                <div t-if="inj.get('items')" class="mt-2 o_sc_injury_changes">
+                    <t t-call="bemade_sports_clinic.dashboard_change_items">
+                        <t t-set="items" t-value="inj['items']"/>
+                        <t t-set="synopsis" t-value="False"/>
+                        <t t-set="show_position" t-value="False"/>
+                        <t t-set="position" t-value="False"/>
+                        <t t-set="hide_injury_suffix" t-value="True"/>
+                    </t>
+                </div>
             </div>
         </template>
 
@@ -860,7 +871,7 @@
                          Position moved to the header; last consultation moved
                          into the expandable below. -->
                     <div t-if="player.training_recommendation" class="text-muted small d-flex align-items-start mb-1">
-                        <i class="fa fa-graduation-cap mt-1" title="Training Recommendation"></i>
+                        <i class="fa fa-heartbeat mt-1" title="Training Recommendation"></i>
                         <span class="ms-1" style="white-space: pre-wrap;" t-esc="player.training_recommendation"/>
                     </div>
                     <!-- Task 1388: only meaningful for an injured player. Hide the
@@ -870,7 +881,8 @@
                     <div t-if="is_injured" class="text-muted small d-flex align-items-center mb-1">
                         <i class="fa fa-clock-o" title="Estimated Return"></i>
                         <span class="ms-1 d-none d-md-inline">Predicted return:</span>
-                        <span t-if="player.predicted_return_date" class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"></span>
+                        <span t-if="player.predicted_return_date and player.predicted_return_overdue" class="ms-1 o_sc_overdue"><span t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span>
+                        <span t-elif="player.predicted_return_date" class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"></span>
                         <span t-else="" class="ms-1">—</span>
                     </div>
                     <!-- Task 1385: native <details> expandable (collapsed by
@@ -969,12 +981,15 @@
                              recordset; a stored digest snapshot (task 1267) carries
                              a plain `injury_diagnosis` string instead (no recordset
                              survives serialization), so prefer that when present. -->
-                        <t t-if="it['category'] != 'new_injury'">
+                        <t t-if="it['category'] != 'new_injury' and not hide_injury_suffix">
                             <t t-set="digest_diag" t-value="it.get('injury_diagnosis') or (it['injury'].diagnosis if it.get('injury') else False)"/>
                             <t t-if="digest_diag">
                                 <span class="text-muted small"> — <t t-esc="digest_diag"/></span>
                             </t>
                         </t>
+                        <!-- Task 1582: a note is ONE « current state » text —
+                             its change reads as the new text alone. -->
+                        <span t-if="it.get('category') == 'note'" class="badge text-bg-light border ms-1 fw-normal dashboard-digest-new-note">New note</span>
                     </div>
                     <t t-if="it.get('sub_items')">
                         <ul class="list-unstyled ms-1 mb-0">
@@ -1002,7 +1017,7 @@
                         <!-- Task 1385 (CR-A #4): show the delta as
                              « ancienne → nouvelle » when a pre-window value is
                              known; gracefully fall back to the new value alone. -->
-                        <t t-if="it.get('old_value')">
+                        <t t-if="it.get('old_value') and it.get('category') != 'note'">
                             <div style="white-space: pre-wrap;"><span class="text-muted text-decoration-line-through" t-esc="it['old_value']"/> <i class="fa fa-arrow-right mx-1 small" aria-hidden="true"/> <span t-esc="it['value']"/></div>
                         </t>
                         <t t-else="">
@@ -1051,7 +1066,8 @@
                         <div class="mb-2 small">
                             <i class="fa fa-calendar-check-o me-1" aria-hidden="true"/>
                             <span class="fw-bold">Predicted return: </span>
-                            <span t-out="predicted_return_date" t-options="{'widget': 'date'}"/>
+                            <span t-if="predicted_return_overdue" class="o_sc_overdue"><span t-out="predicted_return_date" t-options="{'widget': 'date'}"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span>
+                            <span t-else="" t-out="predicted_return_date" t-options="{'widget': 'date'}"/>
                         </div>
                     </t>
                     <!-- Task 1385 (CR-A #5): the internal digest also drops the
@@ -2100,15 +2116,17 @@
                                 </div>
                             </div>
 
-                            <!-- Right column: Allergies (if present) -->
-                            <!-- allergies is a TP-only field; guard with is_treatment_prof so coaches
-                                 don't read it (reading the group-restricted field raises AccessError
-                                 -> the whole player page 403s for coaches). -->
-                            <div class="col-12 col-md-6" t-if="is_treatment_prof and (player.allergies or '').replace('\xa0','').strip()">
-                                <div class="alert alert-warning py-2 mb-0 text-start">
-                                    <strong>Allergies:</strong>
-                                    <span class="ms-1" t-esc="player.allergies"/>
+                            <!-- Right column: Task 1630 — the allergy / medical-alert
+                                 lines (compact read of the app's pills). Coaches get
+                                 the non-urgent / urgent ones only; the fields are
+                                 readable by therapists and portal coaches. -->
+                            <t t-set="sc_med_lines" t-value="player._sc_medical_summary_lines(tp=is_treatment_prof)"/>
+                            <div class="col-12 col-md-6" t-if="sc_med_lines" data-sc-legacy-medical="header">
+                                <div t-foreach="sc_med_lines" t-as="med_line"
+                                     t-attf-class="alert #{'alert-danger' if med_line['tone'] == 'urgent' else 'alert-warning' if med_line['tone'] == 'minor' else 'alert-secondary'} py-2 mb-1 text-start">
+                                    <span t-esc="med_line['text']"/>
                                 </div>
+                                <p t-if="is_treatment_prof" class="small text-muted mb-0">Edit in the app.</p>
                             </div>
                         </div>
 
@@ -2128,7 +2146,7 @@
                         <div class="row" t-if="(player.training_recommendation or '').strip() or player.stage != 'healthy'">
                             <div class="col-12">
                                 <div class="border rounded p-2 mt-2">
-                                    <i class="fa fa-graduation-cap me-1" aria-hidden="true"/>
+                                    <i class="fa fa-heartbeat me-1" aria-hidden="true"/>
                                     <strong>Training Recommendation</strong>
                                     <div t-if="(player.training_recommendation or '').strip()" class="mt-1" style="white-space: pre-wrap;" t-esc="player.training_recommendation"/>
                                     <div t-else="" class="mt-1">—</div>
@@ -2291,12 +2309,13 @@
                                                 <td><strong>Last Consultation:</strong></td>
                                                 <td t-esc="player.last_consultation_date"/>
                                             </tr>
-                                             <tr t-if="is_treatment_prof and (player.allergies or '').replace('\xa0','').strip()">
-                                                <td><strong>Allergies:</strong></td>
+                                             <!-- Task 1630: the allergy / medical-alert lines. -->
+                                             <tr t-if="is_treatment_prof and player._sc_medical_summary_lines(tp=True)" data-sc-legacy-medical="info">
+                                                <td><strong>Allergies / medical alert:</strong></td>
                                                  <td>
-                                                     <div class="alert alert-warning mb-0 p-2">
+                                                     <div t-foreach="player._sc_medical_summary_lines(tp=True)" t-as="med_line" class="alert alert-warning mb-1 p-2">
                                                          <i class="fa fa-exclamation-triangle"></i>
-                                                         <span t-esc="player.allergies"/>
+                                                         <span t-esc="med_line['text']"/>
                                                      </div>
                                                  </td>
                                              </tr>
@@ -2406,7 +2425,8 @@
                                             </tr>
                                             <tr t-if="player.predicted_return_date">
                                                 <td><strong>Predicted Return Date:</strong></td>
-                                                <td t-esc="player.predicted_return_date"/>
+                                                <td t-if="player.predicted_return_overdue" class="o_sc_overdue"><t t-esc="player.predicted_return_date"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></td>
+                                                <td t-else="" t-esc="player.predicted_return_date"/>
                                             </tr>
                                             <tr t-if="player.return_date">
                                                 <td><strong>Actual Return Date:</strong></td>
@@ -2595,11 +2615,11 @@
                                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                                             <small class="text-muted">
                                                                 <i class="fa fa-calendar me-1"/>
-                                                                <span t-field="note.date"/>
+                                                                <span t-esc="note.portal_when_label"/>
                                                             </small>
                                                             <span class="badge text-bg-light border o_sc_note_author"
                                                                   t-att-data-author="note.sudo().user_id.name"
-                                                                  t-esc="note.author_initials"/>
+                                                                  t-esc="note.sudo().user_id.name"/>
                                                         </div>
                                                         <div class="mb-2">
                                                             <t t-if="note.injury_id">
@@ -2751,13 +2771,15 @@
                             <!-- Medical Information Tab (Treatment Professionals Only) -->
                             <div class="tab-pane fade" id="medical-info" role="tabpanel" aria-labelledby="medical-info-tab" t-if="is_treatment_prof">
                                 <div class="row">
-                                    <div class="col-md-6" t-if="(patient_info.get('allergies') or '').replace('\xa0','').strip()">
+                                    <!-- Task 1630: the allergy / medical-alert lines. -->
+                                    <t t-set="sc_med_info_lines" t-value="player._sc_medical_summary_lines(tp=True)"/>
+                                    <div class="col-md-6" t-if="sc_med_info_lines" data-sc-legacy-medical="tab">
                                         <div class="card border-warning">
                                             <div class="card-header bg-warning text-dark">
-                                                <i class="fa fa-exclamation-triangle"></i> <strong>Allergies</strong>
+                                                <i class="fa fa-exclamation-triangle"></i> <strong>Allergies / medical alert</strong>
                                             </div>
                                             <div class="card-body">
-                                                <p t-esc="patient_info.get('allergies')"/>
+                                                <p t-foreach="sc_med_info_lines" t-as="med_line" t-esc="med_line['text']"/>
                                             </div>
                                         </div>
                                     </div>
@@ -2771,7 +2793,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-12" t-if="not (patient_info.get('allergies') or '').replace('\xa0','').strip() and not (patient_info.get('team_info_notes') or '').replace('\xa0','').strip()">
+                                    <div class="col-12" t-if="not sc_med_info_lines and not (patient_info.get('team_info_notes') or '').replace('\xa0','').strip()">
                                         <div class="text-center text-muted py-4">
                                             <i class="fa fa-notes-medical fa-3x mb-3"></i>
                                             <p>No medical information available</p>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field
+      name="name"
+    >res.config.settings.view.form.inherit.cron.failure.alert</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="mail.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//block[@id='discuss']" position="inside">
+                <setting
+          id="cron_failure_alert_setting"
+          string="Scheduled action failures"
+          help="Be told when a scheduled action fails or is switched off"
+          groups="base.group_system"
+        >
+                    <field name="cron_failure_alert" />
+                    <div class="content-group" invisible="not cron_failure_alert">
+                        <div class="row mt16">
+                            <label
+                for="cron_failure_alert_user_id"
+                class="col-lg-4 o_light_label"
+              />
+                            <field name="cron_failure_alert_user_id" />
+                        </div>
+                        <div class="row">
+                            <label
+                for="cron_failure_alert_channel_id"
+                class="col-lg-4 o_light_label"
+              />
+                            <field name="cron_failure_alert_channel_id" />
+                        </div>
+                    </div>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>

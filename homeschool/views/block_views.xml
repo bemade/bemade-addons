@@ -105,11 +105,17 @@
         </field>
     </record>
 
+    <!-- The board: day columns from the oldest to the newest, left to right.
+         default_order="day_id desc" is not a typo: a many2one group is ordered by its
+         comodel's _order, and a day's is "date desc" (the most recent day first in every
+         day picker, on purpose). Asking for DESC reverses that order, hence ascending
+         dates. Inside a column every card has the same day, so the cards still follow
+         "sequence". -->
     <record id="view_block_kanban" model="ir.ui.view">
         <field name="name">homeschool.block.kanban</field>
         <field name="model">homeschool.block</field>
         <field name="arch" type="xml">
-            <kanban default_group_by="day_id" default_order="sequence">
+            <kanban default_group_by="day_id" default_order="day_id desc, sequence">
                 <field name="color"/>
                 <templates>
                     <t t-name="card">
@@ -154,7 +160,13 @@
                 <filter name="done" string="Done" domain="[('status', 'in', ('done', 'partial'))]"/>
                 <filter name="adult_missing" string="Adult minutes missing" domain="[('adult_missing', '=', True)]"/>
                 <separator/>
-                <filter name="this_week" string="This week" domain="[('date', '>=', (context_today() - relativedelta(weekday=0, weeks=1)).strftime('%Y-%m-%d')), ('date', '&lt;', (context_today() + relativedelta(weekday=0)).strftime('%Y-%m-%d'))]"/>
+                <!-- Monday to Sunday, whatever the day. relativedelta(weekday=0) alone means
+                     "this Monday or the next one": on a Monday it does not move. Hence the
+                     "days=1" (tomorrow, then the Monday on or after it = next Monday), and one
+                     week less for the Monday that opens the current week. Not the '=monday'
+                     relative dates: those follow the language's first day of the week. -->
+                <filter name="this_week" string="This week" domain="[('date', '>=', (context_today() + relativedelta(weeks=-1, days=1, weekday=0)).strftime('%Y-%m-%d')), ('date', '&lt;', (context_today() + relativedelta(days=1, weekday=0)).strftime('%Y-%m-%d'))]"/>
+                <filter name="next_week" string="Next week" domain="[('date', '>=', (context_today() + relativedelta(days=1, weekday=0)).strftime('%Y-%m-%d')), ('date', '&lt;', (context_today() + relativedelta(days=8, weekday=0)).strftime('%Y-%m-%d'))]"/>
                 <group>
                     <filter name="group_day" string="Day" context="{'group_by': 'day_id'}"/>
                     <filter name="group_subject" string="Subject" context="{'group_by': 'subject_id'}"/>

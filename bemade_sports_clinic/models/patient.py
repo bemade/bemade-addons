@@ -1,16 +1,32 @@
 from odoo import models, fields, _, api, Command, SUPERUSER_ID
 from odoo.exceptions import ValidationError, AccessError, UserError
+from odoo.fields import Domain
 from datetime import date, datetime, timedelta
 import re
 import unicodedata
 from dateutil.relativedelta import relativedelta
 from odoo.addons.phone_validation.tools import phone_validation
+from .sc_phone import sc_phone_is_valid
 from .patient_injury import (
     dashboard_external_injury_fields,
     dashboard_internal_injury_fields,
+    history_author_uid,
+    history_stamp_date,
     legacy_change_emails_enabled,
 )
+from .medical_alerts import (
+    COACH_LEVELS,
+    LEVEL_MINOR,
+    LEVEL_NONE,
+    LEVEL_TONES,
+    LEVEL_URGENT,
+    LEVELS,
+    UNSET_TONE,
+    DETAILS_FIELD,
+)
 import logging
+
+from markupsafe import Markup
 
 _logger = logging.getLogger(__name__)
 
@@ -21,9 +37,47 @@ _logger = logging.getLogger(__name__)
 # therapist, so a head therapist must be able to action it (task 1260).
 REMOVAL_ROLES = ('therapist', 'head_therapist')
 
+# Task 1727: the context key that lets a SYSTEM copy keep a past « Retour
+# prévu » as-is (the merge wizard, data migrations, tests that need one) —
+# the « not in the past » rule is for people entering a date.
+PAST_RETURN_OK = 'sc_allow_past_predicted_return'
+
 # Task 1421: jersey_sort value for players without a (numeric) jersey number —
 # above any 8-digit number, so « blanks last » on an ascending order.
 JERSEY_SORT_LAST = 10 ** 8
+
+# Task 1600: a player's identity. For a portal (share) user, changing an
+# EXISTING value of one of these is an explicit, confirmed step (context key
+# ``sc_identity_confirmed``) recorded on the player's file; filling a blank one
+# is free. The same triple, case-insensitive and trimmed, may not be given to
+# two players by a portal user (exact-duplicate refusal).
+IDENTITY_FIELDS = ('first_name', 'last_name', 'date_of_birth')
+IDENTITY_CONFIRM_KEY = 'sc_identity_confirmed'
+# Task 1716: « Créer quand même » — a create confirmed over an exact name +
+# date-of-birth twin (the add panel's force_create=1).
+IDENTITY_FORCE_CREATE_KEY = 'sc_identity_force_create'
+
+# Task 1630: allergy / medical-alert levels (no value = « Not specified »).
+MEDICAL_LEVEL_SELECTION = [
+    # « None known » (not « None »: the shared msgid is masculine in French).
+    (LEVEL_NONE, "None known"),
+    (LEVEL_MINOR, "Not urgent"),
+    (LEVEL_URGENT, "Urgent – life-threatening"),
+]
+_MEDICAL_ALERT_GROUPS = (
+    "bemade_sports_clinic.group_sports_clinic_treatment_professional,"
+    "bemade_sports_clinic.group_portal_treatment_professional,"
+    "bemade_sports_clinic.group_portal_team_coach"
+)
+
+# Summaries of the « Player Removal Request » activities (English source and
+# the fr_CA renderings the cron may have stored — task 1661 renamed the French
+# « suppression » to « retrait », older activities keep the old wording).
+REMOVAL_REQUEST_SUMMARIES = (
+    'Player Removal Request',
+    'Demande de retrait de joueur',
+    'Demande de suppression de joueur',
+)
 
 external_tracking_fields = {
     "last_consultation_date",
@@ -84,7 +138,9 @@ DASHBOARD_SYNOPSIS_MAX_PHRASES = 4
 class Patient(models.Model):
     _name = "sports.patient"
     _description = "Patient"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "sc.phone.mixin"]
+    # Task 1645: normalized / refused in create / write (sc_phone.py).
+    _sc_phone_fields = ("phone",)
     
     _unique_patient = models.Constraint(
         'UNIQUE(partner_id)',
@@ -92,6 +148,10 @@ class Patient(models.Model):
     )
     pending_removal = fields.Boolean(string='Pending Removal', default=False, tracking=True, 
                                     help='Indicates if this player has a pending removal request')
+    # Task 1678: the team the pending removal request is about — its head
+    # therapist gets the To-Do (_cron_handle_pending_removals).
+    pending_removal_team_id = fields.Many2one(
+        'sports.team', string='Removal Requested From', ondelete='set null', copy=False)
     _order = "sort_order, last_name, first_name"
     
     active = fields.Boolean(
@@ -128,13 +188,15 @@ class Patient(models.Model):
     )
 
     # Patient fields
+    # Task 1633: coaches read / edit it too (their teams' players only:
+    # the coach record rule portal_team_staff_player_access).
     date_of_birth = fields.Date(
-        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
+        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional,bemade_sports_clinic.group_portal_team_coach",
         tracking=True,
     )
     age = fields.Integer(
         compute="_compute_age",
-        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
+        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional,bemade_sports_clinic.group_portal_team_coach",
     )
     contact_ids = fields.One2many(
         comodel_name="sports.patient.contact",
@@ -186,6 +248,22 @@ class Patient(models.Model):
     # TP-write is enforced at the portal (template t-if + controller gate), the
     # same way date_of_birth is handled.
     training_recommendation = fields.Text(string="Training Recommendation", tracking=True)
+    # Task 1601: every change (a clear included) lands in an append-only
+    # history, like the injury notes; the newest row gives the « Updated on
+    # <date> by <author> » stamp shown under the field everywhere it is shown.
+    # compute_sudo: the history model is rule-gated for portal users, the
+    # stamp is plain display text about a field the reader already sees.
+    training_history_ids = fields.One2many(
+        comodel_name="sports.patient.training.history",
+        inverse_name="patient_id",
+        string="Training Recommendation History",
+        readonly=True,
+    )
+    last_training_recommendation_info = fields.Char(
+        string="Training recommendation last updated",
+        compute="_compute_last_training_recommendation_info",
+        compute_sudo=True,
+    )
     injury_ids = fields.One2many(
         comodel_name="sports.patient.injury",
         inverse_name="patient_id",
@@ -202,6 +280,11 @@ class Patient(models.Model):
     )
     injured_since = fields.Date(compute="_compute_is_injured")
     predicted_return_date = fields.Date(tracking=True)
+    # Task 1727: an existing « Retour prévu » already past (in the user's
+    # timezone) — flagged « Overdue » wherever the date renders.
+    predicted_return_overdue = fields.Boolean(
+        compute="_compute_predicted_return_overdue",
+        search="_search_predicted_return_overdue")
     return_date = fields.Date(
         tracking=True,
         help="When the player was cleared by medical staff to " "return to match play.",
@@ -235,8 +318,80 @@ class Patient(models.Model):
         compute="_compute_document_count",
         string="Document Count",
     )
+    # Task 1630: the legacy free text, kept for this release as a hidden
+    # column (no UI, system only) — the 19.0.1.99.0 post-migrate pre-filled
+    # the levels below from it. Dropping it is a follow-up once the clinic
+    # has validated the pre-filled entries.
     allergies = fields.Text(
+        string="Allergies (legacy)",
+        readonly=True,
+        groups="base.group_system",
+    )
+    # Task 1630 (owner + MC 2026-10-21): allergies and medical alerts, each a
+    # level (no value = « Not specified »); EpiPen with the allergies.
+    # Task 1677 (owner 2026-10-24): each family is a structured list
+    # (``critical_item_ids``, patient_critical_item.py) and its level is
+    # COMPUTED from it — red = a life-threatening item, yellow = items, none
+    # life-threatening, « None known » = the empty list confirmed
+    # (``*_none_confirmed``), « Not specified » otherwise. The field names stay
+    # (pills, cards, digests, the #1628 To-Do, the merge read them). The
+    # former details texts stay as read-only columns (« Old text, to
+    # validate » while ``medical_alert_review`` is set).
+    allergy_level = fields.Selection(
+        selection=MEDICAL_LEVEL_SELECTION,
+        string="Allergy level",
+        compute="_compute_medical_levels",
+        store=True,
+        readonly=True,
+        groups=_MEDICAL_ALERT_GROUPS,
+    )
+    allergy_details = fields.Text(string="Allergy details", groups=_MEDICAL_ALERT_GROUPS)
+    # Task 1717 (owner 2026-10-26): EpiPen is the allergies gate — empty
+    # (« Not provided », new players only), Yes or No. Allergies can be added,
+    # or « No known allergy » ticked, only once it is answered. The former
+    # boolean stays as a stored compute of it (with an inverse) for the
+    # readers (card pills, merge, the #1677 migrations, the backend form).
+    allergy_epipen_state = fields.Selection(
+        [("yes", "Yes"), ("no", "No")],
+        string="EpiPen?",
+        copy=False,
+        groups=_MEDICAL_ALERT_GROUPS,
+    )
+    allergy_epipen = fields.Boolean(
+        string="EpiPen",
+        compute="_compute_allergy_epipen",
+        inverse="_inverse_allergy_epipen",
+        store=True,
+        readonly=False,
+        groups=_MEDICAL_ALERT_GROUPS,
+    )
+    # Task 1677: where the EpiPen is / how to use it (the EpiPen card).
+    allergy_epipen_note = fields.Char(string="EpiPen note", groups=_MEDICAL_ALERT_GROUPS)
+    # Task 1677: « No known allergy / condition » — the empty list confirmed.
+    allergy_none_confirmed = fields.Boolean(string="No known allergy", groups=_MEDICAL_ALERT_GROUPS)
+    medical_none_confirmed = fields.Boolean(string="No known condition", groups=_MEDICAL_ALERT_GROUPS)
+    medical_alert_level = fields.Selection(
+        selection=MEDICAL_LEVEL_SELECTION,
+        string="Medical alert level",
+        compute="_compute_medical_levels",
+        store=True,
+        readonly=True,
+        groups=_MEDICAL_ALERT_GROUPS,
+    )
+    medical_alert_details = fields.Text(string="Medical alert details", groups=_MEDICAL_ALERT_GROUPS)
+    # Therapists only, never coaches (the Infos tab).
+    medical_history_other = fields.Text(
+        string="Other medical history",
         groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
+    )
+    # Pre-filled from the legacy text by the migration: the clinic validates
+    # them from the back-end list « Medical alerts to validate ».
+    medical_alert_review = fields.Boolean(
+        string="To validate",
+        copy=False,
+        groups="base.group_user",
+        help="Pre-filled from the former free-text allergies field: check the "
+        "levels and details, then untick.",
     )
     team_info_notes = fields.Text(
         string="Notes",
@@ -323,9 +478,206 @@ class Patient(models.Model):
                 res.update({"team_ids": team_ids})
         return res
 
+    @api.depends("training_history_ids.change_datetime", "training_history_ids.author_id")
+    def _compute_last_training_recommendation_info(self):
+        for patient in self:
+            row = patient.training_history_ids.sorted(
+                key=lambda r: (r.change_datetime, r.id), reverse=True)[:1]
+            patient.last_training_recommendation_info = _(
+                "Updated on %(date)s by %(author)s",
+                date=history_stamp_date(patient, row.change_datetime),
+                author=row.author_id.name or "—",
+            ) if row else ""
+
+    def _prepare_training_history_vals(self, vals):
+        """History rows for the players whose training recommendation
+        ``vals`` really changes (task 1601): whitespace-only differences are
+        no change; a clear IS one (empty content). Runs whatever the mail
+        tracking context; only ``skip_training_history`` turns it off."""
+        if "training_recommendation" not in vals or self.env.context.get("skip_training_history"):
+            return []
+        new = vals.get("training_recommendation") or ""
+        author_id = history_author_uid(self.env)
+        now = fields.Datetime.now()
+        return [{
+            "patient_id": patient.id,
+            "change_datetime": now,
+            "author_id": author_id,
+            "content": new if new.strip() else False,
+        } for patient in self.sudo()
+            if (patient.training_recommendation or "").strip() != new.strip()]
+
+    # Task 1654: the medical fields coaches read but never write.
+    _SC_MEDICAL_WRITE_FIELDS = (
+        "allergy_level", "allergy_details", "allergy_epipen", "allergy_epipen_state",
+        "medical_alert_level", "medical_alert_details",
+        # Adversarial review 2026-10-22: the « Updated on … by … » stamps
+        # (a coach can't forge them through RPC either).
+        "allergy_updated_info", "medical_alert_updated_info",
+        # Task 1677: the EpiPen card, « none known », the lists.
+        "allergy_epipen_note", "allergy_none_confirmed", "medical_none_confirmed",
+        "critical_item_ids", "allergy_critical_ids", "medical_alert_critical_ids",
+    )
+    # Task 1677: the player fields of each family (stamp + internal note).
+    _SC_MEDICAL_FAMILY_FIELDS = {
+        "allergy": ("allergy_epipen_state", "allergy_epipen", "allergy_epipen_note", "allergy_none_confirmed",
+                    "allergy_details"),
+        "medical_alert": ("medical_none_confirmed", "medical_alert_details"),
+    }
+    # Task 1677: computed from the lists — never written.
+    _SC_MEDICAL_LEVEL_FIELDS = ("allergy_level", "medical_alert_level")
+
+    @api.depends("allergy_epipen_state")
+    def _compute_allergy_epipen(self):
+        """Task 1717: the former boolean, read from the Yes / No answer."""
+        for rec in self:
+            rec.allergy_epipen = rec.allergy_epipen_state == "yes"
+
+    def _inverse_allergy_epipen(self):
+        """Task 1717: a write of the former boolean answers the question."""
+        for rec in self:
+            state = "yes" if rec.allergy_epipen else "no"
+            if rec.allergy_epipen_state != state:
+                rec.allergy_epipen_state = state
+
+    def _sc_epipen_first_message(self):
+        return self.env._("Answer « EpiPen? » (Yes / No) before entering the allergies.")
+
+    def _sc_epipen_todo_summary(self):
+        return self.env._("Complete the medical file (allergies/EpiPen)")
+
+    def _sc_raise_epipen_todos(self):
+        """Task 1717: at creation, while EpiPen is unanswered, ONE To-Do to
+        the player's creator « Complete the medical file (allergies/EpiPen) »
+        (``sc_epipen_todo``; never twice, never for the superuser / a script)."""
+        user = self.env.user
+        if not user or user.id == SUPERUSER_ID or not user.active:
+            return
+        players = self.sudo().filtered(lambda p: not p.allergy_epipen_state)
+        if not players:
+            return
+        Activity = self.env["mail.activity"].sudo()
+        existing = set(Activity.search([
+            ("res_model", "=", self._name), ("res_id", "in", players.ids),
+            ("sc_epipen_todo", "=", True)]).mapped("res_id"))
+        todo_type = self.env.ref("mail.mail_activity_data_todo", raise_if_not_found=False)
+        model_id = self.env["ir.model"]._get(self._name).id
+        lang = user.lang or self.env.lang
+        for player in players:
+            if player.id in existing:
+                continue
+            Activity.with_context(lang=lang).create({
+                "res_model_id": model_id,
+                "res_id": player.id,
+                "sc_epipen_todo": True,
+                "user_id": user.id,
+                "activity_type_id": todo_type.id if todo_type else False,
+                "summary": self.with_context(lang=lang)._sc_epipen_todo_summary(),
+                "date_deadline": fields.Date.context_today(self),
+                "automated": True,
+            })
+
+    def _sc_close_epipen_todos(self):
+        """Task 1717: EpiPen answered — the To-Do is done."""
+        answered = self.sudo().filtered("allergy_epipen_state")
+        if not answered:
+            return
+        todos = self.env["mail.activity"].sudo().search([
+            ("res_model", "=", self._name), ("res_id", "in", answered.ids),
+            ("sc_epipen_todo", "=", True)])
+        if todos:
+            todos.action_done()
+
+    def _sc_check_medical_writer(self, vals):
+        """Task 1654: coaches read the medical fields but never write them —
+        also through RPC (the field ``groups`` grant them write too)."""
+        if not any(name in vals for name in self._SC_MEDICAL_WRITE_FIELDS):
+            return
+        env = self.env
+        if env.su or not env.user.share:
+            return
+        if env.user.has_group("bemade_sports_clinic.group_portal_treatment_professional"):
+            return
+        raise AccessError(env._("Only the therapists can change the medical information."))
+
+    def _sc_medical_change_note(self, vals):
+        """Task 1654 / 1677: the family's « Updated on … by … » stamp for a
+        medical change of the player's own fields; the internal note is
+        posted after the write (``_sc_medical_post_notes``)."""
+        if self.env.context.get("sc_critical_sync") or self._sc_phone_lenient():
+            return vals, []
+        changes = []
+        for family, names in self._SC_MEDICAL_FAMILY_FIELDS.items():
+            changed = [name for name in names if name in vals and any(
+                (rec.sudo()[name] or False) != (vals[name] or False) for rec in self)]
+            if changed:
+                vals["%s_updated_info" % family] = self._sc_medical_stamp()
+                changes.extend(changed)
+        return vals, changes
+
+    def _sc_medical_post_notes(self, changes):
+        """Task 1677: an internal note per change of the EpiPen card / « none
+        known » (the items post their own)."""
+        if not changes:
+            return
+        labels = {
+            "allergy_epipen": self.env._("EpiPen"),
+            "allergy_epipen_state": self.env._("EpiPen"),
+            "allergy_epipen_note": self.env._("EpiPen note"),
+            "allergy_none_confirmed": self.env._("No known allergy"),
+            "medical_none_confirmed": self.env._("No known condition"),
+        }
+        for patient in self.sudo():
+            parts = []
+            for name in changes:
+                if name not in labels:
+                    continue
+                value = patient[name]
+                if isinstance(value, bool):
+                    shown = self.env._("Yes") if value else self.env._("No")
+                else:
+                    shown = value or "—"
+                parts.append(Markup("%s : <b>%s</b>") % (labels[name], shown))
+            if parts:
+                patient.message_post(body=Markup(" · ").join(parts), subtype_xmlid="mail.mt_note")
+
     def write(self, vals):
         self._normalize_jersey_vals(vals)
+        self._sc_check_medical_writer(vals)
+        # Task 1677: the levels follow the lists (computed) — a write of
+        # them (an old client, a script) is ignored, never stored.
+        if any(name in vals for name in self._SC_MEDICAL_LEVEL_FIELDS):
+            vals = {k: v for k, v in vals.items() if k not in self._SC_MEDICAL_LEVEL_FIELDS}
+        medical_changes = []
+        if any(name in vals for names in self._SC_MEDICAL_FAMILY_FIELDS.values() for name in names):
+            vals, medical_changes = self._sc_medical_change_note(dict(vals))
+            epipen_off = vals.get("allergy_epipen") is False or (
+                "allergy_epipen_state" in vals and vals["allergy_epipen_state"] != "yes")
+            if epipen_off and "allergy_epipen_note" not in vals:
+                # Task 1677: the note goes with the EpiPen.
+                vals["allergy_epipen_note"] = False
+            # Task 1717: « No known allergy » waits for the EpiPen answer.
+            if vals.get("allergy_none_confirmed") and not self.env.su and "allergy_epipen_state" not in vals \
+                    and any(not rec.sudo().allergy_epipen_state for rec in self):
+                raise ValidationError(self._sc_epipen_first_message())
+            for family, none_field in (("allergy", "allergy_none_confirmed"),
+                                       ("medical_alert", "medical_none_confirmed")):
+                if vals.get(none_field) and not self._sc_phone_lenient() and not self.env.su and any(
+                        rec._sc_critical_items(family) for rec in self):
+                    raise ValidationError(self.env._(
+                        "Remove the items of the list first: « none known » is for an empty list."))
+        corrections = self._sc_identity_guard(vals)
+        training_history = self._prepare_training_history_vals(vals)
         res = super().write(vals)
+        if "allergy_epipen_state" in vals or "allergy_epipen" in vals:
+            self._sc_close_epipen_todos()
+        if medical_changes:
+            self._sc_medical_post_notes(medical_changes)
+        if training_history:
+            # sudo: history rows are only ever created by server code.
+            self.env["sports.patient.training.history"].sudo().create(training_history)
+        if corrections:
+            self._sc_post_identity_note(corrections)
         if "jersey_number" in vals or "team_ids" in vals:
             self._notify_jersey_duplicates()
         if "team_ids" in vals:
@@ -684,9 +1036,13 @@ class Patient(models.Model):
                 # Note this is NOT the same question as
                 # ``_is_follower_eligible``: eligibility inspects ARCHIVED users
                 # to DENY notification, this ignores them to PICK a link.
-                internal = bool(
-                    partner.user_ids.filtered(lambda u: u.active and not u.share)
-                )
+                # Task 1639: a clinic role (internal therapist, clinic
+                # admin…) opens the app like the portal users; the backend
+                # link only for internal logins with no clinic role.
+                active_users = partner.user_ids.filtered(lambda u: u.active)
+                internal = bool(active_users) and all(
+                    u._sc_backend_link_recipient() for u in active_users
+                ) and bool(active_users.filtered(lambda u: not u.share))
                 keep = self._urgent_notify_keep_item
                 status_count = sum(
                     1 for authors in status_patients.values()
@@ -762,7 +1118,7 @@ class Patient(models.Model):
                     )
                 )
             parts.append(Markup("").join(lines))
-        parts.append(Markup('<p style="color:#888;font-size:12px;">%s</p>') % escape(
+        parts.append(Markup('<p style="color:#767676;font-size:12px;">%s</p>') % escape(
             _("No medical data is included. / Aucune donnée médicale n'est incluse.")
         ))
         return Markup("").join(parts)
@@ -789,7 +1145,7 @@ class Patient(models.Model):
                 team_summaries
             )
         subject = self.with_context(lang=lang).env._(
-            "FitCrew — urgent updates / mises à jour urgentes (%s)", team_count
+            "Le Fit Crew — urgent updates / mises à jour urgentes (%s)", team_count
         )
         try:
             self.env["mail.thread"].sudo().with_context(lang=lang).message_notify(
@@ -1524,6 +1880,90 @@ class Patient(models.Model):
             details.append(detail)
         return details
 
+    def _sc_change_detail(self, role, is_treatment_prof, cutoff=None):
+        """The app shell's expanded recent-changes detail (owner layout
+        2026-10-11): every injury change grouped under its injury, the rest in
+        a general list.
+
+        Returns ``{'items': [...], 'active_injuries': [...],
+        'resolved_injuries': [...]}``; each injury dict is a
+        ``_card_injury_detail`` plus ``items`` (its changes) and ``changed``.
+        Active injuries come most recently changed first, unchanged ones last
+        (latest injury first); resolved injuries appear only with changes.
+        Injuries are read as the CURRENT user, hidden-from-coaches ones dropped
+        for a coach, and the change feed is role-gated, so a coach never gets a
+        hidden injury or an internal note.
+        """
+        self.ensure_one()
+        if cutoff is None:
+            cutoff = self._dashboard_window_cutoff()
+        general, by_injury = [], {}
+        for item in self._dashboard_change_items(role, cutoff):
+            injury = item.get("injury")
+            if injury:
+                by_injury.setdefault(injury.id, []).append(item)
+            else:
+                general.append(item)
+        visible = self.injury_ids
+        if role == "coach":
+            visible = visible.filtered(lambda i: not i.hidden_from_coaches)
+        last_change = self._sc_injury_last_change(visible, cutoff)
+
+        def detail(injury):
+            values = self._card_injury_detail(injury, cutoff)
+            if not is_treatment_prof:
+                values["internal_notes"] = ""
+            values["items"] = by_injury.get(injury.id, [])
+            values["changed"] = bool(values["items"])
+            return values
+
+        def recency(injury):
+            when = last_change.get(injury.id) if injury.id in by_injury else None
+            return (bool(when), when or datetime.min,
+                    injury.injury_date or date.min, injury.id)
+
+        active = visible.filtered(lambda i: i.stage != "resolved")
+        active = active.filtered(
+            lambda i: i.stage == "active" or i.id in by_injury)
+        resolved = visible.filtered(
+            lambda i: i.stage == "resolved" and i.id in by_injury)
+        return {
+            "items": general,
+            "active_injuries": [
+                detail(i) for i in active.sorted(recency, reverse=True)],
+            "resolved_injuries": [
+                detail(i) for i in resolved.sorted(recency, reverse=True)],
+        }
+
+    @api.model
+    def _sc_injury_last_change(self, injuries, cutoff):
+        """``{injury_id: datetime}`` of each injury's latest tracked change or
+        note update in the window (creation counts for a new injury)."""
+        last = {}
+
+        def bump(injury_id, when):
+            if when and (injury_id not in last or when > last[injury_id]):
+                last[injury_id] = when
+
+        for injury in injuries:
+            if injury.create_date and injury.create_date >= cutoff:
+                bump(injury.id, injury.create_date)
+        messages = self.env["mail.message"].sudo().search_read([
+            ("model", "=", "sports.patient.injury"),
+            ("res_id", "in", injuries.ids),
+            ("date", ">=", cutoff),
+            ("tracking_value_ids", "!=", False),
+        ], ["res_id", "date"])
+        for message in messages:
+            bump(message["res_id"], message["date"])
+        notes = self.env["sports.injury.note.history"].sudo().search_read([
+            ("injury_id", "in", injuries.ids),
+            ("note_datetime", ">=", cutoff),
+        ], ["injury_id", "note_datetime"])
+        for note in notes:
+            bump(note["injury_id"][0], note["note_datetime"])
+        return last
+
     @api.model
     def _dashboard_note_count_label(self, count):
         """Bare '<n> new note(s)' phrase (no surrounding parens), pluralised.
@@ -1640,6 +2080,8 @@ class Patient(models.Model):
                     # flag keeps it off the shared portal renders (that's #1385).
                     "show_player_status": True,
                     "predicted_return_date": rec.predicted_return_date,
+                    # Task 1727: « · Dépassé » after a past date.
+                    "predicted_return_overdue": rec.predicted_return_overdue,
                     "training_recommendation": rec.training_recommendation,
                     "active_injuries": active_injuries,
                 },
@@ -1723,11 +2165,24 @@ class Patient(models.Model):
                     "last_name": _("Player %s") % patient.id,
                     "date_of_birth": False,
                     "team_info_notes": False,
+                    # Task 1630: the medical free text (the levels / EpiPen
+                    # carry no identity and stay).
+                    "allergies": False,
+                    "allergy_details": False,
+                    "medical_alert_details": False,
+                    # Task 1677: where the EpiPen is kept.
+                    "allergy_epipen_note": False,
+                    "allergy_updated_info": False,
+                    "medical_alert_updated_info": False,
+                    "medical_history_other": False,
                     "predicted_return_date": False,
                     "return_date": False,
                     "is_anonymized": True,
                 }
             )
+            # Task 1654 / 1677: the items name the allergies and conditions —
+            # deleted (the levels follow, computed).
+            patient.critical_item_ids.sudo().with_context(sc_critical_quiet=True).unlink()
             # Overwrite core identity PII on the partner (address, email, ...).
             if partner:
                 partner._law25_anonymize()
@@ -1775,8 +2230,17 @@ class Patient(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        if self._sc_identity_guarded():
+            for row in vals_list:
+                self._sc_check_identity_duplicate(
+                    row.get('first_name'), row.get('last_name'), row.get('date_of_birth'))
         for row in vals_list:
             self._normalize_jersey_vals(row)
+            # Task 1654: coaches never write the medical fields.
+            self.browse()._sc_check_medical_writer(row)
+            # Task 1677: the levels are computed from the lists.
+            for name in self._SC_MEDICAL_LEVEL_FIELDS:
+                row.pop(name, None)
             if "partner_id" not in row:
                 row["partner_id"] = (
                     self.env["res.partner"].with_context(
@@ -1793,6 +2257,19 @@ class Patient(models.Model):
                     .id
                 )
         res = super().create(vals_list)
+        # Task 1601: a player created with a recommendation gets its first
+        # history row.
+        if not self.env.context.get("skip_training_history"):
+            author_id = history_author_uid(self.env)
+            now = fields.Datetime.now()
+            initial = [{
+                "patient_id": patient.id,
+                "change_datetime": now,
+                "author_id": author_id,
+                "content": patient.training_recommendation,
+            } for patient in res.sudo() if (patient.training_recommendation or "").strip()]
+            if initial:
+                self.env["sports.patient.training.history"].sudo().create(initial)
         res._notify_jersey_duplicates()
         # Stamp the Law 25 retention clock for any player created without a team.
         res._sync_date_left_last_team()
@@ -1803,7 +2280,48 @@ class Patient(models.Model):
                 tracking_disable=True,
                 mail_create_nosubscribe=True,
             ).recompute_followers()
+        # Task 1717: EpiPen unanswered — the creator's To-Do.
+        res._sc_raise_epipen_todos()
         return res
+
+    @api.constrains("partner_id")
+    def _check_partner_is_person(self):
+        """Task 1680: a player's contact is a person, never a company."""
+        if self.sudo().filtered(lambda p: p.partner_id.is_company):
+            raise ValidationError(self.env["res.partner"]._sc_patient_company_message())
+
+    @api.constrains("predicted_return_date")
+    def _check_predicted_return_not_past(self):
+        """Task 1727: « Retour prévu » cannot be SET in the past (today,
+        user's timezone, is fine). Only writes to the field run this, so a
+        player whose date has since passed stays editable otherwise; a
+        system copy passes ``PAST_RETURN_OK`` in the context."""
+        if self.env.context.get(PAST_RETURN_OK):
+            return
+        for rec in self:
+            if rec.predicted_return_date and rec.predicted_return_date < fields.Date.context_today(rec):
+                raise ValidationError(_("The predicted return cannot be in the past."))
+
+    @api.depends("predicted_return_date")
+    def _compute_predicted_return_overdue(self):
+        today = fields.Date.context_today(self)
+        for rec in self:
+            rec.predicted_return_overdue = bool(
+                rec.predicted_return_date and rec.predicted_return_date < today)
+
+    def _search_predicted_return_overdue(self, operator, value):
+        """Task 1727: the backend « Retour prévu dépassé » filter."""
+        if operator != 'in':
+            return NotImplemented
+        today = fields.Date.context_today(self)
+        overdue = [('predicted_return_date', '<', today)]
+        if True in value and False in value:
+            return []
+        if True in value:
+            return overdue
+        if False in value:
+            return ['|', ('predicted_return_date', '=', False), ('predicted_return_date', '>=', today)]
+        return [('id', 'in', [])]
 
     @api.constrains("match_status", "practice_status")
     def constrain_match_and_practice_status(self):
@@ -1823,6 +2341,195 @@ class Patient(models.Model):
                 raise ValidationError(
                     _("Invalid combination of match and practice status.")
                 )
+
+    # ----------------------------------------------------------------------
+    # Identity guard (task 1600)
+    # ----------------------------------------------------------------------
+    # Scope: portal (share) users only — the app shell, the legacy portal forms
+    # and any other portal route all write as the user (or sudo'd, which keeps
+    # env.user), so a model-level check covers them all. Internal users (clinic
+    # administrators, the backend, the merge wizard, crons) are deliberately
+    # NOT guarded: the backend merge flows must stay able to align two files.
+    def _sc_identity_guarded(self):
+        """Task 1600: portal users. Task 1639 (owner 2026-10-22): internal
+        users too when they work through the app / portal routes, which set
+        ``sc_identity_guard`` in the context; the backend form, merges,
+        imports and crons (no flag) stay unguarded."""
+        return bool(self.env.user.share or self.env.context.get("sc_identity_guard"))
+
+    @staticmethod
+    def _sc_identity_text(value):
+        if not value:
+            return ''
+        if isinstance(value, (date, datetime)):
+            return fields.Date.to_string(value)
+        return str(value).strip()
+
+    def _sc_identity_corrections(self, vals):
+        """{patient: [(field, old, new)]}: the identity fields ``vals`` CHANGES
+        from a non-empty value (filling a blank field is not a correction;
+        whitespace-only differences are not either)."""
+        corrections = {}
+        names = [name for name in IDENTITY_FIELDS if name in vals]
+        if not names:
+            return corrections
+        for patient in self.sudo():
+            changed = []
+            for name in names:
+                old = self._sc_identity_text(patient[name])
+                new = self._sc_identity_text(
+                    fields.Date.to_date(vals[name]) if name == 'date_of_birth' and vals[name]
+                    else vals[name])
+                if old and old != new:
+                    changed.append((name, old, new))
+            if changed:
+                corrections[patient.id] = changed
+        return corrections
+
+    def _sc_identity_guard(self, vals):
+        """Pre-write checks for a portal user (nothing is written when one
+        refuses). Returns the corrections to record after the write."""
+        if not any(name in vals for name in IDENTITY_FIELDS):
+            return {}
+        if not self._sc_identity_guarded():
+            # Internal users (clinic administrators, the backend, merges, crons)
+            # are never blocked. A correction they CONFIRMED through a portal
+            # form (the confirm step sets the context flag) is recorded on the
+            # file like anyone else's; a plain backend write is not.
+            if self.env.context.get(IDENTITY_CONFIRM_KEY):
+                return self._sc_identity_corrections(vals)
+            return {}
+        corrections = self._sc_identity_corrections(vals)
+        if corrections and not self.env.context.get(IDENTITY_CONFIRM_KEY):
+            raise UserError(_("Confirm the identity correction."))
+        for patient in self.sudo():
+            new = {name: self._sc_identity_text(
+                fields.Date.to_date(vals[name]) if name == 'date_of_birth' and vals[name] else vals[name])
+                for name in IDENTITY_FIELDS if name in vals}
+            self._sc_check_identity_duplicate(
+                vals.get('first_name', patient.first_name),
+                vals.get('last_name', patient.last_name),
+                vals['date_of_birth'] if 'date_of_birth' in vals else patient.date_of_birth,
+                exclude_id=patient.id,
+                identity_changed=any(value != self._sc_identity_text(patient[name])
+                                     for name, value in new.items()))
+        return corrections
+
+    @api.model
+    def _sc_identity_duplicate(self, first_name, last_name, date_of_birth, exclude_id=None):
+        """Another player (active or archived) with exactly this first name,
+        last name (case-insensitive, trimmed) and date of birth, or None."""
+        first = (first_name or '').strip()
+        last = (last_name or '').strip()
+        dob = fields.Date.to_date(date_of_birth) if date_of_birth else False
+        if not (first and last and dob):
+            return None
+        self.env['sports.patient'].flush_model(['first_name', 'last_name', 'date_of_birth'])
+        # lower() on both sides: the same folding whatever the database locale.
+        self.env.cr.execute(
+            """SELECT id FROM sports_patient
+                WHERE lower(trim(first_name)) = lower(%s) AND lower(trim(last_name)) = lower(%s)
+                  AND date_of_birth = %s AND id != %s
+                ORDER BY id LIMIT 1""",
+            (first, last, dob, exclude_id or 0))
+        row = self.env.cr.fetchone()
+        return self.env['sports.patient'].sudo().browse(row[0]) if row else None
+
+    @api.onchange('first_name', 'last_name', 'date_of_birth')
+    def _onchange_sc_identity_twin(self):
+        """Owner review 2026-10-22 (#1639): the backend form stays allowed
+        for internal users, with a NON-blocking warning when another player
+        (archived included, the identity guard's normalisation) has exactly
+        this first name, last name and date of birth."""
+        for patient in self:
+            twin = patient._sc_identity_duplicate(
+                patient.first_name, patient.last_name, patient.date_of_birth,
+                exclude_id=patient._origin.id or None)
+            if twin:
+                return {'warning': {
+                    'title': _("Possible duplicate"),
+                    'message': _(
+                        "A player already has this name and date of birth: %(name)s (#%(id)s).",
+                        name=twin.with_context(active_test=False).display_name, id=twin.id),
+                }}
+        return None
+
+    def _sc_identity_unrestricted(self):
+        """Clinic administrators, system administrators and the superuser see
+        every player: the identity guard answers them with the exact twin."""
+        user = self.env.user
+        return bool(
+            user._is_superuser()
+            or user.has_group('bemade_sports_clinic.group_sports_clinic_admin')
+            or user.has_group('base.group_system'))
+
+    @api.model
+    def _sc_identity_namesakes(self, first_name, last_name, exclude_id=None):
+        """The players (active or archived, sudo) with exactly this first and
+        last name (case-insensitive, trimmed), whatever their date of birth."""
+        first, last = (first_name or '').strip(), (last_name or '').strip()
+        if not (first and last):
+            return self.env['sports.patient'].sudo()
+        self.env['sports.patient'].flush_model(['first_name', 'last_name'])
+        self.env.cr.execute(
+            """SELECT id FROM sports_patient
+                WHERE lower(trim(first_name)) = lower(%s) AND lower(trim(last_name)) = lower(%s)
+                  AND id != %s""",
+            (first, last, exclude_id or 0))
+        return self.env['sports.patient'].sudo().browse([row[0] for row in self.env.cr.fetchall()])
+
+    @api.model
+    def _sc_identity_twin_teams(self, twins):
+        """Task 1716: the team names of the twins (sudo: names only), for the
+        warning « … already exists (Team X). »."""
+        names = twins.sudo().with_context(active_test=False).team_ids.mapped('name')
+        return ', '.join(sorted(set(names))) or _("no team")
+
+    @api.model
+    def _sc_check_identity_duplicate(self, first_name, last_name, date_of_birth, exclude_id=None,
+                                     identity_changed=True):
+        """The identity guard's refusals (#1600 / #1639).
+
+        Task 1716 (owner 2026-10-26, after the 2026-10-23 security review —
+        the « date-of-birth oracle » concern is waived: the date of birth
+        identifies a player and may be shown to other therapists):
+
+        * a name alone never blocks (the « hidden namesake » refusal is gone);
+        * a CREATE with an exact name + date-of-birth twin (any player,
+          archived included) is refused with « A player with this name and
+          date of birth already exists (Team X). » unless confirmed
+          (``sc_identity_force_create`` — the panel's « Créer quand même »);
+        * a WRITE (identity correction) onto a twin is refused (#1639) —
+          now whoever can read the twin: with the oracle concern waived, an
+          unreadable twin no longer needs hiding behind « ask a manager ».
+        """
+        twin = self._sc_identity_duplicate(first_name, last_name, date_of_birth, exclude_id)
+        if not twin:
+            return
+        if exclude_id is None:
+            if self.env.context.get(IDENTITY_FORCE_CREATE_KEY):
+                return
+            twins = self._sc_identity_namesakes(first_name, last_name).filtered(
+                lambda p: p.date_of_birth == twin.date_of_birth)
+            raise ValidationError(_(
+                "A player with this name and date of birth already exists (%s).",
+                self._sc_identity_twin_teams(twins)))
+        raise ValidationError(_("Another player already has this name and date of birth."))
+
+    def _sc_post_identity_note(self, corrections):
+        """The audit note of a confirmed identity correction: who changed
+        what, old → new (on the player's file, internal note)."""
+        author = self.env.user.sudo().name
+        for patient in self.sudo().browse(list(corrections)):
+            items = Markup('').join(
+                Markup('<li>%s : %s → %s</li>') % (
+                    patient._fields[name]._description_string(self.env),
+                    old or '—', new or '—')
+                for name, old, new in corrections[patient.id])
+            body = Markup('<p>%s</p><ul>%s</ul>') % (
+                _("Identity correction confirmed by %s", author), items)
+            patient.message_post(
+                body=body, message_type='comment', subtype_xmlid='mail.mt_note')
 
     @api.depends("injury_ids.stage")
     def _compute_active_injury_count(self):
@@ -1970,6 +2677,357 @@ class Patient(models.Model):
                     "message": rec._jersey_duplicate_message(duplicates),
                 })
 
+    # App shell player rows: the legacy card's distinct Match / Practice
+    # badges (tone + icon) and active-injury count (owner review 2026-10-11).
+    _SC_MATCH_PILLS = {"yes": ("green", "fa-check"), "no": ("red", "fa-ban")}
+    _SC_PRACTICE_PILLS = {
+        "yes": ("green", "fa-check"),
+        "no_contact": ("yellow", "fa-exclamation-triangle"),
+        "no": ("red", "fa-ban"),
+    }
+
+    @api.model
+    def _sc_status_labels(self):
+        """Task 1634: ``{field: {value: label}}`` of the Match / Practice
+        selections in the request language — computed ONCE per list render
+        and passed to ``_sc_row_status`` / ``_sc_status_pills`` (never per
+        row)."""
+        env = self.env
+        return {
+            field_name: dict(self._fields[field_name]._description_selection(env))
+            for field_name in ("match_status", "practice_status")
+        }
+
+    def _sc_row_status(self, labels=None):
+        """Status line of ONE player row: ``{'pills': [match, practice],
+        'injuries': n}``, each pill ``{label, tone, icon, title}``.
+        ``labels``: ``_sc_status_labels()`` (task 1634: computed once for a
+        whole list)."""
+        self.ensure_one()
+        env = self.env
+        labels_of = labels or self._sc_status_labels()
+
+        def pill(field_name, label, tones):
+            value = self[field_name]
+            tone, icon = tones.get(value, ("ghost", ""))
+            labels = labels_of[field_name]
+            return {
+                "label": label,
+                "tone": tone,
+                "icon": icon,
+                "title": env._("%(what)s: %(value)s", what=label,
+                               value=labels.get(value) or env._("Unknown")),
+            }
+
+        return {
+            "pills": [
+                pill("match_status", env._("Match"), self._SC_MATCH_PILLS),
+                pill("practice_status", env._("Practice"), self._SC_PRACTICE_PILLS),
+            ],
+            "injuries": self.active_injury_count,
+        }
+
+    # Task 1627: the match / practice pairs the constraint allows.
+    _SC_VALID_STATUS_PAIRS = frozenset(
+        {("yes", "yes"), ("no", "yes"), ("no", "no_contact"), ("no", "no")})
+
+    def _sc_status_pills(self, labels=None):
+        """Task 1627: the Match and Practice pill dropdowns of ONE player
+        (the ``sc_status_pill_select`` component): ``[match, practice]``,
+        each ``{key, label, text, value, tone, icon, title, menu_label,
+        options, target}``.
+
+        ``options``: ``{value, label, tone, icon, checked, disabled, hint,
+        post}`` — ``post`` is the ``sc_status`` pair a pick saves (the other
+        pill's value kept); a choice that would make an invalid pair is
+        ``disabled`` with a ``hint`` saying what to change first (owner
+        decision 2026-10-20: greyed out, never auto-adjusted).
+        ``target``: what the pick posts to (``/my/app/save``), with the
+        ``write_date`` / ``old_value`` of this render.
+        ``labels``: ``_sc_status_labels()`` (task 1634: computed once for a
+        whole list of player cards)."""
+        self.ensure_one()
+        env = self.env
+        labels_of = labels or self._sc_status_labels()
+        match, practice = self.match_status, self.practice_status
+        pair = "%s:%s" % (match, practice)
+        target = {
+            "model": self._name,
+            "id": self.id,
+            "field": "sc_status",
+            "write_date": fields.Datetime.to_string(self.sudo().write_date),
+            "old_value": pair,
+        }
+        specs = (
+            ("match", "match_status", env._("Match"), env._("Match status"),
+             self._SC_MATCH_PILLS, lambda v: (v, practice), env._("Requires Practice: Yes")),
+            ("practice", "practice_status", env._("Practice"), env._("Practice status"),
+             self._SC_PRACTICE_PILLS, lambda v: (match, v), env._("Set Match to No first")),
+        )
+        pills = []
+        for key, field_name, label, menu_label, tones, pair_of, hint in specs:
+            value = self[field_name]
+            labels = labels_of[field_name]
+            tone, icon = tones.get(value, ("ghost", ""))
+            text = env._("%(what)s: %(value)s", what=label,
+                         value=labels.get(value) or env._("Unknown"))
+            options = []
+            for option, option_label in labels.items():
+                new_pair = pair_of(option)
+                valid = new_pair in self._SC_VALID_STATUS_PAIRS
+                option_tone, option_icon = tones.get(option, ("ghost", ""))
+                options.append({
+                    "value": option,
+                    "label": option_label,
+                    "tone": option_tone,
+                    "icon": option_icon,
+                    "checked": option == value,
+                    "disabled": not valid,
+                    "hint": "" if valid else hint,
+                    "post": "%s:%s" % new_pair if valid else "",
+                })
+            pills.append({
+                "key": key,
+                "label": label,
+                "menu_label": menu_label,
+                "value": value,
+                "text": text,
+                "title": text,
+                "tone": tone,
+                "icon": icon,
+                "options": options,
+                "target": target,
+            })
+        return pills
+
+    # ----------------------------------------------------------------------
+    # Task 1630: allergies + medical alert pills
+    # Task 1677: the families are structured lists; the pills follow them.
+    # ----------------------------------------------------------------------
+    # The posted / saved fields of the legacy medical block (therapists only).
+    # Task 1677: the levels and details are no longer typed — the lists are
+    # edited in the app's popups; only « Other medical history » is posted.
+    SC_MEDICAL_FIELDS = ("medical_history_other",)
+
+    def _sc_level_label(self, level):
+        """« None known » / « Not urgent » / « Urgent – life-threatening », or
+        « Not specified » for no value, in the env's language."""
+        if not level:
+            return self.env._("Not specified")
+        labels = dict(self._fields["allergy_level"]._description_selection(self.env))
+        return labels.get(level, level)
+
+    def _sc_medical_legacy_text(self, family):
+        """Task 1677: the « Old text (to validate) » of a family — its former
+        details, else the legacy allergies text — while the player is
+        flagged « to validate »; '' once validated.
+
+        Owner 2026-10-25: treatment professionals only (the legacy
+        ``allergies`` text was therapist-only): '' for any other viewer —
+        a coach, whatever the caller (popups, cards, fragments)."""
+        self.ensure_one()
+        if not self._sc_viewer_is_tp():
+            return ""
+        patient = self.sudo()
+        if not patient.medical_alert_review:
+            return ""
+        details = patient[DETAILS_FIELD[family]] or ""
+        return (details or patient.allergies or "").strip()
+
+    def _sc_viewer_is_tp(self):
+        """The CURRENT user is a treatment professional (portal or internal
+        group). The superuser flag does not count: a sudo'ed coach env is
+        still a coach viewing."""
+        user = self.env.user
+        return bool(
+            user.has_group("bemade_sports_clinic.group_portal_treatment_professional")
+            or user.has_group("bemade_sports_clinic.group_sports_clinic_treatment_professional"))
+
+    def _sc_medical_pills(self, tp=False):
+        """Task 1630 / 1677: the two header pills of ONE player,
+        « Allergies » and « Medical alert », with what their popups show:
+        ``[{key, label, family_label, level, level_label, tone, epipen,
+        epipen_note, none_confirmed, items, stamp, legacy_text, text}]``.
+
+        ``tp``: the viewer is a therapist (both pills, every level). A coach
+        gets only the non-urgent / urgent ones (owner + MC 2026-10-21: no
+        pill for « None » / « Not specified »). Read as the CURRENT user: the
+        fields are group-restricted (therapists + portal coaches) — the
+        caller gates the call on ``sc_can('patient.medical_alerts')``."""
+        self.ensure_one()
+        env = self.env
+        if not self._has_field_access(self._fields["allergy_level"], "read"):
+            # Neither therapist nor coach (e.g. a system administrator
+            # without a clinic role): nothing to show, never an AccessError.
+            return []
+        specs = (
+            ("allergy", env._("Allergies"), "allergy_level", "allergy_none_confirmed"),
+            ("medical_alert", env._("Medical alert"), "medical_alert_level", "medical_none_confirmed"),
+        )
+        pills = []
+        for key, label, level_field, none_field in specs:
+            level = self[level_field] or False
+            if not tp and level not in COACH_LEVELS:
+                continue
+            level_label = self._sc_level_label(level)
+            epipen = bool(key == "allergy" and self.allergy_epipen)
+            # Task 1717: EpiPen unanswered — the allergies are « Not
+            # provided » (grey), whatever else; the card asks first.
+            epipen_unset = key == "allergy" and not self.allergy_epipen_state
+            if epipen_unset and not level:
+                level_label = env._("Not provided")
+            items = self._sc_critical_items(key)
+            urgent = items.filtered("life_threatening")
+            pills.append({
+                "key": key,
+                # The header pill names the life-threatening items.
+                "label": self._sc_critical_label(urgent) or label,
+                "family_label": label,
+                "items": [item._sc_read_dict() for item in items],
+                "stamp": self["%s_updated_info" % key] or "",
+                "level": level,
+                "level_label": level_label,
+                "tone": LEVEL_TONES.get(level, UNSET_TONE),
+                "epipen": epipen,
+                "epipen_state": (self.allergy_epipen_state or "") if key == "allergy" else "",
+                "epipen_unset": epipen_unset,
+                "epipen_note": ((self.allergy_epipen_note or "").strip() if epipen else ""),
+                "none_confirmed": bool(self[none_field]),
+                # Therapists only (owner 2026-10-25).
+                "legacy_text": self._sc_medical_legacy_text(key) if tp else "",
+                "text": env._("%(what)s: %(level)s", what=label, level=level_label),
+            })
+        return pills
+
+    @staticmethod
+    def _sc_critical_label(items, limit=2):
+        """Task 1654: « Arachides », « Arachides · Noix », « Arachides · Noix
+        +1 » — the names of ``items`` ('' if none)."""
+        names = [name for name in items.mapped("name") if name]
+        if not names:
+            return ""
+        label = " · ".join(names[:limit])
+        if len(names) > limit:
+            label += " +%s" % (len(names) - limit)
+        return label
+
+    # Review round 1 (owner 2026-10-22): the pills a player CARD shows.
+    _SC_CARD_MEDICAL_FIELDS = ("allergy_level", "allergy_epipen", "allergy_epipen_state",
+                               "medical_alert_level")
+
+    def _sc_card_medical_pills(self, tp=None):
+        """Task 1630 / 1652 / 1677: the medical pills of player cards
+        (dashboard, roster, /my/players, the clinic pane): ``{player_id:
+        [{key, label, tone, level, epipen, title}]}``.
+
+        Review round 2 (owner 2026-10-27): the « Allergies » and « Medical
+        alert » pills sit INSIDE every player card, coloured by level — red
+        (life-threatening), yellow (not urgent), grey (none / not filled
+        in) — exactly the header pills' visibility (``_sc_medical_pills``):
+        a therapist (``tp``; default: the viewer) gets both, always; a coach
+        the yellow / red ones only (owner + MC 2026-10-21), players without
+        one absent. A red pill names the family's life-threatening items
+        (the allergy one carries the EpiPen icon).
+
+        ONE batched read for the whole recordset, as the CURRENT user (never
+        sudo: the fields are group-restricted). A viewer failing the
+        field-group check gets nothing; records the viewer may not read are
+        skipped — never an AccessError."""
+        records = self.sudo(False)
+        if not records:
+            return {}
+        if not all(records._has_field_access(records._fields[name], "read")
+                   for name in self._SC_CARD_MEDICAL_FIELDS):
+            return {}
+        try:
+            records = records._filtered_access("read")
+            records.fetch(list(self._SC_CARD_MEDICAL_FIELDS))
+        except AccessError:
+            return {}
+        if tp is None:
+            tp = self._sc_viewer_is_tp()
+        env = self.env
+        specs = (
+            ("allergy", env._("Allergies"), "allergy_level"),
+            ("medical_alert", env._("Medical alert"), "medical_alert_level"),
+        )
+        level_labels = {level: self._sc_level_label(level) for level in (False,) + LEVELS}
+        not_provided = env._("Not provided")
+        result = {}
+        # The life-threatening items, ONE read.
+        empty = env["sports.patient.critical.item"]
+        by_family = {}
+        for item in env["sports.patient.critical.item"].sudo().search(
+                [("patient_id", "in", records.ids), ("life_threatening", "=", True)]):
+            key = (item.patient_id.id, item.family)
+            by_family[key] = by_family.get(key, empty) | item
+        for record in records:
+            pills = []
+            for key, label, level_field in specs:
+                level = record[level_field] or False
+                if not tp and level not in COACH_LEVELS:
+                    continue
+                level_label = level_labels.get(level, level)
+                if key == "allergy" and not record.allergy_epipen_state and not level:
+                    # Task 1717: EpiPen unanswered — « Not provided ».
+                    level_label = not_provided
+                epipen = bool(key == "allergy" and record.allergy_epipen)
+                title = env._("%(what)s: %(level)s", what=label, level=level_label)
+                names = ""
+                if level == LEVEL_URGENT:
+                    items = by_family.get((record.id, key), empty)
+                    names = self._sc_critical_label(items)
+                    if names:
+                        title = "%s — %s" % (title, ", ".join(items.mapped("name")))
+                pills.append({
+                    "key": key,
+                    "label": names or label,
+                    "tone": LEVEL_TONES.get(level, UNSET_TONE),
+                    "level": level,
+                    "epipen": epipen,
+                    "title": ("%s · EpiPen" % title) if epipen else title,
+                })
+            if pills:
+                result[record.id] = pills
+        return result
+
+    def _sc_medical_summary_lines(self, tp=False):
+        """Task 1630: the legacy portal's compact read of the pills, one line
+        each — « Allergies (urgent – life-threatening, EpiPen): Arachides
+        (life-threatening), Pollen ». Same visibility rule as
+        ``_sc_medical_pills``; a therapist gets no line for « Not
+        specified » / « None » (nothing on the list)."""
+        lines = []
+        vital = self.env._("life-threatening")
+        for pill in self._sc_medical_pills(tp=tp):
+            if not pill["items"] and not pill["epipen"]:
+                continue
+            qualifiers = [pill["level_label"].lower()]
+            if pill["epipen"]:
+                qualifiers.append("EpiPen")
+            head = self.env._("%(what)s (%(qualifiers)s)", what=pill["family_label"],
+                              qualifiers=", ".join(qualifiers))
+            names = ", ".join(
+                ("%s (%s)" % (item["name"], vital)) if item["life_threatening"] else item["name"]
+                for item in pill["items"])
+            lines.append({
+                "key": pill["key"],
+                "tone": pill["tone"],
+                "text": self.env._("%(head)s: %(details)s", head=head, details=names) if names else head,
+            })
+        return lines
+
+    @api.model
+    def _sc_medical_vals_from_post(self, post):
+        """Task 1630 / 1677: the medical block of a legacy create / edit form
+        (therapists only — the caller gates it): « Other medical history »
+        only (the allergies and conditions are lists, edited in the app)."""
+        vals = {}
+        for name in self.SC_MEDICAL_FIELDS:
+            if name in post:
+                vals[name] = (post.get(name) or "").strip() or False
+        return vals
+
     def _portal_list_name(self, with_jersey=True):
         """« Last, First » of ONE patient for portal lists and pickers —
         « #12 Last, First » when the player has a jersey number (task 1421,
@@ -1988,14 +3046,33 @@ class Patient(models.Model):
         label = self._jersey_label() if with_jersey else ""
         return "%s %s" % (label, name) if label else name
 
-    def _portal_heading_name(self):
-        """« #12 First Last » of ONE patient for single-patient headings (the
-        player page H1, the clinic dossier card) — ``name`` alone without a
-        number. Breadcrumbs keep the bare ``name``."""
+    def _training_recommendation_history(self):
+        """Every change of ONE patient's training recommendation, newest
+        first (owner review 2026-10-10: a history like the team
+        announcement's). Task 1601: read from
+        ``sports.patient.training.history`` — NOT sudo, so the model's record
+        rules re-enforce the team scoping behind the caller's own gate. Plain
+        dicts — ``when`` (datetime), ``author`` and ``body`` (the text set,
+        '' when cleared)."""
         self.ensure_one()
-        label = self._jersey_label()
-        name = self.name or ""
-        return "%s %s" % (label, name) if label else name
+        rows = self.env["sports.patient.training.history"].search(
+            [("patient_id", "=", self.id)])
+        return [{
+            "when": row.change_datetime,
+            # sudo: the author's name only (a portal reader may not read
+            # internal users).
+            "author": row.author_id.sudo().name or "",
+            "body": (row.content or "").strip(),
+        } for row in rows]
+
+    def _portal_heading_name(self):
+        """Single-patient headings (the player page title, the clinic dossier
+        card, the injury pages' context line). Owner review 2026-10-11: the
+        same « #12 Last, First » as every list (``_portal_list_name``), so a
+        heading never reads in the reverse order of the line below it.
+        Breadcrumbs keep the bare ``name``."""
+        self.ensure_one()
+        return self._portal_list_name()
 
     def _portal_combo_key(self):
         """Normalized « last first » search key of ONE patient (what the
@@ -2159,6 +3236,26 @@ class Patient(models.Model):
                 },
             }
 
+    # Task 1645: MC's « Numbers to fix » — the player's phone or one of the
+    # contacts' mobiles does not parse (left as is by the reformat).
+    sc_phone_invalid = fields.Boolean(
+        string="Phone number to fix", compute="_compute_sc_phone_invalid", store=True,
+        help="The player's phone or an emergency contact's mobile is not a valid phone number.")
+
+    @api.depends("partner_id.phone", "country_id", "contact_ids.sc_phone_invalid")
+    def _compute_sc_phone_invalid(self):
+        for patient in self:
+            patient.sc_phone_invalid = (
+                not sc_phone_is_valid(patient.env, patient.phone, patient._sc_phone_country())
+                or any(patient.contact_ids.mapped("sc_phone_invalid"))
+            )
+
+    def _sc_phone_country(self, vals=None):
+        country = self.env["res.country"]
+        if vals and vals.get("country_id"):
+            country = country.browse(vals["country_id"])
+        return country or self[:1].country_id or self.env.company.country_id
+
     @api.onchange("phone", "country_id")
     def _onchange_phone_validation(self):
         if self.phone:
@@ -2276,8 +3373,8 @@ class Patient(models.Model):
         team = self.env['sports.team'].browse(team_id)
         current_user = self.env.user
         
-        # Set the pending_removal flag
-        self.write({'pending_removal': True})
+        # Set the pending_removal flag (task 1678: and the team it is about)
+        self.write({'pending_removal': True, 'pending_removal_team_id': team.id or False})
         
         # Log the request with details
         log_message = _(
@@ -2300,55 +3397,12 @@ class Patient(models.Model):
             'tag': 'display_notification',
             'params': {
                 'title': _('Removal Request Submitted'),
-                'message': _('Your removal request has been submitted and will be processed by an administrator.'),
+                'message': _("Your removal request has been submitted to the team's head therapist."),
                 'type': 'success',
                 'sticky': True,
             }
         }
         
-    def _schedule_removal_request_activity(self, request_data):
-        """
-        Scheduled action to create an activity for the head therapist to review the removal request.
-        
-        :param dict request_data: Data for the removal request
-        """
-        player = self.env['sports.patient'].browse(request_data['player_id'])
-        team = self.env['sports.team'].browse(request_data['team_id'])
-        requested_by = self.env['res.users'].browse(request_data['requested_by_id'])
-        reason = request_data['reason']
-        is_last_team = request_data['is_last_team']
-        assignee = self.env['res.users'].browse(request_data['assignee_id'])
-        
-        # Create a more detailed activity
-        note = _("Player Removal Request\n")
-        note += _("====================\n\n")
-        note += _("Player: %s\n") % player.display_name
-        note += _("Team: %s\n") % team.name
-        note += _("Requested by: %s\n\n") % requested_by.name
-        
-        if reason:
-            note += _("Reason for removal request:\n%s\n\n") % reason
-            
-        if is_last_team:
-            note += _("⚠️ WARNING: This is the player's only team. Removing it will leave the player with no team.\n\n")
-            
-        note += _("Please review this request and take appropriate action.")
-        
-        # Create activity for head therapist
-        activity_vals = {
-            'activity_type_id': self.env.ref('mail.mail_activity_data_todo').id,
-            'note': note,
-            'res_id': player.id,
-            'res_model_id': self.env['ir.model']._get('sports.patient').id,
-            'user_id': assignee.id,
-            'summary': _('Player Removal Request: %s') % player.display_name,
-        }
-        
-        # Create the activity
-        self.env['mail.activity'].create(activity_vals)
-    
-
-    
     @api.model
     def _cron_handle_pending_removals(self):
         """
@@ -2376,14 +3430,22 @@ class Patient(models.Model):
                 ('res_model', '=', 'sports.patient'),
                 ('res_id', '=', player.id),
                 ('activity_type_id', '=', activity_type.id),
-                ('summary', 'ilike', 'Player Removal Request')
+                '|', '|',
+                ('summary', 'ilike', REMOVAL_REQUEST_SUMMARIES[0]),
+                ('summary', 'ilike', REMOVAL_REQUEST_SUMMARIES[1]),
+                ('summary', 'ilike', REMOVAL_REQUEST_SUMMARIES[2]),
             ], limit=1)
             
             if existing_activity:
                 continue
                 
-            # Find head therapist (role == 'head_therapist') or fallback to any therapist
-            team = player.team_ids[0]
+            # Task 1678: the team the request is about (still one of the
+            # player's teams); older requests, stored without it, fall back
+            # to the player's first team. Its head therapist with a user,
+            # else a therapist of that team, else the superuser.
+            team = player.pending_removal_team_id
+            if team not in player.team_ids:
+                team = player.team_ids[0]
             staff = team.staff_ids
             head_therapist = staff.filtered(lambda s: s.role == 'head_therapist' and s.user_ids)
             if not head_therapist:
@@ -2406,6 +3468,43 @@ class Patient(models.Model):
                 'date_deadline': today,
             })
     
+    def _sc_removal_request_activities(self):
+        """The open « Player Removal Request » activities of these players."""
+        if not self:
+            return self.env['mail.activity']
+        return self.env['mail.activity'].sudo().search(Domain.AND([
+            [('res_model', '=', 'sports.patient'), ('res_id', 'in', self.ids)],
+            Domain.OR([[('summary', 'ilike', summary)] for summary in REMOVAL_REQUEST_SUMMARIES]),
+        ]))
+
+    def _sc_close_removal_requests(self):
+        """Mark the open removal-request activities of these players done,
+        with « Closed: the player is no longer on the team. » as feedback (in
+        the assignee's language). Returns the number closed."""
+        activities = self._sc_removal_request_activities()
+        for activity in activities:
+            lang = activity.user_id.lang or self.env.lang
+            feedback = self.with_context(lang=lang)._sc_removal_closed_feedback()
+            activity.with_context(lang=lang).action_feedback(feedback=feedback)
+        return len(activities)
+
+    def _sc_removal_closed_feedback(self):
+        return _("Closed: the player is no longer on the team.")
+
+    @api.model
+    def _sc_clear_stale_removal_flags(self):
+        """Task 1600 one-off cleanup: players flagged ``pending_removal`` who
+        no longer belong to any team (active or archived) — the flag is
+        cleared and their open removal requests are closed. Returns
+        ``(players, activities_closed)``."""
+        players = self.sudo().with_context(active_test=False).search([
+            ('pending_removal', '=', True), ('team_ids', '=', False)])
+        closed = 0
+        if players:
+            players.write({'pending_removal': False, 'pending_removal_team_id': False})
+            closed = players._sc_close_removal_requests()
+        return players, closed
+
     def _removal_log_message(self, team_name, user_name):
         """Compose the chatter line describing a removal from ``team_name``.
 
@@ -2454,7 +3553,11 @@ class Patient(models.Model):
         :return bool: True if the current user may remove directly from ``team``
         """
         user = self.env.user
-        if user.has_group('base.group_system'):
+        # Task 1600: a clinic administrator acts on ALL teams (task 1577 owner
+        # decision) — the legacy edit form lets them untick any team, and an
+        # untick now goes through this removal path.
+        if user.has_group('base.group_system') or user.has_group(
+                'bemade_sports_clinic.group_sports_clinic_admin'):
             return True
 
         is_treatment_prof = (
@@ -2470,6 +3573,26 @@ class Patient(models.Model):
             lambda s: s.user_ids and user.id in s.user_ids.ids
         )
         return any(role.role in REMOVAL_ROLES for role in user_staff_roles)
+
+    @api.model
+    def _sc_teams_may_remove(self, teams):
+        """Task 1624: the subset of ``teams`` where ``_may_remove_from_team``
+        is True, in ONE staff query (the dashboard's « À faire » removal
+        requests over many teams). Same policy, batched."""
+        user = self.env.user
+        if user.has_group('base.group_system') or user.has_group(
+                'bemade_sports_clinic.group_sports_clinic_admin'):
+            return teams
+        if not (user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+                or user.has_group('bemade_sports_clinic.group_portal_treatment_professional')):
+            return teams.browse()
+        rows = self.env['sports.team.staff'].sudo().search([
+            ('team_id', 'in', teams.ids or [0]),
+            ('user_ids', 'in', [user.id]),
+            ('role', 'in', list(REMOVAL_ROLES)),
+        ])
+        ok = set(rows.team_id.ids)
+        return teams.filtered(lambda team: team.id in ok)
 
     def remove_from_team(self, team_id, clear_pending=True, reason=None):
         """
@@ -2558,8 +3681,12 @@ class Patient(models.Model):
         # Prepare and execute the removal (one write for every player)
         update_vals = {'team_ids': [Command.unlink(team.id)]}
         if had_pending:
-            update_vals['pending_removal'] = False
+            update_vals.update(pending_removal=False, pending_removal_team_id=False)
         self.write(update_vals)
+        if clear_pending:
+            # Task 1600: the official removal closes the open « Player Removal
+            # Request » activities of these players (the request is answered).
+            self._sc_close_removal_requests()
 
         # Chatter branches on recordset size:
         #  - a SINGLE-record call keeps its per-player audit note on the player's
@@ -2751,8 +3878,10 @@ class Patient(models.Model):
             patient_vals['position'] = vals.get('position') or False
         if 'jersey_number' in vals:
             patient_vals['jersey_number'] = vals.get('jersey_number') or False
-        if 'allergies' in vals:
-            patient_vals['allergies'] = vals.get('allergies') or False
+        # Task 1630: the medical block replaces the legacy allergies text.
+        for key in self.SC_MEDICAL_FIELDS:
+            if key in vals:
+                patient_vals[key] = vals.get(key) or False
         if 'team_info_notes' in vals:
             patient_vals['team_info_notes'] = vals.get('team_info_notes') or False
         

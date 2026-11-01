@@ -1,6 +1,6 @@
 {
     "name": "Automated Partner Association by Email Domain",
-    "version": "19.0.0.0.2",
+    "version": "19.0.0.0.3",
     "category": "Extra Tools",
     "summary": "Automatically associates partners with companies using matching email domains",
     "description": """

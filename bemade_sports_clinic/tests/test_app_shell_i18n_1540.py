@@ -47,8 +47,10 @@ class TestAppShellI18n1540(TestAppShellI18n1538):
         for term in ("Aujourd'hui", 'À venir', 'Qui me sont assignées', 'Filtres', '1 sur la liste'):
             self.assertIn(term, text.replace('&#39;', "'"), term)
         text = self._fr('/my/clinic/%s?patient=%s' % (self.clinic.id, self.player.id)).replace('&#39;', "'")
-        for term in ("Liste d'attente", 'Dossier', 'Ajouter un patient', 'Dossier complet',
-                     'Nouvelle blessure', 'Notes de traitement', "Résoudre l'inscription",
+        # Task 1721: the hero's « Dossier complet » / « Nouvelle blessure »
+        # gave way to the player card and the injuries' « + Ajouter ».
+        for term in ("Liste d'attente", 'Dossier', 'Ajouter un patient', 'Blessures',
+                     'Ajouter', 'Notes de traitement', "Résoudre l'inscription",
                      "Borne d'inscription"):
             self.assertIn(term, text, term)
         data = self.url_open('/my/clinic/%s/worklist/data' % self.clinic.id).json()
@@ -59,11 +61,11 @@ class TestAppShellI18n1540(TestAppShellI18n1538):
         self._switch(True)
         self._login_tp()
         text = self._fr('/my/events?no_default_dates=1').replace('&#39;', "'")
-        for term in ('À venir', 'Passées', 'Calendrier', 'Nouvel événement'):
+        for term in ('À venir', 'Passés', 'Calendrier', 'Nouvel événement'):
             self.assertIn(term, text, term)
         text = self._fr('/my/event/%s' % self.event.id).replace('&#39;', "'")
-        for term in ('Ajouter ma feuille de temps', 'Mes feuilles de temps', "Modifier l'événement",
-                     'Heures de couverture'):
+        for term in ('Ajouter ma feuille de temps', 'Mes feuilles de temps', 'Nouveau lieu',
+                     'Heures de couverture', 'Nouveau lieu'):
             self.assertIn(term, text, term)
         text = self._fr('/my/event/create').replace('&#39;', "'")
         for term in ("Début de l'événement", 'Nouveau lieu', 'Nom du lieu', 'À déterminer'):

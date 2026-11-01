@@ -169,11 +169,15 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         tz = env.user.tz or env.context.get('tz')
 
         def _row(note):
+            # Task 1611: the player chip reads as the pencil card's choice
+            # and its save display (« Last, First », _portal_list_name).
             chips = [label for label in (
-                note.team_id.name, note.patient_id.display_name,
+                note.team_id.name,
+                note.patient_id._portal_list_name() if note.patient_id else '',
                 note.injury_id.display_name, note.event_id.name) if label]
             return {
                 'id': note.id,
+                'record': note,
                 'note': note.note or '',
                 'when': format_datetime(env, note.create_date, tz=tz, dt_format='EEE d MMM · HH:mm'),
                 'chips': chips,
@@ -194,7 +198,28 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         error = {
             'empty_note': env._("Please enter a note."),
         }.get(values.get('error'))
+        # Owner review 2026-10-11: the pencil card's link choices (the same
+        # scoped pickers the update route validates against).
+        def _options(records, label):
+            return [('', '—')] + [(rec.id, label(rec)) for rec in records]
+
+        # Task 1648: the narrowing data of the link pickers (a team narrows
+        # the players and events, a player the injuries) — ids only.
+        def _teams(rec):
+            return ','.join(str(i) for i in rec.sudo().team_ids.ids)
+        sc_qn_meta = {
+            'patient_id': {str(p.id): {'teams': _teams(p)} for p in values['patients']},
+            'injury_id': {str(i.id): {'player': str(i.sudo().patient_id.id)} for i in values['injuries']},
+            'event_id': {str(e.id): {'teams': _teams(e)} for e in values['events']},
+        }
         return {
+            'sc_qn_meta': sc_qn_meta,
+            'sc_qn_options': {
+                'team_id': _options(values['teams'], lambda r: r.name),
+                'patient_id': _options(values['patients'], lambda r: r._portal_list_name()),
+                'injury_id': _options(values['injuries'], lambda r: r.display_name),
+                'event_id': _options(values['events'], lambda r: r.name),
+            },
             'sc_note_rows': [_row(note) for note in values['notes']],
             'sc_archived_rows': [_row(note) for note in values['archived_notes']],
             'sc_quick_note_prefix': self.SC_NOTE_DRAFT_PREFIX,

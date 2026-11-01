@@ -11,7 +11,9 @@ class TestTaskTemplate(BemadeFSMBaseTest):
         """User should never be able to delete a task template used on a product"""
         task_template = self._generate_task_template(names=["Template 1"])
         self._generate_product(name="Test Product 1", task_template=task_template)
-        with self.assertRaises(psycopg2.errors.ForeignKeyViolation):
+        # ondelete="restrict": PostgreSQL 18 raises RestrictViolation, older
+        # versions ForeignKeyViolation; both are IntegrityError.
+        with self.assertRaises(psycopg2.IntegrityError):
             with mute_logger("odoo.sql_db"):
                 task_template.unlink()
 

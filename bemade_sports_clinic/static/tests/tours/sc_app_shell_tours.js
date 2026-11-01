@@ -75,7 +75,7 @@ tours.add("sc_1542_nav_laptop", {
     ],
 });
 
-// ------------------------------------------------- theme + navigation mode
+// ------------------------------------------------- theme (+ laptop crumbs)
 tours.add("sc_1542_prefs", {
     steps: () => [
         {
@@ -99,35 +99,36 @@ tours.add("sc_1542_prefs", {
             },
         },
         {
-            content: "Go to « Plus »",
+            content: "Go to « Paramètres » (task 1606: out of « Plus »)",
             trigger: '.o_sc_app[data-sc-theme="light"]',
             run() {
-                window.location.assign("/my/app/more");
+                window.location.assign("/my/app/settings");
             },
             expectUnloadPage: true,
         },
         {
-            content: "Light theme persisted",
-            trigger: '.o_sc_app[data-sc-theme="light"] #sc_navigation',
-        },
-        {
-            content: "Switch the navigation mode to breadcrumbs",
-            trigger: '#sc_navigation button[name="sc_nav_mode"][value="crumbs"]',
-            run: "click",
-            expectUnloadPage: true,
-        },
-        {
-            trigger: '.o_sc_app[data-sc-nav="crumbs"]',
+            content: "Light theme persisted; no navigation setting (task 1579)",
+            trigger: '.o_sc_app[data-sc-theme="light"] #sc_appearance',
             run() {
+                assert(!document.querySelector("#sc_navigation"), "« Navigation » setting still there");
                 window.location.assign("/my/teams");
             },
             expectUnloadPage: true,
         },
         {
-            content: "Sub-page shows the crumb row, no back chevron",
-            trigger: 'nav.o_sc_crumbs a[href="/my/home"]',
+            content: "Open a team (a sub-page of « Équipes »)",
+            trigger: "main a[data-sc-team-id]",
+            run: "click",
+            expectUnloadPage: true,
+        },
+        {
+            // Task 1618 (owner review 2026-10-18): the chevron always shows
+            // next to the trail on a laptop sub-page.
+            content: "Laptop: the crumb trail shows, and the back chevron too",
+            trigger: 'nav.o_sc_crumbs a[href$="/my/teams"]',
             run() {
-                assert(!document.querySelector(".o_sc_back"), "back chevron in crumbs mode");
+                const back = document.querySelector(".o_sc_back");
+                assert(back && back.offsetParent, "back chevron hidden on a laptop");
             },
         },
     ],
@@ -174,21 +175,12 @@ tours.add("sc_1542_team_tabs", {
             run: "click",
         },
         {
-            content: "Open the digest history sheet",
-            trigger: 'button[data-sc-sheet-open="sc_digest_history_sheet"]',
-            run: "click",
-        },
-        {
-            content: "Sheet open, lazy body fetched",
-            trigger: "dialog#sc_digest_history_sheet[open] .o_sc_sheet_body:not(:has(.o_sc_lazy_loading))",
-        },
-        {
-            content: "Close the sheet",
-            trigger: "dialog#sc_digest_history_sheet [data-sc-sheet-close]",
-            run: "click",
-        },
-        {
-            trigger: "dialog#sc_digest_history_sheet:not([open]):not(:visible)",
+            // Task 1579: « History » is a link to the digest list (no sheet).
+            content: "« History » goes to the digest list page",
+            trigger: 'a[data-sc-action="team.digest_history"][href$="/digest-history"]',
+            run() {
+                assert(!document.querySelector("#sc_digest_history_sheet"), "digest sheet still there");
+            },
         },
     ],
 });
@@ -199,8 +191,8 @@ const DRAFT_TEXT = "Tour 1542 synthetic draft";
 tours.add("sc_1542_announcement_draft", {
     steps: () => [
         {
-            content: "Open the compose disclosure",
-            trigger: 'details[data-sc-section="team.announcement.edit"] > summary',
+            content: "Open the compose form (the announcement card's pencil)",
+            trigger: '[data-sc-edit-card="announcement"] button[data-sc-edit-toggle]',
             run(helpers) {
                 window.sessionStorage.setItem("sc1542TeamUrl", window.location.href);
                 return helpers.click();
@@ -261,7 +253,7 @@ tours.add("sc_1542_announcement_draft", {
 tours.add("sc_1542_logout_clears_drafts", {
     steps: () => [
         {
-            trigger: 'details[data-sc-section="team.announcement.edit"] > summary',
+            trigger: '[data-sc-edit-card="announcement"] button[data-sc-edit-toggle]',
             run: "click",
         },
         {
@@ -272,13 +264,18 @@ tours.add("sc_1542_logout_clears_drafts", {
             trigger: '.o_sc_autosave[data-sc-state="draft"]',
             run() {
                 assert(draftKeys().length === 1, "expected one device draft");
-                window.location.assign("/my/app/more");
+                window.location.assign("/my/teams");
             },
             expectUnloadPage: true,
         },
         {
-            content: "Log out from « Plus »",
-            trigger: '#sc_account a[href^="/web/session/logout"]',
+            content: "Open the user menu (task 1606: logout left « Plus »; task 1638: the app-bar avatar at every width)",
+            trigger: "header.o_sc_appbar button[data-sc-user-menu-toggle]",
+            run: "click",
+        },
+        {
+            content: "« Se déconnecter »",
+            trigger: '[data-sc-user-menu-popup]:not([hidden]) a[role="menuitem"][href^="/web/session/logout"]',
             run: "click",
             expectUnloadPage: true,
         },
@@ -361,7 +358,7 @@ tours.add("sc_1542_sw_kill_switch", {
 tours.add("sc_1542_fr_draft", {
     steps: () => [
         {
-            trigger: 'details[data-sc-section="team.announcement.edit"] > summary',
+            trigger: '[data-sc-edit-card="announcement"] button[data-sc-edit-toggle]',
             run: "click",
         },
         {
