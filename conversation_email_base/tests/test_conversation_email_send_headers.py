@@ -11,6 +11,8 @@
 #   3. The message's own long Message-Id is plain as well.
 
 from contextlib import contextmanager
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from unittest.mock import MagicMock, patch
 
 from odoo.tests import TransactionCase
@@ -143,3 +145,36 @@ class TestConversationEmailSendHeaders(TransactionCase):
             conversation_reply_to_message_id=stranger.id
         )
         self.assertFalse(transport._explicit_reply_message_id(conversation))
+
+    def test_send_raw_stamps_exactly_one_date_header(self):
+        before = datetime.now(timezone.utc).replace(microsecond=0)
+        self.transport._send_raw(
+            subject="Hello",
+            body="<p>x</p>",
+            to_emails=["a@example.com"],
+            bcc=["hidden@example.com"],
+        )
+        after = datetime.now(timezone.utc)
+        lines = self._wire_headers()
+        dates = [line for line in lines if line.startswith(b"Date:")]
+        self.assertEqual(len(dates), 1)
+        sent_at = parsedate_to_datetime(self.sent[0]["Date"])
+        self.assertLessEqual(before, sent_at)
+        self.assertLessEqual(sent_at, after)
+        # Bcc stays out of the headers.
+        self.assertFalse([line for line in lines if line.startswith(b"Bcc")])
+
+    def test_sent_folder_copy_carries_the_same_date(self):
+        appended = []
+        with patch.object(
+            type(self.transport),
+            "_imap_append_to_sent",
+            side_effect=lambda outgoing: appended.append(outgoing),
+        ):
+            self.transport._send_raw(
+                subject="Hello", body="<p>x</p>", to_emails=["a@example.com"]
+            )
+        self.assertEqual(len(appended), 1)
+        self.assertTrue(appended[0]["Date"])
+        self.assertEqual(appended[0]["Date"], self.sent[0]["Date"])
+        self.assertEqual(appended[0]["Message-Id"], self.sent[0]["Message-Id"])
