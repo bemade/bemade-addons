@@ -1,0 +1,12 @@
+{
+  "stepsFile": "../../static/tests/tours/imap_smtp_encryption.steps.js",
+  "startPath": "/odoo/conversation.transport/1",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "voice": "fr_FR-siwis-medium",
+  "lang": "fr_CA",
+  "title": "Choisir le chiffrement SMTP de votre boîte courriel",
+  "introNarration": "Selon votre fournisseur de courriel, l'envoi se fait par STARTTLS, habituellement sur le port 587, ou par SSL/TLS, habituellement sur le port 465. Voyons comment choisir.",
+  "outroTitle": "C'est fait",
+  "outroNarration": "Votre boîte est réglée. L'envoi d'une réponse fonctionne maintenant avec le chiffrement de votre serveur."
+}

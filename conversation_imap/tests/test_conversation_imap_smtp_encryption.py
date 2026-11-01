@@ -7,7 +7,7 @@
 import importlib.util
 import pathlib
 
-from odoo.tests import Form, TransactionCase
+from odoo.tests import Form, HttpCase, TransactionCase, tagged
 
 
 class TestConversationImapSmtpEncryption(TransactionCase):
@@ -108,3 +108,38 @@ class TestConversationImapSmtpMigration(TransactionCase):
             [ids["on"]],
         )
         self.assertEqual(cr.fetchone()[0], "ssl")
+
+
+@tagged("post_install", "-at_install")
+class TestImapSmtpEncryptionTour(HttpCase):
+    def test_owner_picks_ssl_on_port_465(self):
+        user = (
+            self.env["res.users"]
+            .with_context(no_reset_password=True)
+            .create(
+                {
+                    "name": "Tour Encryption Owner",
+                    "login": "tour_enc_owner",
+                    "password": "tour_enc_owner",
+                    "group_ids": [(6, 0, [self.env.ref("base.group_user").id])],
+                }
+            )
+        )
+        transport = self.env["conversation.transport"].create(
+            {
+                "name": "Tour Enc Box",
+                "provider": "imap",
+                "user_id": user.id,
+                "login": "tour@example.com",
+                "smtp_host": "smtp.example.com",
+            }
+        )
+        self.assertEqual(transport.smtp_encryption, "starttls")
+        self.start_tour(
+            f"/odoo/conversation.transport/{transport.id}",
+            "imap_smtp_encryption",
+            login="tour_enc_owner",
+        )
+        transport.invalidate_recordset()
+        self.assertEqual(transport.smtp_encryption, "ssl")
+        self.assertEqual(transport.smtp_port, 465)
