@@ -47,7 +47,7 @@ tours.add("sc_1018_header_pencil", {
                 window.__sc1018NoReload = true;
                 assert(!document.querySelector(`${HERO} .o_sc_autosave[data-sc-field="sc_status"]`), "a 4-way selector");
                 assert(!visible(`${HERO} [data-sc-action="player.remove"]`), "« Remove player » shown in read mode");
-                document.querySelector(`${HERO} > button[data-sc-edit-toggle]`).click();
+                document.querySelector(`${HERO} [data-sc-card-icons] > button[data-sc-edit-toggle]`).click();
             },
         },
         {
@@ -110,7 +110,7 @@ tours.add("sc_1018_injury_dates", {
     steps: () => [
         {
             content: "Open the card's details pencil",
-            trigger: `${DETAILS} button[data-sc-edit-toggle]`,
+            trigger: `${CARD} > summary button[data-sc-edit-toggle][data-sc-edit-for="injury-details"]`, // task 1736: the top-bar pencil
             run: "click",
         },
         {

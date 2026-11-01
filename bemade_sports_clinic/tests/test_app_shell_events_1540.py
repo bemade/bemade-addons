@@ -101,11 +101,16 @@ class TestAppShellEvents1540(Events1540Common):
         cards = tree.xpath('//*[@data-sc-timesheet-id]/@data-sc-timesheet-id')
         self.assertEqual(cards, [str(self.timesheet.id)])
         for sheet, action in (('sc_ts_add_sheet', '/my/event/%s/timesheet/add' % self.event.id),
-                              ('sc_ts_delete_%s' % self.timesheet.id, '/my/sc/timesheet/%s/delete' % self.timesheet.id),
                               ('sc_event_cancel_sheet', '/my/event/%s/cancel' % self.event.id)):
             form = tree.xpath('//dialog[@id="%s"]//form' % sheet)[0]
             self.assertEqual(form.get('action'), action)
             self.assertTrue(form.xpath('.//input[@name="csrf_token"]'), sheet)
+        # Task 1736 (deliberate update): the timesheet's delete (an archive)
+        # is the card's archive icon posting a plain form — no confirmation
+        # sheet, an undo toast instead.
+        form = tree.xpath('//form[@id="sc_ts_archive_%s"]' % self.timesheet.id)[0]
+        self.assertEqual(form.get('action'), '/my/sc/timesheet/%s/delete' % self.timesheet.id)
+        self.assertTrue(form.xpath('.//input[@name="csrf_token"]'))
         # Task 1607 (deliberate update): « + Ajouter » in the timesheets list
         # header (was in the app bar).
         self.assertEqual(tree.xpath('//div[contains(@class, "o_sc_list_header")]//button/@data-sc-sheet-open'),

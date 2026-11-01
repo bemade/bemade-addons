@@ -120,7 +120,8 @@ tours.add("sc_1590_clinic_injury_edit", {
         },
         {
             content: "The Details pencil opens its edit view again",
-            trigger: '[data-sc-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-sc-edit-card="injury-details"]:not([data-sc-edit-open]) button[data-sc-edit-toggle]',
+            // Task 1736 (deliberate update): the Details pencil is the card's top-bar pencil.
+            trigger: '[data-sc-section="clinic.dossier.injuries"] .o_sc_injury_item[open]:has([data-sc-edit-card="injury-details"]:not([data-sc-edit-open])) > summary button[data-sc-edit-toggle][data-sc-edit-for="injury-details"]',
             run: "click",
         },
         {

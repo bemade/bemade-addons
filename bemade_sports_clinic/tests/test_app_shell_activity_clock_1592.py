@@ -78,6 +78,20 @@ class Clock1592Mixin:
         clocks = node.xpath('.//a[contains(@class, "o_sc_activity_clock")]')
         return clocks[0] if clocks else None
 
+    def _assert_card_clock(self, node, count, overdue, href):
+        """Task 1736: an injury card's clock is its top bar's clock icon
+        with a count badge (red when one is overdue), not a chip."""
+        clocks = node.xpath('.//a[contains(@class, "o_sc_card_clock")]')
+        self.assertTrue(clocks, 'no clock')
+        clock = clocks[0]
+        self.assertEqual(clock.get('data-sc-activity-clock'), str(count))
+        self.assertEqual(clock.get('data-sc-activity-overdue'), str(overdue))
+        self.assertEqual(_text(clock), str(count))
+        self.assertEqual('o_sc_card_clock_overdue' in clock.get('class'), bool(overdue))
+        self.assertEqual(clock.get('href'), href)
+        self.assertTrue(clock.get('aria-label'))
+        return clock
+
     def _assert_clock(self, node, count, overdue, href):
         clock = self._clock(node)
         self.assertIsNotNone(clock, 'no clock chip')
@@ -296,11 +310,12 @@ class TestActivityClockRows1592(Clock1592Common):
         _text_, tree = self._get(url)
         card = tree.xpath('//details[@id="injury-%s"]' % self.injury.id)[0]
         # act_injury only (act_player is not about this injury).
-        clock = self._assert_clock(card, 1, 0, url + '&tab=activities')
+        # Task 1736 (deliberate update): the top bar's clock icon + badge.
+        clock = self._assert_card_clock(card, 1, 0, url + '&tab=activities')
         # In the summary row, beside the status chip.
         self.assertTrue(clock.xpath('ancestor::summary'))
         quiet = tree.xpath('//details[@id="injury-%s"]' % other.id)[0]
-        self.assertIsNone(self._clock(quiet))
+        self.assertFalse(quiet.xpath('.//a[contains(@class, "o_sc_card_clock")]'))
         # The target tab lists the injury's activity.
         _text_, tree = self._get(url + '&tab=activities')
         panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
@@ -317,8 +332,9 @@ class TestActivityClockDossier1592(Clock1592Mixin, Clinic1540Common):
         self._login_tp()
         _text_, tree = self._get('/my/clinic/%s?patient=%s&tab=dossier' % (self.clinic.id, self.player.id))
         card = tree.xpath('//details[@id="clinic-injury-%s"]' % self.injury.id)[0]
-        self._assert_clock(card, 2, 1, '/my/player?player_id=%s&clinic_id=%s&team_id=%s&tab=activities'
-                           % (self.player.id, self.clinic.id, self.team_a.id))
+        # Task 1736 (deliberate update): the top bar's clock icon + badge.
+        self._assert_card_clock(card, 2, 1, '/my/player?player_id=%s&clinic_id=%s&team_id=%s&tab=activities'
+                                % (self.player.id, self.clinic.id, self.team_a.id))
 
 
 @tagged('post_install', '-at_install')

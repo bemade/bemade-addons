@@ -311,7 +311,10 @@ class TestAppShellDocuments1539(AppShellCommon):
         self.assertEqual(upload.get('enctype'), 'multipart/form-data')
         self.assertIn('team_id=%s' % self.team_a.id, upload.xpath('.//input[@name="return_url"]/@value')[0])
         self.assertTrue(tree.xpath('//a[@href="/my/injury/document/download/%s"]' % self.doc.id))
-        form = tree.xpath('//dialog[@id="sc_delete_document_%s"]//form' % self.doc.id)[0]
+        # Task 1736 (deliberate update): the document's archive icon posts its
+        # own inline form (no confirmation sheet: an undo toast).
+        form = tree.xpath('//form[.//button[@data-sc-action="documents.delete"]]'
+                          '[contains(@action, "/delete/%s")]' % self.doc.id)[0]
         self.assertEqual(form.get('action'), '/my/injury/document/delete/%s' % self.doc.id)
         self.assertEqual(form.get('method'), 'post')
         resp = self.url_open(form.get('action'), data={

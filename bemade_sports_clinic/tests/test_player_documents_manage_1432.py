@@ -36,6 +36,9 @@ Acceptance criteria:
   follow the other cards (medical list items) — download, then the red
   trash next to the pencil / ✓ (rightmost); with a pencil, the trash shows
   while editing.
+* (Task 1736, owner 2026-11-01, supersedes the « Delete » + confirmation of
+  AC-5 / AC-9 / AC-8: the delete only archives, so it is the archive icon
+  with an undo toast — test_card_top_bars_1736.py.)
 * AC-8 fr_CA (website-aware): the tab's « Modifier » / « Supprimer » labels,
   « Supprimer ce document ? » and the link field render in French.
 """
@@ -266,13 +269,16 @@ class TestPlayerDocuments1432(PlayerDocuments1432Common):
         self.assertEqual(keys[0], '')
         self.assertIn(str(self.injury_b.id), keys)
         self.assertNotIn(str(self.injury_foreign.id), keys)
-        form = tree.xpath('//dialog[@id="sc_delete_player_document_%s"]//form' % self.doc_player.id)[0]
+        # Task 1736 (deliberate update, owner 2026-11-01): « delete » only
+        # archives a document — the archive icon posts its inline form (no
+        # confirmation sheet: an undo toast).
+        form = item.xpath('.//form[.//button[@data-sc-action="documents.delete"]]')[0]
         self.assertEqual(form.get('action'), '/my/injury/document/delete/%s' % self.doc_player.id)
         self.assertIn('documents', form.xpath('.//input[@name="return_url"]/@value')[0])
         # The injury card too.
         card = tree.xpath('//*[@data-sc-edit-card="document-%s"]' % self.doc_injury.id)
         self.assertTrue(card)
-        self.assertTrue(tree.xpath('//dialog[@id="sc_delete_document_%s"]' % self.doc_injury.id))
+        self.assertTrue(card[0].xpath('.//form[.//button[@data-sc-action="documents.delete"]]'))
 
     def test_buttons_hidden_for_other_therapist(self):
         self._login_tp2()
@@ -293,7 +299,10 @@ class TestPlayerDocuments1432(PlayerDocuments1432Common):
         """The document's top-bar icons follow the other cards (the medical
         list items, owner review 2026-10-27): read actions first, then the
         red trash next to the pencil / ✓, which is the rightmost button —
-        on the Documents tab and on the injury card alike."""
+        on the Documents tab and on the injury card alike. Task 1736
+        (deliberate update, owner 2026-11-01): the delete only archives, so
+        it is the neutral archive icon (visible in read mode), in the shared
+        top bar (sc_card_icons)."""
         self._login_tp()
         _text, tree = self._get(self._tab_url())
         rows = [self._tab_item(tree, self.doc_player)]
@@ -302,11 +311,12 @@ class TestPlayerDocuments1432(PlayerDocuments1432Common):
         for row in rows:
             trailing = row.xpath('.//*[contains(@class, "o_sc_doc_row")]/*[contains(@class, "o_sc_row_trailing")]')[0]
             self.assertEqual(
-                [child.get('data-sc-action') for child in trailing],
+                trailing.xpath('.//*[@data-sc-card-icons]//*[self::a or self::button]/@data-sc-action'),
                 ['documents.download', 'documents.delete', 'documents.edit'])
-            trash = trailing.xpath('./*[@data-sc-action="documents.delete"]')[0]
-            self.assertIn('o_sc_icon_btn_danger', trash.get('class').split())
-            self.assertIn('o_sc_doc_delete', trash.get('class').split())
+            archive = trailing.xpath('.//*[@data-sc-action="documents.delete"]')[0]
+            self.assertIn('o_sc_card_archive', archive.get('class').split())
+            self.assertNotIn('o_sc_icon_btn_danger', archive.get('class').split())
+            self.assertIsNone(archive.get('hidden'))
 
     # -- AC-6 ------------------------------------------------------------
     def test_archived_hidden_everywhere(self):
@@ -373,10 +383,9 @@ class TestPlayerDocumentsFr1432(PlayerDocuments1432Common):
         self.opener.cookies.set('frontend_lang', 'fr_CA')
         _text, tree = self._get(self._tab_url())
         item = self._tab_item(tree, self.doc_player)
-        self.assertEqual(item.xpath('.//button[@data-sc-action="documents.delete"]/@title'), ['Supprimer'])
+        # Task 1736 (deliberate update): the archive icon, no confirmation.
+        self.assertEqual(item.xpath('.//button[@data-sc-action="documents.delete"]/@title'), ['Archiver'])
         self.assertEqual(item.xpath('.//button[@data-sc-action="documents.edit"]/@title'), ['Modifier'])
-        dialog = tree.xpath('//dialog[@id="sc_delete_player_document_%s"]' % self.doc_player.id)[0]
-        self.assertIn('Supprimer ce document ?', ' '.join(dialog.text_content().split()))
         labels = {json.loads(p)['field']: json.loads(p)['label'] for p in item.xpath('.//owl-component/@props')}
         self.assertEqual(labels['injury_id'], 'Lien vers la blessure (optionnel)')
         # Pre-review click-through 2026-10-31: « Category » was left in English.

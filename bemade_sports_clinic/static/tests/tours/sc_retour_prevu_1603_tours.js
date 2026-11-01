@@ -49,7 +49,7 @@ const HEADER_FIELD = '[data-sc-section="player.predicted_return"] .o_sc_autosave
 // Review fixes 2026-10-18: the header's fields are behind its one pencil.
 const HEADER_PENCIL = {
     content: "Open the header's pencil",
-    trigger: '[data-sc-section="player.hero"] > button[data-sc-edit-toggle][aria-expanded="false"]',
+    trigger: '[data-sc-section="player.hero"] [data-sc-card-icons] > button[data-sc-edit-toggle][aria-expanded="false"]',
     run: "click",
 };
 

@@ -60,7 +60,7 @@ function typeAndLeave(input, value) {
 
 const openPencil = {
     content: "Open the header's pencil",
-    trigger: `${HERO} > button[data-sc-edit-toggle][aria-expanded="false"]`,
+    trigger: `${HERO} [data-sc-card-icons] > button[data-sc-edit-toggle][aria-expanded="false"]`,
     run: "click",
 };
 

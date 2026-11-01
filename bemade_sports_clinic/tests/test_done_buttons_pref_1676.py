@@ -95,12 +95,14 @@ class TestDoneButtonsPref1676(Done1676Common):
         card = tree.xpath('//details[@id="injury-%s"]' % self.injury.id)[0]
         self.assertFalse(card.xpath('.//*[@data-sc-injury-done]'))
         self.assertFalse(card.xpath('.//*[@data-sc-action="injury.done"]'))
-        foot = card.xpath('.//div[contains(@class, "o_sc_injury_card_actions")]')[0]
-        buttons = foot.xpath('.//button')
+        # Task 1736 (deliberate update): no foot any more — « Delete injury »
+        # is the top bar's red trash (shown while the Details are edited).
+        self.assertFalse(card.xpath('.//div[contains(@class, "o_sc_injury_card_actions")]'))
+        buttons = card.xpath('.//button[@data-sc-action="injury.delete"]')
         self.assertEqual(len(buttons), 1)
-        self.assertEqual(buttons[0].get('data-sc-action'), 'injury.delete')
-        self.assertEqual(' '.join(buttons[0].text_content().split()), 'Delete injury')
-        self.assertIn('o_sc_btn_danger', buttons[0].get('class'))
+        self.assertTrue(buttons[0].xpath('ancestor::summary'))
+        self.assertEqual(buttons[0].get('aria-label'), 'Delete injury')
+        self.assertIn('o_sc_icon_btn_danger', buttons[0].get('class'))
         self.assertEqual(buttons[0].get('data-sc-sheet-open'), 'sc_delete_injury_sheet_%s' % self.injury.id)
 
     def test_coach_has_no_foot(self):
@@ -108,6 +110,8 @@ class TestDoneButtonsPref1676(Done1676Common):
         _text, tree = self._get(self._card_url())
         card = tree.xpath('//details[@id="injury-%s"]' % self.injury.id)[0]
         self.assertFalse(card.xpath('.//div[contains(@class, "o_sc_injury_card_actions")]'))
+        # Task 1736: nor the top bar's trash.
+        self.assertFalse(card.xpath('.//*[@data-sc-action="injury.delete"]'))
 
     def test_done_buttons_marked(self):
         self._login_tp()
@@ -143,8 +147,11 @@ class TestDoneButtonsPrefI18n1676(Done1676Common):
         self.assertIn('Afficher les boutons Terminé', section.text_content())
         self.assertIn('terminer la modification', section.text_content())
         text, tree = self._fr(self._card_url())
-        foot = tree.xpath('//div[contains(@class, "o_sc_injury_card_actions")]//button')[0]
-        self.assertEqual(' '.join(foot.text_content().split()), 'Supprimer la blessure')
+        # Task 1736 (deliberate update): « Delete injury » is the top bar's
+        # trash icon — its name says it.
+        trash = tree.xpath('//details[contains(@class, "o_sc_injury_item")]/summary'
+                           '//button[@data-sc-action="injury.delete"]')[0]
+        self.assertEqual(trash.get('aria-label'), 'Supprimer la blessure')
 
     def test_check_label_in_french(self):
         # The ✓'s label comes from the layout (a card may open on load,

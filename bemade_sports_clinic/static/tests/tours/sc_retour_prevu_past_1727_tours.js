@@ -52,7 +52,7 @@ tours.add("sc_1727_header_past", {
         },
         {
             content: "Open the header's pencil",
-            trigger: '[data-sc-section="player.hero"] > button[data-sc-edit-toggle][aria-expanded="false"]',
+            trigger: '[data-sc-section="player.hero"] [data-sc-card-icons] > button[data-sc-edit-toggle][aria-expanded="false"]',
             run: "click",
         },
         {
