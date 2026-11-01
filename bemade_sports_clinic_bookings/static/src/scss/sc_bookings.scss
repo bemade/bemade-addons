@@ -32,3 +32,28 @@
         white-space: pre-line;
     }
 }
+
+// Task 1737: change / cancel a booking (list rows, calendar details, the
+// edit / cancel pages).
+.o_sc_app {
+    .o_sc_booking_action .o_sc_icon,
+    .o_sc_booking_detail_actions .o_sc_icon {
+        color: var(--sc-fg-2);
+    }
+
+    .o_sc_calendar_detail .o_sc_card_head > strong {
+        flex: 1 1 auto;
+    }
+
+    .o_sc_booking_detail_actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 auto;
+    }
+
+    .o_sc_booking_overlaps {
+        margin: var(--sc-space-1) 0 0;
+        padding-left: 1.2em;
+    }
+}

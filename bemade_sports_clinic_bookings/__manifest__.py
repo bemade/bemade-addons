@@ -1,6 +1,6 @@
 {
     'name': 'Sports Clinic Bookings on the App Shell',
-    'version': '19.0.1.4.0',
+    'version': '19.0.1.5.0',
     'summary': "Glue: the portal bookings pages (appointment_portal_staff) on the Sports Clinic app shell.",
     'description': """
 Sports Clinic Bookings on the App Shell
@@ -30,6 +30,17 @@ role), ``/my/bookings`` and ``/my/bookings/calendar`` render on the shell:
   booking (question → answer, in the question order; a selection by its
   label; multi-line text kept) — any question of the appointment type,
   nothing when there are no answers. Same visibility as the booking.
+* change or cancel a booking (task 1737): on an upcoming booking, its
+  staff user (or a clinic administrator) gets « Cancel booking » and
+  « Edit » buttons on the list row and in the calendar details. « Edit »
+  changes the date, the start time and the length (5 to 60 minutes, in
+  5-minute steps); a time that overlaps another busy event of the staff
+  member needs an explicit « Save anyway ». The booking keeps its
+  attendees and Odoo sends them its standard « Date updated » email.
+  « Cancel booking » uses the appointment module's own cancellation (the
+  one the customer's cancel link uses): the person who booked receives the
+  standard cancellation email, with the staff member's optional message in
+  it, and the slot can be booked again. Anyone else gets a 404.
 
 With the switch off (or for a user without an app role) both pages render
 exactly the ``appointment_portal_staff`` templates. The bookings addon
@@ -46,6 +57,8 @@ itself is unchanged; the routes, domains and record rules are its own.
     'assets': {
         'web.assets_frontend': [
             'bemade_sports_clinic_bookings/static/src/scss/sc_bookings.scss',
+            'bemade_sports_clinic_bookings/static/src/js/sc_booking_calendar.js',
+            'bemade_sports_clinic_bookings/static/src/js/sc_booking_calendar.xml',
         ],
         'web.assets_tests': [
             'bemade_sports_clinic_bookings/static/tests/tours/**/*',

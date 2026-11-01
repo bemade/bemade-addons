@@ -26,6 +26,15 @@ msgid "<span>Filters</span>"
 msgstr "<span>Filtres</span>"
 
 #. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_edit
+msgid ""
+"<strong class=\"o_sc_banner_title\">This time slot overlaps another booking."
+" Save anyway?</strong>"
+msgstr ""
+"<strong class=\"o_sc_banner_title\">Ce créneau chevauche un autre rendez-"
+"vous — enregistrer quand même ?</strong>"
+
+#. module: bemade_sports_clinic_bookings
 #. odoo-python
 #: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
 msgid "All"
@@ -44,6 +53,30 @@ msgid "Appointment type"
 msgstr "Type de rendez-vous"
 
 #. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_cancel
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_edit
+msgid "Back"
+msgstr "Retour"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "Booking"
+msgstr "Rendez-vous"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "Booking cancelled"
+msgstr "Rendez-vous annulé"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "Booking changed"
+msgstr "Rendez-vous modifié"
+
+#. module: bemade_sports_clinic_bookings
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
 msgid "Booking form answers"
 msgstr "Réponses au formulaire de réservation"
@@ -55,9 +88,34 @@ msgid "Calendar"
 msgstr "Calendrier"
 
 #. module: bemade_sports_clinic_bookings
+#. odoo-javascript
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+#: code:addons/bemade_sports_clinic_bookings/static/src/js/sc_booking_calendar.xml:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_cancel
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
+msgid "Cancel booking"
+msgstr "Annuler le rendez-vous"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_cancel
+msgid ""
+"Cancel this booking? The person who booked receives the cancellation email "
+"and the time slot becomes available again."
+msgstr ""
+"Annuler ce rendez-vous ? La personne qui a réservé reçoit le courriel "
+"d'annulation et la plage horaire redevient disponible."
+
+#. module: bemade_sports_clinic_bookings
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
 msgid "Cancelled"
 msgstr "Annulée"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "Choose a length between 5 and 60 minutes, in 5-minute steps."
+msgstr "Choisissez une durée de 5 à 60 minutes, par tranches de 5 minutes."
 
 #. module: bemade_sports_clinic_bookings
 #. odoo-python
@@ -66,15 +124,56 @@ msgid "Client"
 msgstr "Client"
 
 #. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_edit
+msgid "Date"
+msgstr "Date"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-javascript
+#: code:addons/bemade_sports_clinic_bookings/static/src/js/sc_booking_calendar.xml:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
+msgid "Edit"
+msgstr "Modifier"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_edit
+msgid "Edit booking"
+msgstr "Modifier le rendez-vous"
+
+#. module: bemade_sports_clinic_bookings
 #. odoo-python
 #: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
 msgid "Email"
 msgstr "Courriel"
 
 #. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "Enter a valid date, start time and length."
+msgstr "Entrez une date, une heure de début et une durée valides."
+
+#. module: bemade_sports_clinic_bookings
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
 msgid "From"
 msgstr "Du"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_edit
+msgid "Length"
+msgstr "Durée"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/models/calendar_event.py:0
+msgid "Message from %(name)s:"
+msgstr "Message de %(name)s :"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_cancel
+msgid "Message to the person (optional)"
+msgstr "Message à la personne (facultatif)"
 
 #. module: bemade_sports_clinic_bookings
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
@@ -99,15 +198,53 @@ msgid "Reset"
 msgstr "Réinitialiser"
 
 #. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_edit
+msgid "Save"
+msgstr "Enregistrer"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_edit
+msgid "Save anyway"
+msgstr "Enregistrer quand même"
+
+#. module: bemade_sports_clinic_bookings
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
 msgid "Sort bookings"
 msgstr "Trier les réservations"
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_edit
+msgid "Start time"
+msgstr "Heure de début"
 
 #. module: bemade_sports_clinic_bookings
 #. odoo-python
 #: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
 msgid "Status"
 msgstr "Statut"
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "The new time is in the past. Choose a time to come."
+msgstr "La nouvelle heure est passée. Choisissez une heure à venir."
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "The person who booked has been notified by email."
+msgstr "La personne qui a réservé a été avisée par courriel."
+
+#. module: bemade_sports_clinic_bookings
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_edit
+msgid "The person who booked will be notified by email."
+msgstr "La personne qui a réservé sera avisée par courriel."
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+msgid "This booking can no longer be changed."
+msgstr "Ce rendez-vous ne peut plus être modifié."
 
 #. module: bemade_sports_clinic_bookings
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings

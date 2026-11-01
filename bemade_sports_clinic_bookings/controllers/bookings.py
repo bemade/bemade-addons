@@ -8,14 +8,23 @@ The bookings addon's search, filters, record rules and JSON feed are used
 as they are — nothing is re-implemented here.
 """
 import json
+from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
-from odoo import http
+import pytz
+
+from odoo import fields, http
 from odoo.http import request
 from odoo.tools import format_datetime
+from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.appointment_portal_staff.controllers.portal import BookingPortal
 from odoo.addons.bemade_sports_clinic.controllers.app_shell import AppShellMixin, sc_contact_href
+from odoo.addons.bemade_sports_clinic.models import sc_app_nav
+
+from ..models.calendar_event import SC_BOOKING_LENGTHS
+
+_lt = LazyTranslate(__name__)
 
 
 DETAIL_KEYS = ('client', 'appointment_type', 'status', 'email', 'phone')
@@ -30,6 +39,23 @@ SEGMENTS = (
 LIST_SEGMENTS = ('upcoming', 'past', 'all')
 # Task 1596: the list filters a segment / sort link carries along.
 LIST_FILTER_KEYS = ('appointment_type_id', 'date_from', 'date_to')
+
+
+# Task 1737: the edit / cancel pages are sub-pages of « Mes rendez-vous » in
+# the shell's parent registry (back chevron + crumbs); the list / calendar
+# are registered so a ``return_url`` to them is honoured.
+_BOOKINGS_PAGE = 'sc_app_bookings'
+sc_app_nav.PAGES.setdefault(_BOOKINGS_PAGE, sc_app_nav.Page(
+    _BOOKINGS_PAGE, url='/my/bookings', label=sc_app_nav.nav_label('bookings'),
+    path=r'/my/bookings(?:/calendar)?'))
+# Labels first, keys zipped in (babel's extractor would take a literal that
+# follows an _lt() call in the same tuple for a term).
+_PAGE_LABELS = (_lt('Edit booking'), _lt('Cancel booking'))
+for (_key, _suffix), _label in zip(
+        (('sc_app_booking_edit', 'edit'), ('sc_app_booking_cancel', 'cancel')), _PAGE_LABELS):
+    sc_app_nav.PAGES.setdefault(_key, sc_app_nav.Page(
+        _key, parent=lambda v: (_BOOKINGS_PAGE, {}), label=_label,
+        url=lambda v, _s=_suffix: '/my/bookings/%s/%s' % (v['booking'].id, _s)))
 
 
 def sc_bookings_list_url(params):
@@ -163,9 +189,15 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
         bookings = request.env['calendar.event'].sudo().with_context(active_test=False).browse(
             [item['id'] for item in payload])
         answers = {booking.id: self._sc_booking_answers(booking) for booking in bookings}
+        manage = {booking.id: self._sc_booking_manage_urls(booking, '/my/bookings/calendar')
+                  for booking in bookings}
         for item in payload:
             for answer in answers.get(item['id'], ()):
                 item[self._sc_booking_answer_key(answer['question_id'])] = answer['value']
+            # Task 1737: the calendar detail's change / cancel links.
+            if manage.get(item['id']):
+                item['sc_edit_url'] = manage[item['id']]['edit']
+                item['sc_cancel_url'] = manage[item['id']]['cancel']
         return request.make_response(
             json.dumps(payload), headers=[('Content-Type', 'application/json')])
 
@@ -229,6 +261,9 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
                 'cancelled': details['cancelled'],
                 # Task 1732: the booking form's answers.
                 'answers': self._sc_booking_answers(booking),
+                # Task 1737: change / cancel (the list is the viewer's own
+                # bookings; a past or cancelled one has no actions).
+                'manage': self._sc_booking_manage_urls(booking, request.httprequest.full_path),
             })
         list_params = self._sc_booking_filter_params(qcontext) + [('sortby', explicit_sortby or '')]
         return {
@@ -237,3 +272,157 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
             'sc_booking_sorts': self._sc_booking_sorts(qcontext),
             'sc_booking_sortby': explicit_sortby,
         }
+
+    # ------------------------------------------------------------------
+    # Task 1737: staff change the time / length of a booking or cancel it
+    # ------------------------------------------------------------------
+
+    def _sc_booking_manage_urls(self, booking, return_url):
+        """``{'edit', 'cancel'}`` page URLs for a booking the viewer may
+        still change, else None."""
+        if not booking._sc_booking_is_open() or not booking._sc_booking_can_manage(request.env.user):
+            return None
+        query = '?%s' % urlencode({'return_url': return_url}) if return_url else ''
+        return {
+            'edit': '/my/bookings/%s/edit%s' % (booking.id, query),
+            'cancel': '/my/bookings/%s/cancel%s' % (booking.id, query),
+        }
+
+    def _sc_managed_booking(self, booking_id):
+        """The (sudo) booking when the shell is on and the viewer may manage
+        it — its staff user or a clinic administrator — else None (404:
+        another user's booking is not revealed)."""
+        if not self._sc_app_shell_active():
+            return None
+        booking = request.env['calendar.event'].sudo().with_context(active_test=False).browse(
+            int(booking_id)).exists()
+        if not booking or not booking._sc_booking_can_manage(request.env.user):
+            return None
+        return booking
+
+    @staticmethod
+    def _sc_booking_return_url(value):
+        return sc_app_nav.safe_return_url(value, '/my/bookings', prefixes=('/my/bookings',))
+
+    def _sc_booking_closed(self, return_url):
+        request.session['notification'] = {
+            'type': 'danger',
+            'title': request.env._("Booking"),
+            'message': request.env._("This booking can no longer be changed."),
+        }
+        return request.redirect(return_url)
+
+    @staticmethod
+    def _sc_booking_tz(booking):
+        name = request.env.user.tz or booking.appointment_type_id.appointment_tz or 'UTC'
+        try:
+            return pytz.timezone(name)
+        except pytz.UnknownTimeZoneError:
+            return pytz.UTC
+
+    def _sc_booking_page(self, template, booking, values):
+        env = request.env
+        values = dict(values, booking=booking, page_name='booking')
+        values.setdefault('sc_flash', {'success': None, 'error': None})
+        tz = env.user.tz or booking.appointment_type_id.appointment_tz
+        details = self._booking_detail_values(booking)
+        values.update({
+            'sc_booking_client': details['client'],
+            'sc_booking_type': details['appointment_type'],
+            'sc_booking_when': format_datetime(
+                env, booking.start, tz=tz, dt_format='EEEE d MMMM y · HH:mm') if booking.start else '',
+        })
+        return self._sc_shell_response(template, self._sc_app_values(values, template))
+
+    def _sc_booking_edit_page(self, booking, return_url, date=None, start_time=None, length=None,
+                              error=None, overlap=None):
+        local = pytz.UTC.localize(booking.start).astimezone(self._sc_booking_tz(booking))
+        current = booking._sc_booking_length()
+        lengths = list(SC_BOOKING_LENGTHS)
+        if current not in lengths:
+            # Shown as-is until changed (a length from before the 5-minute set).
+            lengths = sorted(set(lengths) | {current})
+        return self._sc_booking_page('bemade_sports_clinic_bookings.sc_app_booking_edit', booking, {
+            'return_url': return_url,
+            'sc_booking_form': {
+                'date': date or local.strftime('%Y-%m-%d'),
+                'time': start_time or local.strftime('%H:%M'),
+                'length': int(length) if length else current,
+                'lengths': lengths,
+            },
+            'sc_booking_overlaps': [{
+                'name': event.name,
+                'when': format_datetime(request.env, event.start, tz=request.env.user.tz,
+                                        dt_format='HH:mm') + ' – ' + format_datetime(
+                    request.env, event.stop, tz=request.env.user.tz, dt_format='HH:mm'),
+            } for event in (overlap or [])],
+            'sc_flash': {'success': None, 'error': error},
+        })
+
+    @http.route('/my/bookings/<int:booking_id>/edit', type='http', auth='user', website=True,
+                methods=['GET', 'POST'])
+    def sc_booking_edit(self, booking_id, **post):
+        booking = self._sc_managed_booking(booking_id)
+        if not booking:
+            return request.not_found()
+        return_url = self._sc_booking_return_url(post.get('return_url'))
+        if not booking._sc_booking_is_open():
+            return self._sc_booking_closed(return_url)
+        if request.httprequest.method != 'POST':
+            return self._sc_booking_edit_page(booking, return_url)
+
+        env = request.env
+        date_value, time_value, length_value = (
+            (post.get(key) or '').strip() for key in ('date', 'time', 'length'))
+        error = None
+        start = stop = None
+        try:
+            day = fields.Date.to_date(date_value)
+            clock = datetime.strptime(time_value, '%H:%M').time()
+            length = int(length_value)
+        except (TypeError, ValueError):
+            day = clock = length = None
+            error = env._("Enter a valid date, start time and length.")
+        if not error and length not in SC_BOOKING_LENGTHS and length != booking._sc_booking_length():
+            error = env._("Choose a length between 5 and 60 minutes, in 5-minute steps.")
+        if not error:
+            start = self._sc_booking_tz(booking).localize(datetime.combine(day, clock)).astimezone(
+                pytz.UTC).replace(tzinfo=None)
+            stop = start + timedelta(minutes=length)
+            if start <= fields.Datetime.now():
+                error = env._("The new time is in the past. Choose a time to come.")
+        if error:
+            return self._sc_booking_edit_page(
+                booking, return_url, date_value, time_value, length if length else None, error=error)
+        overlaps = booking._sc_booking_overlaps(start, stop)
+        if overlaps and not post.get('confirm_overlap'):
+            return self._sc_booking_edit_page(
+                booking, return_url, date_value, time_value, length, overlap=overlaps)
+        booking._sc_booking_reschedule(start, stop)
+        request.session['notification'] = {
+            'type': 'success',
+            'title': env._("Booking changed"),
+            'message': env._("The person who booked has been notified by email."),
+        }
+        return request.redirect(return_url)
+
+    @http.route('/my/bookings/<int:booking_id>/cancel', type='http', auth='user', website=True,
+                methods=['GET', 'POST'])
+    def sc_booking_cancel(self, booking_id, **post):
+        booking = self._sc_managed_booking(booking_id)
+        if not booking:
+            return request.not_found()
+        return_url = self._sc_booking_return_url(post.get('return_url'))
+        if not booking._sc_booking_is_open():
+            return self._sc_booking_closed(return_url)
+        if request.httprequest.method != 'POST':
+            return self._sc_booking_page('bemade_sports_clinic_bookings.sc_app_booking_cancel', booking, {
+                'return_url': return_url,
+            })
+        booking._sc_booking_cancel(request.env.user, post.get('message'))
+        request.session['notification'] = {
+            'type': 'success',
+            'title': request.env._("Booking cancelled"),
+            'message': request.env._("The person who booked has been notified by email."),
+        }
+        return request.redirect(return_url)
