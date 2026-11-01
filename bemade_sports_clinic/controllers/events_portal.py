@@ -1625,7 +1625,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         elif params.get('restored'):
             success = env._("Event restored.")
         elif params.get('ts_saved'):
-            success = env._("Timesheet saved.")
+            # Task 1731: created = submitted (no separate send step) — say SENT.
+            success = env._("Timesheet sent.")
         elif params.get('updated'):
             success = env._("Timesheet updated.")
         elif params.get('deleted'):

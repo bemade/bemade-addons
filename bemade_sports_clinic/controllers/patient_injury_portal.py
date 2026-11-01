@@ -9,7 +9,9 @@ from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from .access_control_mixin import AccessControlMixin, parse_portal_date
 from .app_shell import AppShellMixin
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
+
+import pytz
 from urllib.parse import quote as url_quote
 
 _logger = logging.getLogger(__name__)
@@ -396,7 +398,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             record.create_uid == request.env.user
             and record.create_date and record.create_date >= deadline
             and not record.treatment_note_ids
-            and not record.document_ids
+            # Task 1432: an archived document still blocks it (cascade).
+            and not record.with_context(active_test=False).document_ids
         )
         if not allowed:
             _logger.info("Undo of injury %s refused for user %s", injury.id, request.env.user.id)
@@ -1075,6 +1078,37 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         histories = request.env['sports.injury.note.history'].search(domain)
         return histories, requested_scope, is_treatment_prof
 
+    def _injury_followup_note_entries(self, injury):
+        """Task 1735: [(sort key, history entry)] of the player's Notes-tab
+        notes (``sports.treatment.note``) linked to ``injury`` — therapists
+        only (the caller checks; a coach holds no treatment-note ACL). They
+        count as INTERNAL entries with a « Follow-up note » chip.
+
+        Deliberately NOT sudo: the treatment-note portal record rule keeps
+        the therapist to the patients of the teams they staff.
+
+        Sort key: a note written on its own date sorts at its write time
+        (``create_date``, the moment shown); a back-dated note has no time,
+        so it sorts at the END of its date (viewer's tz), shown date-only —
+        the same « when » as the Notes tab (``portal_when_label``)."""
+        Note = request.env['sports.treatment.note']
+        notes = Note.search([('injury_id', '=', injury.id)])
+        label = request.env._("Follow-up note")
+        tz = pytz.timezone(request.env.user.tz or request.env.context.get('tz') or 'UTC')
+        keyed = []
+        for note in notes:
+            written = note.create_date
+            if written and note.date == fields.Date.context_today(note, timestamp=written):
+                moment = written
+            else:
+                moment = tz.localize(datetime.combine(note.date, time.max)).astimezone(
+                    pytz.utc).replace(tzinfo=None)
+            entry = self._sc_history_entry(
+                None, note.user_id.name, note.note, action=label, tone='green', scope='internal')
+            entry['when'] = note.portal_when_label or ''
+            keyed.append(((moment, 0, note.id), entry))
+        return keyed
+
     @http.route(['/my/injury/<int:injury_id>/notes/history/fragment'], type='http',
                 auth='user', website=True, methods=['GET'])
     def injury_note_history_fragment(self, injury_id, scope=None, **kw):
@@ -1091,12 +1125,17 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         env = request.env
         histories, scope, is_treatment_prof = self._injury_note_history(injury, scope)
         scope_labels = {'internal': env._("Internal"), 'external': env._("External")}
-        entries = [self._sc_history_entry(
+        # Task 1735: (sort key, entry) from both sources, merged newest first.
+        keyed = [((row.note_datetime or row.create_date, 1, row.id), self._sc_history_entry(
             row.note_datetime, row.author_id.name, row.content,
             action=scope_labels.get(row.scope) if is_treatment_prof else None,
             tone='mauve' if row.scope == 'internal' else 'ghost',
             scope=row.scope,
-        ) for row in histories]
+        )) for row in histories]
+        if is_treatment_prof and scope in ('all', 'internal'):
+            keyed += self._injury_followup_note_entries(injury)
+        keyed.sort(key=lambda pair: pair[0], reverse=True)
+        entries = [entry for _key, entry in keyed]
         base = '/my/injury/%s/notes/history/fragment' % injury.id
         return request.render('bemade_sports_clinic.sc_note_history_fragment', {
             'entries': entries,
@@ -1232,7 +1271,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         """Download a document attached to an injury"""
         document = request.env['sports.injury.document'].sudo().browse(int(document_id))
         
-        if not document.exists():
+        # Task 1432: an archived (portal-deleted) document is gone.
+        if not document.exists() or not document.active:
             raise request.not_found()
             
         try:
@@ -1258,7 +1298,8 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def download_patient_document(self, document_id, **post):
         """Download a document linked to a patient (injury optional)."""
         document = request.env['sports.injury.document'].sudo().browse(int(document_id))
-        if not document.exists():
+        # Task 1432: an archived (portal-deleted) document is gone.
+        if not document.exists() or not document.active:
             raise request.not_found()
         try:
             # Access check based on patient (primary link)
@@ -1392,43 +1433,59 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     @http.route(['/my/injury/document/delete/<int:document_id>'], type='http', auth='user',
                 website=True, methods=['POST'], csrf=True)
     def delete_injury_document(self, document_id, **post):
-        """Delete a document attached to an injury.
+        """Delete a document — of an injury or of the player (injury-less).
 
         Task 1544: POST + CSRF only (a GET used to delete, so a crafted link or
-        image could remove a document for a logged-in TP)."""
+        image could remove a document for a logged-in TP).
+
+        Task 1432 (owner decision 2026-10-31): only the document's uploader or
+        a clinic administrator may delete it, and « delete » ARCHIVES it (a
+        clinic administrator restores it from the backend), with an internal
+        note on the player. Player-level documents (no injury) work too (they
+        used to 404). A refusal comes back with « permission denied » — never
+        a 404 / 500 for a document the user can see."""
         document = request.env['sports.injury.document'].sudo().browse(int(document_id))
-        
-        if not document.exists():
+
+        if not document.exists() or not document.active:
             raise request.not_found()
-            
+
         try:
-            # Check access to the injury this document belongs to
-            injury = self._check_access_to_injury(document.injury_id.id)
-        except UserError:
+            # The injury's access, or (no injury) the player's — as the download.
+            if document.injury_id:
+                self._check_access_to_injury(document.injury_id.id)
+            else:
+                self._check_access_to_patient(document.patient_id.id)
+        except (UserError, AccessError):
             raise request.not_found()
-            
+
         # Keep the team/clinic nav context across the round-trip (task 1410).
         ctx_qs = _nav_ctx_qs(post, self._clinic_context(post))
 
-        # Task 1616: the injury card posts where to come back (the card).
+        # Task 1616: the injury card posts where to come back (the card);
+        # task 1432: the player Documents tab too.
         return_url = self._safe_return_url(post.get('return_url'), None)
+        if document.injury_id:
+            fallback = f'/my/injury/documents?injury_id={document.injury_id.id}{ctx_qs}'
+        else:
+            fallback = f'/my/player?player_id={document.patient_id.id}{ctx_qs}&tab=documents'
 
-        # Check if user is a treatment professional (only they can delete documents)
-        is_treatment_prof = self._is_treatment_professional()
-        if not is_treatment_prof:
-            if return_url:
-                return request.redirect(self._url_with_query(return_url, 'error=permission_denied'))
-            return request.redirect(f'/my/injury/documents?injury_id={document.injury_id.id}{ctx_qs}&error=permission_denied')
-            
-        # Delete the document
-        injury_id = document.injury_id.id
-        document.sudo().unlink()
-        
-        if return_url:
-            return request.redirect(self._url_with_query(return_url, 'success=document_deleted'))
-        # Redirect back to documents page with success message
-        return request.redirect(f'/my/injury/documents?injury_id={injury_id}{ctx_qs}&success=document_deleted')
-        
+        def _back(query):
+            return request.redirect(self._url_with_query(return_url or fallback, query))
+
+        # A treatment professional (or an administrator) who uploaded it, or
+        # a clinic administrator.
+        user = request.env.user
+        allowed = (
+            (self._is_treatment_professional() or self._is_clinic_admin())
+            and document._sc_can_manage(user)
+        )
+        if not allowed:
+            _logger.info("Document %s delete refused for user %s", document.id, user.id)
+            return _back('error=permission_denied')
+
+        document._sc_portal_archive(user)
+        return _back('success=document_deleted')
+
     @http.route(['/my/injury/verify'], type='http', auth='user', website=True, methods=['POST'])
     def verify_injury(self, injury_id, **post):
         """Verify an injury (change status from unverified to active)"""

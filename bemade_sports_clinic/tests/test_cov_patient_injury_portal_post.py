@@ -21,6 +21,8 @@ class TestCovPatientInjuryPortalPost(PortalCovCommon):
         return self.env['sports.injury.document'].create({
             'name': 'fixture.pdf', 'patient_id': self.player.id, 'injury_id': self.injury.id,
             'file_content': base64.b64encode(b'fixture-bytes'), 'category': 'other',
+            # Task 1432: only the uploader (or an admin) may delete it.
+            'created_by_id': self.tp.id,
         })
 
     # ---- document upload / download / delete ----
@@ -61,7 +63,8 @@ class TestCovPatientInjuryPortalPost(PortalCovCommon):
         resp = self.url_open('/my/injury/document/delete/%s' % doc.id,
                              data={'csrf_token': self._csrf()})
         self.assertEqual(resp.status_code, 200)
-        self.assertFalse(doc.exists(), "TP should be able to delete the document")
+        doc.invalidate_recordset()
+        self.assertFalse(doc.active, "TP should be able to delete (archive) the document")
 
     def test_delete_injury_document_denied_for_coach(self):
         doc = self._new_document()

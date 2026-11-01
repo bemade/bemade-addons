@@ -3963,8 +3963,9 @@ msgstr "Changements capturés (vue interne)"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_documents
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_injury_documents
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
 msgid "Category"
 msgstr "Catégorie"
 
@@ -6127,6 +6128,12 @@ msgid "Le Fit Crew — urgent updates / mises à jour urgentes (%s)"
 msgstr ""
 
 #. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/patient_injury_portal.py:0
+msgid "Follow-up note"
+msgstr "Note de suivi"
+
+#. module: bemade_sports_clinic
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_event__message_follower_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_organization_staff__message_follower_ids
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient__message_follower_ids
@@ -7226,6 +7233,7 @@ msgstr "Lier cette note (facultatif)"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_note_add_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
 msgid "Link to Injury (optional)"
@@ -12429,8 +12437,8 @@ msgstr "Feuille de temps supprimée."
 #. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
-msgid "Timesheet saved."
-msgstr "Feuille de temps enregistrée."
+msgid "Timesheet sent."
+msgstr "Feuille de temps envoyée."
 
 #. module: bemade_sports_clinic
 #. odoo-python
@@ -15095,6 +15103,7 @@ msgstr "Supprimer ce contact ?"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_injury_documents
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
 msgid "Delete this document?"
 msgstr "Supprimer ce document ?"
@@ -18039,3 +18048,34 @@ msgstr "Déplacer vers"
 #: code:addons/bemade_sports_clinic/models/sc_dashboard.py:0
 msgid "Right"
 msgstr "Droite"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "Submitted ✓"
+msgstr "Soumise ✓"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
+msgid "Billed"
+msgstr "Facturée"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_timesheet_card
+msgid "Sent"
+msgstr "Envoyée"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_timesheet_card
+msgid ""
+"Your timesheet for this event has already been sent — your changes are saved"
+" automatically."
+msgstr ""
+"Votre feuille de temps pour cet événement est déjà envoyée — vos "
+"modifications s'enregistrent automatiquement."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
+msgid "-- None --"
+msgstr "-- Aucune --"
