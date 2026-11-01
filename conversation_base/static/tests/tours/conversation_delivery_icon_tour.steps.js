@@ -18,7 +18,8 @@ export default [
     id: "reply-shown",
     title: "Voir la réponse envoyée",
     narration: "Notre réponse figure dans le fil de la conversation.",
-    selector: ".o-mail-Message:contains('Votre commande part demain')",
+    selector: ".o-mail-Message",
+    containsText: "Votre commande part demain",
     action: "assert",
   },
   {
@@ -26,8 +27,8 @@ export default [
     title: "Vérifier l'absence d'icône d'échec",
     narration:
       "Le message n'affiche aucune icône d'échec d'envoi : il a bien été livré.",
-    selector:
-      ".o-mail-Message:contains('Votre commande part demain'):not(:has(.o-mail-Message-notification))",
+    selector: ".o-mail-Message:not(:has(.o-mail-Message-notification))",
+    containsText: "Votre commande part demain",
     action: "assert",
   },
 ];
