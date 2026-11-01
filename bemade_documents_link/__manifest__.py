@@ -1,6 +1,6 @@
 {
     "name": "Documents - Link Existing",
-    "version": "19.0.2.0.1",
+    "version": "19.0.2.1.1",
     "summary": "Link an existing Documents record (incl. spreadsheets) to any "
                "number of mail.thread records, from either side.",
     "category": "Productivity/Documents",
@@ -19,6 +19,9 @@
             "bemade_documents_link/static/src/link_document_cog_menu/*.js",
             "bemade_documents_link/static/src/link_document_cog_menu/*.xml",
             "bemade_documents_link/static/src/link_to_record/*.js",
+        ],
+        "web.assets_tests": [
+            "bemade_documents_link/static/tests/tours/*.js",
         ],
     },
     "installable": True,

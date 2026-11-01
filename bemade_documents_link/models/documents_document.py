@@ -19,7 +19,7 @@ class DocumentsDocument(models.Model):
     def _compute_bemade_linked_record_count(self):
         # Rows are unique per (document, res_model, res_id), so their count
         # is exactly the number of distinct records this document is linked
-        # to across every model (task #3678 AC5).
+        # to across every model.
         for document in self:
             document.bemade_linked_record_count = len(document.bemade_link_ids)
 
@@ -48,7 +48,7 @@ class DocumentsDocument(models.Model):
             self.write({"res_model": False, "res_id": False})
 
     def action_link_to_record(self, model=False):
-        """Documents-side entry point (task #3678 defect 1 / AC3): the stock
+        """Documents-side entry point: the stock
         version (enterprise/documents/models/documents_document.py) refuses
         to open the wizard at all when any selected document is already
         linked (``res_model != 'documents.document'``). Since a document can
@@ -88,57 +88,6 @@ class DocumentsDocument(models.Model):
             "context": context,
         }
 
-    def _bemade_sync_product_document(self):
-        """Ensure a ``product.document`` exists for any of these documents that
-        are linked to a product.
-
-        The product "Documents" smart button reads the **``product.document``**
-        model (filtered by ``res_model`` / ``res_id`` on the shared
-        ``ir.attachment``), NOT ``documents.document``. When a file is uploaded
-        from a product, the stock ``ir.attachment.create`` override creates the
-        ``product.document`` for us; but when an *existing* ``documents.document``
-        is merely *re-linked* to a product (the whole point of this module), only
-        its ``res_model`` / ``res_id`` change — via a ``write`` that propagates to
-        the attachment with ``no_document=True`` — so no ``product.document`` is
-        ever created and the document never appears under the product's smart
-        button (task #3678 defect 2).
-
-        This bridges that gap: for each document now linked to a product and
-        backed by a real attachment, create the matching ``product.document``
-        (idempotently) so it surfaces on the product. The bridge is a soft
-        dependency — it is a no-op when ``documents_product`` (which provides the
-        ``product.document`` smart-button integration) is not installed.
-        """
-        ProductDocument = self.env.get("product.document")
-        if ProductDocument is None:
-            # documents_product not installed -> no product smart button to feed.
-            return
-        product_models = ("product.template", "product.product")
-        to_bridge = self.filtered(
-            lambda d: d.res_model in product_models
-            and d.res_id
-            and d.attachment_id
-        )
-        if not to_bridge:
-            return
-        # Only create what is missing — keep idempotent across repeated links.
-        existing = self.env["product.document"].sudo().search(
-            [("ir_attachment_id", "in", to_bridge.attachment_id.ids)]
-        )
-        existing_attachment_ids = set(existing.mapped("ir_attachment_id").ids)
-        vals_list = [
-            {"ir_attachment_id": doc.attachment_id.id}
-            for doc in to_bridge
-            if doc.attachment_id.id not in existing_attachment_ids
-        ]
-        if not vals_list:
-            return
-        # The attachment already carries res_model / res_id (propagated by
-        # documents.document._inverse_res_model) AND already has its own
-        # documents.document. Create the product.document with no_document=True
-        # so the documents bridge does not try to create a SECOND
-        # documents.document for the same attachment (which would violate the
-        # documents_document_attachment_unique constraint).
-        self.env["product.document"].sudo().with_context(
-            no_document=True
-        ).create(vals_list)
+    def _bemade_is_shared(self):
+        """True if any of these documents is linked to two or more records."""
+        return any(len(document.bemade_link_ids) >= 2 for document in self)

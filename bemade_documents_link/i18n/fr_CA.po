@@ -1,0 +1,259 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_documents_link
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-27 19:58+0000\n"
+"PO-Revision-Date: 2026-10-27 19:58+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr_CA\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: bemade_documents_link
+#: model:ir.model.constraint,message:bemade_documents_link.constraint_bemade_documents_link_doc_record_uniq
+msgid "A document can be linked to a record only once."
+msgstr "Un document ne peut être lié qu'une seule fois à une même fiche."
+
+#. module: bemade_documents_link
+#: model:ir.model,name:bemade_documents_link.model_ir_attachment
+msgid "Attachment"
+msgstr "Pièce jointe"
+
+#. module: bemade_documents_link
+#: model:ir.model.fields,field_description:bemade_documents_link.field_documents_document__bemade_linked_record_count
+msgid "Bemade Linked Record Count"
+msgstr "Nombre de fiches liées"
+
+#. module: bemade_documents_link
+#: model_terms:ir.ui.view,arch_db:bemade_documents_link.documents_link_wizard_view_form
+msgid "Cancel"
+msgstr "Annuler"
+
+#. module: bemade_documents_link
+#. odoo-python
+#: code:addons/bemade_documents_link/wizard/documents_link_wizard.py:0
+msgid "Cannot link documents to model %s."
+msgstr "Impossible de lier des documents au modèle %s."
+
+#. module: bemade_documents_link
+#: model_terms:ir.ui.view,arch_db:bemade_documents_link.documents_link_wizard_view_form
+msgid ""
+"Check any existing documents to link to this record (uncheck to unlink)..."
+msgstr ""
+"Cochez les documents existants à lier à cette fiche (décochez pour "
+"délier)..."
+
+#. module: bemade_documents_link
+#. odoo-python
+#: code:addons/bemade_documents_link/models/documents_document.py:0
+#: code:addons/bemade_documents_link/models/documents_link_to_record_wizard.py:0
+msgid "Choose a record to link"
+msgstr "Choisissez une fiche à lier"
+
+#. module: bemade_documents_link
+#: model:ir.model,name:bemade_documents_link.model_res_partner
+msgid "Contact"
+msgstr "Contact"
+
+#. module: bemade_documents_link
+#: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__create_uid
+#: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_wizard__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: bemade_documents_link
+#: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__create_date
+#: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_wizard__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: bemade_documents_link
+#: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__display_name
+#: model:ir.model.fields,field_description:bemade_documents_link.field_documents_document__display_name
+#: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_to_record_wizard__display_name
+#: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_wizard__display_name
+#: model:ir.model.fields,field_description:bemade_documents_link.field_ir_attachment__display_name
+#: model:ir.model.fields,field_description:bemade_documents_link.field_mail_thread__display_name
+#: model:ir.model.fields,field_description:bemade_documents_link.field_res_partner__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: bemade_documents_link
+#: model:ir.model,name:bemade_documents_link.model_documents_document
+#: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__document_id
+msgid "Document"
+msgstr "Document"
+
+#. module: bemade_documents_link
+#. odoo-python
+#: code:addons/bemade_documents_link/models/documents_link.py:0
+msgid "Document %(document)s was %(action)s this record."
+msgstr "Le document %(document)s a été %(action)s cette fiche."
+
+#. module: bemade_documents_link
+#: model:ir.model,name:bemade_documents_link.model_bemade_documents_link
+msgid "Document Link to Record"
+msgstr "Lien document-fiche"
+
+#. module: bemade_documents_link
+#: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_wizard__document_ids
+msgid "Documents"
+msgstr "Documents"
+
+#. module: bemade_documents_link
+#: model:ir.model,name:bemade_documents_link.model_documents_link_to_record_wizard
+msgid "Documents Link to Record"
+msgstr "Lier des documents à une fiche"
+
+#. module: bemade_documents_link
+#: model:ir.model,name:bemade_documents_link.model_mail_thread
+msgid "Email Thread"
+msgstr ""
+
+#. module: bemade_documents_link
+#: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__id
+#: model:ir.model.fields,field_description:bemade_documents_link.field_documents_document__id
+#: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_to_record_wizard__id
+#: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_wizard__id
+#: model:ir.model.fields,field_description:bemade_documents_link.field_ir_attachment__id
+#: model:ir.model.fields,field_description:bemade_documents_link.field_mail_thread__id
+#: model:ir.model.fields,field_description:bemade_documents_link.field_res_partner__id
+msgid "ID"
+msgstr ""
+
+#. module: bemade_documents_link
+#: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__write_uid
+#: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_wizard__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: bemade_documents_link
+#: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__write_date
+#: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_wizard__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: bemade_documents_link
+#: model_terms:ir.ui.view,arch_db:bemade_documents_link.documents_link_wizard_view_form
+msgid "Link"
+msgstr "Lier"
+
+#. module: bemade_documents_link
+#. odoo-javascript
+#: code:addons/bemade_documents_link/static/src/link_document_cog_menu/link_document_cog_menu.js:0
+#: model:ir.actions.act_window,name:bemade_documents_link.action_documents_link_wizard
+msgid "Link Existing Document"
+msgstr "Lier un document existant"
+
+#. module: bemade_documents_link
+#: model_terms:ir.ui.view,arch_db:bemade_documents_link.documents_link_wizard_view_form
+msgid "Link Existing Documents"
+msgstr "Lier des documents existants"
+
+#. module: bemade_documents_link
+#: model:ir.model,name:bemade_documents_link.model_documents_link_wizard
+msgid "Link Existing Documents to Record"
+msgstr "Lier des documents existants à la fiche"
+
+#. module: bemade_documents_link
+#. odoo-javascript
+#: code:addons/bemade_documents_link/static/src/link_document_cog_menu/link_document_cog_menu.xml:0
+msgid "Link existing document"
+msgstr "Lier un document existant"
+
+#. module: bemade_documents_link
+#. odoo-javascript
+#: code:addons/bemade_documents_link/static/src/link_to_record/link_to_record_action.js:0
+msgid "Link to Record"
+msgstr "Lier à un enregistrement"
+
+#. module: bemade_documents_link
+#: model:ir.actions.server,name:bemade_documents_link.ir_actions_server_link_to_record
+msgid "Link to record"
+msgstr "Lier à un enregistrement"
+
+#. module: bemade_documents_link
+#. odoo-python
+#: code:addons/bemade_documents_link/models/documents_document.py:0
+#: model:ir.model.fields,field_description:bemade_documents_link.field_documents_document__bemade_link_ids
+msgid "Linked Records"
+msgstr "Fiches liées"
+
+#. module: bemade_documents_link
+#: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__record_ref
+msgid "Record"
+msgstr "Fiche"
+
+#. module: bemade_documents_link
+#: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__res_id
+msgid "Res"
+msgstr ""
+
+#. module: bemade_documents_link
+#: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__res_model
+msgid "Res Model"
+msgstr ""
+
+#. module: bemade_documents_link
+#: model:ir.model.fields,field_description:bemade_documents_link.field_bemade_documents_link__res_name
+msgid "Res Name"
+msgstr ""
+
+#. module: bemade_documents_link
+#: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_wizard__res_model
+msgid "Target Model"
+msgstr "Modèle cible"
+
+#. module: bemade_documents_link
+#: model:ir.model.fields,field_description:bemade_documents_link.field_documents_link_wizard__res_id
+msgid "Target Record"
+msgstr "Fiche cible"
+
+#. module: bemade_documents_link
+#. odoo-python
+#: code:addons/bemade_documents_link/wizard/documents_link_wizard.py:0
+msgid "The record to link the documents to no longer exists."
+msgstr "La fiche à laquelle lier les documents n'existe plus."
+
+#. module: bemade_documents_link
+#. odoo-python
+#: code:addons/bemade_documents_link/models/documents_document.py:0
+msgid "There are no records to link this document. Create one first."
+msgstr ""
+"Aucune fiche n'est disponible pour lier ce document. Créez-en une d'abord."
+
+#. module: bemade_documents_link
+#. odoo-python
+#: code:addons/bemade_documents_link/models/ir_attachment.py:0
+msgid ""
+"This file is linked to several records. To remove it from this record only, "
+"use 'Link existing document' in the gear menu and uncheck it."
+msgstr ""
+"Ce fichier est lié à plusieurs fiches. Pour le retirer de cette fiche "
+"seulement, utilisez « Lier un document existant » dans le menu d'engrenage "
+"et décochez-le."
+
+#. module: bemade_documents_link
+#. odoo-python
+#: code:addons/bemade_documents_link/models/documents_document.py:0
+msgid "document_id"
+msgstr ""
+
+#. module: bemade_documents_link
+#. odoo-python
+#: code:addons/bemade_documents_link/models/documents_link.py:0
+msgid "linked to"
+msgstr "lié à"
+
+#. module: bemade_documents_link
+#. odoo-python
+#: code:addons/bemade_documents_link/models/documents_link.py:0
+msgid "unlinked from"
+msgstr "délié de"

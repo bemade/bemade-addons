@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- The "Documents of this variant" default filter must also keep the
+         documents linked to the variant (they are not attached to it natively). -->
+    <record id="product_document_search" model="ir.ui.view">
+        <field name="name">product.document.search.bemade.link</field>
+        <field name="model">product.document</field>
+        <field name="inherit_id" ref="product.product_document_search" />
+        <field name="arch" type="xml">
+            <filter name="context_variant" position="attributes">
+                <attribute
+          name="domain"
+        >['|', '&amp;', ('res_model', '=', 'product.product'), ('res_id', '=', context.get('default_res_id')), ('ir_attachment_id', 'in', context.get('bemade_variant_attachment_ids', []))]</attribute>
+            </filter>
+        </field>
+    </record>
+</odoo>
