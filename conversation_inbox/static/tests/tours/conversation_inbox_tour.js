@@ -85,6 +85,11 @@ registry.category("web_tour.tours").add("conversation_inbox_tour", {
       content: "Page 1 is back",
       trigger: ".o_conversation_inbox_list .card-header:contains('Tour Message A')",
     },
+    {
+      // Tour Message B has no Date: its row shows an empty date, never "false".
+      content: "A dateless message is listed without the text 'false'",
+      trigger: `.o_inbox_row:has(.card-header:contains('Tour Message B')):not(:contains('false'))`,
+    },
     // --------------------------------------------------------------
     // Row actions are on the collapsed row: no message was opened, so no
     // envelope was fetched for any of them (asserted server-side).
