@@ -76,6 +76,9 @@ class TestEvlCertification(CbetCommon):
         skill = self._make_cert_skill("Tech Classe I")
         std = self._make_standard("Classe I", essentials=comp, skill=skill)
         cand = self._make_employee("Cand 13")
+        # The candidate qualifies against the standard explicitly (issuance no
+        # longer creates qualifications implicitly — UC-STD-06).
+        self.env["cbet.qualification"]._get_or_create(cand, std)
         ev = self._make_evaluation(comp, cand)
         self._set_results(ev, crit="reussi")
         self._sign_and_complete(ev, decision="reussi")

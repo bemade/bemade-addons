@@ -15,6 +15,11 @@ class ResCompany(models.Model):
     cbet_expiry_horizon_months = fields.Integer(
         string="Certification expiry warning horizon (months)", default=3,
     )
+    cbet_hr_responsible_id = fields.Many2one(
+        "res.users", string="HR responsible for certification expiry",
+        help="Also receives a to-do for every expiring or expired certification, "
+             "beside the employee's manager.",
+    )
 
 
 class ResConfigSettings(models.TransientModel):
@@ -28,4 +33,7 @@ class ResConfigSettings(models.TransientModel):
     )
     cbet_expiry_horizon_months = fields.Integer(
         related="company_id.cbet_expiry_horizon_months", readonly=False,
+    )
+    cbet_hr_responsible_id = fields.Many2one(
+        related="company_id.cbet_hr_responsible_id", readonly=False,
     )

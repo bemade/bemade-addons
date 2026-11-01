@@ -46,9 +46,11 @@ class TestStdTieback(CbetCommon):
         cert_b = self._certify(self.emp, self.b, valid_to=self.exp_b)
         self.qual._recompute()
         row = self.qual.tie_back_skill_row_id
-        # b recertified further out → min moves to a's expiry, same row.
-        cert_b.active = False
+        # b recertified further out → min moves to a's expiry, same row. The new
+        # certificate supersedes cert_b itself (UC-VAL-02 AC3); archiving cert_b
+        # first would be a real, recomputed lapse in between.
         self._certify(self.emp, self.b, valid_to=Date.today() + relativedelta(years=3))
+        cert_b.active = False
         self.qual._recompute()
         self.assertEqual(self.qual.tie_back_skill_row_id, row)
         self.assertEqual(row.valid_to, self.exp_a)

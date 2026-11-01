@@ -30,6 +30,12 @@ class CbetQualification(models.Model):
     n_required = fields.Integer(string="# required", readonly=True)
     n_certified = fields.Integer(string="# certified", readonly=True)
     percent_complete = fields.Float(string="% complete", readonly=True)
+    active = fields.Boolean(default=True, tracking=True)
+    from_job = fields.Boolean(
+        string="Required by job position", readonly=True, copy=False,
+        help="Created because the employee's job position requires the standard; "
+             "archived when it no longer does.",
+    )
     tie_back_skill_row_id = fields.Many2one(
         "hr.employee.skill", string="Tie-back skill row", copy=False,
     )
@@ -42,12 +48,58 @@ class CbetQualification(models.Model):
     # ------------------------------------------------------------------
     @api.model
     def _get_or_create(self, employee, standard):
-        qual = self.search([
+        """The employee's qualification on the standard; an archived one is
+        reactivated rather than duplicated (unique employee/standard)."""
+        qual = self.with_context(active_test=False).search([
             ("employee_id", "=", employee.id), ("standard_id", "=", standard.id),
         ], limit=1)
         if not qual:
             qual = self.create({"employee_id": employee.id, "standard_id": standard.id})
-        return qual
+        elif not qual.active:
+            qual.active = True
+        return qual.with_context(active_test=self.env.context.get("active_test", True))
+
+    @api.model
+    def _sync_job_requirements(self, employees):
+        """UC-STD-06 — align the employees' job-derived qualifications with the
+        standards their job position requires.
+
+        Missing → created (or reactivated) with from_job=True and recomputed.
+        A from_job qualification the position no longer requires — or held by an
+        archived employee — is archived, never deleted (history stays).
+        Qualifications created by hand (from_job=False) are left alone.
+        """
+        employees = employees.sudo().with_context(active_test=False).exists()
+        if not employees:
+            return True
+        Qual = self.sudo().with_context(active_test=False)
+        existing = {
+            (q.employee_id.id, q.standard_id.id): q
+            for q in Qual.search([("employee_id", "in", employees.ids)])
+        }
+        to_create, to_recompute, to_archive = [], Qual.browse(), Qual.browse()
+        for employee in employees:
+            required = (employee.job_id.cbet_standard_ids.filtered("active")
+                        if employee.active else self.env["cbet.standard"])
+            for standard in required:
+                qual = existing.get((employee.id, standard.id))
+                if not qual:
+                    to_create.append({
+                        "employee_id": employee.id,
+                        "standard_id": standard.id,
+                        "from_job": True,
+                    })
+                elif not qual.active:
+                    qual.write({"active": True, "from_job": True})
+                    to_recompute |= qual
+            for (emp_id, std_id), qual in existing.items():
+                if (emp_id == employee.id and qual.active and qual.from_job
+                        and std_id not in required.ids):
+                    to_archive |= qual
+        to_archive.write({"active": False})
+        to_recompute |= Qual.create(to_create)
+        to_recompute._recompute()
+        return True
 
     def _valid_certs_in_closure(self):
         """Employee's currently-valid certifications whose competency is in the
@@ -75,8 +127,9 @@ class CbetQualification(models.Model):
             all_valid = closed and (closed & valid_comps) == closed
             if all_valid:
                 qual.state = "qualified"
-            elif qual.state == "qualified":
-                # UC-STD-02 AC3 — a lapse suspends, does not reset.
+            elif qual.state in ("qualified", "suspended"):
+                # UC-STD-02 AC3 — a lapse suspends, does not reset; recomputing
+                # a suspended qualification again keeps it suspended.
                 qual.state = "suspended"
             else:
                 qual.state = "in_progress"
@@ -134,12 +187,17 @@ class CbetQualification(models.Model):
             "valid_to": valid_to,
         })
 
-    # Entry point used by certification issuance / expiry.
+    # Entry point used by certification issuance / entry / expiry.
     @api.model
     def _recompute_for_employee(self, employee, competencies):
-        """Recompute every qualification whose closed set touches any of the
-        given competencies for this employee."""
-        standards = self.env["cbet.standard"].search([]).filtered(
-            lambda s: s.closed_competency_ids & competencies)
-        for standard in standards:
-            self._get_or_create(employee, standard)._recompute()
+        """Recompute the employee's EXISTING active qualifications whose closed
+        set touches any of the given competencies.
+
+        It never creates one: which standards an employee qualifies against is
+        decided by their job position (UC-STD-06) or by hand, not by whatever
+        certificate they happen to hold."""
+        # sudo: derived state — the evaluator or manager who enters the
+        # certificate may not read every qualification of the employee.
+        quals = self.sudo().search([("employee_id", "=", employee.id)])
+        quals.filtered(
+            lambda q: q.standard_id.closed_competency_ids & competencies)._recompute()
