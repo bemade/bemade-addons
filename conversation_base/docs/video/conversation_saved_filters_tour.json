@@ -1,0 +1,20 @@
+{
+  "stepsFile": "../../static/tests/tours/conversation_saved_filters_tour.steps.js",
+  "startPath": "/odoo/action-conversation_base.mail_conversation_action",
+  "lang": "fr_CA",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "voice": "fr_FR-siwis-medium",
+  "title": "Les favoris des conversations en français",
+  "introNarration": "Dans cette démonstration, nous voyons que les quatre favoris partagés de la liste des conversations s'affichent en français.",
+  "outroTitle": "À vous de jouer",
+  "outroNarration": "Vos collègues qui travaillent en anglais voient les mêmes favoris avec des noms anglais. Les favoris font exactement la même chose qu'avant.",
+  "stepOverrides": {
+    "favorite-unread": {"containsText": "Non lues"},
+    "favorite-unanswered": {"containsText": "Sans réponse"},
+    "favorite-oldest": {"containsText": "Sans réponse, les plus anciennes d'abord"},
+    "favorite-mine": {"containsText": "Assignées à moi"},
+    "apply-unread": {"containsText": "Non lues"},
+    "facet-shown": {"containsText": "Non lues"}
+  }
+}
