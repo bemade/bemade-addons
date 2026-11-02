@@ -315,3 +315,4 @@ from . import test_activity_cards_tours_1736r1
 from . import test_players_followed_filter_1738
 from . import test_french_labels_1739
 from . import test_dashboard_verify_drop_1740
+from . import test_undo_toast_once_1741

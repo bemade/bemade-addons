@@ -299,7 +299,8 @@ class TestCardTopBars1736(TopBars1736Common):
         undo = self._one(tree, '//form[@data-sc-form="sc.undo"]')
         self.assertEqual(undo.get('action'), '/my/notepad/%s/restore?undo=1' % self.qnote.id)
         resp = self._post(undo.get('action'))
-        self.assertIn('/my/notepad?success=note_restored#note-%s' % self.qnote.id, resp.headers['Location'])
+        # Task 1741: the session toast, not a ?success= banner.
+        self.assertIn('/my/notepad#note-%s' % self.qnote.id, resp.headers['Location'])
         self.qnote.invalidate_recordset()
         self.assertTrue(self.qnote.active)
         # An archived note: no pencil, so its trash shows; « Restore » stays.

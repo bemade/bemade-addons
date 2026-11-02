@@ -31,6 +31,7 @@ import json
 import logging
 import re
 import time
+import uuid
 from datetime import timedelta
 from urllib.parse import urlencode
 
@@ -1328,7 +1329,13 @@ class AppShellMixin:
         undo_url = notif.get('undo_url')
         if not (isinstance(undo_url, str) and undo_url.startswith('/') and not undo_url.startswith('//')):
             undo_url = False
+        # Task 1741: the page carrying a notification is never stored by the
+        # browser (« back » to it fetches it again — the notification is
+        # gone by then), and the notification has an id the page shows once.
+        if not AppShellMixin._sc_guard_probe():
+            request.future_response.headers['Cache-Control'] = 'no-store'
         return {
+            'id': uuid.uuid4().hex[:16],
             'message': str(notif.get('message') or ''),
             'title': str(notif.get('title') or ''),
             'tone': 'error' if notif.get('type') in ('danger', 'warning', 'error') else 'success',

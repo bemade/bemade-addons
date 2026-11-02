@@ -26,6 +26,7 @@ import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
 import { focusFirstField } from "@bemade_sports_clinic/js/sc_focus";
 import { scSetDisplay } from "@bemade_sports_clinic/js/sc_contact_href";
 import { anchorEdited } from "@bemade_sports_clinic/js/sc_edit_anchor";
+import { markDirty } from "@bemade_sports_clinic/js/sc_fragments";
 import {
     clearAllDrafts,
     purgeForeignDrafts,
@@ -162,9 +163,42 @@ document.addEventListener("sc:toast", (ev) => {
         { title: detail.title, tone: detail.tone });
 });
 
+// Task 1741: the ids of the session notifications already shown in this tab
+// (a page replayed from the browser's cache must not show its one again).
+const NOTIFY_SHOWN_KEY = "sc_notify_shown:v1";
+
+function notifyNavigationType() {
+    try {
+        const entry = performance.getEntriesByType("navigation")[0];
+        return (entry && entry.type) || "navigate";
+    } catch {
+        return "navigate";
+    }
+}
+
+/** True when ``id`` was shown already; else remembers it (last 20). */
+function notificationSeen(id) {
+    if (!id) {
+        return false;
+    }
+    try {
+        const shown = JSON.parse(window.sessionStorage.getItem(NOTIFY_SHOWN_KEY) || "[]");
+        if (shown.includes(id)) {
+            return true;
+        }
+        shown.push(id);
+        window.sessionStorage.setItem(NOTIFY_SHOWN_KEY, JSON.stringify(shown.slice(-20)));
+    } catch {
+        // private mode / storage off: the navigation-type check still applies
+    }
+    return false;
+}
+
 // Task 1583: the pending session notification of a POST round-trip
 // (« Add to Team »…), rendered on the toast host by sc_app_layout — shown
 // once on load, whatever the page. Errors stay longer.
+// Task 1741: never on a page shown again by back / forward (a cached copy
+// of the page that showed it), never twice for the same notification.
 function showSessionNotification() {
     const root = app();
     const toast = root && root.querySelector(".o_sc_toast[data-sc-notify]");
@@ -174,14 +208,25 @@ function showSessionNotification() {
     const message = toast.dataset.scNotify;
     const tone = toast.dataset.scNotifyTone || "success";
     const title = toast.dataset.scNotifyTitle || "";
+    const id = toast.dataset.scNotifyId || "";
     delete toast.dataset.scNotify;
     delete toast.dataset.scNotifyTitle;
     delete toast.dataset.scNotifyTone;
+    delete toast.dataset.scNotifyId;
+    if (notifyNavigationType() === "back_forward" || notificationSeen(id)) {
+        return;
+    }
     // Task 1736: an archive just done from a card's archive icon — its
     // « Annuler » posts the restore form for the toast's time.
     const undo = root.querySelector('form[data-sc-form="sc.undo"]');
     if (undo) {
-        showToast(message, undo.dataset.scToastAction, () => undo.submit(), 8000, { title, tone });
+        // Task 1741: form.submit() fires no « submit » event — mark the
+        // session dirty here, so pages shown again by « back » reload.
+        const restore = () => {
+            markDirty();
+            undo.submit();
+        };
+        showToast(message, undo.dataset.scToastAction, restore, 8000, { title, tone });
         return;
     }
     showToast(message, null, null, tone === "error" ? 10000 : 6000, { title, tone });

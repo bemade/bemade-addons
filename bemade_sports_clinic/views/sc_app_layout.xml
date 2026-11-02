@@ -223,7 +223,8 @@
                     <div class="o_sc_toast" role="status" aria-live="polite" hidden="hidden"
                          t-att-data-sc-notify="sc_notification and (sc_notification['message'] or sc_notification['title']) or None"
                          t-att-data-sc-notify-title="sc_notification and sc_notification['message'] and sc_notification['title'] or None"
-                         t-att-data-sc-notify-tone="sc_notification and sc_notification['tone'] or None"/>
+                         t-att-data-sc-notify-tone="sc_notification and sc_notification['tone'] or None"
+                         t-att-data-sc-notify-id="sc_notification and sc_notification.get('id') or None"/>
                     <!-- Task 1736: an archive's « Annuler » (the card archive
                          icons: a timesheet, a document, a quick note) — the
                          toast's action posts this form (sc_app_ui.js). -->
