@@ -19,6 +19,7 @@ Acceptance criteria covered here:
   sheet asks « Which team? », a request without a team is refused, with a
   team it goes through.
 """
+import json
 from datetime import timedelta
 
 from lxml import html as lxml_html
@@ -154,17 +155,22 @@ class TestTodoRouting1664(Routing1664Common):
     def test_reassign_everywhere(self):
         self._switch(True)
         self._login_tp()
+        # Task 1736 r1 (deliberate update): « Réassigner » is the inline
+        # assignee field of every activity card (pencil) and of the detail
+        # page's pencil card — no button, no sheet.
+        user_field = './/owl-component[contains(@props, \'"field": "user_id"\')]/@props'
         tree = lxml_html.fromstring(self.url_open('/my/activities').text)
-        self.assertTrue(tree.xpath('//button[@data-sc-action="activity.reassign"]'))
-        self.assertTrue(tree.xpath('//dialog[@id="sc_activity_reassign_sheet"]'))
+        self.assertTrue(tree.xpath('//*[@data-sc-activity-row]' + user_field[1:]))
+        self.assertFalse(tree.xpath('//button[@data-sc-action="activity.reassign"]'))
         tree = lxml_html.fromstring(self.url_open(
             '/my/player?player_id=%s&tab=activities' % self.player.id).text)
         panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
-        self.assertTrue(panel.xpath('.//button[@data-sc-action="activity.reassign"]'))
-        self.assertTrue(panel.xpath('.//dialog[@id="sc_activity_reassign_sheet"]//option[@value]'))
+        props = panel.xpath(user_field)
+        self.assertTrue(props)
+        self.assertTrue(json.loads(props[0])['options'])
         tree = lxml_html.fromstring(self.url_open('/my/activity/%s' % self.act_player.id).text)
-        self.assertTrue(tree.xpath('//div[contains(@class, "o_sc_actionbar")]//button[@data-sc-action="activity.reassign"]'))
-        self.assertTrue(tree.xpath('//dialog[@id="sc_activity_reassign_sheet"]//option[@value="%s"]' % self.tp.id))
+        props = tree.xpath('//*[@data-sc-edit-card="activity"]' + user_field[1:])
+        self.assertIn(str(self.tp.id), [str(o[0]) for o in json.loads(props[0])['options']])
 
     # -- AC-4 -------------------------------------------------------------
     def test_coach_two_teams_request_removal(self):

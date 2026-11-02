@@ -21,10 +21,11 @@ Acceptance criteria:
   the team announcement) is visible in read mode, neutral, and its action is
   undone from the next page's toast (« … archived · Undo »); « Undo » puts
   the record back (same rights as the archive).
-* AC-4 Event: « Cancel Event » is the hero's archive icon (it opens the
-  reason sheet), « Activities » its clock with MY activities' count (the
-  event row's count); no bottom « Activities » / « Cancel Event » buttons;
-  « Restore event » stays.
+* AC-4 Event: « Activities » is the hero's clock with MY activities' count
+  (the event row's count); no bottom « Activities » button. Task 1736 r1
+  (owner 2026-11-01): cancelling an event is NOT an archive — « Cancel
+  Event » stays its own red action (its reason sheet), « Restore event »
+  its counterpart; no archive icon on the hero.
 * AC-5 Injury card: the summary is the top bar — status pill, clock + count,
   the trash (« Delete injury », edit-only, for the Details group), the
   pencil (the Details group's, ``data-sc-edit-for``), then the chevron
@@ -33,9 +34,10 @@ Acceptance criteria:
 * AC-6 Player header: « Follow » is the ★ icon (aria-pressed = following)
   and the pencil sits in the same icon group, rightmost (no absolutely
   positioned pencil).
-* AC-7 Activities: the row's delete is its red trash; « Done » is the LAST
-  action on the row and on the detail page (whose delete is the head's
-  edit-only trash; no « Delete » in its bar).
+* AC-7 Activities: the delete is the red trash of the card's top bar, shown
+  while editing (task 1736 r1: the cards have a pencil — see
+  test_activity_cards_1736r1); « Done » is the LAST action on the card and
+  on the detail page (no « Delete » in its bar).
 * AC-8 fr_CA: the icons' names (Archiver, Supprimer, Modifier, Activités,
   Suivre) and the new texts render in French.
 """
@@ -313,29 +315,39 @@ class TestCardTopBars1736(TopBars1736Common):
         self._login_tp()
         _text, tree = self._get('/my/event/%s' % self.event.id)
         hero = self._one(tree, '//section[@data-sc-section="event.hero"]')
-        self._assert_order(hero, ('o_sc_card_clock', 'o_sc_card_archive', 'o_sc_card_edit'))
+        # Task 1736 r1 (deliberate update): no archive icon — « Cancel Event »
+        # is its own red action again (below the hero's details).
+        self._assert_order(hero, ('o_sc_card_clock', 'o_sc_card_edit'))
         clock = self._one(hero, './/a[contains(@class, "o_sc_card_clock")]')
         self.assertEqual(clock.get('href'), '/my/event/activities?event_id=%s' % self.event.id)
         # act_event: the therapist's — the same count as the event's row.
         self.assertEqual(clock.get('data-sc-activity-clock'), '1')
         self.assertEqual(clock.xpath('./span[contains(@class, "o_sc_card_badge")]/text()'), ['1'])
-        archive = self._one(hero, './/button[contains(@class, "o_sc_card_archive")]')
-        self.assertEqual(archive.get('data-sc-sheet-open'), 'sc_event_cancel_sheet')
-        self.assertEqual(archive.get('aria-label'), 'Cancel Event')
+        self.assertFalse(hero.xpath('.//*[contains(@class, "o_sc_card_archive")]'))
+        cancel = self._one(hero, './/*[contains(@class, "o_sc_actions_row")]/button[@data-sc-action="event.cancel"]')
+        self.assertEqual(cancel.get('data-sc-sheet-open'), 'sc_event_cancel_sheet')
+        self.assertIn('o_sc_btn_danger', cancel.get('class'))
+        self.assertEqual(cancel.text_content().strip(), 'Cancel Event')
         self.assertTrue(tree.xpath('//dialog[@id="sc_event_cancel_sheet"]'))
-        self.assertFalse(hero.xpath('.//*[contains(@class, "o_sc_actions_row")]'))
+        # Only « Cancel Event » in that row (« Activities » is the clock).
+        self.assertEqual(hero.xpath('.//*[contains(@class, "o_sc_actions_row")]//@data-sc-action'), ['event.cancel'])
+        # Its sheet posts the cancel itself — no archive « Undo » toast.
+        form = self._one(tree, '//dialog[@id="sc_event_cancel_sheet"]//form')
+        self.assertEqual(form.get('action'), '/my/event/%s/cancel' % self.event.id)
+        self.assertFalse(form.xpath('.//input[@name="sc_undo"]'))
         # No activity of mine: the clock still leads to them, without a badge.
         self.act_event.unlink()
         _text, tree = self._get('/my/event/%s' % self.event.id)
         clock = self._one(tree, '//section[@data-sc-section="event.hero"]//a[contains(@class, "o_sc_card_clock")]')
         self.assertEqual(clock.get('data-sc-activity-clock'), '0')
         self.assertFalse(clock.xpath('./span[contains(@class, "o_sc_card_badge")]'))
-        # Cancelled: « Restore event » stays a text button, no archive icon.
+        # Cancelled: « Restore event » (its counterpart), no « Cancel Event ».
         self.event.sudo().write({'state': 'cancelled'})
         _text, tree = self._get('/my/event/%s' % self.event.id)
         hero = self._one(tree, '//section[@data-sc-section="event.hero"]')
         self.assertNotIn('o_sc_card_archive', self._icons(hero))
         self.assertTrue(hero.xpath('.//button[@data-sc-action="event.restore"]'))
+        self.assertFalse(hero.xpath('.//button[@data-sc-action="event.cancel"]'))
 
     # -- AC-7: activities -----------------------------------------------------
     def test_activity_row_and_detail(self):
@@ -343,9 +355,12 @@ class TestCardTopBars1736(TopBars1736Common):
         _text, tree = self._get('/my/activities')
         # (an activity may be listed in more than one group: the first)
         row = tree.xpath('//*[@data-sc-activity-row="%s"]' % self.act_team.id)[0]
-        self._assert_order(row, ('o_sc_card_trash',))
+        # Task 1736 r1 (deliberate update): the card has a pencil — the
+        # trash shows while editing only.
+        self._assert_order(row, ('o_sc_card_trash', 'o_sc_card_edit'))
         trash = self._one(row, './/button[contains(@class, "o_sc_card_trash")]')
-        self.assertIsNone(trash.get('hidden'), 'no pencil on a row: always shown')
+        self.assertEqual(trash.get('hidden'), 'hidden')
+        self.assertEqual(trash.get('data-sc-edit-only'), '1')
         self.assertEqual(trash.get('data-sc-activity-id'), str(self.act_team.id))
         self.assertEqual(trash.get('data-sc-sheet-open'), 'sc_activity_cancel_sheet')
         actions = row.xpath('.//*[contains(@class, "o_sc_activity_actions")]/button/@data-sc-action')
@@ -428,7 +443,8 @@ class TestCardTopBarsI18n1736(TopBars1736Common):
         hero = self._one(tree, '//section[@data-sc-section="event.hero"]')
         self.assertEqual(self._one(hero, './/a[contains(@class, "o_sc_card_clock")]').get('aria-label'),
                          'Mes activités : 1')
-        self.assertEqual(self._one(hero, './/button[contains(@class, "o_sc_card_archive")]').get('aria-label'),
+        # Task 1736 r1 (deliberate update): its own red button again.
+        self.assertEqual(self._one(hero, './/button[@data-sc-action="event.cancel"]').text_content().strip(),
                          "Annuler l'événement")
         _text, tree = self._fr(self._player_url('injuries'))
         hero = self._one(tree, '//*[@data-sc-section="player.hero"]')

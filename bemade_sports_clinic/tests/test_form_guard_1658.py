@@ -14,7 +14,8 @@ Acceptance criteria covered here:
 * AC-2 A guarded form's fetch (X-Sc-Guard) never consumes the pending
   session toast: the real navigation that follows still shows it.
 * AC-3 (tours, phone) contact, timesheet, injury, event create,
-  announcement, activity reassign: greyed with a reason → ready when valid →
+  announcement (task 1736 r1: the activity reassign sheet is gone — its
+  refusal is the inline assignee field's, server-side test): greyed with a reason → ready when valid →
   a forced server refusal shows in the form, values kept, same page (and a
   valid contact / announcement goes through).
 """
@@ -22,7 +23,7 @@ from datetime import datetime, timedelta
 
 from lxml import html as lxml_html
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.tests import tagged
 
 from odoo.addons.bemade_sports_clinic.tests.test_internal_tp_parity_1577 import Parity1577Common
@@ -68,8 +69,8 @@ class TestFormGuard1658(Guard1658Common):
             },
             '/my/activities': {
                 '/my/activity/complete': ('fetch', {'activity_id', 'feedback'}),
-                '/my/activity/reschedule': ('fetch', {'activity_id', 'new_deadline'}),
-                '/my/activity/reassign': ('fetch', {'activity_id', 'new_user_id'}),
+                # Task 1736 r1 (deliberate update): no reschedule / reassign
+                # sheets — the cards are edited in place (autosave fields).
                 '/my/activity/cancel': ('fetch', {'activity_id'}),
             },
             '/my/event/%s' % self.clinic_event.id: {
@@ -155,5 +156,17 @@ class TestFormGuardTours1658(Guard1658Common):
         self.assertEqual(self.team_a.announcement, 'Synthetic bus at 7 (1658)')
 
     def test_activity_reassign(self):
-        self.start_tour('/my/activities?x1658=%s' % self.plain.id, 'sc_1658_activity', login='pc.tp@example.com')
+        # Task 1736 r1 (deliberate update): the « Reassign » sheet is gone —
+        # the assignee is a field of the activity card's in-place edit (an
+        # autosave field: a refusal shows under the field, the value kept).
+        # The same forced refusal (a real user outside my assignable list)
+        # is answered 400 with its message, nothing written.
+        self.authenticate('pc.tp@example.com', 'pc-tp')
+        self.act_player.invalidate_recordset()
+        resp = self.url_open('/my/app/save/mail.activity/%s' % self.act_player.id, data={
+            'field': 'user_id', 'value': str(self.plain.id), 'csrf_token': self._csrf(),
+            'write_date': fields.Datetime.to_string(self.act_player.write_date)}, allow_redirects=False)
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('You cannot assign this activity to that user.', resp.json()['message'])
+        self.act_player.invalidate_recordset()
         self.assertEqual(self.act_player.user_id, self.tp)

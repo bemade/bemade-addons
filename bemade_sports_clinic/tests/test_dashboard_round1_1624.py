@@ -155,8 +155,11 @@ class TestDashboardRound1_1624(Dashboard1624Common):
         self.assertEqual(len(rows) - len(folded), 8)
         # The activity cards' actions and the sheets they open.
         self.assertTrue(overdue[0].xpath('.//button[@data-sc-action="activity.complete"]'))
-        self.assertTrue(overdue[0].xpath('.//button[@data-sc-action="activity.reschedule"]'))
-        for sheet in ('sc_activity_complete_sheet', 'sc_activity_reschedule_sheet'):
+        # Task 1736 r1 (deliberate update): « Reschedule » is the card's
+        # pencil (inline edit); a tap on the card opens the details popout.
+        self.assertTrue(overdue[0].xpath('.//button[@data-sc-action="activity.edit"]'))
+        self.assertFalse(overdue[0].xpath('.//button[@data-sc-action="activity.reschedule"]'))
+        for sheet in ('sc_activity_complete_sheet', 'sc_activity_detail_sheet'):
             self.assertEqual(len(tree.xpath('//dialog[@id="%s"]' % sheet)), 1, sheet)
         self.assertEqual(tree.xpath('//dialog[@id="sc_activity_complete_sheet"]'
                                     '//input[@name="return_url"]/@value'), ['/my/home'])

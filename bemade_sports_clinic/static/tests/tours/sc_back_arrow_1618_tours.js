@@ -65,11 +65,14 @@ tours.add("sc_1618_laptop_drill_down", {
 tours.add("sc_1618_laptop_sideways", {
     steps: () => [
         {
+            // Task 1736 r1 (deliberate update): a tap on the card opens its
+            // details popout; the activity PAGE stays the link's target (a
+            // new tab, a notification's deep link) — followed here.
             content: "Activities list (with its filter): open the activity",
             trigger: '.o_sc_app [data-sc-activity-row] a.o_sc_link_row_main[href^="/my/activity/"]',
-            run(helpers) {
+            run() {
                 reloadIfRestored();
-                return helpers.click();
+                window.location.assign(this.anchor.href);
             },
             expectUnloadPage: true,
         },

@@ -296,48 +296,6 @@ tours.add("sc_1658_announcement", {
     ],
 });
 
-// ---------------------------------------------- activity (reassign sheet)
-const RE = 'dialog#sc_activity_reassign_sheet form[data-sc-form="activity.reassign"]';
-tours.add("sc_1658_activity", {
-    steps: () => [
-        {
-            content: "Reassign an activity",
-            trigger: 'button[data-sc-action="activity.reassign"]',
-            run: "click",
-        },
-        {
-            content: "No one chosen: greyed",
-            trigger: `dialog#sc_activity_reassign_sheet[open] select[name="new_user_id"]:not(:visible)`,
-            run() {
-                assertBlocked(q(RE), "");
-            },
-        },
-        {
-            content: "Someone the server will refuse: the refusal is in the sheet",
-            trigger: `${RE} select[name="new_user_id"]:not(:visible)`,
-            run() {
-                const form = q(RE);
-                const select = form.querySelector('select[name="new_user_id"]');
-                // A real user outside my assignable list (the test passes
-                // its id): the server answers ?error=invalid_user.
-                const outsider = new URLSearchParams(window.location.search).get("x1658");
-                const option = document.createElement("option");
-                option.value = outsider;
-                option.textContent = "Outsider 1658";
-                select.appendChild(option);
-                type(select, outsider);
-                assertReady(form);
-                window.__sc1658Url = window.location.href;
-                submitOf(form).click();
-            },
-        },
-        {
-            content: "In the sheet, same page",
-            trigger: `${RE} [data-sc-guard-error]:not([hidden])`,
-            run() {
-                assert(document.querySelector("dialog#sc_activity_reassign_sheet").open, "the sheet closed");
-                assert(window.location.href === window.__sc1658Url, "the page changed");
-            },
-        },
-    ],
-});
+// Task 1736 r1 (deliberate update): the activity « Reassign » sheet is gone
+// (the assignee is edited in place on the card) — its refusal is covered by
+// test_form_guard_1658.test_activity_reassign (server side).

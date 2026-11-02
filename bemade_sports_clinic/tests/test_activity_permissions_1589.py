@@ -365,7 +365,9 @@ class TestActivityPermissions1589(ActivityPermissionsCommon):
         # Task 1664 (deliberate update): « Réassigner » on the detail page too.
         # Task 1736 (deliberate update): the delete moved from the bar to the
         # card's top-bar trash (edit-only).
-        self.assertEqual(actions, {'activity.reschedule', 'activity.complete', 'activity.reassign'})
+        # Task 1736 r1 (deliberate update): « Reschedule » / « Reassign » are
+        # the pencil's in-place edit; « Done » is the bar's only action.
+        self.assertEqual(actions, {'activity.complete'})
         self.assertTrue(tree.xpath('//*[@data-sc-edit-card="activity"]//*[@data-sc-card-icons]'
                                    '//button[@data-sc-action="activity.cancel"]'))
         self.assertTrue(tree.xpath('//*[@data-sc-edit-card="activity"]'))

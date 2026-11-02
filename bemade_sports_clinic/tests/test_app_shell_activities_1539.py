@@ -18,6 +18,7 @@ Acceptance criteria covered here:
 * UC-A5 (AC2) The team page's Activities tab uses the shell list (no legacy
   partial) and its add sheet creates an activity through today's route.
 """
+import json
 from datetime import timedelta
 from urllib.parse import quote
 
@@ -67,13 +68,20 @@ class TestAppShellActivities1539(AppShellCommon):
         states = tree.xpath('//section[@data-sc-tab-panel="all"]//*[@data-sc-activity-row="%s"]'
                             '/@data-sc-activity-state' % self.act_team.id)
         self.assertEqual(states, ['today'])
-        for sheet in ('complete', 'reschedule', 'cancel'):
+        # Task 1736 r1 (deliberate update): no « Reschedule » sheet — the
+        # cards are edited in place (the due date is a field of the pencil).
+        for sheet in ('complete', 'cancel'):
             form = tree.xpath('//dialog[@id="sc_activity_%s_sheet"]//form' % sheet)[0]
             self.assertEqual(form.get('action'), '/my/activity/%s' % sheet)
             self.assertTrue(form.xpath('.//input[@name="csrf_token"]/@value')[0])
             self.assertEqual(form.xpath('.//input[@name="return_url"]/@value'), ['/my/activities'])
         # Task 1664 (deliberate update): « Réassigner » on « Mes activités » too.
-        self.assertTrue(tree.xpath('//dialog[@id="sc_activity_reassign_sheet"]'))
+        # Task 1736 r1 (deliberate update): it is the card's inline assignee
+        # field (no sheet); the details popout sheet is on the page.
+        self.assertFalse(tree.xpath('//dialog[@id="sc_activity_reassign_sheet"]'))
+        self.assertTrue(tree.xpath('//dialog[@id="sc_activity_detail_sheet"]'))
+        self.assertTrue(tree.xpath('//*[@data-sc-activity-row="%s"]//owl-component[contains(@props, \'"field": "user_id"\')]'
+                                   % self.act_team.id))
         # ?tab= deep link.
         _text, tree = self._get('/my/activities?tab=planned')
         self.assertIsNone(tree.xpath('//section[@data-sc-tab-panel="planned"]')[0].get('hidden'))
@@ -95,10 +103,12 @@ class TestAppShellActivities1539(AppShellCommon):
         url = '/my/team/activities?team_id=%s' % self.team_a.id
         _text, tree = self._get(url)
         self.assertIsNotNone(self._shell(tree))
-        form = tree.xpath('//dialog[@id="sc_activity_reassign_sheet"]//form')[0]
-        self.assertEqual(form.get('action'), '/my/activity/reassign')
-        options = form.xpath('.//select[@name="new_user_id"]/option/@value')
-        self.assertIn(str(self.coach.id), options)
+        # Task 1736 r1 (deliberate update): the reassign sheet became the
+        # card's inline assignee field — the same choices (the coach too).
+        self.assertFalse(tree.xpath('//dialog[@id="sc_activity_reassign_sheet"]'))
+        props = tree.xpath('//*[@data-sc-activity-row="%s"]//owl-component[contains(@props, \'"field": "user_id"\')]/@props'
+                           % self.act_team.id)[0]
+        self.assertIn(str(self.coach.id), [str(o[0]) for o in json.loads(props)['options']])
         # Task 1607 (deliberate update): « + Ajouter » is in the list header.
         add = tree.xpath('//div[contains(@class, "o_sc_list_header")]//a[@data-sc-action="activity.add"]/@href')
         self.assertEqual(add, ['/my/activity/create?model=sports.team&res_id=%s&return_url=%s'

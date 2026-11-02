@@ -310,3 +310,5 @@ from . import test_injury_history_followup_notes_1735
 from . import test_my_events_default_1730
 from . import test_card_top_bars_1736
 from . import test_card_top_bars_tours_1736
+from . import test_activity_cards_1736r1
+from . import test_activity_cards_tours_1736r1

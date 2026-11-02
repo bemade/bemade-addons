@@ -70,9 +70,11 @@ class PlayersCommon1539(AppShellCommon):
 
     @staticmethod
     def _owl_fields(tree):
-        """{field: props} of every autosave component on the page."""
+        """{field: props} of every autosave component under ``tree``.
+        Task 1736 r1 (deliberate update): scoped to the node passed (was the
+        whole page) — the activity cards now carry their own « note » field."""
         out = {}
-        for node in tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+        for node in tree.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
             props = json.loads(node.get('props'))
             out[props.get('field') or props.get('name')] = props
         return out
@@ -255,7 +257,9 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         _text, tree = self._get(self.url)
         # « add » is an inline card since the owner review of 2026-10-10.
         forms = {sheet: tree.xpath('//dialog[@id="sc_activity_%s_sheet"]//form' % sheet)
-                 for sheet in ('complete', 'reschedule', 'cancel')}
+                 # Task 1736 r1 (deliberate update): no « Reschedule » sheet
+                 # (the card's pencil edits the due date in place).
+                 for sheet in ('complete', 'cancel')}
         forms['add'] = tree.xpath('//details[@data-sc-section="activity.add"]//form')
         for sheet, form in forms.items():
             self.assertTrue(form, sheet)
