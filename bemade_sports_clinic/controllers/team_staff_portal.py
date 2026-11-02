@@ -677,8 +677,11 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'followed': player.id in values['followed_ids'],
                 'url': '/my/player?player_id=%s' % player.id if accessible else False,
             })
-        active_filters = any(values.get(key) for key in (
-            'team_id', 'organization_id', 'match_status', 'practice_status', 'jersey_number'))
+        # Task 1743: the « Filters (N) » disclosure — every filter but the
+        # name boxes (« Suivis » included); open when one is set.
+        active_filters = sum(1 for key in (
+            'team_id', 'organization_id', 'match_status', 'practice_status', 'jersey_number',
+            'followed_only') if values.get(key))
         # Task 1607: the sort menu (sc_sort_options) keeps the active filters
         # and resets the page itself.
         return {
@@ -686,7 +689,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_can_create_player': is_tp_admin and self._is_treatment_professional(),
             # Task 1655: the inline « create a player » panel.
             'sc_player_add': self._sc_player_add_panel(),
-            'sc_filters_open': active_filters,
+            'sc_filters_open': bool(active_filters),
+            'sc_filters_count': active_filters,
             'sc_players_count_label': env._("%(count)s player(s)", count=values['players_count']),
             # Task 1738: the « Suivis ★ » chip toggles the filter, keeping
             # the others (page reset); none for a user who may not follow.

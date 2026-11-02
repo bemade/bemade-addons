@@ -337,6 +337,17 @@ $sc-p3-laptop: 1024px;
 
     .o_sc_contact_sub {
         margin-left: 6px;
+        // Task 1743: wrap between words (and at the « @ », a <wbr>), not
+        // anywhere — the .o_sc_kv dd default.
+        overflow-wrap: break-word;
+    }
+
+    // Task 1743: on a phone the email sits on its own line under the name.
+    @media (max-width: 575.98px) {
+        .o_sc_contact_sub {
+            display: block;
+            margin-left: 0;
+        }
     }
 
     .o_sc_contact_person {

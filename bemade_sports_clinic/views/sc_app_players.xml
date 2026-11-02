@@ -38,23 +38,34 @@
                                t-att-value="last_name or ''"/>
                     </div>
                 </div>
-                <!-- Task 1738: « Suivis ★ » — only the players I follow (who
-                     may follow players); a link toggling it, the other
-                     filters kept. Off by default, never remembered. -->
-                <div t-if="sc_players_followed_url" class="o_sc_chips" data-sc-section="players.followed">
-                    <a t-att-href="sc_players_followed_url"
-                       t-attf-class="o_sc_chip o_sc_chip_follow #{'o_sc_chip_mauve' if followed_only else 'o_sc_chip_ghost'}"
-                       t-att-aria-pressed="'true' if followed_only else 'false'" data-sc-action="players.followed">
-                        <span>Followed</span>
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'star'"/></t>
-                    </a>
-                </div>
+                <!-- Task 1743 (owner 2026-11-02): the name boxes stay in
+                     sight with « Search »; everything else — « Suivis ★ »
+                     (#1738), jersey, team, organization, statuses and
+                     « Clear » — goes in ONE « Filters (N) » disclosure,
+                     closed unless one of those is set (same on a laptop). -->
                 <input t-if="followed_only" type="hidden" name="followed" value="1"/>
-                <details class="o_sc_disclosure" t-att-open="'open' if sc_filters_open else None">
+                <div class="o_sc_form_actions o_sc_players_search_actions">
+                    <button type="submit" class="o_sc_btn o_sc_btn_primary">
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'search'"/></t>
+                        <span>Search</span>
+                    </button>
+                </div>
+                <details class="o_sc_disclosure o_sc_players_filters" data-sc-section="players.filters"
+                         t-att-open="'open' if sc_filters_open else None">
                     <summary class="o_sc_disclosure_summary">
                         <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
                         <span>Filters</span>
+                        <span t-if="sc_filters_count" class="o_sc_filter_count" data-sc-filter-count="1"
+                              t-out="'(%s)' % sc_filters_count"/>
                     </summary>
+                    <div t-if="sc_players_followed_url" class="o_sc_chips" data-sc-section="players.followed">
+                        <a t-att-href="sc_players_followed_url"
+                           t-attf-class="o_sc_chip o_sc_chip_follow #{'o_sc_chip_mauve' if followed_only else 'o_sc_chip_ghost'}"
+                           t-att-aria-pressed="'true' if followed_only else 'false'" data-sc-action="players.followed">
+                            <span>Followed</span>
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'star'"/></t>
+                        </a>
+                    </div>
                     <div class="o_sc_filter_grid">
                         <div class="o_sc_field">
                             <label for="sc_players_jersey" class="o_sc_field_label">Jersey no.</label>
@@ -100,14 +111,10 @@
                             </select>
                         </div>
                     </div>
+                    <div class="o_sc_form_actions">
+                        <a href="/my/players" class="o_sc_btn o_sc_btn_ghost" data-sc-filter-reset="1">Clear Filters</a>
+                    </div>
                 </details>
-                <div class="o_sc_form_actions">
-                    <a href="/my/players" class="o_sc_btn o_sc_btn_ghost" data-sc-filter-reset="1">Clear Filters</a>
-                    <button type="submit" class="o_sc_btn o_sc_btn_primary">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'search'"/></t>
-                        <span>Search</span>
-                    </button>
-                </div>
             </form>
 
             <!-- Task 1607: « + Ajouter » (create a player) and the sort
