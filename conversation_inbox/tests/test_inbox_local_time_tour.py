@@ -33,6 +33,13 @@ def _fake_browse(self, query=None, page=1):
 @tagged("post_install", "-at_install")
 class TestInboxLocalTimeTour(HttpCase):
     def test_inbox_shows_dates_in_the_viewers_zone(self):
+        # The flow reads the time as "18:10", which is how a 24-hour
+        # language (fr_CA, the demo's screen language) shows it. Pin the
+        # admin's language to a 24-hour time format so the assertion does
+        # not depend on which language the test database runs in (en_US
+        # shows "06:10:20 PM").
+        admin = self.env.ref("base.user_admin")
+        self.env["res.lang"]._lang_get(admin.lang).time_format = "%H:%M:%S"
         self.env["conversation.transport"].create(
             {
                 "name": "Local Time Mailbox",
