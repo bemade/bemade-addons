@@ -1288,6 +1288,20 @@ class AppShellMixin:
         except RuntimeError:  # no request
             return False
 
+    def _sc_activity_user_options_for(self, user):
+        """Task 1736 r1: ``activity -> [(id, name)]``, the assignee choices of
+        an activity card's inline edit — the same list as the detail page's
+        (``_activity_assignable_users_for`` + the current assignee; the save
+        route re-checks). The assignable users are searched once per page."""
+        cache = {}
+
+        def options(activity):
+            if 'users' not in cache:
+                cache['users'] = self._activity_assignable_users_for(user)
+            users = (cache['users'] | activity.sudo().user_id).sorted('name')
+            return [(u.id, u.name) for u in users]
+        return options
+
     @staticmethod
     def _sc_pop_notification():
         """Task 1583: pop ``request.session['notification']`` (the
@@ -1431,6 +1445,10 @@ class AppShellMixin:
             # Task 1589: an activity row's Done / Reschedule / Reassign /
             # Cancel buttons follow the one act rule (the routes re-check).
             'sc_activity_can_act': self._activity_act_access,
+            # Task 1736 r1 (owner 2026-11-01): an activity card edited in
+            # place — its assignee choices (the per-actor rule of
+            # /my/activity/reassign, task 1500, plus the current assignee).
+            'sc_activity_assignee_options': self._sc_activity_user_options_for(user),
             # Task 1595: an activity row's related-record links (player /
             # team / event, the injury it is about), access-gated.
             'sc_activity_related': self._sc_activity_related,

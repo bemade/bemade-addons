@@ -1028,57 +1028,87 @@
         Task 1539 — activity row with its due-date state chip. Variables:
         activity, today_date, related_links (sc_activity_related: the
         access-gated related-record links, task 1595), show_assignee,
-        can_reassign. Actions open the shared sheets (sc_activity_sheets)
-        through sc_activities.js.
+        can_reassign, act_scope (optional: unique ids when the same activity
+        is listed twice on a page — the activity tabs). Actions open the
+        shared sheets (sc_activity_sheets) through sc_activities.js.
         Task 1595: a link row (sc_link_row) — the title opens the activity,
         the related player / team / event / injury link opens that record;
         the activity type shows in the subtitle when a summary is the title.
+        Task 1736 r1 (owner 2026-11-01): an EDIT CARD like the others — its
+        pencil (rightmost, who may act on the activity) edits it in place
+        (summary, due date, assignee where the user may reassign, note;
+        saved as you go — the former « Reschedule » / « Reassign »), the red
+        trash shows while editing (it asks first), « Done » stays the last
+        action. A tap on the card opens the details popout
+        (sc_activity_detail_sheet; without it, the activity page). The edit
+        fields are mounted on the first pencil tap (data-sc-lazy-edit: a
+        long list mounts no field until then).
     -->
     <template id="sc_activity_row" name="App shell: activity row">
         <t t-set="act_state" t-value="'overdue' if activity.date_deadline &lt; today_date else ('today' if activity.date_deadline == today_date else 'planned')"/>
         <!-- ONE card, actions inside it (owner review 2026-10-10: same UX as
              the other tabs' cards). -->
         <t t-set="sc_act_can_act" t-value="sc_activity_can_act(activity)"/>
-        <div class="o_sc_card o_sc_activity" t-att-data-sc-activity-row="activity.id" t-att-data-sc-activity-state="act_state">
-            <t t-call="bemade_sports_clinic.sc_link_row">
-                <t t-set="href" t-value="'/my/activity/%s' % activity.id"/>
-                <t t-set="title" t-value="activity.summary or activity.activity_type_id.name"/>
-                <!-- Owner review 2026-10-14: the related record's name in the
-                     title is a link to it too (same access-gated URL). -->
-                <t t-set="title_parts" t-value="sc_activity_title_parts(title, related_links)"/>
-                <t t-set="dot" t-value="'red' if act_state == 'overdue' else ('yellow' if act_state == 'today' else 'green')"/>
-                <t t-set="subtitle">
-                    <span t-if="activity.summary and activity.activity_type_id" class="o_sc_activity_type"
-                          t-out="activity.activity_type_id.name"/>
-                    <t t-if="activity.summary and activity.activity_type_id"> · </t>
-                    <span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/>
-                    <t t-if="show_assignee and activity.user_id"> · <t t-out="activity.user_id.name"/></t>
+        <t t-set="sc_act_uid" t-value="('%s_%s' % (activity.id, act_scope)) if act_scope else str(activity.id)"/>
+        <div t-attf-class="o_sc_card o_sc_activity #{'o_sc_edit_card' if sc_act_can_act else ''}"
+             t-att-data-sc-activity-row="activity.id" t-att-data-sc-activity-state="act_state"
+             t-att-data-sc-edit-card="('activity-%s' % sc_act_uid) if sc_act_can_act else None">
+            <div class="o_sc_activity_head" t-att-data-sc-fragment="sc_fragment_key(activity, 'row')">
+                <t t-call="bemade_sports_clinic.sc_link_row">
+                    <t t-set="href" t-value="'/my/activity/%s' % activity.id"/>
+                    <!-- Task 1736 r1: a tap opens the details popout (the
+                         page itself on a new-tab click / without the sheet). -->
+                    <t t-set="main_attrs" t-value="{'data-sc-sheet-open': 'sc_activity_detail_sheet', 'data-sc-sheet-url': '/my/activity/%s/popout' % activity.id, 'data-sc-activity-popout': activity.id, 'aria-haspopup': 'dialog'}"/>
+                    <t t-set="title" t-value="activity.summary or activity.activity_type_id.name"/>
+                    <!-- Owner review 2026-10-14: the related record's name in the
+                         title is a link to it too (same access-gated URL). -->
+                    <t t-set="title_parts" t-value="sc_activity_title_parts(title, related_links)"/>
+                    <t t-set="dot" t-value="'red' if act_state == 'overdue' else ('yellow' if act_state == 'today' else 'green')"/>
+                    <t t-set="subtitle">
+                        <span t-if="activity.summary and activity.activity_type_id" class="o_sc_activity_type"
+                              t-out="activity.activity_type_id.name"/>
+                        <t t-if="activity.summary and activity.activity_type_id"> · </t>
+                        <span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/>
+                        <t t-if="show_assignee and activity.user_id"> · <t t-out="activity.user_id.name"/></t>
+                    </t>
+                    <t t-set="links" t-value="related_links"/>
+                    <t t-set="chevron" t-value="False"/>
+                    <!-- Task 1736: the shared top bar. r1: the red trash while
+                         editing (it asks first), the pencil rightmost. -->
+                    <t t-call="bemade_sports_clinic.sc_card_icons">
+                        <t t-set="ci_trash" t-value="sc_act_can_act and {'sheet': 'sc_activity_cancel_sheet', 'key': 'activity.cancel', 'attrs': {'data-sc-activity-id': activity.id}}"/>
+                        <t t-set="ci_editable" t-value="sc_act_can_act"/>
+                        <t t-set="ci_edit_key" t-value="'activity.edit'"/>
+                        <span t-if="act_state == 'overdue'" class="o_sc_chip o_sc_chip_red">Overdue</span>
+                        <span t-elif="act_state == 'today'" class="o_sc_chip o_sc_chip_yellow">Today</span>
+                        <span t-else="" class="o_sc_chip o_sc_chip_ghost">Planned</span>
+                    </t>
                 </t>
-                <t t-set="links" t-value="related_links"/>
-                <!-- Task 1736 (owner 2026-11-01): the delete is the red trash
-                     of the row's top bar (it asks first; the row has no
-                     pencil, so it always shows). -->
-                <t t-call="bemade_sports_clinic.sc_card_icons">
-                    <t t-set="ci_trash" t-value="sc_act_can_act and {'sheet': 'sc_activity_cancel_sheet', 'key': 'activity.cancel', 'always': True, 'attrs': {'data-sc-activity-id': activity.id}}"/>
-                    <span t-if="act_state == 'overdue'" class="o_sc_chip o_sc_chip_red">Overdue</span>
-                    <span t-elif="act_state == 'today'" class="o_sc_chip o_sc_chip_yellow">Today</span>
-                    <span t-else="" class="o_sc_chip o_sc_chip_ghost">Planned</span>
-                </t>
-            </t>
+            </div>
+            <!-- Task 1736 r1: the inline edit (the detail page's fields; the
+                 type stays read-only, as there). -->
+            <div t-if="sc_act_can_act" class="o_sc_fields o_sc_activity_edit" data-sc-edit-view="edit"
+                 data-sc-lazy-edit-host="1" hidden="hidden">
+                <template data-sc-lazy-edit="1">
+                    <div class="o_sc_fields_lazy">
+                        <t t-set="lbl">Summary</t>
+                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'summary', lbl, inputId='sc_act_%s_summary' % sc_act_uid)"/></t>
+                        <t t-set="lbl">Due Date</t>
+                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'date_deadline', lbl, 'date', inputId='sc_act_%s_date_deadline' % sc_act_uid)"/></t>
+                        <t t-if="can_reassign">
+                            <t t-set="lbl">Assigned To</t>
+                            <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'user_id', lbl, 'select', options=sc_activity_assignee_options(activity), picker=True, pickerKey='user', inputId='sc_act_%s_user_id' % sc_act_uid)"/></t>
+                        </t>
+                        <t t-set="lbl">Note</t>
+                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'note', lbl, 'textarea', clearable=True, inputId='sc_act_%s_note' % sc_act_uid)"/></t>
+                    </div>
+                </template>
+                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+            </div>
             <!-- Task 1589: actions only for who may act on the activity.
-                 Task 1736 (owner 2026-11-01): in the same order as the
-                 detail page's bar — « Done » last (rightmost), as the ✓ of a
-                 top bar. -->
+                 Task 1736 r1: « Reschedule » / « Reassign » are the inline
+                 edit now; « Done » stays, last (rightmost). -->
             <div t-if="sc_act_can_act" class="o_sc_card_actions o_sc_activity_actions">
-                <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-sheet-open="sc_activity_reschedule_sheet"
-                        t-att-data-sc-activity-id="activity.id" data-sc-action="activity.reschedule">
-                    <span>Reschedule</span>
-                </button>
-                <button t-if="can_reassign" type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
-                        data-sc-sheet-open="sc_activity_reassign_sheet" data-sc-action="activity.reassign"
-                        t-att-data-sc-activity-id="activity.id" t-att-data-sc-current-user="activity.user_id.name or ''">
-                    <span>Reassign</span>
-                </button>
                 <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-sheet-open="sc_activity_complete_sheet"
                         t-att-data-sc-activity-id="activity.id" data-sc-action="activity.complete">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'check'"/></t>

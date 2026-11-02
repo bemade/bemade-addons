@@ -432,6 +432,9 @@ function setCardEditing(card, editing) {
     }
     syncCardControls(card, editing);
     if (editing) {
+        // Task 1736 r1: a lazy edit view (an activity card) mounts its
+        // fields now (sc_lazy_edit.js).
+        edit.dispatchEvent(new CustomEvent("sc:edit-view-open", { bubbles: true }));
         // Task 1646: a text field only (never a picker), nothing on a phone.
         focusFirstField(edit);
     }
@@ -710,6 +713,19 @@ document.addEventListener("click", (ev) => {
     }
     const opener = ev.target.closest("[data-sc-sheet-open]");
     if (opener) {
+        // Task 1736 r1: an opener with data-sc-sheet-url (an activity card's
+        // details popout) loads that body into the shared sheet, fresh on
+        // every open. It is a link to the full page: a new-tab click, or a
+        // page without the sheet, follows the link.
+        const url = opener.dataset.scSheetUrl;
+        if (url) {
+            const dialog = document.getElementById(opener.dataset.scSheetOpen);
+            if (!dialog || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
+                return;
+            }
+            dialog.dataset.scLazyUrl = url;
+            dialog.dataset.scLazyFresh = "1";
+        }
         ev.preventDefault();
         openSheet(opener.dataset.scSheetOpen);
         return;

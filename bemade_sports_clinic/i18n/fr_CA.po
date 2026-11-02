@@ -2945,6 +2945,7 @@ msgstr "Activités pour l'équipe"
 #. module: bemade_sports_clinic
 #: model:ir.model,name:bemade_sports_clinic.model_mail_activity
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.activity_list_table
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_sheets
 msgid "Activity"
 msgstr "Activité"
 
@@ -3679,6 +3680,8 @@ msgstr "Personnel assigné"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_add_sheet
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_detail_read
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_row
 msgid "Assigned To"
 msgstr "Assigné à"
 
@@ -3717,6 +3720,7 @@ msgstr "Nombre de pièces jointes"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_activity_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_attachments
 msgid "Attachments"
 msgstr "Pièces jointes"
 
@@ -4554,6 +4558,7 @@ msgstr "Créer/Mettre à jour la soumission"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_detail_read
 msgid "Created"
 msgstr "Créée le"
 
@@ -4607,6 +4612,7 @@ msgstr "Créé le"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_line__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_team_role_mass_assign_wizard__create_uid
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_critical_item__create_uid
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_detail_read
 msgid "Created by"
 msgstr "Créé par"
 
@@ -5373,6 +5379,8 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_add_sheet
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_detail_read
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_row
 msgid "Due Date"
 msgstr "Date d'échéance"
 
@@ -8219,6 +8227,8 @@ msgstr "Non jumelée"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_treatment_notes
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_quick_note_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_sports_quick_note_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_row
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_detail
 msgid "Note"
 msgstr "Note"
 
@@ -8740,6 +8750,7 @@ msgstr "Résultat"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_row
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_popout
 msgid "Overdue"
 msgstr "En retard"
 
@@ -9120,6 +9131,7 @@ msgstr "Choisissez l'équipe du nouveau joueur."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_row
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_popout
 msgid "Planned"
 msgstr "Planifiée"
 
@@ -10112,6 +10124,7 @@ msgstr "Partenaire associé"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.activity_list_table
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_detail_read
 msgid "Related Record"
 msgstr "Enregistrement associé"
 
@@ -11318,6 +11331,8 @@ msgstr "Soumis : modifiable; Facturé : lecture seule"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_add_sheet
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_detail
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_detail_read
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_row
 msgid "Summary"
 msgstr "Résumé"
 
@@ -12575,6 +12590,7 @@ msgstr "À traiter"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_event_view_search
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_treatment_note_search
 #: code:addons/bemade_sports_clinic/models/sc_dashboard.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_popout
 msgid "Today"
 msgstr "Aujourd'hui"
 
@@ -14945,7 +14961,7 @@ msgstr "<span>Documents</span>"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_row
 msgid "<span>Done</span>"
-msgstr "<span>Fait</span>"
+msgstr "<span>Terminé</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_clinics
@@ -15017,6 +15033,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_add_sheet
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_detail
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_activity_form
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_detail_read
 msgid "Activity Type"
 msgstr "Type d'activité"
 

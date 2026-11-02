@@ -976,7 +976,8 @@ $sc-p2-laptop: 992px;
         gap: 0;
         overflow: hidden;
 
-        > .o_sc_entity_row {
+        > .o_sc_entity_row,
+        > .o_sc_activity_head > .o_sc_entity_row {
             border: 0;
             border-radius: 0;
             background: transparent;
@@ -987,9 +988,44 @@ $sc-p2-laptop: 992px;
         }
     }
 
+    // Task 1736 r1: the card's top-bar icons in the regular icon colour
+    // (the link row's trailing area is muted).
+    .o_sc_activity .o_sc_row_trailing > .o_sc_card_icons {
+        color: var(--sc-fg);
+    }
+
+    // Task 1736 r1: the in-place edit (the fields, then « Done »).
+    .o_sc_activity_edit {
+        border-top: 1px solid var(--sc-line);
+        padding: var(--sc-space-3);
+
+        > .o_sc_fields_lazy {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sc-space-3);
+        }
+    }
+
     .o_sc_activity_actions {
         border-top: 1px solid var(--sc-line);
         padding: var(--sc-space-2) var(--sc-space-3);
+    }
+
+    // Task 1736 r1: the popout's note, set apart from the details.
+    .o_sc_activity_popout .o_sc_activity_note {
+        margin-top: var(--sc-space-3);
+        padding-top: var(--sc-space-3);
+        border-top: 1px solid var(--sc-line);
+    }
+
+    // Task 1736 r1: the details popout's head (the title + its state chip).
+    .o_sc_activity_popout_title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2);
+        margin: 0 0 var(--sc-space-3);
+        font-size: 1.05rem;
     }
 }
 

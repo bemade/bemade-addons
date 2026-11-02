@@ -408,12 +408,11 @@
                     </span>
                     <!-- Task 1736 (owner 2026-11-01): the shared top bar — the
                          activities clock (its count; it opens the event's
-                         activities), « Cancel Event » as the archive icon
-                         (its reason sheet unchanged), the pencil. -->
+                         activities), the pencil. Task 1736 r1 (owner
+                         2026-11-01): cancelling an event is NOT an archive —
+                         « Cancel Event » is its own red action again (below). -->
                     <t t-call="bemade_sports_clinic.sc_card_icons">
                         <t t-set="ci_clock" t-value="sc_can_activities and dict(sc_event_clock or {}, always=True, url='/my/event/activities?event_id=%s' % event.id, key='event.activities')"/>
-                        <t t-set="sc_cancel_event_label">Cancel Event</t>
-                        <t t-set="ci_archive" t-value="sc_can_cancel and {'sheet': 'sc_event_cancel_sheet', 'key': 'event.cancel', 'label': sc_cancel_event_label}"/>
                         <t t-set="ci_editable" t-value="sc_event_editable"/>
                         <t t-set="ci_edit_key" t-value="'event.edit'"/>
                     </t>
@@ -482,10 +481,13 @@
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(event, 'description', lbl, 'textarea', clearable=True)"/></t>
                     <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
                 </div>
-                <!-- « Restore event » (a cancelled event) stays a text button
-                     (owner 2026-11-01: unchanged). -->
-                <div t-if="sc_can_restore" class="o_sc_actions_row">
-                    <button type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm"
+                <!-- Task 1736 r1 (owner 2026-11-01): « Cancel Event » (red, its
+                     reason sheet) and its counterpart « Restore event », as
+                     before #1736 (the clock replaced « Activities »). -->
+                <div t-if="sc_can_cancel or sc_can_restore" class="o_sc_actions_row">
+                    <button t-if="sc_can_cancel" type="button" class="o_sc_btn o_sc_btn_danger o_sc_btn_sm"
+                            data-sc-sheet-open="sc_event_cancel_sheet" data-sc-action="event.cancel">Cancel Event</button>
+                    <button t-if="sc_can_restore" type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm"
                             data-sc-sheet-open="sc_event_restore_sheet" data-sc-action="event.restore">Restore event</button>
                 </div>
             </section>
