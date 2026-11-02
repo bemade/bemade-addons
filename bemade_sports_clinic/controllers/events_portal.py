@@ -104,17 +104,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 date_from = datetime.today().strftime('%Y-%m-%d')
 
         # For missing_timesheets view, avoid the default date_from=yesterday.
-        # Also default the end date to today (inclusive) to match the "missing" logic.
+        # Task 1742: and no default end date either — the shared predicate
+        # only keeps events that have started (the former default, the
+        # server's UTC « today », listed today's later events and, after
+        # 20:00 in Québec, tomorrow's).
         if view_type == 'missing_timesheets':
             no_default_dates = True
-            # Only default when the parameters are truly absent.
-            # If the user cleared the field, it arrives as an empty string and
-            # we must not override it.
-            if date_from is None and date_to is None:
-                try:
-                    date_to = fields.Date.to_string(fields.Date.today())
-                except Exception:
-                    date_to = datetime.today().strftime('%Y-%m-%d')
 
         # Prepare base domain. Cancelled events are hidden by default and only
         # surfaced when the user opts in via the "Show cancelled" toggle (task 1235).

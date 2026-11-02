@@ -664,6 +664,17 @@ class ScDashboard(models.AbstractModel):
         return data
 
     @api.model
+    def _sc_missing_timesheets_since(self, days_back):
+        """Task 1742: ``(day, naive-UTC start of that day)`` — the user's
+        today minus ``days_back`` days, the lower bound of « Feuilles de temps
+        manquantes » (the widget and its « See all » list)."""
+        user = self.env.user
+        tz = pytz.timezone(user.tz or self.env.context.get('tz') or 'UTC')
+        day = fields.Datetime.context_timestamp(user, fields.Datetime.now()).date() - timedelta(days=days_back)
+        start = tz.localize(datetime.combine(day, time.min)).astimezone(pytz.UTC)
+        return day, start.replace(tzinfo=None)
+
+    @api.model
     def _sc_data_missing_timesheets(self, teams, days_back, explicit_scope):
         """« Feuilles de temps manquantes » (review round 1): my past events
         (started in the last ``days_back`` days) assigned to me with no
@@ -672,11 +683,13 @@ class ScDashboard(models.AbstractModel):
         filtered by team only when a scope is chosen (an assignment can be
         on a team I do not staff, as « Couvertures à venir »). Newest first."""
         Event = self.env['sports.event']
-        now = fields.Datetime.now()
+        # Task 1742: started (the shared predicate), since the start of the
+        # day ``days_back`` days ago in the user's timezone — the « See all »
+        # list (date_from = that day) shows the very same events.
+        _day, since = self._sc_missing_timesheets_since(days_back)
         domain = Event._sc_missing_timesheet_domain() + [
             ('state', '!=', 'cancelled'),
-            ('date_start', '<=', now),
-            ('date_start', '>=', now - timedelta(days=days_back)),
+            ('date_start', '>=', since),
         ]
         if explicit_scope:
             domain.append(('team_ids', 'in', teams.ids or [0]))
