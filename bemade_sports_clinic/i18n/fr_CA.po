@@ -18173,3 +18173,18 @@ msgstr "Vous pouvez seulement restaurer vos propres feuilles de temps."
 #: code:addons/bemade_sports_clinic/controllers/timesheets_portal.py:0
 msgid "This timesheet is invoiced and cannot be changed."
 msgstr "Cette feuille de temps est facturée et ne peut pas être modifiée."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_players
+msgid "<span>Followed</span>"
+msgstr "<span>Suivis</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_players
+msgid "You do not follow any player. Use ★ on a player's page."
+msgstr "Vous ne suivez aucun joueur. Utilisez ★ sur la fiche d'un joueur."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_players_row_followed
+msgid "You follow this player"
+msgstr "Vous suivez ce joueur"

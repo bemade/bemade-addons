@@ -403,6 +403,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         - organization_id (team parent partner)
         - match_status (exact)
         - practice_status (exact)
+        - followed (``1``: only the players the user follows — task 1738;
+          ignored for a user who may not follow players)
         """
         Patients = http.request.env['sports.patient']
         user = http.request.env.user
@@ -430,6 +432,12 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Task 1421: jersey-number filter — exact on the normalised value
         # (« #12 » and « 12 » both find #12; « 1 » does not list 10, 11, …).
         jersey_number = Patients._normalize_jersey_number(kw.get('jersey_number')) or ''
+        # Task 1738: « Suivis ★ » — the players the user follows (staff
+        # roles only; off by default, never remembered). The followed ids
+        # are read ONCE (rows' ★ included), never per row.
+        can_follow = Patients._sc_follow_allowed()
+        followed_ids = set(user.sudo().sc_followed_patient_ids.ids) if can_follow else set()
+        followed_only = can_follow and kw.get('followed') == '1'
 
         # Task 1225 / 640: when a TP/admin searches by name, broaden beyond the
         # user's own teams so out-of-team players are *findable* (to be added to
@@ -465,6 +473,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             filters.append(('practice_status', '=', practice_status))
         if jersey_number:
             filters.append(('jersey_number', '=', jersey_number))
+        if followed_only:
+            filters.append(('id', 'in', sorted(followed_ids)))
 
         domain = ([] if broaden else list(base_players_domain)) + filters
 
@@ -483,6 +493,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'match_status': match_status,
                 'practice_status': practice_status,
                 'jersey_number': jersey_number,
+                'followed': '1' if followed_only else None,
             },
         )
 
@@ -558,6 +569,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'match_status': match_status,
                 'practice_status': practice_status,
                 'jersey_number': jersey_number,
+                'followed_only': followed_only,
+                'can_follow': can_follow,
+                'followed_ids': followed_ids,
                 # options
                 'teams': teams,
                 'organizations': organizations,
@@ -659,6 +673,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'changed': player.id in (values.get('changed_player_ids') or ()),
                 'status': (extras[player.id]['status'] if player.id in extras
                            else player._sc_row_status(labels)),
+                # Task 1738: the ★ of a followed player.
+                'followed': player.id in values['followed_ids'],
                 'url': '/my/player?player_id=%s' % player.id if accessible else False,
             })
         active_filters = any(values.get(key) for key in (
@@ -672,7 +688,24 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_player_add': self._sc_player_add_panel(),
             'sc_filters_open': active_filters,
             'sc_players_count_label': env._("%(count)s player(s)", count=values['players_count']),
+            # Task 1738: the « Suivis ★ » chip toggles the filter, keeping
+            # the others (page reset); none for a user who may not follow.
+            'sc_players_followed_url': (
+                self._sc_players_followed_url(not values['followed_only'])
+                if values['can_follow'] else False),
+            'sc_players_followed_none': values['followed_only'] and not values['followed_ids'],
         }
+
+    def _sc_players_followed_url(self, followed):
+        """/my/players with the current filters, ``followed=1`` set
+        (``followed``) or dropped; the pager and flash arguments dropped."""
+        args = http.request.httprequest.args
+        keep = [(key, value) for key, value in args.items(multi=True)
+                if key not in ('followed', 'page', 'success', 'error', 'error_files')
+                and value not in (None, '')]
+        if followed:
+            keep.append(('followed', '1'))
+        return '/my/players?%s' % urllib.parse.urlencode(keep) if keep else '/my/players'
 
     @http.route(route=['/my/player/<int:player_id>/recent-changes'], type='http',
                 auth='user', website=True)
