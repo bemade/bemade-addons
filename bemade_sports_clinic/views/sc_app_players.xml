@@ -1171,7 +1171,7 @@
                 </span>
             </summary>
             <t t-set="sc_note_history_base" t-value="'/my/injury/%s/notes/history/fragment' % injury.id"/>
-            <div class="o_sc_expand_body" t-att-id="sc_card_body_id">
+            <div class="o_sc_expand_body o_sc_injury_body" t-att-id="sc_card_body_id">
                 <div class="o_sc_injury_sections">
                     <!-- ============================ Details ============================ -->
                     <section class="o_sc_injury_section o_sc_injury_details o_sc_edit_card" data-sc-edit-card="injury-details"

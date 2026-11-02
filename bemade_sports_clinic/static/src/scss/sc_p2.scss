@@ -1140,7 +1140,14 @@ $sc-p2-laptop: 992px;
         }
     }
 
-    @media (min-width: 992px) {
+    /* Task 1736 r2: 1 vs 2 columns follows the CARD width (container query),
+       not the page width, so a narrow dashboard column gets the 1-column layout. */
+    .o_sc_injury_body {
+        container-type: inline-size;
+        container-name: sc-injury;
+    }
+
+    @container sc-injury (min-width: 720px) {
         .o_sc_injury_sections {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
