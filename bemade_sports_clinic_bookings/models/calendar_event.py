@@ -87,10 +87,13 @@ class CalendarEvent(models.Model):
     def _sc_booking_muted_partner_ids(self):
         """Partners of this booking's staff whose booking mails are held
         back: « Daily summary » / « None » always; « All » only for the
-        second invitation sent when a pending booking is confirmed."""
-        staff = self._sc_booking_staff_users()
+        second invitation sent when a pending booking is confirmed. Only
+        staff the preference applies to (``_sc_booking_prefs_apply``):
+        anyone else gets every mail, as in standard Odoo."""
+        staff = self._sc_booking_staff_users().filtered(
+            lambda user: user._sc_booking_prefs_apply())
         if not self.env.context.get('sc_booking_confirming'):
-            staff = staff.filtered(lambda user: user.sc_booking_email_pref != 'all')
+            staff = staff.filtered(lambda user: user._sc_booking_effective_pref() != 'all')
         return set(staff.partner_id.ids)
 
     def _sc_booking_is_system_mail(self, message, msg_vals):

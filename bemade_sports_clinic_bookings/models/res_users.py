@@ -6,6 +6,7 @@ from datetime import datetime, time, timedelta
 import pytz
 
 from odoo import api, fields, models
+from odoo.addons.bemade_sports_clinic.models import sc_app_roles
 from odoo.tools import format_datetime
 
 _logger = logging.getLogger(__name__)
@@ -19,6 +20,9 @@ SC_BOOKING_EMAIL_PREFS = [
 SC_DIGEST_TIME = time(6, 30)
 SC_DEFAULT_TZ = 'America/Toronto'
 MAIL_FROM_PARAM = 'appointment_portal_staff.mail_from'
+# The clinic app's switch (bemade_sports_clinic controllers/app_shell.py).
+APP_SHELL_PARAM = 'bemade_sports_clinic.app_shell_enabled'
+_TRUTHY = ('1', 'true', 'yes', 'on')
 
 
 class ResUsers(models.Model):
@@ -53,6 +57,27 @@ class ResUsers(models.Model):
             return True
         return bool(self.env['calendar.event'].sudo().with_context(active_test=False).search_count(
             [('user_id', '=', self.id), ('appointment_type_id', '!=', False)], limit=1))
+
+    def _sc_booking_prefs_apply(self):
+        """The preference governs this user's booking mails only when they
+        can see it: « Paramètres » of the clinic app (switch on + an app
+        role) AND staff of a booking. Anyone else (e.g. a plain portal
+        appointment staff user) gets every mail, as in standard Odoo,
+        whatever the stored value."""
+        self.ensure_one()
+        if not self.active or self._is_public():
+            return False
+        raw = self.env['ir.config_parameter'].sudo().get_param(APP_SHELL_PARAM)
+        if str(raw or '').strip().lower() not in _TRUTHY:
+            return False
+        if not (self._sc_app_roles() & sc_app_roles.APP_ROLES):
+            return False
+        return self._sc_booking_is_staff()
+
+    def _sc_booking_effective_pref(self):
+        """``sc_booking_email_pref`` where it applies, else ``'all'``."""
+        self.ensure_one()
+        return self.sc_booking_email_pref if self._sc_booking_prefs_apply() else 'all'
 
     def _sc_booking_tz(self):
         self.ensure_one()
@@ -133,7 +158,7 @@ class ResUsers(models.Model):
         today ». Nothing is sent when there is nothing to say."""
         now = fields.Datetime.now()
         staff = self.env['appointment.type'].sudo().search([]).staff_user_ids.filtered(
-            lambda user: user.active and user.sc_booking_email_pref == 'digest')
+            lambda user: user.active and user._sc_booking_effective_pref() == 'digest')
         for user in staff:
             if user._sc_booking_digest_sent_today(now):
                 continue
@@ -186,7 +211,7 @@ class ResUsers(models.Model):
         this user at once."""
         self.ensure_one()
         now = fields.Datetime.now()
-        if self.sc_booking_email_pref != 'digest' or not self._sc_booking_digest_sent_today(now):
+        if self._sc_booking_effective_pref() != 'digest' or not self._sc_booking_digest_sent_today(now):
             return False
         day_start, day_end = self._sc_booking_day_bounds(now)
         if not booking.start or not (day_start <= booking.start < day_end) or booking.stop < now:

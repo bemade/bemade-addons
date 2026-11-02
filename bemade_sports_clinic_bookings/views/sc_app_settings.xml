@@ -10,7 +10,7 @@
     <template id="sc_app_settings_booking_emails" inherit_id="bemade_sports_clinic.sc_app_settings"
               name="Sports Clinic App: settings, booking emails">
         <xpath expr="//section[@id='sc_morning_summary']" position="after">
-            <section t-if="request.env.user._sc_booking_is_staff()" class="o_sc_section" id="sc_booking_emails"
+            <section t-if="request.env.user._sc_booking_prefs_apply()" class="o_sc_section" id="sc_booking_emails"
                      data-sc-section="settings.booking_emails">
                 <t t-call="bemade_sports_clinic.sc_section_header">
                     <t t-set="title">Booking emails</t>

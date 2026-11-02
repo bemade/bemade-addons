@@ -30,6 +30,13 @@ Acceptance criteria:
   Daily summary / None: held back). A staff member who cancels a booking
   for later today gets no same-day « Booking cancelled » notice about
   their own cancellation.
+* UC-E10 Scope: the preference (the holding back AND the daily summary)
+  applies only to the users who can see it — clinic-app staff who take
+  bookings (app switch on + an app role + staff of a booking). A plain
+  portal appointment staff user (appointment_portal_staff alone, no clinic
+  role) gets every booking mail like in standard Odoo, whatever the stored
+  value, and never a summary; so does everyone while the app switch is off.
+  A clinic staff member in summary mode is still held back.
 """
 from datetime import datetime, timedelta
 
@@ -40,7 +47,7 @@ from odoo import Command, fields
 from odoo.tests import TransactionCase, tagged
 from odoo.tools.misc import mute_logger
 
-from .common import BookingsShellCommon
+from .common import SWITCH, BookingsShellCommon
 
 # 2026-11-04 is a Wednesday; America/Toronto = UTC-5 (EST).
 NOW = '2026-11-04 15:00:00'          # 10:00 in Toronto
@@ -54,9 +61,13 @@ class _EmailsCommon(TransactionCase):
         super().setUpClass()
         env = cls.env
         portal = env.ref('base.group_portal').id
+        cls.tp_group = env.ref('bemade_sports_clinic.group_portal_treatment_professional')
+        # UC-E10: a clinic-app therapist (app switch on + the role) — the
+        # people the preference applies to.
+        env['ir.config_parameter'].sudo().set_param(SWITCH, 'True')
         cls.tp = env['res.users'].with_context(no_reset_password=True).create({
             'name': 'EM Therapist', 'login': 'em.tp@example.com', 'email': 'em.tp@example.com',
-            'tz': 'America/Toronto', 'group_ids': [Command.set([portal])],
+            'tz': 'America/Toronto', 'group_ids': [Command.set([portal, cls.tp_group.id])],
         })
         cls.client = env['res.partner'].create({'name': 'Robin Client', 'email': 'robin@em.example.com'})
         cls.apt_type = env['appointment.type'].create({
@@ -185,6 +196,60 @@ class TestBookingEmailPrefs(_EmailsCommon):
         booking.message_post(body='Question about my visit', message_type='comment',
                              subtype_xmlid='mail.mt_comment', partner_ids=self.tp.partner_id.ids)
         self.assertTrue(self._new_mails(before, self.tp.partner_id))
+
+
+@tagged('post_install', '-at_install')
+class TestBookingEmailScope(_EmailsCommon):
+    """UC-E10."""
+
+    EVERY_MAIL = {
+        'book': (True, True), 'book_request': (True, True), 'confirm': (True, True),
+        'reminder': (True, True), 'cancel': (True, True),
+    }
+
+    def setUp(self):
+        super().setUp()
+        self.start = fields.Datetime.now().replace(microsecond=0) + timedelta(days=3)
+
+    _run_flow = TestBookingEmailPrefs._run_flow
+
+    def _make_plain_portal_staff(self):
+        """The appointment_portal_staff shape: a portal user who is staff
+        on the type, no clinic role."""
+        self.tp.group_ids = [Command.unlink(self.tp_group.id)]
+        self.assertFalse(self.tp._sc_app_roles() & {'therapist', 'head_therapist'})
+
+    def test_clinic_staff_in_digest_mode_is_held(self):
+        self._set_pref('digest')
+        self.assertTrue(self.tp._sc_booking_prefs_apply())
+        flow = self._run_flow()
+        self.assertFalse(any(staff for staff, _client in flow.values()), flow)
+
+    def test_plain_portal_staff_gets_every_mail(self):
+        self._make_plain_portal_staff()
+        for pref in ('digest', 'none'):
+            self._set_pref(pref)
+            self.assertFalse(self.tp._sc_booking_prefs_apply())
+            self.assertEqual(self.tp._sc_booking_effective_pref(), 'all')
+            # Invitation (book) and cancellation both reach the staff member.
+            self.assertEqual(self._run_flow(), self.EVERY_MAIL, pref)
+
+    def test_switch_off_everyone_gets_every_mail(self):
+        self.env['ir.config_parameter'].sudo().set_param(SWITCH, False)
+        self._set_pref('none')
+        self.assertFalse(self.tp._sc_booking_prefs_apply())
+        self.assertEqual(self._run_flow(), self.EVERY_MAIL)
+
+    def test_plain_portal_staff_gets_no_summary(self):
+        self._make_plain_portal_staff()
+        self._set_pref('digest')
+        with freeze_time('2026-11-04 08:00:00'):
+            self._book(datetime(2026, 11, 4, 20, 0))
+        with freeze_time('2026-11-04 11:40:00'):
+            before = self._snap()
+            self.env['res.users']._sc_booking_digest_cron()
+            self.assertFalse(self._new_mails(before, self.tp.partner_id).filtered(
+                lambda m: m.subject == 'Your bookings today'))
 
 
 @tagged('post_install', '-at_install')
