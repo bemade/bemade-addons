@@ -24,7 +24,11 @@
             </xpath>
             <xpath expr="//notebook" position="inside">
                 <page string="Drafts" name="drafts">
-                    <field name="draft_ids" readonly="1">
+                    <field
+            name="draft_ids"
+            readonly="1"
+            widget="conversation_draft_list"
+          >
                         <list>
                             <field name="create_date" />
                             <field name="subject" />

@@ -1,0 +1,34 @@
+// Task 1732 — the booking form's answers on « Mes rendez-vous ».
+// Scoped under .o_sc_app (the shell); no inline style in the views.
+
+.o_sc_app {
+    .o_sc_booking_answers {
+        margin-top: var(--sc-space-2);
+
+        dt {
+            white-space: normal;
+        }
+
+        dd {
+            overflow-wrap: anywhere;
+        }
+
+        // Phone / tablet: the row's text column is narrow (lead icon +
+        // status chip beside it), so a two-column grid crushed the answers
+        // to one word per line — stack each question above its answer.
+        @media (max-width: 991.98px) {
+            grid-template-columns: minmax(0, 1fr);
+            row-gap: 0;
+
+            dt:not(:first-child) {
+                margin-top: var(--sc-space-1);
+            }
+        }
+    }
+
+    // The calendar's booking details (sc_calendar, shared component):
+    // a multi-line answer keeps its line breaks.
+    .o_sc_calendar_detail .o_sc_kv dd {
+        white-space: pre-line;
+    }
+}

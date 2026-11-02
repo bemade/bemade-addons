@@ -72,6 +72,14 @@
                                 <a t-if="row['phone']" class="o_sc_contact_link" t-att-href="row['phone_href']" data-sc-booking-link="phone" t-out="row['phone']"/>
                                 <a t-if="row['email']" class="o_sc_contact_link" t-att-href="row['email_href']" data-sc-booking-link="email" t-out="row['email']"/>
                             </span>
+                            <!-- Task 1732: the booking form's answers (question → answer). -->
+                            <dl t-if="row['answers']" class="o_sc_kv o_sc_booking_answers" data-sc-booking-answers="1"
+                                aria-label="Booking form answers">
+                                <t t-foreach="row['answers']" t-as="answer">
+                                    <dt t-out="answer['label']"/>
+                                    <dd class="o_sc_pre" t-att-data-sc-booking-answer="answer['question_id']" t-out="answer['value']"/>
+                                </t>
+                            </dl>
                         </span>
                         <span class="o_sc_row_trailing">
                             <span t-if="row['cancelled']" class="o_sc_chip o_sc_chip_red">Cancelled</span>

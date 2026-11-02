@@ -612,7 +612,8 @@ class TestClinicKioskUnregistered(HttpCase):
             self.assertNotIn('Far, Fay', html)
         # the row carries no dossier link
         html = self._page().text
-        self.assertNotIn('?patient=%s' % row.id, html)
+        # word boundary: row 5 must not "match" a link to ?patient=56
+        self.assertNotRegex(html, r'\?patient=%s\b' % row.id)
         # no unregistered row: no resolve blocks rendered at all
         row.unlink()
         html = self._page().text

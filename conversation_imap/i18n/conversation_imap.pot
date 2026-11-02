@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 15:23+0000\n"
-"PO-Revision-Date: 2026-10-20 15:23+0000\n"
+"POT-Creation-Date: 2026-11-01 20:43+0000\n"
+"PO-Revision-Date: 2026-11-01 20:43+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -21,8 +21,24 @@ msgid "Conversation Transport"
 msgstr ""
 
 #. module: conversation_imap
+#: model:ir.model.fields,help:conversation_imap.field_conversation_transport__smtp_ssl
+msgid ""
+"Deprecated alias of the SMTP Encryption field, kept for callers that still "
+"read or write the old checkbox: true means STARTTLS, false means no "
+"encryption."
+msgstr ""
+
+#. module: conversation_imap
 #: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__display_name
 msgid "Display Name"
+msgstr ""
+
+#. module: conversation_imap
+#: model:ir.model.fields,help:conversation_imap.field_conversation_transport__smtp_encryption
+msgid ""
+"How the SMTP connection is secured. STARTTLS is what servers usually expect "
+"on port 587; SSL/TLS (implicit TLS, SMTPS) is what they usually expect on "
+"port 465. Choose None only for a plain legacy relay."
 msgstr ""
 
 #. module: conversation_imap
@@ -71,6 +87,11 @@ msgid "New Password"
 msgstr ""
 
 #. module: conversation_imap
+#: model:ir.model.fields.selection,name:conversation_imap.selection__conversation_transport__smtp_encryption__none
+msgid "None"
+msgstr ""
+
+#. module: conversation_imap
 #: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__password
 msgid "Password"
 msgstr ""
@@ -86,6 +107,11 @@ msgid "Provider"
 msgstr ""
 
 #. module: conversation_imap
+#: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__smtp_encryption
+msgid "SMTP Encryption"
+msgstr ""
+
+#. module: conversation_imap
 #: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__smtp_port
 msgid "SMTP Port"
 msgstr ""
@@ -97,7 +123,17 @@ msgstr ""
 
 #. module: conversation_imap
 #: model:ir.model.fields,field_description:conversation_imap.field_conversation_transport__smtp_ssl
-msgid "SMTP over STARTTLS"
+msgid "SMTP over STARTTLS (legacy)"
+msgstr ""
+
+#. module: conversation_imap
+#: model:ir.model.fields.selection,name:conversation_imap.selection__conversation_transport__smtp_encryption__ssl
+msgid "SSL/TLS"
+msgstr ""
+
+#. module: conversation_imap
+#: model:ir.model.fields.selection,name:conversation_imap.selection__conversation_transport__smtp_encryption__starttls
+msgid "STARTTLS"
 msgstr ""
 
 #. module: conversation_imap
@@ -108,13 +144,6 @@ msgid ""
 "each opt-in provider module (conversation_imap, conversation_gmail, ...) "
 "registers its own via selection_add, so the dropdown only ever offers a "
 "provider that is actually installed and implemented."
-msgstr ""
-
-#. module: conversation_imap
-#: model:ir.model.fields,help:conversation_imap.field_conversation_transport__smtp_ssl
-msgid ""
-"Use STARTTLS on the SMTP connection (the common case on port 587). Leave off"
-" only for a plain/legacy relay."
 msgstr ""
 
 #. module: conversation_imap

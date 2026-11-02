@@ -29,12 +29,36 @@ class ConversationTransport(models.Model):
     imap_ssl = fields.Boolean(string="IMAP over SSL", default=True)
     smtp_host = fields.Char(string="SMTP Server")
     smtp_port = fields.Integer(string="SMTP Port", default=587)
-    smtp_ssl = fields.Boolean(
-        string="SMTP over STARTTLS",
-        default=True,
-        help="Use STARTTLS on the SMTP connection (the common case on port "
-        "587). Leave off only for a plain/legacy relay.",
+    smtp_encryption = fields.Selection(
+        [
+            ("none", "None"),
+            ("starttls", "STARTTLS"),
+            ("ssl", "SSL/TLS"),
+        ],
+        string="SMTP Encryption",
+        default="starttls",
+        help="How the SMTP connection is secured. STARTTLS is what servers "
+        "usually expect on port 587; SSL/TLS (implicit TLS, SMTPS) is what "
+        "they usually expect on port 465. Choose None only for a plain "
+        "legacy relay.",
     )
+    smtp_ssl = fields.Boolean(
+        string="SMTP over STARTTLS (legacy)",
+        compute="_compute_smtp_ssl",
+        inverse="_inverse_smtp_ssl",
+        help="Deprecated alias of the SMTP Encryption field, kept for "
+        "callers that still read or write the old checkbox: true means "
+        "STARTTLS, false means no encryption.",
+    )
+
+    @api.depends("smtp_encryption")
+    def _compute_smtp_ssl(self):
+        for transport in self:
+            transport.smtp_ssl = transport.smtp_encryption == "starttls"
+
+    def _inverse_smtp_ssl(self):
+        for transport in self:
+            transport.smtp_encryption = "starttls" if transport.smtp_ssl else "none"
     password = fields.Char(
         groups="base.group_system",
         help="IMAP/SMTP account password. Generic IMAP has no universal "
@@ -122,7 +146,8 @@ class ConversationTransport(models.Model):
             "imap_ssl": self.imap_ssl,
             "smtp_host": self.smtp_host,
             "smtp_port": self.smtp_port or 587,
-            "smtp_starttls": self.smtp_ssl,
+            "smtp_encryption": self.smtp_encryption or "none",
+            "smtp_starttls": self.smtp_encryption == "starttls",
             # sudo: the engine runs as the end user on shared mailboxes, who
             # cannot read the field; the value stays server-side.
             "password": self.sudo().password,

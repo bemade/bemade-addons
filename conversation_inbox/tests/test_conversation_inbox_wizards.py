@@ -237,6 +237,23 @@ class TestConversationInboxReplyWizard(InboxWizardTestMixin, TransactionCase):
         self.assertIn("Please send a quote.", wizard.body)
         self.assertIn("blockquote", wizard.body)
 
+    def test_reply_to_a_dateless_message_quotes_no_false_date(self):
+        # ``_mock_fetch_normalize`` defaults to ``date: False``.
+        fetch_patch, normalize_patch = self._mock_fetch_normalize(external_id="ext-8")
+        with fetch_patch, normalize_patch:
+            wizard = self._open("ext-8", "reply")
+        self.assertIn("Need a quote", wizard.body)
+        self.assertNotIn("False", wizard.body)
+        self.assertNotIn("false", wizard.body)
+
+    def test_reply_to_a_dated_message_quotes_the_date(self):
+        fetch_patch, normalize_patch = self._mock_fetch_normalize(
+            external_id="ext-9", date="2026-08-14 09:00:00"
+        )
+        with fetch_patch, normalize_patch:
+            wizard = self._open("ext-9", "reply")
+        self.assertIn("2026", wizard.body)
+
     def test_reply_all_carries_the_others_but_never_this_account(self):
         fetch_patch, normalize_patch = self._mock_fetch_normalize(external_id="ext-6")
         with fetch_patch, normalize_patch:

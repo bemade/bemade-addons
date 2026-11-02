@@ -1,6 +1,6 @@
 {
     "name": "CBET / TWI Competency & Certification Engine",
-    "version": "19.0.1.14.0",
+    "version": "19.0.1.15.0",
     "category": "Human Resources/Skills Management",
     "license": "LGPL-3",
     "author": "Bemade Inc.",
@@ -23,12 +23,21 @@ Within Industry (TWI) engine extending the Odoo 19.0 hr / hr_skills stack.
   closure of obligatory prerequisites; per-employee qualification state with
   automatic suspension and restoration, tied back to a coarse hr.skill
   certification on hr.employee.skill.
+- Job positions: a job position lists the standards it requires (CBET tab
+  of the job position form, or "Job positions" on the standard). Every
+  active employee in that position gets a qualification on each of them,
+  so their gaps show in the training matrix; moving the employee to another
+  position archives the old position's qualifications (history and
+  certificates stay). Qualifications added by hand are never touched.
 - Signed evaluations: two-part (practical criteria and oral questions),
   snapshotted from the published competency, computed pass indicators, dual
   evaluator and technician signatures with locking, targeted retake
   (reprise ciblee), and evidence retention.
-- Certifications and validity: time-limited competency certifications with an
-  expiry engine and activity nudges; qualification-level early warning rides
+- Certifications and validity: time-limited competency certifications —
+  issued by evaluation or entered by hand (validity end filled from the
+  competency's validity, the previous certificate superseded) — with an
+  expiry engine and to-dos for the manager and the HR responsible set in
+  the settings; qualification-level early warning rides
   the native hr.employee.skill cron.
 - Reports: a printable evaluation grid, an employees-by-competencies
   training matrix, and the four training documents printed from the live
@@ -86,6 +95,7 @@ Content-agnostic; competency content is seeded separately.
         "views/cbet_qualification_views.xml",
         "views/cbet_matrix_views.xml",
         "views/res_config_settings_views.xml",
+        "views/hr_job_views.xml",
         "views/cbet_menus.xml",
         "views/cbet_import_views.xml",
     ],

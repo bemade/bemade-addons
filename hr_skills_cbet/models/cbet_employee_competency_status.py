@@ -44,7 +44,8 @@ class CbetEmployeeCompetencyStatus(models.Model):
     )
 
     def init(self):
-        # Default 3-month expiry horizon baked into the view (UC-VAL-01 AC1 default).
+        # The 'expiring' horizon is the employee's company setting
+        # (cbet_expiry_horizon_months, UC-VAL-01 AC1), 3 months when unset.
         self.env.cr.execute(SQL("DROP VIEW IF EXISTS %s", SQL.identifier(self._table)))
         self.env.cr.execute(SQL(
             """
@@ -67,6 +68,8 @@ class CbetEmployeeCompetencyStatus(models.Model):
                 FROM cbet_qualification q
                 JOIN cbet_standard s ON s.id = q.standard_id AND s.active = TRUE
                 JOIN closure cl ON cl.standard_id = q.standard_id
+                -- Archived qualifications (a role left, UC-STD-06) owe nothing.
+                WHERE q.active = TRUE
             ),
             pairs AS (
                 SELECT employee_id, competency_id FROM required
@@ -101,11 +104,16 @@ class CbetEmployeeCompetencyStatus(models.Model):
                        WHEN l.id IS NULL THEN 'none'
                        WHEN l.valid_to IS NOT NULL AND l.valid_to < CURRENT_DATE THEN 'expired'
                        WHEN l.valid_to IS NOT NULL
-                            AND l.valid_to <= CURRENT_DATE + INTERVAL '3 months' THEN 'expiring'
+                            AND l.valid_to <= CURRENT_DATE
+                                + make_interval(months => COALESCE(
+                                    NULLIF(rc.cbet_expiry_horizon_months, 0), 3))
+                            THEN 'expiring'
                        ELSE 'valid'
                    END AS state
             FROM pairs p
             JOIN cbet_competency c ON c.id = p.competency_id
+            JOIN hr_employee e ON e.id = p.employee_id
+            LEFT JOIN res_company rc ON rc.id = e.company_id
             LEFT JOIN latest l
                    ON l.employee_id = p.employee_id
                   AND l.competency_id = p.competency_id

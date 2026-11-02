@@ -78,6 +78,12 @@ let providerLabelsPromise = null;
  * The provider selection labels ({imap: "Email (IMAP)", ...}) in the user's
  * language, fetched once per page load. Never rejects: on failure the
  * tooltip falls back to the raw provider key.
+ *
+ * `orm` must be the plain service (env.services.orm), not a component's
+ * useService("orm"): the promise is shared by every row, and a component's
+ * orm never settles once that component is destroyed. A list render that is
+ * replaced before the answer (a search typed while the list loads) would
+ * then leave every later row, and the whole list, waiting forever.
  */
 function loadProviderLabels(orm) {
   if (!providerLabelsPromise) {
@@ -92,16 +98,20 @@ function loadProviderLabels(orm) {
   return providerLabelsPromise;
 }
 
+/** Forget the fetched labels (tests start each case from an empty page). */
+export function resetProviderLabels() {
+  providerLabelsPromise = null;
+}
+
 /** Channel icon with its name as a tooltip. */
 export class ConversationChannelField extends Component {
   static template = "conversation_base.ConversationChannelField";
   static props = {...standardFieldProps};
 
   setup() {
-    this.orm = useService("orm");
     this.labels = useState({});
     onWillStart(async () => {
-      Object.assign(this.labels, await loadProviderLabels(this.orm));
+      Object.assign(this.labels, await loadProviderLabels(this.env.services.orm));
     });
   }
 

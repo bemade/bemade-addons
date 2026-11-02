@@ -19,7 +19,7 @@
 #
 {
     "name": "Conversation Base",
-    "version": "19.0.1.8.3",
+    "version": "19.0.1.10.2",
     "category": "Discuss",
     "summary": "First-class conversation model decoupled from any single business record.",
     "author": "Bemade Inc.",
@@ -45,10 +45,14 @@
     "assets": {
         "web.assets_backend": [
             "conversation_base/static/src/triage/**/*",
+            "conversation_base/static/src/message/**/*",
         ],
         # Tours ship in the test bundle only.
         "web.assets_tests": [
             "conversation_base/static/tests/tours/**/*",
+        ],
+        "web.assets_unit_tests": [
+            "conversation_base/static/tests/unit/**/*",
         ],
     },
     "installable": True,

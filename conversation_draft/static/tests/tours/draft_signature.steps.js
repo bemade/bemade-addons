@@ -29,7 +29,7 @@ export default [
     title: "Repérer la signature dans le texte de la réponse",
     narration:
       "Votre signature est déjà dans le texte de la réponse, sous une ligne vide prête pour votre message. C'est du texte ordinaire : vous pouvez la modifier ou l'effacer avant d'envoyer.",
-    selector: ".o_field_widget[name='body'] .odoo-editor-editable",
+    selector: ".modal .o_field_widget[name='body'] .odoo-editor-editable",
     containsText: "Cordialement",
     action: "assert",
   },
@@ -38,15 +38,16 @@ export default [
     title: "Envoyer la réponse",
     narration:
       "Envoyons la réponse. Rien n'est ajouté au moment de l'envoi : le destinataire reçoit exactement ce que vous voyez, avec votre signature une seule fois.",
-    selector: ".o_form_statusbar button[name='action_send']",
+    selector: ".modal-footer button[name='action_send']",
     action: "click",
-    navigates: true,
   },
   {
     id: "sent",
     title: "Constater que la réponse est envoyée",
-    narration: "La réponse est envoyée et ne peut plus être modifiée.",
-    selector: ".o_form_statusbar:not(:has(button[name='action_send']))",
+    narration:
+      "La fenêtre se ferme et la réponse apparaît dans le fil de la conversation.",
+    selector: "body:not(:has(.modal)) .o-mail-Message",
+    containsText: "Cordialement",
     action: "assert",
   },
 ];
