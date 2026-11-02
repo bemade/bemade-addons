@@ -541,8 +541,9 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             
         record = self._check_access_to_task_model(model, res_id)
 
-        # Validate required fields
-        activity_type_id = post.get('activity_type_id')
+        # Validate required fields. Task 1739 (owner 2026-11-02): no type
+        # choice — every clinic activity is a To-Do (a posted
+        # activity_type_id, e.g. from a stale page, is ignored).
         summary = post.get('summary')
         user_id = post.get('user_id')
         date_deadline = post.get('date_deadline')
@@ -563,7 +564,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         elif model == 'sports.event':
             default_return_url = f'/my/event/{int(res_id)}'
 
-        if not activity_type_id or not summary or not user_id or not date_deadline:
+        if not summary or not user_id or not date_deadline:
             return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
             return request.redirect(_append_query(return_url, 'error=missing_fields'))
             
@@ -590,7 +591,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return request.redirect(_append_query(return_url, 'error=invalid_model'))
             
         vals = {
-            'activity_type_id': int(activity_type_id),
+            'activity_type_id': request.env['mail.activity']._sc_todo_type().id,
             'summary': summary,
             'note': post.get('note', ''),
             'user_id': int(user_id),

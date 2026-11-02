@@ -307,7 +307,6 @@
                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'travel_end', lbl, 'datetime-local', savedLabel=sent_lbl)"/></t>
                 <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
             </div>
-            <p t-if="not row['editable'] and row['state'] == 'invoiced'" class="o_sc_meta">Invoiced (read-only)</p>
         </article>
     </template>
 

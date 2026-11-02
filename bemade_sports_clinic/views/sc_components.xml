@@ -1233,7 +1233,7 @@
                                  Non | Oui (Oui green, Non grey), on the ✓'s
                                  line; label and options are t-set texts (an
                                  extracted term never holds the radio). -->
-                            <t t-set="sc_epipen_ask_label">Carries an EpiPen</t>
+                            <t t-set="sc_epipen_ask_label">EpiPen?</t>
                             <t t-set="sc_epipen_no">No</t>
                             <t t-set="sc_epipen_yes">Yes</t>
                             <div class="o_sc_med_epipen_ask" role="radiogroup" data-sc-med-epipen-ask="1"

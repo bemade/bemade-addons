@@ -91,7 +91,7 @@
         « Add Emergency Contact » / « Upload Document » (owner review
         2026-10-10: same UX across the tabs; was a button opening a dialog).
         Variables: add_model, add_res_id, add_return_url, add_team_id,
-        activity_types, assignable_users, default_activity_type_id, today.
+        assignable_users, today.
     -->
     <template id="sc_activity_add_sheet" name="App shell: add activity (inline)">
         <!-- Task 1607: opened by the list header's « + Ajouter ». -->
@@ -112,15 +112,8 @@
                 <input type="hidden" name="res_id" t-att-value="add_res_id"/>
                 <input type="hidden" name="return_url" t-att-value="add_return_url"/>
                 <input t-if="add_team_id" type="hidden" name="team_id" t-att-value="add_team_id"/>
-                <div class="o_sc_field">
-                    <label for="sc_add_activity_type" class="o_sc_field_label">Activity Type</label>
-                    <select id="sc_add_activity_type" name="activity_type_id" class="o_sc_input o_sc_select" required="required">
-                        <t t-foreach="activity_types" t-as="atype">
-                            <option t-att-value="atype.id" t-out="atype.name"
-                                    t-att-selected="'selected' if atype.id == default_activity_type_id else None"/>
-                        </t>
-                    </select>
-                </div>
+                <!-- Task 1739 (owner 2026-11-02): no type choice — every
+                     activity is a To-Do (« À faire »), set by the server. -->
                 <div class="o_sc_field">
                     <label for="sc_add_activity_summary" class="o_sc_field_label">Summary</label>
                     <input type="text" id="sc_add_activity_summary" name="summary" class="o_sc_input" required="required"
@@ -236,16 +229,7 @@
                     <input t-if="team_id" type="hidden" name="team_id" t-att-value="team_id"/>
                     <input t-if="clinic_event" type="hidden" name="clinic_id" t-att-value="clinic_event.id"/>
                 </t>
-                <div class="o_sc_field">
-                    <label for="sc_act_type" class="o_sc_field_label">Activity Type</label>
-                    <select id="sc_act_type" name="activity_type_id" class="o_sc_input o_sc_select" required="required">
-                        <t t-set="sc_selected_type" t-value="activity.activity_type_id.id if activity else default_activity_type_id"/>
-                        <t t-foreach="activity_types" t-as="atype">
-                            <option t-att-value="atype.id" t-out="atype.name"
-                                    t-att-selected="'selected' if atype.id == sc_selected_type else None"/>
-                        </t>
-                    </select>
-                </div>
+                <!-- Task 1739: no type choice (all To-Do). -->
                 <div class="o_sc_field">
                     <label for="sc_act_summary" class="o_sc_field_label">Summary</label>
                     <input type="text" id="sc_act_summary" name="summary" class="o_sc_input" required="required"

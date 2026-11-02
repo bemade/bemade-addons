@@ -6911,7 +6911,6 @@ msgstr "Facturé"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic._timesheet_card
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_timesheet_card
 msgid "Invoiced (read-only)"
 msgstr "Facturé (lecture seule)"
 
@@ -13902,7 +13901,7 @@ msgstr "Votre prénom, votre nom et votre date de naissance servent uniquement �
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_created
 msgid "Your injury report has been successfully submitted."
-msgstr "Votre rapport de blessure a été soumise avec succès."
+msgstr "Votre rapport de blessure a été soumis avec succès."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_account
@@ -17604,11 +17603,6 @@ msgstr ""
 #: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
 msgid "Change organization"
 msgstr "Changer d'organisation"
-
-#. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
-msgid "Carries an EpiPen"
-msgstr "Porte un EpiPen"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_settings
