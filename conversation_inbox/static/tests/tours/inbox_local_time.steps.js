@@ -1,6 +1,6 @@
 // Reading the date of an email on the Inbox screen: the time shown is the
 // time where you work, in the same format as the rest of Odoo. The message
-// below arrived at 09:00 UTC on a summer day, which is 05:00 in Toronto.
+// below was sent at 18:10 Toronto time, which is 23:10 UTC.
 export default [
   {
     id: "open_inbox",
@@ -21,9 +21,9 @@ export default [
     id: "see_local_time",
     title: "Lire l'heure du courriel",
     narration:
-      "L'heure affichée à droite de la ligne est la vôtre : le courriel reçu à 9 h, heure universelle, s'affiche à 5 h, heure de Toronto.",
+      "L'heure affichée à droite de la ligne est la vôtre : le courriel envoyé à 18 h 10, heure de Toronto, s'affiche à 18 h 10, et non plus à 23 h 10, l'heure universelle.",
     selector: ".o_inbox_row_date",
     action: "assert",
-    containsText: "05:00",
+    containsText: "18:10",
   },
 ];

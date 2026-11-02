@@ -1,6 +1,6 @@
 # Acceptance criteria: the Inbox screen shows a message's date in the
 # viewer's time zone (here a Toronto browser), in Odoo's date-time format.
-# A message received at 09:00 UTC in August shows 05:00.
+# A message sent at 18:10 Toronto time (23:10 UTC) shows 18:10.
 
 from unittest.mock import patch
 
@@ -24,7 +24,7 @@ def _stub(external_id, subject, date):
 
 def _fake_browse(self, query=None, page=1):
     if (page or 1) <= 1:
-        items = [_stub("lt1", "Local Time Message", "2026-08-14 09:00:00")]
+        items = [_stub("lt1", "Local Time Message", "2026-11-01 23:10:20")]
         return {"items": items, "page": 1, "page_size": 1, "has_more": True}
     items = [_stub("lt2", "Second Page Message", "2026-01-15 17:00:00")]
     return {"items": items, "page": 2, "page_size": 1, "has_more": False}
