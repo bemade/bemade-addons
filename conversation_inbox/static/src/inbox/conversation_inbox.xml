@@ -174,7 +174,7 @@
                                     </div>
                                     <span
                     class="text-muted flex-shrink-0"
-                    t-esc="item.date"
+                    t-esc="item.date or ''"
                   />
                                     <div
                     class="o_inbox_row_actions d-flex flex-shrink-0 gap-1 ms-2"
