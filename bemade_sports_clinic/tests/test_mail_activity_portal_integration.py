@@ -167,7 +167,8 @@ class TestMailActivityPortalIntegration(HttpCase):
         self.assertEqual(response.status_code, 200, "Should access creation form for authorized patient")
         
         # Check that form contains expected elements
-        self.assertIn('activity_type_id', response.text, "Form should contain activity type field")
+        # Task 1739: no activity-type picker (every activity is a To-Do).
+        self.assertNotIn('name="activity_type_id"', response.text, "Form should not offer a type")
         self.assertIn('summary', response.text, "Form should contain summary field")
         self.assertIn('date_deadline', response.text, "Form should contain deadline field")
 
@@ -668,7 +669,9 @@ class TestMailActivityPortalIntegration(HttpCase):
                       "Add header must scope the new activity to the team model")
         self.assertIn(f'name="res_id" value="{team.id}"', body,
                       "Add header must scope the new activity to this team")
-        for field_name in ('activity_type_id', 'date_deadline', 'user_id', 'summary'):
+        # Task 1739: no activity-type field (every activity is a To-Do).
+        self.assertNotIn('name="activity_type_id"', body)
+        for field_name in ('date_deadline', 'user_id', 'summary'):
             self.assertIn(field_name, body,
                           f"Add header should expose the {field_name} field")
 

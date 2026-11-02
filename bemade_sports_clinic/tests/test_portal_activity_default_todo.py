@@ -66,7 +66,17 @@ class TestPortalActivityDefaultTodo(HttpCase):
         resp = self.url_open(f"/my/activity/create?model=sports.patient&res_id={self.patient.id}", timeout=30)
         self.assertEqual(resp.status_code, 200)
 
-        # Assert the To Do option is pre-selected in the HTML
-        # QWeb renders selected attribute when t-att-selected resolves truthy, typically selected="selected"
-        pattern = rf'<option[^>]+value="{self.todo_type_id}"[^>]+selected'
-        self.assertRegex(resp.text, pattern, msg="Expected the 'To Do' activity type to be pre-selected")
+        # Task 1739 (owner 2026-11-02): no type picker any more — every
+        # activity is a To-Do, set by the server.
+        self.assertNotIn('name="activity_type_id"', resp.text)
+        self.url_open('/my/activity/save', data={
+            'csrf_token': self._sc_csrf(resp.text),
+            'model': 'sports.patient', 'res_id': self.patient.id, 'summary': 'Default To-Do 1739',
+            'user_id': self.tp_user.id, 'date_deadline': fields.Date.today().isoformat()})
+        created = self.env['mail.activity'].search([('summary', '=', 'Default To-Do 1739')])
+        self.assertEqual(created.activity_type_id.id, self.todo_type_id)
+
+    @staticmethod
+    def _sc_csrf(html):
+        match = re.search(r'name="csrf_token" value="([^"]+)"', html)
+        return match.group(1) if match else ''
