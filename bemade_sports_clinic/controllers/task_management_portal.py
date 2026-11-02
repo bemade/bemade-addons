@@ -3,7 +3,9 @@ from odoo import http, fields, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
-from .access_control_mixin import AccessControlMixin, parse_portal_date
+from .access_control_mixin import (
+    AccessControlMixin, parse_portal_date, sc_deadline_in_past, sc_past_deadline_message,
+)
 from .app_shell import AppShellMixin, sc_file_size
 from ..models import sc_app_nav, sc_app_roles
 from datetime import date, timedelta
@@ -333,6 +335,8 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'missing_fields': env._("Please fill in all required fields."),
                 'invalid_user': env._("You cannot assign this activity to that user."),
                 'not_allowed': env._("You cannot change this activity."),
+                # Task 1744.
+                'past_deadline': sc_past_deadline_message(env),
             }.get(params.get('error')),
         }
 
@@ -590,12 +594,17 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
             return request.redirect(_append_query(return_url, 'error=invalid_model'))
             
+        deadline = parse_portal_date(date_deadline)  # task 1640
+        # Task 1744: never a due date in the past.
+        if sc_deadline_in_past(deadline):
+            return_url = _sanitize_return_url(post.get('return_url'), default_return_url)
+            return request.redirect(_append_query(return_url, 'error=past_deadline'))
         vals = {
             'activity_type_id': request.env['mail.activity']._sc_todo_type().id,
             'summary': summary,
             'note': post.get('note', ''),
             'user_id': int(user_id),
-            'date_deadline': parse_portal_date(date_deadline),  # task 1640
+            'date_deadline': deadline,
             'res_model_id': model_id,
             'res_id': int(res_id),
         }
@@ -645,6 +654,10 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             update_vals['note'] = post['note']
         if 'date_deadline' in post:
             update_vals['date_deadline'] = parse_portal_date(post['date_deadline'])  # task 1640
+            # Task 1744: a CHANGED due date may not be in the past.
+            if sc_deadline_in_past(update_vals['date_deadline'], activity.date_deadline):
+                return request.redirect(_append_query(
+                    f'/my/activity/{activity.id}/edit', 'error=past_deadline'))
 
         # Assignee change from the edit page (task 1500): honoured, and
         # validated with the SAME per-actor rule as save / reassign. Outside
@@ -746,6 +759,16 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         new_deadline = post.get('new_deadline')
         if not new_deadline:
             return request.redirect('/my/activities')
+        # Task 1744: parsed like the other routes (task 1640); never a NEW
+        # due date in the past.
+        try:
+            new_deadline = parse_portal_date(new_deadline)
+        except ValidationError:
+            new_deadline = False
+        if not new_deadline or sc_deadline_in_past(new_deadline, activity.date_deadline):
+            return_url = self._safe_return_url(post.get('return_url'), '/my/activities')
+            return request.redirect(_append_query(
+                return_url, 'error=past_deadline' if new_deadline else 'error=missing_fields'))
 
         activity.sudo().write({'date_deadline': new_deadline})
         

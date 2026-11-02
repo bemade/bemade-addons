@@ -142,6 +142,9 @@ class TestFragmentsEvent1611(FragmentsCommon):
         url = '/my/activity/%s' % self.act_player.id
         akey = 'mail.activity:%s:%%s' % self.act_player.id
         past = fields.Date.to_string(fields.Date.today() - timedelta(days=3))
+        # Task 1744: the portal refuses a NEW past due date — the activity is
+        # made overdue internally; saving its (stored) date is allowed.
+        self.act_player.sudo().date_deadline = past
         payload = self._saved(self.act_player, 'date_deadline', past)
         self.assertTrue(payload['live_counts'])
         for part in ('chips', 'read', 'appbar'):

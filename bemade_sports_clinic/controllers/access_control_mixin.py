@@ -62,6 +62,21 @@ def parse_portal_date(value):
     return day
 
 
+def sc_deadline_in_past(day, current=None):
+    """Task 1744 (owner 2026-11-02): True when ``day`` is a NEW activity due
+    date (not the stored ``current`` one: an overdue activity saved without
+    touching its date is fine) before the user's today (their timezone,
+    Québec). The portal routes refuse it; crons / internal code do not go
+    through them."""
+    if not day or day == current:
+        return False
+    return day < fields.Date.context_today(http.request.env.user)
+
+
+def sc_past_deadline_message(env):
+    return env._("The due date cannot be in the past.")
+
+
 class AccessControlMixin:
     """
     Mixin class providing common access control methods for portal controllers.

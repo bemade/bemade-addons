@@ -122,7 +122,7 @@
                 <div class="o_sc_field">
                     <label for="sc_add_activity_deadline" class="o_sc_field_label">Due Date</label>
                     <input type="date" id="sc_add_activity_deadline" name="date_deadline" class="o_sc_input" required="required"
-                           t-att-min="today" t-att-value="today"/>
+                           t-att-min="sc_today" t-att-value="sc_today"/>
                 </div>
                 <div class="o_sc_field">
                     <label for="sc_add_activity_user" class="o_sc_field_label">Assigned To</label>
@@ -237,8 +237,11 @@
                 </div>
                 <div class="o_sc_field">
                     <label for="sc_act_deadline" class="o_sc_field_label">Due Date</label>
+                    <!-- Task 1744: no NEW due date in the past (the server
+                         refuses it too; a stored overdue one stays). -->
                     <input type="date" id="sc_act_deadline" name="date_deadline" class="o_sc_input" required="required"
-                           t-att-value="activity.date_deadline.isoformat() if activity else today"/>
+                           t-att-min="min(sc_today, activity.date_deadline.isoformat()) if activity else sc_today"
+                           t-att-value="activity.date_deadline.isoformat() if activity else sc_today"/>
                 </div>
                 <div class="o_sc_field">
                     <label for="sc_act_user" class="o_sc_field_label">Assigned To</label>
@@ -291,10 +294,11 @@
             <!-- Task 1595: « Créée le ». Task 1736 r1: and by whom. -->
             <dt>Created</dt>
             <dd><span data-sc-activity-created="1" t-field="activity.create_date" t-options="{'widget': 'datetime', 'hide_seconds': True}"/></dd>
-            <t t-set="act_creator" t-value="activity.sudo().create_uid"/>
+            <!-- Task 1744: « Créé automatiquement » for the system's. -->
+            <t t-set="act_creator" t-value="activity.sudo().sc_created_by_label"/>
             <t t-if="act_creator">
                 <dt>Created by</dt>
-                <dd><span data-sc-activity-creator="1" t-out="act_creator.name"/></dd>
+                <dd><span data-sc-activity-creator="1" t-out="act_creator"/></dd>
             </t>
         </dl>
         <div t-if="activity.note" class="o_sc_activity_note"><div t-field="activity.note"/></div>
@@ -377,7 +381,7 @@
                     <t t-set="lbl">Summary</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'summary', lbl)"/></t>
                     <t t-set="lbl">Due Date</t>
-                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'date_deadline', lbl, 'date')"/></t>
+                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'date_deadline', lbl, 'date', min=sc_today)"/></t>
                     <t t-set="lbl">Assigned To</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'user_id', lbl, 'select', options=sc_activity_user_options, picker=True, pickerKey='user')"/></t>
                     <t t-set="lbl">Note</t>

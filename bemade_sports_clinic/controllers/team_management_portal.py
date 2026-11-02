@@ -2,7 +2,7 @@ from odoo import http, fields, _
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
-from .access_control_mixin import AccessControlMixin, parse_portal_date
+from .access_control_mixin import AccessControlMixin, parse_portal_date, sc_past_deadline_message
 from .app_shell import AppShellMixin
 import logging
 from datetime import date, timedelta
@@ -425,7 +425,12 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 values['success'] = _("Player has been added to the team.")
                 
             if error:
-                values['error'] = error
+                # Task 1744: the activity add panel's refusals in words.
+                values['error'] = {
+                    'past_deadline': sc_past_deadline_message(request.env),
+                    'missing_fields': _("Please fill in all required fields."),
+                    'invalid_user': _("You cannot assign this activity to that user."),
+                }.get(error, error)
             
             # Task 1542: the app shell (switch on) or today's template, byte
             # for byte (switch off). The shell-only values are computed only

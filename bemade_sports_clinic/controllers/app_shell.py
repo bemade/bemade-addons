@@ -53,7 +53,9 @@ from odoo.addons.portal.controllers.portal import CustomerPortal
 from ..models import sc_app_nav, sc_app_roles
 from ..models.patient import IDENTITY_CONFIRM_KEY, IDENTITY_FIELDS
 from ..models.patient_injury import STAGE_ORDER
-from .access_control_mixin import AccessControlMixin, parse_portal_date
+from .access_control_mixin import (
+    AccessControlMixin, parse_portal_date, sc_deadline_in_past, sc_past_deadline_message,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -279,6 +281,9 @@ def _activity_write(ctrl, activity, field, value):
         day = _date_value(value)
         if not day:
             raise ValidationError(_("Please fill in all required fields."))
+        # Task 1744: never a NEW due date in the past.
+        if sc_deadline_in_past(day, record.date_deadline):
+            raise ValidationError(sc_past_deadline_message(request.env))
         record.write({'date_deadline': day})
     elif field == 'note':
         record.write({'note': plaintext2html(value) if (value or '').strip() else False})

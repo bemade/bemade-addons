@@ -18182,3 +18182,20 @@ msgstr "Vous ne suivez aucun joueur. Utilisez ★ sur la fiche d'un joueur."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_players_row_followed
 msgid "You follow this player"
 msgstr "Vous suivez ce joueur"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
+msgid "The due date cannot be in the past."
+msgstr "La date d'échéance ne peut pas être dans le passé."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/mail_activity.py:0
+msgid "Created automatically"
+msgstr "Créé automatiquement"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_mail_activity__sc_created_by_label
+msgid "Created by (label)"
+msgstr "Créé par (libellé)"

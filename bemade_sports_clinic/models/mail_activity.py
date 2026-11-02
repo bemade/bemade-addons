@@ -50,6 +50,28 @@ class MailActivity(models.Model):
         help="Technical: the creator's « complete the medical file » To-Do (task 1717).",
     )
 
+    # Task 1744 (owner 2026-11-02): « Créé par » reads « Créé
+    # automatiquement » for what the system created (crons, scripts:
+    # OdooBot / the superuser, the public user) — people keep their name.
+    sc_created_by_label = fields.Char(
+        string="Created by (label)", compute="_compute_sc_created_by_label", compute_sudo=True)
+
+    @api.depends("create_uid")
+    @api.depends_context("lang")
+    def _compute_sc_created_by_label(self):
+        system = self.env.ref("base.partner_root", raise_if_not_found=False)
+        public = self.env.ref("base.public_user", raise_if_not_found=False)
+        auto = self.env._("Created automatically")
+        for activity in self:
+            user = activity.create_uid
+            if not user:
+                activity.sc_created_by_label = False
+            elif (user._is_superuser() or user == public
+                  or (system and user.partner_id == system)):
+                activity.sc_created_by_label = auto
+            else:
+                activity.sc_created_by_label = user.name
+
     @api.model
     def _sc_todo_type(self):
         """The To-Do activity type every clinic activity uses (task 1739)."""

@@ -1094,7 +1094,7 @@
                         <t t-set="lbl">Summary</t>
                         <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'summary', lbl, inputId='sc_act_%s_summary' % sc_act_uid)"/></t>
                         <t t-set="lbl">Due Date</t>
-                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'date_deadline', lbl, 'date', inputId='sc_act_%s_date_deadline' % sc_act_uid)"/></t>
+                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'date_deadline', lbl, 'date', inputId='sc_act_%s_date_deadline' % sc_act_uid, min=sc_today)"/></t>
                         <t t-if="can_reassign">
                             <t t-set="lbl">Assigned To</t>
                             <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'user_id', lbl, 'select', options=sc_activity_assignee_options(activity), picker=True, pickerKey='user', inputId='sc_act_%s_user_id' % sc_act_uid)"/></t>

@@ -6,7 +6,7 @@ from odoo import fields, http, _
 from odoo.tools import format_date, format_datetime
 from odoo.exceptions import UserError, AccessError, MissingError
 
-from .access_control_mixin import AccessControlMixin
+from .access_control_mixin import AccessControlMixin, sc_past_deadline_message
 from ..models import sc_app_roles
 from ..models.sc_name_match import NEAR, NameIndex, words as sc_words_of
 from .app_shell import AppShellMixin, sc_country_options, sc_state_options
@@ -1320,6 +1320,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'upload_failed': env._("The upload failed."),
             'missing_fields': env._("Please fill in all required fields."),
             'invalid_user': env._("You cannot assign this activity to that user."),
+            'past_deadline': sc_past_deadline_message(env),  # task 1744
             'injury_visibility': env._("Please choose whether coaches can see this injury."),
             'injury_diagnosis': env._("Please enter a diagnosis."),
             'undo_expired': env._("This injury can no longer be undone; delete it from its card."),
