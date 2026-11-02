@@ -4,6 +4,7 @@ from . import test_conversation_inbox_views
 from . import test_conversation_inbox_tour
 from . import test_conversation_inbox_bulk_tour
 from . import test_conversation_inbox_auto_archive
+from . import test_conversation_inbox_browse_date
 from . import test_conversation_inbox_record_link
 from . import test_conversation_inbox_link_picker
 from . import test_shared_inbox_tours
@@ -12,3 +13,4 @@ from . import test_conversation_inbox_my_mailboxes
 from . import test_reply_wizard_attachment_access
 from . import test_reply_window_tour
 from . import test_conversation_app_landing
+from . import test_inbox_local_time_tour
