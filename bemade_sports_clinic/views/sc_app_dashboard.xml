@@ -130,7 +130,14 @@
     <template id="sc_dw_todo" name="App dashboard: to do">
         <div t-if="section['lines']" class="o_sc_list o_sc_dw_todo_lines">
             <t t-foreach="section['lines']" t-as="line">
-                <details class="o_sc_disclosure o_sc_dw_todo_line" t-att-data-sc-todo="line['kind']">
+                <!-- Task 1740: an injury line is a LIST read fragment — a
+                     « Vérifier » drops the card at once (its items: the
+                     injury cards), the count follows; the last one gone,
+                     the line hides. -->
+                <t t-set="sc_todo_list_key" t-value="('sc.dashboard:todo:%s:list' % line['row_scope']) if line['card'] == 'injury' else None"/>
+                <details class="o_sc_disclosure o_sc_dw_todo_line" t-att-data-sc-todo="line['kind']"
+                         t-att-data-sc-fragment="sc_todo_list_key"
+                         t-att-data-sc-fragment-mode="'list' if sc_todo_list_key else None">
                     <summary class="o_sc_entity_row o_sc_dw_todo_head">
                         <span class="o_sc_row_text"><span class="o_sc_row_title" t-out="line['label']"/></span>
                         <span class="o_sc_row_trailing">

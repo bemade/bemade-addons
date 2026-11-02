@@ -991,7 +991,10 @@ SAVE_REGISTRY = {
         # The card (summary, read view), the injury page's title / details,
         # the player's fragments (card order, active list, choices) and the
         # linked-injury name in the treatment notes' meta lines.
-        'refresh': {'*': ['*', _injury_patient_fragments, 'sports.treatment.note:*:meta']},
+        # Task 1740: the dashboard's « À faire » counts and its injury lines
+        # (a verified injury leaves « Injuries to verify » at once).
+        'refresh': {'*': ['*', _injury_patient_fragments, 'sports.treatment.note:*:meta',
+                          'sc.dashboard:todo:*', 'sc.dashboard:todo:*:list']},
     },
     'sports.treatment.note': {
         'fields': {'note': _TP_ROLES, 'date': _TP_ROLES, 'injury_id': _TP_ROLES},
