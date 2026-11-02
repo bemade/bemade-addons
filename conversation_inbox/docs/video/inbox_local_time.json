@@ -1,0 +1,12 @@
+{
+  "stepsFile": "../../static/tests/tours/inbox_local_time.steps.js",
+  "startPath": "/odoo/action-conversation_inbox.conversation_inbox_client_action",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "lang": "fr_CA",
+  "voice": "fr_FR-siwis-medium",
+  "title": "Lire l'heure d'un courriel dans la boîte de réception",
+  "introNarration": "Dans cette démonstration, nous voyons que la boîte de réception de Conversations affiche maintenant la date et l'heure de chaque courriel dans votre fuseau horaire, et non plus en heure universelle.",
+  "outroTitle": "À retenir",
+  "outroNarration": "L'heure affichée est celle de votre fuseau horaire, dans le même format que les autres dates d'Odoo, y compris lors du changement d'heure. Le reste de l'écran fonctionne comme avant."
+}

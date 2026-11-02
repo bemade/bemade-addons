@@ -1,6 +1,7 @@
 /** @odoo-module */
 
 import {Component, markup, onWillStart, useState} from "@odoo/owl";
+import {deserializeDateTime, formatDateTime} from "@web/core/l10n/dates";
 import {ConfirmationDialog} from "@web/core/confirmation_dialog/confirmation_dialog";
 import {_t} from "@web/core/l10n/translation";
 import {registry} from "@web/core/registry";
@@ -78,6 +79,19 @@ export class ConversationInboxAction extends Component {
     return (
       (error && error.data && error.data.message) || error.message || String(error)
     );
+  }
+
+  /**
+   * The row's date in the viewer's time zone and date-time format, like any
+   * Datetime field. The server sends the instant as naive UTC; a missing or
+   * unreadable date renders as an empty cell, never "Invalid DateTime".
+   */
+  formatItemDate(item) {
+    if (!item.date) {
+      return "";
+    }
+    const value = deserializeDateTime(item.date);
+    return value.isValid ? formatDateTime(value) : "";
   }
 
   async loadTransports() {
