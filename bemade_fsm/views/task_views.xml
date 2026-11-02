@@ -108,8 +108,7 @@
         <field name="domain">[('is_fsm', '=', True),
                               ('project_id', '!=', False),
                               ('display_in_project', '=', True),
-                              ('parent_id', '=', False)]
-        </field>
+                              ('parent_id', '=', False)]</field>
     </record>
     <record
     id="industry_fsm.project_task_action_to_schedule_fsm"
@@ -119,16 +118,14 @@
         <field name="domain">[('is_fsm', '=', True),
                               ('project_id', '!=', False),
                               ('display_in_project', '=', True),
-                              ('parent_id', '=', False)]
-        </field>
+                              ('parent_id', '=', False)]</field>
     </record>
     <record id="industry_fsm.project_task_action_all_fsm" model="ir.actions.act_window">
         <field name="context">{'search_default_is_parent_task': True}</field>
         <field name="domain">[('is_fsm', '=', True),
                               ('project_id', '!=', False),
                               ('display_in_project', '=', True),
-                              ('parent_id', '=', False)]
-        </field>
+                              ('parent_id', '=', False)]</field>
     </record>
     <record
     id="industry_fsm_sale.project_task_action_to_invoice_fsm"
@@ -139,8 +136,7 @@
                               ('project_id', '!=', False),
                               ('display_in_project', '=', True),
                               ('parent_id', '=', False),
-                              ('invoice_status', '=', 'to invoice')]
-        </field>
+                              ('invoice_status', '=', 'to invoice')]</field>
     </record>
     <!-- Add parent_id = false to domain for planning actions as well -->
     <record
@@ -151,8 +147,7 @@
         <field name="domain">[('is_fsm', '=', True),
                               ('project_id', '!=', False),
                               ('display_in_project', '=', True),
-                              ('parent_id', '=', False)]
-        </field>
+                              ('parent_id', '=', False)]</field>
     </record>
     <record
     id="industry_fsm.project_task_action_fsm_planning_groupby_project"
@@ -162,8 +157,7 @@
         <field name="domain">[('is_fsm', '=', True),
                               ('project_id', '!=', False),
                               ('display_in_project', '=', True),
-                              ('parent_id', '=', False)]
-        </field>
+                              ('parent_id', '=', False)]</field>
     </record>
     <record
     id="industry_fsm_report.project_task_action_fsm_planning_groupby_worksheet"
@@ -173,8 +167,7 @@
         <field name="domain">[('is_fsm', '=', True),
                               ('project_id', '!=', False),
                               ('display_in_project', '=', True),
-                              ('parent_id', '=', False)]
-        </field>
+                              ('parent_id', '=', False)]</field>
     </record>
     <!--        <record id="project_task_view_calendar_fsm" model="ir.ui.view">-->
     <!--            <field name="name">bemade_fsm.project_task_view_calendar_fsm</field>-->
