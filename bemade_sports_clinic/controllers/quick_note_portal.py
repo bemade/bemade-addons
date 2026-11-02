@@ -264,7 +264,14 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def portal_quick_note_archive(self, note_id, **post):
         """Dismiss / mark handled — archiving IS the 'done' concept here."""
         self._check_quick_note_access()
-        self._get_own_note(note_id).write({'active': False})
+        note = self._get_own_note(note_id)
+        note.write({'active': False})
+        # Task 1736 (owner 2026-11-01): the card's archive icon — « Note
+        # archived · Undo » (the toast) instead of the banner.
+        if post.get('sc_undo'):
+            self._sc_offer_undo(request.env._("Note archived."),
+                                '/my/notepad/%s/restore?undo=1' % note.id)
+            return request.redirect('/my/notepad#quick-add')
         return request.redirect('/my/notepad?success=note_archived#quick-add')
 
     @http.route(['/my/notepad/<int:note_id>/restore'], type='http', auth='user',
@@ -272,7 +279,12 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def portal_quick_note_restore(self, note_id, **post):
         """Undo a dismissal — a mis-tapped Dismiss must not lose the thought."""
         self._check_quick_note_access()
-        self._get_own_note(note_id).write({'active': True})
+        note = self._get_own_note(note_id)
+        note.write({'active': True})
+        # Task 1736: the undo toast's « Annuler » — back to the open notes,
+        # on the note.
+        if post.get('undo'):
+            return request.redirect('/my/notepad?success=note_restored#note-%s' % note.id)
         return request.redirect('/my/notepad?show_archived=1&success=note_restored')
 
     @http.route(['/my/notepad/<int:note_id>/delete'], type='http', auth='user',

@@ -84,7 +84,12 @@ class TestAppShellPencil(AppShellCommon):
         cards = tree.xpath('//*[@data-sc-edit-card="%s"]' % key)
         self.assertEqual(len(cards), 1, key)
         card = cards[0]
-        self.assertEqual(len(card.xpath('.//button[@data-sc-edit-toggle]')), 1, key)
+        # Task 1736 (deliberate update): a card's pencil may sit in its
+        # enclosing card's top bar, pointing at it (data-sc-edit-for: the
+        # injury card's Details).
+        pencils = card.xpath('.//button[@data-sc-edit-toggle]') + tree.xpath(
+            '//button[@data-sc-edit-toggle][@data-sc-edit-for="%s"]' % key)
+        self.assertEqual(len(pencils), 1, key)
         self.assertTrue(card.xpath('.//*[@data-sc-edit-view="read"]'), key)
         edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
         self.assertEqual(edit.get('hidden'), 'hidden', key)

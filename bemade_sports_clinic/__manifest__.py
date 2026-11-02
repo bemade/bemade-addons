@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.129.2",
+    'version': "19.0.1.131.2",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -392,6 +392,9 @@ therapists, Missing timesheets.
             "bemade_sports_clinic/static/src/js/sc_dashboard_live.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.xml",
+            # Task 1736 r1: an activity card's edit fields, mounted on its
+            # first pencil tap.
+            "bemade_sports_clinic/static/src/js/sc_lazy_edit.js",
             # Task 1539: the shell's activity sheets (replaces, in the shell
             # only, the legacy activity partials' inline scripts).
             "bemade_sports_clinic/static/src/js/sc_activities.js",

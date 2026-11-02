@@ -203,14 +203,17 @@
         <article t-attf-class="o_sc_card o_sc_quick_note #{'o_sc_edit_card' if not archived else ''}"
                  t-att-data-sc-quick-note-id="row['id']" t-att-id="'note-%s' % row['id']"
                  t-att-data-sc-edit-card="('quick-note-%s' % row['id']) if not archived else None">
+            <!-- Task 1736 (owner 2026-11-01): the shared top bar — archive
+                 (recoverable: an undo toast), the red trash (for good: it
+                 asks first; while editing, or always on an archived note,
+                 which has no pencil), the pencil. -->
             <div class="o_sc_edit_card_head">
                 <p class="o_sc_meta" t-out="row['when']"/>
-                <t t-if="not archived">
-                    <t t-set="sc_edit_label">Edit</t>
-                    <button type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1" aria-expanded="false"
-                            t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label" data-sc-action="note.edit">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
-                    </button>
+                <t t-call="bemade_sports_clinic.sc_card_icons">
+                    <t t-set="ci_archive" t-value="not archived and {'action': '/my/notepad/%s/archive' % row['id'], 'hidden': {'sc_undo': '1'}, 'key': 'note.archive'}"/>
+                    <t t-set="ci_editable" t-value="not archived"/>
+                    <t t-set="ci_edit_key" t-value="'note.edit'"/>
+                    <t t-set="ci_trash" t-value="{'sheet': 'sc_qn_delete_%s' % row['id'], 'key': 'note.delete', 'always': archived}"/>
                 </t>
             </div>
             <!-- Task 1611: the text and the link chips, a read fragment. -->
@@ -235,23 +238,13 @@
                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'event_id', lbl, 'select', options=sc_qn_options['event_id'], picker=True, pickerKey='event', optionMeta=sc_qn_meta['event_id'])"/></t>
                 <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
             </div>
-            <div class="o_sc_card_actions">
-                <t t-if="archived">
-                    <form t-att-action="'/my/notepad/%s/restore' % row['id']" method="post" class="o_sc_inline_form">
-                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                        <button type="submit" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-action="note.restore">Restore</button>
-                    </form>
-                </t>
-                <t t-else="">
-                    <form t-att-action="'/my/notepad/%s/archive' % row['id']" method="post" class="o_sc_inline_form">
-                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                        <!-- Task 1648: « Archiver » (was « Terminer », taken
-                             for the editing « Done »). -->
-                        <button type="submit" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-action="note.archive">Archive</button>
-                    </form>
-                </t>
-                <button type="button" class="o_sc_btn o_sc_btn_danger o_sc_btn_sm" t-att-data-sc-sheet-open="'sc_qn_delete_%s' % row['id']"
-                        data-sc-action="note.delete">Delete</button>
+            <!-- « Restore » of an archived note stays a text button (owner
+                 2026-11-01: unchanged). -->
+            <div t-if="archived" class="o_sc_card_actions">
+                <form t-att-action="'/my/notepad/%s/restore' % row['id']" method="post" class="o_sc_inline_form">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <button type="submit" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-action="note.restore">Restore</button>
+                </form>
             </div>
         </article>
         <t t-call="bemade_sports_clinic.sc_confirm_sheet">

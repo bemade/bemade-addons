@@ -181,6 +181,9 @@
                     <t t-call="bemade_sports_clinic.sc_event_list_row"/>
                 </t>
             </div>
+            <!-- Task 1730: « My events » (a therapist's default view) empty
+                 points at « All ». -->
+            <p t-elif="sc_event_view == 'my'" class="o_sc_empty" data-sc-section="events.empty_mine">No events assigned to you. <a t-att-href="sc_event_all_url" class="o_sc_link o_sc_hint_link" data-sc-view-link="all">See all events</a></p>
             <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
                 <t t-set="message">No events found.</t>
             </t>
@@ -267,19 +270,19 @@
                         <t t-out="row['subtitle']"/>
                     </p>
                 </div>
-                <span class="o_sc_card_icons">
+                <!-- Task 1736 (owner 2026-11-01): the shared top bar — the
+                     state chip, then archive (« delete » only archives a
+                     timesheet: an undo toast, no confirmation; its form is
+                     in sc_timesheet_sheets) and the pencil. -->
+                <t t-call="bemade_sports_clinic.sc_card_icons">
+                    <t t-set="ci_archive" t-value="row['editable'] and {'form': 'sc_ts_archive_%s' % row['id'], 'key': 'timesheet.delete'}"/>
+                    <t t-set="ci_editable" t-value="row['editable']"/>
+                    <t t-set="ci_edit_key" t-value="'timesheet.edit'"/>
                     <!-- Task 1731: « Soumise ✓ » (green: sent, nothing left to
                          do) / « Facturée » — the proof the timesheet is sent. -->
                     <span t-attf-class="o_sc_chip o_sc_ts_state #{'o_sc_chip_green' if row['state'] == 'submitted' else 'o_sc_chip_mauve'}"
                           t-att-data-sc-ts-state="row['state']" t-out="row['state_label']"/>
-                    <t t-if="row['editable']">
-                        <t t-set="sc_edit_label">Edit</t>
-                        <button type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1" aria-expanded="false"
-                                t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label" data-sc-action="timesheet.edit">
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
-                        </button>
-                    </t>
-                </span>
+                </t>
             </div>
             <dl class="o_sc_kv" data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(row['record'], 'read')">
                 <t t-foreach="row['lines']" t-as="line">
@@ -304,14 +307,7 @@
                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'travel_end', lbl, 'datetime-local', savedLabel=sent_lbl)"/></t>
                 <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
             </div>
-            <div t-if="row['editable']" class="o_sc_card_actions">
-                <button type="button" class="o_sc_btn o_sc_btn_danger o_sc_btn_sm" t-att-data-sc-sheet-open="'sc_ts_delete_%s' % row['id']"
-                        data-sc-action="timesheet.delete">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'trash'"/></t>
-                    <span>Delete</span>
-                </button>
-            </div>
-            <p t-elif="row['state'] == 'invoiced'" class="o_sc_meta">Invoiced (read-only)</p>
+            <p t-if="not row['editable'] and row['state'] == 'invoiced'" class="o_sc_meta">Invoiced (read-only)</p>
         </article>
     </template>
 
@@ -335,20 +331,18 @@
         </div>
     </template>
 
-    <!-- Edit / delete sheets of editable timesheets. Variables: rows, return_url. -->
+    <!-- The archive forms of editable timesheets (task 1736: the card's
+         archive icon submits its form — outside the card's read fragments;
+         the route archives, the next page offers « Annuler »). Variables:
+         rows, return_url. -->
     <template id="sc_timesheet_sheets" name="App shell: timesheet sheets">
         <t t-foreach="rows" t-as="row">
-            <t t-if="row['editable']">
-                <t t-call="bemade_sports_clinic.sc_confirm_sheet">
-                    <t t-set="sheet_id" t-value="'sc_ts_delete_%s' % row['id']"/>
-                    <t t-set="title">Delete Timesheet</t>
-                    <t t-set="message">Delete this timesheet? This cannot be undone from the portal.</t>
-                    <t t-set="action" t-value="'/my/sc/timesheet/%s/delete' % row['id']"/>
-                    <t t-set="hidden" t-value="{'return_url': return_url}"/>
-                    <t t-set="confirm_label">Delete</t>
-                    <t t-set="danger" t-value="True"/>
-                </t>
-            </t>
+            <form t-if="row['editable']" t-att-id="'sc_ts_archive_%s' % row['id']" method="post" hidden="hidden"
+                  t-att-action="'/my/sc/timesheet/%s/delete' % row['id']" data-sc-form="timesheet.archive">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="return_url" t-att-value="return_url"/>
+                <input type="hidden" name="sc_undo" value="1"/>
+            </form>
         </t>
     </template>
 
@@ -412,12 +406,15 @@
                         <span class="o_sc_chip o_sc_chip_ghost" t-out="sc_event_kind"/>
                         <span t-attf-class="o_sc_chip #{'o_sc_chip_red' if event_sudo.state == 'cancelled' else 'o_sc_chip_ghost'}" t-out="sc_event_state"/>
                     </span>
-                    <t t-if="sc_event_editable">
-                        <t t-set="sc_edit_label">Edit</t>
-                        <button type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1" aria-expanded="false"
-                                t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label" data-sc-action="event.edit">
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
-                        </button>
+                    <!-- Task 1736 (owner 2026-11-01): the shared top bar — the
+                         activities clock (its count; it opens the event's
+                         activities), the pencil. Task 1736 r1 (owner
+                         2026-11-01): cancelling an event is NOT an archive —
+                         « Cancel Event » is its own red action again (below). -->
+                    <t t-call="bemade_sports_clinic.sc_card_icons">
+                        <t t-set="ci_clock" t-value="sc_can_activities and dict(sc_event_clock or {}, always=True, url='/my/event/activities?event_id=%s' % event.id, key='event.activities')"/>
+                        <t t-set="ci_editable" t-value="sc_event_editable"/>
+                        <t t-set="ci_edit_key" t-value="'event.edit'"/>
                     </t>
                 </div>
                 <div data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(event, 'read')">
@@ -484,12 +481,10 @@
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(event, 'description', lbl, 'textarea', clearable=True)"/></t>
                     <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
                 </div>
-                <div class="o_sc_actions_row">
-                    <a t-if="sc_can_activities" t-attf-href="/my/event/activities?event_id=#{event.id}" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
-                       data-sc-action="event.activities">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'activities'"/></t>
-                        <span>Activities</span>
-                    </a>
+                <!-- Task 1736 r1 (owner 2026-11-01): « Cancel Event » (red, its
+                     reason sheet) and its counterpart « Restore event », as
+                     before #1736 (the clock replaced « Activities »). -->
+                <div t-if="sc_can_cancel or sc_can_restore" class="o_sc_actions_row">
                     <button t-if="sc_can_cancel" type="button" class="o_sc_btn o_sc_btn_danger o_sc_btn_sm"
                             data-sc-sheet-open="sc_event_cancel_sheet" data-sc-action="event.cancel">Cancel Event</button>
                     <button t-if="sc_can_restore" type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm"

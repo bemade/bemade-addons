@@ -143,14 +143,86 @@ $sc-laptop: 992px;
         }
     }
 
+    // Task 1736 (owner 2026-11-01): THE card top bar's icon group
+    // (sc_card_icons) — ★ · clock + count · archive · trash · pencil → ✓,
+    // the pencil always rightmost. Neutral icons (the button's colour, also
+    // inside an entity row whose trailing icons are greyed), except: the
+    // red trash, the green ✓, the filled ★ (following), the red clock (an
+    // overdue activity).
     .o_sc_card_icons {
         display: inline-flex;
+        flex: none;
         align-items: center;
         gap: 2px;
         margin-left: auto;
 
         .o_sc_inline_form {
             display: inline-flex;
+        }
+
+        &[data-sc-card-icons] .o_sc_icon_btn .o_sc_icon {
+            color: inherit;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+    }
+
+    .o_sc_icon_btn.o_sc_icon_btn_danger,
+    .o_sc_icon_btn.o_sc_icon_btn_danger .o_sc_icon {
+        color: var(--sc-bad);
+    }
+
+    .o_sc_follow.o_sc_follow_icon {
+        display: inline-grid;
+
+        .o_sc_icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        &[data-sc-followed="1"] .o_sc_icon {
+            fill: currentColor;
+        }
+    }
+
+    .o_sc_card_clock {
+        position: relative;
+        color: inherit;
+        text-decoration: none;
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: none;
+        }
+    }
+
+    // The app bar's badge look (sc_p3 .o_sc_appbar_badge), neutral unless
+    // an activity is overdue.
+    .o_sc_card_badge {
+        position: absolute;
+        top: 3px;
+        right: 1px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: var(--sc-radius-pill);
+        background: var(--sc-fg-2);
+        color: var(--sc-surface);
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 18px;
+        text-align: center;
+        pointer-events: none;
+    }
+
+    .o_sc_card_clock_overdue {
+        color: var(--sc-bad);
+
+        .o_sc_card_badge {
+            background: var(--sc-bad);
+            color: var(--sc-tone-fg);
         }
     }
 

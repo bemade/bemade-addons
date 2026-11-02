@@ -406,28 +406,29 @@ $sc-p2-laptop: 992px;
         min-width: 0;
     }
 
-    // Review fixes 2026-10-18 (#1603 / #1615): the header is a read view
-    // with ONE pencil (therapists), top right, next to the name.
-    .o_sc_hero_editable {
-        position: relative;
-
-        .o_sc_hero_top {
-            padding-right: calc(var(--sc-tap) + var(--sc-space-1, 4px));
-        }
-    }
 
     // Task 1630: the name / team head and, left of the pencil, the
     // « Allergies » / « Medical alert » pills; on a narrow screen the pills
     // wrap under the name.
+    // Task 1736: the name / team head and the hero's top bar (★, pencil)
+    // on ONE line, the icons in the top-right corner (was: an absolutely
+    // positioned pencil and a « Suivre » button that wrapped on a phone).
     .o_sc_hero_top {
         display: flex;
-        flex-wrap: wrap;
-        align-items: center;
+        flex-wrap: nowrap;
+        align-items: flex-start;
         gap: var(--sc-space-2) var(--sc-space-3);
         min-width: 0;
 
         > .o_sc_hero_head {
             flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        > .o_sc_hero_follow {
+            flex: none;
+            margin-top: calc(var(--sc-space-2) * -1);
+            margin-right: calc(var(--sc-space-2) * -1);
         }
     }
 
@@ -614,22 +615,11 @@ $sc-p2-laptop: 992px;
     }
 
     // Review round 1 (owner 2026-10-27): an item's trash sits next to its ✓
-    // (top right), shown while the card is being edited.
-    .o_sc_med_card_row > .o_sc_med_item_delete {
-        display: none;
-    }
-
-    .o_sc_med_item[data-sc-edit-open] .o_sc_med_card_row {
-        > .o_sc_med_item_delete {
-            display: inline-flex;
-            margin-left: auto;
-            margin-top: calc((26px - var(--sc-tap)) / 2);
-            color: var(--sc-bad);
-        }
-
-        > .o_sc_med_item_delete + .o_sc_icon_btn {
-            margin-left: 0;
-        }
+    // (top right), shown while the card is being edited — task 1736: the
+    // shared top bar (sc_card_icons: red, data-sc-edit-only).
+    .o_sc_med_card_row > .o_sc_card_icons {
+        margin-right: calc(var(--sc-space-2) * -1);
+        margin-top: calc((26px - var(--sc-tap)) / 2);
     }
 
     // Review round 1 (owner 2026-10-27): EpiPen as ONE line — the label, then
@@ -783,11 +773,6 @@ $sc-p2-laptop: 992px;
         }
     }
 
-    .o_sc_hero_edit_toggle {
-        position: absolute;
-        top: var(--sc-space-2);
-        right: var(--sc-space-2);
-    }
 
     .o_sc_hero_read {
         display: flex;
@@ -991,7 +976,8 @@ $sc-p2-laptop: 992px;
         gap: 0;
         overflow: hidden;
 
-        > .o_sc_entity_row {
+        > .o_sc_entity_row,
+        > .o_sc_activity_head > .o_sc_entity_row {
             border: 0;
             border-radius: 0;
             background: transparent;
@@ -1002,9 +988,44 @@ $sc-p2-laptop: 992px;
         }
     }
 
+    // Task 1736 r1: the card's top-bar icons in the regular icon colour
+    // (the link row's trailing area is muted).
+    .o_sc_activity .o_sc_row_trailing > .o_sc_card_icons {
+        color: var(--sc-fg);
+    }
+
+    // Task 1736 r1: the in-place edit (the fields, then « Done »).
+    .o_sc_activity_edit {
+        border-top: 1px solid var(--sc-line);
+        padding: var(--sc-space-3);
+
+        > .o_sc_fields_lazy {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sc-space-3);
+        }
+    }
+
     .o_sc_activity_actions {
         border-top: 1px solid var(--sc-line);
         padding: var(--sc-space-2) var(--sc-space-3);
+    }
+
+    // Task 1736 r1: the popout's note, set apart from the details.
+    .o_sc_activity_popout .o_sc_activity_note {
+        margin-top: var(--sc-space-3);
+        padding-top: var(--sc-space-3);
+        border-top: 1px solid var(--sc-line);
+    }
+
+    // Task 1736 r1: the details popout's head (the title + its state chip).
+    .o_sc_activity_popout_title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sc-space-2);
+        margin: 0 0 var(--sc-space-3);
+        font-size: 1.05rem;
     }
 }
 
@@ -1119,7 +1140,14 @@ $sc-p2-laptop: 992px;
         }
     }
 
-    @media (min-width: 992px) {
+    /* Task 1736 r2: 1 vs 2 columns follows the CARD width (container query),
+       not the page width, so a narrow dashboard column gets the 1-column layout. */
+    .o_sc_injury_body {
+        container-type: inline-size;
+        container-name: sc-injury;
+    }
+
+    @container sc-injury (min-width: 720px) {
         .o_sc_injury_sections {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -1179,30 +1207,6 @@ $sc-p2-laptop: 992px;
 
     .o_sc_injury_doc.o_sc_edit_card {
         gap: var(--sc-space-2);
-    }
-
-    // Review round 1 of #1432 (owner 2026-11-01): like the medical list
-    // items, a document's trash sits next to its ✓ and shows while the
-    // document is being edited (without a pencil, it always shows).
-    .o_sc_edit_card:not([data-sc-edit-open]) > .o_sc_doc_row .o_sc_doc_delete {
-        display: none;
-    }
-
-    // Same colours as the other cards: the entity row greys its trailing
-    // icons (sc_components.scss), which hid the red trash and the green ✓ —
-    // a document's icon buttons take their button's colour.
-    .o_sc_entity_row.o_sc_doc_row > .o_sc_row_trailing .o_sc_icon_btn .o_sc_icon {
-        color: inherit;
-    }
-
-    // Task 1676: only « Delete injury » now, on the left.
-    .o_sc_injury_card_actions {
-        display: flex;
-        justify-content: flex-start;
-        flex-wrap: wrap;
-        gap: var(--sc-space-2);
-        padding-top: var(--sc-space-3);
-        border-top: 1px solid var(--sc-line);
     }
 
     // The « Add documents » sheet: a drop zone (a tap opens the picker),
@@ -1696,14 +1700,71 @@ $sc-p2-laptop: 992px;
     }
 
     // Task 1662: the injury card's summary trailing group (quick button,
-    // activity clock, status pill, chevron) wraps onto a second line on a
-    // narrow phone instead of overflowing; the row gap keeps wrapped lines
-    // apart, so nothing overlaps.
-    .o_sc_injury_item > summary > .o_sc_row_trailing {
-        flex-wrap: wrap;
-        justify-content: flex-end;
+    // status pill) wraps instead of overflowing; the row gap keeps wrapped
+    // lines apart, so nothing overlaps.
+    // Task 1736 (owner 2026-11-01): the summary is the card's top bar — the
+    // read fragment's dot, text and quick button + status pill (a
+    // ``display: contents`` holder: its parts are the grid's cells), then
+    // the icon group (clock, trash, pencil) and the chevron. Phone: the
+    // pill line goes under the title, the icons stay on the title's line.
+    .o_sc_injury_item > summary.o_sc_injury_head {
+        grid-template-columns: auto minmax(0, 1fr) auto;
         row-gap: var(--sc-space-1);
-        min-width: 0;
+        cursor: default;
+
+        > .o_sc_injury_head_main {
+            display: contents;
+
+            > .o_sc_row_trailing {
+                grid-column: 2 / -1;
+                grid-row: 2;
+                flex-wrap: wrap;
+                justify-content: flex-start;
+                row-gap: var(--sc-space-1);
+                min-width: 0;
+
+                &:empty {
+                    display: none;
+                }
+            }
+        }
+
+        > .o_sc_injury_head_icons {
+            grid-column: 3;
+            grid-row: 1;
+            gap: 0;
+            margin-right: calc(var(--sc-space-2) * -1);
+
+            // The card icons in the text colour, as on every other card
+            // (an entity row greys its trailing icons); the chevron stays
+            // the rows' grey.
+            .o_sc_card_icons {
+                gap: 0;
+                color: var(--sc-fg);
+            }
+        }
+
+        @media (min-width: 768px) {
+            grid-template-columns: auto minmax(0, 1fr) auto auto;
+
+            > .o_sc_injury_head_main > .o_sc_row_trailing {
+                grid-column: 3;
+                grid-row: 1;
+                justify-content: flex-end;
+            }
+
+            > .o_sc_injury_head_icons {
+                grid-column: 4;
+            }
+        }
+    }
+
+    .o_sc_injury_toggle .o_sc_icon {
+        transition: transform .15s ease;
+    }
+
+    .o_sc_injury_item[open] > summary .o_sc_injury_toggle .o_sc_icon {
+        transform: rotate(180deg);
     }
 
 }

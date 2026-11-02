@@ -1,7 +1,7 @@
 /*
  * Task 1676 — « Terminé » buttons optional per user (default hidden); the
  * head pencil is a ✓ in edit mode that closes the card; the injury card's
- * foot is « Supprimer la blessure » on the left
+ * « Supprimer la blessure » (task 1736: its top bar's trash, while editing)
  * (tests/test_done_buttons_pref_1676.py, phone + laptop).
  */
 import { registry } from "@web/core/registry";
@@ -72,14 +72,17 @@ tours.add("sc_1676_info_check", {
 tours.add("sc_1676_injury_check", {
     steps: () => [
         {
-            content: "The injury foot: « Delete injury » on the left, no « Done »",
-            trigger: "details.o_sc_injury_item[open] .o_sc_injury_card_actions button[data-sc-action='injury.delete']",
+            // Task 1736 (deliberate update): « Delete injury » is the top
+            // bar's red trash (shown while the Details are edited), no foot.
+            content: "No foot (no « Done »); « Delete injury » is the top bar's trash (hidden until editing)",
+            trigger: "details.o_sc_injury_item[open] > summary button[data-sc-edit-toggle][data-sc-edit-for='injury-details']",
             run() {
-                const foot = this.anchor.closest(".o_sc_injury_card_actions");
-                assert(!foot.querySelector("[data-sc-injury-done]"), "the bottom « Done » is back");
-                const footBox = foot.getBoundingClientRect();
-                const box = this.anchor.getBoundingClientRect();
-                assert(box.left - footBox.left < footBox.right - box.right, "« Delete injury » is not on the left");
+                const card = this.anchor.closest("details");
+                assert(!card.querySelector(".o_sc_injury_card_actions"), "the foot is back");
+                assert(!card.querySelector("[data-sc-injury-done]"), "the bottom « Done » is back");
+                const trash = card.querySelector(":scope > summary button.o_sc_card_trash[data-sc-action='injury.delete']");
+                assert(trash, "no « Delete injury » in the top bar");
+                assert(!visible(trash), "the trash shows in read mode");
             },
         },
         {
@@ -97,8 +100,13 @@ tours.add("sc_1676_injury_check", {
             trigger: `${NOTE}:not([data-sc-edit-open]) [data-sc-edit-view="read"]:not([hidden])`,
         },
         {
-            content: "« Delete injury » opens its confirm",
-            trigger: "details.o_sc_injury_item[open] .o_sc_injury_card_actions button[data-sc-action='injury.delete']",
+            content: "The Details pencil (top bar)",
+            trigger: "details.o_sc_injury_item[open] > summary button[data-sc-edit-toggle][data-sc-edit-for='injury-details']",
+            run: "click",
+        },
+        {
+            content: "« Delete injury » (the trash, now shown) opens its confirm",
+            trigger: "details.o_sc_injury_item[open] > summary button.o_sc_card_trash[data-sc-action='injury.delete']:visible",
             run: "click",
         },
         {

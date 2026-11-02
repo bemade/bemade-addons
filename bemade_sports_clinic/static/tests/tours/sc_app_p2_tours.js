@@ -444,7 +444,7 @@ tours.add("sc_training_history_refresh", {
         },
         {
             content: "Review fixes 2026-10-18: the header's pencil opens its edit view",
-            trigger: '[data-sc-section="player.hero"] > button[data-sc-edit-toggle]',
+            trigger: '[data-sc-section="player.hero"] [data-sc-card-icons] > button[data-sc-edit-toggle]',
             run: "click",
         },
         {

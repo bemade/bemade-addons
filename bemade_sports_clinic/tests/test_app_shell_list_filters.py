@@ -71,14 +71,15 @@ class TestAppShellListFilters(AppShellCommon):
     # -- UC-LF2 ----------------------------------------------------------
     def test_events_filters_apply_and_group(self):
         self._login_tp()
-        _text, tree = self._get('/my/events?team_id=%s' % self.team_a.id)
+        # Task 1730: « All » named (a professional's default is « My events »).
+        _text, tree = self._get('/my/events?team_id=%s&view_type=all' % self.team_a.id)
         ids = self._event_ids(tree)
         self.assertIn(self.ev_a.id, ids)
         self.assertNotIn(self.ev_b.id, ids)
         self.assertNotIn(self.ev_cancel.id, ids)
-        _text, tree = self._get('/my/events?team_id=%s&show_cancelled=1' % self.team_a.id)
+        _text, tree = self._get('/my/events?team_id=%s&show_cancelled=1&view_type=all' % self.team_a.id)
         self.assertIn(self.ev_cancel.id, self._event_ids(tree))
-        _text, tree = self._get('/my/events?group_by=team')
+        _text, tree = self._get('/my/events?group_by=team&view_type=all')
         groups = tree.xpath('//*[@data-sc-section="events.list"]//*[@data-sc-group]')
         titles = [' '.join(g.xpath('.//*[contains(@class, "o_sc_group_title")]')[0].text_content().split())
                   for g in groups]

@@ -1,8 +1,12 @@
 /*
  * Task 1616 — the injury card as the injury's page (inert outside .o_sc_app):
  *
- * - (task 1676: the bottom « Done » is gone — the card's summary closes
- *   it; each edit group closes with its pencil's ✓ or its own « Done »);
+ * - (task 1676: the bottom « Done » is gone — each edit group closes with
+ *   its pencil's ✓ or its own « Done »);
+ * - task 1736 (owner 2026-11-01): the summary is the card's top bar and
+ *   ONLY its chevron ([data-sc-injury-toggle]) folds / unfolds the card —
+ *   a tap anywhere else on the header does nothing (its buttons, links and
+ *   pills keep their own action); the chevron's aria-expanded follows;
  * - form[data-sc-doc-upload] (the document picker — the injury card's
  *   « Add documents » sheet AND the player Documents tab, one template:
  *   bemade_sports_clinic.sc_document_upload_form): several files at once —
@@ -27,6 +31,61 @@ import { _t } from "@web/core/l10n/translation";
 function inShell(node) {
     return Boolean(node && node.closest && node.closest(".o_sc_app"));
 }
+
+// --------------------------------------- chevron-only fold (task 1736)
+const SC_HEAD_ACTIONS = "a, button, input, select, textarea, label, [role='button'], [role='menuitemradio'], [role='menu']";
+
+document.addEventListener("click", (ev) => {
+    const summary = ev.target.closest && ev.target.closest("details.o_sc_injury_item > summary");
+    if (!summary || !inShell(summary)) {
+        return;
+    }
+    const details = summary.parentElement;
+    const chevron = ev.target.closest("[data-sc-injury-toggle]");
+    if (chevron) {
+        ev.preventDefault();
+        details.open = !details.open;
+        return;
+    }
+    if (ev.target.closest(SC_HEAD_ACTIONS)) {
+        return; // its own action (a pill, the clock, the pencil…)
+    }
+    // A keyboard activation of the summary itself (Enter / Space) still
+    // folds; a tap on the header does not.
+    if (ev.target === summary && ev.detail === 0) {
+        return;
+    }
+    ev.preventDefault();
+});
+
+// The trash of a folded card (its Details left in edit mode): unfold it
+// first — its confirmation sheet lives in the card's body.
+document.addEventListener(
+    "click",
+    (ev) => {
+        const opener = ev.target.closest && ev.target.closest("details.o_sc_injury_item > summary [data-sc-sheet-open]");
+        const details = opener && opener.closest("details.o_sc_injury_item");
+        if (details && !details.open && inShell(details)) {
+            details.open = true;
+        }
+    },
+    true
+);
+
+document.addEventListener(
+    "toggle",
+    (ev) => {
+        const details = ev.target;
+        if (!(details instanceof HTMLDetailsElement) || !details.classList.contains("o_sc_injury_item")) {
+            return;
+        }
+        const chevron = details.querySelector(":scope > summary [data-sc-injury-toggle]");
+        if (chevron) {
+            chevron.setAttribute("aria-expanded", details.open ? "true" : "false");
+        }
+    },
+    true
+);
 
 // ------------------------------------- status-only fields (review 2026-10-18)
 // « Date prévue de résolution » until the injury is resolved, « Date de

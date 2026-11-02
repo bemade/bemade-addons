@@ -4,7 +4,7 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from .access_control_mixin import AccessControlMixin, parse_portal_date
-from .app_shell import AppShellMixin
+from .app_shell import AppShellMixin, sc_file_size
 from ..models import sc_app_nav, sc_app_roles
 from datetime import date, timedelta
 from urllib.parse import quote
@@ -861,6 +861,27 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             raise request.not_found()
         stream = request.env['ir.binary']._get_stream_from(attachment)
         return stream.get_response(as_attachment=True)
+
+    @http.route(['/my/activity/<int:activity_id>/popout'], type='http', auth='user', website=True,
+                methods=['GET'])
+    def activity_detail_popout(self, activity_id, **kw):
+        """Task 1736 r1 (owner 2026-11-01): the body of an activity card's
+        details popout — the page's read-only details (related record,
+        dates, creator, note, attachments), fetched on every open. Same gate
+        as the page (``_activity_view_access``): anyone else gets a 404.
+        The page (/my/activity/<id>) stays for deep links and notifications."""
+        activity = request.env['mail.activity'].browse(activity_id)
+        if not activity.exists() or not self._activity_view_access(activity):
+            raise request.not_found()
+        today = fields.Date.context_today(request.env.user)
+        deadline = activity.sudo().date_deadline
+        return request.render('bemade_sports_clinic.sc_activity_popout', {
+            'activity': activity,
+            'act_links': self._sc_activity_related(activity),
+            'act_state': 'overdue' if deadline < today else ('today' if deadline == today else 'planned'),
+            'attachments': self._activity_attachments(activity),
+            'sc_file_size': lambda size: sc_file_size(size, request.env),
+        })
 
     @http.route(['/my/activity/<int:activity_id>'], type='http', auth='user', website=True)
     def view_activity_detail(self, activity_id, **kw):

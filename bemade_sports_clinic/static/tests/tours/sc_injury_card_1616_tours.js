@@ -84,7 +84,7 @@ tours.add("sc_1616_card_sections", {
         },
         {
             content: "The Details pencil edits Details only",
-            trigger: `${DETAILS} button[data-sc-edit-toggle]`,
+            trigger: `${CARD} > summary button[data-sc-edit-toggle][data-sc-edit-for="injury-details"]`, // task 1736: the top-bar pencil
             run: "click",
         },
         {
@@ -134,7 +134,8 @@ tours.add("sc_1616_card_sections", {
                 assert(!el(`${CARD} [data-sc-injury-done]`), "the bottom « Done » is back");
                 el(`${NOTES_INT} button[data-sc-edit-toggle]`).click();
                 el(`${NOTES_EXT} button[data-sc-edit-toggle]`).click();
-                el(`${CARD} > summary`).click();
+                // Task 1736 (deliberate update): only the chevron folds the card.
+                el(`${CARD} > summary button[data-sc-injury-toggle]`).click();
             },
         },
         {

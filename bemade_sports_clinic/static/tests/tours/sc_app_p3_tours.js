@@ -77,8 +77,9 @@ tours.add("sc_1540_clinic", {
             },
         },
         {
+            // Task 1736 (deliberate update): only the chevron unfolds the card.
             content: "Open the injury card (task 1590: inline, no sheet)",
-            trigger: '[data-sc-section="clinic.dossier.injuries"] details[data-sc-edit-card="injury"] > summary',
+            trigger: '[data-sc-section="clinic.dossier.injuries"] details[data-sc-edit-card="injury"] > summary button[data-sc-injury-toggle]',
             run: "click",
         },
         {
