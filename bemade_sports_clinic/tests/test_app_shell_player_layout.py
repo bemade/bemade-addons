@@ -81,7 +81,10 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         _text, tree = self._get(self._url(tab='injuries'))
         hero = tree.xpath('//*[@data-sc-section="player.hero"]')[0]
         self.assertEqual(hero.get('data-sc-edit-card'), 'player-header')
-        self.assertEqual(len(hero.xpath('./button[@data-sc-edit-toggle]')), 1)
+        # Task 1736 (deliberate update): the pencil sits in the hero's top-bar
+        # icon group (with the ★), no longer a direct child of the card.
+        self.assertEqual(len(hero.xpath('.//*[@data-sc-card-icons]/button[@data-sc-edit-toggle]')), 1)
+        self.assertEqual(len(hero.xpath('.//button[@data-sc-edit-toggle]')), 1)
         read = hero.xpath('./*[@data-sc-edit-view="read"]')[0]
         edit = hero.xpath('./*[@data-sc-edit-view="edit"]')[0]
         self.assertEqual(edit.get('hidden'), 'hidden')

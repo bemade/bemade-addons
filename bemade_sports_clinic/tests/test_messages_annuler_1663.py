@@ -198,12 +198,13 @@ class TestMessagesAnnuler1663(Messages1663Common):
         self.assertEqual(sheet.xpath('.//button[@type="submit"]')[0].text_content().strip(), 'Oui, supprimer')
         buttons = tree.xpath('//button[@data-sc-action="activity.cancel"]')
         self.assertTrue(buttons)
+        # Task 1736 (deliberate update): the red trash icon — its name.
         for button in buttons:
-            self.assertEqual(' '.join(button.text_content().split()), 'Supprimer')
+            self.assertEqual(button.get('aria-label'), 'Supprimer')
         self.assertNotIn("Annuler l'activité", text)
         _text, tree = self._page('/my/activity/%s' % self.act_player.id)
         detail = tree.xpath('//button[@data-sc-action="activity.cancel"]')
-        self.assertEqual([' '.join(b.text_content().split()) for b in detail], ['Supprimer'])
+        self.assertEqual([b.get('aria-label') for b in detail], ['Supprimer'])
         resp = self.url_open('/my/activity/cancel', data={
             'csrf_token': self._csrf(), 'activity_id': self.act_team.id,
             'return_url': '/my/activities?tab=today'}, allow_redirects=False)

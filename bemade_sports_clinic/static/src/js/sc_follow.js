@@ -22,8 +22,17 @@ function setFollowed(playerId, followed) {
     for (const button of document.querySelectorAll(`.o_sc_app [data-sc-follow="${playerId}"]`)) {
         button.dataset.scFollowed = followed ? "1" : "0";
         button.setAttribute("aria-pressed", followed ? "true" : "false");
-        button.classList.toggle("o_sc_btn_primary", followed);
-        button.classList.toggle("o_sc_btn_ghost", !followed);
+        // Task 1736: the top-bar ★ (an icon button) keeps its look — the
+        // star fills (CSS on data-sc-followed); its title says the action.
+        if (button.classList.contains("o_sc_follow_icon")) {
+            const title = followed ? button.dataset.scFollowOn : button.dataset.scFollowOff;
+            if (title) {
+                button.setAttribute("title", title);
+            }
+        } else {
+            button.classList.toggle("o_sc_btn_primary", followed);
+            button.classList.toggle("o_sc_btn_ghost", !followed);
+        }
         for (const label of button.querySelectorAll("[data-sc-follow-label]")) {
             label.hidden = (label.dataset.scFollowLabel === "on") !== followed;
         }

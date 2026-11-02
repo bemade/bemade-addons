@@ -79,7 +79,9 @@ class TestAppShellTools1540(Tools1540Common):
                          [str(self.timesheet.id)])
         # Owner review 2026-10-11: edited in place (pencil card).
         self.assertTrue(tree.xpath('//*[@data-sc-edit-card="timesheet-%s"]' % self.timesheet.id))
-        form = tree.xpath('//dialog[@id="sc_ts_delete_%s"]//form' % self.timesheet.id)[0]
+        # Task 1736 (deliberate update): the delete (an archive) is the card's
+        # archive icon submitting this form — no confirmation sheet.
+        form = tree.xpath('//form[@id="sc_ts_archive_%s"]' % self.timesheet.id)[0]
         self.assertEqual(form.get('action'), '/my/sc/timesheet/%s/delete' % self.timesheet.id)
         self.assertTrue(form.xpath('.//input[@name="csrf_token"]'))
         resp = self._post('/my/sc/timesheet/%s/delete' % self.timesheet.id,

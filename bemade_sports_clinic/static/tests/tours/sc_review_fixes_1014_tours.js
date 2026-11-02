@@ -92,7 +92,7 @@ tours.add("sc_1014_serialized_saves", {
     steps: () => [
         {
             content: "Open the header's pencil",
-            trigger: '[data-sc-section="player.hero"] > button[data-sc-edit-toggle]',
+            trigger: '[data-sc-section="player.hero"] [data-sc-card-icons] > button[data-sc-edit-toggle]',
             run: "click",
         },
         {

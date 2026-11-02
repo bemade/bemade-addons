@@ -422,9 +422,12 @@ class TestMedicalLists1677(MedicalLists1677Common):
                 # ✓ (the card's top row), not at the bottom of the edit view.
                 self.assertFalse(edit.xpath('.//button[@data-sc-med-item-delete]'))
                 row = card.xpath('./div[contains(@class, "o_sc_med_card_row")]')[0]
-                buttons = row.xpath('./button')
+                # Task 1736 (deliberate update): in the shared top bar
+                # (sc_card_icons) — the trash (edit-only), then the pencil.
+                buttons = row.xpath('./span[@data-sc-card-icons]/button')
                 self.assertEqual([bool(b.get('data-sc-med-item-delete')) for b in buttons], [True, False])
                 self.assertTrue(buttons[1].get('data-sc-edit-toggle'))
+                self.assertEqual(buttons[0].get('data-sc-edit-only'), '1')
                 read = card.xpath('.//*[@data-sc-edit-view="read"]')[0]
                 self.assertEqual(read.get('data-sc-fragment'),
                                  'sports.patient:%s:medical-item-%s' % (pid, card.get('data-sc-med-item')))

@@ -180,7 +180,8 @@ class TestStaffColoursTourPhone1605(Colours1605Common):
 
     def test_dots_and_legend_phone(self):
         self._switch(True)
-        self.start_tour('/my/events/calendar', 'sc_1605_calendar_colours', login='pc.tp@example.com')
+        # Task 1730: « All » named (a professional's default is « My events »).
+        self.start_tour('/my/events/calendar?view_type=all', 'sc_1605_calendar_colours', login='pc.tp@example.com')
 
 
 @tagged('post_install', '-at_install')
@@ -189,7 +190,8 @@ class TestStaffColoursTourLaptop1605(Colours1605Common):
 
     def test_dots_and_legend_laptop(self):
         self._switch(True)
-        self.start_tour('/my/events/calendar', 'sc_1605_calendar_colours', login='pc.tp@example.com')
+        # Task 1730: « All » named (a professional's default is « My events »).
+        self.start_tour('/my/events/calendar?view_type=all', 'sc_1605_calendar_colours', login='pc.tp@example.com')
 
 
 @tagged('post_install', '-at_install')

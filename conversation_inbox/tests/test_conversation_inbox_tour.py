@@ -30,7 +30,7 @@ _TOUR_ITEMS = {
     "2": {
         "subject": "Tour Message B",
         "email_from": "other@example.com",
-        "date": "2026-08-14 08:00:00",
+        "date": False,  # a dateless message: the row must not print "false"
     },
     "3": {
         "subject": "Tour Message C",

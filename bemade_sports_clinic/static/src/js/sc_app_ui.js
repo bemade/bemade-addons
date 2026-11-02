@@ -177,6 +177,13 @@ function showSessionNotification() {
     delete toast.dataset.scNotify;
     delete toast.dataset.scNotifyTitle;
     delete toast.dataset.scNotifyTone;
+    // Task 1736: an archive just done from a card's archive icon — its
+    // « Annuler » posts the restore form for the toast's time.
+    const undo = root.querySelector('form[data-sc-form="sc.undo"]');
+    if (undo) {
+        showToast(message, undo.dataset.scToastAction, () => undo.submit(), 8000, { title, tone });
+        return;
+    }
     showToast(message, null, null, tone === "error" ? 10000 : 6000, { title, tone });
 }
 if (document.readyState === "loading") {
@@ -370,8 +377,44 @@ function setToggleDone(toggle, editing) {
     delete toggle.dataset.scEditToggleDone;
 }
 
+// Task 1736: the card a pencil / an edit-only control belongs to — the
+// nearest edit card, or (data-sc-edit-for="<key>", a control in a top bar
+// outside that card, e.g. the injury card's header) the card of that key in
+// the same enclosing edit card.
+function ownerCard(control) {
+    const key = control.dataset.scEditFor;
+    const nearest = control.closest("[data-sc-edit-card]");
+    if (!key) {
+        return nearest;
+    }
+    let scope = nearest;
+    while (scope) {
+        const target = scope.querySelector(`[data-sc-edit-card="${CSS.escape(key)}"]`);
+        if (target) {
+            return target;
+        }
+        scope = scope.parentElement && scope.parentElement.closest("[data-sc-edit-card]");
+    }
+    return null;
+}
+
+// Task 1736: the pencils and edit-only controls (the red trash) of a card —
+// its own (not a nested card's), and the ones pointing at it from outside.
+function cardControls(card, selector) {
+    const own = [...card.querySelectorAll(selector)].filter((el) => ownerCard(el) === card);
+    const key = card.dataset.scEditCard;
+    const host = card.parentElement && card.parentElement.closest("[data-sc-edit-card]");
+    const outside = key && host
+        ? [...host.querySelectorAll(`${selector}[data-sc-edit-for="${CSS.escape(key)}"]`)].filter(
+            (el) => !card.contains(el) && ownerCard(el) === card)
+        : [];
+    return [...own, ...outside];
+}
+
 // Inline-edit cards: ONE pencil per card toggles its edit view; « Done »
 // closes it and (task 1611) refreshes the read fragments at once — no reload.
+// Task 1736: the card's edit-only controls (data-sc-edit-only: the red
+// trash) show while it is edited.
 function setCardEditing(card, editing) {
     const edit = card.querySelector('[data-sc-edit-view="edit"]');
     const read = card.querySelector('[data-sc-edit-view="read"]');
@@ -387,16 +430,40 @@ function setCardEditing(card, editing) {
     } else {
         delete card.dataset.scEditOpen;
     }
-    const toggle = card.querySelector("[data-sc-edit-toggle]");
-    if (toggle) {
-        toggle.setAttribute("aria-expanded", editing ? "true" : "false");
-        setToggleDone(toggle, editing);
-    }
+    syncCardControls(card, editing);
     if (editing) {
+        // Task 1736 r1: a lazy edit view (an activity card) mounts its
+        // fields now (sc_lazy_edit.js).
+        edit.dispatchEvent(new CustomEvent("sc:edit-view-open", { bubbles: true }));
         // Task 1646: a text field only (never a picker), nothing on a phone.
         focusFirstField(edit);
     }
 }
+
+function syncCardControls(card, editing) {
+    for (const toggle of cardControls(card, "[data-sc-edit-toggle]")) {
+        toggle.setAttribute("aria-expanded", editing ? "true" : "false");
+        setToggleDone(toggle, editing);
+    }
+    for (const control of cardControls(card, "[data-sc-edit-only]")) {
+        control.hidden = !editing;
+    }
+}
+
+// Task 1736: a card rendered in edit mode (e.g. a just-created injury's
+// Details) shows its ✓ and its edit-only controls from the start.
+function syncOpenCards() {
+    for (const card of document.querySelectorAll(".o_sc_app [data-sc-edit-card][data-sc-edit-open]")) {
+        syncCardControls(card, true);
+    }
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", syncOpenCards);
+} else {
+    syncOpenCards();
+}
+// A refreshed read fragment brings its controls back as rendered: re-sync.
+document.addEventListener("sc:fragments", syncOpenCards);
 
 document.addEventListener("sc:edit-open", (ev) => {
     const card = ev.target.closest && ev.target.closest("[data-sc-edit-card]");
@@ -408,12 +475,18 @@ document.addEventListener("sc:edit-open", (ev) => {
 document.addEventListener("click", (ev) => {
     const toggle = ev.target.closest && ev.target.closest("[data-sc-edit-toggle]");
     const done = !toggle && ev.target.closest && ev.target.closest("[data-sc-edit-done]");
-    const card = (toggle || done) && (toggle || done).closest("[data-sc-edit-card]");
+    const card = toggle ? ownerCard(toggle) : done && done.closest("[data-sc-edit-card]");
     if (!card) {
         return;
     }
     ev.preventDefault();
     if (toggle) {
+        // Task 1736: a top-bar pencil of a folded card (the injury card's
+        // header) unfolds it first.
+        const fold = card.closest("details:not([open])");
+        if (fold && !card.dataset.scEditOpen) {
+            fold.open = true;
+        }
         const closing = Boolean(card.dataset.scEditOpen);
         setCardEditing(card, !closing);
         if (closing) {
@@ -640,6 +713,19 @@ document.addEventListener("click", (ev) => {
     }
     const opener = ev.target.closest("[data-sc-sheet-open]");
     if (opener) {
+        // Task 1736 r1: an opener with data-sc-sheet-url (an activity card's
+        // details popout) loads that body into the shared sheet, fresh on
+        // every open. It is a link to the full page: a new-tab click, or a
+        // page without the sheet, follows the link.
+        const url = opener.dataset.scSheetUrl;
+        if (url) {
+            const dialog = document.getElementById(opener.dataset.scSheetOpen);
+            if (!dialog || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
+                return;
+            }
+            dialog.dataset.scLazyUrl = url;
+            dialog.dataset.scLazyFresh = "1";
+        }
         ev.preventDefault();
         openSheet(opener.dataset.scSheetOpen);
         return;

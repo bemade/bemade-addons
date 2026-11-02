@@ -75,7 +75,8 @@ class TestLinkPickers1648(Pickers1648Common):
             self.assertIn(key, props)
         self.assertIn('"optionMeta"', props)
         archive = card.xpath('.//button[@data-sc-action="note.archive"]')[0]
-        self.assertEqual(archive.text_content().strip(), 'Archive')
+        # Task 1736 (deliberate update): the archive icon — its name.
+        self.assertEqual(archive.get('aria-label'), 'Archive')
 
     def test_no_js_post_links_the_player(self):
         self._login_tp()

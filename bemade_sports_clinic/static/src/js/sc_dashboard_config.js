@@ -272,7 +272,8 @@ document.addEventListener("submit", (ev) => {
         save(form);
         return;
     }
-    if (form.matches && form.matches("form[data-sc-dash-reset-form]") && inApp(form)) {
+    // Task 1736: « Retirer » (an item's red trash) asks first too.
+    if (form.matches && form.matches("form[data-sc-dash-reset-form], form[data-sc-dash-remove-form]") && inApp(form)) {
         if (form.dataset.scDashConfirmed) {
             return;
         }

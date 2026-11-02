@@ -169,6 +169,12 @@ tours.add("sc_1677_allergies_tp", {
             run: "click",
         },
         {
+            // Task 1736 (deliberate update): a permanent delete asks first.
+            content: "Confirm the delete",
+            trigger: "dialog[data-sc-confirm][open] [data-sc-confirm-ok]",
+            run: "click",
+        },
+        {
             content: "Gone: yellow again",
             trigger: `${headOf(ALLERGY)}[data-sc-med-level="minor"]`,
             async run() {

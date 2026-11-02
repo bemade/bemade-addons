@@ -63,17 +63,24 @@ tours.add("sc_1624_dashboard_round1", {
             run: "click",
         },
         {
+            // Task 1736 r1 (deliberate update): « Reschedule » is the card's
+            // pencil — the due date is edited in place, on the dashboard.
             content: "Its activity cards, with their actions",
-            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row] button[data-sc-action="activity.reschedule"]`,
+            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row] button[data-sc-action="activity.edit"]`,
             run: "click",
         },
         {
-            content: "The « Reschedule » sheet opens on the dashboard",
-            trigger: "dialog#sc_activity_reschedule_sheet[open]",
+            content: "The card is edited in place on the dashboard (its due date)",
+            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row][data-sc-edit-open] [data-sc-edit-view="edit"]:not([hidden]) input[type="date"]`,
             run() {
-                assert(this.anchor.querySelector('input[name="activity_id"]').value, "the activity is set");
-                this.anchor.querySelector("[data-sc-sheet-close]").click();
+                const card = this.anchor.closest("[data-sc-activity-row]");
+                assert(card.querySelector('[data-sc-action="activity.complete"]'), "« Done » stays");
+                card.querySelector("button[data-sc-edit-toggle]").click();
             },
+        },
+        {
+            content: "Closed again",
+            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row]:not([data-sc-edit-open]) button[data-sc-action="activity.edit"]`,
         },
         {
             content: "Fold out an upcoming event's « Details »",

@@ -237,5 +237,6 @@ class TestReviewFixes1018I18n(TestAppShellI18n1538):
         tree = lxml_html.fromstring(self._fr('/my/player?player_id=%s' % self.player.id))
         ret = tree.xpath('//*[@data-sc-section="player.return"]')[0]
         self.assertIn('Retour réel', _text(ret))
-        toggle = tree.xpath('//*[@data-sc-section="player.hero"]/button[@data-sc-edit-toggle]')[0]
+        # Task 1736 (deliberate update): in the hero's top-bar icon group.
+        toggle = tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-card-icons]/button[@data-sc-edit-toggle]')[0]
         self.assertEqual(toggle.get('aria-label'), 'Modifier')

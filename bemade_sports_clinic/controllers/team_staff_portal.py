@@ -1190,8 +1190,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'url': '/my/team?team_id=%s' % team.id if team.id in readable else False,
         } for team in all_teams]
 
+        # Task 1432: edit / delete (archive) for the uploader or an admin.
         document_rows = [{
             'doc': doc,
+            'can_manage': doc._sc_can_manage(user),
             'meta': ' · '.join(part for part in (
                 dict(doc._fields['category']._description_selection(env)).get(doc.category, ''),
                 format_date(env, doc.create_date),

@@ -44,8 +44,15 @@ tours.add("sc_1663_announcement_undo", {
 tours.add("sc_1663_activity_delete", {
     steps: () => [
         {
-            content: "« Delete » on the activity page",
-            trigger: 'button[data-sc-action="activity.cancel"]:contains(Delete)',
+            // Task 1736 (deliberate update): the delete is the card's red
+            // trash, shown while the activity is being edited.
+            content: "The activity card's pencil",
+            trigger: '[data-sc-edit-card="activity"] [data-sc-card-icons] button[data-sc-edit-toggle]',
+            run: "click",
+        },
+        {
+            content: "« Delete » (the trash) on the activity page",
+            trigger: '[data-sc-edit-card="activity"][data-sc-edit-open] button[data-sc-action="activity.cancel"][aria-label="Delete"]:visible',
             run: "click",
         },
         {

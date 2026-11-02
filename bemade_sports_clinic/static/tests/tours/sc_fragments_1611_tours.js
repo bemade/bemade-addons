@@ -157,6 +157,12 @@ tours.add("sc_1611_player_fragments", {
             run: "click",
         },
         {
+            // Task 1736 (deliberate update): a permanent delete asks first.
+            content: "Confirm the delete",
+            trigger: "dialog[data-sc-confirm][open] [data-sc-confirm-ok]",
+            run: "click",
+        },
+        {
             content: "The item goes",
             trigger: ".o_sc_app",
             async run() {
@@ -176,7 +182,8 @@ tours.add("sc_1611_injury_stage", {
     steps: () => [
         {
             content: "Open card: the Details pencil (task 1616: one per group)",
-            trigger: `${CARD_DETAILS} button[data-sc-edit-toggle]`,
+            // Task 1736 (deliberate update): the Details pencil is the card's top-bar pencil.
+            trigger: `${CARD} > summary button[data-sc-edit-toggle][data-sc-edit-for="injury-details"]`,
             run(helpers) {
                 markNoReload();
                 return helpers.click();

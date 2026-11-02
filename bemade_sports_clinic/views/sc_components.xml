@@ -331,6 +331,105 @@
         </div>
     </template>
 
+    <!--
+        Task 1736 (owner 2026-11-01) — a card top bar's icon group: ONE order
+        and ONE colour scheme on every card, left to right:
+          ★ follow · clock + count · archive · trash · pencil → ✓
+        (the pencil / ✓ always rightmost). Neutral icons, except the red
+        trash, the green ✓ (sc_app_ui.js), the filled ★ while following and
+        the red clock when an activity is overdue. Every variable optional:
+          ci_follow    truthy: the ★ toggle of ``player`` (sc_follow_toggle)
+          ci_clock     {count, overdue, url, label[, always]}: a link to the
+                     record's activities with a count badge; hidden at 0
+                     unless ``always`` (then no badge)
+          ci_archive   a recoverable action, visible in read mode, neutral:
+                     {sheet} opens that sheet, {form} submits that (outside)
+                     form (button ``form`` attribute), {action, hidden[,
+                     section]} an inline POST form; optional label, key
+                     (data-sc-action)
+          ci_trash     a permanent delete (it always asks first), red:
+                     {sheet}, {form} (submits that form, which asks first)
+                     or {attrs} (extra attributes, a JS-handled button;
+                     cls = extra classes); shown while the card is edited (sc_app_ui.js
+                     data-sc-edit-only) unless ``always`` (a card without a
+                     pencil); optional label, key
+          ci_editable  the pencil (data-sc-edit-toggle); ci_edit_key = its
+                     data-sc-action, ci_edit_for = the edit card it opens
+                     when it sits outside it (data-sc-edit-for),
+                     ci_edit_open = the card renders in edit mode
+        (ci_ prefixed: a caller's own ``editable`` / ``clock`` never leak in.)
+        Body (0): status chips / pills, before the icons.
+    -->
+    <template id="sc_card_icons" name="App shell: card top-bar icons">
+        <t t-set="sc_ci_edit_for" t-value="ci_edit_for or None"/>
+        <span class="o_sc_card_icons" data-sc-card-icons="1">
+            <t t-out="0"/>
+            <t t-if="ci_follow" t-call="bemade_sports_clinic.sc_follow_toggle">
+                <t t-set="follow_icon" t-value="True"/>
+            </t>
+            <t t-if="ci_clock and (ci_clock.get('count') or ci_clock.get('always'))">
+                <t t-set="sc_ci_clock_label">Activities</t>
+                <a t-att-href="ci_clock['url']"
+                   t-attf-class="o_sc_icon_btn o_sc_card_clock #{'o_sc_card_clock_overdue' if ci_clock.get('overdue') else ''}"
+                   t-att-data-sc-activity-clock="str(ci_clock.get('count') or 0)"
+                   t-att-data-sc-activity-overdue="str(ci_clock.get('overdue') or 0)"
+                   t-att-data-sc-action="ci_clock.get('key') or None"
+                   t-att-aria-label="ci_clock.get('label') or sc_ci_clock_label" t-att-title="ci_clock.get('label') or sc_ci_clock_label">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'clock'"/></t>
+                    <span t-if="ci_clock.get('count')" class="o_sc_card_badge" aria-hidden="true" t-out="ci_clock['count']"/>
+                </a>
+            </t>
+            <t t-if="ci_archive">
+                <t t-set="sc_ci_archive_label" t-value="ci_archive.get('label')"/>
+                <t t-if="not sc_ci_archive_label"><t t-set="sc_ci_archive_label">Archive</t></t>
+                <form t-if="ci_archive.get('action')" t-att-action="ci_archive['action']" method="post" class="o_sc_inline_form"
+                      t-att-data-sc-section="ci_archive.get('section') or None">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <t t-foreach="(ci_archive.get('hidden') or {}).items()" t-as="hid">
+                        <input type="hidden" t-att-name="hid[0]" t-att-value="hid[1]"/>
+                    </t>
+                    <button type="submit" class="o_sc_icon_btn o_sc_card_archive" data-sc-card-archive="1"
+                            t-att-data-sc-action="ci_archive.get('key') or None"
+                            t-att-aria-label="sc_ci_archive_label" t-att-title="sc_ci_archive_label">
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'archive'"/></t>
+                    </button>
+                </form>
+                <button t-else="" t-att-type="'submit' if ci_archive.get('form') else 'button'"
+                        class="o_sc_icon_btn o_sc_card_archive" data-sc-card-archive="1"
+                        t-att-form="ci_archive.get('form') or None" t-att-data-sc-sheet-open="ci_archive.get('sheet') or None"
+                        t-att-data-sc-action="ci_archive.get('key') or None"
+                        t-att-aria-label="sc_ci_archive_label" t-att-title="sc_ci_archive_label">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'archive'"/></t>
+                </button>
+            </t>
+            <t t-if="ci_trash">
+                <t t-set="sc_ci_trash_label" t-value="ci_trash.get('label')"/>
+                <t t-if="not sc_ci_trash_label"><t t-set="sc_ci_trash_label">Delete</t></t>
+                <t t-set="sc_ci_trash_gated" t-value="not ci_trash.get('always')"/>
+                <button t-att-type="'submit' if ci_trash.get('form') else 'button'" t-attf-class="o_sc_icon_btn o_sc_icon_btn_danger o_sc_card_trash #{ci_trash.get('cls') or ''}" data-sc-card-trash="1"
+                        t-att="ci_trash.get('attrs') or {}" t-att-form="ci_trash.get('form') or None"
+                        t-att-data-sc-sheet-open="ci_trash.get('sheet') or None"
+                        t-att-data-sc-action="ci_trash.get('key') or None"
+                        t-att-data-sc-edit-only="'1' if sc_ci_trash_gated else None"
+                        t-att-data-sc-edit-for="sc_ci_edit_for if sc_ci_trash_gated else None"
+                        t-att-hidden="'hidden' if sc_ci_trash_gated and not ci_edit_open else None"
+                        t-att-aria-label="sc_ci_trash_label" t-att-title="sc_ci_trash_label">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'trash'"/></t>
+                </button>
+            </t>
+            <t t-if="ci_editable">
+                <t t-set="sc_ci_edit_label">Edit</t>
+                <button type="button" class="o_sc_icon_btn o_sc_card_edit" data-sc-edit-toggle="1"
+                        t-att-data-sc-edit-for="sc_ci_edit_for"
+                        t-att-data-sc-action="ci_edit_key or None"
+                        t-att-aria-expanded="'true' if ci_edit_open else 'false'"
+                        t-att-aria-label="sc_ci_edit_label" t-att-title="sc_ci_edit_label">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                </button>
+            </t>
+        </span>
+    </template>
+
     <!-- « Done » of an edit card's edit view. -->
     <template id="sc_edit_card_done" name="App shell: edit card done">
         <!-- Task 1676: hidden unless the user shows the « Done » buttons
@@ -590,8 +689,9 @@
 
     <!--
         Task 1539 — document row. Variables: doc (sports.injury.document),
-        download_url, delete_sheet (dialog id of the delete confirm, or
-        False), meta (subtitle text). Task 1616: optional edit_toggle (the
+        download_url, archive_return (task 1736: the document's archive
+        icon posts there and comes back to that URL, or False: no archive),
+        meta (subtitle text). Task 1616: optional edit_toggle (the
         pencil of the enclosing per-document edit card) and fragment_key
         (the text is a read fragment refreshed by a save of the document).
     -->
@@ -603,20 +703,22 @@
                 <span class="o_sc_row_subtitle" t-out="meta"/>
                 <span t-if="doc.description" class="o_sc_row_subtitle" t-out="doc.description"/>
             </span>
+            <!-- Review round 1 of #1432 (owner 2026-11-01): the same top-bar
+                 order as the other cards — the download first, the pencil /
+                 ✓ rightmost. Task 1736 (owner 2026-11-01): « delete » only
+                 ARCHIVES a document (a clinic administrator restores it), so
+                 it is the archive icon, visible in read mode, with an undo
+                 toast (no confirmation). -->
             <span class="o_sc_row_trailing">
-                <button t-if="edit_toggle" type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1"
-                        aria-expanded="false" data-sc-action="documents.edit" aria-label="Edit" title="Edit">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
-                </button>
-                <a t-att-href="download_url" class="o_sc_icon_btn" data-sc-action="documents.download"
-                   aria-label="Download" title="Download">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'download'"/></t>
-                </a>
-                <button t-if="delete_sheet" type="button" class="o_sc_icon_btn o_sc_icon_btn_danger"
-                        t-att-data-sc-sheet-open="delete_sheet" data-sc-action="documents.delete"
-                        aria-label="Delete" title="Delete">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'trash'"/></t>
-                </button>
+                <t t-call="bemade_sports_clinic.sc_card_icons">
+                    <t t-set="ci_archive" t-value="archive_return and {'action': '/my/injury/document/delete/%s' % doc.id, 'hidden': {'return_url': archive_return, 'sc_undo': '1'}, 'key': 'documents.delete'}"/>
+                    <t t-set="ci_editable" t-value="edit_toggle"/>
+                    <t t-set="ci_edit_key" t-value="'documents.edit'"/>
+                    <a t-att-href="download_url" class="o_sc_icon_btn" data-sc-action="documents.download"
+                       aria-label="Download" title="Download">
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'download'"/></t>
+                    </a>
+                </t>
             </span>
         </div>
     </template>
@@ -926,55 +1028,91 @@
         Task 1539 — activity row with its due-date state chip. Variables:
         activity, today_date, related_links (sc_activity_related: the
         access-gated related-record links, task 1595), show_assignee,
-        can_reassign. Actions open the shared sheets (sc_activity_sheets)
-        through sc_activities.js.
+        can_reassign, act_scope (optional: unique ids when the same activity
+        is listed twice on a page — the activity tabs). Actions open the
+        shared sheets (sc_activity_sheets) through sc_activities.js.
         Task 1595: a link row (sc_link_row) — the title opens the activity,
         the related player / team / event / injury link opens that record;
         the activity type shows in the subtitle when a summary is the title.
+        Task 1736 r1 (owner 2026-11-01): an EDIT CARD like the others — its
+        pencil (rightmost, who may act on the activity) edits it in place
+        (summary, due date, assignee where the user may reassign, note;
+        saved as you go — the former « Reschedule » / « Reassign »), the red
+        trash shows while editing (it asks first), « Done » stays the last
+        action. A tap on the card opens the details popout
+        (sc_activity_detail_sheet; without it, the activity page). The edit
+        fields are mounted on the first pencil tap (data-sc-lazy-edit: a
+        long list mounts no field until then).
     -->
     <template id="sc_activity_row" name="App shell: activity row">
         <t t-set="act_state" t-value="'overdue' if activity.date_deadline &lt; today_date else ('today' if activity.date_deadline == today_date else 'planned')"/>
         <!-- ONE card, actions inside it (owner review 2026-10-10: same UX as
              the other tabs' cards). -->
-        <div class="o_sc_card o_sc_activity" t-att-data-sc-activity-row="activity.id" t-att-data-sc-activity-state="act_state">
-            <t t-call="bemade_sports_clinic.sc_link_row">
-                <t t-set="href" t-value="'/my/activity/%s' % activity.id"/>
-                <t t-set="title" t-value="activity.summary or activity.activity_type_id.name"/>
-                <!-- Owner review 2026-10-14: the related record's name in the
-                     title is a link to it too (same access-gated URL). -->
-                <t t-set="title_parts" t-value="sc_activity_title_parts(title, related_links)"/>
-                <t t-set="dot" t-value="'red' if act_state == 'overdue' else ('yellow' if act_state == 'today' else 'green')"/>
-                <t t-set="subtitle">
-                    <span t-if="activity.summary and activity.activity_type_id" class="o_sc_activity_type"
-                          t-out="activity.activity_type_id.name"/>
-                    <t t-if="activity.summary and activity.activity_type_id"> · </t>
-                    <span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/>
-                    <t t-if="show_assignee and activity.user_id"> · <t t-out="activity.user_id.name"/></t>
+        <t t-set="sc_act_can_act" t-value="sc_activity_can_act(activity)"/>
+        <t t-set="sc_act_uid" t-value="('%s_%s' % (activity.id, act_scope)) if act_scope else str(activity.id)"/>
+        <div t-attf-class="o_sc_card o_sc_activity #{'o_sc_edit_card' if sc_act_can_act else ''}"
+             t-att-data-sc-activity-row="activity.id" t-att-data-sc-activity-state="act_state"
+             t-att-data-sc-edit-card="('activity-%s' % sc_act_uid) if sc_act_can_act else None">
+            <div class="o_sc_activity_head" t-att-data-sc-fragment="sc_fragment_key(activity, 'row')">
+                <t t-call="bemade_sports_clinic.sc_link_row">
+                    <t t-set="href" t-value="'/my/activity/%s' % activity.id"/>
+                    <!-- Task 1736 r1: a tap opens the details popout (the
+                         page itself on a new-tab click / without the sheet). -->
+                    <t t-set="main_attrs" t-value="{'data-sc-sheet-open': 'sc_activity_detail_sheet', 'data-sc-sheet-url': '/my/activity/%s/popout' % activity.id, 'data-sc-activity-popout': activity.id, 'aria-haspopup': 'dialog'}"/>
+                    <t t-set="title" t-value="activity.summary or activity.activity_type_id.name"/>
+                    <!-- Owner review 2026-10-14: the related record's name in the
+                         title is a link to it too (same access-gated URL). -->
+                    <t t-set="title_parts" t-value="sc_activity_title_parts(title, related_links)"/>
+                    <t t-set="dot" t-value="'red' if act_state == 'overdue' else ('yellow' if act_state == 'today' else 'green')"/>
+                    <t t-set="subtitle">
+                        <span t-if="activity.summary and activity.activity_type_id" class="o_sc_activity_type"
+                              t-out="activity.activity_type_id.name"/>
+                        <t t-if="activity.summary and activity.activity_type_id"> · </t>
+                        <span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/>
+                        <t t-if="show_assignee and activity.user_id"> · <t t-out="activity.user_id.name"/></t>
+                    </t>
+                    <t t-set="links" t-value="related_links"/>
+                    <t t-set="chevron" t-value="False"/>
+                    <!-- Task 1736: the shared top bar. r1: the red trash while
+                         editing (it asks first), the pencil rightmost. -->
+                    <t t-call="bemade_sports_clinic.sc_card_icons">
+                        <t t-set="ci_trash" t-value="sc_act_can_act and {'sheet': 'sc_activity_cancel_sheet', 'key': 'activity.cancel', 'attrs': {'data-sc-activity-id': activity.id}}"/>
+                        <t t-set="ci_editable" t-value="sc_act_can_act"/>
+                        <t t-set="ci_edit_key" t-value="'activity.edit'"/>
+                        <span t-if="act_state == 'overdue'" class="o_sc_chip o_sc_chip_red">Overdue</span>
+                        <span t-elif="act_state == 'today'" class="o_sc_chip o_sc_chip_yellow">Today</span>
+                        <span t-else="" class="o_sc_chip o_sc_chip_ghost">Planned</span>
+                    </t>
                 </t>
-                <t t-set="links" t-value="related_links"/>
-                <span t-if="act_state == 'overdue'" class="o_sc_chip o_sc_chip_red">Overdue</span>
-                <span t-elif="act_state == 'today'" class="o_sc_chip o_sc_chip_yellow">Today</span>
-                <span t-else="" class="o_sc_chip o_sc_chip_ghost">Planned</span>
-            </t>
-            <!-- Task 1589: actions only for who may act on the activity. -->
-            <div t-if="sc_activity_can_act(activity)" class="o_sc_card_actions o_sc_activity_actions">
+            </div>
+            <!-- Task 1736 r1: the inline edit (the detail page's fields; the
+                 type stays read-only, as there). -->
+            <div t-if="sc_act_can_act" class="o_sc_fields o_sc_activity_edit" data-sc-edit-view="edit"
+                 data-sc-lazy-edit-host="1" hidden="hidden">
+                <template data-sc-lazy-edit="1">
+                    <div class="o_sc_fields_lazy">
+                        <t t-set="lbl">Summary</t>
+                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'summary', lbl, inputId='sc_act_%s_summary' % sc_act_uid)"/></t>
+                        <t t-set="lbl">Due Date</t>
+                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'date_deadline', lbl, 'date', inputId='sc_act_%s_date_deadline' % sc_act_uid)"/></t>
+                        <t t-if="can_reassign">
+                            <t t-set="lbl">Assigned To</t>
+                            <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'user_id', lbl, 'select', options=sc_activity_assignee_options(activity), picker=True, pickerKey='user', inputId='sc_act_%s_user_id' % sc_act_uid)"/></t>
+                        </t>
+                        <t t-set="lbl">Note</t>
+                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'note', lbl, 'textarea', clearable=True, inputId='sc_act_%s_note' % sc_act_uid)"/></t>
+                    </div>
+                </template>
+                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+            </div>
+            <!-- Task 1589: actions only for who may act on the activity.
+                 Task 1736 r1: « Reschedule » / « Reassign » are the inline
+                 edit now; « Done » stays, last (rightmost). -->
+            <div t-if="sc_act_can_act" class="o_sc_card_actions o_sc_activity_actions">
                 <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-sheet-open="sc_activity_complete_sheet"
                         t-att-data-sc-activity-id="activity.id" data-sc-action="activity.complete">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'check'"/></t>
                     <span>Done</span>
-                </button>
-                <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-sheet-open="sc_activity_reschedule_sheet"
-                        t-att-data-sc-activity-id="activity.id" data-sc-action="activity.reschedule">
-                    <span>Reschedule</span>
-                </button>
-                <button t-if="can_reassign" type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
-                        data-sc-sheet-open="sc_activity_reassign_sheet" data-sc-action="activity.reassign"
-                        t-att-data-sc-activity-id="activity.id" t-att-data-sc-current-user="activity.user_id.name or ''">
-                    <span>Reassign</span>
-                </button>
-                <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-sheet-open="sc_activity_cancel_sheet"
-                        t-att-data-sc-activity-id="activity.id" data-sc-action="activity.cancel">
-                    <span>Delete</span>
                 </button>
             </div>
         </div>
@@ -1201,16 +1339,14 @@
                                 </div>
                                 <!-- Review round 1 (owner 2026-10-27): the trash sits
                                      next to the ✓, top right, shown while editing
-                                     (allergies and conditions alike). -->
-                                <button t-if="editable" type="button" class="o_sc_icon_btn o_sc_med_item_delete"
-                                        t-att-data-sc-med-item-delete="item['id']" data-sc-action="medical.item.delete"
-                                        aria-label="Delete" title="Delete">
-                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'trash'"/></t>
-                                </button>
-                                <button t-if="editable" type="button" class="o_sc_icon_btn" data-sc-edit-toggle="1"
-                                        data-sc-action="medical.item.edit" aria-expanded="false" aria-label="Edit" title="Edit">
-                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
-                                </button>
+                                     (allergies and conditions alike). Task 1736:
+                                     the shared top bar; the delete asks first
+                                     (sc_medical_lists.js). -->
+                                <t t-if="editable" t-call="bemade_sports_clinic.sc_card_icons">
+                                    <t t-set="ci_trash" t-value="{'key': 'medical.item.delete', 'cls': 'o_sc_med_item_delete', 'attrs': {'data-sc-med-item-delete': item['id']}}"/>
+                                    <t t-set="ci_editable" t-value="True"/>
+                                    <t t-set="ci_edit_key" t-value="'medical.item.edit'"/>
+                                </t>
                             </div>
                             <div t-if="editable" class="o_sc_fields o_sc_med_card_edit" data-sc-edit-view="edit" hidden="hidden">
                                 <div class="o_sc_field">
@@ -1286,7 +1422,21 @@
               class="o_sc_inline_form o_sc_follow_form">
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
             <input type="hidden" name="follow" t-att-value="'0' if sc_follow_state else '1'"/>
-            <button type="submit" t-attf-class="o_sc_btn o_sc_btn_sm o_sc_follow #{'o_sc_btn_primary' if sc_follow_state else 'o_sc_btn_ghost'}"
+            <!-- Task 1736: in a card top bar (follow_icon) the toggle is the
+                 ★ alone, filled while following; its name says the action. -->
+            <t t-if="follow_icon">
+                <t t-set="sc_follow_on_label">Unfollow</t>
+                <t t-set="sc_follow_off_label">Follow</t>
+                <button type="submit" class="o_sc_icon_btn o_sc_follow o_sc_follow_icon"
+                        t-att-data-sc-follow="player.id" t-att-data-sc-followed="'1' if sc_follow_state else '0'"
+                        t-att-data-sc-follow-on="sc_follow_on_label" t-att-data-sc-follow-off="sc_follow_off_label"
+                        t-att-aria-pressed="'true' if sc_follow_state else 'false'" data-sc-action="player.follow"
+                        t-att-aria-label="sc_follow_off_label"
+                        t-att-title="sc_follow_on_label if sc_follow_state else sc_follow_off_label">
+                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'star'"/></t>
+                </button>
+            </t>
+            <button t-else="" type="submit" t-attf-class="o_sc_btn o_sc_btn_sm o_sc_follow #{'o_sc_btn_primary' if sc_follow_state else 'o_sc_btn_ghost'}"
                     t-att-data-sc-follow="player.id" t-att-data-sc-followed="'1' if sc_follow_state else '0'"
                     t-att-aria-pressed="'true' if sc_follow_state else 'false'" data-sc-action="player.follow">
                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'star'"/></t>

@@ -8,7 +8,8 @@ import smtplib
 import time
 from contextlib import contextmanager
 from email.message import EmailMessage
-from email.utils import make_msgid
+from datetime import datetime, timezone
+from email.utils import format_datetime, make_msgid
 
 from odoo import fields, models
 from odoo.addons.conversation_base.tools import mime
@@ -163,7 +164,8 @@ class ConversationTransport(models.Model):
     def _email_connection_params(self):
         """Endpoints + credentials for this transport's provider, as a
         dict: ``imap_host``, ``imap_port``, ``imap_ssl``, ``smtp_host``,
-        ``smtp_port``, ``smtp_starttls``, ``password``. Overridden by each
+        ``smtp_port``, ``smtp_encryption`` (``none``/``starttls``/``ssl``; or
+        the older boolean ``smtp_starttls``), ``password``. Overridden by each
         provider module, guarded on its own ``provider`` value.
 
         ``login`` is not part of this: it lives on ``conversation.transport``
@@ -189,6 +191,21 @@ class ConversationTransport(models.Model):
 
     def _get_smtp_client_class(self):
         return smtplib.SMTP
+
+    def _get_smtp_ssl_client_class(self):
+        """Client for implicit SSL/TLS (SMTPS, usually port 465): the
+        socket is wrapped in TLS before the server greeting, so plain
+        ``SMTP`` + ``starttls()`` cannot talk to it."""
+        return smtplib.SMTP_SSL
+
+    def _smtp_encryption(self, params):
+        """``none`` / ``starttls`` / ``ssl`` for these connection params.
+        Providers that only know the older ``smtp_starttls`` boolean
+        (Gmail) keep working: absent ``smtp_encryption`` is derived from it."""
+        encryption = params.get("smtp_encryption")
+        if encryption:
+            return encryption
+        return "starttls" if params.get("smtp_starttls", True) else "none"
 
     def _email_socket_timeout(self):
         """Seconds before an unresponsive mail server gives a worker back.
@@ -292,14 +309,18 @@ class ConversationTransport(models.Model):
                 )
             )
         oauth_string = self._imap_oauth_string()  # pylint: disable=assignment-from-none
-        client_cls = self._get_smtp_client_class()
+        encryption = self._smtp_encryption(params)
+        if encryption == "ssl":
+            client_cls = self._get_smtp_ssl_client_class()
+        else:
+            client_cls = self._get_smtp_client_class()
         connection = client_cls(
             params["smtp_host"],
             params.get("smtp_port") or 587,
             timeout=self._email_socket_timeout(),
         )
         try:
-            if params.get("smtp_starttls", True):
+            if encryption == "starttls":
                 connection.starttls()
             if oauth_string:
                 self._smtp_xoauth2_login(connection, oauth_string)
@@ -804,6 +825,9 @@ class ConversationTransport(models.Model):
         outgoing = EmailMessage(policy=_OUTGOING_POLICY)
         outgoing["Subject"] = subject or ""
         outgoing["From"] = self.login
+        # Without a Date the message is delivered and APPENDed to Sent
+        # dateless: clients show it oddly and the inbox cannot date it.
+        outgoing["Date"] = format_datetime(datetime.now(timezone.utc))
         if to_emails:
             outgoing["To"] = ", ".join(to_emails)
         if cc:

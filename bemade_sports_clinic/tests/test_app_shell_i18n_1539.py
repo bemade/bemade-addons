@@ -77,8 +77,10 @@ class TestAppShellI18n1539(TestAppShellI18n1538):
         self._switch(True)
         self._login_tp()
         text = self._fr_text('/my/activities')
+        # Task 1736 r1 (deliberate update): no « Reprogrammer » — the card's
+        # pencil (« Modifier ») edits the due date in place.
         for term in ('Toutes (', 'En retard (', "Aujourd'hui (", 'Planifiées (',
-                     "Terminer l'activité", 'Reprogrammer'):
+                     "Terminer l'activité", 'aria-label="Modifier"'):
             self.assertIn(term, text, term)
 
     def test_p2_owl_strings_served_in_french(self):

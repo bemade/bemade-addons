@@ -248,7 +248,9 @@ class TestInjuryQuickActions1604(QuickActionsMixin, FragmentsCommon):
             tree = self._page('/my/injury/edit?injury_id=%s' % injury.id)
             card = tree.xpath('//details[@id="injury-%s"][@open]' % injury.id)
             self.assertEqual(len(card), 1, action)
-            summary = card[0].xpath('./summary[@data-sc-fragment="sports.patient.injury:%s:summary"]' % injury.id)
+            # Task 1736 (deliberate update): the summary fragment is the top
+            # bar's left part (inside the summary).
+            summary = card[0].xpath('./summary/*[@data-sc-fragment="sports.patient.injury:%s:summary"]' % injury.id)
             self.assertEqual(len(self._buttons(summary[0], action)), 1, action)
             self.assertEqual(len(tree.xpath('//dialog[@id="sc_injury_resolve_sheet"]')), 1)
         tree = self._page('/my/injury/edit?injury_id=%s' % self.resolved.id)
