@@ -38,11 +38,34 @@
                                t-att-value="last_name or ''"/>
                     </div>
                 </div>
-                <details class="o_sc_disclosure" t-att-open="'open' if sc_filters_open else None">
+                <!-- Task 1743 (owner 2026-11-02): the name boxes stay in
+                     sight with « Search »; everything else — « Suivis ★ »
+                     (#1738), jersey, team, organization, statuses and
+                     « Clear » — goes in ONE « Filters (N) » disclosure,
+                     closed unless one of those is set (same on a laptop). -->
+                <input t-if="followed_only" type="hidden" name="followed" value="1"/>
+                <div class="o_sc_form_actions o_sc_players_search_actions">
+                    <button type="submit" class="o_sc_btn o_sc_btn_primary">
+                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'search'"/></t>
+                        <span>Search</span>
+                    </button>
+                </div>
+                <details class="o_sc_disclosure o_sc_players_filters" data-sc-section="players.filters"
+                         t-att-open="'open' if sc_filters_open else None">
                     <summary class="o_sc_disclosure_summary">
                         <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
                         <span>Filters</span>
+                        <span t-if="sc_filters_count" class="o_sc_filter_count" data-sc-filter-count="1"
+                              t-out="'(%s)' % sc_filters_count"/>
                     </summary>
+                    <div t-if="sc_players_followed_url" class="o_sc_chips" data-sc-section="players.followed">
+                        <a t-att-href="sc_players_followed_url"
+                           t-attf-class="o_sc_chip o_sc_chip_follow #{'o_sc_chip_mauve' if followed_only else 'o_sc_chip_ghost'}"
+                           t-att-aria-pressed="'true' if followed_only else 'false'" data-sc-action="players.followed">
+                            <span>Followed</span>
+                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'star'"/></t>
+                        </a>
+                    </div>
                     <div class="o_sc_filter_grid">
                         <div class="o_sc_field">
                             <label for="sc_players_jersey" class="o_sc_field_label">Jersey no.</label>
@@ -88,14 +111,10 @@
                             </select>
                         </div>
                     </div>
+                    <div class="o_sc_form_actions">
+                        <a href="/my/players" class="o_sc_btn o_sc_btn_ghost" data-sc-filter-reset="1">Clear Filters</a>
+                    </div>
                 </details>
-                <div class="o_sc_form_actions">
-                    <a href="/my/players" class="o_sc_btn o_sc_btn_ghost" data-sc-filter-reset="1">Clear Filters</a>
-                    <button type="submit" class="o_sc_btn o_sc_btn_primary">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'search'"/></t>
-                        <span>Search</span>
-                    </button>
-                </div>
             </form>
 
             <!-- Task 1607: « + Ajouter » (create a player) and the sort
@@ -128,6 +147,7 @@
                          training recommendation, « Retour prévu », details. -->
                     <t t-if="row['accessible']" t-call="bemade_sports_clinic.sc_player_row">
                         <t t-set="row_scope" t-value="'players'"/>
+                        <t t-call="bemade_sports_clinic.sc_players_row_followed"/>
                     </t>
                     <!-- Task 1225: a player found by the broadened search whom
                          the viewer cannot open: « Ajouter à l'équipe » instead
@@ -145,6 +165,7 @@
                                 </t>
                             </span>
                             <span class="o_sc_row_trailing">
+                                <t t-call="bemade_sports_clinic.sc_players_row_followed"/>
                                 <t t-call="bemade_sports_clinic.sc_status_chip">
                                     <t t-set="tone" t-value="'ghost'"/>
                                     <t t-set="label">Not on your teams</t>
@@ -166,6 +187,8 @@
                     </div>
                 </t>
             </div>
+            <!-- Task 1738: « Suivis ★ » on while following nobody. -->
+            <p t-elif="sc_players_followed_none" class="o_sc_empty" data-sc-empty="players.followed-none">You do not follow any player. Use ★ on a player's page.</p>
             <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
                 <t t-set="message">No players match these filters.</t>
             </t>
@@ -193,6 +216,15 @@
                 <t t-call="portal.pager"/>
             </div>
         </t>
+    </template>
+
+    <!-- Task 1738: the small filled ★ of a followed player's row (row). -->
+    <template id="sc_players_row_followed" name="Sports Clinic App: players row followed star">
+        <span t-if="row.get('followed')" class="o_sc_row_followed" data-sc-row-followed="1"
+              title="You follow this player">
+            <span class="visually-hidden">You follow this player</span>
+            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'star'"/></t>
+        </span>
     </template>
 
     <!-- Flash messages of a page's POST round-trips (sc_flash: {success, error}). -->

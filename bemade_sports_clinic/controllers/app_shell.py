@@ -31,6 +31,7 @@ import json
 import logging
 import re
 import time
+import uuid
 from datetime import timedelta
 from urllib.parse import urlencode
 
@@ -52,7 +53,9 @@ from odoo.addons.portal.controllers.portal import CustomerPortal
 from ..models import sc_app_nav, sc_app_roles
 from ..models.patient import IDENTITY_CONFIRM_KEY, IDENTITY_FIELDS
 from ..models.patient_injury import STAGE_ORDER
-from .access_control_mixin import AccessControlMixin, parse_portal_date
+from .access_control_mixin import (
+    AccessControlMixin, parse_portal_date, sc_deadline_in_past, sc_past_deadline_message,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -278,6 +281,9 @@ def _activity_write(ctrl, activity, field, value):
         day = _date_value(value)
         if not day:
             raise ValidationError(_("Please fill in all required fields."))
+        # Task 1744: never a NEW due date in the past.
+        if sc_deadline_in_past(day, record.date_deadline):
+            raise ValidationError(sc_past_deadline_message(request.env))
         record.write({'date_deadline': day})
     elif field == 'note':
         record.write({'note': plaintext2html(value) if (value or '').strip() else False})
@@ -991,7 +997,10 @@ SAVE_REGISTRY = {
         # The card (summary, read view), the injury page's title / details,
         # the player's fragments (card order, active list, choices) and the
         # linked-injury name in the treatment notes' meta lines.
-        'refresh': {'*': ['*', _injury_patient_fragments, 'sports.treatment.note:*:meta']},
+        # Task 1740: the dashboard's « À faire » counts and its injury lines
+        # (a verified injury leaves « Injuries to verify » at once).
+        'refresh': {'*': ['*', _injury_patient_fragments, 'sports.treatment.note:*:meta',
+                          'sc.dashboard:todo:*', 'sc.dashboard:todo:*:list']},
     },
     'sports.treatment.note': {
         'fields': {'note': _TP_ROLES, 'date': _TP_ROLES, 'injury_id': _TP_ROLES},
@@ -1325,7 +1334,13 @@ class AppShellMixin:
         undo_url = notif.get('undo_url')
         if not (isinstance(undo_url, str) and undo_url.startswith('/') and not undo_url.startswith('//')):
             undo_url = False
+        # Task 1741: the page carrying a notification is never stored by the
+        # browser (« back » to it fetches it again — the notification is
+        # gone by then), and the notification has an id the page shows once.
+        if not AppShellMixin._sc_guard_probe():
+            request.future_response.headers['Cache-Control'] = 'no-store'
         return {
+            'id': uuid.uuid4().hex[:16],
             'message': str(notif.get('message') or ''),
             'title': str(notif.get('title') or ''),
             'tone': 'error' if notif.get('type') in ('danger', 'warning', 'error') else 'success',

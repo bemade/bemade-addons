@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Task 1739: « À faire » for the core To-Do type (a noupdate record in
+         mail) — re-applied on each install / upgrade of the clinic. -->
+    <function model="mail.activity.type" name="_sc_set_todo_french_name"/>
+</odoo>

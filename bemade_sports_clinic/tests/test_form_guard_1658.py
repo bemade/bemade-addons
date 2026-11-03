@@ -65,7 +65,7 @@ class TestFormGuard1658(Guard1658Common):
                 '/my/player/contact/save': ('fetch', {'name', 'contact_type', 'mobile', 'email', 'patient_id'}),
                 '/my/patient/injury/create': ('fetch', {'diagnosis', 'patient_id'}),
                 '/my/injury/note/add': ('fetch', {'patient_id', 'injury_id'}),
-                '/my/activity/save': ('fetch', {'summary', 'date_deadline', 'user_id', 'activity_type_id'}),
+                '/my/activity/save': ('fetch', {'summary', 'date_deadline', 'user_id'}),  # #1739: no type
             },
             '/my/activities': {
                 '/my/activity/complete': ('fetch', {'activity_id', 'feedback'}),

@@ -307,7 +307,6 @@
                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'travel_end', lbl, 'datetime-local', savedLabel=sent_lbl)"/></t>
                 <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
             </div>
-            <p t-if="not row['editable'] and row['state'] == 'invoiced'" class="o_sc_meta">Invoiced (read-only)</p>
         </article>
     </template>
 
@@ -430,7 +429,9 @@
                         <dd data-sc-event-organization="1">
                             <span t-out="event_sudo.partner_id.name"/>
                             <t t-set="sc_org_mailto" t-value="sc_contact_href('mailto', event_sudo.partner_id.email)"/>
-                            <a t-if="sc_org_mailto" class="o_sc_contact_link o_sc_contact_sub" t-att-href="sc_org_mailto" t-out="event_sudo.partner_id.email"/>
+                            <!-- Task 1743: a break opportunity before « @ » (an
+                                 address never splits mid-word on a phone). -->
+                            <a t-if="sc_org_mailto" class="o_sc_contact_link o_sc_contact_sub" t-att-href="sc_org_mailto"><t t-set="sc_em" t-value="event_sudo.partner_id.email.partition('@')"/><t t-out="sc_em[0]"/><wbr t-if="sc_em[1]"/><t t-out="sc_em[1] + sc_em[2]"/></a>
                         </dd>
                     </t>
                     <dt>Assigned Staff</dt>
@@ -439,7 +440,7 @@
                             <span t-foreach="assigned_staff" t-as="staff" class="o_sc_contact_person" data-sc-event-staff="1">
                                 <span t-out="staff['name']"/>
                                 <t t-set="sc_staff_mailto" t-value="sc_contact_href('mailto', staff['email'])"/>
-                                <a t-if="sc_staff_mailto" class="o_sc_contact_link o_sc_contact_sub" t-att-href="sc_staff_mailto" t-out="staff['email']"/>
+                                <a t-if="sc_staff_mailto" class="o_sc_contact_link o_sc_contact_sub" t-att-href="sc_staff_mailto"><t t-set="sc_em" t-value="staff['email'].partition('@')"/><t t-out="sc_em[0]"/><wbr t-if="sc_em[1]"/><t t-out="sc_em[1] + sc_em[2]"/></a>
                             </span>
                         </t>
                         <t t-else="">—</t>

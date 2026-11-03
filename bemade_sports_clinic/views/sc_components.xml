@@ -1065,9 +1065,8 @@
                     <t t-set="title_parts" t-value="sc_activity_title_parts(title, related_links)"/>
                     <t t-set="dot" t-value="'red' if act_state == 'overdue' else ('yellow' if act_state == 'today' else 'green')"/>
                     <t t-set="subtitle">
-                        <span t-if="activity.summary and activity.activity_type_id" class="o_sc_activity_type"
-                              t-out="activity.activity_type_id.name"/>
-                        <t t-if="activity.summary and activity.activity_type_id"> · </t>
+                        <!-- Task 1739 review (owner 2026-11-02): every activity is
+                             a To-Do « À faire » now — no type label. -->
                         <span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/>
                         <t t-if="show_assignee and activity.user_id"> · <t t-out="activity.user_id.name"/></t>
                     </t>
@@ -1094,7 +1093,7 @@
                         <t t-set="lbl">Summary</t>
                         <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'summary', lbl, inputId='sc_act_%s_summary' % sc_act_uid)"/></t>
                         <t t-set="lbl">Due Date</t>
-                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'date_deadline', lbl, 'date', inputId='sc_act_%s_date_deadline' % sc_act_uid)"/></t>
+                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'date_deadline', lbl, 'date', inputId='sc_act_%s_date_deadline' % sc_act_uid, min=sc_today)"/></t>
                         <t t-if="can_reassign">
                             <t t-set="lbl">Assigned To</t>
                             <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'user_id', lbl, 'select', options=sc_activity_assignee_options(activity), picker=True, pickerKey='user', inputId='sc_act_%s_user_id' % sc_act_uid)"/></t>
@@ -1233,7 +1232,7 @@
                                  Non | Oui (Oui green, Non grey), on the ✓'s
                                  line; label and options are t-set texts (an
                                  extracted term never holds the radio). -->
-                            <t t-set="sc_epipen_ask_label">Carries an EpiPen</t>
+                            <t t-set="sc_epipen_ask_label">EpiPen?</t>
                             <t t-set="sc_epipen_no">No</t>
                             <t t-set="sc_epipen_yes">Yes</t>
                             <div class="o_sc_med_epipen_ask" role="radiogroup" data-sc-med-epipen-ask="1"

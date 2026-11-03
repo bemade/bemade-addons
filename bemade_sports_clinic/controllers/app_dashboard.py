@@ -409,8 +409,11 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
             'no_scope': bool(explicit and not teams),
             'rows': rows,
             'window_label': env._("(last %(days)s days)", days=days_back),
+            # Task 1742: the list of the SAME events (same lower bound).
             'list_url': ('/my/events?view_type=missing_timesheets&assigned_user_id=%s'
-                         '&no_default_dates=1' % env.uid),
+                         '&no_default_dates=1&date_from=%s' % (
+                             env.uid, fields.Date.to_string(
+                                 env['sc.dashboard']._sc_missing_timesheets_since(days_back)[0]))),
         }
 
     # ------------------------------------------------------------------

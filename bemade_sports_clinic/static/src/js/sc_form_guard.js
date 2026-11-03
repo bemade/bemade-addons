@@ -386,6 +386,17 @@ async function post(form, submitter) {
         // Task 1672: an add panel resets before the page changes (back on
         // this page, the form is empty again).
         form.dispatchEvent(new CustomEvent("sc:create-success", { bubbles: true }));
+        // Task 1741: a target that differs from this page by its #fragment
+        // only would not load (a same-document navigation): the page would
+        // stay stale and its pending notification would pop on a LATER page.
+        // Reload instead.
+        const here = new URL(window.location.href);
+        const there = new URL(target, here);
+        if (there.hash && there.href.split("#")[0] === here.href.split("#")[0]) {
+            window.history.replaceState(window.history.state, "", there.href);
+            window.location.reload();
+            return;
+        }
         window.location.assign(target);
     } catch {
         guardShowError(form, texts(form).offline);

@@ -18,7 +18,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.131.2",
+    'version': "19.0.1.133.6",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -174,6 +174,7 @@ therapists, Missing timesheets.
         "data/admin_access_data.xml",
         # "data/project_portal_demo_data.xml",  # Temporarily disabled for clean upgrade
         "data/cron_actions.xml",
+        "data/sc_activity_todo_data.xml",
         "data/data_recycle_model.xml",
         # Must precede sports_team_views.xml: its header button resolves
         # %(action_team_player_removal)d at parse time.

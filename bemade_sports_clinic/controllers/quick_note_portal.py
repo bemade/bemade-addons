@@ -283,8 +283,14 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         note.write({'active': True})
         # Task 1736: the undo toast's « Annuler » — back to the open notes,
         # on the note.
+        # Task 1741: « Note restored. » is the session toast (as for a
+        # timesheet / a document), not a ?success= banner a « back » to the
+        # URL would show again.
         if post.get('undo'):
-            return request.redirect('/my/notepad?success=note_restored#note-%s' % note.id)
+            request.session['notification'] = {
+                'type': 'success', 'title': '', 'message': request.env._("Note restored."),
+            }
+            return request.redirect('/my/notepad#note-%s' % note.id)
         return request.redirect('/my/notepad?show_archived=1&success=note_restored')
 
     @http.route(['/my/notepad/<int:note_id>/delete'], type='http', auth='user',

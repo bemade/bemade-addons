@@ -6911,7 +6911,6 @@ msgstr "Facturé"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic._timesheet_card
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_timesheet_card
 msgid "Invoiced (read-only)"
 msgstr "Facturé (lecture seule)"
 
@@ -13902,7 +13901,7 @@ msgstr "Votre prénom, votre nom et votre date de naissance servent uniquement �
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_created
 msgid "Your injury report has been successfully submitted."
-msgstr "Votre rapport de blessure a été soumise avec succès."
+msgstr "Votre rapport de blessure a été soumis avec succès."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_account
@@ -17606,11 +17605,6 @@ msgid "Change organization"
 msgstr "Changer d'organisation"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets
-msgid "Carries an EpiPen"
-msgstr "Porte un EpiPen"
-
-#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_settings
 msgid "Dark mode"
 msgstr "Mode sombre"
@@ -18173,3 +18167,35 @@ msgstr "Vous pouvez seulement restaurer vos propres feuilles de temps."
 #: code:addons/bemade_sports_clinic/controllers/timesheets_portal.py:0
 msgid "This timesheet is invoiced and cannot be changed."
 msgstr "Cette feuille de temps est facturée et ne peut pas être modifiée."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_players
+msgid "<span>Followed</span>"
+msgstr "<span>Suivis</span>"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_players
+msgid "You do not follow any player. Use ★ on a player's page."
+msgstr "Vous ne suivez aucun joueur. Utilisez ★ sur la fiche d'un joueur."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_players_row_followed
+msgid "You follow this player"
+msgstr "Vous suivez ce joueur"
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
+msgid "The due date cannot be in the past."
+msgstr "La date d'échéance ne peut pas être dans le passé."
+
+#. module: bemade_sports_clinic
+#. odoo-python
+#: code:addons/bemade_sports_clinic/models/mail_activity.py:0
+msgid "Created automatically"
+msgstr "Créé automatiquement"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_mail_activity__sc_created_by_label
+msgid "Created by (label)"
+msgstr "Créé par (libellé)"

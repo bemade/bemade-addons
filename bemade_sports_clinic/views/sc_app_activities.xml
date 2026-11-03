@@ -91,7 +91,7 @@
         « Add Emergency Contact » / « Upload Document » (owner review
         2026-10-10: same UX across the tabs; was a button opening a dialog).
         Variables: add_model, add_res_id, add_return_url, add_team_id,
-        activity_types, assignable_users, default_activity_type_id, today.
+        assignable_users, today.
     -->
     <template id="sc_activity_add_sheet" name="App shell: add activity (inline)">
         <!-- Task 1607: opened by the list header's « + Ajouter ». -->
@@ -112,15 +112,8 @@
                 <input type="hidden" name="res_id" t-att-value="add_res_id"/>
                 <input type="hidden" name="return_url" t-att-value="add_return_url"/>
                 <input t-if="add_team_id" type="hidden" name="team_id" t-att-value="add_team_id"/>
-                <div class="o_sc_field">
-                    <label for="sc_add_activity_type" class="o_sc_field_label">Activity Type</label>
-                    <select id="sc_add_activity_type" name="activity_type_id" class="o_sc_input o_sc_select" required="required">
-                        <t t-foreach="activity_types" t-as="atype">
-                            <option t-att-value="atype.id" t-out="atype.name"
-                                    t-att-selected="'selected' if atype.id == default_activity_type_id else None"/>
-                        </t>
-                    </select>
-                </div>
+                <!-- Task 1739 (owner 2026-11-02): no type choice — every
+                     activity is a To-Do (« À faire »), set by the server. -->
                 <div class="o_sc_field">
                     <label for="sc_add_activity_summary" class="o_sc_field_label">Summary</label>
                     <input type="text" id="sc_add_activity_summary" name="summary" class="o_sc_input" required="required"
@@ -129,7 +122,7 @@
                 <div class="o_sc_field">
                     <label for="sc_add_activity_deadline" class="o_sc_field_label">Due Date</label>
                     <input type="date" id="sc_add_activity_deadline" name="date_deadline" class="o_sc_input" required="required"
-                           t-att-min="today" t-att-value="today"/>
+                           t-att-min="sc_today" t-att-value="sc_today"/>
                 </div>
                 <div class="o_sc_field">
                     <label for="sc_add_activity_user" class="o_sc_field_label">Assigned To</label>
@@ -236,16 +229,7 @@
                     <input t-if="team_id" type="hidden" name="team_id" t-att-value="team_id"/>
                     <input t-if="clinic_event" type="hidden" name="clinic_id" t-att-value="clinic_event.id"/>
                 </t>
-                <div class="o_sc_field">
-                    <label for="sc_act_type" class="o_sc_field_label">Activity Type</label>
-                    <select id="sc_act_type" name="activity_type_id" class="o_sc_input o_sc_select" required="required">
-                        <t t-set="sc_selected_type" t-value="activity.activity_type_id.id if activity else default_activity_type_id"/>
-                        <t t-foreach="activity_types" t-as="atype">
-                            <option t-att-value="atype.id" t-out="atype.name"
-                                    t-att-selected="'selected' if atype.id == sc_selected_type else None"/>
-                        </t>
-                    </select>
-                </div>
+                <!-- Task 1739: no type choice (all To-Do). -->
                 <div class="o_sc_field">
                     <label for="sc_act_summary" class="o_sc_field_label">Summary</label>
                     <input type="text" id="sc_act_summary" name="summary" class="o_sc_input" required="required"
@@ -253,8 +237,11 @@
                 </div>
                 <div class="o_sc_field">
                     <label for="sc_act_deadline" class="o_sc_field_label">Due Date</label>
+                    <!-- Task 1744: no NEW due date in the past (the server
+                         refuses it too; a stored overdue one stays). -->
                     <input type="date" id="sc_act_deadline" name="date_deadline" class="o_sc_input" required="required"
-                           t-att-value="activity.date_deadline.isoformat() if activity else today"/>
+                           t-att-min="min(sc_today, activity.date_deadline.isoformat()) if activity else sc_today"
+                           t-att-value="activity.date_deadline.isoformat() if activity else sc_today"/>
                 </div>
                 <div class="o_sc_field">
                     <label for="sc_act_user" class="o_sc_field_label">Assigned To</label>
@@ -294,7 +281,8 @@
     <template id="sc_activity_detail_read" name="App shell: activity details">
         <dl class="o_sc_kv">
             <dt>Summary</dt><dd><span t-att-data-sc-display="None if act_popout else sc_display_key(activity, 'summary')" t-out="activity.summary or '—'"/></dd>
-            <dt>Activity Type</dt><dd><span t-field="activity.activity_type_id"/></dd>
+            <!-- Task 1739 review (owner 2026-11-02): no « Activity Type »
+                 line — every activity is a To-Do « À faire » now. -->
             <dt>Due Date</dt><dd><span t-att-data-sc-display="None if act_popout else sc_display_key(activity, 'date_deadline')" t-field="activity.date_deadline" t-options="{'widget': 'date'}"/></dd>
             <dt>Assigned To</dt><dd><span t-att-data-sc-display="None if act_popout else sc_display_key(activity, 'user_id')" t-out="activity.sudo().user_id.name"/></dd>
             <!-- Task 1595: the same access-gated links as the row. -->
@@ -307,10 +295,11 @@
             <!-- Task 1595: « Créée le ». Task 1736 r1: and by whom. -->
             <dt>Created</dt>
             <dd><span data-sc-activity-created="1" t-field="activity.create_date" t-options="{'widget': 'datetime', 'hide_seconds': True}"/></dd>
-            <t t-set="act_creator" t-value="activity.sudo().create_uid"/>
+            <!-- Task 1744: « Créé automatiquement » for the system's. -->
+            <t t-set="act_creator" t-value="activity.sudo().sc_created_by_label"/>
             <t t-if="act_creator">
                 <dt>Created by</dt>
-                <dd><span data-sc-activity-creator="1" t-out="act_creator.name"/></dd>
+                <dd><span data-sc-activity-creator="1" t-out="act_creator"/></dd>
             </t>
         </dl>
         <div t-if="activity.note" class="o_sc_activity_note"><div t-field="activity.note"/></div>
@@ -393,7 +382,7 @@
                     <t t-set="lbl">Summary</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'summary', lbl)"/></t>
                     <t t-set="lbl">Due Date</t>
-                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'date_deadline', lbl, 'date')"/></t>
+                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'date_deadline', lbl, 'date', min=sc_today)"/></t>
                     <t t-set="lbl">Assigned To</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'user_id', lbl, 'select', options=sc_activity_user_options, picker=True, pickerKey='user')"/></t>
                     <t t-set="lbl">Note</t>

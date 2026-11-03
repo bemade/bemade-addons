@@ -50,7 +50,8 @@ class TestPlayerActivitiesTab(PortalCovCommon):
         resp = self.url_open(f'/my/player?player_id={self.player.id}')
         self.assertEqual(resp.status_code, 200)
         self.assertIn('action="/my/activity/save"', resp.text)
-        self.assertIn('name="activity_type_id"', resp.text)
+        # Task 1739: no activity-type picker (every activity is a To-Do).
+        self.assertNotIn('name="activity_type_id"', resp.text)
         self.assertIn('name="summary"', resp.text)
         self.assertIn('name="date_deadline"', resp.text)
         self.assertIn('name="model" value="sports.patient"', resp.text)

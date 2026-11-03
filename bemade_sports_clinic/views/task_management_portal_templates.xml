@@ -481,21 +481,7 @@
                     <input type="hidden" name="team_id" t-if="add_team_id" t-att-value="add_team_id"/>
 
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <label t-attf-for="add_activity_type_id_#{add_res_id}" class="form-label">
-                                Activity Type <span class="text-danger">*</span>
-                            </label>
-                            <select name="activity_type_id" t-attf-id="add_activity_type_id_#{add_res_id}"
-                                    class="form-select" required="required">
-                                <option value="">Select Activity Type</option>
-                                <t t-foreach="activity_types" t-as="activity_type">
-                                    <option t-att-value="activity_type.id"
-                                            t-att-selected="activity_type.id == default_activity_type_id and 'selected' or None">
-                                        <t t-esc="activity_type.name"/>
-                                    </option>
-                                </t>
-                            </select>
-                        </div>
+                        <!-- Task 1739: no type choice (all To-Do, set by the server). -->
                         <div class="col-md-6">
                             <label t-attf-for="add_date_deadline_#{add_res_id}" class="form-label">
                                 Due Date <span class="text-danger">*</span>
@@ -561,19 +547,7 @@
                             <input type="hidden" name="clinic_id" t-if="clinic_event" t-att-value="clinic_event.id"/>
                             
                             <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="activity_type_id">Activity Type <span class="text-danger">*</span></label>
-                                        <select name="activity_type_id" id="activity_type_id" class="form-control" required="required">
-                                            <option value="">Select Activity Type</option>
-                                            <t t-foreach="activity_types" t-as="activity_type">
-                                                <option t-att-value="activity_type.id" t-att-selected="activity_type.id == default_activity_type_id and 'selected' or None">
-                                                    <t t-esc="activity_type.name"/>
-                                                </option>
-                                            </t>
-                                        </select>
-                                    </div>
-                                </div>
+                                <!-- Task 1739: no type choice (all To-Do, set by the server). -->
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="date_deadline">Due Date <span class="text-danger">*</span></label>
@@ -700,20 +674,7 @@
                             </div>
                             
                             <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="activity_type_id">Activity Type <span class="text-danger">*</span></label>
-                                        <select name="activity_type_id" id="activity_type_id" class="form-control" required="required">
-                                            <option value="">Select an activity type...</option>
-                                            <t t-foreach="activity_types" t-as="activity_type">
-                                                <option t-att-value="activity_type.id" 
-                                                        t-att-selected="activity_type.id == activity.activity_type_id.id">
-                                                    <t t-esc="activity_type.name"/>
-                                                </option>
-                                            </t>
-                                        </select>
-                                    </div>
-                                </div>
+                                <!-- Task 1739: no type choice (all To-Do). -->
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="date_deadline">Due Date <span class="text-danger">*</span></label>

@@ -2678,16 +2678,7 @@
                                             <input type="hidden" name="return_url" t-att-value="activities_tab_return"/>
                                             <input type="hidden" name="team_id" t-if="team_context_id" t-att-value="team_context_id"/>
                                             <div class="row g-3">
-                                                <div class="col-md-4">
-                                                    <label class="form-label">Activity Type <span class="text-danger">*</span></label>
-                                                    <select name="activity_type_id" class="form-select" required="required">
-                                                        <t t-foreach="activity_types" t-as="atype">
-                                                            <option t-att-value="atype.id"
-                                                                    t-att-selected="'selected' if (default_activity_type and atype.id == default_activity_type.id) else None"
-                                                                    t-esc="atype.name"/>
-                                                        </t>
-                                                    </select>
-                                                </div>
+                                                <!-- Task 1739: no type choice (all To-Do, set by the server). -->
                                                 <div class="col-md-4">
                                                     <label class="form-label">Summary <span class="text-danger">*</span></label>
                                                     <input type="text" name="summary" class="form-control" required="required"

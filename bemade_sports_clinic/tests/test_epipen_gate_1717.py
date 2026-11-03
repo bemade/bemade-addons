@@ -23,8 +23,8 @@ Acceptance criteria:
   (``o_sc_toggle_pill``, a radiogroup named by the label), nothing selected
   while unanswered.
 * AC-8 (review round 2, owner 2026-10-27): the pill reads Non | Oui (Non
-  left); the switch label has its own text (« Carries an EpiPen » / « Porte
-  un EpiPen »); « Non » / « Oui » / the label render in French; the
+  left); the switch label has its own text (#1739: the field's « EpiPen? » /
+  « EpiPen ? », as the gate messages quote it); « Non » / « Oui » / the label render in French; the
   allergies level pill sits in the popup's header, next to its title.
 """
 import importlib.util
@@ -154,7 +154,7 @@ class TestEpiPenGate1717(EpiPen1717Common):
         self.assertEqual(ask.get('role'), 'radiogroup')
         label = ask.xpath('./span[contains(@class, "o_sc_med_epipen_ask_label")]')[0]
         self.assertEqual(ask.get('aria-labelledby'), label.get('id'))
-        self.assertEqual(label.text_content().strip(), 'Carries an EpiPen')
+        self.assertEqual(label.text_content().strip(), 'EpiPen?')  # #1739
         pill = ask.xpath('./div[contains(@class, "o_sc_toggle_pill")]')[0]
         # AC-8: Non | Oui.
         self.assertEqual([' '.join(o.text_content().split()) for o in pill.xpath('./label')], ['No', 'Yes'])
@@ -207,7 +207,7 @@ class TestEpiPenGate1717(EpiPen1717Common):
                 'patient_id': player.id, 'family': 'allergy', 'name': 'Synthetic nut'})
         # AC-8: the switch in French (the popup's view translation).
         arch = env.ref('bemade_sports_clinic.sc_medical_sheets').with_context(lang='fr_CA').arch_db
-        self.assertIn('<t t-set="sc_epipen_ask_label">Porte un EpiPen</t>', arch)
+        self.assertIn('<t t-set="sc_epipen_ask_label">EpiPen ?</t>', arch)  # #1739
         self.assertIn('<t t-set="sc_epipen_no">Non</t>', arch)
         self.assertIn('<t t-set="sc_epipen_yes">Oui</t>', arch)
 
