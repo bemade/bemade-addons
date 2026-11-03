@@ -19,6 +19,10 @@
                              help="How far ahead certifications are flagged 'expiring' (months).">
                         <field name="cbet_expiry_horizon_months"/>
                     </setting>
+                    <setting string="HR responsible for certification expiry"
+                             help="Also gets a to-do for every expiring or expired certification, beside the employee's manager.">
+                        <field name="cbet_hr_responsible_id"/>
+                    </setting>
                 </block>
             </xpath>
         </field>

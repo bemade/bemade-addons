@@ -21,3 +21,5 @@ from . import cbet_criterion_result
 from . import cbet_question_result
 from . import cbet_evaluation
 from . import cbet_employee_competency_status
+from . import hr_job
+from . import hr_employee

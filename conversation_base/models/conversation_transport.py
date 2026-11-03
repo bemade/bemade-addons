@@ -333,6 +333,28 @@ class ConversationTransport(models.Model):
         self.ensure_one()
         raise NotImplementedError
 
+    def _explicit_reply_message_id(self, conversation):
+        """The RFC822 Message-Id of the message the current send is an
+        explicit answer to (``action_reply(reply_to_message=...)``), or
+        False when the send is a plain, conversation-wide reply.
+
+        Transports thread an outgoing mail against this id when it is set,
+        and fall back to their own rule (the newest message a correspondent
+        has seen) otherwise. Only a message of ``conversation`` counts: the
+        id comes from the context, so it is checked rather than trusted.
+        """
+        message_id = self.env.context.get("conversation_reply_to_message_id")
+        if not message_id:
+            return False
+        target = self.env["mail.message"].sudo().browse(message_id).exists()
+        if (
+            target
+            and target.model == conversation._name
+            and target.res_id == conversation.id
+        ):
+            return target.message_id or False
+        return False
+
     def _send(self, conversation, message, recipients=None, cc=None, bcc=None):
         """Send ``message`` (an already-posted ``mail.message`` on
         ``conversation``) out over this transport, to the explicit

@@ -1,0 +1,21 @@
+{
+  "stepsFile": "../../static/tests/tours/reply_popup.steps.js",
+  "startPath": "/odoo/action-conversation_base.mail_conversation_action",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "lang": "fr_CA",
+  "voice": "fr_FR-siwis-medium",
+  "title": "Répondre depuis le fil d'une conversation, dans une fenêtre",
+  "introNarration": "Dans cette démonstration, nous répondons à un client directement depuis le fil de la conversation, dans une fenêtre qui nous laisse sur la conversation.",
+  "outroTitle": "À vous de jouer",
+  "outroNarration": "Le bouton Répondre en haut du fil répond à toute la conversation ; l'action Répondre d'un courriel répond à ce courriel et le cite. Fermer la fenêtre garde votre texte, et un collègue peut terminer le brouillon dans la même fenêtre.",
+  "stepOverrides": {
+    "reply-at-top": {"containsText": "Répondre"},
+    "click-reply": {"containsText": "Répondre"},
+    "close-dialog": {"containsText": "Fermer"},
+    "reopen-reply": {"containsText": "Répondre"},
+    "reply-to-email": {
+      "selector": ".o-mail-Message-actions button[title='Répondre']:visible"
+    }
+  }
+}

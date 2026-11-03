@@ -370,13 +370,9 @@ class CbetEvaluation(models.Model):
         valid_from = max(passes.mapped("date"))
         validity = comp.validity_months or self.env.company.cbet_default_validity_months
         valid_to = valid_from + relativedelta(months=validity)
-        # Supersede any prior active certification (versioned-row, UC-EVL-10 AC2).
-        prior = self.env["cbet.certification"].search([
-            ("employee_id", "=", self.candidate_id.id),
-            ("competency_id", "=", comp.id),
-            ("active", "=", True),
-        ])
-        prior.active = False
+        # cbet.certification.create supersedes the prior active certification
+        # (versioned-row, UC-EVL-10 AC2) and recomputes the candidate's
+        # qualifications (UC-EVL-10 AC3), as for a certificate entered by hand.
         cert = self.env["cbet.certification"].create({
             "employee_id": self.candidate_id.id,
             "competency_id": comp.id,
@@ -385,6 +381,4 @@ class CbetEvaluation(models.Model):
             "valid_to": valid_to,
             "source_evaluation_ids": [(6, 0, passes.ids)],
         })
-        # UC-EVL-10 AC3 — issuance triggers qualification recompute.
-        self.env["cbet.qualification"]._recompute_for_employee(self.candidate_id, comp)
         return cert
