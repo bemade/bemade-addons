@@ -33,6 +33,35 @@ _LAST_ERRORS = {}
 class IrCron(models.Model):
     _inherit = "ir.cron"
 
+    failure_alert_mode = fields.Selection(
+        [
+            ("default", "Use Settings"),
+            ("custom", "Custom"),
+            ("off", "Off"),
+        ],
+        string="Failure alert",
+        default="default",
+        required=True,
+        help="Use Settings: alert the user and channel set in General Settings.\n"
+        "Custom: alert the user and channel set below instead (even if the "
+        "option is off in Settings).\n"
+        "Off: never alert for this scheduled action; failures are only logged.",
+    )
+    failure_alert_user_id = fields.Many2one(
+        "res.users",
+        string="Alert user",
+        domain=[("share", "=", False)],
+        help="User who receives a To-Do activity when this scheduled action "
+        "fails or is switched off.",
+    )
+    failure_alert_channel_id = fields.Many2one(
+        "discuss.channel",
+        string="Alert channel",
+        domain=[("channel_type", "=", "channel")],
+        help="Discuss channel where this scheduled action's failure alerts "
+        "are posted.",
+    )
+
     def _callback(self, cron_name, server_action_id):
         try:
             return super()._callback(cron_name, server_action_id)
@@ -79,13 +108,10 @@ class IrCron(models.Model):
 
     @api.model
     def _cron_failure_alert_send(self, job, error, deactivated):
-        icp = self.env["ir.config_parameter"].sudo()
-        if not str2bool(icp.get_param(PARAM_ENABLED) or "False", False):
+        targets = self._cron_failure_alert_targets(job, deactivated)
+        if targets is None:
             return
-        user = self._cron_failure_alert_record("res.users", icp.get_param(PARAM_USER))
-        channel = self._cron_failure_alert_record(
-            "discuss.channel", icp.get_param(PARAM_CHANNEL)
-        )
+        user, channel = targets
         _logger.warning(
             "Scheduled action %r (%s) %s.",
             job["cron_name"],
@@ -115,6 +141,40 @@ class IrCron(models.Model):
                 message_type="comment",
                 subtype_xmlid="mail.mt_comment",
             )
+
+    @api.model
+    def _cron_failure_alert_targets(self, job, deactivated):
+        """Return ``(user, channel)`` to alert for ``job``, or ``None``.
+
+        ``None`` means alerts are off for this job (Settings option off in
+        mode "Use Settings"). Either record may be empty.
+        """
+        cron = self.browse(job["id"]).exists()
+        mode = cron.failure_alert_mode or "default"
+        if mode == "off":
+            _logger.warning(
+                "Scheduled action %r (%s) %s; its failure alert is off.",
+                job["cron_name"],
+                job["id"],
+                "was switched off after repeated failures"
+                if deactivated
+                else "failed",
+            )
+            return None
+        if mode == "custom":
+            return (
+                cron.failure_alert_user_id.exists(),
+                cron.failure_alert_channel_id.exists(),
+            )
+        icp = self.env["ir.config_parameter"].sudo()
+        if not str2bool(icp.get_param(PARAM_ENABLED) or "False", False):
+            return None
+        return (
+            self._cron_failure_alert_record("res.users", icp.get_param(PARAM_USER)),
+            self._cron_failure_alert_record(
+                "discuss.channel", icp.get_param(PARAM_CHANNEL)
+            ),
+        )
 
     @api.model
     def _cron_failure_alert_link(self, cron_id):

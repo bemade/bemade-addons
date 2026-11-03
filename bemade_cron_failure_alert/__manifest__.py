@@ -1,6 +1,6 @@
 {
     "name": "Scheduled Action Failure Alerts",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "summary": "Warn a user and a Discuss channel when a scheduled action fails "
     "or is switched off by Odoo.",
     "description": """
@@ -40,6 +40,18 @@ Configuration
 With the option on but neither a user nor a channel set, failures are only
 logged.
 
+Per scheduled action
+--------------------
+
+The *Alerts* group of each scheduled action (*Settings > Technical >
+Scheduled Actions*) chooses where that action's alerts go:
+
+* **Use Settings** (default) - the user and channel above;
+* **Custom** - the user and/or channel set on the scheduled action instead
+  (it alerts even when the option above is off; with neither set, failures
+  are only logged);
+* **Off** - no alert for this scheduled action, failures are only logged.
+
 Safety
 ------
 
@@ -55,6 +67,7 @@ action's own bookkeeping (failure counter, next call, deactivation) fail.
     "depends": ["mail"],
     "data": [
         "views/res_config_settings_views.xml",
+        "views/ir_cron_views.xml",
     ],
     "installable": True,
     "application": False,
