@@ -70,9 +70,10 @@ class TestAppShellActivityRows1595(_ActivityRowsMixin, AppShellCommon):
             self.assertEqual(len(main), 1, activity.summary)
             self.assertEqual(main[0].get('href'), '/my/activity/%s' % activity.id)
             self.assertEqual(_text(main[0]), activity.summary)
-            # The type, now that the summary is the title.
-            self.assertEqual(row.xpath('string(.//*[contains(@class, "o_sc_activity_type")])'),
-                             activity.activity_type_id.name)
+            # Task 1739 review (owner 2026-11-02): no type label — every
+            # activity is a To-Do « À faire » now.
+            self.assertFalse(row.xpath('.//*[contains(@class, "o_sc_activity_type")]'),
+                             activity.summary)
             self.assertEqual(self._related(row), [link], activity.summary)
             # No nested anchors anywhere in the row.
             self.assertFalse(row.xpath('.//a//a'), activity.summary)

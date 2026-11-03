@@ -281,7 +281,8 @@
     <template id="sc_activity_detail_read" name="App shell: activity details">
         <dl class="o_sc_kv">
             <dt>Summary</dt><dd><span t-att-data-sc-display="None if act_popout else sc_display_key(activity, 'summary')" t-out="activity.summary or '—'"/></dd>
-            <dt>Activity Type</dt><dd><span t-field="activity.activity_type_id"/></dd>
+            <!-- Task 1739 review (owner 2026-11-02): no « Activity Type »
+                 line — every activity is a To-Do « À faire » now. -->
             <dt>Due Date</dt><dd><span t-att-data-sc-display="None if act_popout else sc_display_key(activity, 'date_deadline')" t-field="activity.date_deadline" t-options="{'widget': 'date'}"/></dd>
             <dt>Assigned To</dt><dd><span t-att-data-sc-display="None if act_popout else sc_display_key(activity, 'user_id')" t-out="activity.sudo().user_id.name"/></dd>
             <!-- Task 1595: the same access-gated links as the row. -->

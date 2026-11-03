@@ -1065,9 +1065,8 @@
                     <t t-set="title_parts" t-value="sc_activity_title_parts(title, related_links)"/>
                     <t t-set="dot" t-value="'red' if act_state == 'overdue' else ('yellow' if act_state == 'today' else 'green')"/>
                     <t t-set="subtitle">
-                        <span t-if="activity.summary and activity.activity_type_id" class="o_sc_activity_type"
-                              t-out="activity.activity_type_id.name"/>
-                        <t t-if="activity.summary and activity.activity_type_id"> · </t>
+                        <!-- Task 1739 review (owner 2026-11-02): every activity is
+                             a To-Do « À faire » now — no type label. -->
                         <span t-field="activity.date_deadline" t-options="{'widget': 'date'}"/>
                         <t t-if="show_assignee and activity.user_id"> · <t t-out="activity.user_id.name"/></t>
                     </t>
