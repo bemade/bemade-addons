@@ -320,3 +320,4 @@ from . import test_undo_toast_once_1741
 from . import test_missing_ts_started_1742
 from . import test_phone_filters_email_1743
 from . import test_activity_dates_creator_1744
+from . import test_home_picto_1746

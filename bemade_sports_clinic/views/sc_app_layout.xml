@@ -27,7 +27,8 @@
     Task 1579: where « back » goes, the context line and the breadcrumb trail
     come from the parent registry (models/sc_app_nav.py) through the render
     values — pages never set them:
-      sc_parent_url     the resolved parent (False = top-level page: logo)
+      sc_parent_url     the resolved parent (False = top-level page: logo;
+                        a sub-page: back chevron + the home picto, task 1746)
       sc_context        the line under the title
       sc_crumbs         [(label, url), ...] ancestors, top first (the current
                         page, sc_title, is appended here)
@@ -107,7 +108,16 @@
                            class="o_sc_icon_btn o_sc_back" aria-label="Back" title="Back">
                             <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'back'"/></t>
                         </a>
-                        <a t-else="" href="/my/home" class="o_sc_logo" aria-label="Le Fit Crew">
+                        <!-- Task 1746: phone sub-pages keep the back chevron AND
+                             show the Fit Crew picto right after it — one tap
+                             home (the bottom tabs have no dashboard tab). The
+                             laptop rail already carries the brand link, so the
+                             picto is phone-only (sc_components.scss). -->
+                        <a t-if="sc_parent_url" href="/my/home" class="o_sc_home_picto"
+                           aria-label="Dashboard" title="Dashboard">
+                            <t t-call="bemade_sports_clinic.sc_logo_mark"/>
+                        </a>
+                        <a t-if="not sc_parent_url" href="/my/home" class="o_sc_logo" aria-label="Le Fit Crew">
                             <t t-call="bemade_sports_clinic.sc_logo_mark"/>
                         </a>
                         <h1 class="o_sc_appbar_title" t-att-data-sc-fragment="('%s:appbar' % sc_page_key) if sc_page_key else None">

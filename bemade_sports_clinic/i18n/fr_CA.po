@@ -4741,6 +4741,7 @@ msgstr "Sommaire quotidien —"
 #. odoo-python
 #: code:addons/bemade_sports_clinic/models/sc_app_nav.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_home
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_team_view_form
 msgid "Dashboard"
 msgstr "Tableau de bord"
