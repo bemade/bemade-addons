@@ -3,3 +3,4 @@
 from . import test_update_sharing
 from . import test_portal_access
 from . import test_portal_updates_page
+from . import test_project_sharing_button

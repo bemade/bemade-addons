@@ -53,6 +53,14 @@ Portal
         "views/project_update_views.xml",
         "views/portal_templates.xml",
     ],
+    "assets": {
+        "project.webclient": [
+            "project_update_share/static/src/project_sharing/**/*",
+        ],
+        "web.assets_tests": [
+            "project_update_share/static/tests/tours/**/*",
+        ],
+    },
     "installable": True,
     "application": False,
 }

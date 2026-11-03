@@ -1,20 +1,26 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <!-- Copyright 2026 Bemade Inc. License LGPL-3.0 or later. -->
 <odoo>
     <record id="project_update_view_form" model="ir.ui.view">
         <field name="name">project.update.view.form.share</field>
         <field name="model">project.update</field>
-        <field name="inherit_id" ref="project.project_update_view_form"/>
+        <field name="inherit_id" ref="project.project_update_view_form" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='date']" position="after">
-                <field name="internal_only"/>
+                <field name="internal_only" />
             </xpath>
             <xpath expr="//separator" position="before">
                 <group invisible="internal_only">
-                    <field name="recipient_ids" widget="many2many_tags_email"
-                           options="{'no_quick_create': True}"/>
-                    <field name="emailed_partner_ids" widget="many2many_tags"
-                           invisible="not emailed_partner_ids"/>
+                    <field
+            name="recipient_ids"
+            widget="many2many_tags_email"
+            options="{'no_quick_create': True}"
+          />
+                    <field
+            name="emailed_partner_ids"
+            widget="many2many_tags"
+            invisible="not emailed_partner_ids"
+          />
                 </group>
             </xpath>
         </field>
@@ -23,12 +29,12 @@
     <!-- Body of the message that shares an update with its recipients. -->
     <template id="update_share_message">
         <div>
-            <p style="margin:0 0 4px 0;"><strong t-out="update.name"/></p>
+            <p style="margin:0 0 4px 0;"><strong t-out="update.name" /></p>
             <p style="margin:0 0 12px 0;color:#666;">
-                <span t-out="status_label"/> ·
-                <span t-out="date_label"/>
+                <span t-out="status_label" /> ·
+                <span t-out="date_label" />
             </p>
-            <div t-out="update.description"/>
+            <div t-out="update.description" />
             <p style="margin:12px 0 0 0;">
                 <a t-att-href="url">See all project updates</a>
             </p>

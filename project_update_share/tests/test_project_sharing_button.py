@@ -10,3 +10,22 @@ ACCEPTANCE CRITERIA
 - The button is shown for every project in Project Sharing, whether or not
   anything has been shared yet (the page says when there is nothing).
 """
+from odoo import Command
+from odoo.tests.common import HttpCase, tagged
+
+from .common import ProjectUpdateShareCommon
+
+
+@tagged("post_install", "-at_install")
+class TestProjectSharingButton(HttpCase, ProjectUpdateShareCommon):
+    def test_updates_button_in_project_sharing(self):
+        self._update(
+            name="For the collaborator",
+            internal_only=False,
+            recipient_ids=[Command.set(self.collaborator.ids)],
+        )
+        self.start_tour(
+            "/my/projects/%s/project_sharing" % self.project.id,
+            "project_update_share_sharing_button",
+            login="pus-collaborator",
+        )
