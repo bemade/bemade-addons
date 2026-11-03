@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-29 14:22+0000\n"
-"PO-Revision-Date: 2026-10-29 14:22+0000\n"
+"POT-Creation-Date: 2026-11-03 22:26+0000\n"
+"PO-Revision-Date: 2026-11-03 22:26+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -17,9 +17,24 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: bemade_cron_failure_alert
+#: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_ir_cron__failure_alert_channel_id
+msgid "Alert channel"
+msgstr "Canal d'alerte"
+
+#. module: bemade_cron_failure_alert
 #: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_res_config_settings__cron_failure_alert
 msgid "Alert on scheduled action failures"
 msgstr "Alerter en cas d'échec d'une action planifiée"
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_ir_cron__failure_alert_user_id
+msgid "Alert user"
+msgstr "Utilisateur à alerter"
+
+#. module: bemade_cron_failure_alert
+#: model_terms:ir.ui.view,arch_db:bemade_cron_failure_alert.ir_cron_view_form
+msgid "Alerts"
+msgstr "Alertes"
 
 #. module: bemade_cron_failure_alert
 #: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_res_config_settings__cron_failure_alert_user_id
@@ -37,15 +52,33 @@ msgid "Config Settings"
 msgstr "Paramètres de configuration"
 
 #. module: bemade_cron_failure_alert
+#: model:ir.model.fields.selection,name:bemade_cron_failure_alert.selection__ir_cron__failure_alert_mode__custom
+msgid "Custom"
+msgstr "Personnalisé"
+
+#. module: bemade_cron_failure_alert
 #: model:ir.model.fields,help:bemade_cron_failure_alert.field_res_config_settings__cron_failure_alert_channel_id
 msgid "Discuss channel where each alert is posted."
 msgstr "Canal Discussion où chaque alerte est publiée."
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model.fields,help:bemade_cron_failure_alert.field_ir_cron__failure_alert_channel_id
+msgid ""
+"Discuss channel where this scheduled action's failure alerts are posted."
+msgstr ""
+"Canal Discussion où sont publiées les alertes d'échec de cette action "
+"planifiée."
 
 #. module: bemade_cron_failure_alert
 #: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_ir_cron__display_name
 #: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_res_config_settings__display_name
 msgid "Display Name"
 msgstr "Nom d'affichage"
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_ir_cron__failure_alert_mode
+msgid "Failure alert"
+msgstr "Alerte d'échec"
 
 #. module: bemade_cron_failure_alert
 #: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_ir_cron__id
@@ -74,6 +107,11 @@ msgstr ""
 "Odoo a désactivé l'action planifiée %(link)s après %(count)s échecs "
 "consécutifs sur plus d'une semaine (dernier échec : %(time)s UTC). Elle ne "
 "s'exécutera plus tant qu'elle n'aura pas été réactivée."
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model.fields.selection,name:bemade_cron_failure_alert.selection__ir_cron__failure_alert_mode__off
+msgid "Off"
+msgstr "Désactivée"
 
 #. module: bemade_cron_failure_alert
 #: model:ir.model.fields,field_description:bemade_cron_failure_alert.field_res_config_settings__cron_failure_alert_channel_id
@@ -124,6 +162,31 @@ msgstr ""
 "réussisse de nouveau, sauf si Odoo la désactive."
 
 #. module: bemade_cron_failure_alert
+#: model:ir.model.fields.selection,name:bemade_cron_failure_alert.selection__ir_cron__failure_alert_mode__default
+msgid "Use Settings"
+msgstr "Selon les paramètres"
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model.fields,help:bemade_cron_failure_alert.field_ir_cron__failure_alert_mode
+msgid ""
+"Use Settings: alert the user and channel set in General Settings.\n"
+"Custom: alert the user and channel set below instead (even if the option is off in Settings).\n"
+"Off: never alert for this scheduled action; failures are only logged."
+msgstr ""
+"Selon les paramètres : alerter l'utilisateur et le canal définis dans les Paramètres généraux.\n"
+"Personnalisé : alerter plutôt l'utilisateur et le canal définis ci-dessous (même si l'option est désactivée dans les Paramètres).\n"
+"Désactivée : ne jamais alerter pour cette action planifiée ; les échecs sont seulement journalisés."
+
+#. module: bemade_cron_failure_alert
 #: model:ir.model.fields,help:bemade_cron_failure_alert.field_res_config_settings__cron_failure_alert_user_id
 msgid "User who receives a To-Do activity for each alert."
 msgstr "Utilisateur qui reçoit une activité À faire pour chaque alerte."
+
+#. module: bemade_cron_failure_alert
+#: model:ir.model.fields,help:bemade_cron_failure_alert.field_ir_cron__failure_alert_user_id
+msgid ""
+"User who receives a To-Do activity when this scheduled action fails or is "
+"switched off."
+msgstr ""
+"Utilisateur qui reçoit une activité À faire quand cette action planifiée "
+"échoue ou est désactivée."

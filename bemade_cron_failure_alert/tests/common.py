@@ -30,6 +30,7 @@ class CronAlertCase(common.TransactionCase):
                 "name": "Cron Watcher",
                 "login": "cron.watcher.%s" % secrets.token_hex(4),
                 "email": "cron.watcher@example.com",
+                "lang": "en_US",
                 "group_ids": [(6, 0, [cls.env.ref("base.group_user").id])],
             }
         )

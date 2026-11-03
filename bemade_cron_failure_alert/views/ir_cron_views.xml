@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="ir_cron_view_form" model="ir.ui.view">
+        <field name="name">ir.cron.view.form.inherit.cron.failure.alert</field>
+        <field name="model">ir.cron</field>
+        <field name="inherit_id" ref="base.ir_cron_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='priority']/.." position="after">
+                <group name="failure_alerts" string="Alerts">
+                    <field name="failure_alert_mode" widget="radio" />
+                    <field
+            name="failure_alert_user_id"
+            invisible="failure_alert_mode != 'custom'"
+            widget="many2one_avatar_user"
+          />
+                    <field
+            name="failure_alert_channel_id"
+            invisible="failure_alert_mode != 'custom'"
+          />
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
