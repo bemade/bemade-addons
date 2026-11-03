@@ -114,6 +114,23 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
         }
     }
 
+    // Task 1746: the home picto after the back chevron on a phone sub-page
+    // (same mark as the top-level logo, a 44 px tap target). It takes its
+    // room from the title (flex: 1; min-width: 0), never from the right-hand
+    // icons. Hidden on a laptop: the rail's brand already goes home.
+    .o_sc_home_picto {
+        display: inline-grid;
+        place-items: center;
+        width: var(--sc-tap);
+        height: var(--sc-tap);
+        flex: none;
+
+        .o_sc_logo_mark {
+            width: 24px;
+            height: 24px;
+        }
+    }
+
     // Silver chrome F (brand « Effet Chrome / Argent »), a transparent PNG.
     .o_sc_logo_mark {
         display: block;
@@ -297,6 +314,10 @@ $sc-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg
             display: block;
             padding-left: var(--sc-space-5);
             padding-right: var(--sc-space-5);
+        }
+
+        .o_sc_home_picto {
+            display: none;
         }
 
         // Laptop: the trail replaces the context line. Task 1618 (owner
