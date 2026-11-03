@@ -149,6 +149,9 @@
                          </div>
                         <div class="oe_title"><h1>Patient Record</h1></div>
                         <group>
+                            <!-- Owner 2026-11-03: « Health » sits in the left column under the
+                                 patient information (no empty half-row, no gap above it). -->
+                            <group col="1">
                             <group col="3">
                                 <separator string="Patient Information"/>
                                 <field name="first_name" colspan="3"/>
@@ -161,6 +164,21 @@
                                     <button type="object" name="action_consulted_today"
                                             class="fa fa-refresh" title="Set to Today's Date"/>
                                 </span>
+                            </group>
+                            <!-- Task 1630: allergies + medical alert, « Other medical
+                                 history », « To validate ». Task 1677: each family is a
+                                 list (name, life-threatening, first aid for a condition);
+                                 the levels are computed from it, the former details are
+                                 read-only (the old text to validate). -->
+                            <group name="health" string="Health">
+                                <field name="allergy_level"/>
+                                <field name="allergy_epipen_state" widget="radio" options="{'horizontal': true}"/>
+                                <field name="allergy_epipen_note" invisible="allergy_epipen_state != 'yes'"/>
+                                <field name="allergy_none_confirmed"/>
+                                <field name="medical_alert_level"/>
+                                <field name="medical_none_confirmed"/>
+                                <field name="medical_history_other"/>
+                            </group>
                             </group>
                             <group>
                                 <separator string="Team Information"/>
@@ -190,20 +208,6 @@
                                 </div>
                                 <field name="return_date"/>
                                 <field name="team_info_notes"/>
-                            </group>
-                            <!-- Task 1630: allergies + medical alert, « Other medical
-                                 history », « To validate ». Task 1677: each family is a
-                                 list (name, life-threatening, first aid for a condition);
-                                 the levels are computed from it, the former details are
-                                 read-only (the old text to validate). -->
-                            <group name="health" string="Health">
-                                <field name="allergy_level"/>
-                                <field name="allergy_epipen_state" widget="radio" options="{'horizontal': true}"/>
-                                <field name="allergy_epipen_note" invisible="allergy_epipen_state != 'yes'"/>
-                                <field name="allergy_none_confirmed"/>
-                                <field name="medical_alert_level"/>
-                                <field name="medical_none_confirmed"/>
-                                <field name="medical_history_other"/>
                             </group>
                             <group name="critical" string="Allergies and conditions" colspan="2">
                                 <field name="allergy_critical_ids" context="{'default_family': 'allergy'}">
