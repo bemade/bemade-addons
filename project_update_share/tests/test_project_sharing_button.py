@@ -5,8 +5,8 @@
 ACCEPTANCE CRITERIA
 - A portal collaborator opening the project lands in Project Sharing, whose
   control panel shows an "Updates" button.
-- Clicking it opens the project's portal updates page, listing its Shared
-  updates.
+- Clicking it opens the project's portal updates page, listing the updates
+  shared with that collaborator.
 - The button is shown for every project in Project Sharing, whether or not
-  it has shared updates yet (the page says when there are none).
+  anything has been shared yet (the page says when there is nothing).
 """

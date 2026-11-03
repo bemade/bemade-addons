@@ -1,13 +1,15 @@
 # Copyright 2026 Bemade Inc.
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html).
-"""Use case: portal users see shared updates, and only those.
+"""Use case: a portal user sees the updates shared with them, and only those.
 
 ACCEPTANCE CRITERIA
-- A portal user who can open a project (follower of a portal-visible
-  project, or collaborator) can read its Shared updates through the ORM as
-  themselves (no sudo): title, date, status, description.
-- The same user cannot read its Internal updates, nor any update of a
-  project they cannot open, nor create, write or delete any update.
-- An update made Internal again is unreadable to them immediately.
+- A portal user can read an update through the ORM as themselves (no sudo)
+  if and only if it is shared (Internal only unticked) AND their partner
+  (``user.partner_id``) is among its recipients.
+- They cannot read an internal update, nor a shared update they are not a
+  recipient of (even on a project they can open), nor create, write or
+  delete any update.
+- Ticking Internal only, or removing them from the recipients, makes the
+  update unreadable to them immediately.
 - Internal users' access to updates is unchanged from core Odoo.
 """

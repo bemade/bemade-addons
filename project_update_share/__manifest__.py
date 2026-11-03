@@ -11,34 +11,37 @@ Project Update Share
 
 Core Odoo never sends a project update to anyone: creating one only logs an
 internal note on the update. This module lets a project manager share an
-update with the client, by email and on the portal, one update at a time.
+update with chosen recipients, by email and on the portal.
 
-Visibility
-----------
-* Each update is **Internal** (default) or **Shared with client**.
-* Internal updates behave exactly as in core Odoo. Nothing is sent and
-  nothing appears on the portal. Updates created by code stay internal unless
-  that code asks otherwise.
+Internal or shared
+------------------
+* **Internal only** is ticked on every new update, and an internal update
+  behaves exactly as in core Odoo: nothing is sent, and no portal user sees
+  it. Updates created by code stay internal unless that code says otherwise.
+* Unticking it shows the update's **recipients**, prefilled with the
+  project's followers and its portal collaborators, editable before saving.
+  Sharing, unsharing and choosing recipients happen in the same create or
+  save as the rest of the update.
 
-Sharing
--------
-* Sharing an update asks for its **recipients**, prefilled with the project's
-  followers and its portal collaborators and editable before sending.
-* The update is posted once to the project's chatter as a Discussion message
-  addressed to those recipients. The message carries the title, status and
-  full content, and links to the project's updates page on the portal.
-* Editing a shared update does not send it again.
-* Switching a shared update back to Internal removes it from the portal at
-  once. The email already sent cannot be recalled.
+Email
+-----
+* Each recipient is emailed once, the first time the update is shared with
+  them, by a Discussion message on the project's chatter addressed to them.
+  It carries the update's title, status, date and full content, and a link
+  to the project's updates page on the portal.
+* Adding a recipient to a shared update emails only that recipient. Editing
+  the update, removing recipients or making it internal again sends nothing.
+  An email already sent cannot be recalled.
 
 Portal
 ------
-* ``/my/projects/<id>/updates`` lists the project's shared updates, newest
-  first, with date, status and content.
+* A portal user sees an update only if it is shared **and** they are one of
+  its recipients. Making it internal again, or removing them from the
+  recipients, hides it from them at once.
+* ``/my/projects/<id>/updates`` lists the updates of a project shared with
+  the visitor, newest first, with date, status and content.
 * An **Updates** button reaches it from the top of the project's portal page
   and from the Project Sharing view that collaborators see.
-* Portal users can read shared updates only, and only on projects they can
-  already open. Internal updates are never visible.
 """,
     "author": "Bemade Inc.",
     "website": "https://www.bemade.org",

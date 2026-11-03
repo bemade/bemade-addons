@@ -4,9 +4,10 @@
 
 ACCEPTANCE CRITERIA
 - ``/my/projects/<id>/updates``, logged in as a portal user who can open the
-  project, renders its Shared updates newest first, each with title, date,
-  status and description, and none of its Internal updates. With none
-  shared, it says there are no updates yet.
+  project, renders the project's updates that user can read (shared with
+  them, see test_portal_access) newest first, each with title, date, status
+  and description, and no other update. With none, it says there are no
+  updates yet.
 - A portal user who cannot open the project, or an anonymous visitor, is
   sent away (redirect to ``/my`` or login) and sees no update content.
 - It is NOT redirected to Project Sharing for collaborators: the link in the
