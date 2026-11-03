@@ -49,7 +49,9 @@ tours.add("sc_1746_phone_home_picto", {
                 // last, flush with the bar's right padding.
                 const me = rect(".o_sc_appbar .o_sc_appbar_me");
                 assert(me && me.right > bar.getBoundingClientRect().right - 24, "avatar moved");
-                window.sessionStorage.setItem("sc1746_me_right", String(me.right));
+                // Measured from the right edge of the client area: a vertical scrollbar
+                // (headless CI on a taller page) must not read as the icons moving.
+                window.sessionStorage.setItem("sc1746_me_gap", String(document.documentElement.clientWidth - me.right));
                 document.querySelector(".o_sc_appbar a.o_sc_home_picto").click();
             },
             expectUnloadPage: true,
@@ -61,9 +63,10 @@ tours.add("sc_1746_phone_home_picto", {
                 assert(window.location.pathname === "/my/home", window.location.href);
                 assert(!document.querySelector(".o_sc_appbar a.o_sc_home_picto"), "top level: picto shows");
                 assert(!document.querySelector(".o_sc_appbar a.o_sc_back"), "top level: back shows");
-                const before = Number(window.sessionStorage.getItem("sc1746_me_right"));
+                const before = Number(window.sessionStorage.getItem("sc1746_me_gap"));
                 const me = rect(".o_sc_appbar .o_sc_appbar_me");
-                assert(Math.abs(me.right - before) < 1, `right-hand icons moved: ${before} -> ${me.right}`);
+                const gap = document.documentElement.clientWidth - me.right;
+                assert(Math.abs(gap - before) < 1, `right-hand icons moved: gap ${before} -> ${gap}`);
             },
         },
     ],
