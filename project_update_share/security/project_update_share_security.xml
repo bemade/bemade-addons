@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2026 Bemade Inc. License LGPL-3.0 or later. -->
+<odoo>
+    <!-- A portal user reads an update only once it is shared, and only if
+         they are one of its recipients. -->
+    <record id="project_update_rule_portal_recipient" model="ir.rule">
+        <field name="name">Project Update: portal users read updates shared with them</field>
+        <field name="model_id" ref="project.model_project_update"/>
+        <field name="domain_force">[
+            ('internal_only', '=', False),
+            ('recipient_ids', 'in', [user.partner_id.id]),
+        ]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+</odoo>

@@ -47,7 +47,12 @@ Portal
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
     "depends": ["project", "portal"],
-    "data": [],
+    "data": [
+        "security/ir.model.access.csv",
+        "security/project_update_share_security.xml",
+        "views/project_update_views.xml",
+        "views/portal_templates.xml",
+    ],
     "installable": True,
     "application": False,
 }
