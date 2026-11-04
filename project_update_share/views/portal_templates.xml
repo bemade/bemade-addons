@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 Bemade Inc. License LGPL-3.0 or later. -->
+<odoo>
+    <template id="portal_my_project_updates" name="My Project Updates">
+        <t t-call="portal.portal_layout">
+            <t t-set="title" t-value="project.name" />
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h3 class="mb-0">Updates</h3>
+                <a t-attf-href="/my/projects/#{project.id}" class="btn btn-light">
+                    <i class="fa fa-tasks me-1" role="img" aria-label="Tasks" /><span
+          >Tasks</span>
+                </a>
+            </div>
+            <div t-if="not updates" class="alert alert-info" role="alert">
+                There are no updates yet.
+            </div>
+            <div
+        t-foreach="updates"
+        t-as="update"
+        class="card mb-3 o_project_update_share_card"
+      >
+                <div class="card-header d-flex flex-wrap justify-content-between gap-2">
+                    <strong t-out="update.name" />
+                    <span class="text-muted">
+                        <span t-out="statuses.get(update.status)" /> ·
+                        <span t-field="update.date" />
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div t-field="update.description" />
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- "Updates" at the top of the classic portal project page. -->
+    <template
+    id="portal_my_project_updates_button"
+    inherit_id="project.portal_my_project"
+  >
+        <xpath expr="//t[@t-call='portal.portal_searchbar']" position="before">
+            <div class="d-flex justify-content-end mb-2">
+                <a
+          t-attf-href="/my/projects/#{project.id}/updates"
+          class="btn btn-secondary"
+        >
+                    <i
+            class="fa fa-bullhorn me-1"
+            role="img"
+            aria-label="Updates"
+          /><span>Updates</span>
+                </a>
+            </div>
+        </xpath>
+    </template>
+</odoo>
