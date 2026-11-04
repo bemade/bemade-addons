@@ -41,6 +41,19 @@
                     <t t-set="message">Every section is switched off. Use « Configure » to show some.</t>
                 </t>
             </div>
+            <!-- Task 1749: a fragment request only — the player cards the
+                 page still shows in a section the fresh render no longer
+                 lists them in (a status change moved them out), each with
+                 its own scope, so they refresh in place
+                 (AppDashboardPortal._sc_dash_kept_rows). Never on a page. -->
+            <div t-if="sc_dash_kept_rows" hidden="hidden" data-sc-dash-kept="1">
+                <t t-foreach="sc_dash_kept_rows" t-as="kept">
+                    <t t-call="bemade_sports_clinic.sc_player_row">
+                        <t t-set="row" t-value="kept['row']"/>
+                        <t t-set="row_scope" t-value="kept['scope']"/>
+                    </t>
+                </t>
+            </div>
             <!-- Review round 1: the sheets of the « À faire » activity cards
                  (Fait, Reprogrammer, …), once on the page; back home after. -->
             <t t-if="sc_dash_activity_sheets" t-call="bemade_sports_clinic.sc_activity_sheets">

@@ -17,6 +17,7 @@ validated by ``sc.dashboard`` (strict) — the page offers nothing the server
 would not accept, and the server accepts nothing the page did not offer.
 """
 import json
+import re
 from datetime import timedelta
 from urllib.parse import quote
 
@@ -34,6 +35,8 @@ HOME_RETURN = 'return_url=%2Fmy%2Fhome'
 # Rows / cards shown before « See the N others » (the rest folded): the
 # player lists, the events and each « À faire » line's cards.
 ROWS_SHOWN = 8
+# Task 1749: a player card's face fragment (sc_player_row).
+DASH_ROW_KEY_RE = re.compile(r'^sports\.patient:(\d+):row-([\w-]+)$')
 
 
 def _csv_ints(value):
@@ -70,6 +73,9 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
             # Review round 1: page-level parts a widget asks for (the
             # activity cards' sheets, once per page).
             'activity_sheets': False,
+            # Task 1749: the player-card scopes of the page — {row_scope:
+            # {'teams', 'ids' (the players listed), 'changed'}}.
+            'row_scopes': {},
         }
         sections = []
         for instance in Dash._sc_layout(viewer):
@@ -112,12 +118,57 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
             'today_date': fields.Date.context_today(env.user),
         }
         values.update(self._sc_injury_card_options())
+        values['sc_dash_kept_rows'] = self._sc_dash_kept_rows(ctx)
         if ctx['activity_sheets']:
             values.update({
                 'sc_dash_available_users': self._activity_assignable_users_for(env.user),
                 'sc_dash_today': fields.Date.to_string(values['today_date']),
             })
         return values
+
+    def _sc_dash_scope_rows(self, ctx, row_scope, teams, rows, changed=False):
+        """Task 1749: note the player cards a section lists under
+        ``row_scope`` (see ``_sc_dash_kept_rows``)."""
+        ctx['row_scopes'][row_scope] = {
+            'teams': teams or request.env['sports.team'],
+            'ids': {row['id'] for row in rows},
+            'changed': changed,
+        }
+        return rows
+
+    def _sc_dash_kept_rows(self, ctx):
+        """Task 1749: the player cards a FRAGMENT request asks for that the
+        fresh render no longer lists in their section — a status change
+        takes the player out of it (« Match : Oui » leaves « Retours en
+        retard »; any change makes a recent change, out of « À
+        surveiller »). The page keeps such a card where it is until the
+        next visit (data-sc-fragment-keep, #1634); rendered here with its
+        own scope, it is refreshed in place instead of staying stale.
+        Never on a full page render; only players the viewer may read, on
+        the section's teams.
+
+        ``[{'scope', 'row'}]`` (sc_app_home, a hidden holder)."""
+        keys = self._sc_fragment_keys()
+        if not keys:
+            return []
+        wanted = {}
+        for key in keys:
+            match = DASH_ROW_KEY_RE.match(key)
+            if not match:
+                continue
+            pid, scope = int(match.group(1)), match.group(2)
+            spec = ctx['row_scopes'].get(scope)
+            if spec and pid not in spec['ids']:
+                wanted.setdefault(scope, []).append(pid)
+        kept = []
+        Patient = request.env['sports.patient']
+        for scope, pids in wanted.items():
+            spec = ctx['row_scopes'][scope]
+            players = Patient.browse(pids).exists()._filtered_access('read').filtered(
+                lambda p: p.sudo().team_ids & spec['teams'])
+            for row in self._sc_dash_player_rows(players, spec['teams'], ctx, changed=spec['changed']):
+                kept.append({'scope': scope, 'row': row})
+        return kept
 
     @staticmethod
     def _sc_dash_zones(sections):
@@ -281,10 +332,14 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
             lines.append({
                 'kind': 'removals', 'tone': 'ghost', 'label': env._("Removal requests"),
                 'card': 'player', 'url': False,
-                'cards': self._sc_dash_player_rows(players, removal_teams, ctx),
+                'cards': self._sc_dash_scope_rows(
+                    ctx, '%s-removals' % scope, removal_teams,
+                    self._sc_dash_player_rows(players, removal_teams, ctx)),
             })
         if data.get('returns'):
-            cards = self._sc_dash_player_rows(data['returns'], teams, ctx)
+            cards = self._sc_dash_scope_rows(
+                ctx, '%s-returns' % scope, teams,
+                self._sc_dash_player_rows(data['returns'], teams, ctx))
             self._sc_dash_return_quick_edit(cards, data['returns'], '%s-returns' % scope)
             lines.append({
                 'kind': 'returns', 'tone': 'orange', 'label': env._("Overdue returns"),
@@ -340,7 +395,9 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
         env = request.env
         players = self._sc_dash_changes(teams, ctx) if teams else env['sports.patient']
         return {
-            'rows': self._sc_dash_player_rows(players, teams, ctx, changed=True),
+            'rows': self._sc_dash_scope_rows(
+                ctx, 'dash-%s' % instance['id'], teams,
+                self._sc_dash_player_rows(players, teams, ctx, changed=True), changed=True),
             'window_label': env._("(last %(hours)s h)",
                                   hours=env['sports.patient']._dashboard_window_hours()),
             # One team in scope: its digest list (the team page's « History »).
@@ -355,6 +412,7 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
             players = env['sc.dashboard']._sc_data_watch(
                 teams, instance['settings'].get('level'), changed)
             rows = self._sc_dash_player_rows(players, teams, ctx)
+        self._sc_dash_scope_rows(ctx, 'dash-%s' % instance['id'], teams, rows)
         return {'rows': rows}
 
     def _sc_dw_announcements(self, instance, teams, ctx):
