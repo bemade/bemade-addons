@@ -17,6 +17,9 @@
  *   The answer carries the CURRENT worklist, which replaces the local one
  *   (reconcile); a failure rolls back (to the server's list when the answer
  *   carries it) and shows a toast.
+ * - « Seen » (#1747), once saved, opens that player's file (row.url, the
+ *   legacy redirect's target); « Expected » / « Arrived » stay in place,
+ *   and so does a row the user may not open (no url).
  * - « Remove » asks for a second tap (the row is deleted, not archived).
  * - An unregistered kiosk sign-in (#1418) has no status buttons: « Resolve »
  *   opens the page's resolve sheet, whose three forms (link / create /
@@ -207,16 +210,33 @@ export class ScClinicWorklist extends Component {
         }
     }
 
-    setState(row, value) {
-        if (row.unregistered || row.state === value) {
+    async setState(row, value) {
+        if (row.unregistered) {
             return;
         }
-        this.act("state", { attendance_id: row.id, state: value }, (data) => {
+        // #1747: « Seen » opens that player's file once saved, as the
+        // legacy screen's redirect did (only when the user may open it).
+        const open = value === "seen" && row.url;
+        if (row.state === value) {
+            if (open) {
+                this.open(row.url);
+            }
+            return;
+        }
+        const ok = await this.act("state", { attendance_id: row.id, state: value }, (data) => {
             const target = data.rows.find((r) => r.id === row.id);
             if (target) {
                 target.state = value;
             }
         });
+        if (ok && open) {
+            this.open(row.url);
+        }
+    }
+
+    open(url) {
+        clearTimeout(this.timer); // no poll while the next page loads
+        window.location.assign(url);
     }
 
     confirm(row) {
