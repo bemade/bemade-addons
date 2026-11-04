@@ -271,8 +271,8 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
             lines.append({
                 'kind': 'verify', 'tone': 'yellow', 'label': env._("Injuries to verify"),
                 'card': 'injury', 'url': False,
-                'cards': [self._sc_injury_card_row(
-                    injury, '', ctx['viewer']['is_tp'], tp_view, documents=documents)
+                'cards': [self._sc_dash_injury_player_head(self._sc_injury_card_row(
+                    injury, '', ctx['viewer']['is_tp'], tp_view, documents=documents), ctx)
                     for injury in injuries],
             })
         if data.get('removals'):
@@ -297,6 +297,25 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
                 env._("See the %(count)s others", count=line['count'] - ROWS_SHOWN)
                 if line['count'] > ROWS_SHOWN else '')
         return {'lines': lines, 'card_id_prefix': '%s-injury-' % scope}
+
+    def _sc_dash_injury_player_head(self, row, ctx):
+        """Task 1748: an injury card of « À faire » is shown away from its
+        player's page — it gets a header line: the player (« #12 Last,
+        First », a link to the player page's Injuries tab with THIS injury
+        unfolded, the team context kept) and their teams (the viewer's
+        universe only). The player page and the clinic dossier show the
+        player already: no header there (no ``player_head``)."""
+        injury = row['injury']
+        player = injury.sudo().patient_id
+        universe_ids = set(ctx['universe'].ids)
+        teams = player.team_ids.filtered(lambda t: t.id in universe_ids)
+        row['player_head'] = {
+            'id': player.id,
+            'name': player._portal_list_name(),
+            'teams': ' · '.join(teams.mapped('name')),
+            'url': self._sc_injury_card_url(injury, team_id=teams[:1].id),
+        }
+        return row
 
     def _sc_dash_return_quick_edit(self, cards, players, row_scope):
         """Review round 2 (owner 2026-10-29): each « Retours dépassés » card
