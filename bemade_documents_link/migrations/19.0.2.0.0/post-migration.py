@@ -9,7 +9,7 @@ def migrate(cr, version):
     """Mirror every pre-existing v1 native link (``documents.document``'s
     single ``res_model``/``res_id`` pointer) into a ``bemade.documents.link``
     row, so linked-record counts/filters built on the new model include data
-    that predates it (task #3678). Runs post-migrate so the new model's table
+    that predates it. Runs post-migrate so the new model's table
     already exists. Idempotent: safe to re-run on upgrade re-runs.
     """
     env = api.Environment(cr, SUPERUSER_ID, {})

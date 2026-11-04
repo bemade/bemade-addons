@@ -8,7 +8,7 @@ import { _t } from "@web/core/l10n/translation";
 import { patch } from "@web/core/utils/patch";
 
 /**
- * Documents-side "Link to Record" entry point (task #3678 defect 1).
+ * Documents-side "Link to Record" entry point.
  *
  * The enterprise Documents app does NOT render the standard ActionMenus
  * component, so a server action bound via `binding_model_id` /
@@ -39,7 +39,7 @@ import { patch } from "@web/core/utils/patch";
 const makeModelPatch = () => ({
     /**
      * True when every selected record is a real binary document with an
-     * attachment. A document can now be linked to many records (task #3678),
+     * attachment. A document can now be linked to many records,
      * so -- unlike the stock guard -- already-linked documents
      * (res_model !== 'documents.document') remain eligible too.
      */

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 Bemade Inc. License LGPL-3.0 or later. -->
+<templates xml:space="preserve">
+    <!-- Next to Project Sharing's "back to My Projects" arrow. -->
+    <t t-inherit="project.ProjectSharingControlPanelNavigationButton" t-inherit-mode="extension">
+        <xpath expr="//a" position="after">
+            <a t-if="projectUpdateShareUrl" t-att-href="projectUpdateShareUrl"
+               class="btn btn-secondary o_project_update_share_button">
+                <i class="fa fa-bullhorn me-1" role="img" aria-label="Updates"/><span>Updates</span>
+            </a>
+        </xpath>
+    </t>
+</templates>

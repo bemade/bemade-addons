@@ -1757,6 +1757,51 @@ $sc-p2-laptop: 992px;
                 grid-column: 4;
             }
         }
+
+        // Task 1748: the player line (dashboard « Injuries to verify »)
+        // above the card's top bar, full width; the bar's rows move down
+        // one.
+        > .o_sc_injury_player_head {
+            grid-column: 1 / -1;
+            grid-row: 1;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            column-gap: var(--sc-space-2);
+            min-width: 0;
+
+            > .o_sc_injury_player_link {
+                font-weight: 600;
+                color: var(--sc-fg);
+                text-decoration: underline;
+                text-underline-offset: 2px;
+                overflow-wrap: anywhere;
+            }
+
+            > .o_sc_injury_player_teams {
+                color: var(--sc-fg-2);
+                font-size: var(--sc-text-xs);
+                overflow-wrap: anywhere;
+            }
+        }
+
+        &.o_sc_injury_head_with_player {
+            > .o_sc_injury_head_main > .o_sc_dot,
+            > .o_sc_injury_head_main > .o_sc_row_text,
+            > .o_sc_injury_head_icons {
+                grid-row: 2;
+            }
+
+            > .o_sc_injury_head_main > .o_sc_row_trailing {
+                grid-row: 3;
+            }
+
+            @media (min-width: 768px) {
+                > .o_sc_injury_head_main > .o_sc_row_trailing {
+                    grid-row: 2;
+                }
+            }
+        }
     }
 
     .o_sc_injury_toggle .o_sc_icon {

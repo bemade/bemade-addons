@@ -1,10 +1,11 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import MissingError
+from odoo.fields import Domain
 
 
 class BemadeDocumentsLink(models.Model):
     """Polymorphic link between a ``documents.document`` and any business
-    record (task #3678): the source of truth for "which records is this
+    record: the source of truth for "which records is this
     document linked to". A single document can be linked to many records
     across many different models -- something the stock Documents module
     can't express, since it only tracks a single ``res_model``/``res_id``
@@ -116,14 +117,56 @@ class BemadeDocumentsLink(models.Model):
             document._bemade_repoint_primary()
         return result
 
+    @api.model
+    def _bemade_linked_documents(self, res_model, res_ids):
+        """Documents linked (through a link row) to any of the given records."""
+        return self.sudo().search(
+            [("res_model", "=", res_model), ("res_id", "in", list(res_ids))]
+        ).document_id
+
+    @api.model
+    def _bemade_linked_domain(self, res_model, res_ids):
+        """Domain on ``documents.document`` matching the documents linked to
+        any of the given records."""
+        return Domain(
+            "bemade_link_ids",
+            "any",
+            [("res_model", "=", res_model), ("res_id", "in", list(res_ids))],
+        )
+
     def _sync_primary_on_link(self):
         """The first link row on a document also becomes the native primary
         (``res_model``/``res_id``) so stock Documents UX keeps working;
-        subsequent rows just add a link and leave the primary alone."""
+        subsequent rows just add a link and leave the primary alone.
+
+        When the document already has a native primary that has no link row
+        (it was attached natively), mirror it into a row so that every
+        record the document is attached to is represented by a row."""
         self.ensure_one()
         document = self.document_id
         if not document.res_model:
             document.write({"res_model": self.res_model, "res_id": self.res_id})
+        elif document.res_id and document.res_model != "documents.document":
+            self._bemade_mirror_native_primary(document)
+
+    @api.model
+    def _bemade_mirror_native_primary(self, document):
+        """Create the missing link row for ``document``'s native primary."""
+        exists = self.sudo().search_count(
+            [
+                ("document_id", "=", document.id),
+                ("res_model", "=", document.res_model),
+                ("res_id", "=", document.res_id),
+            ]
+        )
+        if not exists:
+            self.with_context(skip_bemade_link_audit=True).sudo().create(
+                {
+                    "document_id": document.id,
+                    "res_model": document.res_model,
+                    "res_id": document.res_id,
+                }
+            )
 
     def _post_chatter_audit(self, action):
         """Post a one-line note on the *target* record's chatter (not on the

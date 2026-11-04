@@ -1,0 +1,15 @@
+{
+  "stepsFile": "../../static/tests/tours/link_document_to_record.steps.js",
+  "startPath": "/odoo/action-documents.document_action",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "voice": "fr_FR-siwis-medium",
+  "lang": "fr_CA",
+  "title": "Lier un document à une fiche depuis l'application Documents",
+  "introNarration": "Dans cette vidéo, vous verrez comment lier un document existant à une fiche depuis l'application Documents.",
+  "outroTitle": "C'est fait",
+  "outroNarration": "La fenêtre se ferme une fois la liaison effectuée, et le document apparaît sur la fiche choisie. Un même document peut être lié à plusieurs fiches.",
+  "stepOverrides": {
+    "click_link_to_record": {"containsText": "Lier à un enregistrement"}
+  }
+}
