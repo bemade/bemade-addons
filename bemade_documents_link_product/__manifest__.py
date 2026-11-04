@@ -1,6 +1,6 @@
 {
     "name": "Documents - Link Existing (Products)",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "summary": "Show documents linked to a product in its Documents button.",
     "category": "Productivity/Documents",
     "author": "Bemade Inc.",

@@ -91,3 +91,21 @@ class DocumentsDocument(models.Model):
     def _bemade_is_shared(self):
         """True if any of these documents is linked to two or more records."""
         return any(len(document.bemade_link_ids) >= 2 for document in self)
+
+    def _bemade_linked_from_documents(self):
+        """The documents among these that live in the Documents app and were
+        linked to a single record from it or from the record's gear menu, as
+        opposed to files uploaded on the record itself. Both link wizards
+        (stock and ours) flag a linked document ``is_editable_attachment``;
+        a file filed in Documents for a record upload never is."""
+        return self.filtered(
+            lambda document: document.is_editable_attachment
+            and document.res_model
+            and len(document.bemade_link_ids) <= 1
+        )
+
+    def _bemade_remove_links(self):
+        """Unlink these documents from every record, keeping the files: they
+        go back to unlinked in the Documents app."""
+        self.bemade_link_ids.unlink()
+        self.filtered("res_model").write({"res_model": False, "res_id": False})

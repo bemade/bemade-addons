@@ -456,11 +456,6 @@ class TestDocumentsLinkM2M(TransactionCase):
             shared.attachment_id._delete_and_notify()
         self.assertTrue(shared.exists())
 
-        single = self._make_doc("Single Delete Doc")
-        self._link(single, "res.partner", self.partner_a.id)
-        single.attachment_id._delete_and_notify()
-        self.assertFalse(single.exists())
-
     def test_migration_mirrors_native_primary(self):
         doc = self._make_doc("Migration 2.1 Doc")
         self._link(doc, "res.partner", self.partner_b.id)

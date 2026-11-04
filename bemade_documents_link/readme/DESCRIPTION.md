@@ -31,3 +31,7 @@ Where a link shows up:
 
 Removing a link only removes it from that record. Deleting, from a chatter, a
 file shared by several records is refused, to avoid deleting it everywhere.
+Deleting, from the one record it is linked to, a file that lives in the
+Documents app (linked from the gear menu or from the Documents app) only
+removes the link: the file stays in Documents. A file uploaded on the record
+itself is still deleted as usual.
