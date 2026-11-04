@@ -6,7 +6,11 @@ from . import test_fsm_visit
 from . import test_fsm_visit_task_tree
 from . import test_fsm_visit_task_tree_tour
 from . import test_task
+from . import test_task_inline_template
 from . import test_task_report
 from . import test_settings
 from . import test_equipment
 from . import test_quotation_duplication
+from . import test_fsm_contacts_list_view
+from . import test_task_report_state_dots
+from . import test_fsm_menu_actions

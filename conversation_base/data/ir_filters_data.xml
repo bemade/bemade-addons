@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <!-- oca-hooks:disable=xml-dangerous-filter-wo-user -->
+    <!-- Intentionally global: 19.0 replaced `user_id` by `user_ids`; empty means shared. -->
+    <record id="ir_filter_conversation_unread" model="ir.filters">
+        <field name="name">Unread</field>
+        <field name="model_id">mail.conversation</field>
+        <field
+      name="domain"
+    >[('member_ids', 'any', [('user_id', '=', uid), ('unread', '=', True)])]</field>
+        <field name="sort">[]</field>
+        <field name="is_default" eval="False" />
+        <field name="user_ids" eval="[]" />
+    </record>
+    <record id="ir_filter_conversation_unanswered" model="ir.filters">
+        <field name="name">Unanswered</field>
+        <field name="model_id">mail.conversation</field>
+        <field name="domain">[('unanswered', '=', True)]</field>
+        <field name="sort">[]</field>
+        <field name="is_default" eval="False" />
+        <field name="user_ids" eval="[]" />
+    </record>
+    <record id="ir_filter_conversation_oldest_unanswered" model="ir.filters">
+        <field name="name">Oldest unanswered first</field>
+        <field name="model_id">mail.conversation</field>
+        <field name="domain">[('unanswered', '=', True)]</field>
+        <field name="sort">["unanswered_since asc"]</field>
+        <field name="is_default" eval="False" />
+        <field name="user_ids" eval="[]" />
+    </record>
+    <record id="ir_filter_conversation_mine" model="ir.filters">
+        <field name="name">Mine</field>
+        <field name="model_id">mail.conversation</field>
+        <field name="domain">[('user_id', '=', uid)]</field>
+        <field name="sort">[]</field>
+        <field name="is_default" eval="False" />
+        <field name="user_ids" eval="[]" />
+    </record>
+</odoo>

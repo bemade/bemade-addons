@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="action_conversation_split" model="ir.actions.server">
+        <field name="name">Split…</field>
+        <field name="model_id" ref="conversation_base.model_mail_conversation" />
+        <field
+      name="binding_model_id"
+      ref="conversation_base.model_mail_conversation"
+    />
+        <field name="binding_view_types">form</field>
+        <field name="state">code</field>
+        <field name="code">action = record.action_open_split_wizard()</field>
+    </record>
+</odoo>

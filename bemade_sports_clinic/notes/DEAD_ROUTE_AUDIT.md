@@ -25,7 +25,8 @@ Two distinct mechanisms, BOTH must be guarded:
 
 Audited all portal templates for accesses to `assigned_staff_ids / treatment_professional_ids
 / user_id(s) / message_partner_ids`. Broken + fixed: event detail assigned staff, event edit
-team+staff pre-check, injury edit TP pre-check. Verified-safe (cross-team regression tests
+team+staff pre-check, injury edit TP pre-check (the injury TP field itself was removed in
+#1240 — the pre-check and its picker are gone). Verified-safe (cross-team regression tests
 in `test_cov_portal_cross_team.py`): event-detail timesheet table, treatment-note author,
 activity-detail assignee. **New portal views that display a res.users/team relation must
 follow mechanism-1 (controller-resolved data) and are covered by the cross-team triage tests.**

@@ -12,7 +12,7 @@ class TestCovPatientInjuryPortalPost(PortalCovCommon):
 
     def _new_injury(self, stage='unverified'):
         injury = self.env['sports.patient.injury'].create({
-            'patient_id': self.player.id, 'team_id': self.team_a.id, 'diagnosis': 'Fixture',
+            'patient_id': self.player.id, 'diagnosis': 'Fixture',
         })
         injury.with_context(mail_notrack=True).write({'stage': stage})
         return injury
@@ -21,6 +21,8 @@ class TestCovPatientInjuryPortalPost(PortalCovCommon):
         return self.env['sports.injury.document'].create({
             'name': 'fixture.pdf', 'patient_id': self.player.id, 'injury_id': self.injury.id,
             'file_content': base64.b64encode(b'fixture-bytes'), 'category': 'other',
+            # Task 1432: only the uploader (or an admin) may delete it.
+            'created_by_id': self.tp.id,
         })
 
     # ---- document upload / download / delete ----
@@ -57,14 +59,18 @@ class TestCovPatientInjuryPortalPost(PortalCovCommon):
     def test_delete_injury_document_happy(self):
         doc = self._new_document()
         self._login_tp()
-        resp = self.url_open('/my/injury/document/delete/%s' % doc.id)
+        # Task 1544: POST + CSRF only.
+        resp = self.url_open('/my/injury/document/delete/%s' % doc.id,
+                             data={'csrf_token': self._csrf()})
         self.assertEqual(resp.status_code, 200)
-        self.assertFalse(doc.exists(), "TP should be able to delete the document")
+        doc.invalidate_recordset()
+        self.assertFalse(doc.active, "TP should be able to delete (archive) the document")
 
     def test_delete_injury_document_denied_for_coach(self):
         doc = self._new_document()
         self._login_coach()
-        self.url_open('/my/injury/document/delete/%s' % doc.id)
+        self.url_open('/my/injury/document/delete/%s' % doc.id,
+                      data={'csrf_token': self._csrf()})
         self.assertTrue(doc.exists(), "a coach must not delete injury documents")
 
     # ---- create_injury_submit ----

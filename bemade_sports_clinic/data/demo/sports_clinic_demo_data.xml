@@ -134,24 +134,18 @@
             <field name="diagnosis">Fracture du fémur</field>
             <field name="predicted_resolution_date">2024-02-01</field>
             <field name="patient_id" ref="patient_1"/>
-            <field name="treatment_professional_ids"
-                   eval="[Command.set([ref('base.user_admin')])]"/>
         </record>
         <record id="injury_2" model="sports.patient.injury">
             <field name="injury_date">2022-03-17</field>
             <field name="diagnosis">Entorse cheville droite</field>
             <field name="predicted_resolution_date">2022-03-23</field>
             <field name="patient_id" ref="patient_1"/>
-            <field name="treatment_professional_ids"
-                   eval="[Command.set([ref('base.user_admin')])]"/>
         </record>
         <record id="injury_3" model="sports.patient.injury">
             <field name="injury_date">2023-10-15</field>
             <field name="diagnosis">Commotion cérébrale mineure</field>
             <field name="predicted_resolution_date">2023-11-01</field>
             <field name="patient_id" ref="patient_3"/>
-            <field name="treatment_professional_ids"
-                   eval="[Command.set([ref('base.user_admin')])]"/>
         </record>
         <record id="stingers_coach_rel" model="sports.team.staff">
             <field name="partner_id" ref="base.partner_demo_portal"/>

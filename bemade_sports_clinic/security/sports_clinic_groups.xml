@@ -23,7 +23,12 @@
         <record id="group_sports_clinic_treatment_professional" model="res.groups">
             <field name="name">Treatment Professional</field>
             <field name="privilege_id" ref="privilege_sports_clinic_management"/>
-            <!-- No implied_ids to allow both internal and portal treatment professionals -->
+            <!-- Task 1639: the INTERNAL therapist implies the clinic « Internal
+                 User » (the app's assumption; portal therapists hold
+                 group_portal_treatment_professional, never this group — the
+                 staff sync gives it to internal users only). noupdate:
+                 migrations/19.0.1.105.0 applies it to existing databases. -->
+            <field name="implied_ids" eval="[Command.link(ref('group_sports_clinic_user'))]"/>
         </record>
         <record id="group_sports_clinic_admin" model="res.groups">
             <field name="name">Administrator</field>

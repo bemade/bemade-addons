@@ -3,21 +3,23 @@ from odoo import http, _, fields
 from odoo.exceptions import AccessError, UserError
 from datetime import datetime
 import pytz
+from urllib.parse import quote as url_quote
 import logging
 
 from .access_control_mixin import AccessControlMixin
+from .app_shell import AppShellMixin
 
 _logger = logging.getLogger(__name__)
 
 
-class TimesheetsPortal(CustomerPortal, AccessControlMixin):
+class TimesheetsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     # _parse_portal_datetime now lives on AccessControlMixin (dead-route audit cleanup).
 
     def _prepare_home_portal_values(self, counters):
         vals = super()._prepare_home_portal_values(counters)
         if 'event_timesheets_count' in counters:
             user = http.request.env.user
-            if user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system'):
+            if self._is_tp_or_system():
                 # Count timesheets owned by the current user OR by an internal user sharing
                 # the same partner. Timesheets on cancelled events stay included: a
                 # last-minute cancellation can still be payable/invoiceable.
@@ -32,7 +34,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
 
     def _prepare_timesheets_domain(self, user_only=True):
         user = http.request.env.user
-        if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system')):
+        if not self._is_tp_or_system():
             # No access for non-therapists in portal
             return [('id', '=', 0)]
         # Timesheets on cancelled events stay listed: a last-minute cancellation
@@ -51,7 +53,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
     def view_timesheets(self, page=1, date_from=None, date_to=None, team_id=None, organization_id=None, group_by=None, sortby=None, search=None, **kw):
         _logger.warning("[TimesheetsPortal] ENTER /my/sc/timesheets page=%s", page)
         user = http.request.env.user
-        if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system')):
+        if not self._is_tp_or_system():
             raise AccessError(_("You don't have access to timesheets."))
 
         domain = self._prepare_timesheets_domain(user_only=True)
@@ -110,7 +112,9 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
         _logger.debug("[TimesheetsPortal] search result ids=%s", timesheets.ids)
 
         # Filters data sources
-        teams = http.request.env['sports.team'].search([])
+        # Task 1577: explicit scope — every team for a clinic admin (staffed
+        # first), the staffed teams for everyone else (was a bare search([])).
+        teams = self._get_accessible_teams()
         orgs = teams.mapped('parent_id').filtered(lambda p: p).sorted('name')
         _logger.debug(
             "[TimesheetsPortal] UI sources: teams=%s orgs=%s",
@@ -174,12 +178,43 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
             # Mapping of timesheet.id -> localized datetime strings for edit modal fields
             'timesheet_local_dt': local_dt_map,
         }
-        return http.request.render('bemade_sports_clinic.portal_timesheets_list', values)
+        # Task 1540: the app shell (switch on) or today's template (off).
+        if self._sc_app_shell_active():
+            values.update(self._sc_timesheets_values(values, kw))
+        return self._sc_render('bemade_sports_clinic.portal_timesheets_list',
+                               'bemade_sports_clinic.sc_app_timesheets', values)
 
-    @http.route(['/my/sc/timesheet/<int:ts_id>/edit'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    def _sc_timesheets_values(self, values, kw):
+        """/my/sc/timesheets in the shell: the same search, one card per
+        timesheet (shared with the event page), edit / delete as sheets
+        posting to today's CSRF-checked routes and coming back here."""
+        env = http.request.env
+        request_ = http.request.httprequest
+        current = request_.path + ('?' + request_.query_string.decode() if request_.query_string else '')
+        params = http.request.params
+        success = None
+        if params.get('updated'):
+            success = env._("Timesheet updated.")
+        elif params.get('deleted'):
+            success = env._("Timesheet deleted.")
+        # Owner review 2026-10-11: « Group by » is back (date / organization
+        # / team), one titled group each, from the legacy route's groups.
+        groups = []
+        if values.get('group_by') and values.get('grouped'):
+            groups = [{'key': str(index), 'label': group['label'],
+                       'rows': [self._sc_timesheet_row(ts) for ts in group['items']]}
+                      for index, group in enumerate(values['grouped'])]
+        return {
+            'sc_timesheet_groups': groups,
+            'sc_timesheet_rows': [self._sc_timesheet_row(ts) for ts in values['timesheets']],
+            'sc_timesheets_return': current,
+            'sc_flash': {'success': success, 'error': None},
+        }
+
+    @http.route(['/my/sc/timesheet/<int:ts_id>/edit'], type='http', auth='user', website=True, methods=['POST'])
     def edit_timesheet(self, ts_id, **post):
         user = http.request.env.user
-        if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system')):
+        if not self._is_tp_or_system():
             raise AccessError(_("You don't have permission to edit timesheets."))
         ts = http.request.env['sports.event.timesheet'].browse(ts_id)
         if not ts.exists() or ts.user_id.id != user.id:
@@ -198,17 +233,17 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
             return_url = return_url.replace('&amp;', '&')
         if not return_url or return_url in ('None', 'none', 'null', 'NULL'):
             return_url = None
-        if return_url and not str(return_url).startswith('/'):
-            return_url = None
+        # Task 1544: same-site paths only (was: any '/…', incl. '//host').
+        return_url = self._safe_return_url(return_url, None)
 
         target = return_url or '/my/sc/timesheets'
         separator = '&' if '?' in target else '?'
         return http.request.redirect(f'{target}{separator}updated=1')
 
-    @http.route(['/my/sc/timesheet/<int:ts_id>/delete'], type='http', auth='user', website=True, methods=['POST'], csrf=False)
+    @http.route(['/my/sc/timesheet/<int:ts_id>/delete'], type='http', auth='user', website=True, methods=['POST'])
     def delete_timesheet(self, ts_id, **post):
         user = http.request.env.user
-        if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system')):
+        if not self._is_tp_or_system():
             raise AccessError(_("You don't have permission to delete timesheets."))
         ts = http.request.env['sports.event.timesheet'].browse(ts_id)
         if not ts.exists() or ts.user_id.id != user.id:
@@ -223,9 +258,36 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin):
             return_url = return_url.replace('&amp;', '&')
         if not return_url or return_url in ('None', 'none', 'null', 'NULL'):
             return_url = None
-        if return_url and not str(return_url).startswith('/'):
-            return_url = None
+        # Task 1544: same-site paths only (was: any '/…', incl. '//host').
+        return_url = self._safe_return_url(return_url, None)
 
         target = return_url or '/my/sc/timesheets'
+        # Task 1736 (owner 2026-11-01): the app shell's archive icon (it IS
+        # an archive) — no banner, « Timesheet archived · Undo » instead.
+        if post.get('sc_undo'):
+            undo = '/my/sc/timesheet/%s/restore?return_url=%s' % (ts.id, url_quote(target, safe=''))
+            self._sc_offer_undo(http.request.env._("Timesheet archived."), undo)
+            return http.request.redirect(target)
         separator = '&' if '?' in target else '?'
         return http.request.redirect(f'{target}{separator}deleted=1')
+
+    @http.route(['/my/sc/timesheet/<int:ts_id>/restore'], type='http', auth='user', website=True, methods=['POST'])
+    def restore_timesheet(self, ts_id, **post):
+        """Task 1736: « Annuler » of a timesheet just archived from the app
+        (the archive icon's undo toast) — the same rule as the archive: the
+        caller's own, not invoiced."""
+        user = http.request.env.user
+        if not self._is_tp_or_system():
+            raise AccessError(_("You don't have permission to restore timesheets."))
+        ts = http.request.env['sports.event.timesheet'].with_context(active_test=False).browse(ts_id)
+        if not ts.exists() or ts.user_id.id != user.id:
+            raise AccessError(_("You can only restore your own timesheets."))
+        if ts.state == 'invoiced':
+            raise UserError(_('This timesheet is invoiced and cannot be changed.'))
+        if not ts.active:
+            ts.write({'active': True})
+        target = self._safe_return_url(post.get('return_url'), None) or '/my/sc/timesheets'
+        http.request.session['notification'] = {
+            'type': 'success', 'title': '', 'message': http.request.env._("Timesheet restored."),
+        }
+        return http.request.redirect(target)

@@ -1,38 +1,26 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
     <!-- Reorder SO line columns: packaging fields move BEFORE base qty.
-         product_uom_packaging already adds them after product_uom_qty (optional="show").
-         This module removes them from after and re-inserts them before, making
-         product_packaging_qty editable (no readonly) to activate the inverse. -->
+         product_uom_packaging already adds them after product_uom_qty, with
+         optional="show" and a server-side domain="product_packaging_domain".
+         This module relocates the SAME field nodes there via position="move"
+         (not a remove-then-recreate copy), so their domain/optional
+         attributes stay a single source of truth defined by
+         product_uom_packaging. Task #4104: a prior round's remove+recreate
+         copy of the inline domain silently drifted out of sync with
+         product_uom_packaging's fix (PO side; applied here for consistency
+         before it could do the same on the SO side). -->
     <record id="view_sale_order_line_packaging_qty_entry" model="ir.ui.view">
         <field name="name">sale.order.packaging.qty.entry</field>
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form" />
         <field name="arch" type="xml">
-            <!-- Remove the packaging fields that product_uom_packaging added after product_uom_qty -->
             <xpath
-                expr="//field[@name='order_line']//list//field[@name='product_packaging_id']"
-                position="replace"
-            />
-            <xpath
-                expr="//field[@name='order_line']//list//field[@name='product_packaging_qty']"
-                position="replace"
-            />
-            <!-- Re-insert packaging fields BEFORE product_uom_qty, with product_packaging_qty editable -->
-            <xpath
-                expr="//field[@name='order_line']//list//field[@name='product_uom_qty']"
-                position="before"
-            >
-                <field
-                    name="product_packaging_id"
-                    optional="show"
-                    domain="[('product_tmpl_id', '=', product_template_id), ('partner_id', '=', False)]"
-                />
-                <field
-                    name="product_packaging_qty"
-                    optional="show"
-                    string="# Packages"
-                />
+        expr="//field[@name='order_line']//list//field[@name='product_uom_qty']"
+        position="before"
+      >
+                <field name="product_packaging_id" position="move" />
+                <field name="product_packaging_qty" position="move" />
             </xpath>
         </field>
     </record>

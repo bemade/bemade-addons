@@ -3,17 +3,24 @@ name: version-bump-check
 # bump its __manifest__.py version vs the target branch.
 # See https://github.com/bemade/pre-commit-hooks and odoo-project-guide §7.
 #
-# OPT-IN / HELD: the job only runs when the repository variable
-# VERSION_BUMP_CHECK is set to "true" (Settings → Secrets and variables →
-# Actions → Variables). Held until the autonomous worker learns to bump
-# (task #3891), to avoid failing its in-flight PRs.
+# Why this repo in particular: it is the producer for per-addon vendoring.
+# Clients pin each addon by an <addon>/<version> tag, so a module changed
+# without a bump keeps pointing at its previous tag -- and a client vendoring
+# by version silently receives stale content for that addon beside fresh
+# content from the modules that were bumped. The mismatch then surfaces in the
+# client's CI, far from where it was introduced (task #3965).
+#
+# Runs unconditionally. It was previously opt-in behind a VERSION_BUMP_CHECK
+# repository variable, held so it would not fail the autonomous worker's
+# in-flight PRs; the worker bumps versions itself now (task #3891), so the
+# hold is retired rather than left as a switch that could silently disable the
+# guard everywhere.
 
 on:
   pull_request:
 
 jobs:
   version-bump-check:
-    if: vars.VERSION_BUMP_CHECK == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

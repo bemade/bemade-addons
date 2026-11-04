@@ -8,22 +8,19 @@
         <field name="arch" type="xml">
             <!-- Insert packaging columns after qty column in the PO line list -->
             <xpath
-                expr="//field[@name='order_line']//list//field[@name='product_qty']"
-                position="after"
-            >
-                <!-- product_template_id must be loaded in the list so the
-                     packaging domain below can dereference it client-side. -->
-                <field name="product_template_id" invisible="True" />
+        expr="//field[@name='order_line']//list//field[@name='product_qty']"
+        position="after"
+      >
                 <field
-                    name="product_packaging_id"
-                    optional="show"
-                    domain="[('product_tmpl_id', '=', product_template_id), '|', ('partner_id', '=', False), ('partner_id', '=', parent.partner_id)]"
-                />
+          name="product_packaging_id"
+          optional="show"
+          domain="product_packaging_domain"
+        />
                 <field
-                    name="product_packaging_qty"
-                    optional="show"
-                    string="# Packages"
-                />
+          name="product_packaging_qty"
+          optional="show"
+          string="# Packages"
+        />
             </xpath>
         </field>
     </record>

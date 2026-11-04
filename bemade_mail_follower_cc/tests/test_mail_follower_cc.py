@@ -15,6 +15,10 @@
 # 7. Internal-only recipient sends still get the Cc header populated.
 # 8. The message author is excluded from Cc even if they follow the record.
 # 9. Notified partners with email=False are silently skipped.
+# 9b. An entry whose To has no valid address (recipient without / with an
+#     invalid email) gets NO Cc: core must still mark that recipient's
+#     notification as failed (mail_email_missing / mail_email_invalid) instead
+#     of delivering the copy to the peers and recording a success.
 # 10. End-to-end: the RFC-2822 Cc: header on each outgoing message matches
 #     the expected peer list, and To: has exactly one address.
 
@@ -519,6 +523,68 @@ class TestMailFollowerCc(MailCommon):
                         "Cc should not contain the literal string 'False'"
                     )
                     self.assertTrue(addr.strip(), "Cc should not contain empty addresses")
+
+    # ------------------------------------------------------------------
+    # Test 9b: no-valid-To entry stays Cc-free so the failure is not masked
+    # ------------------------------------------------------------------
+
+    @mute_logger("odoo.addons.mail.models.mail_mail", "odoo.models.unlink")
+    def test_no_valid_to_entry_keeps_failure(self):
+        """A recipient without a usable email must end up with an `exception`
+        notification, and the peers must not receive its copy as Cc.
+
+        Core only flags a recipient as failed when send_email finds no valid
+        To/Cc at all, so adding the peers as Cc on that entry silently turns a
+        missing-email failure into a "sent" notification (and a duplicate
+        email to every peer)."""
+        partner_no_email = self.env["res.partner"].create({
+            "name": "No Email Partner",
+            "email": False,
+        })
+        partner_bad_email = self.env["res.partner"].create({
+            "name": "Bad Email Partner",
+            "email": "not-an-address",
+        })
+        record = self._make_record()
+
+        with self.mock_mail_gateway():
+            msg = record.with_user(self.user_author).message_post(
+                body="Failure must not be masked",
+                message_type="comment",
+                subtype_xmlid="mail.mt_comment",
+                partner_ids=(
+                    partner_no_email + partner_bad_email + self.partner_peer1
+                ).ids,
+            )
+
+        notifs = msg.notification_ids.filtered(
+            lambda n: n.notification_type == "email"
+        )
+        by_partner = {n.res_partner_id: n for n in notifs}
+        self.assertEqual(by_partner[self.partner_peer1].notification_status, "sent")
+        # failure_type is computed per mail.mail, not per recipient, so both
+        # unusable recipients of the same batch share the same value
+        for partner in (partner_no_email, partner_bad_email):
+            self.assertEqual(by_partner[partner].notification_status, "exception")
+            self.assertIn(
+                by_partner[partner].failure_type,
+                ("mail_email_missing", "mail_email_invalid"),
+            )
+
+        # the entries built for the two unusable recipients carry no Cc, so
+        # the peer is reached exactly once (its own To entry) and never as a
+        # Cc fallback of someone else's failed delivery
+        peer = email_normalize(self.partner_peer1.email)
+        as_to = [
+            m for m in self._mails
+            if peer in {email_normalize(a) for a in (m.get("email_to") or [])}
+        ]
+        as_cc = [
+            m for m in self._mails
+            if peer in {email_normalize(a) for a in (m.get("email_cc") or [])}
+        ]
+        self.assertEqual(len(as_to), 1)
+        self.assertFalse(as_cc, "peer must not be Cc'd on a recipient without a valid To")
 
     # ------------------------------------------------------------------
     # Test 10: end-to-end SMTP headers (Cc: and To: in rendered message)

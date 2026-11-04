@@ -1,14 +1,27 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <!-- This template adds the preamble as a cover page before the main document -->
-    <template id="report_saleorder_document_preamble" inherit_id="sale.report_saleorder_document">
+    <!-- This template adds the preamble as a cover page before the main document.
+         It is printed in every state: once an order is confirmed the preamble is
+         the scope of work the customer agreed to, so it stays part of the record.
+
+         The cover goes through the company's external layout like the document
+         itself. wkhtmltopdf renders every .article as its own document and pairs
+         it with the header and footer at the same position, so a bare article
+         would take the quotation's header and footer and leave the quotation
+         pages without them. No forced page break: the quotation's article starts
+         on a new page anyway, and an extra break leaves a blank page whenever the
+         preamble ends at a page boundary. -->
+    <template
+    id="report_saleorder_document_preamble"
+    inherit_id="sale.report_saleorder_document"
+  >
         <xpath expr="//t[@t-call='web.external_layout']" position="before">
-            <t t-if="doc.preamble and doc.state in ['draft', 'sent']">
-                <div class="article" style="page-break-after: always;">
-                    <div class="mt-4 mb-4">
-                        <span t-field="doc.preamble"/>
+            <t t-if="not is_html_empty(doc.preamble)">
+                <t t-call="web.external_layout">
+                    <div class="page o_preamble_page">
+                        <div t-field="doc.preamble" />
                     </div>
-                </div>
+                </t>
             </t>
         </xpath>
     </template>

@@ -1,0 +1,50 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_partner_email_domain
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: it@bemade.org\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_partner__access_token
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_users__access_token
+msgid "Access Token"
+msgstr "Jeton d'accès"
+
+#. module: bemade_partner_email_domain
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.partner_email_domain_form
+msgid "Division"
+msgstr "Division"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_partner__email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_users__email_domain
+msgid "Email Domain"
+msgstr "Domaine de courriel"
+
+#. module: bemade_partner_email_domain
+#. odoo-python
+#: code:addons/bemade_partner_email_domain/controllers/main.py:0
+msgid "No Access Token found or not matching for this partner."
+msgstr "Aucun jeton d'accès trouvé ou ne correspondant pas à ce partenaire."
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_partner__is_subdivision
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_users__is_subdivision
+msgid "Subdivision"
+msgstr "Subdivision"
+
+#. module: bemade_partner_email_domain
+#. odoo-python
+#: code:addons/bemade_partner_email_domain/controllers/main.py:0
+msgid "The requested partner is not found."
+msgstr "Le partenaire demandé n'est pas trouvé."

@@ -1,9 +1,32 @@
 from odoo import models, fields, _, api, Command, SUPERUSER_ID
 from odoo.exceptions import ValidationError, AccessError, UserError
+from odoo.fields import Domain
 from datetime import date, datetime, timedelta
+import re
+import unicodedata
 from dateutil.relativedelta import relativedelta
 from odoo.addons.phone_validation.tools import phone_validation
+from .sc_phone import sc_phone_is_valid
+from .patient_injury import (
+    dashboard_external_injury_fields,
+    dashboard_internal_injury_fields,
+    history_author_uid,
+    history_stamp_date,
+    legacy_change_emails_enabled,
+)
+from .medical_alerts import (
+    COACH_LEVELS,
+    LEVEL_MINOR,
+    LEVEL_NONE,
+    LEVEL_TONES,
+    LEVEL_URGENT,
+    LEVELS,
+    UNSET_TONE,
+    DETAILS_FIELD,
+)
 import logging
+
+from markupsafe import Markup
 
 _logger = logging.getLogger(__name__)
 
@@ -14,18 +37,73 @@ _logger = logging.getLogger(__name__)
 # therapist, so a head therapist must be able to action it (task 1260).
 REMOVAL_ROLES = ('therapist', 'head_therapist')
 
+# Task 1727: the context key that lets a SYSTEM copy keep a past « Retour
+# prévu » as-is (the merge wizard, data migrations, tests that need one) —
+# the « not in the past » rule is for people entering a date.
+PAST_RETURN_OK = 'sc_allow_past_predicted_return'
+
+# Task 1421: jersey_sort value for players without a (numeric) jersey number —
+# above any 8-digit number, so « blanks last » on an ascending order.
+JERSEY_SORT_LAST = 10 ** 8
+
+# Task 1600: a player's identity. For a portal (share) user, changing an
+# EXISTING value of one of these is an explicit, confirmed step (context key
+# ``sc_identity_confirmed``) recorded on the player's file; filling a blank one
+# is free. The same triple, case-insensitive and trimmed, may not be given to
+# two players by a portal user (exact-duplicate refusal).
+IDENTITY_FIELDS = ('first_name', 'last_name', 'date_of_birth')
+IDENTITY_CONFIRM_KEY = 'sc_identity_confirmed'
+# Task 1716: « Créer quand même » — a create confirmed over an exact name +
+# date-of-birth twin (the add panel's force_create=1).
+IDENTITY_FORCE_CREATE_KEY = 'sc_identity_force_create'
+
+# Task 1630: allergy / medical-alert levels (no value = « Not specified »).
+MEDICAL_LEVEL_SELECTION = [
+    # « None known » (not « None »: the shared msgid is masculine in French).
+    (LEVEL_NONE, "None known"),
+    (LEVEL_MINOR, "Not urgent"),
+    (LEVEL_URGENT, "Urgent – life-threatening"),
+]
+_MEDICAL_ALERT_GROUPS = (
+    "bemade_sports_clinic.group_sports_clinic_treatment_professional,"
+    "bemade_sports_clinic.group_portal_treatment_professional,"
+    "bemade_sports_clinic.group_portal_team_coach"
+)
+
+# Summaries of the « Player Removal Request » activities (English source and
+# the fr_CA renderings the cron may have stored — task 1661 renamed the French
+# « suppression » to « retrait », older activities keep the old wording).
+REMOVAL_REQUEST_SUMMARIES = (
+    'Player Removal Request',
+    'Demande de retrait de joueur',
+    'Demande de suppression de joueur',
+)
+
 external_tracking_fields = {
     "last_consultation_date",
     "match_status",
     "practice_status",
     "predicted_return_date",
-    "return_date",
+    # Task 1381: return_date untracked from the dashboard changelog — injury
+    # resolution already surfaces via match_status/practice_status (both still
+    # tracked), so a return_date line is redundant. Still tracking=True on the
+    # field (chatter keeps it). The synopsis phrase "Return date updated" below
+    # is now dead-but-harmless. Forward-only.
+    # Task 1272 (deferred from #1339): a training-recommendation edit is
+    # coach-visible clinical guidance, so it bumps BOTH roles and surfaces as a
+    # digest change-item. This is the ONE tracked-field addition for #1272 (the
+    # broader "what counts as a change" review is #1343). NB: the plan text said
+    # "patient_injury.py"; training_recommendation is a sports.patient field, so
+    # the correct home is this patient-level external set — the one
+    # _propagate_patient_dashboard checks.
+    "training_recommendation",
 }
 
+# Task 1381: date_of_birth untracked from the dashboard changelog (still
+# tracking=True on the field, so chatter still records it). Forward-only.
 internal_tracking_fields = {
     "team_info_notes",
     "age",
-    "date_of_birth",
 }
 
 # --- Team-dashboard rollup (task 1272) --------------------------------------
@@ -37,11 +115,32 @@ DASHBOARD_STAGE_WEIGHT = {"no_play": 3, "practice_ok": 2, "healthy": 1}
 DASHBOARD_WINDOW_HOURS_DEFAULT = 24
 DASHBOARD_WINDOW_PARAM = "bemade_sports_clinic.dashboard_activity_window_hours"
 
+# --- Team-dashboard change DIGEST (task 1272, re-plan) -----------------------
+# The digest flips the dashboard from counting to RENDERING content: for each
+# active player it lists ONLY the fields that changed in the window, with their
+# CURRENT value, de-duplicated per field. Free text longer than this many
+# characters is truncated behind a « voir plus » drill-down.
+DASHBOARD_DIGEST_TRUNCATE_LEN = 180
+# Category -> Font Awesome icon (shared by the portal cards and the backend
+# kanban HTML digest so both surfaces read the same).
+DASHBOARD_DIGEST_ICONS = {
+    "status": "fa-user",
+    "injury": "fa-medkit",
+    "new_injury": "fa-plus-circle",
+    "note": "fa-sticky-note",
+}
+# Max synopsis phrases shown on the COLLAPSED card before the remainder folds
+# into a "+N more" tail. Keeps the collapsed line to ≤2-3 lines even for the
+# busiest player (task 1272, condense round 2). Presentation-only.
+DASHBOARD_SYNOPSIS_MAX_PHRASES = 4
+
 
 class Patient(models.Model):
     _name = "sports.patient"
     _description = "Patient"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "sc.phone.mixin"]
+    # Task 1645: normalized / refused in create / write (sc_phone.py).
+    _sc_phone_fields = ("phone",)
     
     _unique_patient = models.Constraint(
         'UNIQUE(partner_id)',
@@ -49,7 +148,11 @@ class Patient(models.Model):
     )
     pending_removal = fields.Boolean(string='Pending Removal', default=False, tracking=True, 
                                     help='Indicates if this player has a pending removal request')
-    _order = "last_name, first_name"
+    # Task 1678: the team the pending removal request is about — its head
+    # therapist gets the To-Do (_cron_handle_pending_removals).
+    pending_removal_team_id = fields.Many2one(
+        'sports.team', string='Removal Requested From', ondelete='set null', copy=False)
+    _order = "sort_order, last_name, first_name"
     
     active = fields.Boolean(
         string='Active',
@@ -85,13 +188,15 @@ class Patient(models.Model):
     )
 
     # Patient fields
+    # Task 1633: coaches read / edit it too (their teams' players only:
+    # the coach record rule portal_team_staff_player_access).
     date_of_birth = fields.Date(
-        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
+        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional,bemade_sports_clinic.group_portal_team_coach",
         tracking=True,
     )
     age = fields.Integer(
         compute="_compute_age",
-        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
+        groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional,bemade_sports_clinic.group_portal_team_coach",
     )
     contact_ids = fields.One2many(
         comodel_name="sports.patient.contact",
@@ -107,6 +212,20 @@ class Patient(models.Model):
         string="Teams",
     )
     position = fields.Char(string="Position")
+    # Task 1421: ONE jersey number per player (patient-level, not per team).
+    # Char, not Integer: « 00 » must survive. tracking=True keeps the change in
+    # the chatter; deliberately NOT in external_tracking_fields — a number
+    # change is not a coach-digest change item. Inputs are normalised on
+    # create/write (_normalize_jersey_vals: trimmed, leading « # » dropped,
+    # blank → False) so « = » searches and the duplicate check are exact.
+    jersey_number = fields.Char(string="Jersey Number", size=8, tracking=True)
+    # Stored numeric helper so the ORM can ``order='jersey_sort'`` — the
+    # digits of the Char as an int, blanks (and digit-less values) pushed LAST
+    # with JERSEY_SORT_LAST (an Integer column cannot hold NULL through the
+    # ORM, so a sentinel above any 8-character number stands in for it).
+    jersey_sort = fields.Integer(
+        compute="_compute_jersey_sort", store=True, readonly=True, index=True,
+    )
     match_status = fields.Selection(
         # Selection rather than bool for easy expansion later
         selection=[
@@ -128,7 +247,23 @@ class Patient(models.Model):
     # read it (no field-level groups= so it stays coach-readable). Coach-read /
     # TP-write is enforced at the portal (template t-if + controller gate), the
     # same way date_of_birth is handled.
-    training_recommendation = fields.Text(string="Training Recommendation")
+    training_recommendation = fields.Text(string="Training Recommendation", tracking=True)
+    # Task 1601: every change (a clear included) lands in an append-only
+    # history, like the injury notes; the newest row gives the « Updated on
+    # <date> by <author> » stamp shown under the field everywhere it is shown.
+    # compute_sudo: the history model is rule-gated for portal users, the
+    # stamp is plain display text about a field the reader already sees.
+    training_history_ids = fields.One2many(
+        comodel_name="sports.patient.training.history",
+        inverse_name="patient_id",
+        string="Training Recommendation History",
+        readonly=True,
+    )
+    last_training_recommendation_info = fields.Char(
+        string="Training recommendation last updated",
+        compute="_compute_last_training_recommendation_info",
+        compute_sudo=True,
+    )
     injury_ids = fields.One2many(
         comodel_name="sports.patient.injury",
         inverse_name="patient_id",
@@ -145,6 +280,11 @@ class Patient(models.Model):
     )
     injured_since = fields.Date(compute="_compute_is_injured")
     predicted_return_date = fields.Date(tracking=True)
+    # Task 1727: an existing « Retour prévu » already past (in the user's
+    # timezone) — flagged « Overdue » wherever the date renders.
+    predicted_return_overdue = fields.Boolean(
+        compute="_compute_predicted_return_overdue",
+        search="_search_predicted_return_overdue")
     return_date = fields.Date(
         tracking=True,
         help="When the player was cleared by medical staff to " "return to match play.",
@@ -157,6 +297,13 @@ class Patient(models.Model):
             ("healthy", "Play OK"),
         ],
         compute="_compute_stage",
+    )
+    sort_order = fields.Integer(
+        string="Roster Sort Order",
+        compute="_compute_sort_order",
+        store=True,
+        help="Status-severity key for roster ordering: 0 = no_play (red), "
+        "1 = practice_ok (yellow), 2 = healthy (green). Lower surfaces first.",
     )
     last_consultation_date = fields.Date(tracking=True)
     active_injury_count = fields.Integer(compute="_compute_active_injury_count")
@@ -171,8 +318,80 @@ class Patient(models.Model):
         compute="_compute_document_count",
         string="Document Count",
     )
+    # Task 1630: the legacy free text, kept for this release as a hidden
+    # column (no UI, system only) — the 19.0.1.99.0 post-migrate pre-filled
+    # the levels below from it. Dropping it is a follow-up once the clinic
+    # has validated the pre-filled entries.
     allergies = fields.Text(
+        string="Allergies (legacy)",
+        readonly=True,
+        groups="base.group_system",
+    )
+    # Task 1630 (owner + MC 2026-10-21): allergies and medical alerts, each a
+    # level (no value = « Not specified »); EpiPen with the allergies.
+    # Task 1677 (owner 2026-10-24): each family is a structured list
+    # (``critical_item_ids``, patient_critical_item.py) and its level is
+    # COMPUTED from it — red = a life-threatening item, yellow = items, none
+    # life-threatening, « None known » = the empty list confirmed
+    # (``*_none_confirmed``), « Not specified » otherwise. The field names stay
+    # (pills, cards, digests, the #1628 To-Do, the merge read them). The
+    # former details texts stay as read-only columns (« Old text, to
+    # validate » while ``medical_alert_review`` is set).
+    allergy_level = fields.Selection(
+        selection=MEDICAL_LEVEL_SELECTION,
+        string="Allergy level",
+        compute="_compute_medical_levels",
+        store=True,
+        readonly=True,
+        groups=_MEDICAL_ALERT_GROUPS,
+    )
+    allergy_details = fields.Text(string="Allergy details", groups=_MEDICAL_ALERT_GROUPS)
+    # Task 1717 (owner 2026-10-26): EpiPen is the allergies gate — empty
+    # (« Not provided », new players only), Yes or No. Allergies can be added,
+    # or « No known allergy » ticked, only once it is answered. The former
+    # boolean stays as a stored compute of it (with an inverse) for the
+    # readers (card pills, merge, the #1677 migrations, the backend form).
+    allergy_epipen_state = fields.Selection(
+        [("yes", "Yes"), ("no", "No")],
+        string="EpiPen?",
+        copy=False,
+        groups=_MEDICAL_ALERT_GROUPS,
+    )
+    allergy_epipen = fields.Boolean(
+        string="EpiPen",
+        compute="_compute_allergy_epipen",
+        inverse="_inverse_allergy_epipen",
+        store=True,
+        readonly=False,
+        groups=_MEDICAL_ALERT_GROUPS,
+    )
+    # Task 1677: where the EpiPen is / how to use it (the EpiPen card).
+    allergy_epipen_note = fields.Char(string="EpiPen note", groups=_MEDICAL_ALERT_GROUPS)
+    # Task 1677: « No known allergy / condition » — the empty list confirmed.
+    allergy_none_confirmed = fields.Boolean(string="No known allergy", groups=_MEDICAL_ALERT_GROUPS)
+    medical_none_confirmed = fields.Boolean(string="No known condition", groups=_MEDICAL_ALERT_GROUPS)
+    medical_alert_level = fields.Selection(
+        selection=MEDICAL_LEVEL_SELECTION,
+        string="Medical alert level",
+        compute="_compute_medical_levels",
+        store=True,
+        readonly=True,
+        groups=_MEDICAL_ALERT_GROUPS,
+    )
+    medical_alert_details = fields.Text(string="Medical alert details", groups=_MEDICAL_ALERT_GROUPS)
+    # Therapists only, never coaches (the Infos tab).
+    medical_history_other = fields.Text(
+        string="Other medical history",
         groups="bemade_sports_clinic.group_sports_clinic_treatment_professional,bemade_sports_clinic.group_portal_treatment_professional",
+    )
+    # Pre-filled from the legacy text by the migration: the clinic validates
+    # them from the back-end list « Medical alerts to validate ».
+    medical_alert_review = fields.Boolean(
+        string="To validate",
+        copy=False,
+        groups="base.group_user",
+        help="Pre-filled from the former free-text allergies field: check the "
+        "levels and details, then untick.",
     )
     team_info_notes = fields.Text(
         string="Notes",
@@ -232,6 +451,19 @@ class Patient(models.Model):
     dashboard_note_update_count_tp = fields.Integer(
         string="Recent Note Updates (TP)", default=0, copy=False, readonly=True
     )
+    # Task 1272 (re-plan): rendered change DIGEST for the BACKEND single-column
+    # kanban. Non-stored, TP-scoped (the backend team Dashboard tab is internal
+    # clinic staff = TP audience). Built from the same role-scoped change-item
+    # builder the portal uses, rendered through a shared QWeb fragment. The
+    # portal builds its items directly in the controller/template, so it does
+    # NOT read this field. sanitize=False so the « voir plus » <details> markup
+    # survives (the value is server-generated from a trusted QWeb template).
+    dashboard_digest_html = fields.Html(
+        string="Change Digest",
+        compute="_compute_dashboard_digest_html",
+        sanitize=False,
+        compute_sudo=True,
+    )
 
     def default_get(self, fields_list):
         res = super().default_get(fields_list)
@@ -246,9 +478,209 @@ class Patient(models.Model):
                 res.update({"team_ids": team_ids})
         return res
 
-    def write(self, values):
-        res = super().write(values)
-        if "team_ids" in values:
+    @api.depends("training_history_ids.change_datetime", "training_history_ids.author_id")
+    def _compute_last_training_recommendation_info(self):
+        for patient in self:
+            row = patient.training_history_ids.sorted(
+                key=lambda r: (r.change_datetime, r.id), reverse=True)[:1]
+            patient.last_training_recommendation_info = _(
+                "Updated on %(date)s by %(author)s",
+                date=history_stamp_date(patient, row.change_datetime),
+                author=row.author_id.name or "—",
+            ) if row else ""
+
+    def _prepare_training_history_vals(self, vals):
+        """History rows for the players whose training recommendation
+        ``vals`` really changes (task 1601): whitespace-only differences are
+        no change; a clear IS one (empty content). Runs whatever the mail
+        tracking context; only ``skip_training_history`` turns it off."""
+        if "training_recommendation" not in vals or self.env.context.get("skip_training_history"):
+            return []
+        new = vals.get("training_recommendation") or ""
+        author_id = history_author_uid(self.env)
+        now = fields.Datetime.now()
+        return [{
+            "patient_id": patient.id,
+            "change_datetime": now,
+            "author_id": author_id,
+            "content": new if new.strip() else False,
+        } for patient in self.sudo()
+            if (patient.training_recommendation or "").strip() != new.strip()]
+
+    # Task 1654: the medical fields coaches read but never write.
+    _SC_MEDICAL_WRITE_FIELDS = (
+        "allergy_level", "allergy_details", "allergy_epipen", "allergy_epipen_state",
+        "medical_alert_level", "medical_alert_details",
+        # Adversarial review 2026-10-22: the « Updated on … by … » stamps
+        # (a coach can't forge them through RPC either).
+        "allergy_updated_info", "medical_alert_updated_info",
+        # Task 1677: the EpiPen card, « none known », the lists.
+        "allergy_epipen_note", "allergy_none_confirmed", "medical_none_confirmed",
+        "critical_item_ids", "allergy_critical_ids", "medical_alert_critical_ids",
+    )
+    # Task 1677: the player fields of each family (stamp + internal note).
+    _SC_MEDICAL_FAMILY_FIELDS = {
+        "allergy": ("allergy_epipen_state", "allergy_epipen", "allergy_epipen_note", "allergy_none_confirmed",
+                    "allergy_details"),
+        "medical_alert": ("medical_none_confirmed", "medical_alert_details"),
+    }
+    # Task 1677: computed from the lists — never written.
+    _SC_MEDICAL_LEVEL_FIELDS = ("allergy_level", "medical_alert_level")
+
+    @api.depends("allergy_epipen_state")
+    def _compute_allergy_epipen(self):
+        """Task 1717: the former boolean, read from the Yes / No answer."""
+        for rec in self:
+            rec.allergy_epipen = rec.allergy_epipen_state == "yes"
+
+    def _inverse_allergy_epipen(self):
+        """Task 1717: a write of the former boolean answers the question."""
+        for rec in self:
+            state = "yes" if rec.allergy_epipen else "no"
+            if rec.allergy_epipen_state != state:
+                rec.allergy_epipen_state = state
+
+    def _sc_epipen_first_message(self):
+        return self.env._("Answer « EpiPen? » (Yes / No) before entering the allergies.")
+
+    def _sc_epipen_todo_summary(self):
+        return self.env._("Complete the medical file (allergies/EpiPen)")
+
+    def _sc_raise_epipen_todos(self):
+        """Task 1717: at creation, while EpiPen is unanswered, ONE To-Do to
+        the player's creator « Complete the medical file (allergies/EpiPen) »
+        (``sc_epipen_todo``; never twice, never for the superuser / a script)."""
+        user = self.env.user
+        if not user or user.id == SUPERUSER_ID or not user.active:
+            return
+        players = self.sudo().filtered(lambda p: not p.allergy_epipen_state)
+        if not players:
+            return
+        Activity = self.env["mail.activity"].sudo()
+        existing = set(Activity.search([
+            ("res_model", "=", self._name), ("res_id", "in", players.ids),
+            ("sc_epipen_todo", "=", True)]).mapped("res_id"))
+        todo_type = self.env.ref("mail.mail_activity_data_todo", raise_if_not_found=False)
+        model_id = self.env["ir.model"]._get(self._name).id
+        lang = user.lang or self.env.lang
+        for player in players:
+            if player.id in existing:
+                continue
+            Activity.with_context(lang=lang).create({
+                "res_model_id": model_id,
+                "res_id": player.id,
+                "sc_epipen_todo": True,
+                "user_id": user.id,
+                "activity_type_id": todo_type.id if todo_type else False,
+                "summary": self.with_context(lang=lang)._sc_epipen_todo_summary(),
+                "date_deadline": fields.Date.context_today(self),
+                "automated": True,
+            })
+
+    def _sc_close_epipen_todos(self):
+        """Task 1717: EpiPen answered — the To-Do is done."""
+        answered = self.sudo().filtered("allergy_epipen_state")
+        if not answered:
+            return
+        todos = self.env["mail.activity"].sudo().search([
+            ("res_model", "=", self._name), ("res_id", "in", answered.ids),
+            ("sc_epipen_todo", "=", True)])
+        if todos:
+            todos.action_done()
+
+    def _sc_check_medical_writer(self, vals):
+        """Task 1654: coaches read the medical fields but never write them —
+        also through RPC (the field ``groups`` grant them write too)."""
+        if not any(name in vals for name in self._SC_MEDICAL_WRITE_FIELDS):
+            return
+        env = self.env
+        if env.su or not env.user.share:
+            return
+        if env.user.has_group("bemade_sports_clinic.group_portal_treatment_professional"):
+            return
+        raise AccessError(env._("Only the therapists can change the medical information."))
+
+    def _sc_medical_change_note(self, vals):
+        """Task 1654 / 1677: the family's « Updated on … by … » stamp for a
+        medical change of the player's own fields; the internal note is
+        posted after the write (``_sc_medical_post_notes``)."""
+        if self.env.context.get("sc_critical_sync") or self._sc_phone_lenient():
+            return vals, []
+        changes = []
+        for family, names in self._SC_MEDICAL_FAMILY_FIELDS.items():
+            changed = [name for name in names if name in vals and any(
+                (rec.sudo()[name] or False) != (vals[name] or False) for rec in self)]
+            if changed:
+                vals["%s_updated_info" % family] = self._sc_medical_stamp()
+                changes.extend(changed)
+        return vals, changes
+
+    def _sc_medical_post_notes(self, changes):
+        """Task 1677: an internal note per change of the EpiPen card / « none
+        known » (the items post their own)."""
+        if not changes:
+            return
+        labels = {
+            "allergy_epipen": self.env._("EpiPen"),
+            "allergy_epipen_state": self.env._("EpiPen"),
+            "allergy_epipen_note": self.env._("EpiPen note"),
+            "allergy_none_confirmed": self.env._("No known allergy"),
+            "medical_none_confirmed": self.env._("No known condition"),
+        }
+        for patient in self.sudo():
+            parts = []
+            for name in changes:
+                if name not in labels:
+                    continue
+                value = patient[name]
+                if isinstance(value, bool):
+                    shown = self.env._("Yes") if value else self.env._("No")
+                else:
+                    shown = value or "—"
+                parts.append(Markup("%s : <b>%s</b>") % (labels[name], shown))
+            if parts:
+                patient.message_post(body=Markup(" · ").join(parts), subtype_xmlid="mail.mt_note")
+
+    def write(self, vals):
+        self._normalize_jersey_vals(vals)
+        self._sc_check_medical_writer(vals)
+        # Task 1677: the levels follow the lists (computed) — a write of
+        # them (an old client, a script) is ignored, never stored.
+        if any(name in vals for name in self._SC_MEDICAL_LEVEL_FIELDS):
+            vals = {k: v for k, v in vals.items() if k not in self._SC_MEDICAL_LEVEL_FIELDS}
+        medical_changes = []
+        if any(name in vals for names in self._SC_MEDICAL_FAMILY_FIELDS.values() for name in names):
+            vals, medical_changes = self._sc_medical_change_note(dict(vals))
+            epipen_off = vals.get("allergy_epipen") is False or (
+                "allergy_epipen_state" in vals and vals["allergy_epipen_state"] != "yes")
+            if epipen_off and "allergy_epipen_note" not in vals:
+                # Task 1677: the note goes with the EpiPen.
+                vals["allergy_epipen_note"] = False
+            # Task 1717: « No known allergy » waits for the EpiPen answer.
+            if vals.get("allergy_none_confirmed") and not self.env.su and "allergy_epipen_state" not in vals \
+                    and any(not rec.sudo().allergy_epipen_state for rec in self):
+                raise ValidationError(self._sc_epipen_first_message())
+            for family, none_field in (("allergy", "allergy_none_confirmed"),
+                                       ("medical_alert", "medical_none_confirmed")):
+                if vals.get(none_field) and not self._sc_phone_lenient() and not self.env.su and any(
+                        rec._sc_critical_items(family) for rec in self):
+                    raise ValidationError(self.env._(
+                        "Remove the items of the list first: « none known » is for an empty list."))
+        corrections = self._sc_identity_guard(vals)
+        training_history = self._prepare_training_history_vals(vals)
+        res = super().write(vals)
+        if "allergy_epipen_state" in vals or "allergy_epipen" in vals:
+            self._sc_close_epipen_todos()
+        if medical_changes:
+            self._sc_medical_post_notes(medical_changes)
+        if training_history:
+            # sudo: history rows are only ever created by server code.
+            self.env["sports.patient.training.history"].sudo().create(training_history)
+        if corrections:
+            self._sc_post_identity_note(corrections)
+        if "jersey_number" in vals or "team_ids" in vals:
+            self._notify_jersey_duplicates()
+        if "team_ids" in vals:
             self.sudo().recompute_followers()
             # sudo(), like recompute_followers above: removing a player from
             # their last team makes them teamless, and the per-record ir.rule
@@ -258,12 +690,12 @@ class Patient(models.Model):
             # is a system invariant, not a user edit — it must not depend on who
             # happened to trigger the roster change.
             self.sudo()._sync_date_left_last_team()
-        if "first_name" in values or "last_name" in values:
+        if "first_name" in vals or "last_name" in vals:
             self._recompute_name()
         # Team-dashboard propagation (task 1272). Skip our own rollup writes
         # (dashboard_bump) to avoid recursion.
         if not self.env.context.get("dashboard_bump"):
-            self._propagate_patient_dashboard(values)
+            self._propagate_patient_dashboard(vals)
         return res
 
     # ----------------------------------------------------------------------
@@ -344,6 +776,11 @@ class Patient(models.Model):
                 mail_notrack=True,
                 skip_recompute_followers=True,
             ).write(vals)
+        # Task 1401: the SAME stamp, same roles, pushed to the players' teams
+        # (write-if-newer) so the portal /my/teams "recent activity" order
+        # follows player activity. This is the single stamping site — every
+        # dashboard bump (patient fields, injuries, note history) lands here.
+        self.sudo().team_ids._bump_last_player_activity(roles, now)
 
     def _propagate_patient_dashboard(self, values):
         """Bump dashboard rollups for player-level field changes. External
@@ -354,6 +791,1301 @@ class Patient(models.Model):
             self._bump_dashboard_activity({"coach", "tp"})
         elif internal_tracking_fields & changed:
             self._bump_dashboard_activity({"tp"})
+
+    # ----------------------------------------------------------------------
+    # Urgent aggregated notifications (task 1269) — 5-min PHI-free cron
+    # ----------------------------------------------------------------------
+    # A 5-minute cron scans three urgent triggers since a watermark and sends
+    # ONE consolidated, PHI-free email per recipient (team coaches + TPs),
+    # replacing the per-change follower emails. Law 25: the mail carries only
+    # per-team counts, team names, short-notice event name/time and dashboard
+    # backlinks — never a player name or any clinical/injury detail.
+
+    _URGENT_WATERMARK_PARAM = "bemade_sports_clinic.urgent_notify_last_run"
+    _URGENT_SHORT_NOTICE_HOURS = 24
+    _URGENT_STATUS_FIELDS = ("match_status", "practice_status")
+    # Task 1427 debounce: hold the summary while urgent activity is still
+    # fresh (< QUIET minutes old) so an editing session yields ONE mail, but
+    # never hold longer than MAX_DELAY from the oldest pending change.
+    _URGENT_QUIET_MINUTES = 10
+    _URGENT_MAX_DELAY_MINUTES = 30
+
+    @api.model
+    def _urgent_notify_get_watermark(self, now):
+        """Datetime lower bound for the scan window. Missing/invalid param ->
+        one cron interval back so a fresh install never blasts full history."""
+        raw = self.env["ir.config_parameter"].sudo().get_param(
+            self._URGENT_WATERMARK_PARAM
+        )
+        if raw:
+            try:
+                return fields.Datetime.to_datetime(raw)
+            except (ValueError, TypeError):  # pragma: no cover - defensive
+                pass
+        return now - timedelta(minutes=5)
+
+    @api.model
+    def _urgent_notify_set_watermark(self, value):
+        self.env["ir.config_parameter"].sudo().set_param(
+            self._URGENT_WATERMARK_PARAM, fields.Datetime.to_string(value)
+        )
+
+    @api.model
+    def _urgent_activity_bounds(self, watermark, now):
+        """``(earliest, latest)`` datetimes of urgent-relevant activity in
+        ``[watermark, now)`` — the same three sources the scans read — or
+        ``(None, None)`` when the window is empty. Drives the debounce in
+        ``_cron_send_urgent_notifications`` (task 1427)."""
+        dates = []
+        Message = self.env["mail.message"].sudo()
+        status_domain = [
+            ("model", "=", "sports.patient"),
+            ("date", ">=", watermark), ("date", "<", now),
+            ("tracking_value_ids.field_id.name", "in", list(self._URGENT_STATUS_FIELDS)),
+        ]
+        for order in ("date asc", "date desc"):
+            msg = Message.search(status_domain, order=order, limit=1)
+            if msg:
+                dates.append(msg.date)
+        Injury = self.env["sports.patient.injury"].sudo()
+        injury_domain = [("create_date", ">=", watermark), ("create_date", "<", now)]
+        for order in ("create_date asc", "create_date desc"):
+            inj = Injury.search(injury_domain, order=order, limit=1)
+            if inj:
+                dates.append(inj.create_date)
+        for items in self._urgent_scan_short_notice_events(watermark, now).values():
+            dates.extend(ev.create_date for ev, _authors in items if ev.create_date)
+        if not dates:
+            return None, None
+        return min(dates), max(dates)
+
+    @api.model
+    def _urgent_scan_status_changes(self, watermark, now):
+        """{team_id: {patient_id: set(author_partner_id)}} for players whose
+        match/practice status changed in ``[watermark, now)`` (read from the
+        mail tracking audit).
+
+        The author set threads the originating partner(s) through to
+        ``_urgent_notify_build_recipients`` so a recipient is not alerted about
+        their own edit (task 1395). A patient can accumulate several tracking
+        messages in one window, hence a SET per patient: an item is only dropped
+        for a recipient who is its SOLE author. A message with no ``author_id``
+        (cron/system write, import) contributes nothing, leaving the set empty —
+        which the keep-rule reads as "always notify"."""
+        messages = self.env["mail.message"].sudo().search([
+            ("model", "=", "sports.patient"),
+            ("date", ">=", watermark),
+            ("date", "<", now),
+        ])
+        status_fields = set(self._URGENT_STATUS_FIELDS)
+        result = {}
+        for msg in messages:
+            changed = set(msg.tracking_value_ids.field_id.mapped("name"))
+            if not (status_fields & changed):
+                continue
+            patient = self.browse(msg.res_id).exists()
+            if not patient:
+                continue
+            author = msg.author_id
+            for team in patient.team_ids:
+                authors = result.setdefault(team.id, {}).setdefault(
+                    patient.id, set()
+                )
+                if author:
+                    authors.add(author.id)
+        return result
+
+    @api.model
+    def _urgent_scan_new_injuries(self, watermark, now):
+        """{team_id: {'all': {injury_id: set(author_partner_id)},
+        'coach_visible': {injury_id: set(author_partner_id)}}} for injuries
+        created in the window. Coach-visible excludes injuries hidden from
+        coaches (Law 25 — a coach never sees them, even as a count).
+
+        Each bucket maps the item to its author partner(s) so the per-recipient
+        self-authored filter (task 1395) applies TOGETHER with the role scoping,
+        never before it. A creator with no ``res.users``/partner leaves the set
+        empty — read as "always notify"."""
+        injuries = self.env["sports.patient.injury"].sudo().search([
+            ("create_date", ">=", watermark),
+            ("create_date", "<", now),
+        ])
+        result = {}
+        for inj in injuries:
+            teams = inj.patient_id.team_ids
+            author = inj.create_uid.partner_id
+            authors = {author.id} if author else set()
+            for team in teams:
+                bucket = result.setdefault(
+                    team.id, {"all": {}, "coach_visible": {}}
+                )
+                bucket["all"].setdefault(inj.id, set()).update(authors)
+                if not inj.hidden_from_coaches:
+                    bucket["coach_visible"].setdefault(inj.id, set()).update(
+                        authors
+                    )
+        return result
+
+    @api.model
+    def _urgent_scan_short_notice_events(self, watermark, now):
+        """{team_id: [(sports.event, set(author_partner_id)), ...]} for events
+        CREATED in the window whose start is < 24h from their creation time
+        (short notice). Normal (>=24h) new events are NOT urgent — they surface
+        in the daily digest instead.
+
+        The author set rides alongside each event so the per-recipient
+        self-authored filter (task 1395) can drop it for its sole author; the
+        summary dict still carries bare ``sports.event`` records."""
+        events = self.env["sports.event"].sudo().search([
+            ("create_date", ">=", watermark),
+            ("create_date", "<", now),
+        ])
+        threshold = timedelta(hours=self._URGENT_SHORT_NOTICE_HOURS)
+        result = {}
+        for ev in events:
+            if not ev.date_start or not ev.create_date:
+                continue
+            # Compare against CREATION time (not later edits): a short-notice
+            # event is one booked less than 24h before it starts.
+            if ev.date_start >= ev.create_date + threshold:
+                continue
+            author = ev.create_uid.partner_id
+            authors = {author.id} if author else set()
+            for team in ev.team_ids:
+                result.setdefault(team.id, []).append((ev, authors))
+        return result
+
+    @api.model
+    def _urgent_notify_keep_item(self, authors, partner_id):
+        """Task 1395 keep-rule: should an item authored by ``authors`` (a set of
+        partner ids) still be reported to ``partner_id``?
+
+        Kept unless the recipient is the item's SOLE author:
+          * empty ``authors`` (cron/system write, import, no ``author_id``) ->
+            ALWAYS kept — a missing author must never suppress a notification;
+          * another author besides the recipient -> kept, that edit is genuine
+            news even if the recipient also touched the same item;
+          * the recipient alone -> dropped.
+        """
+        return not authors or bool(authors - {partner_id})
+
+    @api.model
+    def _urgent_notify_build_recipients(
+        self, status_by_team, injuries_by_team, events_by_team
+    ):
+        """Map each eligible recipient partner to their per-team summary list.
+
+        Recipients = team coaches + TPs (doctors count as TP), filtered by
+        ``_is_follower_eligible`` (which also drops ``silent_notifications``).
+        New-injury counts are role-scoped: coaches see coach-visible injuries
+        only; TPs see all. Play-status changes and event schedule info are
+        visible to both roles. Returns ``{partner_id: [team_summary, ...]}``.
+
+        Counts are computed PER RECIPIENT: each item carries its author
+        partner(s) and is dropped from a recipient's copy when that recipient is
+        its sole author (task 1395, see ``_urgent_notify_keep_item``). For
+        injuries the author filter applies within the role-scoped bucket, never
+        before it, so Law-25 hiding is unaffected. A recipient left with nothing
+        on every one of their teams never enters the result, so no mail is sent.
+
+        The dashboard ``url`` is likewise per recipient (task 1396): internal
+        staff get the backend action link, everyone else the portal team
+        dashboard.
+        """
+        active_team_ids = (
+            set(status_by_team) | set(injuries_by_team) | set(events_by_team)
+        )
+        if not active_team_ids:
+            return {}
+        base_url = self.env["ir.config_parameter"].sudo().get_param(
+            "web.base.url"
+        ) or ""
+        teams = self.env["sports.team"].sudo().browse(sorted(active_team_ids))
+        recipients = {}
+        for team in teams:
+            status_patients = status_by_team.get(team.id, {})
+            inj = injuries_by_team.get(
+                team.id, {"all": {}, "coach_visible": {}}
+            )
+            event_items = events_by_team.get(team.id, [])
+            # Task 1396: the dashboard link is per RECIPIENT, not per surface.
+            # Both variants are plain strings, so build them once per team and
+            # pick per recipient inside the staff loop below.
+            portal_url = team._dashboard_url(base_url)
+            internal_url = team._dashboard_url(base_url, internal=True)
+            for staff in team.staff_ids:
+                if not staff._is_follower_eligible():
+                    continue
+                if staff._has_coach_role():
+                    role = "coach"
+                elif staff._has_therapist_role() or staff.role == "doctor":
+                    role = "tp"
+                else:
+                    continue
+                # Needed by the self-authored filter below, hence resolved
+                # BEFORE the counts (task 1395).
+                partner = staff.partner_id
+                if not partner:
+                    continue
+                # Task 1396: this mail targets the PARTNER, not a user, so the
+                # account type has to be inferred from their logins. Only an
+                # ACTIVE non-share user grants backend access; the explicit
+                # ``u.active`` filter is redundant with the ambient
+                # ``active_test`` on ``partner.user_ids`` but keeps the intent
+                # legible (and safe if a caller ever runs with active_test off).
+                # Note this is NOT the same question as
+                # ``_is_follower_eligible``: eligibility inspects ARCHIVED users
+                # to DENY notification, this ignores them to PICK a link.
+                # Task 1639: a clinic role (internal therapist, clinic
+                # admin…) opens the app like the portal users; the backend
+                # link only for internal logins with no clinic role.
+                active_users = partner.user_ids.filtered(lambda u: u.active)
+                internal = bool(active_users) and all(
+                    u._sc_backend_link_recipient() for u in active_users
+                ) and bool(active_users.filtered(lambda u: not u.share))
+                keep = self._urgent_notify_keep_item
+                status_count = sum(
+                    1 for authors in status_patients.values()
+                    if keep(authors, partner.id)
+                )
+                scoped_injuries = (
+                    inj["all"] if role == "tp" else inj["coach_visible"]
+                )
+                new_injury_count = sum(
+                    1 for authors in scoped_injuries.values()
+                    if keep(authors, partner.id)
+                )
+                team_events = [
+                    ev for ev, authors in event_items
+                    if keep(authors, partner.id)
+                ]
+                if not (new_injury_count or status_count or team_events):
+                    continue
+                summary = {
+                    "name": team.name,
+                    "url": internal_url if internal else portal_url,
+                    "status_changes": status_count,
+                    "new_injuries": new_injury_count,
+                    "events": [
+                        {"name": ev.name, "date_start": ev.date_start}
+                        for ev in team_events
+                    ],
+                }
+                recipients.setdefault(partner.id, []).append(summary)
+        return recipients
+
+    @api.model
+    def _urgent_notify_fallback_body(self, team_summaries):
+        """PHI-free bilingual HTML body used when the mail template is missing
+        or fails to render. Counts + team names + short-notice event name/time +
+        dashboard links only — never a player name or clinical detail."""
+        from markupsafe import Markup, escape
+        parts = [Markup(
+            "<p>%s</p>" % escape(_(
+                "Urgent activity on your teams / Activité urgente sur vos équipes:"
+            ))
+        )]
+        for team in team_summaries:
+            lines = [Markup("<p><strong>%s</strong></p>") % escape(team["name"])]
+            items = []
+            if team["status_changes"]:
+                items.append(escape(_(
+                    "%s play-status change(s)", team["status_changes"]
+                )))
+            if team["new_injuries"]:
+                items.append(escape(_(
+                    "%s new injury/injuries", team["new_injuries"]
+                )))
+            for ev in team["events"]:
+                when = (
+                    fields.Datetime.to_string(ev["date_start"])
+                    if ev["date_start"] else ""
+                )
+                items.append(escape(_(
+                    "Short-notice new event: %(name)s %(when)s",
+                    name=ev["name"] or "", when=when,
+                )))
+            if items:
+                lines.append(
+                    Markup("<ul>%s</ul>") % Markup("").join(
+                        Markup("<li>%s</li>") % it for it in items
+                    )
+                )
+            if team["url"]:
+                lines.append(
+                    Markup('<p><a href="%s">%s</a></p>') % (
+                        team["url"], escape(_("Team dashboard / Tableau de bord"))
+                    )
+                )
+            parts.append(Markup("").join(lines))
+        parts.append(Markup('<p style="color:#767676;font-size:12px;">%s</p>') % escape(
+            _("No medical data is included. / Aucune donnée médicale n'est incluse.")
+        ))
+        return Markup("").join(parts)
+
+    @api.model
+    def _urgent_notify_send_one(self, partner, team_summaries, lang, template):
+        team_count = len(team_summaries)
+        body = None
+        if template:
+            try:
+                tmpl = template.sudo().with_context(
+                    lang=lang,
+                    urgent_teams=team_summaries,
+                    urgent_team_count=team_count,
+                )
+                body = tmpl._render_field("body_html", partner.ids).get(partner.id)
+            except Exception:  # pragma: no cover - render guard
+                _logger.exception(
+                    "Urgent-summary body render failed for partner %s", partner.id
+                )
+                body = None
+        if not body:
+            body = self.with_context(lang=lang)._urgent_notify_fallback_body(
+                team_summaries
+            )
+        subject = self.with_context(lang=lang).env._(
+            "Le Fit Crew — urgent updates / mises à jour urgentes (%s)", team_count
+        )
+        try:
+            self.env["mail.thread"].sudo().with_context(lang=lang).message_notify(
+                partner_ids=partner.ids,
+                subject=subject,
+                body=body,
+                email_layout_xmlid="mail.mail_notification_light",
+            )
+        except Exception:  # pragma: no cover - never break the cron txn
+            _logger.exception(
+                "Urgent-summary send failed for partner %s", partner.id
+            )
+
+    @api.model
+    def _cron_send_urgent_notifications(self, now=None):
+        """5-min cron entrypoint. Scans ``[watermark, now)`` for the three
+        urgent triggers, sends one PHI-free summary per recipient, then advances
+        the watermark (idempotent: a re-run over an already-scanned window finds
+        nothing and sends nothing). Missed runs self-heal — the next run covers
+        the gap because the watermark only moves on completion.
+
+        ``now`` defaults to the current time; it is injectable so tests can pin a
+        deterministic upper bound (all records in a test transaction share the
+        transaction-start ``create_date``)."""
+        if now is None:
+            now = fields.Datetime.now()
+        watermark = self._urgent_notify_get_watermark(now)
+        if watermark >= now:
+            return True
+        # Debounce (task 1427): while changes are still landing, hold the
+        # whole window — watermark untouched so the next run re-scans it and
+        # folds the newer changes into the SAME summary. The hold is bounded
+        # by MAX_DELAY from the oldest pending change so a long session still
+        # gets its first summary within a known latency.
+        earliest, latest = self._urgent_activity_bounds(watermark, now)
+        if earliest is not None:
+            quiet = timedelta(minutes=self._URGENT_QUIET_MINUTES)
+            max_delay = timedelta(minutes=self._URGENT_MAX_DELAY_MINUTES)
+            if now - latest < quiet and now - earliest < max_delay:
+                _logger.info(
+                    "Urgent summary held: activity %s ago (quiet %s), oldest pending %s ago",
+                    now - latest, quiet, now - earliest,
+                )
+                return True
+        status_by_team = self._urgent_scan_status_changes(watermark, now)
+        injuries_by_team = self._urgent_scan_new_injuries(watermark, now)
+        events_by_team = self._urgent_scan_short_notice_events(watermark, now)
+
+        recipients = self._urgent_notify_build_recipients(
+            status_by_team, injuries_by_team, events_by_team
+        )
+        if recipients:
+            template = self.env.ref(
+                "bemade_sports_clinic.mail_template_urgent_summary",
+                raise_if_not_found=False,
+            )
+            partners = self.env["res.partner"].sudo().browse(list(recipients))
+            default_lang = self.env.lang or "en_US"
+            by_lang = self.env["sports.event"]._group_partners_by_lang(
+                partners, default_lang
+            )
+            for lang, lang_partners in by_lang.items():
+                for partner in lang_partners:
+                    self._urgent_notify_send_one(
+                        partner, recipients[partner.id], lang, template
+                    )
+            # Deliver NOW: the summaries are queued mail.mail records and the
+            # stock queue manager may run only hourly (prod: three window
+            # summaries burst together an hour later, 2026-08-26). Trigger it.
+            mail_cron = self.env.ref(
+                "mail.ir_cron_mail_scheduler_action", raise_if_not_found=False
+            )
+            if mail_cron:
+                mail_cron.sudo()._trigger()
+        # Advance the watermark on completion (also on empty windows).
+        self._urgent_notify_set_watermark(now)
+        return True
+
+    # ----------------------------------------------------------------------
+    # Team-dashboard change DIGEST (task 1272, re-plan): render CONTENT
+    # ----------------------------------------------------------------------
+    # The counting rollup above answers "did something change, and how urgent";
+    # the digest below answers "WHAT changed" — the fields that actually changed
+    # in the window, with their current value, de-duplicated per field. It
+    # reuses the SAME tracking sets + note-history hook that drive the counts;
+    # nothing about the on-change detection changes. Law 25: the role argument
+    # is the visibility gate. These methods run sudo (a portal coach can't read
+    # tracking values / note history), so the role filter here MUST be airtight
+    # — a coach digest must never contain internal-note or hidden-injury content.
+
+    @api.model
+    def _dashboard_changed_field_names(self, res_model, res_ids, cutoff):
+        """Set of field names on ``res_model``/``res_ids`` whose value changed
+        within the window, read from the mail tracking audit (the same trail the
+        chatter shows). Fields must be ``tracking=True`` to appear here — that is
+        exactly the dashboard tracked-field set."""
+        res_ids = [r for r in (res_ids or []) if r]
+        if not res_ids:
+            return set()
+        messages = self.env["mail.message"].sudo().search([
+            ("model", "=", res_model),
+            ("res_id", "in", res_ids),
+            ("date", ">=", cutoff),
+        ])
+        return set(messages.tracking_value_ids.field_id.mapped("name"))
+
+    def _dashboard_render_value(self, record, field_name):
+        """Human-readable CURRENT value of ``field_name`` on ``record``."""
+        field = record._fields[field_name]
+        value = record[field_name]
+        if value is False or value is None or value == "":
+            return ""
+        ftype = field.type
+        if ftype == "selection":
+            try:
+                selection = dict(field._description_selection(record.env))
+            except Exception:  # pragma: no cover - defensive
+                raw = field.selection
+                selection = dict(raw) if isinstance(raw, (list, tuple)) else {}
+            return str(selection.get(value, value))
+        if ftype == "many2one":
+            return value.display_name or ""
+        if ftype in ("many2many", "one2many"):
+            return ", ".join(n for n in value.mapped("display_name") if n)
+        if ftype == "date":
+            return fields.Date.to_string(value)
+        if ftype == "datetime":
+            return fields.Datetime.to_string(value)
+        return str(value).strip()
+
+    def _selection_key_from_label(self, record, field_name, label):
+        """Reverse-map a stored selection LABEL back to its selection KEY
+        (task 1385, CR-D1). ``mail.tracking.value`` stores a selection change as
+        the label rendered in the WRITER's language at write time
+        (``old_value_char``), so a French viewer can be shown an English "No".
+        We recover the underlying key by matching the stored label against the
+        field's selection in EVERY installed language; the caller then re-renders
+        that key in the viewer's language for a consistently localized delta.
+
+        Returns the key, or ``None`` when the label can't be resolved (a renamed
+        selection option, or a free-text tracking) so the caller can fall back to
+        the stored label as-is.
+        """
+        field = record._fields[field_name]
+        label = (label or "").strip()
+        if not label:
+            return None
+        codes = [code for code, _name in self.env["res.lang"].get_installed()]
+        if not codes:
+            codes = [record.env.lang or self.env.lang or "en_US"]
+        for code in codes:
+            rec = record.with_context(lang=code)
+            try:
+                selection = dict(field._description_selection(rec.env))
+            except Exception:  # pragma: no cover - defensive
+                continue
+            for key, lbl in selection.items():
+                if str(lbl).strip() == label:
+                    return key
+        return None
+
+    def _dashboard_field_old_value(self, record, field_name, cutoff):
+        """PREVIOUS display value of ``field_name`` on ``record`` — the value it
+        held at the start of the window, read from the mail tracking audit (task
+        1385, CR-A #4). Returns ``""`` when no in-window tracking exists (e.g. a
+        create-only field) so callers can gracefully fall back to just the new
+        value.
+
+        The window can hold several edits to the same field; the OLDEST
+        tracking's ``old`` value is the pre-window state and the current record
+        value is the ``new`` one, so together they read as the net delta the
+        coach cares about (``ancienne → nouvelle``), not each intermediate hop.
+
+        Task 1385 (CR-D1): the value is rendered in the VIEWER's language. For a
+        selection field the tracking's stored label is snapshotted in the
+        writer's language, so we reverse-map it to the selection key and
+        re-render it through the field's selection in the viewer's language —
+        keeping old and new consistently localized (no English "No" facing a
+        French viewer, and no spurious "No → Non" pure-language "change").
+        """
+        if not cutoff:
+            return ""
+        field = record._fields[field_name]
+        # Messages oldest-first so the combined tracking recordset keeps
+        # chronological order; the first tracking for the field carries the
+        # pre-window value.
+        messages = self.env["mail.message"].sudo().search(
+            [
+                ("model", "=", record._name),
+                ("res_id", "=", record.id),
+                ("date", ">=", cutoff),
+            ],
+            order="date asc, id asc",
+        )
+        trackings = messages.tracking_value_ids.filtered(
+            lambda t: t.field_id.name == field_name
+        )
+        if not trackings:
+            return ""
+        raw_old = trackings[0]._format_display_value(field.type, new=False)[0]
+        return self._dashboard_normalize_old_value(record, field_name, raw_old)
+
+    # ---------------------------------------------------------------- 1387
+    # THE shared net-no-op rule. Both the per-player change FEED
+    # (``_dashboard_build_item``) and the batched PRESENCE pass
+    # (``_dashboard_card_presence`` / ``_dashboard_injury_presence``) go through
+    # these two helpers, so a marker can never disagree with the content it
+    # announces (task 1387). Do NOT reimplement the comparison anywhere else.
+
+    def _dashboard_normalize_old_value(self, record, field_name, raw_old):
+        """Normalize a RAW ``mail.tracking.value`` old-display value into the
+        VIEWER's language (task 1385 CR-D1, extracted for sharing in 1387).
+
+        ``mail.tracking.value`` snapshots a selection change as the LABEL
+        rendered in the WRITER's language, so a French viewer can be facing an
+        English "No". We reverse-map the stored label to its selection key and
+        re-render it in the viewer's language; anything else is returned
+        stripped. Empty/absent trackings normalize to ``""``.
+        """
+        if raw_old is False or raw_old is None or raw_old == "":
+            return ""
+        field = record._fields[field_name]
+        if field.type == "selection":
+            key = self._selection_key_from_label(record, field_name, raw_old)
+            if key is not None:
+                selection = dict(field._description_selection(record.env))
+                if key in selection:
+                    return str(selection[key]).strip()
+        return str(raw_old).strip()
+
+    def _dashboard_is_net_change(self, record, field_name, old_value):
+        """Did ``field_name`` NET-change on ``record`` over the window?
+
+        ``old_value`` must ALREADY be normalized through
+        ``_dashboard_normalize_old_value`` (both callers do), so an equal pair is
+        a genuine net no-op — a round-trip like No → Yes → No, or a pure
+        writer/viewer language difference.
+
+        An EMPTY normalized old value means the field held nothing at the start
+        of the window: it is a change only if it holds something now. A field
+        that was filled and then cleared again within the window (empty → X →
+        empty) has nothing to render on either side, so it is a no-op too.
+        """
+        current = self._dashboard_render_value(record, field_name)
+        if not old_value:
+            return bool(current)
+        return old_value != current
+
+    def _dashboard_build_item(
+        self, record, field_name, category, injury=False, cutoff=None
+    ):
+        """Build one de-dupable change-item dict from a field's current value.
+
+        When ``cutoff`` is given and the category carries a real before/after
+        (``status`` / ``injury`` field edits), the pre-window value is attached
+        as ``old_value`` so the render can show ``ancienne → nouvelle`` (task
+        1385, CR-A #4). New-injury sub-items pass no cutoff — a freshly created
+        field has no "previous" to show.
+
+        Task 1385 (CR-D1): returns ``None`` when, after normalizing the old value
+        into the viewer's language, it resolves to the SAME value as the current
+        one — a net no-op over the window (a round-trip like No → Yes → No, or a
+        pure writer/viewer language difference). Such a field genuinely did not
+        change from the coach's point of view, so it must not emit a change item.
+        Callers append only truthy results.
+        """
+        field = record._fields[field_name]
+        value = self._dashboard_render_value(record, field_name)
+        is_long = bool(value) and len(value) > DASHBOARD_DIGEST_TRUNCATE_LEN
+        preview = value
+        if is_long:
+            preview = value[:DASHBOARD_DIGEST_TRUNCATE_LEN].rstrip() + "…"
+        old_value = ""
+        if cutoff and category in ("status", "injury"):
+            old_value = self._dashboard_field_old_value(record, field_name, cutoff)
+            # Both old and new are now rendered in the viewer's language, so an
+            # equal pair is a genuine net no-op (round-trip or language-only
+            # difference) -> suppress the whole item (CR-D1 (b)). Task 1387: the
+            # rule lives in ONE place, shared with the batched presence pass.
+            if not self._dashboard_is_net_change(record, field_name, old_value):
+                return None
+        # Task 1272 (round 3, defect 3): use the TRANSLATED field label so the
+        # expanded digest reads French wherever the field has an fr_CA
+        # translation (app-wide ir.model.fields translation), instead of the raw
+        # source ``field.string`` which is always the English definition. This is
+        # the same label the form/list views show — not a digest-local override.
+        label = (
+            record.fields_get([field_name]).get(field_name, {}).get("string")
+            or field.string
+            or field_name
+        )
+        return {
+            "category": category,
+            "field": field_name,
+            "label": label,
+            "value": value,
+            "old_value": old_value,
+            "preview": preview,
+            "is_long": is_long,
+            "injury": injury,
+            "icon": DASHBOARD_DIGEST_ICONS.get(category, "fa-pencil"),
+        }
+
+    # Task 1385 (CR-A #5): the former ``_dashboard_build_new_injury_item`` unit
+    # builder was removed. A new injury is no longer a change-feed unit — it is
+    # flagged ``is_new`` in the static card section (see ``_card_injury_detail``)
+    # and its notes flow through the normal note feed.
+
+    def _dashboard_change_items(self, role, cutoff=None):
+        """Ordered list of change-item dicts for ``role`` over the window.
+
+        Read-only; never mutates. ``role`` in ``('coach', 'tp')`` is the Law-25
+        visibility gate: ``coach`` gets external-scope changes on non-hidden
+        injuries only; ``tp`` gets internal + external.
+        """
+        self.ensure_one()
+        if role not in ("coach", "tp"):
+            return []
+        if cutoff is None:
+            cutoff = self._dashboard_window_cutoff()
+        patient = self.sudo()
+        items = []
+
+        # 1. Player-level status changes (deduped per field, current value).
+        player_fields = self._dashboard_player_fields(role)
+        changed_player = patient._dashboard_changed_field_names(
+            "sports.patient", patient.ids, cutoff
+        )
+        for fname in changed_player & player_fields:
+            if fname in patient._fields:
+                item = patient._dashboard_build_item(
+                    patient, fname, "status", cutoff=cutoff
+                )
+                if item:  # None -> net no-op over the window (CR-D1)
+                    items.append(item)
+
+        # 2. Injuries. Coach never sees a hidden-from-coaches injury at all.
+        injuries = patient.injury_ids
+        if role == "coach":
+            injuries = injuries.filtered(lambda i: not i.hidden_from_coaches)
+        new_injuries = injuries.filtered(
+            lambda i: i.create_date and i.create_date >= cutoff
+        )
+        updated_injuries = injuries - new_injuries
+
+        # 2a. New injuries -> NO change-feed unit (task 1385, CR-A #5). A brand
+        #     new injury is already surfaced (and flagged "new") in the card's
+        #     static active-injury section, so emitting a "Nouvelle blessure …"
+        #     row here just duplicates it. Its note history still flows through
+        #     section 3 below.
+
+        # 2b. Updated injuries -> only their changed fields (notes handled in 3).
+        injury_fields = self._dashboard_injury_field_set(role)
+        for injury in updated_injuries:
+            changed = patient._dashboard_changed_field_names(
+                "sports.patient.injury", injury.ids, cutoff
+            )
+            for fname in changed & injury_fields:
+                if fname in injury._fields:
+                    item = patient._dashboard_build_item(
+                        injury, fname, "injury", injury=injury, cutoff=cutoff
+                    )
+                    if item:  # None -> net no-op over the window (CR-D1)
+                        items.append(item)
+
+        # 3. Note updates, from the append-only history, scope-filtered. Deduped
+        #    to the CURRENT note value per (injury, scope): a burst of edits
+        #    reads as ONE item.
+        note_domain = [
+            ("patient_id", "=", patient.id),
+            ("note_datetime", ">=", cutoff),
+        ]
+        if role == "coach":
+            note_domain += [
+                ("scope", "=", "external"),
+                ("injury_id.hidden_from_coaches", "=", False),
+            ]
+        histories = self.env["sports.injury.note.history"].sudo().search(note_domain)
+        seen_notes = set()
+        for hist in histories:
+            injury = hist.injury_id
+            if not injury:
+                continue
+            if role == "coach" and injury.hidden_from_coaches:
+                continue
+            # Task 1385 (CR-A #5): new injuries no longer emit a bundled unit,
+            # so their note history is surfaced here like any other note update.
+            key = (injury.id, hist.scope)
+            if key in seen_notes:
+                continue
+            seen_notes.add(key)
+            note_field = "external_notes" if hist.scope == "external" else "internal_notes"
+            if note_field in injury._fields and injury[note_field]:
+                item = patient._dashboard_build_item(
+                    injury, note_field, "note", injury=injury
+                )
+                if item:  # note items never no-op out, but guard uniformly
+                    items.append(item)
+        return items
+
+    # ----------------------------------------------------------------------
+    # Homogenized portal card (task 1385): batched presence + lazy-load feed
+    # ----------------------------------------------------------------------
+    # The common card renders always-on fields + a collapsed <details>. Rather
+    # than compute the full change feed for every card up front (a roster can be
+    # 40+ players, one mail-tracking audit each), the list surfaces run ONE
+    # batched presence query and lazy-load the full feed only for cards the user
+    # actually opens (see the /my/player/<id>/recent-changes route + the
+    # portal_card_recent_changes.js toggle listener).
+
+    @api.model
+    def _dashboard_player_fields(self, role):
+        """Patient-level tracked field set for ``role`` (Law-25 gate)."""
+        player_fields = set(external_tracking_fields)
+        if role == "tp":
+            player_fields |= set(internal_tracking_fields)
+        return player_fields
+
+    @api.model
+    def _dashboard_injury_field_set(self, role):
+        """Injury-level tracked field set for ``role`` (Law-25 gate)."""
+        injury_fields = set(dashboard_external_injury_fields)
+        if role == "tp":
+            injury_fields |= set(dashboard_internal_injury_fields)
+        return injury_fields
+
+    @api.model
+    def _dashboard_visible_injuries(self, patients, role):
+        """All injuries of ``patients`` the ``role`` may see. Read sudo (portal
+        coaches cannot read the audit trail), so the Law-25 gate is applied HERE
+        and nowhere later: a coach never gets a hidden-from-coaches injury.
+        """
+        injuries = patients.sudo().injury_ids
+        if role == "coach":
+            injuries = injuries.filtered(lambda i: not i.hidden_from_coaches)
+        return injuries
+
+    @api.model
+    def _dashboard_tracking_old_values(self, res_model, records, cutoff):
+        """ONE batched mail-tracking read for ALL ``records`` (task 1387).
+
+        Returns ``{res_id: {field_name: raw_old_display_value}}`` where the value
+        is the PRE-WINDOW one — the OLDEST in-window tracking for that field, so
+        old-vs-current reads as the NET delta over the window rather than each
+        intermediate hop. Exactly one ``mail.message`` search regardless of how
+        many records are passed; that is the whole point (a team dashboard
+        renders up to ~70 cards and must not audit them one at a time).
+        """
+        res_ids = [r for r in (records.ids if records else []) if r]
+        if not res_ids:
+            return {}
+        model_fields = self.env[res_model]._fields
+        messages = self.env["mail.message"].sudo().search(
+            [
+                ("model", "=", res_model),
+                ("res_id", "in", res_ids),
+                ("date", ">=", cutoff),
+            ],
+            order="date asc, id asc",
+        )
+        olds = {}
+        for msg in messages:
+            per_record = olds.setdefault(msg.res_id, {})
+            for tracking in msg.tracking_value_ids:
+                fname = tracking.field_id.name
+                if fname in per_record:
+                    continue  # oldest wins -> that is the pre-window value
+                field = model_fields.get(fname)
+                if field is None:
+                    continue
+                per_record[fname] = tracking._format_display_value(
+                    field.type, new=False)[0]
+        return olds
+
+    @api.model
+    def _dashboard_net_changed_fields(self, record, old_values, allowed_fields):
+        """Names among ``allowed_fields`` that NET-changed on ``record``, given
+        the batched ``{field_name: raw_old}`` map from
+        ``_dashboard_tracking_old_values``. Pure in-memory: applies the SAME
+        shared rule the change feed uses (``_dashboard_is_net_change``), so a
+        round-trip or a language-only difference contributes nothing.
+        """
+        changed = set()
+        for fname, raw_old in (old_values or {}).items():
+            if fname not in allowed_fields or fname not in record._fields:
+                continue
+            old = self._dashboard_normalize_old_value(record, fname, raw_old)
+            if self._dashboard_is_net_change(record, fname, old):
+                changed.add(fname)
+        return changed
+
+    @api.model
+    def _dashboard_injury_presence_from_olds(self, injuries, role, injury_olds):
+        """In-memory half of the injury presence: ids of ``injuries`` with at
+        least one NET-changed dashboard field. Split out so the card presence can
+        reuse the single batched read instead of issuing a second one."""
+        injury_fields = self._dashboard_injury_field_set(role)
+        return {
+            injury.id for injury in injuries
+            if self._dashboard_net_changed_fields(
+                injury, injury_olds.get(injury.id), injury_fields)
+        }
+
+    @api.model
+    def _dashboard_injury_presence(self, patients, role, cutoff=None):
+        """ONE batched audit read across ALL given patients' injuries: the set of
+        injury ids whose dashboard-tracked fields changed within the window.
+
+        Drives the "recent change" marker on the static active-injury entries of
+        the portal card. Ids only — never rendered items. ``role`` is the Law-25
+        gate: a coach never gets a hidden-from-coaches injury in the set.
+
+        Task 1387: "changed" now means NET changed. A field that round-trips
+        within the window (or whose tracking differs only by the writer's
+        language) no longer contributes an id, so the marker cannot appear over
+        an entry the expanded feed has nothing to say about.
+        """
+        if cutoff is None:
+            cutoff = self._dashboard_window_cutoff()
+        injuries = self._dashboard_visible_injuries(patients, role)
+        if not injuries:
+            return set()
+        injury_olds = self._dashboard_tracking_old_values(
+            "sports.patient.injury", injuries, cutoff)
+        return self._dashboard_injury_presence_from_olds(
+            injuries, role, injury_olds)
+
+    @api.model
+    def _dashboard_card_presence(self, patients, role, cutoff=None):
+        """Batched presence for the portal cards. Returns
+        ``{'players': set(patient_ids), 'injuries': set(injury_ids)}``.
+
+        - ``players`` drives the « changements récents » pill on the collapsed
+          control AND the lazy-load container behind it.
+        - ``injuries`` drives the static active-injury section markers.
+
+        Task 1387 — the pill is no longer a stored-stamp lookup. The stamp is
+        bumped by ANY tracked write, including one that nets to nothing, so the
+        pill could announce a feed that renders empty. Both sets are now derived
+        from the SAME change data (and the same net-no-op rule) as the feed the
+        card lazy-loads, so a pill appears if and only if that feed has content:
+
+          player is flagged  <=>  ``_dashboard_change_items_deduped`` is non-empty
+
+        which means a net-changed patient-level tracked field, OR a note update
+        in the window, OR a net-changed field on an injury the card does NOT show
+        up top (an active injury's own field changes are de-duped out of the feed
+        — they are marked in the static section instead).
+
+        PERFORMANCE — this is a BATCHED computation: exactly two ``mail.message``
+        searches (patients + injuries) and one note-history search for the WHOLE
+        recordset, then pure in-memory comparison. It must never become a
+        per-player loop over ``_dashboard_change_items``: the largest production
+        team has 67 players on one page.
+
+        The stored ``dashboard_last_activity_<role>`` stamp is untouched and its
+        other consumers (the dashboard-tab recency filter, the morning briefing's
+        change count) keep using it.
+        """
+        if cutoff is None:
+            cutoff = self._dashboard_window_cutoff()
+        patients = patients.sudo()
+
+        # --- 1. ONE batched injury audit read, reused by both sets.
+        injuries = self._dashboard_visible_injuries(patients, role)
+        injury_olds = self._dashboard_tracking_old_values(
+            "sports.patient.injury", injuries, cutoff)
+        changed_injuries = self._dashboard_injury_presence_from_olds(
+            injuries, role, injury_olds)
+
+        # --- 2. ONE batched patient-level audit read.
+        player_olds = self._dashboard_tracking_old_values(
+            "sports.patient", patients, cutoff)
+        player_fields = self._dashboard_player_fields(role)
+
+        # --- 3. ONE batched note-history read (notes are never de-duped out of
+        #        the feed, so any in-window note update means content).
+        note_domain = [
+            ("patient_id", "in", patients.ids),
+            ("note_datetime", ">=", cutoff),
+        ]
+        if role == "coach":
+            note_domain += [
+                ("scope", "=", "external"),
+                ("injury_id.hidden_from_coaches", "=", False),
+            ]
+        histories = self.env["sports.injury.note.history"].sudo().search(
+            note_domain)
+        noted_patients = set()
+        for hist in histories:
+            injury = hist.injury_id
+            if not injury:
+                continue
+            if role == "coach" and injury.hidden_from_coaches:
+                continue
+            note_field = (
+                "external_notes" if hist.scope == "external" else "internal_notes"
+            )
+            if note_field in injury._fields and injury[note_field]:
+                noted_patients.add(hist.patient_id.id)
+
+        # --- 4. In-memory fold, mirroring _dashboard_change_items_deduped.
+        changed_players = set()
+        for patient in patients:
+            if patient.id in noted_patients:
+                changed_players.add(patient.id)
+                continue
+            if self._dashboard_net_changed_fields(
+                    patient, player_olds.get(patient.id), player_fields):
+                changed_players.add(patient.id)
+                continue
+            for injury in patient.injury_ids:
+                if injury.id not in changed_injuries:
+                    continue
+                if injury.stage == "active":
+                    # Shown in the card's static section -> its field changes are
+                    # de-duped OUT of the feed (marked up top instead).
+                    continue
+                if injury.create_date and injury.create_date >= cutoff:
+                    # A brand-new injury emits no change-feed unit (task 1385).
+                    continue
+                changed_players.add(patient.id)
+                break
+
+        return {
+            "players": changed_players,
+            "injuries": changed_injuries,
+        }
+
+    def _dashboard_change_items_deduped(self, role, cutoff, shown_injury_ids):
+        """The change feed for one player with the injury de-dup applied.
+
+        The card's static top section shows each active injury's DETAIL fields
+        (diagnosis, body location, type/severity/stage, dates) with a "recent
+        change" marker when they changed — so repeating those field-changes in
+        the recent-changes list is redundant. We therefore drop only the
+        detail-field change items (category ``injury``) of injuries shown up top.
+        Everything else stays: player-level status changes, note updates (notes
+        are NOT shown in the static section), new-injury units, and any change on
+        an injury NOT displayed up top (e.g. a resolved injury).
+        """
+        self.ensure_one()
+        shown = set(shown_injury_ids or [])
+        items = []
+        for it in self._dashboard_change_items(role, cutoff):
+            injury = it.get("injury")
+            if (
+                it.get("category") == "injury"
+                and injury and injury.id in shown
+            ):
+                continue
+            items.append(it)
+        return items
+
+    def _card_injury_detail(self, injury, cutoff=None):
+        """JSON-safe detail dict for one injury, shared by the LIVE card and the
+        frozen snapshot so both render an identical static injury block.
+
+        ``cutoff`` (defaults to the live window) flags a freshly reported injury
+        as ``is_new`` (task 1385, CR-A #5): a new injury is marked "Nouvelle"
+        up top in the static section instead of emitting a redundant
+        "Nouvelle blessure …" change-feed row."""
+        if cutoff is None:
+            cutoff = self._dashboard_window_cutoff()
+        def _sel_label(field_name):
+            field = injury._fields.get(field_name)
+            if not field or not injury[field_name]:
+                return ""
+            try:
+                selection = dict(field._description_selection(injury.env))
+            except Exception:  # pragma: no cover - defensive
+                raw = getattr(field, "selection", None)
+                selection = dict(raw) if isinstance(raw, (list, tuple)) else {}
+            return str(selection.get(injury[field_name], injury[field_name]))
+
+        return {
+            "injury_id": injury.id,
+            "diagnosis": injury.diagnosis or "",
+            "body_location": injury.body_location or "",
+            "injury_type": injury.injury_type or "",
+            "severity": _sel_label("severity"),
+            "stage": _sel_label("stage"),
+            "injury_date": (
+                fields.Date.to_string(injury.injury_date)
+                if injury.injury_date else ""
+            ),
+            "predicted_resolution_date": (
+                fields.Date.to_string(injury.predicted_resolution_date)
+                if injury.predicted_resolution_date else ""
+            ),
+            "resolution_date": (
+                fields.Date.to_string(injury.resolution_date)
+                if injury.resolution_date else ""
+            ),
+            "hidden_from_coaches": bool(injury.hidden_from_coaches),
+            "is_new": bool(
+                injury.create_date and cutoff and injury.create_date >= cutoff
+            ),
+            # Task 1385 (CR-D2): surface the injury's notes in the static
+            # active-injury section. This dict is the TP superset (both scopes);
+            # audience-scoping — coach sees external only, TP sees internal +
+            # external — is applied by the caller (``_card_active_injuries`` for
+            # the live card; ``_render_for_role`` for the frozen snapshot), never
+            # leaking internal notes to a coach.
+            "external_notes": injury.external_notes or "",
+            # Task 1544: internal_notes is field-restricted (staff + portal
+            # TP). Read it only when the current env may: a coach-env caller
+            # gets "" instead of an AccessError; sudo callers (digest capture)
+            # keep the TP superset.
+            "internal_notes": (
+                (injury.internal_notes or "")
+                if injury._has_field_access(injury._fields["internal_notes"], "read")
+                else ""
+            ),
+        }
+
+    def _card_active_injuries(self, is_treatment_prof=True):
+        """Active-injury detail dicts for the LIVE card's static section. Read as
+        the current portal user, so the coach record rule already hides
+        ``hidden_from_coaches`` injuries — no extra injury-level filtering needed.
+
+        Task 1385 (CR-D2): ``internal_notes`` are FIELD-level restricted (a coach
+        may still read a non-hidden injury's record), so the flag drops the
+        internal note from the coach's dict here — the same audience-scope the
+        change feed and snapshot enforce. TP/admin keep both note scopes."""
+        self.ensure_one()
+        details = []
+        for inj in self.injury_ids.filtered(lambda i: i.stage == "active"):
+            detail = self._card_injury_detail(inj)
+            if not is_treatment_prof:
+                detail["internal_notes"] = ""
+            details.append(detail)
+        return details
+
+    def _sc_change_detail(self, role, is_treatment_prof, cutoff=None):
+        """The app shell's expanded recent-changes detail (owner layout
+        2026-10-11): every injury change grouped under its injury, the rest in
+        a general list.
+
+        Returns ``{'items': [...], 'active_injuries': [...],
+        'resolved_injuries': [...]}``; each injury dict is a
+        ``_card_injury_detail`` plus ``items`` (its changes) and ``changed``.
+        Active injuries come most recently changed first, unchanged ones last
+        (latest injury first); resolved injuries appear only with changes.
+        Injuries are read as the CURRENT user, hidden-from-coaches ones dropped
+        for a coach, and the change feed is role-gated, so a coach never gets a
+        hidden injury or an internal note.
+        """
+        self.ensure_one()
+        if cutoff is None:
+            cutoff = self._dashboard_window_cutoff()
+        general, by_injury = [], {}
+        for item in self._dashboard_change_items(role, cutoff):
+            injury = item.get("injury")
+            if injury:
+                by_injury.setdefault(injury.id, []).append(item)
+            else:
+                general.append(item)
+        visible = self.injury_ids
+        if role == "coach":
+            visible = visible.filtered(lambda i: not i.hidden_from_coaches)
+        last_change = self._sc_injury_last_change(visible, cutoff)
+
+        def detail(injury):
+            values = self._card_injury_detail(injury, cutoff)
+            if not is_treatment_prof:
+                values["internal_notes"] = ""
+            values["items"] = by_injury.get(injury.id, [])
+            values["changed"] = bool(values["items"])
+            return values
+
+        def recency(injury):
+            when = last_change.get(injury.id) if injury.id in by_injury else None
+            return (bool(when), when or datetime.min,
+                    injury.injury_date or date.min, injury.id)
+
+        active = visible.filtered(lambda i: i.stage != "resolved")
+        active = active.filtered(
+            lambda i: i.stage == "active" or i.id in by_injury)
+        resolved = visible.filtered(
+            lambda i: i.stage == "resolved" and i.id in by_injury)
+        return {
+            "items": general,
+            "active_injuries": [
+                detail(i) for i in active.sorted(recency, reverse=True)],
+            "resolved_injuries": [
+                detail(i) for i in resolved.sorted(recency, reverse=True)],
+        }
+
+    @api.model
+    def _sc_injury_last_change(self, injuries, cutoff):
+        """``{injury_id: datetime}`` of each injury's latest tracked change or
+        note update in the window (creation counts for a new injury)."""
+        last = {}
+
+        def bump(injury_id, when):
+            if when and (injury_id not in last or when > last[injury_id]):
+                last[injury_id] = when
+
+        for injury in injuries:
+            if injury.create_date and injury.create_date >= cutoff:
+                bump(injury.id, injury.create_date)
+        messages = self.env["mail.message"].sudo().search_read([
+            ("model", "=", "sports.patient.injury"),
+            ("res_id", "in", injuries.ids),
+            ("date", ">=", cutoff),
+            ("tracking_value_ids", "!=", False),
+        ], ["res_id", "date"])
+        for message in messages:
+            bump(message["res_id"], message["date"])
+        notes = self.env["sports.injury.note.history"].sudo().search_read([
+            ("injury_id", "in", injuries.ids),
+            ("note_datetime", ">=", cutoff),
+        ], ["injury_id", "note_datetime"])
+        for note in notes:
+            bump(note["injury_id"][0], note["note_datetime"])
+        return last
+
+    @api.model
+    def _dashboard_note_count_label(self, count):
+        """Bare '<n> new note(s)' phrase (no surrounding parens), pluralised.
+        Wrapped in parens by the caller when folded into a longer phrase."""
+        if count == 1:
+            return _("%s new note", count)
+        return _("%s new notes", count)
+
+    def _dashboard_change_synopsis(self, role, cutoff=None, items=None):
+        """Ordered list of short, per-category synopsis phrases for the
+        COLLAPSED digest card (task 1272, condense round 2).
+
+        Built from the SAME role-scoped ``_dashboard_change_items`` list as the
+        expanded view — never from raw records — so a coach synopsis can no more
+        name a hidden injury or an internal note than the coach digest can: the
+        items it reads are already visibility-filtered. This is PRESENTATION
+        ONLY; it changes no detection, tracking set, or scoping. The caller joins
+        the phrases into the ≤2-3 line collapsed summary (the list is capped +
+        folded here so the busiest player never wraps into an article again).
+        """
+        self.ensure_one()
+        if items is None:
+            items = self._dashboard_change_items(role, cutoff=cutoff)
+        if not items:
+            return []
+        phrases = []
+        # 1. New injuries no longer appear in the synopsis (task 1385, CR-A #5):
+        #    they are flagged in the static card section, not the change feed, so
+        #    their notes fold into the plain note count in step 4 like any other.
+        # 2. Player-level status changes.
+        status_fields = {
+            it["field"] for it in items if it.get("category") == "status"}
+        if {"match_status", "practice_status"} & status_fields:
+            phrases.append(_("Status changed"))
+        if "training_recommendation" in status_fields:
+            phrases.append(_("Training recommendation updated"))
+        # Other tracked player fields — explicit translatable phrases so the
+        # synopsis stays fully localized (the raw field label is often English
+        # only, and "%s updated" gets the French agreement wrong). Falls back to
+        # "<label> updated" for any unmapped tracked field.
+        handled = {"match_status", "practice_status", "training_recommendation"}
+        field_phrases = {
+            "predicted_return_date": _("Predicted return updated"),
+            "return_date": _("Return date updated"),
+            "last_consultation_date": _("Last consultation updated"),
+            "team_info_notes": _("Team notes updated"),
+            "age": _("Age updated"),
+            "date_of_birth": _("Date of birth updated"),
+        }
+        for it in items:
+            if it.get("category") == "status" and it["field"] not in handled:
+                phrases.append(
+                    field_phrases.get(it["field"]) or _("%s updated", it["label"]))
+        # 3. Updated (existing) injuries — one phrase per injury, deduped, with
+        #    diagnosis (note changes on them are folded as a count in step 4).
+        seen_injuries = set()
+        for it in items:
+            if it.get("category") != "injury":
+                continue
+            injury = it.get("injury")
+            key = injury.id if injury else it.get("field")
+            if key in seen_injuries:
+                continue
+            seen_injuries.add(key)
+            diag = (injury.diagnosis or "").strip() if injury else ""
+            phrases.append(
+                _("Injury updated (%s)", diag) if diag else _("Injury updated"))
+        # 4. Note changes on EXISTING injuries — folded into one count,
+        #    scope-appropriate (the items list is already coach: external only /
+        #    TP: internal + external).
+        note_count = sum(1 for it in items if it.get("category") == "note")
+        if note_count:
+            phrases.append(self._dashboard_note_count_label(note_count))
+        # Cap + fold so the collapsed card stays ≤2-3 lines.
+        if len(phrases) > DASHBOARD_SYNOPSIS_MAX_PHRASES:
+            extra = len(phrases) - DASHBOARD_SYNOPSIS_MAX_PHRASES
+            phrases = phrases[:DASHBOARD_SYNOPSIS_MAX_PHRASES]
+            phrases.append(_("+%s more changes", extra))
+        return phrases
+
+    @api.depends(
+        "dashboard_last_activity_tp",
+        "dashboard_score_tp",
+        "injury_ids",
+        "injury_ids.note_history_ids",
+    )
+    def _compute_dashboard_digest_html(self):
+        """Render the TP-scoped digest for the backend kanban via the shared
+        QWeb fragment. Non-stored: recomputed per read so the window applies
+        live. Backend team Dashboard tab audience is internal staff = TP."""
+        cutoff = self._dashboard_window_cutoff()
+        show_position = bool(self.env.context.get("dashboard_show_position"))
+        for rec in self:
+            items = rec._dashboard_change_items("tp", cutoff)
+            # Task 1385 (CR-A #5 / CR-B): the internal digest also drops the
+            # "Nouvelle blessure …" feed row, so surface the standing active
+            # injuries (new ones flagged) in a static block, matching the card.
+            changed_injuries = self._dashboard_injury_presence(rec, "tp", cutoff)
+            active_injuries = rec._card_active_injuries()
+            for inj in active_injuries:
+                inj["changed"] = inj["injury_id"] in changed_injuries
+            rec.dashboard_digest_html = self.env["ir.qweb"]._render(
+                "bemade_sports_clinic.dashboard_change_items",
+                {
+                    "items": items,
+                    # Same role-scoped items -> the collapsed synopsis on the
+                    # backend card is Law-25 safe by construction.
+                    "synopsis": rec._dashboard_change_synopsis("tp", items=items),
+                    "show_position": show_position,
+                    "position": rec.position,
+                    # Task 1381: internal card only — an always-on player-status
+                    # block (predicted return + training recommendation) rendered
+                    # ahead of the changelog, pulled live from the record. The
+                    # flag keeps it off the shared portal renders (that's #1385).
+                    "show_player_status": True,
+                    "predicted_return_date": rec.predicted_return_date,
+                    # Task 1727: « · Dépassé » after a past date.
+                    "predicted_return_overdue": rec.predicted_return_overdue,
+                    "training_recommendation": rec.training_recommendation,
+                    "active_injuries": active_injuries,
+                },
+            )
 
     def _sync_date_left_last_team(self):
         """Maintain the Law 25 retention clock on every path that can change a
@@ -388,9 +2120,20 @@ class Patient(models.Model):
 
     def _recompute_name(self):
         for rec in self:
-            rec.partner_id.with_context(patient_update=True).name = (
-                rec._get_name_from_first_and_last(rec.first_name, rec.last_name)
-            )
+            name = rec._get_name_from_first_and_last(rec.first_name, rec.last_name)
+            # Task 1421: no partner write when nothing changed — the portal
+            # edit form always re-posts the (unchanged) name, and a portal
+            # user's res.partner write can trip on unrelated partner fields.
+            if rec.partner_id.name == name:
+                continue
+            # Task 1537: the contact name is a mirror of the patient's
+            # first/last name, which the caller was already allowed to write.
+            # Write it with sudo: on a rename, core res.partner.write syncs the
+            # bank-account holder names (reads bank_ids), and portal coaches /
+            # therapists cannot read res.partner.bank. sudo() keeps env.uid,
+            # so tracking authorship stays the caller; patient_update keeps
+            # the res.partner name guard satisfied.
+            rec.partner_id.sudo().with_context(patient_update=True).name = name
 
     # ----------------------------------------------------------------------
     # Law 25 retention anonymization
@@ -422,11 +2165,24 @@ class Patient(models.Model):
                     "last_name": _("Player %s") % patient.id,
                     "date_of_birth": False,
                     "team_info_notes": False,
+                    # Task 1630: the medical free text (the levels / EpiPen
+                    # carry no identity and stay).
+                    "allergies": False,
+                    "allergy_details": False,
+                    "medical_alert_details": False,
+                    # Task 1677: where the EpiPen is kept.
+                    "allergy_epipen_note": False,
+                    "allergy_updated_info": False,
+                    "medical_alert_updated_info": False,
+                    "medical_history_other": False,
                     "predicted_return_date": False,
                     "return_date": False,
                     "is_anonymized": True,
                 }
             )
+            # Task 1654 / 1677: the items name the allergies and conditions —
+            # deleted (the levels follow, computed).
+            patient.critical_item_ids.sudo().with_context(sc_critical_quiet=True).unlink()
             # Overwrite core identity PII on the partner (address, email, ...).
             if partner:
                 partner._law25_anonymize()
@@ -474,7 +2230,17 @@ class Patient(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        if self._sc_identity_guarded():
+            for row in vals_list:
+                self._sc_check_identity_duplicate(
+                    row.get('first_name'), row.get('last_name'), row.get('date_of_birth'))
         for row in vals_list:
+            self._normalize_jersey_vals(row)
+            # Task 1654: coaches never write the medical fields.
+            self.browse()._sc_check_medical_writer(row)
+            # Task 1677: the levels are computed from the lists.
+            for name in self._SC_MEDICAL_LEVEL_FIELDS:
+                row.pop(name, None)
             if "partner_id" not in row:
                 row["partner_id"] = (
                     self.env["res.partner"].with_context(
@@ -491,6 +2257,20 @@ class Patient(models.Model):
                     .id
                 )
         res = super().create(vals_list)
+        # Task 1601: a player created with a recommendation gets its first
+        # history row.
+        if not self.env.context.get("skip_training_history"):
+            author_id = history_author_uid(self.env)
+            now = fields.Datetime.now()
+            initial = [{
+                "patient_id": patient.id,
+                "change_datetime": now,
+                "author_id": author_id,
+                "content": patient.training_recommendation,
+            } for patient in res.sudo() if (patient.training_recommendation or "").strip()]
+            if initial:
+                self.env["sports.patient.training.history"].sudo().create(initial)
+        res._notify_jersey_duplicates()
         # Stamp the Law 25 retention clock for any player created without a team.
         res._sync_date_left_last_team()
         # Avoid triggering follower recomputation (which can create mail/follower
@@ -500,7 +2280,48 @@ class Patient(models.Model):
                 tracking_disable=True,
                 mail_create_nosubscribe=True,
             ).recompute_followers()
+        # Task 1717: EpiPen unanswered — the creator's To-Do.
+        res._sc_raise_epipen_todos()
         return res
+
+    @api.constrains("partner_id")
+    def _check_partner_is_person(self):
+        """Task 1680: a player's contact is a person, never a company."""
+        if self.sudo().filtered(lambda p: p.partner_id.is_company):
+            raise ValidationError(self.env["res.partner"]._sc_patient_company_message())
+
+    @api.constrains("predicted_return_date")
+    def _check_predicted_return_not_past(self):
+        """Task 1727: « Retour prévu » cannot be SET in the past (today,
+        user's timezone, is fine). Only writes to the field run this, so a
+        player whose date has since passed stays editable otherwise; a
+        system copy passes ``PAST_RETURN_OK`` in the context."""
+        if self.env.context.get(PAST_RETURN_OK):
+            return
+        for rec in self:
+            if rec.predicted_return_date and rec.predicted_return_date < fields.Date.context_today(rec):
+                raise ValidationError(_("The predicted return cannot be in the past."))
+
+    @api.depends("predicted_return_date")
+    def _compute_predicted_return_overdue(self):
+        today = fields.Date.context_today(self)
+        for rec in self:
+            rec.predicted_return_overdue = bool(
+                rec.predicted_return_date and rec.predicted_return_date < today)
+
+    def _search_predicted_return_overdue(self, operator, value):
+        """Task 1727: the backend « Retour prévu dépassé » filter."""
+        if operator != 'in':
+            return NotImplemented
+        today = fields.Date.context_today(self)
+        overdue = [('predicted_return_date', '<', today)]
+        if True in value and False in value:
+            return []
+        if True in value:
+            return overdue
+        if False in value:
+            return ['|', ('predicted_return_date', '=', False), ('predicted_return_date', '>=', today)]
+        return [('id', 'in', [])]
 
     @api.constrains("match_status", "practice_status")
     def constrain_match_and_practice_status(self):
@@ -520,6 +2341,195 @@ class Patient(models.Model):
                 raise ValidationError(
                     _("Invalid combination of match and practice status.")
                 )
+
+    # ----------------------------------------------------------------------
+    # Identity guard (task 1600)
+    # ----------------------------------------------------------------------
+    # Scope: portal (share) users only — the app shell, the legacy portal forms
+    # and any other portal route all write as the user (or sudo'd, which keeps
+    # env.user), so a model-level check covers them all. Internal users (clinic
+    # administrators, the backend, the merge wizard, crons) are deliberately
+    # NOT guarded: the backend merge flows must stay able to align two files.
+    def _sc_identity_guarded(self):
+        """Task 1600: portal users. Task 1639 (owner 2026-10-22): internal
+        users too when they work through the app / portal routes, which set
+        ``sc_identity_guard`` in the context; the backend form, merges,
+        imports and crons (no flag) stay unguarded."""
+        return bool(self.env.user.share or self.env.context.get("sc_identity_guard"))
+
+    @staticmethod
+    def _sc_identity_text(value):
+        if not value:
+            return ''
+        if isinstance(value, (date, datetime)):
+            return fields.Date.to_string(value)
+        return str(value).strip()
+
+    def _sc_identity_corrections(self, vals):
+        """{patient: [(field, old, new)]}: the identity fields ``vals`` CHANGES
+        from a non-empty value (filling a blank field is not a correction;
+        whitespace-only differences are not either)."""
+        corrections = {}
+        names = [name for name in IDENTITY_FIELDS if name in vals]
+        if not names:
+            return corrections
+        for patient in self.sudo():
+            changed = []
+            for name in names:
+                old = self._sc_identity_text(patient[name])
+                new = self._sc_identity_text(
+                    fields.Date.to_date(vals[name]) if name == 'date_of_birth' and vals[name]
+                    else vals[name])
+                if old and old != new:
+                    changed.append((name, old, new))
+            if changed:
+                corrections[patient.id] = changed
+        return corrections
+
+    def _sc_identity_guard(self, vals):
+        """Pre-write checks for a portal user (nothing is written when one
+        refuses). Returns the corrections to record after the write."""
+        if not any(name in vals for name in IDENTITY_FIELDS):
+            return {}
+        if not self._sc_identity_guarded():
+            # Internal users (clinic administrators, the backend, merges, crons)
+            # are never blocked. A correction they CONFIRMED through a portal
+            # form (the confirm step sets the context flag) is recorded on the
+            # file like anyone else's; a plain backend write is not.
+            if self.env.context.get(IDENTITY_CONFIRM_KEY):
+                return self._sc_identity_corrections(vals)
+            return {}
+        corrections = self._sc_identity_corrections(vals)
+        if corrections and not self.env.context.get(IDENTITY_CONFIRM_KEY):
+            raise UserError(_("Confirm the identity correction."))
+        for patient in self.sudo():
+            new = {name: self._sc_identity_text(
+                fields.Date.to_date(vals[name]) if name == 'date_of_birth' and vals[name] else vals[name])
+                for name in IDENTITY_FIELDS if name in vals}
+            self._sc_check_identity_duplicate(
+                vals.get('first_name', patient.first_name),
+                vals.get('last_name', patient.last_name),
+                vals['date_of_birth'] if 'date_of_birth' in vals else patient.date_of_birth,
+                exclude_id=patient.id,
+                identity_changed=any(value != self._sc_identity_text(patient[name])
+                                     for name, value in new.items()))
+        return corrections
+
+    @api.model
+    def _sc_identity_duplicate(self, first_name, last_name, date_of_birth, exclude_id=None):
+        """Another player (active or archived) with exactly this first name,
+        last name (case-insensitive, trimmed) and date of birth, or None."""
+        first = (first_name or '').strip()
+        last = (last_name or '').strip()
+        dob = fields.Date.to_date(date_of_birth) if date_of_birth else False
+        if not (first and last and dob):
+            return None
+        self.env['sports.patient'].flush_model(['first_name', 'last_name', 'date_of_birth'])
+        # lower() on both sides: the same folding whatever the database locale.
+        self.env.cr.execute(
+            """SELECT id FROM sports_patient
+                WHERE lower(trim(first_name)) = lower(%s) AND lower(trim(last_name)) = lower(%s)
+                  AND date_of_birth = %s AND id != %s
+                ORDER BY id LIMIT 1""",
+            (first, last, dob, exclude_id or 0))
+        row = self.env.cr.fetchone()
+        return self.env['sports.patient'].sudo().browse(row[0]) if row else None
+
+    @api.onchange('first_name', 'last_name', 'date_of_birth')
+    def _onchange_sc_identity_twin(self):
+        """Owner review 2026-10-22 (#1639): the backend form stays allowed
+        for internal users, with a NON-blocking warning when another player
+        (archived included, the identity guard's normalisation) has exactly
+        this first name, last name and date of birth."""
+        for patient in self:
+            twin = patient._sc_identity_duplicate(
+                patient.first_name, patient.last_name, patient.date_of_birth,
+                exclude_id=patient._origin.id or None)
+            if twin:
+                return {'warning': {
+                    'title': _("Possible duplicate"),
+                    'message': _(
+                        "A player already has this name and date of birth: %(name)s (#%(id)s).",
+                        name=twin.with_context(active_test=False).display_name, id=twin.id),
+                }}
+        return None
+
+    def _sc_identity_unrestricted(self):
+        """Clinic administrators, system administrators and the superuser see
+        every player: the identity guard answers them with the exact twin."""
+        user = self.env.user
+        return bool(
+            user._is_superuser()
+            or user.has_group('bemade_sports_clinic.group_sports_clinic_admin')
+            or user.has_group('base.group_system'))
+
+    @api.model
+    def _sc_identity_namesakes(self, first_name, last_name, exclude_id=None):
+        """The players (active or archived, sudo) with exactly this first and
+        last name (case-insensitive, trimmed), whatever their date of birth."""
+        first, last = (first_name or '').strip(), (last_name or '').strip()
+        if not (first and last):
+            return self.env['sports.patient'].sudo()
+        self.env['sports.patient'].flush_model(['first_name', 'last_name'])
+        self.env.cr.execute(
+            """SELECT id FROM sports_patient
+                WHERE lower(trim(first_name)) = lower(%s) AND lower(trim(last_name)) = lower(%s)
+                  AND id != %s""",
+            (first, last, exclude_id or 0))
+        return self.env['sports.patient'].sudo().browse([row[0] for row in self.env.cr.fetchall()])
+
+    @api.model
+    def _sc_identity_twin_teams(self, twins):
+        """Task 1716: the team names of the twins (sudo: names only), for the
+        warning « … already exists (Team X). »."""
+        names = twins.sudo().with_context(active_test=False).team_ids.mapped('name')
+        return ', '.join(sorted(set(names))) or _("no team")
+
+    @api.model
+    def _sc_check_identity_duplicate(self, first_name, last_name, date_of_birth, exclude_id=None,
+                                     identity_changed=True):
+        """The identity guard's refusals (#1600 / #1639).
+
+        Task 1716 (owner 2026-10-26, after the 2026-10-23 security review —
+        the « date-of-birth oracle » concern is waived: the date of birth
+        identifies a player and may be shown to other therapists):
+
+        * a name alone never blocks (the « hidden namesake » refusal is gone);
+        * a CREATE with an exact name + date-of-birth twin (any player,
+          archived included) is refused with « A player with this name and
+          date of birth already exists (Team X). » unless confirmed
+          (``sc_identity_force_create`` — the panel's « Créer quand même »);
+        * a WRITE (identity correction) onto a twin is refused (#1639) —
+          now whoever can read the twin: with the oracle concern waived, an
+          unreadable twin no longer needs hiding behind « ask a manager ».
+        """
+        twin = self._sc_identity_duplicate(first_name, last_name, date_of_birth, exclude_id)
+        if not twin:
+            return
+        if exclude_id is None:
+            if self.env.context.get(IDENTITY_FORCE_CREATE_KEY):
+                return
+            twins = self._sc_identity_namesakes(first_name, last_name).filtered(
+                lambda p: p.date_of_birth == twin.date_of_birth)
+            raise ValidationError(_(
+                "A player with this name and date of birth already exists (%s).",
+                self._sc_identity_twin_teams(twins)))
+        raise ValidationError(_("Another player already has this name and date of birth."))
+
+    def _sc_post_identity_note(self, corrections):
+        """The audit note of a confirmed identity correction: who changed
+        what, old → new (on the player's file, internal note)."""
+        author = self.env.user.sudo().name
+        for patient in self.sudo().browse(list(corrections)):
+            items = Markup('').join(
+                Markup('<li>%s : %s → %s</li>') % (
+                    patient._fields[name]._description_string(self.env),
+                    old or '—', new or '—')
+                for name, old, new in corrections[patient.id])
+            body = Markup('<p>%s</p><ul>%s</ul>') % (
+                _("Identity correction confirmed by %s", author), items)
+            patient.message_post(
+                body=body, message_type='comment', subtype_xmlid='mail.mt_note')
 
     @api.depends("injury_ids.stage")
     def _compute_active_injury_count(self):
@@ -543,6 +2553,17 @@ class Patient(models.Model):
                 continue
             rec.stage = stage_map[(rec.match_status, rec.practice_status)]
 
+    @api.depends("match_status", "practice_status")
+    def _compute_sort_order(self):
+        # Stored status-severity key driving roster ordering on the backend
+        # team-form Players list and the portal roster. Depends on the same
+        # stored roots as `stage` (a non-stored computed), so reading
+        # `self.stage` here is safe: any change to match/practice status
+        # recomputes `stage` and this field together.
+        severity = {"no_play": 0, "practice_ok": 1, "healthy": 2}
+        for rec in self:
+            rec.sort_order = severity.get(rec.stage, 99)
+
     @api.depends("date_of_birth")
     def _compute_age(self):
         for rec in self:
@@ -559,6 +2580,532 @@ class Patient(models.Model):
         if last_name:
             names.append(last_name)
         return " ".join(names)
+
+    # ----------------------------------------------------------------------
+    # Portal « Last, First » display + picker helpers (task 1414)
+    # ----------------------------------------------------------------------
+    # The portal LISTS (clinic worklist, patient cards) and every patient
+    # PICKER read and sort « Last, First » straight from the patient record
+    # (last_name / first_name — never res.partner.name, which is
+    # « First Last »). Single-patient headings (player page H1, clinic dossier
+    # header, breadcrumbs) keep « First Last » via ``name``.
+    @staticmethod
+    def _portal_name_key(text):
+        """Accent-insensitive, case-insensitive sort / search key of a name
+        part: NFKD-decomposed, combining marks dropped, casefolded, inner
+        whitespace collapsed. « Zoé Äbel » → « zoe abel »."""
+        decomposed = unicodedata.normalize("NFKD", (text or "").strip())
+        stripped = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+        return " ".join(stripped.casefold().split())
+
+    # ----------------------------------------------------------------------
+    # Jersey number (task 1421)
+    # ----------------------------------------------------------------------
+    @staticmethod
+    def _normalize_jersey_number(value):
+        """Canonical stored form of a jersey number input: trimmed, ONE leading
+        « # » dropped (« #12 » → « 12 », the glyph is rendering, not data),
+        blank → False. Never touches the digits (« 00 » stays « 00 »)."""
+        text = (value or "").strip()
+        if text.startswith("#"):
+            text = text[1:].strip()
+        return text or False
+
+    @api.model
+    def _normalize_jersey_vals(self, vals):
+        if "jersey_number" in vals:
+            vals["jersey_number"] = self._normalize_jersey_number(vals["jersey_number"])
+
+    @api.depends("jersey_number")
+    def _compute_jersey_sort(self):
+        for rec in self:
+            digits = re.sub(r"\D", "", rec.jersey_number or "")
+            rec.jersey_sort = int(digits) if digits else JERSEY_SORT_LAST
+
+    def _jersey_label(self):
+        """« #12 » of ONE patient, or "" when there is no number — the ONLY
+        place the glyph is added, so no surface can render a stray « # »."""
+        self.ensure_one()
+        number = (self.jersey_number or "").strip()
+        return "#%s" % number if number else ""
+
+    def _jersey_duplicates(self):
+        """Other ACTIVE players wearing the same (non-empty) number on at least
+        one team shared with this patient. Advisory only — never a constraint.
+        sudo(): the acting portal user may not read every teammate's record
+        through the per-record rules; only names are surfaced."""
+        self.ensure_one()
+        number = (self.jersey_number or "").strip()
+        team_ids = self.team_ids.ids
+        if not number or not team_ids:
+            return self.sudo().browse()
+        return self.sudo().search([
+            ("id", "!=", self.id),
+            ("active", "=", True),
+            ("jersey_number", "=", number),
+            ("team_ids", "in", team_ids),
+        ], order="last_name, first_name, id")
+
+    def _jersey_duplicate_message(self, duplicates=None):
+        """Translated warning naming the other player(s), or "" when none."""
+        self.ensure_one()
+        duplicates = self._jersey_duplicates() if duplicates is None else duplicates
+        if not duplicates:
+            return ""
+        return _(
+            "Jersey number %(label)s is already used by %(players)s on a shared team.",
+            label=self._jersey_label(),
+            players=", ".join(duplicates.mapped("name")),
+        )
+
+    def _notify_jersey_duplicates(self):
+        """Backend soft warning (task 1421): a toast for the acting INTERNAL
+        user when a create/write leaves a duplicate number on a shared team.
+        Portal saves get their own flash from the controller (the portal does
+        not listen for these), and the save is never blocked either way."""
+        user = self.env.user
+        if not user._is_internal() or self.env.context.get("skip_jersey_duplicate_notify"):
+            return
+        for rec in self:
+            if not rec.jersey_number or not rec.team_ids:
+                continue
+            duplicates = rec._jersey_duplicates()
+            if duplicates:
+                user._bus_send("simple_notification", {
+                    "type": "warning",
+                    "title": _("Duplicate jersey number"),
+                    "message": rec._jersey_duplicate_message(duplicates),
+                })
+
+    # App shell player rows: the legacy card's distinct Match / Practice
+    # badges (tone + icon) and active-injury count (owner review 2026-10-11).
+    _SC_MATCH_PILLS = {"yes": ("green", "fa-check"), "no": ("red", "fa-ban")}
+    _SC_PRACTICE_PILLS = {
+        "yes": ("green", "fa-check"),
+        "no_contact": ("yellow", "fa-exclamation-triangle"),
+        "no": ("red", "fa-ban"),
+    }
+
+    @api.model
+    def _sc_status_labels(self):
+        """Task 1634: ``{field: {value: label}}`` of the Match / Practice
+        selections in the request language — computed ONCE per list render
+        and passed to ``_sc_row_status`` / ``_sc_status_pills`` (never per
+        row)."""
+        env = self.env
+        return {
+            field_name: dict(self._fields[field_name]._description_selection(env))
+            for field_name in ("match_status", "practice_status")
+        }
+
+    def _sc_row_status(self, labels=None):
+        """Status line of ONE player row: ``{'pills': [match, practice],
+        'injuries': n}``, each pill ``{label, tone, icon, title}``.
+        ``labels``: ``_sc_status_labels()`` (task 1634: computed once for a
+        whole list)."""
+        self.ensure_one()
+        env = self.env
+        labels_of = labels or self._sc_status_labels()
+
+        def pill(field_name, label, tones):
+            value = self[field_name]
+            tone, icon = tones.get(value, ("ghost", ""))
+            labels = labels_of[field_name]
+            return {
+                "label": label,
+                "tone": tone,
+                "icon": icon,
+                "title": env._("%(what)s: %(value)s", what=label,
+                               value=labels.get(value) or env._("Unknown")),
+            }
+
+        return {
+            "pills": [
+                pill("match_status", env._("Match"), self._SC_MATCH_PILLS),
+                pill("practice_status", env._("Practice"), self._SC_PRACTICE_PILLS),
+            ],
+            "injuries": self.active_injury_count,
+        }
+
+    # Task 1627: the match / practice pairs the constraint allows.
+    _SC_VALID_STATUS_PAIRS = frozenset(
+        {("yes", "yes"), ("no", "yes"), ("no", "no_contact"), ("no", "no")})
+
+    def _sc_status_pills(self, labels=None):
+        """Task 1627: the Match and Practice pill dropdowns of ONE player
+        (the ``sc_status_pill_select`` component): ``[match, practice]``,
+        each ``{key, label, text, value, tone, icon, title, menu_label,
+        options, target}``.
+
+        ``options``: ``{value, label, tone, icon, checked, disabled, hint,
+        post}`` — ``post`` is the ``sc_status`` pair a pick saves (the other
+        pill's value kept); a choice that would make an invalid pair is
+        ``disabled`` with a ``hint`` saying what to change first (owner
+        decision 2026-10-20: greyed out, never auto-adjusted).
+        ``target``: what the pick posts to (``/my/app/save``), with the
+        ``write_date`` / ``old_value`` of this render.
+        ``labels``: ``_sc_status_labels()`` (task 1634: computed once for a
+        whole list of player cards)."""
+        self.ensure_one()
+        env = self.env
+        labels_of = labels or self._sc_status_labels()
+        match, practice = self.match_status, self.practice_status
+        pair = "%s:%s" % (match, practice)
+        target = {
+            "model": self._name,
+            "id": self.id,
+            "field": "sc_status",
+            "write_date": fields.Datetime.to_string(self.sudo().write_date),
+            "old_value": pair,
+        }
+        specs = (
+            ("match", "match_status", env._("Match"), env._("Match status"),
+             self._SC_MATCH_PILLS, lambda v: (v, practice), env._("Requires Practice: Yes")),
+            ("practice", "practice_status", env._("Practice"), env._("Practice status"),
+             self._SC_PRACTICE_PILLS, lambda v: (match, v), env._("Set Match to No first")),
+        )
+        pills = []
+        for key, field_name, label, menu_label, tones, pair_of, hint in specs:
+            value = self[field_name]
+            labels = labels_of[field_name]
+            tone, icon = tones.get(value, ("ghost", ""))
+            text = env._("%(what)s: %(value)s", what=label,
+                         value=labels.get(value) or env._("Unknown"))
+            options = []
+            for option, option_label in labels.items():
+                new_pair = pair_of(option)
+                valid = new_pair in self._SC_VALID_STATUS_PAIRS
+                option_tone, option_icon = tones.get(option, ("ghost", ""))
+                options.append({
+                    "value": option,
+                    "label": option_label,
+                    "tone": option_tone,
+                    "icon": option_icon,
+                    "checked": option == value,
+                    "disabled": not valid,
+                    "hint": "" if valid else hint,
+                    "post": "%s:%s" % new_pair if valid else "",
+                })
+            pills.append({
+                "key": key,
+                "label": label,
+                "menu_label": menu_label,
+                "value": value,
+                "text": text,
+                "title": text,
+                "tone": tone,
+                "icon": icon,
+                "options": options,
+                "target": target,
+            })
+        return pills
+
+    # ----------------------------------------------------------------------
+    # Task 1630: allergies + medical alert pills
+    # Task 1677: the families are structured lists; the pills follow them.
+    # ----------------------------------------------------------------------
+    # The posted / saved fields of the legacy medical block (therapists only).
+    # Task 1677: the levels and details are no longer typed — the lists are
+    # edited in the app's popups; only « Other medical history » is posted.
+    SC_MEDICAL_FIELDS = ("medical_history_other",)
+
+    def _sc_level_label(self, level):
+        """« None known » / « Not urgent » / « Urgent – life-threatening », or
+        « Not specified » for no value, in the env's language."""
+        if not level:
+            return self.env._("Not specified")
+        labels = dict(self._fields["allergy_level"]._description_selection(self.env))
+        return labels.get(level, level)
+
+    def _sc_medical_legacy_text(self, family):
+        """Task 1677: the « Old text (to validate) » of a family — its former
+        details, else the legacy allergies text — while the player is
+        flagged « to validate »; '' once validated.
+
+        Owner 2026-10-25: treatment professionals only (the legacy
+        ``allergies`` text was therapist-only): '' for any other viewer —
+        a coach, whatever the caller (popups, cards, fragments)."""
+        self.ensure_one()
+        if not self._sc_viewer_is_tp():
+            return ""
+        patient = self.sudo()
+        if not patient.medical_alert_review:
+            return ""
+        details = patient[DETAILS_FIELD[family]] or ""
+        return (details or patient.allergies or "").strip()
+
+    def _sc_viewer_is_tp(self):
+        """The CURRENT user is a treatment professional (portal or internal
+        group). The superuser flag does not count: a sudo'ed coach env is
+        still a coach viewing."""
+        user = self.env.user
+        return bool(
+            user.has_group("bemade_sports_clinic.group_portal_treatment_professional")
+            or user.has_group("bemade_sports_clinic.group_sports_clinic_treatment_professional"))
+
+    def _sc_medical_pills(self, tp=False):
+        """Task 1630 / 1677: the two header pills of ONE player,
+        « Allergies » and « Medical alert », with what their popups show:
+        ``[{key, label, family_label, level, level_label, tone, epipen,
+        epipen_note, none_confirmed, items, stamp, legacy_text, text}]``.
+
+        ``tp``: the viewer is a therapist (both pills, every level). A coach
+        gets only the non-urgent / urgent ones (owner + MC 2026-10-21: no
+        pill for « None » / « Not specified »). Read as the CURRENT user: the
+        fields are group-restricted (therapists + portal coaches) — the
+        caller gates the call on ``sc_can('patient.medical_alerts')``."""
+        self.ensure_one()
+        env = self.env
+        if not self._has_field_access(self._fields["allergy_level"], "read"):
+            # Neither therapist nor coach (e.g. a system administrator
+            # without a clinic role): nothing to show, never an AccessError.
+            return []
+        specs = (
+            ("allergy", env._("Allergies"), "allergy_level", "allergy_none_confirmed"),
+            ("medical_alert", env._("Medical alert"), "medical_alert_level", "medical_none_confirmed"),
+        )
+        pills = []
+        for key, label, level_field, none_field in specs:
+            level = self[level_field] or False
+            if not tp and level not in COACH_LEVELS:
+                continue
+            level_label = self._sc_level_label(level)
+            epipen = bool(key == "allergy" and self.allergy_epipen)
+            # Task 1717: EpiPen unanswered — the allergies are « Not
+            # provided » (grey), whatever else; the card asks first.
+            epipen_unset = key == "allergy" and not self.allergy_epipen_state
+            if epipen_unset and not level:
+                level_label = env._("Not provided")
+            items = self._sc_critical_items(key)
+            urgent = items.filtered("life_threatening")
+            pills.append({
+                "key": key,
+                # The header pill names the life-threatening items.
+                "label": self._sc_critical_label(urgent) or label,
+                "family_label": label,
+                "items": [item._sc_read_dict() for item in items],
+                "stamp": self["%s_updated_info" % key] or "",
+                "level": level,
+                "level_label": level_label,
+                "tone": LEVEL_TONES.get(level, UNSET_TONE),
+                "epipen": epipen,
+                "epipen_state": (self.allergy_epipen_state or "") if key == "allergy" else "",
+                "epipen_unset": epipen_unset,
+                "epipen_note": ((self.allergy_epipen_note or "").strip() if epipen else ""),
+                "none_confirmed": bool(self[none_field]),
+                # Therapists only (owner 2026-10-25).
+                "legacy_text": self._sc_medical_legacy_text(key) if tp else "",
+                "text": env._("%(what)s: %(level)s", what=label, level=level_label),
+            })
+        return pills
+
+    @staticmethod
+    def _sc_critical_label(items, limit=2):
+        """Task 1654: « Arachides », « Arachides · Noix », « Arachides · Noix
+        +1 » — the names of ``items`` ('' if none)."""
+        names = [name for name in items.mapped("name") if name]
+        if not names:
+            return ""
+        label = " · ".join(names[:limit])
+        if len(names) > limit:
+            label += " +%s" % (len(names) - limit)
+        return label
+
+    # Review round 1 (owner 2026-10-22): the pills a player CARD shows.
+    _SC_CARD_MEDICAL_FIELDS = ("allergy_level", "allergy_epipen", "allergy_epipen_state",
+                               "medical_alert_level")
+
+    def _sc_card_medical_pills(self, tp=None):
+        """Task 1630 / 1652 / 1677: the medical pills of player cards
+        (dashboard, roster, /my/players, the clinic pane): ``{player_id:
+        [{key, label, tone, level, epipen, title}]}``.
+
+        Review round 2 (owner 2026-10-27): the « Allergies » and « Medical
+        alert » pills sit INSIDE every player card, coloured by level — red
+        (life-threatening), yellow (not urgent), grey (none / not filled
+        in) — exactly the header pills' visibility (``_sc_medical_pills``):
+        a therapist (``tp``; default: the viewer) gets both, always; a coach
+        the yellow / red ones only (owner + MC 2026-10-21), players without
+        one absent. A red pill names the family's life-threatening items
+        (the allergy one carries the EpiPen icon).
+
+        ONE batched read for the whole recordset, as the CURRENT user (never
+        sudo: the fields are group-restricted). A viewer failing the
+        field-group check gets nothing; records the viewer may not read are
+        skipped — never an AccessError."""
+        records = self.sudo(False)
+        if not records:
+            return {}
+        if not all(records._has_field_access(records._fields[name], "read")
+                   for name in self._SC_CARD_MEDICAL_FIELDS):
+            return {}
+        try:
+            records = records._filtered_access("read")
+            records.fetch(list(self._SC_CARD_MEDICAL_FIELDS))
+        except AccessError:
+            return {}
+        if tp is None:
+            tp = self._sc_viewer_is_tp()
+        env = self.env
+        specs = (
+            ("allergy", env._("Allergies"), "allergy_level"),
+            ("medical_alert", env._("Medical alert"), "medical_alert_level"),
+        )
+        level_labels = {level: self._sc_level_label(level) for level in (False,) + LEVELS}
+        not_provided = env._("Not provided")
+        result = {}
+        # The life-threatening items, ONE read.
+        empty = env["sports.patient.critical.item"]
+        by_family = {}
+        for item in env["sports.patient.critical.item"].sudo().search(
+                [("patient_id", "in", records.ids), ("life_threatening", "=", True)]):
+            key = (item.patient_id.id, item.family)
+            by_family[key] = by_family.get(key, empty) | item
+        for record in records:
+            pills = []
+            for key, label, level_field in specs:
+                level = record[level_field] or False
+                if not tp and level not in COACH_LEVELS:
+                    continue
+                level_label = level_labels.get(level, level)
+                if key == "allergy" and not record.allergy_epipen_state and not level:
+                    # Task 1717: EpiPen unanswered — « Not provided ».
+                    level_label = not_provided
+                epipen = bool(key == "allergy" and record.allergy_epipen)
+                title = env._("%(what)s: %(level)s", what=label, level=level_label)
+                names = ""
+                if level == LEVEL_URGENT:
+                    items = by_family.get((record.id, key), empty)
+                    names = self._sc_critical_label(items)
+                    if names:
+                        title = "%s — %s" % (title, ", ".join(items.mapped("name")))
+                pills.append({
+                    "key": key,
+                    "label": names or label,
+                    "tone": LEVEL_TONES.get(level, UNSET_TONE),
+                    "level": level,
+                    "epipen": epipen,
+                    "title": ("%s · EpiPen" % title) if epipen else title,
+                })
+            if pills:
+                result[record.id] = pills
+        return result
+
+    def _sc_medical_summary_lines(self, tp=False):
+        """Task 1630: the legacy portal's compact read of the pills, one line
+        each — « Allergies (urgent – life-threatening, EpiPen): Arachides
+        (life-threatening), Pollen ». Same visibility rule as
+        ``_sc_medical_pills``; a therapist gets no line for « Not
+        specified » / « None » (nothing on the list)."""
+        lines = []
+        vital = self.env._("life-threatening")
+        for pill in self._sc_medical_pills(tp=tp):
+            if not pill["items"] and not pill["epipen"]:
+                continue
+            qualifiers = [pill["level_label"].lower()]
+            if pill["epipen"]:
+                qualifiers.append("EpiPen")
+            head = self.env._("%(what)s (%(qualifiers)s)", what=pill["family_label"],
+                              qualifiers=", ".join(qualifiers))
+            names = ", ".join(
+                ("%s (%s)" % (item["name"], vital)) if item["life_threatening"] else item["name"]
+                for item in pill["items"])
+            lines.append({
+                "key": pill["key"],
+                "tone": pill["tone"],
+                "text": self.env._("%(head)s: %(details)s", head=head, details=names) if names else head,
+            })
+        return lines
+
+    @api.model
+    def _sc_medical_vals_from_post(self, post):
+        """Task 1630 / 1677: the medical block of a legacy create / edit form
+        (therapists only — the caller gates it): « Other medical history »
+        only (the allergies and conditions are lists, edited in the app)."""
+        vals = {}
+        for name in self.SC_MEDICAL_FIELDS:
+            if name in post:
+                vals[name] = (post.get(name) or "").strip() or False
+        return vals
+
+    def _portal_list_name(self, with_jersey=True):
+        """« Last, First » of ONE patient for portal lists and pickers —
+        « #12 Last, First » when the player has a jersey number (task 1421,
+        ``with_jersey=False`` for a bare name).
+
+        Graceful when a part is empty (the other part alone; ``name`` as a
+        last resort so an anonymized / legacy record never renders blank).
+        """
+        self.ensure_one()
+        last = (self.last_name or "").strip()
+        first = (self.first_name or "").strip()
+        if last and first:
+            name = "%s, %s" % (last, first)
+        else:
+            name = last or first or (self.name or "")
+        label = self._jersey_label() if with_jersey else ""
+        return "%s %s" % (label, name) if label else name
+
+    def _training_recommendation_history(self):
+        """Every change of ONE patient's training recommendation, newest
+        first (owner review 2026-10-10: a history like the team
+        announcement's). Task 1601: read from
+        ``sports.patient.training.history`` — NOT sudo, so the model's record
+        rules re-enforce the team scoping behind the caller's own gate. Plain
+        dicts — ``when`` (datetime), ``author`` and ``body`` (the text set,
+        '' when cleared)."""
+        self.ensure_one()
+        rows = self.env["sports.patient.training.history"].search(
+            [("patient_id", "=", self.id)])
+        return [{
+            "when": row.change_datetime,
+            # sudo: the author's name only (a portal reader may not read
+            # internal users).
+            "author": row.author_id.sudo().name or "",
+            "body": (row.content or "").strip(),
+        } for row in rows]
+
+    def _portal_heading_name(self):
+        """Single-patient headings (the player page title, the clinic dossier
+        card, the injury pages' context line). Owner review 2026-10-11: the
+        same « #12 Last, First » as every list (``_portal_list_name``), so a
+        heading never reads in the reverse order of the line below it.
+        Breadcrumbs keep the bare ``name``."""
+        self.ensure_one()
+        return self._portal_list_name()
+
+    def _portal_combo_key(self):
+        """Normalized « last first » search key of ONE patient (what the
+        portal combo filters on, client-side, from the rendered options).
+        With a jersey number the key ends in « #12 12 » so typing either
+        « 12 » or « #12 » finds the player (task 1421)."""
+        self.ensure_one()
+        parts = [
+            self._portal_name_key(self.last_name),
+            self._portal_name_key(self.first_name),
+        ]
+        number = (self.jersey_number or "").strip()
+        if number:
+            parts += ["#%s" % number, number]
+        return " ".join(part for part in parts if part)
+
+    def _portal_combo_sorted(self):
+        """This recordset ordered by last name, then first name — accent and
+        case insensitive, ties broken by id — regardless of the incoming
+        order (``_order`` puts sort_order / injury severity first, which is
+        right for the lists but wrong for a picker)."""
+        return self.sorted(key=lambda p: (
+            p._portal_name_key(p.last_name), p._portal_name_key(p.first_name), p.id))
+
+    def _portal_combo_options(self):
+        """``[(id, « #12 Last, First », search_key)]`` for the portal patient combo
+        (views/portal_widgets_templates.xml), ordered by last name, first
+        name. Pure read of the records already in hand — no search, so the
+        combo can only ever offer what the page already renders."""
+        return [
+            (p.id, p._portal_list_name(), p._portal_combo_key())
+            for p in self._portal_combo_sorted()
+        ]
 
     @api.depends("practice_status", "match_status", "injury_ids.injury_date")
     def _compute_is_injured(self):
@@ -627,7 +3174,7 @@ class Patient(models.Model):
 
     def action_consulted_today(self):
         self.ensure_one()  # should just be called from form view
-        self.last_consultation_date = date.today()
+        self.last_consultation_date = fields.Date.context_today(self)
         return {
             "view_mode": "form",
             "res_model": "sports.patient",
@@ -689,6 +3236,26 @@ class Patient(models.Model):
                 },
             }
 
+    # Task 1645: MC's « Numbers to fix » — the player's phone or one of the
+    # contacts' mobiles does not parse (left as is by the reformat).
+    sc_phone_invalid = fields.Boolean(
+        string="Phone number to fix", compute="_compute_sc_phone_invalid", store=True,
+        help="The player's phone or an emergency contact's mobile is not a valid phone number.")
+
+    @api.depends("partner_id.phone", "country_id", "contact_ids.sc_phone_invalid")
+    def _compute_sc_phone_invalid(self):
+        for patient in self:
+            patient.sc_phone_invalid = (
+                not sc_phone_is_valid(patient.env, patient.phone, patient._sc_phone_country())
+                or any(patient.contact_ids.mapped("sc_phone_invalid"))
+            )
+
+    def _sc_phone_country(self, vals=None):
+        country = self.env["res.country"]
+        if vals and vals.get("country_id"):
+            country = country.browse(vals["country_id"])
+        return country or self[:1].country_id or self.env.company.country_id
+
     @api.onchange("phone", "country_id")
     def _onchange_phone_validation(self):
         if self.phone:
@@ -711,6 +3278,12 @@ class Patient(models.Model):
 
     def _track_template(self, changes):
         res = super()._track_template(changes)
+        # Task 1269: the per-change play-status email is replaced by the
+        # aggregated urgent-notification cron + dashboard/digest. Keep the
+        # tracking/chatter audit log (recorded by super()) but only attach the
+        # notifying template when the legacy flag is explicitly enabled.
+        if not legacy_change_emails_enabled(self.env):
+            return res
         params = set(changes)
         external = bool(external_tracking_fields & params)
         if external:
@@ -800,8 +3373,8 @@ class Patient(models.Model):
         team = self.env['sports.team'].browse(team_id)
         current_user = self.env.user
         
-        # Set the pending_removal flag
-        self.write({'pending_removal': True})
+        # Set the pending_removal flag (task 1678: and the team it is about)
+        self.write({'pending_removal': True, 'pending_removal_team_id': team.id or False})
         
         # Log the request with details
         log_message = _(
@@ -824,55 +3397,12 @@ class Patient(models.Model):
             'tag': 'display_notification',
             'params': {
                 'title': _('Removal Request Submitted'),
-                'message': _('Your removal request has been submitted and will be processed by an administrator.'),
+                'message': _("Your removal request has been submitted to the team's head therapist."),
                 'type': 'success',
                 'sticky': True,
             }
         }
         
-    def _schedule_removal_request_activity(self, request_data):
-        """
-        Scheduled action to create an activity for the head therapist to review the removal request.
-        
-        :param dict request_data: Data for the removal request
-        """
-        player = self.env['sports.patient'].browse(request_data['player_id'])
-        team = self.env['sports.team'].browse(request_data['team_id'])
-        requested_by = self.env['res.users'].browse(request_data['requested_by_id'])
-        reason = request_data['reason']
-        is_last_team = request_data['is_last_team']
-        assignee = self.env['res.users'].browse(request_data['assignee_id'])
-        
-        # Create a more detailed activity
-        note = _("Player Removal Request\n")
-        note += _("====================\n\n")
-        note += _("Player: %s\n") % player.display_name
-        note += _("Team: %s\n") % team.name
-        note += _("Requested by: %s\n\n") % requested_by.name
-        
-        if reason:
-            note += _("Reason for removal request:\n%s\n\n") % reason
-            
-        if is_last_team:
-            note += _("⚠️ WARNING: This is the player's only team. Removing it will leave the player with no team.\n\n")
-            
-        note += _("Please review this request and take appropriate action.")
-        
-        # Create activity for head therapist
-        activity_vals = {
-            'activity_type_id': self.env.ref('mail.mail_activity_data_todo').id,
-            'note': note,
-            'res_id': player.id,
-            'res_model_id': self.env['ir.model']._get('sports.patient').id,
-            'user_id': assignee.id,
-            'summary': _('Player Removal Request: %s') % player.display_name,
-        }
-        
-        # Create the activity
-        self.env['mail.activity'].create(activity_vals)
-    
-
-    
     @api.model
     def _cron_handle_pending_removals(self):
         """
@@ -900,14 +3430,22 @@ class Patient(models.Model):
                 ('res_model', '=', 'sports.patient'),
                 ('res_id', '=', player.id),
                 ('activity_type_id', '=', activity_type.id),
-                ('summary', 'ilike', 'Player Removal Request')
+                '|', '|',
+                ('summary', 'ilike', REMOVAL_REQUEST_SUMMARIES[0]),
+                ('summary', 'ilike', REMOVAL_REQUEST_SUMMARIES[1]),
+                ('summary', 'ilike', REMOVAL_REQUEST_SUMMARIES[2]),
             ], limit=1)
             
             if existing_activity:
                 continue
                 
-            # Find head therapist (role == 'head_therapist') or fallback to any therapist
-            team = player.team_ids[0]
+            # Task 1678: the team the request is about (still one of the
+            # player's teams); older requests, stored without it, fall back
+            # to the player's first team. Its head therapist with a user,
+            # else a therapist of that team, else the superuser.
+            team = player.pending_removal_team_id
+            if team not in player.team_ids:
+                team = player.team_ids[0]
             staff = team.staff_ids
             head_therapist = staff.filtered(lambda s: s.role == 'head_therapist' and s.user_ids)
             if not head_therapist:
@@ -930,6 +3468,43 @@ class Patient(models.Model):
                 'date_deadline': today,
             })
     
+    def _sc_removal_request_activities(self):
+        """The open « Player Removal Request » activities of these players."""
+        if not self:
+            return self.env['mail.activity']
+        return self.env['mail.activity'].sudo().search(Domain.AND([
+            [('res_model', '=', 'sports.patient'), ('res_id', 'in', self.ids)],
+            Domain.OR([[('summary', 'ilike', summary)] for summary in REMOVAL_REQUEST_SUMMARIES]),
+        ]))
+
+    def _sc_close_removal_requests(self):
+        """Mark the open removal-request activities of these players done,
+        with « Closed: the player is no longer on the team. » as feedback (in
+        the assignee's language). Returns the number closed."""
+        activities = self._sc_removal_request_activities()
+        for activity in activities:
+            lang = activity.user_id.lang or self.env.lang
+            feedback = self.with_context(lang=lang)._sc_removal_closed_feedback()
+            activity.with_context(lang=lang).action_feedback(feedback=feedback)
+        return len(activities)
+
+    def _sc_removal_closed_feedback(self):
+        return _("Closed: the player is no longer on the team.")
+
+    @api.model
+    def _sc_clear_stale_removal_flags(self):
+        """Task 1600 one-off cleanup: players flagged ``pending_removal`` who
+        no longer belong to any team (active or archived) — the flag is
+        cleared and their open removal requests are closed. Returns
+        ``(players, activities_closed)``."""
+        players = self.sudo().with_context(active_test=False).search([
+            ('pending_removal', '=', True), ('team_ids', '=', False)])
+        closed = 0
+        if players:
+            players.write({'pending_removal': False, 'pending_removal_team_id': False})
+            closed = players._sc_close_removal_requests()
+        return players, closed
+
     def _removal_log_message(self, team_name, user_name):
         """Compose the chatter line describing a removal from ``team_name``.
 
@@ -978,7 +3553,11 @@ class Patient(models.Model):
         :return bool: True if the current user may remove directly from ``team``
         """
         user = self.env.user
-        if user.has_group('base.group_system'):
+        # Task 1600: a clinic administrator acts on ALL teams (task 1577 owner
+        # decision) — the legacy edit form lets them untick any team, and an
+        # untick now goes through this removal path.
+        if user.has_group('base.group_system') or user.has_group(
+                'bemade_sports_clinic.group_sports_clinic_admin'):
             return True
 
         is_treatment_prof = (
@@ -994,6 +3573,26 @@ class Patient(models.Model):
             lambda s: s.user_ids and user.id in s.user_ids.ids
         )
         return any(role.role in REMOVAL_ROLES for role in user_staff_roles)
+
+    @api.model
+    def _sc_teams_may_remove(self, teams):
+        """Task 1624: the subset of ``teams`` where ``_may_remove_from_team``
+        is True, in ONE staff query (the dashboard's « À faire » removal
+        requests over many teams). Same policy, batched."""
+        user = self.env.user
+        if user.has_group('base.group_system') or user.has_group(
+                'bemade_sports_clinic.group_sports_clinic_admin'):
+            return teams
+        if not (user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+                or user.has_group('bemade_sports_clinic.group_portal_treatment_professional')):
+            return teams.browse()
+        rows = self.env['sports.team.staff'].sudo().search([
+            ('team_id', 'in', teams.ids or [0]),
+            ('user_ids', 'in', [user.id]),
+            ('role', 'in', list(REMOVAL_ROLES)),
+        ])
+        ok = set(rows.team_id.ids)
+        return teams.filtered(lambda team: team.id in ok)
 
     def remove_from_team(self, team_id, clear_pending=True, reason=None):
         """
@@ -1082,8 +3681,12 @@ class Patient(models.Model):
         # Prepare and execute the removal (one write for every player)
         update_vals = {'team_ids': [Command.unlink(team.id)]}
         if had_pending:
-            update_vals['pending_removal'] = False
+            update_vals.update(pending_removal=False, pending_removal_team_id=False)
         self.write(update_vals)
+        if clear_pending:
+            # Task 1600: the official removal closes the open « Player Removal
+            # Request » activities of these players (the request is answered).
+            self._sc_close_removal_requests()
 
         # Chatter branches on recordset size:
         #  - a SINGLE-record call keeps its per-player audit note on the player's
@@ -1205,9 +3808,12 @@ class Patient(models.Model):
         if not vals.get('first_name') or not vals.get('last_name'):
             raise ValidationError(_("First name and last name are required"))
             
-        # Check permissions - must be portal treatment professional or team coach
+        # Check permissions - must be a treatment professional (portal OR
+        # internal, task 1577 — a clinic admin implies the internal group) or
+        # a team coach
         user = self.env.user
-        if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or 
+        if not (user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or
+                user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional') or
                 user.has_group('bemade_sports_clinic.group_portal_team_coach')):
             raise AccessError(_("You don't have permission to create patients"))
         
@@ -1265,9 +3871,17 @@ class Patient(models.Model):
             patient_vals['match_status'] = vals.get('match_status')
         if vals.get('practice_status'):
             patient_vals['practice_status'] = vals.get('practice_status')
-        # Other optional patient fields
-        if 'allergies' in vals:
-            patient_vals['allergies'] = vals.get('allergies') or False
+        # Other optional patient fields. Task 1421: position was silently
+        # dropped here (the controller put it in vals, this whitelist did not
+        # pass it on); jersey_number goes through the same gate.
+        if 'position' in vals:
+            patient_vals['position'] = vals.get('position') or False
+        if 'jersey_number' in vals:
+            patient_vals['jersey_number'] = vals.get('jersey_number') or False
+        # Task 1630: the medical block replaces the legacy allergies text.
+        for key in self.SC_MEDICAL_FIELDS:
+            if key in vals:
+                patient_vals[key] = vals.get(key) or False
         if 'team_info_notes' in vals:
             patient_vals['team_info_notes'] = vals.get('team_info_notes') or False
         
@@ -1349,3 +3963,57 @@ class Patient(models.Model):
                 injury_new = future_followers - injury.message_partner_ids
                 if injury_new:
                     injury.message_subscribe(injury_new.ids)
+
+    # ==================================================================
+    # Task 1397 — clinic kiosk: who is this, by name + date of birth
+    # ==================================================================
+    @staticmethod
+    def _kiosk_normalize(text):
+        """Fold a name for comparison: strip, casefold, strip accents
+        (NFKD + drop combining marks), unify apostrophes, treat hyphens as
+        spaces and collapse runs of whitespace. "Émile  Lefèvre-Roy" and
+        "emile lefevre roy" compare equal; "Emilie" and "Emile" do not."""
+        if not text:
+            return ''
+        text = unicodedata.normalize('NFKD', str(text))
+        text = ''.join(ch for ch in text if not unicodedata.combining(ch))
+        text = text.casefold().replace('\u2019', "'").replace('-', ' ')
+        return re.sub(r'\s+', ' ', text).strip()
+
+    @api.model
+    def _kiosk_match(self, first_name, last_name, date_of_birth, scope):
+        """Find THE patient in ``scope`` for what was typed at the kiosk.
+
+        :param scope: the candidate recordset (the clinic's roster — see
+            ``sports.event._kiosk_patient_scope``); this method never widens
+            it.
+        :return: ``(patient, needs_confirmation)`` — an empty recordset when
+            there is no unambiguous match (0 or several), so the kiosk can
+            only ever answer "not found"; never WHY.
+
+        Rules (owner decisions 2026-08-21):
+        * first AND last name must match exactly after normalization;
+        * among the name matches, the date of birth decides: exactly one
+          candidate with that DOB -> match;
+        * no-DOB rule: a UNIQUE name match whose file has no date of birth
+          is accepted, flagged ``needs_confirmation`` for the therapist;
+        * anything else (DOB mismatch, two homonyms with the same DOB, two
+          no-DOB homonyms, name unknown) -> no match.
+        """
+        first = self._kiosk_normalize(first_name)
+        last = self._kiosk_normalize(last_name)
+        if not first or not last:
+            return self.browse(), False
+        candidates = scope.sudo().filtered(
+            lambda p: self._kiosk_normalize(p.first_name) == first
+            and self._kiosk_normalize(p.last_name) == last)
+        if not candidates:
+            return self.browse(), False
+        if len(candidates) == 1 and not candidates.date_of_birth:
+            return candidates, True
+        if not date_of_birth:
+            return self.browse(), False
+        with_dob = candidates.filtered(lambda p: p.date_of_birth == date_of_birth)
+        if len(with_dob) == 1:
+            return with_dob, False
+        return self.browse(), False

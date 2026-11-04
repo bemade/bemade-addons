@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_mail_notification_scope_system,mail.notification.scope system,model_mail_notification_scope,base.group_system,1,1,1,1

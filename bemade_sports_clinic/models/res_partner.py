@@ -26,6 +26,26 @@ class Partner(models.Model):
     patient_ids = fields.One2many(
         comodel_name="sports.patient", inverse_name="partner_id"
     )
+    # Task 1415: organization-level staff (company partner = sports.team
+    # parent), propagated to every team of the organization.
+    org_staff_ids = fields.One2many(
+        comodel_name="sports.organization.staff",
+        inverse_name="organization_id",
+        string="Organization Staff",
+    )
+    org_staff_line_ids = fields.One2many(
+        comodel_name="sports.organization.staff",
+        inverse_name="partner_id",
+        string="Organization Staff Lines",
+        help="The organizations this person serves as organization-level staff.",
+    )
+    # Task 1416: organization-scoped temporary access grants (every team of
+    # the organization, inside a date window).
+    staff_grant_ids = fields.One2many(
+        comodel_name="sports.staff.grant",
+        inverse_name="organization_id",
+        string="Temporary Access",
+    )
     
     # Boolean field to identify venues
     is_venue = fields.Boolean(
@@ -34,11 +54,31 @@ class Partner(models.Model):
         help='Check this box if this contact represents a venue/location'
     )
 
+    def _sc_patient_company_message(self):
+        return _("A player's contact must be a person, not a company.")
+
+    @api.constrains("is_company")
+    def _check_patient_partner_is_person(self):
+        """Task 1680: a contact linked to a player (active or archived) cannot
+        become a company. The lookup is a sudo read (task 1536: callers
+        without a clinic group cannot read sports.patient); it only decides
+        whether to raise."""
+        companies = self.filtered("is_company")
+        if companies and self.env["sports.patient"].sudo().with_context(
+            active_test=False
+        ).search_count([("partner_id", "in", companies.ids)], limit=1):
+            raise ValidationError(self._sc_patient_company_message())
+
     def write(self, vals):
+        # Task 1536: the guard is module-owned bookkeeping that runs for ANY
+        # caller writing a partner name (e.g. res.users.create toggling
+        # partner.active from another addon's tests). A caller without a
+        # clinic group cannot read sports.patient, so the existence check is
+        # a sudo read — it only decides whether to raise, never returns data.
         if (
-            self.patient_ids
-            and "name" in vals
+            "name" in vals
             and not self.env.context.get("patient_update")
+            and self.sudo().patient_ids
         ):
             raise ValidationError(
                 _("To change a patient's name, change it from the patient form.")
@@ -46,6 +86,11 @@ class Partner(models.Model):
         res = super().write(vals)
         if "active" in vals and not vals.get("active"):
             self._sports_clinic_purge_archived_staff()
+        if "active" in vals:
+            # Task 1415: organization lines re-evaluate eligibility (archived
+            # contact -> rows gone / status « ineligible »; unarchived -> the
+            # line, still the declared intent, propagates again).
+            self.env["sports.organization.staff"].sudo()._sync_for_partners(self)
         return res
 
     def _sports_clinic_purge_archived_staff(self):
@@ -74,10 +119,13 @@ class Partner(models.Model):
             active_test=False
         )
         staff = Staff.search([("partner_id", "in", self.ids)])
+        patients = staff.mapped("team_id.patient_ids")
+        # Task 1416: the event coverage no longer creates a staff row until
+        # the lead — an assigned therapist may have NO row yet and must still
+        # be dropped from every future event, so the purge runs regardless.
+        self._sports_clinic_purge_future_events()
         if not staff:
             return
-        patients = staff.mapped("team_id.patient_ids")
-        self._sports_clinic_purge_future_events()
         # The future-event purge may already have unlinked orphaned
         # auto-created coverage rows via the event sync — drop them from the
         # set before touching their fields.
@@ -89,11 +137,12 @@ class Partner(models.Model):
         doomed = staff.filtered(lambda s: s.partner_id in revoked)
         if doomed:
             # The staff unlink hook recomputes followers, cleans injury
-            # TPs/activities and reconciles portal groups.
-            doomed.unlink()
+            # activities and reconciles portal groups. org_staff_sync: the
+            # purge may delete organization-sourced rows too (task 1415) —
+            # the reconciler never resurrects a revoked person.
+            doomed.with_context(org_staff_sync=True).unlink()
         if patients:
             patients.sudo().recompute_followers()
-            patients.injury_ids.sudo()._cleanup_stale_treatment_professionals()
             patients.injury_ids.sudo()._cleanup_stale_mail_activities()
 
     def _sports_clinic_purge_future_events(self):
@@ -110,7 +159,13 @@ class Partner(models.Model):
             ("date_end", ">=", now),
             ("assigned_staff_ids", "in", users.ids),
         ])
-        events = events.filtered(lambda e: e._is_active_for_access())
+        # Task 1416: _is_active_for_access now has a START boundary (the
+        # coverage lead); the purge must still drop the archived person from
+        # EVERY not-yet-ended, not-cancelled event, however far ahead.
+        events = events.filtered(
+            lambda e: e.state != "cancelled"
+            and (not e._coverage_window()[1] or e._coverage_window()[1] >= now)
+        )
         for event in events:
             event.write({
                 "assigned_staff_ids": [Command.unlink(u.id) for u in users],

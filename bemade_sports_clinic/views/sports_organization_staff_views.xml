@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Task 1415: organization staff lines (propagated to every team of the org). -->
+        <record id="sports_organization_staff_view_form" model="ir.ui.view">
+            <field name="name">sports.organization.staff.view.form</field>
+            <field name="model">sports.organization.staff</field>
+            <field name="arch" type="xml">
+                <form string="Organization Staff">
+                    <header>
+                        <button name="action_sync_now" type="object" string="Reconcile now"
+                                class="btn-secondary" icon="fa-refresh"
+                                groups="bemade_sports_clinic.group_sports_clinic_admin,base.group_system"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_button_box" name="button_box">
+                            <button name="action_open_team_staff" type="object" class="oe_stat_button" icon="fa-users">
+                                <div class="o_stat_info">
+                                    <field name="synced_count" class="o_stat_value"/>
+                                    <span class="o_stat_text">Propagated</span>
+                                </div>
+                            </button>
+                        </div>
+                        <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                        <div class="oe_title">
+                            <h1><field name="partner_id" placeholder="Staff member" options="{'no_create': True}"/></h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="organization_id" options="{'no_create': True}"/>
+                                <field name="role"/>
+                                <field name="silent_notifications"/>
+                                <field name="active" invisible="1"/>
+                            </group>
+                            <group>
+                                <field name="team_count"/>
+                                <field name="manual_count"/>
+                                <field name="note" placeholder="Internal note (no patient information)"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page name="teams" string="Teams">
+                                <field name="team_state_ids" readonly="1">
+                                    <list create="false" delete="false" edit="false"
+                                          decoration-success="state == 'synced'"
+                                          decoration-warning="state == 'demoted'"
+                                          decoration-info="state == 'manual'"
+                                          decoration-muted="state in ('excluded', 'ineligible')">
+                                        <field name="team_id"/>
+                                        <field name="role"/>
+                                        <field name="state" widget="badge"
+                                               decoration-success="state == 'synced'"
+                                               decoration-warning="state == 'demoted'"
+                                               decoration-info="state == 'manual'"
+                                               decoration-muted="state in ('excluded', 'ineligible')"/>
+                                    </list>
+                                </field>
+                            </page>
+                            <page name="overrides" string="Role Overrides">
+                                <field name="override_ids" context="{'default_line_id': id}">
+                                    <list editable="bottom">
+                                        <field name="team_id" domain="[('parent_id', '=', parent.organization_id)]" options="{'no_create': True}"/>
+                                        <field name="role"/>
+                                    </list>
+                                </field>
+                            </page>
+                            <page name="exclusions" string="Excluded Teams">
+                                <field name="excluded_team_ids" widget="many2many_tags"
+                                       domain="[('parent_id', '=', organization_id)]"
+                                       options="{'no_create': True}"/>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <chatter/>
+                </form>
+            </field>
+        </record>
+
+        <record id="sports_organization_staff_view_list" model="ir.ui.view">
+            <field name="name">sports.organization.staff.view.list</field>
+            <field name="model">sports.organization.staff</field>
+            <field name="arch" type="xml">
+                <list string="Organization Staff">
+                    <field name="sequence" widget="handle"/>
+                    <field name="organization_id" optional="show"/>
+                    <field name="partner_id"/>
+                    <field name="role"/>
+                    <field name="silent_notifications" optional="hide"/>
+                    <field name="synced_count"/>
+                    <field name="manual_count" optional="show"/>
+                    <field name="team_count" optional="hide"/>
+                    <field name="excluded_team_ids" widget="many2many_tags" optional="show"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="sports_organization_staff_view_search" model="ir.ui.view">
+            <field name="name">sports.organization.staff.view.search</field>
+            <field name="model">sports.organization.staff</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="partner_id"/>
+                    <field name="organization_id"/>
+                    <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+                    <filter name="group_org" string="Organization" context="{'group_by': 'organization_id'}"/>
+                    <filter name="group_role" string="Role" context="{'group_by': 'role'}"/>
+                </search>
+            </field>
+        </record>
+
+        <record id="action_sports_organization_staff" model="ir.actions.act_window">
+            <field name="name">Organization Staff</field>
+            <field name="res_model">sports.organization.staff</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="sports_organization_staff_view_search"/>
+            <field name="context">{'search_default_group_org': 1}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">No organization staff yet</p>
+                <p>Define a person once on the organization and they are propagated as staff to every team of the organization.</p>
+            </field>
+        </record>
+
+        <menuitem id="sports_clinic_organization_staff"
+                  name="Organization Staff"
+                  parent="sports_clinic_staff_menu"
+                  groups="bemade_sports_clinic.group_sports_clinic_admin"
+                  action="action_sports_organization_staff"
+                  sequence="10"/>
+
+        <!-- Promotion wizard: existing per-team rows -> organization lines (dry run until Apply). -->
+        <record id="view_team_org_staff_promote_wizard_form" model="ir.ui.view">
+            <field name="name">team.org.staff.promote.wizard.form</field>
+            <field name="model">team.org.staff.promote.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Promote to Organization Staff">
+                    <sheet>
+                        <div class="alert alert-info" role="status">
+                            Preview only: nothing is written until you click <b>Apply</b>. Existing team rows are re-sourced as Organization in place (no deletion); rows are created only on the missing teams.
+                        </div>
+                        <group>
+                            <group>
+                                <field name="organization_id"/>
+                                <field name="team_count"/>
+                            </group>
+                            <group>
+                                <label for="threshold"/>
+                                <div class="d-flex align-items-center gap-2">
+                                    <field name="threshold" class="oe_inline"/>
+                                    <button name="action_refresh" type="object" string="Recompute" class="btn-secondary btn-sm" icon="fa-refresh"/>
+                                </div>
+                            </group>
+                        </group>
+                        <field name="line_ids">
+                            <list editable="bottom" create="false" delete="false">
+                                <field name="selected"/>
+                                <field name="partner_id"/>
+                                <field name="role"/>
+                                <field name="silent_notifications"/>
+                                <field name="row_count"/>
+                                <field name="coverage" widget="progressbar"/>
+                                <field name="override_count"/>
+                                <field name="override_summary" optional="show"/>
+                                <field name="missing_count"/>
+                                <field name="missing_summary" optional="show"/>
+                            </list>
+                        </field>
+                        <div class="mt-2 fw-bold"><field name="summary"/></div>
+                    </sheet>
+                    <footer>
+                        <button string="Apply" type="object" name="action_apply" class="btn-primary"/>
+                        <button string="Cancel" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_team_org_staff_promote" model="ir.actions.act_window">
+            <field name="name">Promote to Organization Staff</field>
+            <field name="res_model">team.org.staff.promote.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+            <field name="context">{"default_organization_id": active_id}</field>
+        </record>
+    </data>
+</odoo>

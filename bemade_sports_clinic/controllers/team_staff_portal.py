@@ -1,22 +1,48 @@
 import urllib.parse
-from datetime import date
+from datetime import date, timedelta
 
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
-from odoo import http, _
+from odoo import fields, http, _
+from odoo.tools import format_date, format_datetime
 from odoo.exceptions import UserError, AccessError, MissingError
 
-from .access_control_mixin import AccessControlMixin
+from .access_control_mixin import AccessControlMixin, sc_past_deadline_message
+from ..models import sc_app_roles
+from ..models.sc_name_match import NEAR, NameIndex, words as sc_words_of
+from .app_shell import AppShellMixin, sc_country_options, sc_state_options
+
+# /my/teams sort modes (task 1401). Keys are what the page posts and what
+# res.users.teams_sort_mode stores; labels live in the template (translated).
+TEAMS_SORT_MODES = ('activity', 'alpha', 'mine')
+# /my/teams page size. 48 (owner, 2026-08-21): with « Mon ordre » a therapist
+# should virtually never have to page — paging across a personal order is a
+# chore, and the cards are light.
+TEAMS_PAGE_SIZE = 48
+# App shell « Players » list sort modes (owner review 2026-10-10) -> ORM order.
+# « status » = most injured first (stored severity key, as the roster).
+SC_PLAYERS_SORT_ORDERS = {
+    'status': 'sort_order asc, last_name asc, first_name asc',
+    'name': 'last_name asc, first_name asc',
+}
 
 
-class TeamStaffPortal(CustomerPortal, AccessControlMixin):
+class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     def _prepare_home_portal_values(self, counters):
         rtn = super()._prepare_home_portal_values(counters)
+        # CONTRACT (2026-08-31 prod incident): only REQUESTED keys may be
+        # returned. ``/my/counters`` forwards every returned key to the portal
+        # home JS, which looks up a ``[data-placeholder_count]`` element per
+        # key and crashes on an unknown one — hiding every card on the page.
+        # (The orphaned ``timesheets_count`` — placeholder renamed to
+        # ``event_timesheets_count`` — broke the home for every TP.)
         user = http.request.env.user
-        teams_domain = self._prepare_teams_domain()
-        players_domain = self._prepare_players_domain(teams_domain)
-        rtn['teams_count'] = http.request.env['sports.team'].search_count(teams_domain)
-        rtn['players_count'] = http.request.env['sports.patient'].search_count(
-            players_domain)
+        if 'teams_count' in counters or 'players_count' in counters:
+            teams_domain = self._prepare_teams_domain()
+            if 'teams_count' in counters:
+                rtn['teams_count'] = http.request.env['sports.team'].search_count(teams_domain)
+            if 'players_count' in counters:
+                rtn['players_count'] = http.request.env['sports.patient'].search_count(
+                    self._prepare_players_domain(teams_domain))
         # mail.activity and sports.event ACLs only cover internal users,
         # portal coaches and portal TPs. Any other portal user (e.g. staff
         # role 'other') would 403 right at login if we counted
@@ -24,20 +50,23 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         if (user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
                 or user.has_group('bemade_sports_clinic.group_portal_team_coach')
                 or user.has_group('base.group_user')):
-            activities_domain = self._prepare_activities_domain()
-            rtn['activities_count'] = http.request.env['mail.activity'].search_count(
-                activities_domain)
-            events_domain = self._prepare_events_domain()
-            rtn['events_count'] = http.request.env['sports.event'].search_count(
-                events_domain)
-        # Timesheets count (therapists only)
-        if user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or user.has_group('base.group_system'):
-            rtn['timesheets_count'] = http.request.env['sports.event.timesheet'].search_count([('user_id', '=', user.id)])
+            if 'activities_count' in counters:
+                rtn['activities_count'] = http.request.env['mail.activity'].search_count(
+                    self._prepare_activities_domain())
+            if 'events_count' in counters:
+                rtn['events_count'] = http.request.env['sports.event'].search_count(
+                    self._prepare_events_domain())
         return rtn
 
     @classmethod
     def _prepare_teams_domain(cls):
+        """The teams the viewer lists / counts on /my/teams, the home and
+        /my/players. Task 1577 (owner decision 2026-09-28): EVERY team for a
+        clinic administrator (their record rules are global; the pages list
+        their staffed teams first); the staffed teams for everyone else."""
         user = http.request.env.user
+        if cls._is_clinic_admin():
+            return []
         return [
             ('staff_ids.user_ids', '=', user.id),
         ]
@@ -57,34 +86,146 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
     def _prepare_activities_domain(cls):
         # Use controller-level team-based filtering for consistent security
         # Record rules provide broad CRUD access, controller enforces team-based security
-        user = http.request.env.user
-        partner = user.partner_id
-        team_staff_rels = partner.team_staff_rel_ids
-        
-        # Build team-based access domain for security filtering
+        # Task 1577 review: the same team scope as /my/activities — every
+        # team for a clinic administrator, the staffed teams otherwise.
+        scope_teams = cls._activity_scope_teams()
+
+        # Build team-based access domain for security filtering (task 1409:
+        # activities live on patients and teams — no injury branch)
         return [
-            '|', '|',
+            '|',
             '&', '&',
             ('res_model', '=', 'sports.patient'),
             ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.id') or [0]),
-            '&', '&',
-            ('res_model', '=', 'sports.patient.injury'),
-            ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.patient_ids.injury_ids.id') or [0]),
+            ('res_id', 'in', scope_teams.mapped('patient_ids.id') or [0]),
             '&', '&',
             ('res_model', '=', 'sports.team'),
             ('res_id', '!=', False),
-            ('res_id', 'in', team_staff_rels.mapped('team_id.id') or [0])
+            ('res_id', 'in', scope_teams.ids or [0])
         ]
 
+    # ------------------------------------------------------------------
+    # /my/teams sorting (task 1401)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _teams_sort_role():
+        """Which role-scoped player-activity stamp orders THIS viewer's list.
+
+        Same split as the team dashboard (team_management_portal): portal or
+        internal treatment professionals and admins see the TP stamp; everyone
+        else (coaches, role='other' staff) sees the coach-visible one — a
+        coach's order must not move on TP-only activity (Law 25).
+        """
+        user = http.request.env.user
+        if (user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+                or user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')
+                or user.has_group('base.group_system')):
+            return 'tp'
+        return 'coach'
+
+    @staticmethod
+    def _teams_can_rank():
+        """Who may keep a personal team order — exactly the groups holding an
+        ACL on sports.team.user.rank. A role='other' portal user never gets the
+        « Mon ordre » option (it would 403 on the first write)."""
+        user = http.request.env.user
+        return (
+            user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
+            or user.has_group('bemade_sports_clinic.group_portal_team_coach')
+            or user.has_group('base.group_user')
+        )
+
+    def _teams_activity_order(self):
+        # Postgres puts NULLs first on DESC; teams with no recorded player
+        # activity must sort LAST, then alphabetically among equals.
+        return 'last_player_activity_%s_at desc nulls last, name, id' % self._teams_sort_role()
+
+    def _teams_order_for(self, mode):
+        if mode == 'alpha':
+            return 'name, id'
+        return self._teams_activity_order()
+
+    def _teams_resolve_sort(self, requested):
+        """Resolve the effective sort mode and persist an explicit choice.
+
+        Sticky per user (owner decision 5): an explicit ``?sort=`` becomes the
+        stored preference; a visit without one uses the stored preference;
+        with nothing stored the default is « Mon ordre » when the user already
+        has ranks, else « Activité récente » (decision 6). ``mine`` is only
+        available to users who may rank; anyone else silently gets activity.
+
+        Returns ``(mode, previous_mode)`` — ``previous_mode`` is what the user
+        was on before this request, used to seed a first « Mon ordre » from the
+        order they were just looking at.
+        """
+        user = http.request.env.user
+        can_rank = self._teams_can_rank()
+        stored = user.teams_sort_mode or None
+        if requested == 'mine' and not can_rank:
+            requested = 'activity'
+        if requested in TEAMS_SORT_MODES:
+            mode = requested
+            if mode != stored:
+                try:
+                    # Self-writable preference (SELF_WRITEABLE_FIELDS): a portal
+                    # user may write this on their own record.
+                    user.write({'teams_sort_mode': mode})
+                except AccessError:
+                    pass
+        elif stored:
+            mode = stored
+        elif can_rank and http.request.env['sports.team.user.rank'].search_count(
+                [('user_id', '=', user.id)], limit=1):
+            mode = 'mine'
+        else:
+            mode = 'activity'
+        if mode == 'mine' and not can_rank:
+            mode = 'activity'
+        previous = stored if stored in TEAMS_SORT_MODES else 'activity'
+        return mode, previous
+
+    def _teams_seed_personal_order(self, seed_mode):
+        """First entry into « Mon ordre »: seed the ranks from the order the
+        user was just looking at (acceptance 5), over the FULL visible set
+        (not the current search subset, so an unfiltered list is complete)."""
+        Teams = http.request.env['sports.team']
+        Rank = http.request.env['sports.team.user.rank']
+        user = http.request.env.user
+        if Rank.search_count([('user_id', '=', user.id)], limit=1):
+            return
+        teams = Teams.search(self._prepare_teams_domain(),
+                             order=self._teams_order_for(seed_mode))
+        if self._is_clinic_admin():
+            # Task 1577: seed from what the admin saw — staffed teams first.
+            teams = self._staffed_first(teams)
+        if teams:
+            Rank._set_user_order(user, teams.ids)
+
+    def _teams_personal_order(self, domain):
+        """The FULL visible set in the user's personal order — ranked teams
+        by rank, unranked appended in recent-activity order (acceptance 4).
+        Resolved before the pager slices (acceptance 6)."""
+        Teams = http.request.env['sports.team']
+        teams = Teams.search(domain, order=self._teams_activity_order())
+        if self._is_clinic_admin():
+            # Task 1577: unranked teams are appended staffed-first.
+            teams = self._staffed_first(teams)
+        return http.request.env['sports.team.user.rank']._resolve_user_order(
+            http.request.env.user, teams)
+
     @http.route(route=['/my/teams', '/my/teams/page/<int:page>'], type='http', auth='user', website=True)
-    def view_teams(self, page=1, search=None, **kw):
+    def view_teams(self, page=1, search=None, sort=None, **kw):
         """ Display the list of teams that a portal user has access to.
 
         Optional `search` query param does an `ilike` on team name and
         the parent organization name — useful when a user has many
         accessible teams.
+
+        Optional `sort` (task 1401): ``activity`` (most recent player
+        activity first, the default), ``alpha`` (by name) or ``mine`` (the
+        user's personal order, editable on the page). The choice is sticky per
+        user. Ordering is applied to the FULL visible set before the pager
+        slices — never to one page.
         """
         Teams = http.request.env['sports.team']
         domain = self._prepare_teams_domain()
@@ -95,31 +236,161 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 ('name', 'ilike', search_term),
                 ('parent_id.name', 'ilike', search_term),
             ]
+        sort_mode, previous_mode = self._teams_resolve_sort(sort)
         teams_count = Teams.search_count(domain)
-        pgr_url_args = {'search': search_term} if search_term else None
-        step = 10
+        pgr_url_args = {'search': search_term} if search_term else {}
+        pgr_url_args['sort'] = sort_mode
+        step = TEAMS_PAGE_SIZE
         pgr = pager(url='/my/teams', total=teams_count,
                     page=page, step=step, scope=5,
                     url_args=pgr_url_args)
         # limit must be the page size, not the full result count — with the
-        # pager advancing offset by 10 while limit spanned everything, page 2+
+        # pager advancing offset by the page size while limit spanned everything, page 2+
         # re-served the whole remaining list (duplicate teams across pages).
-        teams = Teams.search(domain,
-                             offset=pgr['offset'],
-                             limit=step)
-        return http.request.render(template='bemade_sports_clinic.portal_my_teams',
-                                   qcontext={
+        if sort_mode == 'mine':
+            self._teams_seed_personal_order(previous_mode)
+            ordered = self._teams_personal_order(domain)
+            page_teams = ordered[pgr['offset']:pgr['offset'] + step]
+            teams = Teams.browse([team.id for team in page_teams])
+        elif self._is_clinic_admin():
+            # Task 1577: a clinic admin lists EVERY team, the teams they staff
+            # first (then the chosen order) — resolved over the full set
+            # before the pager slices.
+            ordered = self._staffed_first(
+                Teams.search(domain, order=self._teams_order_for(sort_mode)))
+            teams = ordered[pgr['offset']:pgr['offset'] + step]
+        else:
+            teams = Teams.search(domain,
+                                 order=self._teams_order_for(sort_mode),
+                                 offset=pgr['offset'],
+                                 limit=step)
+        # Task 1538: the app shell (switch on) or today's template (switch off).
+        return self._sc_render('bemade_sports_clinic.portal_my_teams',
+                               'bemade_sports_clinic.sc_app_teams', {
                                        'teams_count': teams_count,
                                        'teams': teams,
                                        'pager': pgr,
                                        'page_name': 'my_teams',
                                        'search': search_term,
+                                       'sort_mode': sort_mode,
+                                       'can_rank': self._teams_can_rank(),
+                                       # Task 1592: the rows' activity clocks
+                                       # (one query, the shell only).
+                                       'sc_team_clocks': (self._sc_team_clocks(teams)
+                                                          if self._sc_app_shell_active() else {}),
+                                       'page': page,
+                                       # 1577 review: a refused team lands
+                                       # here with a CODE, never raw text.
+                                       'error': (self._access_denied_message('team')
+                                                 if kw.get('error') == 'team_denied' else False),
+                                       # "&search=..." to append to the sort
+                                       # links so a search survives a re-sort.
+                                       'search_qs': (
+                                           '&' + urllib.parse.urlencode({'search': search_term})
+                                           if search_term else ''),
                                    })
+
+    @http.route(route=['/my/teams/reorder'], type='http', auth='user',
+                website=True, methods=['POST'])
+    def reorder_teams(self, **post):
+        """Persist the user's personal team order (« Mon ordre », task 1401).
+
+        ONE endpoint, two callers — the #1398 idiom:
+        * drag posts ``order`` — the full team-id order, once, after the drop;
+        * the up/down buttons post ``team_id`` + ``direction`` — the keyboard
+          path, the no-JS path and the only path on a phone.
+        Only teams in the user's own visible set are accepted; foreign ids are
+        dropped. CSRF is enforced by the http POST route itself.
+        """
+        if not self._teams_can_rank():
+            response = http.request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': _("You cannot keep a personal team order."),
+            })
+            response.status_code = 403
+            return response
+        Rank = http.request.env['sports.team.user.rank']
+        user = http.request.env.user
+        domain = self._prepare_teams_domain()
+        visible = self._teams_personal_order(domain)
+        visible_ids = [team.id for team in visible]
+
+        search_term = (post.get('search') or '').strip()
+        try:
+            page = max(int(post.get('page') or 1), 1)
+        except (TypeError, ValueError):
+            page = 1
+        anchor = ''
+
+        raw_order = (post.get('order') or '').strip()
+        if raw_order:
+            ordered_ids = []
+            for chunk in raw_order.split(','):
+                chunk = chunk.strip()
+                if chunk.isdigit() and int(chunk) in visible_ids:
+                    ordered_ids.append(int(chunk))
+            if ordered_ids:
+                # The drag works on ONE page: splice that page's new order back
+                # into the full list, so the other pages keep their places.
+                page_set = set(ordered_ids)
+                full = []
+                inserted = False
+                for team_id in visible_ids:
+                    if team_id in page_set:
+                        if not inserted:
+                            full.extend(ordered_ids)
+                            inserted = True
+                    else:
+                        full.append(team_id)
+                Rank._set_user_order(user, full)
+        else:
+            direction = post.get('direction')
+            try:
+                team_id = int(post.get('team_id') or 0)
+            except (TypeError, ValueError):
+                team_id = 0
+            if direction in ('up', 'down') and team_id in visible_ids:
+                index = visible_ids.index(team_id)
+                target = index - 1 if direction == 'up' else index + 1
+                if 0 <= target < len(visible_ids):
+                    visible_ids[index], visible_ids[target] = (
+                        visible_ids[target], visible_ids[index])
+                    Rank._set_user_order(user, visible_ids)
+                anchor = '#team-%s' % team_id
+
+        url = '/my/teams' if page == 1 else '/my/teams/page/%s' % page
+        params = {'sort': 'mine'}
+        if search_term:
+            params['search'] = search_term
+        return http.request.redirect(
+            url + '?' + urllib.parse.urlencode(params) + anchor)
 
     # view_team (route '/my/team') removed: the bare '/my/team' route is served by
     # team_management_portal.portal_team_players (registered later, so it always won),
     # and this handler's only other route ('/my/team/page/<int:page>') was linked
     # nowhere. It was unreachable dead code. (Dead-route audit.)
+
+    def _sc_team_confirm_remove(self, player):
+        """Task 1656: the data the Teams widget needs to ask before a removal
+        that would END the viewer's access: ``access`` — the teams the viewer
+        staffs (a non-admin keeps access while ONE of them stays on the
+        player; the widget decides live, as tags come and go), the popup's
+        texts (``title`` holds ``%s`` for the team). Admins never lose
+        access: None."""
+        if self._is_clinic_admin():
+            return None
+        env = http.request.env
+        staffed = env['sports.team.staff'].sudo().search([
+            ('partner_id', '=', env.user.partner_id.id)]).mapped('team_id')
+        return {
+            'access': [str(team_id) for team_id in staffed.ids],
+            'title': env._("Remove %s?"),
+            'message': env._("You will no longer have access to this player: you are not a "
+                             "member of any of their other teams."),
+            'confirm': env._("Remove and leave"),
+            'cancel': env._("Cancel"),
+        }
 
     @http.route(route=['/my/players', '/my/players/page/<int:page>'], type='http', auth='user', website=True)
     def view_players(self, page=1, **kw):
@@ -132,12 +403,13 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         - organization_id (team parent partner)
         - match_status (exact)
         - practice_status (exact)
+        - followed (``1``: only the players the user follows — task 1738;
+          ignored for a user who may not follow players)
         """
         Patients = http.request.env['sports.patient']
         user = http.request.env.user
         is_system = user.has_group('base.group_system')
-        is_tp_admin = is_system or user.has_group(
-            'bemade_sports_clinic.group_portal_treatment_professional')
+        is_tp_admin = is_system or self._is_treatment_professional()
         # Teams the user actually staffs (drives both accessibility and the
         # Add-to-Team target list). For a TP this is NOT "all teams": full
         # patient-record access requires a staff relationship (see
@@ -157,6 +429,15 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         organization_id = kw.get('organization_id')
         match_status = kw.get('match_status')
         practice_status = kw.get('practice_status')
+        # Task 1421: jersey-number filter — exact on the normalised value
+        # (« #12 » and « 12 » both find #12; « 1 » does not list 10, 11, …).
+        jersey_number = Patients._normalize_jersey_number(kw.get('jersey_number')) or ''
+        # Task 1738: « Suivis ★ » — the players the user follows (staff
+        # roles only; off by default, never remembered). The followed ids
+        # are read ONCE (rows' ★ included), never per row.
+        can_follow = Patients._sc_follow_allowed()
+        followed_ids = set(user.sudo().sc_followed_patient_ids.ids) if can_follow else set()
+        followed_only = can_follow and kw.get('followed') == '1'
 
         # Task 1225 / 640: when a TP/admin searches by name, broaden beyond the
         # user's own teams so out-of-team players are *findable* (to be added to
@@ -190,6 +471,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             filters.append(('match_status', '=', match_status))
         if practice_status:
             filters.append(('practice_status', '=', practice_status))
+        if jersey_number:
+            filters.append(('jersey_number', '=', jersey_number))
+        if followed_only:
+            filters.append(('id', 'in', sorted(followed_ids)))
 
         domain = ([] if broaden else list(base_players_domain)) + filters
 
@@ -207,13 +492,23 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 'organization_id': organization_id,
                 'match_status': match_status,
                 'practice_status': practice_status,
+                'jersey_number': jersey_number,
+                'followed': '1' if followed_only else None,
             },
         )
 
-        # Query with ordering: last name, first name ASC
+        # Query with ordering: last name, first name ASC. The app shell lists
+        # the most injured first by default (stored severity key, as the
+        # roster's « By status »), switchable to alphabetical (owner review
+        # 2026-10-10).
+        order = 'last_name asc, first_name asc'
+        sort_mode = None
+        if self._sc_app_shell_active():
+            sort_mode = self._sc_players_resolve_sort(kw.get('sort'))
+            order = SC_PLAYERS_SORT_ORDERS[sort_mode]
         players = Patients_search.search(
             domain,
-            order='last_name asc, first_name asc',
+            order=order,
             limit=self._items_per_page,
             offset=pgr['offset'],
         )
@@ -223,7 +518,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         # _check_access_to_patient's rule. Inaccessible players (surfaced by the
         # broadened search) get an Add-to-Team action instead of a 403-bound
         # View link.
-        if is_system:
+        if self._is_clinic_admin():
+            # System or clinic admin (task 1577): _check_access_to_patient
+            # lets them open any player.
             accessible_ids = set(players.ids)
         else:
             accessible_ids = {
@@ -233,20 +530,34 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         # Teams offered in the Add-to-Team control: only the user's own staffed
         # teams, and only for users who may directly add (TP/admin). Linking to
         # one of these grants the user access afterwards.
-        add_to_team_teams = staff_teams.sorted('name') if is_tp_admin else staff_teams.browse([])
+        # Task 1577: a clinic admin may add to ANY team (staffed ones first).
+        add_to_team_teams = (
+            self._admin_or_staffed_teams(staff_teams.sorted('name'))
+            if is_tp_admin else staff_teams.browse([]))
 
         # Filter options
         teams = self._get_accessible_teams()
         organizations = self._get_organizations()
-        match_status_selection = dict(Patients._fields['match_status'].selection)
-        practice_status_selection = dict(Patients._fields['practice_status'].selection)
+        # Task 1661: the TRANSLATED selection labels (« Oui / Non / Oui, sans
+        # contact » in fr_CA), not the raw English source labels.
+        match_status_selection = dict(
+            Patients._fields['match_status']._description_selection(Patients.env))
+        practice_status_selection = dict(
+            Patients._fields['practice_status']._description_selection(Patients.env))
 
-        return http.request.render(
-            template='bemade_sports_clinic.portal_my_players',
-            qcontext={
+        # Task 1385: ONE batched presence query for the homogenized cards on this
+        # page — which players have recent changes (the collapsed "changements
+        # récents" hint) and which injuries changed (the static-section markers).
+        # No per-player feed compute here; the full feed lazy-loads on expand.
+        card_role = 'tp' if is_tp_admin else 'coach'
+        presence = Patients._dashboard_card_presence(players, card_role)
+
+        values = {
                 'players_count': total,
                 'players': players,
                 'accessible_ids': accessible_ids,
+                'changed_player_ids': presence['players'],
+                'changed_injury_ids': presence['injuries'],
                 'add_to_team_teams': add_to_team_teams,
                 'pager': pgr,
                 'page_name': 'my_players',
@@ -257,13 +568,274 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 'organization_id': int(organization_id) if organization_id else None,
                 'match_status': match_status,
                 'practice_status': practice_status,
+                'jersey_number': jersey_number,
+                'followed_only': followed_only,
+                'can_follow': can_follow,
+                'followed_ids': followed_ids,
                 # options
                 'teams': teams,
                 'organizations': organizations,
                 'match_status_selection': match_status_selection,
                 'practice_status_selection': practice_status_selection,
-            },
+                'players_sort_mode': sort_mode,
+        }
+        # Task 1539: the app shell (switch on) or today's template, byte for
+        # byte (switch off). Shell rows are computed only for the shell.
+        if self._sc_app_shell_active():
+            values.update(self._sc_players_values(values, is_tp_admin))
+            # Task 1674: the near matches of a name search (first page).
+            if name_search and int(page or 1) == 1:
+                values['sc_near_rows'] = self._sc_players_near_rows(
+                    Patients_search, ([] if broaden else list(base_players_domain)),
+                    [f for f in filters if f[0] not in ('first_name', 'last_name')],
+                    domain, first_name, last_name, staff_team_ids)
+        return self._sc_render('bemade_sports_clinic.portal_my_players',
+                               'bemade_sports_clinic.sc_app_players', values)
+
+    def _sc_players_near_rows(self, Patients, scope, filters, found_domain, first_name, last_name,
+                              staff_team_ids, limit=10):
+        """Task 1674: the players NEAR the typed names (the shared matcher),
+        in the list's own scope and filters, minus the ones the name filter
+        already listed; openable as the list's rows are."""
+        listed = set(Patients.search(found_domain).ids)
+        rows = Patients.search_read(scope + filters, ['first_name', 'last_name'])
+        index = NameIndex([(row['id'], row['first_name'] or '', row['last_name'] or '')
+                           for row in rows if row['id'] not in listed])
+        if first_name and last_name:
+            grades = index.match(first_name, last_name)
+        else:
+            grades = index.match_words(sc_words_of(first_name or last_name))
+        ids = [rid for rid, grade in grades if grade == NEAR][:limit]
+        admin = self._is_clinic_admin()
+        out = []
+        for player in Patients.browse(ids):
+            teams = player.sudo().team_ids
+            accessible = admin or bool(staff_team_ids.intersection(teams.ids))
+            out.append({
+                'id': player.id,
+                'title': player._portal_list_name(),
+                'teams': ', '.join(teams.mapped('name')),
+                'url': '/my/player?player_id=%s' % player.id if accessible else False,
+            })
+        return out
+
+    # ------------------------------------------------------------------
+    # Task 1539 — the players list in the app shell
+    # ------------------------------------------------------------------
+    SC_STAGE_TONES = {'no_play': 'red', 'practice_ok': 'yellow', 'healthy': 'green'}
+
+    def _sc_players_resolve_sort(self, requested):
+        """Effective players sort mode; an explicit ``?sort=`` becomes the
+        user's sticky preference (res.users.players_sort_mode, self-writable —
+        same contract as the roster sort). Unknown or absent → the stored
+        preference, else « status » (most injured first)."""
+        user = http.request.env.user
+        stored = user.players_sort_mode if user.players_sort_mode in SC_PLAYERS_SORT_ORDERS else None
+        if requested in SC_PLAYERS_SORT_ORDERS:
+            if requested != stored:
+                try:
+                    user.write({'players_sort_mode': requested})
+                except AccessError:
+                    pass
+            return requested
+        return stored or 'status'
+
+    def _sc_players_values(self, values, is_tp_admin):
+        """Entity rows for ``sc_app_players`` — built from the legacy values
+        (same search, same per-row accessibility), never re-deriving them."""
+        env = http.request.env
+        stage_labels = dict(env['sports.patient']._fields['stage']._description_selection(env))
+        rows = []
+        # Task 1593: the legacy card's content (team links, training
+        # recommendation, « Retour prévu », expanded detail) for the openable
+        # rows, computed for the whole page at once.
+        accessible_players = values['players'].filtered(
+            lambda p: p.id in values['accessible_ids'])
+        # Task 1634: quick-change Match / Practice dropdowns on the openable
+        # rows of a status editor; the locked rows stay static.
+        labels = env['sports.patient']._sc_status_labels()
+        extras = self._sc_player_row_extras(
+            accessible_players, status_edit=self._sc_status_editable(), labels=labels)
+        for player in values['players']:
+            stage = player.stage or 'healthy'
+            teams = player.sudo().team_ids
+            accessible = player.id in values['accessible_ids']
+            rows.append({
+                **extras.get(player.id, {}),
+                'id': player.id,
+                'title': player._portal_list_name(),
+                # Openable rows carry the teams as links (task 1593); a
+                # locked row keeps the plain names.
+                'subtitle': '' if accessible else ', '.join(teams.mapped('name')),
+                'dot': self.SC_STAGE_TONES.get(stage, 'green'),
+                'chip': stage_labels.get(stage, ''),
+                'accessible': accessible,
+                'changed': player.id in (values.get('changed_player_ids') or ()),
+                'status': (extras[player.id]['status'] if player.id in extras
+                           else player._sc_row_status(labels)),
+                # Task 1738: the ★ of a followed player.
+                'followed': player.id in values['followed_ids'],
+                'url': '/my/player?player_id=%s' % player.id if accessible else False,
+            })
+        # Task 1743: the « Filters (N) » disclosure — every filter but the
+        # name boxes (« Suivis » included); open when one is set.
+        active_filters = sum(1 for key in (
+            'team_id', 'organization_id', 'match_status', 'practice_status', 'jersey_number',
+            'followed_only') if values.get(key))
+        # Task 1607: the sort menu (sc_sort_options) keeps the active filters
+        # and resets the page itself.
+        return {
+            'sc_player_rows': rows,
+            'sc_can_create_player': is_tp_admin and self._is_treatment_professional(),
+            # Task 1655: the inline « create a player » panel.
+            'sc_player_add': self._sc_player_add_panel(),
+            'sc_filters_open': bool(active_filters),
+            'sc_filters_count': active_filters,
+            'sc_players_count_label': env._("%(count)s player(s)", count=values['players_count']),
+            # Task 1738: the « Suivis ★ » chip toggles the filter, keeping
+            # the others (page reset); none for a user who may not follow.
+            'sc_players_followed_url': (
+                self._sc_players_followed_url(not values['followed_only'])
+                if values['can_follow'] else False),
+            'sc_players_followed_none': values['followed_only'] and not values['followed_ids'],
+        }
+
+    def _sc_players_followed_url(self, followed):
+        """/my/players with the current filters, ``followed=1`` set
+        (``followed``) or dropped; the pager and flash arguments dropped."""
+        args = http.request.httprequest.args
+        keep = [(key, value) for key, value in args.items(multi=True)
+                if key not in ('followed', 'page', 'success', 'error', 'error_files')
+                and value not in (None, '')]
+        if followed:
+            keep.append(('followed', '1'))
+        return '/my/players?%s' % urllib.parse.urlencode(keep) if keep else '/my/players'
+
+    @http.route(route=['/my/player/<int:player_id>/recent-changes'], type='http',
+                auth='user', website=True)
+    def portal_player_recent_changes(self, player_id, **kw):
+        """Task 1385: lazy-load fragment of one player's recent-changes feed for
+        the homogenized portal card's expandable section.
+
+        Fetched by portal_card_recent_changes.js when a card's <details> is
+        opened, so the (per-player, mail-tracking-audit) change compute runs ONLY
+        for cards the user actually opens — not for every card at page render.
+
+        Access is enforced in code exactly like the other /my/player* routes
+        (_check_access_to_patient: staff-on-team or admin), so no new security
+        record is needed. The injury de-dup is applied server-side here: a change
+        to an active injury already shown in the card's static section is dropped
+        (it is marked there instead); only changes to injuries NOT shown up top,
+        plus player-level changes, remain.
+        """
+        try:
+            player = self._check_access_to_patient(int(player_id))
+        except UserError as e:
+            response = http.request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': str(e),
+            })
+            response.status_code = 403
+            return response
+        user = http.request.env.user
+        is_tp = self._is_tp_or_system()
+        role = 'tp' if is_tp else 'coach'
+        Patients = http.request.env['sports.patient']
+        cutoff = Patients._dashboard_window_cutoff()
+        # The static section shows the active injuries the viewer can see (the
+        # coach record rule already hides hidden-from-coaches ones). De-dup uses
+        # exactly that set.
+        shown_injury_ids = player.injury_ids.filtered(
+            lambda i: i.stage == 'active').ids
+        if kw.get('detail'):
+            # The app shell's team page: the legacy card's whole expandable in
+            # one fragment, each injury's changes inside its own card.
+            values = player._sc_change_detail(role, is_tp, cutoff)
+            values['player'] = player
+            # Task 1626: the detail ends with « Open the player page », with
+            # the team context when given (as the row detail does).
+            try:
+                team_id = int(kw.get('team_id') or 0)
+            except ValueError:
+                team_id = 0
+            player_url = '/my/player?player_id=%s' % player.id
+            if team_id and team_id in player.sudo().team_ids.ids:
+                player_url += '&team_id=%s' % team_id
+            values['player_url'] = player_url
+            return http.request.render(
+                'bemade_sports_clinic.sc_player_change_detail', values)
+        items = player._dashboard_change_items_deduped(role, cutoff, shown_injury_ids)
+        return http.request.render(
+            'bemade_sports_clinic.portal_card_recent_changes_fragment',
+            {'items': items, 'player': player},
         )
+
+    @http.route(route=['/my/player/<int:player_id>/row-detail'], type='http',
+                auth='user', website=True)
+    def portal_player_row_detail(self, player_id, team_id=None, **kw):
+        """Task 1593: the expanded detail of ONE player row (roster,
+        dashboard / watch lists, /my/players) — the legacy card's
+        expandable: the whole training recommendation (+ its « Updated on »
+        stamp), « Retour prévu », the last consultation and the active
+        injuries. Fetched when a row is expanded, never for every row.
+
+        Same access as the player page (``_check_access_to_patient``). The
+        injuries come from ``_card_active_injuries`` read as the CURRENT
+        user: the coach record rule drops hidden-from-coaches injuries (Loi
+        25) and a non-therapist never gets an internal note."""
+        try:
+            player = self._check_access_to_patient(int(player_id))
+        except (UserError, AccessError, MissingError) as e:
+            response = http.request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': self._user_error_text(e, 'patient'),
+            })
+            response.status_code = 403
+            return response
+        team = http.request.env['sports.team']
+        try:
+            team_id = int(team_id) if team_id else 0
+        except ValueError:
+            team_id = 0
+        if team_id and team_id in player.sudo().team_ids.ids:
+            team = team.browse(team_id)
+        player_url = '/my/player?player_id=%s' % player.id
+        if team:
+            player_url += '&team_id=%s' % team.id
+        is_tp = self._is_tp_or_system()
+        return http.request.render('bemade_sports_clinic.sc_player_row_detail', {
+            'player': player,
+            'team': team,
+            'player_url': player_url,
+            'active_injuries': player._card_active_injuries(is_tp),
+        })
+
+    @http.route(route=['/my/player/<int:player_id>/training-history'], type='http',
+                auth='user', website=True)
+    def portal_player_training_history(self, player_id, **kw):
+        """The player page's training recommendation history sheet, fetched
+        on every open (owner review 2026-10-11). Same access as the page;
+        coaches see it too (they see the recommendation)."""
+        try:
+            player = self._check_access_to_patient(int(player_id))
+        except UserError as e:
+            response = http.request.render('http_routing.http_error', {
+                'status_code': 403,
+                'status_message': 'Forbidden',
+                'error_message': str(e),
+            })
+            response.status_code = 403
+            return response
+        # Task 1581: the shared history entry (the standard the other
+        # histories now follow).
+        return http.request.render('bemade_sports_clinic.sc_training_history_list', {
+            'entries': [
+                self._sc_history_entry(row['when'], row['author'], row['body'])
+                for row in player._training_recommendation_history()
+            ],
+        })
 
     @http.route(route=['/my/player'], type='http',
                 auth='user', website=True)
@@ -286,37 +858,49 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             response.status_code = 403
             return response
         team = team_id and http.request.env['sports.team'].browse(team_id)
+        # Clinic navigation context (task 1410): validated, silently dropped
+        # when invalid. Drives the breadcrumbs + every link/return URL below.
+        clinic_event = self._clinic_context(kw)
 
         # Check if user is a treatment professional (portal version)
         user = http.request.env.user
-        is_treatment_prof = user.has_group('bemade_sports_clinic.group_portal_treatment_professional')
-        
+        is_treatment_prof = self._is_treatment_professional()
 
-        
-        # Show all injuries to treatment professionals, but only active ones to coaches
+        # Show all injuries to treatment professionals. Coaches see the
+        # current ones: active AND unverified (task 1681, owner 2026-10-25 —
+        # every coach of the team sees a report, flagged « Unverified », so
+        # its author lands on it); resolved ones stay hidden. The coach
+        # record rule already drops hidden-from-coaches injuries. Player page
+        # only: dashboards, counts and digests keep their own rules.
         if is_treatment_prof:
             injuries = player.injury_ids
         else:
-            injuries = player.injury_ids.filtered(lambda r: r.stage == 'active')
+            injuries = player.injury_ids.filtered(
+                lambda r: r.stage in ('active', 'unverified'))
 
         # Patient documents for Documents tab (primary association now on patient)
         patient_documents = http.request.env['sports.injury.document'].search([
             ('patient_id', '=', player.id)
         ], order='create_date desc, id desc')
 
-        # Treatment notes for the new Notes tab (TPs only see this tab,
-        # but always loading is cheap and avoids tab-conditional context).
-        treatment_notes = http.request.env['sports.treatment.note'].search([
-            ('patient_id', '=', player.id)
-        ], order='date desc, id desc')
+        # Treatment notes for the Notes tab, which only TPs see. Since the
+        # 19.0.1.42.4 security hotfix (forward-port 19.0.1.99.2) portal coaches
+        # and plain portal users hold NO ACL on sports.treatment.note (portal
+        # TPs read it, scoped to their teams by record rule), so the search
+        # MUST stay gated: coaches and role='other' staff would get an
+        # AccessError and a 500 on the whole player page.
+        treatment_notes = http.request.env['sports.treatment.note']
+        if is_treatment_prof:
+            treatment_notes = treatment_notes.search([
+                ('patient_id', '=', player.id)
+            ], order='date desc, id desc')
 
-        # Activities tab (task 1222): the player's own activities AND the
-        # activities of the injuries the user is allowed to see, merged into one
-        # list. We scope injury activities to `injuries` (the role-filtered set
-        # computed above — TPs see all, coaches see active only), so an activity
-        # on an injury the user can't read never surfaces here. mail.activity
-        # record rules already gate broad access; constraining res_id to this
-        # player and its visible injuries keeps the listing team-scoped.
+        # Activities tab (task 1222): the player's own activities. Since task
+        # 1409 activities live on the patient only (the former injury-level
+        # ones were moved here with a « [Injury: …] » summary prefix), so the
+        # list is patient-scoped. mail.activity record rules already gate
+        # broad access; constraining res_id to this player keeps the listing
+        # team-scoped.
         #
         # IMPORTANT: only TPs and coaches hold ACLs on mail.activity[.type]
         # (see security/ir.model.access.csv). view_player is reachable by any
@@ -333,11 +917,8 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         if can_use_activities:
             player_activities = http.request.env['mail.activity'].search(
                 [
-                    '|',
-                    '&', ('res_model', '=', 'sports.patient'),
+                    ('res_model', '=', 'sports.patient'),
                     ('res_id', '=', player.id),
-                    '&', ('res_model', '=', 'sports.patient.injury'),
-                    ('res_id', 'in', injuries.ids or [0]),
                 ],
                 order='date_deadline asc',
             )
@@ -350,18 +931,12 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             if not default_activity_type:
                 default_activity_type = http.request.env['mail.activity.type'].search(
                     [('category', '=', 'todo')], limit=1)
-            # Assignable users: TPs may assign to any treatment professional
-            # (portal or internal); coaches may only assign to themselves.
-            if is_treatment_prof:
-                portal_tp_group = http.request.env.ref(
-                    'bemade_sports_clinic.group_portal_treatment_professional')
-                internal_tp_group = http.request.env.ref(
-                    'bemade_sports_clinic.group_sports_clinic_treatment_professional')
-                assignable_users = http.request.env['res.users'].search([
-                    ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
-                ])
-            else:
-                assignable_users = user
+            # Assignable users: the per-actor rule (task 1500) — a TP may
+            # assign to any TP or coach, a coach to the staff of their own
+            # teams. Task 1408: the shared sudo helper — a plain search()
+            # here was collapsed to "self" by base.res_users_rule_portal for
+            # portal TPs (the owner's TP saw only herself on the player page).
+            assignable_users = self._activity_assignable_users_for(user)
 
         # Categories for patient document uploads
         categories = [
@@ -375,8 +950,9 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         # No need for sudo() now that we have proper field-level access rights
         patient_info = {}
         if is_treatment_prof:
-            # Include allergies and medical notes - direct access now that security is properly configured
-            patient_info['allergies'] = player.allergies
+            # Medical notes - direct access now that security is properly
+            # configured. Task 1630: the allergies are the medical-alert
+            # summary lines (player._sc_medical_summary_lines), read in the template.
             patient_info['team_info_notes'] = player.team_info_notes
         
         # Compute removal request visibility for coaches on the player detail view
@@ -406,6 +982,19 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             sole_team_id = next(iter(player_team_ids)) if player_team_ids else None
             if sole_team_id and sole_team_id in staff_team_ids:
                 removal_team_id = sole_team_id
+        # Task 1664: no team context and the player is on several teams — the
+        # viewer's teams among them; one → that team, several → the request
+        # sheet asks « De quelle équipe ? » (the first one stands in for the
+        # direct-remove check below, which never applies to a coach).
+        removal_team_options = []
+        if not valid_team_context:
+            shared = http.request.env['sports.team'].sudo().browse(
+                sorted(staff_team_ids & player_team_ids)).sorted('name')
+            removal_team_options = [(t.id, t.name) for t in shared]
+            if not removal_team_id and removal_team_options:
+                removal_team_id = removal_team_options[0][0]
+        if len(removal_team_options) < 2:
+            removal_team_options = []
 
         # Show the direct-remove button ONLY when the viewer may actually remove
         # from this team (task 1260 — the single permission predicate), so it
@@ -431,11 +1020,18 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
         # for embedding in another URL's query string). Doing this in
         # Python avoids QWeb's t-attf %-format collisions with literal
         # %23/%26 sequences.
+        # `ctx_qs` is the navigation-context tail (&team_id=…&clinic_id=…)
+        # every link the page builds appends after its own first parameter,
+        # so a sub-page reached from here knows both the team and the clinic
+        # (task 1410) the user came from. Empty outside any context.
+        ctx_qs = ''
+        if team_context_id:
+            ctx_qs += f'&team_id={team_context_id}'
+        if clinic_event:
+            ctx_qs += f'&clinic_id={clinic_event.id}'
+
         def _tab_url(tab):
-            base = f'/my/player?player_id={player.id}'
-            if team_context_id:
-                base += f'&team_id={team_context_id}'
-            return base + '#' + tab
+            return f'/my/player?player_id={player.id}{ctx_qs}#{tab}'
 
         contacts_tab_return = _tab_url('contacts')
         documents_tab_return = _tab_url('documents')
@@ -449,13 +1045,27 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
             f'&return_url={contacts_tab_return_q}'
         )
 
-        return http.request.render(
-            template='bemade_sports_clinic.portal_my_player_injuries',
-            qcontext={
+        # Task 1421: soft duplicate-number banner after a save that left this
+        # player sharing a number with an active teammate. Computed from LIVE
+        # data (the parameter alone shows nothing once the clash is gone).
+        jersey_warning = ''
+        if kw.get('warning') == 'duplicate_number':
+            jersey_warning = player._jersey_duplicate_message()
+
+        values = {
                 'player': player,
+                'jersey_warning': jersey_warning,
                 'injuries': injuries,
                 'patient_documents': patient_documents,
                 'treatment_notes': treatment_notes,
+                # Task 1413: notes the viewer may edit in place (author / clinic
+                # admin) + the notes-tab flash (add / edit round-trips land on
+                # #notes with success= / error=[&note_id=]).
+                'editable_note_ids': {
+                    n.id for n in treatment_notes if n._can_portal_edit(user)},
+                'note_success': kw.get('success'),
+                'note_error': kw.get('error'),
+                'note_error_id': self._int_or_none(kw.get('note_id')),
                 'player_activities': player_activities,
                 'activity_types': activity_types,
                 'default_activity_type': default_activity_type,
@@ -469,7 +1079,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 'can_request_removal': can_request_removal,
                 'can_direct_remove': can_direct_remove,
                 'removal_team_id': removal_team_id,
+                'removal_team_options': removal_team_options,
                 'team_context_id': team_context_id,
+                'clinic_event': clinic_event,
+                'ctx_qs': ctx_qs,
                 # Tab-anchor URLs for in-tab actions.
                 'contacts_tab_return': contacts_tab_return,
                 'documents_tab_return': documents_tab_return,
@@ -478,5 +1091,248 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin):
                 'activities_tab_return': activities_tab_return,
                 'contacts_tab_return_q': contacts_tab_return_q,
                 'add_contact_url': add_contact_url,
-            }
-        )
+        }
+        # Task 1539: the app shell (switch on) or today's template, byte for
+        # byte (switch off — including the e-mail deep links). The shell-only
+        # values are computed only when the shell renders.
+        if self._sc_app_shell_active():
+            values.update(self._sc_player_values(player, values, kw))
+        return self._sc_render('bemade_sports_clinic.portal_my_player_injuries',
+                               'bemade_sports_clinic.sc_app_player', values)
+
+    # ------------------------------------------------------------------
+    # Task 1539 — the player page in the app shell
+    # ------------------------------------------------------------------
+    # Owner review 2026-10-11: no « Overview » (status in the header, the
+    # training recommendation on Info) and no « Contacts » (on Info); the
+    # page opens on « Injuries ». Old ?tab= values still land.
+    SC_PLAYER_TABS = ('injuries', 'info', 'documents', 'notes', 'activities')
+    SC_PLAYER_TAB_MOVED = {'overview': 'injuries', 'contacts': 'info'}
+
+    def _sc_player_values(self, player, values, kw):
+        """Shell-only render values for ``sc_app_player`` — built from the
+        legacy values (same role filtering), never re-deriving them."""
+        env = http.request.env
+        user = env.user
+        is_tp = values['is_treatment_prof']
+        ctx_qs = values['ctx_qs']
+        base_url = '/my/player?player_id=%s%s' % (player.id, ctx_qs)
+        can_activities = is_tp or user.has_group('bemade_sports_clinic.group_portal_team_coach')
+        # Inline injury cards (owner decision 2026-10-11): ?created=<id> opens
+        # the new injury in edit mode (with its « Undo »), ?injury=<id> opens
+        # one in read mode.
+        def _int_arg(name):
+            try:
+                return int(kw.get(name) or 0)
+            except (TypeError, ValueError):
+                return 0
+        created_id = _int_arg('created')
+        opened_id = _int_arg('injury') or created_id
+        # Task 1655: ?created_player=<id> — the player just created inline:
+        # the identity card opens in edit and « Undo » is offered (creator
+        # only, within the undo window).
+        sc_created_player = bool(
+            _int_arg('created_player') == player.id
+            and player.sudo().create_uid == user
+            and player.sudo().create_date
+            and player.sudo().create_date >= fields.Datetime.now() - timedelta(minutes=2))
+        # Task 1579: a create from the full « new injury » page lands here —
+        # drop its device draft once the injury exists. A sudo browse: the
+        # created id must clear its draft even when the viewer cannot read
+        # it (e.g. a TP report the coach record rule hides from coaches).
+        created = env['sports.patient.injury'].sudo().browse(created_id).exists()
+        created_draft_clear = bool(
+            created and created.patient_id == player and created.create_uid == user)
+        tp_view = self._sc_injury_tp_view(is_tp)
+
+        # Task 1592: the cards' activity clocks (one query). An injury holds
+        # no activities of its own (task 1409: they are scheduled on the
+        # patient with the injury link) — the clock opens this page's
+        # Activities tab.
+        injury_clocks = self._sc_activity_clocks(
+            values['injuries'], lambda i: '%s&tab=activities' % base_url)
+
+        # Task 1616: the cards' Documents (one query) and their own address
+        # (an upload / delete comes back to the card, open).
+        injury_documents = self._sc_injury_card_documents(values['injuries'])
+
+        def _injury_row(injury):
+            return self._sc_injury_card_row(
+                injury, ctx_qs, is_tp, tp_view, opened_id=opened_id, created_id=created_id,
+                clocks=injury_clocks, list_url='%s&tab=injuries' % base_url,
+                documents=injury_documents)
+
+        # Owner review 2026-10-10: current injuries (active, unverified)
+        # first, then resolved; each by injury date, newest first.
+        injuries = values['injuries'].sorted(lambda i: (
+            i.stage not in ('active', 'unverified'),
+            -(i.injury_date or date.min).toordinal(),
+            -i.id,
+        ))
+        active = injuries.filtered(lambda i: i.stage in ('active', 'unverified'))
+
+        # Next events of the player's teams (the viewer's own ACL decides).
+        events = []
+        if env['sports.event'].has_access('read'):
+            tz = user.tz or env.context.get('tz')
+            kinds = dict(env['sports.event']._fields['event_type']._description_selection(env))
+            for event in env['sports.event'].search([
+                ('team_ids', 'in', player.team_ids.ids or [0]),
+                ('date_start', '>=', fields.Datetime.now()),
+                ('state', '!=', 'cancelled'),
+            ], order='date_start asc', limit=3):
+                events.append({
+                    'when': format_datetime(env, event.date_start, tz=tz,
+                                            dt_format='EEE d MMM · HH:mm'),
+                    'kind': kinds.get(event.event_type, ''),
+                    'name': event.name or '',
+                    'url': '/my/event/%s' % event.id,
+                })
+
+        # One append per tab: babel's extractor would take a literal that
+        # follows an _() call in the same list for a term.
+        roles = user._sc_app_roles()
+        tabs = [('injuries', env._("Injuries"))]
+        tabs.append(('info', env._("Info")))
+        tabs.append(('documents', env._("Documents")))
+        if is_tp and sc_app_roles.can('patient.notes.tab', roles):
+            tabs.append(('notes', env._("Notes")))
+        if can_activities and sc_app_roles.can('patient.activities.tab', roles):
+            tabs.append(('activities', env._("Activities")))
+        keys = [key for key, _label in tabs]
+        requested = self.SC_PLAYER_TAB_MOVED.get(kw.get('tab'), kw.get('tab'))
+        active_tab = requested if requested in keys else 'injuries'
+        # Legacy #fragments (a POST round-trip's return_url) open the tab now
+        # holding them: the contacts are on Info.
+        aliases = {'info': 'patient-info team-info contacts'}
+        # Task 1635: the Activities tab counts what its panel lists.
+        badges = {'activities': self._sc_activity_tab_badge(values['player_activities'])}
+        # Task 1647: a short label on a phone (« Docs »).
+        shorts = {'documents': env._("Docs")}
+        sc_tabs = [(key, label, '%s&tab=%s' % (base_url, key), aliases.get(key, ''),
+                    badges.get(key), shorts.get(key))
+                   for key, label in tabs]
+
+        editable = values['editable_note_ids']
+        note_props = {}
+        for note in values['treatment_notes']:
+            if note.id in editable:
+                note_props[note.id] = self._sc_note_edit_props(note)
+
+        all_teams = player.sudo().team_ids
+        readable = set(env['sports.team'].search([('id', 'in', all_teams.ids)]).ids)
+        memberships = [{
+            'name': team.name,
+            'org': team.parent_id.name or '',
+            'url': '/my/team?team_id=%s' % team.id if team.id in readable else False,
+        } for team in all_teams]
+
+        # Task 1432: edit / delete (archive) for the uploader or an admin.
+        document_rows = [{
+            'doc': doc,
+            'can_manage': doc._sc_can_manage(user),
+            'meta': ' · '.join(part for part in (
+                dict(doc._fields['category']._description_selection(env)).get(doc.category, ''),
+                format_date(env, doc.create_date),
+                doc.created_by_id.display_name or '') if part),
+        } for doc in values['patient_documents']]
+
+        # Task 1645: a refused « Add Emergency Contact » (an invalid mobile)
+        # comes back here (the shell has no separate form page): the panel
+        # re-opens with the message and the typed values.
+        contact_error, contact_data = self._portal_pop_flash(('contact_add', player.id))
+
+        return dict(self._sc_injury_card_options(), **{
+            'sc_created_player': sc_created_player,
+            'sc_created_player_back': ('/my/team?team_id=%s&tab=players' % values['team'].id
+                                       if values.get('team') else '/my/players'),
+            'sc_contact_add_error': contact_error,
+            # Task 1656: removing the team that gives the viewer access asks
+            # first (the tags widget's confirmRemove).
+            'sc_team_confirm': self._sc_team_confirm_remove(player),
+            'sc_contact_add_data': contact_data or {},
+            'sc_player_tabs': sc_tabs,
+            'sc_player_active_tab': active_tab,
+            'sc_player_url': base_url,
+            'sc_contacts_return': '%s&tab=info' % base_url,
+            'sc_player_team': values['team'] or player.team_ids[:1],
+            'sc_created_draft_clear': created_draft_clear,
+            'sc_injury_rows': [_injury_row(i) for i in injuries],
+            'sc_is_tp_view': tp_view,
+            'sc_active_injury_rows': [_injury_row(i) for i in active],
+            'sc_player_events': events,
+            # Inline « Add Injury » card (owner review 2026-10-10): the new
+            # injury page's draft prefix and consent choices.
+            'sc_new_injury_prefix': 'sports.patient.%s.new_injury.' % player.id,
+            # Inline editing (owner review 2026-10-10).
+            # Task 1594: the province choices follow the player's country.
+            'sc_state_options': sc_state_options(env, player.country_id),
+            'sc_country_options': sc_country_options(env),
+            'sc_contact_type_options': list(
+                env['sports.patient.contact']._fields['contact_type']._description_selection(env)),
+            'sc_team_options': [(team.id, team.name) for team in self._team_targets()] if is_tp else [],
+            'relationship_types': env['sports.patient.contact']._fields['contact_type']._description_selection(env),
+            # The Contacts tab (therapists AND coaches since 2026-10-10): read
+            # from the contact model — patient.contact_ids is TP-only.
+            'sc_player_contacts': env['sports.patient.contact'].search(
+                [('patient_id', '=', player.id)], order='sequence,id'),
+            'sc_can_activities': can_activities,
+            'sc_note_props': note_props,
+            'sc_memberships': memberships,
+            # Task 1593: the hero's team names are links (same gate as the
+            # player rows' team links).
+            'sc_hero_team_links': list(self._sc_team_links(all_teams).values()),
+            'sc_document_rows': document_rows,
+            # Task 1665: the same list as the note edit picker.
+            'sc_injury_choices': self._sc_note_injury_options(player),
+            'sc_note_draft_prefix': 'sports.patient.%s.new_note.' % player.id,
+            'sc_default_activity_type_id': (
+                values['default_activity_type'].id if values['default_activity_type'] else False),
+            'sc_activities_return': '%s&tab=activities' % base_url,
+            'today_date': fields.Date.context_today(player),
+            'sc_flash': self._sc_player_flash(kw),
+        })
+
+    @staticmethod
+    def _sc_player_flash(kw):
+        """The player page's POST round-trip messages (?success= / ?error=)."""
+        env = http.request.env
+        success = {
+            'note_added': env._("Treatment note added successfully."),
+            'note_updated': env._("Treatment note updated."),
+            'document_uploaded': env._("Document uploaded."),
+            'activity_created': env._("Activity created successfully."),
+            'activity_updated': env._("Activity updated."),
+            'activity_reassigned': env._("Activity reassigned."),
+            'activity_done': env._("Activity marked as done."),
+            'activity_cancelled': env._("Activity deleted."),
+            'injury_deleted': env._("Injury deleted."),
+            'injury_undone': env._("Injury creation undone."),
+            'player_updated': env._("Player updated."),
+        }.get(kw.get('success'))
+        error = {
+            'empty_note': env._("Please enter a treatment note."),
+            'invalid_injury': env._("The selected injury does not belong to this patient."),
+            'permission_denied': env._("You do not have permission to do this."),
+            'note_failed': env._("The treatment note could not be saved."),
+            'no_file': env._("Please choose a file."),
+            'file_too_large': env._("The file is too large (10 MB maximum)."),
+            'upload_failed': env._("The upload failed."),
+            'missing_fields': env._("Please fill in all required fields."),
+            'invalid_user': env._("You cannot assign this activity to that user."),
+            'past_deadline': sc_past_deadline_message(env),  # task 1744
+            'injury_visibility': env._("Please choose whether coaches can see this injury."),
+            'injury_diagnosis': env._("Please enter a diagnosis."),
+            'undo_expired': env._("This injury can no longer be undone; delete it from its card."),
+            # Task 1663: the player undo-create has its own message.
+            'player_undo_expired': env._(
+                "This player can no longer be undone; remove or archive them from their page."),
+        }.get(kw.get('error'))
+        # Task 1616: the injury cards' messages (several documents, a file
+        # list over the limit, an old injury-page save).
+        card = AppShellMixin._sc_injury_card_flash(kw)
+        if kw.get('success') in ('documents_uploaded', 'injury_updated', 'document_deleted'):
+            success = card['success']
+        if kw.get('error') in ('file_too_large', 'invalid_category'):
+            error = card['error']
+        return {'success': success, 'error': error}

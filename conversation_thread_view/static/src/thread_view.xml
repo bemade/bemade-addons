@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="conversation_thread_view.ThreadView">
+        <div class="o_action o-conversationThreadView d-flex flex-column h-100 bg-view">
+            <ControlPanel>
+                <t t-set-slot="layout-buttons">
+                    <button
+            class="o-conversationThreadView-formView btn btn-secondary text-nowrap"
+            t-on-click="onClickFormView"
+          >
+                        <i class="fa fa-list-alt me-1" role="img" />
+                        Form view
+                    </button>
+                </t>
+            </ControlPanel>
+            <t t-if="state.summary">
+                <div
+          class="o-conversationThreadView-header d-flex align-items-start gap-3 flex-wrap px-3 py-2 border-bottom"
+        >
+                    <div class="flex-grow-1">
+                        <h1
+              class="o-conversationThreadView-subject h3 mb-1"
+              t-esc="state.summary.name"
+            />
+                        <div class="d-flex flex-wrap gap-2 align-items-center small">
+                            <span
+                class="o-conversationThreadView-state badge text-bg-secondary"
+                t-esc="state.summary.state_label"
+              />
+                            <span
+                t-if="state.summary.user"
+                class="o-conversationThreadView-user"
+              >
+                                <i
+                  class="fa fa-user-o me-1"
+                  role="img"
+                  title="Assignee"
+                />
+                                <t t-esc="state.summary.user" />
+                            </span>
+                            <span
+                t-if="state.summary.team"
+                class="o-conversationThreadView-team"
+              >
+                                <i class="fa fa-users me-1" role="img" title="Team" />
+                                <t t-esc="state.summary.team" />
+                            </span>
+                            <span
+                t-foreach="state.summary.tags"
+                t-as="tag"
+                t-key="tag.id"
+                class="o-conversationThreadView-tag badge text-bg-info"
+                t-esc="tag.name"
+              />
+                        </div>
+                    </div>
+                </div>
+            </t>
+            <div
+        class="o-conversationThreadView-messages d-flex flex-column flex-grow-1 overflow-auto"
+      >
+                <t t-if="state.thread">
+                    <Thread
+            thread="state.thread"
+            t-key="state.thread.localId"
+            order="'asc'"
+          />
+                </t>
+            </div>
+            <div
+        t-if="state.thread"
+        class="o-conversationThreadView-bottom border-top bg-view"
+      >
+                <div class="d-flex gap-2 px-3 py-2">
+                    <button
+            class="o-conversationThreadView-reply btn btn-primary text-nowrap"
+            t-att-disabled="!canPost"
+            t-on-click="onClickReply"
+          >
+                        <i class="fa fa-reply me-1" role="img" />
+                        Reply
+                    </button>
+                    <button
+            class="o-conversationThreadView-forward btn btn-secondary text-nowrap"
+            t-on-click="onClickForward"
+          >
+                        <i class="fa fa-share me-1" role="img" />
+                        Forward
+                    </button>
+                    <button
+            class="o-conversationThreadView-logNote btn text-nowrap"
+            t-att-class="state.composerType === 'note' ? 'btn-primary active' : 'btn-secondary'"
+            t-att-disabled="!canPost"
+            t-on-click="() => this.toggleComposer('note')"
+          >
+                        <i class="fa fa-sticky-note-o me-1" role="img" />
+                        Log note
+                    </button>
+                </div>
+                <Composer
+          t-if="state.composerType"
+          composer="state.thread.composer"
+          autofocus="true"
+          mode="'extended'"
+          type="state.composerType"
+          onPostCallback.bind="onPostCallback"
+        />
+            </div>
+        </div>
+    </t>
+</templates>

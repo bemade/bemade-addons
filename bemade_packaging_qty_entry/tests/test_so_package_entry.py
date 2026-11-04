@@ -6,6 +6,9 @@ Acceptance Criteria (tests 7–9 from the design):
 8. SO forward display + confirm: direct product_uom_qty edit shows correct ceil;
    confirming SO raises no UoM-mismatch error.
 9. View smoke (SO): Form loads the reordered view; product_packaging_qty editable.
+10. View smoke (SO), no product yet: resolving Packaging on a brand-new line
+    (task #4104 consistency fix — this module's own re-inserted field) does
+    not raise InvalidDomainError.
 """
 
 from odoo.tests import Form
@@ -114,3 +117,27 @@ class TestSOPackageEntry(TransactionCase):
                 # If product_packaging_qty were readonly, the next line would raise
                 line.product_packaging_qty = 2.0
                 self.assertAlmostEqual(line.product_uom_qty, 24.0, places=2)
+
+    # ------------------------------------------------------------------ test 10
+
+    def test_10_view_smoke_so_form_empty_product_no_error(self):
+        """Consistency fix for task #4104: resolving the Packaging field on a
+        brand-new SO line (no product chosen yet) must not raise
+        InvalidDomainError.
+
+        Same pattern as the PO-side guard (test_10 in test_po_package_entry.py):
+        this module re-inserts product_packaging_id via its own inherited view
+        (view_sale_order_line_packaging_qty_entry), so that copy of the domain
+        — not product_uom_packaging's — is what actually renders here. The SO
+        path did not error in production (core sale.order.line already loads
+        product_template_id, so the old inline domain never pruned to an empty
+        leaf), but it now uses the same bare-name domain field for consistency
+        with the PO fix, and this guards against future regression.
+        """
+        so = self.env["sale.order"].create({"partner_id": self.customer.id})
+        with Form(so) as so_form:
+            line = so_form.order_line.new()
+            self.assertFalse(
+                line.product_packaging_id,
+                "No packaging should be auto-selected when product is empty",
+            )

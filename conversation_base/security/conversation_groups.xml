@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Mailbox permission model for shared (ownerless) transports.
+         - Archive / mark read stay member actions: no group needed.
+         - Switching write-back on for a shared account is a manager setting.
+         - Deleting (move to Trash) in a shared mailbox needs its own,
+           narrowly granted group.
+         Settings administrators hold both by implication; every other user
+         is granted them explicitly from the user form. Personal accounts
+         are unaffected: their owner decides. -->
+    <record id="module_category_conversations" model="ir.module.category">
+        <field name="name">Conversations</field>
+        <field name="sequence">20</field>
+    </record>
+
+    <record id="res_groups_privilege_conversations" model="res.groups.privilege">
+        <field name="name">Conversations</field>
+        <field name="category_id" ref="module_category_conversations" />
+    </record>
+
+    <record id="res_groups_privilege_delete_shared_mail" model="res.groups.privilege">
+        <field name="name">Shared Mailbox</field>
+        <field name="category_id" ref="module_category_conversations" />
+    </record>
+
+    <record id="group_conversation_manager" model="res.groups">
+        <field name="name">Manager</field>
+        <field name="privilege_id" ref="res_groups_privilege_conversations" />
+        <field name="implied_ids" eval="[Command.link(ref('base.group_user'))]" />
+        <field name="implied_by_ids" eval="[Command.link(ref('base.group_system'))]" />
+        <field
+      name="comment"
+    >Can switch write-back (mailbox_writable) on for a shared mail account.</field>
+    </record>
+
+    <record id="group_delete_shared_mail" model="res.groups">
+        <field name="name">Delete shared mail</field>
+        <field name="privilege_id" ref="res_groups_privilege_delete_shared_mail" />
+        <field name="implied_ids" eval="[Command.link(ref('base.group_user'))]" />
+        <field name="implied_by_ids" eval="[Command.link(ref('base.group_system'))]" />
+        <field
+      name="comment"
+    >Can delete (move to the mailbox Trash) mail of a shared mail account. Not implied by the Manager group; grant it explicitly.</field>
+    </record>
+</odoo>

@@ -1,0 +1,55 @@
+// Task 1414 — portal patient combo (views/portal_widgets_templates.xml +
+// static/src/js/portal_patient_combo.js): a typeahead over a real <select>.
+// Bootstrap 5 does the input-group / list-group work; this only positions
+// the dropdown list and makes the rows finger-sized.
+
+.o_sc_patient_combo {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    // The enhanced combo does not take the tab stop of the hidden select.
+    &.o_sc_patient_combo_enhanced > select {
+        display: none !important;
+    }
+
+    .o_sc_combo_list {
+        position: absolute;
+        left: 0;
+        right: 0;
+        z-index: 1050;
+        margin-top: 0.125rem;
+        max-height: 16rem;
+        overflow-y: auto;
+        box-shadow: var(--bs-box-shadow, 0 0.5rem 1rem rgba(0, 0, 0, 0.15));
+    }
+
+    .o_sc_combo_item {
+        cursor: pointer;
+        // Touch target: at least 44px tall, the whole row clickable.
+        min-height: 2.75rem;
+        padding-top: 0.625rem;
+        padding-bottom: 0.625rem;
+
+        &.o_sc_combo_current {
+            font-weight: 600;
+        }
+    }
+
+    .o_sc_combo_group {
+        background-color: var(--bs-tertiary-bg, #f8f9fa);
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
+
+    .o_sc_combo_clear {
+        line-height: 1;
+    }
+}
+
+// The website theme's .card clips its content (overflow: hidden, for the
+// rounded corners); an open list must escape it. Only while open, only the
+// card(s) around a combo — :has() is supported by every browser the portal
+// targets; an older browser would see the list cut at the card edge.
+.card:has(.o_sc_patient_combo.o_sc_combo_open) {
+    overflow: visible !important;
+}

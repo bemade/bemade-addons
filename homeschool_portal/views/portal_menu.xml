@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Portal home: one card, "My school" for the student, "My students" for the outside
+         teacher. Hidden until /my/counters reports at least one student (stock behaviour
+         of portal_docs_entry). -->
+    <template
+    id="portal_my_home_homeschool"
+    name="Portal My Home: homeschool"
+    inherit_id="portal.portal_my_home"
+    priority="45"
+  >
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
+            <t t-set="portal_service_category_enable" t-value="True" />
+        </xpath>
+        <div id="portal_service_category" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t
+          t-set="icon"
+          t-value="'/homeschool_portal/static/src/img/school.svg'"
+        />
+                <t t-set="title">
+                    <t t-if="homeschool_portal_role == 'student'">My school</t>
+                    <t t-else="">My students</t>
+                </t>
+                <t t-set="url" t-value="'/my/homeschool'" />
+                <t t-set="text">
+                    <t
+            t-if="homeschool_portal_role == 'student'"
+          >Your day, your list, your traces and your reading log</t>
+                    <t
+            t-else=""
+          >The days, traces and reading log of the students you follow</t>
+                </t>
+                <t t-set="placeholder_count" t-value="'homeschool_student_count'" />
+            </t>
+        </div>
+    </template>
+
+    <!-- Breadcrumbs -->
+    <template
+    id="portal_breadcrumbs_homeschool"
+    name="Portal breadcrumbs: homeschool"
+    inherit_id="portal.portal_breadcrumbs"
+    priority="45"
+  >
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li
+        t-if="page_name and page_name.startswith('homeschool')"
+        t-attf-class="breadcrumb-item #{'active' if page_name == 'homeschool_home' else ''}"
+      >
+                <a t-if="page_name != 'homeschool_home'" href="/my/homeschool">
+                    <t t-if="homeschool_role == 'student'">My school</t>
+                    <t t-else="">My students</t>
+                </a>
+                <t t-else="">
+                    <t t-if="homeschool_role == 'student'">My school</t>
+                    <t t-else="">My students</t>
+                </t>
+            </li>
+            <li
+        t-if="student and page_name and page_name.startswith('homeschool') and page_name != 'homeschool_home'"
+        class="breadcrumb-item active text-truncate"
+      >
+                <t t-out="student.name" />
+            </li>
+        </xpath>
+    </template>
+</odoo>

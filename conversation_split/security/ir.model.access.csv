@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_conversation_split_wizard_user,conversation.split.wizard user,model_conversation_split_wizard,base.group_user,1,1,1,1
+access_conversation_split_wizard_participant_user,conversation.split.wizard.participant user,model_conversation_split_wizard_participant,base.group_user,1,1,1,1
+access_conversation_split_wizard_link_user,conversation.split.wizard.link user,model_conversation_split_wizard_link,base.group_user,1,1,1,1

@@ -89,8 +89,8 @@ class K8sUploadBackupWizard(models.TransientModel):
                 )
             )
 
-        # Get S3 client
-        s3_client = self._get_s3_client(s3_config)
+        # Get S3 client, signing for the host the browser will upload to
+        s3_client = self._get_s3_client(s3_config, presign=True)
 
         # Generate object key using backup_name
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -191,8 +191,12 @@ class K8sUploadBackupWizard(models.TransientModel):
             },
         }
 
-    def _get_s3_client(self, s3_config):
-        """Get boto3 S3 client with credentials from Kubernetes."""
+    def _get_s3_client(self, s3_config, presign=False):
+        """Get boto3 S3 client with credentials from Kubernetes.
+
+        With presign=True the client targets the config's public endpoint and
+        is only meant to sign URLs for the browser, not to make calls.
+        """
         from kubernetes import client as k8s_client
 
         cluster = self.cluster_id
@@ -219,9 +223,10 @@ class K8sUploadBackupWizard(models.TransientModel):
             )
 
         # Create S3 client
-        endpoint = s3_config.endpoint
-        if endpoint.endswith("/"):
-            endpoint = endpoint[:-1]
+        if presign:
+            endpoint = s3_config._get_presign_endpoint()
+        else:
+            endpoint = s3_config.endpoint.rstrip("/")
 
         return boto3.client(
             "s3",
@@ -229,6 +234,6 @@ class K8sUploadBackupWizard(models.TransientModel):
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
             region_name=s3_config.region or "us-east-1",
-            config=Config(signature_version="s3v4"),
+            config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
             verify=not s3_config.allow_insecure,
         )

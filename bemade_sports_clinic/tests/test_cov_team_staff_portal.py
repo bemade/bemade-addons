@@ -1,6 +1,8 @@
 from odoo import Command
 from odoo.tests import HttpCase, tagged
 
+from ..controllers.team_staff_portal import TEAMS_PAGE_SIZE
+
 
 @tagged('-at_install', 'post_install')
 class TestCovTeamStaffPortal(HttpCase):
@@ -94,9 +96,10 @@ class TestCovTeamStaffPortal(HttpCase):
 
     def test_view_teams_paging_no_duplicates(self):
         """Paging regression (task 892): the controller searched with
-        limit=teams_count while the pager stepped the offset by 10, so page 2+
-        re-served the remaining full list (22 -> 12 -> 2 with duplicates).
-        Each team must appear on exactly one page."""
+        limit=teams_count while the pager stepped the offset by the page size,
+        so page 2+ re-served the remaining full list (with duplicates). Each
+        team must appear on exactly one page. Page size is TEAMS_PAGE_SIZE
+        (48 since the #1401 follow-up); two teams spill onto page 2."""
         staff_user = self.env['res.users'].with_context(no_reset_password=True).create({
             'name': 'TSP Pager', 'login': 'tsp.pager@example.com', 'password': 'tsp-pager',
             'group_ids': [Command.set([
@@ -104,7 +107,7 @@ class TestCovTeamStaffPortal(HttpCase):
                 self.env.ref('bemade_sports_clinic.group_portal_team_coach').id,
             ])],
         })
-        names = [f'TSP Page Team {i:02d}' for i in range(1, 13)]
+        names = [f'TSP Page Team {i:02d}' for i in range(1, TEAMS_PAGE_SIZE + 3)]
         for name in names:
             team = self.env['sports.team'].create({'name': name, 'parent_id': self.org.id})
             self.env['sports.team.staff'].create({
@@ -117,7 +120,7 @@ class TestCovTeamStaffPortal(HttpCase):
         on_page1 = {n for n in names if n in page1}
         on_page2 = {n for n in names if n in page2}
 
-        self.assertEqual(len(on_page1), 10, "page 1 must hold exactly one page of teams")
+        self.assertEqual(len(on_page1), TEAMS_PAGE_SIZE, "page 1 must hold exactly one page of teams")
         self.assertEqual(len(on_page2), 2, "page 2 must hold only the remainder")
         self.assertFalse(on_page1 & on_page2, "no team may appear on both pages")
         self.assertEqual(on_page1 | on_page2, set(names), "every team appears exactly once")

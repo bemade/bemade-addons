@@ -127,19 +127,19 @@ class TestPortalInjuryCards(HttpCase):
         # 'fa fa-edit' without the me-1 spacing class.)
         self.assertNotIn("fa fa-edit me-1", body)
 
-    def test_activities_button_links_to_list(self):
+    def test_no_per_injury_activities_button_or_counter(self):
+        """Task 1409: activities live on the player (Activities tab) — the
+        injury card has neither an Activities button nor an activity counter
+        nor an injury-scoped create link."""
         resp = self._open_player(self.player_with_injuries)
         body = resp.content.decode("utf-8", errors="replace")
-        self.assertIn(
-            f"/my/injury/activities?injury_id={self.injury_active.id}",
-            body,
-        )
-        # The old per-card "Add Activity" create-flow link should not
-        # appear on the card any more.
+        self.assertNotIn("/my/injury/activities", body)
         self.assertNotIn(
             f"/my/activity/create?model=sports.patient.injury&amp;res_id={self.injury_active.id}",
             body,
         )
+        # The Docs button is still there.
+        self.assertIn(f"/my/injury/documents?injury_id={self.injury_active.id}", body)
 
     def test_add_injury_button_in_injuries_tab(self):
         resp = self._open_player(self.player_no_injuries)

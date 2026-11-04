@@ -10,6 +10,12 @@ Acceptance Criteria (tests 1–6 from the design):
 4. PO stability / no loop: after inverse write, re-saving does not drift.
 5. PO direct base edit preserves non-multiple: ceil shown, base NOT overwritten.
 6. PO no packaging selected: no-op guard; normal base edit works.
+10. PO Packaging field on a brand-new line (no product chosen yet) resolves its
+    domain without an InvalidDomainError — this module's own inherited view is
+    the one Verajet's PO form actually renders (it replaces and re-inserts
+    product_packaging_id ahead of product_qty), so this is the regression guard
+    for task #4104: a fix living only in product_uom_packaging's view never
+    reaches real users here.
 """
 
 from odoo.tests import Form
@@ -160,3 +166,35 @@ class TestPOPackageEntry(TransactionCase):
                 # If product_packaging_qty were readonly, the next line would raise
                 line.product_packaging_qty = 1.0
                 self.assertAlmostEqual(line.product_qty, 205.0, places=2)
+
+    # ------------------------------------------------------------------ test 10
+
+    def test_10_view_smoke_po_form_empty_product_no_error(self):
+        """Regression guard for task #4104: resolving the Packaging field on a
+        brand-new PO line (no product chosen yet) must not raise
+        InvalidDomainError.
+
+        This module (bemade_packaging_qty_entry) removes and re-inserts
+        product_packaging_id ahead of product_qty via its own inherited view
+        (view_purchase_order_line_packaging_qty_entry) — that re-inserted
+        field, with its own domain attribute, is what actually renders on
+        Verajet's PO form, overriding product_uom_packaging's own (already
+        correct) view. A prior round fixed only product_uom_packaging's copy
+        of the domain and shipped green because no test exercised this
+        module's view without a product set — the bug reproduced live on
+        staging anyway. This test exercises the field the user actually
+        clicks.
+
+        We call .new() without a 'with' block, same workaround as
+        product_uom_packaging's test_po_line_form_empty_product_no_error:
+        the O2MForm's __exit__() would otherwise try to save() and raise
+        AssertionError for the required product_id field. The domain is
+        evaluated at new() time, so a malformed domain still surfaces here.
+        """
+        po = self.env["purchase.order"].create({"partner_id": self.vendor.id})
+        with Form(po) as po_form:
+            line = po_form.order_line.new()
+            self.assertFalse(
+                line.product_packaging_id,
+                "No packaging should be auto-selected when product is empty",
+            )

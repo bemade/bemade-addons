@@ -15,6 +15,11 @@ class K8sS3Config(models.Model):
         required=True,
         help="S3-compatible endpoint URL, e.g. https://minio.local",
     )
+    public_endpoint = fields.Char(
+        help="Endpoint reachable from users' browsers, used to sign download and "
+        "upload URLs. Set it when Endpoint is an in-cluster address; presigned "
+        "URLs are bound to the host they were signed for. Defaults to Endpoint.",
+    )
     bucket = fields.Char(string="Bucket", required=True)
     region = fields.Char(string="Region")
 
@@ -35,6 +40,11 @@ class K8sS3Config(models.Model):
         string="Allow Insecure TLS",
         help="Disable TLS verification for this endpoint (useful for local/self-signed MinIO)",
     )
+
+    def _get_presign_endpoint(self):
+        """Endpoint to sign browser-facing URLs for, without trailing slash."""
+        self.ensure_one()
+        return (self.public_endpoint or self.endpoint).rstrip("/")
 
     @api.depends("name", "bucket")
     def _compute_display_name(self):

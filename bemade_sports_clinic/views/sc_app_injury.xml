@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1539 (epic #1535) — P2 injury pages of the portal app shell: new
+    injury (device draft + « Créer »), injury edit (saved field by field on
+    blur, status / visibility instant with undo), treatment notes and injury
+    documents. Task 1579 retired the « created » landing (a create redirects
+    to the player's Injuries tab); task 1581 retired the note-history page
+    (the injury page's notes-history sheet, sc_note_history_fragment); task
+    1616 retired the injury page and its documents page (the injury card's
+    Details / Notes / Documents, views/sc_app_players.xml).
+
+    Rendered only with the system switch on (controllers: _sc_render). The
+    clinic's modal fragments (portal_injury_form_body,
+    portal_injury_create_form_body), their routes, the clinic's partial save
+    (/my/injury/save partial=1) and portal_treatment_note_edit_form are NOT
+    modified — the clinic keeps them until P3. Every form posts to the SAME
+    routes as today. No inline script / style.
+-->
+<odoo>
+
+    <!--
+        The new-injury form (device drafts until « Create »): the
+        /my/patient/injury/new page and the player page's inline « Add
+        Injury » card (owner review 2026-10-10). Variables: patient,
+        return_url, team_context_id, clinic_event, is_treatment_prof,
+        sc_draft_prefix, sc_consent_options, cancel_url (page only).
+    -->
+    <template id="sc_injury_new_form" name="App shell: new injury form">
+        <form action="/my/patient/injury/create" method="post" class="o_sc_form" data-sc-form="injury.new"
+              t-att-data-sc-draft-prefix="sc_draft_prefix" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"diagnosis"}]'>
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+            <input type="hidden" name="patient_id" t-att-value="patient.id"/>
+            <input type="hidden" name="return_url" t-att-value="return_url"/>
+            <input t-if="team_context_id" type="hidden" name="team_context_id" t-att-value="team_context_id"/>
+            <input t-if="clinic_event" type="hidden" name="clinic_id" t-att-value="clinic_event.id"/>
+            <div class="o_sc_grid2">
+                <div class="o_sc_card o_sc_fields">
+                    <t t-set="lbl">Diagnosis/Description</t>
+                    <t t-call="bemade_sports_clinic.sc_field_autosave">
+                        <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'diagnosis', 'diagnosis', lbl, 'text', required=True)"/>
+                    </t>
+                    <t t-set="lbl">Date of Injury</t>
+                    <t t-set="hint">Turn on N/A if the exact date is unknown</t>
+                    <t t-call="bemade_sports_clinic.sc_field_autosave">
+                        <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'injury_date', 'injury_date', lbl, 'date_na', value=datetime.date.today().isoformat(), naName='injury_date_na', required=True, hint=hint)"/>
+                    </t>
+                    <t t-if="is_treatment_prof and sc_can('injury.tp_fields')">
+                        <t t-set="lbl">Predicted Resolution Date</t>
+                        <t t-call="bemade_sports_clinic.sc_field_autosave">
+                            <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'predicted_resolution_date', 'predicted_resolution_date', lbl, 'date')"/>
+                        </t>
+                        <t t-set="lbl">Parental Consent</t>
+                        <t t-call="bemade_sports_clinic.sc_field_autosave">
+                            <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'parental_consent', 'parental_consent', lbl, 'select', options=sc_consent_options, required=True)"/>
+                        </t>
+                        <t t-call="bemade_sports_clinic.sc_switch">
+                            <t t-set="sw_name" t-value="'hidden_from_coaches'"/>
+                            <t t-set="sw_value" t-value="'1'"/>
+                            <t t-set="sw_label">Hide from coaches</t>
+                        </t>
+                    </t>
+                </div>
+                <!-- Owner review 2026-10-25 (#1675): coaches read the external
+                     note, they no longer write it — a coach's report is the
+                     diagnosis and the date (the create route ignores a coach's
+                     external note in the app). -->
+                <div t-if="is_treatment_prof" class="o_sc_card o_sc_fields">
+                    <t t-set="lbl">External Notes</t>
+                    <t t-set="hint">Notes visible to all team members</t>
+                    <t t-call="bemade_sports_clinic.sc_field_autosave">
+                        <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'external_notes', 'external_notes', lbl, 'textarea', hint=hint)"/>
+                    </t>
+                    <t t-if="sc_can('injury.internal_notes')">
+                        <t t-set="lbl">Internal Notes (Medical Staff Only)</t>
+                        <t t-set="hint">Notes visible only to treatment professionals</t>
+                        <t t-call="bemade_sports_clinic.sc_field_autosave">
+                            <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'internal_notes', 'internal_notes', lbl, 'textarea', hint=hint)"/>
+                        </t>
+                    </t>
+                </div>
+            </div>
+            <div t-attf-class="#{'o_sc_actionbar' if cancel_url else 'o_sc_form_actions'}">
+                <a t-if="cancel_url" t-att-href="cancel_url" class="o_sc_btn o_sc_btn_ghost">Cancel</a>
+                <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="injury.create">
+                    <span t-if="is_treatment_prof">Create</span>
+                    <span t-else="">Submit Report</span>
+                </button>
+            </div>
+            <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_injury_new'"/></t>
+        </form>
+    </template>
+
+
+    <!-- /my/patient/injury/new?patient_id=<id> (shell): nothing is created
+         before « Créer » — the typing is a device draft (sc_autosave_field,
+         draft mode) and the form posts to today's create route. -->
+    <template id="sc_app_injury_new" name="Sports Clinic App: new injury">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-if="is_treatment_prof">
+                <t t-set="sc_title">Add Injury</t>
+            </t>
+            <t t-else="">
+                <t t-set="sc_title">Report Injury</t>
+            </t>
+            <t t-set="sc_active_nav" t-value="'players'"/>
+            <t t-if="error" t-call="bemade_sports_clinic.sc_banner">
+                <t t-set="flash_error" t-value="True"/>
+                <t t-set="tone" t-value="'warn'"/>
+                <t t-out="error"/>
+            </t>
+            <t t-call="bemade_sports_clinic.sc_banner">
+                <t t-set="title">Kept on this device until you create it</t>
+                What you type stays a draft on this device; nobody is notified before « Create ».
+            </t>
+            <t t-call="bemade_sports_clinic.sc_injury_new_form">
+                <t t-set="cancel_url" t-value="return_url"/>
+            </t>
+        </t>
+    </template>
+
+    <!-- /my/patient/notes?patient_id=<id> (shell): the note cards (editable
+         in place by their author / a clinic admin, saved on blur) and the
+         « Ajouter » device draft posting to today's /my/injury/note/add. -->
+    <template id="sc_app_treatment_notes" name="Sports Clinic App: treatment notes">
+        <t t-call="bemade_sports_clinic.sc_app_layout">
+            <t t-set="sc_title">Treatment Notes</t>
+            <t t-set="sc_active_nav" t-value="'players'"/>
+            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <div t-if="success == 'note_added'" t-att-data-sc-draft-clear="sc_note_draft_prefix" hidden="hidden"/>
+            <t t-if="is_treatment_prof" t-call="bemade_sports_clinic.sc_note_add_form">
+                <t t-set="note_patient" t-value="patient"/>
+                <t t-set="note_return_url" t-value="notes_return_url"/>
+                <t t-set="note_injury_choices" t-value="sc_injury_choices"/>
+                <t t-set="note_draft_prefix" t-value="sc_note_draft_prefix"/>
+            </t>
+            <div t-if="notes" class="o_sc_list" data-sc-section="notes.list">
+                <t t-foreach="notes" t-as="note">
+                    <t t-call="bemade_sports_clinic.sc_note_card">
+                        <t t-set="injury_url" t-value="note.injury_id and '/my/player?player_id=%s%s&amp;tab=injuries&amp;injury=%s#injury-%s' % (patient.id, ctx_qs or '', note.injury_id.id, note.injury_id.id)"/>
+                        <t t-set="edit_props" t-value="sc_note_props.get(note.id)"/>
+                    </t>
+                </t>
+            </div>
+            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-set="message">No treatment notes recorded</t>
+            </t>
+        </t>
+    </template>
+
+
+    <!-- Task 1581: /my/injury/<id>/notes/history/fragment — the injury notes
+         history sheet's body: the scope chips (therapists only) re-fetch it
+         inside the sheet (data-sc-sheet-refetch, sc_app_ui.js). -->
+    <template id="sc_note_history_fragment" name="App shell: injury note history">
+        <t t-set="empty_message">No note history yet.</t>
+        <t t-call="bemade_sports_clinic.sc_history_list">
+            <t t-set="section" t-value="'injury.notes.history'"/>
+            <nav t-if="is_treatment_prof" class="o_sc_segmented o_sc_segmented_full" role="group"
+                 aria-label="Scope filter" data-sc-section="history.scope">
+                <a t-att-href="sc_scope_urls['all']" data-sc-sheet-refetch="1"
+                   t-att-aria-pressed="'true' if scope == 'all' else 'false'">All notes</a>
+                <a t-att-href="sc_scope_urls['internal']" data-sc-sheet-refetch="1"
+                   t-att-aria-pressed="'true' if scope == 'internal' else 'false'">Internal notes</a>
+                <a t-att-href="sc_scope_urls['external']" data-sc-sheet-refetch="1"
+                   t-att-aria-pressed="'true' if scope == 'external' else 'false'">External notes</a>
+            </nav>
+        </t>
+    </template>
+
+</odoo>

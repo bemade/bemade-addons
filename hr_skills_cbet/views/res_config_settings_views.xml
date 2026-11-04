@@ -11,13 +11,17 @@
                              help="Seeds each competency's validity (months).">
                         <field name="cbet_default_validity_months"/>
                     </setting>
-                    <setting string="Reprise completion deadline"
-                             help="Seeds each competency's reprise-ciblée deadline (days).">
+                    <setting string="Retake completion deadline"
+                             help="Seeds each competency's targeted-retake deadline (days).">
                         <field name="cbet_reprise_deadline_days"/>
                     </setting>
                     <setting string="Expiry warning horizon"
                              help="How far ahead certifications are flagged 'expiring' (months).">
                         <field name="cbet_expiry_horizon_months"/>
+                    </setting>
+                    <setting string="HR responsible for certification expiry"
+                             help="Also gets a to-do for every expiring or expired certification, beside the employee's manager.">
+                        <field name="cbet_hr_responsible_id"/>
                     </setting>
                 </block>
             </xpath>

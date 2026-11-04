@@ -75,6 +75,23 @@
             <field name="perm_unlink" eval="False"/>
             <field name="domain_force">[('staff_ids.user_ids', 'in', user.id)]</field>
         </record>
+
+        <!-- Task 1407: portal therapists WRITE teams they staff. Separate
+             write-only rule (the read rule above is left untouched) pairing with
+             the access_team_portal_tp ACL (read+write, no create/unlink). Same
+             house pattern as patients/injuries: broad portal ACL + staffing
+             record rule; the announcement fields stay further gated by the
+             model's role guard (_user_can_edit_announcement). -->
+        <record id="portal_treatment_professional_team_write" model="ir.rule">
+            <field name="name">Portal Treatment Professional Write Access to Staffed Teams</field>
+            <field name="model_id" ref="model_sports_team"/>
+            <field name="groups" eval="[(6, 0, [ref('bemade_sports_clinic.group_portal_treatment_professional')])]"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_read" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+            <field name="domain_force">[('staff_ids.user_ids', 'in', user.id)]</field>
+        </record>
         
         <!-- Portal team coaches can read teams that share patients with their accessible teams -->
         <record id="portal_team_coach_team_read_shared_patients" model="ir.rule">
@@ -88,7 +105,17 @@
             <field name="domain_force">[('patient_ids', 'in', user.partner_id.team_staff_rel_ids.mapped('team_id.patient_ids.id') or [0])]</field>
         </record>
         
-        <!-- Portal users can access injury documents for their team's players -->
+        <!-- Portal users can access injury documents for their team's players,
+             EXCEPT documents of injuries hidden from coaches (security hotfix
+             19.0.1.42.5, forward-port 19.0.1.99.3). Portal treatment professionals get the full team
+             scope back through their own rule in
+             portal_access_sweep_rules.xml (rules of different groups are
+             ORed). This record is noupdate: existing databases get the new
+             domain from migrations/19.0.1.99.3/post-migrate.py (keep the two
+             domains identical). patient_id is required and an injury's
+             document always carries the injury's patient, so the old
+             « injury OR patient » domain leaked hidden-injury documents
+             through the patient branch. -->
         <record id="portal_injury_document_access" model="ir.rule">
             <field name="name">Portal Access to Injury Documents</field>
             <field name="model_id" ref="model_sports_injury_document"/>
@@ -97,10 +124,7 @@
             <field name="perm_write" eval="True"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_unlink" eval="False"/>
-            <field name="domain_force">['|',
-                ('injury_id.patient_id.team_ids.staff_ids.user_ids', 'in', user.id),
-                ('patient_id.team_ids.staff_ids.user_ids', 'in', user.id)
-            ]</field>
+            <field name="domain_force">[('patient_id.team_ids.staff_ids.user_ids', 'in', user.id), '|', ('injury_id', '=', False), ('injury_id.hidden_from_coaches', '=', False)]</field>
         </record>
         
         <!-- Portal therapists access partners broadly (kept permissive for

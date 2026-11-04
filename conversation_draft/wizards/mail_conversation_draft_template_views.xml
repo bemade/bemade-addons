@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="mail_conversation_draft_template_view_form" model="ir.ui.view">
+        <field name="name">mail.conversation.draft.template.view.form</field>
+        <field name="model">mail.conversation.draft.template</field>
+        <field name="arch" type="xml">
+            <form string="Use Template">
+                <group>
+                    <field name="conversation_id" invisible="1" />
+                    <field name="draft_id" invisible="1" />
+                    <field name="draft_has_body" invisible="1" />
+                    <field name="template_id" options="{'no_create': True}" />
+                    <field name="mode" widget="radio" invisible="not draft_has_body" />
+                </group>
+                <footer>
+                    <button
+            name="action_apply"
+            string="Apply"
+            type="object"
+            class="btn-primary"
+            data-hotkey="q"
+          />
+                    <button
+            string="Cancel"
+            class="btn-secondary"
+            special="cancel"
+            data-hotkey="x"
+          />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

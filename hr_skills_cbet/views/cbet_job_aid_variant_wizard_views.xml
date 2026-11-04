@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_cbet_job_aid_variant_wizard_form" model="ir.ui.view">
+        <field name="name">cbet.job.aid.variant.wizard.form</field>
+        <field name="model">cbet.job.aid.variant.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Duplicate as variant">
+                <group>
+                    <field name="job_aid_id" readonly="1"/>
+                    <field name="competency_id" readonly="1"/>
+                    <field name="variant" placeholder="e.g. RO"/>
+                </group>
+                <div class="text-muted">
+                    The blocks, phases and lines of this card are copied into a new card for
+                    the given equipment variant, on the same competency.
+                </div>
+                <footer>
+                    <button name="action_duplicate" type="object" string="Duplicate"
+                            class="btn-primary" data-hotkey="q"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel" data-hotkey="x"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

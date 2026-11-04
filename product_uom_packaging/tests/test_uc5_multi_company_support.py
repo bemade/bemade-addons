@@ -11,11 +11,16 @@ Acceptance Criteria:
 """
 
 from odoo.exceptions import ValidationError
-from odoo.tests import Form
+from odoo.tests import Form, tagged
 from odoo.tests.common import TransactionCase
 from odoo.tools.misc import mute_logger
 
 
+# Run post_install so the full registry (account, sale_stock, ...) is loaded
+# before setUpClass creates a res.company: creating one at at_install time in a
+# DB that already has those modules' NOT NULL columns (autopost_bills,
+# security_lead) but not yet their Python defaults raises a NotNullViolation.
+@tagged("post_install", "-at_install")
 class TestUC5MultiCompanySupport(TransactionCase):
     """Test UC5: Multi-Company Support"""
 

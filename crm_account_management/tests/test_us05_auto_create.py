@@ -1,4 +1,5 @@
 from odoo.tests import tagged
+from odoo.tools import mute_logger
 from odoo.exceptions import ValidationError
 from datetime import date
 from dateutil.relativedelta import relativedelta
@@ -236,8 +237,15 @@ class TestUS05AutoCreateOU(AccountTestInvoicingCommon):
         self.assertEqual(len(ou2), 1, "Second company should have an OU")
         self.assertNotEqual(ou1.id, ou2.id, "Should be different OUs despite same name")
 
+    @mute_logger("odoo.sql_db")
     def test_company_without_name_still_creates_ou(self):
-        """Company without name should still create OU (though invalid)."""
+        """Company without name should still create OU (though invalid).
+
+        Creating a nameless company trips res_partner_check_name; odoo.sql_db
+        logs the failed INSERT at ERROR before the except swallows it. Mute it so
+        the deliberate failure doesn't fail an Odoo.sh build ("errors detected in
+        the logs") even though the test passes.
+        """
         # This tests the auto-creation logic, even though name validation might fail
         try:
             company = self.partner_model.create(

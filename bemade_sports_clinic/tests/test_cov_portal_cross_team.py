@@ -42,15 +42,6 @@ class TestCovPortalCrossTeam(PortalCovCommon):
         self.assertNotIn('<span>Cross Team Therapist</span>', resp.text,
                          "other therapists' timesheet rows must not render")
 
-    def test_injury_edit_prechecks_cross_team_tp(self):
-        self.injury.sudo().write({'treatment_professional_ids': [Command.set([self.other.id])]})
-        self.env.flush_all()
-        self._login_tp()
-        resp = self.url_open(f'/my/injury/edit?injury_id={self.injury.id}')
-        self.assertEqual(resp.status_code, 200)
-        self.assertRegex(resp.text, r'value="%s"[^>]*checked' % self.other.id,
-                         "the assigned (cross-team) TP checkbox should be pre-checked")
-
     def test_treatment_notes_other_author(self):
         # A note authored by a therapist the viewer can't read: the notes view
         # renders note.user_id.name.

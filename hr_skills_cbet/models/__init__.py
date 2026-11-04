@@ -1,6 +1,11 @@
 from . import res_config_settings
+from . import ir_actions_report
 from . import cbet_domain
+from . import cbet_icon
+from . import cbet_content_revision
 from . import cbet_competency
+from . import cbet_job_aid
+from . import cbet_import
 from . import cbet_evaluation_unit
 from . import cbet_criterion
 from . import cbet_question
@@ -16,3 +21,5 @@ from . import cbet_criterion_result
 from . import cbet_question_result
 from . import cbet_evaluation
 from . import cbet_employee_competency_status
+from . import hr_job
+from . import hr_employee

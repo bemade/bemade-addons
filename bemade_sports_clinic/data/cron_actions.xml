@@ -29,12 +29,47 @@
         <field name="priority">80</field>
     </record>
 
-    <!-- Hourly: detach past or cancelled events from auto-created event-coverage staff records (task 539) -->
-    <record id="ir_cron_cleanup_auto_event_staff" model="ir.cron">
-        <field name="name">Cleanup Auto Event-Coverage Staff</field>
-        <field name="model_id" ref="model_sports_event"/>
+    <!-- Task 1269: every 5 minutes, send ONE aggregated PHI-free urgent-update
+         email per recipient (team coaches + TPs) covering play-status changes,
+         new injuries and short-notice new events since the watermark. -->
+    <record id="ir_cron_send_urgent_notifications" model="ir.cron">
+        <field name="name">Send Urgent Aggregated Notifications</field>
+        <field name="model_id" ref="model_sports_patient"/>
         <field name="state">code</field>
-        <field name="code">model._cron_cleanup_auto_event_staff()</field>
+        <field name="code">model._cron_send_urgent_notifications()</field>
+        <field name="interval_number">5</field>
+        <field name="interval_type">minutes</field>
+        <field name="nextcall">2026-08-13 00:00:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">75</field>
+    </record>
+
+    <!-- Task 1268: hourly, send ONE PHI-free morning briefing per staff user at
+         their configured user-local send time. Per-user-per-local-date guard
+         makes it idempotent and DST-safe. -->
+    <record id="ir_cron_send_morning_digests" model="ir.cron">
+        <field name="name">Send Daily Morning Briefings</field>
+        <field name="model_id" ref="base.model_res_users"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_send_morning_digests()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="nextcall">2026-08-13 00:00:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">75</field>
+    </record>
+
+    <!-- Hourly: the ONE timed-staff reconcile (task 1416) — opens / closes the
+         event-coverage rows (task 539: from coverage start − lead hours to the
+         end) and the temporary access grant rows (window start → end), updates
+         the grant states. Same record id as the former #539 cleanup cron. -->
+    <record id="ir_cron_cleanup_auto_event_staff" model="ir.cron">
+        <field name="name">Reconcile Timed Staff Access (event coverage + temporary grants)</field>
+        <field name="model_id" ref="model_sports_team_staff"/>
+        <field name="state">code</field>
+        <field name="code">model._reconcile_timed_rows()</field>
         <field name="interval_number">1</field>
         <field name="interval_type">hours</field>
         <field name="nextcall">2026-05-03 00:00:00</field>
@@ -43,7 +78,142 @@
         <field name="priority">85</field>
     </record>
 
+    <!-- Hourly: capture per-team daily dashboard-digest snapshots at each team's
+         local capture time (task 1267). Per-local-date guard makes it idempotent
+         and DST-safe. -->
+    <record id="ir_cron_capture_team_digests" model="ir.cron">
+        <field name="name">Capture Team Dashboard Digests</field>
+        <field name="model_id" ref="model_sports_team_digest"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_capture_team_digests()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="nextcall">2026-08-13 00:00:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">75</field>
+    </record>
+
+    <!-- Daily: purge team dashboard-digest snapshots older than each team's
+         per-team retention window (task 1267). -->
+    <record id="ir_cron_purge_team_digests" model="ir.cron">
+        <field name="name">Purge Old Team Dashboard Digests</field>
+        <field name="model_id" ref="model_sports_team_digest"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_purge_team_digests()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-08-13 03:00:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">76</field>
+    </record>
+
+    <!-- Task 1244: daily, nudge therapists (and clinic admins) about quick notes
+         left undismissed past the configured staleness threshold. Never deletes
+         anything — users purge their own notes. Dedupe makes reruns a no-op. -->
+    <record id="ir_cron_escalate_stale_quick_notes" model="ir.cron">
+        <field name="name">Escalate Stale Quick Notes</field>
+        <field name="model_id" ref="model_sports_quick_note"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_escalate_stale_notes()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-08-18 04:00:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">78</field>
+    </record>
+
+    <!-- Task 1628: daily, ONE « Complete the player's file » To-Do per player
+         created since bemade_sports_clinic.incomplete_todo_since (set by the
+         19.0.1.94.0 post-migrate: no backfill) whose file is still incomplete
+         48 h after creation. The To-Do follows the file and closes itself once
+         complete; one dismissed by hand is never raised again. -->
+    <record id="ir_cron_incomplete_player_todos" model="ir.cron">
+        <field name="name">Incomplete Player File To-Dos</field>
+        <field name="model_id" ref="model_sports_patient"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_incomplete_player_todos()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-10-21 11:00:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">80</field>
+    </record>
+
+    <!-- Task 1399: daily, record no-shows on the clinic worklist — rows still
+         Expected once the clinic has ended get the stored no_show flag (the
+         portal's live is_no_show needs no cron; this is the reporting twin).
+         Idempotent and self-correcting: rows that moved on, or clinics moved
+         back into the future, are un-flagged. -->
+    <record id="ir_cron_flag_clinic_no_shows" model="ir.cron">
+        <field name="name">Record Clinic No-shows</field>
+        <field name="model_id" ref="model_sports_clinic_attendance"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_flag_no_shows()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-08-22 05:00:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">79</field>
+    </record>
+
+    <!-- Task 1418: daily, purge unresolved unregistered kiosk sign-ins (typed
+         name + date of birth, no patient file) once their clinic ended more
+         than the retention window ago (bemade_sports_clinic.
+         kiosk_unregistered_retention_days, default 7, 0 = never). Linked /
+         created / removed rows are untouched. -->
+    <record id="ir_cron_purge_unregistered_kiosk_rows" model="ir.cron">
+        <field name="name">Purge Unregistered Kiosk Sign-ins</field>
+        <field name="model_id" ref="model_sports_clinic_attendance"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_purge_unregistered_kiosk_rows()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-08-23 05:10:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">79</field>
+    </record>
+
+    <!-- Task 1433: daily, purge kiosk DEVICE rows that never got paired and
+         are older than 24 h — drive-by hits on the public /clinic/kiosk
+         dispatcher must not accumulate rows. Acts only on
+         sports.clinic.kiosk.device; paired devices are never touched. -->
+    <record id="ir_cron_purge_unpaired_kiosk_devices" model="ir.cron">
+        <field name="name">Purge Never-Paired Kiosk Devices</field>
+        <field name="model_id" ref="model_sports_clinic_kiosk_device"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_purge_unpaired_devices()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-09-05 05:20:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">79</field>
+    </record>
+
     <!-- Nightly maintenance: recompute followers and team staff groups at 2:00 AM -->
+    <!-- Task 1415: nightly reconcile of organization staff lines into team
+         staff rows (drop orphan org rows, re-apply every line). The hourly
+         event-coverage cleanup and the 02:00 follower/group maintenance
+         (which calls the same reconcile first) remain. -->
+    <record id="ir_cron_sync_organization_staff" model="ir.cron">
+        <field name="name">Reconcile Organization Staff</field>
+        <field name="model_id" ref="model_sports_organization_staff"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_sync_organization_staff()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-08-23 03:30:00</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="priority">72</field>
+    </record>
+
     <record id="ir_cron_recompute_sports_followers_and_groups" model="ir.cron">
         <field name="name">Recompute Sports Followers and Groups</field>
         <field name="model_id" ref="base.model_res_config_settings"/>

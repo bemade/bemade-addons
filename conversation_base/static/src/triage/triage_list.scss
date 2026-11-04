@@ -1,0 +1,21 @@
+.o_conversation_triage_list {
+  .o_conversation_avatar {
+    width: 24px;
+    height: 24px;
+    object-fit: cover;
+  }
+  .o_conversation_initials {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bs-secondary-bg, #dee2e6);
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+  .o_data_cell[name="last_message_snippet"] {
+    max-width: 28rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

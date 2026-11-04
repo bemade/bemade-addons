@@ -1,0 +1,137 @@
+// Task 1398 — clinic worklist (/my/clinic/<id>).
+// Task 1401 — the drag affordance is shared with the /my/teams personal order.
+//
+// Deliberately tiny: the two-pane layout is plain Bootstrap 5 grid
+// (col-lg-4 + col-lg-8, stacking on narrow viewports), exactly like the
+// existing portal_event_detail_template. This file only styles the drag
+// affordance, which Bootstrap has no vocabulary for.
+
+// Shared by every reorderable portal list (clinic worklist, /my/teams cards):
+// the container carries .o_sc_reorderable, rows get .o_sc_dragging /
+// .o_sc_drag_over from portal_clinic_reorder.js.
+.o_sc_reorderable {
+
+    .o_sc_drag_handle {
+        cursor: grab;
+        padding: 0.125rem 0.25rem;
+        // Desktop affordance only — see portal_clinic_reorder.js. On touch the
+        // up/down buttons are the reorder path, so the grip is hidden there to
+        // avoid advertising something that will not work.
+        display: none;
+
+        &:active {
+            cursor: grabbing;
+        }
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .o_sc_drag_handle {
+            display: inline-block;
+        }
+    }
+
+    .o_sc_dragging {
+        opacity: 0.5;
+    }
+
+    .o_sc_drag_over {
+        border-color: var(--bs-info) !important;
+
+        // /my/teams: the draggable unit is the grid column, the border is on
+        // the card inside it.
+        > .card {
+            border-color: var(--bs-info) !important;
+        }
+    }
+}
+
+.o_sc_clinic_detail {
+
+    .o_sc_worklist_row {
+        background-color: var(--bs-body-bg);
+    }
+
+    // Task 1418 — an unregistered kiosk sign-in: amber card, and its
+    // « Resolve » <details> (summary styled as a button, no marker).
+    .o_sc_worklist_row.o_sc_unregistered {
+        background-color: var(--bs-warning-bg-subtle, #fff3cd);
+    }
+
+    .o_sc_resolve {
+        > summary {
+            cursor: pointer;
+            list-style: none;
+            display: inline-block;
+
+            &::-webkit-details-marker {
+                display: none;
+            }
+        }
+
+        .o_sc_resolve_body {
+            background-color: var(--bs-body-bg);
+        }
+    }
+
+    // Keep the worklist in view while reading a long dossier — desktop only,
+    // where the two panes are side by side.
+    // Plain media query rather than Bootstrap's media-breakpoint-up mixin:
+    // this addon's other frontend SCSS does the same (portal_badges.scss), so
+    // the file never depends on the mixin being in scope in this bundle.
+    @media (min-width: 992px) {
+        #clinic-worklist {
+            position: sticky;
+            top: 1rem;
+            align-self: flex-start;
+        }
+    }
+}
+
+// Task 1397/1433 — the kiosk panel on the TP clinic page. The pairing-code
+// input reads like the code on the iPad: monospace, tracked out.
+.o_sc_kiosk_panel {
+    #clinic_kiosk_code {
+        font-family: var(--bs-font-monospace, monospace);
+        letter-spacing: 0.25rem;
+    }
+}
+
+// Task 1411 — the dossier's active-injury cards: light-red header. Bootstrap
+// 5.3's .bg-danger-subtle does the work; the variable fallback keeps the tint
+// if the subtle utility is ever absent from the frontend bundle.
+.o_sc_clinic_injury {
+    > .card-header {
+        background-color: var(--bs-danger-bg-subtle, #f8d7da);
+    }
+}
+
+// Task 1412 — the injury forms inside the dossier modal: the same templates
+// as the full pages, just denser (smaller section headers, tighter cards).
+.o_sc_injury_modal_form {
+    .card {
+        margin-bottom: 0.75rem !important;
+    }
+
+    .card-header h4 {
+        font-size: 1rem;
+        margin-bottom: 0;
+    }
+}
+
+// Task 1413 — the inline treatment-note edit form (clinic notes table +
+// player page notes tab): a <details> whose summary is the « Edit » control.
+.o_sc_note_edit {
+    > summary {
+        cursor: pointer;
+        list-style: none;
+        display: inline-block;
+
+        &::-webkit-details-marker {
+            display: none;
+        }
+    }
+
+    .o_sc_note_edit_form {
+        max-width: 40rem;
+    }
+}

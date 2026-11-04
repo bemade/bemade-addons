@@ -16,6 +16,35 @@
                 </search>
             </field>
         </record>
+        <!-- Task 1391: announcement note-history as a popup. Read-only list opened
+             in an act_window dialog (target new) from the team form's announcement
+             "History" button, instead of the old inline <details> expansion. Defined
+             here (ahead of sports_team_view_form) so the form button resolves
+             %(action_view_team_note_history)d at parse time. -->
+        <record id="sports_team_note_history_view_list" model="ir.ui.view">
+            <field name="name">sports.team.note.history.view.list</field>
+            <field name="model">sports.team.note.history</field>
+            <field name="arch" type="xml">
+                <list create="false" edit="false" delete="false"
+                      default_order="note_datetime desc, id desc">
+                    <field name="note_datetime"/>
+                    <field name="author_id"/>
+                    <field name="action"/>
+                    <field name="body"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="action_view_team_note_history" model="ir.actions.act_window">
+            <field name="name">Announcement History</field>
+            <field name="res_model">sports.team.note.history</field>
+            <field name="view_mode">list</field>
+            <field name="view_id" ref="sports_team_note_history_view_list"/>
+            <field name="domain">[('team_id', '=', active_id)]</field>
+            <field name="target">new</field>
+            <field name="context">{'create': False}</field>
+        </record>
+
         <record id="sports_team_view_kanban" model="ir.ui.view">
             <field name="name">sports.team.view.kanban</field>
             <field name="model">sports.team</field>
@@ -88,30 +117,65 @@
                 </list>
             </field>
         </record>
-        <!-- Task 1272: embedded list of recently-active players for the team
-             Dashboard page. Ordered by the TP dashboard score (most concerning
-             first), color-coded by the existing stage scheme. -->
-        <record id="sports_patient_view_list_dashboard" model="ir.ui.view">
-            <field name="name">sports.patient.view.list.dashboard</field>
+        <!-- Task 1272 (re-plan): single-column, full-width kanban of the
+             recently-active players for the team Dashboard tab. One roomy card
+             per row (full-width via the o_sports_dashboard_kanban class + backend
+             SCSS); each card renders the TP-scoped CHANGE DIGEST (dashboard_digest_html)
+             — the fields that changed in the window with their current value,
+             de-duped — instead of raw counts. Ordered by the TP dashboard score
+             (most concerning first) via _compute_dashboard_active_patients. -->
+        <record id="sports_patient_view_kanban_dashboard" model="ir.ui.view">
+            <field name="name">sports.patient.view.kanban.dashboard</field>
             <field name="model">sports.patient</field>
             <field name="arch" type="xml">
-                <list string="Recently Active Players" create="false"
-                      default_order="dashboard_score_tp desc"
-                      decoration-danger="stage == 'no_play'"
-                      decoration-warning="stage == 'practice_ok'">
-                    <field name="last_name"/>
+                <kanban class="o_sports_dashboard_kanban" create="false"
+                        records_draggable="false" group_create="false"
+                        default_order="dashboard_score_tp desc">
                     <field name="first_name"/>
+                    <field name="last_name"/>
                     <field name="stage"/>
-                    <field name="dashboard_new_injury_count_tp" string="New Injuries"/>
-                    <field name="dashboard_note_update_count_tp" string="Note Updates"/>
-                    <field name="dashboard_last_activity_tp" string="Last Activity"/>
-                    <field name="dashboard_score_tp" string="Score" optional="hide"/>
-                    <button name="action_view_patient_form" type="object"
-                            title="Details" string="Open" icon="fa-arrow-right"/>
-                </list>
+                    <field name="position"/>
+                    <field name="jersey_number"/>
+                    <field name="active_injury_count"/>
+                    <field name="dashboard_score_tp"/>
+                    <field name="dashboard_digest_html"/>
+                    <templates>
+                        <t t-name="card">
+                            <!-- Task 1272 (round 4, defect 1): opening the patient
+                                 form is not the dashboard's purpose. In Odoo 19 a kanban
+                                 record card opens its form on click regardless of the
+                                 pre-16 oe_kanban_global_click class (removed round 3),
+                                 so removing that alone did NOT stop the popup. The web
+                                 KanbanRecord.onGlobalClick handler bails out (no
+                                 openRecord) when ev.target.closest() matches its
+                                 CANCEL_GLOBAL_CLICK selector — which includes
+                                 ".oe_kanban_action" — WITHOUT preventDefault. Marking the
+                                 whole card with oe_kanban_action therefore cancels the
+                                 record-open on any click while the native <details>
+                                 toggle still fires at the target. No JS, keeps styling. -->
+                            <div class="o_sports_dashboard_card oe_kanban_action p-2">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <!-- Round 5: the card-wide oe_kanban_action (above) cancels the
+                                         record-open on ANY click, which also killed the *intended* way to
+                                         open the patient form. Restore ONE explicit open path: the player
+                                         name is an <a type="open"> action link, so clicking the name opens
+                                         the form while clicking the digest still only expands/collapses. -->
+                                    <strong class="o_kanban_record_title">
+                                        <a type="open" role="button" class="text-reset" style="cursor: pointer;"><t t-if="record.jersey_number.raw_value">#<field name="jersey_number"/> </t><field name="last_name"/>, <field name="first_name"/></a>
+                                    </strong>
+                                    <span t-attf-class="badge {{ record.stage.raw_value == 'no_play' ? 'text-bg-danger' : record.stage.raw_value == 'practice_ok' ? 'text-bg-warning' : 'text-bg-success' }}">
+                                        <field name="stage"/>
+                                    </span>
+                                </div>
+                                <field name="dashboard_digest_html" widget="html"/>
+                            </div>
+                        </t>
+                    </templates>
+                </kanban>
             </field>
         </record>
-        <!-- Task 1272: embedded list of the team's upcoming (7-day) events. -->
+        <!-- Task 1272: embedded list of the team's upcoming events (window set
+             in Settings → Sports Clinic → Dashboard Upcoming Events Window, task 1533). -->
         <record id="sports_event_view_list_team_dashboard" model="ir.ui.view">
             <field name="name">sports.event.view.list.team.dashboard</field>
             <field name="model">sports.event</field>
@@ -142,7 +206,17 @@
                                 groups="base.group_system,bemade_sports_clinic.group_sports_clinic_treatment_professional"/>
                     </header>
                     <sheet>
-                        <div class="oe_button_box"/>
+                        <div class="oe_button_box" name="button_box">
+                            <!-- Task 1416: the dated temporary access grants of this
+                                 team (team-scoped + its organization's). -->
+                            <button name="action_view_staff_grants" type="object" class="oe_stat_button" icon="fa-clock-o"
+                                    groups="bemade_sports_clinic.group_sports_clinic_user">
+                                <div class="o_stat_info">
+                                    <field name="staff_grant_count" class="o_stat_value"/>
+                                    <span class="o_stat_text">Temporary access</span>
+                                </div>
+                            </button>
+                        </div>
                         <div class="oe_title">
                             <h1>
                                 <field name="name"/>
@@ -153,25 +227,99 @@
                                 <field name="parent_id"/>
                                 <field name="player_count"/>
                                 <field name="injured_count"/>
+                                <field name="show_position_on_dashboard"/>
                             </group>
                             <group>
-                                <field name="staff_ids">
+                                <!-- Task 1416: « Staff » = the lasting rows (manual +
+                                     organization). Temporary rows live in their own
+                                     section below. -->
+                                <field name="permanent_staff_ids" string="Staff">
+                                    <!-- Task 1415: organization-sourced rows are
+                                         locked here (role / person / silent) and
+                                         managed at the organization line. -->
                                     <list>
                                         <field name="sequence" widget="handle"/>
-                                        <field name="name"/>
-                                        <field name="role"/>
+                                        <field name="name" readonly="source == 'org'"/>
+                                        <field name="role" readonly="source == 'org'"/>
+                                        <field name="source" widget="badge"
+                                               decoration-info="source == 'org'"
+                                               decoration-warning="source == 'event'"/>
                                         <field name="mobile" widget="phone"/>
-                                        <field name="silent_notifications" optional="hide"/>
+                                        <field name="silent_notifications" optional="hide" readonly="source == 'org'"/>
                                         <field column_invisible="True" name="has_portal_access"/>
-                                        <field column_invisible="True" name="partner_id"/>
+                                        <field column_invisible="True" name="partner_id" readonly="source == 'org'"/>
+                                        <field column_invisible="True" name="org_staff_line_id"/>
+                                        <button icon="fa-sitemap" invisible="source != 'org'" name="action_open_org_staff_line" title="Manage at the organization" type="object"/>
                                         <button class="oe_highlight" groups="bemade_sports_clinic.group_sports_clinic_admin,base.group_system" icon="fa-user-plus" invisible="has_portal_access == True" name="action_grant_portal_access" title="Grant Portal Access" type="object"/>
                                         <button class="oe_highlight" groups="bemade_sports_clinic.group_sports_clinic_admin,base.group_system" icon="fa-ban" invisible="has_portal_access == False" name="action_revoke_portal_access" title="Revoke Portal Access" type="object"/>
                                     </list>
                                 </field>
                             </group>
                         </group>
+                        <!-- Task 1416: rows that exist only inside a window — dated
+                             temporary access grants and #539 event coverage. Read-only
+                             here: managed on the grant (« Temporary access » button) /
+                             the event. -->
+                        <group string="Temporary staff" name="temporary_staff">
+                            <field name="temp_staff_ids" nolabel="1" colspan="2" readonly="1">
+                                <list create="false" delete="false" edit="false"
+                                      decoration-primary="source == 'temp'"
+                                      decoration-warning="source == 'event'">
+                                    <field name="name"/>
+                                    <field name="role"/>
+                                    <field name="temp_access_label" widget="badge"
+                                           decoration-primary="source == 'temp'"
+                                           decoration-warning="source == 'event'"/>
+                                    <field name="mobile" widget="phone" optional="hide"/>
+                                    <field name="silent_notifications" optional="show"/>
+                                    <field column_invisible="True" name="source"/>
+                                    <field column_invisible="True" name="grant_id"/>
+                                    <button icon="fa-clock-o" invisible="source != 'temp'" name="action_open_grant" title="Open the temporary access" type="object"/>
+                                </list>
+                            </field>
+                        </group>
                         <notebook>
                             <page name="dashboard" string="Dashboard">
+                                <!-- Task 1270: team announcement (TP-authored,
+                                     all-staff visible). Optional soft deadline;
+                                     stays until dismissed. -->
+                                <field name="announcement_is_expired" invisible="1"/>
+                                <field name="announcement_author_id" invisible="1"/>
+                                <!-- Task 1380: Law 25 warning is now an onchange
+                                     popup (see _onchange_announcement_law25_warning),
+                                     not a permanent banner. -->
+                                <!-- Task 1391: the announcement history now opens in
+                                     an act_window dialog (target new) instead of
+                                     expanding inline and blowing up the layout. The
+                                     dialog's built-in × closes it; the button stays in
+                                     the same position, gated on note_history_ids.
+                                     Task 1385 (CR-D4): UI text is English source;
+                                     French is supplied by i18n/fr_CA.po (owner
+                                     standard). -->
+                                <field name="note_history_ids" invisible="1"/>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="fw-bold">Team announcement</span>
+                                    <span class="badge text-bg-secondary" invisible="not announcement_is_expired">Expired</span>
+                                    <div class="ms-auto d-flex align-items-center gap-2">
+                                        <button name="%(action_view_team_note_history)d" type="action"
+                                                string="History" icon="fa-history"
+                                                class="btn-sm btn-outline-secondary"
+                                                invisible="not note_history_ids"/>
+                                        <button name="action_dismiss_announcement" type="object"
+                                                string="Archive" class="btn-sm btn-secondary"
+                                                invisible="not announcement"
+                                                confirm="Archive this announcement from the dashboard?"/>
+                                    </div>
+                                </div>
+                                <field name="announcement" nolabel="1"
+                                       placeholder="Write an announcement for all team staff…"/>
+                                <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                                    <label for="announcement_deadline" class="fw-normal mb-0">Valid until (optional):</label>
+                                    <field name="announcement_deadline" nolabel="1"/>
+                                    <span class="text-muted small" invisible="not announcement_date">
+                                        Posted on <field name="announcement_date" readonly="1" nolabel="1" class="d-inline"/>
+                                    </span>
+                                </div>
                                 <!-- Team-health header: red/yellow/green counts
                                      by stage (task 1272). -->
                                 <div class="d-flex flex-wrap gap-2 mb-3" name="team_health">
@@ -189,10 +337,13 @@
                                     </span>
                                 </div>
                                 <separator string="Recent Player Changes"/>
+                                <!-- Single-column full-width kanban digest (task 1272 re-plan).
+                                     dashboard_show_position carries the per-team toggle into the
+                                     patient digest compute so position shows only when enabled. -->
                                 <field name="dashboard_active_patient_ids" nolabel="1"
-                                       readonly="1"
-                                       context="{'list_view_ref': 'bemade_sports_clinic.sports_patient_view_list_dashboard'}"/>
-                                <separator string="Upcoming Events (next 7 days)"/>
+                                       readonly="1" mode="kanban"
+                                       context="{'kanban_view_ref': 'bemade_sports_clinic.sports_patient_view_kanban_dashboard', 'dashboard_show_position': show_position_on_dashboard}"/>
+                                <separator string="Upcoming Events"/>
                                 <field name="dashboard_upcoming_event_ids" nolabel="1"
                                        readonly="1"
                                        context="{'list_view_ref': 'bemade_sports_clinic.sports_event_view_list_team_dashboard'}"/>
@@ -220,14 +371,18 @@
                     <sheet>
                         <group>
                             <group>
-                                <field name="partner_id"/>
+                                <field name="partner_id" readonly="source == 'org'"/>
                                 <field name="parent_id"/>
-                                <field name="role"/>
+                                <field name="role" readonly="source == 'org'"/>
+                                <field name="source" readonly="1"/>
+                                <field name="org_staff_line_id" invisible="source != 'org'" readonly="1"/>
+                                <field name="grant_id" invisible="source != 'temp'" readonly="1"/>
+                                <field name="temp_access_label" invisible="source not in ('temp', 'event')"/>
                             </group>
                             <group>
                                 <field name="mobile" widget="phone"/>
                                 <field name="email" widget="email"/>
-                                <field name="silent_notifications"/>
+                                <field name="silent_notifications" readonly="source == 'org'"/>
                             </group>
                         </group>
                     </sheet>

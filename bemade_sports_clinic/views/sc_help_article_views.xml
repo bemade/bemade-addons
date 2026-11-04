@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Task 1660: the in-app help mapping (page key -> public guide article),
+     clinic administrators only. -->
+<odoo>
+    <record id="sc_help_article_view_list" model="ir.ui.view">
+        <field name="name">sc.help.article.list</field>
+        <field name="model">sc.help.article</field>
+        <field name="arch" type="xml">
+            <list string="App help" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="key"/>
+                <field name="url" widget="url"/>
+                <field name="note" optional="show"/>
+                <field name="active" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="sc_help_article_action" model="ir.actions.act_window">
+        <field name="name">App help</field>
+        <field name="res_model">sc.help.article</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Map an app page to its user-guide article.</p>
+            <p>Keys: home, teams, team, team.players, players, player, player.injuries, player.info,
+               player.documents, player.notes, player.activities, injury, notepad, activities, events,
+               event, calendar, timesheets, clinics, clinic, settings, account, install, search.
+               An unmapped page opens the guide home (Settings › Sports Clinic › User Guide Home).</p>
+        </field>
+    </record>
+
+    <menuitem id="sc_help_article_menu"
+              name="App help"
+              parent="sports_clinic_staff_menu"
+              groups="bemade_sports_clinic.group_sports_clinic_admin"
+              action="sc_help_article_action"
+              sequence="90"/>
+</odoo>

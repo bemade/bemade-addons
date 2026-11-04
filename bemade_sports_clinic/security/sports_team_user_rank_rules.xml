@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    Personal team order record rule (task 1401).
+
+    A rank row is a purely PERSONAL preference (the portal /my/teams « Mon
+    ordre » sort), so every group that may touch the model is scoped to its
+    own rows: a user reads, creates, edits and deletes only ranks whose
+    user_id is themself. Another staffer's order is never visible nor
+    affected. Applied to ALL groups (no `groups` field) so it is a global rule.
+
+    Plain <data> block, no noupdate: a brand-new ir.rule record is CREATED
+    normally on upgrade (the noupdate freeze only blocks updates to existing
+    records), so this needs no post-migrate — same idiom as
+    sports_clinic_attendance_rules.xml (#1398).
+-->
+<odoo>
+    <data>
+        <record id="sports_team_user_rank_own_rule" model="ir.rule">
+            <field name="name">Personal Team Order: own rows only</field>
+            <field name="model_id" ref="model_sports_team_user_rank"/>
+            <field name="domain_force">[('user_id', '=', user.id)]</field>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+    </data>
+</odoo>

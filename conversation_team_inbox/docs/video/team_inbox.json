@@ -1,0 +1,11 @@
+{
+  "stepsFile": "../../static/tests/tours/team_inbox.steps.js",
+  "startPath": "/odoo/action-conversation_base.mail_conversation_team_action/new",
+  "login": {"path": "/web/login", "formSelector": "form"},
+  "viewport": {"width": 1280, "height": 800},
+  "voice": "fr_FR-siwis-medium",
+  "title": "Créer une boîte de réception d'équipe",
+  "introNarration": "Dans cette démonstration, nous créons une boîte de réception partagée pour une équipe : une adresse de groupe qui transforme chaque courriel reçu en conversation de l'équipe.",
+  "outroTitle": "À vous de jouer",
+  "outroNarration": "Dès que l'équipe est enregistrée, les courriels envoyés à son adresse arrivent comme conversations non lues pour tous ses membres, et vos réponses partent automatiquement de l'adresse d'expédition de l'équipe."
+}

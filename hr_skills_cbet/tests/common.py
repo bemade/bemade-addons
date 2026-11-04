@@ -131,3 +131,122 @@ class CbetCommon(TransactionCase):
                 ["valid_from"])["valid_from"],
             "valid_to": valid_to,
         })
+
+    # ------------------------------------------------------------------
+    # UC-RPT-02/03/06 — synthetic documents for the PDF reports. Invented
+    # wording only: nothing here comes from a real training vault.
+    # ------------------------------------------------------------------
+    FULL_FICHE = {
+        "subtitle": "Recognition competency, demonstrated on a test bench",
+        "execution_context": "<table><tr><td>Equipment covered</td>"
+                             "<td>Synthetic bench XB-1</td></tr></table>",
+        "knowledge_body": "<h3>Glossary</h3><ul><li><strong>Inlet</strong> — where the "
+                          "water comes in.</li></ul>",
+        "safety_block": "<ul><li>☐ Lock-out required — see the isolation competency</li></ul>",
+        "tools_materials": "<ul><li>Standard tool bag</li><li>Conductivity meter</li></ul>",
+        "documents_required": "<ul><li>Data form XF-1</li></ul>",
+        "evidence_required": "<ul><li>Signed evaluation grid</li></ul>",
+        "references_body": "<ol><li>Synthetic bench manual, rev. 3</li></ol>",
+        "procedure_body": "<h2>Steps</h2><ol><li>Isolate the bench.</li>"
+                          "<li>Open the lid.</li></ol>",
+        "demo_notes_body": "<h2>Step 1 — Prepare</h2><p>Set up the bench before the "
+                           "technician arrives.</p>",
+        "protocol_method": "Demonstration on the test bench",
+        "protocol_place": "Training room",
+        "protocol_duration": 0.75,
+        "protocol_support": "Written procedure allowed, no verbal help",
+        "protocol_start_conditions": "Bench in service",
+        "protocol_verbalization": "Explain each key step aloud",
+        "protocol_min_evaluator_qualification": "Designated trainer",
+        "evaluator_independence": "Preferably not the candidate's direct trainer",
+        "validity_months": 24,
+        "maintenance_condition": "At least 3 interventions of this kind in 12 months",
+        "recert_modality": "Light demonstration (key criteria only)",
+        "recert_early_trigger": "Incident or major procedure change",
+        "field_frequency": "★★★ — frequent",
+        "difficulty": "medium",
+        "learning_time": "2 h demo + 4 h supervised practice",
+        "common_pitfalls": "Confuses the inlet with the outlet",
+    }
+
+    @classmethod
+    def _make_full_competency(cls, code="XPR-01", publish=True, **extra):
+        """A competency with every fiche section, a mandatory prerequisite, three
+        typed criteria and both operational bodies; published (v1.0) by default."""
+        pcode = "XPQ-" + code.split("-")[1]
+        prereq = cls.env["cbet.competency"].search([("code", "=", pcode)], limit=1)
+        if not prereq:
+            prereq = cls._make_competency(pcode, name="Safe isolation of a bench")
+        vals = dict(cls.FULL_FICHE, name="Read the synthetic bench", **extra)
+        comp = cls._make_competency(code, **vals)
+        cls.env["cbet.prerequisite"].create({
+            "competency_id": comp.id, "prerequisite_id": prereq.id,
+            "prereq_type": "obligatoire",
+        })
+        cls._add_criteria(comp, [
+            ("security", "Bench isolated before opening"),
+            ("critical", "Readings within tolerance"),
+            ("standard", "Data recorded on the form"),
+        ])
+        if publish:
+            cls._publish(comp)
+        return comp
+
+    @classmethod
+    def _make_job_aid(cls, comp, variant=False):
+        """A recto/verso job aid: three recto blocks (PPE with icons, STOP, data)
+        and two verso phases, the last one with a reference table."""
+        icons = cls.env["cbet.icon"]._by_token()
+        goggles, stop = icons["epi-lunettes"], icons["sev-stop"]
+        return cls.env["cbet.job.aid"].create({
+            "competency_id": comp.id,
+            "variant": variant,
+            "section_ids": [
+                Command.create({
+                    "face": "recto", "kind": "ppe", "icon_id": goggles.id, "name": "PPE",
+                    "line_ids": [
+                        Command.create({"icon_id": goggles.id, "text": "safety glasses"}),
+                        Command.create({"text": "safety shoes"}),
+                    ],
+                }),
+                Command.create({
+                    "face": "recto", "kind": "stop", "icon_id": stop.id,
+                    "name": "STOP — escalate",
+                    "line_ids": [
+                        Command.create({"text": "Bench under pressure — point, do not touch"}),
+                    ],
+                }),
+                Command.create({
+                    "face": "recto", "kind": "data", "name": "Data to record",
+                    "line_ids": [
+                        Command.create({"text": "Inlet pressure"}),
+                        Command.create({"text": "Flow"}),
+                    ],
+                }),
+                Command.create({
+                    "face": "verso", "kind": "phase", "name": "1. State the principle",
+                    "line_ids": [Command.create({"text": "Reading point defined aloud"})],
+                }),
+                Command.create({
+                    "face": "verso", "kind": "phase", "icon_id": stop.id,
+                    "name": "2. Check before leaving",
+                    "line_ids": [Command.create({"icon_id": stop.id, "text": "Nothing touched"})],
+                    "note_html": "<table><tr><td>Unit</td><td>kPa — inlet reading</td></tr></table>",
+                }),
+            ],
+        })
+
+    def _render(self, report_xmlid, records, lang=None):
+        """The report's html as text (``lang`` switches the rendering language)."""
+        Report = self.env["ir.actions.report"]
+        if lang:
+            Report = Report.with_context(lang=lang)
+        html, _type = Report._render_qweb_html(report_xmlid, records.ids)
+        return html.decode()
+
+    @classmethod
+    def _load_fr(cls):
+        """Activate fr_CA and load the module's own translations for it."""
+        cls.env["res.lang"]._activate_lang("fr_CA")
+        cls.env["ir.module.module"]._load_module_terms(["hr_skills_cbet"], ["fr_CA"])
+        return "fr_CA"

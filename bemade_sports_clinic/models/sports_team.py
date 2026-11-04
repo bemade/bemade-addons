@@ -1,10 +1,24 @@
 from odoo import models, fields, api, _, Command
-from odoo.exceptions import ValidationError
+from odoo.addons.phone_validation.tools import phone_validation
+from odoo.exceptions import ValidationError, AccessError, UserError
+from odoo.tools.misc import format_datetime
 from datetime import timedelta
 import logging
 
 
 _logger = logging.getLogger(__name__)
+
+# Roles allowed to author/edit/dismiss the team announcement (task 1270). All
+# other staff (coaches included) get read-only access.
+ANNOUNCEMENT_TP_ROLES = ("head_therapist", "therapist", "doctor")
+
+# Task 1533: horizon (days) of the « Upcoming events » block. ONE window for
+# the team dashboard, its portal view and the morning briefing's event union
+# (which reads dashboard_upcoming_event_ids). Configurable in Settings via the
+# ir.config_parameter below; the default lives in code, like the activity
+# window (task 1392) — no data record.
+DASHBOARD_UPCOMING_EVENTS_DAYS_PARAM = "bemade_sports_clinic.dashboard_upcoming_events_days"
+DASHBOARD_UPCOMING_EVENTS_DAYS_DEFAULT = 14
 
 
 class SportsTeam(models.Model):
@@ -52,12 +66,43 @@ class SportsTeam(models.Model):
         string="Recently Active Players",
         compute="_compute_dashboard_active_patients",
     )
+    # Portal dashboard (task 1382, digest epic): red/yellow players who are NOT
+    # in the recent-changes set, so they stay visible below it. Cheap compute —
+    # reuses stage + the existing active set only; no per-player audit query.
+    dashboard_watchlist_patient_ids = fields.Many2many(
+        comodel_name="sports.patient",
+        string="Other Players to Watch",
+        compute="_compute_dashboard_watchlist_patients",
+    )
     dashboard_upcoming_event_ids = fields.Many2many(
         comodel_name="sports.event",
         string="Upcoming Events",
         compute="_compute_dashboard_upcoming_events",
     )
+    # Task 1272 (deferred from #1273): per-team toggle. When on, the player's
+    # position is shown as card context on this team's dashboards (portal cards
+    # + backend kanban digest). Default off; other teams are unaffected.
+    show_position_on_dashboard = fields.Boolean(
+        string="Show Player Position on Dashboard",
+        default=True,
+        help="When enabled, each player's position is shown as context on this "
+        "team's dashboard cards.",
+    )
     activity_count = fields.Integer(compute="_compute_activity_count")
+    # Daily dashboard-digest snapshots (task 1267). One per local date; the
+    # capture/purge crons on sports.team.digest maintain them.
+    digest_ids = fields.One2many(
+        comodel_name="sports.team.digest",
+        inverse_name="team_id",
+        string="Daily Digests",
+    )
+    digest_count = fields.Integer(compute="_compute_digest_count")
+    digest_retention_days = fields.Integer(
+        string="Digest Retention (days)",
+        default=365,
+        help="How long this team's daily dashboard-digest snapshots are kept "
+        "before the purge cron removes them. Set to 0 to keep indefinitely.",
+    )
     parent_id = fields.Many2one(
         comodel_name="res.partner",
         string="Parent Organization",
@@ -68,6 +113,35 @@ class SportsTeam(models.Model):
         comodel_name="sports.team.staff",
         inverse_name="team_id",
         tracking=True,
+    )
+    # Task 1416: the team form shows the staff in two sections. « Staff » =
+    # the lasting rows (manual + organization, editable there); « Temporary
+    # staff » = the rows that exist only inside a window (temporary access
+    # grants and #539 event coverage), read-only — managed by the grant /
+    # the event. Both are subsets of ``staff_ids`` (same inverse, domain).
+    permanent_staff_ids = fields.One2many(
+        comodel_name="sports.team.staff",
+        inverse_name="team_id",
+        string="Staff",
+        domain=[("source", "in", ("manual", "org"))],
+        copy=False,
+    )
+    temp_staff_ids = fields.One2many(
+        comodel_name="sports.team.staff",
+        inverse_name="team_id",
+        string="Temporary Staff",
+        domain=[("source", "in", ("temp", "event"))],
+        readonly=True,
+        copy=False,
+    )
+    staff_grant_ids = fields.One2many(
+        comodel_name="sports.staff.grant",
+        inverse_name="team_id",
+        string="Temporary Access Grants",
+        copy=False,
+    )
+    staff_grant_count = fields.Integer(
+        compute="_compute_staff_grant_count", string="Temporary Access"
     )
     head_coach_id = fields.Many2one(
         comodel_name="res.partner",
@@ -89,6 +163,67 @@ class SportsTeam(models.Model):
         string="Head Therapist Name",
     )
     website = fields.Char()
+    # Team announcement (task 1270, digest epic slice F). A single TP-authored,
+    # all-staff-visible note with an OPTIONAL soft deadline. It stays on the
+    # dashboard until a TP dismisses it; the deadline only drives a visual
+    # "expired" flag (see _compute_announcement_is_expired). Every change is
+    # audited into sports.team.note.history via the write/create hooks. Law 25:
+    # broadcast to coaches + emailed, so it must never carry player PHI — the
+    # compose surfaces warn the author (backend + portal).
+    announcement = fields.Text(
+        string="Team Announcement",
+        tracking=True,
+        help="A note visible to all team staff (coaches included) on the "
+        "dashboard and in the morning briefing email. Do NOT include "
+        "confidential medical information about any player.",
+    )
+    announcement_deadline = fields.Date(
+        string="Valid Until",
+        help="Optional. When set and passed, the announcement is flagged as "
+        "expired but stays on the dashboard until a treatment professional "
+        "dismisses it.",
+    )
+    announcement_author_id = fields.Many2one(
+        comodel_name="res.users",
+        string="Announcement Author",
+        readonly=True,
+    )
+    announcement_date = fields.Datetime(
+        string="Announcement Posted On",
+        readonly=True,
+    )
+    announcement_is_expired = fields.Boolean(
+        string="Announcement Expired",
+        compute="_compute_announcement_is_expired",
+        help="True when the announcement has a deadline that has passed. Blank "
+        "deadline never expires.",
+    )
+    note_history_ids = fields.One2many(
+        comodel_name="sports.team.note.history",
+        inverse_name="team_id",
+        string="Announcement History",
+        readonly=True,
+    )
+    # Portal /my/teams "recent activity" sort (task 1401). The most recent
+    # PLAYER activity on the team, per dashboard role, pushed here incrementally
+    # by sports.patient._bump_dashboard_activity (the ONE site that writes the
+    # patient dashboard_last_activity_<role> stamps) — never recomputed over the
+    # roster. Two role-scoped stamps, mirroring the patient fields, because the
+    # Law 25 discipline of this addon applies to ORDER too: a coach's list must
+    # not move on TP-only activity (internal notes, hidden injuries), not even
+    # implicitly. NULL = no recorded player activity yet; sorts last.
+    last_player_activity_coach_at = fields.Datetime(
+        string="Last Coach-visible Player Activity",
+        index=True,
+        copy=False,
+        readonly=True,
+    )
+    last_player_activity_tp_at = fields.Datetime(
+        string="Last TP-visible Player Activity",
+        index=True,
+        copy=False,
+        readonly=True,
+    )
     allowed_user_ids = fields.Many2many(
         comodel_name="res.users",
         compute="_compute_allowed_user_ids",
@@ -108,8 +243,44 @@ class SportsTeam(models.Model):
         return self.sudo().with_context(active_test=False).patient_ids
 
     def write(self, vals):
+        editing_announcement = (
+            "announcement" in vals or "announcement_deadline" in vals
+        )
+        if editing_announcement:
+            for rec in self:
+                if not rec._user_can_edit_announcement():
+                    raise AccessError(
+                        _(
+                            "Only treatment professionals assigned to this team "
+                            "can edit the team announcement."
+                        )
+                    )
+        old_announcements = {}
+        if "announcement" in vals:
+            vals = dict(vals)
+            vals.setdefault("announcement_author_id", self.env.user.id)
+            vals.setdefault("announcement_date", fields.Datetime.now())
+            old_announcements = {
+                rec.id: (rec.announcement or "").strip() for rec in self
+            }
         previous_patients = self._roster()
+        # Task 1415: a team changing organization drops the old organization's
+        # propagated staff and receives the new one's. Re-parenting runs that
+        # sync sudo, so only internal users may change a team's organization
+        # (a portal TP with team write access must not be able to pull an
+        # organization's staff onto a team — review finding).
+        # Task 1659: and only an ADMIN among them — the organization's staff
+        # lines follow the team (sudo), so re-parenting is a staff change.
+        if "parent_id" in vals and not self.env.su and not self._sc_staff_admin(self.env.user):
+            raise AccessError(
+                _("Only clinic administrators can change a team's parent organization.")
+            )
+        old_parents = (
+            {rec.id: rec.parent_id for rec in self} if "parent_id" in vals else {}
+        )
         res = super().write(vals)
+        if "parent_id" in vals:
+            self._sync_organization_staff(old_parents)
         if "staff_ids" in vals or "patient_ids" in vals:
             current_patients = self._roster()
             (current_patients | previous_patients).recompute_followers()
@@ -121,18 +292,131 @@ class SportsTeam(models.Model):
                 # teamless with a NULL clock (never anonymized) and let a stale
                 # clock survive a rejoin (anonymized early).
                 (current_patients | previous_patients)._sync_date_left_last_team()
+        if "announcement" in vals:
+            self._log_announcement_history(old_announcements)
         return res
 
     @api.model_create_multi
     def create(self, vals_list):
         res = super().create(vals_list)
+        # Task 1415: a team created under an organization gets its staff.
+        if res.filtered("parent_id"):
+            res.filtered("parent_id")._sync_organization_staff()
         for index, rec in enumerate(res):
             if "staff_ids" in vals_list[index] or "patient_ids" in vals_list[index]:
                 patients = rec._roster()
                 patients.recompute_followers()
                 if "patient_ids" in vals_list[index]:
                     patients._sync_date_left_last_team()
+            if (vals_list[index].get("announcement") or "").strip():
+                # Stamp authorship and open the audit trail for a team created
+                # with an announcement already set.
+                stamp = {}
+                if not vals_list[index].get("announcement_author_id"):
+                    stamp["announcement_author_id"] = self.env.user.id
+                if not vals_list[index].get("announcement_date"):
+                    stamp["announcement_date"] = fields.Datetime.now()
+                if stamp:
+                    super(SportsTeam, rec).write(stamp)
+                rec._log_announcement_history({rec.id: ""})
         return res
+
+    # --------------------------------------------------------- announcement (1270)
+    @api.onchange("announcement")
+    def _onchange_announcement_law25_warning(self):
+        """Law 25 (task 1380): the announcement is broadcast to coaches and
+        emailed, so it must never carry player PHI. On the backend, surface a
+        native warning popup as soon as the author composes/edits content —
+        replacing the permanent inline banner. Gated to content present so
+        clearing/dismissing the announcement stays silent."""
+        if (self.announcement or "").strip():
+            return {
+                "warning": {
+                    "title": _("Privacy (Law 25)"),
+                    "message": _(
+                        "Visible to all team staff (coaches included) and sent "
+                        "by email — do not include any confidential medical "
+                        "information about a player."
+                    ),
+                }
+            }
+
+    @api.depends("announcement_deadline")
+    def _compute_announcement_is_expired(self):
+        today = fields.Date.context_today(self)
+        for rec in self:
+            rec.announcement_is_expired = bool(
+                rec.announcement_deadline and rec.announcement_deadline < today
+            )
+
+    @api.model
+    def _sc_staff_admin(self, user):
+        """Task 1659: who may change staff composition — a clinic
+        administrator or a system administrator (internal)."""
+        return bool(user._is_internal() and (
+            user.has_group("base.group_system")
+            or user.has_group("bemade_sports_clinic.group_sports_clinic_admin")))
+
+    def _user_can_edit_announcement(self, user=None):
+        """Whether ``user`` (default: current) may author/edit/dismiss THIS
+        team's announcement. Admins/system always may; otherwise only staff
+        holding a treatment-professional role on this team."""
+        self.ensure_one()
+        user = user or self.env.user
+        if user.has_group("base.group_system") or user.has_group(
+            "bemade_sports_clinic.group_sports_clinic_admin"
+        ):
+            return True
+        return bool(
+            self.sudo().staff_ids.filtered(
+                lambda s: s.role in ANNOUNCEMENT_TP_ROLES and user in s.user_ids
+            )
+        )
+
+    def _log_announcement_history(self, old_by_id):
+        """Append one audit row per team whose announcement text changed. The
+        action is inferred from the transition: cleared -> ``dismiss``, first
+        content -> ``set``, otherwise ``edit``. Created via sudo() so the
+        read-only model stays append-only from every role."""
+        History = self.env["sports.team.note.history"].sudo()
+        for rec in self:
+            old = old_by_id.get(rec.id, "")
+            new = (rec.announcement or "").strip()
+            if new == old:
+                continue
+            if not new:
+                action = "dismiss"
+            elif not old and self.env.context.get("sc_announcement_restore"):
+                # Task 1663: the undo of an archive.
+                action = "restore"
+            elif not old:
+                action = "set"
+            else:
+                action = "edit"
+            History.create(
+                {
+                    "team_id": rec.id,
+                    "body": rec.announcement or "",
+                    "author_id": self.env.user.id,
+                    "action": action,
+                }
+            )
+
+    def action_dismiss_announcement(self):
+        """Clear the announcement and log a ``dismiss`` history entry. TP-only
+        (enforced by the write guard). 'Stay until dismissed': the deadline is
+        only a visual flag, so this is the sole way an announcement leaves the
+        dashboard."""
+        for rec in self:
+            if not rec._user_can_edit_announcement():
+                raise AccessError(
+                    _(
+                        "Only treatment professionals assigned to this team can "
+                        "dismiss the team announcement."
+                    )
+                )
+            rec.write({"announcement": False, "announcement_deadline": False})
+        return True
 
     def unlink(self):
         to_recompute = self._roster()
@@ -142,6 +426,28 @@ class SportsTeam(models.Model):
         # retention clock stamped.
         to_recompute._sync_date_left_last_team()
         return res
+
+    def _sync_organization_staff(self, old_parents=None):
+        """Task 1415: (re)apply the organization staff lines to these teams.
+
+        ``old_parents`` (team id -> previous res.partner) lets a re-parent
+        drop the previous organization's propagated rows on the team before
+        the new organization's lines are applied. Runs sudo: the trigger may
+        be a clinic user editing the team form who has no write access on the
+        organization lines."""
+        Line = self.env["sports.organization.staff"].sudo().with_context(
+            active_test=False
+        )
+        for team in self:
+            orgs = team.parent_id
+            old = (old_parents or {}).get(team.id)
+            if old and old != team.parent_id:
+                orgs |= old
+            if not orgs:
+                continue
+            lines = Line.search([("organization_id", "in", orgs.ids)])
+            if lines:
+                lines._sync(teams=team)
 
     @api.depends("patient_ids.is_injured")
     def _compute_player_counts(self):
@@ -176,16 +482,63 @@ class SportsTeam(models.Model):
             ).sorted(key=lambda p: p.dashboard_score_tp, reverse=True)
             rec.dashboard_active_patient_ids = active
 
+    @api.depends(
+        "patient_ids.stage",
+        "patient_ids.dashboard_last_activity_tp",
+        "patient_ids.dashboard_score_tp",
+    )
+    def _compute_dashboard_watchlist_patients(self):
+        # Red (no_play) + yellow (practice_ok) players who are NOT already in the
+        # recent-changes set, ordered red -> yellow then alpha (sort_order splits
+        # severity; last_name/first_name break ties). Set difference against the
+        # SAME active set the recent-changes list renders from, so no player can
+        # appear in both lists.
+        for rec in self:
+            active = rec.dashboard_active_patient_ids
+            watchlist = rec.patient_ids.filtered(
+                lambda p: p.stage in ("no_play", "practice_ok") and p not in active
+            ).sorted(
+                key=lambda p: (p.sort_order, p.last_name or "", p.first_name or "")
+            )
+            rec.dashboard_watchlist_patient_ids = watchlist
+
+    @api.model
+    def _dashboard_upcoming_events_days(self):
+        """Horizon (days) of the upcoming-events block (task 1533). Configurable
+        via ``DASHBOARD_UPCOMING_EVENTS_DAYS_PARAM``; defaults to 14; a
+        non-numeric value falls back to the default and a zero/negative value
+        is floored to 1 (mirrors ``sports.patient._dashboard_window_hours``)."""
+        raw = self.env["ir.config_parameter"].sudo().get_param(
+            DASHBOARD_UPCOMING_EVENTS_DAYS_PARAM, DASHBOARD_UPCOMING_EVENTS_DAYS_DEFAULT
+        )
+        try:
+            days = int(raw)
+        except (TypeError, ValueError):
+            days = DASHBOARD_UPCOMING_EVENTS_DAYS_DEFAULT
+        return max(days, 1)
+
+    @api.model
+    def _dashboard_upcoming_events_domain(self):
+        """``sports.event`` domain of the upcoming-events block: starts between
+        now and now + the configured horizon, not cancelled. Shared by the team
+        dashboard compute and the morning briefing's assigned-events lookup
+        (task 1636) so the two can never drift."""
+        now = fields.Datetime.now()
+        horizon = now + timedelta(days=self._dashboard_upcoming_events_days())
+        return [
+            ("date_start", ">=", now),
+            ("date_start", "<=", horizon),
+            ("state", "!=", "cancelled"),
+        ]
+
     @api.depends("event_ids.date_start", "event_ids.state")
     def _compute_dashboard_upcoming_events(self):
-        now = fields.Datetime.now()
-        horizon = now + timedelta(days=7)
+        # Non-stored: a window change in Settings is live on the next read.
+        domain = self._dashboard_upcoming_events_domain()
         for rec in self:
-            events = rec.event_ids.filtered(
-                lambda e: e.date_start
-                and now <= e.date_start <= horizon
-                and e.state != "cancelled"
-            ).sorted(key=lambda e: e.date_start)
+            events = rec.event_ids.filtered_domain(domain).sorted(
+                key=lambda e: e.date_start
+            )
             rec.dashboard_upcoming_event_ids = events
 
     @api.depends("staff_ids.role")
@@ -206,6 +559,65 @@ class SportsTeam(models.Model):
                 ('res_model', '=', 'sports.team'),
                 ('res_id', '=', rec.id)
             ])
+
+    def _compute_digest_count(self):
+        counts = dict(
+            self.env["sports.team.digest"]._read_group(
+                [("team_id", "in", self.ids)],
+                groupby=["team_id"],
+                aggregates=["__count"],
+            )
+        )
+        for rec in self:
+            rec.digest_count = counts.get(rec, 0)
+
+    def action_view_digests(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Daily Digests"),
+            "res_model": "sports.team.digest",
+            "view_mode": "list,form",
+            "domain": [("team_id", "=", self.id)],
+            "context": {"default_team_id": self.id, "create": False},
+        }
+
+    def _staff_grant_domain(self):
+        """Task 1416: the grants that concern this team — team-scoped ones
+        and the organization-scoped ones of its parent organization."""
+        self.ensure_one()
+        domain = [("team_id", "=", self.id)]
+        if self.parent_id:
+            domain = [
+                "|", ("team_id", "=", self.id),
+                "&", ("scope", "=", "organization"),
+                ("organization_id", "=", self.parent_id.id),
+            ]
+        return domain
+
+    @api.depends("staff_grant_ids.state", "parent_id")
+    def _compute_staff_grant_count(self):
+        Grant = self.env["sports.staff.grant"]
+        for rec in self:
+            rec.staff_grant_count = Grant.search_count(
+                rec._staff_grant_domain()
+                + [("state", "in", ("scheduled", "active"))]
+            ) if rec.id else 0
+
+    def action_view_staff_grants(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Temporary Access"),
+            "res_model": "sports.staff.grant",
+            "view_mode": "list,form",
+            "domain": self._staff_grant_domain(),
+            "context": {
+                "default_scope": "team",
+                "default_team_id": self.id,
+                "search_default_open": 1,
+            },
+        }
 
     def _compute_allowed_user_ids(self):
         for rec in self:
@@ -229,13 +641,72 @@ class SportsTeam(models.Model):
                 ]
             )
 
+    def _bump_last_player_activity(self, roles, stamp):
+        """Push a player-activity ``stamp`` to these teams for ``roles``
+        (subset of ``('coach', 'tp')``), write-if-newer only (task 1401).
+
+        Called from sports.patient._bump_dashboard_activity with the patient's
+        teams, so the portal "recent activity" order follows player activity
+        without any compute over the roster. Runs sudo: the trigger is usually a
+        portal coach/TP editing a player or injury, who has no write access to
+        the team record. Only the stamp fields are written; tracking/followers
+        are left out of it.
+        """
+        roles = tuple(r for r in ("coach", "tp") if r in roles)
+        if not roles or not self or not stamp:
+            return
+        for role in roles:
+            field = "last_player_activity_%s_at" % role
+            stale = self.sudo().filtered(
+                lambda t: not t[field] or t[field] < stamp
+            )
+            if stale:
+                stale.with_context(
+                    tracking_disable=True, mail_notrack=True
+                ).write({field: stamp})
+
     def remove_access(self, user):
         self.staff_ids.filtered(lambda staff: user in staff.user_ids).unlink()
+
+    def _dashboard_url(self, base_url, internal=False):
+        """Return this team's dashboard link for ONE recipient (task 1396).
+
+        Shared *formatter* for every notification surface (urgent alerts,
+        morning briefing) so the link shapes cannot drift apart again:
+          - ``internal`` -> the backend action link, falling back to
+            ``base_url`` when the action cannot be resolved;
+          - otherwise -> the portal team dashboard, ``""`` without a base URL.
+
+        Deciding *who* is internal stays with the caller on purpose: each
+        surface holds a different and more accurate signal (a ``res.partner``
+        on the urgent path, the recipient ``res.users`` itself on the briefing
+        path). Only the formatting is shared.
+        """
+        self.ensure_one()
+        if internal:
+            action = self.env.ref(
+                "bemade_sports_clinic.action_view_team",
+                raise_if_not_found=False,
+            )
+            if not action:  # pragma: no cover - action always present
+                return base_url
+            return "%s/odoo/action-%s/%s" % (base_url, action.id, self.id)
+        return "%s/my/team?team_id=%s" % (base_url, self.id) if base_url else ""
 
 
 class TeamStaff(models.Model):
     _name = "sports.team.staff"
     _description = "Sports Team Staff"
+    # Task 1645: the mobile (the partner's phone) is normalized / refused.
+    _inherit = ["sc.phone.mixin"]
+    _sc_phone_fields = ("mobile",)
+
+    def _sc_phone_country(self, vals=None):
+        partner = self.env["res.partner"]
+        if vals and vals.get("partner_id"):
+            partner = partner.browse(vals["partner_id"])
+        partner = partner or self[:1].partner_id
+        return partner.country_id or self.env.company.country_id
 
     sequence = fields.Integer()
     team_id = fields.Many2one(
@@ -299,11 +770,222 @@ class TeamStaff(models.Model):
              "event is removed and the record is auto-created, the record "
              "is unlinked.",
     )
+    # Task 1415: provenance of the row. ``manual`` = hand-made on the team,
+    # ``org`` = propagated from an organization staff line (task 1415),
+    # ``event`` = temporary event coverage (task 539, ``is_auto_created``).
+    # Distinct from ``is_auto_created`` on purpose: that flag is #539's and
+    # its cleanup cron purges on it. Precedence: manual > org > event.
+    # Task 1416 adds ``temp`` = dated temporary access (sports.staff.grant):
+    # the row exists only inside the grant's window. Precedence:
+    # manual > org > temp > event.
+    source = fields.Selection(
+        selection=[
+            ("manual", "Manual"),
+            ("org", "Organization"),
+            ("temp", "Temporary access"),
+            ("event", "Event coverage"),
+        ],
+        string="Source",
+        default="manual",
+        required=True,
+        index=True,
+        help="Manual: added on the team. Organization: propagated from the "
+             "organization's staff list (edit it there). Temporary access: "
+             "dated grant (replacement), present only inside its window. "
+             "Event coverage: temporary access granted by an event assignment.",
+    )
+    org_staff_line_id = fields.Many2one(
+        comodel_name="sports.organization.staff",
+        string="Organization Staff Line",
+        ondelete="set null",
+        index=True,
+        help="The organization staff line this row is propagated from "
+             "(source = Organization).",
+    )
+    grant_id = fields.Many2one(
+        comodel_name="sports.staff.grant",
+        string="Temporary Access Grant",
+        ondelete="set null",
+        index=True,
+        help="The temporary access grant this row is materialized from "
+             "(source = Temporary access).",
+    )
+    temp_access_label = fields.Char(
+        compute="_compute_temp_access_label",
+        compute_sudo=True,
+        string="Temporary Access",
+        help="Why this row is temporary and until when (temporary access "
+             "grant / event coverage).",
+    )
 
     _team_staff_unique = models.Constraint(
         'unique(team_id, partner_id)',
         "Each partner can only be related to a given team once.",
     )
+
+    # Fields an organization-sourced row takes from its organization line;
+    # editing them on the team row is refused (the nightly reconcile would
+    # silently revert it anyway) unless the org sync itself is writing.
+    _ORG_LOCKED_FIELDS = ("role", "partner_id", "team_id", "silent_notifications")
+
+    def _is_org_sync(self):
+        return bool(self.env.context.get("org_staff_sync"))
+
+    def _check_org_locked(self, vals=None, unlinking=False):
+        """Task 1415: organization-sourced rows are managed at the organization.
+
+        Raises when a backend user edits a locked field or deletes such a row
+        outside the reconciler; the org line's override / exclusion is the way
+        to change a single team. Bypassed by the ``org_staff_sync`` context
+        (reconciler, promotion wizard, archive purge)."""
+        if self._is_org_sync():
+            return
+        if not unlinking and not (vals and set(vals) & set(self._ORG_LOCKED_FIELDS)):
+            return
+        locked = self.filtered(lambda s: s.source == "org")
+        if locked:
+            raise UserError(
+                _(
+                    "%(names)s: this staff member comes from the organization "
+                    "%(org)s. Manage it at the organization (override the role "
+                    "or exclude this team on the organization staff line)."
+                )
+                % {
+                    "names": ", ".join(locked.mapped("display_name")),
+                    "org": ", ".join(
+                        locked.mapped("org_staff_line_id.organization_id.display_name")
+                    ) or "-",
+                }
+            )
+        # Task 1416: temporary rows are owned by their grant (the hourly
+        # reconcile would recreate a deleted row while the grant is active).
+        temp = self.filtered(lambda s: s.source == "temp")
+        if temp:
+            raise UserError(
+                _(
+                    "%(names)s: this staff member holds a temporary access "
+                    "(grant %(grants)s). Manage it on the grant: revoke it or "
+                    "change its dates."
+                )
+                % {
+                    "names": ", ".join(temp.mapped("display_name")),
+                    "grants": ", ".join(
+                        "#%s" % g.id for g in temp.mapped("grant_id")
+                    ) or "-",
+                }
+            )
+
+    @api.depends(
+        "source", "grant_id.date_end",
+        "temporary_event_ids.name", "temporary_event_ids.date_end",
+        "temporary_event_ids.therapist_end",
+    )
+    def _compute_temp_access_label(self):
+        """Task 1416: the badge shown in the « Temporary staff » sections."""
+        for rec in self:
+            label = False
+            if rec.source == "temp" and rec.grant_id:
+                label = _("Temporary · until %s") % format_datetime(
+                    self.env, rec.grant_id.date_end, dt_format="short"
+                )
+            elif rec.source == "event":
+                events = rec.temporary_event_ids.sudo()
+                ends = [e.therapist_end or e.date_end for e in events]
+                ends = [e for e in ends if e]
+                names = events.mapped("name")
+                shown = ", ".join(names[:2]) + (
+                    " +%d" % (len(names) - 2) if len(names) > 2 else ""
+                )
+                if ends:
+                    label = _("Event coverage · %(event)s · until %(end)s") % {
+                        "event": shown or "-",
+                        "end": format_datetime(self.env, max(ends), dt_format="short"),
+                    }
+                else:
+                    label = _("Event coverage · %s") % (shown or "-")
+            rec.temp_access_label = label
+
+    def action_open_grant(self):
+        """Open the temporary access grant this row is materialized from."""
+        self.ensure_one()
+        grant = self.grant_id
+        if not grant:
+            return False
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "sports.staff.grant",
+            "res_id": grant.id,
+            "view_mode": "form",
+            "target": "current",
+        }
+
+    @api.model
+    def _reconcile_timed_rows(self, now=None):
+        """Task 1416: the ONE hourly job for every timed staff row.
+
+        1. temporary access grants (``source = temp``): open the windows that
+           began, close the ones that ended / were revoked, update the grant
+           states — ``sports.staff.grant._reconcile_all``;
+        2. event coverage (``source = event``, task 539): re-sync every event
+           whose access window [start − lead, end] touches now (± 1 day) plus
+           every event still linked to a coverage row, so rows appear at
+           ``start − lead`` and disappear after the end / on cancel.
+
+        Grants first, then events: a temp row handed back to an open event
+        (precedence temp > event) is re-evaluated by the event pass in the
+        same run. ``now`` is for tests. Returns the counts it logs."""
+        now = now or fields.Datetime.now()
+        counts = self.env["sports.staff.grant"]._reconcile_all(now)
+
+        Event = self.env["sports.event"].sudo().with_context(active_test=False)
+        Staff = self.env["sports.team.staff"].sudo().with_context(active_test=False)
+        lead = Event._event_coverage_lead_hours()
+        horizon = now + timedelta(hours=lead, days=1)
+        floor = now - timedelta(days=1)
+        window_events = Event.search([
+            ("state", "!=", "cancelled"),
+            "|", ("therapist_start", "<=", horizon),
+            "&", ("therapist_start", "=", False), ("date_start", "<=", horizon),
+            "|", ("therapist_end", ">=", floor),
+            "&", ("therapist_end", "=", False), ("date_end", ">=", floor),
+        ])
+        linked_events = Staff.search([("source", "=", "event")]).temporary_event_ids
+        events = window_events | linked_events
+        before = set(Staff.search([("source", "=", "event")]).ids)
+        if events:
+            events._sync_event_auto_staff(now)
+        after = set(Staff.search([("source", "=", "event")]).ids)
+        counts.update({
+            "events": len(events),
+            "event_rows_created": len(after - before),
+            "event_rows_removed": len(before - after),
+            "event_rows": len(after),
+        })
+        _logger.info(
+            "[SportsTeam] timed staff reconcile: grants=%(grants)s activated=%(activated)s "
+            "expired=%(expired)s revoked=%(revoked)s temp rows +%(rows_created)s "
+            "-%(rows_removed)s | events=%(events)s coverage rows +%(event_rows_created)s "
+            "-%(event_rows_removed)s (now %(event_rows)s)",
+            {k: counts.get(k, 0) for k in (
+                "grants", "activated", "expired", "revoked", "rows_created",
+                "rows_removed", "events", "event_rows_created",
+                "event_rows_removed", "event_rows")},
+        )
+        return counts
+
+    def action_open_org_staff_line(self):
+        """Open the organization staff line this row is propagated from."""
+        self.ensure_one()
+        line = self.org_staff_line_id
+        if not line:
+            return False
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "sports.organization.staff",
+            "res_id": line.id,
+            "view_mode": "form",
+            "target": "current",
+        }
 
     def _is_follower_eligible(self):
         """Whether this staff member should be auto-subscribed as a follower
@@ -338,67 +1020,22 @@ class TeamStaff(models.Model):
             if len(team.staff_ids.filtered(lambda r: r.role == "head_therapist")) > 1:
                 raise ValidationError(_("A team can have only one head therapist."))
 
-    @api.onchange("mobile")
+    @api.onchange("mobile", "partner_id")
     def _onchange_mobile_validation(self):
-        import logging
-        _logger = logging.getLogger(__name__)
-        
-        _logger.info(f"Mobile validation triggered. mobile={self.mobile}, partner_id={self.partner_id}")
-        
-        # Check for phone formatting dependencies
-        try:
-            import phonenumbers
-            _logger.info(f"phonenumbers library available: {phonenumbers.__version__}")
-            
-            # Test phonenumbers library directly
-            try:
-                test_number = phonenumbers.parse(self.mobile, "CA")
-                _logger.info(f"phonenumbers.parse result: {test_number}")
-                formatted_direct = phonenumbers.format_number(test_number, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
-                _logger.info(f"Direct phonenumbers formatting result: {formatted_direct}")
-            except Exception as e:
-                _logger.error(f"Direct phonenumbers test failed: {e}")
-                
-        except ImportError as e:
-            _logger.error(f"phonenumbers library not available: {e}")
-            return
-        
-        # Check if Odoo's phone formatting method exists and is callable
-        if not hasattr(self.partner_id, '_phone_format'):
-            _logger.error("Partner does not have _phone_format method")
-            return
-        
-        _logger.info(f"_phone_format method available: {callable(self.partner_id._phone_format)}")
-        
-        if self.mobile and self.partner_id:
-            try:
-                _logger.info(f"Attempting to format mobile: {self.mobile}")
-                country_code = self.partner_id.country_id.code if self.partner_id.country_id else None
-                _logger.info(f"Partner country code: {country_code}")
-                
-                # Since Odoo's _phone_format is broken, use phonenumbers library directly
-                if country_code:
-                    try:
-                        import phonenumbers
-                        parsed_number = phonenumbers.parse(self.mobile, country_code)
-                        if phonenumbers.is_valid_number(parsed_number):
-                            formatted_mobile = phonenumbers.format_number(
-                                parsed_number, phonenumbers.PhoneNumberFormat.INTERNATIONAL
-                            )
-                            _logger.info(f"Direct phonenumbers formatting successful: {formatted_mobile}")
-                            self.mobile = formatted_mobile
-                        else:
-                            _logger.warning(f"Invalid phone number: {self.mobile}")
-                    except Exception as e:
-                        _logger.error(f"Direct phonenumbers formatting failed: {e}")
-                else:
-                    _logger.warning(f"No country code available for formatting")
-                    
-            except Exception as e:
-                # If formatting fails, keep the original value
-                _logger.error(f"Mobile formatting failed: {e}")
-        else:
-            _logger.info(f"Skipping validation - mobile: {bool(self.mobile)}, partner_id: {bool(self.partner_id)}")
+        if self.mobile:
+            self.mobile = self._phone_format(self.mobile, force_format="INTERNATIONAL")
+
+    def _phone_format(self, number, force_format="INTERNATIONAL"):
+        country = self.partner_id.country_id or self.env.company.country_id
+        if not country or not number:
+            return number
+        return phone_validation.phone_format(
+            number,
+            country.code if country else None,
+            country.phone_code if country else None,
+            force_format=force_format,
+            raise_exception=False,
+        )
 
     @api.depends("user_ids", "user_ids.group_ids")
     def _compute_has_portal_access(self):
@@ -456,45 +1093,61 @@ class TeamStaff(models.Model):
         )
         return wiz._action_open_modal()
 
+    def _staff_batch(self):
+        """Task 1415: the organization reconciler creates / updates / deletes
+        many rows in one pass and runs the follower recompute ONCE per touched
+        team and the portal-group update ONCE per touched user at the end.
+        While ``sports_staff_batch`` is set the per-row side effects below are
+        skipped; the caller owns them (see
+        ``sports.organization.staff._apply_staff_side_effects``)."""
+        return bool(self.env.context.get("sports_staff_batch"))
+
     @api.model_create_multi
     def create(self, vals_list):
         res = super().create(vals_list)
-        
+        if self._staff_batch():
+            return res
+
+        # Review fixes 2026-10-24: an event-coverage row (auto-created from
+        # an event assignment) never changes portal groups — it used to
+        # grant the portal TP group to whoever was put on an event.
+        granting = res.filtered(lambda s: s.source != 'event')
+
         # Update all portal group memberships for new records
-        res._update_all_portal_groups()
-        
+        granting._update_all_portal_groups()
+
         # Update group membership based on staff roles
-        affected_users = res.mapped('user_ids')
+        affected_users = granting.mapped('user_ids')
         if affected_users:
             for user in affected_users.sudo():
-                res._update_all_portal_groups(user)
+                granting._update_all_portal_groups(user)
         
         # Handle follower recomputation
         res.team_id.mapped("patient_ids").recompute_followers()
         return res
 
     def unlink(self):
-        # Store affected partners and users before deletion
+        self._check_org_locked(unlinking=True)
+        if self._staff_batch():
+            return super().unlink()
+        # Store affected partners and users before deletion. Review fixes
+        # 2026-10-24: event-coverage rows grant no group, so removing one
+        # changes none either.
         affected_partners = self.mapped('partner_id')
-        affected_users = self.mapped('user_ids')
+        affected_users = self.filtered(lambda s: s.source != 'event').mapped('user_ids')
 
         # Standard processing for follower recomputation
         patients = self.team_id.mapped("patient_ids")
         res = super().unlink()
         patients.recompute_followers()
 
-        # Drop ex-staff users from any treatment_professional_ids on the
-        # affected patients' injuries when they no longer have staff
-        # access via any of the patient's other teams. Without this a
-        # therapist removed from a team stays assigned to the team's
-        # injuries (and as a follower) until manually scrubbed.
-        # Same logic for mail.activity records pointing at those
-        # injuries — the activity rule won't grant access to the
-        # ex-staff user anymore, so leaving the activity assigned to
-        # them produces a 403 in the portal next time they open
-        # /my/activities. Reassign to a current team therapist or drop.
+        # Reassign or drop mail.activity records on the affected patients'
+        # injuries that still point at ex-staff users — the activity rule
+        # won't grant access to the ex-staff user anymore, so leaving the
+        # activity assigned to them produces a 403 in the portal next time
+        # they open /my/activities. Reassign to a current team therapist or
+        # drop.
         if patients:
-            patients.injury_ids.sudo()._cleanup_stale_treatment_professionals()
             patients.injury_ids.sudo()._cleanup_stale_mail_activities()
 
         # After deletion, update group memberships for all affected users
@@ -564,9 +1217,12 @@ class TeamStaff(models.Model):
         Returns:
             recordset: Staff records with therapist roles
         """
+        # Review fixes 2026-10-24: event-coverage rows never count (they
+        # grant no portal group).
         return self.env['sports.team.staff'].sudo().search([
             ('partner_id', '=', partner_id),
-            ('role', 'in', ['head_therapist', 'therapist', 'doctor'])
+            ('role', 'in', ['head_therapist', 'therapist', 'doctor']),
+            ('source', '!=', 'event'),
         ])
     
     def _get_staff_with_coach_roles(self, partner_id):
@@ -578,9 +1234,12 @@ class TeamStaff(models.Model):
         Returns:
             recordset: Staff records with coach roles
         """
+        # Review fixes 2026-10-24: event-coverage rows never count (they
+        # grant no portal group).
         return self.env['sports.team.staff'].sudo().search([
             ('partner_id', '=', partner_id),
-            ('role', 'in', ['head_coach', 'coach'])
+            ('role', 'in', ['head_coach', 'coach']),
+            ('source', '!=', 'event'),
         ])
     
     def update_all_treatment_professional_groups(self):
@@ -761,22 +1420,26 @@ class TeamStaff(models.Model):
                     elif not has_therapist_role and portal_treatment_prof_group in user.group_ids:
                         user.sudo().write({'group_ids': [(3, portal_treatment_prof_group.id)]})
     
-    def write(self, values):
-        previous_patients = self.team_id.patient_ids if 'team_id' in values else self.env['sports.patient']
-        result = super().write(values)
+    def write(self, vals):
+        self._check_org_locked(vals)
+        previous_patients = self.team_id.patient_ids if 'team_id' in vals else self.env['sports.patient']
+        result = super().write(vals)
+        if self._staff_batch():
+            return result
 
-        if 'role' in values or 'team_id' in values:
+        # Review fixes 2026-10-24: a row adopted out of event coverage
+        # (``source`` changed) starts / stops counting for the groups.
+        if 'role' in vals or 'team_id' in vals or 'source' in vals:
             self._update_all_portal_groups()
 
-        if 'team_id' in values or 'silent_notifications' in values or 'role' in values:
+        if 'team_id' in vals or 'silent_notifications' in vals or 'role' in vals:
             affected_patients = self.team_id.patient_ids | previous_patients
             affected_patients.recompute_followers()
             # If team_id moved a staff member to a different team, the
-            # patients on the *previous* team may have stale TP injury
-            # assignments to clean up. (silent_notifications and role
+            # patients on the *previous* team may have stale injury
+            # activities to clean up. (silent_notifications and role
             # changes don't affect access to the patient itself.)
-            if 'team_id' in values and previous_patients:
-                previous_patients.injury_ids.sudo()._cleanup_stale_treatment_professionals()
+            if 'team_id' in vals and previous_patients:
                 previous_patients.injury_ids.sudo()._cleanup_stale_mail_activities()
 
         return result

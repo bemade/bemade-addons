@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!--
+        A top-level application menu rather than a corner of Settings: this is
+        day-to-day work for whoever cleans the data, not a technical setting
+        someone visits once.
+    -->
+    <menuitem
+    id="menu_bemade_dedup_root"
+    name="Deduplication"
+    web_icon="bemade_fuzzy_dedup,static/description/icon.png"
+    sequence="95"
+    groups="base.group_system"
+  />
+
+    <menuitem
+    id="menu_bemade_dedup_review"
+    name="Duplicates to Review"
+    parent="menu_bemade_dedup_root"
+    action="bemade_dedup_review_action"
+    sequence="10"
+  />
+    <menuitem
+    id="menu_bemade_dedup_group"
+    name="Match Groups"
+    parent="menu_bemade_dedup_root"
+    action="bemade_dedup_group_action"
+    sequence="20"
+  />
+    <menuitem
+    id="menu_bemade_dedup_target"
+    name="Targets"
+    parent="menu_bemade_dedup_root"
+    action="bemade_dedup_target_action"
+    sequence="30"
+  />
+</odoo>

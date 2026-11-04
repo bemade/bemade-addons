@@ -1,0 +1,178 @@
+// Task 1620 — « Mon compte » / « Sécurité » in the shell
+// (views/sc_app_account.xml). Scoped under .o_sc_app.
+
+.o_sc_app {
+    .o_sc_account,
+    .o_sc_security {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-4);
+        max-width: 720px;
+    }
+
+    .o_sc_account_form {
+        gap: var(--sc-space-4);
+    }
+
+    // Zip + city, country + state: side by side when there is room (the
+    // core address JS hides / reorders the boxes; a hidden box frees its
+    // column).
+    .o_sc_account_pair {
+        display: flex;
+        flex-wrap: wrap;
+        // Review fixes 2026-10-18 b: no stretching — a taller neighbour (the
+        // country's « not allowed » note, a wrapped label) used to stretch
+        // the province box, and its select (flex: 1 in a field column) grew
+        // to ~2× the input height.
+        align-items: flex-start;
+        gap: var(--sc-space-3);
+
+        > .o_sc_field {
+            flex: 1 1 220px;
+        }
+    }
+
+    // Every input / select of the account page keeps the app's input
+    // height (phone and laptop): never grown by its field column.
+    .o_sc_account .o_sc_field > .o_sc_input {
+        flex: 0 0 auto;
+    }
+
+    .o_sc_account select.o_sc_input {
+        height: auto;
+        min-height: var(--sc-tap);
+        line-height: normal;
+    }
+
+    // Review fixes 2026-10-18 b: the cards' read views and own actions.
+    .o_sc_account_address_lines {
+        margin: 0;
+        font-style: normal;
+
+        > span {
+            display: block;
+        }
+    }
+
+    .o_sc_account [data-sc-edit-view="edit"] {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-3);
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    // Required marker, as the core form (its address JS toggles
+    // .label-optional with the country's rules). 1018c: after the label's
+    // text, before the field's save state.
+    .o_sc_account .o_sc_field_label:not(.label-optional) > span:first-child::after {
+        content: " *";
+        font-weight: normal;
+        color: var(--sc-fg-3);
+    }
+
+    // The core validation flags fields and fills #errors.
+    .o_sc_account .o_sc_input.is-invalid,
+    .o_sc_security .o_sc_input[aria-invalid="true"],
+    .o_sc_sheet .o_sc_input[aria-invalid="true"] {
+        border-color: var(--sc-bad);
+    }
+
+    .o_sc_account_errors {
+        &:empty {
+            display: none;
+        }
+
+        background: var(--sc-surface-2);
+        border-left: 4px solid var(--sc-bad);
+        border-radius: var(--sc-radius-sm);
+        padding: 10px 12px;
+
+        h5 {
+            margin: 0;
+            font-size: var(--sc-text-sm);
+            font-weight: 600;
+            color: var(--sc-bad) !important;
+
+            + h5 {
+                margin-top: 4px;
+            }
+        }
+    }
+
+    // 1018c: a field's save state (hidden until its first save).
+    .o_sc_account .o_sc_save_state[hidden] {
+        display: none;
+    }
+
+    .o_sc_account_locked {
+        pointer-events: none;
+        opacity: 0.6;
+    }
+
+    .o_sc_banner_ok {
+        border-left-color: var(--sc-ok);
+    }
+
+    .o_sc_form_actions_start {
+        justify-content: flex-start;
+    }
+
+    // Password + the core « show password » eye.
+    .o_sc_password_group {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: var(--sc-space-2);
+
+        > .o_sc_input {
+            flex: 1;
+            width: auto;
+        }
+
+        > .o_show_password {
+            flex: none;
+            min-height: var(--sc-tap);
+            min-width: var(--sc-tap);
+            color: var(--sc-fg-2);
+        }
+    }
+
+    .o_sc_security_on {
+        margin: 0;
+        color: var(--sc-ok);
+        font-weight: 600;
+    }
+
+    .o_sc_security_devices {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--sc-space-2);
+
+        > li {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--sc-space-2);
+            min-height: var(--sc-tap);
+            border-bottom: 1px solid var(--sc-line);
+        }
+    }
+
+    .o_sc_security_device_name {
+        flex: 1;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .o_sc_security_device_remove {
+        cursor: pointer;
+        padding: 10px;
+        color: var(--sc-bad) !important;
+    }
+}

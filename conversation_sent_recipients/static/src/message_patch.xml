@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.Message" t-inherit-mode="extension">
+        <xpath expr="//div[@name='header']" position="after">
+            <div
+        t-if="message.sentToRecipients.length or message.sentCcRecipients.length"
+        class="o-conversation-SentRecipients o-xsmaller text-muted mb-1"
+      >
+                <div
+          t-if="message.sentToRecipients.length"
+          class="o-conversation-SentRecipients-to"
+        >
+                    <strong class="me-1">To:</strong>
+                    <t
+            t-foreach="message.sentToRecipients"
+            t-as="recipient"
+            t-key="recipient.email"
+          >
+                        <span
+              class="o-conversation-SentRecipient me-2"
+              t-att-title="recipient.name or recipient.email"
+              t-esc="recipient.email"
+            />
+                    </t>
+                </div>
+                <div
+          t-if="message.sentCcRecipients.length"
+          class="o-conversation-SentRecipients-cc"
+        >
+                    <strong class="me-1">Cc:</strong>
+                    <t
+            t-foreach="message.sentCcRecipients"
+            t-as="recipient"
+            t-key="recipient.email"
+          >
+                        <span
+              class="o-conversation-SentRecipient me-2"
+              t-att-title="recipient.name or recipient.email"
+              t-esc="recipient.email"
+            />
+                    </t>
+                </div>
+            </div>
+        </xpath>
+    </t>
+</templates>

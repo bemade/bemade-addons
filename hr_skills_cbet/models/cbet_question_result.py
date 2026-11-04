@@ -19,7 +19,7 @@ class CbetQuestionResult(models.Model):
     essential = fields.Boolean()
 
     result = fields.Selection(
-        [("acquis", "Acquis"), ("a_revoir", "À revoir")],
+        [("acquis", "Acquired"), ("a_revoir", "To review")],
         default="a_revoir",
         required=True,
     )

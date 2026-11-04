@@ -1,7 +1,56 @@
 from odoo import models, fields, api, _, Command
+from odoo.exceptions import ValidationError
+from odoo.tools import format_datetime
+
+from . import sc_app_roles
+from datetime import time, timedelta
 import logging
 
+import colorsys
+import re
+
+import pytz
+
 _logger = logging.getLogger(__name__)
+
+# Morning-briefing config (global). The send time is the user-local clock time
+# at/after which the day's digest is sent; the default-tz param is shared with
+# slice C and used when a user (and their partner) has no tz on file.
+DIGEST_MORNING_SEND_TIME_PARAM = "bemade_sports_clinic.digest_morning_send_time"
+DIGEST_MORNING_SEND_TIME_DEFAULT = "07:00"
+DIGEST_DEFAULT_TZ_PARAM = "bemade_sports_clinic.digest_default_timezone"
+# A most-recent snapshot captured within this window of the send moment is "too
+# close to send" to be a 24h baseline; the delta falls back to the prior one.
+DIGEST_BASELINE_MIN_AGE = timedelta(hours=1)
+# Roles that receive a per-team line, and how they scope role-visible activity.
+DIGEST_COACH_ROLES = {"head_coach", "coach"}
+DIGEST_TP_ROLES = {"head_therapist", "therapist", "doctor"}
+# Task 1636: a TP assigned to an upcoming event is a recipient even without a
+# team staff row (portal or internal treatment-professional group).
+DIGEST_TP_GROUP_XMLIDS = sc_app_roles._TP_GROUPS
+
+# Task 1605: the events calendar's colour per therapist. Hand-picked for the
+# dark app surface (#1d1a20: every colour >= 3:1), no greys (grey = an
+# unassigned event), ordered so the first ones handed out are far apart.
+SC_CALENDAR_PALETTE = (
+    "#ef5350", "#26c6da", "#ffca28", "#7c8cff", "#66bb6a", "#e057e0",
+    "#ff9248", "#42a5f5", "#c0e04a", "#a77bff", "#2ed3a0", "#ff6fa8",
+    "#f4a99a", "#8fdcf0", "#e8e08a", "#b8b0ff", "#a6e3a1", "#f2a6e6",
+    "#d9a066", "#8cb4ff", "#b5a642", "#4fb3a9", "#e0c3a0", "#c62f8a",
+)
+SC_CALENDAR_COLOR_RE = re.compile(r"^#[0-9a-f]{6}$")
+
+
+def _sc_generated_colors():
+    """Further colours once the palette is exhausted: golden-angle hues,
+    light enough for the dark surface (endless, deterministic)."""
+    index = 0
+    while True:
+        hue = (index * 137.508) % 360 / 360
+        lightness = (0.68, 0.6, 0.76)[index % 3]
+        red, green, blue = colorsys.hls_to_rgb(hue, lightness, 0.62)
+        yield "#%02x%02x%02x" % (round(red * 255), round(green * 255), round(blue * 255))
+        index += 1
 
 
 class User(models.Model):
@@ -12,6 +61,246 @@ class User(models.Model):
         compute="_compute_accessible_team_ids",
         inverse="_inverse_accessible_team_ids",
     )
+
+    # Task 1714: inverse of sports.event.assigned_staff_ids (the events the
+    # user covers). Exists so the portal mail.activity record rule can list
+    # every activity on an event the user is assigned to (another team's
+    # event included). active_test off: an archived event's activities stay
+    # reachable, like the event's own m2m.
+    sc_assigned_event_ids = fields.Many2many(
+        comodel_name="sports.event",
+        relation="sports_event_staff_rel",
+        column1="user_id",
+        column2="event_id",
+        string="Assigned Events",
+        context={"active_test": False},
+    )
+
+    # Task 1244: inverse of sports.quick.note.user_id. Exists so the portal
+    # mail.activity record rule can traverse user -> own quick notes and let a
+    # therapist read the stale-note reminder raised on their own note.
+    quick_note_ids = fields.One2many(
+        comodel_name="sports.quick.note",
+        inverse_name="user_id",
+        string="Quick Notes",
+        # active_test off on purpose: the rule must still resolve for an
+        # activity hanging on a note the user has since dismissed (archived).
+        context={"active_test": False},
+    )
+
+    # Per-user morning-briefing preferences (task 1268, digest epic slice D).
+    digest_daily_enabled = fields.Boolean(
+        string="Daily Morning Briefing",
+        default=True,
+        help="Receive a daily PHI-free morning summary email for your teams "
+        "(counts, 24h deltas and dashboard links — no medical data).",
+    )
+    digest_send_when_empty = fields.Boolean(
+        string="Send Briefing Even When Empty",
+        default=False,
+        help="When off (default), the morning briefing is skipped on days with "
+        "no changes across your teams. Turn on to always receive it.",
+    )
+    # Per-user-per-local-date idempotency guard for the morning-briefing cron.
+    # Stores the last user-local date a briefing decision was made (sent OR
+    # suppressed), so the hourly cron sends at most one briefing per local day.
+    digest_last_sent_date = fields.Date(
+        string="Morning Briefing Last Sent (local date)",
+        copy=False,
+        readonly=True,
+    )
+
+    # Task 1401: sticky sort choice for the portal /my/teams list. Written ONLY
+    # by the portal controller on an explicit sort change (self-writable, like
+    # the digest preferences above). Unset = no explicit choice yet, in which
+    # case the controller defaults to « Mon ordre » if the user has a personal
+    # order, else « Activité récente ».
+    teams_sort_mode = fields.Selection(
+        selection=[
+            ("activity", "Recent activity"),
+            ("alpha", "Alphabetical"),
+            ("mine", "My order"),
+        ],
+        string="Portal Teams Sort",
+        copy=False,
+    )
+    # Task 1421: sticky sort choice for the portal team roster tab (same
+    # contract as teams_sort_mode: written only by the portal controller on an
+    # explicit ?sort= change, self-writable). Unset = the default status order.
+    roster_sort_mode = fields.Selection(
+        selection=[
+            ("status", "Status, then name"),
+            ("number", "Jersey number"),
+        ],
+        string="Portal Roster Sort",
+        copy=False,
+    )
+    # Owner review 2026-10-10: the app shell's « Players » list order, toggled
+    # by the list's switch (same contract as roster_sort_mode). Unset = most
+    # injured first.
+    players_sort_mode = fields.Selection(
+        selection=[
+            ("status", "By status"),
+            ("name", "Alphabetical"),
+        ],
+        string="Portal Players Sort",
+        copy=False,
+    )
+
+    # Task 1538: portal app shell preference (self-writable; set from
+    # « Plus › Apparence » and the app-bar theme toggle through /my/app/pref,
+    # which accepts this field only). Task 1579 removed the navigation-mode
+    # setting: the screen width decides (back + context on a phone, the
+    # breadcrumb trail on a laptop).
+    sc_theme = fields.Selection(
+        selection=[
+            ("dark", "Dark"),
+            ("light", "Light"),
+        ],
+        string="Portal App Theme",
+        default="dark",
+        required=True,
+        copy=False,
+    )
+
+    # Task 1676: « Afficher les boutons Terminé » (Paramètres). Off by
+    # default: the edit cards' « Done » buttons are hidden and the head
+    # pencil turns into a ✓ that closes the card (it does in both modes).
+    sc_show_done_buttons = fields.Boolean(
+        string="Show « Done » buttons",
+        default=False,
+        copy=False,
+    )
+
+    # Task 1624: the app dashboard's layout (models/sc_dashboard.py) —
+    # {"v": 2, "instances": [...]} (round 2: each with its zone). Not
+    # self-writable: only the validated « Configurer » path
+    # (sc.dashboard._sc_layout_save, sudo) writes it.
+    sc_dashboard_layout = fields.Json(
+        string="App Dashboard Layout",
+        groups="base.group_system",
+        copy=False,
+    )
+
+    # Task 1624, review round 1 (owner 2026-10-29): the players this user
+    # follows (« Suivre », the dashboard's « Joueurs que je suis »). A
+    # relation on the user, not a new model: nothing to share, nothing to
+    # rule. Private by construction — system group only, so neither another
+    # user nor the user themselves reads or writes it over RPC; the app reads
+    # and writes it for ``env.user`` only, through
+    # sports.patient._sc_follow / sc_followed_by_me (readability checked).
+    sc_followed_patient_ids = fields.Many2many(
+        'sports.patient',
+        'sc_user_followed_patient_rel', 'user_id', 'patient_id',
+        string="Followed Players",
+        groups="base.group_system",
+        copy=False,
+    )
+
+    # Task 1605: the user's colour on the events calendar (dot before each
+    # event title, legend). Handed out automatically the first time the user
+    # shows up in the calendar feed (``_sc_calendar_colors``), then stable;
+    # an admin may override it on the user form. Internal users read it;
+    # the portal gets it through the feed (sudo, as the names).
+    sc_calendar_color = fields.Char(
+        string="Calendar Colour",
+        groups="base.group_user",
+        copy=False,
+        help="Colour of this person's events on the portal calendar (#rrggbb). "
+             "Chosen automatically; change it to override.",
+    )
+
+    @api.model
+    def _sc_normalize_calendar_color(self, vals):
+        if vals.get("sc_calendar_color"):
+            vals["sc_calendar_color"] = vals["sc_calendar_color"].strip().lower()
+        return vals
+
+    @api.constrains("sc_calendar_color")
+    def _check_sc_calendar_color(self):
+        for user in self:
+            if user.sc_calendar_color and not SC_CALENDAR_COLOR_RE.match(user.sc_calendar_color):
+                raise ValidationError(_(
+                    "The calendar colour must be a hexadecimal colour like #ef5350."))
+
+    def _sc_calendar_colors(self):
+        """``{user id: '#rrggbb'}`` for these users, handing a colour to the
+        ones without (task 1605): the first palette colour nobody holds
+        (users taken by id), then generated hues — never a colour already
+        held while one is free. Stored, hence stable across sessions."""
+        users = self.sudo().with_context(active_test=False)
+        missing = users.filtered(lambda user: not user.sc_calendar_color).sorted("id")
+        if missing:
+            held = set(users.search([("sc_calendar_color", "!=", False)]).mapped("sc_calendar_color"))
+            candidates = (colour for colour in SC_CALENDAR_PALETTE if colour not in held)
+            generated = (colour for colour in _sc_generated_colors()
+                         if colour not in held and colour not in SC_CALENDAR_PALETTE)
+            for user in missing:
+                colour = next(candidates, None) or next(generated)
+                held.add(colour)
+                user.sc_calendar_color = colour
+        return {user.id: user.sc_calendar_color for user in users}
+
+    @property
+    def SELF_READABLE_FIELDS(self):
+        return super().SELF_READABLE_FIELDS + [
+            "digest_daily_enabled",
+            "digest_send_when_empty",
+            "teams_sort_mode",
+            "roster_sort_mode",
+            "players_sort_mode",
+            "sc_theme",
+            "sc_show_done_buttons",
+        ]
+
+    @property
+    def SELF_WRITEABLE_FIELDS(self):
+        return super().SELF_WRITEABLE_FIELDS + [
+            "digest_daily_enabled",
+            "digest_send_when_empty",
+            "teams_sort_mode",
+            "roster_sort_mode",
+            "players_sort_mode",
+            "sc_theme",
+            "sc_show_done_buttons",
+        ]
+
+    def _sc_backend_link_recipient(self):
+        """Task 1639: True when this user's notification links should open
+        the BACKEND — an internal user with no clinic role. Every clinic
+        role (internal therapist, clinic admin, coach, portal therapist)
+        gets the app."""
+        self.ensure_one()
+        # « internal » is any backend user, not a clinic role.
+        return not self.share and not (set(self._sc_app_roles()) - {"internal"})
+
+    def _sc_app_roles(self):
+        """The user's portal-app role SET (task 1538) — see
+        ``models/sc_app_roles.py`` for the model and the registries.
+
+        Resolved from group membership and from the staff rows the user's
+        partner holds (sudo: a portal user cannot read every staff row, and
+        only the role keys leave this method)."""
+        self.ensure_one()
+        roles = set()
+        for role, xmlids in sc_app_roles.ROLE_GROUPS.items():
+            if any(self.has_group(xmlid) for xmlid in xmlids):
+                roles.add(role)
+        wanted = {
+            staff_role
+            for staff_roles in sc_app_roles.ROLE_STAFF_ROLES.values()
+            for staff_role in staff_roles
+        }
+        held = set()
+        if wanted and self.partner_id:
+            held = set(self.env["sports.team.staff"].sudo().search([
+                ("partner_id", "=", self.partner_id.id),
+                ("role", "in", sorted(wanted)),
+            ]).mapped("role"))
+        for role, staff_roles in sc_app_roles.ROLE_STAFF_ROLES.items():
+            if held & set(staff_roles):
+                roles.add(role)
+        return frozenset(roles)
 
     def _compute_accessible_team_ids(self):
         for rec in self:
@@ -38,6 +327,8 @@ class User(models.Model):
     
     def write(self, vals):
         """Override write to trigger treatment professional group assignment when portal access is granted."""
+        if vals.get('sc_calendar_color'):  # task 1605
+            vals = self._sc_normalize_calendar_color(dict(vals))
         # Process user updates for portal access changes
 
         # Archiving a user (portal-access revoke) must scrub the person from
@@ -66,7 +357,10 @@ class User(models.Model):
                 if portal_group.id in new_groups and portal_group.id not in old_groups:
                     # Portal access was just granted - reconcile ALL portal groups
                     # (treatment professional *and* team coach) for this user.
-                    staff_records = self.env['sports.team.staff'].search([
+                    # Task 1536: sudo — this bookkeeping runs for any caller
+                    # allowed to edit users (base.group_user has no ACL on
+                    # sports.team.staff); the rows describe the edited user.
+                    staff_records = self.env['sports.team.staff'].sudo().search([
                         ('partner_id', '=', user.partner_id.id)
                     ])
                     if staff_records:
@@ -74,6 +368,10 @@ class User(models.Model):
 
             if archiving:
                 self.mapped('partner_id')._sports_clinic_purge_archived_staff()
+            if 'active' in vals:
+                # Task 1415: organization lines re-evaluate eligibility.
+                self.env['sports.organization.staff'].sudo()._sync_for_partners(
+                    self.mapped('partner_id'))
 
             return result
         else:
@@ -84,6 +382,10 @@ class User(models.Model):
         res = super().write(vals)
         if archiving:
             self.mapped('partner_id')._sports_clinic_purge_archived_staff()
+        if 'active' in vals:
+            # Task 1415: organization lines re-evaluate eligibility.
+            self.env['sports.organization.staff'].sudo()._sync_for_partners(
+                self.mapped('partner_id'))
         return res
     
     @api.model_create_multi
@@ -91,6 +393,8 @@ class User(models.Model):
         """Override create to trigger treatment professional group assignment when portal users are created."""
         # Process user creation for portal access
         
+        # Task 1605: a calendar colour is stored lower case.
+        vals_list = [self._sc_normalize_calendar_color(dict(vals)) for vals in vals_list]
         # Create the users first
         users = super().create(vals_list)
         
@@ -105,10 +409,601 @@ class User(models.Model):
             if portal_group.id in user.group_ids.ids:
                 # User was created with portal access - reconcile ALL portal groups
                 # (treatment professional *and* team coach) for this user.
-                staff_records = self.env['sports.team.staff'].search([
+                # Task 1536: sudo — see write(); the caller may hold no clinic
+                # group at all (other addons' tests create portal users).
+                staff_records = self.env['sports.team.staff'].sudo().search([
                     ('partner_id', '=', user.partner_id.id)
                 ])
                 if staff_records:
                     staff_records._update_all_portal_groups(user)
-        
+
         return users
+
+    # ----------------------------------------------------------------------
+    # Morning briefing (task 1268, digest epic slice D) — daily PHI-free email
+    # ----------------------------------------------------------------------
+    # An hourly cron sends ONE per-user, per-local-date "morning briefing" at
+    # the configured user-local time. Law 25: the mail carries only per-team
+    # counts, signed 24h deltas, team/event names and dashboard backlinks —
+    # never a player name or any clinical/injury detail. Deltas are computed
+    # against slice C's most recent stored snapshot stage counts.
+
+    @api.model
+    def _digest_morning_send_time(self):
+        """Parsed (hour, minute) of the configured user-local send time."""
+        raw = (
+            self.env["ir.config_parameter"]
+            .sudo()
+            .get_param(
+                DIGEST_MORNING_SEND_TIME_PARAM, DIGEST_MORNING_SEND_TIME_DEFAULT
+            )
+        )
+        try:
+            hh, mm = str(raw).split(":")
+            return time(int(hh), int(mm))
+        except (ValueError, TypeError):
+            return time(7, 0)
+
+    def _digest_resolve_timezone(self):
+        """Resolve a user's morning-briefing timezone: the user's own tz, else
+        their partner's tz, else the global default-tz config param, else the
+        company partner tz, else UTC. Always returns a pytz-valid name."""
+        self.ensure_one()
+        candidates = []
+        if self.tz:
+            candidates.append(self.tz)
+        partner = self.partner_id
+        if partner and partner.tz:
+            candidates.append(partner.tz)
+        param = (
+            self.env["ir.config_parameter"].sudo().get_param(DIGEST_DEFAULT_TZ_PARAM)
+        )
+        if param:
+            candidates.append(param)
+        company_partner = self.env.company.partner_id
+        if company_partner and company_partner.tz:
+            candidates.append(company_partner.tz)
+        for name in candidates:
+            try:
+                pytz.timezone(name)
+                return name
+            except Exception:  # pragma: no cover - defensive against bad config
+                continue
+        return "UTC"
+
+    @api.model
+    def _digest_delta_baseline(self, team, now):
+        """Return the ``sports.team.digest`` snapshot to use as the 24h delta
+        baseline for ``team``, or ``None`` if none is usable.
+
+        Baseline = the team's most recent snapshot (from slice C, captured
+        overnight). Fallback = the previous snapshot when the most recent is
+        captured too close to the send moment to be a 24h baseline. No snapshot
+        at all -> ``None`` (caller shows absolute counts, no delta)."""
+        snaps = (
+            self.env["sports.team.digest"]
+            .sudo()
+            .search(
+                [("team_id", "=", team.id)],
+                order="captured_at desc, id desc",
+                limit=2,
+            )
+        )
+        if not snaps:
+            return None
+        recent = snaps[0]
+        if (
+            len(snaps) > 1
+            and recent.captured_at
+            and (now - recent.captured_at) < DIGEST_BASELINE_MIN_AGE
+        ):
+            return snaps[1]
+        return recent
+
+    def _digest_pending_verify_count(self, team, role=None):
+        """Open 'Verify injury' to-do activities on the team's injuries (the
+        count only — the underlying activities are untouched). Task 1589: a
+        coach line counts only the ones assigned to or created by the
+        recipient (a coach never learns of other staff's activities)."""
+        injuries = (
+            self.env["sports.patient.injury"]
+            .sudo()
+            .search([("patient_id.team_ids", "in", team.id)])
+        )
+        if not injuries:
+            return 0
+        # Task 1409: verification To-Dos live on the patient, keyed by the
+        # technical injury_id link (+ the summary marker, as before).
+        domain = injuries._verify_activity_domain()
+        if role == "coach":
+            domain = domain + [
+                "|", ("user_id", "=", self.id), ("create_uid", "=", self.id),
+            ]
+        return self.env["mail.activity"].sudo().search_count(domain)
+
+    def _digest_build_team_line(self, staff, role, now, cutoff, base_url):
+        """Build one PHI-free per-team summary dict for the recipient, scoped to
+        their ``role`` on that team, or ``None`` if the team should be skipped.
+
+        The dashboard ``url`` follows the recipient's account type (task 1396):
+        the backend action link for internal staff, the portal team dashboard
+        for portal users."""
+        team = staff.team_id.sudo()
+        red = team.stage_no_play_count
+        yellow = team.stage_practice_ok_count
+
+        baseline = self._digest_delta_baseline(team, now)
+        if baseline is not None:
+            delta_red = red - baseline.stage_no_play_count
+            delta_yellow = yellow - baseline.stage_practice_ok_count
+            red_delta_str = " (%+d)" % delta_red
+            yellow_delta_str = " (%+d)" % delta_yellow
+        else:
+            delta_red = delta_yellow = None
+            red_delta_str = yellow_delta_str = ""
+
+        patients = team.patient_ids
+        inj_field = "dashboard_new_injury_count_%s" % role
+        act_field = "dashboard_last_activity_%s" % role
+        new_injuries = sum(patients.mapped(inj_field))
+        changes = len(
+            patients.filtered(
+                lambda p: p[act_field] and p[act_field] >= cutoff
+            )
+        )
+        pending_verify = self._digest_pending_verify_count(team, role)
+        pending_removal = len(patients.filtered("pending_removal"))
+
+        # Task 1396: the dashboard link follows the RECIPIENT, not the surface.
+        # Here ``self`` IS the recipient user, so ``share`` is the exact signal
+        # — no partner-side inference and no multi-user ambiguity.
+        # Task 1639: anyone with a clinic role (internal therapist, clinic
+        # admin, coach, portal therapist) gets the app link; the backend
+        # link only for an internal user with no clinic role.
+        url = team._dashboard_url(base_url, internal=self._sc_backend_link_recipient())
+        # Task 1270 (slice F): the full team announcement text rides in the
+        # briefing, under the all-staff framing. This is an intentional,
+        # author-written all-staff broadcast (NOT player PHI) — it carries its
+        # own compose-time Law 25 warning.
+        announcement = (team.announcement or "").strip()
+        return {
+            "id": team.id,
+            "name": team.name,
+            "url": url,
+            "announcement": announcement or None,
+            "announcement_is_expired": (
+                bool(team.announcement_is_expired) if announcement else False
+            ),
+            "announcement_deadline": (
+                fields.Date.to_string(team.announcement_deadline)
+                if (announcement and team.announcement_deadline)
+                else None
+            ),
+            "red": red,
+            "yellow": yellow,
+            "delta_red": delta_red,
+            "delta_yellow": delta_yellow,
+            "red_delta_str": red_delta_str,
+            "yellow_delta_str": yellow_delta_str,
+            "new_injuries": new_injuries,
+            "changes": changes,
+            "pending_verify": pending_verify,
+            "pending_removal": pending_removal,
+        }
+
+    def _digest_build_for_user(self, now, cutoff, base_url):
+        """Return ``(team_lines, events)`` for this user: role-scoped per-team
+        summaries (most-active first) and the deduped upcoming-event union
+        (window = ``sports.team._dashboard_upcoming_events_days``, default 14
+        days, task 1533 — read through ``dashboard_upcoming_event_ids``).
+
+        Only eligible staff lines are included: silent_notifications and
+        archived/revoked access are dropped (``_is_follower_eligible``); the
+        ``other`` role is skipped; doctors are scoped as TP.
+
+        Task 1636: the events the user is ASSIGNED to (``assigned_staff_ids``,
+        same window + states via ``_dashboard_upcoming_events_domain``) join
+        the list; one not already brought in by a staff team is flagged
+        ``assigned`` with its teams as ``assigned_label``."""
+        self.ensure_one()
+        partner = self.partner_id
+        team_lines = []
+        seen_events = self.env["sports.event"].sudo()
+        events = []
+        assigned_ids = set()
+        for staff in partner.sudo().team_staff_rel_ids:
+            if not staff._is_follower_eligible():
+                continue
+            if staff.role in DIGEST_COACH_ROLES:
+                role = "coach"
+            elif staff.role in DIGEST_TP_ROLES:
+                role = "tp"
+            else:  # 'other' -> skip
+                continue
+            line = self._digest_build_team_line(staff, role, now, cutoff, base_url)
+            if line is not None:
+                team_lines.append(line)
+            for ev in staff.team_id.sudo().dashboard_upcoming_event_ids:
+                if ev not in seen_events:
+                    seen_events |= ev
+                    events.append(ev)
+        assigned_events = self.env["sports.event"].sudo().search(
+            self.env["sports.team"]._dashboard_upcoming_events_domain()
+            + [("assigned_staff_ids", "in", self.ids)]
+        )
+        for ev in assigned_events:
+            if ev not in seen_events:
+                seen_events |= ev
+                events.append(ev)
+                assigned_ids.add(ev.id)
+        team_lines.sort(key=lambda l: (-l["changes"], l["name"] or ""))
+        events.sort(key=lambda e: e.date_start or fields.Datetime.now())
+        tz_name = self._digest_resolve_timezone()
+        ev_lang = self.partner_id.lang or self.lang or self.env.lang
+        event_data = []
+        for ev in events:
+            date_label = ""
+            if ev.date_start:
+                date_label = format_datetime(
+                    self.env, ev.date_start, tz=tz_name,
+                    dt_format="EEE d MMM, HH 'h' mm", lang_code=ev_lang,
+                )
+            assigned = ev.id in assigned_ids
+            assigned_label = ""
+            if assigned:
+                assigned_label = ", ".join(
+                    n for n in ev.team_ids.mapped("name") if n
+                ) or (ev.partner_id.name or "")
+            event_data.append({
+                "name": ev.name,
+                "date_start": ev.date_start,
+                "date_label": date_label,
+                "assigned": assigned,
+                "assigned_label": assigned_label,
+            })
+        return team_lines, event_data
+
+    @api.model
+    def _digest_line_has_content(self, line):
+        """A team line is 'new activity' when it carries any change signal —
+        deltas, new injuries, role-scoped changes, or pending to-do counts. The
+        red/yellow standing alone (unchanged) is not new activity."""
+        return bool(
+            line["new_injuries"]
+            or line["changes"]
+            or line["pending_verify"]
+            or line["pending_removal"]
+            or (line["delta_red"] not in (None, 0))
+            or (line["delta_yellow"] not in (None, 0))
+        )
+
+    def _digest_has_content(self, team_lines, events):
+        return bool(events) or any(
+            self._digest_line_has_content(line) for line in team_lines
+        )
+
+    def _digest_fallback_body(self, team_lines, events, window_hours=None,
+                              events_days=None):
+        """PHI-free bilingual HTML body used when the mail template is missing
+        or fails to render. Counts + deltas + team/event names + links only —
+        never a player name or clinical detail.
+
+        ``window_hours`` (task 1392) is the current dashboard activity window the
+        change counts cover; it is surfaced in a header line and the count labels
+        so a reader knows the coverage even though the backlinked live dashboard
+        may have drifted by click time. ``events_days`` (task 1533) is the
+        upcoming-events window the event list covers, same idea."""
+        from markupsafe import Markup, escape
+
+        if window_hours is None:
+            window_hours = self.env["sports.patient"]._dashboard_window_hours()
+        if events_days is None:
+            events_days = self.env["sports.team"]._dashboard_upcoming_events_days()
+
+        parts = [
+            Markup("<p>%s</p>")
+            % escape(
+                _(
+                    "Your daily team briefing / Votre sommaire quotidien d'équipe:"
+                )
+            ),
+            Markup('<p style="color:#767676;font-size:12px;">%s</p>')
+            % escape(
+                _(
+                    "Changes over the last %(hours)s h / Changements des "
+                    "dernières %(hours)s h.",
+                    hours=window_hours,
+                )
+            ),
+        ]
+        for team in team_lines:
+            lines = [Markup("<p><strong>%s</strong></p>") % escape(team["name"])]
+            # Task 1380: the announcement sits directly under the team name,
+            # before the counts block.
+            if team.get("announcement"):
+                expired_suffix = (
+                    " " + _("(expired / expirée)")
+                    if team.get("announcement_is_expired")
+                    else ""
+                )
+                lines.append(
+                    Markup("<p><strong>%s%s</strong></p>")
+                    % (
+                        escape(_("Team announcement / Annonce d'équipe:")),
+                        escape(expired_suffix),
+                    )
+                )
+                lines.append(
+                    Markup('<p style="white-space:pre-wrap;">%s</p>')
+                    % escape(team["announcement"])
+                )
+            items = [
+                escape(
+                    _(
+                        "%(red)s no-play%(red_delta)s · %(yellow)s limited%(yellow_delta)s",
+                        red=team["red"],
+                        red_delta=team["red_delta_str"],
+                        yellow=team["yellow"],
+                        yellow_delta=team["yellow_delta_str"],
+                    )
+                )
+            ]
+            if team["new_injuries"]:
+                items.append(
+                    escape(_(
+                        "%(count)s new injury/injuries (%(hours)s h)",
+                        count=team["new_injuries"],
+                        hours=window_hours,
+                    ))
+                )
+            if team["changes"]:
+                items.append(
+                    escape(_(
+                        "%(count)s player(s) with changes (%(hours)s h)",
+                        count=team["changes"],
+                        hours=window_hours,
+                    ))
+                )
+            if team["pending_verify"]:
+                items.append(
+                    escape(
+                        _(
+                            "%s injury verification(s) pending",
+                            team["pending_verify"],
+                        )
+                    )
+                )
+            if team["pending_removal"]:
+                items.append(
+                    escape(
+                        _("%s player removal request(s)", team["pending_removal"])
+                    )
+                )
+            lines.append(
+                Markup("<ul>%s</ul>")
+                % Markup("").join(Markup("<li>%s</li>") % it for it in items)
+            )
+            if team["url"]:
+                lines.append(
+                    Markup('<p><a href="%s">%s</a></p>')
+                    % (
+                        team["url"],
+                        escape(_("Team dashboard / Tableau de bord")),
+                    )
+                )
+            parts.append(Markup("").join(lines))
+        if events:
+            ev_lines = [
+                Markup("<p><strong>%s</strong></p>")
+                % escape(_(
+                    "Upcoming events (next %(days)s days) / "
+                    "Événements à venir (%(days)s prochains jours):",
+                    days=events_days,
+                ))
+            ]
+            ev_items = []
+            for ev in events:
+                when = ev.get("date_label") or (
+                    fields.Datetime.to_string(ev["date_start"])
+                    if ev["date_start"]
+                    else ""
+                )
+                if ev.get("assigned"):
+                    # Task 1636: an event reached only through an assignment.
+                    label = _(
+                        "%(name)s %(when)s · assigned (%(team)s) / "
+                        "assigné·e (%(team)s)",
+                        name=ev["name"] or "",
+                        when=when,
+                        team=ev.get("assigned_label") or "",
+                    )
+                else:
+                    label = _(
+                        "%(name)s %(when)s",
+                        name=ev["name"] or "",
+                        when=when,
+                    )
+                ev_items.append(escape(label))
+            ev_lines.append(
+                Markup("<ul>%s</ul>")
+                % Markup("").join(Markup("<li>%s</li>") % it for it in ev_items)
+            )
+            ev_lines.append(
+                Markup("<p>%s</p>")
+                % escape(
+                    _(
+                        "Events not listed are outside our coverage plan — please "
+                        "advise us. / Les événements non listés sont hors de notre "
+                        "plan de couverture, avisez-nous."
+                    )
+                )
+            )
+            parts.append(Markup("").join(ev_lines))
+        parts.append(
+            Markup('<p style="color:#767676;font-size:12px;">%s</p>')
+            % escape(
+                _(
+                    "No medical data is included. / Aucune donnée médicale n'est "
+                    "incluse."
+                )
+            )
+        )
+        return Markup("").join(parts)
+
+    def _digest_send_one(self, team_lines, events, lang, template, window_hours=None,
+                         events_days=None):
+        """Render and deliver the morning briefing to this user's partner.
+
+        ``window_hours`` (task 1392) is the current dashboard activity window the
+        change counts cover; it is threaded into the template context and the
+        fallback body so the briefing states its coverage. ``events_days``
+        (task 1533) does the same for the upcoming-events window."""
+        self.ensure_one()
+        if window_hours is None:
+            window_hours = self.env["sports.patient"]._dashboard_window_hours()
+        if events_days is None:
+            events_days = self.env["sports.team"]._dashboard_upcoming_events_days()
+        partner = self.partner_id
+        body = None
+        if template:
+            try:
+                tmpl = template.sudo().with_context(
+                    lang=lang,
+                    digest_teams=team_lines,
+                    digest_events=events,
+                    digest_window_hours=window_hours,
+                    digest_events_days=events_days,
+                )
+                body = tmpl._render_field("body_html", partner.ids).get(partner.id)
+            except Exception:  # pragma: no cover - render guard
+                _logger.exception(
+                    "Morning-briefing body render failed for partner %s",
+                    partner.id,
+                )
+                body = None
+        if not body:
+            body = self.with_context(lang=lang)._digest_fallback_body(
+                team_lines, events, window_hours, events_days
+            )
+        subject = self.with_context(lang=lang).env._(
+            "Le Fit Crew — daily briefing / sommaire quotidien"
+        )
+        try:
+            self.env["mail.thread"].sudo().with_context(lang=lang).message_notify(
+                partner_ids=partner.ids,
+                subject=subject,
+                body=body,
+                email_layout_xmlid="mail.mail_notification_light",
+            )
+        except Exception:  # pragma: no cover - never break the cron txn
+            _logger.exception(
+                "Morning-briefing send failed for partner %s", partner.id
+            )
+
+    @api.model
+    def _digest_eligible_users(self):
+        """Active users who are sports-clinic staff in a coach/TP role, plus
+        (task 1636) active treatment professionals assigned to an upcoming
+        event in the window, even without a team staff row. One search for the
+        windowed assigned events, one for the users — never one per user."""
+        staff = (
+            self.env["sports.team.staff"]
+            .sudo()
+            .search([("role", "in", list(DIGEST_COACH_ROLES | DIGEST_TP_ROLES))])
+        )
+        users = self.browse()
+        partners = staff.partner_id
+        if partners:
+            users = self.sudo().search(
+                [("partner_id", "in", partners.ids), ("active", "=", True)]
+            )
+        tp_group_ids = [
+            g.id
+            for g in (
+                self.env.ref(xmlid, raise_if_not_found=False)
+                for xmlid in DIGEST_TP_GROUP_XMLIDS
+            )
+            if g
+        ]
+        assigned = (
+            self.env["sports.event"]
+            .sudo()
+            .search(
+                self.env["sports.team"]._dashboard_upcoming_events_domain()
+                + [("assigned_staff_ids", "!=", False)]
+            )
+            .assigned_staff_ids
+        )
+        if assigned and tp_group_ids:
+            users |= self.sudo().search([
+                ("id", "in", assigned.ids),
+                ("active", "=", True),
+                ("all_group_ids", "in", tp_group_ids),
+            ])
+        return users
+
+    @api.model
+    def _cron_send_morning_digests(self, now=None):
+        """Hourly cron entrypoint. For each eligible user, once their local
+        clock has passed the configured send time for a local date AND no
+        briefing decision has yet been made for that date, build their PHI-free
+        briefing and send it (or suppress it when empty and the user has not
+        opted into empty briefings). The per-user-per-local-date guard makes it
+        idempotent and DST-safe; a missed hour self-heals on the next run.
+
+        ``now`` is injectable so tests can pin a deterministic upper bound."""
+        if now is None:
+            now = fields.Datetime.now()
+        send_time = self._digest_morning_send_time()
+        # Task 1392: label the briefing with the window its counts actually cover.
+        # Read from the SAME helper the counts use so label and counts can never
+        # disagree, even if an admin widened the window mid-run.
+        window_hours = self.env["sports.patient"]._dashboard_window_hours()
+        # Task 1533: same for the upcoming-events window the event list covers.
+        events_days = self.env["sports.team"]._dashboard_upcoming_events_days()
+        cutoff = self.env["sports.patient"]._dashboard_window_cutoff()
+        base_url = (
+            self.env["ir.config_parameter"].sudo().get_param("web.base.url") or ""
+        )
+        template = self.env.ref(
+            "bemade_sports_clinic.mail_template_morning_digest",
+            raise_if_not_found=False,
+        )
+        default_lang = self.env.lang or "en_US"
+        for user in self._digest_eligible_users():
+            if not user.digest_daily_enabled:
+                continue
+            tz_name = user._digest_resolve_timezone()
+            try:
+                tz = pytz.timezone(tz_name)
+            except Exception:  # pragma: no cover - _resolve guards this
+                tz = pytz.UTC
+            local_now = pytz.utc.localize(now).astimezone(tz)
+            if local_now.time() < send_time:
+                continue
+            local_date = local_now.date()
+            if user.digest_last_sent_date == local_date:
+                continue
+            try:
+                team_lines, events = user._digest_build_for_user(
+                    now, cutoff, base_url
+                )
+                if not team_lines and not events:
+                    # No eligible teams at all -> nothing to say, and don't burn
+                    # the guard (the user may gain a team later today).
+                    continue
+                has_content = user._digest_has_content(team_lines, events)
+                if has_content or user.digest_send_when_empty:
+                    lang = user.partner_id.lang or user.lang or default_lang
+                    user._digest_send_one(
+                        team_lines, events, lang, template, window_hours,
+                        events_days,
+                    )
+                # Record the daily decision (sent OR suppressed-empty) so the
+                # briefing fires at most once per user per local date.
+                user.sudo().write({"digest_last_sent_date": local_date})
+            except Exception:  # pragma: no cover - one bad user must not stop others
+                _logger.exception(
+                    "Morning-briefing failed for user %s", user.id
+                )
+        return True

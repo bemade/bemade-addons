@@ -26,6 +26,25 @@ class PurchaseOrderLine(models.Model):
         store=False,
         help="Number of packages required for this order line.",
     )
+    product_packaging_domain = fields.Binary(
+        string="Packaging Domain",
+        compute="_compute_product_packaging_domain",
+        help="Dynamic domain scoping product_packaging_id to the line's "
+        "product template and the order's vendor (plus generic packagings).",
+    )
+
+    @api.depends("product_template_id", "order_id.partner_id")
+    def _compute_product_packaging_domain(self):
+        for line in self:
+            if line.product_template_id:
+                line.product_packaging_domain = [
+                    ("product_tmpl_id", "=", line.product_template_id.id),
+                    "|",
+                    ("partner_id", "=", False),
+                    ("partner_id", "=", line.order_id.partner_id.id),
+                ]
+            else:
+                line.product_packaging_domain = [("id", "=", False)]
 
     @api.depends(
         "product_qty",

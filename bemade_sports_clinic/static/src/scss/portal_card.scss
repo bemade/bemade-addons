@@ -1,0 +1,44 @@
+// Task 1385: homogenized portal player card — the native <details> expandable.
+// The card carries a Bootstrap .stretched-link that makes the whole card open
+// the player; the expandable must sit ABOVE it so the summary stays clickable.
+.o_sc_card_detail {
+    position: relative;
+    z-index: 2;
+
+    > summary {
+        cursor: pointer;
+        list-style: none;
+        user-select: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    // Hide the default disclosure triangle (we toggle the label text instead).
+    > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .o_sc_summary_less {
+        display: none;
+    }
+    &[open] > summary {
+        .o_sc_summary_more {
+            display: none;
+        }
+        .o_sc_summary_less {
+            display: inline;
+        }
+        // Task 1385 (CR-D, pill tweak): while COLLAPSED the "recent changes"
+        // pill flags the card next to the expand link; once EXPANDED it would
+        // wrongly draw the eye to the static detail section (injury detail,
+        // etc.), so hide it on open. The same pill instead heads the
+        // recent-changes subsection inside the expandable (o_sc_recent_heading).
+        .o_sc_recent_hint {
+            display: none;
+        }
+    }
+}
+
+.o_sc_injury_detail {
+    background-color: rgba(0, 0, 0, 0.02);
+}

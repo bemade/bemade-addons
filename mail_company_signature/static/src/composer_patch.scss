@@ -1,0 +1,11 @@
+.o-mail-Composer-signaturePreview {
+  font-size: 0.85em;
+  opacity: 0.85;
+
+  .o-mail-Composer-signatureBlock {
+    max-height: 8em;
+    overflow: auto;
+    pointer-events: none;
+    user-select: none;
+  }
+}

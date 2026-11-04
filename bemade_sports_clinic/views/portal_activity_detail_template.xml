@@ -70,7 +70,7 @@
                                             <h5>Attachments</h5>
                                             <div class="list-group">
                                                 <t t-foreach="attachments" t-as="attachment">
-                                                    <a t-attf-href="/web/content/#{attachment.id}?download=true" 
+                                                    <a t-attf-href="/my/activity/#{activity.id}/attachment/#{attachment.id}" download="" 
                                                        class="list-group-item list-group-item-action">
                                                         <i class="fa fa-paperclip mr-2"/>
                                                         <span t-field="attachment.name"/>
@@ -88,9 +88,6 @@
                                         <div class="col-12">
                                             <div class="btn-group" role="group">
                                                 <a t-if="context_team" t-att-href="'/my/activities?model=sports.team&amp;res_id=%s' % context_team.id" class="btn bg-o-color-2 text-white">
-                                                    <i class="fa fa-arrow-left"></i> Back to Activities
-                                                </a>
-                                                <a t-elif="context_injury" t-att-href="'/my/activities?model=sports.patient.injury&amp;res_id=%s' % context_injury.id" class="btn bg-o-color-2 text-white">
                                                     <i class="fa fa-arrow-left"></i> Back to Activities
                                                 </a>
                                                 <a t-elif="context_patient" t-att-href="'/my/activities?model=sports.patient&amp;res_id=%s' % context_patient.id" class="btn bg-o-color-2 text-white">
@@ -132,8 +129,11 @@
                                 </div>
                                 <div class="modal-body">
                                     <div class="form-group">
-                                        <label for="feedback">Feedback (optional):</label>
-                                        <textarea class="form-control" id="feedback" name="feedback" rows="3" 
+                                        <t t-call="bemade_sports_clinic.portal_field_label_clear">
+                                            <t t-set="target_id" t-value="'feedback'"/>
+                                            <t t-set="label">Feedback (optional):</t>
+                                        </t>
+                                        <textarea class="form-control" id="feedback" name="feedback" rows="3"
                                                   placeholder="Add any notes about completing this activity..."></textarea>
                                     </div>
                                 </div>

@@ -5,10 +5,17 @@ from odoo.tools import SQL
 class CbetEmployeeCompetencyStatus(models.Model):
     """UC-RPT-04 — the employees × competencies training matrix.
 
-    A SQL view (_auto=False, AC3) over the tracked (employee, competency) pairs
-    — those appearing in a certification or a training line — computing the
-    per-cell state. Certification-less pairs surface as 'none'. Feeds the
-    coverage-% pivot and the decoration-coloured RAG list.
+    A SQL view (_auto=False, AC3) computing the per-cell state. The rows are
+    every (employee, competency) pair that is either *required* — the obligatory
+    closure of the standards the employee is qualifying against, mirroring
+    ``cbet.competency._obligatory_closure`` — or already *tracked*, through a
+    certification or a training line.
+
+    Requirements are what make this a training matrix rather than a list of
+    holdings: a competency the employee owes but has never been certified on
+    surfaces as a 'none' cell (AC2), and ``is_required`` separates those gaps
+    from competencies held over and above the standard. Feeds the coverage-%
+    pivot and the decoration-coloured RAG list.
     """
 
     _name = "cbet.employee.competency.status"
@@ -21,6 +28,11 @@ class CbetEmployeeCompetencyStatus(models.Model):
     domain_id = fields.Many2one("cbet.domain", readonly=True)
     certification_id = fields.Many2one("cbet.certification", readonly=True)
     valid_to = fields.Date(readonly=True)
+    is_required = fields.Boolean(
+        string="Required", readonly=True,
+        help="The competency belongs to the obligatory closure of a standard "
+             "this employee is qualifying against.",
+    )
     state = fields.Selection(
         [
             ("none", "None"),
@@ -32,12 +44,36 @@ class CbetEmployeeCompetencyStatus(models.Model):
     )
 
     def init(self):
-        # Default 3-month expiry horizon baked into the view (UC-VAL-01 AC1 default).
+        # The 'expiring' horizon is the employee's company setting
+        # (cbet_expiry_horizon_months, UC-VAL-01 AC1), 3 months when unset.
         self.env.cr.execute(SQL("DROP VIEW IF EXISTS %s", SQL.identifier(self._table)))
         self.env.cr.execute(SQL(
             """
             CREATE VIEW %(table)s AS
-            WITH pairs AS (
+            WITH RECURSIVE closure AS (
+                -- Seed: the competencies each standard names as essential.
+                SELECT sl.standard_id, sl.competency_id
+                FROM cbet_standard_line sl
+                WHERE sl.line_type = 'essential'
+                UNION
+                -- Transitively pull in obligatory prerequisites. UNION (not
+                -- UNION ALL) both de-duplicates and terminates on cycles.
+                SELECT cl.standard_id, p.prerequisite_id
+                FROM closure cl
+                JOIN cbet_prerequisite p ON p.competency_id = cl.competency_id
+                WHERE p.prereq_type = 'obligatoire'
+            ),
+            required AS (
+                SELECT DISTINCT q.employee_id, cl.competency_id
+                FROM cbet_qualification q
+                JOIN cbet_standard s ON s.id = q.standard_id AND s.active = TRUE
+                JOIN closure cl ON cl.standard_id = q.standard_id
+                -- Archived qualifications (a role left, UC-STD-06) owe nothing.
+                WHERE q.active = TRUE
+            ),
+            pairs AS (
+                SELECT employee_id, competency_id FROM required
+                UNION
                 SELECT employee_id, competency_id FROM cbet_certification
                 UNION
                 SELECT employee_id, competency_id FROM cbet_training_line
@@ -49,24 +85,41 @@ class CbetEmployeeCompetencyStatus(models.Model):
                 WHERE active = TRUE
                 ORDER BY employee_id, competency_id, valid_from DESC
             )
-            SELECT row_number() OVER () AS id,
+            -- The id must identify the CELL, not its position in the result.
+            -- row_number() renumbers every row whenever one is inserted, and the
+            -- ORM reads a record by id alone (search returns ids; the following
+            -- read matches `id IN (...)` and never re-checks employee/competency),
+            -- so a positional id silently reports another employee's state.
+            -- Packing the pair is stable for any data: competency_id occupies the
+            -- low 20 bits (< 1,048,576 competencies) and the result stays well
+            -- inside the 2^53 the web client can represent exactly.
+            SELECT ((p.employee_id::bigint << 20) | p.competency_id) AS id,
                    p.employee_id,
                    p.competency_id,
                    c.domain_id,
                    l.id AS certification_id,
                    l.valid_to,
+                   (r.employee_id IS NOT NULL) AS is_required,
                    CASE
                        WHEN l.id IS NULL THEN 'none'
                        WHEN l.valid_to IS NOT NULL AND l.valid_to < CURRENT_DATE THEN 'expired'
                        WHEN l.valid_to IS NOT NULL
-                            AND l.valid_to <= CURRENT_DATE + INTERVAL '3 months' THEN 'expiring'
+                            AND l.valid_to <= CURRENT_DATE
+                                + make_interval(months => COALESCE(
+                                    NULLIF(rc.cbet_expiry_horizon_months, 0), 3))
+                            THEN 'expiring'
                        ELSE 'valid'
                    END AS state
             FROM pairs p
             JOIN cbet_competency c ON c.id = p.competency_id
+            JOIN hr_employee e ON e.id = p.employee_id
+            LEFT JOIN res_company rc ON rc.id = e.company_id
             LEFT JOIN latest l
                    ON l.employee_id = p.employee_id
                   AND l.competency_id = p.competency_id
+            LEFT JOIN required r
+                   ON r.employee_id = p.employee_id
+                  AND r.competency_id = p.competency_id
             """,
             table=SQL.identifier(self._table),
         ))

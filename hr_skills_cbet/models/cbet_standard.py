@@ -40,6 +40,33 @@ class CbetStandard(models.Model):
 
     qualification_ids = fields.One2many("cbet.qualification", "standard_id")
 
+    # UC-STD-06 — the job positions that require this standard.
+    job_ids = fields.Many2many(
+        "hr.job", "cbet_standard_hr_job_rel", "standard_id", "job_id",
+        string="Job positions",
+        help="Employees in these positions qualify against this standard.",
+    )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        standards = super().create(vals_list)
+        if any(vals.get("job_ids") for vals in vals_list):
+            standards._sync_job_holders()
+        return standards
+
+    def write(self, vals):
+        res = super().write(vals)
+        if "job_ids" in vals:
+            self._sync_job_holders()
+        return res
+
+    def _sync_job_holders(self):
+        # The inverse side of hr.job.cbet_standard_ids: resync everyone
+        # whose position may have gained or lost this standard.
+        employees = self.env["hr.employee"].sudo().with_context(
+            active_test=False).search([("job_id", "!=", False)])
+        self.env["cbet.qualification"]._sync_job_requirements(employees)
+
     @api.depends("parent_standard_id")
     def _compute_is_sub(self):
         for std in self:

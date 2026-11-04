@@ -1,0 +1,976 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- ================================================================
+         Shared bits
+         ================================================================ -->
+    <template id="portal_student_nav" name="Homeschool: student navigation">
+        <ul class="nav nav-pills mb-3 o_hs_noprint">
+            <li class="nav-item">
+                <a
+          t-attf-class="nav-link #{'active' if page_name == 'homeschool_day' else ''}"
+          t-attf-href="#{base_url}/day"
+        >Today</a>
+            </li>
+            <li class="nav-item">
+                <a
+          t-attf-class="nav-link #{'active' if page_name == 'homeschool_week' else ''}"
+          t-attf-href="#{base_url}/week"
+        >Week</a>
+            </li>
+            <li class="nav-item">
+                <a
+          t-attf-class="nav-link #{'active' if page_name in ('homeschool_traces', 'homeschool_trace', 'homeschool_submit') else ''}"
+          t-attf-href="#{base_url}/traces"
+        >Traces</a>
+            </li>
+            <li class="nav-item">
+                <a
+          t-attf-class="nav-link #{'active' if page_name in ('homeschool_reading', 'homeschool_book') else ''}"
+          t-attf-href="#{base_url}/reading"
+        >Reading log</a>
+            </li>
+        </ul>
+    </template>
+
+    <template id="portal_file_list" name="Homeschool: file list">
+        <ul class="list-unstyled mb-0">
+            <li t-foreach="files" t-as="file" class="mb-1">
+                <a
+          t-attf-href="#{base_url}/file/#{file['id']}"
+          class="text-decoration-none"
+        >
+                    <i class="fa fa-paperclip me-1" role="img" aria-label="File" /><t
+            t-out="file['name']"
+          />
+                </a>
+                <small
+          t-if="file['size_label']"
+          class="text-muted ms-1"
+          t-out="file['size_label']"
+        />
+            </li>
+        </ul>
+    </template>
+
+    <!-- ================================================================
+         Home: one card per student
+         ================================================================ -->
+    <template id="portal_home" name="Homeschool: my students">
+        <t t-call="portal.portal_layout">
+            <div class="o_hs_portal">
+                <h3 class="mb-3">
+                    <t t-if="homeschool_role == 'student'">My school</t>
+                    <t t-else="">My students</t>
+                </h3>
+                <div t-if="not students" class="alert alert-info" role="alert">
+                    No student is attached to your account yet.
+                </div>
+                <div class="row g-3">
+                    <div t-foreach="students" t-as="s" class="col-12 col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3"><t t-out="s.name" /></h5>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a
+                    t-attf-href="/my/homeschool/#{s.id}/day"
+                    class="btn btn-primary"
+                  >Today</a>
+                                    <a
+                    t-attf-href="/my/homeschool/#{s.id}/week"
+                    class="btn btn-outline-primary"
+                  >This week</a>
+                                    <a
+                    t-attf-href="/my/homeschool/#{s.id}/traces"
+                    class="btn btn-outline-secondary"
+                  >Traces</a>
+                                    <a
+                    t-attf-href="/my/homeschool/#{s.id}/reading"
+                    class="btn btn-outline-secondary"
+                  >Reading log</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ================================================================
+         Day
+         ================================================================ -->
+    <template id="portal_day" name="Homeschool: day">
+        <t t-call="portal.portal_layout">
+            <div class="o_hs_portal o_hs_day">
+                <t t-call="homeschool_portal.portal_student_nav" />
+                <div
+          class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"
+        >
+                    <h3 class="mb-0 text-capitalize">
+                        <t
+              t-out="day_date"
+              t-options='{"widget": "date", "format": "EEEE d MMMM y"}'
+            />
+                    </h3>
+                    <div class="btn-group o_hs_noprint" role="group">
+                        <a
+              t-if="prev_day"
+              t-attf-href="#{base_url}/day/#{prev_day.date}"
+              class="btn btn-outline-secondary"
+              title="Previous school day"
+            ><i
+                class="fa fa-chevron-left"
+                role="img"
+                aria-label="Previous school day"
+              /></a>
+                        <a
+              t-attf-href="#{base_url}/day"
+              class="btn btn-outline-secondary"
+            >Today</a>
+                        <a
+              t-attf-href="#{base_url}/week/#{iso_week}"
+              class="btn btn-outline-secondary"
+            >Week</a>
+                        <a
+              t-if="next_day"
+              t-attf-href="#{base_url}/day/#{next_day.date}"
+              class="btn btn-outline-secondary"
+              title="Next school day"
+            ><i
+                class="fa fa-chevron-right"
+                role="img"
+                aria-label="Next school day"
+              /></a>
+                        <button
+              type="button"
+              class="btn btn-outline-secondary"
+              onclick="window.print()"
+              title="Print"
+            ><i class="fa fa-print" role="img" aria-label="Print" /></button>
+                    </div>
+                </div>
+
+                <div t-if="not day" class="alert alert-info" role="alert">
+                    No school day is planned on this date.
+                </div>
+                <t t-else="">
+                    <div t-if="day.is_off" class="alert alert-secondary" role="alert">
+                        <strong>Day off</strong><t t-if="day.off_reason"> — <t
+                t-out="day.off_reason"
+              /></t>
+                    </div>
+                    <div t-if="day.opening_html" class="card mb-3">
+                        <div class="card-body o_hs_md">
+                            <h6 class="card-subtitle text-muted mb-2">Opening</h6>
+                            <t t-out="day.opening_html" />
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-8">
+                            <h5 class="mb-2">Blocks</h5>
+                            <div
+                t-if="not blocks"
+                class="text-muted mb-3"
+              >No block on this day.</div>
+                            <div
+                t-foreach="blocks"
+                t-as="block"
+                t-attf-class="card mb-2 o_hs_block o_hs_kind_#{block.kind}"
+              >
+                                <div class="card-body py-2">
+                                    <div
+                    class="d-flex flex-wrap align-items-baseline gap-2"
+                  >
+                                        <span class="o_hs_time text-muted"><t
+                        t-out="fmt_hour(block.start_time)"
+                      />–<t t-out="fmt_hour(block.end_time)" /></span>
+                                        <span class="badge text-bg-light border"><t
+                        t-out="kind_labels.get(block.kind, block.kind)"
+                      /></span>
+                                        <span
+                      t-if="block.subject_id"
+                      class="badge text-bg-secondary"
+                    ><t t-out="block.subject_id.name" /></span>
+                                        <strong class="flex-grow-1"><t
+                        t-out="block.name"
+                      /></strong>
+                                        <small
+                      class="text-muted"
+                      t-out="'%s min' % block.duration_planned"
+                    />
+                                    </div>
+                                    <t t-if="block.kind != 'pause'">
+                                        <div
+                      t-if="block.intention_html"
+                      class="mt-2 o_hs_md"
+                    >
+                                            <small
+                        class="text-uppercase text-muted"
+                      >Intention</small>
+                                            <t t-out="block.intention_html" />
+                                        </div>
+                                        <div
+                      t-if="block.steps_html"
+                      class="mt-2 o_hs_md"
+                    >
+                                            <small
+                        class="text-uppercase text-muted"
+                      >Steps</small>
+                                            <t t-out="block.steps_html" />
+                                        </div>
+                                        <div
+                      t-if="block.success_html"
+                      class="mt-2 o_hs_md"
+                    >
+                                            <small
+                        class="text-uppercase text-muted"
+                      >Success criteria</small>
+                                            <t t-out="block.success_html" />
+                                        </div>
+                                        <div
+                      t-if="block.fallback_html"
+                      class="mt-2 o_hs_md"
+                    >
+                                            <small
+                        class="text-uppercase text-muted"
+                      >Fallback</small>
+                                            <t t-out="block.fallback_html" />
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-lg-4">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-2">Liste du jour</h5>
+                                    <div
+                    t-if="not deliverables"
+                    class="text-muted"
+                  >Nothing to hand over today.</div>
+                                    <ul class="list-unstyled mb-0">
+                                        <li
+                      t-foreach="deliverables"
+                      t-as="d"
+                      t-attf-class="d-flex align-items-start gap-2 py-1 o_hs_deliverable #{'o_hs_done' if d.done else ''} #{'bg-success-subtle rounded' if ticked and int(ticked) == d.id else ''}"
+                    >
+                                            <form
+                        t-if="role == 'student'"
+                        method="post"
+                        t-attf-action="#{base_url}/deliverable/#{d.id}/tick"
+                        class="o_hs_noprint"
+                      >
+                                                <input
+                          type="hidden"
+                          name="csrf_token"
+                          t-att-value="request.csrf_token()"
+                        />
+                                                <button
+                          t-if="d.done"
+                          type="submit"
+                          name="done"
+                          value="0"
+                          class="btn btn-link o_hs_tick o_hs_done"
+                          title="Untick"
+                        >
+                                                    <i
+                            class="fa fa-check-square-o"
+                            role="img"
+                            aria-label="Done"
+                          />
+                                                </button>
+                                                <button
+                          t-else=""
+                          type="submit"
+                          name="done"
+                          value="1"
+                          class="btn btn-link o_hs_tick"
+                          title="Tick"
+                        >
+                                                    <i
+                            class="fa fa-square-o"
+                            role="img"
+                            aria-label="To do"
+                          />
+                                                </button>
+                                            </form>
+                                            <span t-else="" class="o_hs_tick">
+                                                <i
+                          t-if="d.done"
+                          class="fa fa-check-square-o text-success"
+                          role="img"
+                          aria-label="Done"
+                        />
+                                                <i
+                          t-else=""
+                          class="fa fa-square-o text-muted"
+                          role="img"
+                          aria-label="To do"
+                        />
+                                            </span>
+                                            <div class="flex-grow-1">
+                                                <div class="o_hs_deliverable_name">
+                                                    <t t-out="d.name" />
+                                                    <span
+                            t-if="d.bonus"
+                            class="badge text-bg-warning ms-1"
+                          >Bonus</span>
+                                                </div>
+                                                <small
+                          t-if="d.when"
+                          class="text-muted"
+                        ><t t-out="d.when" /></small>
+                                                <div t-if="d.detail" class="small"><t
+                            t-out="d.detail"
+                          /></div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-2">Material of the day</h5>
+                                    <div
+                    t-if="not materials"
+                    class="text-muted"
+                  >No material for today.</div>
+                                    <div t-foreach="materials" t-as="m" class="mb-2">
+                                        <div><strong><t t-out="m.name" /></strong></div>
+                                        <div
+                      t-if="m.description"
+                      class="small text-muted"
+                    ><t t-out="m.description" /></div>
+                                        <a
+                      t-if="m.pdf_attachment_id"
+                      t-attf-href="#{base_url}/file/#{m.pdf_attachment_id.id}"
+                      class="text-decoration-none"
+                    >
+                                            <i
+                        class="fa fa-file-pdf-o me-1"
+                        role="img"
+                        aria-label="PDF"
+                      />Download the PDF
+                                        </a>
+                                        <t t-call="homeschool_portal.portal_file_list">
+                                            <t
+                        t-set="files"
+                        t-value="material_files.get(m.id, [])"
+                      />
+                                        </t>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+
+    <!-- ================================================================
+         Week
+         ================================================================ -->
+    <template id="portal_week" name="Homeschool: week">
+        <t t-call="portal.portal_layout">
+            <div class="o_hs_portal o_hs_week">
+                <t t-call="homeschool_portal.portal_student_nav" />
+                <div
+          class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"
+        >
+                    <h3 class="mb-0">
+                        Week <t t-out="iso_week" />
+                        <small class="text-muted fs-6">
+                            <t
+                t-out="monday"
+                t-options='{"widget": "date", "format": "d MMMM"}'
+              /> –
+                            <t
+                t-out="friday"
+                t-options='{"widget": "date", "format": "d MMMM y"}'
+              />
+                        </small>
+                    </h3>
+                    <div class="btn-group o_hs_noprint" role="group">
+                        <a
+              t-attf-href="#{base_url}/week/#{prev_week}"
+              class="btn btn-outline-secondary"
+              title="Previous week"
+            ><i class="fa fa-chevron-left" role="img" aria-label="Previous week" /></a>
+                        <a
+              t-attf-href="#{base_url}/week"
+              class="btn btn-outline-secondary"
+            >This week</a>
+                        <a
+              t-attf-href="#{base_url}/week/#{next_week}"
+              class="btn btn-outline-secondary"
+              title="Next week"
+            ><i class="fa fa-chevron-right" role="img" aria-label="Next week" /></a>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm o_hs_week">
+                        <thead>
+                            <tr>
+                                <th
+                  t-foreach="columns"
+                  t-as="col"
+                  class="text-capitalize"
+                >
+                                    <a
+                    t-if="col['day']"
+                    t-attf-href="#{base_url}/day/#{col['date']}"
+                    class="text-decoration-none"
+                  >
+                                        <t t-out="col['day'].display_name" />
+                                    </a>
+                                    <span t-else="" class="text-muted">
+                                        <t
+                      t-out="col['date']"
+                      t-options='{"widget": "date", "format": "EEE d MMM"}'
+                    />
+                                    </span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td t-foreach="columns" t-as="col">
+                                    <t t-if="not col['day']"><span
+                      class="text-muted small"
+                    >—</span></t>
+                                    <t t-elif="col['day'].is_off"><span
+                      class="badge text-bg-secondary"
+                    >Day off</span></t>
+                                    <t t-else="">
+                                        <div
+                      t-foreach="col['blocks']"
+                      t-as="block"
+                      t-attf-class="o_hs_block ps-2 mb-2 o_hs_kind_#{block.kind}"
+                    >
+                                            <div
+                        class="small text-muted o_hs_time"
+                        t-out="'%s · %s min' % (fmt_hour(block.start_time), block.duration_planned)"
+                      />
+                                            <div><t t-out="block.name" /></div>
+                                            <div class="small">
+                                                <span
+                          class="badge text-bg-light border"
+                        ><t t-out="kind_labels.get(block.kind, block.kind)" /></span>
+                                                <span
+                          t-if="block.subject_id"
+                          class="badge text-bg-secondary"
+                        ><t t-out="block.subject_id.name" /></span>
+                                            </div>
+                                        </div>
+                                        <div
+                      t-if="not col['blocks']"
+                      class="text-muted small"
+                    >No block</div>
+                                    </t>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ================================================================
+         Traces
+         ================================================================ -->
+    <template id="portal_trace_badges" name="Homeschool: trace badges">
+        <span
+      t-if="not trace.validated"
+      class="badge text-bg-warning"
+    >Pending validation</span>
+        <span
+      t-elif="trace.diffusion == 'institutional'"
+      class="badge text-bg-success"
+    >Institutional</span>
+        <span t-else="" class="badge text-bg-secondary">Internal</span>
+    </template>
+
+    <template id="portal_traces" name="Homeschool: traces">
+        <t t-call="portal.portal_layout">
+            <div class="o_hs_portal o_hs_traces">
+                <t t-call="homeschool_portal.portal_student_nav" />
+                <div
+          class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"
+        >
+                    <h3 class="mb-0">Traces</h3>
+                    <a
+            t-attf-href="#{base_url}/traces/submit"
+            class="btn btn-primary o_hs_noprint"
+          ><i
+              class="fa fa-upload me-1"
+              role="img"
+              aria-label="Hand in"
+            />Hand in a trace</a>
+                </div>
+                <div t-if="not traces" class="alert alert-info" role="alert">
+                    No trace to show yet.
+                </div>
+                <t t-if="traces" t-call="portal.portal_table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Title</th>
+                            <th class="d-none d-md-table-cell">Subjects</th>
+                            <th class="d-none d-md-table-cell">Code</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="traces" t-as="trace">
+                            <td><span t-field="trace.date" /></td>
+                            <td><a t-attf-href="#{base_url}/traces/#{trace.id}"><t
+                    t-out="trace.name"
+                  /></a></td>
+                            <td class="d-none d-md-table-cell"><span
+                    t-foreach="trace.subject_ids"
+                    t-as="subject"
+                    class="badge text-bg-secondary me-1"
+                    t-out="subject.name"
+                  /></td>
+                            <td class="d-none d-md-table-cell text-muted"><t
+                  t-out="trace.code"
+                /></td>
+                            <td><t
+                  t-call="homeschool_portal.portal_trace_badges"
+                /></td>
+                        </tr>
+                    </tbody>
+                </t>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_trace" name="Homeschool: trace">
+        <t t-call="portal.portal_layout">
+            <div class="o_hs_portal o_hs_trace">
+                <t t-call="homeschool_portal.portal_student_nav" />
+                <div t-if="submitted" class="alert alert-success" role="alert">
+                    Thank you! The trace was handed in. It waits for the parent's validation.
+                </div>
+                <div
+          class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3"
+        >
+                    <div>
+                        <h3 class="mb-1"><t t-out="trace.name" /></h3>
+                        <div class="text-muted">
+                            <span t-field="trace.date" /> · <t t-out="trace.code" />
+                        </div>
+                        <div t-if="trace.subject_ids" class="mt-1 o_hs_subjects">
+                            <span class="text-muted small me-1">Subjects:</span>
+                            <span
+                t-foreach="trace.subject_ids"
+                t-as="subject"
+                class="badge text-bg-secondary me-1"
+                t-out="subject.name"
+              />
+                        </div>
+                    </div>
+                    <div><t t-call="homeschool_portal.portal_trace_badges" /></div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-12 col-lg-8">
+                        <div t-if="trace.student_comment" class="card mb-3">
+                            <div class="card-body">
+                                <h6
+                  class="card-subtitle text-muted mb-2"
+                >In the student's words</h6>
+                                <blockquote class="blockquote mb-0 fs-6"><t
+                    t-out="trace.student_comment"
+                  /></blockquote>
+                            </div>
+                        </div>
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle text-muted mb-2">Files</h6>
+                                <div
+                  t-if="not attachments"
+                  class="text-muted"
+                >No file.</div>
+                                <t t-call="homeschool_portal.portal_file_list">
+                                    <t t-set="files" t-value="attachments" />
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-4">
+                        <div class="card">
+                            <div class="card-body small">
+                                <div class="mb-1"><span
+                    class="text-muted"
+                  >Handed in by</span>
+                                    <t
+                    t-if="trace.submitted_by == 'student'"
+                  >the student</t>
+                                    <t
+                    t-elif="trace.submitted_by == 'resource'"
+                  >a resource person</t>
+                                    <t t-else="">the parent</t>
+                                </div>
+                                <div
+                  t-if="trace.validated and trace.validated_at"
+                  class="mb-1"
+                ><span class="text-muted">Validated on</span> <span
+                    t-field="trace.validated_at"
+                    t-options='{"widget": "date"}'
+                  /></div>
+                                <a
+                  t-attf-href="#{base_url}/traces"
+                  class="btn btn-sm btn-outline-secondary mt-2 o_hs_noprint"
+                ><i
+                    class="fa fa-arrow-left me-1"
+                    role="img"
+                    aria-label="Back"
+                  />All traces</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr class="mt-4" />
+                <h5 class="mb-2">Comments</h5>
+                <t t-call="portal.message_thread" />
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_submit" name="Homeschool: hand in a trace">
+        <t t-call="portal.portal_layout">
+            <div class="o_hs_portal o_hs_submit">
+                <t t-call="homeschool_portal.portal_student_nav" />
+                <h3 class="mb-3">Hand in a trace</h3>
+                <p class="text-muted">
+                    A trace handed in from here stays internal until the parent validates it.
+                </p>
+                <div t-if="errors" class="alert alert-danger" role="alert">
+                    <ul class="mb-0"><li t-foreach="errors" t-as="error"><t
+                t-out="error"
+              /></li></ul>
+                </div>
+                <form
+          method="post"
+          enctype="multipart/form-data"
+          t-attf-action="#{base_url}/traces/submit"
+          class="col-12 col-lg-8"
+        >
+                    <input
+            type="hidden"
+            name="csrf_token"
+            t-att-value="request.csrf_token()"
+          />
+                    <div class="mb-3">
+                        <label class="form-label" for="hs_name">Title</label>
+                        <input
+              type="text"
+              class="form-control"
+              id="hs_name"
+              name="name"
+              required="required"
+              maxlength="200"
+              t-att-value="form.get('name')"
+            />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="hs_date">Date</label>
+                        <input
+              type="date"
+              class="form-control"
+              id="hs_date"
+              name="date"
+              required="required"
+              t-att-value="form.get('date')"
+            />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="hs_files">Files</label>
+                        <input
+              type="file"
+              class="form-control"
+              id="hs_files"
+              name="files"
+              multiple="multiple"
+            />
+                        <div class="form-text" t-out="files_hint" />
+                    </div>
+                    <div class="mb-3">
+                        <t t-if="role == 'student'">
+                            <label
+                class="form-label"
+                for="hs_comment"
+              >In your own words</label>
+                            <textarea
+                class="form-control"
+                id="hs_comment"
+                name="student_comment"
+                rows="4"
+                placeholder="What did you do? What did you learn?"
+              ><t t-out="form.get('student_comment')" /></textarea>
+                        </t>
+                        <t t-else="">
+                            <label
+                class="form-label"
+                for="hs_comment"
+              >In the student's words</label>
+                            <textarea
+                class="form-control"
+                id="hs_comment"
+                name="student_comment"
+                rows="4"
+                placeholder="What the student says about this work, in his words."
+              ><t t-out="form.get('student_comment')" /></textarea>
+                        </t>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary"><i
+                class="fa fa-upload me-1"
+                role="img"
+                aria-label="Hand in"
+              />Hand in</button>
+                        <a
+              t-attf-href="#{base_url}/traces"
+              class="btn btn-outline-secondary"
+            >Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </t>
+    </template>
+
+    <!-- ================================================================
+         Reading log
+         ================================================================ -->
+    <template id="portal_reading" name="Homeschool: reading log">
+        <t t-call="portal.portal_layout">
+            <div class="o_hs_portal o_hs_reading">
+                <t t-call="homeschool_portal.portal_student_nav" />
+                <h3 class="mb-3">Reading log</h3>
+                <div t-if="not books" class="alert alert-info" role="alert">
+                    No book in the reading log yet.
+                </div>
+                <t t-if="books" t-call="portal.portal_table">
+                    <thead>
+                        <tr>
+                            <th>Book</th>
+                            <th class="d-none d-md-table-cell">Author</th>
+                            <th>Started</th>
+                            <th>Finished</th>
+                            <th class="text-end">Entries</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="books" t-as="book">
+                            <td><a t-attf-href="#{base_url}/reading/#{book.id}"><t
+                    t-out="book.title"
+                  /></a></td>
+                            <td class="d-none d-md-table-cell text-muted"><t
+                  t-out="book.author or ''"
+                /></td>
+                            <td><span t-if="book.started" t-field="book.started" /></td>
+                            <td>
+                                <span t-if="book.finished" t-field="book.finished" />
+                                <span
+                  t-else=""
+                  class="badge text-bg-info"
+                >In progress</span>
+                            </td>
+                            <td class="text-end"><t t-out="book.entry_count" /></td>
+                        </tr>
+                    </tbody>
+                </t>
+            </div>
+        </t>
+    </template>
+
+    <template id="portal_book" name="Homeschool: book">
+        <t t-call="portal.portal_layout">
+            <div class="o_hs_portal o_hs_book">
+                <t t-call="homeschool_portal.portal_student_nav" />
+                <div
+          class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3"
+        >
+                    <div>
+                        <h3 class="mb-1"><t t-out="book.title" /></h3>
+                        <div t-if="book.author" class="text-muted"><t
+                t-out="book.author"
+              /></div>
+                    </div>
+                    <a
+            t-attf-href="#{base_url}/reading"
+            class="btn btn-sm btn-outline-secondary o_hs_noprint"
+          ><i class="fa fa-arrow-left me-1" role="img" aria-label="Back" />All books</a>
+                </div>
+                <div t-if="saved" class="alert alert-success" role="alert">
+                    Your entry is saved.
+                </div>
+                <div class="row g-3">
+                    <div t-if="role == 'student'" class="col-12 col-lg-5">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">Today's entry</h5>
+                                <form
+                  method="post"
+                  t-attf-action="#{base_url}/reading/#{book.id}/entry"
+                >
+                                    <input
+                    type="hidden"
+                    name="csrf_token"
+                    t-att-value="request.csrf_token()"
+                  />
+                                    <div class="mb-3">
+                                        <label
+                      class="form-label"
+                      for="hs_entry_date"
+                    >Date</label>
+                                        <input
+                      type="date"
+                      class="form-control"
+                      id="hs_entry_date"
+                      name="date"
+                      required="required"
+                      t-att-value="form_date"
+                    />
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label
+                        class="form-label"
+                        for="hs_word1"
+                      >Word 1</label>
+                                            <input
+                        type="text"
+                        class="form-control"
+                        id="hs_word1"
+                        name="word1"
+                        maxlength="80"
+                        t-att-value="current.word1 if current else ''"
+                      />
+                                        </div>
+                                        <div class="col-6">
+                                            <label
+                        class="form-label"
+                        for="hs_word2"
+                      >Word 2</label>
+                                            <input
+                        type="text"
+                        class="form-control"
+                        id="hs_word2"
+                        name="word2"
+                        maxlength="80"
+                        t-att-value="current.word2 if current else ''"
+                      />
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label
+                      class="form-label"
+                      for="hs_question"
+                    >A question about today's reading</label>
+                                        <textarea
+                      class="form-control"
+                      id="hs_question"
+                      name="question"
+                      rows="2"
+                    ><t t-out="current.question if current else ''" /></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label
+                      class="form-label"
+                      for="hs_answer"
+                    >Your answer</label>
+                                        <textarea
+                      class="form-control"
+                      id="hs_answer"
+                      name="answer"
+                      rows="2"
+                    ><t t-out="current.answer if current else ''" /></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label
+                      class="form-label"
+                      for="hs_weekly"
+                    >The Friday page</label>
+                                        <textarea
+                      class="form-control"
+                      id="hs_weekly"
+                      name="weekly_page"
+                      rows="3"
+                      placeholder="On Fridays: what was this week's reading about?"
+                    ><t t-out="current.weekly_page if current else ''" /></textarea>
+                                        <div
+                      t-if="not is_friday"
+                      class="form-text"
+                    >Only needed on Fridays.</div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary"><i
+                      class="fa fa-save me-1"
+                      role="img"
+                      aria-label="Save"
+                    />Save</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div
+            t-attf-class="col-12 #{'col-lg-7' if role == 'student' else ''}"
+          >
+                        <h5 class="mb-2">Entries</h5>
+                        <div t-if="not entries" class="text-muted">No entry yet.</div>
+                        <div t-foreach="entries" t-as="entry" class="card mb-2">
+                            <div class="card-body py-2">
+                                <div
+                  class="d-flex flex-wrap justify-content-between align-items-baseline gap-2"
+                >
+                                    <strong class="text-capitalize"><span
+                      t-field="entry.date"
+                      t-options='{"format": "EEEE d MMMM y"}'
+                    /></strong>
+                                    <a
+                    t-if="role == 'student'"
+                    t-attf-href="#{base_url}/reading/#{book.id}?date=#{entry.date}"
+                    class="small o_hs_noprint"
+                  >Edit</a>
+                                </div>
+                                <div
+                  t-if="entry.word1 or entry.word2"
+                  class="o_hs_entry_words mt-1"
+                >
+                                    <span
+                    t-if="entry.word1"
+                    class="badge text-bg-light border"
+                  ><t t-out="entry.word1" /></span>
+                                    <span
+                    t-if="entry.word2"
+                    class="badge text-bg-light border"
+                  ><t t-out="entry.word2" /></span>
+                                </div>
+                                <div t-if="entry.question" class="mt-1"><span
+                    class="text-muted"
+                  >Question:</span> <t t-out="entry.question" /></div>
+                                <div t-if="entry.answer" class="mt-1"><span
+                    class="text-muted"
+                  >Answer:</span> <t t-out="entry.answer" /></div>
+                                <div
+                  t-if="entry.weekly_page"
+                  class="mt-2 p-2 bg-light rounded"
+                >
+                                    <div
+                    class="small text-uppercase text-muted"
+                  >The Friday page</div>
+                                    <t t-out="entry.weekly_page" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

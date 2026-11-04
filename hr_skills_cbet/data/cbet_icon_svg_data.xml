@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- The printable SVG of every catalog token (static/src/img/icons/<token>.svg),
+         set on the rows seeded by cbet_icon_data.xml. noupdate="0": a redrawn icon
+         ships with the module upgrade. -->
+    <data noupdate="0">
+        <record id="icon_epi_lunettes" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/epi-lunettes.svg"/>
+            <field name="svg_filename">epi-lunettes.svg</field>
+        </record>
+        <record id="icon_epi_ecran_facial" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/epi-ecran-facial.svg"/>
+            <field name="svg_filename">epi-ecran-facial.svg</field>
+        </record>
+        <record id="icon_epi_nitrile" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/epi-nitrile.svg"/>
+            <field name="svg_filename">epi-nitrile.svg</field>
+        </record>
+        <record id="icon_epi_gants_meca" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/epi-gants-meca.svg"/>
+            <field name="svg_filename">epi-gants-meca.svg</field>
+        </record>
+        <record id="icon_epi_tablier" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/epi-tablier.svg"/>
+            <field name="svg_filename">epi-tablier.svg</field>
+        </record>
+        <record id="icon_epi_chaussures" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/epi-chaussures.svg"/>
+            <field name="svg_filename">epi-chaussures.svg</field>
+        </record>
+        <record id="icon_epi_n95" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/epi-n95.svg"/>
+            <field name="svg_filename">epi-n95.svg</field>
+        </record>
+        <record id="icon_epi_auditive" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/epi-auditive.svg"/>
+            <field name="svg_filename">epi-auditive.svg</field>
+        </record>
+        <record id="icon_epi_casque" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/epi-casque.svg"/>
+            <field name="svg_filename">epi-casque.svg</field>
+        </record>
+        <record id="icon_sev_securite" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/sev-securite.svg"/>
+            <field name="svg_filename">sev-securite.svg</field>
+        </record>
+        <record id="icon_sev_critique" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/sev-critique.svg"/>
+            <field name="svg_filename">sev-critique.svg</field>
+        </record>
+        <record id="icon_sev_standard" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/sev-standard.svg"/>
+            <field name="svg_filename">sev-standard.svg</field>
+        </record>
+        <record id="icon_sev_stop" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/sev-stop.svg"/>
+            <field name="svg_filename">sev-stop.svg</field>
+        </record>
+        <record id="icon_sev_escalade" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/sev-escalade.svg"/>
+            <field name="svg_filename">sev-escalade.svg</field>
+        </record>
+        <record id="icon_sev_verif" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/sev-verif.svg"/>
+            <field name="svg_filename">sev-verif.svg</field>
+        </record>
+        <record id="icon_act_donnees" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/act-donnees.svg"/>
+            <field name="svg_filename">act-donnees.svg</field>
+        </record>
+        <record id="icon_act_photo" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/act-photo.svg"/>
+            <field name="svg_filename">act-photo.svg</field>
+        </record>
+        <record id="icon_act_inspection" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/act-inspection.svg"/>
+            <field name="svg_filename">act-inspection.svg</field>
+        </record>
+        <record id="icon_act_eau" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/act-eau.svg"/>
+            <field name="svg_filename">act-eau.svg</field>
+        </record>
+        <record id="icon_act_temperature" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/act-temperature.svg"/>
+            <field name="svg_filename">act-temperature.svg</field>
+        </record>
+        <record id="icon_act_repeter" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/act-repeter.svg"/>
+            <field name="svg_filename">act-repeter.svg</field>
+        </record>
+        <record id="icon_act_aller" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/act-aller.svg"/>
+            <field name="svg_filename">act-aller.svg</field>
+        </record>
+        <record id="icon_act_loto" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/act-loto.svg"/>
+            <field name="svg_filename">act-loto.svg</field>
+        </record>
+        <record id="icon_act_depressuriser" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/act-depressuriser.svg"/>
+            <field name="svg_filename">act-depressuriser.svg</field>
+        </record>
+        <record id="icon_act_isoler" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/act-isoler.svg"/>
+            <field name="svg_filename">act-isoler.svg</field>
+        </record>
+        <record id="icon_outil_conductivimetre" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-conductivimetre.svg"/>
+            <field name="svg_filename">outil-conductivimetre.svg</field>
+        </record>
+        <record id="icon_outil_ph_metre" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-ph-metre.svg"/>
+            <field name="svg_filename">outil-ph-metre.svg</field>
+        </record>
+        <record id="icon_outil_bandelettes" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-bandelettes.svg"/>
+            <field name="svg_filename">outil-bandelettes.svg</field>
+        </record>
+        <record id="icon_outil_debitmetre" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-debitmetre.svg"/>
+            <field name="svg_filename">outil-debitmetre.svg</field>
+        </record>
+        <record id="icon_outil_manometre" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-manometre.svg"/>
+            <field name="svg_filename">outil-manometre.svg</field>
+        </record>
+        <record id="icon_outil_thermometre" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-thermometre.svg"/>
+            <field name="svg_filename">outil-thermometre.svg</field>
+        </record>
+        <record id="icon_outil_cle_sangle" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-cle-sangle.svg"/>
+            <field name="svg_filename">outil-cle-sangle.svg</field>
+        </record>
+        <record id="icon_outil_cles" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-cles.svg"/>
+            <field name="svg_filename">outil-cles.svg</field>
+        </record>
+        <record id="icon_outil_lampe" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-lampe.svg"/>
+            <field name="svg_filename">outil-lampe.svg</field>
+        </record>
+        <record id="icon_outil_formulaire" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-formulaire.svg"/>
+            <field name="svg_filename">outil-formulaire.svg</field>
+        </record>
+        <record id="icon_outil_pompe_cip" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-pompe-cip.svg"/>
+            <field name="svg_filename">outil-pompe-cip.svg</field>
+        </record>
+        <record id="icon_outil_extracteur" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-extracteur.svg"/>
+            <field name="svg_filename">outil-extracteur.svg</field>
+        </record>
+        <record id="icon_outil_aspirateur" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-aspirateur.svg"/>
+            <field name="svg_filename">outil-aspirateur.svg</field>
+        </record>
+        <record id="icon_outil_entonnoir" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-entonnoir.svg"/>
+            <field name="svg_filename">outil-entonnoir.svg</field>
+        </record>
+        <record id="icon_outil_bac" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-bac.svg"/>
+            <field name="svg_filename">outil-bac.svg</field>
+        </record>
+        <record id="icon_outil_boyau" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/outil-boyau.svg"/>
+            <field name="svg_filename">outil-boyau.svg</field>
+        </record>
+        <record id="icon_item_produit_chimique" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/item-produit-chimique.svg"/>
+            <field name="svg_filename">item-produit-chimique.svg</field>
+        </record>
+        <record id="icon_item_fds" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/item-fds.svg"/>
+            <field name="svg_filename">item-fds.svg</field>
+        </record>
+        <record id="icon_item_media" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/item-media.svg"/>
+            <field name="svg_filename">item-media.svg</field>
+        </record>
+        <record id="icon_item_gravier" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/item-gravier.svg"/>
+            <field name="svg_filename">item-gravier.svg</field>
+        </record>
+        <record id="icon_item_membrane" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/item-membrane.svg"/>
+            <field name="svg_filename">item-membrane.svg</field>
+        </record>
+        <record id="icon_item_cartouche" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/item-cartouche.svg"/>
+            <field name="svg_filename">item-cartouche.svg</field>
+        </record>
+        <record id="icon_item_joint" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/item-joint.svg"/>
+            <field name="svg_filename">item-joint.svg</field>
+        </record>
+        <record id="icon_item_sel" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/item-sel.svg"/>
+            <field name="svg_filename">item-sel.svg</field>
+        </record>
+        <record id="icon_item_lubrifiant" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/item-lubrifiant.svg"/>
+            <field name="svg_filename">item-lubrifiant.svg</field>
+        </record>
+        <record id="icon_comp_vanne" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/comp-vanne.svg"/>
+            <field name="svg_filename">comp-vanne.svg</field>
+        </record>
+        <record id="icon_comp_pompe_hp" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/comp-pompe-hp.svg"/>
+            <field name="svg_filename">comp-pompe-hp.svg</field>
+        </record>
+        <record id="icon_comp_boitier" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/comp-boitier.svg"/>
+            <field name="svg_filename">comp-boitier.svg</field>
+        </record>
+        <record id="icon_comp_reservoir" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/comp-reservoir.svg"/>
+            <field name="svg_filename">comp-reservoir.svg</field>
+        </record>
+        <record id="icon_comp_tete" model="cbet.icon">
+            <field name="svg" type="base64" file="hr_skills_cbet/static/src/img/icons/comp-tete.svg"/>
+            <field name="svg_filename">comp-tete.svg</field>
+        </record>
+    </data>
+</odoo>

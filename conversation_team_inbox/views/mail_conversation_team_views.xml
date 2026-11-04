@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="mail_conversation_team_view_form" model="ir.ui.view">
+        <field name="name">mail.conversation.team.view.form.team.inbox</field>
+        <field name="model">mail.conversation.team</field>
+        <field
+      name="inherit_id"
+      ref="conversation_base.mail_conversation_team_view_form"
+    />
+        <field name="arch" type="xml">
+            <xpath expr="//group" position="before">
+                <group name="team_inbox" string="Team Inbox">
+                    <field
+            name="from_address"
+            required="not id"
+            placeholder="e.g. sales@example.com"
+          />
+                    <field name="alias_name" placeholder="e.g. sales" />
+                    <field name="alias_domain_id" invisible="1" />
+                    <field
+            name="alias_email"
+            string="Team Email Address"
+            invisible="not alias_email"
+          />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="mail_conversation_team_view_list" model="ir.ui.view">
+        <field name="name">mail.conversation.team.view.list.team.inbox</field>
+        <field name="model">mail.conversation.team</field>
+        <field
+      name="inherit_id"
+      ref="conversation_base.mail_conversation_team_view_list"
+    />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="alias_email" optional="show" />
+                <field name="from_address" optional="show" />
+            </field>
+        </field>
+    </record>
+</odoo>

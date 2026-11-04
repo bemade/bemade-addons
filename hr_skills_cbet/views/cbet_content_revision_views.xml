@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- UC-CAT-08 — a previous content of a document body, opened from the
+         Revisions tab of the competency (or of a job-aid section). -->
+    <record id="view_cbet_content_revision_form" model="ir.ui.view">
+        <field name="name">cbet.content.revision.form</field>
+        <field name="model">cbet.content.revision</field>
+        <field name="arch" type="xml">
+            <form create="false" edit="false">
+                <header>
+                    <button name="action_restore" type="object" string="Restore"
+                            class="btn-primary" icon="fa-undo"
+                            confirm="Restore this previous content? The current content is kept as a revision."/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="competency_id"/>
+                            <field name="section_id" invisible="not section_id"/>
+                            <field name="field_label"/>
+                        </group>
+                        <group>
+                            <field name="date"/>
+                            <field name="user_id"/>
+                            <field name="lang_name"/>
+                        </group>
+                    </group>
+                    <separator string="Previous content"/>
+                    <field name="previous_html" nolabel="1" readonly="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_cbet_content_revision_list" model="ir.ui.view">
+        <field name="name">cbet.content.revision.list</field>
+        <field name="model">cbet.content.revision</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false">
+                <field name="date"/>
+                <field name="competency_id"/>
+                <field name="field_label"/>
+                <field name="lang_name"/>
+                <field name="user_id"/>
+            </list>
+        </field>
+    </record>
+</odoo>

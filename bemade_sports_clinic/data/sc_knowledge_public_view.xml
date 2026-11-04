@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Task 1685: the public guide view's header for a logged-in user — a view
+     extension of website_knowledge (soft dependency), so it is (re)built by
+     code on every install / update, when website_knowledge is installed. -->
+<odoo>
+    <function model="sc.help.article" name="_sc_sync_knowledge_public_view"/>
+</odoo>

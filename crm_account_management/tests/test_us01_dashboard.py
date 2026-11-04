@@ -10,10 +10,10 @@ from odoo.addons.crm_account_management.tests.common import OUTestCommon
 class TestUS01Dashboard(OUTestCommon):
     """
     US-01: View Customer Account Dashboard
-    
-    As a salesperson, I want to view a customer account dashboard showing key metrics and trends, 
+
+    As a salesperson, I want to view a customer account dashboard showing key metrics and trends,
     so I can quickly assess account health and identify opportunities.
-    
+
     Acceptance Criteria:
     - Display YTD sales $ vs same period last year
     - Display open quotations count and $, won quotations count and $
@@ -23,12 +23,12 @@ class TestUS01Dashboard(OUTestCommon):
     - Show top products purchased
     - Can click through to detailed records (drill-down)
     - Metrics aggregate from all partners in the account
-    
+
     Phase 2.1 Enhancements (Client Feedback 2026-02-11):
     - Drill-Down Capability: Enable clicking on dashboard numbers and graph bars to view detailed records
     - Configurable Reference Date: Allow setting reference date for dashboard calculations (calendar vs fiscal year)
     - Average Gross Profit %: Display average gross profit percentage on customer account dashboard
-    
+
     Requirements Covered:
     - Dashboard metrics display
     - YTD calculations with comparisons
@@ -54,6 +54,7 @@ class TestUS01Dashboard(OUTestCommon):
                 "name": "Test Product",
                 "list_price": 100.0,
                 "standard_price": 60.0,  # Cost for gross profit calculation
+                "invoice_policy": "order",
             }
         )
         cls.product2 = cls.product_model.create(
@@ -61,6 +62,7 @@ class TestUS01Dashboard(OUTestCommon):
                 "name": "Expensive Product",
                 "list_price": 500.0,
                 "standard_price": 300.0,  # Cost for gross profit calculation
+                "invoice_policy": "order",
             }
         )
 
@@ -560,7 +562,7 @@ class TestUS01Dashboard(OUTestCommon):
             invoice.action_post()
 
         ou.invalidate_recordset()
-        
+
         # Check that field exists and is computed
         self.assertTrue(hasattr(ou, 'avg_gross_profit_percentage'), "OU should have avg_gross_profit_percentage field")
         self.assertIsInstance(ou.avg_gross_profit_percentage, float, "Should be a float value")
@@ -583,13 +585,15 @@ class TestUS01Dashboard(OUTestCommon):
                 "name": "High Margin Product",
                 "list_price": 200.0,
                 "standard_price": 80.0,  # 60% margin
+                "invoice_policy": "order",
             }
         )
         low_margin_product = self.product_model.create(
             {
-                "name": "Low Margin Product", 
+                "name": "Low Margin Product",
                 "list_price": 100.0,
                 "standard_price": 90.0,  # 10% margin
+                "invoice_policy": "order",
             }
         )
 
@@ -634,8 +638,8 @@ class TestUS01Dashboard(OUTestCommon):
             invoice.action_post()
 
         ou.invalidate_recordset()
-        
+
         # Average should be (60% + 10%) / 2 = 35%
         expected_avg = (0.6 + 0.1) / 2
-        self.assertAlmostEqual(ou.avg_gross_profit_percentage, expected_avg, places=2, 
+        self.assertAlmostEqual(ou.avg_gross_profit_percentage, expected_avg, places=2,
                           msg="Should average different margins correctly")

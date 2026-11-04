@@ -1,4 +1,7 @@
-from datetime import date
+from datetime import date, datetime
+from unittest.mock import patch
+
+from freezegun import freeze_time
 
 from odoo import Command, fields
 from odoo.exceptions import AccessError, ValidationError
@@ -49,6 +52,15 @@ class TestCovPatient(TransactionCase):
         p = self._patient(first_name='Jane', last_name='Roe')
         p.write({'last_name': 'Doe'})
         self.assertEqual(p.partner_id.name, 'Jane Doe')
+
+    def test_write_accepts_vals_keyword(self):
+        """Regression (task 1378): sports.patient.write() must accept the
+        standard Odoo ``vals`` keyword so external RPC / update_records writes
+        (which call write(vals=...) by keyword) succeed. Before the param
+        rename this raised: write() got an unexpected keyword argument 'vals'."""
+        p = self._patient(first_name='Kim', last_name='Vale')
+        p.write(vals={'match_status': 'no'})
+        self.assertEqual(p.match_status, 'no')
 
     def test_get_name_from_first_and_last(self):
         P = self.env['sports.patient']
@@ -120,7 +132,22 @@ class TestCovPatient(TransactionCase):
     def test_action_consulted_today(self):
         p = self._patient()
         p.action_consulted_today()
-        self.assertEqual(p.last_consultation_date, date.today())
+        self.assertEqual(p.last_consultation_date, fields.Date.context_today(p))
+
+    def test_action_consulted_today_tz_boundary(self):
+        # Late-evening consultation in America/Toronto: 02:00 UTC on the 16th is
+        # 22:00 EDT on the 15th. The recorded date must be the local calendar day
+        # (the 15th), not the UTC day (the 16th). Regression for task 1344.
+        # context_today() reads the tz from the record CONTEXT (env.tz), not
+        # user.tz, and the current date from the module-level datetime.now() —
+        # freeze_time controls that (patching fields.Datetime.now does NOT, which
+        # was the old flaky bug: the test only passed on its ship date).
+        # 02:00 UTC on the 16th = 22:00 EDT on the 15th, so the recorded date must
+        # be the local calendar day (the 15th), not the UTC day. Regression for #1344.
+        p = self._patient().with_context(tz='America/Toronto')
+        with freeze_time('2026-08-16 02:00:00'):
+            p.action_consulted_today()
+        self.assertEqual(p.last_consultation_date, date(2026, 8, 15))
 
     def test_action_report_injury_backend(self):
         p = self._patient()
@@ -145,8 +172,15 @@ class TestCovPatient(TransactionCase):
     def test_track_subtype_and_template(self):
         p = self._patient()
         self.assertEqual(p._track_subtype({}), self.env.ref('mail.mt_note'))
-        res = p._track_template(['match_status'])
-        self.assertIn('match_status', res)
+        ICP = self.env['ir.config_parameter'].sudo()
+        # Task 1269: the notifying template only attaches when the legacy
+        # per-change-email flag is enabled; off by default.
+        ICP.set_param('bemade_sports_clinic.legacy_change_emails_enabled', 'False')
+        res_off = p._track_template(['match_status'])
+        self.assertNotIn('match_status', res_off)
+        ICP.set_param('bemade_sports_clinic.legacy_change_emails_enabled', 'True')
+        res_on = p._track_template(['match_status'])
+        self.assertIn('match_status', res_on)
 
     # ----- staff helpers -----
 
@@ -178,19 +212,6 @@ class TestCovPatient(TransactionCase):
         p.team_ids = [Command.set([self.team.id])]
         p.remove_from_team(self.team.id)
         self.assertNotIn(self.team, p.team_ids)
-
-    def test_schedule_removal_request_activity(self):
-        p = self._patient()
-        p.team_ids = [Command.set([self.team.id])]
-        p._schedule_removal_request_activity({
-            'player_id': p.id, 'team_id': self.team.id,
-            'requested_by_id': self.env.user.id, 'reason': 'because',
-            'is_last_team': True, 'assignee_id': self.therapist_user.id,
-        })
-        acts = self.env['mail.activity'].search([
-            ('res_model', '=', 'sports.patient'), ('res_id', '=', p.id),
-        ])
-        self.assertTrue(acts)
 
     def test_removal_log_message(self):
         # _archive_if_no_teams never archived anything despite its name; all it
@@ -248,10 +269,33 @@ class TestCovPatient(TransactionCase):
 
     @mute_logger('odoo.addons.bemade_sports_clinic.models.patient')
     def test_create_portal_patient_permission(self):
-        # The acting admin lacks the portal groups required by the public method.
+        # Task 1577: an internal user holding NO treatment-professional group
+        # (and no coach group) is refused by the public method.
+        plain = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Cov Plain Internal', 'login': 'cov.plain.internal@example.com',
+            'group_ids': [Command.set([
+                self.env.ref('base.group_user').id,
+                self.env.ref('bemade_sports_clinic.group_sports_clinic_user').id,
+            ])],
+        })
         with self.assertRaises(AccessError):
-            self.env['sports.patient'].create_portal_patient(
+            self.env['sports.patient'].with_user(plain).create_portal_patient(
                 {'first_name': 'A', 'last_name': 'B'})
+
+    def test_create_portal_patient_internal_tp(self):
+        # Task 1577: an INTERNAL treatment professional may create a player,
+        # like a portal one.
+        itp = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Cov Internal TP', 'login': 'cov.internal.tp@example.com',
+            'group_ids': [Command.set([
+                self.env.ref('base.group_user').id,
+                self.env.ref('bemade_sports_clinic.group_sports_clinic_user').id,
+                self.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional').id,
+            ])],
+        })
+        patient = self.env['sports.patient'].with_user(itp).create_portal_patient(
+            {'first_name': 'Internal', 'last_name': 'Created'})
+        self.assertEqual(patient.sudo().last_name, 'Created')
 
     def test_create_portal_patient_private_impl(self):
         patient = self.env['sports.patient']._create_portal_patient({

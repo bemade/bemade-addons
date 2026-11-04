@@ -1,4 +1,5 @@
 from odoo.tests import HttpCase, tagged
+from odoo.tools.misc import mute_logger
 from odoo.exceptions import AccessError
 from odoo import Command, fields
 import json
@@ -50,7 +51,6 @@ class TestMailActivityPortalIntegration(HttpCase):
         # Create injuries
         cls.authorized_injury = cls.env['sports.patient.injury'].create({
             'patient_id': cls.authorized_patient.id,
-            'team_id': cls.authorized_team.id,
             'diagnosis': 'Integration Test Injury',
             'stage': 'active',
             'injury_date': fields.Date.today(),
@@ -59,7 +59,6 @@ class TestMailActivityPortalIntegration(HttpCase):
         
         cls.unauthorized_injury = cls.env['sports.patient.injury'].create({
             'patient_id': cls.unauthorized_patient.id,
-            'team_id': cls.unauthorized_team.id,
             'diagnosis': 'Unauthorized Integration Injury',
             'stage': 'active',
             'injury_date': fields.Date.today(),
@@ -137,46 +136,12 @@ class TestMailActivityPortalIntegration(HttpCase):
         })
 
     def csrf_token(self):
-        """Get CSRF token for form submissions"""
-        # Use Odoo's request context to get the CSRF token
-        # This is the most reliable method for tests
-        try:
-            # Import request from odoo.http
-            from odoo.http import request
-            
-            # In test context, we can access the CSRF token directly
-            if hasattr(request, 'csrf_token'):
-                return request.csrf_token()
-        except Exception:
-            pass
-        
-        # Alternative: Use the session-based approach
-        try:
-            # Get session ID from cookies (this often works as CSRF token)
-            for cookie in self.opener.cookies:
-                if cookie.name == 'session_id':
-                    return cookie.value
-        except Exception:
-            pass
-        
-        # Extract from any page that might have a form
-        try:
-            response = self.url_open('/my')
-            if response.status_code == 200:
-                import re
-                # Look for CSRF token in various formats
-                patterns = [
-                    r'name="csrf_token"[^>]*value="([^"]+)"'
-                ]
-                for pattern in patterns:
-                    match = re.search(pattern, response.text, re.MULTILINE)
-                    if match:
-                        return match.group(1)
-        except Exception:
-            pass
-        
-        # Final fallback: return a fixed token for testing
-        return 'test_csrf_token_123'
+        """A real CSRF token for the logged-in session, scraped from /my
+        (19.0 HttpCase has no csrf helper). Task 1544: the activity routes
+        now enforce CSRF, so a fake token no longer passes."""
+        response = self.url_open('/my')
+        match = re.search(r'csrf_token:\s*"([^"]+)"', response.text)
+        return match.group(1) if match else ''
 
     def test_01_portal_activity_list_access(self):
         """Test that therapist can access the activity list page"""
@@ -202,7 +167,8 @@ class TestMailActivityPortalIntegration(HttpCase):
         self.assertEqual(response.status_code, 200, "Should access creation form for authorized patient")
         
         # Check that form contains expected elements
-        self.assertIn('activity_type_id', response.text, "Form should contain activity type field")
+        # Task 1739: no activity-type picker (every activity is a To-Do).
+        self.assertNotIn('name="activity_type_id"', response.text, "Form should not offer a type")
         self.assertIn('summary', response.text, "Form should contain summary field")
         self.assertIn('date_deadline', response.text, "Form should contain deadline field")
 
@@ -255,11 +221,8 @@ class TestMailActivityPortalIntegration(HttpCase):
         self.assertTrue(created_activity.exists(), "Activity should be created in database")
 
     def test_05_portal_csrf_protection_validation(self):
-        """Test CSRF protection behavior (currently disabled for testing)"""
+        """CSRF protection on /my/activity/save (enforced since task 1544)."""
         self.authenticate('integration.therapist@example.com', 'integration123')
-        
-        # NOTE: CSRF protection is currently disabled (csrf=False) on portal routes
-        # for testing purposes. In production, csrf=False should be removed.
         
         # Test with the exact same pattern as test_04 (which works reliably)
         form_data = {
@@ -291,32 +254,28 @@ class TestMailActivityPortalIntegration(HttpCase):
         ])
         self.assertTrue(created_activity.exists(), "Activity should be created in database")
         
-        # Test with invalid CSRF token (since CSRF is disabled, this should also work)
+        # Task 1544: an invalid CSRF token is refused and creates nothing.
         invalid_form_data = form_data.copy()
         invalid_form_data['csrf_token'] = 'invalid_token_12345'
         invalid_form_data['summary'] = 'Invalid CSRF Test Activity'
-        
-        invalid_response = self.url_open(
-            '/my/activity/save',
-            data=invalid_form_data,
-            timeout=30
-        )
-        
-        # Since CSRF is disabled, this should also succeed
-        self.assertIn(invalid_response.status_code, [200, 302], 
-                     "Activity creation should succeed even with invalid CSRF token (CSRF disabled)")
-        
-        # Verify invalid CSRF activity was also created (since CSRF is disabled)
+
+        with mute_logger('odoo.http'):
+            invalid_response = self.url_open(
+                '/my/activity/save',
+                data=invalid_form_data,
+                timeout=30
+            )
+        self.assertEqual(invalid_response.status_code, 400,
+                         "An invalid CSRF token must be refused")
         invalid_activity = self.env['mail.activity'].search([
             ('summary', '=', 'Invalid CSRF Test Activity'),
             ('res_model', '=', 'sports.patient'),
             ('res_id', '=', self.authorized_patient.id)
         ])
-        self.assertTrue(invalid_activity.exists(), "Activity should be created even with invalid CSRF token")
-        
+        self.assertFalse(invalid_activity, "No activity may be created with an invalid CSRF token")
+
         # Clean up test activities
         created_activity.unlink()
-        invalid_activity.unlink()
 
     def test_06_portal_activity_creation_unauthorized_submission(self):
         """Test that unauthorized activity creation is blocked"""
@@ -495,10 +454,12 @@ class TestMailActivityPortalIntegration(HttpCase):
         self.assertIn('Patient activity for filtering', response.text)
         self.assertNotIn('Injury activity for filtering', response.text)
         
-        # Test filtering by injury model
+        # Task 1409: activities only live on patients in the portal — an
+        # injury-model filter renders an empty list (the backend-scheduled
+        # injury activity never surfaces in the portal).
         response = self.url_open('/my/activities?model=sports.patient.injury', timeout=30)
         self.assertEqual(response.status_code, 200)
-        self.assertIn('Injury activity for filtering', response.text)
+        self.assertNotIn('Injury activity for filtering', response.text)
         self.assertNotIn('Patient activity for filtering', response.text)
 
     def test_12_portal_activity_date_filtering(self):
@@ -708,7 +669,9 @@ class TestMailActivityPortalIntegration(HttpCase):
                       "Add header must scope the new activity to the team model")
         self.assertIn(f'name="res_id" value="{team.id}"', body,
                       "Add header must scope the new activity to this team")
-        for field_name in ('activity_type_id', 'date_deadline', 'user_id', 'summary'):
+        # Task 1739: no activity-type field (every activity is a To-Do).
+        self.assertNotIn('name="activity_type_id"', body)
+        for field_name in ('date_deadline', 'user_id', 'summary'):
             self.assertIn(field_name, body,
                           f"Add header should expose the {field_name} field")
 
@@ -742,6 +705,71 @@ class TestMailActivityPortalIntegration(HttpCase):
         ])
         self.assertTrue(created.exists(),
                         "Team add header should create a team-scoped activity")
+
+    def test_1379_my_activities_self_scoped_context_broad(self):
+        """Task 1379: the bare /my/activities (My Activities) lists ONLY activities
+        assigned to the current user (user_id == self), AND still within their
+        team-based access — while a per-context view (e.g. team) stays broad and
+        lists every team member's activities. Also asserts the assignee is now
+        rendered in the My Activities list via the shared initials paradigm
+        (.o_sc_note_author + data-author full name).
+        """
+        team = self.authorized_team  # therapist_user is staff here
+        team_type = self.env['mail.activity.type'].create({
+            'name': 'Team Task 1379',
+            'res_model': 'sports.team',
+            'category': 'default',
+        })
+
+        # A team-level activity assigned to ME (should show in both views).
+        mine = self.env['mail.activity'].create({
+            'activity_type_id': team_type.id,
+            'summary': 'Mine1379Activity',
+            'user_id': self.therapist_user.id,
+            'date_deadline': fields.Date.today(),
+            'res_model_id': self.env['ir.model']._get_id('sports.team'),
+            'res_id': team.id,
+        })
+
+        # A team-level activity on the SAME team assigned to ANOTHER therapist.
+        # therapist_user has team access to this record, but it is NOT assigned
+        # to them -> must be hidden from My Activities, but visible in the team
+        # (context) view where the broad access is intended.
+        other = self.env['mail.activity'].create({
+            'activity_type_id': team_type.id,
+            'summary': 'Other1379Activity',
+            'user_id': self.other_therapist_user.id,
+            'date_deadline': fields.Date.today(),
+            'res_model_id': self.env['ir.model']._get_id('sports.team'),
+            'res_id': team.id,
+        })
+
+        self.authenticate('integration.therapist@example.com', 'integration123')
+
+        # --- Bare My Activities: self-scoped ---
+        my = self.url_open('/my/activities', timeout=30)
+        self.assertEqual(my.status_code, 200, "My Activities should render")
+        self.assertIn('Mine1379Activity', my.text,
+                      "My Activities must list the activity assigned to me")
+        self.assertNotIn('Other1379Activity', my.text,
+                         "My Activities must NOT list a team activity assigned to "
+                         "someone else (self-scope), even though I can access the "
+                         "related team record")
+        # Assignee now shown in the My Activities list via the initials paradigm.
+        self.assertIn('o_sc_note_author', my.text,
+                      "My Activities list must render the assignee initials badge")
+        self.assertIn('data-author="%s"' % self.therapist_user.name, my.text,
+                      "The initials badge must carry the assignee full name for the "
+                      "hover popover")
+
+        # --- Team (context) view: broad, NOT self-scoped ---
+        ctx = self.url_open(f'/my/team/activities?team_id={team.id}', timeout=30)
+        self.assertEqual(ctx.status_code, 200, "Team activities view should render")
+        self.assertIn('Mine1379Activity', ctx.text,
+                      "Team view lists my activity")
+        self.assertIn('Other1379Activity', ctx.text,
+                      "Team (context) view must list ALL team activities, including "
+                      "those assigned to other staff (broad access preserved)")
 
     def test_640_tp_can_find_and_link_unteamed_player(self):
         """Task 640: a treatment professional can FIND a player with no team

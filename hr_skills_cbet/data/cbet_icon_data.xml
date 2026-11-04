@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Job-aid icon catalog: one row per :token: of the field documents.
+         noupdate="0" so a new token or a corrected emoji ships with the module;
+         the SVG assets are loaded separately (data task). -->
+    <data noupdate="0">
+        <record id="icon_epi_lunettes" model="cbet.icon">
+            <field name="token">epi-lunettes</field>
+            <field name="category">epi</field>
+            <field name="name">Safety glasses</field>
+            <field name="emoji">🥽</field>
+            <field name="iso_ref">ISO 7010 M004</field>
+        </record>
+        <record id="icon_epi_ecran_facial" model="cbet.icon">
+            <field name="token">epi-ecran-facial</field>
+            <field name="category">epi</field>
+            <field name="name">Face shield</field>
+            <field name="emoji">🛡️</field>
+            <field name="iso_ref">ISO 7010 M016</field>
+        </record>
+        <record id="icon_epi_nitrile" model="cbet.icon">
+            <field name="token">epi-nitrile</field>
+            <field name="category">epi</field>
+            <field name="name">Nitrile gloves (chemical)</field>
+            <field name="emoji">🧤</field>
+            <field name="iso_ref">ISO 7010 M009</field>
+        </record>
+        <record id="icon_epi_gants_meca" model="cbet.icon">
+            <field name="token">epi-gants-meca</field>
+            <field name="category">epi</field>
+            <field name="name">Mechanical gloves (cut / handling)</field>
+            <field name="emoji">🧤</field>
+            <field name="iso_ref">ISO 7010 M009</field>
+        </record>
+        <record id="icon_epi_tablier" model="cbet.icon">
+            <field name="token">epi-tablier</field>
+            <field name="category">epi</field>
+            <field name="name">Apron / protective clothing</field>
+            <field name="emoji">🦺</field>
+            <field name="iso_ref">ISO 7010 M010</field>
+        </record>
+        <record id="icon_epi_chaussures" model="cbet.icon">
+            <field name="token">epi-chaussures</field>
+            <field name="category">epi</field>
+            <field name="name">Safety shoes</field>
+            <field name="emoji">👟</field>
+            <field name="iso_ref">ISO 7010 M008</field>
+        </record>
+        <record id="icon_epi_n95" model="cbet.icon">
+            <field name="token">epi-n95</field>
+            <field name="category">epi</field>
+            <field name="name">Respirator mask (N95)</field>
+            <field name="emoji">😷</field>
+            <field name="iso_ref">ISO 7010 M017</field>
+        </record>
+        <record id="icon_epi_auditive" model="cbet.icon">
+            <field name="token">epi-auditive</field>
+            <field name="category">epi</field>
+            <field name="name">Hearing protection</field>
+            <field name="emoji">🎧</field>
+            <field name="iso_ref">ISO 7010 M003</field>
+        </record>
+        <record id="icon_epi_casque" model="cbet.icon">
+            <field name="token">epi-casque</field>
+            <field name="category">epi</field>
+            <field name="name">Safety helmet (if required)</field>
+            <field name="emoji">⛑️</field>
+            <field name="iso_ref">ISO 7010 M014</field>
+        </record>
+        <record id="icon_sev_securite" model="cbet.icon">
+            <field name="token">sev-securite</field>
+            <field name="category">sev</field>
+            <field name="name">Safety — fail = fail (incl. LOTO, pressure, chemicals)</field>
+            <field name="emoji">🔒</field>
+        </record>
+        <record id="icon_sev_critique" model="cbet.icon">
+            <field name="token">sev-critique</field>
+            <field name="category">sev</field>
+            <field name="name">Critical — fail = fail</field>
+            <field name="emoji">⚠️</field>
+        </record>
+        <record id="icon_sev_standard" model="cbet.icon">
+            <field name="token">sev-standard</field>
+            <field name="category">sev</field>
+            <field name="name">Standard — overall threshold</field>
+            <field name="emoji">▫️</field>
+        </record>
+        <record id="icon_sev_stop" model="cbet.icon">
+            <field name="token">sev-stop</field>
+            <field name="category">sev</field>
+            <field name="name">STOP — do not continue</field>
+            <field name="emoji">🛑</field>
+        </record>
+        <record id="icon_sev_escalade" model="cbet.icon">
+            <field name="token">sev-escalade</field>
+            <field name="category">sev</field>
+            <field name="name">Immediate escalation — call the supervisor</field>
+            <field name="emoji">🚨</field>
+        </record>
+        <record id="icon_sev_verif" model="cbet.icon">
+            <field name="token">sev-verif</field>
+            <field name="category">sev</field>
+            <field name="name">Verified / to check</field>
+            <field name="emoji">✅</field>
+        </record>
+        <record id="icon_act_donnees" model="cbet.icon">
+            <field name="token">act-donnees</field>
+            <field name="category">act</field>
+            <field name="name">Record data (UNI-02)</field>
+            <field name="emoji">📋</field>
+        </record>
+        <record id="icon_act_photo" model="cbet.icon">
+            <field name="token">act-photo</field>
+            <field name="category">act</field>
+            <field name="name">Mandatory photo</field>
+            <field name="emoji">📷</field>
+        </record>
+        <record id="icon_act_inspection" model="cbet.icon">
+            <field name="token">act-inspection</field>
+            <field name="category">act</field>
+            <field name="name">Visual inspection</field>
+            <field name="emoji">🔦</field>
+        </record>
+        <record id="icon_act_eau" model="cbet.icon">
+            <field name="token">act-eau</field>
+            <field name="category">act</field>
+            <field name="name">Water — circulation / rinse / flow</field>
+            <field name="emoji">💧</field>
+        </record>
+        <record id="icon_act_temperature" model="cbet.icon">
+            <field name="token">act-temperature</field>
+            <field name="category">act</field>
+            <field name="name">Temperature (measurement / effect)</field>
+            <field name="emoji">🌡️</field>
+        </record>
+        <record id="icon_act_repeter" model="cbet.icon">
+            <field name="token">act-repeter</field>
+            <field name="category">act</field>
+            <field name="name">Repeat / iterate</field>
+            <field name="emoji">🔁</field>
+        </record>
+        <record id="icon_act_aller" model="cbet.icon">
+            <field name="token">act-aller</field>
+            <field name="category">act</field>
+            <field name="name">Go to / next step</field>
+            <field name="emoji">➡️</field>
+        </record>
+        <record id="icon_act_loto" model="cbet.icon">
+            <field name="token">act-loto</field>
+            <field name="category">act</field>
+            <field name="name">Lockout / tagout (LOTO)</field>
+            <field name="emoji">🔒🏷️</field>
+        </record>
+        <record id="icon_act_depressuriser" model="cbet.icon">
+            <field name="token">act-depressuriser</field>
+            <field name="category">act</field>
+            <field name="name">Depressurise to 0 psig</field>
+        </record>
+        <record id="icon_act_isoler" model="cbet.icon">
+            <field name="token">act-isoler</field>
+            <field name="category">act</field>
+            <field name="name">Isolate (close upstream / downstream valves)</field>
+        </record>
+        <record id="icon_outil_conductivimetre" model="cbet.icon">
+            <field name="token">outil-conductivimetre</field>
+            <field name="category">outil</field>
+            <field name="name">Conductivity meter</field>
+        </record>
+        <record id="icon_outil_ph_metre" model="cbet.icon">
+            <field name="token">outil-ph-metre</field>
+            <field name="category">outil</field>
+            <field name="name">pH meter</field>
+        </record>
+        <record id="icon_outil_bandelettes" model="cbet.icon">
+            <field name="token">outil-bandelettes</field>
+            <field name="category">outil</field>
+            <field name="name">Test strips</field>
+        </record>
+        <record id="icon_outil_debitmetre" model="cbet.icon">
+            <field name="token">outil-debitmetre</field>
+            <field name="category">outil</field>
+            <field name="name">Flow meter</field>
+        </record>
+        <record id="icon_outil_manometre" model="cbet.icon">
+            <field name="token">outil-manometre</field>
+            <field name="category">outil</field>
+            <field name="name">Pressure gauge</field>
+        </record>
+        <record id="icon_outil_thermometre" model="cbet.icon">
+            <field name="token">outil-thermometre</field>
+            <field name="category">outil</field>
+            <field name="name">Thermometer</field>
+            <field name="emoji">🌡️</field>
+        </record>
+        <record id="icon_outil_cle_sangle" model="cbet.icon">
+            <field name="token">outil-cle-sangle</field>
+            <field name="category">outil</field>
+            <field name="name">Strap wrench</field>
+        </record>
+        <record id="icon_outil_cles" model="cbet.icon">
+            <field name="token">outil-cles</field>
+            <field name="category">outil</field>
+            <field name="name">Hand tools (wrenches, screwdrivers)</field>
+            <field name="emoji">🔧</field>
+        </record>
+        <record id="icon_outil_lampe" model="cbet.icon">
+            <field name="token">outil-lampe</field>
+            <field name="category">outil</field>
+            <field name="name">Inspection lamp</field>
+            <field name="emoji">🔦</field>
+        </record>
+        <record id="icon_outil_formulaire" model="cbet.icon">
+            <field name="token">outil-formulaire</field>
+            <field name="category">outil</field>
+            <field name="name">Data form (UNI-02)</field>
+            <field name="emoji">📋</field>
+        </record>
+        <record id="icon_outil_pompe_cip" model="cbet.icon">
+            <field name="token">outil-pompe-cip</field>
+            <field name="category">outil</field>
+            <field name="name">CIP pump</field>
+        </record>
+        <record id="icon_outil_extracteur" model="cbet.icon">
+            <field name="token">outil-extracteur</field>
+            <field name="category">outil</field>
+            <field name="name">Mineral extractor</field>
+        </record>
+        <record id="icon_outil_aspirateur" model="cbet.icon">
+            <field name="token">outil-aspirateur</field>
+            <field name="category">outil</field>
+            <field name="name">Shop vacuum</field>
+        </record>
+        <record id="icon_outil_entonnoir" model="cbet.icon">
+            <field name="token">outil-entonnoir</field>
+            <field name="category">outil</field>
+            <field name="name">Funnel</field>
+        </record>
+        <record id="icon_outil_bac" model="cbet.icon">
+            <field name="token">outil-bac</field>
+            <field name="category">outil</field>
+            <field name="name">Catch bucket / bin</field>
+            <field name="emoji">🪣</field>
+        </record>
+        <record id="icon_outil_boyau" model="cbet.icon">
+            <field name="token">outil-boyau</field>
+            <field name="category">outil</field>
+            <field name="name">Hose</field>
+        </record>
+        <record id="icon_item_produit_chimique" model="cbet.icon">
+            <field name="token">item-produit-chimique</field>
+            <field name="category">item</field>
+            <field name="name">Chemical (cleaner / sanitiser)</field>
+            <field name="emoji">🧪</field>
+        </record>
+        <record id="icon_item_fds" model="cbet.icon">
+            <field name="token">item-fds</field>
+            <field name="category">item</field>
+            <field name="name">Safety data sheet (SDS)</field>
+        </record>
+        <record id="icon_item_media" model="cbet.icon">
+            <field name="token">item-media</field>
+            <field name="category">item</field>
+            <field name="name">Media / resin</field>
+        </record>
+        <record id="icon_item_gravier" model="cbet.icon">
+            <field name="token">item-gravier</field>
+            <field name="category">item</field>
+            <field name="name">Support gravel</field>
+        </record>
+        <record id="icon_item_membrane" model="cbet.icon">
+            <field name="token">item-membrane</field>
+            <field name="category">item</field>
+            <field name="name">RO membrane</field>
+        </record>
+        <record id="icon_item_cartouche" model="cbet.icon">
+            <field name="token">item-cartouche</field>
+            <field name="category">item</field>
+            <field name="name">Filter cartridge</field>
+        </record>
+        <record id="icon_item_joint" model="cbet.icon">
+            <field name="token">item-joint</field>
+            <field name="category">item</field>
+            <field name="name">O-ring</field>
+        </record>
+        <record id="icon_item_sel" model="cbet.icon">
+            <field name="token">item-sel</field>
+            <field name="category">item</field>
+            <field name="name">Salt (regeneration)</field>
+            <field name="emoji">🧂</field>
+        </record>
+        <record id="icon_item_lubrifiant" model="cbet.icon">
+            <field name="token">item-lubrifiant</field>
+            <field name="category">item</field>
+            <field name="name">Lubricant (silicone / glycerine)</field>
+        </record>
+        <record id="icon_comp_vanne" model="cbet.icon">
+            <field name="token">comp-vanne</field>
+            <field name="category">comp</field>
+            <field name="name">Valve</field>
+        </record>
+        <record id="icon_comp_pompe_hp" model="cbet.icon">
+            <field name="token">comp-pompe-hp</field>
+            <field name="category">comp</field>
+            <field name="name">High-pressure pump</field>
+        </record>
+        <record id="icon_comp_boitier" model="cbet.icon">
+            <field name="token">comp-boitier</field>
+            <field name="category">comp</field>
+            <field name="name">Membrane housing</field>
+        </record>
+        <record id="icon_comp_reservoir" model="cbet.icon">
+            <field name="token">comp-reservoir</field>
+            <field name="category">comp</field>
+            <field name="name">Tank / column</field>
+        </record>
+        <record id="icon_comp_tete" model="cbet.icon">
+            <field name="token">comp-tete</field>
+            <field name="category">comp</field>
+            <field name="name">Control head</field>
+        </record>
+    </data>
+</odoo>

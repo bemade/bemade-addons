@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.notification.scope</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="mail.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//block[@id='discuss']" position="inside">
+                <setting
+          id="notification_scope_setting"
+          string="Scoped Notifications"
+          help="Models listed here only notify internal users in-app: external followers and bare email recipients are never emailed, and email-preferring internal users receive an inbox notification instead."
+        >
+                    <div class="content-group">
+                        <div class="row mt8">
+                            <label
+                class="col-lg-4"
+                for="notification_scope_all_models"
+              />
+                            <field name="notification_scope_all_models" />
+                        </div>
+                        <div class="row mt8" invisible="notification_scope_all_models">
+                            <label
+                class="col-lg-4"
+                for="notification_scope_model_ids"
+              />
+                            <field
+                name="notification_scope_model_ids"
+                widget="many2many_tags"
+              />
+                        </div>
+                    </div>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>

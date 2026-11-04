@@ -14,6 +14,7 @@
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <form t-attf-action="/my/event/#{event.id}/cancel" method="post">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                         <input type="hidden" name="return_url" t-att-value="return_url or ''"/>
                                         <div class="modal-header">
                                             <h5 class="modal-title">Cancel Event</h5>
@@ -41,6 +42,7 @@
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <form t-attf-action="/my/event/#{event.id}/timesheet/add" method="post">
+                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                         <input type="hidden" name="return_url" t-att-value="return_url or ''"/>
                                         <div class="modal-header">
                                             <h5 class="modal-title">Add My Timesheet</h5>
@@ -84,13 +86,13 @@
                             <div>
                                 <h2 t-esc="event.name"/>
                                 <div class="d-flex flex-wrap gap-2">
-                                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"
+                                    <a t-if="(request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')) or request.env.user.has_group('bemade_sports_clinic.group_portal_team_coach')"
                                        t-attf-href="/my/event/activities?event_id={{ event.id }}"
                                        class="btn bg-o-color-2 text-white">
                                         <i class="fa fa-tasks"></i> Activities
                                         <span class="badge ms-1" t-if="event.activity_count"><t t-esc="event.activity_count"/></span>
                                     </a>
-                                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional')"
+                                    <a t-if="request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('bemade_sports_clinic.group_sports_clinic_treatment_professional')"
                                        t-att-href="'/my/activity/create?model=sports.event&amp;res_id=%s&amp;return_url=%s' % (event.id, event_return_url)"
                                        class="btn bg-o-color-2 text-white">
                                         <i class="fa fa-tasks"></i> Add Activity

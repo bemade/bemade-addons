@@ -92,10 +92,129 @@
                 </div>
             </field>
         </record>
+        <!-- Task 1269: PHI-free aggregated urgent-notification summary.
+             Bound to res.partner (the recipient) but driven entirely by the
+             per-recipient render context (ctx.urgent_teams / urgent_team_count)
+             the cron passes in. Law 25: counts, team names, short-notice event
+             name/time and dashboard links ONLY — never a player name or any
+             clinical/injury detail. Bilingual FR/EN body, matching the
+             cancellation-notice approach. -->
+        <record id="mail_template_urgent_summary" model="mail.template">
+            <field name="name">Urgent Aggregated Updates (PHI-free)</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="subject">Le Fit Crew — mises à jour urgentes / urgent updates</field>
+            <field name="body_html" type="html">
+                <div>
+                    <p>Bonjour, / Hello,</p>
+                    <p>Activité urgente sur vos équipes : / Urgent activity on your teams:</p>
+                    <t t-foreach="ctx.get('urgent_teams') or []" t-as="team">
+                        <div style="margin-bottom:12px;">
+                            <p><strong t-out="team['name']"/></p>
+                            <ul>
+                                <li t-if="team['status_changes']">
+                                    <t t-out="team['status_changes']"/> changement(s) de statut de jeu / play-status change(s)
+                                </li>
+                                <li t-if="team['new_injuries']">
+                                    <t t-out="team['new_injuries']"/> nouvelle(s) blessure(s) / new injury/injuries
+                                </li>
+                                <t t-foreach="team['events'] or []" t-as="ev">
+                                    <li>
+                                        Nouvel événement à court préavis / Short-notice new event:
+                                        <strong t-out="ev['name']"/>
+                                        <t t-if="ev.get('date_label') or ev['date_start']"> — <t t-out="ev.get('date_label') or format_datetime(ev['date_start'])"/></t>
+                                    </li>
+                                </t>
+                            </ul>
+                            <p t-if="team['url']">
+                                <a t-att-href="team['url']">Tableau de bord / Team dashboard</a>
+                            </p>
+                        </div>
+                    </t>
+                    <p style="color:#767676;font-size:12px;">
+                        Aucune donnée médicale n'est incluse. / No medical data is included.
+                    </p>
+                </div>
+            </field>
+        </record>
+        <!-- Task 1268: per-user daily MORNING BRIEFING (digest epic slice D).
+             Bound to res.partner (the recipient) but driven entirely by the
+             per-recipient render context (ctx.digest_teams / digest_events) the
+             cron passes in. Law 25: per-team counts, signed 24h deltas,
+             team/event names and dashboard links ONLY — never a player name or
+             any clinical/injury detail. Bilingual FR/EN body. -->
+        <record id="mail_template_morning_digest" model="mail.template">
+            <field name="name">Daily Morning Briefing (PHI-free)</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="subject">Le Fit Crew — sommaire quotidien / daily briefing</field>
+            <field name="body_html" type="html">
+                <div>
+                    <p>Bonjour, / Hello,</p>
+                    <p>Votre sommaire quotidien d'équipe : / Your daily team briefing:</p>
+                    <p style="color:#767676;font-size:12px;">
+                        Changements des dernières <t t-out="ctx.get('digest_window_hours') or 24"/> h /
+                        Changes over the last <t t-out="ctx.get('digest_window_hours') or 24"/> h.
+                    </p>
+                    <t t-foreach="ctx.get('digest_teams') or []" t-as="team">
+                        <div style="margin-bottom:12px;">
+                            <p><strong t-out="team['name']"/></p>
+                            <div t-if="team.get('announcement')" style="margin:6px 0;">
+                                <p style="margin:0 0 2px 0;">
+                                    <strong>Annonce d'équipe / Team announcement<t t-if="team.get('announcement_is_expired')"> (expirée / expired)</t>:</strong>
+                                </p>
+                                <p style="white-space:pre-wrap;margin:0;" t-out="team['announcement']"/>
+                            </div>
+                            <ul>
+                                <li>
+                                    <t t-out="team['red']"/> indisponible(s) / no-play<t t-out="team['red_delta_str']"/>
+                                    ·
+                                    <t t-out="team['yellow']"/> limité(s) / limited<t t-out="team['yellow_delta_str']"/>
+                                </li>
+                                <li t-if="team['new_injuries']">
+                                    <t t-out="team['new_injuries']"/> nouvelle(s) blessure(s) (<t t-out="ctx.get('digest_window_hours') or 24"/> h) / new injury/injuries
+                                </li>
+                                <li t-if="team['changes']">
+                                    <t t-out="team['changes']"/> joueur(s) avec changements (<t t-out="ctx.get('digest_window_hours') or 24"/> h) / player(s) with changes
+                                </li>
+                                <li t-if="team['pending_verify']">
+                                    <t t-out="team['pending_verify']"/> vérification(s) de blessure en attente / injury verification(s) pending
+                                </li>
+                                <li t-if="team['pending_removal']">
+                                    <t t-out="team['pending_removal']"/> demande(s) de retrait de joueur / player removal request(s)
+                                </li>
+                            </ul>
+                            <p t-if="team['url']">
+                                <a t-att-href="team['url']">Tableau de bord / Team dashboard</a>
+                            </p>
+                        </div>
+                    </t>
+                    <t t-if="ctx.get('digest_events')">
+                        <div style="margin-bottom:12px;">
+                            <p><strong>Événements à venir (<t t-out="ctx.get('digest_events_days') or 14"/> prochains jours) / Upcoming events (next <t t-out="ctx.get('digest_events_days') or 14"/> days):</strong></p>
+                            <ul>
+                                <t t-foreach="ctx.get('digest_events') or []" t-as="ev">
+                                    <li>
+                                        <strong t-out="ev['name']"/>
+                                        <t t-if="ev.get('date_label') or ev['date_start']"> — <t t-out="ev.get('date_label') or format_datetime(ev['date_start'])"/></t>
+                                        <t t-if="ev.get('assigned')"> · assigné·e (<t t-out="ev.get('assigned_label')"/>) / assigned (<t t-out="ev.get('assigned_label')"/>)</t>
+                                    </li>
+                                </t>
+                            </ul>
+                            <p style="color:#767676;font-size:12px;">
+                                Les événements non listés sont hors de notre plan de couverture, avisez-nous. /
+                                Events not listed are outside our coverage plan — please advise us.
+                            </p>
+                        </div>
+                    </t>
+                    <p style="color:#767676;font-size:12px;">
+                        Aucune donnée médicale n'est incluse. / No medical data is included.
+                    </p>
+                </div>
+            </field>
+        </record>
         <record id="mail_template_event_cancelled" model="mail.template">
             <field name="name">Event Cancelled - Assigned Staff Notice</field>
             <field name="model_id" ref="bemade_sports_clinic.model_sports_event"/>
-            <field name="subject">Event cancelled: {{ object.name }}</field>
+            <field name="subject">Le Fit Crew — Event cancelled: {{ object.name }}</field>
             <!-- Bilingual body (owner call, dev-review 2026-07-04 round 2):
                  mail.template body_html is whole-value translated, so static
                  per-language bodies would have to be maintained as full
@@ -112,6 +231,24 @@
                         <t t-out="', '.join(object.team_ids.mapped('name'))"/></li>
                     <li t-if="ctx.get('cancel_reason')"><strong>Raison / Reason:</strong>
                         <t t-out="ctx.get('cancel_reason')"/></li>
+                </ul>
+            </field>
+        </record>
+        <!-- Task 1665: the mirror of the cancellation notice — bilingual
+             body, per-language subject (po), no health data. -->
+        <record id="mail_template_event_revived" model="mail.template">
+            <field name="name">Event Restored - Assigned Staff Notice</field>
+            <field name="model_id" ref="bemade_sports_clinic.model_sports_event"/>
+            <field name="subject">Le Fit Crew — Event restored: {{ object.name }}</field>
+            <field name="body_html" type="html">
+                <p>L'événement auquel vous êtes assigné a été rétabli. /
+                   The event you are assigned to has been restored.</p>
+                <ul>
+                    <li><strong>Événement / Event:</strong> <t t-out="object.name or ''"/></li>
+                    <li t-if="object.date_start"><strong>Date:</strong>
+                        <t t-out="format_datetime(object.date_start) or ''"/></li>
+                    <li t-if="object.team_ids"><strong>Équipe(s) / Team(s):</strong>
+                        <t t-out="', '.join(object.team_ids.mapped('name'))"/></li>
                 </ul>
             </field>
         </record>

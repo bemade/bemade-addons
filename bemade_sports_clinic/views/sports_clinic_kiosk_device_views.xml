@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    Task 1433 — minimal backend admin for the kiosk devices (system admins
+    only): rename, unbind, revoke the token, archive. Day-to-day pairing and
+    unbinding happen on the portal clinic page; this is the emergency panel.
+-->
+<odoo>
+    <data>
+
+        <record id="view_sports_clinic_kiosk_device_list" model="ir.ui.view">
+            <field name="name">sports.clinic.kiosk.device.list</field>
+            <field name="model">sports.clinic.kiosk.device</field>
+            <field name="arch" type="xml">
+                <list>
+                    <field name="name"/>
+                    <field name="clinic_id"/>
+                    <field name="bound_until"/>
+                    <field name="last_seen_at"/>
+                    <button name="action_unbind" type="object" string="Unbind"
+                            icon="fa-chain-broken"/>
+                    <button name="action_revoke_token" type="object" string="Revoke token"
+                            icon="fa-ban"
+                            confirm="Revoke this device's token? Its cookie stops working immediately; the physical device falls back to a pairing screen with a fresh identity on its next load."/>
+                </list>
+            </field>
+        </record>
+
+        <record id="view_sports_clinic_kiosk_device_form" model="ir.ui.view">
+            <field name="name">sports.clinic.kiosk.device.form</field>
+            <field name="model">sports.clinic.kiosk.device</field>
+            <field name="arch" type="xml">
+                <form>
+                    <header>
+                        <button name="action_unbind" type="object" string="Unbind"
+                                invisible="not clinic_id"/>
+                        <button name="action_revoke_token" type="object" string="Revoke token"
+                                confirm="Revoke this device's token? Its cookie stops working immediately; the physical device falls back to a pairing screen with a fresh identity on its next load."/>
+                    </header>
+                    <sheet>
+                        <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
+                                invisible="active"/>
+                        <group>
+                            <group>
+                                <field name="name"/>
+                                <field name="clinic_id"/>
+                                <field name="bound_until"/>
+                            </group>
+                            <group>
+                                <field name="last_seen_at"/>
+                                <field name="create_date" string="First seen"/>
+                                <field name="active" invisible="1"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_sports_clinic_kiosk_device" model="ir.actions.act_window">
+            <field name="name">Kiosk Devices</field>
+            <field name="res_model">sports.clinic.kiosk.device</field>
+            <field name="view_mode">list,form</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_neutral_face">No kiosk device yet</p>
+                <p>A device registers itself the first time it loads /clinic/kiosk. Devices are never created by hand.</p>
+            </field>
+        </record>
+
+        <menuitem id="sports_clinic_staff_kiosk_devices"
+                  name="Kiosk Devices"
+                  parent="sports_clinic_staff_menu"
+                  groups="base.group_system"
+                  action="action_sports_clinic_kiosk_device"
+                  sequence="30"/>
+
+    </data>
+</odoo>

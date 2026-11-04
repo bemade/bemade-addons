@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Portal (share) staff users need READ access to the appointment
+         types they are staff on: the enterprise booking-line constraint
+         `_check_user_or_resource_match_appointment_type` verifies
+         `appointment_type.with_user(staff_user).has_access('read')` on
+         every booking. Scoped strictly to their own types. -->
+    <record id="appointment_type_rule_portal_staff" model="ir.rule">
+        <field name="name">Appointment Type: portal staff read own types</field>
+        <field name="model_id" ref="appointment.model_appointment_type"/>
+        <field name="domain_force">[('staff_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+</odoo>

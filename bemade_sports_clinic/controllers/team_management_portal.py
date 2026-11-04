@@ -1,15 +1,42 @@
 from odoo import http, fields, _
 from odoo.http import request
-from odoo.addons.portal.controllers.portal import CustomerPortal
+from odoo.addons.portal.controllers.portal import CustomerPortal, pager
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
-from .access_control_mixin import AccessControlMixin
+from .access_control_mixin import AccessControlMixin, parse_portal_date, sc_past_deadline_message
+from .app_shell import AppShellMixin
 import logging
-from datetime import date
+from datetime import date, timedelta
+from urllib.parse import urlparse, quote
 from dateutil.relativedelta import relativedelta
+from werkzeug.exceptions import Forbidden
+
+from odoo.tools import format_date, format_datetime
 
 _logger = logging.getLogger(__name__)
 
-class TeamManagementPortal(CustomerPortal, AccessControlMixin):
+# Task 1663: « Annonce archivée — Annuler » (the toast lasts ~8 s, like the
+# status pills' undo; the server allows a little more for the page load).
+SC_ANNOUNCEMENT_UNDO_KEY = 'sc_announcement_undo'
+SC_ANNOUNCEMENT_UNDO_SECONDS = 30
+
+# Task 1389: the digest-history modal shows this many days of recent snapshots
+# for the quick glance; the "Voir tout" page shows the full retained archive.
+DIGEST_HISTORY_MODAL_DAYS = 14
+# Task 1389: rows per page on the full digest-history archive page.
+DIGEST_HISTORY_PAGE_SIZE = 20
+# Task 1421: roster tab sort modes -> ORM order. « status » is the historical
+# default (stored sort_order key shared with the backend team form); « number »
+# uses the stored jersey_sort helper (numeric, blanks last).
+ROSTER_SORT_ORDERS = {
+    'status': 'sort_order, last_name, first_name',
+    'number': 'jersey_sort, last_name, first_name',
+}
+
+# Task 1542: dot / chip tone of a player's stage in the app shell rows.
+SC_STAGE_TONES = {'no_play': 'red', 'practice_ok': 'yellow', 'healthy': 'green'}
+
+
+class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
     
     def _prepare_home_portal_values(self, counters):
         values = super()._prepare_home_portal_values(counters)
@@ -51,7 +78,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             request.session['notification'] = {
                 'type': 'success',
                 'title': _('Removal Request Submitted'),
-                'message': _('Your request to remove %s from the team has been submitted for review.') % patient.name,
+                'message': _("Your request to remove %s from the team has been submitted to the team's head therapist.") % patient.name,
                 'sticky': False,
             }
             
@@ -59,9 +86,25 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             
         except Exception as e:
             _logger.error("Error requesting player removal: %s", str(e), exc_info=True)
-            error_message = _("Error requesting removal: %s") % str(e)
+            error_message = _("Error requesting removal: %s") % self._user_error_text(e, 'team')
             return request.redirect(f"/my/team/{team_id}?error={error_message}".replace(' ', '+'))
     
+    @http.route(['/my/player/<int:player_id>/request_removal'],
+                type='http', auth="user", website=True, methods=['POST'])
+    def portal_request_player_removal_any_team(self, player_id, **post):
+        """Task 1664: the player page's « Request Removal » when the player
+        is on several of the viewer's teams — the sheet posts the chosen
+        ``team_id``; the same checks as the per-team route (which it calls)."""
+        team_id = post.pop('team_id', '') or ''
+        if not str(team_id).isdigit():
+            request.session['notification'] = {
+                'type': 'warning', 'title': '',
+                'message': _("Please choose the team."),
+                'sticky': False,
+            }
+            return request.redirect('/my/player?player_id=%s' % int(player_id))
+        return self.portal_request_player_removal(int(team_id), player_id, **post)
+
     @http.route(['/my/team/<int:team_id>/player/<int:player_id>/remove'],
                type='http', auth="user", website=True, methods=['POST'])
     def portal_remove_player(self, team_id, player_id, **post):
@@ -170,7 +213,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
 
             # PRG: a failed submit stashed the error + submitted fields in the
             # session; surface them and re-prefill the form.
-            flash_error, flash_data = self._portal_pop_flash()
+            flash_error, flash_data = self._portal_pop_flash(('team_add', team.id))
             if flash_error:
                 values['error'] = flash_error
                 for field in ('first_name', 'last_name', 'email', 'phone', 'date_of_birth'):
@@ -186,8 +229,24 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             values['error'] = _("An error occurred while loading the form. Please try again.")
             return self._render_add_player(values)
 
+    def _roster_resolve_sort(self, requested):
+        """Effective roster sort mode; an explicit ``?sort=`` becomes the
+        user's sticky preference (res.users.roster_sort_mode, self-writable —
+        same contract as the /my/teams sort, task 1401). Unknown or absent →
+        the stored preference, else « status »."""
+        user = request.env.user
+        stored = user.roster_sort_mode if user.roster_sort_mode in ROSTER_SORT_ORDERS else None
+        if requested in ROSTER_SORT_ORDERS:
+            if requested != stored:
+                try:
+                    user.write({'roster_sort_mode': requested})
+                except AccessError:
+                    pass
+            return requested
+        return stored or 'status'
+
     @http.route(['/my/team', '/my/team/<int:team_id>'], type='http', auth="user", website=True)
-    def portal_team_players(self, team_id=None, **kw):
+    def portal_team_players(self, team_id=None, sort=None, tab=None, **kw):
         """Display the list of players for a team.
 
         Canonical public URL shape is /my/team?team_id=<id> to align with
@@ -206,23 +265,20 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             team = self._check_team_access(team_id)
             
             # Get all players for the team, sorted by status severity so the
-            # most concerning players (injured/limited) surface first, then by name.
+            # most concerning players (injured/limited) surface first, then by
+            # name. Ordering is driven by the stored `sort_order` key on
+            # sports.patient (single source of truth, shared with the backend
+            # team-form Players list), so the two surfaces can never drift.
+            # Task 1421: « Sort: Status · Number » on the roster tab, sticky
+            # per user; the dashboard tab keeps its own score order below.
+            roster_sort_mode = self._roster_resolve_sort(sort)
             players = request.env['sports.patient'].search([
                 ('team_ids', 'in', [team.id]),
                 ('active', '=', True)
-            ], order='last_name, first_name')
-            stage_priority = {'no_play': 0, 'practice_ok': 1, 'healthy': 2}
-            players = players.sorted(
-                key=lambda p: (
-                    stage_priority.get(p.stage, 99),
-                    (p.last_name or '').lower(),
-                    (p.first_name or '').lower(),
-                )
-            )
+            ], order=ROSTER_SORT_ORDERS[roster_sort_mode])
 
             # Check user permissions for UI elements
-            is_treatment_prof = request.env.user.has_group(
-                'bemade_sports_clinic.group_portal_treatment_professional')
+            is_treatment_prof = self._is_treatment_professional()
             is_admin = request.env.user.has_group('base.group_system')
             is_team_staff = team.staff_ids.filtered(
                 lambda s: request.env.user.partner_id in s.user_ids.partner_id
@@ -251,14 +307,11 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 ], order='date_deadline asc')
                 activity_types = request.env['mail.activity.type'].search([])
                 # Assignable users for the add-activity header / reassign modal:
-                # treatment professionals (and admins) may assign to any treatment
-                # professional; everyone else (e.g. coaches) may only self-assign.
-                portal_tp_group = request.env.ref('bemade_sports_clinic.group_portal_treatment_professional')
-                internal_tp_group = request.env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional')
-                if is_treatment_prof or is_admin:
-                    assignable_users = request.env['res.users'].search([
-                        ('group_ids', 'in', [portal_tp_group.id, internal_tp_group.id])
-                    ])
+                # the per-actor rule (task 1500) — TPs and admins may assign to
+                # any TP or coach, a coach to the staff of their own teams.
+                # Task 1408: the shared sudo helper — a plain search() here was
+                # collapsed to "self" by base.res_users_rule_portal for portal TPs.
+                assignable_users = self._activity_assignable_users_for(request.env.user)
                 default_activity_type = request.env.ref(
                     'mail.mail_activity_data_todo', raise_if_not_found=False)
 
@@ -275,9 +328,19 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             dashboard_players = players.filtered(
                 lambda p: p[stamp_field] and p[stamp_field] >= cutoff
             ).sorted(key=lambda p: p[score_field], reverse=True)
-            # Team-level upcoming events (next 7 days).
+            # Task 1385: the per-player change feed no longer renders eagerly as a
+            # sibling of the card — it lazy-loads inside each homogenized card's
+            # expandable <details> (route /my/player/<id>/recent-changes). Here we
+            # run only the ONE batched presence query across the whole roster to
+            # drive the collapsed "changements récents" hint and the static-section
+            # injury markers. The expensive per-player mail-tracking compute now
+            # happens solely for cards the user actually opens.
+            presence = Patient._dashboard_card_presence(players, dashboard_role, cutoff)
+            # Team-level upcoming events — same configurable window as the
+            # backend dashboard and the morning briefing (task 1533).
+            upcoming_events_days = request.env['sports.team']._dashboard_upcoming_events_days()
             now = fields.Datetime.now()
-            horizon = now + relativedelta(days=7)
+            horizon = now + relativedelta(days=upcoming_events_days)
             upcoming_events = request.env['sports.event'].search([
                 ('team_ids', 'in', [team.id]),
                 ('date_start', '>=', now),
@@ -285,17 +348,48 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 ('state', '!=', 'cancelled'),
             ], order='date_start asc')
 
+            # Task 1416: the team's temporary staff rows (dated grants + event
+            # coverage) for the read-only « Temporary staff » block. Staff names
+            # and roles only; sudo because the portal staff rule scopes rows
+            # to the viewer and the viewer already staffs this team.
+            temp_staff_rows = team.sudo().temp_staff_ids.sorted(
+                key=lambda r: (r.source != 'temp', r.partner_id.name or ''))
+
             values = {
                 # Use my_teams so existing breadcrumbs logic renders
                 # "Teams / <Team Name>" for team detail pages.
                 'page_name': 'my_teams',
                 'team': team,
                 'players': players,
+                'roster_sort_mode': roster_sort_mode,
+                # A sort change reloads the page: land on the roster tab, not
+                # the (default) dashboard tab.
+                'active_tab': (
+                    'players' if sort in ROSTER_SORT_ORDERS
+                    # Task 1500 staging check: activity add/reassign return here
+                    # with tab=activities so the user lands back on that tab.
+                    else tab if tab in ('dashboard', 'players', 'activities')
+                    else 'dashboard'
+                ),
+                'temp_staff_rows': temp_staff_rows,
                 # Dashboard tab context (task 1272)
                 'dashboard_role': dashboard_role,
                 'dashboard_players': dashboard_players,
+                # Task 1385: batched presence for the homogenized cards (both the
+                # dashboard tab and the roster tab reuse the same card).
+                'changed_player_ids': presence['players'],
+                'changed_injury_ids': presence['injuries'],
                 'dashboard_window_hours': Patient._dashboard_window_hours(),
                 'upcoming_events': upcoming_events,
+                # Task 1533: the copy states the live window. Whole sentences
+                # translated here (one msgid each) rather than QWeb fragments
+                # split around a <t t-esc/>.
+                'upcoming_events_days': upcoming_events_days,
+                'upcoming_events_window_label': request.env._(
+                    "(next %(days)s days)", days=upcoming_events_days),
+                'upcoming_events_empty_label': request.env._(
+                    "No upcoming events in the next %(days)s days.",
+                    days=upcoming_events_days),
                 # Canonical URL used by pager and templates
                 'default_url': f'/my/team?team_id={team.id}',
                 'user_has_group': request.env.user.has_group,  # Pass the has_group method to template
@@ -331,12 +425,539 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 values['success'] = _("Player has been added to the team.")
                 
             if error:
-                values['error'] = error
+                # Task 1744: the activity add panel's refusals in words.
+                values['error'] = {
+                    'past_deadline': sc_past_deadline_message(request.env),
+                    'missing_fields': _("Please fill in all required fields."),
+                    'invalid_user': _("You cannot assign this activity to that user."),
+                }.get(error, error)
             
-            return request.render('bemade_sports_clinic.portal_my_team_players', values)
+            # Task 1542: the app shell (switch on) or today's template, byte
+            # for byte (switch off). The shell-only values are computed only
+            # when the shell renders.
+            if self._sc_app_shell_active():
+                values.update(self._sc_team_values(team, values))
+            return self._sc_render('bemade_sports_clinic.portal_my_team_players',
+                                   'bemade_sports_clinic.sc_app_team', values)
             
         except (AccessError, MissingError) as e:
-            return request.redirect('/my/teams?error=%s' % str(e))
+            # 1577 review: never the raw exception text in the URL / on the
+            # page — log it, land on /my/teams with the clean message.
+            self._user_error_text(e, 'team')
+            return request.redirect('/my/teams?error=team_denied')
+
+    # ------------------------------------------------------------------
+    # Task 1542 — the team page in the app shell
+    # ------------------------------------------------------------------
+    def _sc_player_row(self, player, team, stage_labels, with_position=True, extras=None):
+        """One roster / dashboard row: « #12 Last, First », stage dot + chip,
+        position; links to the player page like the legacy card.
+        Task 1593: ``extras`` (``_sc_player_row_extras``, computed once for
+        the whole page) adds the legacy card's content — training
+        recommendation, « Retour prévu », the lazy expanded detail; no team
+        links on a team's own page (as legacy)."""
+        stage = player.stage or 'healthy'
+        position = player.position if with_position else False
+        if extras is None:
+            extras = self._sc_player_row_extras(player, team_links=False, team=team)
+        return dict(extras[player.id], **{
+            'id': player.id,
+            'title': player._portal_list_name(),
+            'subtitle': position or '',
+            'dot': SC_STAGE_TONES.get(stage, 'green'),
+            'chip': stage_labels.get(stage, ''),
+            'url': '/my/player?player_id=%s&team_id=%s' % (player.id, team.id),
+            'pending_removal': bool(player.pending_removal),
+        })
+
+    def _sc_team_values(self, team, values):
+        """Shell-only render values for ``sc_app_team`` — built from the
+        legacy values (same role filtering), never re-deriving them."""
+        env = request.env
+        user = env.user
+        stage_labels = dict(
+            env['sports.patient']._fields['stage']._description_selection(env))
+        show_position = team.show_position_on_dashboard
+        # « Recent changes » lists only players with something to show (the
+        # ⚡ presence rule). A recent activity stamp whose changes net to
+        # nothing (owner review 2026-10-11) is not a change: such a red or
+        # yellow player joins « Other players to watch » instead.
+        changed = set(values.get('changed_player_ids') or ())
+        quiet = values['dashboard_players'].filtered(
+            lambda p: p.id not in changed and p.stage in ('no_play', 'practice_ok'))
+        watched = (team.dashboard_watchlist_patient_ids | quiet).sorted(
+            key=lambda p: (p.sort_order, p.last_name or '', p.first_name or ''))
+        # Task 1593: the rows' legacy-card content for every listed player
+        # at once (no per-row queries); no team links on the team's own page.
+        # Task 1634: the Match / Practice pills are quick-change dropdowns for
+        # a status editor (the cards' status line, in place).
+        extras = self._sc_player_row_extras(
+            values['dashboard_players'] | watched | values['players'],
+            team_links=False, team=team, status_edit=self._sc_status_editable())
+        dashboard_rows = []
+        for player in values['dashboard_players'].filtered(lambda p: p.id in changed):
+            row = self._sc_player_row(player, team, stage_labels, show_position, extras)
+            row['changed'] = True
+            # Task 1626: the card is a player row like the others; its
+            # « Details » loads the player's change detail, not the plain
+            # row detail.
+            row['detail_url'] = '/my/player/%s/recent-changes?detail=1&team_id=%s' % (
+                player.id, team.id)
+            dashboard_rows.append(row)
+        watch_rows = [
+            self._sc_player_row(player, team, stage_labels, show_position, extras)
+            for player in watched
+        ]
+        roster_rows = [
+            self._sc_player_row(player, team, stage_labels, extras=extras)
+            for player in values['players']
+        ]
+        tz = user.tz or env.context.get('tz')
+        kinds = dict(env['sports.event']._fields['event_type']._description_selection(env))
+        upcoming_rows = [{
+            'when': format_datetime(env, event.date_start, tz=tz,
+                                    dt_format='EEE d MMM · HH:mm'),
+            'kind': kinds.get(event.event_type, ''),
+            'name': event.name or '',
+            'url': '/my/event/%s' % event.id,
+        } for event in values['upcoming_events']]
+        can_add_directly = self._is_tp_or_system()
+        org = team.sudo().parent_id.name or ''
+        return {
+            'sc_team_org': org,
+            'sc_dashboard_rows': dashboard_rows,
+            # Task 1655: the inline « create a player » panel (team pre-filled).
+            'sc_player_add': self._sc_player_add_panel(team, 'sc_add_player', 'team.add_player'),
+            'sc_watch_rows': watch_rows,
+            'sc_roster_rows': roster_rows,
+            'sc_upcoming_rows': upcoming_rows,
+            'sc_pending_count': sum(1 for row in roster_rows if row['pending_removal']),
+            'sc_can_add_directly': can_add_directly,
+            'sc_can_edit_announcement': team._user_can_edit_announcement(),
+            # Task 1663: right after an archive, its « Annuler » toast.
+            'sc_announcement_undo': (
+                self._sc_announcement_undo(team)
+                if request.httprequest.args.get('announcement_archived') else None),
+            'sc_announcement_deadline': (
+                format_date(env, team.announcement_deadline)
+                if team.announcement_deadline else ''),
+            # Task 1719: the compact « Jusqu'au <date> » line.
+            'sc_announcement_until': (
+                env._("Until %(date)s", date=format_date(env, team.announcement_deadline))
+                if team.announcement_deadline else ''),
+            'sc_team_url': '/my/team?team_id=%s' % team.id,
+            # Task 1635: the Activities tab counts what its panel lists.
+            'sc_team_activities_badge': self._sc_activity_tab_badge(values['team_activities']),
+            'sc_window_label': env._("(last %(hours)s h)",
+                                     hours=values.get('dashboard_window_hours')),
+            'sc_pending_label': env._(
+                "%(count)s player(s) with a pending removal request.",
+                count=sum(1 for row in roster_rows if row['pending_removal'])),
+        }
+
+    def _digest_for_viewer(self, team_id, digest_id):
+        """Access + role gate shared by the snapshot page and its body
+        fragment (tasks 1267, 1614): ``(team, digest, role)``.
+
+        Only a team staff member (or a treatment professional / admin) may read
+        a snapshot (non-member -> 403); a digest of another team -> 404
+        (``MissingError``). The role is resolved exactly as the live dashboard
+        does: a portal TP (or internal/admin) gets the TP view, everyone else the
+        coach view.
+        """
+        try:
+            # Visibility gate — same membership check as the live team page. A
+            # non-member raises AccessError, surfaced as a real 403.
+            team = self._check_team_access(team_id)
+        except AccessError:
+            raise Forbidden(
+                _("You don't have permission to view this team's digest."))
+        # sudo: the team gate above is the access rule; another team's digest
+        # is « not found », never an access error.
+        digest = request.env['sports.team.digest'].sudo().browse(int(digest_id)).exists()
+        if not digest or digest.team_id.id != team.id:
+            raise MissingError(_("This digest does not exist."))
+        is_treatment_prof = self._is_treatment_professional()
+        is_admin = request.env.user.has_group('base.group_system')
+        role = 'tp' if (is_treatment_prof or is_admin) else 'coach'
+        return team, digest, role
+
+    @http.route(['/my/team/<int:team_id>/digest/<int:digest_id>'],
+                type='http', auth="user", website=True)
+    def portal_team_digest(self, team_id, digest_id, **kw):
+        """Historical view of one stored team-digest snapshot (task 1267).
+
+        Law 25: the stored ``item_data`` is re-gated at read by the viewer's role
+        (coach -> external only; TP -> all) — never frozen HTML. Access mirrors
+        the live team dashboard: only a team staff member (or a treatment
+        professional / admin) may view it; anyone else gets a 403.
+        """
+        try:
+            team, digest, role = self._digest_for_viewer(team_id, digest_id)
+        except MissingError:
+            return request.not_found()
+
+        players = digest._render_for_role(role)
+        values = {
+            'page_name': 'my_teams',
+            'team': team,
+            'digest': digest,
+            'players': players,
+            # Task 1270 (slice F): the frozen announcement rides in item_data;
+            # it is all-staff content, so both roles see it.
+            'announcement': (digest.item_data or {}).get('announcement'),
+            'default_url': f'/my/team?team_id={team.id}',
+        }
+        # Task 1540: the app shell (switch on) or today's template (off);
+        # team_digest_render is rendered unchanged inside the shell card.
+        if self._sc_app_shell_active():
+            values['sc_digest_date'] = format_date(request.env, digest.snapshot_date)
+        return self._sc_render('bemade_sports_clinic.portal_team_digest',
+                               'bemade_sports_clinic.sc_app_team_digest', values)
+
+    @http.route(['/my/team/<int:team_id>/digest/<int:digest_id>/body'],
+                type='http', auth="user", website=True)
+    def portal_team_digest_body(self, team_id, digest_id, **kw):
+        """Task 1614: one snapshot's body alone (no layout, never cached), the
+        lazy body of its date in the app's digest history. Same gate and same
+        role re-gated ``team_digest_render`` as the snapshot page."""
+        try:
+            _team, digest, role = self._digest_for_viewer(team_id, digest_id)
+        except MissingError:
+            return request.not_found()
+        values = {
+            'request': request,
+            'digest': digest,
+            'players': digest._render_for_role(role),
+            'announcement': (digest.item_data or {}).get('announcement'),
+        }
+        html = request.env['ir.ui.view']._render_template(
+            'bemade_sports_clinic.sc_digest_body', values)
+        return request.make_response(html, headers=[
+            ('Content-Type', 'text/html; charset=utf-8'),
+            ('Cache-Control', 'no-store'),
+        ])
+
+    def _sanitize_local_back(self, back, team_id):
+        """Open-redirect guard for the digest-history backlink (task 1389).
+
+        Only a bare local ``/my/...`` path is honoured; anything carrying a
+        scheme, a host, a protocol-relative ``//`` prefix, a backslash trick or a
+        ``..`` traversal falls back to the team dashboard. Returns path (+ query)
+        only, dropping any fragment.
+        """
+        default = '/my/team/%d' % int(team_id)
+        if not back or not isinstance(back, str):
+            return default
+        if back.startswith('//') or '\\' in back or '..' in back:
+            return default
+        parsed = urlparse(back)
+        if parsed.scheme or parsed.netloc:
+            return default
+        if not parsed.path.startswith('/my/'):
+            return default
+        return parsed.path + (('?' + parsed.query) if parsed.query else '')
+
+    @http.route(['/my/team/<int:team_id>/digest-history',
+                 '/my/team/<int:team_id>/digest-history/page/<int:page>',
+                 '/my/team/<int:team_id>/digest-history/recent'],
+                type='http', auth="user", website=True)
+    def portal_team_digest_history(self, team_id, page=1, back=None,
+                                   preview=None, **kw):
+        """Task 1389: navigable history of a team's daily digest snapshots.
+
+        One method, two modes:
+
+        - **Modal fragment** (``?preview=1`` or the ``/digest-history/recent``
+          sibling): the last ``DIGEST_HISTORY_MODAL_DAYS`` days of snapshots
+          (date desc) as a bare list fragment + a "Voir tout l'historique" link
+          carrying the caller path as ``?back=``. Lazy-fetched by
+          ``portal_digest_history.js`` on first modal open.
+        - **Full page** (default): every retained snapshot (date desc) with the
+          standard portal pager and a validated-local backlink.
+
+        The list exposes ONLY snapshot dates — no content — so it is
+        audience-safe as-is; the per-snapshot ``/digest/<id>`` render re-gates
+        coach (external only) vs TP (internal + external). Membership is enforced
+        exactly like the single-snapshot route (non-member -> 403).
+        """
+        try:
+            team = self._check_team_access(team_id)
+        except MissingError:
+            return request.not_found()
+        except AccessError:
+            raise Forbidden(
+                _("You don't have permission to view this team's digest history."))
+
+        Digest = request.env['sports.team.digest'].sudo()
+        is_preview = (bool(preview)
+                      or request.httprequest.path.endswith('/digest-history/recent'))
+
+        if is_preview:
+            cutoff = (fields.Date.context_today(request.env.user)
+                      - relativedelta(days=DIGEST_HISTORY_MODAL_DAYS))
+            digests = Digest.search(
+                [('team_id', '=', team.id), ('snapshot_date', '>=', cutoff)],
+                order='snapshot_date desc',
+            )
+            # The caller path (validated) rides through to the full-history page
+            # so its backlink returns wherever the modal was opened from.
+            safe_back = self._sanitize_local_back(back, team.id)
+            history_url = '/my/team/%d/digest-history?back=%s' % (
+                team.id, quote(safe_back, safe=''))
+            values = {
+                'team': team,
+                'digests': digests,
+                'history_url': history_url,
+            }
+            return request.render(
+                'bemade_sports_clinic.portal_team_digest_history_modal', values)
+
+        # Full paginated page.
+        domain = [('team_id', '=', team.id)]
+        total = Digest.search_count(domain)
+        safe_back = self._sanitize_local_back(back, team.id)
+        pgr = pager(
+            url='/my/team/%d/digest-history' % team.id,
+            total=total,
+            page=int(page),
+            step=DIGEST_HISTORY_PAGE_SIZE,
+            url_args={'back': safe_back},
+        )
+        digests = Digest.search(
+            domain,
+            order='snapshot_date desc',
+            limit=DIGEST_HISTORY_PAGE_SIZE,
+            offset=pgr['offset'],
+        )
+        values = {
+            'page_name': 'my_teams',
+            'team': team,
+            'digests': digests,
+            'pager': pgr,
+            'back_url': safe_back,
+        }
+        # Task 1540: the full history on the app shell (the modal fragment
+        # above — also the P1b sheet — is unchanged).
+        if self._sc_app_shell_active():
+            # Task 1614: each date expands in place (lazy body) with its
+            # counts as the subtitle — a coach's re-gated (see _sc_counts).
+            role = ('tp' if (self._is_treatment_professional()
+                             or request.env.user.has_group('base.group_system'))
+                    else 'coach')
+            values['sc_digest_rows'] = [{
+                'id': d.id,
+                'label': format_date(request.env, d.snapshot_date),
+                'subtitle': d._sc_counts_label(role),
+                'url': '/my/team/%d/digest/%d' % (team.id, d.id),
+                'body_url': '/my/team/%d/digest/%d/body' % (team.id, d.id),
+            } for d in digests]
+        return self._sc_render('bemade_sports_clinic.portal_team_digest_history',
+                               'bemade_sports_clinic.sc_app_team_digest_history', values)
+
+    def _announcement_error_redirect(self, team_id, message):
+        """Redirect back to the team page with a flash error (task 1407)."""
+        return request.redirect(
+            f"/my/team?team_id={team_id}&error=" + message.replace(' ', '+')
+        )
+
+    @http.route(['/my/team/<int:team_id>/announcement'],
+                type='http', auth="user", website=True, methods=['POST'], csrf=True)
+    def portal_team_announcement(self, team_id, **post):
+        """Post/edit the team announcement from the portal (task 1270). The
+        model write guard enforces TP-only authorship; a non-TP submitting the
+        form (they never see it) is redirected with an error.
+
+        Task 1407: the role guard's refusal (not a TP on this team) is told
+        apart from every OTHER AccessError (ACL / record rule — the failure
+        that silently killed the feature for portal TPs since #1270), so the
+        message the user sees is honest. The guard predicate is the model's
+        own ``_user_can_edit_announcement`` — no portal-local copy of the
+        role policy.
+        """
+        try:
+            team = self._check_team_access(team_id, check_staff=True)
+            if not team._user_can_edit_announcement():
+                return self._announcement_error_redirect(
+                    team_id,
+                    _("Only treatment professionals can edit the team announcement."),
+                )
+            body = (post.get('announcement') or '').strip()
+            # Task 1640: a malformed deadline (« 202610-10-10 ») gets a clear
+            # message, not « Error saving announcement. ».
+            try:
+                deadline = parse_portal_date(post.get('announcement_deadline'))
+            except ValidationError as e:
+                return self._announcement_error_redirect(team_id, e.args[0])
+            team.write({
+                'announcement': body or False,
+                'announcement_deadline': deadline,
+            })
+            return request.redirect(f"/my/team?team_id={team_id}")
+        except AccessError as e:
+            _logger.warning(
+                "Team announcement save refused for user %s on team %s: %s",
+                request.env.user.id, team_id, e,
+            )
+            return self._announcement_error_redirect(
+                team_id,
+                _("You don't have permission to edit the team announcement."),
+            )
+        except Exception as e:
+            _logger.error("Error saving team announcement: %s", str(e), exc_info=True)
+            return self._announcement_error_redirect(
+                team_id, _("Error saving announcement.")
+            )
+
+    @http.route(['/my/team/<int:team_id>/announcement/dismiss'],
+                type='http', auth="user", website=True, methods=['POST'], csrf=True)
+    def portal_team_announcement_dismiss(self, team_id, **post):
+        """Dismiss (clear) the team announcement from the portal (task 1270).
+        TP-only, enforced by action_dismiss_announcement's write guard. Task
+        1407: same guard-vs-other AccessError distinction as the post route."""
+        try:
+            team = self._check_team_access(team_id, check_staff=True)
+            if not team._user_can_edit_announcement():
+                return self._announcement_error_redirect(
+                    team_id,
+                    _("Only treatment professionals can dismiss the team announcement."),
+                )
+            # Task 1663: what « Annuler » puts back (this session only).
+            before = {
+                'team_id': team.id,
+                'user_id': request.env.user.id,
+                'body': team.announcement or '',
+                'deadline': fields.Date.to_string(team.announcement_deadline) or False,
+                'author_id': team.announcement_author_id.id or False,
+                'date': fields.Datetime.to_string(team.announcement_date) or False,
+            }
+            team.action_dismiss_announcement()
+            history = request.env['sports.team.note.history'].sudo().search(
+                [('team_id', '=', team.id)], order='id desc', limit=1)
+            if before['body'] and history.action == 'dismiss':
+                before['history_id'] = history.id
+                request.session[SC_ANNOUNCEMENT_UNDO_KEY] = before
+            return request.redirect(f"/my/team?team_id={team_id}&announcement_archived=1")
+        except AccessError as e:
+            _logger.warning(
+                "Team announcement dismiss refused for user %s on team %s: %s",
+                request.env.user.id, team_id, e,
+            )
+            return self._announcement_error_redirect(
+                team_id,
+                _("You don't have permission to dismiss the team announcement."),
+            )
+        except Exception as e:
+            _logger.error("Error dismissing team announcement: %s", str(e), exc_info=True)
+            return request.redirect(f"/my/team?team_id={team_id}")
+
+    def _sc_announcement_undo(self, team):
+        """Task 1663: the pending « Annuler » of this user's last archive of
+        THIS team's announcement (``request.session``), or None — when it is
+        another team's, another user's, past the window, or anything changed
+        the announcement since (a newer history row, a new text)."""
+        payload = request.session.get(SC_ANNOUNCEMENT_UNDO_KEY)
+        if not isinstance(payload, dict) or payload.get('team_id') != team.id:
+            return None
+        if payload.get('user_id') != request.env.user.id:
+            return None
+        History = request.env['sports.team.note.history'].sudo()
+        history = History.browse(payload.get('history_id') or 0).exists()
+        latest = History.search([('team_id', '=', team.id)], order='id desc', limit=1)
+        if not history or history != latest or history.action != 'dismiss':
+            return None
+        if history.author_id != request.env.user:
+            return None
+        window = timedelta(seconds=SC_ANNOUNCEMENT_UNDO_SECONDS)
+        if not history.note_datetime or fields.Datetime.now() - history.note_datetime > window:
+            return None
+        if (team.sudo().announcement or '').strip():
+            return None
+        return payload
+
+    @http.route(['/my/team/<int:team_id>/announcement/restore'],
+                type='http', auth="user", website=True, methods=['POST'], csrf=True)
+    def portal_team_announcement_restore(self, team_id, **post):
+        """Task 1663: « Annonce archivée — Annuler »: put back the
+        announcement this user just archived (same text, deadline, author and
+        date; the history gets « Restaurée »). Same right as the archive (a
+        therapist of the team / an admin), the same user, within the window,
+        nothing changed since. No email (none is sent for an announcement)."""
+        back = f"/my/team?team_id={team_id}"
+        try:
+            team = self._check_team_access(team_id, check_staff=True)
+            if not team._user_can_edit_announcement():
+                return self._announcement_error_redirect(
+                    team_id, _("Only treatment professionals can edit the team announcement."))
+            payload = self._sc_announcement_undo(team)
+            if not payload:
+                request.session['notification'] = {
+                    'type': 'warning', 'title': '',
+                    'message': _("This announcement can no longer be restored."),
+                    'sticky': False,
+                }
+                return request.redirect(back)
+            team.with_context(sc_announcement_restore=True).write({
+                'announcement': payload['body'],
+                'announcement_deadline': payload.get('deadline') or False,
+                'announcement_author_id': payload.get('author_id') or request.env.user.id,
+                'announcement_date': payload.get('date') or fields.Datetime.now(),
+            })
+            request.session.pop(SC_ANNOUNCEMENT_UNDO_KEY, None)
+            request.session['notification'] = {
+                'type': 'success', 'title': '',
+                'message': _("Announcement restored."),
+                'sticky': False,
+            }
+            return request.redirect(back)
+        except AccessError as e:
+            _logger.warning("Team announcement restore refused for user %s on team %s: %s",
+                            request.env.user.id, team_id, e)
+            return self._announcement_error_redirect(
+                team_id, _("You don't have permission to edit the team announcement."))
+
+    # Task 1581: the announcement history action -> (chip tone, state); the
+    # labels are built in _sc_announcement_history_entries (babel extracts
+    # them from the _() calls there).
+    SC_ANNOUNCEMENT_ACTIONS = {
+        'set': ('green', None),
+        'edit': ('ghost', None),
+        'dismiss': ('ghost', 'archived'),
+        'restore': ('green', None),
+    }
+
+    def _sc_announcement_history_entries(self, team):
+        env = request.env
+        labels = {
+            'set': env._("Posted"),
+            'edit': env._("Edited"),
+            'dismiss': env._("Archived"),
+            'restore': env._("Restored"),
+        }
+        entries = []
+        for row in team.note_history_ids:
+            tone, state = self.SC_ANNOUNCEMENT_ACTIONS.get(row.action, ('ghost', None))
+            entries.append(self._sc_history_entry(
+                row.note_datetime, row.author_id.name, row.body,
+                action=labels.get(row.action, row.action), tone=tone,
+                state=state or ('' if (row.body or '').strip() else 'cleared')))
+        return entries
+
+    @http.route(['/my/team/<int:team_id>/announcement/history'],
+                type='http', auth='user', website=True, methods=['GET'])
+    def portal_team_announcement_history(self, team_id, **kw):
+        """Task 1581: the team announcement history sheet's body, fetched on
+        EVERY open (a change made on the page shows without a reload). Same
+        gate as the team page (its staff; clinic administrators)."""
+        try:
+            team = self._check_team_access(team_id)
+        except MissingError:
+            return request.not_found()
+        except AccessError as error:
+            return self._forbidden(error)
+        return request.render('bemade_sports_clinic.sc_announcement_history_fragment', {
+            'entries': self._sc_announcement_history_entries(team),
+        })
 
     def _find_existing_patient(self, first_name, last_name, email=None, phone=None):
         """Search for an existing patient by name and contact information.
@@ -345,8 +966,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
         hidden by per-record ir.rules can still be found (and subsequently linked
         to a team). Coaches keep the rule-scoped, active-only behaviour.
         """
-        is_tp_admin = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-            request.env.user.has_group('base.group_system')
+        is_tp_admin = self._is_tp_or_system()
         Patient = request.env['sports.patient'].sudo() if is_tp_admin else request.env['sports.patient']
         domain = [
             ('first_name', '=ilike', first_name.strip()),
@@ -391,8 +1011,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             team = self._check_team_access(team_id)
 
             # Only therapists/admins can add directly; others should use request flow
-            if not (request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or
-                    request.env.user.has_group('base.group_system')):
+            if not self._is_tp_or_system():
                 request.session['notification'] = {
                     'type': 'danger',
                     'title': _('Access Denied'),
@@ -436,6 +1055,9 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 return {
                     'id': p.id,
                     'name': p.name,
+                    # Task 1421: « #12 First Last » for the result rows.
+                    'label': p._portal_heading_name(),
+                    'jersey_number': p.jersey_number or '',
                     'first_name': p.first_name,
                     'last_name': p.last_name,
                     'date_of_birth': p.date_of_birth or '',
@@ -454,14 +1076,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'active_results': [_to_dict(p) for p in active_rs],
                 'archived_results': [_to_dict(p) for p in archived_rs],
                 # Extra context to support inline full create form
-                'is_treatment_prof': request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system'),
+                'is_treatment_prof': self._is_tp_or_system(),
                 'states': request.env['res.country.state'].search([('country_id.code', '=', 'CA')], order='name'),
                 'countries': request.env['res.country'].search([('code', '=', 'CA')], limit=1) or request.env['res.country'].search([], order='name'),
-                'all_teams': request.env['sports.team'].search([
-                    ('id', 'in', request.env['sports.team.staff'].search([
-                        ('partner_id', '=', request.env.user.partner_id.id)
-                    ]).mapped('team_id').ids)
-                ], order='name'),
+                'all_teams': self._team_targets(),
                 'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
                 'prefill_team_id': team.id,
             })
@@ -486,12 +1104,13 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
         This is used when the search yields no results and we render the full form inline.
         Only treatment professionals/admins may create directly.
         """
+        # Task 1639: the identity guard for internal users too.
+        request.update_context(sc_identity_guard=True)
         try:
             team = self._check_team_access(team_id)
 
             # Permission: only therapists/admins can create directly
-            is_tp = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-                   request.env.user.has_group('base.group_system')
+            is_tp = self._is_tp_or_system()
             if not is_tp:
                 raise AccessError(_("You don't have permission to create players."))
 
@@ -519,14 +1138,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                     'searched': True,
                     'active_results': [],
                     'archived_results': [],
-                    'is_treatment_prof': request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system'),
+                    'is_treatment_prof': self._is_tp_or_system(),
                     'states': request.env['res.country.state'].search([('country_id.code', '=', 'CA')], order='name'),
                     'countries': request.env['res.country'].search([('code', '=', 'CA')], limit=1) or request.env['res.country'].search([], order='name'),
-                    'all_teams': request.env['sports.team'].search([
-                        ('id', 'in', request.env['sports.team.staff'].search([
-                            ('partner_id', '=', request.env.user.partner_id.id)
-                        ]).mapped('team_id').ids)
-                    ], order='name'),
+                    'all_teams': self._team_targets(),
                     'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
                     'form_data': dict(post),
                     'error': _('Please enter a valid Date of Birth (YYYY-MM-DD).'),
@@ -548,14 +1163,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                     'searched': True,
                     'active_results': [],
                     'archived_results': [],
-                    'is_treatment_prof': request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system'),
+                    'is_treatment_prof': self._is_tp_or_system(),
                     'states': request.env['res.country.state'].search([('country_id.code', '=', 'CA')], order='name'),
                     'countries': request.env['res.country'].search([('code', '=', 'CA')], limit=1) or request.env['res.country'].search([], order='name'),
-                    'all_teams': request.env['sports.team'].search([
-                        ('id', 'in', request.env['sports.team.staff'].search([
-                            ('partner_id', '=', request.env.user.partner_id.id)
-                        ]).mapped('team_id').ids)
-                    ], order='name'),
+                    'all_teams': self._team_targets(),
                     'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
                     'form_data': dict(post),
                     'error': _('Date of Birth must not be in the future and not be more than 120 years ago.'),
@@ -574,9 +1185,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             if team.id not in selected_team_ids:
                 selected_team_ids.append(team.id)
             # Restrict to teams where current user is staff (defense-in-depth against tampering)
-            allowed_team_ids = request.env['sports.team.staff'].search([
-                ('partner_id', '=', request.env.user.partner_id.id)
-            ]).mapped('team_id').ids
+            allowed_team_ids = self._team_targets().ids
             selected_team_ids = [tid for tid in selected_team_ids if tid in allowed_team_ids]
             vals = {
                 'first_name': first_name,
@@ -611,8 +1220,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
 
             # Extra medical/status fields (only for TP/admin)
             if is_tp:
-                if 'allergies' in post:
-                    vals['allergies'] = post.get('allergies') or False
+                # Task 1630: the allergy / medical-alert block.
+                vals.update(request.env['sports.patient']._sc_medical_vals_from_post(post))
                 if 'team_info_notes' in post:
                     vals['team_info_notes'] = post.get('team_info_notes') or False
                 if post.get('match_status'):
@@ -621,7 +1230,9 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                     vals['practice_status'] = post.get('practice_status')
 
             # Create through secured helper
-            patient = request.env['sports.patient']._create_portal_patient(vals)
+            # Task 1600: a refused create leaves no orphan contact behind.
+            with request.env.cr.savepoint():
+                patient = request.env['sports.patient']._create_portal_patient(vals)
 
             # Optionally create a primary emergency contact if provided (TP/admin only)
             if is_tp:
@@ -664,17 +1275,13 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'searched': True,
                 'active_results': [],
                 'archived_results': [],
-                'is_treatment_prof': request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system'),
+                'is_treatment_prof': self._is_tp_or_system(),
                 'states': request.env['res.country.state'].search([('country_id.code', '=', 'CA')], order='name'),
                 'countries': request.env['res.country'].search([('code', '=', 'CA')], limit=1) or request.env['res.country'].search([], order='name'),
-                'all_teams': request.env['sports.team'].search([
-                    ('id', 'in', request.env['sports.team.staff'].search([
-                        ('partner_id', '=', request.env.user.partner_id.id)
-                    ]).mapped('team_id').ids)
-                ], order='name'),
+                'all_teams': self._team_targets(),
                 'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
                 'form_data': dict(post),
-                'error': str(e),
+                'error': self._user_error_text(e, 'team'),
                 'prefill_team_id': team.id,
             })
             return request.render('bemade_sports_clinic.portal_add_link_player_page', values)
@@ -692,14 +1299,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 'searched': True,
                 'active_results': [],
                 'archived_results': [],
-                'is_treatment_prof': request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or request.env.user.has_group('base.group_system'),
+                'is_treatment_prof': self._is_tp_or_system(),
                 'states': request.env['res.country.state'].search([('country_id.code', '=', 'CA')], order='name'),
                 'countries': request.env['res.country'].search([('code', '=', 'CA')], limit=1) or request.env['res.country'].search([], order='name'),
-                'all_teams': request.env['sports.team'].search([
-                    ('id', 'in', request.env['sports.team.staff'].search([
-                        ('partner_id', '=', request.env.user.partner_id.id)
-                    ]).mapped('team_id').ids)
-                ], order='name'),
+                'all_teams': self._team_targets(),
                 'relationship_types': request.env['sports.patient.contact']._fields['contact_type'].selection,
                 'form_data': dict(post),
                 'error': _('An unexpected error occurred.'),
@@ -711,6 +1314,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                 type='http', auth="user", website=True, methods=['POST'], csrf=True)
     def portal_add_player_submit(self, team_id, **post):
         """Handle the form submission to add a new player."""
+        # Task 1639: the identity guard for internal users too.
+        request.update_context(sc_identity_guard=True)
         try:
             team = self._check_team_access(team_id)
             
@@ -731,7 +1336,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             try:
                 dob_date = fields.Date.to_date(dob)
             except Exception:
-                self._portal_flash(_('Please enter a valid Date of Birth (YYYY-MM-DD).'), post)
+                self._portal_flash(_('Please enter a valid Date of Birth (YYYY-MM-DD).'), post, ('team_add', team_id))
                 return request.redirect(f'/my/team/{team_id}/add_player')
 
             # Enforce DOB not in future and not older than 120 years
@@ -739,12 +1344,11 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             min_dob = today - relativedelta(years=120)
             if dob_date > today or dob_date < min_dob:
                 self._portal_flash(
-                    _('Date of Birth must not be in the future and not be more than 120 years ago.'), post)
+                    _('Date of Birth must not be in the future and not be more than 120 years ago.'), post, ('team_add', team_id))
                 return request.redirect(f'/my/team/{team_id}/add_player')
             
             # Determine if current user is allowed to set medical/status fields
-            is_tp_or_admin = request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-                             request.env.user.has_group('base.group_system')
+            is_tp_or_admin = self._is_tp_or_system()
 
             # Check for existing player
             existing_patient = self._find_existing_patient(
@@ -803,7 +1407,10 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                     patient_vals['practice_status'] = post.get('practice_status')
             
             # Create patient through the private _create_portal_patient method which has proper access controls
-            patient = request.env['sports.patient']._create_portal_patient(patient_vals)
+            # Task 1600: a refused create (e.g. the exact-duplicate check)
+            # leaves no orphan contact behind.
+            with request.env.cr.savepoint():
+                patient = request.env['sports.patient']._create_portal_patient(patient_vals)
             
             # Log the action
             _logger.debug(
@@ -816,7 +1423,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             return request.redirect(edit_url)
             
         except UserError as e:
-            self._portal_flash(str(e), post)
+            self._portal_flash(self._user_error_text(e, 'team'), post, ('team_add', team_id))
             return request.redirect(f'/my/team/{team_id}/add_player')
 
         except (AccessError, MissingError) as e:
@@ -824,7 +1431,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
 
         except Exception as e:
             _logger.exception("Error in portal_add_player_submit")
-            self._portal_flash(_("An error occurred while adding the player. Please try again later."), post)
+            self._portal_flash(_("An error occurred while adding the player. Please try again later."), post, ('team_add', team_id))
             return request.redirect(f'/my/team/{team_id}/add_player')
 
     @http.route(['/my/team/<int:team_id>/player/search'], type='jsonrpc', auth="user", methods=['POST'])
@@ -858,14 +1465,15 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
 
             # If user can view archived, include them too (need active_test=False)
             archived_rs = Patient.browse([])
-            if request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-               request.env.user.has_group('base.group_system'):
+            if self._is_tp_or_system():
                 archived_rs = Patient.with_context(active_test=False).search(domain + [('active', '=', False)], limit=10)
 
             def _to_dict(p):
                 return {
                     'id': p.id,
                     'name': p.name,
+                    'label': p._portal_heading_name(),
+                    'jersey_number': p.jersey_number or '',
                     'first_name': p.first_name,
                     'last_name': p.last_name,
                     'date_of_birth': p.date_of_birth or '',
@@ -888,12 +1496,13 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
         Only treatment professionals (and admins) can directly add/link.
         Coaches must use the request route.
         """
+        # Task 1639: the identity guard for internal users too.
+        request.update_context(sc_identity_guard=True)
         try:
             team = self._check_team_access(team_id)
 
             # Enforce role: only treatment professionals/admin can add
-            if not (request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or
-                    request.env.user.has_group('base.group_system')):
+            if not self._is_tp_or_system():
                 raise AccessError(_("You don't have permission to add players. You may submit a request instead."))
 
             first_name = (post.get('first_name') or '').strip()
@@ -911,11 +1520,21 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             existing_id_str = post.get('existing_id')
             existing_id = int(existing_id_str) if (existing_id_str and str(existing_id_str).isdigit()) else False
 
+            # Owner review 2026-10-11: the app shell's inline « Add a player »
+            # links a chosen result (existing_id) or, with force_new, creates
+            # exactly the typed player (no fuzzy re-match), then lands on the
+            # Players tab / the new player's page.
+            sc_inline = bool(post.get('sc_inline')) and self._sc_app_shell_active()
+            force_new = sc_inline and bool(post.get('force_new'))
+            if force_new and not (first_name and last_name):
+                raise UserError(_('First name and last name are required'))
             # Only require basic identity fields when creating/searching, not when linking an explicit existing_id
             if not existing_id and not (first_name or last_name):
                 raise UserError(_('Provide at least a first or last name'))
             if existing_id:
                 existing = Patient.with_context(active_test=False).browse(existing_id).exists()
+            elif force_new:
+                existing = Patient.browse([])
             else:
                 # Try to find existing by name + optional dob (allow partials on whichever provided)
                 like_first = f"%{first_name}%" if first_name else "%"
@@ -939,6 +1558,9 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
                     existing.write({'team_ids': [(4, team.id)]})
                     action_taken.append('added to team')
 
+                if sc_inline:
+                    success = 'player_reactivated' if 'reactivated' in action_taken else 'player_added_to_team'
+                    return request.redirect(f"/my/team?team_id={team.id}&tab=players&success={success}")
                 request.session['notification'] = {
                     'type': 'success',
                     'title': _('Player Linked'),
@@ -961,7 +1583,12 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             if post.get('practice_status'):
                 vals['practice_status'] = post.get('practice_status')
 
-            patient = request.env['sports.patient']._create_portal_patient(vals)
+            # Task 1600: a refused create leaves no orphan contact behind.
+            with request.env.cr.savepoint():
+                patient = request.env['sports.patient']._create_portal_patient(vals)
+            if sc_inline:
+                return request.redirect(
+                    f"/my/player?player_id={patient.id}&team_id={team.id}&tab=info")
 
             request.session['notification'] = {
                 'type': 'success',
@@ -977,7 +1604,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             request.session['notification'] = {
                 'type': 'danger',
                 'title': _('Add Player Failed'),
-                'message': str(e),
+                'message': self._user_error_text(e, 'team'),
                 'sticky': False,
             }
             return request.redirect(f"/my/team/{team_id}")
@@ -1006,19 +1633,13 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
           per-record ir.rules until the team link exists; only then does
           _check_access_to_patient grant the user full record access.
         """
-        return_url = post.get('return_url') or '/my/players'
-        # Only ever redirect to a same-site, absolute path (reject scheme-relative
-        # '//host' and backslash tricks to avoid an open redirect).
-        if (not isinstance(return_url, str)
-                or not return_url.startswith('/')
-                or return_url.startswith('//')
-                or '\\' in return_url):
-            return_url = '/my/players'
+        # Only ever redirect to a same-site, absolute path (the shared
+        # validator, task 1579: no scheme, '//host', backslash or control
+        # character — no open redirect).
+        return_url = self._safe_return_url(post.get('return_url'), '/my/players')
 
         user = request.env.user
-        is_system = user.has_group('base.group_system')
-        is_tp_admin = is_system or user.has_group(
-            'bemade_sports_clinic.group_portal_treatment_professional')
+        is_tp_admin = self._is_tp_or_system()
         if not is_tp_admin:
             request.session['notification'] = {
                 'type': 'danger',
@@ -1034,7 +1655,8 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             team_id = 0
 
         staff_team_ids = set(user.partner_id.team_staff_rel_ids.mapped('team_id.id'))
-        if not team_id or (not is_system and team_id not in staff_team_ids):
+        # Task 1577: a clinic admin (like a system admin) may add to any team.
+        if not team_id or (not self._is_clinic_admin() and team_id not in staff_team_ids):
             request.session['notification'] = {
                 'type': 'danger',
                 'title': _('Access Denied'),
@@ -1071,12 +1693,13 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
         """Create a brand new player and link to team from the Add/Link page.
         Separate endpoint from link flow to simplify validation and UX.
         """
+        # Task 1639: the identity guard for internal users too.
+        request.update_context(sc_identity_guard=True)
         try:
             team = self._check_team_access(team_id)
 
             # Only therapists/admins can create directly
-            if not (request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or
-                    request.env.user.has_group('base.group_system')):
+            if not self._is_tp_or_system():
                 raise AccessError(_("You don't have permission to create players."))
 
             first_name = (post.get('first_name') or '').strip()
@@ -1107,7 +1730,9 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             if post.get('practice_status'):
                 vals['practice_status'] = post.get('practice_status')
 
-            patient = request.env['sports.patient']._create_portal_patient(vals)
+            # Task 1600: a refused create leaves no orphan contact behind.
+            with request.env.cr.savepoint():
+                patient = request.env['sports.patient']._create_portal_patient(vals)
 
             request.session['notification'] = {
                 'type': 'success',
@@ -1123,7 +1748,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             request.session['notification'] = {
                 'type': 'danger',
                 'title': _('Create Player Failed'),
-                'message': str(e),
+                'message': self._user_error_text(e, 'team'),
                 'sticky': False,
             }
             return request.redirect(f"/my/team/{team_id}")
@@ -1144,8 +1769,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             team = self._check_team_access(team_id, check_staff=True)
 
             # Only non-therapists need this route; therapists should use direct add
-            if request.env.user.has_group('bemade_sports_clinic.group_portal_treatment_professional') or \
-               request.env.user.has_group('base.group_system'):
+            if self._is_tp_or_system():
                 raise AccessError(_('You can add players directly.'))
 
             first_name = (post.get('first_name') or '').strip()
@@ -1211,7 +1835,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin):
             request.session['notification'] = {
                 'type': 'danger',
                 'title': _('Request Failed'),
-                'message': str(e),
+                'message': self._user_error_text(e, 'team'),
                 'sticky': False,
             }
             return request.redirect(f"/my/team/{team_id}")

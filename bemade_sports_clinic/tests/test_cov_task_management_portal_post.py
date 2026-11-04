@@ -46,16 +46,17 @@ class TestCovTaskManagementPortalPost(PortalCovCommon):
         self.act_player.invalidate_recordset(['date_deadline'])
         self.assertEqual(self.act_player.date_deadline, original, "no deadline -> no change")
 
-    def test_reassign_activity_rejects_non_tp(self):
-        # The coach is not a treatment professional, so reassignment must be refused.
+    def test_reassign_activity_rejects_non_assignee(self):
+        # A plain portal user is neither a TP nor a coach (task 1426), so
+        # reassignment must be refused.
         self._login_tp()
         self.url_open('/my/activity/reassign', data={
             'csrf_token': self._csrf(), 'activity_id': self.act_event.id,
-            'new_user_id': self.coach.id,
+            'new_user_id': self.plain.id,
         })
         self.act_event.invalidate_recordset(['user_id'])
         self.assertEqual(self.act_event.user_id, self.tp,
-                         "reassigning to a non-TP must be rejected")
+                         "reassigning to a non-assignable user must be rejected")
 
     def test_create_activity_submit_happy(self):
         self._login_tp()

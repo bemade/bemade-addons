@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.Composer" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('o-mail-Composer-footer')]" position="before">
+            <div
+        t-if="showSignaturePreview"
+        class="o-mail-Composer-signaturePreview text-muted small border-top mt-1 pt-1 px-2"
+      >
+                <t t-if="props.composer.emailAddSignature">
+                    <div
+            class="o-mail-Composer-signatureBlock"
+            t-out="signatureBlock"
+          />
+                    <button
+            type="button"
+            class="o-mail-Composer-signatureRemove btn btn-link btn-sm p-0"
+            title="Remove the signature from this message"
+            t-on-click="onClickRemoveSignature"
+          >Remove signature</button>
+                </t>
+                <t t-else="">
+                    <span>Signature removed for this message</span>
+                    <button
+            type="button"
+            class="o-mail-Composer-signatureRestore btn btn-link btn-sm p-0 ms-1"
+            t-on-click="onClickRestoreSignature"
+          >Add signature</button>
+                </t>
+            </div>
+        </xpath>
+    </t>
+</templates>

@@ -163,14 +163,68 @@ class TestUCPurchaseVendorPackaging(TransactionCase):
         self.assertIn(self.pkg_vendor_a, valid)
         self.assertNotIn(self.pkg_vendor_b, valid)
 
+    def test_compute_product_packaging_domain_with_product_and_vendor(self):
+        """With product + vendor set, the computed domain scopes to the
+        template and (vendor OR generic) packagings."""
+        po = self._make_po(self.vendor_a)
+        line = self.env["purchase.order.line"].create(
+            {
+                "order_id": po.id,
+                "product_id": self.product.id,
+                "product_qty": 100.0,
+                "product_uom_id": self.uom_kg.id,
+                "price_unit": 1.0,
+                "name": "Pigment Base",
+            }
+        )
+        self.assertEqual(
+            line.product_packaging_domain,
+            [
+                ("product_tmpl_id", "=", self.tmpl.id),
+                "|",
+                ("partner_id", "=", False),
+                ("partner_id", "=", self.vendor_a.id),
+            ],
+        )
+        found = self.env["product.uom.packaging"].search(
+            line.product_packaging_domain
+        )
+        self.assertIn(self.pkg_vendor_a, found)
+        self.assertNotIn(self.pkg_vendor_b, found)
+
+    def test_compute_product_packaging_domain_no_product(self):
+        """With no product set, the computed domain is well-formed (a Python
+        list, no leaf carrying an empty-string value) and yields zero
+        packagings.
+
+        Direct regression guard for the malformed ('product_tmpl_id','=','')
+        leaf produced when the web client pruned an always-invisible sibling
+        field from its field-load spec.
+        """
+        po = self._make_po(self.vendor_a)
+        line = self.env["purchase.order.line"].new(
+            {
+                "order_id": po.id,
+            }
+        )
+        domain = line.product_packaging_domain
+        self.assertIsInstance(domain, list)
+        for leaf in domain:
+            if isinstance(leaf, (list, tuple)) and len(leaf) == 3:
+                self.assertNotEqual(
+                    leaf[2],
+                    "",
+                    "Domain leaf must not carry an empty-string value",
+                )
+        found = self.env["product.uom.packaging"].search(domain)
+        self.assertFalse(found)
+
     def test_po_line_form_builds_with_packaging_domain(self):
         """Form build with a product succeeds and product_packaging_id resolves.
 
-        Regression guard: a malformed view-level domain on product_packaging_id
-        (e.g. referencing product_id.product_tmpl_id instead of
-        product_template_id) causes odoo.tests.Form to raise on build.
-        If this test passes, the domain in purchase_order_views.xml compiles
-        and the invisible product_template_id field is loaded in the list.
+        Regression guard: the domain field must be readable server-side and
+        the Form proxy must be able to resolve product_packaging_id against
+        it without raising.
         """
         po = self._make_po(self.vendor_a)
         with Form(po) as po_form:

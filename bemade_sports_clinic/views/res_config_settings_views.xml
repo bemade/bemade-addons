@@ -24,6 +24,11 @@
                 <field name="product_event_clinic_vendor_id"/>
               </div>
             </setting>
+            <setting string="User Guide Home" help="Public page of the user guide's home article (/knowledge/article/&lt;id&gt;). The page-by-page articles: Sports Clinic › Administration › App help.">
+              <div class="content-group">
+                <field name="sc_help_home_url" placeholder="/knowledge/article/…"/>
+              </div>
+            </setting>
             <setting string="Material Report Recipient" help="Email address pre-filled in the portal Add Timesheet notice inviting therapists to report personal material used, for client re-invoicing.">
               <div class="content-group">
                 <field name="material_report_email"/>
@@ -46,6 +51,66 @@
               </div>
             </setting>
 
+            <setting string="Digest Capture Time" help="Team-local clock time (HH:MM) at/after which each team's daily dashboard-digest snapshot is captured.">
+              <div class="content-group">
+                <field name="digest_capture_time" placeholder="00:00"/>
+              </div>
+            </setting>
+            <setting string="Digest Default Timezone" help="Fallback timezone (e.g. America/Toronto) used to resolve a team's local capture date when its organization partner has no timezone set.">
+              <div class="content-group">
+                <field name="digest_default_timezone" placeholder="America/Toronto"/>
+              </div>
+            </setting>
+            <setting string="Morning Briefing Send Time" help="User-local clock time (HH:MM) at/after which each staff member's daily PHI-free morning briefing is sent, in their own timezone.">
+              <div class="content-group">
+                <field name="digest_morning_send_time" placeholder="07:00"/>
+              </div>
+            </setting>
+            <setting string="Dashboard Activity Window (hours)" help="Recency window (hours) for the team dashboard, its portal view and the morning briefing's change counts (e.g. 24 / 48 / 72). The daily digest snapshot stays a fixed 24h slice regardless. Floored at 1h.">
+              <div class="content-group">
+                <field name="dashboard_activity_window_hours" placeholder="24"/>
+              </div>
+            </setting>
+            <setting string="Dashboard Upcoming Events Window (days)" help="How many days ahead the « Upcoming events » block looks, on the team dashboard, the portal team page and the morning briefing — e.g. 7 / 14 / 21. Floored at 1 day; a zero/negative value cannot be saved.">
+              <div class="content-group">
+                <field name="dashboard_upcoming_events_days" placeholder="14"/>
+              </div>
+            </setting>
+
+            <setting string="Quick Note Staleness (days)" help="Age in days after which an undismissed quick note raises a reminder for its owner and a summary reminder for the clinic administrators. Quick notes are never auto-deleted.">
+              <div class="content-group">
+                <field name="quick_note_stale_days" placeholder="365"/>
+              </div>
+            </setting>
+
+            <setting string="Event Coverage Access Lead (hours)" help="Hours before the therapist coverage starts at which an assigned therapist gets the temporary team access (hourly reconcile). 0 = exactly at the start.">
+              <div class="content-group">
+                <field name="event_coverage_lead_hours" placeholder="48"/>
+              </div>
+            </setting>
+
+            <setting string="Unregistered Kiosk Sign-ins Retention (days)" help="Days after a clinic ends before its unresolved kiosk sign-ins (name and date of birth typed by a player who matched no file) are purged. Linked, created or removed rows are not concerned. 0 = never purge.">
+              <div class="content-group">
+                <field name="kiosk_unregistered_retention_days" placeholder="7"/>
+              </div>
+            </setting>
+
+            <setting string="Kiosk Idle Timeout (seconds)" help="Seconds without interaction before the kiosk sign-in form abandons back to a clean start screen. Falls back to 75 when zero or negative.">
+              <div class="content-group">
+                <field name="kiosk_idle_seconds" placeholder="75"/>
+              </div>
+            </setting>
+
+            <setting string="Legacy Per-Change Emails" help="When off (default), the three legacy per-change follower emails (play-status, injury edit, internal note) are suppressed in favour of the aggregated 5-minute urgent notification and the dashboard/daily digest. Turn on to restore the old one-email-per-change behaviour.">
+              <field name="legacy_change_emails_enabled"/>
+            </setting>
+
+            <setting string="Urgent Notifications — Last Run" help="Watermark for the 5-minute urgent-notification cron. Rewind it to re-scan an earlier window.">
+              <div class="content-group">
+                <field name="urgent_notify_last_run"/>
+              </div>
+            </setting>
+
             <setting string="Sports Clinic Maintenance" help="Recompute followers and team staff group memberships for all sports clinic records.">
               <div class="content-group">
                 <button name="action_recompute_sports_followers_and_groups"
@@ -64,6 +129,12 @@
                         class="btn btn-secondary"
                         groups="base.group_system,bemade_sports_clinic.group_sports_clinic_admin"/>
               </div>
+            </setting>
+          </block>
+          <!-- Task 1538: the new portal app shell switch (staging only until launch). -->
+          <block title="Sports Clinic Portal" id="bemade_sports_clinic_portal_app_settings">
+            <setting string="New Portal App (preview)" help="Show the sports-clinic portal (home, teams, « More ») in the new Fit Crew app shell. Leave off in production until the launch; a staging refresh from production turns it off again.">
+              <field name="sc_app_shell_enabled"/>
             </setting>
           </block>
         </xpath>

@@ -1,5 +1,6 @@
 import logging
 import urllib.parse
+from datetime import timedelta
 
 from markupsafe import Markup, escape
 
@@ -8,6 +9,12 @@ from odoo.exceptions import ValidationError
 from odoo.tools.misc import format_datetime
 
 _logger = logging.getLogger(__name__)
+
+# Task 1397 — the clinic sign-in kiosk. The kiosk is usable from this long
+# BEFORE the clinic starts to this long AFTER it ends; outside that window
+# the kiosk device falls back to its pairing screen (#1433).
+KIOSK_WINDOW_BEFORE = timedelta(minutes=30)
+KIOSK_WINDOW_AFTER = timedelta(minutes=30)
 
 
 class SportsEvent(models.Model):
@@ -147,6 +154,30 @@ class SportsEvent(models.Model):
         store=False,
         help='Number of timesheets recorded for this event'
     )
+
+    # Task 1398: the clinic worklist. Only ever populated for event_type
+    # 'clinic' (the model constrains it), but the o2m lives on every event so
+    # the portal can ask any event for its worklist without a type branch.
+    attendance_ids = fields.One2many(
+        'sports.clinic.attendance', 'event_id',
+        string='Clinic Attendance',
+        help='Patients on this clinic\'s worklist'
+    )
+
+    attendance_count = fields.Integer(
+        string='Attendance Count',
+        compute='_compute_attendance_count',
+        store=False,
+        help='Number of patients on this clinic\'s worklist (unregistered '
+             'kiosk sign-ins, which have no patient file yet, are not counted)'
+    )
+
+    # Task 1433 removed the #1397 signed-token kiosk scheme (`kiosk_nonce`,
+    # `kiosk_enabled_at`, `_kiosk_token`/`_kiosk_verify`/`_kiosk_url`): the
+    # kiosk entry is now a stable public dispatcher + a device bound by a
+    # pairing code — see `sports.clinic.kiosk.device`. The clinic keeps only
+    # `_kiosk_window` (the validity window) and `_kiosk_patient_scope` (who
+    # may sign in) below.
 
     activity_count = fields.Integer(
         string='Activity Count',
@@ -349,6 +380,107 @@ class SportsEvent(models.Model):
         for event in self:
             event.treatment_professional_user_ids = users
 
+    # ------------------------------------------------------------------
+    # Review fixes 2026-10-24 (adversarial review): who may be assigned,
+    # and who may assign.
+    # ------------------------------------------------------------------
+    @api.model
+    def _sc_tp_users(self, user_ids):
+        """The users among ``user_ids`` who are treatment professionals
+        (portal or internal TP group, effective membership: a clinic admin is
+        one by implication). Archived users count (past events keep them).
+        sudo: identity-level check (portal users cannot read res.groups)."""
+        group_ids = self._treatment_professional_group_ids()
+        users = self.env['res.users'].sudo().with_context(active_test=False)
+        if not user_ids or not group_ids:
+            return users.browse()
+        return users.search([('id', 'in', list(user_ids)), ('all_group_ids', 'in', group_ids)])
+
+    @api.model
+    def _sc_assign_admin(self, user):
+        """A clinic administrator or a system administrator (internal)."""
+        return self.env['sports.team']._sc_staff_admin(user)
+
+    @api.model
+    def _sc_assigner_team_ids(self, user):
+        """The teams ``user`` staffs through a row that is NOT event
+        coverage (an event-sourced row never makes its holder « part of »
+        the team for this rule)."""
+        if not user.partner_id:
+            return set()
+        return set(self.env['sports.team.staff'].sudo().search([
+            ('partner_id', '=', user.partner_id.id),
+            ('source', '!=', 'event'),
+        ]).team_id.ids)
+
+    @api.model
+    def _sc_assign_refusal(self, user, team_ids):
+        """Owner policy 2026-10-24: assigning staff to an event whose teams
+        the assigner does not staff is clinic-admin only. '' when ``user``
+        may set / change the assignees of an event of ``team_ids``, else the
+        refusal text."""
+        if self._sc_assign_admin(user):
+            return ''
+        if set(team_ids or ()) <= self._sc_assigner_team_ids(user):
+            return ''
+        return self.env._(
+            "Only the clinic administration can assign staff to an event "
+            "of a team you're not part of.")
+
+    def _sc_can_assign(self, user=None):
+        """Whether ``user`` (default: current) may change THIS event's
+        assignees (the app hides the picker otherwise)."""
+        self.ensure_one()
+        return not self._sc_assign_refusal(user or self.env.user, self.sudo().team_ids.ids)
+
+    @api.model
+    def _sc_missing_timesheet_domain(self, user=None):
+        """« Missing timesheets »: events assigned to ``user`` (default: the
+        current one) with no timesheet of theirs. ``user`` stands for every
+        login sharing its partner (one person, several logins). ONE
+        definition: the events page's « missing timesheets » segment
+        (AccessControlMixin._prepare_events_domain) and the dashboard's
+        « Feuilles de temps manquantes » (task 1624 review round 1). Task
+        1742 (owner 2026-11-02): an event counts once it has STARTED — never
+        a later one today (or tomorrow's, after 20:00 in Québec: the list
+        used to bound by the server's UTC date). The callers add the lower
+        date bound and the cancelled filter."""
+        user = user or self.env.user
+        shared = self.env['res.users'].sudo().search(
+            [('partner_id', '=', user.partner_id.id)]).ids or [user.id]
+        return [
+            ('assigned_staff_ids', 'in', shared),
+            ('date_start', '<=', fields.Datetime.now()),
+            '!', ('timesheet_ids.user_id', 'in', shared),
+        ]
+
+    @api.model
+    def _sc_check_assignment(self, user, old_staff, new_staff, old_teams, new_teams):
+        """Refuse (ValidationError) an assignment change:
+
+        * every ADDED assignee must be a treatment professional — for every
+          writer, superuser included (a coach or any other user put there
+          used to get a therapist coverage row, and with it the portal TP
+          group: adversarial review 2026-10-24);
+        * ``user`` (None = no policy: superuser / trusted code) changing
+          the assignees, or the teams of an event that has assignees, must
+          staff every resulting team (``_sc_assign_refusal``).
+
+        Called by write / create and, BEFORE their sudo writes, by the portal
+        routes (which pass the request user)."""
+        old_staff, new_staff = set(old_staff or ()), set(new_staff or ())
+        old_teams, new_teams = set(old_teams or ()), set(new_teams or ())
+        added = new_staff - old_staff
+        if added and added - set(self._sc_tp_users(added).ids):
+            raise ValidationError(self.env._(
+                "Only treatment professionals can be assigned to an event."))
+        if user is None:
+            return
+        if new_staff != old_staff or (new_staff and new_teams != old_teams):
+            refusal = self._sc_assign_refusal(user, new_teams)
+            if refusal:
+                raise ValidationError(refusal)
+
     @staticmethod
     def _user_initials(name):
         """First letter of each whitespace-separated token of a name,
@@ -389,6 +521,13 @@ class SportsEvent(models.Model):
     def _compute_timesheet_count(self):
         for event in self:
             event.timesheet_count = len(event.timesheet_ids.filtered('active'))
+
+    @api.depends('attendance_ids', 'attendance_ids.patient_id')
+    def _compute_attendance_count(self):
+        # #1418: unregistered kiosk sign-ins carry no patient yet — they are
+        # their own bucket everywhere (counts line, report), not a patient.
+        for event in self:
+            event.attendance_count = len(event.attendance_ids.filtered('patient_id'))
 
     def _compute_activity_count(self):
         for event in self:
@@ -520,7 +659,7 @@ class SportsEvent(models.Model):
         for event in self:
             if event.date_start and event.date_end:
                 if event.date_end <= event.date_start:
-                    raise ValidationError("Event end time must be after start time.")
+                    raise ValidationError(_("Event end time must be after start time."))
     
     @api.constrains('therapist_start', 'therapist_end')
     def _check_therapist_dates(self):
@@ -528,7 +667,7 @@ class SportsEvent(models.Model):
         for event in self:
             if event.therapist_start and event.therapist_end:
                 if event.therapist_end <= event.therapist_start:
-                    raise ValidationError("Therapist end time must be after start time.")
+                    raise ValidationError(_("Therapist end time must be after start time."))
     
     # ========================================
     # PORTAL ACCESS METHODS
@@ -557,12 +696,23 @@ class SportsEvent(models.Model):
     # ========================================
     @api.constrains('team_ids')
     def _check_team_ids_same_org_and_nonempty(self):
+        """At least one team, and never the teams of two organizations.
+
+        Task 1597: the messages are translated (the portal shows them as is)
+        and the refusal names the organizations involved. Teams without an
+        organization never count: they may join the teams of any ONE
+        organization. sudo: a portal user may not read the organizations."""
         for event in self:
             if not event.team_ids:
-                raise ValidationError("Please select at least one team for the event.")
-            orgs = event.team_ids.mapped('parent_id').filtered(lambda p: p)
-            if orgs and len(set(orgs.mapped('id'))) > 1:
-                raise ValidationError("All selected teams must belong to the same organization.")
+                raise ValidationError(self.env._("Please select at least one team for the event."))
+            orgs = event.sudo().team_ids.parent_id
+            if len(orgs) > 1:
+                raise ValidationError(self.env._(
+                    "An event's teams must all belong to the same organization "
+                    "(here: %(organizations)s). Choose the organization first, "
+                    "then its teams.",
+                    organizations=', '.join(orgs.sorted('name').mapped('name')),
+                ))
     
     # ========================================
     # CRUD OVERRIDES
@@ -579,6 +729,12 @@ class SportsEvent(models.Model):
             for vals in vals_list
         ]
         events = super().create(vals_list)
+        # Review fixes 2026-10-24: assignees are treatment professionals, and
+        # (non-superuser) only a clinic admin assigns on another team's event.
+        policy_user = None if self.env.su else self.env.user
+        for event in events.sudo().filtered('assigned_staff_ids'):
+            self._sc_check_assignment(
+                policy_user, (), event.assigned_staff_ids.ids, (), event.team_ids.ids)
         events.sudo()._sync_event_auto_staff()
         return events
 
@@ -599,7 +755,9 @@ class SportsEvent(models.Model):
             # Exception: portal cancellation is allowed via controller with context flag.
             if not self.env.user.has_group('base.group_user'):
                 allow_portal_cancel = bool(self.env.context.get('portal_cancel_event'))
-                if not allow_portal_cancel:
+                # Task 1665: the portal « Restore » of a cancelled event.
+                allow_portal_revive = bool(self.env.context.get('portal_revive_event'))
+                if not (allow_portal_cancel or allow_portal_revive):
                     raise ValidationError("Only internal users can change event workflow state.")
             new_state = vals.get('state')
             allowed_states = {'confirmed', 'to_invoice', 'invoiced', 'cancelled'}
@@ -610,9 +768,13 @@ class SportsEvent(models.Model):
                 # Prevent marking invoiced if customer side still needs invoicing
                 if new_state == 'invoiced' and any(t.customer_ready_to_invoice for t in event.timesheet_ids.filtered('active')):
                     raise ValidationError("Cannot mark Invoiced while timesheets remain to invoice.")
-                # Portal may only cancel
-                if not self.env.user.has_group('base.group_user') and new_state != 'cancelled':
-                    raise ValidationError("Only internal users can change event workflow state.")
+                # Portal may only cancel — or (task 1665) restore a cancelled
+                # event to Confirmed.
+                if not self.env.user.has_group('base.group_user'):
+                    revive_ok = (self.env.context.get('portal_revive_event')
+                                 and new_state == 'confirmed' and event.state == 'cancelled')
+                    if new_state != 'cancelled' and not revive_ok:
+                        raise ValidationError("Only internal users can change event workflow state.")
 
         # Drag-only sync: BOTH fields of a pair shifted together (the
         # calendar drag pattern) and the other pair wasn't touched.
@@ -641,6 +803,22 @@ class SportsEvent(models.Model):
         events_entering_cancel = self.env['sports.event']
         if vals.get('state') == 'cancelled':
             events_entering_cancel = self.filtered(lambda e: e.state != 'cancelled')
+        # Task 1665: the mirror — a cancelled event restored. Only a real
+        # restore (back to Confirmed: the portal « Restore », action_revive)
+        # notifies; a cancelled event billed anyway (cancelled → invoiced,
+        # action_mark_invoiced) is not « restored » (review fixes 2026-10-24).
+        events_leaving_cancel = self.env['sports.event']
+        if vals.get('state') == 'confirmed':
+            events_leaving_cancel = self.filtered(lambda e: e.state == 'cancelled')
+
+        # Review fixes 2026-10-24: the assignees / teams before the write
+        # (the assignment checks below compare the result with them).
+        assign_before = {}
+        if 'assigned_staff_ids' in vals or 'team_ids' in vals:
+            assign_before = {
+                event.id: (event.assigned_staff_ids.ids, event.team_ids.ids)
+                for event in self.sudo()
+            }
 
         old_times = {}
         if sync_t_to_d or sync_d_to_t:
@@ -655,6 +833,14 @@ class SportsEvent(models.Model):
             }
 
         res = super().write(vals)
+
+        if assign_before:
+            policy_user = None if self.env.su else self.env.user
+            for event in self.sudo():
+                old_staff, old_teams = assign_before[event.id]
+                self._sc_check_assignment(
+                    policy_user, old_staff, event.assigned_staff_ids.ids,
+                    old_teams, event.team_ids.ids)
 
         if sync_t_to_d:
             for event in self.with_context(skip_event_time_sync=True):
@@ -693,13 +879,16 @@ class SportsEvent(models.Model):
                 if updates:
                     event.write(updates)
 
-        if {'assigned_staff_ids', 'team_ids', 'state', 'date_end', 'therapist_end'}.intersection(vals):
+        if {'assigned_staff_ids', 'team_ids', 'state', 'date_start', 'date_end',
+                'therapist_start', 'therapist_end'}.intersection(vals):
             self.sudo()._sync_event_auto_staff()
 
         if events_entering_cancel:
             events_entering_cancel._notify_assigned_staff_cancelled(
                 reason=self.env.context.get('cancel_reason')
             )
+        if events_leaving_cancel:
+            events_leaving_cancel._notify_assigned_staff_revived()
         return res
 
     def unlink(self):
@@ -723,7 +912,9 @@ class SportsEvent(models.Model):
         affected = Staff.search([('temporary_event_ids', 'in', self.ids)])
         affected.write({'temporary_event_ids': [(3, ev.id) for ev in self]})
         orphan_auto = affected.filtered(
-            lambda s: s.is_auto_created and not s.temporary_event_ids
+            lambda s: s.is_auto_created
+            and s.source == 'event'
+            and not s.temporary_event_ids
         )
         orphan_auto.unlink()
         res = super().unlink()
@@ -733,20 +924,48 @@ class SportsEvent(models.Model):
                 partners, label, date_start=date_start, team_names=team_names)
         return res
 
-    def _is_active_for_access(self):
-        """An event is "active for access" while either the event itself
-        or the therapist coverage window is still open (and the event is
-        not cancelled). This way, extending therapist coverage past the
-        event keeps the auto-grant alive for that extra time."""
+    # Task 1416: head start (hours) of the event-coverage access before the
+    # coverage starts. Settings « Event coverage access lead (hours) »,
+    # default 48, 0 = exactly at the start.
+    EVENT_COVERAGE_LEAD_PARAM = 'bemade_sports_clinic.event_coverage_lead_hours'
+    EVENT_COVERAGE_LEAD_DEFAULT = 48
+
+    @api.model
+    def _event_coverage_lead_hours(self):
+        raw = self.env['ir.config_parameter'].sudo().get_param(
+            self.EVENT_COVERAGE_LEAD_PARAM, default=None)
+        if raw in (None, False, ''):
+            return self.EVENT_COVERAGE_LEAD_DEFAULT
+        try:
+            return max(0, int(float(raw)))
+        except (TypeError, ValueError):
+            return self.EVENT_COVERAGE_LEAD_DEFAULT
+
+    def _coverage_window(self):
+        """(start, end) of the therapist coverage: therapist_* when set,
+        else the event times. Either may be False."""
+        self.ensure_one()
+        return (self.therapist_start or self.date_start,
+                self.therapist_end or self.date_end)
+
+    def _is_active_for_access(self, now=None):
+        """An event is "active for access" while its coverage window is
+        open (and the event is not cancelled): from ``start − lead hours``
+        (task 1416 — no access at event creation any more; the hourly
+        reconcile opens the rows on time) until the therapist coverage end
+        or the event end, whichever applies. ``now`` is for tests."""
         self.ensure_one()
         if self.state == 'cancelled':
             return False
-        boundary = self.therapist_end or self.date_end
-        if not boundary:
-            return True
-        return boundary >= fields.Datetime.now()
+        now = now or fields.Datetime.now()
+        start, end = self._coverage_window()
+        if end and end < now:
+            return False
+        if start and start - timedelta(hours=self._event_coverage_lead_hours()) > now:
+            return False
+        return True
 
-    def _sync_event_auto_staff(self):
+    def _sync_event_auto_staff(self, now=None):
         """For each event in self, reconcile sports.team.staff records used
         for temporary event-based access (task 539).
 
@@ -762,10 +981,14 @@ class SportsEvent(models.Model):
         for event in self:
             prior = Staff.search([('temporary_event_ids', 'in', event.ids)])
             desired = set()
-            if event._is_active_for_access():
+            if event._is_active_for_access(now):
+                # Never auto-create coverage staff for archived users, nor
+                # (review fixes 2026-10-24) for an assignee who is not a
+                # treatment professional (a pre-constraint assignment).
+                coverage_users = event.assigned_staff_ids.filtered('active')
+                coverage_users = coverage_users & self._sc_tp_users(coverage_users.ids)
                 for team in event.team_ids:
-                    # Never auto-create coverage staff for archived users.
-                    for user in event.assigned_staff_ids.filtered('active'):
+                    for user in coverage_users:
                         if user.partner_id:
                             desired.add((team.id, user.partner_id.id))
             for team_id, partner_id in desired:
@@ -774,7 +997,13 @@ class SportsEvent(models.Model):
                     ('partner_id', '=', partner_id),
                 ], limit=1)
                 if existing:
-                    if existing.is_auto_created and event not in existing.temporary_event_ids:
+                    # Keep the granting events linked on auto rows and on
+                    # temporary-access rows (task 1416: a temp row adopted
+                    # from / handed back to the event coverage needs them).
+                    if (
+                        (existing.is_auto_created or existing.source == 'temp')
+                        and event not in existing.temporary_event_ids
+                    ):
                         existing.write({'temporary_event_ids': [(4, event.id)]})
                 else:
                     Staff.create({
@@ -782,38 +1011,30 @@ class SportsEvent(models.Model):
                         'partner_id': partner_id,
                         'role': 'therapist',
                         'is_auto_created': True,
+                        'source': 'event',
                         'silent_notifications': True,
                         'temporary_event_ids': [(4, event.id)],
                     })
             for staff in prior:
                 if (staff.team_id.id, staff.partner_id.id) not in desired:
                     staff.write({'temporary_event_ids': [(3, event.id)]})
-                    if staff.is_auto_created and not staff.temporary_event_ids:
+                    # Task 1415: an event row adopted by an organization line
+                    # (source flipped to 'org') outlives its events — only
+                    # rows still sourced by event coverage are unlinked.
+                    if (
+                        staff.is_auto_created
+                        and staff.source == 'event'
+                        and not staff.temporary_event_ids
+                    ):
                         staff.unlink()
 
     @api.model
     def _cron_cleanup_auto_event_staff(self):
-        """Nightly: detach past or cancelled events from auto-staff and
-        unlink orphans. Runs _sync_event_auto_staff which is idempotent.
-
-        An event is "stale" when both the event window and the
-        therapist coverage window have passed (or it's cancelled).
-        Picking up records by either boundary keeps the cleanup eager
-        without missing events whose coverage already ended even though
-        date_end hasn't.
-        """
-        now = fields.Datetime.now()
-        stale = self.search([
-            '|',
-                ('state', '=', 'cancelled'),
-                '&',
-                    ('date_end', '<', now),
-                    '|',
-                        ('therapist_end', '=', False),
-                        ('therapist_end', '<', now),
-        ])
-        if stale:
-            stale._sync_event_auto_staff()
+        """Kept for callers of the pre-1416 name: the hourly job is now the
+        single timed-staff reconcile (event coverage + temporary access
+        grants) on sports.team.staff — it opens the coverage rows at
+        ``start − lead`` and closes them after the end / on cancel."""
+        return self.env['sports.team.staff']._reconcile_timed_rows()
 
     def _update_state_from_timesheets(self):
         """Update the event workflow state based on timesheet billing progress.
@@ -951,7 +1172,7 @@ class SportsEvent(models.Model):
                 if not body:
                     body = localized._cancel_notice_body(event_sudo.display_name, reason)
                 if not subject:
-                    subject = localized.env._("Event cancelled: %s", event_sudo.display_name)
+                    subject = localized.env._("Le Fit Crew — Event cancelled: %s", event_sudo.display_name)
                 try:
                     event_sudo.with_context(mail_notify_author=True, lang=lang).message_notify(
                         body=body,
@@ -1023,7 +1244,7 @@ class SportsEvent(models.Model):
                     mail_notify_author=True, lang=lang,
                 ).message_notify(
                     partner_ids=lang_partners.ids,
-                    subject=lenv._("Event deleted: %s", event_label),
+                    subject=lenv._("Le Fit Crew — Event deleted: %s", event_label),
                     body=body,
                     author_id=author.id if author else None,
                 )
@@ -1034,6 +1255,49 @@ class SportsEvent(models.Model):
                 )
 
     @api.model
+    def _notify_assigned_staff_revived(self):
+        """Task 1665: « Événement rétabli : … » to every active assignee of
+        these events — the mirror of _notify_assigned_staff_cancelled (same
+        delivery: message_notify per language, sudo, the bilingual template
+        mail_template_event_revived, no health data)."""
+        template = self.env.ref(
+            'bemade_sports_clinic.mail_template_event_revived', raise_if_not_found=False)
+        author = self.env.user.partner_id
+        default_lang = self.env.lang or 'en_US'
+        for event in self:
+            event_sudo = event.sudo()
+            partners = event_sudo.assigned_staff_ids.filtered('active').partner_id.filtered(
+                lambda p: bool(p))
+            if not partners:
+                continue
+            for lang, lang_partners in self._group_partners_by_lang(partners, default_lang).items():
+                subject = body = None
+                if template:
+                    try:
+                        ctx_template = template.sudo().with_context(lang=lang)
+                        body = ctx_template._render_field('body_html', event_sudo.ids).get(event_sudo.id)
+                        subject = ctx_template._render_field('subject', event_sudo.ids).get(event_sudo.id)
+                    except Exception:  # pragma: no cover - template render guard
+                        _logger.exception("Failed to render the restore template for event %s", event.id)
+                        body = subject = None
+                localized = self.with_context(lang=lang)
+                if not body:
+                    body = Markup("<p>%s</p>") % escape(localized.env._(
+                        "The event \"%s\" you were assigned to has been restored.",
+                        event_sudo.display_name))
+                if not subject:
+                    subject = localized.env._("Le Fit Crew — Event restored: %s", event_sudo.display_name)
+                try:
+                    event_sudo.with_context(mail_notify_author=True, lang=lang).message_notify(
+                        body=body,
+                        subject=subject,
+                        partner_ids=lang_partners.ids,
+                        email_layout_xmlid='mail.mail_notification_light',
+                        author_id=author.id if author else None,
+                    )
+                except Exception:  # pragma: no cover - never break the restore txn
+                    _logger.exception("Failed to notify assigned staff of restored event %s", event.id)
+
     def _cancel_notice_body(self, event_label, reason=None):
         """Plain HTML fallback body used when the mail template is missing
         or fails to render."""
@@ -1106,3 +1370,34 @@ class SportsEvent(models.Model):
                 'type': 'success',
             }
         }
+
+    # ==================================================================
+    # Task 1397/1433 — clinic sign-in kiosk: what the clinic still owns
+    # ==================================================================
+    # The token lifecycle moved to `sports.clinic.kiosk.device` (#1433):
+    # the clinic only defines WHEN its kiosk may run (`_kiosk_window`) and
+    # WHO may sign in (`_kiosk_patient_scope`).
+
+    def _kiosk_window(self):
+        """(start, end) of the validity window, on the CURRENT clinic dates."""
+        self.ensure_one()
+        event = self.sudo()
+        start = event.date_start - KIOSK_WINDOW_BEFORE
+        end = (event.date_end or event.date_start) + KIOSK_WINDOW_AFTER
+        return start, end
+
+    def _kiosk_patient_scope(self):
+        """Who may sign in at this clinic's kiosk: the ACTIVE patients on the
+        rosters of the clinic's teams; when the clinic has no team (cannot
+        happen today — team_ids is required — kept for safety), the active
+        patients of the organization's teams. sudo(): the caller is public."""
+        self.ensure_one()
+        event = self.sudo()
+        Patient = self.env['sports.patient'].sudo()
+        teams = event.team_ids
+        if not teams and event.partner_id:
+            teams = self.env['sports.team'].sudo().search(
+                [('parent_id', '=', event.partner_id.id)])
+        if not teams:
+            return Patient.browse()
+        return Patient.search([('team_ids', 'in', teams.ids)])

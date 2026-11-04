@@ -94,24 +94,26 @@ class TestEndToEndWorkflows(TransactionCase):
 
         # Step 1: Coach reports an injury (unverified)
         with freeze_time('2025-01-15'):
-            # Create injury as coach
+            # Create injury as coach. #1675 (owner 2026-10-25): a coach's
+            # report is the diagnosis + date — the external note is written
+            # by therapists only (the model refuses it from a coach).
             injury = self.env['sports.patient.injury'].with_user(self.coach_user).create({
                 'patient_id': self.patient.id,
-                'team_id': self.team.id,
                 'diagnosis': 'Ankle Sprain - Initial',
-                'external_notes': 'Player twisted ankle during practice.',
                 'injury_date': fields.Date.today(),
             })
+            self.assertFalse(injury.sudo().external_notes)
 
             # Check that injury is unverified and has default values
             self.assertEqual(injury.stage, 'unverified')
             # parental_consent has no default in 19.0 (was previously defaulted
             # for coach-created injuries); it is therefore falsy here.
             self.assertFalse(injury.parental_consent)
-            # In 19.0, when a (portal) coach reports an injury for a team that
-            # has a treatment professional on staff, that therapist is
-            # automatically assigned as a treatment professional.
-            self.assertIn(self.therapist_user, injury.treatment_professional_ids)
+            # Task 1240: no per-injury treater list any more — the team's
+            # staff (incl. its therapist) follows the injury through the
+            # patient's follower recompute.
+            self.patient.recompute_followers()
+            self.assertIn(self.therapist_partner, injury.sudo().message_partner_ids)
 
             # In 19.0 a patient's injured state is driven by match/practice
             # status rather than by the existence of injury records. Mark the
@@ -122,20 +124,18 @@ class TestEndToEndWorkflows(TransactionCase):
 
         # Step 2: Therapist verifies the injury and adds details
         with freeze_time('2025-01-16'):
-            # Update injury as therapist. treatment_professional_ids is a m2m to
-            # res.users, so link the therapist *user* (not the partner).
+            # Update injury as therapist.
             injury.with_user(self.therapist_user).write({
                 'diagnosis': 'Grade 2 Ankle Sprain',
                 'stage': 'active',
-                'treatment_professional_ids': [Command.link(self.therapist_user.id)],
                 'internal_notes': 'Significant swelling observed. Recommend RICE protocol.',
                 'parental_consent': 'yes',
             })
 
-            # Check that injury is now active and therapist is assigned
+            # Check that injury is now active and the therapist still follows it
             self.assertEqual(injury.stage, 'active')
             self.assertEqual(injury.parental_consent, 'yes')
-            self.assertIn(self.therapist_user, injury.treatment_professional_ids)
+            self.assertIn(self.therapist_partner, injury.sudo().message_partner_ids)
 
             # Add a message/note to the chatter as the therapist
             injury.with_user(self.therapist_user).message_post(
@@ -171,7 +171,7 @@ class TestEndToEndWorkflows(TransactionCase):
             injury.with_user(self.therapist_user).write({
                 'external_notes': injury.external_notes + '\nFollow-up 2: '
                                  'Good progress. Can resume non-contact training.',
-                'internal_notes': injury.internal_notes + '\nFollow-up 2: '
+                'internal_notes': injury.with_user(self.therapist_user).internal_notes + '\nFollow-up 2: '
                                  'Strength tests show 85% compared to uninjured side. Proprioception improving.',
             })
 
@@ -183,7 +183,7 @@ class TestEndToEndWorkflows(TransactionCase):
                 'resolution_date': fields.Date.today(),
                 'external_notes': injury.external_notes + '\nFinal update: '
                                  'Player fully cleared to return to all activities.',
-                'internal_notes': injury.internal_notes + '\nFinal assessment: '
+                'internal_notes': injury.with_user(self.therapist_user).internal_notes + '\nFinal assessment: '
                                  'Full ROM restored, strength tests at 95%. Cleared for all activities.',
             })
 
@@ -262,7 +262,7 @@ class TestEndToEndWorkflows(TransactionCase):
             'city': 'Test City',
             'zip': '12345',
             'email': 'test.patient@example.com',
-            'phone': '555-123-4567',
+            'phone': '514-555-0167',  # task 1645: a valid synthetic number
         })
 
         # Create a contact for the patient. sports.patient.contact uses
@@ -271,7 +271,7 @@ class TestEndToEndWorkflows(TransactionCase):
         patient_contact = self.env['sports.patient.contact'].create({
             'patient_id': patient_for_anon.id,
             'name': 'Test Parent',
-            'mobile': '555-987-6543',
+            'mobile': '514-555-0198',  # task 1645: a valid synthetic number
             'email': 'test.parent@example.com',
             'contact_type': 'mother',
         })
@@ -279,7 +279,6 @@ class TestEndToEndWorkflows(TransactionCase):
         # Create an injury with personal medical information
         injury_for_anon = self.env['sports.patient.injury'].create({
             'patient_id': patient_for_anon.id,
-            'team_id': self.team.id,
             'diagnosis': 'Confidential Medical Condition',
             'external_notes': 'Contains personally identifiable information',
             'internal_notes': 'Contains sensitive medical details',

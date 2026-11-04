@@ -4,10 +4,14 @@ from odoo import models, fields, api
 class Partner(models.Model):
     _inherit = "res.partner"
 
+    # No chatter tracking on this one2many: mail.thread reads EVERY tracked
+    # field of the partner before any write (_track_prepare), and reading a
+    # one2many to delivery.carrier.account as a user without read access on
+    # that model (e.g. a portal user editing a contact) raises AccessError,
+    # blocking unrelated writes. The account model tracks its own changes.
     carrier_account_ids = fields.One2many(
         comodel_name="delivery.carrier.account",
         inverse_name="partner_id",
-        tracking=2,
         string="Carrier Accounts",
     )
 

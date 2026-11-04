@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Task 1267: shared renderer for a stored team-digest snapshot. Takes a
+         `players` list (each {player_name, position, items, synopsis}) already
+         re-gated for the viewer's role by sports.team.digest._render_for_role,
+         and reuses the live dashboard's `dashboard_change_items` fragment per
+         player so the historical view reads identically to the live one. Used by
+         BOTH the backend digest form (via ir.qweb) and the portal snapshot page. -->
+    <template id="team_digest_render" name="Team Digest Render">
+        <div class="team-digest">
+            <!-- Task 1270 (slice F): the standing team announcement, frozen into
+                 the snapshot. All-staff content; shown to every role. -->
+            <t t-if="announcement and announcement.get('body')">
+                <div t-attf-class="alert #{announcement.get('is_expired') and 'alert-secondary' or 'alert-info'} mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <strong>Team announcement</strong>
+                        <span t-if="announcement.get('is_expired')" class="badge text-bg-secondary">Expired</span>
+                    </div>
+                    <div t-attf-style="white-space:pre-wrap;#{announcement.get('is_expired') and 'text-decoration:line-through;opacity:.7;' or ''}"
+                         t-esc="announcement['body']"/>
+                    <div t-if="announcement.get('deadline')" class="small text-muted mt-1">
+                        <span>Valid until:</span> <t t-esc="announcement['deadline']"/>
+                    </div>
+                </div>
+            </t>
+            <t t-if="not players">
+                <!-- Task 1614: .o_sc_empty = the app's lazy loader keeps it. -->
+                <div class="text-muted fst-italic small o_sc_empty">
+                    No changes were recorded for this day.
+                </div>
+            </t>
+            <!-- Task 1385: the snapshot card mirrors the live homogenized card —
+                 header with position in brackets, always-on predicted-return +
+                 training-rec, a collapsed <details> carrying the static
+                 active-injury detail + last consultation + the (frozen, small)
+                 recent-changes rendered INLINE (the snapshot is a static
+                 posterity view, so it does not lazy-load). All fields come from
+                 the frozen item_data; historical snapshots predating 1385 simply
+                 have empty new keys (forward-only). -->
+            <t t-foreach="players" t-as="player">
+                <div class="card mb-2 shadow-sm">
+                    <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                        <div class="fw-bold">
+                            <t t-if="player.get('player_id')">
+                                <a t-att-href="'/my/player?player_id=%s' % player['player_id']" class="text-decoration-none">
+                                    <t t-if="player.get('jersey_number')">#<t t-esc="player['jersey_number']"/> </t><t t-esc="player['player_name']"/><t t-if="player.get('position')"> (<t t-esc="player['position']"/>)</t>
+                                </a>
+                            </t>
+                            <t t-else="">
+                                <t t-if="player.get('jersey_number')">#<t t-esc="player['jersey_number']"/> </t><t t-esc="player['player_name']"/><t t-if="player.get('position')"> (<t t-esc="player['position']"/>)</t>
+                            </t>
+                        </div>
+                        <span t-if="player.get('changed_recently')" class="badge bg-warning text-dark">
+                            <i class="fa fa-bolt me-1" aria-hidden="true"/>recent changes
+                        </span>
+                    </div>
+                    <div class="card-body py-2">
+                        <!-- Task 1385 (CR-A #3): training recommendation first,
+                             then predicted return (inverted), mirroring the live card. -->
+                        <div t-if="player.get('training_recommendation')" class="text-muted small d-flex align-items-start mb-1">
+                            <i class="fa fa-heartbeat mt-1" title="Training Recommendation"></i>
+                            <span class="ms-1" style="white-space: pre-wrap;" t-esc="player['training_recommendation']"/>
+                        </div>
+                        <div t-if="player.get('predicted_return_date')" class="text-muted small d-flex align-items-center mb-1">
+                            <i class="fa fa-clock-o" title="Estimated Return"></i>
+                            <span class="ms-1"><span>Predicted return:</span> <t t-if="player.get('predicted_return_overdue')"><span class="o_sc_overdue"><t t-esc="player['predicted_return_date']"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span></t><t t-else="" t-esc="player['predicted_return_date']"/></span>
+                        </div>
+                        <details class="mt-2 o_sc_card_detail">
+                            <summary class="o_sc_card_summary text-primary small">
+                                <span class="o_sc_summary_more">Show details</span>
+                                <span class="o_sc_summary_less">Hide details</span>
+                            </summary>
+                            <!-- Owner layout 2026-10-11, same as the app shell's
+                                 live detail: last consultation, the player's
+                                 non-injury changes, then the injuries, each with
+                                 its own changes inside its card (grouped by
+                                 _render_for_role). -->
+                            <div class="pt-2">
+                                <div t-if="player.get('last_consultation_date')" class="text-muted small d-flex align-items-center mb-2">
+                                    <i class="fa fa-stethoscope" title="Last Consultation Date"></i>
+                                    <span class="ms-1"><span>Last consultation:</span> <t t-esc="player['last_consultation_date']"/></span>
+                                </div>
+                                <div t-if="player['items']" class="o_sc_recent_changes_content mb-2">
+                                    <!-- Task 1385 (CR-D, pill tweak): recent-changes
+                                         subsection headed by the same pill flag. -->
+                                    <div class="mb-1">
+                                        <span class="badge bg-warning text-dark o_sc_recent_heading">
+                                            <i class="fa fa-bolt me-1" aria-hidden="true"/>recent changes
+                                        </span>
+                                    </div>
+                                    <t t-call="bemade_sports_clinic.dashboard_change_items">
+                                        <t t-set="items" t-value="player['items']"/>
+                                        <t t-set="synopsis" t-value="False"/>
+                                        <t t-set="show_position" t-value="False"/>
+                                        <t t-set="position" t-value="False"/>
+                                        <!-- Task 1381: internal-only player-status block stays off the portal. -->
+                                        <t t-set="show_player_status" t-value="False"/>
+                                    </t>
+                                </div>
+                                <t t-if="player.get('active_injuries')">
+                                    <div class="small fw-bold text-uppercase text-muted mt-2 mb-1">Active injuries</div>
+                                    <t t-foreach="player['active_injuries']" t-as="inj">
+                                        <t t-call="bemade_sports_clinic.portal_card_injury_detail">
+                                            <t t-set="changed" t-value="inj.get('changed')"/>
+                                        </t>
+                                    </t>
+                                </t>
+                                <t t-if="player.get('resolved_injuries')">
+                                    <div class="small fw-bold text-uppercase text-muted mt-2 mb-1">Resolved injuries</div>
+                                    <t t-foreach="player['resolved_injuries']" t-as="inj">
+                                        <t t-call="bemade_sports_clinic.portal_card_injury_detail">
+                                            <t t-set="changed" t-value="inj.get('changed')"/>
+                                        </t>
+                                    </t>
+                                </t>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </template>
+
+    <!-- Portal page for one stored snapshot. The controller resolves the viewer's
+         role and hands us the already re-gated `players`; a coach can never be
+         handed internal-tagged content. Non-members are 403'd by the controller. -->
+    <template id="portal_team_digest" name="Team Daily Digest">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Daily digest</t>
+            </t>
+            <div class="container pt-3">
+                <div class="row mt-3">
+                    <div class="col-lg-12">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap">
+                            <h2 class="mb-0">
+                                Daily digest — <t t-esc="team.name"/>
+                            </h2>
+                            <a t-att-href="'/my/team?team_id=%s' % team.id" class="btn btn-secondary btn-sm">
+                                <i class="fa fa-arrow-left"></i> Back to team
+                            </a>
+                        </div>
+                        <p class="text-muted">
+                            Snapshot of <strong t-esc="digest.snapshot_date"/>
+                            <t t-if="digest.timezone"> (<t t-esc="digest.timezone"/>)</t>.
+                            Read-only view of the team dashboard's change history for the last 24 h.
+                        </p>
+                        <t t-call="bemade_sports_clinic.team_digest_render">
+                            <t t-set="players" t-value="players"/>
+                            <t t-set="announcement" t-value="announcement"/>
+                        </t>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Task 1389: recent-slice list fragment for the digest-history modal. The
+         controller hands us the last DIGEST_HISTORY_MODAL_DAYS days of snapshots
+         (date desc) + a pre-built, back-carrying `history_url`. Dates only — no
+         snapshot content — so it is audience-safe; the per-snapshot render
+         re-gates coach vs TP. Lazy-fetched by portal_digest_history.js. -->
+    <template id="portal_team_digest_history_modal" name="Team Digest History (modal)">
+        <div class="o_sc_digest_history_modal">
+            <t t-if="digests">
+                <div class="list-group list-group-flush mb-2">
+                    <t t-foreach="digests" t-as="d">
+                        <a t-attf-href="/my/team/#{team.id}/digest/#{d.id}"
+                           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="fa fa-calendar-o me-2" aria-hidden="true"/>
+                                <t t-esc="d.snapshot_date"/>
+                            </span>
+                            <i class="fa fa-chevron-right text-muted small" aria-hidden="true"/>
+                        </a>
+                    </t>
+                </div>
+            </t>
+            <t t-else="">
+                <p class="text-muted fst-italic small mb-2">
+                    No digest recorded for the last 14 days.
+                </p>
+            </t>
+            <div class="text-end">
+                <a t-att-href="history_url" class="small">See the full history →</a>
+            </div>
+        </div>
+    </template>
+
+    <!-- Task 1389: full paginated digest-history archive page. Standard portal
+         layout + pager; the backlink returns to wherever the modal was opened
+         from (validated-local `back_url`, defaulting to the team dashboard). Each
+         row links to the existing single-snapshot render, which re-gates the
+         audience. -->
+    <template id="portal_team_digest_history" name="Team Digest History">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Digest history</t>
+            </t>
+            <div class="container pt-3">
+                <div class="row mt-3">
+                    <div class="col-lg-12">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
+                            <h2 class="mb-0">
+                                Digest history — <t t-esc="team.name"/>
+                            </h2>
+                            <a t-att-href="back_url" class="btn btn-secondary btn-sm">
+                                <i class="fa fa-arrow-left"></i> Back
+                            </a>
+                        </div>
+                        <p class="text-muted">
+                            All daily digests kept for this team,
+                            from the most recent to the oldest.
+                        </p>
+                        <t t-if="digests">
+                            <div class="list-group mb-3">
+                                <t t-foreach="digests" t-as="d">
+                                    <a t-attf-href="/my/team/#{team.id}/digest/#{d.id}"
+                                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <i class="fa fa-calendar-o me-2" aria-hidden="true"/>
+                                            Digest of <strong t-esc="d.snapshot_date"/>
+                                        </span>
+                                        <i class="fa fa-chevron-right text-muted" aria-hidden="true"/>
+                                    </a>
+                                </t>
+                            </div>
+                            <div class="d-flex justify-content-center">
+                                <t t-call="portal.pager"/>
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <p class="text-muted fst-italic">
+                                No digest recorded for this team.
+                            </p>
+                        </t>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

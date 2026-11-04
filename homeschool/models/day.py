@@ -1,0 +1,213 @@
+# -*- coding: utf-8 -*-
+from datetime import timedelta
+
+from odoo import api, fields, models
+from odoo.fields import Domain
+from odoo.tools import format_date
+
+from .block import NO_HOURS_KINDS
+from .markdown_mixin import markdown_html_field
+
+JOURNAL_STATES = [
+    ("future", "Not yet"),
+    ("off", "Day off"),
+    ("empty", "Empty"),
+    ("incomplete", "Incomplete"),
+    ("done", "Done"),
+]
+
+
+def iso_week_label(d):
+    """'2026-W38' for a date (ISO year and week)."""
+    y, w, _ = d.isocalendar()
+    return "%d-W%02d" % (y, w)
+
+
+class Day(models.Model):
+    _name = "homeschool.day"
+    _description = "School day"
+    _inherit = ["mail.thread", "homeschool.markdown.mixin", "homeschool.company.mixin"]
+    _order = "date desc"
+    _markdown_fields = ("opening", "evening_before", "debrief", "note")
+
+    name = fields.Char(compute="_compute_name", store=True)
+    student_id = fields.Many2one("homeschool.student", required=True, ondelete="cascade", index=True, check_company=True)
+    date = fields.Date(required=True, index=True)
+    iso_week = fields.Char(compute="_compute_iso_week", store=True, index=True)
+    weekday = fields.Integer(compute="_compute_iso_week", store=True, help="0 = Monday.")
+    start_time = fields.Float(default=9.0, help="When the first block starts (hours, e.g. 9.0).")
+    is_off = fields.Boolean(string="Day off", tracking=True)
+    off_reason = fields.Char()
+
+    opening = fields.Text(help="Markdown: the opening plan (what we do, why, the choice offered).")
+    opening_html = markdown_html_field("opening")
+    evening_before = fields.Text(help="Markdown: the 'evening before' checklist.")
+    evening_before_html = markdown_html_field("evening_before")
+    debrief = fields.Text(help="Markdown.")
+    debrief_html = markdown_html_field("debrief")
+    note = fields.Text(help="Markdown.")
+    note_html = markdown_html_field("note")
+
+    block_ids = fields.One2many("homeschool.block", "day_id", string="Blocks")
+    block_count = fields.Integer(compute="_compute_totals", store=True)
+    planned_minutes = fields.Integer(compute="_compute_totals", store=True)
+    actual_minutes = fields.Integer(compute="_compute_totals", store=True)
+    adult_minutes = fields.Integer(compute="_compute_totals", store=True)
+    end_time = fields.Float(compute="_compute_totals", store=True)
+    material_ids = fields.Many2many("homeschool.material", compute="_compute_material_ids", string="Material of the day")
+
+    deliverable_ids = fields.One2many("homeschool.deliverable", "day_id", string="Deliverables")
+    deliverable_count = fields.Integer(compute="_compute_deliverable_counts")
+    deliverable_done_count = fields.Integer(compute="_compute_deliverable_counts")
+
+    journal_ids = fields.One2many("homeschool.journal", "day_id")
+    journal_state = fields.Selection(
+        JOURNAL_STATES, compute="_compute_journal_state", search="_search_journal_state",
+        help="Not stored: « today » is not a dependency Odoo can track, so a stored value went stale "
+             "on days created ahead of time. Computed on read, searched through a plain domain.",
+    )
+
+    _student_date_unique = models.Constraint(
+        "unique(student_id, date)", "There is already a day for this student on that date."
+    )
+
+    @api.depends("date", "student_id.name")
+    def _compute_name(self):
+        for rec in self:
+            rec.name = rec.date.strftime("%a %Y-%m-%d") if rec.date else self.env._("New day")
+
+    @api.depends("date", "name")
+    @api.depends_context("lang")
+    def _compute_display_name(self):
+        """The stored ``name`` keeps its English weekday (``Mon 2026-03-02``, stable for the
+        exports); what people see is the weekday in their own language: « lun. 2 mars »."""
+        for rec in self:
+            rec.display_name = format_date(self.env, rec.date, date_format="EEE d MMM") if rec.date else rec.name
+
+    @api.depends("date")
+    def _compute_iso_week(self):
+        for rec in self:
+            rec.iso_week = iso_week_label(rec.date) if rec.date else False
+            rec.weekday = rec.date.weekday() if rec.date else 0
+
+    @api.depends("block_ids.duration_planned", "block_ids.minutes_total", "block_ids.minutes_adult_present",
+                 "block_ids.end_time", "block_ids.status")
+    def _compute_totals(self):
+        for rec in self:
+            blocks = rec.block_ids
+            rec.block_count = len(blocks)
+            rec.planned_minutes = sum(blocks.filtered(lambda b: b.kind != "pause").mapped("duration_planned"))
+            rec.actual_minutes = sum(blocks.mapped("minutes_total"))
+            rec.adult_minutes = sum(blocks.mapped("minutes_adult_present"))
+            rec.end_time = max(blocks.mapped("end_time")) if blocks else rec.start_time
+
+    @api.depends("deliverable_ids.done")
+    def _compute_deliverable_counts(self):
+        for rec in self:
+            rec.deliverable_count = len(rec.deliverable_ids)
+            rec.deliverable_done_count = len(rec.deliverable_ids.filtered("done"))
+
+    @api.depends("block_ids.material_ids")
+    def _compute_material_ids(self):
+        for rec in self:
+            rec.material_ids = rec.block_ids.material_ids
+
+    @api.depends("date", "is_off", "block_ids.status", "block_ids.kind", "block_ids.minutes_total",
+                 "block_ids.actuals_recorded", "block_ids.adult_recorded", "journal_ids")
+    def _compute_journal_state(self):
+        """``incomplete`` while an hour-bearing, non-skipped block lacks its minutes or its
+        adult-present minutes, or while the day has no journal entry — the same rule as the
+        journal API's ``status``. ``NO_HOURS_KINDS`` blocks never count. A day with no
+        hour-bearing block and no entry is ``empty`` (nothing was planned nor written: there
+        is nothing to close)."""
+        today = fields.Date.context_today(self)
+        for rec in self:
+            if rec.is_off:
+                rec.journal_state = "off"
+            elif rec.date and rec.date > today:
+                rec.journal_state = "future"
+            elif not rec.journal_ids and not rec._hour_blocks():
+                rec.journal_state = "empty"
+            else:
+                rec.journal_state = "incomplete" if (rec._pending_blocks() or not rec.journal_ids) else "done"
+
+    def _hour_blocks(self):
+        """The day's hour-bearing blocks (``NO_HOURS_KINDS`` excepted)."""
+        self.ensure_one()
+        return self.block_ids.filtered(lambda b: b.kind not in NO_HOURS_KINDS)
+
+    def _pending_blocks(self):
+        """The hour-bearing blocks of the day still waiting for their minutes or their
+        adult-present minutes (skipped ones excepted)."""
+        self.ensure_one()
+        return self.block_ids.filtered(
+            lambda b: b.kind not in NO_HOURS_KINDS and b.status != "skipped"
+            and not (b.actuals_recorded and b.adult_recorded)
+        )
+
+    # the same rules as ``_hour_blocks`` and ``_pending_blocks``, as domains on homeschool.block
+    _HOUR_BLOCK_DOMAIN = [("kind", "not in", NO_HOURS_KINDS)]
+    _PENDING_BLOCK_DOMAIN = [
+        ("kind", "not in", NO_HOURS_KINDS), ("status", "!=", "skipped"),
+        "|", ("actuals_recorded", "=", False), ("adult_recorded", "=", False),
+    ]
+
+    @api.model
+    def _search_journal_state(self, operator, value):
+        """``journal_state`` as a plain domain, one per value (``empty``, ``incomplete`` and
+        ``done`` partition the non-off days up to today)."""
+        if operator not in ("=", "!=", "in", "not in"):
+            raise NotImplementedError("Unsupported operator %r on journal_state" % operator)
+        values = {value} if isinstance(value, str) else set(value or ())
+        if operator in ("!=", "not in"):
+            values = {state for state, _ in JOURNAL_STATES} - values
+        today = fields.Date.context_today(self)
+        past = [("is_off", "=", False), ("date", "<=", today)]
+        per_state = {
+            "off": [("is_off", "=", True)],
+            "future": [("is_off", "=", False), ("date", ">", today)],
+            "empty": past + [("journal_ids", "=", False), ("block_ids", "not any", self._HOUR_BLOCK_DOMAIN)],
+            # no entry with an hour-bearing block, or a pending block (always hour-bearing)
+            "incomplete": past + ["|", "&", ("journal_ids", "=", False), ("block_ids", "any", self._HOUR_BLOCK_DOMAIN),
+                                  ("block_ids", "any", self._PENDING_BLOCK_DOMAIN)],
+            "done": past + [("journal_ids", "!=", False), ("block_ids", "not any", self._PENDING_BLOCK_DOMAIN)],
+        }
+        return Domain.OR(Domain(per_state[state]) for state in per_state if state in values)
+
+    def action_open_close_wizard(self):
+        """« Fermer la journée »: the wizard on this day, first hour-bearing block."""
+        self.ensure_one()
+        return self.env["homeschool.close.day.wizard"].create({"day_id": self.id})._reopen()
+
+    def action_recompute_times(self):
+        self.block_ids._compute_times()
+        return True
+
+    @api.model
+    def _get_or_create(self, student, date):
+        day = self.search([("student_id", "=", student.id), ("date", "=", date)], limit=1)
+        return day or self.create({"student_id": student.id, "date": date, "company_id": student.company_id.id})
+
+    # ------------------------------------------------------------------
+    # Week generation from templates (UC-03)
+    # ------------------------------------------------------------------
+    @api.model
+    def generate_week(self, student, any_date):
+        """Create the days and blocks of the ISO week containing ``any_date`` from the
+        block templates. Days already holding blocks, and days off, are skipped.
+        Returns (days_created, days_skipped)."""
+        monday = any_date - timedelta(days=any_date.weekday())
+        Template = self.env["homeschool.block.template"]
+        created, skipped = self.browse(), self.browse()
+        for offset in range(7):
+            d = monday + timedelta(days=offset)
+            templates = Template._for(student, d.weekday())
+            if not templates:
+                continue
+            day = self._get_or_create(student, d)
+            if day.is_off or day.block_ids:
+                skipped |= day
+                continue
+            day.block_ids = [fields.Command.create(t._to_block_vals()) for t in templates]
+            created |= day
+        return created, skipped

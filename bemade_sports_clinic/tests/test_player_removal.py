@@ -203,7 +203,7 @@ class TestPlayerRemoval(TransactionCase):
         self.assertEqual(result['type'], 'ir.actions.client')
         self.assertEqual(result['tag'], 'display_notification')
         self.assertEqual(result['params']['title'], 'Removal Request Submitted')
-        self.assertIn('has been submitted and will be processed by an administrator', result['params']['message'])
+        self.assertIn("has been submitted to the team's head therapist", result['params']['message'])
         
         # Now run the cron job to create the activity
         self.env['sports.patient']._cron_handle_pending_removals()

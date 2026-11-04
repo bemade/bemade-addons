@@ -1,6 +1,6 @@
 {
     "name": "CBET / TWI Competency & Certification Engine",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.15.0",
     "category": "Human Resources/Skills Management",
     "license": "LGPL-3",
     "author": "Bemade Inc.",
@@ -23,15 +23,45 @@ Within Industry (TWI) engine extending the Odoo 19.0 hr / hr_skills stack.
   closure of obligatory prerequisites; per-employee qualification state with
   automatic suspension and restoration, tied back to a coarse hr.skill
   certification on hr.employee.skill.
+- Job positions: a job position lists the standards it requires (CBET tab
+  of the job position form, or "Job positions" on the standard). Every
+  active employee in that position gets a qualification on each of them,
+  so their gaps show in the training matrix; moving the employee to another
+  position archives the old position's qualifications (history and
+  certificates stay). Qualifications added by hand are never touched.
 - Signed evaluations: two-part (practical criteria and oral questions),
   snapshotted from the published competency, computed pass indicators, dual
   evaluator and technician signatures with locking, targeted retake
   (reprise ciblee), and evidence retention.
-- Certifications and validity: time-limited competency certifications with an
-  expiry engine and activity nudges; qualification-level early warning rides
+- Certifications and validity: time-limited competency certifications —
+  issued by evaluation or entered by hand (validity end filled from the
+  competency's validity, the previous certificate superseded) — with an
+  expiry engine and to-dos for the manager and the HR responsible set in
+  the settings; qualification-level early warning rides
   the native hr.employee.skill cron.
-- Reports: a printable evaluation grid and an employees-by-competencies
-  training matrix.
+- Reports: a printable evaluation grid, an employees-by-competencies
+  training matrix, and the four training documents printed from the live
+  competency as Letter PDFs — competency sheet (14 sections), procedure,
+  recto/verso field job aid and trainer demonstration notes — in French or
+  English through the "Print documents" wizard, watermarked while in draft;
+  a printable legend of the job-aid pictograms.
+- Content model: the full competency fiche (context, knowledge, safety,
+  tools, documents, evidence, references, protocol, validity, trainer meta),
+  the operational procedure, structured recto/verso field job aids (one per
+  equipment variant, with an icon catalog shipping its own SVG pictogram
+  set) and the trainer's demonstration
+  notes — with their English editions as translations. An import wizard
+  gives an initial load from a markdown archive; content is then authored in
+  Odoo, and a re-import never overwrites a competency edited in Odoo since its
+  last import unless explicitly told to.
+- In-Odoo authoring: the competency form is the work surface for the four
+  documents (sheet, procedure, job aids, demonstration notes) with a PDF
+  preview per document, a structured recto/verso job-aid editor with
+  "Duplicate as variant", a revision history per document body and language
+  (restore one language without touching the other), a translation-missing
+  badge and filter, and a publish confirmation listing what changed since the
+  last version. CBET Trainers edit the content of draft competencies;
+  criteria, questions, protocol, policy and publication stay Manager-only.
 
 Content-agnostic; competency content is seeded separately.
 """,
@@ -39,13 +69,25 @@ Content-agnostic; competency content is seeded separately.
         "hr",
         "hr_skills",
     ],
+    "external_dependencies": {"python": ["markdown2"]},
     "data": [
         "security/hr_skills_cbet_groups.xml",
         "security/ir.model.access.csv",
         "security/cbet_record_rules.xml",
         "data/cbet_cron.xml",
+        "data/cbet_icon_data.xml",
+        "data/cbet_icon_svg_data.xml",
+        "data/report_paperformat.xml",
         "report/cbet_evaluation_report.xml",
+        "report/cbet_document_reports.xml",
+        "report/cbet_icon_legend_report.xml",
         "views/cbet_domain_views.xml",
+        "views/cbet_icon_views.xml",
+        "views/cbet_print_wizard_views.xml",
+        "views/cbet_content_revision_views.xml",
+        "views/cbet_job_aid_variant_wizard_views.xml",
+        "views/cbet_publish_wizard_views.xml",
+        "views/cbet_job_aid_views.xml",
         "views/cbet_competency_views.xml",
         "views/cbet_standard_views.xml",
         "views/cbet_evaluation_views.xml",
@@ -53,7 +95,9 @@ Content-agnostic; competency content is seeded separately.
         "views/cbet_qualification_views.xml",
         "views/cbet_matrix_views.xml",
         "views/res_config_settings_views.xml",
+        "views/hr_job_views.xml",
         "views/cbet_menus.xml",
+        "views/cbet_import_views.xml",
     ],
     "application": True,
     "installable": True,

@@ -17,5 +17,6 @@ class CbetQuestion(models.Model):
     expected_answer = fields.Text(translate=True)
     section_ref = fields.Char(string="Fiche section reference")
     essential = fields.Boolean(
-        help="Essential questions must be 'acquis' for the evaluation to pass.",
+        help="Essential questions must be answered correctly for the "
+             "evaluation to pass.",
     )

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <!-- Task 1601: the training recommendation history is read by the portal
+         staff of the player's teams — therapists AND coaches (coaches see the
+         recommendation itself). Read-only: rows are only ever written by
+         server code (sudo). Internal users rely on the ACL, like the injury
+         note history. -->
+    <data noupdate="1">
+        <record id="portal_training_history_access" model="ir.rule">
+            <field name="name">Portal Team Staff Access to Training Recommendation History</field>
+            <field name="model_id" ref="model_sports_patient_training_history"/>
+            <field name="groups" eval="[(6, 0, [ref('bemade_sports_clinic.group_portal_treatment_professional'), ref('bemade_sports_clinic.group_portal_team_coach')])]"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_unlink" eval="False"/>
+            <field name="domain_force">[('patient_id.team_ids.staff_ids.user_ids', 'in', user.id)]</field>
+        </record>
+    </data>
+</odoo>

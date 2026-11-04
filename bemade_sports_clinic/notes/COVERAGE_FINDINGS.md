@@ -17,7 +17,8 @@ and were repaired for the 19.0 API. Common drifts fixed:
 - HttpCase `self.csrf_token()` dropped in 19.0 → harvest token from a rendered form.
 - Renamed portal routes: `/my/player/injury` → `/my/injury/edit`, `/my/patient/injury/update` → `/my/injury/save`.
 - `sports.patient.contact`: `relationship`/`phone` → `contact_type`/`mobile`.
-- `treatment_professional_ids` is m2m to `res.users` (link the user, not the partner).
+- `treatment_professional_ids` was m2m to `res.users` (link the user, not the partner) —
+  removed with `team_id` in #1240; team staff is the treater list.
 
 Now green and registered: `test_e2e_workflows`, `test_injury_assignment`,
 `test_injury_notifications`, `test_treatment_notes`, plus the passing methods of

@@ -1,0 +1,209 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* appointment_portal_staff
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-25 12:38+0000\n"
+"PO-Revision-Date: 2026-08-25 12:38+0000\n"
+"Last-Translator: Bemade Inc.\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+msgid "<option value=\"\">All types</option>"
+msgstr "<option value=\"\">Tous les types</option>"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+msgid ""
+"<span class=\"btn btn-link btn-sm p-0\" title=\"Details\">\n"
+"                                    <i class=\"fa fa-chevron-down o_aps_chevron\" role=\"img\" aria-label=\"Details\"/>\n"
+"                                </span>"
+msgstr ""
+"<span class=\"btn btn-link btn-sm p-0\" title=\"Détails\">\n"
+"                                    <i class=\"fa fa-chevron-down o_aps_chevron\" role=\"img\" aria-label=\"Détails\"/>\n"
+"                                </span>"
+
+#. module: appointment_portal_staff
+#. odoo-python
+#: code:addons/appointment_portal_staff/controllers/portal.py:0
+msgid "All"
+msgstr "Toutes"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+msgid "Apply"
+msgstr "Appliquer"
+
+#. module: appointment_portal_staff
+#: model:ir.model,name:appointment_portal_staff.model_appointment_type
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings_calendar
+msgid "Appointment Type"
+msgstr "Type de rendez-vous"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings_calendar
+msgid "Booking"
+msgstr "Réservation"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_home_menu_booking
+msgid "Calendar"
+msgstr "Calendrier"
+
+#. module: appointment_portal_staff
+#: model:ir.model,name:appointment_portal_staff.model_calendar_event
+msgid "Calendar Event"
+msgstr "Événement calendrier"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+msgid "Calendar view"
+msgstr "Vue calendrier"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.booking_status_badge
+msgid "Cancelled"
+msgstr "Annulée"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings_calendar
+msgid "Client"
+msgstr "Client"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings_calendar
+msgid "Close"
+msgstr "Fermer"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+msgid "Date &amp; Time"
+msgstr "Date et heure"
+
+#. module: appointment_portal_staff
+#. odoo-python
+#: code:addons/appointment_portal_staff/controllers/portal.py:0
+msgid "Date (newest first)"
+msgstr "Date (plus récente d'abord)"
+
+#. module: appointment_portal_staff
+#. odoo-python
+#: code:addons/appointment_portal_staff/controllers/portal.py:0
+msgid "Date (oldest first)"
+msgstr "Date (plus ancienne d'abord)"
+
+#. module: appointment_portal_staff
+#: model:ir.model.fields,field_description:appointment_portal_staff.field_appointment_type__display_name
+#: model:ir.model.fields,field_description:appointment_portal_staff.field_calendar_event__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings_calendar
+msgid "Email"
+msgstr "Courriel"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings_calendar
+msgid "End"
+msgstr "Fin"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+msgid "From"
+msgstr "Du"
+
+#. module: appointment_portal_staff
+#: model:ir.model.fields,field_description:appointment_portal_staff.field_appointment_type__id
+#: model:ir.model.fields,field_description:appointment_portal_staff.field_calendar_event__id
+msgid "ID"
+msgstr "Identifiant"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings_calendar
+msgid "List view"
+msgstr "Vue liste"
+
+#. module: appointment_portal_staff
+#. odoo-python
+#: code:addons/appointment_portal_staff/controllers/portal.py:0
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings_calendar
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_home_booking
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_home_menu_booking
+msgid "My Bookings"
+msgstr "Mes réservations"
+
+#. module: appointment_portal_staff
+#. odoo-python
+#: code:addons/appointment_portal_staff/controllers/portal.py:0
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings_calendar
+msgid "My Bookings — Calendar"
+msgstr "Mes réservations — Calendrier"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+msgid "No details provided."
+msgstr "Aucun détail fourni."
+
+#. module: appointment_portal_staff
+#. odoo-python
+#: code:addons/appointment_portal_staff/controllers/portal.py:0
+msgid "Past"
+msgstr "Passées"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings_calendar
+msgid "Phone"
+msgstr "Téléphone"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_home_booking
+msgid "See the appointments clients booked with you"
+msgstr "Consultez les rendez-vous que vos clients ont réservés avec vous"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings_calendar
+msgid "Start"
+msgstr "Début"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings_calendar
+msgid "Status"
+msgstr "Statut"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+msgid "To"
+msgstr "Au"
+
+#. module: appointment_portal_staff
+#. odoo-python
+#: code:addons/appointment_portal_staff/controllers/portal.py:0
+msgid "Upcoming"
+msgstr "À venir"
+
+#. module: appointment_portal_staff
+#: model:ir.model.fields,field_description:appointment_portal_staff.field_appointment_type__staff_user_ids
+msgid "Users"
+msgstr "Utilisateurs"
+
+#. module: appointment_portal_staff
+#: model_terms:ir.ui.view,arch_db:appointment_portal_staff.portal_my_bookings
+msgid "You have no bookings for this period."
+msgstr "Vous n'avez aucune réservation pour cette période."

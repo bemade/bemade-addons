@@ -180,7 +180,8 @@ class TestCovSportsEventTimesheet(TransactionCase):
         self.assertEqual(self.event.state, 'confirmed')
 
     def test_soft_delete_owner_reappears_in_missing(self):
-        owner = self._make_user('cov_ts_sd_missing', 'base.group_user')
+        owner = self._make_user('cov_ts_sd_missing', 'base.group_user',
+                                'bemade_sports_clinic.group_sports_clinic_treatment_professional')
         self.event.assigned_staff_ids = [Command.link(owner.id)]
         ts = self._ts(user_id=owner.id)
         self.assertNotIn(owner, self.event._get_missing_timesheet_user_ids())

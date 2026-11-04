@@ -28,6 +28,7 @@
                         </group>
                         <group>
                             <field name="endpoint"/>
+                            <field name="public_endpoint" placeholder="Same as Endpoint"/>
                             <field name="bucket"/>
                             <field name="region"/>
                         </group>

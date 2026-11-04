@@ -143,12 +143,10 @@
       <field name="diagnosis">Entorse du genou</field>
       <field name="predicted_resolution_date">2025-10-05</field>
       <field name="patient_id" ref="patient_7"/>
-      <field name="team_id" ref="team_mcgill_rugby_m"/>
       <field name="stage">active</field>
       <field name="parental_consent">yes</field>
       <field name="external_notes">Swelling reduced; continue RICE protocol</field>
       <field name="internal_notes">Consider MRI if instability persists</field>
-      <field name="treatment_professional_ids" eval="[Command.set([ref('mcgill_therapist_user_1')])]"/>
     </record>
 
     <record id="injury_5" model="sports.patient.injury">
@@ -157,12 +155,10 @@
       <field name="predicted_resolution_date">2025-10-01</field>
       <field name="resolution_date">2025-09-25</field>
       <field name="patient_id" ref="patient_8"/>
-      <field name="team_id" ref="team_mcgill_soccer_w"/>
       <field name="stage">resolved</field>
       <field name="parental_consent">na</field>
       <field name="external_notes">Cast removed; PT phase started</field>
       <field name="internal_notes">No complications</field>
-      <field name="treatment_professional_ids" eval="[Command.set([ref('mcgill_therapist_user_2')])]"/>
     </record>
 
     <!-- Treatment Notes (general and injury-specific) -->

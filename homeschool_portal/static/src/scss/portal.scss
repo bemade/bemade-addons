@@ -1,0 +1,75 @@
+// Homeschool portal: light touches on the stock portal look, and a day page that prints well.
+.o_hs_portal {
+  .o_hs_block {
+    border-left: 4px solid var(--o-hs-kind-color, #{$gray-400});
+    &.o_hs_kind_pause {
+      --o-hs-kind-color: #{$gray-300};
+    }
+    &.o_hs_kind_opening,
+    &.o_hs_kind_debrief {
+      --o-hs-kind-color: #{$info};
+    }
+    &.o_hs_kind_bloc {
+      --o-hs-kind-color: #{$primary};
+    }
+    &.o_hs_kind_reading {
+      --o-hs-kind-color: #{$success};
+    }
+    &.o_hs_kind_projects,
+    &.o_hs_kind_bonus {
+      --o-hs-kind-color: #{$warning};
+    }
+    &.o_hs_kind_ressource {
+      --o-hs-kind-color: #{$secondary};
+    }
+  }
+  .o_hs_time {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .o_hs_md {
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+  .o_hs_tick {
+    font-size: 1.5rem;
+    line-height: 1;
+    padding: 0 0.25rem;
+    &.o_hs_done {
+      color: $success;
+    }
+  }
+  .o_hs_deliverable.o_hs_done .o_hs_deliverable_name {
+    text-decoration: line-through;
+    opacity: 0.7;
+  }
+  .o_hs_week td {
+    vertical-align: top;
+    min-width: 9rem;
+  }
+  .o_hs_entry_words .badge {
+    font-size: 0.9rem;
+  }
+}
+
+@media print {
+  .o_hs_portal .o_hs_noprint,
+  .o_portal_navbar,
+  .o_footer,
+  footer,
+  header,
+  .o_portal_submenu,
+  .breadcrumb {
+    display: none !important;
+  }
+  .o_hs_portal .o_hs_block {
+    break-inside: avoid;
+  }
+  .o_hs_portal .o_hs_tick {
+    color: #000 !important;
+  }
+  body {
+    background: #fff;
+  }
+}

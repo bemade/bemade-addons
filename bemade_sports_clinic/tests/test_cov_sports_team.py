@@ -1,7 +1,17 @@
+import unittest
+
 from odoo import Command
 from odoo.exceptions import ValidationError
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import Form, TransactionCase, tagged
 from odoo.tools import mute_logger
+
+# Task 1536: phone_validation exposes no public "lib present" flag; probe the
+# optional dependency directly so the formatting tests skip (with a reason)
+# on an image without it instead of failing.
+try:
+    import phonenumbers
+except ImportError:  # pragma: no cover - exercised on the CI image only
+    phonenumbers = None
 
 
 @tagged('post_install', '-at_install')
@@ -102,6 +112,15 @@ class TestCovSportsTeam(TransactionCase):
         self.team.remove_access(self.internal_user)
         self.assertFalse(staff.exists())
 
+    def test_write_accepts_vals_keyword(self):
+        """Regression (task 1378): sports.team.staff.write() must accept the
+        standard Odoo ``vals`` keyword so external RPC / update_records writes
+        (which call write(vals=...) by keyword) succeed. Before the param
+        rename this raised: write() got an unexpected keyword argument 'vals'."""
+        staff = self._staff('coach', silent_notifications=False)
+        staff.write(vals={'silent_notifications': True})
+        self.assertTrue(staff.silent_notifications)
+
     # ----- portal access compute + group sync -----
 
     def test_compute_has_portal_access(self):
@@ -127,3 +146,55 @@ class TestCovSportsTeam(TransactionCase):
         staff = self._staff('therapist', partner=self.internal_user.partner_id)
         staff._update_treatment_professional_group(specific_user=self.internal_user)
         self.assertIn(self.tp_group, self.internal_user.group_ids)
+
+    # ----- staff phone auto-format (task 1345) -----
+
+    @unittest.skipUnless(phonenumbers, "phonenumbers not installed on this image")
+    def test_staff_phone_onchange_company_country_fallback(self):
+        """Adding a staff line via the team Form auto-formats a local mobile to
+        INTERNATIONAL even when the new partner has NO country_id, falling back
+        to the company country (regression for task 1345)."""
+        self.env.company.country_id = self.env.ref('base.ca')
+        # A brand-new staff partner with no country set.
+        partner = self.env['res.partner'].create({
+            'name': 'No-Country Coach', 'is_company': False,
+        })
+        self.assertFalse(partner.country_id)
+        with Form(self.env['sports.team']) as team_form:
+            team_form.name = 'Phone Fmt Team'
+            # Task 1416: the team form's editable staff list is permanent_staff_ids.
+            with team_form.permanent_staff_ids.new() as line:
+                line.partner_id = partner
+                line.role = 'coach'
+                line.mobile = '5145551234'
+                # The onchange fires inside the Form; mobile is reformatted.
+                formatted = line.mobile
+        self.assertTrue(formatted.startswith('+1'),
+                        "local number should auto-format to INTERNATIONAL via "
+                        "the company-country fallback, got %r" % formatted)
+        self.assertIn('514', formatted)
+
+    @unittest.skipUnless(phonenumbers, "phonenumbers not installed on this image")
+    def test_staff_phone_format_partner_country(self):
+        """The partner-has-country path also formats to INTERNATIONAL."""
+        ca = self.env.ref('base.ca')
+        partner = self.env['res.partner'].create({
+            'name': 'CA Coach', 'is_company': False, 'country_id': ca.id,
+        })
+        staff = self._staff('coach', partner=partner)
+        formatted = staff._phone_format('5145551234', force_format='INTERNATIONAL')
+        self.assertTrue(formatted.startswith('+1'))
+        self.assertIn('514', formatted)
+
+    @mute_logger('odoo.addons.phone_validation.tools.phone_validation')
+    def test_staff_phone_format_invalid_passthrough(self):
+        """An unparseable number passes through untouched, no exception."""
+        ca = self.env.ref('base.ca')
+        partner = self.env['res.partner'].create({
+            'name': 'Bad Number Coach', 'is_company': False, 'country_id': ca.id,
+        })
+        staff = self._staff('doctor', partner=partner)
+        self.assertEqual(
+            staff._phone_format('not-a-number', force_format='INTERNATIONAL'),
+            'not-a-number',
+        )

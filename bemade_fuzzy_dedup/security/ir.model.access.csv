@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_bemade_dedup_target,bemade.dedup.target,model_bemade_dedup_target,base.group_system,1,1,1,1
+access_bemade_dedup_group,bemade.dedup.group,model_bemade_dedup_group,base.group_system,1,1,1,1
+access_bemade_dedup_group_record,bemade.dedup.group.record,model_bemade_dedup_group_record,base.group_system,1,1,1,1

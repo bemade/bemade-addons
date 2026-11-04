@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="conversation_split_wizard_view_form" model="ir.ui.view">
+        <field name="name">conversation.split.wizard.view.form</field>
+        <field name="model">conversation.split.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Split conversation">
+                <p class="text-muted">
+                    The selected message and every later message move to a new
+                    conversation. Nothing is copied and no email is sent.
+                </p>
+                <group>
+                    <group>
+                        <field name="conversation_id" invisible="1" />
+                        <field name="message_id" options="{'no_create': True}" />
+                        <field name="name" />
+                    </group>
+                    <group>
+                        <field name="user_id" />
+                    </group>
+                </group>
+                <notebook>
+                    <page string="Participants" name="participants">
+                        <field name="participant_line_ids">
+                            <list editable="bottom">
+                                <field
+                  name="source_participant_id"
+                  column_invisible="1"
+                />
+                                <field name="partner_id" />
+                                <field name="email" />
+                                <field name="kind" />
+                                <field name="role" />
+                            </list>
+                        </field>
+                    </page>
+                    <page string="Linked Records" name="links">
+                        <field name="link_line_ids">
+                            <list create="0" edit="0">
+                                <field name="res_model" column_invisible="1" />
+                                <field name="res_id" column_invisible="1" />
+                                <field name="record_display_name" />
+                                <field name="reason" />
+                            </list>
+                        </field>
+                    </page>
+                </notebook>
+                <footer>
+                    <button
+            string="Split"
+            name="action_split"
+            type="object"
+            class="btn-primary"
+            data-hotkey="q"
+          />
+                    <button string="Cancel" special="cancel" data-hotkey="x" />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

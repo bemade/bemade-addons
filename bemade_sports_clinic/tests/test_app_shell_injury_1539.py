@@ -1,0 +1,333 @@
+"""Task 1539 — injuries on the app shell: new injury (device draft +
+« Créer »), injury edit (saved on blur, status / visibility instant with
+undo). Synthetic fixtures only.
+
+Acceptance criteria covered here:
+
+* UC-I1 (AC1) Switch OFF: /my/patient/injury/new, the « created » landing
+  and /my/injury/edit render today's templates; with the switch ON the
+  clinic's modal fragments still render today's form bodies (no shell).
+* UC-I2 (AC4) New injury: every typed field is a DEVICE draft keyed under
+  ``sports.patient.<id>.new_injury.``; opening the page creates nothing; the
+  form posts to today's create route; the « created » landing carries the
+  draft-clear marker; therapist-only fields are not rendered for a coach.
+* UC-I3 (AC3/AC5) Injury edit: server autosave fields; the status and the
+  visibility are instant segmented fields for therapists only; a coach sees
+  neither the internal notes nor the delete action, and cannot reword a
+  verified diagnosis; the delete sheet posts to today's route with CSRF.
+* UC-I4 (AC5) A hidden injury never reaches a coach, on either page.
+* UC-N1 (AC1) Switch OFF: the notes page and the note history render
+  today's templates.
+* UC-N2 (AC3/AC4) Notes page in the shell: « Ajouter » is a device draft
+  posting to today's route (therapists only); only the notes the viewer
+  authored are editable in place (server autosave); the « added » landing
+  drops the draft.
+* UC-N3 (AC5) Note history (task 1581: the injury page's sheet fragment):
+  a coach gets the external rows only (even with ?scope=internal), a
+  therapist all of them + the scope filter.
+  Task 1616: /my/injury/edit lands on the open injury card, which carries
+  the same fields and actions.
+* UC-D1 (AC1/AC2/AC5) Injury documents (task 1616: the open card's
+  « Documents »): switch OFF = today's page; in the
+  shell a therapist gets upload + a delete sheet posting (CSRF) to today's
+  POST route, a coach only the list and the download links.
+"""
+import base64
+import json
+from datetime import timedelta
+
+from odoo import Command, fields
+from odoo.tests import tagged
+
+from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
+
+
+@tagged('post_install', '-at_install')
+class TestAppShellInjury1539(AppShellCommon):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        env = cls.env
+        cls.injury.sudo().write({'internal_notes': 'TP-only synthetic remark',
+                                 'external_notes': 'Visible synthetic remark'})
+        cls.hidden = env['sports.patient.injury'].create({
+            'patient_id': cls.player.id, 'diagnosis': 'Hidden synthetic injury',
+            'hidden_from_coaches': True,
+        })
+        now = fields.Datetime.now()
+        cls.clinic = env['sports.event'].create({
+            'name': 'T1539 Clinic', 'event_type': 'clinic',
+            'team_ids': [Command.set([cls.team_a.id])],
+            'date_start': now, 'date_end': now + timedelta(hours=2),
+            'state': 'confirmed', 'assigned_staff_ids': [Command.set([cls.tp.id])],
+        })
+        cls.new_url = '/my/patient/injury/new?patient_id=%s' % cls.player.id
+        cls.edit_url = '/my/injury/edit?injury_id=%s' % cls.injury.id
+
+    @staticmethod
+    def _owl(tree):
+        out = {}
+        for node in tree.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+            props = json.loads(node.get('props'))
+            out[props.get('field') or props.get('name')] = props
+        return out
+
+    # -- UC-I1 -----------------------------------------------------------
+    def test_switch_off_legacy(self):
+        self._login_tp()
+        text, tree = self._get(self.new_url)
+        self.assertIn('id="injury_date_na"', text)
+        self.assertIsNone(self._shell(tree))
+        text, tree = self._get(self.edit_url)
+        self.assertIn('id="deleteInjuryModal"', text)
+        self.assertIsNone(self._shell(tree))
+
+    def test_switch_off_created_landing_legacy(self):
+        self._login_coach()
+        resp = self.url_open('/my/patient/injury/create', data={
+            'csrf_token': self._csrf(), 'patient_id': self.player.id,
+            'diagnosis': 'Synthetic legacy report', 'injury_date': '2026-03-03'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn('data-sc-app-shell', resp.text)
+        self.assertNotIn('data-sc-draft-clear', resp.text)
+
+    def test_clinic_fragments_stay_legacy_with_switch_on(self):
+        self._switch(True)
+        self._login_tp()
+        for url in ('/my/injury/%s/form/fragment?clinic_id=%s' % (self.injury.id, self.clinic.id),
+                    '/my/patient/injury/new/fragment?patient_id=%s&clinic_id=%s'
+                    % (self.player.id, self.clinic.id)):
+            resp = self.url_open(url)
+            self.assertEqual(resp.status_code, 200, url)
+            self.assertNotIn('data-sc-app-shell', resp.text)
+            self.assertNotIn('owl-component', resp.text)
+            self.assertIn('name="csrf_token"', resp.text)
+
+    # -- UC-I2 -----------------------------------------------------------
+    def test_new_injury_is_a_device_draft(self):
+        self._switch(True)
+        count = self.env['sports.patient.injury'].search_count([('patient_id', '=', self.player.id)])
+        self._login_coach()
+        _text, tree = self._get(self.new_url)
+        self.assertIsNotNone(self._shell(tree))
+        owl = self._owl(tree)
+        prefix = 'sports.patient.%s.new_injury.' % self.player.id
+        for name in ('diagnosis', 'injury_date'):
+            self.assertEqual(owl[name]['mode'], 'draft', name)
+            self.assertEqual(owl[name]['draftKey'], prefix + name)
+        self.assertEqual(owl['injury_date']['naName'], 'injury_date_na')
+        # Owner review 2026-10-25 (#1675): a coach's report has no external note.
+        for name in ('external_notes', 'internal_notes', 'parental_consent', 'predicted_resolution_date'):
+            self.assertNotIn(name, owl, name)
+        form = tree.xpath('//form[@data-sc-form="injury.new"]')[0]
+        self.assertEqual(form.get('action'), '/my/patient/injury/create')
+        self._login_tp()
+        _text, tree = self._get(self.new_url)
+        owl = self._owl(tree)
+        for name in ('external_notes', 'internal_notes', 'parental_consent', 'predicted_resolution_date'):
+            self.assertIn(name, owl, name)
+        self.assertEqual(owl['external_notes']['draftKey'], prefix + 'external_notes')
+        # Opening the page (twice) created nothing.
+        self.assertEqual(self.env['sports.patient.injury'].search_count(
+            [('patient_id', '=', self.player.id)]), count)
+
+    def test_create_lands_on_draft_clear(self):
+        self._switch(True)
+        self._login_coach()
+        count = self.env['sports.patient.injury'].search_count([('patient_id', '=', self.player.id)])
+        resp = self.url_open('/my/patient/injury/create', data={
+            'csrf_token': self._csrf(), 'patient_id': self.player.id,
+            'diagnosis': 'Synthetic report', 'injury_date': '2026-03-03',
+            'external_notes': 'Synthetic external',
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(self.env['sports.patient.injury'].search_count(
+            [('patient_id', '=', self.player.id)]), count + 1)
+        self.assertIn('data-sc-draft-clear="sports.patient.%s.new_injury."' % self.player.id,
+                      resp.text)
+
+    # -- UC-I3 -----------------------------------------------------------
+    def _card(self, tree):
+        """Task 1616: the injury page is the open card (an old link lands
+        on it) — its fields are the card's."""
+        card = tree.xpath('//details[@id="injury-%s"]' % self.injury.id)[0]
+        self.assertEqual(card.get('open'), 'open')
+        return card
+
+    def test_edit_therapist(self):
+        self._switch(True)
+        self._login_tp()
+        text, tree = self._get(self.edit_url)
+        tree = self._card(tree)
+        owl = self._owl(tree)
+        # Task 1631: status, consent and visibility are pill dropdowns.
+        for name in ('stage', 'parental_consent', 'hidden_from_coaches'):
+            self.assertNotIn(name, owl)
+        pills = {p.get('data-sc-field'): p for p in tree.xpath('.//*[@data-sc-pill-select]')}
+        self.assertEqual(set(pills), {'stage', 'parental_consent', 'hidden_from_coaches'})
+        self.assertEqual(pills['hidden_from_coaches'].get('data-sc-old-value'), '0')
+        self.assertEqual(owl['sc_injury_date']['inputType'], 'date_na')
+        for name in ('diagnosis', 'external_notes', 'internal_notes', 'predicted_resolution_date',
+                     'resolution_date'):
+            self.assertEqual(owl[name]['mode'], 'server', name)
+        self.assertIn('TP-only synthetic remark', text)
+        form = tree.xpath('.//dialog[@id="sc_delete_injury_sheet_%s"]//form' % self.injury.id)[0]
+        self.assertEqual(form.get('action'), '/my/injury/delete')
+        self.assertEqual(form.xpath('.//input[@name="injury_id"]/@value'), [str(self.injury.id)])
+        self.assertTrue(form.xpath('.//input[@name="csrf_token"]/@value')[0])
+
+    def test_edit_coach(self):
+        self._switch(True)
+        self._login_coach()
+        text, tree = self._get(self.edit_url)
+        tree = self._card(tree)
+        owl = self._owl(tree)
+        # Owner review 2026-10-25 (#1675): the external note reads, no editor.
+        self.assertEqual(set(owl), {'sc_injury_date'})
+        self.assertIn('Visible synthetic remark', text)
+        self.assertNotIn('TP-only synthetic remark', text)
+        self.assertFalse(tree.xpath('.//*[@data-sc-action="injury.delete"]'))
+        # The diagnosis and status read in the card's summary (task 1616).
+        summary = tree.xpath('./summary')[0]
+        self.assertIn(self.injury.diagnosis or '', summary.text_content())
+        self.assertFalse([p for p in tree.xpath('.//owl-component/@props') if '"stage"' in p])
+
+    # -- UC-I4 -----------------------------------------------------------
+    def test_hidden_injury_never_reaches_a_coach(self):
+        self._switch(True)
+        self._login_coach()
+        _text, tree = self._get('/my/player?player_id=%s&tab=injuries' % self.player.id)
+        self.assertNotIn(str(self.hidden.id), tree.xpath('//*[@data-sc-injury-id]/@data-sc-injury-id'))
+        resp = self.url_open('/my/injury/edit?injury_id=%s' % self.hidden.id)
+        self.assertNotEqual(resp.status_code, 200)
+        self.assertNotIn('Hidden synthetic injury', resp.text)
+
+
+@tagged('post_install', '-at_install')
+class TestAppShellNotes1539(AppShellCommon):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        env = cls.env
+        portal = env.ref('base.group_portal').id
+        tp_g = env.ref('bemade_sports_clinic.group_portal_treatment_professional').id
+        cls.tp2 = env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'T1539 Notes TP2', 'login': 't1539.notes.tp2@example.com',
+            'group_ids': [Command.set([portal, tp_g])],
+        })
+        Note = env['sports.treatment.note']
+        cls.mine = Note.create({'patient_id': cls.player.id, 'note': 'My synthetic note',
+                                'user_id': cls.tp.id, 'date': '2026-01-05'})
+        cls.theirs = Note.create({'patient_id': cls.player.id, 'note': 'Their synthetic note',
+                                  'user_id': cls.tp2.id, 'date': '2026-01-04'})
+        # One internal + one external history row, written as the therapist.
+        cls.injury.with_user(cls.tp).write({'internal_notes': 'Internal synthetic history'})
+        cls.injury.with_user(cls.tp).write({'external_notes': 'External synthetic history'})
+        cls.notes_url = '/my/patient/notes?patient_id=%s' % cls.player.id
+        cls.history_url = '/my/injury/%s/notes/history' % cls.injury.id
+
+    # -- UC-N1 -----------------------------------------------------------
+    def test_switch_off_legacy(self):
+        self._login_tp()
+        for url in (self.notes_url, self.history_url):
+            text, tree = self._get(url)
+            self.assertIn('<table', text, url)
+            self.assertIsNone(self._shell(tree), url)
+
+    # -- UC-N2 -----------------------------------------------------------
+    def test_notes_page_editable_by_author_only(self):
+        self._switch(True)
+        self._login_tp()
+        _text, tree = self._get(self.notes_url)
+        self.assertIsNotNone(self._shell(tree))
+        mine = tree.xpath('//*[@data-sc-note-id="%s"]//owl-component' % self.mine.id)
+        self.assertEqual(json.loads(mine[0].get('props'))['field'], 'note')
+        self.assertFalse(tree.xpath('//*[@data-sc-note-id="%s"]//owl-component' % self.theirs.id))
+        form = tree.xpath('//form[@data-sc-form="notes.add"]')[0]
+        self.assertEqual(form.get('action'), '/my/injury/note/add')
+        self.assertEqual(form.xpath('.//input[@name="return_url"]/@value'), [self.notes_url])
+        text, tree = self._get(self.notes_url + '&success=note_added')
+        self.assertEqual(tree.xpath('//*[@data-sc-draft-clear]/@data-sc-draft-clear'),
+                         ['sports.patient.%s.new_note.' % self.player.id])
+        # A coach reads the notes (as today) but adds / edits none.
+        self._login_coach()
+        _text, tree = self._get(self.notes_url)
+        self.assertFalse(tree.xpath('//form[@data-sc-form="notes.add"]'))
+        self.assertFalse(tree.xpath('//owl-component[contains(@props, \'"field": "note"\')]'))
+
+    # -- UC-N3 -----------------------------------------------------------
+    def test_history_scopes(self):
+        # Task 1581 (deliberate update): the shell's note history is the
+        # injury page's sheet; its body is the fragment route (the page
+        # redirects to the injury page in the shell). Same role rules.
+        self._switch(True)
+        self._login_tp()
+        fragment = self.history_url + '/fragment'
+        text, tree = self._get(fragment)
+        scopes = tree.xpath('//*[@data-sc-section="injury.notes.history"]//li/@data-sc-scope')
+        self.assertIn('internal', scopes)
+        self.assertIn('external', scopes)
+        self.assertTrue(tree.xpath('//*[@data-sc-section="history.scope"]'))
+        self._login_coach()
+        for url in (fragment, fragment + '?scope=internal'):
+            text, tree = self._get(url)
+            scopes = tree.xpath('//*[@data-sc-section="injury.notes.history"]//li/@data-sc-scope')
+            self.assertEqual(set(scopes), {'external'}, url)
+            self.assertNotIn('Internal synthetic history', text)
+            self.assertFalse(tree.xpath('//*[@data-sc-section="history.scope"]'))
+
+
+@tagged('post_install', '-at_install')
+class TestAppShellDocuments1539(AppShellCommon):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.doc = cls.env['sports.injury.document'].create({
+            'injury_id': cls.injury.id, 'patient_id': cls.player.id,
+            'name': 'Synthetic scan', 'category': 'medical',
+            'file_content': base64.b64encode(b'synthetic'), 'file_name': 'scan.txt',
+            'created_by_id': cls.tp.id,
+        })
+        cls.url = '/my/injury/documents?injury_id=%s' % cls.injury.id
+
+    def test_switch_off_legacy(self):
+        self._login_tp()
+        text, tree = self._get(self.url)
+        self.assertIn('id="attachment"', text)
+        self.assertIsNone(self._shell(tree))
+
+    def test_therapist_upload_and_delete_sheet(self):
+        self._switch(True)
+        self._login_tp()
+        _text, tree = self._get(self.url + '&team_id=%s' % self.team_a.id)
+        self.assertIsNotNone(self._shell(tree))
+        # Task 1616: the documents are the open card's « Documents ».
+        card = tree.xpath('//details[@id="injury-%s"][@open]' % self.injury.id)[0]
+        upload = card.xpath('.//dialog[@id="sc_injury_%s_documents_add"]//form' % self.injury.id)[0]
+        self.assertEqual(upload.get('action'), '/my/patient/document/upload')
+        self.assertEqual(upload.get('enctype'), 'multipart/form-data')
+        self.assertIn('team_id=%s' % self.team_a.id, upload.xpath('.//input[@name="return_url"]/@value')[0])
+        self.assertTrue(tree.xpath('//a[@href="/my/injury/document/download/%s"]' % self.doc.id))
+        # Task 1736 (deliberate update): the document's archive icon posts its
+        # own inline form (no confirmation sheet: an undo toast).
+        form = tree.xpath('//form[.//button[@data-sc-action="documents.delete"]]'
+                          '[contains(@action, "/delete/%s")]' % self.doc.id)[0]
+        self.assertEqual(form.get('action'), '/my/injury/document/delete/%s' % self.doc.id)
+        self.assertEqual(form.get('method'), 'post')
+        resp = self.url_open(form.get('action'), data={
+            'csrf_token': self._csrf(), 'team_id': self.team_a.id}, allow_redirects=False)
+        self.assertIn(resp.status_code, (302, 303))
+        self.assertIn('success=document_deleted', resp.headers['Location'])
+        self.doc.invalidate_recordset()
+        self.assertFalse(self.doc.active)  # task 1432: archived, not unlinked
+
+    def test_coach_list_only(self):
+        self._switch(True)
+        self._login_coach()
+        _text, tree = self._get(self.url)
+        self.assertFalse(tree.xpath('//*[@data-sc-action="injury.documents.add"]'))
+        self.assertFalse(tree.xpath('//*[@data-sc-action="documents.delete"]'))
+        self.assertTrue(tree.xpath('//a[@href="/my/injury/document/download/%s"]' % self.doc.id))

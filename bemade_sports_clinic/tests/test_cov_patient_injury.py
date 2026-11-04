@@ -39,10 +39,6 @@ class TestCovPatientInjury(TransactionCase):
 
     # ----- computes -----
 
-    def test_compute_allowed_team_ids(self):
-        injury = self._injury()
-        self.assertIn(self.team, injury.allowed_team_ids)
-
     def test_compute_counts_default_zero(self):
         injury = self._injury()
         self.assertEqual(injury.treatment_note_count, 0)
@@ -118,7 +114,7 @@ class TestCovPatientInjury(TransactionCase):
     # ----- create stage logic -----
 
     def test_create_as_admin_sets_active(self):
-        injury = self._injury(team_id=self.team.id)
+        injury = self._injury()
         self.assertEqual(injury.stage, 'active', "admin-created injuries start active")
 
     def test_create_as_portal_coach_unverified_assigns_team_tp(self):
@@ -136,46 +132,43 @@ class TestCovPatientInjury(TransactionCase):
             'team_id': self.team.id, 'partner_id': coach.partner_id.id, 'role': 'coach',
         })
         injury = self.env['sports.patient.injury'].with_user(coach).create({
-            'patient_id': self.patient.id, 'diagnosis': 'Coach reported', 'team_id': self.team.id,
+            'patient_id': self.patient.id, 'diagnosis': 'Coach reported',
         })
         self.assertEqual(injury.stage, 'unverified')
-        self.assertIn(self.therapist_user, injury.treatment_professional_ids,
-                      "team therapists should be auto-assigned")
+        # Task 1240: no per-injury treater list — the team's therapist follows
+        # the injury through the patient's follower recompute.
+        self.patient.recompute_followers()
+        self.assertIn(self.therapist_user.partner_id, injury.sudo().message_partner_ids,
+                      "team therapists should follow a coach-created injury")
 
-    # ----- write TP-change side effects -----
-
-    def test_write_treatment_professional_change_posts_message(self):
-        injury = self._injury()
-        before = len(injury.message_ids)
-        injury.write({'treatment_professional_ids': [Command.link(self.therapist_user.id)]})
-        self.assertGreater(len(injury.message_ids), before,
-                           "adding a treatment professional should post a chatter message")
-
-    # ----- cleanup + cron -----
-
-    def test_cleanup_stale_treatment_professionals(self):
-        # Assign a user who is NOT staff on any of the patient's teams.
-        stranger = self.env['res.users'].create({
-            'name': 'Stranger', 'login': 'cov_inj_stranger', 'email': 'cov_inj_str@example.com',
-            'group_ids': [Command.link(self.group_user.id), Command.link(self.tp_group.id)],
-        })
-        injury = self._injury()
-        injury.with_context(mail_notrack=True).write({
-            'treatment_professional_ids': [Command.set([stranger.id])],
-        })
-        injury._cleanup_stale_treatment_professionals()
-        self.assertNotIn(stranger, injury.treatment_professional_ids)
+    # ----- cron -----
 
     def test_cron_create_injury_verification_tasks(self):
-        injury = self._injury(team_id=self.team.id)
+        # Task 1409: the To-Do lives on the PATIENT, keyed by injury_id, with
+        # the « [Injury: <diagnosis>] » summary prefix.
+        injury = self._injury()
         injury.with_context(mail_notrack=True).write({'stage': 'unverified'})
         self.env['sports.patient.injury']._cron_create_injury_verification_tasks()
         acts = self.env['mail.activity'].sudo().search([
-            ('res_model', '=', 'sports.patient.injury'),
-            ('res_id', '=', injury.id),
-            ('summary', '=', 'Verify injury'),
+            ('res_model', '=', 'sports.patient'),
+            ('res_id', '=', self.patient.id),
+            ('injury_id', '=', injury.id),
+            ('summary', 'ilike', 'Verify injury'),
         ])
-        self.assertTrue(acts, "a 'Verify injury' activity should be created for the head therapist")
+        self.assertEqual(len(acts), 1, "one 'Verify injury' To-Do on the patient for the head therapist")
+        self.assertEqual(acts.user_id, self.therapist_user)
+        self.assertEqual(acts.summary, '[Injury: Twisted ankle] Verify injury')
+        self.assertFalse(self.env['mail.activity'].sudo().search([
+            ('res_model', '=', 'sports.patient.injury'), ('res_id', '=', injury.id)]),
+            "nothing is scheduled on the injury itself any more")
+        # Idempotent: a second run does not duplicate.
+        self.env['sports.patient.injury']._cron_create_injury_verification_tasks()
+        self.assertEqual(self.env['mail.activity'].sudo().search_count(
+            [('injury_id', '=', injury.id)]), 1)
+        # « Vérifier » closes it (keyed on injury_id).
+        injury.with_user(self.therapist_user).action_verify_injury()
+        acts.invalidate_recordset()
+        self.assertFalse(acts.filtered('active'), "verifying the injury closes its To-Do")
 
     def test_unlink_posts_message_to_patient(self):
         injury = self._injury()

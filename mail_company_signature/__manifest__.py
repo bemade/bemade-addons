@@ -1,0 +1,27 @@
+{
+    "name": "Mail Company Signature",
+    "version": "19.0.1.1.1",
+    "category": "Discuss",
+    "summary": "Company-standard email signature generated from a template, "
+    "with a visible signature preview in the chatter composer.",
+    "author": "Bemade Inc.",
+    "website": "https://www.bemade.org",
+    "license": "LGPL-3",
+    "depends": ["mail", "hr"],
+    "data": [
+        "data/ir_cron.xml",
+        "views/res_config_settings_views.xml",
+        "views/res_users_views.xml",
+    ],
+    "assets": {
+        "web.assets_backend": [
+            "mail_company_signature/static/src/**/*",
+        ],
+        "web.assets_tests": [
+            "mail_company_signature/static/tests/tours/**/*",
+        ],
+    },
+    "installable": True,
+    "application": False,
+    "auto_install": False,
+}

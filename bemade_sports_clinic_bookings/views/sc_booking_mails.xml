@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 1734 — the staff member's booking emails (rendered in their own
+    language by res.users._sc_booking_send_mail): the daily summary and the
+    same-day notice. Plain markup, no inline style (the addon's lint).
+-->
+<odoo>
+
+    <template id="sc_booking_mail_row" name="Booking email: one booking">
+        <strong t-out="row['when']"/> · <t t-out="row['client']"/> · <t t-out="row['type']"/>
+        <ul t-if="row['answers']">
+            <li t-foreach="row['answers']" t-as="answer">
+                <t t-out="answer['label']"/> : <t t-out="answer['value']"/>
+            </li>
+        </ul>
+    </template>
+
+    <template id="sc_booking_digest_mail" name="Booking email: daily summary">
+        <div>
+            <h3>Today</h3>
+            <p t-if="not today_rows">No bookings today.</p>
+            <ul t-else="">
+                <li t-foreach="today_rows" t-as="row" t-att-data-sc-digest-today="row['id']">
+                    <t t-call="bemade_sports_clinic_bookings.sc_booking_mail_row"/>
+                </li>
+            </ul>
+            <t t-if="new_rows">
+                <h3>New bookings</h3>
+                <ul>
+                    <li t-foreach="new_rows" t-as="row" t-att-data-sc-digest-new="row['id']">
+                        <t t-call="bemade_sports_clinic_bookings.sc_booking_mail_row"/>
+                    </li>
+                </ul>
+            </t>
+            <t t-if="cancelled_rows">
+                <h3>Cancelled bookings</h3>
+                <ul>
+                    <li t-foreach="cancelled_rows" t-as="row" t-att-data-sc-digest-cancelled="row['id']">
+                        <t t-call="bemade_sports_clinic_bookings.sc_booking_mail_row"/>
+                    </li>
+                </ul>
+            </t>
+            <p><a t-att-href="base_url + '/my/bookings'">Open my bookings</a></p>
+            <p><small>You get this summary because « Booking emails » is set to « Daily summary » in your app settings.</small></p>
+        </div>
+    </template>
+
+    <template id="sc_booking_same_day_mail" name="Booking email: same-day change">
+        <div>
+            <p t-if="kind == 'new'">A booking was just made for today:</p>
+            <p t-else="">A booking for today was just cancelled:</p>
+            <p t-att-data-sc-same-day="row['id']">
+                <t t-call="bemade_sports_clinic_bookings.sc_booking_mail_row"/>
+            </p>
+            <p><a t-att-href="base_url + '/my/bookings'">Open my bookings</a></p>
+        </div>
+    </template>
+
+</odoo>

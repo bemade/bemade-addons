@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!--
+        Add "Assigned by <creator> on <date> · due <deadline>" (or "Created
+        automatically on ..." for superuser-created activities) under the title
+        of the "activity done" chatter message, when the creator is not the
+        user closing it. `user` is the closing user (render eval context).
+    -->
+    <template id="message_activity_done" inherit_id="mail.message_activity_done">
+        <xpath expr="//p[1]" position="after">
+            <t t-set="adb_creator" t-value="activity.create_uid" />
+            <p
+        t-if="adb_creator and adb_creator != user"
+        class="o_mail_activity_assigned_by text-muted"
+      >
+                <t
+          t-if="adb_creator == env.ref('base.user_root')"
+        >Created automatically on <t t-out="format_date(activity.create_date)" /></t>
+                <t t-else="">Assigned by <t t-out="adb_creator.sudo().name" /> on <t
+            t-out="format_date(activity.create_date)"
+          /></t>
+                <t t-if="activity.date_deadline"> · due <t
+            t-out="format_date(activity.date_deadline)"
+          /></t>
+            </p>
+        </xpath>
+    </template>
+</odoo>

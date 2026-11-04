@@ -1,0 +1,31 @@
+/* Task 1272 (re-plan): backend team-dashboard digest kanban.
+   The Dashboard tab embeds a kanban of recently-active players; per owner
+   preference it must render as a SINGLE COLUMN of roomy, full-width cards
+   (one card per row) rather than the default responsive grid. */
+.o_sports_dashboard_kanban {
+    .o_kanban_renderer {
+        /* Break out of the default grid/flex column layout. */
+        display: block !important;
+    }
+
+    .o_kanban_record {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 0 12px 0 !important;
+    }
+
+    .o_sports_dashboard_card {
+        width: 100%;
+    }
+
+    /* Digest list spacing inside the card. */
+    .dashboard-digest {
+        .dashboard-digest-item {
+            line-height: 1.35;
+        }
+
+        details > summary {
+            cursor: pointer;
+        }
+    }
+}

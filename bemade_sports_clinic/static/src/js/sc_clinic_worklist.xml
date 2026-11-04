@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Task 1540 (epic #1535, P3) — see sc_clinic_worklist.js. -->
+<templates xml:space="preserve">
+    <t t-name="bemade_sports_clinic.ScClinicWorklist">
+        <div class="o_sc_wl_live" t-att-data-sc-worklist-live="props.clinicId"
+             t-att-data-sc-version="state.data.version" t-att-data-sc-status="state.status"
+             t-att-data-sc-busy="state.pending ? '1' : '0'">
+            <div class="o_sc_wl_head">
+                <span t-attf-class="o_sc_live o_sc_live_{{ state.status }}" role="status">
+                    <i aria-hidden="true"/>
+                    <span t-esc="liveLabel"/>
+                </span>
+                <span class="o_sc_chip o_sc_chip_ghost" t-esc="waitingLabel"/>
+            </div>
+            <p t-if="state.data.countsLine" class="o_sc_meta o_sc_wl_counts" t-esc="state.data.countsLine"/>
+            <p t-if="!rows.length" class="o_sc_empty">Nobody on the list yet. Add the patients you expect to see, or pair the sign-in kiosk.</p>
+            <ol t-else="" class="o_sc_wl">
+                <t t-foreach="rows" t-as="row" t-key="row.id">
+                    <li t-att-class="rowClass(row)" t-att-data-sc-attendance-id="row.id"
+                        t-att-data-sc-state="row.state" t-att-data-sc-patient-id="row.patientId or ''"
+                        t-att-id="'attendance-' + row.id"
+                        t-on-dragover="(ev) => this.onDragOver(row, ev)"
+                        t-on-drop="(ev) => this.onDrop(row, ev)">
+                        <span class="o_sc_wl_handle" draggable="true" title="Drag to reorder" aria-hidden="true"
+                              t-on-dragstart="(ev) => this.onDragStart(row, ev)" t-on-dragend="() => this.onDragEnd()">
+                            <span class="o_sc_wl_num" t-esc="row.state === 'seen' ? '✓' : row_index + 1"/>
+                        </span>
+                        <span class="o_sc_row_text">
+                            <a t-if="row.url" t-att-href="row.url" class="o_sc_row_title" t-esc="row.name"/>
+                            <span t-else="" class="o_sc_row_title" t-esc="row.name"/>
+                            <span class="o_sc_row_subtitle" t-esc="subtitle(row)"/>
+                            <span class="o_sc_chips">
+                                <span t-if="row.kiosk" class="o_sc_chip o_sc_chip_ghost">Kiosk</span>
+                                <span t-if="row.toConfirm" class="o_sc_chip o_sc_chip_mauve">To confirm</span>
+                                <span t-if="row.noShow" class="o_sc_chip o_sc_chip_red">No show</span>
+                                <span t-if="row.unregistered" class="o_sc_chip o_sc_chip_yellow">Unregistered</span>
+                            </span>
+                        </span>
+                        <div class="o_sc_wl_actions">
+                            <div t-if="!row.unregistered" class="o_sc_segmented o_sc_wl_states" role="group">
+                                <button type="button" data-sc-wl-state="expected" t-att-aria-pressed="row.state === 'expected' ? 'true' : 'false'"
+                                        t-on-click="() => this.setState(row, 'expected')">Expected</button>
+                                <button type="button" data-sc-wl-state="arrived" t-att-aria-pressed="row.state === 'arrived' ? 'true' : 'false'"
+                                        t-on-click="() => this.setState(row, 'arrived')">Arrived</button>
+                                <button type="button" data-sc-wl-state="seen" t-att-aria-pressed="row.state === 'seen' ? 'true' : 'false'"
+                                        t-on-click="() => this.setState(row, 'seen')">Seen</button>
+                            </div>
+                            <button t-if="row.toConfirm" type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
+                                    data-sc-wl-action="confirm" t-on-click="() => this.confirm(row)">Confirm</button>
+                            <button t-if="row.unregistered" type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm"
+                                    data-sc-wl-action="resolve" data-sc-sheet-open="sc_clinic_resolve_sheet"
+                                    t-att-data-sc-resolve-id="row.id" t-att-data-sc-resolve-name="row.name">Resolve</button>
+                            <span class="o_sc_wl_tools">
+                                <button type="button" class="o_sc_icon_btn" data-sc-wl-action="up" title="Move up" aria-label="Move up"
+                                        t-att-disabled="row_first" t-on-click="() => this.move(row, 'up')">↑</button>
+                                <button type="button" class="o_sc_icon_btn" data-sc-wl-action="down" title="Move down" aria-label="Move down"
+                                        t-att-disabled="row_last" t-on-click="() => this.move(row, 'down')">↓</button>
+                                <button t-if="!row.unregistered" type="button"
+                                        t-attf-class="o_sc_btn o_sc_btn_sm {{ state.armed === row.id ? 'o_sc_btn_danger' : 'o_sc_btn_ghost' }}"
+                                        data-sc-wl-action="remove" t-on-click="() => this.remove(row)">
+                                    <t t-if="state.armed === row.id">Tap again to remove</t>
+                                    <t t-else="">Remove</t>
+                                </button>
+                            </span>
+                        </div>
+                    </li>
+                </t>
+            </ol>
+        </div>
+    </t>
+</templates>

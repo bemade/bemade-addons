@@ -30,6 +30,30 @@ class TestEvlParts(CbetCommon):
         comp.criterion_ids[0].text = "Changed in catalog"
         self.assertEqual(ev.criterion_result_ids[0].text, "Original")
 
+    def test_grid_comes_from_the_pinned_version_not_the_live_catalog(self):
+        # EVL-03 AC1 — the evaluation pins a published version, so its grid must
+        # be built from that version's snapshot. Live catalogue rows can have
+        # moved on (a re-import replaces them wholesale) and an evaluation
+        # stamped v1.0 must never contain criteria that v1.0 never had.
+        comp = self._ready_competency("EVL-11", crit_specs=[("security", "As published")],
+                                      question_specs=[("Published question?", True)])
+        # The catalogue moves on: criteria and questions replaced, as a
+        # re-import would do. The competency is still sitting at v1.0.
+        comp.criterion_ids.unlink()
+        comp.question_ids.unlink()
+        self._add_criteria(comp, [("standard", "Added after publication")])
+        self.env["cbet.question"].create({
+            "competency_id": comp.id, "text": "Added after publication?",
+            "essential": False})
+
+        ev = self._make_evaluation(comp, self._make_employee("Cand 11"))
+        self.assertEqual(ev.criterion_result_ids.mapped("text"), ["As published"])
+        self.assertEqual(ev.criterion_result_ids.criterion_type, "security")
+        self.assertEqual(ev.question_result_ids.mapped("text"), ["Published question?"])
+        self.assertTrue(ev.question_result_ids.essential)
+        # The source links are dropped rather than pointed at deleted rows.
+        self.assertFalse(ev.criterion_result_ids.source_criterion_id)
+
     def test_theoretical_has_no_part_a(self):
         comp = self._ready_competency(
             "EVL-05", kind="theoretical", question_specs=[("Explain?", True)])
