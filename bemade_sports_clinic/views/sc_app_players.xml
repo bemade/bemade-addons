@@ -1153,7 +1153,19 @@
                  « Resolve » stay as they were. The left part is the summary
                  read fragment; the icons sit outside it (a refresh never
                  resets the pencil's ✓). -->
-            <summary class="o_sc_entity_row o_sc_injury_head" tabindex="-1">
+            <summary t-attf-class="o_sc_entity_row o_sc_injury_head #{'o_sc_injury_head_with_player' if row.get('player_head') else ''}" tabindex="-1">
+                <!-- Task 1748: a card shown away from its player's page (the
+                     dashboard's « Injuries to verify ») names the player — a
+                     link to the player page's Injuries tab, this injury
+                     unfolded — and their teams. A link: it never folds the
+                     card (sc_injury_card.js lets head actions through). -->
+                <span t-if="row.get('player_head')" class="o_sc_injury_player_head" data-sc-injury-player="1">
+                    <a t-att-href="row['player_head']['url']" class="o_sc_injury_player_link"
+                       t-att-data-sc-injury-player-link="row['player_head']['id']"
+                       t-out="row['player_head']['name']"/>
+                    <span t-if="row['player_head']['teams']" class="o_sc_injury_player_teams"
+                          t-out="row['player_head']['teams']"/>
+                </span>
                 <span class="o_sc_injury_head_main" t-att-data-sc-fragment="sc_fragment_key(injury, 'summary')">
                 <span t-attf-class="o_sc_dot o_sc_tone_#{row['dot']}" aria-hidden="true"/>
                 <span class="o_sc_row_text">
