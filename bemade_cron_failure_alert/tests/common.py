@@ -8,7 +8,7 @@ from odoo.tools.misc import mute_logger
 from odoo.addons.bemade_cron_failure_alert.models.ir_cron import (
     PARAM_CHANNEL,
     PARAM_ENABLED,
-    PARAM_USER,
+    PARAM_USERS,
 )
 
 FAILING_CODE = 'raise UserError("Synthetic failure for the alert test")'
@@ -56,9 +56,16 @@ class CronAlertCase(common.TransactionCase):
         self.env.invalidate_all()
 
     def _configure(self, enabled=True, user=True, channel=True):
+        """Set the General Settings alert options.
+
+        ``user``: True for ``alert_user``, a ``res.users`` recordset for those
+        users, False for none. ``channel``: True for ``channel``, False for none.
+        """
+        if user is True:
+            user = self.alert_user
         icp = self.env["ir.config_parameter"].sudo()
         icp.set_param(PARAM_ENABLED, enabled or False)
-        icp.set_param(PARAM_USER, user and self.alert_user.id or False)
+        icp.set_param(PARAM_USERS, ",".join(str(i) for i in user.ids) if user else False)
         icp.set_param(PARAM_CHANNEL, channel and self.channel.id or False)
 
     def _run_cron(self, cron=None):

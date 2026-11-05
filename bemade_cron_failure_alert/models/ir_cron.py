@@ -14,7 +14,10 @@ from odoo.addons.base.models.ir_cron import (
 _logger = logging.getLogger(__name__)
 
 PARAM_ENABLED = "bemade_cron_failure_alert.enabled"
-PARAM_USER = "bemade_cron_failure_alert.user_id"
+# comma-separated ids of the users who get every alert
+PARAM_USERS = "bemade_cron_failure_alert.user_ids"
+# single user of 19.0.1.0.x/19.0.1.1.0, migrated into PARAM_USERS by 19.0.1.2.0
+PARAM_USER_LEGACY = "bemade_cron_failure_alert.user_id"
 PARAM_CHANNEL = "bemade_cron_failure_alert.channel_id"
 
 # Keep the end of the traceback: the exception itself is at the bottom.
@@ -35,31 +38,34 @@ class IrCron(models.Model):
 
     failure_alert_mode = fields.Selection(
         [
-            ("default", "Use Settings"),
-            ("custom", "Custom"),
+            ("default", "On"),
             ("off", "Off"),
         ],
         string="Failure alert",
         default="default",
         required=True,
-        help="Use Settings: alert the user and channel set in General Settings.\n"
-        "Custom: alert the user and channel set below instead (even if the "
-        "option is off in Settings).\n"
+        help="On: alert the users and channel set in General Settings, plus "
+        "the ones set below (those are alerted even if the option is off in "
+        "Settings).\n"
         "Off: never alert for this scheduled action; failures are only logged.",
     )
-    failure_alert_user_id = fields.Many2one(
+    failure_alert_user_ids = fields.Many2many(
         "res.users",
-        string="Alert user",
+        "ir_cron_failure_alert_user_rel",
+        "cron_id",
+        "user_id",
+        string="Also alert",
         domain=[("share", "=", False)],
-        help="User who receives a To-Do activity when this scheduled action "
-        "fails or is switched off.",
+        help="Users who also receive a To-Do activity when this scheduled "
+        "action fails or is switched off, on top of the users set in General "
+        "Settings.",
     )
     failure_alert_channel_id = fields.Many2one(
         "discuss.channel",
-        string="Alert channel",
+        string="Also post in channel",
         domain=[("channel_type", "=", "channel")],
         help="Discuss channel where this scheduled action's failure alerts "
-        "are posted.",
+        "are also posted, on top of the channel set in General Settings.",
     )
 
     def _callback(self, cron_name, server_action_id):
@@ -111,14 +117,14 @@ class IrCron(models.Model):
         targets = self._cron_failure_alert_targets(job, deactivated)
         if targets is None:
             return
-        user, channel = targets
+        users, channels = targets
         _logger.warning(
             "Scheduled action %r (%s) %s.",
             job["cron_name"],
             job["id"],
             "was switched off after repeated failures" if deactivated else "failed",
         )
-        if not user and not channel:
+        if not users and not channels:
             _logger.warning(
                 "Scheduled action failure alerts are on, but no user or channel "
                 "is set: nothing to notify for %r (%s).",
@@ -128,26 +134,33 @@ class IrCron(models.Model):
             return
 
         admin = self.env.ref("base.user_admin", raise_if_not_found=False)
-        lang = user.lang or (admin and admin.lang) or "en_US"
-        cron = self.with_context(lang=lang)
-        summary, body = cron._cron_failure_alert_content(job, error, deactivated)
-
-        if user:
+        default_lang = (admin and admin.lang) or "en_US"
+        # one To-Do per user, written in that user's language
+        for user in users:
+            cron = self.with_context(lang=user.lang or default_lang)
+            summary, body = cron._cron_failure_alert_content(job, error, deactivated)
             cron._cron_failure_alert_todo(job, user, summary, body)
-        if channel:
-            channel.message_post(
-                body=Markup("<p><b>%s</b></p>") % summary + body,
-                author_id=cron.env.ref("base.partner_root").id,
-                message_type="comment",
-                subtype_xmlid="mail.mt_comment",
-            )
+        if channels:
+            cron = self.with_context(lang=default_lang)
+            summary, body = cron._cron_failure_alert_content(job, error, deactivated)
+            for channel in channels:
+                channel.message_post(
+                    body=Markup("<p><b>%s</b></p>") % summary + body,
+                    author_id=cron.env.ref("base.partner_root").id,
+                    message_type="comment",
+                    subtype_xmlid="mail.mt_comment",
+                )
 
     @api.model
     def _cron_failure_alert_targets(self, job, deactivated):
-        """Return ``(user, channel)`` to alert for ``job``, or ``None``.
+        """Return ``(users, channels)`` to alert for ``job``, or ``None``.
 
-        ``None`` means alerts are off for this job (Settings option off in
-        mode "Use Settings"). Either record may be empty.
+        The recipients are the scheduled action's own "Also alert" users and
+        channel, plus -- when the Settings option is on -- the Settings users
+        and channel. Both are recordsets, so a user or a channel set in both
+        places appears once. ``None`` means nothing to alert and nothing to
+        say about it: mode "Off" (logged here), or the Settings option off
+        with no extra recipient on the scheduled action.
         """
         cron = self.browse(job["id"]).exists()
         mode = cron.failure_alert_mode or "default"
@@ -161,20 +174,29 @@ class IrCron(models.Model):
                 else "failed",
             )
             return None
-        if mode == "custom":
-            return (
-                cron.failure_alert_user_id.exists(),
-                cron.failure_alert_channel_id.exists(),
-            )
+        users = cron.failure_alert_user_ids.filtered("active")
+        channels = cron.failure_alert_channel_id.exists()
         icp = self.env["ir.config_parameter"].sudo()
-        if not str2bool(icp.get_param(PARAM_ENABLED) or "False", False):
-            return None
-        return (
-            self._cron_failure_alert_record("res.users", icp.get_param(PARAM_USER)),
-            self._cron_failure_alert_record(
+        if str2bool(icp.get_param(PARAM_ENABLED) or "False", False):
+            users |= self._cron_failure_alert_settings_users()
+            channels |= self._cron_failure_alert_record(
                 "discuss.channel", icp.get_param(PARAM_CHANNEL)
-            ),
-        )
+            )
+        elif not users and not channels:
+            return None
+        return users, channels
+
+    @api.model
+    def _cron_failure_alert_settings_users(self):
+        """Active users set in General Settings to receive every alert."""
+        value = self.env["ir.config_parameter"].sudo().get_param(PARAM_USERS) or ""
+        ids = []
+        for part in value.split(","):
+            try:
+                ids.append(int(part))
+            except ValueError:
+                continue
+        return self.env["res.users"].browse(ids).exists().filtered("active")
 
     @api.model
     def _cron_failure_alert_link(self, cron_id):
