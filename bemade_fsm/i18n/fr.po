@@ -1119,16 +1119,16 @@ msgstr "<strong class=\"mr16\">Sous-total de section</strong>"
 #. odoo-python
 #: code:addons/bemade_fsm/models/task.py:0
 msgid "Done"
-msgstr "fait"
+msgstr "Fait"
 
 #. module: bemade_fsm
 #. odoo-python
 #: code:addons/bemade_fsm/models/task.py:0
 msgid "Not done"
-msgstr "non fait"
+msgstr "Non fait"
 
 #. module: bemade_fsm
 #. odoo-python
 #: code:addons/bemade_fsm/models/task.py:0
 msgid "Waiting"
-msgstr "en attente"
+msgstr "En attente"

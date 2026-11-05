@@ -13,8 +13,8 @@ intervention, a coloured dot and a short label instead of the stage name.
    04_waiting_normal), Not done (01_in_progress, 02_changes_requested, 1_canceled).
 3. The rendered report shows the dot (inline-styled, PDF-safe) and the label in the
    status cell, and no longer shows the stage name there.
-4. The label follows the report language: a French client gets « fait »,
-   « en attente », « non fait ».
+4. The label follows the report language: a French client gets « Fait »,
+   « En attente », « Non fait ».
 5. Subtasks (the nested list) are unchanged.
 """
 
@@ -135,6 +135,6 @@ class TestTaskReportStateDots(BemadeFSMBaseTest):
         )
         root, tasks = self._make_work_order(lang="fr_FR")
         _content, cells = self._render_status_cells(root)
-        self.assertEqual(cells["Task Alpha"][0], "fait")
-        self.assertEqual(cells["Task Bravo"][0], "non fait")
-        self.assertEqual(cells["Task Charlie"][0], "en attente")
+        self.assertEqual(cells["Task Alpha"][0], "Fait")
+        self.assertEqual(cells["Task Bravo"][0], "Non fait")
+        self.assertEqual(cells["Task Charlie"][0], "En attente")
