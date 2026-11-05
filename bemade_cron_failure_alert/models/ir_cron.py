@@ -262,21 +262,28 @@ class IrCron(models.Model):
         """Return ``(summary, html_body)``: French first, then English.
 
         The summary is "<French> / <English>"; the body is one block per
-        language, each starting with its summary in bold.
+        language, each starting with its summary in bold, then the error text
+        ONCE at the end (it is code, not language).
         """
         summaries = []
         body = Markup()
         for lang in self._cron_failure_alert_langs():
             summary, block = self.with_context(
                 lang=lang
-            )._cron_failure_alert_content(job, error, deactivated)
+            )._cron_failure_alert_content(job, error, deactivated, include_error=False)
             summaries.append(summary)
             body += Markup("<p><b>%s</b></p>") % summary + block
+        if error:
+            body += Markup("<pre>%s</pre>") % error
         return " / ".join(summaries), body
 
     @api.model
-    def _cron_failure_alert_content(self, job, error, deactivated):
-        """Return ``(summary, html_body)`` in the context language only."""
+    def _cron_failure_alert_content(self, job, error, deactivated, include_error=True):
+        """Return ``(summary, html_body)`` in the context language only.
+
+        ``include_error=False`` leaves the error text out (the bilingual
+        wrapper appends it once after all language blocks).
+        """
         _ = self.env._
         name = job["cron_name"]
         now = fields.Datetime.to_string(self.env.cr.now().replace(microsecond=0))
@@ -304,7 +311,8 @@ class IrCron(models.Model):
         # escape the values too -- except the link, which is already Markup.
         body = Markup("<p>%s</p>") % (Markup(escape(intro)) % values)
         if error:
-            body += Markup("<pre>%s</pre>") % error
+            if include_error:
+                body += Markup("<pre>%s</pre>") % error
         else:
             no_error = _(
                 "No error text was captured (for example, the run timed out). "

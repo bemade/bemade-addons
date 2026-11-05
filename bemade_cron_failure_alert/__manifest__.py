@@ -1,6 +1,6 @@
 {
     "name": "Scheduled Action Failure Alerts",
-    "version": "19.0.1.2.1",
+    "version": "19.0.1.2.2",
     "summary": "Warn users and a Discuss channel when a scheduled action fails "
     "or is switched off by Odoo.",
     "description": """

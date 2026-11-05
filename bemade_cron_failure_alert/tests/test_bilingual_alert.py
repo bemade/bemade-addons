@@ -9,8 +9,8 @@ Acceptance criteria:
    note is the French block followed by the English block, for a French-
    speaking user and for an English-speaking user alike.
 2. The Discuss channel post is the French block followed by the English block.
-3. The dynamic parts (scheduled action name, link, error text) appear in both
-   blocks.
+3. The scheduled action name and link appear in both blocks; the error text
+   (code, not language) appears ONCE, after the English block.
 4. Deduplication is unchanged: one To-Do per user per scheduled action, one
    post per channel.
 5. Without French installed, the alert is written in the environment's
@@ -62,7 +62,8 @@ class TestBilingualAlert(CronAlertCase):
         for block in (fr_block, en_block):
             self.assertIn(link, block)
             self.assertIn(self.cron.name, block)
-            self.assertIn(ERROR_TEXT, block)
+        self.assertEqual(html.count(ERROR_TEXT), 1, "The error is quoted once.")
+        self.assertGreater(html.index(ERROR_TEXT), en_at, "The error comes after both blocks.")
 
     def test_todo_is_french_then_english_for_every_user(self):
         self._configure(user=self.users)
