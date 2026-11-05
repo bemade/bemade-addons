@@ -1,7 +1,7 @@
 {
     "name": "Scheduled Action Failure Alerts",
-    "version": "19.0.1.1.0",
-    "summary": "Warn a user and a Discuss channel when a scheduled action fails "
+    "version": "19.0.1.2.2",
+    "summary": "Warn users and a Discuss channel when a scheduled action fails "
     "or is switched off by Odoo.",
     "description": """
 Scheduled Action Failure Alerts
@@ -17,8 +17,8 @@ This module turns that bookkeeping into alerts people actually see:
 * on the **first failure** of a streak, and
 * when Odoo **switches the action off** after repeated failures,
 
-it creates a *To-Do* activity for a chosen user and posts a message in a
-chosen Discuss channel. Both alerts name the scheduled action, link to it and
+it creates a *To-Do* activity for each chosen user and posts a message in
+each chosen Discuss channel. Both alerts name the scheduled action, link to it and
 include the end of the error traceback when one was raised (a run that timed
 out has no traceback; the alert then points to the server log time).
 
@@ -28,29 +28,45 @@ again. Each scheduled action keeps a single open To-Do per user: while it is
 not marked done, a new alert is added on top of its note (and its deadline
 moves to today) instead of creating another one.
 
+Every alert is written in **French, then English** (To-Do summary
+"<French> / <English>", To-Do note and channel message with a French block
+followed by an English block), whatever the language of its recipient, since
+other people may read it later. When French is not installed, the alert is
+written in English alone.
+
 Configuration
 -------------
 
 *Settings > General Settings > Discuss > Scheduled action failures*:
 
 * **Alert on scheduled action failures** - turns the alerts on;
-* **Assign failure alerts to** - the user who receives the To-Do activity;
+* **Assign failure alerts to** - the users who receive a To-Do activity for
+  the failures of EVERY scheduled action;
 * **Post in channel** - the Discuss channel that receives the message.
 
-With the option on but neither a user nor a channel set, failures are only
-logged.
+With the option on but no user, no channel and no per-action recipient set,
+failures are only logged.
 
 Per scheduled action
 --------------------
 
 The *Alerts* group of each scheduled action (*Settings > Technical >
-Scheduled Actions*) chooses where that action's alerts go:
+Scheduled Actions*) adds recipients for that action only:
 
-* **Use Settings** (default) - the user and channel above;
-* **Custom** - the user and/or channel set on the scheduled action instead
-  (it alerts even when the option above is off; with neither set, failures
-  are only logged);
-* **Off** - no alert for this scheduled action, failures are only logged.
+* **On** (default) - the users and channel above, plus:
+
+  * **Also alert** - more users who receive a To-Do for this action;
+  * **Also post in channel** - one more channel for this action.
+
+  These extra recipients are alerted even when the option above is off.
+  A user listed both in Settings and in *Also alert* gets a single To-Do; a
+  channel set in both places gets a single message.
+* **Off** - nobody is alerted for this scheduled action (not even its extra
+  recipients); failures are only logged.
+
+Upgrading from 19.0.1.1.0, a scheduled action in the former *Custom* mode
+becomes *On* with its user in *Also alert* and its channel kept; the single
+Settings user joins the Settings user list.
 
 Safety
 ------

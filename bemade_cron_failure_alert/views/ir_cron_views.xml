@@ -9,13 +9,13 @@
                 <group name="failure_alerts" string="Alerts">
                     <field name="failure_alert_mode" widget="radio" />
                     <field
-            name="failure_alert_user_id"
-            invisible="failure_alert_mode != 'custom'"
-            widget="many2one_avatar_user"
+            name="failure_alert_user_ids"
+            invisible="failure_alert_mode == 'off'"
+            widget="many2many_avatar_user"
           />
                     <field
             name="failure_alert_channel_id"
-            invisible="failure_alert_mode != 'custom'"
+            invisible="failure_alert_mode == 'off'"
           />
                 </group>
             </xpath>

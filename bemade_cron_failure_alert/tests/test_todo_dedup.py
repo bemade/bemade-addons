@@ -36,7 +36,10 @@ class TestTodoDedup(CronAlertCase):
         self._new_streak()
 
         self.assertEqual(self._alert_activities(), activity, "No second To-Do.")
-        self.assertEqual(str(activity.note).count("Synthetic failure for the alert test"), 2)
+        # each alert quotes the error once, after its language blocks
+        self.assertEqual(
+            str(activity.note).count("Synthetic failure for the alert test"), 2
+        )
         self.assertEqual(activity.date_deadline, fields.Date.today())
         self.assertEqual(len(self._alert_messages()), 2, "One message per alert.")
 

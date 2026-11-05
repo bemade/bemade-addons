@@ -5,3 +5,5 @@ from . import test_alert_never_breaks_cron
 from . import test_settings
 from . import test_todo_dedup
 from . import test_per_action_routing
+from . import test_migration
+from . import test_bilingual_alert
