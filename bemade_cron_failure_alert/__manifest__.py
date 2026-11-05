@@ -1,6 +1,6 @@
 {
     "name": "Scheduled Action Failure Alerts",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.2.1",
     "summary": "Warn users and a Discuss channel when a scheduled action fails "
     "or is switched off by Odoo.",
     "description": """
@@ -27,6 +27,12 @@ one per run. A successful run ends the streak, so the next failure alerts
 again. Each scheduled action keeps a single open To-Do per user: while it is
 not marked done, a new alert is added on top of its note (and its deadline
 moves to today) instead of creating another one.
+
+Every alert is written in **French, then English** (To-Do summary
+"<French> / <English>", To-Do note and channel message with a French block
+followed by an English block), whatever the language of its recipient, since
+other people may read it later. When French is not installed, the alert is
+written in English alone.
 
 Configuration
 -------------

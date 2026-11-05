@@ -133,23 +133,16 @@ class IrCron(models.Model):
             )
             return
 
-        admin = self.env.ref("base.user_admin", raise_if_not_found=False)
-        default_lang = (admin and admin.lang) or "en_US"
-        # one To-Do per user, written in that user's language
+        summary, body = self._cron_failure_alert_bilingual(job, error, deactivated)
         for user in users:
-            cron = self.with_context(lang=user.lang or default_lang)
-            summary, body = cron._cron_failure_alert_content(job, error, deactivated)
-            cron._cron_failure_alert_todo(job, user, summary, body)
-        if channels:
-            cron = self.with_context(lang=default_lang)
-            summary, body = cron._cron_failure_alert_content(job, error, deactivated)
-            for channel in channels:
-                channel.message_post(
-                    body=Markup("<p><b>%s</b></p>") % summary + body,
-                    author_id=cron.env.ref("base.partner_root").id,
-                    message_type="comment",
-                    subtype_xmlid="mail.mt_comment",
-                )
+            self._cron_failure_alert_todo(job, user, summary, body)
+        for channel in channels:
+            channel.message_post(
+                body=body,
+                author_id=self.env.ref("base.partner_root").id,
+                message_type="comment",
+                subtype_xmlid="mail.mt_comment",
+            )
 
     @api.model
     def _cron_failure_alert_targets(self, job, deactivated):
@@ -227,10 +220,7 @@ class IrCron(models.Model):
             open_todo.write(
                 {
                     "summary": summary,
-                    "note": Markup("<p><b>%s</b></p>") % summary
-                    + body
-                    + Markup("<hr/>")
-                    + (open_todo.note or ""),
+                    "note": body + Markup("<hr/>") + (open_todo.note or ""),
                     "date_deadline": today,
                 }
             )
@@ -254,8 +244,39 @@ class IrCron(models.Model):
         return self.env[model].browse(record_id).exists()
 
     @api.model
+    def _cron_failure_alert_langs(self):
+        """Languages the alerts are written in: French, then English.
+
+        Alerts are read later by other people than their recipient, so they
+        never follow a user's language. Only installed languages are used
+        (rendering in an inactive one fails); without French, the alert is
+        written in the environment's language alone.
+        """
+        installed = {code for code, _name in self.env["res.lang"].get_installed()}
+        if "fr_FR" not in installed:
+            return [self.env.lang or "en_US"]
+        return [lang for lang in ("fr_FR", "en_US") if lang in installed]
+
+    @api.model
+    def _cron_failure_alert_bilingual(self, job, error, deactivated):
+        """Return ``(summary, html_body)``: French first, then English.
+
+        The summary is "<French> / <English>"; the body is one block per
+        language, each starting with its summary in bold.
+        """
+        summaries = []
+        body = Markup()
+        for lang in self._cron_failure_alert_langs():
+            summary, block = self.with_context(
+                lang=lang
+            )._cron_failure_alert_content(job, error, deactivated)
+            summaries.append(summary)
+            body += Markup("<p><b>%s</b></p>") % summary + block
+        return " / ".join(summaries), body
+
+    @api.model
     def _cron_failure_alert_content(self, job, error, deactivated):
-        """Return ``(summary, html_body)`` in the context language."""
+        """Return ``(summary, html_body)`` in the context language only."""
         _ = self.env._
         name = job["cron_name"]
         now = fields.Datetime.to_string(self.env.cr.now().replace(microsecond=0))
