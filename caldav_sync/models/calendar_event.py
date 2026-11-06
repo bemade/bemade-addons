@@ -93,8 +93,8 @@ def _parse_rrule_string(rrule_str: str) -> Dict[str, Any]:
 
 def _extract_vcal_email(vcal_address):
     email_regex = re.compile(r"[a-z0-9.\-+_]+@[a-z0-9.\-+_]+\.[a-z]+")
-    res = email_regex.search(str(vcal_address))
-    return res.group(0).lower().strip() if res else ""
+    res = email_regex.search(str(vcal_address).lower())
+    return res.group(0).strip() if res else ""
 
 
 class CalendarEvent(models.Model):
@@ -498,8 +498,12 @@ class CalendarEvent(models.Model):
         event_data["created"] = vDatetime(
             utc.localize(self.create_date).astimezone(event_tz)
         )
-        event_data["dtstart"] = vDatetime(utc.localize(self.start).astimezone(event_tz))
-        event_data["dtend"] = vDatetime(utc.localize(self.stop).astimezone(event_tz))
+        if self.allday:
+            event_data["dtstart"] = vDate(self.start_date)
+            event_data["dtend"] = vDate(self.stop_date + timedelta(days=1))
+        else:
+            event_data["dtstart"] = vDatetime(utc.localize(self.start).astimezone(event_tz))
+            event_data["dtend"] = vDatetime(utc.localize(self.stop).astimezone(event_tz))
 
     def _add_event_recurrence_id(self, event_data: Dict) -> None:
         """Add the recurrence-id parameter to event data if self is linked
@@ -651,6 +655,7 @@ class CalendarEvent(models.Model):
                 component, user, for_creation=not existing_instance
             )
             recurrency_vals = self._get_recurrency_values_from_ical_event(component)
+            unsupported_recurrence = recurrency_vals.pop("unsupported_recurrence", False)
             if not existing_instance:
                 # If the event is in the past, we just ignore it.
                 stop = values.get("stop")
@@ -661,12 +666,21 @@ class CalendarEvent(models.Model):
                     continue
                 # If we're creating an instance and it doesn't follow the recurrence,
                 # just scrap the recurrency vals, they're not useful
-                if not recurrency_vals.get("follow_recurrence"):
+                if unsupported_recurrence or not recurrency_vals.get("follow_recurrence"):
                     recurrency_vals = {}
 
                 new_event = self.with_context(
                     caldav_no_sync=True, caldav_keep_ids=True
                 ).create(values | recurrency_vals)
+                if unsupported_recurrence:
+                    new_event.message_post(
+                        body=(
+                            "Récurrence non importée : la règle CalDAV n'est pas prise en "
+                            "charge (BYSETPOS). Seule la date de début a été créée."
+                        ),
+                        message_type="comment",
+                        subtype_xmlid="mail.mt_note",
+                    )
                 self.env["calendar.event"].flush_model()
                 if new_event.recurrency:
                     synced_events |= new_event.recurrence_id.calendar_event_ids
@@ -676,9 +690,15 @@ class CalendarEvent(models.Model):
             elif outdated or not owned:
                 pass
             else:
-                changed_vals = existing_instance._get_recurrence_changes(
-                    recurrency_vals
-                ) | existing_instance._get_value_changes(values)
+                # An unsupported rule must not remove the recurrence Odoo already has
+                recurrence_changes = (
+                    {}
+                    if unsupported_recurrence
+                    else existing_instance._get_recurrence_changes(recurrency_vals)
+                )
+                changed_vals = recurrence_changes | existing_instance._get_value_changes(
+                    values
+                )
                 if changed_vals:
                     existing_instance.with_context(
                         caldav_no_sync=True,
@@ -769,9 +789,23 @@ class CalendarEvent(models.Model):
             return {}
         until = rrule.get("until")
         if until and isinstance(until, list):
-            until = until[0].astimezone(utc)
+            until = until[0]
+            if isinstance(until, datetime):
+                # A floating (naive) UNTIL is read in the server's zone, not the event's TZID
+                until = until.astimezone(utc)
+            else:
+                # All-day series: RFC 5545 gives UNTIL as a DATE, keep its whole last day
+                until = datetime.combine(until, datetime.max.time(), tzinfo=utc)
+            rrule["until"] = until
         rrule_str = rrule.to_ical() and rrule.to_ical().decode("utf-8")
         if rrule_str:
+            if self.env["calendar.recurrence"]._is_unsupported_bysetpos(
+                "RRULE:" + rrule_str
+            ):
+                _logger.warning(
+                    f"Unsupported BYSETPOS rule, imported without recurrence: {rrule_str}"
+                )
+                return {"unsupported_recurrence": True}
             dtstart_dt = component.get("dtstart").dt
             # For all-day events, dtstart.dt is a date (not datetime) and has
             # no astimezone(); promote it to a UTC-aware datetime at midnight.
@@ -911,12 +945,32 @@ class CalendarEvent(models.Model):
         :param for_creation: Whether these values are for creating a new event (True)
                             or updating an existing one (False).
         :return: The dictionary of values to construct a calendar.event."""
+        allday = False
         start = component.get("dtstart") and component.decoded("dtstart")
         if isinstance(start, datetime):
             start = start.astimezone(utc).replace(tzinfo=None)
-        end = component.get("dtend") and component.decoded("dtend")
-        if isinstance(end, datetime):
+        elif isinstance(start, date):
+            allday = True
+        else:
+            _logger.warning(
+                f"Unsupported dtstart type for event {component.get('uid')}: {type(start)}"
+            )
+            return {}
+        dtend_prop = component.get("dtend")
+        end = dtend_prop and component.decoded("dtend")
+        if dtend_prop is None:
+            pass  # handled below alongside the duration/instant-event fallback
+        elif isinstance(end, datetime):
             end = end.astimezone(utc).replace(tzinfo=None)
+        elif isinstance(end, date) and allday:
+            # DTEND is exclusive for all-day events, so the last day is the one before it.
+            # Never before start, for clients that send DTEND == DTSTART.
+            end = max(start, end - timedelta(days=1))
+        else:
+            _logger.warning(
+                f"Unsupported dtend type for event {component.get('uid')}: {type(end)}"
+            )
+            return {}
 
         # Handle events without dtend (e.g., endless recurring events or instant events)
         # Per RFC 5545, events can have dtend, duration, or neither.
@@ -956,6 +1010,15 @@ class CalendarEvent(models.Model):
             "caldav_uid": str(component.get("uid")),
             "partner_ids": [(6, 0, attendee_ids.ids)],
         }
+
+        if allday:
+            values.update(
+                {
+                    "start_date": start,
+                    "stop_date": end,
+                    "allday": True,
+                }
+            )
 
         # Only set user_id and partner_id during creation
         if for_creation:

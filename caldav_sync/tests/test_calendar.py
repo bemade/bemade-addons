@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import DEFAULT, MagicMock, patch
 
@@ -475,3 +475,117 @@ END:VCALENDAR"""
         # Compare just the datetime values (timezone handling may differ)
         self.assertEqual(values_duration["stop"], expected_stop,
             "stop should be start + duration")
+
+    def _vevent_from_ics(self, body):
+        """Return the VEVENT of a minimal calendar built from the given lines."""
+        ics = "\r\n".join(
+            ["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", "UID:test-allday", *body, "END:VEVENT", "END:VCALENDAR"]
+        )
+        return icalendar.Calendar.from_ical(ics).walk("VEVENT")[0]
+
+    def test_allday_event_from_ical_values(self):
+        """An all-day VEVENT (DATE values) imports as an all-day event whose
+        stop_date is the last day, DTEND being exclusive."""
+        vevent = self._vevent_from_ics(
+            ["DTSTART;VALUE=DATE:20270108", "DTEND;VALUE=DATE:20270111"]
+        )
+        values = self.env["calendar.event"]._get_values_from_ical_component(
+            vevent, self.user_1
+        )
+        self.assertTrue(values["allday"])
+        self.assertEqual(values["start_date"], date(2027, 1, 8))
+        self.assertEqual(values["stop_date"], date(2027, 1, 10))
+
+    def test_allday_event_dtend_equal_dtstart(self):
+        """Clients sending DTEND equal to DTSTART for an all-day event must not
+        produce a stop_date before start_date."""
+        vevent = self._vevent_from_ics(
+            ["DTSTART;VALUE=DATE:20270108", "DTEND;VALUE=DATE:20270108"]
+        )
+        values = self.env["calendar.event"]._get_values_from_ical_component(
+            vevent, self.user_1
+        )
+        self.assertEqual(values["start_date"], date(2027, 1, 8))
+        self.assertEqual(values["stop_date"], date(2027, 1, 8))
+
+    def test_event_without_dtstart_is_skipped(self):
+        """A VEVENT without DTSTART is ignored instead of raising."""
+        vevent = self._vevent_from_ics(["SUMMARY:No start"])
+        values = self.env["calendar.event"]._get_values_from_ical_component(
+            vevent, self.user_1
+        )
+        self.assertEqual(values, {})
+
+    def test_allday_recurring_until_date(self):
+        """An all-day series with UNTIL as a DATE keeps its last day."""
+        vevent = self._vevent_from_ics(
+            [
+                "DTSTART;VALUE=DATE:20270108",
+                "DTEND;VALUE=DATE:20270109",
+                "RRULE:FREQ=WEEKLY;UNTIL=20270301",
+            ]
+        )
+        values = self.env["calendar.event"]._get_recurrency_values_from_ical_event(
+            vevent
+        )
+        self.assertEqual(values["end_type"], "end_date")
+        self.assertEqual(values["rrule_type"], "weekly")
+        # UNTIL as a DATE covers the whole of its last day
+        self.assertEqual(values["until"].date(), date(2027, 3, 1))
+
+    def test_monthly_bysetpos_is_parsed_as_monthly(self):
+        """FREQ=MONTHLY;BYDAY=SU;BYSETPOS=2 is the second Sunday of each month,
+        not a weekly Sunday rule."""
+        data = self.env["calendar.recurrence"]._rrule_parse(
+            "RRULE:FREQ=MONTHLY;BYDAY=SU;BYSETPOS=2", datetime(2027, 1, 1)
+        )
+        self.assertEqual(data["rrule_type"], "monthly")
+        self.assertEqual(data["month_by"], "day")
+        self.assertEqual(data["weekday"], "SUN")
+        self.assertEqual(data["byday"], "2")
+        self.assertFalse(data["sun"])
+
+    def test_monthly_bysetpos_unsupported_combination_kept_as_core(self):
+        """Several weekdays with BYSETPOS are not mapped to a monthly rule, so
+        core's result is kept instead of a silently wrong single weekday."""
+        data = self.env["calendar.recurrence"]._rrule_parse(
+            "RRULE:FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1", datetime(2027, 1, 1)
+        )
+        self.assertEqual(data["rrule_type"], "weekly")
+        self.assertNotIn("weekday", data)
+
+    def test_unsupported_bysetpos_rules_are_detected(self):
+        """Only a monthly rule with one weekday and one position is mapped."""
+        recurrence = self.env["calendar.recurrence"]
+        for rule in [
+            "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1",
+            "FREQ=MONTHLY;BYDAY=FR;BYSETPOS=5",
+            "FREQ=MONTHLY;BYDAY=SU;BYSETPOS=-2",
+        ]:
+            self.assertTrue(recurrence._is_unsupported_bysetpos(f"RRULE:{rule}"), rule)
+        for rule in ["FREQ=MONTHLY;BYDAY=SU;BYSETPOS=2", "FREQ=WEEKLY;BYDAY=MO"]:
+            self.assertFalse(recurrence._is_unsupported_bysetpos(f"RRULE:{rule}"), rule)
+
+    def test_unsupported_bysetpos_event_is_imported_without_recurrence(self):
+        """An unsupported rule creates only the first date, with a visible note."""
+        ics = "\r\n".join(
+            [
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "BEGIN:VEVENT",
+                "UID:test-bysetpos-unsupported",
+                "DTSTART:20301105T090000Z",
+                "DTEND:20301105T100000Z",
+                "SUMMARY:Dernier jour ouvré",
+                "RRULE:FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1",
+                "END:VEVENT",
+                "END:VCALENDAR",
+            ]
+        )
+        calendar = icalendar.Calendar.from_ical(ics)
+        events = self.env["calendar.event"]._sync_event_from_ical(calendar, self.user_1)
+        self.assertEqual(len(events), 1)
+        self.assertFalse(events.recurrency)
+        self.assertFalse(events.recurrence_id)
+        notes = events.message_ids.filtered(lambda m: "non importée" in (m.body or ""))
+        self.assertTrue(notes)
