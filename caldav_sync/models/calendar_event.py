@@ -655,6 +655,7 @@ class CalendarEvent(models.Model):
                 component, user, for_creation=not existing_instance
             )
             recurrency_vals = self._get_recurrency_values_from_ical_event(component)
+            unsupported_recurrence = recurrency_vals.pop("unsupported_recurrence", False)
             if not existing_instance:
                 # If the event is in the past, we just ignore it.
                 stop = values.get("stop")
@@ -665,12 +666,21 @@ class CalendarEvent(models.Model):
                     continue
                 # If we're creating an instance and it doesn't follow the recurrence,
                 # just scrap the recurrency vals, they're not useful
-                if not recurrency_vals.get("follow_recurrence"):
+                if unsupported_recurrence or not recurrency_vals.get("follow_recurrence"):
                     recurrency_vals = {}
 
                 new_event = self.with_context(
                     caldav_no_sync=True, caldav_keep_ids=True
                 ).create(values | recurrency_vals)
+                if unsupported_recurrence:
+                    new_event.message_post(
+                        body=(
+                            "Récurrence non importée : la règle CalDAV n'est pas prise en "
+                            "charge (BYSETPOS). Seule la date de début a été créée."
+                        ),
+                        message_type="comment",
+                        subtype_xmlid="mail.mt_note",
+                    )
                 self.env["calendar.event"].flush_model()
                 if new_event.recurrency:
                     synced_events |= new_event.recurrence_id.calendar_event_ids
@@ -680,9 +690,15 @@ class CalendarEvent(models.Model):
             elif outdated or not owned:
                 pass
             else:
-                changed_vals = existing_instance._get_recurrence_changes(
-                    recurrency_vals
-                ) | existing_instance._get_value_changes(values)
+                # An unsupported rule must not remove the recurrence Odoo already has
+                recurrence_changes = (
+                    {}
+                    if unsupported_recurrence
+                    else existing_instance._get_recurrence_changes(recurrency_vals)
+                )
+                changed_vals = recurrence_changes | existing_instance._get_value_changes(
+                    values
+                )
                 if changed_vals:
                     existing_instance.with_context(
                         caldav_no_sync=True,
@@ -783,6 +799,13 @@ class CalendarEvent(models.Model):
             rrule["until"] = until
         rrule_str = rrule.to_ical() and rrule.to_ical().decode("utf-8")
         if rrule_str:
+            if self.env["calendar.recurrence"]._is_unsupported_bysetpos(
+                "RRULE:" + rrule_str
+            ):
+                _logger.warning(
+                    f"Unsupported BYSETPOS rule, imported without recurrence: {rrule_str}"
+                )
+                return {"unsupported_recurrence": True}
             dtstart_dt = component.get("dtstart").dt
             # For all-day events, dtstart.dt is a date (not datetime) and has
             # no astimezone(); promote it to a UTC-aware datetime at midnight.

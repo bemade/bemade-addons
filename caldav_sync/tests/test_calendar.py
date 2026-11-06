@@ -553,3 +553,39 @@ END:VCALENDAR"""
         )
         self.assertEqual(data["rrule_type"], "weekly")
         self.assertNotIn("weekday", data)
+
+    def test_unsupported_bysetpos_rules_are_detected(self):
+        """Only a monthly rule with one weekday and one position is mapped."""
+        recurrence = self.env["calendar.recurrence"]
+        for rule in [
+            "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1",
+            "FREQ=MONTHLY;BYDAY=FR;BYSETPOS=5",
+            "FREQ=MONTHLY;BYDAY=SU;BYSETPOS=-2",
+        ]:
+            self.assertTrue(recurrence._is_unsupported_bysetpos(f"RRULE:{rule}"), rule)
+        for rule in ["FREQ=MONTHLY;BYDAY=SU;BYSETPOS=2", "FREQ=WEEKLY;BYDAY=MO"]:
+            self.assertFalse(recurrence._is_unsupported_bysetpos(f"RRULE:{rule}"), rule)
+
+    def test_unsupported_bysetpos_event_is_imported_without_recurrence(self):
+        """An unsupported rule creates only the first date, with a visible note."""
+        ics = "\r\n".join(
+            [
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "BEGIN:VEVENT",
+                "UID:test-bysetpos-unsupported",
+                "DTSTART:20301105T090000Z",
+                "DTEND:20301105T100000Z",
+                "SUMMARY:Dernier jour ouvré",
+                "RRULE:FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1",
+                "END:VEVENT",
+                "END:VCALENDAR",
+            ]
+        )
+        calendar = icalendar.Calendar.from_ical(ics)
+        events = self.env["calendar.event"]._sync_event_from_ical(calendar, self.user_1)
+        self.assertEqual(len(events), 1)
+        self.assertFalse(events.recurrency)
+        self.assertFalse(events.recurrence_id)
+        notes = events.message_ids.filtered(lambda m: "non importée" in (m.body or ""))
+        self.assertTrue(notes)
