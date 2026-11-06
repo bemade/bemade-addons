@@ -1,6 +1,7 @@
 import logging
 import re
 import uuid
+from datetime import datetime
 
 import pytz
 from dateutil import rrule
@@ -60,6 +61,26 @@ class RecurrenceRule(models.Model):
         for event in detached_events:
             event._sync_unlink_to_caldav()
         return detached_events
+
+    @api.model
+    def _is_unsupported_bysetpos(self, rule_str):
+        """Tell whether a rule uses BYSETPOS in a form _rrule_parse cannot map.
+
+        Only a monthly rule with one weekday and one position (1 to 4, or -1) is mapped.
+        """
+        rule_str = re.sub(r";?X-[-\w]+=[^;:]*", "", rule_str).replace(":;", ":").lstrip(":;")
+        dtstart = datetime(2000, 1, 1, tzinfo=pytz.utc) if "Z" in rule_str else datetime(2000, 1, 1)
+        rule = rrule.rrulestr(rule_str, dtstart=dtstart)
+        if not rule._bysetpos:
+            return False
+        weekdays = tuple(rule._byweekday or ())
+        positions = [str(position) for position in rule._bysetpos]
+        return not (
+            rule._freq == rrule.MONTHLY
+            and len(weekdays) == 1
+            and len(positions) == 1
+            and positions[0] in dict(BYDAY_SELECTION)
+        )
 
     @api.model
     def _rrule_parse(self, rule_str, date_start):
