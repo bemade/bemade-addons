@@ -16,7 +16,8 @@ class MailThread(models.AbstractModel):
 
         This override filters the routes to avoid processing a message multiple times for helpdesk models
         (`helpdesk.ticket` and `helpdesk.team`). If multiple helpdesk routes are found, only the first one
-        is retained, and a log entry is created to indicate the adjustment.
+        is retained, and a log entry is created to indicate the adjustment. Routes to other models (a
+        reply to another document, an alias of another model) are kept, in their original order.
 
         Parameters:
             message (object): The incoming message object.
@@ -27,17 +28,18 @@ class MailThread(models.AbstractModel):
             bool: Result of the `_message_route_process` from the superclass.
         """
         try:
-            # Filter routes to keep only those related to helpdesk models if they are present
+            # Helpdesk routes: only the first one is processed
             helpdesk_routes = [
                 r for r in routes if r[0] in ("helpdesk.ticket", "helpdesk.team")
             ]
 
-            if helpdesk_routes:
+            if len(helpdesk_routes) > 1:
                 _logger.info(
-                    "Messages contained helpdesk routes. Only the first one will be used."
+                    "Messages contained several helpdesk routes. Only the first one will be used."
                 )
-                # Retain only the first helpdesk route
-                routes = [helpdesk_routes[0]]
+                # Retain the first helpdesk route and every non-helpdesk route
+                dropped = helpdesk_routes[1:]
+                routes = [r for r in routes if not any(r is d for d in dropped)]
 
             # Call the parent method with potentially modified routes
             return super()._message_route_process(message, message_dict, routes)

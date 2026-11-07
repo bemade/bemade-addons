@@ -80,8 +80,13 @@ class TestHelpdeskOneTicketPerEmail(TransactionCase):
         forwarded_routes = mock_super.call_args.args[2]
         self.assertEqual(forwarded_routes, [ticket_route])
 
-    def test_mixed_routes_keep_first_helpdesk(self):
-        """Mixed routes are reduced to the first helpdesk route only."""
+    def test_mixed_routes_keep_other_routes(self):
+        """Mixed routes keep every non-helpdesk route and the first helpdesk route.
+
+        An email sent to a helpdesk alias and to an alias of another model
+        (or replying to another document) must still reach that other
+        document: only the extra helpdesk routes are dropped.
+        """
         non_helpdesk = self._route("res.partner")
         team_route = self._route("helpdesk.team")
         ticket_route = self._route("helpdesk.ticket")
@@ -93,7 +98,23 @@ class TestHelpdeskOneTicketPerEmail(TransactionCase):
         ) as mock_super:
             self.MailThread._message_route_process(None, dict(self.MSG_DICT), routes)
         forwarded_routes = mock_super.call_args.args[2]
-        self.assertEqual(forwarded_routes, [team_route])
+        self.assertEqual(forwarded_routes, [non_helpdesk, team_route])
+
+    def test_mixed_routes_keep_order(self):
+        """Kept routes stay in their original order."""
+        ticket_route = self._route("helpdesk.ticket")
+        reply_route = self._route("sale.order", thread_id=7)
+        team_route = self._route("helpdesk.team")
+        lead_route = self._route("crm.lead")
+        routes = [ticket_route, reply_route, team_route, lead_route]
+        with patch.object(
+            CoreMailThread,
+            "_message_route_process",
+            return_value=True,
+        ) as mock_super:
+            self.MailThread._message_route_process(None, dict(self.MSG_DICT), routes)
+        forwarded_routes = mock_super.call_args.args[2]
+        self.assertEqual(forwarded_routes, [ticket_route, reply_route, lead_route])
 
     def test_exception_wrapped_in_user_error(self):
         """Any error raised by the super call is wrapped into a UserError."""
