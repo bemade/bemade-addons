@@ -1,7 +1,6 @@
 from odoo import fields, models, api, Command
 from odoo.addons.project.models.project_task import CLOSED_STATES
 import re
-from typing import cast, List
 
 
 class Task(models.Model):
@@ -145,6 +144,9 @@ class Task(models.Model):
         # we cannot read it back off the created record.
         template_ids = [vals.get("template_id") for vals in vals_list]
         res = super().create(vals_list)
+        # Next work order number per sale order, shared by the whole batch so
+        # that visits created together get consecutive numbers.
+        next_numbers = {}
         for rec, template_id in zip(res, template_ids):
             if template_id:
                 rec._apply_template_to_self(
@@ -158,20 +160,7 @@ class Task(models.Model):
                 if not rec.site_contacts and rec.parent_id:
                     rec.site_contacts = rec.parent_id.site_contacts
             if rec.sale_order_id:
-                seq = 1
-                prev_seqs = (
-                    self.sale_order_id.tasks_ids
-                    and self.sale_order_id.tasks_ids.mapped("work_order_number")
-                )
-                if prev_seqs:
-                    pattern = re.compile(r"(\d+)$")
-                    matches = map(
-                        lambda n: pattern.search(n), cast(List[str], prev_seqs)
-                    )
-                    seq += max(map(lambda n: int(n.group(1)) if n else 0, matches))
-                rec.work_order_number = (
-                    rec.sale_order_id.name.replace("SO", "SVR", 1) + f"-{seq}"
-                )
+                rec.work_order_number = rec._next_work_order_number(next_numbers)
                 # If the task is linked to a sales order and has no parent, it should inherit SO work order contacts
                 if (
                     not rec.parent_id
@@ -186,6 +175,37 @@ class Task(models.Model):
                 ):
                     rec.site_contacts = rec.sale_order_id.site_contacts
         return res
+
+    def _next_work_order_number(self, next_numbers):
+        """Return the work order (SVR) number for this new task.
+
+        Visit tasks are numbered one after the other per sale order: the next
+        number follows the highest suffix among the order's visit tasks
+        (``SVR<order>-<n>``), counting the visit tasks created earlier in the
+        same batch through ``next_numbers`` ({order id: next number}). Other
+        tasks get the order's next number without consuming it; a service
+        task takes its visit's number when it is attached under the visit task.
+
+        Existing numbers are never changed.
+        """
+        self.ensure_one()
+        order = self.sale_order_id
+        if order.id not in next_numbers:
+            visit_tasks = (
+                self.sudo().with_context(active_test=False)
+                .search([("sale_order_id", "=", order.id), ("visit_id", "!=", False)])
+                - self
+            )
+            suffixes = [0]
+            for number in visit_tasks.mapped("work_order_number"):
+                match = number and re.search(r"-(\d+)$", number)
+                if match:
+                    suffixes.append(int(match.group(1)))
+            next_numbers[order.id] = max(suffixes) + 1
+        seq = next_numbers[order.id]
+        if self.visit_id:
+            next_numbers[order.id] += 1
+        return order.name.replace("SO", "SVR", 1) + f"-{seq}"
 
     def write(self, vals):
         res = super().write(vals)

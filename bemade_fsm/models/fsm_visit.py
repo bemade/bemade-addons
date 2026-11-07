@@ -77,12 +77,21 @@ class FSMVisit(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
-        for i, rec in enumerate(recs.filtered(lambda visit: not visit.so_section_id)):
+        for rec, vals in zip(recs, vals_list):
+            if rec.so_section_id:
+                continue
+            # Put the new section after every existing line of the order: with
+            # the default sequence (10) it could land inside an earlier visit's
+            # section and take over that visit's lines.
+            last_sequence = max(
+                rec.sale_order_id.order_line.mapped("sequence"), default=0
+            )
             rec.so_section_id = rec.env["sale.order.line"].create(
                 {
                     "order_id": rec.sale_order_id.id,
                     "display_type": "line_section",
-                    "name": vals_list[i].get("label", False),
+                    "name": vals.get("label", False),
+                    "sequence": last_sequence + 1,
                 }
             )
         return recs
