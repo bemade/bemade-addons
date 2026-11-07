@@ -325,20 +325,28 @@ class ResPartner(models.Model):
             candidates = self._find_email_domain_candidates(email_domain)
             Suggestion._queue(partner, candidates, email_domain, "suffix_fix")
 
-    def _email_domain_queue_backfill(self):
-        """Queue contacts left without company by the former email flow.
+    def _email_domain_backfill(self):
+        """Re-match contacts left without company by the former email flow.
 
-        Re-matched with the anchored rule; never attached here, even on a
-        single candidate: the triage list decides.
+        Same rule as a new contact: a single candidate attaches the contact
+        (flag, note, Detach available) unless "suggest only" is set; two or
+        more candidates queue it in Unassigned contacts. Returns the
+        ``(attached, queued)`` recordsets.
         """
+        suggest_only = self._email_domain_suggest_only()
         Suggestion = self.env["partner.parent.suggestion"].sudo()
-        queued = self.browse()
+        attached = queued = self.browse()
         for partner in self:
             if not partner.active or not partner._is_email_domain_match_target():
                 continue
             email_domain = email_domain_of(partner.email)
             candidates = self._find_email_domain_candidates(email_domain)
-            if candidates:
+            if not candidates:
+                continue
+            if len(candidates) == 1 and not suggest_only:
+                partner._attach_to_email_domain_parent(candidates, email_domain)
+                attached |= partner
+            else:
                 Suggestion._queue(partner, candidates, email_domain, "backfill")
                 queued |= partner
-        return queued
+        return attached, queued

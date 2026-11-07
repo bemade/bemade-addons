@@ -5,7 +5,8 @@
    ``@atlantic.ca``) are detached, noted and queued in Unassigned contacts.
 2. Contacts left without a company by the former "select your division"
    email (they carry an access token) are re-matched with the anchored rule
-   and queued when at least one company matches. Nothing is attached here.
+   like a new contact: attached (with a note) when exactly one company
+   matches, queued when several do.
 3. The access tokens are cleared and their column dropped; the email
    template is deleted (it was noupdate, so the upgrade would keep it).
 4. Malformed and bare-suffix configured email domains are logged for a
@@ -87,10 +88,11 @@ def migrate(cr, version):
 
     # 2. Contacts left behind by the former division email (selected before
     #    step 1 changes any parent)
-    queued = without_parent._email_domain_queue_backfill()
+    attached, queued = without_parent._email_domain_backfill()
     _logger.warning(
-        "email domain: %s partners had an access token, %s without company, %s queued in Unassigned contacts",
-        len(token_partners), len(without_parent), len(queued),
+        "email domain: %s partners had an access token, %s without company, "
+        "%s attached to their single matching company, %s queued in Unassigned contacts",
+        len(token_partners), len(without_parent), len(attached), len(queued),
     )
 
     # 3. Tokens and email template
