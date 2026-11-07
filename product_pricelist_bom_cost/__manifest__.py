@@ -8,7 +8,7 @@
 #
 {
     "name": "Pricelist prices based on BOM cost",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "summary": "Add a pricelist-item base option that prices off the product's BOM cost",
     "description": """Pricelist prices based on BOM cost
 ==================================
