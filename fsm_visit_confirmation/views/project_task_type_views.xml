@@ -7,6 +7,8 @@
         <field name="arch" type="xml">
             <field name="mail_template_id" position="after">
                 <field name="approval_template_id"/>
+                <field name="approved_stage_id"
+                       invisible="not approval_template_id"/>
             </field>
         </field>
     </record>
