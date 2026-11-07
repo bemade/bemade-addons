@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Hide Decimal on unit",
-    "version": "19.0.0.1.2",
+    "version": "19.0.0.1.3",
     "category": "Extra Tools",
     "summary": "Hide decimal on Qty when there is no decimal",
     "description": """
