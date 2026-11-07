@@ -199,13 +199,27 @@ msgid "Task not found or invalid token"
 msgstr ""
 
 #. module: fsm_visit_confirmation
-#. odoo-python
-#: code:addons/fsm_visit_confirmation/controllers/main.py:0
-#, python-format
-msgid "Visit approved by customer"
+#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
+msgid "Your Comments:"
 msgstr ""
 
 #. module: fsm_visit_confirmation
-#: model_terms:ir.ui.view,arch_db:fsm_visit_confirmation.portal_my_task
-msgid "Your Comments:"
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/models/project_task_type.py:0
+msgid ""
+"The stage after customer approval of \"%(stage)s\" must be another stage of "
+"the same project."
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task_type__approved_stage_id
+msgid "Stage after customer approval"
+msgstr ""
+
+#. module: fsm_visit_confirmation
+#: model:ir.model.fields,help:fsm_visit_confirmation.field_project_task_type__approved_stage_id
+msgid ""
+"When the customer approves the visit from the confirmation email while the "
+"task is still in this stage, the task moves to the selected stage. Leave "
+"empty to keep the task where it is."
 msgstr ""
