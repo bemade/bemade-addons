@@ -6,6 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: it@bemade.org\n"
+"POT-Creation-Date: 2026-11-07 16:48+0000\n"
+"PO-Revision-Date: 2026-11-07 16:48+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -15,36 +17,493 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: bemade_partner_email_domain
-#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_partner__access_token
-#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_users__access_token
-msgid "Access Token"
-msgstr "Jeton d'accès"
+#: model:ir.model.constraint,message:bemade_partner_email_domain.constraint_partner_parent_suggestion_partner_uniq
+msgid "A contact can only have one open row."
+msgstr "Un contact ne peut avoir qu'une seule ligne ouverte."
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__message_needaction
+msgid "Action Needed"
+msgstr "Nécessite une action"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__activity_ids
+msgid "Activities"
+msgstr "Activités"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr "Indicateur d’exception d’activité"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__activity_state
+msgid "Activity State"
+msgstr "Statut de l'activité"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__activity_type_icon
+msgid "Activity Type Icon"
+msgstr "Icône de type d'activité"
+
+#. module: bemade_partner_email_domain
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.partner_parent_suggestion_view_list
+msgid "Apply assignments"
+msgstr "Appliquer les rattachements"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_partner__parent_set_by_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_users__parent_set_by_email_domain
+msgid "Attached by Email Domain"
+msgstr "Rattaché par domaine de courriel"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__message_attachment_count
+msgid "Attachment Count"
+msgstr "Nombre de pièces jointes"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__candidate_ids
+msgid "Candidate Companies"
+msgstr "Entreprises candidates"
+
+#. module: bemade_partner_email_domain
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.partner_parent_suggestion_view_search
+msgid "Candidate Company"
+msgstr "Entreprise candidate"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__chosen_parent_id
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.partner_parent_suggestion_view_list
+msgid "Company"
+msgstr "Société"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_partner__parent_suggestion_ids
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_users__parent_suggestion_ids
+msgid "Company Suggestions"
+msgstr "Suggestions d'entreprise"
+
+#. module: bemade_partner_email_domain
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.partner_parent_suggestion_view_search
+msgid "Company chosen"
+msgstr "Entreprise choisie"
+
+#. module: bemade_partner_email_domain
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.res_config_settings_view_form
+msgid "Company from email domain"
+msgstr "Entreprise selon le domaine de courriel"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,help:bemade_partner_email_domain.field_partner_parent_suggestion__chosen_parent_id
+msgid ""
+"Company to attach the contact to. Nothing is written until Apply "
+"assignments."
+msgstr ""
+"Entreprise à laquelle rattacher le contact. Rien n'est enregistré avant « "
+"Appliquer les rattachements »."
+
+#. module: bemade_partner_email_domain
+#: model:ir.model,name:bemade_partner_email_domain.model_res_config_settings
+msgid "Config Settings"
+msgstr "Paramètres de configuration"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model,name:bemade_partner_email_domain.model_res_partner
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__partner_id
+msgid "Contact"
+msgstr ""
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields.selection,name:bemade_partner_email_domain.selection__partner_parent_suggestion__source__create
+msgid "Contact created"
+msgstr "Contact créé"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__partner_create_uid
+msgid "Contact created by"
+msgstr "Contact créé par"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__partner_create_date
+msgid "Contact created on"
+msgstr "Contact créé le"
+
+#. module: bemade_partner_email_domain
+#: model_terms:ir.actions.act_window,help:bemade_partner_email_domain.action_partner_parent_suggestion
+msgid ""
+"Contacts whose email domain matches several companies appear here.\n"
+"               Click a company on each row, then Apply assignments."
+msgstr ""
+"Les contacts dont le domaine de courriel correspond à plusieurs entreprises apparaissent ici.\n"
+"               Cliquez sur une entreprise sur chaque ligne, puis sur « Appliquer les rattachements »."
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: bemade_partner_email_domain
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.partner_email_domain_form
+msgid "Detach"
+msgstr "Détacher"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields.selection,name:bemade_partner_email_domain.selection__partner_parent_suggestion__source__suffix_fix
+msgid "Detached (domain suffix only)"
+msgstr "Détaché (fin de domaine seulement)"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__display_name
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_partner__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
 
 #. module: bemade_partner_email_domain
 #: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.partner_email_domain_form
 msgid "Division"
-msgstr "Division"
+msgstr ""
 
 #. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__partner_email
+msgid "Email"
+msgstr "E-mail"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__email_domain
 #: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_partner__email_domain
 #: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_users__email_domain
 msgid "Email Domain"
 msgstr "Domaine de courriel"
 
 #. module: bemade_partner_email_domain
+#: model:ir.model.fields.selection,name:bemade_partner_email_domain.selection__partner_parent_suggestion__source__email
+msgid "Email changed"
+msgstr "Courriel modifié"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,help:bemade_partner_email_domain.field_res_partner__email_domain
+#: model:ir.model.fields,help:bemade_partner_email_domain.field_res_users__email_domain
+msgid ""
+"Email domain owned by this company (e.g. example.com). New contacts whose "
+"email ends with this domain are attached to this company."
+msgstr ""
+"Domaine de courriel de cette entreprise (p. ex. example.com). Les nouveaux "
+"contacts dont le courriel se termine par ce domaine sont rattachés à cette "
+"entreprise."
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_config_settings__email_domain_suggest_only
+msgid "Email domain: suggest only"
+msgstr "Domaine de courriel : suggérer seulement"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__message_follower_ids
+msgid "Followers"
+msgstr "Abonnés"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Abonnés (Partenaires)"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,help:bemade_partner_email_domain.field_partner_parent_suggestion__activity_type_icon
+msgid "Font awesome icon e.g. fa-tasks"
+msgstr "Icône Font Awesome par ex. fa-tasks"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields.selection,name:bemade_partner_email_domain.selection__partner_parent_suggestion__source__backfill
+msgid "Former division email"
+msgstr "Ancien courriel de choix de division"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__has_message
+msgid "Has Message"
+msgstr "A un message"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__id
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_config_settings__id
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_partner__id
+msgid "ID"
+msgstr ""
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__activity_exception_icon
+msgid "Icon"
+msgstr "Icône"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,help:bemade_partner_email_domain.field_partner_parent_suggestion__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr "Icône pour indiquer une activité d'exception."
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,help:bemade_partner_email_domain.field_partner_parent_suggestion__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si coché, de nouveaux messages demandent votre attention."
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,help:bemade_partner_email_domain.field_partner_parent_suggestion__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si coché, certains messages ont une erreur de livraison."
+
+#. module: bemade_partner_email_domain
 #. odoo-python
-#: code:addons/bemade_partner_email_domain/controllers/main.py:0
-msgid "No Access Token found or not matching for this partner."
-msgstr "Aucun jeton d'accès trouvé ou ne correspondant pas à ce partenaire."
+#: code:addons/bemade_partner_email_domain/models/res_partner.py:0
+msgid "Invalid email domain %(domain)s: %(error)s"
+msgstr "Domaine de courriel invalide %(domain)s : %(error)s"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__message_is_follower
+msgid "Is Follower"
+msgstr "Est un abonné"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__write_uid
+msgid "Last Updated by"
+msgstr "Mis à jour par"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__write_date
+msgid "Last Updated on"
+msgstr "Mis à jour le"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__message_has_error
+msgid "Message Delivery error"
+msgstr "Erreur d'envoi du message"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr "Échéance de mon activité"
+
+#. module: bemade_partner_email_domain
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.res_config_settings_view_form
+msgid ""
+"New contacts are attached to the company owning their email domain; "
+"ambiguous cases go to Contacts > Unassigned contacts."
+msgstr ""
+"Les nouveaux contacts sont rattachés à l'entreprise qui possède leur domaine"
+" de courriel; les cas ambigus vont dans Contacts > Contacts non assignés."
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr "Date limite de l'activité à venir"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__activity_summary
+msgid "Next Activity Summary"
+msgstr "Résumé de l'activité suivante"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__activity_type_id
+msgid "Next Activity Type"
+msgstr "Type d'activités à venir"
+
+#. module: bemade_partner_email_domain
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.partner_parent_suggestion_view_search
+msgid "No candidate"
+msgstr "Aucune candidate"
+
+#. module: bemade_partner_email_domain
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.partner_parent_suggestion_view_search
+msgid "No choice yet"
+msgstr "Pas encore de choix"
+
+#. module: bemade_partner_email_domain
+#: model_terms:ir.actions.act_window,help:bemade_partner_email_domain.action_partner_parent_suggestion
+msgid "No contact is waiting for its company"
+msgstr "Aucun contact n'attend son entreprise"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Nombre d'actions"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__message_has_error_counter
+msgid "Number of errors"
+msgstr "Nombre d'erreurs"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,help:bemade_partner_email_domain.field_partner_parent_suggestion__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Nombre de messages nécessitant une action"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,help:bemade_partner_email_domain.field_partner_parent_suggestion__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Nombre de messages avec des erreurs d'envoi"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__origin
+msgid "Origin"
+msgstr "Origine"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,help:bemade_partner_email_domain.field_res_config_settings__email_domain_reminder_user_id
+msgid "Receives a weekly to-do while contacts wait in Unassigned contacts."
+msgstr ""
+"Reçoit une tâche à faire hebdomadaire tant que des contacts attendent dans "
+"Contacts non assignés."
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__activity_user_id
+msgid "Responsible User"
+msgstr "Utilisateur responsable"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_partner_parent_suggestion__source
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.partner_parent_suggestion_view_search
+msgid "Source"
+msgstr ""
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,help:bemade_partner_email_domain.field_partner_parent_suggestion__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+"Statut basé sur les activités\n"
+"En retard : la date d'échéance est déjà dépassée\n"
+"Aujourd'hui : la date d'activité est aujourd'hui\n"
+"Planifiée : activités futures"
 
 #. module: bemade_partner_email_domain
 #: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_partner__is_subdivision
 #: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_users__is_subdivision
 msgid "Subdivision"
-msgstr "Subdivision"
+msgstr ""
+
+#. module: bemade_partner_email_domain
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.res_config_settings_view_form
+msgid "Suggest only (never attach automatically)"
+msgstr "Suggérer seulement (ne jamais rattacher automatiquement)"
 
 #. module: bemade_partner_email_domain
 #. odoo-python
-#: code:addons/bemade_partner_email_domain/controllers/main.py:0
-msgid "The requested partner is not found."
-msgstr "Le partenaire demandé n'est pas trouvé."
+#: code:addons/bemade_partner_email_domain/models/partner_parent_suggestion.py:0
+msgid "The chosen company must be one of the candidates."
+msgstr "L'entreprise choisie doit faire partie des candidates."
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,help:bemade_partner_email_domain.field_res_partner__parent_set_by_email_domain
+#: model:ir.model.fields,help:bemade_partner_email_domain.field_res_users__parent_set_by_email_domain
+msgid ""
+"The company of this contact was set automatically from its email domain. Use"
+" Detach to undo it."
+msgstr ""
+"L'entreprise de ce contact a été définie automatiquement à partir de son "
+"domaine de courriel. Utilisez « Détacher » pour l'annuler."
+
+#. module: bemade_partner_email_domain
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.partner_email_domain_form
+msgid ""
+"This company was set from the email domain: remove it from this contact."
+msgstr ""
+"Cette entreprise a été définie à partir du domaine de courriel : la retirer "
+"de ce contact."
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,help:bemade_partner_email_domain.field_partner_parent_suggestion__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr "Type d'activité d'exception enregistrée."
+
+#. module: bemade_partner_email_domain
+#: model:ir.model,name:bemade_partner_email_domain.model_partner_parent_suggestion
+msgid "Unassigned Contact (company to choose)"
+msgstr "Contact non assigné (entreprise à choisir)"
+
+#. module: bemade_partner_email_domain
+#: model:ir.actions.act_window,name:bemade_partner_email_domain.action_partner_parent_suggestion
+#: model:ir.ui.menu,name:bemade_partner_email_domain.menu_partner_parent_suggestion
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.partner_parent_suggestion_view_list
+msgid "Unassigned contacts"
+msgstr "Contacts non assignés"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,field_description:bemade_partner_email_domain.field_res_config_settings__email_domain_reminder_user_id
+msgid "Unassigned contacts reminder"
+msgstr "Rappel des contacts non assignés"
+
+#. module: bemade_partner_email_domain
+#: model:ir.actions.server,name:bemade_partner_email_domain.ir_cron_unassigned_contacts_reminder_ir_actions_server
+msgid "Unassigned contacts: weekly reminder"
+msgstr "Contacts non assignés : rappel hebdomadaire"
+
+#. module: bemade_partner_email_domain
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.res_config_settings_view_form
+msgid "Weekly reminder to"
+msgstr "Rappel hebdomadaire à"
+
+#. module: bemade_partner_email_domain
+#: model:ir.model.fields,help:bemade_partner_email_domain.field_res_config_settings__email_domain_suggest_only
+msgid ""
+"When a single company matches the email domain of a new contact, queue it in"
+" Unassigned contacts instead of attaching it."
+msgstr ""
+"Quand une seule entreprise correspond au domaine de courriel d'un nouveau "
+"contact, le placer dans Contacts non assignés au lieu de le rattacher."
+
+#. module: bemade_partner_email_domain
+#. odoo-python
+#: code:addons/bemade_partner_email_domain/models/res_partner.py:0
+msgid "an email domain may only contain letters, digits, dashes and dots"
+msgstr ""
+"un domaine de courriel ne peut contenir que des lettres, des chiffres, des "
+"tirets et des points"
+
+#. module: bemade_partner_email_domain
+#. odoo-python
+#: code:addons/bemade_partner_email_domain/models/res_partner.py:0
+msgid "an email domain must contain at least one dot"
+msgstr "un domaine de courriel doit contenir au moins un point"
+
+#. module: bemade_partner_email_domain
+#. odoo-python
+#: code:addons/bemade_partner_email_domain/models/res_partner.py:0
+msgid ""
+"an email domain must not contain '@' (use example.com, not name@example.com)"
+msgstr ""
+"un domaine de courriel ne doit pas contenir « @ » (utilisez example.com, pas"
+" nom@example.com)"
+
+#. module: bemade_partner_email_domain
+#. odoo-python
+#: code:addons/bemade_partner_email_domain/models/res_partner.py:0
+msgid ""
+"an email domain must not contain a scheme or a path (use example.com, not "
+"https://example.com/)"
+msgstr ""
+"un domaine de courriel ne doit contenir ni protocole ni chemin (utilisez "
+"example.com, pas https://example.com/)"
+
+#. module: bemade_partner_email_domain
+#: model_terms:ir.ui.view,arch_db:bemade_partner_email_domain.partner_email_domain_form
+msgid "e.g. example.com"
+msgstr "p. ex. example.com"
+
+#. module: bemade_partner_email_domain
+#. odoo-python
+#: code:addons/bemade_partner_email_domain/models/res_partner.py:0
+msgid "this is a public mailbox provider, it cannot identify a company"
+msgstr ""
+"c'est un fournisseur de messagerie public, il ne peut pas identifier une "
+"entreprise"
