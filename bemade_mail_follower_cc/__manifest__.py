@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Mail Follower CC Header",
-    "version": "19.0.1.0.2",
+    "version": "19.0.1.0.3",
     "category": "Discuss",
     "summary": "Show thread followers in the Cc header of outgoing notification emails (display only, no extra SMTP delivery).",
     "author": "Bemade",
@@ -12,5 +12,5 @@
     "data": [],
     "auto_install": False,
     "installable": True,
-    "license": "OPL-1",
+    "license": "LGPL-3",
 }

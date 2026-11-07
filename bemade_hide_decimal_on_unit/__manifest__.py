@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Hide Decimal on unit",
-    "version": "19.0.0.1.3",
+    "version": "19.0.0.1.4",
     "category": "Extra Tools",
     "summary": "Hide decimal on Qty when there is no decimal",
     "description": """
@@ -13,5 +13,5 @@
     "data": ["views/sale.xml", "views/purchase.xml"],
     "auto_install": False,
     "installable": True,
-    "license": "OPL-1",
+    "license": "LGPL-3",
 }
