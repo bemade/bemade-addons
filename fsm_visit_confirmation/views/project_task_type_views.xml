@@ -7,8 +7,12 @@
         <field name="arch" type="xml">
             <field name="mail_template_id" position="after">
                 <field name="approval_template_id"/>
+                <!-- Only stages sharing a project with this one (several
+                     projects may have a stage with the same name); a stage
+                     without project falls back to every other stage. -->
                 <field name="approved_stage_id"
-                       invisible="not approval_template_id"/>
+                       invisible="not approval_template_id"
+                       domain="[('id', '!=', id), ('project_ids', 'in', project_ids)] if project_ids else [('id', '!=', id)]"/>
             </field>
         </field>
     </record>

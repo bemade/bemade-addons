@@ -292,6 +292,16 @@ msgid "Your Comments:"
 msgstr "Vos commentaires :"
 
 #. module: fsm_visit_confirmation
+#. odoo-python
+#: code:addons/fsm_visit_confirmation/models/project_task_type.py:0
+msgid ""
+"The stage after customer approval of \"%(stage)s\" must be another stage of "
+"the same project."
+msgstr ""
+"L'étape après l'approbation du client de « %(stage)s » doit être une autre "
+"étape du même projet."
+
+#. module: fsm_visit_confirmation
 #: model:ir.model.fields,field_description:fsm_visit_confirmation.field_project_task_type__approved_stage_id
 msgid "Stage after customer approval"
 msgstr "Étape après l'approbation du client"

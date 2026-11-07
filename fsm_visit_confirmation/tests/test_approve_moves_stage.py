@@ -192,3 +192,93 @@ class TestApproveControllerMovesStage(_ApprovalStageMixin, HttpCase):
         self.assertEqual(task.stage_id, self.stage_planned)
         self.assertEqual(len(self._approval_notes(task)), 1)
         self.assertEqual(self.env["mail.mail"].search_count([]), mails_before)
+
+
+@tagged("post_install", "-at_install")
+class TestApprovedStageChoices(TransactionCase):
+    """Review round 2026-11-07: the "Stage after customer approval" choices.
+
+    Acceptance criteria:
+
+    8. On the stage form, the field only offers stages that share at least
+       one project with the stage being edited, never the stage itself.
+    9. A stage without any project falls back to every other stage.
+    10. Server side, a stage cannot point to itself nor to a stage that
+        shares none of its projects.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        Stage = cls.env["project.task.type"]
+        cls.stage_tentative = Stage.create({"name": "Synthetic Tentative"})
+        cls.stage_planned = Stage.create({"name": "Synthetic Planned"})
+        cls.stage_planned_elsewhere = Stage.create({"name": "Synthetic Planned"})
+        cls.stage_planned_orphan = Stage.create({"name": "Synthetic Planned"})
+        cls.project = cls.env["project.project"].create(
+            {
+                "name": "Synthetic FSM Project",
+                "type_ids": [
+                    (6, 0, (cls.stage_tentative | cls.stage_planned).ids)
+                ],
+            }
+        )
+        cls.other_project = cls.env["project.project"].create(
+            {
+                "name": "Synthetic Other Project",
+                "type_ids": [(6, 0, cls.stage_planned_elsewhere.ids)],
+            }
+        )
+
+    def _served_domain(self):
+        """The domain of approved_stage_id in the stage form served to the
+        web client."""
+        from lxml import etree
+
+        view = self.env.ref("project.task_type_edit")
+        arch = self.env["project.task.type"].get_views([(view.id, "form")])[
+            "views"
+        ]["form"]["arch"]
+        nodes = etree.fromstring(arch).xpath("//field[@name='approved_stage_id']")
+        self.assertEqual(len(nodes), 1)
+        domain = nodes[0].get("domain")
+        self.assertTrue(domain, "approved_stage_id must carry a domain")
+        return domain
+
+    def _choices(self, stage):
+        from odoo.tools.safe_eval import safe_eval
+
+        domain = safe_eval(
+            self._served_domain(),
+            {"id": stage.id, "project_ids": stage.project_ids.ids},
+        )
+        return self.env["project.task.type"].search(domain)
+
+    def test_choices_restricted_to_shared_projects(self):
+        """AC8."""
+        choices = self._choices(self.stage_tentative)
+        self.assertIn(self.stage_planned, choices)
+        self.assertNotIn(self.stage_planned_elsewhere, choices)
+        self.assertNotIn(self.stage_planned_orphan, choices)
+        self.assertNotIn(self.stage_tentative, choices)
+
+    def test_choices_without_project_fall_back_to_all(self):
+        """AC9."""
+        choices = self._choices(self.stage_planned_orphan)
+        self.assertIn(self.stage_planned, choices)
+        self.assertIn(self.stage_planned_elsewhere, choices)
+        self.assertNotIn(self.stage_planned_orphan, choices)
+
+    def test_cannot_point_to_stage_of_other_project(self):
+        """AC10."""
+        from odoo.exceptions import ValidationError
+
+        with self.assertRaises(ValidationError):
+            self.stage_tentative.approved_stage_id = self.stage_planned_elsewhere
+        with self.assertRaises(ValidationError):
+            self.stage_tentative.approved_stage_id = self.stage_tentative
+        with self.assertRaises(ValidationError):
+            self.stage_tentative.approved_stage_id = self.stage_planned_orphan
+        # Same project: allowed; a project-less stage may point anywhere else.
+        self.stage_tentative.approved_stage_id = self.stage_planned
+        self.stage_planned_orphan.approved_stage_id = self.stage_planned_elsewhere
