@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_warehouse_orderpoint_tree_editable" model="ir.ui.view">
+        <field
+      name="name"
+    >stock.warehouse.orderpoint.list.replenish.by.first.vendor</field>
+        <field name="model">stock.warehouse.orderpoint</field>
+        <field
+      name="inherit_id"
+      ref="purchase_stock.view_warehouse_orderpoint_tree_editable_inherited_mrp"
+    />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='supplier_id']" position="attributes">
+                <attribute name="optional">show</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="stock_reorder_report_search" model="ir.ui.view">
+        <field
+      name="name"
+    >stock.warehouse.orderpoint.reorder.search.replenish.by.first.vendor</field>
+        <field name="model">stock.warehouse.orderpoint</field>
+        <field
+      name="inherit_id"
+      ref="purchase_stock.stock_reorder_report_search_inherited_purchase_stock"
+    />
+        <field name="arch" type="xml">
+            <!-- Any product with a price from the vendor, not only the line's own vendor. -->
+            <xpath expr="//field[@name='vendor_id']" position="attributes">
+                <attribute
+          name="filter_domain"
+        >[('product_id.product_tmpl_id.seller_ids.partner_id', 'child_of', self)]</attribute>
+            </xpath>
+            <xpath expr="//filter[@name='groupby_category']" position="after">
+                <filter
+          string="Vendor"
+          name="groupby_vendor"
+          domain="[]"
+          context="{'group_by': 'vendor_id'}"
+        />
+            </xpath>
+            <xpath
+        expr="//searchpanel/field[@name='product_category_id']"
+        position="before"
+      >
+                <field
+          name="vendor_id"
+          string="Vendor"
+          icon="fa-truck"
+          select="multi"
+          enable_counters="1"
+        />
+            </xpath>
+        </field>
+    </record>
+</odoo>
