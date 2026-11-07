@@ -40,6 +40,26 @@ class StockOrderpoint(models.Model):
         current = product._get_filtered_sellers(quantity=None)
         return (current or product._prepare_sellers())[:1]
 
+    @api.depends("route_id", "supplier_id", "product_id", "location_id")
+    def _compute_show_suppplier(self):
+        """Also show the vendor of a line that has no route of its own.
+
+        Odoo sets a line's Buy route only when the line is created and its
+        product already has vendor prices, and hides the Vendor cell without
+        it. A line filled later would keep its vendor out of sight, so show it
+        when the product is bought anyway.
+        """
+        res = super()._compute_show_suppplier()
+        for orderpoint in self:
+            if (
+                not orderpoint.show_supplier
+                and not orderpoint.route_id
+                and orderpoint.supplier_id
+                and "buy" in orderpoint.rule_ids.mapped("action")
+            ):
+                orderpoint.show_supplier = True
+        return res
+
     @api.model
     def _fill_missing_supplier(self):
         """Fill the empty manual lines the earlier version left behind."""

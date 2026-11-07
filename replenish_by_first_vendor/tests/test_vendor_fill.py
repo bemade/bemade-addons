@@ -13,11 +13,14 @@ Acceptance criteria:
   the product has nothing else. A price restricted to another company is
   never used.
 - Existing empty lines are filled by the upgrade.
+- The filled vendor is visible: a line created before its product had a price
+  has no route of its own, and Odoo hides the Vendor cell on such a line. It
+  is shown when the product is bought; it stays hidden when it is not.
 """
 
 from datetime import timedelta
 
-from odoo import fields
+from odoo import Command, fields
 from odoo.tests import tagged
 
 from .common import ReplenishVendorCase
@@ -86,6 +89,22 @@ class TestVendorFill(ReplenishVendorCase):
         mine = self._add_price(self.vendor2, sequence=2)
         line = self._make_line()
         self.assertEqual(line.supplier_id, mine)
+
+    def test_vendor_cell_shown_on_bought_product(self):
+        buy = self.env.ref("purchase_stock.route_warehouse0_buy")
+        self.product.route_ids = [Command.link(buy.id)]
+        line = self._make_line()
+        self.assertFalse(line.route_id)
+        self._add_price(self.vendor1)
+        self.assertTrue(line.supplier_id)
+        self.assertTrue(line.show_supplier)
+
+    def test_vendor_cell_hidden_on_product_not_bought(self):
+        self.product.route_ids = [Command.clear()]
+        line = self._make_line()
+        self._add_price(self.vendor1)
+        self.assertTrue(line.supplier_id)
+        self.assertFalse(line.show_supplier)
 
     def test_upgrade_fills_existing_empty_lines(self):
         other = self.env["product.product"].create(
