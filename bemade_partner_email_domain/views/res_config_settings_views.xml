@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.email.domain</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <block name="contacts_setting_container" position="inside">
+                <setting
+          id="email_domain_parent"
+          string="Company from email domain"
+          help="New contacts are attached to the company owning their email domain; ambiguous cases go to Contacts &gt; Unassigned contacts."
+        >
+                    <div class="mt8">
+                        <field name="email_domain_suggest_only" />
+                        <label
+              for="email_domain_suggest_only"
+              string="Suggest only (never attach automatically)"
+            />
+                    </div>
+                    <div class="mt8">
+                        <label
+              for="email_domain_reminder_user_id"
+              string="Weekly reminder to"
+            />
+                        <field name="email_domain_reminder_user_id" class="ms-2" />
+                    </div>
+                </setting>
+            </block>
+        </field>
+    </record>
+</odoo>
