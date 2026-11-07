@@ -1,0 +1,44 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_partner_merge_batch
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-07 16:22+0000\n"
+"PO-Revision-Date: 2026-11-07 16:22+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: bemade_partner_merge_batch
+#. odoo-python
+#: code:addons/bemade_partner_merge_batch/wizard/base_partner_merge.py:0
+msgid ""
+"All contacts must have the same email. Only the Administrator can merge "
+"contacts with different emails."
+msgstr ""
+"Tous les contacts doivent avoir la même adresse e-mail. Seul "
+"l'administrateur peut fusionner des contacts avec des adresses e-mail "
+"différentes."
+
+#. module: bemade_partner_merge_batch
+#. odoo-python
+#: code:addons/bemade_partner_merge_batch/wizard/base_partner_merge.py:0
+msgid "You cannot merge a contact with one of his parent."
+msgstr "Vous ne pouvez pas fusionner un contact avec l'un de ses parents."
+
+#. module: bemade_partner_merge_batch
+#. odoo-python
+#: code:addons/bemade_partner_merge_batch/wizard/base_partner_merge.py:0
+msgid ""
+"You cannot merge contacts linked to more than one user even if only one is "
+"active."
+msgstr ""
+"Vous ne pouvez pas fusionner des contacts liés à plus d'un utilisateur, même "
+"si un seul est actif."
