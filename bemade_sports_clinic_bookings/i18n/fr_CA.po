@@ -128,6 +128,12 @@ msgid "Booking form answers"
 msgstr "Réponses au formulaire de réservation"
 
 #. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/models/portal_kit.py:0
+msgid "Bookings"
+msgstr "Réservations"
+
+#. module: bemade_sports_clinic_bookings
 #: model:ir.actions.server,name:bemade_sports_clinic_bookings.ir_cron_sc_booking_digest_ir_actions_server
 msgid "Bookings: daily summary to staff"
 msgstr "Rendez-vous : résumé quotidien au personnel"
@@ -141,7 +147,7 @@ msgstr "Calendrier"
 #. module: bemade_sports_clinic_bookings
 #. odoo-javascript
 #. odoo-python
-#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+#: code:addons/bemade_sports_clinic_bookings/models/portal_kit.py:0
 #: code:addons/bemade_sports_clinic_bookings/static/src/js/sc_booking_calendar.xml:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_cancel
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
@@ -199,7 +205,7 @@ msgstr "Modifier"
 
 #. module: bemade_sports_clinic_bookings
 #. odoo-python
-#: code:addons/bemade_sports_clinic_bookings/controllers/bookings.py:0
+#: code:addons/bemade_sports_clinic_bookings/models/portal_kit.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_edit
 msgid "Edit booking"
 msgstr "Modifier le rendez-vous"
@@ -300,6 +306,11 @@ msgid "Phone"
 msgstr "Téléphone"
 
 #. module: bemade_sports_clinic_bookings
+#: model:ir.model,name:bemade_sports_clinic_bookings.model_portal_kit
+msgid "Portal Kit Registries"
+msgstr "Registres de la trousse portail"
+
+#. module: bemade_sports_clinic_bookings
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_bookings
 msgid "Reset"
 msgstr "Réinitialiser"
@@ -376,6 +387,12 @@ msgid ""
 msgstr ""
 "Dernière exécution du résumé quotidien des rendez-vous pour cette personne "
 "(envoyé ou vide)."
+
+#. module: bemade_sports_clinic_bookings
+#. odoo-python
+#: code:addons/bemade_sports_clinic_bookings/models/portal_kit.py:0
+msgid "Your appointments"
+msgstr "Vos rendez-vous"
 
 #. module: bemade_sports_clinic_bookings
 #. odoo-python
