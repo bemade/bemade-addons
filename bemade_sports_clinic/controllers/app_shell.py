@@ -881,7 +881,7 @@ def _document_permission(ctrl, document):
         return False
     if ctrl._is_clinic_admin():
         return True
-    return bool(ctrl._is_treatment_professional() and sc_app_roles.can(
+    return bool(ctrl._is_treatment_professional() and request.env['portal.kit'].pk_can(
         'documents.upload', user._sc_app_roles(), is_system=user.has_group('base.group_system')))
 
 
@@ -1266,7 +1266,7 @@ class AppShellMixin:
         user = request.env.user
         if user._is_public():
             return False
-        return bool(user._sc_app_roles() & sc_app_roles.APP_ROLES)
+        return bool(user._sc_app_roles() & request.env['portal.kit'].pk_app_roles())
 
     def _sc_booking_enabled(self):
         """The bookings addon (appointment_portal_staff) flags its home card
@@ -1379,19 +1379,19 @@ class AppShellMixin:
         """``values`` + everything ``sc_app_layout`` needs. ``page`` is the
         app template (``module.template``): its navigation — back target,
         context line, crumb trail — comes from the parent registry
-        (``models/sc_app_nav.py``, task 1579); without it the page is top
+        (``models/sc_app_nav.py``, task 1579; ``portal.kit.pk_resolve``, task
+        5196); without it the page is top
         level."""
         self._sc_profile_lang_guard()
         user = request.env.user
         roles = user._sc_app_roles()
         is_system = user.has_group('base.group_system')
+        kit = request.env['portal.kit']
         ctx = {'booking_card_enable': self._sc_booking_enabled()}
-        tabs = self._sc_nav_items(sc_app_roles.visible_nav(roles, 'tab', ctx))
-        rail = self._sc_nav_items(sc_app_roles.visible_nav(roles, 'rail', ctx))
-        plus = self._sc_nav_items(sc_app_roles.visible_nav(roles, 'plus', ctx))
-        labels = {
-            entry['key']: str(entry['label']) for entry in sc_app_roles.NAV_REGISTRY
-        }
+        tabs = self._sc_nav_items(kit.pk_visible_nav(roles, 'tab', ctx))
+        rail = self._sc_nav_items(kit.pk_visible_nav(roles, 'rail', ctx))
+        plus = self._sc_nav_items(kit.pk_visible_nav(roles, 'plus', ctx))
+        labels = kit.pk_nav_labels()
         path = request.httprequest.path
         query = request.httprequest.query_string.decode()
         initials = ''.join(part[:1] for part in (user.name or '').split()[:2]).upper()
@@ -1400,7 +1400,7 @@ class AppShellMixin:
             'sc_roles': roles,
             # Task 1598: a system admin also sees the TP actions legacy
             # granted them (registry keys flagged ``system``).
-            'sc_can': lambda key: sc_app_roles.can(key, roles, is_system=is_system),
+            'sc_can': lambda key: kit.pk_can(key, roles, is_system=is_system),
             # Task 1652: the players whose red card pills this page shows
             # (filled while the rows are built) and the viewer's role there.
             'sc_card_med_patients': lambda: request.env['sports.patient'].browse(
@@ -1423,7 +1423,7 @@ class AppShellMixin:
             'sc_search_url': '/my/players' if any(t['key'] == 'players' for t in rail) else False,
             # Task 1592: the app bar's activity clock (its overdue badge is
             # fetched by sc_live_count.js, not computed here).
-            'sc_activity_clock': sc_app_roles.can('app.activity_clock', roles, is_system=is_system),
+            'sc_activity_clock': kit.pk_can('app.activity_clock', roles, is_system=is_system),
             # Task 1622: the clock's href carries the page it is tapped on.
             'sc_clock_url': sc_app_nav.clock_url(path, request.httprequest.args),
             'sc_user_initials': initials or '?',
@@ -1479,8 +1479,8 @@ class AppShellMixin:
             'sc_proposal_json': self._sc_pop_proposal(),
         }
         shell.update(values)
-        nav = sc_app_nav.resolve(
-            (page or '').rpartition('.')[2], shell, request.env,
+        nav = kit.pk_resolve(
+            (page or '').rpartition('.')[2], shell,
             request_url=shell['sc_current_url'],
             request_return_url=request.httprequest.args.get('return_url'))
         shell.update({
@@ -2045,7 +2045,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         read access to events; never cached."""
         env = request.env
         roles = env.user._sc_app_roles()
-        if not (sc_app_roles.can('home.clinic_teaser', roles)
+        if not (env['portal.kit'].pk_can('home.clinic_teaser', roles)
                 and env['sports.event'].has_access('read')):
             response = request.make_json_response({'error': 'forbidden'}, status=403)
         else:
@@ -2643,7 +2643,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         if not self._sc_app_shell_enabled():
             return request.not_found()
         img = '/bemade_sports_clinic/static/src/img/'
-        labels = {entry['key']: str(entry['label']) for entry in sc_app_roles.NAV_REGISTRY}
+        labels = request.env['portal.kit'].pk_nav_labels()
         manifest = {
             'name': 'Le Fit Crew',
             'short_name': 'Fit Crew',

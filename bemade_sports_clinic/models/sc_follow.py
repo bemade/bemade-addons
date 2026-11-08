@@ -15,8 +15,6 @@ The dashboard's « Joueurs que je suis » widget reads them with
 """
 from odoo import api, fields, models
 
-from . import sc_app_roles
-
 
 class SportsPatientFollow(models.Model):
     _inherit = 'sports.patient'
@@ -36,8 +34,8 @@ class SportsPatientFollow(models.Model):
     def _sc_follow_allowed(self):
         """May the current user follow players at all (the staff roles)?"""
         user = self.env.user
-        return sc_app_roles.can('patient.follow', user._sc_app_roles(),
-                                is_system=user.has_group('base.group_system'))
+        return self.env['portal.kit'].pk_can('patient.follow', user._sc_app_roles(),
+                                             is_system=user.has_group('base.group_system'))
 
     def _sc_follow_state(self):
         """For the toggle: None (no toggle for this user), else whether the

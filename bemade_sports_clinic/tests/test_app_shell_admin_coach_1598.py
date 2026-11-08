@@ -35,12 +35,11 @@ role set the report describes. (An internal admin who is only a
 head coach by staff row has no injury ACL and is refused the team page
 upstream of this fix — not a persona the portal serves.)
 """
-from unittest.mock import patch
 
 from odoo import Command
 from odoo.tests import tagged
 
-from odoo.addons.bemade_sports_clinic.models import sc_app_roles as registry
+from odoo.addons.bemade_portal_kit.tests.common import pk_hook
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
 SYSTEM_KEYS = (
@@ -102,18 +101,20 @@ class TestAppShellAdminCoach1598(AppShellCommon):
 
     def test_sc_can_system_keys(self):
         coach_roles = frozenset({'coach', 'internal'})
+        kit = self.env['portal.kit']
         for key in SYSTEM_KEYS:
-            self.assertTrue(registry.can(key, coach_roles, is_system=True), key)
-            self.assertFalse(registry.can(key, coach_roles), key)
-            self.assertFalse(registry.can(key, frozenset({'coach'})), key)
+            self.assertTrue(kit.pk_can(key, coach_roles, is_system=True), key)
+            self.assertFalse(kit.pk_can(key, coach_roles), key)
+            self.assertFalse(kit.pk_can(key, frozenset({'coach'})), key)
         # Not flagged: stays TP-only even for a system admin.
         for key in ('players.create', 'players.add_to_team', 'patient.medical_history', 'notes.add',
                     'injury.delete'):
-            self.assertFalse(registry.can(key, coach_roles, is_system=True), key)
+            self.assertFalse(kit.pk_can(key, coach_roles, is_system=True), key)
         # exclude still wins.
-        spec = dict(registry.VISIBILITY_REGISTRY['team.add_player'], exclude=frozenset({'coach'}))
-        with patch.dict(registry.VISIBILITY_REGISTRY, {'team.add_player': spec}):
-            self.assertFalse(registry.can('team.add_player', coach_roles, is_system=True))
+        spec = dict(kit.pk_visibility()['team.add_player'], exclude=frozenset({'coach'}))
+        with pk_hook(self.env, '_pk_visibility',
+                     lambda keys: dict(keys, **{'team.add_player': spec})):
+            self.assertFalse(kit.pk_can('team.add_player', coach_roles, is_system=True))
 
     # -- UC-A2 -----------------------------------------------------------
     def test_team_page_add_and_announcement(self):

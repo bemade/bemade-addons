@@ -275,30 +275,33 @@ class User(models.Model):
         return not self.share and not (set(self._sc_app_roles()) - {"internal"})
 
     def _sc_app_roles(self):
-        """The user's portal-app role SET (task 1538) — see
-        ``models/sc_app_roles.py`` for the model and the registries.
+        """The user's portal-app role SET (task 1538) — the kit's
+        ``_pk_roles()`` (task 5196). See ``models/sc_app_roles.py`` for the
+        clinic's roles and registries."""
+        return self._pk_roles()
 
-        Resolved from group membership and from the staff rows the user's
-        partner holds (sudo: a portal user cannot read every staff row, and
-        only the role keys leave this method)."""
-        self.ensure_one()
-        roles = set()
-        for role, xmlids in sc_app_roles.ROLE_GROUPS.items():
-            if any(self.has_group(xmlid) for xmlid in xmlids):
-                roles.add(role)
-        wanted = {
-            staff_role
-            for staff_roles in sc_app_roles.ROLE_STAFF_ROLES.values()
-            for staff_role in staff_roles
+    def _pk_extra_roles(self):
+        """The clinic roles held through a staff row (``staff_roles`` in
+        ``portal.kit._pk_roles``): head_coach, head_therapist, doctor.
+
+        Read from the staff rows the user's partner holds (sudo: a portal
+        user cannot read every staff row, and only the role keys leave this
+        method). Per user, never cached."""
+        roles = set(super()._pk_extra_roles())
+        staff_map = {
+            role: frozenset(spec['staff_roles'])
+            for role, spec in self.env['portal.kit'].pk_roles().items()
+            if spec.get('staff_roles')
         }
+        wanted = set().union(*staff_map.values()) if staff_map else set()
         held = set()
         if wanted and self.partner_id:
             held = set(self.env["sports.team.staff"].sudo().search([
                 ("partner_id", "=", self.partner_id.id),
                 ("role", "in", sorted(wanted)),
             ]).mapped("role"))
-        for role, staff_roles in sc_app_roles.ROLE_STAFF_ROLES.items():
-            if held & set(staff_roles):
+        for role, staff_roles in staff_map.items():
+            if held & staff_roles:
                 roles.add(role)
         return frozenset(roles)
 

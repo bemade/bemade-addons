@@ -7,7 +7,6 @@ from odoo.tools import format_date, format_datetime
 from odoo.exceptions import UserError, AccessError, MissingError
 
 from .access_control_mixin import AccessControlMixin, sc_past_deadline_message
-from ..models import sc_app_roles
 from ..models.sc_name_match import NEAR, NameIndex, words as sc_words_of
 from .app_shell import AppShellMixin, sc_country_options, sc_state_options
 
@@ -1195,9 +1194,10 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         tabs = [('injuries', env._("Injuries"))]
         tabs.append(('info', env._("Info")))
         tabs.append(('documents', env._("Documents")))
-        if is_tp and sc_app_roles.can('patient.notes.tab', roles):
+        kit = env['portal.kit']
+        if is_tp and kit.pk_can('patient.notes.tab', roles):
             tabs.append(('notes', env._("Notes")))
-        if can_activities and sc_app_roles.can('patient.activities.tab', roles):
+        if can_activities and kit.pk_can('patient.activities.tab', roles):
             tabs.append(('activities', env._("Activities")))
         keys = [key for key, _label in tabs]
         requested = self.SC_PLAYER_TAB_MOVED.get(kw.get('tab'), kw.get('tab'))

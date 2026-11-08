@@ -7,7 +7,7 @@ from .access_control_mixin import (
     AccessControlMixin, parse_portal_date, sc_deadline_in_past, sc_past_deadline_message,
 )
 from .app_shell import AppShellMixin, sc_file_size
-from ..models import sc_app_nav, sc_app_roles
+from ..models import sc_app_nav
 from datetime import date, timedelta
 from urllib.parse import quote
 
@@ -144,8 +144,8 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         env = request.env
         user = env.user
         roles = user._sc_app_roles()
-        if not sc_app_roles.can('app.activity_clock', roles,
-                                is_system=user.has_group('base.group_system')):
+        if not env['portal.kit'].pk_can('app.activity_clock', roles,
+                                        is_system=user.has_group('base.group_system')):
             response = request.make_json_response({'error': 'forbidden'}, status=403)
         else:
             count = env['mail.activity'].search_count(self._sc_my_activities_domain(

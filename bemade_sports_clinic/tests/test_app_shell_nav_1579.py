@@ -44,6 +44,7 @@ from odoo import Command, fields
 from odoo.modules.module import get_module_path
 from odoo.tests import tagged
 
+from odoo.addons.bemade_portal_kit.tools import pk_safe_return_url
 from odoo.addons.bemade_sports_clinic.models import sc_app_nav
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_i18n_1538 import TestAppShellI18n1538
 from odoo.addons.bemade_sports_clinic.tests.test_internal_tp_parity_1577 import Parity1577Common
@@ -110,7 +111,8 @@ class TestAppShellNav1579(Nav1579Common):
             and 't-call="bemade_sports_clinic.sc_app_layout"' in (view.arch_db or '')
         }
         self.assertIn('sc_app_player', pages)
-        self.assertFalse(pages - set(sc_app_nav.PAGES), 'pages without a registry entry')
+        registered = set(self.env['portal.kit'].pk_pages())
+        self.assertFalse(pages - registered, 'pages without a registry entry')
         # And every shell page a controller renders.
         root = os.path.join(get_module_path('bemade_sports_clinic'), 'controllers')
         rendered = set()
@@ -121,11 +123,12 @@ class TestAppShellNav1579(Nav1579Common):
         rendered -= {'sc_app_offline'}  # standalone page, no app layout
         rendered -= {'sc_app_search_results'}  # task 1650: a fragment, not a page
         self.assertIn('sc_app_team', rendered)
-        self.assertFalse(rendered - set(sc_app_nav.PAGES), 'rendered pages without an entry')
+        self.assertFalse(rendered - registered, 'rendered pages without an entry')
 
     def test_every_sub_page_declares_a_parent(self):
-        self.assertTrue(sc_app_nav.TOP_LEVEL <= set(sc_app_nav.PAGES))
-        orphans = [key for key, page in sc_app_nav.PAGES.items()
+        pages = self.env['portal.kit'].pk_pages()
+        self.assertTrue(sc_app_nav.TOP_LEVEL <= set(pages))
+        orphans = [key for key, page in pages.items()
                    if key not in sc_app_nav.TOP_LEVEL and not page.has_parent]
         self.assertFalse(orphans, 'shell pages without a parent')
 
@@ -206,20 +209,20 @@ class TestAppShellNav1579(Nav1579Common):
             self.assertEqual(back, ['/my/players'], bad)
 
     def test_match_url_validator(self):
-        env = self.env(user=self.coach)
+        kit = self.env(user=self.coach)['portal.kit']
         for bad in ('https://evil.example/my/home', '//evil.example/my/home',
                     'javascript:alert(1)', '/\\evil.example', '/my/home\tx',
                     '/web/login', '/my/account', 'my/home', '',
                     '/my/player?player_id=%s' % self.player_c.id,
                     '/my/team?team_id=%s' % self.team_unstaffed.id,
                     '/my/team?team_id=999999999', '/my/team?team_id=abc'):
-            self.assertIsNone(sc_app_nav.match_url(env, bad), bad)
-        key, values = sc_app_nav.match_url(env, '/my/team?team_id=%s&tab=players' % self.team_a.id)
+            self.assertIsNone(kit.pk_match_url(bad), bad)
+        key, values = kit.pk_match_url('/my/team?team_id=%s&tab=players' % self.team_a.id)
         self.assertEqual((key, values['team']), ('sc_app_team', self.team_a))
-        self.assertEqual(sc_app_nav.match_url(env, HOME)[0], 'sc_app_home')
+        self.assertEqual(kit.pk_match_url(HOME)[0], 'sc_app_home')
 
     def test_one_safe_return_url_validator(self):
-        safe = sc_app_nav.safe_return_url
+        safe = pk_safe_return_url
         self.assertEqual(safe('/my/teams', 'x'), '/my/teams')
         for bad in (None, 42, 'https://evil', '//evil', '/\\evil', '/a\nb', 'javascript:x'):
             self.assertEqual(safe(bad, 'fb'), 'fb', bad)

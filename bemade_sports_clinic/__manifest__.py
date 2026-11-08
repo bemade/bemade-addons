@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.133.12",
+    'version': "19.0.1.134.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -78,7 +78,8 @@ bottom tabs, laptop left rail, dark theme by default, per-user theme)
 behind the system switch Settings > Sports Clinic Portal > New Portal App
 (``bemade_sports_clinic.app_shell_enabled``). Switch off (the default)
 leaves today's portal unchanged. Menus, sections and fields are shown from
-a declarative, multi-role registry (``models/sc_app_roles.py``): a user
+a declarative, multi-role registry (``models/sc_app_roles.py``, on the
+``portal.kit`` hooks of ``bemade_portal_kit``): a user
 holds a set of roles and every entry declares the roles it includes and
 excludes; security stays in the access rules. Back navigation and the
 breadcrumb trail come from one parent registry (``models/sc_app_nav.py``):
@@ -124,6 +125,7 @@ therapists, Missing timesheets.
     "depends": [
         "mail",  # Required for mail.activity functionality
         "portal",
+        "bemade_portal_kit",  # Task 5196: the app shell registries (roles, nav, pages)
         "contacts",
         "base_setup",  # For res.config.settings base view inheritance
         "phone_validation",  # For phone number formatting in patient contacts

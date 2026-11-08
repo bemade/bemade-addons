@@ -338,14 +338,14 @@ class TestMedicalDossier1630(Clinic1540Common):
 class TestMedicalRolesRegistry1630(MedicalCommon):
 
     def test_registry_keys(self):
-        from odoo.addons.bemade_sports_clinic.models import sc_app_roles as registry
+        kit = self.env['portal.kit']
         coach, tp = self.coach._sc_app_roles(), self.tp._sc_app_roles()
-        self.assertTrue(registry.can('patient.medical_alerts', coach))
-        self.assertTrue(registry.can('patient.medical_alerts', tp))
-        self.assertFalse(registry.can('patient.medical_history', coach))
-        self.assertTrue(registry.can('patient.medical_history', tp))
+        self.assertTrue(kit.pk_can('patient.medical_alerts', coach))
+        self.assertTrue(kit.pk_can('patient.medical_alerts', tp))
+        self.assertFalse(kit.pk_can('patient.medical_history', coach))
+        self.assertTrue(kit.pk_can('patient.medical_history', tp))
         with self.assertRaises(KeyError):
-            registry.can('patient.allergies', tp)
+            kit.pk_can('patient.allergies', tp)
 
     def test_backend_review_list(self):
         action = self.env.ref('bemade_sports_clinic.action_patient_medical_review')
