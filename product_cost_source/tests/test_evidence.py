@@ -38,7 +38,7 @@ class TestEvidence(ProductCostSourceCommon):
         self._supplier_price(75.0, date_start=self._months_ago(9), date_end=expiry)
         sentence = self._resolve().evidence[0]
         self.assertIn("firm", sentence.lower())
-        self.assertIn(fields.Date.to_string(expiry), sentence)
+        self.assertIn(self._fmt(expiry), sentence)
 
     def test_aged_price_names_its_age_and_last_event(self):
         agreed = self._months_ago(24)
@@ -49,7 +49,7 @@ class TestEvidence(ProductCostSourceCommon):
         )
         sentence = self._resolve().evidence[0]
         self.assertIn("6 months old", sentence)
-        self.assertIn(fields.Date.to_string(agreed), sentence)
+        self.assertIn(self._fmt(agreed), sentence)
 
     def test_stock_coverage_is_stated(self):
         self._set_stock_value(10.0)

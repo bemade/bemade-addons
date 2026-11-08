@@ -2,10 +2,11 @@
 # License LGPL-3 - See https://www.gnu.org/licenses/lgpl-3.0.html
 from dateutil.relativedelta import relativedelta
 
-from odoo import fields, models
+from odoo import api, fields, models
 from odoo.tools.float_utils import float_compare, float_is_zero
+from odoo.tools.misc import format_amount, format_date
 
-from ..tools.cost_source import CostResolution, CostSource
+from ..tools.cost_source import CONFIDENCE_ORDER, CostResolution, CostSource
 
 
 class ProductProduct(models.Model):
@@ -62,24 +63,54 @@ class ProductProduct(models.Model):
         second extension point: modules contribute other ways of knowing a
         price, and the best-evidenced one wins. They compete rather than
         accumulate, because they are all answering the same question.
+
+        A newer indicative candidate that lost to firm evidence is not thrown
+        away: it is attached to the winner as a note, because "the vendor
+        quoted something else last week" is worth knowing.
         """
         self.ensure_one()
         candidates = self._cost_source_price_candidates(qty, date, currency, company)
         if not candidates:
             return None
-        return sorted(candidates, key=self._cost_source_rank)[0]
+        cutoff = self._cost_source_cutoff(date)
+        ranked = sorted(candidates, key=lambda s: self._cost_source_rank(s, cutoff))
+        best = ranked[0]
+        if not best.indicative:
+            best.notes = [
+                other
+                for other in ranked[1:]
+                if other.indicative
+                and other.priced_on
+                and (best.priced_on is None or other.priced_on > best.priced_on)
+            ]
+        return best
 
-    def _cost_source_rank(self, source):
+    def _cost_source_cutoff(self, date):
+        """Oldest date a price may be established on and still count as current."""
+        months = self.env["res.config.settings"]._price_age_months()
+        return date - relativedelta(months=months)
+
+    def _cost_source_rank(self, source, cutoff=None):
         """Ordering over price evidence, best first.
 
         An agreement in force outranks loose evidence, because it is a promise
-        rather than an observation. Below that, the most recently established
-        price wins, whoever contributed it -- a plugin cannot jump the queue
-        merely by being a plugin. Undated evidence sorts last: it may well be
-        current, but nothing on file says so.
+        rather than an observation. Then a confirmed price established within
+        the age window; then an indicative one (quoted, not confirmed); then
+        everything older. Within a tier the most recently established price
+        wins, whoever contributed it -- a plugin cannot jump the queue merely
+        by being a plugin. Undated evidence sorts last: it may well be current,
+        but nothing on file says so.
         """
+        if source.in_force:
+            tier = 0
+        elif source.indicative:
+            tier = 2
+        elif cutoff and source.priced_on and source.priced_on >= cutoff:
+            tier = 1
+        else:
+            tier = 3
         return (
-            0 if source.in_force else 1,
+            tier,
             0 if source.priced_on else 1,
             -source.priced_on.toordinal() if source.priced_on else 0,
         )
@@ -91,14 +122,31 @@ class ProductProduct(models.Model):
         ranking, confidence and evidence-reporting then apply to it unchanged.
         """
         self.ensure_one()
+        # _select_seller and the seller filters read self.env.company, so the
+        # lookup must run in the company the cost is being resolved for.
+        self = self.with_company(company)
         candidates = []
         seller = self._select_seller(quantity=qty, date=date, uom_id=self.uom_id)
         if seller:
-            candidates.append(self._cost_source_from_seller(seller, qty, currency, company, date, in_force=bool(seller.date_start or seller.date_end)))
+            candidates.append(self._cost_source_from_seller(seller, qty, currency, company, date))
         fallback = self._cost_source_last_known_seller(qty)
         if fallback and fallback != seller:
-            candidates.append(self._cost_source_from_seller(fallback, qty, currency, company, date, in_force=False))
+            candidates.append(self._cost_source_from_seller(fallback, qty, currency, company, date))
         return candidates
+
+    @api.model
+    def _cost_source_seller_in_force(self, seller, date):
+        """Whether a supplier price is a promise that still holds on ``date``.
+
+        Only an END date makes a promise. A price with a start date and no end
+        is when the vendor last set the price, not an undertaking to keep it:
+        it is a dated last-known price, judged by its age like any other.
+        """
+        return bool(
+            seller.date_end
+            and seller.date_end >= date
+            and (not seller.date_start or seller.date_start <= date)
+        )
 
     def _cost_source_last_known_seller(self, qty):
         """The most recent supplier price on file, whether or not it still applies.
@@ -108,9 +156,14 @@ class ProductProduct(models.Model):
         it is reported as evidence rather than as a commitment.
         """
         self.ensure_one()
-        candidates = self.seller_ids.filtered(
-            lambda s: not s.min_qty or s.min_qty <= qty
-        )
+        # Same company / variant / active-partner filter Odoo's own seller
+        # selection applies, so a price meant for another company or another
+        # variant is never offered as "the last known price". ``params`` is
+        # passed explicitly because the purchase module's override of
+        # ``_get_filtered_supplier`` makes it a required argument.
+        candidates = self.seller_ids._get_filtered_supplier(
+            self.env.company, self, params=False
+        ).filtered(lambda s: not s.min_qty or s.min_qty <= qty)
         if not candidates:
             return self.env["product.supplierinfo"]
         dated = candidates.filtered("date_start")
@@ -118,7 +171,9 @@ class ProductProduct(models.Model):
             return max(dated, key=lambda s: s.date_start)
         return candidates.sorted("sequence")[0]
 
-    def _cost_source_from_seller(self, seller, qty, currency, company, date, in_force):
+    def _cost_source_from_seller(self, seller, qty, currency, company, date, in_force=None):
+        if in_force is None:
+            in_force = self._cost_source_seller_in_force(seller, date)
         return CostSource(
             key="vendor",
             qty=qty,
@@ -166,10 +221,7 @@ class ProductProduct(models.Model):
         resolution = CostResolution(sources=sources)
         if not sources:
             resolution.evidence.append(
-                self.env._(
-                    "No price is known for this product: it has no vendor price "
-                    "and no stock on hand."
-                )
+                self.env._("Unknown. No vendor price and no purchase history.")
             )
             return resolution
 
@@ -177,92 +229,135 @@ class ProductProduct(models.Model):
         resolution.unit_cost = (
             sum(source.subtotal for source in sources) / covered if covered else 0.0
         )
-        resolution.confidence = self._cost_source_confidence(sources, date)
-        resolution.evidence = self._cost_source_evidence(sources, date, qty)
+        resolution.confidence = self._cost_source_confidence(sources, date, qty)
+        resolution.evidence = self._cost_source_evidence(sources, date, qty, currency)
         resolution.warnings = self._cost_source_warnings(sources, delivery_date)
+        resolution.notes = [
+            self._cost_source_describe(note, date, currency)
+            for source in sources
+            for note in source.notes
+        ]
         return resolution
 
-    def _cost_source_confidence(self, sources, date):
-        """Firm only when every contributing source is firm.
-
-        A blend is no better than its weakest half: quoting a firm price for
-        part of a line and a guess for the rest is still quoting a guess.
-        """
-        if not sources:
-            return "unknown"
-        cutoff = date - relativedelta(months=self.env["res.config.settings"]._price_age_months())
-        for source in sources:
-            if source.in_force:
-                continue
-            if source.priced_on is None or source.priced_on < cutoff:
-                return "estimated"
+    def _cost_source_level(self, source, cutoff):
+        """The confidence one source deserves on its own."""
+        if source.in_force:
+            return "firm"
+        if source.indicative:
+            return "indicative"
+        if source.priced_on is None or source.priced_on < cutoff:
+            return "estimated"
         return "firm"
 
-    def _cost_source_evidence(self, sources, date, qty):
-        months = self.env["res.config.settings"]._price_age_months()
+    def _cost_source_uncovered(self, sources, qty):
+        """How much of ``qty`` no source prices (never negative)."""
+        if qty is None:
+            return 0.0
+        remaining = qty - sum(source.qty for source in sources)
+        if float_compare(remaining, 0.0, precision_rounding=self.uom_id.rounding) > 0:
+            return remaining
+        return 0.0
+
+    def _cost_source_confidence(self, sources, date, qty=None):
+        """The weakest level among the contributing sources.
+
+        A blend is no better than its weakest half: quoting a firm price for
+        part of a line and a guess for the rest is still quoting a guess. A
+        part nobody can price at all makes the whole Unknown.
+        """
+        if not sources or self._cost_source_uncovered(sources, qty):
+            return "unknown"
+        cutoff = self._cost_source_cutoff(date)
+        return min(
+            (self._cost_source_level(source, cutoff) for source in sources),
+            key=CONFIDENCE_ORDER.index,
+        )
+
+    def _cost_source_evidence(self, sources, date, qty, currency=None):
+        currency = currency or self.env.company.currency_id
         blended = len(sources) > 1
+        uncovered = self._cost_source_uncovered(sources, qty)
         evidence = []
         for source in sources:
-            share = ""
+            if source.key == "stock":
+                evidence.append(
+                    self._cost_source_describe_stock(source, qty, currency, blended)
+                )
+                continue
+            sentence = self._cost_source_describe(source, date, currency)
             if blended:
-                share = self.env._(
+                sentence += self.env._(
                     " Covers %(qty)s of %(total)s.",
                     qty=self._cost_source_format_qty(source.qty),
                     total=self._cost_source_format_qty(qty),
                 )
-            if source.key == "stock":
-                evidence.append(
-                    self.env._(
-                        "Pricing based on current stock availability and stock "
-                        "valuation."
-                    )
-                    + share
+            evidence.append(sentence)
+        if uncovered:
+            evidence.append(
+                self.env._(
+                    "Unknown. No vendor price for the other %(qty)s.",
+                    qty=self._cost_source_format_qty(uncovered),
                 )
-            elif source.in_force and source.in_force_until:
-                evidence.append(
-                    self.env._(
-                        "Pricing is firm based on a date-bounded vendor pricelist, "
-                        "valid until %(until)s.",
-                        until=fields.Date.to_string(source.in_force_until),
-                    )
-                    + share
-                )
-            elif source.in_force:
-                evidence.append(
-                    self.env._(
-                        "Pricing is firm based on an open-ended vendor agreement, "
-                        "in force since %(since)s.",
-                        since=fields.Date.to_string(source.priced_on),
-                    )
-                    + share
-                )
-            elif source.priced_on is None:
-                evidence.append(
-                    self.env._(
-                        "Supplier price is on file but undated, so its age cannot "
-                        "be established. Treat it as an estimate until confirmed."
-                    )
-                    + share
-                )
-            else:
-                evidence.append(
-                    self.env._(
-                        "Supplier price is more than %(months)s months old. No "
-                        "transaction since %(since)s.",
-                        months=months,
-                        since=fields.Date.to_string(source.priced_on),
-                    )
-                    + share
-                    if source.priced_on < date - relativedelta(months=months)
-                    else self.env._(
-                        "Supplier price was last set on %(since)s, within the last "
-                        "%(months)s months.",
-                        since=fields.Date.to_string(source.priced_on),
-                        months=months,
-                    )
-                    + share
-                )
+            )
         return evidence
+
+    def _cost_source_describe_stock(self, source, qty, currency, blended):
+        price = format_amount(self.env, source.unit_price, currency)
+        if float_compare(source.qty, qty, precision_rounding=self.uom_id.rounding) >= 0:
+            return self.env._("Firm. Covered from stock at %(price)s.", price=price)
+        if blended:
+            return self.env._(
+                "Firm. %(qty)s of %(total)s covered from stock at %(price)s; "
+                "balance at vendor price.",
+                qty=self._cost_source_format_qty(source.qty),
+                total=self._cost_source_format_qty(qty),
+                price=price,
+            )
+        return self.env._(
+            "Firm. %(qty)s of %(total)s covered from stock at %(price)s; "
+            "no known price for the balance.",
+            qty=self._cost_source_format_qty(source.qty),
+            total=self._cost_source_format_qty(qty),
+            price=price,
+        )
+
+    def _cost_source_describe(self, source, date, currency):
+        """One sentence, verdict first, describing a piece of price evidence.
+
+        Extension point: a module contributing its own kind of evidence
+        (``source.key``) overrides this to word it, and calls super() for the
+        rest.
+        """
+        months = self.env["res.config.settings"]._price_age_months()
+        if source.in_force and source.in_force_until:
+            return self.env._(
+                "Firm. Vendor price list valid to %(until)s.",
+                until=format_date(self.env, source.in_force_until),
+            )
+        if source.in_force:
+            return self.env._("Firm. Vendor agreement in force.")
+        if source.indicative:
+            return self.env._(
+                "Indicative. Quoted %(price)s, not yet confirmed.",
+                price=format_amount(self.env, source.unit_price, currency),
+            )
+        if source.priced_on is None:
+            return self.env._(
+                "Estimated. The vendor price on file is undated, so its age "
+                "cannot be established."
+            )
+        if source.priced_on < self._cost_source_cutoff(date):
+            return self.env._(
+                "Estimated. Last known price %(date)s, over %(months)s months "
+                "old. No contract in force.",
+                date=format_date(self.env, source.priced_on),
+                months=months,
+            )
+        return self.env._(
+            "Firm. Last known price %(date)s, within the last %(months)s months.",
+            date=format_date(self.env, source.priced_on),
+            months=months,
+        )
 
     def _cost_source_warnings(self, sources, delivery_date):
         """Flag a price that is firm today but will not be by delivery.
@@ -277,10 +372,10 @@ class ProductProduct(models.Model):
             if source.in_force_until and source.in_force_until < delivery_date:
                 warnings.append(
                     self.env._(
-                        "The vendor agreement backing this price expires on "
-                        "%(expiry)s, before the delivery date of %(delivery)s.",
-                        expiry=fields.Date.to_string(source.in_force_until),
-                        delivery=fields.Date.to_string(delivery_date),
+                        "Warning. Vendor price expires %(expiry)s, before this "
+                        "line's delivery date of %(delivery)s.",
+                        expiry=format_date(self.env, source.in_force_until),
+                        delivery=format_date(self.env, delivery_date),
                     )
                 )
         return warnings

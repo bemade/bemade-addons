@@ -1,0 +1,190 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* product_cost_source
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-08 17:00+0000\n"
+"PO-Revision-Date: 2026-11-08 17:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid " Covers %(qty)s of %(total)s."
+msgstr " Couvre %(qty)s sur %(total)s."
+
+#. module: product_cost_source
+#: model_terms:ir.ui.view,arch_db:product_cost_source.res_config_settings_view_form
+msgid "<span class=\"ms-2\">months</span>"
+msgstr "<span class=\"ms-2\">mois</span>"
+
+#. module: product_cost_source
+#: model:ir.model,name:product_cost_source.model_res_config_settings
+msgid "Config Settings"
+msgstr "Paramètres de configuration"
+
+#. module: product_cost_source
+#: model_terms:ir.ui.view,arch_db:product_cost_source.res_config_settings_view_form
+msgid "Costing"
+msgstr "Coût de revient"
+
+#. module: product_cost_source
+#: model:ir.model.fields,field_description:product_cost_source.field_product_product__display_name
+#: model:ir.model.fields,field_description:product_cost_source.field_res_config_settings__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid ""
+"Estimated. Last known price %(date)s, over %(months)s months old. No "
+"contract in force."
+msgstr ""
+"Estimation. Dernier prix connu le %(date)s, il y a plus de %(months)s mois. "
+"Aucun contrat en vigueur."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid ""
+"Estimated. The vendor price on file is undated, so its age cannot be "
+"established."
+msgstr ""
+"Estimation. Le prix fournisseur au dossier n'est pas daté : impossible d'en "
+"établir l'âge."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid ""
+"Firm. %(qty)s of %(total)s covered from stock at %(price)s; balance at "
+"vendor price."
+msgstr ""
+"Ferme. %(qty)s sur %(total)s couverts par le stock à %(price)s ; le reste au"
+" prix fournisseur."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid ""
+"Firm. %(qty)s of %(total)s covered from stock at %(price)s; no known price "
+"for the balance."
+msgstr ""
+"Ferme. %(qty)s sur %(total)s couverts par le stock à %(price)s ; aucun prix "
+"connu pour le reste."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Firm. Covered from stock at %(price)s."
+msgstr "Ferme. Couvert par le stock à %(price)s."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Firm. Last known price %(date)s, within the last %(months)s months."
+msgstr ""
+"Ferme. Dernier prix connu le %(date)s, dans les %(months)s derniers mois."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Firm. Vendor agreement in force."
+msgstr "Ferme. Entente fournisseur en vigueur."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Firm. Vendor price list valid to %(until)s."
+msgstr "Ferme. Liste de prix fournisseur valide jusqu'au %(until)s."
+
+#. module: product_cost_source
+#: model_terms:ir.ui.view,arch_db:product_cost_source.res_config_settings_view_form
+msgid ""
+"How long a price stays trustworthy when no vendor agreement backs it. A "
+"price covered by a date-bounded vendor pricelist stays firm for as long as "
+"that agreement runs, however old it is."
+msgstr ""
+"Combien de temps un prix reste fiable quand aucune entente fournisseur ne le"
+" garantit. Un prix couvert par une liste de prix fournisseur avec date de "
+"fin reste ferme tant que l'entente court, peu importe son âge."
+
+#. module: product_cost_source
+#: model:ir.model.fields,help:product_cost_source.field_res_config_settings__price_age_months
+msgid ""
+"How many months a price stays trustworthy once nothing else backs it up.\n"
+"\n"
+"This only applies outside a vendor agreement. A price covered by a date-bounded vendor pricelist is firm for as long as that agreement runs, however old the price is.\n"
+"\n"
+"Outside one, a price older than this is reported as an estimate, and the components responsible are named so they can be requoted."
+msgstr ""
+"Pendant combien de mois un prix reste fiable quand rien d'autre ne le garantit.\n"
+"\n"
+"Ne s'applique qu'en dehors d'une entente fournisseur. Un prix couvert par une liste de prix fournisseur avec date de fin est ferme tant que l'entente court, peu importe l'âge du prix.\n"
+"\n"
+"En dehors d'une entente, un prix plus ancien est signalé comme une estimation, et les composants en cause sont nommés pour qu'on puisse les faire recoter."
+
+#. module: product_cost_source
+#: model:ir.model.fields,field_description:product_cost_source.field_product_product__id
+#: model:ir.model.fields,field_description:product_cost_source.field_res_config_settings__id
+msgid "ID"
+msgstr ""
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Indicative. Quoted %(price)s, not yet confirmed."
+msgstr "Indicatif. Coté à %(price)s, pas encore confirmé."
+
+#. module: product_cost_source
+#: model:ir.model.fields,field_description:product_cost_source.field_res_config_settings__price_age_months
+msgid "Price considered current for"
+msgstr "Prix considéré à jour pendant"
+
+#. module: product_cost_source
+#: model_terms:ir.ui.view,arch_db:product_cost_source.res_config_settings_view_form
+msgid "Price freshness"
+msgstr "Fraîcheur des prix"
+
+#. module: product_cost_source
+#: model:ir.model,name:product_cost_source.model_product_product
+msgid "Product Variant"
+msgstr "Variante de produit"
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/res_config_settings.py:0
+msgid "The price age must be a whole number of months greater than zero."
+msgstr "L'âge du prix doit être un nombre entier de mois supérieur à zéro."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Unknown. No vendor price and no purchase history."
+msgstr "Inconnu. Aucun prix fournisseur et aucun historique d'achat."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Unknown. No vendor price for the other %(qty)s."
+msgstr "Inconnu. Aucun prix fournisseur pour les %(qty)s autres."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid ""
+"Warning. Vendor price expires %(expiry)s, before this line's delivery date "
+"of %(delivery)s."
+msgstr ""
+"Avertissement. Le prix fournisseur expire le %(expiry)s, avant la date de "
+"livraison de cette ligne, le %(delivery)s."

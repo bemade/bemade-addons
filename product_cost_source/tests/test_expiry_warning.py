@@ -36,8 +36,8 @@ class TestExpiryWarning(ProductCostSourceCommon):
         resolution = self._resolve(delivery_date=delivery)
         self.assertEqual(len(resolution.warnings), 1)
         warning = resolution.warnings[0]
-        self.assertIn(fields.Date.to_string(self.expiry), warning)
-        self.assertIn(fields.Date.to_string(delivery), warning)
+        self.assertIn(self._fmt(self.expiry), warning)
+        self.assertIn(self._fmt(delivery), warning)
 
     def test_agreement_covering_delivery_does_not_warn(self):
         delivery = fields.Date.today() + relativedelta(days=2)

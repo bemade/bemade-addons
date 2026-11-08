@@ -9,6 +9,10 @@ of the demand" -- and nothing about it wants to be stored.
 
 from dataclasses import dataclass, field
 
+#: Confidence levels, worst first. A resolution is as weak as its weakest
+#: source, so "worst" is ``min`` over this order.
+CONFIDENCE_ORDER = ["unknown", "estimated", "indicative", "firm"]
+
 
 @dataclass
 class CostSource:
@@ -26,6 +30,13 @@ class CostSource:
         ``in_force``.
     :param in_force: whether an agreement covers the requested date. A price
         that is in force is firm regardless of its age.
+    :param indicative: a price a vendor quoted but nobody confirmed (an open
+        request for quotation, say). Better than a guess, worse than a
+        promise: it never ranks above firm evidence.
+    :param reference: a human reference for the evidence (an order number),
+        used in the sentence describing it. Never a technical key.
+    :param notes: other evidence worth mentioning beside this one, e.g. a
+        newer quotation that did not win because a firm price exists.
     """
 
     key: str
@@ -34,6 +45,9 @@ class CostSource:
     priced_on: object = None
     in_force_until: object = None
     in_force: bool = False
+    indicative: bool = False
+    reference: str = ""
+    notes: list = field(default_factory=list)
 
     @property
     def subtotal(self):
@@ -49,6 +63,7 @@ class CostResolution:
     sources: list = field(default_factory=list)
     evidence: list = field(default_factory=list)
     warnings: list = field(default_factory=list)
+    notes: list = field(default_factory=list)
 
     @property
     def is_firm(self):
