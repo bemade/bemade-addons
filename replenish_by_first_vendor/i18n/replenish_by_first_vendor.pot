@@ -1,0 +1,36 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* replenish_by_first_vendor
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-08 12:21+0000\n"
+"PO-Revision-Date: 2026-11-08 12:21+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: replenish_by_first_vendor
+#: model_terms:ir.ui.view,arch_db:replenish_by_first_vendor.stock_reorder_report_search
+msgid "Can be bought from"
+msgstr ""
+
+#. module: replenish_by_first_vendor
+#: model:ir.model,name:replenish_by_first_vendor.model_stock_warehouse_orderpoint
+msgid "Minimum Inventory Rule"
+msgstr ""
+
+#. module: replenish_by_first_vendor
+#: model:ir.model.fields,field_description:replenish_by_first_vendor.field_stock_warehouse_orderpoint__supplier_id
+msgid "Supplier"
+msgstr ""
+
+#. module: replenish_by_first_vendor
+#: model_terms:ir.ui.view,arch_db:replenish_by_first_vendor.stock_reorder_report_search
+msgid "Vendor"
+msgstr ""
