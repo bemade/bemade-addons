@@ -3811,8 +3811,6 @@ msgid "Body Location"
 msgstr "Localisation sur le corps"
 
 #. module: bemade_sports_clinic
-#. odoo-python
-#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_home
 msgid "Bookings"
 msgstr "Réservations"
@@ -7898,6 +7896,11 @@ msgstr "1 nouvelle blessure"
 #: code:addons/bemade_sports_clinic/models/sports_team_digest.py:0
 msgid "No changes"
 msgstr "Aucun changement"
+
+#. module: bemade_sports_clinic
+#: model:ir.model,name:bemade_sports_clinic.model_portal_kit
+msgid "Portal Kit Registries"
+msgstr "Registres de la trousse portail"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_security
@@ -14500,12 +14503,6 @@ msgstr "Basculer le thème"
 
 msgid "You are not on any team yet."
 msgstr "Vous ne faites encore partie d'aucune équipe."
-
-#. module: bemade_sports_clinic
-#. odoo-python
-#: code:addons/bemade_sports_clinic/models/sc_app_roles.py:0
-msgid "Your appointments"
-msgstr "Vos rendez-vous"
 
 #. module: bemade_sports_clinic
 #. odoo-python

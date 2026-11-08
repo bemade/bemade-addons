@@ -6,7 +6,6 @@ from datetime import datetime, time, timedelta
 import pytz
 
 from odoo import api, fields, models
-from odoo.addons.bemade_sports_clinic.models import sc_app_roles
 from odoo.tools import format_datetime
 
 _logger = logging.getLogger(__name__)
@@ -70,7 +69,7 @@ class ResUsers(models.Model):
         raw = self.env['ir.config_parameter'].sudo().get_param(APP_SHELL_PARAM)
         if str(raw or '').strip().lower() not in _TRUTHY:
             return False
-        if not (self._sc_app_roles() & sc_app_roles.APP_ROLES):
+        if not (self._sc_app_roles() & self.env['portal.kit'].pk_app_roles()):
             return False
         return self._sc_booking_is_staff()
 

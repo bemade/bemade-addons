@@ -18,11 +18,10 @@ Acceptance criteria covered here:
   that role server-side (the registry decides what is shown, never what is
   allowed).
 """
-from unittest.mock import patch
-
 from odoo import Command
 from odoo.tests import TransactionCase, tagged
 
+from odoo.addons.bemade_portal_kit.tests.common import pk_hook, pk_hooks
 from odoo.addons.bemade_sports_clinic.models import sc_app_roles as registry
 
 
@@ -74,14 +73,17 @@ class TestAppShellRoles1538(TransactionCase):
 
     def test_app_roles_exclude_internal_only(self):
         """A plain internal user (no clinic role) is not an app user."""
-        self.assertFalse(frozenset({'internal'}) & registry.APP_ROLES)
-        self.assertTrue(frozenset({'coach'}) & registry.APP_ROLES)
+        app_roles = self.env['portal.kit'].pk_app_roles()
+        self.assertFalse(frozenset({'internal'}) & app_roles)
+        self.assertTrue(frozenset({'coach'}) & app_roles)
         for reserved in registry.RESERVED_ROLES:
-            self.assertIn(reserved, registry.APP_ROLES)
+            self.assertIn(reserved, app_roles)
+        # The nav shorthand for « every app role » is that same set.
+        self.assertEqual(registry.EVERYONE, app_roles & frozenset(registry.ALL_ROLES))
 
     # -- UC-R2 -----------------------------------------------------------
     def _keys(self, roles, placement, ctx=None):
-        return [e['key'] for e in registry.visible_nav(roles, placement, ctx or {})]
+        return [e['key'] for e in self.env['portal.kit'].pk_visible_nav(roles, placement, ctx or {})]
 
     def test_tabs_union_of_roles(self):
         coach_tabs = self._keys(self.coach._sc_app_roles(), 'tab')
@@ -98,24 +100,20 @@ class TestAppShellRoles1538(TransactionCase):
             'include': frozenset({'therapist'}), 'exclude': frozenset({'coach'}),
             'requires': None, 'placement': ('tab',), 'sequence': 35,
         }
-        with patch.object(registry, 'NAV_REGISTRY', registry.NAV_REGISTRY + (entry,)):
+        with pk_hook(self.env, '_pk_nav', lambda nav: list(nav) + [entry]):
             self.assertIn('test_tp_not_coach', self._keys(self.tp._sc_app_roles(), 'tab'))
             self.assertNotIn('test_tp_not_coach', self._keys(self.both._sc_app_roles(), 'tab'))
             self.assertNotIn('test_tp_not_coach', self._keys(self.coach._sc_app_roles(), 'tab'))
 
-    def test_requires_gates_bookings(self):
-        roles = self.tp._sc_app_roles()
-        self.assertNotIn('bookings', self._keys(roles, 'rail', {'booking_card_enable': False}))
-        self.assertIn('bookings', self._keys(roles, 'rail', {'booking_card_enable': True}))
-        self.assertIn('bookings', self._keys(roles, 'plus', {'booking_card_enable': True}))
-        # Never a phone tab: bookings live under « Plus » on the phone.
-        self.assertNotIn('bookings', self._keys(roles, 'tab', {'booking_card_enable': True}))
+    # Task 5196: the « bookings » entry and its ``requires`` gate moved to
+    # bemade_sports_clinic_bookings (its own ``portal.kit._pk_nav``); its
+    # test is there (test_bookings_portal_kit_5196).
 
     # -- UC-R3 -----------------------------------------------------------
     def test_reserved_roles_resolve_to_nothing_today(self):
         for reserved in ('teacher', 'parent', 'player', 'secretary'):
             self.assertIn(reserved, registry.RESERVED_ROLES)
-            self.assertEqual(tuple(registry.ROLE_GROUPS.get(reserved, ())), ())
+            self.assertEqual(self.env['portal.kit'].pk_roles()[reserved]['groups'], ())
         self.assertEqual(self.parent._sc_app_roles(), frozenset())
 
     def test_parent_mapping_is_data_only(self):
@@ -129,10 +127,10 @@ class TestAppShellRoles1538(TransactionCase):
             'include': frozenset({'coach'}), 'exclude': frozenset({'parent'}),
             'requires': None, 'placement': ('tab',), 'sequence': 26,
         }
-        mapping = {'parent': ('bemade_sports_clinic.test_group_parent_1538',)}
-        with patch.dict(registry.ROLE_GROUPS, mapping), \
-                patch.object(registry, 'NAV_REGISTRY',
-                             registry.NAV_REGISTRY + (parent_entry, no_parent_entry)):
+        mapping = {'parent': {'groups': ('bemade_sports_clinic.test_group_parent_1538',)}}
+        with pk_hooks(self.env,
+                      _pk_roles=lambda roles: dict(roles, **mapping),
+                      _pk_nav=lambda nav: list(nav) + [parent_entry, no_parent_entry]):
             self.assertEqual(self.parent._sc_app_roles(), frozenset({'parent'}))
             parent_tabs = self._keys(self.parent._sc_app_roles(), 'tab')
             # The parent sees its own entry + « Plus » (declared for every app role).
@@ -147,32 +145,33 @@ class TestAppShellRoles1538(TransactionCase):
     def test_sc_can_matches_registry(self):
         coach_roles = self.coach._sc_app_roles()
         tp_roles = self.tp._sc_app_roles()
+        can = self.env['portal.kit'].pk_can
         # Task 1630: the medical pills for every staff role, « Other medical
         # history » for therapists only.
-        self.assertTrue(registry.can('patient.medical_alerts', coach_roles))
-        self.assertTrue(registry.can('patient.medical_alerts', tp_roles))
-        self.assertFalse(registry.can('patient.medical_history', coach_roles))
-        self.assertTrue(registry.can('patient.medical_history', tp_roles))
+        self.assertTrue(can('patient.medical_alerts', coach_roles))
+        self.assertTrue(can('patient.medical_alerts', tp_roles))
+        self.assertFalse(can('patient.medical_history', coach_roles))
+        self.assertTrue(can('patient.medical_history', tp_roles))
         # Task 1624: the dashboard widgets replaced the home's fixed sections.
-        self.assertTrue(registry.can('dashboard.indicators', coach_roles))
-        self.assertFalse(registry.can('dashboard.todo.verify', coach_roles))
-        self.assertTrue(registry.can('dashboard.todo.verify', tp_roles))
-        self.assertFalse(registry.can('home.clinic_teaser', coach_roles))
-        self.assertTrue(registry.can('home.clinic_teaser', tp_roles))
+        self.assertTrue(can('dashboard.indicators', coach_roles))
+        self.assertFalse(can('dashboard.todo.verify', coach_roles))
+        self.assertTrue(can('dashboard.todo.verify', tp_roles))
+        self.assertFalse(can('home.clinic_teaser', coach_roles))
+        self.assertTrue(can('home.clinic_teaser', tp_roles))
         with self.assertRaises(KeyError):
-            registry.can('no.such.key', tp_roles)
+            can('no.such.key', tp_roles)
 
     def test_hidden_field_keys_are_denied_by_acl(self):
         """Every field key hidden from a role is unreadable for that role."""
         personas = {'coach': self.coach, 'therapist': self.tp}
         checked = 0
-        for key, spec in registry.VISIBILITY_REGISTRY.items():
+        for key, spec in self.env['portal.kit'].pk_visibility().items():
             if not spec.get('field'):
                 continue
             model = self.env[spec['model']]
             field = model._fields[spec['field']]
             for role, user in personas.items():
-                shown = registry.can(key, user._sc_app_roles())
+                shown = self.env['portal.kit'].pk_can(key, user._sc_app_roles())
                 readable = model.with_user(user)._has_field_access(field, 'read')
                 if not shown:
                     self.assertFalse(

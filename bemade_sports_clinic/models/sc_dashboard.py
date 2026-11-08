@@ -8,7 +8,7 @@ Widget registry
 
 * ``key``       stable identifier (stored in the users' layouts — never rename);
 * ``title``     the default section title (translatable);
-* ``can``       the ``sc_app_roles.VISIBILITY_REGISTRY`` key deciding which
+* ``can``       the visibility key (``portal.kit._pk_visibility``) deciding which
                 roles may have it (``sc_can``);
 * ``template``  the QWeb template of its body (``views/sc_app_dashboard.xml``);
 * ``builder``   the name of the controller method building its render values,
@@ -70,7 +70,6 @@ from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.tools.translate import LazyTranslate
 
-from . import sc_app_roles
 
 _lt = LazyTranslate(__name__)
 
@@ -200,7 +199,7 @@ class ScDashboard(models.AbstractModel):
     @api.model
     def _sc_can(self, key, viewer=None):
         viewer = viewer or self._sc_viewer()
-        return sc_app_roles.can(key, viewer['roles'], is_system=viewer['is_system'])
+        return self.env['portal.kit'].pk_can(key, viewer['roles'], is_system=viewer['is_system'])
 
     @api.model
     def _sc_widgets(self, viewer=None):

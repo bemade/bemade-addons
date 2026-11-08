@@ -14,7 +14,7 @@
     (sc_app_activities.xml) instead of the legacy partials.
 
     Sections and actions ask the registry (sc_can) AND the controller's
-    existing server-side value — see VISIBILITY_REGISTRY in
+    existing server-side value — see the visibility keys (_pk_visibility) in
     models/sc_app_roles.py. No inline script / style (tests/…_lint_1542).
 -->
 <odoo>

@@ -16,15 +16,12 @@ import pytz
 from odoo import fields, http
 from odoo.http import request
 from odoo.tools import format_datetime
-from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.appointment_portal_staff.controllers.portal import BookingPortal
+from odoo.addons.bemade_portal_kit.tools import pk_safe_return_url
 from odoo.addons.bemade_sports_clinic.controllers.app_shell import AppShellMixin, sc_contact_href
-from odoo.addons.bemade_sports_clinic.models import sc_app_nav
 
 from ..models.calendar_event import SC_BOOKING_LENGTHS
-
-_lt = LazyTranslate(__name__)
 
 
 DETAIL_KEYS = ('client', 'appointment_type', 'status', 'email', 'phone')
@@ -39,26 +36,6 @@ SEGMENTS = (
 LIST_SEGMENTS = ('upcoming', 'past', 'all')
 # Task 1596: the list filters a segment / sort link carries along.
 LIST_FILTER_KEYS = ('appointment_type_id', 'date_from', 'date_to')
-
-
-# Task 1737: the edit / cancel pages are sub-pages of « Mes rendez-vous » in
-# the shell's parent registry (back chevron + crumbs); the list / calendar
-# are registered so a ``return_url`` to them is honoured. Like « Events » /
-# « Timesheets » (rail + « Plus », sc_app_roles.RAIL_PLUS), the list is a
-# « Plus » page: its parent is sc_app_more (the shell rule: a non-top-level
-# page declares a parent — bemade_sports_clinic test_app_shell_nav_1579).
-_BOOKINGS_PAGE = 'sc_app_bookings'
-sc_app_nav.PAGES.setdefault(_BOOKINGS_PAGE, sc_app_nav.Page(
-    _BOOKINGS_PAGE, url='/my/bookings', label=sc_app_nav.nav_label('bookings'),
-    path=r'/my/bookings(?:/calendar)?', parent=lambda v: ('sc_app_more', {})))
-# Labels first, keys zipped in (babel's extractor would take a literal that
-# follows an _lt() call in the same tuple for a term).
-_PAGE_LABELS = (_lt('Edit booking'), _lt('Cancel booking'))
-for (_key, _suffix), _label in zip(
-        (('sc_app_booking_edit', 'edit'), ('sc_app_booking_cancel', 'cancel')), _PAGE_LABELS):
-    sc_app_nav.PAGES.setdefault(_key, sc_app_nav.Page(
-        _key, parent=lambda v: (_BOOKINGS_PAGE, {}), label=_label,
-        url=lambda v, _s=_suffix: '/my/bookings/%s/%s' % (v['booking'].id, _s)))
 
 
 def sc_bookings_list_url(params):
@@ -295,7 +272,7 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
 
     @staticmethod
     def _sc_booking_return_url(value):
-        return sc_app_nav.safe_return_url(value, '/my/bookings', prefixes=('/my/bookings',))
+        return pk_safe_return_url(value, '/my/bookings', prefixes=('/my/bookings',))
 
     def _sc_booking_closed(self, return_url):
         request.session['notification'] = {

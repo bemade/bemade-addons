@@ -14,7 +14,7 @@ from odoo.exceptions import UserError, AccessError, MissingError, ValidationErro
 from odoo.http import request
 from odoo.tools import format_date
 
-from ..models import sc_app_nav, sc_app_roles
+from odoo.addons.bemade_portal_kit.tools import pk_safe_return_url
 from datetime import datetime, time
 import time as systime
 import logging
@@ -539,8 +539,9 @@ class AccessControlMixin:
         user = request.env.user
         if not (self._is_treatment_professional() or self._is_clinic_admin()):
             return False
-        return sc_app_roles.can('patient.status.edit', user._sc_app_roles(),
-                                is_system=user.has_group('base.group_system'))
+        return request.env['portal.kit'].pk_can(
+            'patient.status.edit', user._sc_app_roles(),
+            is_system=user.has_group('base.group_system'))
 
     def _sc_player_row_extras(self, players, team_links=True, team=None, status_edit=False,
                               labels=None):
@@ -1147,9 +1148,9 @@ class AccessControlMixin:
         (task 1544: no open redirect through a posted ``return_url``).
 
         Task 1579: ONE validator for the whole addon —
-        ``models/sc_app_nav.safe_return_url`` (same rule as before, plus the
-        optional ``prefixes`` the events pages restrict themselves to)."""
-        return sc_app_nav.safe_return_url(value, fallback, prefixes=prefixes)
+        the kit's ``pk_safe_return_url`` (task 5196; same rule as before, plus
+        the optional ``prefixes`` the events pages restrict themselves to)."""
+        return pk_safe_return_url(value, fallback, prefixes=prefixes)
 
     @classmethod
     def _local_return_url(cls, value, default):
