@@ -294,7 +294,7 @@
                                      dialog's built-in × closes it; the button stays in
                                      the same position, gated on note_history_ids.
                                      Task 1385 (CR-D4): UI text is English source;
-                                     French is supplied by i18n/fr_CA.po (owner
+                                     French is supplied by i18n/fr.po (owner
                                      standard). -->
                                 <field name="note_history_ids" invisible="1"/>
                                 <div class="d-flex align-items-center gap-2 mb-1">

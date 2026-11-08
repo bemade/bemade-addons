@@ -1516,7 +1516,7 @@
                                      id is suffixed with team.id so a page rendering
                                      more than one team block keeps unique ids.
                                      Task 1385 (CR-D4): UI text is English source;
-                                     French is supplied by i18n/fr_CA.po (owner
+                                     French is supplied by i18n/fr.po (owner
                                      standard). -->
                                 <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                                     <strong>Team announcement</strong>
