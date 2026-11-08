@@ -26,11 +26,14 @@
       ref="purchase_stock.stock_reorder_report_search_inherited_purchase_stock"
     />
         <field name="arch" type="xml">
-            <!-- Any product with a price from the vendor, not only the line's own vendor. -->
-            <xpath expr="//field[@name='vendor_id']" position="attributes">
-                <attribute
-          name="filter_domain"
-        >[('product_id.product_tmpl_id.seller_ids.partner_id', 'child_of', self)]</attribute>
+            <!-- "Vendor" stays the line's own vendor. This one finds any line
+                 whose product has a price from the vendor. -->
+            <xpath expr="//field[@name='vendor_id']" position="after">
+                <field
+          name="vendor_id"
+          string="Can be bought from"
+          filter_domain="[('product_id.product_tmpl_id.seller_ids.partner_id', 'child_of', self)]"
+        />
             </xpath>
             <xpath expr="//filter[@name='groupby_category']" position="after">
                 <filter
