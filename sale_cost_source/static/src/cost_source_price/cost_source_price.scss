@@ -1,0 +1,24 @@
+// Bootstrap's tooltip is narrow and small: widen it for a few sentences.
+.o-tooltip:has(.o_cost_source_tooltip) {
+    max-width: 32rem;
+    line-height: 1.4;
+}
+
+.o_cost_source_tooltip {
+    min-width: 240px;
+    text-align: start;
+
+    .o_cost_source_banner {
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+}
+
+.o_cost_source_icon {
+    opacity: 0.6;
+
+    &.o_cost_source_indicative { color: $info; opacity: 1; }
+    &.o_cost_source_estimated { color: $warning; opacity: 1; }
+    &.o_cost_source_unknown { color: $danger; opacity: 1; }
+}
