@@ -48,6 +48,10 @@ class ProductCostSourceCommon(TransactionCase):
         from odoo.tools.misc import format_date
         return format_date(self.env, date)
 
+    def _money(self, amount, currency=None):
+        from odoo.tools.misc import format_amount
+        return format_amount(self.env, amount, currency or self.env.company.currency_id)
+
     def _months_ago(self, months):
         from dateutil.relativedelta import relativedelta
         from odoo import fields
