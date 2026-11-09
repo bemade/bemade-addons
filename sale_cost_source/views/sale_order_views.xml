@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_order_form_cost_source" model="ir.ui.view">
+        <field name="name">sale.order.form.cost.source</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form" />
+        <field name="arch" type="xml">
+            <!-- Order lines (list): badge + reason after the subtotal, tooltip on the unit price -->
+            <xpath
+                expr="//field[@name='order_line']/list/field[@name='price_unit']"
+                position="attributes"
+            >
+                <attribute name="widget">cost_source_price</attribute>
+            </xpath>
+            <xpath
+                expr="//field[@name='order_line']/list/field[@name='price_subtotal']"
+                position="after"
+            >
+                <field
+                    name="cost_source_confidence"
+                    widget="badge"
+                    decoration-success="cost_source_confidence == 'firm'"
+                    decoration-info="cost_source_confidence == 'indicative'"
+                    decoration-warning="cost_source_confidence == 'estimated'"
+                    decoration-danger="cost_source_confidence == 'unknown'"
+                    optional="show"
+                    readonly="1"
+                    groups="sales_team.group_sale_salesman"
+                />
+                <field
+                    name="cost_source_reason"
+                    optional="hide"
+                    readonly="1"
+                    groups="sales_team.group_sale_salesman"
+                />
+                <field
+                    name="cost_source_explanation"
+                    column_invisible="1"
+                    groups="sales_team.group_sale_salesman"
+                />
+            </xpath>
+            <!-- Order line form -->
+            <xpath
+                expr="//field[@name='order_line']/form//field[@name='price_unit']"
+                position="after"
+            >
+                <field
+                    name="cost_source_confidence"
+                    widget="badge"
+                    decoration-success="cost_source_confidence == 'firm'"
+                    decoration-info="cost_source_confidence == 'indicative'"
+                    decoration-warning="cost_source_confidence == 'estimated'"
+                    decoration-danger="cost_source_confidence == 'unknown'"
+                    readonly="1"
+                    invisible="not cost_source_confidence"
+                    groups="sales_team.group_sale_salesman"
+                />
+                <field
+                    name="cost_source_reason"
+                    readonly="1"
+                    invisible="not cost_source_confidence"
+                    groups="sales_team.group_sale_salesman"
+                />
+            </xpath>
+            <!-- Order: summary badge next to the totals -->
+            <xpath expr="//group[@name='sale_total']" position="before">
+                <div
+                    class="o_cost_source_summary text-end mb-2"
+                    colspan="6"
+                    invisible="not cost_source_summary"
+                    groups="sales_team.group_sale_salesman"
+                >
+                    <field name="cost_source_worst" invisible="1" />
+                    <span class="text-muted me-2">Cost basis:</span>
+                    <field
+                        name="cost_source_summary"
+                        widget="badge"
+                        decoration-info="cost_source_worst == 'indicative'"
+                        decoration-warning="cost_source_worst == 'estimated'"
+                        decoration-danger="cost_source_worst == 'unknown'"
+                    />
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
