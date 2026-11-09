@@ -231,7 +231,7 @@ class ProductProduct(models.Model):
         )
         resolution.confidence = self._cost_source_confidence(sources, date, qty)
         resolution.evidence = self._cost_source_evidence(sources, date, qty, currency)
-        resolution.warnings = self._cost_source_warnings(sources, delivery_date)
+        resolution.warnings = self._cost_source_warnings(sources, delivery_date, date)
         resolution.notes = [
             self._cost_source_describe(note, date, currency)
             for source in sources
@@ -359,17 +359,24 @@ class ProductProduct(models.Model):
             months=months,
         )
 
-    def _cost_source_warnings(self, sources, delivery_date):
+    def _cost_source_warnings(self, sources, delivery_date, date=None):
         """Flag a price that is firm today but will not be by delivery.
 
         The case a plain age check cannot see: nothing is stale, and the quote
-        is still wrong.
+        is still wrong. Only a price still in force on ``date`` can warn: an
+        expired price is already reported as not in force, and warning that it
+        "expires" on a past date would be noise.
         """
         if not delivery_date:
             return []
+        date = date or fields.Date.context_today(self)
         warnings = []
         for source in sources:
-            if source.in_force_until and source.in_force_until < delivery_date:
+            if (
+                source.in_force
+                and source.in_force_until
+                and date <= source.in_force_until < delivery_date
+            ):
                 warnings.append(
                     self.env._(
                         "Warning. Vendor price expires %(expiry)s, before this "
