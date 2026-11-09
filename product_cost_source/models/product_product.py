@@ -298,6 +298,19 @@ class ProductProduct(models.Model):
                 # Cite the likely cost unless the same evidence already
                 # prices the balance and is described below.
                 if source.likely and not blended:
+                    # A vendor price of zero is obviously wrong data, not a
+                    # likely cost: say so instead of citing it as a figure.
+                    if currency.is_zero(source.likely.unit_price):
+                        evidence.append(
+                            self.env._(
+                                "Vendor price at %(price)s, from: %(evidence)s",
+                                price=format_amount(self.env, 0.0, currency),
+                                evidence=self._cost_source_describe(
+                                    source.likely, date, currency
+                                ),
+                            )
+                        )
+                        continue
                     evidence.append(
                         self.env._(
                             "Likely cost %(price)s, from: %(evidence)s",

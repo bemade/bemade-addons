@@ -210,6 +210,12 @@ msgstr "Coût probable %(price)s, d'après : %(evidence)s"
 #. module: product_cost_source
 #. odoo-python
 #: code:addons/product_cost_source/models/product_product.py:0
+msgid "Vendor price at %(price)s, from: %(evidence)s"
+msgstr "Coût fournisseur à %(price)s, d'après : %(evidence)s"
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
 msgid "Warning. Stock has no cost value: the cost of %(price)s is not reliable."
 msgstr ""
 "Avertissement. Stock sans valeur : le coût de %(price)s n'est pas fiable."

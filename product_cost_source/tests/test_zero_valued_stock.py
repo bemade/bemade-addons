@@ -15,6 +15,9 @@ ACCEPTANCE CRITERIA
    cost, but the line stays Unknown and keeps the warning.
 4. Zero-valued stock covering only part of the demand still makes the whole
    resolution Unknown, whatever prices the rest.
+5. When the only other evidence is a vendor price of zero, it is not cited as
+   a likely cost: the line stays Unknown and the evidence says the vendor
+   price is at zero, which is obviously wrong data.
 """
 from odoo.tests import tagged
 
@@ -58,3 +61,16 @@ class TestZeroValuedStock(ProductCostSourceCommon):
         self.assertFalse(
             [s for s in resolution.evidence if s.startswith("Likely cost")]
         )
+
+    def test_zero_vendor_price_is_flagged_not_cited_as_likely(self):
+        self._set_stock_value(0.0)
+        self._supplier_price(0.0)
+        resolution = self._resolve(qty=5, qty_from_stock=5)
+        self.assertEqual(resolution.confidence, "unknown")
+        self.assertTrue(resolution.warnings)
+        self.assertFalse(
+            [s for s in resolution.evidence if s.startswith("Likely cost")]
+        )
+        flagged = [s for s in resolution.evidence if s.startswith("Vendor price at")]
+        self.assertEqual(len(flagged), 1)
+        self.assertIn(self._money(0.0), flagged[0])
