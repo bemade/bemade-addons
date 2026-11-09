@@ -10,6 +10,7 @@ from ..exceptions import (
     LlmCloudRefused,
     LlmInvalidOutput,
     LlmNotConfigured,
+    LlmTruncated,
 )
 from ..tools.schema import SchemaError, validate
 
@@ -197,15 +198,24 @@ class BemadeLlmStream(models.Model):
             stats["prompt_tokens"] = usage.get("prompt_tokens") or 0
             stats["completion_tokens"] = usage.get("completion_tokens") or 0
             try:
-                content = body["choices"][0]["message"]["content"]
+                choice = body["choices"][0]
+                content = choice["message"]["content"]
             except (KeyError, IndexError, TypeError) as error:
                 raise LlmInvalidOutput(self.env._("The LLM answer has no content.")) from error
+            truncated = choice.get("finish_reason") == "length"
             if schema is None:
                 return self._restore(content or "", mapping)
-            result = self._parse_json(content)
             try:
+                result = self._parse_json(content)
                 validate(result, schema)
-            except SchemaError as error:
+            except (LlmInvalidOutput, SchemaError) as error:
+                if truncated:
+                    raise LlmTruncated(
+                        self.env._("The LLM answer was cut off at the token limit (max tokens %(max)s).",
+                                   max=self.max_tokens or "-")
+                    ) from error
+                if isinstance(error, LlmInvalidOutput):
+                    raise
                 raise LlmInvalidOutput(
                     self.env._("The LLM answer does not follow the schema: %(error)s", error=str(error))
                 ) from error

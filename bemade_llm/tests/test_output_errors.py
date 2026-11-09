@@ -5,6 +5,10 @@ Acceptance criteria
 - An answer that breaks the schema (missing required key, value outside the
   enum, extra key, wrong type, too long) raises ``LlmInvalidOutput``.
 - An answer without choices raises ``LlmInvalidOutput``.
+- An answer cut off at the token limit (``finish_reason`` = "length") that
+  holds no valid JSON raises ``LlmTruncated`` (a subclass of
+  ``LlmInvalidOutput``, status "truncated"); a complete JSON answer is still
+  returned even when ``finish_reason`` is "length".
 - A connection error, a timeout, an HTTP 5xx, an HTTP 401 and a body that is
   not JSON raise ``LlmTransportError``.
 - The schema checker (``tools.schema.validate``) covers the subset we use:
@@ -12,11 +16,13 @@ Acceptance criteria
   additionalProperties, enum, minLength/maxLength, items, minimum/maximum.
 """
 
+import json
+
 import requests
 
 from odoo.tests import BaseCase, tagged
 
-from odoo.addons.bemade_llm.exceptions import LlmInvalidOutput, LlmTransportError
+from odoo.addons.bemade_llm.exceptions import LlmInvalidOutput, LlmTransportError, LlmTruncated
 from odoo.addons.bemade_llm.tools.schema import SchemaError, validate
 
 from .common import PERSON_SCHEMA, FakeResponse, LlmCase
@@ -49,6 +55,31 @@ class TestOutputErrors(LlmCase):
         with self.mock_post(FakeResponse(200, {"choices": []})):
             with self.assertRaises(LlmInvalidOutput):
                 self.stream.complete("Find the person.", "x", PERSON_SCHEMA)
+
+    def test_truncated(self):
+        cut = FakeResponse(200, {
+            "choices": [{"message": {"role": "assistant", "content": '{"first": "Ad'},
+                         "finish_reason": "length"}],
+            "usage": {"prompt_tokens": 5, "completion_tokens": 512},
+        })
+        with self.mock_post(cut):
+            with self.assertRaises(LlmTruncated) as caught:
+                self.stream.complete("Find the person.", "x", PERSON_SCHEMA)
+        self.assertIsInstance(caught.exception, LlmInvalidOutput)
+        self.assertEqual(caught.exception.status, "truncated")
+        whole = {"first": "Ada", "last": "Example", "method": "signature"}
+        complete = FakeResponse(200, {
+            "choices": [{"message": {"role": "assistant", "content": json.dumps(whole)},
+                         "finish_reason": "length"}],
+        })
+        with self.mock_post(complete):
+            self.assertEqual(self.stream.complete("Find the person.", "x", PERSON_SCHEMA), whole)
+
+    def test_not_json_complete_answer_is_not_truncated(self):
+        with self.mock_post(self.ok("no json here")):
+            with self.assertRaises(LlmInvalidOutput) as caught:
+                self.stream.complete("Find the person.", "x", PERSON_SCHEMA)
+        self.assertNotIsInstance(caught.exception, LlmTruncated)
 
     def test_transport_errors(self):
         for exc in (requests.ConnectionError("down"), requests.Timeout("slow")):

@@ -35,3 +35,10 @@ class LlmInvalidOutput(BemadeLlmError):
     """The answer is not JSON or does not follow the requested schema."""
 
     status = "invalid_output"
+
+
+class LlmTruncated(LlmInvalidOutput):
+    """The answer was cut off at the token limit (``finish_reason`` = "length")
+    before it held valid JSON. Usually transient: retry, or raise max tokens."""
+
+    status = "truncated"
