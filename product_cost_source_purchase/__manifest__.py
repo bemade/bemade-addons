@@ -38,7 +38,8 @@ quoted that nobody confirmed yet. It is reported at the **Indicative** level:
 *Indicative. Quoted $12.50 on RFQ P00042, not yet confirmed.*
 
 It is used only when no firm evidence exists. When a firm price exists and the
-RFQ is newer, the RFQ is shown as a note beside the firm price.
+RFQ is newer, the RFQ is shown as a note beside the firm price. An RFQ dated
+before the price age window (6 months by default) is ignored.
 
 Access
 ------

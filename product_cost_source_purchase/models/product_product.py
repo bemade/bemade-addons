@@ -68,8 +68,13 @@ class ProductProduct(models.Model):
         )
 
     def _cost_source_open_rfq_line(self, date, company):
-        """The latest line of an open request for quotation, if any."""
+        """The latest line of an open request for quotation, if any.
+
+        Only RFQs dated within the price age window count: a stale draft
+        RFQ left open for years is not a quote anyone would honour.
+        """
         until = datetime.combine(date, time.max)
+        since = datetime.combine(self._cost_source_cutoff(date), time.min)
         return (
             self.env["purchase.order.line"]
             .sudo()
@@ -77,6 +82,7 @@ class ProductProduct(models.Model):
                 self._cost_source_purchase_domain(company)
                 + [
                     ("order_id.state", "in", RFQ_STATES),
+                    ("order_id.date_order", ">=", since),
                     ("order_id.date_order", "<=", until),
                 ],
                 order="date_order desc, id desc",

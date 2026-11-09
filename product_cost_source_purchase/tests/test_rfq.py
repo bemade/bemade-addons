@@ -11,6 +11,7 @@ ACCEPTANCE CRITERIA
    a note, an older one is not.
 4. An RFQ beats an Estimated price (aged or undated).
 5. An RFQ waiting for approval or a cancelled one is not an open RFQ.
+6. An open RFQ older than the price age window (6 months) is ignored.
 """
 from odoo.tests import tagged
 
@@ -72,3 +73,11 @@ class TestRfq(PurchaseCostSourceCommon):
         self._order(12.5, state="to approve")
         self._order(13.5, state="cancel")
         self.assertEqual(self._resolve().confidence, "unknown")
+
+    def test_rfq_older_than_age_window_is_ignored(self):
+        self._order(12.5, state="draft", on=self._months_ago(7))
+        self.assertEqual(self._resolve().confidence, "unknown")
+
+    def test_rfq_inside_age_window_counts(self):
+        self._order(12.5, state="sent", on=self._months_ago(5))
+        self.assertEqual(self._resolve().confidence, "indicative")
