@@ -41,8 +41,8 @@ async function waitFor(check, message, timeout = 8000) {
 tours.add("sc_1018_header_pencil", {
     steps: () => [
         {
-            content: "Read view: status pills (task 1627), no « Remove player »; open the pencil",
-            trigger: `${HERO} [data-sc-edit-view="read"] [data-sc-pill-key="match"] button.o_sc_pill_select`,
+            content: "Read view: status pills (task 1627; task 1753: outside the read view), no « Remove player »; open the pencil",
+            trigger: `${HERO} [data-sc-section="player.status"] [data-sc-pill-key="match"] button.o_sc_pill_select`,
             run() {
                 window.__sc1018NoReload = true;
                 assert(!document.querySelector(`${HERO} .o_sc_autosave[data-sc-field="sc_status"]`), "a 4-way selector");

@@ -14,7 +14,8 @@ Acceptance criteria:
   the date in its edit view), no longer in « Medical Information ».
 * UC-PL4 The training recommendation (with its history link) sits in the
   page header (owner review 2026-10-14 — no longer on the Info tab), right
-  under the play status (task 1615), the one return date next (task 1630:
+  under the play status (task 1615; task 1753: the status just above the
+  read view, outside it), the one return date next (task 1630:
   the allergies are the header's pills, test_medical_alerts_1630); a therapist edits
   the recommendation (live, stamp + history) in the header's edit view.
 * UC-PL5 Emergency contacts are on the Info tab (cards and « Add Emergency
@@ -88,12 +89,16 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         read = hero.xpath('./*[@data-sc-edit-view="read"]')[0]
         edit = hero.xpath('./*[@data-sc-edit-view="edit"]')[0]
         self.assertEqual(edit.get('hidden'), 'hidden')
-        # Task 1627: the status pills are live dropdowns in the READ view (no
-        # stage chip, no selector behind the pencil).
-        self.assertFalse(read.xpath('.//*[@data-sc-stage-chip]'))
-        self.assertEqual(len(read.xpath('.//*[@data-sc-section="player.status.readonly"]'
-                                        '//button[contains(@class, "o_sc_pill_select")]')), 2)
+        # Task 1627: the status pills are live dropdowns (no stage chip, no
+        # selector behind the pencil). Task 1753 (deliberate update): they
+        # sit outside the read view, so the pencil no longer hides them.
+        status = hero.xpath('./*[@data-sc-section="player.status"]')[0]
+        self.assertFalse(hero.xpath('.//*[@data-sc-stage-chip]'))
+        self.assertEqual(len(status.xpath('./*[@data-sc-section="player.status.readonly"]'
+                                          '//button[contains(@class, "o_sc_pill_select")]')), 2)
+        self.assertFalse(read.xpath('.//*[@data-sc-section="player.status"]'))
         self.assertFalse(read.xpath('.//owl-component'))
+        self.assertFalse(status.xpath('.//owl-component'))
         self.assertNotIn('sc_status', self._owl(edit))
         self.assertFalse(tree.xpath('//owl-component[contains(@props, \'"sc_status"\')]'))
         self._login_coach()
@@ -142,7 +147,10 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         self.assertIs(training[0].getparent(), read)
         # Task 1611: the banner sits in its always-rendered read-fragment
         # holder (filled / cleared in place).
-        self.assertEqual(training[0].getprevious().get('data-sc-section'), 'player.status')
+        # Task 1753 (deliberate update): the play status sits just above
+        # the read view (outside it), so the banner opens the read view.
+        self.assertIsNone(training[0].getprevious())
+        self.assertEqual(read.getprevious().get('data-sc-section'), 'player.status')
         self.assertEqual(training[0].getnext().get('data-sc-section'), 'player.return')
         # Task 1630: no allergies banner in the read view — the pill in the
         # header's top row, its details in the popup.

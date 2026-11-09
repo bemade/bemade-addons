@@ -279,14 +279,15 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
                 self.assertEqual(' '.join(pill.text_content().split()), label)
 
     def test_therapist_changes_status_with_the_pills(self):
-        # Task 1627: the therapist's pills are dropdowns in the READ view; the
-        # header's edit view has no status selector any more.
+        # Task 1627: the therapist's pills are dropdowns outside the pencil;
+        # the header's edit view has no status selector any more. Task 1753
+        # (deliberate update): the status block sits outside the read view.
         self._login_tp()
         _text, tree = self._get(self._url())
-        read = tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-edit-view="read"]')[0]
-        self.assertFalse(read.xpath('.//*[@data-sc-stage-chip]'))
-        self.assertEqual(len(read.xpath('.//button[contains(@class, "o_sc_pill_select")]')), 2)
-        self.assertFalse(read.xpath('.//owl-component'))
+        status = tree.xpath('//*[@data-sc-section="player.hero"]/*[@data-sc-section="player.status"]')[0]
+        self.assertFalse(tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-stage-chip]'))
+        self.assertEqual(len(status.xpath('.//button[contains(@class, "o_sc_pill_select")]')), 2)
+        self.assertFalse(status.xpath('.//owl-component'))
         edit = tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-edit-view="edit"]')[0]
         self.assertFalse(self._props(edit, 'sc_status', scope='.//*'))
 

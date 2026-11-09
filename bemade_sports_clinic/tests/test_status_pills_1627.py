@@ -151,10 +151,12 @@ class TestStatusPills1627(StatusPillsMixin, FragmentsCommon):
             self._set(pair)
             tree = self._page(self._url())
             pills = self._assert_dropdowns(tree, pair)
-            # In the header's READ view (always live, never behind the pencil).
+            # Always live, never behind the pencil. Task 1753 (deliberate
+            # update): outside both the read and the edit view, so the
+            # pencil (which hides the read view) no longer hides them.
             for pill in pills.values():
-                self.assertTrue(pill.xpath('ancestor::*[@data-sc-edit-view="read"]'))
-                self.assertFalse(pill.xpath('ancestor::*[@data-sc-edit-view="edit"]'))
+                self.assertTrue(pill.xpath('ancestor::*[@data-sc-section="player.hero"]'))
+                self.assertFalse(pill.xpath('ancestor::*[@data-sc-edit-view]'))
 
     # -- AC-3 --------------------------------------------------------------
     def test_coach_reads_coloured_pills(self):
