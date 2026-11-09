@@ -14,6 +14,10 @@ class ProductCostSourceCommon(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # The engine reads "today" in the user's timezone while the tests build
+        # their dates from UTC today; pin the user to UTC so the two agree at
+        # every hour of the day.
+        cls.env.user.tz = "UTC"
         cls.company = cls.env.company
         cls.vendor = cls.env["res.partner"].create({"name": "Test Vendor"})
         cls.other_vendor = cls.env["res.partner"].create({"name": "Other Vendor"})
@@ -39,6 +43,10 @@ class ProductCostSourceCommon(TransactionCase):
 
     def _set_stock_value(self, value, product=None):
         (product or self.product).standard_price = value
+
+    def _fmt(self, date):
+        from odoo.tools.misc import format_date
+        return format_date(self.env, date)
 
     def _months_ago(self, months):
         from dateutil.relativedelta import relativedelta

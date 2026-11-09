@@ -2,7 +2,7 @@
 # License LGPL-3 - See https://www.gnu.org/licenses/lgpl-3.0.html
 {
     "name": "Product Cost Source",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "summary": "Resolve a product's unit cost, name where it came from, "
     "and say how far it can be trusted.",
     "description": """Product Cost Source
@@ -31,19 +31,30 @@ behind it:
   rest, the weighted unit cost of the two.
 
 Alongside the cost, each contributing source is described in terms a person
-quoting can act on:
+quoting can act on, verdict first:
 
-* *Pricing is firm based on a date-bounded vendor pricelist, valid until
-  2026-11-30.*
-* *Supplier price is more than 6 months old. No transaction since 2022-01-03.*
-* *Pricing based on current stock availability and stock valuation.*
+* *Firm. Vendor price list valid to 11/30/2026.*
+* *Firm. 40 of 60 covered from stock at $10.00; balance at vendor price.*
+* *Estimated. Last known price 01/03/2022, over 6 months old. No contract in
+  force.*
+* *Unknown. No vendor price and no purchase history.*
+* *Warning. Vendor price expires 11/30/2026, before this line's delivery date
+  of 12/15/2026.*
+
+The confidence of a resolution is one of **Firm**, **Indicative** (a price a
+vendor quoted that nobody has confirmed yet, contributed by a plugin),
+**Estimated** and **Unknown**. A blend is as weak as its weakest part, and a
+quantity nobody can price makes the whole Unknown.
 
 How trust is decided
 --------------------
 
 A price that falls inside a vendor agreement currently in force is firm
 regardless of its age: an eight-month-old price on an annual pricelist is not
-stale, because the agreement still binds.
+stale, because the agreement still binds. Only an **end date** makes such a
+promise. A supplier price with a start date and no end date is when the vendor
+last set the price, not an undertaking to keep it, so it is treated as a dated
+last known price.
 
 Outside such an agreement there is no contract to lean on, so the age of the
 last **known** price is measured against a configurable timeout, and anything

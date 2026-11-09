@@ -13,6 +13,8 @@ ACCEPTANCE CRITERIA
 3. No delivery date supplied means no warning -- silence, not a guess.
 4. The warning does not change the cost or the confidence. The price is firm
    today; the warning says it will not stay so.
+5. A price that has already expired does not warn: it is no longer in force,
+   and the evidence already says so.
 """
 from dateutil.relativedelta import relativedelta
 
@@ -36,8 +38,8 @@ class TestExpiryWarning(ProductCostSourceCommon):
         resolution = self._resolve(delivery_date=delivery)
         self.assertEqual(len(resolution.warnings), 1)
         warning = resolution.warnings[0]
-        self.assertIn(fields.Date.to_string(self.expiry), warning)
-        self.assertIn(fields.Date.to_string(delivery), warning)
+        self.assertIn(self._fmt(self.expiry), warning)
+        self.assertIn(self._fmt(delivery), warning)
 
     def test_agreement_covering_delivery_does_not_warn(self):
         delivery = fields.Date.today() + relativedelta(days=2)
@@ -54,3 +56,15 @@ class TestExpiryWarning(ProductCostSourceCommon):
         self.assertEqual(loud.confidence, "firm")
         self.assertAlmostEqual(loud.unit_cost, quiet.unit_cost)
         self.assertTrue(loud.warnings)
+
+
+@tagged("-at_install", "post_install")
+class TestExpiredPriceNoWarning(ProductCostSourceCommon):
+    def test_expired_price_does_not_warn(self):
+        self._supplier_price(
+            75.0, date_start=self._months_ago(12), date_end=self._months_ago(9)
+        )
+        delivery = fields.Date.today() + relativedelta(months=2)
+        resolution = self._resolve(delivery_date=delivery)
+        self.assertNotEqual(resolution.confidence, "firm")
+        self.assertEqual(resolution.warnings, [])
