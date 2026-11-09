@@ -33,6 +33,7 @@ class ProductProduct(models.Model):
 
         covered = max(0.0, min(qty_from_stock, qty))
         if not float_is_zero(covered, precision_rounding=rounding):
+            unvalued = company.currency_id.is_zero(self.standard_price)
             sources.append(
                 CostSource(
                     key="stock",
@@ -41,9 +42,16 @@ class ProductProduct(models.Model):
                         self.standard_price, company.currency_id, currency, company, date
                     ),
                     # Stock was bought at a price we actually paid, so its age
-                    # is not in question: we own the goods at that cost.
+                    # is not in question: we own the goods at that cost --
+                    # unless it carries no value at all, which proves nothing.
                     priced_on=date,
-                    in_force=True,
+                    in_force=not unvalued,
+                    unvalued=unvalued,
+                    likely=(
+                        self._cost_source_vendor(covered, date, currency, company)
+                        if unvalued
+                        else None
+                    ),
                 )
             )
 
@@ -231,7 +239,9 @@ class ProductProduct(models.Model):
         )
         resolution.confidence = self._cost_source_confidence(sources, date, qty)
         resolution.evidence = self._cost_source_evidence(sources, date, qty, currency)
-        resolution.warnings = self._cost_source_warnings(sources, delivery_date, date)
+        resolution.warnings = self._cost_source_warnings(
+            sources, delivery_date, date, currency
+        )
         resolution.notes = [
             self._cost_source_describe(note, date, currency)
             for source in sources
@@ -241,6 +251,8 @@ class ProductProduct(models.Model):
 
     def _cost_source_level(self, source, cutoff):
         """The confidence one source deserves on its own."""
+        if source.unvalued:
+            return "unknown"
         if source.in_force:
             return "firm"
         if source.indicative:
@@ -283,6 +295,20 @@ class ProductProduct(models.Model):
                 evidence.append(
                     self._cost_source_describe_stock(source, qty, currency, blended)
                 )
+                # Cite the likely cost unless the same evidence already
+                # prices the balance and is described below.
+                if source.likely and not blended:
+                    evidence.append(
+                        self.env._(
+                            "Likely cost %(price)s, from: %(evidence)s",
+                            price=format_amount(
+                                self.env, source.likely.unit_price, currency
+                            ),
+                            evidence=self._cost_source_describe(
+                                source.likely, date, currency
+                            ),
+                        )
+                    )
                 continue
             sentence = self._cost_source_describe(source, date, currency)
             if blended:
@@ -303,6 +329,14 @@ class ProductProduct(models.Model):
 
     def _cost_source_describe_stock(self, source, qty, currency, blended):
         price = format_amount(self.env, source.unit_price, currency)
+        if source.unvalued:
+            if float_compare(source.qty, qty, precision_rounding=self.uom_id.rounding) >= 0:
+                return self.env._("Unknown. Covered from stock with no cost value.")
+            return self.env._(
+                "Unknown. %(qty)s of %(total)s covered from stock with no cost value.",
+                qty=self._cost_source_format_qty(source.qty),
+                total=self._cost_source_format_qty(qty),
+            )
         if float_compare(source.qty, qty, precision_rounding=self.uom_id.rounding) >= 0:
             return self.env._("Firm. Covered from stock at %(price)s.", price=price)
         if blended:
@@ -359,18 +393,36 @@ class ProductProduct(models.Model):
             months=months,
         )
 
-    def _cost_source_warnings(self, sources, delivery_date, date=None):
-        """Flag a price that is firm today but will not be by delivery.
+    def _cost_source_warnings(self, sources, delivery_date, date=None, currency=None):
+        """Flag what makes a cost untrustworthy despite the evidence.
+
+        Stock carried at no value is flagged whatever the dates: its cost is a
+        blank, not a price.
+
+        Then a price that is firm today but will not be by delivery.
 
         The case a plain age check cannot see: nothing is stale, and the quote
         is still wrong. Only a price still in force on ``date`` can warn: an
         expired price is already reported as not in force, and warning that it
         "expires" on a past date would be noise.
         """
-        if not delivery_date:
-            return []
         date = date or fields.Date.context_today(self)
         warnings = []
+        for source in sources:
+            if source.unvalued:
+                warnings.append(
+                    self.env._(
+                        "Warning. Stock has no cost value: the cost of %(price)s "
+                        "is not reliable.",
+                        price=format_amount(
+                            self.env,
+                            source.unit_price,
+                            currency or self.env.company.currency_id,
+                        ),
+                    )
+                )
+        if not delivery_date:
+            return warnings
         for source in sources:
             if (
                 source.in_force

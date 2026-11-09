@@ -188,3 +188,28 @@ msgid ""
 msgstr ""
 "Avertissement. Le prix fournisseur expire le %(expiry)s, avant la date de "
 "livraison de cette ligne, le %(delivery)s."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Unknown. Covered from stock with no cost value."
+msgstr "Inconnu. Couvert par du stock sans valeur."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Unknown. %(qty)s of %(total)s covered from stock with no cost value."
+msgstr "Inconnu. %(qty)s sur %(total)s couverts par du stock sans valeur."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Likely cost %(price)s, from: %(evidence)s"
+msgstr "Coût probable %(price)s, d'après : %(evidence)s"
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Warning. Stock has no cost value: the cost of %(price)s is not reliable."
+msgstr ""
+"Avertissement. Stock sans valeur : le coût de %(price)s n'est pas fiable."

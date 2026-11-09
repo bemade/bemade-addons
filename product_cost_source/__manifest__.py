@@ -2,7 +2,7 @@
 # License LGPL-3 - See https://www.gnu.org/licenses/lgpl-3.0.html
 {
     "name": "Product Cost Source",
-    "version": "19.0.1.1.0",
+    "version": "19.0.1.1.1",
     "summary": "Resolve a product's unit cost, name where it came from, "
     "and say how far it can be trusted.",
     "description": """Product Cost Source
@@ -26,7 +26,9 @@ behind it:
 
 * **Vendor pricelist** -- the applicable supplier price, converted to the target
   currency at the given date.
-* **Stock valuation** -- the cost of the quantity already on hand.
+* **Stock valuation** -- the cost of the quantity already on hand. Stock
+  valued at zero is not a cost: it reads as Unknown, with a warning, and any
+  other evidence is cited as the likely cost.
 * **Blended** -- when stock covers part of the demand and a vendor supplies the
   rest, the weighted unit cost of the two.
 

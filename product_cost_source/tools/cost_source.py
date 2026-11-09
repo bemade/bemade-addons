@@ -37,6 +37,10 @@ class CostSource:
         used in the sentence describing it. Never a technical key.
     :param notes: other evidence worth mentioning beside this one, e.g. a
         newer quotation that did not win because a firm price exists.
+    :param unvalued: stock carried at a zero valuation. Its cost says nothing
+        about what the goods cost, so it is never better than unknown.
+    :param likely: for unvalued stock, the best other evidence of what the
+        goods cost (a vendor price, a purchase), cited but not used.
     """
 
     key: str
@@ -48,6 +52,8 @@ class CostSource:
     indicative: bool = False
     reference: str = ""
     notes: list = field(default_factory=list)
+    unvalued: bool = False
+    likely: object = None
 
     @property
     def subtotal(self):

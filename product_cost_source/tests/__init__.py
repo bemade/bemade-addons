@@ -9,3 +9,4 @@ from . import test_extension_point
 from . import test_company_scope
 from . import test_wording
 from . import test_indicative
+from . import test_zero_valued_stock
