@@ -29,10 +29,14 @@
  * header's « + Ajouter ».
  */
 
-import { focusFirstField } from "@bemade_sports_clinic/js/sc_focus";
-import { removeDraftsWithPrefix } from "@bemade_sports_clinic/js/sc_draft_store";
+import { focusFirstField } from "@bemade_portal_kit/js/pk_focus";
+import { removeDraftsWithPrefix } from "@bemade_portal_kit/js/pk_draft_store";
 
-const RESETTABLE = "details.o_sc_list_add_panel, .o_sc_notepad_add";
+// Clinic selector, P3 replaces with a generic data-pk-* hook: the always-open
+// add card that is reset like an add panel.
+export const NOTEPAD_ADD_SELECTOR = ".o_sc_notepad_add";
+
+const RESETTABLE = `details.o_sc_list_add_panel, ${NOTEPAD_ADD_SELECTOR}`;
 
 function togglesOf(panel) {
     return [...document.querySelectorAll("[data-sc-list-add-toggle]")].filter(

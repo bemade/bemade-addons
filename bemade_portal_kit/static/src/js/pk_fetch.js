@@ -10,10 +10,10 @@
  * The legacy page keeps its own portal_card_recent_changes.js /
  * portal_digest_history.js.
  */
-export class ScFetchError extends Error {
+export class PkFetchError extends Error {
     constructor(status, payload, reason) {
         super(reason || `HTTP ${status}`);
-        this.name = "ScFetchError";
+        this.name = "PkFetchError";
         this.status = status; // 0 = network error / timeout
         this.payload = payload;
         this.reason = reason || (status ? "http" : "network");
@@ -43,7 +43,7 @@ export function notifyFetchError(error) {
  * @param {Object} [options.headers] extra request headers (task 1611:
  *     X-Sc-Fragments)
  */
-export async function scFetch(url, options = {}) {
+export async function pkFetch(url, options = {}) {
     const { method = "GET", data = null, as = "json", timeout = 15000, toast = true, headers = {} } = options;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
@@ -72,14 +72,14 @@ export async function scFetch(url, options = {}) {
         const payload =
             as === "json" ? await response.json().catch(() => null) : await response.text();
         if (!response.ok) {
-            throw new ScFetchError(response.status, payload);
+            throw new PkFetchError(response.status, payload);
         }
         return payload;
     } catch (err) {
         const error =
-            err instanceof ScFetchError
+            err instanceof PkFetchError
                 ? err
-                : new ScFetchError(0, null, err && err.name === "AbortError" ? "timeout" : "network");
+                : new PkFetchError(0, null, err && err.name === "AbortError" ? "timeout" : "network");
         if (toast) {
             notifyFetchError(error);
         }

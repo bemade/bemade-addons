@@ -7,7 +7,7 @@
  *   (sc_autosave_field) writing the CSV hidden inputs the routes accept
  *   (team_ids, assigned_staff_ids) — the organization select narrows the
  *   teams through the field's ``groupSelect`` (task 1597);
- * - « Nouveau lieu »: the venue sheet's form posts through scFetch to the
+ * - « Nouveau lieu »: the venue sheet's form posts through pkFetch to the
  *   CSRF-checked /my/venue/create (JSON answer); the created venue is added
  *   to the venue select and selected, the sheet closes; on the event page
  *   (task 1612) the same request also sets it on the event — task 1611: the
@@ -20,7 +20,7 @@
  *   2026-10-14): left (blur), Enter, or picked — never while typing.
  */
 import { _t } from "@web/core/l10n/translation";
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 
 function inShell(el) {
     return Boolean(el && el.closest && el.closest(".o_sc_app"));
@@ -181,7 +181,7 @@ async function createVenue(form) {
         error.hidden = true;
     }
     try {
-        const result = await scFetch(form.action, { method: "POST", data, toast: false });
+        const result = await pkFetch(form.action, { method: "POST", data, toast: false });
         if (!result || !result.success) {
             throw new Error((result && result.error) || "");
         }

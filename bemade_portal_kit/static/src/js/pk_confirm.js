@@ -1,16 +1,27 @@
 /*
- * Task 1656 — two small shell helpers.
+ * Task 1656 — two small shell helpers. Task 5197 (P2): moved from
+ * bemade_sports_clinic (sc_confirm.js) to the portal kit; the « home » is no
+ * longer hard-coded (see pkLeaveTarget).
  *
- * scConfirm({title, message, confirm, cancel}) → Promise<boolean>: an app
+ * pkConfirm({title, message, confirm, cancel}) → Promise<boolean>: an app
  * sheet (<dialog class="o_sc_sheet">, built once, reused) with « Cancel » /
  * the confirm button; Escape or a tap outside = cancel.
  *
- * scLeavePage(message): the viewer just lost access to this page (e.g. they
+ * pkLeavePage(message): the viewer just lost access to this page (e.g. they
  * removed the only team linking them to a player) — keep ``message`` for a
  * toast on the next page (sessionStorage, shown by sc_app_ui.js) and go back
  * to where they came from: the previous in-app page (document.referrer, same
- * origin, not this page), else /my/players — never this page again, and as a
- * fresh load (location.replace: no back/forward cache copy of the page).
+ * origin, not this page), else the app's home — never this page again, and
+ * as a fresh load (location.replace: no back/forward cache copy of the page).
+ *
+ * The home and « this page » come from the shell root:
+ *   data-pk-home="/my/things"               the home (default: /my);
+ *   data-pk-home-same-params="thing_id,…"   the query params that name the
+ *       RECORD of a page: a referrer with the same value for each of them
+ *       (one at least set) shows the same record — the one access was lost
+ *       to — on whatever path (its main page, a sub-page), so it is skipped.
+ *       Without it (or when neither URL has one of them), « this page » is
+ *       the same path and query.
  */
 export const PENDING_TOAST_KEY = "sc_pending_toast:v1";
 
@@ -34,7 +45,7 @@ function build() {
     return dialog;
 }
 
-export function scConfirm({ title = "", message = "", confirm = "OK", cancel = "Cancel" } = {}) {
+export function pkConfirm({ title = "", message = "", confirm = "OK", cancel = "Cancel" } = {}) {
     sheet = sheet && sheet.isConnected ? sheet : build();
     const dialog = sheet;
     dialog.querySelector(".o_sc_sheet_title").textContent = title;
@@ -71,7 +82,50 @@ export function scConfirm({ title = "", message = "", confirm = "OK", cancel = "
     });
 }
 
-export function scLeavePage(message) {
+/** The home settings of a shell root (``[data-pk-home]``). */
+export function pkHomeOf(root) {
+    const home = (root && root.dataset.pkHome) || "/my";
+    const raw = root && root.dataset.pkHomeSameParams;
+    const sameParams = raw ? raw.split(",").map((name) => name.trim()).filter(Boolean) : [];
+    return { home, sameParams: sameParams.length ? sameParams : null };
+}
+
+function sameRecord(ref, here, sameParams) {
+    if (ref.pathname === here.pathname && ref.search === here.search) {
+        return true;
+    }
+    const named = (sameParams || []).filter(
+        (name) => here.searchParams.has(name) || ref.searchParams.has(name)
+    );
+    return (
+        named.length > 0 &&
+        named.every((name) => ref.searchParams.get(name) === here.searchParams.get(name))
+    );
+}
+
+/**
+ * Where pkLeavePage goes from ``hereUrl``: the in-app ``referrer`` (same
+ * origin, under /my, not the same record), else ``home``.
+ */
+export function pkLeaveTarget(hereUrl, referrer, { home = "/my", sameParams = null } = {}) {
+    try {
+        const ref = referrer ? new URL(referrer) : null;
+        const here = new URL(hereUrl);
+        if (
+            ref &&
+            ref.origin === here.origin &&
+            ref.pathname.startsWith("/my") &&
+            !sameRecord(ref, here, sameParams)
+        ) {
+            return ref.pathname + ref.search;
+        }
+    } catch {
+        // fall back to the home
+    }
+    return home;
+}
+
+export function pkLeavePage(message) {
     try {
         if (message) {
             window.sessionStorage.setItem(PENDING_TOAST_KEY, String(message));
@@ -79,17 +133,6 @@ export function scLeavePage(message) {
     } catch {
         // private mode: no toast on the next page
     }
-    let target = "/my/players";
-    try {
-        const ref = document.referrer ? new URL(document.referrer) : null;
-        const here = new URL(window.location.href);
-        if (ref && ref.origin === here.origin && ref.pathname.startsWith("/my")
-                && !(ref.pathname === here.pathname && ref.search === here.search)
-                && !(ref.pathname === "/my/player" && ref.searchParams.get("player_id") === here.searchParams.get("player_id"))) {
-            target = ref.pathname + ref.search;
-        }
-    } catch {
-        // fall back to the players list
-    }
-    window.location.replace(target);
+    const settings = pkHomeOf(document.querySelector("[data-pk-home]"));
+    window.location.replace(pkLeaveTarget(window.location.href, document.referrer, settings));
 }

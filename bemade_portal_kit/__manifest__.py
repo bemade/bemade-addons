@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.1.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -15,8 +15,9 @@ generic machinery of a portal « app shell »; the addons built on it (its
 consumers) bring the content: their roles, menu entries, visibility keys and
 pages. The kit installs on Odoo Community and depends on ``portal`` only.
 
-This first version provides the four registries of the shell. Templates,
-styles, scripts and the save / fragment engines follow in later versions.
+Version 1.0 provides the four registries of the shell; version 1.1 adds the
+shell's generic scripts (below). Templates, styles and the save / fragment
+engines follow in later versions.
 
 Registries
 ----------
@@ -67,6 +68,30 @@ request_url=None, request_return_url=None)`` and
 ``pk_safe_return_url(value, fallback, prefixes=None)``. The pure helpers
 (``Page``, ``pk_nav``, ``pk_static_page``, ``pk_safe_return_url``,
 ``pk_readable``, ``pk_arg``) are in ``odoo.addons.bemade_portal_kit.tools``.
+
+Scripts
+-------
+ES modules in ``web.assets_frontend``, imported as
+``@bemade_portal_kit/js/pk_<name>``. They act on the shell's markup only,
+so they are inert on other portal pages:
+
+* ``pk_fetch``: ``pkFetch(url, options)`` (GET / POST, JSON or HTML, the
+  CSRF token on every POST, a timeout) and ``PkFetchError``;
+* ``pk_draft_store``: the device drafts, scoped by database and user;
+* ``pk_confirm``: ``pkConfirm()`` (the confirm sheet) and
+  ``pkLeavePage(message)``, which leaves a page whose access ended: back to
+  the in-app referrer, else the home. The shell root sets the home with
+  ``data-pk-home`` (default ``/my``) and, with
+  ``data-pk-home-same-params``, the query params that name a page's
+  record (a referrer showing the same record is skipped);
+* ``pk_app_nav`` (the back arrow: « where you came from »),
+  ``pk_user_menu``, ``pk_list_header``, ``pk_focus``, ``pk_forms``,
+  ``pk_switch`` (``window.pkSwitchSync``), ``pk_live_count``,
+  ``pk_date_bounds``, ``pk_contact_href``, ``pk_edit_anchor``.
+
+Until the templates move to the kit, these scripts still read the markup
+names of their first consumer (``data-sc-*`` attributes, ``o_sc_*``
+classes, ``sc:*`` events).
 """,
     'author': 'Bemade Inc.',
     'maintainers': ['dureposd'],
@@ -74,6 +99,38 @@ request_url=None, request_return_url=None)`` and
     'license': 'LGPL-3',
     'depends': ['portal'],
     'data': [],
+    'assets': {
+        # Task 5197 (P2): the shell's generic scripts. assets_frontend ONLY:
+        # the lazy bundle includes this one, listing them there too would
+        # bind them twice (tests/test_pk_assets.py).
+        'web.assets_frontend': [
+            'bemade_portal_kit/static/src/js/pk_fetch.js',
+            'bemade_portal_kit/static/src/js/pk_draft_store.js',
+            'bemade_portal_kit/static/src/js/pk_confirm.js',
+            'bemade_portal_kit/static/src/js/pk_focus.js',
+            'bemade_portal_kit/static/src/js/pk_date_bounds.js',
+            'bemade_portal_kit/static/src/js/pk_contact_href.js',
+            'bemade_portal_kit/static/src/js/pk_edit_anchor.js',
+            'bemade_portal_kit/static/src/js/pk_user_menu.js',
+            'bemade_portal_kit/static/src/js/pk_list_header.js',
+            'bemade_portal_kit/static/src/js/pk_forms.js',
+            'bemade_portal_kit/static/src/js/pk_app_nav.js',
+            'bemade_portal_kit/static/src/js/pk_switch.js',
+            'bemade_portal_kit/static/src/js/pk_live_count.js',
+        ],
+        # The hoot unit tests (tests/test_pk_hoot.py runs them headless).
+        # The modules they test are only DEFINED in the test page and run
+        # per test file (hoot's lazy module loader).
+        'web.assets_unit_tests_setup': [
+            'bemade_portal_kit/static/src/js/pk_fetch.js',
+            'bemade_portal_kit/static/src/js/pk_draft_store.js',
+            'bemade_portal_kit/static/src/js/pk_confirm.js',
+            'bemade_portal_kit/static/src/js/pk_app_nav.js',
+        ],
+        'web.assets_unit_tests': [
+            'bemade_portal_kit/static/tests/**/*',
+        ],
+    },
     'installable': True,
     'application': False,
 }

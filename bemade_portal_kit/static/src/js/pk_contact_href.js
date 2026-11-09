@@ -4,7 +4,7 @@
  * to. A phone keeps only "+" and its digits. Same rule on the server:
  * controllers/app_shell.py sc_contact_href.
  */
-export function scContactHref(kind, value) {
+export function pkContactHref(kind, value) {
     const text = typeof value === "string" ? value.trim() : "";
     if (!text) {
         return null;
@@ -21,13 +21,13 @@ export function scContactHref(kind, value) {
 
 /* Show ``display`` in a read-view element; a contact link
  * ([data-sc-display-href]) follows with its href (none while empty). */
-export function scSetDisplay(el, display) {
+export function pkSetDisplay(el, display) {
     el.textContent = display || "—";
     const kind = el.dataset.scDisplayHref;
     if (!kind) {
         return;
     }
-    const href = scContactHref(kind, display);
+    const href = pkContactHref(kind, display);
     if (href) {
         el.setAttribute("href", href);
     } else {

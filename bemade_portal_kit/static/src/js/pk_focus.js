@@ -9,6 +9,9 @@
  * field: nothing is focused.
  */
 
+// Clinic selector, P3 replaces with a generic data-pk-* hook.
+export const PICKER_INPUT_SELECTOR = ".o_sc_picker_input";
+
 const TEXT_FIELD = [
     "textarea",
     "input:not([type])",
@@ -20,7 +23,7 @@ const TEXT_FIELD = [
     'input[type="url"]',
 ]
     // Task 1648: a picker's search box is a picker, not a text field.
-    .map((selector) => `${selector}:not([disabled]):not([readonly]):not(.o_sc_picker_input)`)
+    .map((selector) => `${selector}:not([disabled]):not([readonly]):not(${PICKER_INPUT_SELECTOR})`)
     .join(", ");
 
 export function isCoarsePointer() {

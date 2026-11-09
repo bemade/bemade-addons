@@ -24,6 +24,10 @@
  * may sit in a <summary>, handled in the capture phase).
  */
 
+// Clinic selector, P3 replaces with a generic data-pk-* hook: the popups
+// kept inside the content area (keepInView).
+export const KEEP_IN_VIEW_POPUP_CLASS = "o_sc_pill_popup";
+
 const TOGGLE = "[data-sc-user-menu-toggle], [data-sc-menu-toggle]";
 const POPUP = "[data-sc-user-menu-popup], [data-sc-menu-popup]";
 const ITEM = '[role="menuitem"], [role="menuitemradio"]';
@@ -92,7 +96,7 @@ export function open(toggle, which = "first") {
     }
     closeAll(toggle);
     popup.hidden = false;
-    if (popup.classList.contains("o_sc_pill_popup")) {
+    if (popup.classList.contains(KEEP_IN_VIEW_POPUP_CLASS)) {
         keepInView(popup); // the other menus have their own placement
     }
     toggle.setAttribute("aria-expanded", "true");

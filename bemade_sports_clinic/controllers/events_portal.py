@@ -1770,7 +1770,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         routes and field names as today's forms (task 1540). Teams and staff
         are checkbox lists that sc_events.js joins into the CSV field the
         routes accept; the venue picker creates a venue through the
-        CSRF-checked /my/venue/create (scFetch)."""
+        CSRF-checked /my/venue/create (pkFetch)."""
         env = http.request.env
         event = values.get('event')
         types = env['sports.event']._fields['event_type']._description_selection(env)

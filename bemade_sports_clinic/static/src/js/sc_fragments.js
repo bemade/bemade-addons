@@ -41,8 +41,8 @@
  * After a swap the document receives « sc:fragments » {detail: {keys}}.
  */
 import { _t } from "@web/core/l10n/translation";
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
-import { scLeavePage } from "@bemade_sports_clinic/js/sc_confirm";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
+import { pkLeavePage } from "@bemade_portal_kit/js/pk_confirm";
 
 export const FRAGMENTS_HEADER = "X-Sc-Fragments";
 const DEBOUNCE_MS = 300;
@@ -305,7 +305,7 @@ async function run() {
     }
     let payload;
     try {
-        payload = await scFetch(window.location.href, {
+        payload = await pkFetch(window.location.href, {
             headers: { [FRAGMENTS_HEADER]: keys.slice(0, MAX_KEYS).join(",") },
             toast: false,
         });
@@ -313,7 +313,7 @@ async function run() {
         // Task 1656: this page is no longer readable (access lost, e.g. from
         // another tab): leave it, with a neutral note, instead of an error.
         if (error && error.status === 403) {
-            scLeavePage(_t("You no longer have access to this page."));
+            pkLeavePage(_t("You no longer have access to this page."));
             return;
         }
         // Offline / error: what shows stays as it is; the next visit of the
@@ -406,7 +406,7 @@ window.addEventListener("pageshow", (ev) => {
     }
     if (pageIsStale()) {
         // Task 1618: this reload replays a back/forward step — the nav stack
-        // (sc_app_nav.js) must not treat it as a reload (which resets it).
+        // (pk_app_nav.js) must not treat it as a reload (which resets it).
         try {
             storage() && storage().setItem("sc_nav_bf_reload:v1", "1");
         } catch {

@@ -18,7 +18,7 @@
  *   next to « Create » — the panel stays open with every typed value; only
  *   a success leaves the page (the new player's page).
  */
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 // Task 1658: the greyed button + reason line are the shared form guard's.
 import { guardFlash, guardRefresh } from "@bemade_sports_clinic/js/sc_form_guard";
 
@@ -274,7 +274,7 @@ async function create(form) {
     clearErrors(form);
     const data = Object.fromEntries(new FormData(form).entries());
     try {
-        const result = await scFetch(form.getAttribute("action"), { method: "POST", data, toast: false, timeout: 30000 });
+        const result = await pkFetch(form.getAttribute("action"), { method: "POST", data, toast: false, timeout: 30000 });
         if (result && result.redirect) {
             // Task 1672: the panel resets before the page changes (back on
             // the team page, reopening it shows an empty form).

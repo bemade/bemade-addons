@@ -23,7 +23,7 @@
  */
 import { _t } from "@web/core/l10n/translation";
 import { requestRefresh } from "@bemade_sports_clinic/js/sc_fragments";
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 
 const lastSaved = new WeakMap(); // field → the value the server holds
 const queues = new WeakMap(); // form → { busy, pending: Set<field> }
@@ -167,9 +167,9 @@ async function send(form, fields) {
     }
     let result;
     try {
-        result = await scFetch(form.dataset.submitUrl || form.action, { method: "POST", data });
+        result = await pkFetch(form.dataset.submitUrl || form.action, { method: "POST", data });
     } catch {
-        // scFetch toasts network / server errors.
+        // pkFetch toasts network / server errors.
         for (const field of fields) {
             setState(field, "error");
             lastSaved.set(field, null);

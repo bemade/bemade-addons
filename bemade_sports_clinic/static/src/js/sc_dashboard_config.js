@@ -12,7 +12,7 @@
  * « Enregistré » in the row's status line. The « Save » button is the no-JS
  * fallback (hidden here).
  *
- * « Rétablir par défaut » asks first (scConfirm; texts from the form's
+ * « Rétablir par défaut » asks first (pkConfirm; texts from the form's
  * data-sc-confirm-* attributes, translated server-side).
  *
  * Review round 2 (owner 2026-10-29) — the three zones (left / right /
@@ -30,7 +30,7 @@ import { _t } from "@web/core/l10n/translation";
 import { reactive } from "@odoo/owl";
 import { useSortable } from "@web/core/utils/sortable";
 import { throttleForAnimation } from "@web/core/utils/timing";
-import { scConfirm } from "@bemade_sports_clinic/js/sc_confirm";
+import { pkConfirm } from "@bemade_portal_kit/js/pk_confirm";
 
 const TITLE_DELAY = 700;
 const timers = new WeakMap();
@@ -74,7 +74,7 @@ function setError(form, message) {
 
 async function save(form) {
     const { data, kinds } = fields(form);
-    // URLSearchParams through scFetch takes one value per key: the kinds go
+    // URLSearchParams through pkFetch takes one value per key: the kinds go
     // as repeated keys in the URL-encoded body instead.
     const body = new URLSearchParams();
     for (const [key, value] of Object.entries(data)) {
@@ -254,7 +254,7 @@ document.addEventListener("change", (ev) => {
     if (!form) {
         return;
     }
-    // A switch's « off » twin follows sc_switch.js (capture phase) first.
+    // A switch's « off » twin follows pk_switch.js (capture phase) first.
     schedule(form, ev.target.name === "title" ? 0 : 50);
 });
 
@@ -278,7 +278,7 @@ document.addEventListener("submit", (ev) => {
             return;
         }
         ev.preventDefault();
-        scConfirm({
+        pkConfirm({
             title: form.dataset.scConfirmTitle,
             message: form.dataset.scConfirmMessage,
             confirm: form.dataset.scConfirmOk,

@@ -31,7 +31,7 @@
  * other modules (task 1604's « Résoudre »).
  */
 import { _t } from "@web/core/l10n/translation";
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 
 const APPLY_URL = "/my/app/apply-proposal";
 
@@ -251,7 +251,7 @@ export async function applyProposal() {
     button.disabled = true;
     error.hidden = true;
     try {
-        const result = await scFetch(APPLY_URL, {
+        const result = await pkFetch(APPLY_URL, {
             method: "POST",
             data: { patient_id: current.patient_id, changes: JSON.stringify(changes) },
             toast: false,

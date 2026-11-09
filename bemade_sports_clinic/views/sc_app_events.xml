@@ -11,7 +11,7 @@
     web.fullcalendar_lib bundle, never a raw <script src>), fed by
     /my/events/calendar/data. Task 1591: the list and the calendar share one
     filter bar (sc_event_filter_bar), the filters carried in the URL. Form behaviours (team / staff CSV,
-    venue creation through scFetch) live in static/src/js/sc_events.js.
+    venue creation through pkFetch) live in static/src/js/sc_events.js.
     No inline script / style.
 -->
 <odoo>
