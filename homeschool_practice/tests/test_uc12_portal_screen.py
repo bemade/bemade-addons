@@ -37,6 +37,9 @@ class TestPortalScreen(PracticeHttpCase):
         r = self.url_open("/my/homeschool/practice")
         self.assertEqual(r.status_code, 200)
         html = r.text
+        self.assertTrue(html.startswith("<!DOCTYPE html>"))
+        self.assertNotIn("&lt;!DOCTYPE", html)
+        self.assertIn("practice.js?v=", html)
         self.assertIn('user-scalable=no', html)
         self.assertIn('rel="manifest"', html)
         self.assertIn('data-handedness="right"', html)

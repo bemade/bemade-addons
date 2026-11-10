@@ -73,6 +73,7 @@
     }
     function loadHome() {
         state.session = null;
+        state.busy = false;
         return rpc("/home").then(function (data) {
             state.home = data; L = data.labels; renderHome();
         }, function () { h('<div class="hp-loading">' + esc(L.offline || "…") + "</div>"); setTimeout(loadHome, 4000); });

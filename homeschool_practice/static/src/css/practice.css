@@ -75,10 +75,10 @@ body[data-handedness="left"] .hp-stage { direction: rtl; } body[data-handedness=
 .hp-choices { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 460px; justify-self: center; }
 .hp-choice { min-height: 110px; border-radius: var(--r); background: var(--panel2); font-size: 40px; font-weight: 800; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
 .hp-choice:active, .hp-choice.is-picked { background: #2f4776; transform: translateY(3px); }
-.hp-feedback { min-height: 0; border-radius: var(--r); display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 26px; }
+.hp-feedback { position: fixed; left: 20px; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 5; border-radius: var(--r); display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 26px; }
 .hp-feedback.is-good, .hp-feedback.is-miss { padding: 18px 22px; animation: rise .25s ease; }
-.hp-feedback.is-good { background: rgba(46,204,113,.18); color: var(--good); }
-.hp-feedback.is-miss { background: rgba(255,138,92,.16); color: var(--ink); }
+.hp-feedback.is-good { background: #1b4a3a; color: var(--good); }
+.hp-feedback.is-miss { background: #4a3030; color: var(--ink); }
 .hp-feedback.is-miss b { color: var(--miss); } .hp-feedback strong { font-size: 34px; color: var(--accent); }
 .hp-fb-hint { font-size: 20px; color: var(--muted); margin-top: 4px; }
 .hp-xp { color: var(--accent); font-weight: 800; white-space: nowrap; }

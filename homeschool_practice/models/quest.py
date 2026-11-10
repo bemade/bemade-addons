@@ -89,8 +89,9 @@ class PracticeQuest(models.Model):
             unit = need[0][0]
             add(unit_t, deck_id=unit.deck_id.id, unit_id=unit.id)
         review_t = pool.filtered(lambda t: t.kind == "review_session")[:1]
-        if review_t and len(vals) < count and any(n[1] for n in need[1:]):
-            add(review_t, deck_id=need[1][0].deck_id.id)
+        due_elsewhere = [n for n in need[1:] if n[2]]
+        if review_t and len(vals) < count and due_elsewhere:
+            add(review_t, deck_id=due_elsewhere[0][0].deck_id.id)
         # 2. the rest from the pool, weighted, never twice a day, not yesterday's set when possible
         if need:
             used = {v["template_id"] for v in vals}

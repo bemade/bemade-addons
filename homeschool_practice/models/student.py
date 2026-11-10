@@ -19,7 +19,8 @@ class Student(models.Model):
         return str(day.isoweekday()) in (self.sudo().practice_weekdays or "")
 
     def _practice_needs(self, day):
-        """Unlocked units with what they need today, most first: ``[(unit, count)]``."""
+        """Unlocked units with what they need today, most first: ``[(unit, count, due_seen)]`` —
+        ``count`` = new or due items, ``due_seen`` = items already seen and due again (review)."""
         self.ensure_one()
         units = self.env["homeschool.practice.unit.access"].sudo().search(
             [("student_id", "=", self.id), ("state", "=", "unlocked")]).unit_id
@@ -28,5 +29,6 @@ class Student(models.Model):
         out = []
         for unit in units:
             mine = rows.filtered(lambda r: r.unit_id == unit)
-            out.append((unit, len(mine.filtered(lambda r: not r.last_seen or r.due_on <= day))))
+            out.append((unit, len(mine.filtered(lambda r: not r.last_seen or r.due_on <= day)),
+                        len(mine.filtered(lambda r: r.last_seen and r.due_on <= day))))
         return sorted(out, key=lambda x: (-x[1], x[0].deck_id.sequence, x[0].sequence, x[0].id))

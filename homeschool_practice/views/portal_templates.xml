@@ -2,7 +2,6 @@
 <odoo>
     <!-- The practice app: a full-screen page of its own (no portal header), touch first. -->
     <template id="practice_app" name="Homeschool: practice app">
-        <t t-out="'&lt;!DOCTYPE html&gt;'"/>
         <html t-att-lang="lang">
             <head>
                 <meta charset="utf-8"/>
@@ -15,11 +14,11 @@
                 <title>Pratique</title>
                 <link rel="manifest" href="/my/homeschool/practice/manifest.webmanifest"/>
                 <link rel="apple-touch-icon" href="/homeschool_practice/static/src/img/icon-180.png"/>
-                <link rel="stylesheet" href="/homeschool_practice/static/src/css/practice.css"/>
+                <link rel="stylesheet" t-attf-href="/homeschool_practice/static/src/css/practice.css?v=#{asset_version}"/>
             </head>
             <body t-att-data-handedness="student.practice_handedness">
                 <main id="app" aria-live="polite"><div class="hp-loading">…</div></main>
-                <script src="/homeschool_practice/static/src/js/practice.js"/>
+                <script t-attf-src="/homeschool_practice/static/src/js/practice.js?v=#{asset_version}"/>
             </body>
         </html>
     </template>

@@ -52,6 +52,7 @@ class TestDailyQuests(PracticeCase):
         self.assertTrue(unit_q.unit_id in (self.t7 | self.t3))
         self.assertIn(unit_q.unit_id.name, unit_q.label)
         self.assertEqual(self.Quest._draw(self.student, MONDAY), quests)
+        self.assertNotIn("review_session", quests.mapped("kind"))  # nothing seen yet: nothing to review
 
     def test_review_quest_when_other_units_due(self):
         self.run_session(unit=self.t3)
