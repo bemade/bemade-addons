@@ -21,7 +21,7 @@ function pick(select, label) {
     select.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-const CONTACT = '[data-sc-edit-card="contact"]';
+const CONTACT = '[data-pk-edit-card="contact"]';
 
 // ------------- a country change: the province choices follow it, in place
 tours.add("sc_1594_country_province", {
@@ -66,7 +66,7 @@ tours.add("sc_1594_country_province", {
         },
         {
             content: "Done: back to read mode",
-            trigger: `${CONTACT} button[data-sc-edit-done]`,
+            trigger: `${CONTACT} button[data-pk-edit-done]`,
             run: "click",
         },
         {
@@ -90,21 +90,21 @@ tours.add("sc_1594_return_date", {
     steps: () => [
         {
             content: "Review fixes 2026-10-18: no return date shown in the header while empty",
-            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="read"]',
+            trigger: '[data-pk-section="player.hero"] [data-sc-edit-view="read"]',
             run() {
-                const holder = this.anchor.querySelector('[data-sc-section="player.return"][data-sc-return-kind="actual"]');
+                const holder = this.anchor.querySelector('[data-pk-section="player.return"][data-sc-return-kind="actual"]');
                 assert(holder && !holder.querySelector(".o_sc_field_static"), "an empty « Retour réel » is shown");
                 window.__sc1594NoReload = true;
             },
         },
         {
             content: "Open the Medical Information card",
-            trigger: '[data-sc-edit-card="medical"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="medical"] button[data-sc-edit-toggle]',
             run: "click",
         },
         {
             content: "Set the actual return date",
-            trigger: '[data-sc-edit-card="medical"] .o_sc_autosave[data-sc-field="return_date"] input[type="date"]',
+            trigger: '[data-pk-edit-card="medical"] .o_sc_autosave[data-sc-field="return_date"] input[type="date"]',
             run() {
                 this.anchor.value = "2026-11-02";
                 this.anchor.dispatchEvent(new Event("input", { bubbles: true }));
@@ -113,11 +113,11 @@ tours.add("sc_1594_return_date", {
         },
         {
             content: "Saved",
-            trigger: '[data-sc-edit-card="medical"] .o_sc_autosave[data-sc-field="return_date"][data-sc-state="saved"]',
+            trigger: '[data-pk-edit-card="medical"] .o_sc_autosave[data-sc-field="return_date"][data-sc-state="saved"]',
         },
         {
             content: "The header's read view shows it (read fragment, no reload)",
-            trigger: '[data-sc-section="player.hero"] [data-sc-section="player.return"][data-sc-return-kind="actual"] .o_sc_field_value',
+            trigger: '[data-pk-section="player.hero"] [data-pk-section="player.return"][data-sc-return-kind="actual"] .o_sc_field_value',
             run() {
                 assert(window.__sc1594NoReload, "the page reloaded");
                 const shown = this.anchor.textContent.trim();

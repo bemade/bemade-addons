@@ -9,7 +9,7 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
-const FORM = 'form[data-sc-section="events.filters"]';
+const FORM = 'form[data-pk-section="events.filters"]';
 const CAL = ".o_sc_calendar_box[data-sc-calendar-ready='1']";
 
 function assert(condition, message) {
@@ -24,7 +24,7 @@ function selectedTeam() {
 }
 
 function activeType() {
-    const chip = document.querySelector('[data-sc-section="events.types"] a[aria-pressed="true"]');
+    const chip = document.querySelector('[data-pk-section="events.types"] a[aria-pressed="true"]');
     return chip && chip.dataset.scEventType;
 }
 
@@ -68,7 +68,7 @@ tours.add("sc_1591_calendar_filters", {
         },
         {
             content: "Filter the calendar on its own: the « practice » type",
-            trigger: '[data-sc-section="events.types"] a[data-sc-event-type="practice"]',
+            trigger: '[data-pk-section="events.types"] a[data-sc-event-type="practice"]',
             run: "click",
             expectUnloadPage: true,
         },
@@ -90,12 +90,12 @@ tours.add("sc_1591_calendar_filters", {
         },
         {
             content: "The list keeps the calendar's filters",
-            trigger: '[data-sc-section="events.list"] [data-sc-event-id]',
+            trigger: '[data-pk-section="events.list"] [data-sc-event-id]',
             run() {
                 assert(window.location.pathname === "/my/events", window.location.pathname);
                 assert(activeType() === "practice", `list type: ${activeType()}`);
                 assert(selectedTeam() === "PC Team A", `list team: ${selectedTeam()}`);
-                const titles = document.querySelector('[data-sc-section="events.list"]').textContent;
+                const titles = document.querySelector('[data-pk-section="events.list"]').textContent;
                 assert(titles.includes("SC 1591 Practice A"), "the practice is listed");
                 assert(!titles.includes("SC 1591 Game A"), "the game is filtered out");
             },

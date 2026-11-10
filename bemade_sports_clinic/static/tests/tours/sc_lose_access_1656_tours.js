@@ -18,7 +18,7 @@ function assert(condition, message) {
     }
 }
 
-const TEAMS = 'section[data-sc-edit-card="teams"]';
+const TEAMS = 'section[data-pk-edit-card="teams"]';
 const REMOVE = `${TEAMS} [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="sc_team_ids"] .o_sc_tag:contains("PC Team A") button.o_sc_tag_remove`;
 
 function removeButton() {
@@ -56,7 +56,7 @@ tours.add("sc_1656_lose_access", {
         },
         {
             content: "Cancel: the tag stays, nothing saved",
-            trigger: "dialog[data-sc-confirm][open] [data-sc-confirm-cancel]",
+            trigger: "dialog[data-pk-confirm][open] [data-pk-confirm-cancel]",
             async run() {
                 this.anchor.click();
                 await new Promise((resolve) => setTimeout(resolve, 400));
@@ -70,7 +70,7 @@ tours.add("sc_1656_lose_access", {
             run: "click",
         },
         {
-            trigger: "dialog[data-sc-confirm][open] [data-sc-confirm-ok]",
+            trigger: "dialog[data-pk-confirm][open] [data-pk-confirm-ok]",
             run: "click",
             expectUnloadPage: true,
         },

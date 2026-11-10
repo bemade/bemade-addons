@@ -8,7 +8,7 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
-const CARD = '[data-sc-edit-card="event"]';
+const CARD = '[data-pk-edit-card="event"]';
 const NAME = `${CARD} .o_sc_autosave[data-sc-field="name"]`;
 const SHEET_FORM = "form[data-sc-venue-form]";
 
@@ -73,12 +73,12 @@ tours.add("sc_1612_event_new_venue", {
         },
         {
             content: "Done",
-            trigger: `${CARD} [data-sc-edit-done]`,
+            trigger: `${CARD} [data-pk-edit-done]`,
             run: "click",
         },
         {
             content: "The read view shows the venue, no error, no reload",
-            trigger: '[data-sc-section="event.hero"] [data-sc-edit-view="read"] dd:contains("Tour 1612 Arena")',
+            trigger: '[data-pk-section="event.hero"] [data-sc-edit-view="read"] dd:contains("Tour 1612 Arena")',
             run() {
                 const error = document.querySelector("[data-sc-venue-error]");
                 if (error && !error.hidden) {

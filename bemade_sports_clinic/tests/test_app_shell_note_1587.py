@@ -132,7 +132,7 @@ class TestAppShellNote1587(_Note1587Common):
     # -- UC-N5 -----------------------------------------------------------
     def _note_card_fields(self, url):
         _text, tree = self._get(url)
-        cards = tree.xpath('//*[@data-sc-edit-card="note-%s"]' % self.note.id)
+        cards = tree.xpath('//*[@data-pk-edit-card="note-%s"]' % self.note.id)
         self.assertEqual(len(cards), 1, url)
         card = cards[0]
         # Task 1611: no reload on « Done » — the meta line is a read fragment.
@@ -205,7 +205,7 @@ class TestAppShellNoteFr1587(_Note1587Common):
         self._login_tp()
         self.opener.cookies.set('frontend_lang', 'fr_CA')
         text, tree = self._get('/my/player?player_id=%s&tab=notes' % self.player.id)
-        card = tree.xpath('//*[@data-sc-edit-card="note-%s"]' % self.note.id)[0]
+        card = tree.xpath('//*[@data-pk-edit-card="note-%s"]' % self.note.id)[0]
         self.assertIn('Note générale', card.xpath('.//*[contains(@class, "o_sc_note_meta")]')[0].text_content())
         props = {p['field']: p for p in (json.loads(raw) for raw in card.xpath(
             './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props'))}

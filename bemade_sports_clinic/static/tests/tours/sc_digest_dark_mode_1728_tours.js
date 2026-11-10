@@ -81,7 +81,7 @@ function checkAll(root) {
         "Dépassé": ".team-digest .o_sc_overdue",
         "Show details": ".team-digest .o_sc_card_summary .o_sc_summary_more",
         "injury meta": ".team-digest .o_sc_injury_detail .text-muted",
-        "snapshot line": '[data-sc-section="digest.snapshot"]',
+        "snapshot line": '[data-pk-section="digest.snapshot"]',
     };
     const failures = [];
     for (const [label, selector] of Object.entries(groups)) {
@@ -106,7 +106,7 @@ tours.add("sc_1728_digest_contrast", {
     steps: () => [
         {
             content: "The day's digest renders in the shell",
-            trigger: '.o_sc_app [data-sc-section="digest.body"] .team-digest .card',
+            trigger: '.o_sc_app [data-pk-section="digest.body"] .team-digest .card',
             run() {
                 const root = document.querySelector(".o_sc_app");
                 OPEN_DETAILS(root);
@@ -116,7 +116,7 @@ tours.add("sc_1728_digest_contrast", {
     ],
 });
 
-const ROW = '[data-sc-section="digest.history"] details[data-sc-digest-row]';
+const ROW = '[data-pk-section="digest.history"] details[data-sc-digest-row]';
 
 tours.add("sc_1728_digest_history_contrast", {
     steps: () => [

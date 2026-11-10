@@ -8,9 +8,9 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
-const PILLS = '[data-sc-section="player.medical"]';
-const ALLERGY = 'dialog[open] [data-sc-section="medical.allergy"]';
-const CARD = `${ALLERGY} [data-sc-section="medical.allergy.epipen"]`;
+const PILLS = '[data-pk-section="player.medical"]';
+const ALLERGY = 'dialog[open] [data-pk-section="medical.allergy"]';
+const CARD = `${ALLERGY} [data-pk-section="medical.allergy.epipen"]`;
 
 function assert(condition, message) {
     if (!condition) {
@@ -36,7 +36,7 @@ tours.add("sc_1717_epipen_first", {
             run() {
                 assert(document.querySelector(`${CARD} [data-sc-med-epipen-state="unset"]`), "state not unset");
                 assert(document.querySelector(`${ALLERGY} [data-sc-med-epipen-first]`), "no « answer first » hint");
-                assert(!document.querySelector(`${ALLERGY} button[data-sc-list-add-toggle]`), "Add shown too early");
+                assert(!document.querySelector(`${ALLERGY} button[data-pk-list-add-toggle]`), "Add shown too early");
                 // Review round 2 (owner 2026-10-27): Non | Oui, both neutral
                 // while unanswered; the question on the ✓'s line.
                 const [no, yes] = document.querySelectorAll(`${CARD} .o_sc_toggle_pill > label`);
@@ -68,7 +68,7 @@ tours.add("sc_1717_epipen_first", {
         },
         {
             content: "Answered « No »: the Add control appears in place",
-            trigger: `${ALLERGY} button[data-sc-list-add-toggle]`,
+            trigger: `${ALLERGY} button[data-pk-list-add-toggle]`,
             run() {
                 assert(window.__sc1717NoReload, "the page reloaded");
                 assert(!document.querySelector(`${ALLERGY} [data-sc-med-epipen-first]`), "the hint stays");

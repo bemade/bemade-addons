@@ -39,8 +39,8 @@ function typeAndLeave(input, value) {
     input.dispatchEvent(new FocusEvent("blur")); // headless CI: blur() fires no event without window focus
 }
 
-const FIELD = '[data-sc-section="player.predicted_return"] .o_sc_autosave[data-sc-field="predicted_return_date"]';
-const READ = '[data-sc-section="player.return"]';
+const FIELD = '[data-pk-section="player.predicted_return"] .o_sc_autosave[data-sc-field="predicted_return_date"]';
+const READ = '[data-pk-section="player.return"]';
 const SHEET = "dialog#sc_proposal_sheet";
 const CARD = ".o_sc_injury_item[open]";
 
@@ -52,7 +52,7 @@ tours.add("sc_1727_header_past", {
         },
         {
             content: "Open the header's pencil",
-            trigger: '[data-sc-section="player.hero"] [data-sc-card-icons] > button[data-sc-edit-toggle][aria-expanded="false"]',
+            trigger: '[data-pk-section="player.hero"] [data-sc-card-icons] > button[data-sc-edit-toggle][aria-expanded="false"]',
             run: "click",
         },
         {

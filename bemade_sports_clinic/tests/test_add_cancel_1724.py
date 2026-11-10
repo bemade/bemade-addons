@@ -5,7 +5,7 @@ Acceptance criteria:
 * AC-1 Every inline add panel opened from a list header
   (``details.o_sc_list_add_panel``: activity, emergency contact, injury,
   note, player add — team page and players list —, player request, medical
-  list items) has a ``button[data-sc-list-add-cancel]`` « Cancel » next to
+  list items) has a ``button[data-pk-list-add-cancel]`` « Cancel » next to
   its submit (type=button, never submits). Bottom-sheet adds (documents,
   timesheet, clinic patient) already had « Cancel » (sc_sheet).
 * AC-2 Browser: « Annuler » closes the panel, clears its fields and its
@@ -30,7 +30,7 @@ class TestAddCancel1724(PlayerAdd1655Common):
         panel = panels[0]
         self.assertIn('o_sc_list_add_panel', panel.get('class'), panel_id)
         buttons = panel.xpath('.//form//*[contains(concat(" ", @class, " "), " o_sc_form_actions ")]'
-                              '/button[@data-sc-list-add-cancel]')
+                              '/button[@data-pk-list-add-cancel]')
         self.assertEqual(len(buttons), 1, panel_id)
         self.assertEqual(buttons[0].get('type'), 'button', panel_id)
         # Next to the submit.
@@ -59,7 +59,7 @@ class TestAddCancel1724(PlayerAdd1655Common):
         panels = tree.xpath('//details[contains(concat(" ", @class, " "), " o_sc_list_add_panel ")]')
         self.assertTrue(panels)
         for panel in panels:
-            self.assertEqual(len(panel.xpath('.//button[@data-sc-list-add-cancel]')), 1, panel.get('id'))
+            self.assertEqual(len(panel.xpath('.//button[@data-pk-list-add-cancel]')), 1, panel.get('id'))
 
     def test_french(self):
         env = self.env

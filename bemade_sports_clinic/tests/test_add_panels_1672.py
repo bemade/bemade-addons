@@ -25,7 +25,7 @@ Acceptance criteria:
   shown once — the reason under « Create » only points at it (« Check the
   existing player above »).
 * AC-4 Browser, the injury add panel (player page): a title tap keeps it
-  open; after a create success (« sc:create-success ») the panel resets
+  open; after a create success (« pk:create-success ») the panel resets
   (fields empty, closed) and reopens empty.
 
 Real phone taps stay UNVERIFIED until /dev-review.

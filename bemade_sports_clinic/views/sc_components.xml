@@ -152,7 +152,7 @@
           the menu id unique when one record's pills show several times on
           a page (the cards' row scope).
 
-        The menu is the shell's generic menu popup (sc_user_menu.js:
+        The menu is the shell's generic menu popup (pk_user_menu.js:
         keyboard, Escape, outside tap, one open at a time).
     -->
     <template id="sc_status_pill_select" name="App shell: status pill select">
@@ -167,7 +167,7 @@
               t-att-data-sc-old-value="sc_pill_target['old_value']"
               t-att-data-sc-undo-message="undo_message or None">
             <button type="button" t-attf-class="o_sc_status_pill o_sc_pill_select o_sc_chip_#{pill['tone']}"
-                    data-sc-menu-toggle="1" aria-haspopup="menu" aria-expanded="false"
+                    data-pk-menu-toggle="1" aria-haspopup="menu" aria-expanded="false"
                     t-att-aria-controls="sc_pill_menu_id" t-att-title="pill['title']"
                     t-att-aria-label="pill['text'] if compact else None"
                     t-att-data-sc-pill-value="pill['value']">
@@ -175,7 +175,7 @@
                 <span class="o_sc_pill_text" t-out="pill['label'] if compact else pill['text']"/>
                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
             </button>
-            <span t-att-id="sc_pill_menu_id" class="o_sc_menu_popup o_sc_pill_popup" role="menu" data-sc-menu-popup="1"
+            <span t-att-id="sc_pill_menu_id" class="o_sc_menu_popup o_sc_pill_popup" role="menu" data-pk-menu-popup="1" data-pk-keep-in-view="1"
                   t-att-aria-label="pill['menu_label']" hidden="hidden">
                 <button t-foreach="pill['options']" t-as="option" type="button" role="menuitemradio"
                         class="o_sc_menu_item o_sc_pill_option"
@@ -245,29 +245,29 @@
           add_url        a link …
           add_sheet      … or the id of the sheet (dialog) it opens …
           add_panel      … or the id of the inline <details> it opens / closes
-                         (the panel follows the header; sc_list_header.js)
+                         (the panel follows the header; pk_list_header.js)
           add_open       add_panel only: the panel renders open
           add_key        data-sc-action of the add control
           count          a short count text (« 12 player(s) »)
           sorts          [{key, label, url, active}] (sc_sort_options), the
                          menu's links; sort_id (unique on the page, the
                          popup's id), sort_label (« Sort players »),
-                         sort_section (data-sc-section of the menu)
-          header_section data-sc-section of the header line
+                         sort_section (data-pk-section of the menu)
+          header_section data-pk-section of the header line
           header_fragment its read-fragment key (task 1611), when a save
                          can change what it offers
     -->
     <!-- Task 1724: « Annuler » next to the submit of an inline add panel
          (details.o_sc_list_add_panel): closes the panel, clears its fields
          and its device drafts, focus back on the header's « + Ajouter »
-         (sc_list_header.js). -->
+         (pk_list_header.js). -->
     <template id="sc_list_add_cancel" name="App shell: add panel cancel">
-        <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_list_add_cancel" data-sc-list-add-cancel="1">Cancel</button>
+        <button type="button" class="o_sc_btn o_sc_btn_ghost o_sc_list_add_cancel" data-pk-list-add-cancel="1">Cancel</button>
     </template>
 
     <template id="sc_list_header" name="App shell: list header">
         <div t-if="add_label or sorts or count or header_fragment" class="o_sc_list_header"
-             t-att-data-sc-section="header_section or None"
+             t-att-data-pk-section="header_section or None"
              t-att-data-sc-fragment="header_fragment or None">
             <!-- Task 1718: « Ajouter » is a green-text link (the
                  « Historique » style). Review round 1 (owner 2026-10-27): no
@@ -286,21 +286,21 @@
                 </button>
                 <button t-elif="add_panel" type="button" class="o_sc_section_more o_sc_link_btn o_sc_list_add"
                         t-att-aria-controls="add_panel" t-att-aria-expanded="'true' if add_open else 'false'"
-                        data-sc-list-add-toggle="1" t-att-data-sc-action="add_key or None"
+                        data-pk-list-add-toggle="1" t-att-data-sc-action="add_key or None"
                         t-att-aria-label="add_label" t-att-title="add_label">
                     <span class="o_sc_list_add_label" t-out="sc_add_text"/>
                 </button>
             </t>
             <span t-if="count" class="o_sc_meta o_sc_list_header_count" t-out="count"/>
-            <div t-if="sorts" class="o_sc_sort_menu" t-att-data-sc-section="sort_section or None">
+            <div t-if="sorts" class="o_sc_sort_menu" t-att-data-pk-section="sort_section or None">
                 <t t-set="sc_sort_current" t-value="([s for s in sorts if s['active']] or sorts)[0]"/>
-                <button type="button" class="o_sc_sort_toggle" data-sc-menu-toggle="1" aria-haspopup="menu"
+                <button type="button" class="o_sc_sort_toggle" data-pk-menu-toggle="1" aria-haspopup="menu"
                         aria-expanded="false" t-att-aria-controls="sort_id">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'sort'"/></t>
                     <span class="visually-hidden" t-out="sort_label"/>
                     <span class="o_sc_sort_current" t-out="sc_sort_current['label']"/>
                 </button>
-                <div t-att-id="sort_id" class="o_sc_menu_popup o_sc_sort_popup" role="menu" data-sc-menu-popup="1"
+                <div t-att-id="sort_id" class="o_sc_menu_popup o_sc_sort_popup" role="menu" data-pk-menu-popup="1"
                      t-att-aria-label="sort_label" hidden="hidden">
                     <a t-foreach="sorts" t-as="sort" t-att-href="sort['url']" role="menuitemradio"
                        class="o_sc_menu_item" t-att-data-sc-sort="sort['key']"
@@ -316,7 +316,7 @@
     <!--
         Owner review 2026-10-10 — an inline-editable card: read view by
         default, ONE pencil (data-sc-edit-toggle) reveals the card's autosave
-        fields (data-sc-edit-view="edit"), « Done » (data-sc-edit-done) hides
+        fields (data-sc-edit-view="edit"), « Done » (data-pk-edit-done) hides
         them again (sc_app_ui.js). Read values carry data-sc-display hooks
         that a save updates in place. This is the card head. Variables:
         title, editable.
@@ -383,7 +383,7 @@
                 <t t-set="sc_ci_archive_label" t-value="ci_archive.get('label')"/>
                 <t t-if="not sc_ci_archive_label"><t t-set="sc_ci_archive_label">Archive</t></t>
                 <form t-if="ci_archive.get('action')" t-att-action="ci_archive['action']" method="post" class="o_sc_inline_form"
-                      t-att-data-sc-section="ci_archive.get('section') or None">
+                      t-att-data-pk-section="ci_archive.get('section') or None">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <t t-foreach="(ci_archive.get('hidden') or {}).items()" t-as="hid">
                         <input type="hidden" t-att-name="hid[0]" t-att-value="hid[1]"/>
@@ -435,21 +435,21 @@
         <!-- Task 1676: hidden unless the user shows the « Done » buttons
              (Paramètres); the head pencil's ✓ closes the card either way. -->
         <div class="o_sc_form_actions o_sc_edit_done_actions">
-            <button type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm o_sc_edit_done" data-sc-edit-done="1">Done</button>
+            <button type="button" class="o_sc_btn o_sc_btn_primary o_sc_btn_sm o_sc_edit_done" data-pk-edit-done="1">Done</button>
         </div>
     </template>
 
     <!-- A read-view row. Variables: label, record, field; optional
          href_kind ('tel' / 'mailto', task 1585): the value is a tap-to-call /
          tap-to-email link (no href while empty — « — » is not a link);
-         data-sc-display-href lets a save move the href (sc_app_ui.js). -->
+         data-pk-display-href lets a save move the href (sc_app_ui.js). -->
     <template id="sc_display_row" name="App shell: display row">
         <dt t-out="label"/>
         <dd>
             <t t-if="href_kind">
                 <t t-set="sc_shown" t-value="sc_display(record, field)"/>
                 <a class="o_sc_contact_link" t-att-href="sc_contact_href(href_kind, sc_shown)"
-                   t-att-data-sc-display-href="href_kind"
+                   t-att-data-pk-display-href="href_kind"
                    t-att-data-sc-display="sc_display_key(record, field)" t-out="sc_shown or '—'"/>
             </t>
             <span t-else="" t-att-data-sc-display="sc_display_key(record, field)" t-out="sc_display(record, field) or '—'"/>
@@ -482,9 +482,9 @@
 
     <!-- Task 1581: a history sheet's body (the lazy, fresh-on-every-open
          fragment): optional filters (0), the entries, or the empty state.
-         Variables: entries, empty_message, section (data-sc-section). -->
+         Variables: entries, empty_message, section (data-pk-section). -->
     <template id="sc_history_list" name="App shell: history list">
-        <div class="o_sc_history_fragment" t-att-data-sc-section="section or None">
+        <div class="o_sc_history_fragment" t-att-data-pk-section="section or None">
             <t t-out="0"/>
             <ol t-if="entries" class="o_sc_history">
                 <t t-foreach="entries" t-as="entry" t-call="bemade_sports_clinic.sc_history_entry"/>
@@ -657,7 +657,7 @@
                 <span class="o_sc_switch_track" aria-hidden="true"><span class="o_sc_switch_thumb"/></span>
             </span>
             <input t-if="sw_off is not None and sw_name" type="hidden" t-att-name="sw_name" t-att-value="sw_off"
-                   data-sc-switch-off="1" t-att-disabled="'disabled' if sw_checked else None"/>
+                   data-pk-switch-off="1" t-att-disabled="'disabled' if sw_checked else None"/>
         </label>
     </template>
 
@@ -733,7 +733,7 @@
     <template id="sc_note_card" name="App shell: note card">
         <!-- Owner review 2026-10-11: an editable note is a pencil card. -->
         <article t-attf-class="o_sc_card o_sc_note_card #{'o_sc_edit_card' if edit_props else ''}" t-att-data-sc-note-id="note.id"
-                 t-att-data-sc-edit-card="('note-%s' % note.id) if edit_props else None">
+                 t-att-data-pk-edit-card="('note-%s' % note.id) if edit_props else None">
             <!-- Task 1611: the meta line and the « modified » stamp are read
                  fragments (a save of the note — or of its linked injury's
                  diagnosis — refreshes them in place). Task 1721 (review
@@ -938,7 +938,7 @@
         title, subtitle, dot, status, changed, pending_removal, training,
         return_label, team_links, detail_url), row_scope (a short key making
         the detail's id unique when one player is listed twice on a page).
-        Task 1624 round 2: row_item (the card's data-sc-fragment-item in a
+        Task 1624 round 2: row_item (the card's data-pk-fragment-item in a
         LIST read fragment), row['return_edit_props'] (the quick « Retour
         prévu » field under the card).
         Body (0) = extra trailing chips.
@@ -946,7 +946,7 @@
     <template id="sc_player_row" name="App shell: player row">
         <t t-set="sc_row_detail_id" t-value="'sc-row-detail-%s-%s' % (row_scope or 'row', row['id'])"/>
         <div class="o_sc_row_group o_sc_player_row" t-att-data-sc-player-id="row['id']"
-             t-att-data-sc-fragment-item="row_item or None">
+             t-att-data-pk-fragment-item="row_item or None">
             <!-- Task 1634: the face (dot, pills, ⚡, lines) is the read
                  fragment « sports.patient:<id>:row-<scope> » — unique on the
                  page, refreshed in place by a status pick; the lazy detail
@@ -1052,7 +1052,7 @@
         <t t-set="sc_act_uid" t-value="('%s_%s' % (activity.id, act_scope)) if act_scope else str(activity.id)"/>
         <div t-attf-class="o_sc_card o_sc_activity #{'o_sc_edit_card' if sc_act_can_act else ''}"
              t-att-data-sc-activity-row="activity.id" t-att-data-sc-activity-state="act_state"
-             t-att-data-sc-edit-card="('activity-%s' % sc_act_uid) if sc_act_can_act else None">
+             t-att-data-pk-edit-card="('activity-%s' % sc_act_uid) if sc_act_can_act else None">
             <div class="o_sc_activity_head" t-att-data-sc-fragment="sc_fragment_key(activity, 'row')">
                 <t t-call="bemade_sports_clinic.sc_link_row">
                     <t t-set="href" t-value="'/my/activity/%s' % activity.id"/>
@@ -1127,10 +1127,10 @@
         a save refreshes it in place. Variables: patient, scope (unique ids
         per page: 'player' / 'clinic'), tp (the viewer is a therapist: both
         pills, every level; a coach gets the non-urgent / urgent ones only),
-        section (data-sc-section of the holder).
+        section (data-pk-section of the holder).
     -->
     <template id="sc_medical_pills" name="App shell: medical pills">
-        <div class="o_sc_med_pills" t-att-data-sc-section="section or 'medical.pills'"
+        <div class="o_sc_med_pills" t-att-data-pk-section="section or 'medical.pills'"
              t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-pills')">
             <t t-foreach="patient._sc_medical_pills(tp=tp)" t-as="pill">
                 <button type="button" t-attf-class="o_sc_med_pill o_sc_med_#{pill['tone']}"
@@ -1190,14 +1190,14 @@
                               t-out="pill['level_label']"/>
                     </div>
                 </t>
-                <div class="o_sc_med_sheet" t-att-data-sc-section="'medical.%s' % sc_med_key"
+                <div class="o_sc_med_sheet" t-att-data-pk-section="'medical.%s' % sc_med_key"
                      t-att-data-sc-med-family="sc_med_key" t-att-data-sc-patient="patient.id"
                      t-att-data-sc-med-editable="'1' if editable else None">
 
                     <!-- Allergies: the EpiPen card. -->
                     <section t-if="sc_med_is_allergy" class="o_sc_card o_sc_edit_card o_sc_med_card o_sc_med_epipen_card"
-                             data-sc-section="medical.allergy.epipen"
-                             t-att-data-sc-edit-card="('med-epipen-%s' % sc_med_uid) if editable else None"
+                             data-pk-section="medical.allergy.epipen"
+                             t-att-data-pk-edit-card="('med-epipen-%s' % sc_med_uid) if editable else None"
                              t-att-data-sc-edit-open-on-load="'1' if editable and pill['epipen_unset'] else None">
                         <div class="o_sc_med_card_row">
                             <div class="o_sc_med_card_read" data-sc-edit-view="read"
@@ -1279,7 +1279,7 @@
                             <t t-set="add_key" t-value="'medical.%s.add' % sc_med_key"/>
                         </t>
                         <details class="o_sc_card o_sc_disclosure o_sc_list_add_panel o_sc_med_add_panel"
-                                 t-att-id="sc_med_panel" t-att-data-sc-section="'medical.%s.add' % sc_med_key">
+                                 t-att-id="sc_med_panel" t-att-data-pk-section="'medical.%s.add' % sc_med_key">
                             <summary class="o_sc_disclosure_summary">
                                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                                 <span t-if="sc_med_is_allergy">Add an allergy</span>
@@ -1314,14 +1314,14 @@
                     </div>
 
                     <!-- The items (a read fragment: read + edit views, plain inputs). -->
-                    <ul class="o_sc_med_items" t-att-data-sc-section="'medical.%s.items' % sc_med_key"
+                    <ul class="o_sc_med_items" t-att-data-pk-section="'medical.%s.items' % sc_med_key"
                         t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-items' % sc_med_key)"
                         data-sc-fragment-mode="list" t-att-hidden="None if pill['items'] else 'hidden'">
-                        <li t-foreach="pill['items']" t-as="item" t-att-data-sc-fragment-item="'item-%s' % item['id']"
+                        <li t-foreach="pill['items']" t-as="item" t-att-data-pk-fragment-item="'item-%s' % item['id']"
                             t-attf-class="o_sc_card o_sc_med_card o_sc_med_item #{'o_sc_edit_card' if editable else ''}"
                             t-att-data-sc-med-item="item['id']"
                             t-att-data-sc-med-vital="'1' if item['life_threatening'] else '0'"
-                            t-att-data-sc-edit-card="('med-item-%s-%s' % (scope, item['id'])) if editable else None">
+                            t-att-data-pk-edit-card="('med-item-%s-%s' % (scope, item['id'])) if editable else None">
                             <div class="o_sc_med_card_row">
                                 <div class="o_sc_med_card_read" data-sc-edit-view="read"
                                      t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-item-%s' % item['id'])">

@@ -169,7 +169,7 @@ class TestTodoRouting1664(Routing1664Common):
         self.assertTrue(props)
         self.assertTrue(json.loads(props[0])['options'])
         tree = lxml_html.fromstring(self.url_open('/my/activity/%s' % self.act_player.id).text)
-        props = tree.xpath('//*[@data-sc-edit-card="activity"]' + user_field[1:])
+        props = tree.xpath('//*[@data-pk-edit-card="activity"]' + user_field[1:])
         self.assertIn(str(self.tp.id), [str(o[0]) for o in json.loads(props[0])['options']])
 
     # -- AC-4 -------------------------------------------------------------

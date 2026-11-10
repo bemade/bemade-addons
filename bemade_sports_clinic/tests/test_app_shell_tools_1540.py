@@ -64,7 +64,7 @@ class TestAppShellTools1540(Tools1540Common):
                     '/my/team/%s/digest-history' % self.team_a.id):
             text, tree = self._get(url)
             self.assertIsNone(self._shell(tree), url)
-            self.assertNotIn('data-sc-app-shell', text, url)
+            self.assertNotIn('data-pk-app-shell', text, url)
         self._switch(True)
         text, _tree = self._get('/my/team/%s/digest-history/recent' % self.team_a.id)
         self.assertIn('o_sc_digest_history_modal', text)
@@ -78,7 +78,7 @@ class TestAppShellTools1540(Tools1540Common):
         self.assertEqual(tree.xpath('//*[@data-sc-timesheet-id]/@data-sc-timesheet-id'),
                          [str(self.timesheet.id)])
         # Owner review 2026-10-11: edited in place (pencil card).
-        self.assertTrue(tree.xpath('//*[@data-sc-edit-card="timesheet-%s"]' % self.timesheet.id))
+        self.assertTrue(tree.xpath('//*[@data-pk-edit-card="timesheet-%s"]' % self.timesheet.id))
         # Task 1736 (deliberate update): the delete (an archive) is the card's
         # archive icon submitting this form — no confirmation sheet.
         form = tree.xpath('//form[@id="sc_ts_archive_%s"]' % self.timesheet.id)[0]
@@ -118,7 +118,7 @@ class TestAppShellTools1540(Tools1540Common):
             self.assertTrue(form.xpath('.//input[@name="csrf_token"]'))
         # The pencil card's fields carry the note's current links (owner
         # review 2026-10-11, was an edit sheet).
-        props = [p for p in tree.xpath('//*[@data-sc-edit-card="quick-note-%s"]//owl-component/@props'
+        props = [p for p in tree.xpath('//*[@data-pk-edit-card="quick-note-%s"]//owl-component/@props'
                                        % self.my_note.id) if '"team_id"' in p]
         self.assertEqual(len(props), 1)
         self.assertEqual(json.loads(props[0])['value'], self.team_a.id)
@@ -137,8 +137,8 @@ class TestAppShellTools1540(Tools1540Common):
         self._login_coach()
         text, tree = self._get('/my/team/%s/digest/%s' % (self.team_a.id, self.digest.id))
         self.assertIsNotNone(self._shell(tree))
-        self.assertTrue(tree.xpath('//*[@data-sc-section="digest.body"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="digest.body"]'))
         _text, tree = self._get('/my/team/%s/digest-history' % self.team_a.id)
-        rows = tree.xpath('//*[@data-sc-section="digest.history"]//a/@href')
+        rows = tree.xpath('//*[@data-pk-section="digest.history"]//a/@href')
         self.assertIn('/my/team/%s/digest/%s' % (self.team_a.id, self.digest.id), rows)
         self.assertEqual(len(rows), 2)

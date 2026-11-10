@@ -18,7 +18,7 @@ function assert(condition, message) {
 }
 
 const ADD = "details#sc_clinic_injury_add";
-const NEW_CARD = '[data-sc-section="clinic.dossier.injuries"] .o_sc_injury_item[data-sc-created-injury]';
+const NEW_CARD = '[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[data-sc-created-injury]';
 const NOTE = '.o_sc_autosave[data-sc-field="external_notes"]';
 const DIAG_EDIT = "Tour 1590 synthetic shoulder";
 const DIAG_UNDO = "Tour 1590 synthetic undo";
@@ -74,7 +74,7 @@ tours.add("sc_1590_clinic_injury_edit", {
             // Task 1616: one pencil per group — the new injury opens its
             // Details; the notes are the Notes group's.
             content: "The Notes pencil",
-            trigger: `${NEW_CARD} [data-sc-edit-card="injury-notes-external"] button[data-sc-edit-toggle]`,
+            trigger: `${NEW_CARD} [data-pk-edit-card="injury-notes-external"] button[data-sc-edit-toggle]`,
             run: "click",
         },
         {
@@ -101,12 +101,12 @@ tours.add("sc_1590_clinic_injury_edit", {
         },
         {
             content: "« Done » of the Notes (task 1611: no reload)",
-            trigger: `${NEW_CARD} [data-sc-edit-card="injury-notes-external"] [data-sc-edit-done]`,
+            trigger: `${NEW_CARD} [data-pk-edit-card="injury-notes-external"] [data-pk-edit-done]`,
             run: "click",
         },
         {
             content: "Same clinic, same patient, file tab; the card reads the note",
-            trigger: `[data-sc-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-sc-edit-card="injury-notes-external"] [data-sc-edit-view="read"]:not([hidden])`,
+            trigger: `[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-pk-edit-card="injury-notes-external"] [data-sc-edit-view="read"]:not([hidden])`,
             run() {
                 onClinicDossier();
                 assert(this.anchor.textContent.includes(QUICK_NOTE), "the read view misses the note");
@@ -115,18 +115,18 @@ tours.add("sc_1590_clinic_injury_edit", {
         },
         {
             content: "« Done » of the Details (opened by the create)",
-            trigger: `${NEW_CARD} [data-sc-edit-card="injury-details"][data-sc-edit-open] [data-sc-edit-done]`,
+            trigger: `${NEW_CARD} [data-pk-edit-card="injury-details"][data-sc-edit-open] [data-pk-edit-done]`,
             run: "click",
         },
         {
             content: "The Details pencil opens its edit view again",
             // Task 1736 (deliberate update): the Details pencil is the card's top-bar pencil.
-            trigger: '[data-sc-section="clinic.dossier.injuries"] .o_sc_injury_item[open]:has([data-sc-edit-card="injury-details"]:not([data-sc-edit-open])) > summary button[data-sc-edit-toggle][data-sc-edit-for="injury-details"]',
+            trigger: '[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[open]:has([data-pk-edit-card="injury-details"]:not([data-sc-edit-open])) > summary button[data-sc-edit-toggle][data-sc-edit-for="injury-details"]',
             run: "click",
         },
         {
             content: "Edit view shown, no legacy form anywhere",
-            trigger: '[data-sc-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-sc-edit-card="injury-details"] [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="sc_injury_date"]',
+            trigger: '[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-pk-edit-card="injury-details"] [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="sc_injury_date"]',
             run() {
                 assert(!document.querySelector('form[action*="/my/injury/save"]'), "a legacy injury form");
             },
@@ -146,7 +146,7 @@ tours.add("sc_1590_clinic_injury_undo", {
         },
         {
             content: "Back on the dossier, the injury is gone",
-            trigger: '[data-sc-section="clinic.dossier.injuries"]',
+            trigger: '[data-pk-section="clinic.dossier.injuries"]',
             run() {
                 onClinicDossier();
                 assert(

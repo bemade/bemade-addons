@@ -19,7 +19,7 @@
         can_reassign, empty_message.
     -->
     <template id="sc_activity_list" name="App shell: activity list">
-        <div t-if="activities" class="o_sc_list" data-sc-section="activities.list">
+        <div t-if="activities" class="o_sc_list" data-pk-section="activities.list">
             <t t-foreach="activities" t-as="activity">
                 <!-- Task 1595: computed in the controller, access-gated
                      (was a non-sudo browse here). -->
@@ -101,7 +101,7 @@
             <t t-set="add_panel" t-value="'sc_activity_add'"/>
             <t t-set="add_key" t-value="'activity.add'"/>
         </t>
-        <details class="o_sc_card o_sc_disclosure o_sc_list_add_panel" id="sc_activity_add" data-sc-section="activity.add">
+        <details class="o_sc_card o_sc_disclosure o_sc_list_add_panel" id="sc_activity_add" data-pk-section="activity.add">
             <summary class="o_sc_disclosure_summary">
                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                 <span>Add Activity</span>
@@ -288,7 +288,7 @@
             <!-- Task 1595: the same access-gated links as the row. -->
             <t t-if="act_links">
                 <dt>Related Record</dt>
-                <dd class="o_sc_row_links" data-sc-section="activity.related">
+                <dd class="o_sc_row_links" data-pk-section="activity.related">
                     <t t-call="bemade_sports_clinic.sc_row_links"><t t-set="links" t-value="act_links"/></t>
                 </dd>
             </t>
@@ -308,7 +308,7 @@
     <!-- The attachments of an activity (task 1586: each a download).
          Variables: activity, attachments. -->
     <template id="sc_activity_attachments" name="App shell: activity attachments">
-        <section t-if="attachments" class="o_sc_section" data-sc-section="activity.attachments">
+        <section t-if="attachments" class="o_sc_section" data-pk-section="activity.attachments">
             <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Attachments</t></t>
             <div class="o_sc_list">
                 <t t-foreach="attachments" t-as="attachment">
@@ -329,7 +329,7 @@
          (/my/activity/<id>/popout). Variables: activity, act_links,
          attachments, act_state, sc_file_size. -->
     <template id="sc_activity_popout" name="App shell: activity details popout">
-        <div class="o_sc_activity_popout" data-sc-section="activity.popout" t-att-data-sc-activity-popout-body="activity.id"
+        <div class="o_sc_activity_popout" data-pk-section="activity.popout" t-att-data-sc-activity-popout-body="activity.id"
              data-sc-lazy-filled="1">
             <h3 class="o_sc_activity_popout_title">
                 <span t-out="activity.summary or activity.activity_type_id.name"/>
@@ -357,8 +357,8 @@
             <!-- Owner review 2026-10-11: the pencil edit paradigm — the
                  activity is edited in place (was a separate edit page); the
                  type stays read-only, as the edit route always treated it. -->
-            <section t-attf-class="o_sc_card #{'o_sc_edit_card' if sc_activity_editable else ''}" data-sc-section="activity.detail"
-                     t-att-data-sc-edit-card="'activity' if sc_activity_editable else None">
+            <section t-attf-class="o_sc_card #{'o_sc_edit_card' if sc_activity_editable else ''}" data-pk-section="activity.detail"
+                     t-att-data-pk-edit-card="'activity' if sc_activity_editable else None">
                 <div class="o_sc_edit_card_head">
                     <span class="o_sc_chips" t-att-data-sc-fragment="sc_fragment_key(activity, 'chips')">
                         <span t-if="act_state == 'overdue'" class="o_sc_chip o_sc_chip_red">Overdue</span>

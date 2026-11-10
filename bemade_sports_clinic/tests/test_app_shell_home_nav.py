@@ -77,7 +77,7 @@ class TestAppShellHomeNav(Parity1577Common):
     # -- UC-H2 -----------------------------------------------------------
     def test_upcoming_event_comes_back_home(self):
         _text, tree = self._get(HOME)
-        hrefs = tree.xpath('//*[@data-sc-section="dashboard.coverage"]//a/@href')
+        hrefs = tree.xpath('//*[@data-pk-section="dashboard.coverage"]//a/@href')
         # Task 1624 review round 1: the row's link and its « Details »
         # fold-out's « Open the event » — the same address.
         href = sorted({h for h in hrefs if h.startswith('/my/event/%s' % self.upcoming.id)})
@@ -97,7 +97,7 @@ class TestAppShellHomeNav(Parity1577Common):
     # -- UC-H3 -----------------------------------------------------------
     def test_calendar_link_comes_back_home(self):
         _text, tree = self._get(HOME)
-        more = tree.xpath('//*[@data-sc-section="dashboard.coverage"]'
+        more = tree.xpath('//*[@data-pk-section="dashboard.coverage"]'
                           '//a[starts-with(@href, "/my/events")]/@href')
         self.assertEqual(len(more), 1, more)
         self.assertEqual(self._return_url(more[0]), HOME)
@@ -169,13 +169,13 @@ class TestAppShellHomeNav(Parity1577Common):
     @staticmethod
     def _player_ids(tree):
         return [int(x) for x in tree.xpath(
-            '//*[@data-sc-section="players.list"]//*[@data-sc-player-id]/@data-sc-player-id')]
+            '//*[@data-pk-section="players.list"]//*[@data-sc-player-id]/@data-sc-player-id')]
 
     @staticmethod
     def _sort_options(tree):
         # Task 1607 (deliberate update): the list header's sort menu.
         return {a.get('data-sc-sort'): a for a in tree.xpath(
-            '//*[@data-sc-section="players.sort"]//a[@role="menuitemradio"]')}
+            '//*[@data-pk-section="players.sort"]//a[@role="menuitemradio"]')}
 
     def test_players_list_most_injured_first(self):
         made = self._make_order_players()

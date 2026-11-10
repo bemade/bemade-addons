@@ -15,7 +15,7 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
-const HERO = '[data-sc-section="player.hero"]';
+const HERO = '[data-pk-section="player.hero"]';
 
 function assert(condition, message) {
     if (!condition) {
@@ -42,7 +42,7 @@ tours.add("sc_1018_header_pencil", {
     steps: () => [
         {
             content: "Read view: status pills (task 1627; task 1753: outside the read view), no « Remove player »; open the pencil",
-            trigger: `${HERO} [data-sc-section="player.status"] [data-sc-pill-key="match"] button.o_sc_pill_select`,
+            trigger: `${HERO} [data-pk-section="player.status"] [data-sc-pill-key="match"] button.o_sc_pill_select`,
             run() {
                 window.__sc1018NoReload = true;
                 assert(!document.querySelector(`${HERO} .o_sc_autosave[data-sc-field="sc_status"]`), "a 4-way selector");
@@ -84,7 +84,7 @@ tours.add("sc_1018_header_pencil", {
         },
         {
             content: "« Done »",
-            trigger: `${HERO} [data-sc-edit-view="edit"] button[data-sc-edit-done]`,
+            trigger: `${HERO} [data-sc-edit-view="edit"] button[data-pk-edit-done]`,
             run: "click",
         },
         {
@@ -92,7 +92,7 @@ tours.add("sc_1018_header_pencil", {
             trigger: `${HERO} [data-sc-edit-view="read"]`,
             async run() {
                 await waitFor(
-                    () => (document.querySelector(`${HERO} [data-sc-section="player.training"]`) || {})
+                    () => (document.querySelector(`${HERO} [data-pk-section="player.training"]`) || {})
                         .textContent?.includes("Synthetic latex"),
                     "recommendation"
                 );
@@ -104,7 +104,7 @@ tours.add("sc_1018_header_pencil", {
 });
 
 const CARD = "details.o_sc_injury_item[open]";
-const DETAILS = `${CARD} [data-sc-edit-card="injury-details"]`;
+const DETAILS = `${CARD} [data-pk-edit-card="injury-details"]`;
 
 tours.add("sc_1018_injury_dates", {
     steps: () => [

@@ -2,7 +2,7 @@
  * Task 1542 (epic #1535) — the app shell's ONE fetch helper.
  *
  * GET / POST, JSON or HTML, the CSRF token added to every POST, a timeout,
- * and an error toast hook: every failure dispatches « sc:fetch-error » on the
+ * and an error toast hook: every failure dispatches « pk:fetch-error » on the
  * document (sc_app_ui.js shows the toast) unless called with toast: false.
  * POST bodies are form-encoded so Odoo's standard http CSRF check applies.
  *
@@ -29,7 +29,7 @@ export function csrfToken() {
 }
 
 export function notifyFetchError(error) {
-    document.dispatchEvent(new CustomEvent("sc:fetch-error", { detail: error }));
+    document.dispatchEvent(new CustomEvent("pk:fetch-error", { detail: error }));
 }
 
 /**
@@ -39,7 +39,7 @@ export function notifyFetchError(error) {
  * @param {Object} [options.data] POST fields (form-encoded)
  * @param {"json"|"html"} [options.as] expected answer
  * @param {number} [options.timeout] ms
- * @param {boolean} [options.toast] dispatch sc:fetch-error on failure
+ * @param {boolean} [options.toast] dispatch pk:fetch-error on failure
  * @param {Object} [options.headers] extra request headers (task 1611:
  *     X-Sc-Fragments)
  */

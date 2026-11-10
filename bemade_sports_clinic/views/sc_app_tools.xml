@@ -22,8 +22,8 @@
             <!-- Owner review 2026-10-14: applied on change (sc_forms.js); group
                  by in its own labelled group (it is not a filter). Task 1607:
                  the sort is in the list header, the form keeps its choice. -->
-            <form method="get" action="/my/sc/timesheets" class="o_sc_filters o_sc_filters_compact" data-sc-section="timesheets.filters"
-                  data-sc-autosubmit="1">
+            <form method="get" action="/my/sc/timesheets" class="o_sc_filters o_sc_filters_compact" data-pk-section="timesheets.filters"
+                  data-pk-autosubmit="1">
                 <input t-if="sortby" type="hidden" name="sortby" t-att-value="sortby"/>
                 <!-- Task 1617: open on every visit (still collapsible; no
                      remembered state — collapsing lasts for that visit). -->
@@ -65,7 +65,7 @@
                             </select>
                         </div>
                     </div>
-                    <fieldset class="o_sc_filter_group" data-sc-section="timesheets.group">
+                    <fieldset class="o_sc_filter_group" data-pk-section="timesheets.group">
                         <legend class="o_sc_filter_group_title">Group by</legend>
                         <div class="o_sc_filter_grid">
                             <div class="o_sc_field">
@@ -80,8 +80,8 @@
                         </div>
                     </fieldset>
                     <div class="o_sc_form_actions">
-                        <a href="/my/sc/timesheets" class="o_sc_btn o_sc_btn_ghost" data-sc-filter-reset="1">Reset</a>
-                        <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-autosubmit-fallback="1">Apply filters</button>
+                        <a href="/my/sc/timesheets" class="o_sc_btn o_sc_btn_ghost" data-pk-filter-reset="1">Reset</a>
+                        <button type="submit" class="o_sc_btn o_sc_btn_primary" data-pk-autosubmit-fallback="1">Apply filters</button>
                     </div>
                 </details>
             </form>
@@ -105,10 +105,10 @@
                  (accent, 600) to MY events missing a timesheet (the events
                  page's « Feuilles de temps manquantes » segment). Round 2
                  (owner 2026-10-27): the link says where it goes. -->
-            <p class="o_sc_muted o_sc_list_hint" data-sc-section="timesheets.hint">To add a timesheet, open the event concerned: <a t-attf-href="/my/events?view_type=missing_timesheets&amp;assigned_user_id=#{request.env.user.id}&amp;no_default_dates=1" class="o_sc_link o_sc_hint_link" data-sc-hint-link="events">My events without timesheets</a></p>
+            <p class="o_sc_muted o_sc_list_hint" data-pk-section="timesheets.hint">To add a timesheet, open the event concerned: <a t-attf-href="/my/events?view_type=missing_timesheets&amp;assigned_user_id=#{request.env.user.id}&amp;no_default_dates=1" class="o_sc_link o_sc_hint_link" data-sc-hint-link="events">My events without timesheets</a></p>
             <!-- Task 1611: a read-fragment list — a time change moves the card
                  to its date group (headings and order as after a reload). -->
-            <div t-if="sc_timesheet_groups" class="o_sc_list" data-sc-section="timesheets.list"
+            <div t-if="sc_timesheet_groups" class="o_sc_list" data-pk-section="timesheets.list"
                  data-sc-fragment="page:timesheets:list" data-sc-fragment-mode="list">
                 <section t-foreach="sc_timesheet_groups" t-as="group" class="o_sc_group" t-att-data-sc-group="group['key']">
                     <h3 class="o_sc_group_title" t-out="group['label']"/>
@@ -119,7 +119,7 @@
                     </t>
                 </section>
             </div>
-            <div t-elif="sc_timesheet_rows" class="o_sc_list" data-sc-section="timesheets.list"
+            <div t-elif="sc_timesheet_rows" class="o_sc_list" data-pk-section="timesheets.list"
                  data-sc-fragment="page:timesheets:list" data-sc-fragment-mode="list">
                 <t t-foreach="sc_timesheet_rows" t-as="row">
                     <t t-call="bemade_sports_clinic.sc_timesheet_card">
@@ -127,7 +127,7 @@
                     </t>
                 </t>
             </div>
-            <p t-else="" class="o_sc_empty" data-sc-section="timesheets.empty">No timesheets. Add one from the event's page: <a t-attf-href="/my/events?view_type=missing_timesheets&amp;assigned_user_id=#{request.env.user.id}&amp;no_default_dates=1" class="o_sc_link o_sc_hint_link" data-sc-hint-link="events">My events without timesheets</a></p>
+            <p t-else="" class="o_sc_empty" data-pk-section="timesheets.empty">No timesheets. Add one from the event's page: <a t-attf-href="/my/events?view_type=missing_timesheets&amp;assigned_user_id=#{request.env.user.id}&amp;no_default_dates=1" class="o_sc_link o_sc_hint_link" data-sc-hint-link="events">My events without timesheets</a></p>
             <t t-call="bemade_sports_clinic.sc_timesheet_sheets">
                 <t t-set="rows" t-value="sc_timesheet_rows"/>
                 <t t-set="return_url" t-value="sc_timesheets_return"/>
@@ -202,7 +202,7 @@
              is edited in place (was an « Edit » sheet with « Save »). -->
         <article t-attf-class="o_sc_card o_sc_quick_note #{'o_sc_edit_card' if not archived else ''}"
                  t-att-data-sc-quick-note-id="row['id']" t-att-id="'note-%s' % row['id']"
-                 t-att-data-sc-edit-card="('quick-note-%s' % row['id']) if not archived else None">
+                 t-att-data-pk-edit-card="('quick-note-%s' % row['id']) if not archived else None">
             <!-- Task 1736 (owner 2026-11-01): the shared top bar — archive
                  (recoverable: an undo toast), the red trash (for good: it
                  asks first; while editing, or always on an archived note,
@@ -269,7 +269,7 @@
             <!-- Task 1667: the quick-note form is always there — no « + Ajouter »
                  header toggle, no collapsible wrapper (it replaced #1607's
                  docked-open panel). « Link this note » stays a disclosure. -->
-            <section class="o_sc_card o_sc_notepad_add" id="sc_notepad_add" data-sc-section="notepad.add">
+            <section class="o_sc_card o_sc_notepad_add" id="sc_notepad_add" data-pk-section="notepad.add" data-pk-list-reset="1">
             <form action="/my/notepad/add" method="post" class="o_sc_form" id="quick-add" data-sc-form="note.add" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"note"}]'>
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <t t-set="sc_qn_label">Quick note</t>
@@ -291,7 +291,7 @@
             </form>
             </section>
 
-            <div t-if="sc_note_rows" class="o_sc_list" data-sc-section="notepad.list">
+            <div t-if="sc_note_rows" class="o_sc_list" data-pk-section="notepad.list">
                 <t t-foreach="sc_note_rows" t-as="row">
                     <t t-call="bemade_sports_clinic.sc_quick_note_card">
                         <t t-set="archived" t-value="False"/>
@@ -302,7 +302,7 @@
                 <t t-set="message">No note yet.</t>
             </t>
 
-            <section class="o_sc_section" data-sc-section="notepad.archived">
+            <section class="o_sc_section" data-pk-section="notepad.archived">
                 <t t-if="show_archived">
                     <t t-call="bemade_sports_clinic.sc_section_header">
                         <t t-set="title">Archived notes</t>
@@ -337,8 +337,8 @@
             <!-- Task 1614: the legacy page's « Snapshot of … » line, and the
                  Bootstrap digest re-themed by o_sc_legacy (player names were
                  white on white in dark mode). -->
-            <p class="o_sc_meta" data-sc-section="digest.snapshot" t-out="digest._sc_snapshot_line()"/>
-            <div class="o_sc_card o_sc_legacy o_sc_digest_body" data-sc-section="digest.body">
+            <p class="o_sc_meta" data-pk-section="digest.snapshot" t-out="digest._sc_snapshot_line()"/>
+            <div class="o_sc_card o_sc_legacy o_sc_digest_body" data-pk-section="digest.body">
                 <t t-call="bemade_sports_clinic.team_digest_render">
                     <t t-set="players" t-value="players"/>
                     <t t-set="announcement" t-value="announcement"/>
@@ -357,7 +357,7 @@
          show. »; an empty day carries .o_sc_empty (team_digest_render). -->
     <template id="sc_digest_body" name="Sports Clinic App: digest body fragment">
         <div class="o_sc_digest_fragment" data-sc-lazy-filled="1">
-            <p class="o_sc_meta" data-sc-section="digest.snapshot" t-out="digest._sc_snapshot_line()"/>
+            <p class="o_sc_meta" data-pk-section="digest.snapshot" t-out="digest._sc_snapshot_line()"/>
             <t t-call="bemade_sports_clinic.team_digest_render">
                 <t t-set="players" t-value="players"/>
                 <t t-set="announcement" t-value="announcement"/>
@@ -373,7 +373,7 @@
             <!-- Task 1614: each date expands in place; its body (the same
                  role re-gated team_digest_render as the day's page) is fetched
                  on first open. The subtitle = the day's counts. -->
-            <div t-if="sc_digest_rows" class="o_sc_list" data-sc-section="digest.history">
+            <div t-if="sc_digest_rows" class="o_sc_list" data-pk-section="digest.history">
                 <t t-foreach="sc_digest_rows" t-as="row">
                     <details class="o_sc_expand o_sc_digest_row" t-att-data-sc-digest-row="row['id']"
                              t-att-data-sc-lazy-url="row['body_url']">

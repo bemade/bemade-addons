@@ -47,7 +47,7 @@ from odoo.addons.bemade_sports_clinic.tests.medical_common_1677 import set_medic
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_clinic_1540 import Clinic1540Common
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_player_inline import PlayerInlineCommon
 
-HERO = '//*[@data-sc-section="player.hero"]'
+HERO = '//*[@data-pk-section="player.hero"]'
 
 
 class MedicalCommon(FragmentsMixin, PlayerInlineCommon):
@@ -69,7 +69,7 @@ class MedicalCommon(FragmentsMixin, PlayerInlineCommon):
     @staticmethod
     def _pills(tree, section='player.medical'):
         return {node.get('data-sc-med-pill'): node for node in tree.xpath(
-            '//*[@data-sc-section="%s"]//button[@data-sc-med-pill]' % section)}
+            '//*[@data-pk-section="%s"]//button[@data-sc-med-pill]' % section)}
 
     def _sheet(self, tree, key, scope='player'):
         nodes = tree.xpath('//dialog[@id="sc_med_%s_%s_%s"]' % (scope, key, self.player.id))
@@ -88,10 +88,10 @@ class TestMedicalHeader1630(MedicalCommon):
         self.assertTrue(top.xpath('./*[contains(@class, "o_sc_hero_head")]'))
         # Review round 2 (owner 2026-10-27): inside the card, on the line
         # under the Match / Practice pills (no longer top right).
-        self.assertFalse(top.xpath('./*[@data-sc-section="player.medical"]'))
-        status = hero.xpath('.//*[@data-sc-section="player.status"]')[0]
-        holder = status.xpath('./*[@data-sc-section="player.medical"]')[0]
-        self.assertEqual(holder.getprevious().get('data-sc-section'), 'player.status.readonly')
+        self.assertFalse(top.xpath('./*[@data-pk-section="player.medical"]'))
+        status = hero.xpath('.//*[@data-pk-section="player.status"]')[0]
+        holder = status.xpath('./*[@data-pk-section="player.medical"]')[0]
+        self.assertEqual(holder.getprevious().get('data-pk-section'), 'player.status.readonly')
         self.assertEqual(holder.get('data-sc-fragment'), 'sports.patient:%s:medical-pills' % self.player.id)
         self.assertFalse(holder.xpath('.//owl-component'))
         pills = self._pills(tree)
@@ -109,7 +109,7 @@ class TestMedicalHeader1630(MedicalCommon):
             self.assertIn(tone, pill.get('class'), items)
             self.assertFalse(pill.xpath('.//*[@data-sc-med-epipen]'), items)
         # No allergies banner any more.
-        self.assertFalse(tree.xpath('//*[@data-sc-section="player.allergies"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="player.allergies"]'))
 
     def test_pills_fragment_refreshes_after_save(self):
         self._login_tp()
@@ -141,7 +141,7 @@ class TestMedicalHeader1630(MedicalCommon):
             self.assertFalse(node.xpath('.//dialog[starts-with(@id, "sc_med_")]'), node.get('data-sc-fragment'))
         hero = tree.xpath(HERO)[0]
         self.assertFalse(hero.xpath('.//*[@data-sc-edit-view="edit"]//owl-component[contains(@props, \'"allergies"\')]'))
-        self.assertFalse(hero.xpath('.//*[@data-sc-section="player.allergies.edit"]'))
+        self.assertFalse(hero.xpath('.//*[@data-pk-section="player.allergies.edit"]'))
 
     # -- COACH-1 ------------------------------------------------------------
     def test_coach_sees_yellow_red_only_read_only(self):
@@ -161,18 +161,18 @@ class TestMedicalHeader1630(MedicalCommon):
         set_medical(self.player, allergies=[], conditions=[], none_allergy=True, none_condition=False)
         tree = self._tree()
         self.assertEqual(self._pills(tree), {})
-        holder = tree.xpath('//*[@data-sc-section="player.medical"]')
+        holder = tree.xpath('//*[@data-pk-section="player.medical"]')
         self.assertEqual(len(holder), 1, 'the holder stays (a fragment)')
         # Never « Other medical history ».
         page = self._get(self._url(tab='info'))[0]
         self.assertNotIn('Synthetic fracture 2020', page)
-        self.assertFalse(self._tree('info').xpath('//*[@data-sc-edit-card="medical-history"]'))
+        self.assertFalse(self._tree('info').xpath('//*[@data-pk-edit-card="medical-history"]'))
 
     # -- INFO-1 -------------------------------------------------------------
     def test_infos_card_other_medical_history(self):
         self._login_tp()
         tree = self._tree('info')
-        card = tree.xpath('//*[@data-sc-edit-card="medical-history"]')[0]
+        card = tree.xpath('//*[@data-pk-edit-card="medical-history"]')[0]
         read = card.xpath('.//*[@data-sc-edit-view="read"]')[0]
         self.assertIn('Synthetic fracture 2020', read.text_content())
         self.assertTrue(card.xpath('.//button[@data-sc-edit-toggle]'))
@@ -320,8 +320,8 @@ class TestMedicalDossier1630(Clinic1540Common):
         _text, tree = self._get('/my/clinic/%s?patient=%s&tab=dossier' % (self.clinic.id, self.player.id))
         # Review round 2 (owner 2026-10-27): the pills are INSIDE the player
         # card (its own medical line), opening the page's « card » sheets.
-        hero = tree.xpath('//*[@data-sc-section="clinic.dossier.player"]')[0]
-        self.assertFalse(tree.xpath('//*[@data-sc-section="clinic.dossier.medical"]'))
+        hero = tree.xpath('//*[@data-pk-section="clinic.dossier.player"]')[0]
+        self.assertFalse(tree.xpath('//*[@data-pk-section="clinic.dossier.medical"]'))
         pills = hero.xpath('.//*[@data-sc-row-med]//button[@data-sc-med-pill]')
         self.assertEqual([p.get('data-sc-med-pill') for p in pills], ['allergy', 'medical_alert'])
         self.assertIn('o_sc_med_minor', pills[0].get('class'))

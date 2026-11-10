@@ -55,7 +55,7 @@ function pad() {
     document.body.style.paddingBottom = "3000px";
 }
 
-const NOTES = 'details.o_sc_injury_item[open] [data-sc-edit-card="injury-notes-external"]';  // task 1675
+const NOTES = 'details.o_sc_injury_item[open] [data-pk-edit-card="injury-notes-external"]';  // task 1675
 const CARD = "details.o_sc_injury_item";
 
 tours.add("sc_1642_injury_notes_blur", {
@@ -113,7 +113,7 @@ tours.add("sc_1642_injury_done", {
     ],
 });
 
-const MEDICAL = 'section[data-sc-edit-card="medical"]';
+const MEDICAL = 'section[data-pk-edit-card="medical"]';
 
 tours.add("sc_1642_player_group_done", {
     steps: () => [
@@ -127,7 +127,7 @@ tours.add("sc_1642_player_group_done", {
         },
         {
             content: "Jump away, then its « Done »: back to the top of the card",
-            trigger: `${MEDICAL} [data-sc-edit-view="edit"] [data-sc-edit-done]`,
+            trigger: `${MEDICAL} [data-sc-edit-view="edit"] [data-pk-edit-done]`,
             async run() {
                 window.scrollTo(0, 0);
                 await sleep(50);
@@ -147,7 +147,7 @@ tours.add("sc_1642_player_group_done", {
                     document.activeElement.blur();
                 }
                 await sleep(1700);
-                const done = document.querySelector(`${MEDICAL} [data-sc-edit-view="edit"] [data-sc-edit-done]`);
+                const done = document.querySelector(`${MEDICAL} [data-sc-edit-view="edit"] [data-pk-edit-done]`);
                 window.scrollTo(0, 0);
                 done.click();
                 window.dispatchEvent(new Event("touchstart"));

@@ -34,7 +34,7 @@
                         page, sc_title, is appended here)
     A sub-page renders BOTH the back chevron + context line and the trail;
     the screen width decides (phone: back + context, laptop: the trail — no
-    user setting). sc_app_nav.js turns the back chevron into history.back()
+    user setting). pk_app_nav.js turns the back chevron into history.back()
     when the previous page of this tab is an in-app page.
     Task 1618 (owner review 2026-10-18): on a laptop the chevron ALWAYS shows
     next to the trail on a sub-page (back = previous page, else the parent).
@@ -76,12 +76,12 @@
             </t>
             <!-- Task 1676: the head pencil's label while it is a ✓ (sc_app_ui.js). -->
             <t t-set="sc_edit_done_label">Finish editing</t>
-            <div class="o_sc_app" data-sc-app-shell="1"
+            <div class="o_sc_app" data-pk-app-shell="1"
                  t-att-data-sc-theme="sc_theme or 'dark'"
                  t-att-data-sc-hide-done="None if sc_show_done else '1'"
                  t-att-data-sc-edit-done-label="sc_edit_done_label"
                  t-att-data-sc-top="'0' if sc_parent_url else '1'"
-                 t-att-data-sc-db="sc_db" t-att-data-sc-uid="sc_uid"
+                 t-att-data-pk-db="sc_db" t-att-data-pk-uid="sc_uid"
                  t-att-data-sc-rendered-at="sc_rendered_at"
                  data-pk-home="/my/players" data-pk-home-same-params="player_id">
 
@@ -105,7 +105,7 @@
                 <div class="o_sc_main">
                     <!-- App bar -->
                     <header class="o_sc_appbar">
-                        <a t-if="sc_parent_url" t-att-href="sc_parent_url" data-sc-back="1"
+                        <a t-if="sc_parent_url" t-att-href="sc_parent_url" data-pk-back="1"
                            class="o_sc_icon_btn o_sc_back" aria-label="Back" title="Back">
                             <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'back'"/></t>
                         </a>
@@ -152,8 +152,8 @@
                                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'clock'"/></t>
                                 <span class="visually-hidden" t-out="sc_clock_label"/>
                                 <span class="o_sc_appbar_badge" hidden="hidden"
-                                      data-sc-live-count-url="/my/activities/overdue/count"
-                                      data-sc-live-poll="60" data-sc-live-eager="1" data-sc-live-hide-zero="1"
+                                      data-pk-live-count-url="/my/activities/overdue/count"
+                                      data-pk-live-poll="60" data-pk-live-eager="1" data-pk-live-hide-zero="1"
                                       t-att-title="sc_clock_badge_label">0</span>
                             </a>
                         </t>
@@ -182,7 +182,7 @@
                              the rail has no footer menu any more. -->
                         <div class="o_sc_user_menu o_sc_user_menu_bar" data-sc-user-menu="bar">
                             <t t-set="sc_user_menu_label">User menu</t>
-                            <button type="button" class="o_sc_icon_btn o_sc_appbar_me" data-sc-user-menu-toggle="1"
+                            <button type="button" class="o_sc_icon_btn o_sc_appbar_me" data-pk-user-menu-toggle="1"
                                     aria-haspopup="menu" aria-expanded="false" aria-controls="sc_user_menu_bar"
                                     t-att-aria-label="sc_user_menu_label" t-att-title="sc_user_menu_label">
                                 <span class="o_sc_avatar" aria-hidden="true" t-out="sc_user_initials"/>
@@ -318,7 +318,7 @@
          (tap, Enter / Space, the arrow keys, Escape, an outside tap).
          ``sc_menu_id``: the id the trigger's aria-controls names. -->
     <template id="sc_user_menu_popup" name="App shell: user menu popup">
-        <div t-att-id="sc_menu_id" class="o_sc_user_menu_popup" hidden="hidden" data-sc-user-menu-popup="1">
+        <div t-att-id="sc_menu_id" class="o_sc_user_menu_popup" hidden="hidden" data-pk-user-menu-popup="1">
             <div class="o_sc_user_menu_head" data-sc-user-menu-head="1">
                 <span class="o_sc_avatar" aria-hidden="true" t-out="sc_user_initials"/>
                 <span class="o_sc_user_menu_who">

@@ -89,10 +89,10 @@ class TestUserMenu1606(UserMenuCommon):
             for url in ('/my/home', '/my/teams', '/my/app/more'):
                 _text, tree = self._get(url)
                 # Task 1638: exactly one user menu in the DOM, none in the rail.
-                self.assertEqual(len(tree.xpath('//*[@data-sc-user-menu-popup]')), 1, url)
-                self.assertEqual(len(tree.xpath('//button[@data-sc-user-menu-toggle]')), 1, url)
+                self.assertEqual(len(tree.xpath('//*[@data-pk-user-menu-popup]')), 1, url)
+                self.assertEqual(len(tree.xpath('//button[@data-pk-user-menu-toggle]')), 1, url)
                 self.assertFalse(tree.xpath('//aside[contains(@class, "o_sc_rail")]'
-                                            '//*[@data-sc-user-menu-toggle or @data-sc-user-menu]'))
+                                            '//*[@data-pk-user-menu-toggle or @data-sc-user-menu]'))
                 self.assertEqual(self._menu(tree, 'rail'), (None, None))
                 for where in ('bar',):
                     trigger, menu = self._menu(tree, where)
@@ -192,7 +192,7 @@ class TestUserMenu1606(UserMenuCommon):
         self._login_tp()
         _text, tree = self._get('/my/app/settings')
         self.assertEqual(self._shell(tree).get('data-sc-top'), '0')
-        self.assertEqual(tree.xpath('//header//a[@data-sc-back]/@href'), ['/my/home'])
+        self.assertEqual(tree.xpath('//header//a[@data-pk-back]/@href'), ['/my/home'])
         crumbs = [(a.get('href'), a.text_content().strip())
                   for a in tree.xpath('//nav[contains(@class, "o_sc_crumbs")]//li/a')]
         self.assertEqual(crumbs, [('/my/home', 'Dashboard')])

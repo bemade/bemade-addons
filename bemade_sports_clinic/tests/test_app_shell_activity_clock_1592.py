@@ -126,17 +126,17 @@ class TestActivityClockAppBar1592(Clock1592Common):
             # Task 1622: the href carries the page it is tapped on.
             self.assertEqual(bar[0].get('href'), '/my/activities?sc_clock=1&sc_from=%2Fmy%2Fhome')
             self.assertEqual(bar[0].get('title'), 'My activities')
-            badge = bar[0].xpath('.//*[@data-sc-live-count-url]')[0]
-            self.assertEqual(badge.get('data-sc-live-count-url'), COUNT_URL)
-            self.assertEqual(badge.get('data-sc-live-eager'), '1')
-            self.assertEqual(badge.get('data-sc-live-hide-zero'), '1')
+            badge = bar[0].xpath('.//*[@data-pk-live-count-url]')[0]
+            self.assertEqual(badge.get('data-pk-live-count-url'), COUNT_URL)
+            self.assertEqual(badge.get('data-pk-live-eager'), '1')
+            self.assertEqual(badge.get('data-pk-live-hide-zero'), '1')
             # Not computed on the page: hidden until the first fetch.
             self.assertEqual(badge.get('hidden'), 'hidden')
             self.assertEqual(_text(badge), '0')
             # No count badge on the Activities menu item.
             for item in tree.xpath('//a[@data-sc-nav-key="activities"]'):
                 self.assertFalse(item.xpath('.//*[contains(@class, "o_sc_chip")]'
-                                            ' | .//*[@data-sc-live-count-url]'))
+                                            ' | .//*[@data-pk-live-count-url]'))
                 self.assertFalse(any(ch.isdigit() for ch in _text(item)))
 
     def test_app_bar_clock_next_to_theme_toggle(self):
@@ -208,7 +208,7 @@ class TestActivityClockRows1592(Clock1592Common):
         self._switch(True)
 
     def _player_row(self, tree, section):
-        rows = tree.xpath('//*[@data-sc-section="%s"]//*[contains(@class, "o_sc_player_row")]'
+        rows = tree.xpath('//*[@data-pk-section="%s"]//*[contains(@class, "o_sc_player_row")]'
                           '[@data-sc-player-id="%s"]' % (section, self.player.id))
         self.assertTrue(rows, 'no row for the player in %s' % section)
         return rows[0]
@@ -243,12 +243,12 @@ class TestActivityClockRows1592(Clock1592Common):
         self._login_coach()
         _text_, tree = self._get('/my/team?team_id=%s&tab=players' % self.team_a.id)
         for player in (self.player, healthy):
-            row = tree.xpath('//*[@data-sc-section="team.roster"]//*[contains(@class, "o_sc_player_row")]'
+            row = tree.xpath('//*[@data-pk-section="team.roster"]//*[contains(@class, "o_sc_player_row")]'
                              '[@data-sc-player-id="%s"]' % player.id)[0]
             self.assertIsNone(self._clock(row), 'the coach has no activity on %s' % player.name)
         self._activity(healthy, self.coach)
         _text_, tree = self._get('/my/team?team_id=%s&tab=players' % self.team_a.id)
-        row = tree.xpath('//*[@data-sc-section="team.roster"]//*[contains(@class, "o_sc_player_row")]'
+        row = tree.xpath('//*[@data-pk-section="team.roster"]//*[contains(@class, "o_sc_player_row")]'
                          '[@data-sc-player-id="%s"]' % healthy.id)[0]
         self._assert_clock(row, 1, 0, '/my/player?player_id=%s&team_id=%s&tab=activities'
                            % (healthy.id, self.team_a.id))
@@ -283,7 +283,7 @@ class TestActivityClockRows1592(Clock1592Common):
         self._activity(self.event, self.tp, days=-1)
         self._login_tp()
         _text_, tree = self._get('/my/events?no_default_dates=1')
-        main = tree.xpath('//*[@data-sc-section="events.list"]//a[@data-sc-event-id="%s"]' % self.event.id)[0]
+        main = tree.xpath('//*[@data-pk-section="events.list"]//a[@data-sc-event-id="%s"]' % self.event.id)[0]
         self.assertIn('o_sc_link_row_main', main.get('class'))
         row = main.xpath('ancestor::*[contains(@class, "o_sc_link_row")][1]')[0]
         self._assert_clock(row, 2, 1, '/my/event/activities?event_id=%s' % self.event.id)
@@ -295,7 +295,7 @@ class TestActivityClockRows1592(Clock1592Common):
         # The coach has none on the event.
         self._login_coach()
         _text_, tree = self._get('/my/events?no_default_dates=1')
-        row = tree.xpath('//*[@data-sc-section="events.list"]//a[@data-sc-event-id="%s"]'
+        row = tree.xpath('//*[@data-pk-section="events.list"]//a[@data-sc-event-id="%s"]'
                          '/ancestor::*[contains(@class, "o_sc_link_row")][1]' % self.event.id)[0]
         self.assertIsNone(self._clock(row))
 
@@ -426,7 +426,7 @@ class TestActivityClockI18n1592(Clock1592Mixin, TestAppShellI18n1538):
         tree = lxml_html.fromstring(self._fr('/my/teams'))
         bar = tree.xpath('//a[@data-sc-activity-clock-bar]')[0]
         self.assertEqual(bar.get('title'), 'Mes activités')
-        self.assertEqual(bar.xpath('.//*[@data-sc-live-count-url]')[0].get('title'),
+        self.assertEqual(bar.xpath('.//*[@data-pk-live-count-url]')[0].get('title'),
                          'Activités en retard')
         row = tree.xpath('//a[@data-sc-team-id="%s"]/ancestor::*[contains(@class, "o_sc_link_row")][1]'
                          % self.team_a.id)[0]

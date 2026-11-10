@@ -79,13 +79,13 @@ class TestInAppHelp1660(Help1660Common):
             self.assertIsNotNone(link, login.__name__)
             self.assertEqual(link.get('href'), TEAM, login.__name__)
             self.assertEqual((link.get('target'), link.get('rel')), ('_blank', 'noopener'))
-            menu = tree.xpath('//*[@data-sc-user-menu-popup]//a[@data-sc-help-home-link]')
+            menu = tree.xpath('//*[@data-pk-user-menu-popup]//a[@data-sc-help-home-link]')
             self.assertEqual([a.get('href') for a in menu], [HOME], login.__name__)
             self.assertEqual(menu[0].get('target'), '_blank')
             # Unmapped page → the guide home.
             self.assertEqual(self._help(self._tree('/my/players')).get('href'), HOME, login.__name__)
             more = self._tree('/my/app/more')
-            row = more.xpath('//*[@data-sc-section="more.guide"]//a[@data-sc-help-home-link]')
+            row = more.xpath('//*[@data-pk-section="more.guide"]//a[@data-sc-help-home-link]')
             self.assertEqual([a.get('href') for a in row], [HOME], login.__name__)
             self.assertEqual(row[0].get('target'), '_blank')
 
@@ -105,7 +105,7 @@ class TestInAppHelp1660(Help1660Common):
         tree = self._tree('/my/team?team_id=%s' % self.team_a.id)
         self.assertIsNone(self._help(tree))
         self.assertFalse(tree.xpath('//a[@data-sc-help-home-link]'))
-        self.assertFalse(self._tree('/my/app/more').xpath('//*[@data-sc-section="more.guide"]'))
+        self.assertFalse(self._tree('/my/app/more').xpath('//*[@data-pk-section="more.guide"]'))
 
     def test_knowledge_url_needs_website_knowledge(self):
         self.env['ir.config_parameter'].sudo().set_param(SC_HELP_HOME_PARAM, '/knowledge/article/1')

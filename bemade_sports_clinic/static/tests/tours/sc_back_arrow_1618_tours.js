@@ -78,7 +78,7 @@ tours.add("sc_1618_laptop_sideways", {
         },
         {
             content: "Activity page (parent = the player): arrow AND trail",
-            trigger: ".o_sc_app.o_sc_back_useful a.o_sc_back[data-sc-back]",
+            trigger: ".o_sc_app.o_sc_back_useful a.o_sc_back[data-pk-back]",
             run() {
                 assert(window.location.pathname.startsWith("/my/activity/"), window.location.href);
                 assert(visible("nav.o_sc_crumbs"), "laptop: no trail");
@@ -114,7 +114,7 @@ tours.add("sc_1618_laptop_standalone", {
                     query.includes("display-mode: standalone")
                         ? { matches: true, media: query, addEventListener() {}, removeEventListener() {} }
                         : original(query);
-                document.dispatchEvent(new CustomEvent("sc:nav-sync"));
+                document.dispatchEvent(new CustomEvent("pk:nav-sync"));
             },
         },
         {
@@ -139,7 +139,7 @@ tours.add("sc_1618_phone_unchanged", {
         },
         {
             content: "Phone: the back chevron after a drill-down, no trail",
-            trigger: ".o_sc_app a.o_sc_back[data-sc-back]",
+            trigger: ".o_sc_app a.o_sc_back[data-pk-back]",
             run() {
                 assert(visible(".o_sc_back"), "phone: back chevron hidden");
                 assert(!visible("nav.o_sc_crumbs"), "phone: trail visible");

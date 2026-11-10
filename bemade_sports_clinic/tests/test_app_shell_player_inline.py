@@ -91,7 +91,7 @@ class PlayerInlineCommon(AppShellCommon):
 
     @staticmethod
     def _card(tree, key):
-        nodes = tree.xpath('//*[@data-sc-edit-card="%s"]' % key)
+        nodes = tree.xpath('//*[@data-pk-edit-card="%s"]' % key)
         return nodes[0] if nodes else None
 
     @staticmethod
@@ -116,7 +116,7 @@ class TestPlayerInline(PlayerInlineCommon):
             self.assertTrue(card.xpath('.//*[@data-sc-edit-view="read"]'), key)
             self.assertTrue(card.xpath('.//button[@data-sc-edit-toggle]'), key)
         # The status block was redundant with the hero and Overview (owner).
-        self.assertFalse(tree.xpath('//*[@data-sc-section="player.info.status"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="player.info.status"]'))
         identity = self._card(tree, 'identity')
         position = identity.xpath('.//*[@data-sc-display="sports.patient:%s:position"]' % self.player.id)
         self.assertEqual(position[0].text_content().strip(), 'Linebacker')
@@ -155,18 +155,18 @@ class TestPlayerInline(PlayerInlineCommon):
         # Owner review 2026-10-11: the status in the header, the training
         # recommendation on Info — both still live (no pencil).
         _text, tree = self._get(self._url(tab='info'))
-        panel = tree.xpath('//*[@data-sc-app-shell]')[0]
+        panel = tree.xpath('//*[@data-pk-app-shell]')[0]
         live = ' '.join(self._fields_in(panel))
         self.assertIn('"training_recommendation"', live)
         # Task 1627: the status is the header's pill dropdowns (outside the
         # pencil), no autosave field. Task 1753: outside the read view too.
         self.assertNotIn('"sc_status"', live)
-        self.assertEqual(len(panel.xpath('.//*[@data-sc-section="player.hero"]/*[@data-sc-section="player.status"]'
+        self.assertEqual(len(panel.xpath('.//*[@data-pk-section="player.hero"]/*[@data-pk-section="player.status"]'
                                          '//*[@data-sc-pill-select][@data-sc-field="sc_status"]')), 2)
         # Review fixes 2026-10-18: the training recommendation behind the
         # HEADER's one pencil (its edit view), still an autosaving field.
         for node in panel.xpath('.//owl-component[contains(@props, \'"training_recommendation"\')]'):
-            self.assertEqual(node.xpath('ancestor::*[@data-sc-edit-card][1]/@data-sc-edit-card'),
+            self.assertEqual(node.xpath('ancestor::*[@data-pk-edit-card][1]/@data-pk-edit-card'),
                              ['player-header'])
             self.assertTrue(node.xpath('ancestor::*[@data-sc-edit-view="edit"]'))
 
@@ -199,7 +199,7 @@ class TestPlayerInline(PlayerInlineCommon):
         _text, tree = self._get(self._url())
         key = 'sports.patient:%s' % self.player.id
         self.assertTrue(tree.xpath('//h1[@data-sc-fragment="%s:appbar"]' % key))
-        self.assertTrue(tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-fragment="%s:hero-head"]' % key))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-sc-fragment="%s:hero-head"]' % key))
         resp = self._save(self.player, 'jersey_number', '7')
         self.assertEqual(resp.status_code, 200, resp.text)
         self.assertNotIn('heading', resp.json())
@@ -231,7 +231,7 @@ class TestPlayerInline(PlayerInlineCommon):
     def test_contacts_inline(self):
         self._login_tp()
         _text, tree = self._get(self._url(tab='info'))
-        card = tree.xpath('//*[@data-sc-edit-card="contact-%s"]' % self.contact.id)
+        card = tree.xpath('//*[@data-pk-edit-card="contact-%s"]' % self.contact.id)
         self.assertEqual(len(card), 1)
         props = ' '.join(self._fields_in(card[0]))
         for field in ('"name"', '"contact_type"', '"mobile"', '"email"'):
@@ -269,7 +269,7 @@ class TestPlayerInline(PlayerInlineCommon):
                     '/my/team?team_id=%s&tab=activities' % self.team_a.id):
             _text, tree = self._get(url)
             panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
-            add = panel.xpath('.//details[@data-sc-section="activity.add"]//form')
+            add = panel.xpath('.//details[@data-pk-section="activity.add"]//form')
             self.assertEqual(len(add), 1, url)
             self.assertEqual(add[0].get('action'), '/my/activity/save', url)
             self.assertFalse(panel.xpath('.//*[@data-sc-sheet-open="sc_activity_add_sheet"]'), url)
@@ -288,7 +288,7 @@ class TestPlayerInline(PlayerInlineCommon):
             _text, tree = self._get(self._url(tab='injuries', team_id=self.team_a.id))
             self.assertFalse(tree.xpath('//header//*[@data-sc-action="injury.new"]'))
             panel = tree.xpath('//section[@data-sc-tab-panel="injuries"]')[0]
-            card = panel.xpath('.//details[@id="sc_new_injury"][@data-sc-section="injury.new"]')
+            card = panel.xpath('.//details[@id="sc_new_injury"][@data-pk-section="injury.new"]')
             self.assertEqual(len(card), 1)
             form = card[0].xpath('.//form[@data-sc-form="injury.quick"]')[0]
             self.assertEqual(form.get('action'), '/my/patient/injury/create')
@@ -305,7 +305,7 @@ class TestPlayerInline(PlayerInlineCommon):
         # Owner review 2026-10-11: the contacts are on the Info tab.
         self.assertNotIn('contacts', tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'))
         for contact in (self.contact, second):
-            card = tree.xpath('//*[@data-sc-edit-card="contact-%s"]' % contact.id)
+            card = tree.xpath('//*[@data-pk-edit-card="contact-%s"]' % contact.id)
             self.assertEqual(len(card), 1, contact.name)
             self.assertIn('"sports.patient.contact"', ' '.join(self._fields_in(card[0])))
             self.assertFalse(card[0].xpath('.//*[@data-sc-action="contact.delete"]'))

@@ -24,7 +24,7 @@ function entries(sheet) {
 // notes-history sheet is « sc_note_history_sheet_<injury id> ».
 // Task 1675: the Notes section (its head holds the one « History »), one
 // edit card per note.
-const NOTES_CARD = 'details.o_sc_injury_item[open] section[data-sc-section="injury.notes"]';
+const NOTES_CARD = 'details.o_sc_injury_item[open] section[data-pk-section="injury.notes"]';
 const NOTES_SHEET = 'dialog[id^="sc_note_history_sheet_"]:not([id$="_external"]):not([id$="_internal"])';
 
 function sheetSel(sheet) {
@@ -37,7 +37,7 @@ tours.add("sc_1581_announcement_fresh", {
         {
             content: "« History » in the announcement header; mark the page to detect a reload",
             trigger:
-                '[data-sc-section="team.announcement.area"] .o_sc_section_header .o_sc_link_btn[data-sc-sheet-open="sc_announcement_history_sheet"]',
+                '[data-pk-section="team.announcement.area"] .o_sc_section_header .o_sc_link_btn[data-sc-sheet-open="sc_announcement_history_sheet"]',
             run(helpers) {
                 window.__sc1581NoReload = true;
                 return helpers.click();
@@ -103,7 +103,7 @@ tours.add("sc_1581_notes_fresh", {
         },
         {
             content: "The notes history, all scopes",
-            trigger: `${NOTES_SHEET}[open] nav[data-sc-section="history.scope"] a[href$="scope=all"][aria-pressed="true"]`,
+            trigger: `${NOTES_SHEET}[open] nav[data-pk-section="history.scope"] a[href$="scope=all"][aria-pressed="true"]`,
             run() {
                 window.__sc1581Count = entries("sc_note_history_sheet").length;
                 assert(window.__sc1581Count === 3, `entries: ${window.__sc1581Count}`);
@@ -111,7 +111,7 @@ tours.add("sc_1581_notes_fresh", {
         },
         {
             content: "Filter: internal only (re-fetched inside the sheet)",
-            trigger: `${NOTES_SHEET}[open] nav[data-sc-section="history.scope"] a[href$="scope=internal"]`,
+            trigger: `${NOTES_SHEET}[open] nav[data-pk-section="history.scope"] a[href$="scope=internal"]`,
             run: "click",
         },
         {
@@ -129,7 +129,7 @@ tours.add("sc_1581_notes_fresh", {
         },
         {
             content: "Edit the notes card (pencil)",
-            trigger: `${NOTES_CARD} [data-sc-edit-card="injury-notes-external"] button[data-sc-edit-toggle]`,
+            trigger: `${NOTES_CARD} [data-pk-edit-card="injury-notes-external"] button[data-sc-edit-toggle]`,
             run: "click",
         },
         {

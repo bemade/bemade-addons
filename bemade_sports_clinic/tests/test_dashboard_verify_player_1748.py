@@ -45,7 +45,7 @@ class _Player1748:
 class TestVerifyCardPlayer1748(_Player1748, FragmentsMixin, Dashboard1624Common):
 
     def _card(self, tree, injury):
-        found = tree.xpath('//details[@data-sc-edit-card="injury"][@data-sc-injury-id="%s"]' % injury.id)
+        found = tree.xpath('//details[@data-pk-edit-card="injury"][@data-sc-injury-id="%s"]' % injury.id)
         self.assertEqual(len(found), 1, injury.diagnosis)
         return found[0]
 
@@ -96,7 +96,7 @@ class TestVerifyCardPlayer1748(_Player1748, FragmentsMixin, Dashboard1624Common)
         card = page.xpath('//details[@id="injury-%s"]' % self.inj_yellow.id)
         self.assertEqual(len(card), 1)
         self.assertEqual(card[0].get('open'), 'open', 'the linked injury is unfolded')
-        other = page.xpath('//details[@data-sc-edit-card="injury"][not(@id="injury-%s")]' % self.inj_yellow.id)
+        other = page.xpath('//details[@data-pk-edit-card="injury"][not(@id="injury-%s")]' % self.inj_yellow.id)
         self.assertFalse([c for c in other if c.get('open')], 'only that injury is unfolded')
 
     # -- UC-3 ---------------------------------------------------------------

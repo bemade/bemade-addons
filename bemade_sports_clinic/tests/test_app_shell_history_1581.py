@@ -199,7 +199,7 @@ class TestAppShellHistory1581(History1581Common):
     def test_announcement_trigger_and_lazy_fresh_sheet(self):
         self._login_tp()
         _text, tree = self._get(self.team_url)
-        link = tree.xpath('//*[@data-sc-section="team.announcement.area"]'
+        link = tree.xpath('//*[@data-pk-section="team.announcement.area"]'
                           '//*[contains(@class, "o_sc_section_header")]'
                           '//*[@data-sc-sheet-open="sc_announcement_history_sheet"]')
         self.assertEqual(len(link), 1)
@@ -219,7 +219,7 @@ class TestAppShellHistory1581(History1581Common):
         self.assertEqual(sheet.get('data-sc-lazy-fresh'), '1')
         # Pencil paradigm (owner review 2026-10-11): ONE « History » link in
         # the notes card's head, reachable while reading.
-        links = tree.xpath('//details[@id="injury-%s"]//section[@data-sc-section="injury.notes"]'
+        links = tree.xpath('//details[@id="injury-%s"]//section[@data-pk-section="injury.notes"]'
                            '/*[contains(@class, "o_sc_edit_card_head")]'
                            '//*[@data-sc-sheet-open="sc_note_history_sheet_%s"][contains(@class, "o_sc_link_btn")]'
                            % (self.injury.id, self.injury.id))
@@ -262,16 +262,16 @@ class TestAppShellHistory1581(History1581Common):
     def test_scope_chips_inside_the_sheet(self):
         self._login_tp()
         tree = self._fragment(self.notes_url)
-        chips = tree.xpath('//nav[@data-sc-section="history.scope"]//a[@data-sc-sheet-refetch]')
+        chips = tree.xpath('//nav[@data-pk-section="history.scope"]//a[@data-sc-sheet-refetch]')
         self.assertEqual([c.get('href') for c in chips],
                          [self.notes_url + '?scope=%s' % s for s in ('all', 'internal', 'external')])
         self.assertEqual([c.get('aria-pressed') for c in chips], ['true', 'false', 'false'])
         tree = self._fragment(self.notes_url + '?scope=internal')
         self.assertEqual([e['scope'] for e in self._entries(tree)], ['internal'])
-        self.assertEqual(tree.xpath('//nav[@data-sc-section="history.scope"]//a[@aria-pressed="true"]/@href'),
+        self.assertEqual(tree.xpath('//nav[@data-pk-section="history.scope"]//a[@aria-pressed="true"]/@href'),
                          [self.notes_url + '?scope=internal'])
         self._login_coach()
-        self.assertFalse(self._fragment(self.notes_url).xpath('//nav[@data-sc-section="history.scope"]'))
+        self.assertFalse(self._fragment(self.notes_url).xpath('//nav[@data-pk-section="history.scope"]'))
 
     # -- UC-H6 -----------------------------------------------------------
     def test_notes_history_page_retired_in_the_shell(self):
@@ -285,7 +285,7 @@ class TestAppShellHistory1581(History1581Common):
         self._switch(False)
         resp = self.url_open('/my/injury/%s/notes/history' % self.injury.id)
         self.assertEqual(resp.status_code, 200)
-        self.assertNotIn('data-sc-app-shell', resp.text)
+        self.assertNotIn('data-pk-app-shell', resp.text)
 
     # -- UC-H7 -----------------------------------------------------------
     def test_digest_history_link_goes_to_the_list(self):

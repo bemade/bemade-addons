@@ -144,7 +144,7 @@ class TestEpiPenGate1717(EpiPen1717Common):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&tab=injuries' % player.id)
         sheet = tree.xpath('//dialog[@id="sc_med_player_allergy_%s"]' % player.id)[0]
-        card = sheet.xpath('.//section[@data-sc-section="medical.allergy.epipen"]')[0]
+        card = sheet.xpath('.//section[@data-pk-section="medical.allergy.epipen"]')[0]
         self.assertEqual(card.get('data-sc-edit-open-on-load'), '1')
         self.assertEqual(card.xpath('.//*[@data-sc-med-epipen-state]/@data-sc-med-epipen-state'), ['unset'])
         self.assertEqual(sorted(card.xpath('.//input[@type="radio"][@data-sc-med-set="allergy_epipen_state"]/@value')),
@@ -166,14 +166,14 @@ class TestEpiPenGate1717(EpiPen1717Common):
         self.assertFalse(sheet.xpath('.//*[contains(@class, "o_sc_sheet_body")]//*[@data-sc-med-head]'))
         self.assertFalse(pill.xpath('.//input[@checked]'))
         self.assertTrue(sheet.xpath('.//*[@data-sc-med-epipen-first]'))
-        self.assertFalse(sheet.xpath('.//button[@data-sc-list-add-toggle]'))
+        self.assertFalse(sheet.xpath('.//button[@data-pk-list-add-toggle]'))
         self.assertTrue(sheet.xpath('.//input[@data-sc-med-set="allergy_none_confirmed"][@disabled]'))
         player.sudo().write({'allergy_epipen_state': 'yes'})
         _text, tree = self._get('/my/player?player_id=%s&tab=injuries' % player.id)
         sheet = tree.xpath('//dialog[@id="sc_med_player_allergy_%s"]' % player.id)[0]
         self.assertFalse(sheet.xpath('.//*[@data-sc-med-epipen-first]'))
-        self.assertTrue(sheet.xpath('.//button[@data-sc-list-add-toggle]'))
-        self.assertIsNone(sheet.xpath('.//section[@data-sc-section="medical.allergy.epipen"]')[0].get(
+        self.assertTrue(sheet.xpath('.//button[@data-pk-list-add-toggle]'))
+        self.assertIsNone(sheet.xpath('.//section[@data-pk-section="medical.allergy.epipen"]')[0].get(
             'data-sc-edit-open-on-load'))
 
     # -- AC-5 --------------------------------------------------------------

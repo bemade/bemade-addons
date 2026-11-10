@@ -225,7 +225,7 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
 
     def _hero_return(self, tree):
         """The header read view's ONE return date (review fixes 2026-10-18)."""
-        nodes = tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-section="player.return"]')
+        nodes = tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-pk-section="player.return"]')
         self.assertEqual(len(nodes), 1)
         return nodes[0]
 
@@ -270,7 +270,7 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
         for vals, tones, labels in cases:
             self.player.write(vals)
             _text, tree = self._get(self._url())
-            hero = tree.xpath('//*[@data-sc-section="player.hero"]')[0]
+            hero = tree.xpath('//*[@data-pk-section="player.hero"]')[0]
             self.assertFalse(hero.xpath('.//*[@data-sc-stage-chip]'))
             pills = hero.xpath('.//*[@data-sc-pill-readonly]')
             self.assertEqual([p.get('data-sc-pill-key') for p in pills], ['match', 'practice'], vals)
@@ -284,11 +284,11 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
         # (deliberate update): the status block sits outside the read view.
         self._login_tp()
         _text, tree = self._get(self._url())
-        status = tree.xpath('//*[@data-sc-section="player.hero"]/*[@data-sc-section="player.status"]')[0]
-        self.assertFalse(tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-stage-chip]'))
+        status = tree.xpath('//*[@data-pk-section="player.hero"]/*[@data-pk-section="player.status"]')[0]
+        self.assertFalse(tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-sc-stage-chip]'))
         self.assertEqual(len(status.xpath('.//button[contains(@class, "o_sc_pill_select")]')), 2)
         self.assertFalse(status.xpath('.//owl-component'))
-        edit = tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-edit-view="edit"]')[0]
+        edit = tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-sc-edit-view="edit"]')[0]
         self.assertFalse(self._props(edit, 'sc_status', scope='.//*'))
 
     def test_injury_cards_carry_stage_badge(self):

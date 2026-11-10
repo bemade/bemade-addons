@@ -186,7 +186,7 @@ class TestEventOrgTeamFilter1597(Org1597Common):
         self.assertIn(str(self.org2.id), values)
         # Task 1608 (deliberate update): every team option of the tags field
         # carries its organization (group key; '' for a team without one).
-        teams_card = form.xpath('.//*[@data-sc-section="event.form.teams"]')[0]
+        teams_card = form.xpath('.//*[@data-pk-section="event.form.teams"]')[0]
         props = json.loads(teams_card.xpath('.//owl-component/@props')[0])
         orgs = {opt[0]: opt[3] for opt in props['options']}
         self.assertEqual(orgs[str(self.team_a.id)], str(self.org.id))

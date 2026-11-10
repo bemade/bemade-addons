@@ -19,7 +19,7 @@ function draftKeys() {
     const keys = [];
     for (let i = 0; i < window.localStorage.length; i++) {
         const key = window.localStorage.key(i);
-        if (key && key.startsWith("sc_draft:")) {
+        if (key && key.startsWith("pk_draft:")) {
             keys.push(key);
         }
     }
@@ -151,7 +151,7 @@ tours.add("sc_1542_team_tabs", {
         },
         {
             content: "Players panel shown in place, ?tab= kept in the address bar",
-            trigger: 'section[data-sc-tab-panel="players"] [data-sc-section="team.roster"]',
+            trigger: 'section[data-sc-tab-panel="players"] [data-pk-section="team.roster"]',
             run() {
                 assert(window.__sc1542NoReload, "tab switch reloaded the page");
                 assert(window.location.search.includes("tab=players"), "tab not in URL");
@@ -167,7 +167,7 @@ tours.add("sc_1542_team_tabs", {
             run: "click",
         },
         {
-            trigger: 'section[data-sc-tab-panel="activities"] [data-sc-section="activities.list"]',
+            trigger: 'section[data-sc-tab-panel="activities"] [data-pk-section="activities.list"]',
         },
         {
             content: "Back to the dashboard",
@@ -192,7 +192,7 @@ tours.add("sc_1542_announcement_draft", {
     steps: () => [
         {
             content: "Open the compose form (the announcement card's pencil)",
-            trigger: '[data-sc-edit-card="announcement"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="announcement"] button[data-sc-edit-toggle]',
             run(helpers) {
                 window.sessionStorage.setItem("sc1542TeamUrl", window.location.href);
                 return helpers.click();
@@ -219,7 +219,7 @@ tours.add("sc_1542_announcement_draft", {
             expectUnloadPage: true,
         },
         {
-            trigger: ".o_sc_app[data-sc-app-shell]",
+            trigger: ".o_sc_app[data-pk-app-shell]",
             run() {
                 window.location.assign(window.sessionStorage.getItem("sc1542TeamUrl"));
             },
@@ -253,7 +253,7 @@ tours.add("sc_1542_announcement_draft", {
 tours.add("sc_1542_logout_clears_drafts", {
     steps: () => [
         {
-            trigger: '[data-sc-edit-card="announcement"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="announcement"] button[data-sc-edit-toggle]',
             run: "click",
         },
         {
@@ -270,12 +270,12 @@ tours.add("sc_1542_logout_clears_drafts", {
         },
         {
             content: "Open the user menu (task 1606: logout left « Plus »; task 1638: the app-bar avatar at every width)",
-            trigger: "header.o_sc_appbar button[data-sc-user-menu-toggle]",
+            trigger: "header.o_sc_appbar button[data-pk-user-menu-toggle]",
             run: "click",
         },
         {
             content: "« Se déconnecter »",
-            trigger: '[data-sc-user-menu-popup]:not([hidden]) a[role="menuitem"][href^="/web/session/logout"]',
+            trigger: '[data-pk-user-menu-popup]:not([hidden]) a[role="menuitem"][href^="/web/session/logout"]',
             run: "click",
             expectUnloadPage: true,
         },
@@ -358,7 +358,7 @@ tours.add("sc_1542_sw_kill_switch", {
 tours.add("sc_1542_fr_draft", {
     steps: () => [
         {
-            trigger: '[data-sc-edit-card="announcement"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="announcement"] button[data-sc-edit-toggle]',
             run: "click",
         },
         {

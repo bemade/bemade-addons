@@ -63,7 +63,7 @@ class TestVerifyDrop1740(_Verify1740, FragmentsMixin, Dashboard1624Common):
         line = todo.xpath('.//details[@data-sc-todo="verify"]')[0]
         self.assertEqual(line.get('data-sc-fragment'), LIST_KEY)
         self.assertEqual(line.get('data-sc-fragment-mode'), 'list')
-        self.assertEqual(sorted(line.xpath('.//*[@data-sc-fragment-item]/@data-sc-fragment-item')),
+        self.assertEqual(sorted(line.xpath('.//*[@data-pk-fragment-item]/@data-pk-fragment-item')),
                          sorted('sports.patient.injury:%s:card' % i.id for i in (self.inj_one, self.inj_two)))
         overdue = todo.xpath('.//details[@data-sc-todo="activities_overdue"]')[0]
         self.assertIsNone(overdue.get('data-sc-fragment'))
@@ -92,7 +92,7 @@ class TestVerifyDrop1740(_Verify1740, FragmentsMixin, Dashboard1624Common):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&tab=injuries' % self.yellow.id)
         self.assertFalse([k for k in tree.xpath('//@data-sc-fragment') if k.startswith('sc.dashboard:')])
-        self.assertTrue(tree.xpath('//*[@data-sc-fragment-item="sports.patient.injury:%s:card"]'
+        self.assertTrue(tree.xpath('//*[@data-pk-fragment-item="sports.patient.injury:%s:card"]'
                                    % self.inj_one.id))
 
 

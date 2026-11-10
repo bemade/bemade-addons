@@ -100,7 +100,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         _text, tree = self._get('/my/player?player_id=%s&tab=activities' % self.player.id)
         card = self._card(tree, self.act_player)
         self.assertIn('o_sc_edit_card', card.get('class'))
-        self.assertEqual(card.get('data-sc-edit-card'), 'activity-%s' % self.act_player.id)
+        self.assertEqual(card.get('data-pk-edit-card'), 'activity-%s' % self.act_player.id)
         self.assertEqual(self._icons(card), ['o_sc_card_trash', 'o_sc_card_edit'])
         trash = card.xpath('.//button[contains(@class, "o_sc_card_trash")]')[0]
         self.assertEqual(trash.get('hidden'), 'hidden')
@@ -128,7 +128,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         options = [str(o[0]) for o in by_field['user_id']['options']]
         # The detail page's choices: the per-actor list + the assignee.
         _text, page = self._get('/my/activity/%s' % self.act_player.id)
-        page_props = self._props(page.xpath('//*[@data-sc-edit-card="activity"]')[0])
+        page_props = self._props(page.xpath('//*[@data-pk-edit-card="activity"]')[0])
         page_options = [str(o[0]) for o in
                         [p for p in page_props if p['field'] == 'user_id'][0]['options']]
         self.assertEqual(options, page_options)
@@ -191,7 +191,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
             _text, tree = self._get('/my/player?player_id=%s&tab=activities' % self.player.id)
         card = self._card(tree, self.act_player)
         self.assertNotIn('o_sc_edit_card', card.get('class'))
-        self.assertIsNone(card.get('data-sc-edit-card'))
+        self.assertIsNone(card.get('data-pk-edit-card'))
         self.assertEqual(self._icons(card), [])
         self.assertFalse(card.xpath('.//*[@data-sc-edit-view] | .//owl-component | .//template'))
         self.assertFalse(card.xpath('.//*[@data-sc-action="activity.complete"]'))
@@ -230,7 +230,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         self.assertEqual(len(cards), 2, '« All » and its state tab')
         ids = [p['inputId'] for card in cards for p in self._props(card)]
         self.assertEqual(len(ids), len(set(ids)), ids)
-        keys = [card.get('data-sc-edit-card') for card in cards]
+        keys = [card.get('data-pk-edit-card') for card in cards]
         self.assertEqual(len(set(keys)), 2, keys)
 
     # -- AC-6 / AC-7 -------------------------------------------------------
@@ -254,13 +254,13 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         resp = self.url_open('/my/activity/%s/popout' % self.act_coach_created.id)
         self.assertEqual(resp.status_code, 200)
         body = lxml_html.fromstring(resp.text)
-        root = body.xpath('//*[@data-sc-section="activity.popout"]')
+        root = body.xpath('//*[@data-pk-section="activity.popout"]')
         self.assertTrue(root)
         text = ' '.join(root[0].text_content().split())
         for expected in ('Coach created task', 'Due Date', 'Assigned To', 'PC TP', 'Created',
                          'Created by', 'PC Coach', 'SC1736r1 coach note', 'sc1736r1-synthetic.txt'):
             self.assertIn(expected, text)
-        self.assertTrue(root[0].xpath('.//*[@data-sc-section="activity.related"]//a[@href]'),
+        self.assertTrue(root[0].xpath('.//*[@data-pk-section="activity.related"]//a[@href]'),
                         'the related record link')
         self.assertTrue(root[0].xpath('.//a[@href="/my/activity/%s/attachment/%s"]'
                                       % (self.act_coach_created.id, attachment.id)))
@@ -283,7 +283,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         self._switch(True)
         self._login('coach')
         _text, tree = self._get('/my/activity/%s' % self.act_coach_created.id)
-        card = tree.xpath('//section[@data-sc-section="activity.detail"]')[0]
+        card = tree.xpath('//section[@data-pk-section="activity.detail"]')[0]
         text = ' '.join(card.text_content().split())
         self.assertIn('Created by', text)
         self.assertIn('PC Coach', text)
@@ -296,7 +296,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         self._switch(True)
         self._login('tp')
         _text, tree = self._get('/my/event/%s' % self.event.id)
-        hero = tree.xpath('//section[@data-sc-section="event.hero"]')[0]
+        hero = tree.xpath('//section[@data-pk-section="event.hero"]')[0]
         self.assertFalse(hero.xpath('.//*[@data-sc-card-icons]//*[@data-sc-action="event.cancel"]'))
         self.assertFalse(hero.xpath('.//*[contains(@class, "o_sc_card_archive")]'))
         cancel = hero.xpath('.//*[contains(@class, "o_sc_actions_row")]/button[@data-sc-action="event.cancel"]')

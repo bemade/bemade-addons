@@ -102,7 +102,7 @@ class TestMedicalCardPills1630(MedicalCards1630Common):
         for login in (self._login_tp, self._login_coach):
             login()
             tree = self._page(self.team_url)
-            rows = tree.xpath('//*[@data-sc-section="team.watchlist"]//*[contains(@class, "o_sc_player_row")]'
+            rows = tree.xpath('//*[@data-pk-section="team.watchlist"]//*[contains(@class, "o_sc_player_row")]'
                               '[@data-sc-player-id="%s"]' % self.player.id)
             self.assertEqual(len(rows), 1, login.__name__)
             self._assert_red(rows[0], (login.__name__, 'watch'), epipen=False)

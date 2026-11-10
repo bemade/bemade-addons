@@ -63,7 +63,7 @@ class Pane1721Common(ClinicDossier1590Common):
 
     def _pane(self):
         _text, tree = self._get(self._dossier_url())
-        return tree.xpath('//*[@data-sc-section="clinic.dossier"]')[0]
+        return tree.xpath('//*[@data-pk-section="clinic.dossier"]')[0]
 
 
 @tagged('post_install', '-at_install')
@@ -72,25 +72,25 @@ class TestClinicPlayerPane1721(Pane1721Common):
     def test_player_card_on_top(self):
         self._login_tp()
         pane = self._pane()
-        card = pane.xpath('.//*[@data-sc-section="clinic.dossier.player"]//div[contains(@class, "o_sc_player_row")]')
+        card = pane.xpath('.//*[@data-pk-section="clinic.dossier.player"]//div[contains(@class, "o_sc_player_row")]')
         self.assertEqual(len(card), 1)
         self.assertEqual(card[0].get('data-sc-player-id'), str(self.player.id))
         self.assertTrue(card[0].xpath('.//*[@data-sc-fragment="sports.patient:%s:row-clinic"]' % self.player.id))
         self.assertTrue(card[0].xpath('.//button[@data-sc-row-expand]'))
-        self.assertFalse(pane.xpath('.//*[@data-sc-section="clinic.dossier.status"]'))
+        self.assertFalse(pane.xpath('.//*[@data-pk-section="clinic.dossier.status"]'))
         self.assertFalse(pane.xpath('.//*[@data-sc-action="clinic.full_file"]'))
         # The card comes first, the injuries after it, the notes last.
-        sections = [el.get('data-sc-section') for el in pane.xpath(
-            './/*[@data-sc-section="clinic.dossier.player" or @data-sc-section="clinic.dossier.injuries"'
-            ' or @data-sc-section="clinic.dossier.notes"]')]
+        sections = [el.get('data-pk-section') for el in pane.xpath(
+            './/*[@data-pk-section="clinic.dossier.player" or @data-pk-section="clinic.dossier.injuries"'
+            ' or @data-pk-section="clinic.dossier.notes"]')]
         self.assertEqual(sections, ['clinic.dossier.player', 'clinic.dossier.injuries', 'clinic.dossier.notes'])
 
     def test_injuries_resolved_folded(self):
         self._login_tp()
         pane = self._pane()
-        section = pane.xpath('.//*[@data-sc-section="clinic.dossier.injuries"]')[0]
-        self.assertTrue(section.xpath('.//button[@data-sc-list-add-toggle][@aria-controls="sc_clinic_injury_add"]'))
-        active = section.xpath('.//*[@data-sc-section="clinic.dossier.injury_list"]')[0]
+        section = pane.xpath('.//*[@data-pk-section="clinic.dossier.injuries"]')[0]
+        self.assertTrue(section.xpath('.//button[@data-pk-list-add-toggle][@aria-controls="sc_clinic_injury_add"]'))
+        active = section.xpath('.//*[@data-pk-section="clinic.dossier.injury_list"]')[0]
         self.assertIn('Synthetic newer sprain', active.text_content())
         self.assertNotIn('Synthetic old knee', active.text_content())
         folded = section.xpath('.//details[@data-sc-resolved-injuries]')
@@ -106,7 +106,7 @@ class TestClinicPlayerPane1721(Pane1721Common):
         self.assertEqual(lists[0].get('data-sc-fragment-mode'), 'list')
         self.assertIs(active.getparent(), lists[0])
         self.assertTrue(lists[0].xpath('.//details[@data-sc-resolved-injuries][@data-sc-keep-open]'))
-        items = lists[0].xpath('.//*[@data-sc-fragment-item]/@data-sc-fragment-item')
+        items = lists[0].xpath('.//*[@data-pk-fragment-item]/@data-pk-fragment-item')
         self.assertIn('sports.patient.injury:%s:card' % self.inj_old.id, items)
         self.assertIn('sports.patient.injury:%s:card' % self.inj_new.id, items)
         self.assertFalse(section.xpath('.//*[@data-sc-fragment="sports.patient:%s:active-injuries"]'
@@ -120,17 +120,17 @@ class TestClinicPlayerPane1721(Pane1721Common):
         self._resolve_all()
         count = len(self.player.injury_ids)
         self._login_tp()
-        section = self._pane().xpath('.//*[@data-sc-section="clinic.dossier.injuries"]')[0]
-        self.assertEqual(section.xpath('.//*[@data-sc-section="clinic.dossier.no_active"]')[0].text_content().strip(),
+        section = self._pane().xpath('.//*[@data-pk-section="clinic.dossier.injuries"]')[0]
+        self.assertEqual(section.xpath('.//*[@data-pk-section="clinic.dossier.no_active"]')[0].text_content().strip(),
                          'No active injuries.')
         self.assertEqual(section.xpath('.//details[@data-sc-resolved-injuries]/summary')[0].text_content().strip(),
                          'Show resolved injuries (%s)' % count)
-        self.assertTrue(section.xpath('.//button[@data-sc-list-add-toggle]'))
+        self.assertTrue(section.xpath('.//button[@data-pk-list-add-toggle]'))
         # No resolved one: no link.
         self.player.injury_ids.unlink()
-        section = self._pane().xpath('.//*[@data-sc-section="clinic.dossier.injuries"]')[0]
+        section = self._pane().xpath('.//*[@data-pk-section="clinic.dossier.injuries"]')[0]
         self.assertFalse(section.xpath('.//details[@data-sc-resolved-injuries]'))
-        self.assertTrue(section.xpath('.//*[@data-sc-section="clinic.dossier.resolved"]'))
+        self.assertTrue(section.xpath('.//*[@data-pk-section="clinic.dossier.resolved"]'))
 
     # -- AC-8 ------------------------------------------------------------
     def _note(self, injury):
@@ -144,7 +144,7 @@ class TestClinicPlayerPane1721(Pane1721Common):
         note_new = self._note(self.inj_new)
         self._login_tp()
         _text, tree = self._get(self._dossier_url())
-        pane = tree.xpath('//*[@data-sc-section="clinic.dossier"]')[0]
+        pane = tree.xpath('//*[@data-pk-section="clinic.dossier"]')[0]
         add = [o.text_content().strip() for o in pane.xpath('.//select[@id="sc_note_injury"]/option[@value!=""]')]
         self.assertIn('Synthetic newer sprain', add)
         self.assertNotIn('Synthetic old knee (resolved)', add)
@@ -169,12 +169,12 @@ class TestClinicPlayerPane1721(Pane1721Common):
         self._login_tp()
         _text, tree = self._get(self._dossier_url())
         self.assertIn('o_sc_content_wide', tree.xpath('//main[@id="sc_content"]')[0].get('class'))
-        card = tree.xpath('//*[@data-sc-section="clinic.dossier"]//*[@data-sc-note-id][@data-sc-edit-card]')[0]
+        card = tree.xpath('//*[@data-pk-section="clinic.dossier"]//*[@data-sc-note-id][@data-pk-edit-card]')[0]
         head = card.xpath('./div[contains(@class, "o_sc_note_head")]')[0]
         self.assertTrue(head.xpath('./button[@data-sc-edit-toggle]'))
         self.assertTrue(head.xpath('./*[contains(@class, "o_sc_note_meta")]'))
         self.assertFalse(card.xpath('.//*[contains(@class, "o_sc_note_body")]'))
-        player = tree.xpath('//*[@data-sc-section="clinic.dossier.player"]')[0]
+        player = tree.xpath('//*[@data-pk-section="clinic.dossier.player"]')[0]
         line = player.xpath('.//*[@data-sc-row-med]')
         self.assertEqual(len(line), 1)
         self.assertEqual(line[0].xpath('./button/@data-sc-med-pill'), ['allergy', 'medical_alert'])
@@ -201,7 +201,7 @@ class TestClinicPlayerPane1721(Pane1721Common):
                          'Afficher les blessures résolues (1)')
         self._resolve_all()
         pane = self._pane()
-        self.assertEqual(pane.xpath('.//*[@data-sc-section="clinic.dossier.no_active"]')[0].text_content().strip(),
+        self.assertEqual(pane.xpath('.//*[@data-pk-section="clinic.dossier.no_active"]')[0].text_content().strip(),
                          'Aucune blessure active.')
 
 
@@ -216,8 +216,8 @@ class TestClinicPaneFragments1721(FragmentsMixin, Pane1721Common):
         payload = self._saved(self.inj_old, 'stage', 'active')
         self.assertRefreshes(payload, key)
         node = self._fragment(self._dossier_url(), key)
-        active = node.xpath('.//*[@data-sc-section="clinic.dossier.injury_list"]'
-                            '//*[@data-sc-fragment-item]/@data-sc-fragment-item')
+        active = node.xpath('.//*[@data-pk-section="clinic.dossier.injury_list"]'
+                            '//*[@data-pk-fragment-item]/@data-pk-fragment-item')
         self.assertIn(old_card, active)
         # Nothing resolved any more: no fold-out (its count went with it).
         self.assertFalse(node.xpath('.//details[@data-sc-resolved-injuries]'))

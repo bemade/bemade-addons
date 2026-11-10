@@ -150,7 +150,7 @@ class TestAppShellActivityRows1595(_ActivityRowsMixin, AppShellCommon):
         self.assertIn(str(self.act_injury.create_date.year), _text(created[0]))
         dt = created[0].xpath('ancestor::dd[1]/preceding-sibling::dt[1]')[0]
         self.assertEqual(_text(dt), 'Created')
-        related = tree.xpath('//*[@data-sc-section="activity.related"]//a/@href')
+        related = tree.xpath('//*[@data-pk-section="activity.related"]//a/@href')
         self.assertEqual(related, ['/my/player?player_id=%s' % self.player.id,
                                    '/my/player?player_id=%s&tab=injuries&injury=%s#injury-%s' % (
                                        self.player.id, self.injury.id, self.injury.id)])
@@ -171,6 +171,6 @@ class TestAppShellActivityRowsI18n1595(_ActivityRowsMixin, TestAppShellI18n1538)
         self._switch(True)
         self._login_tp()
         tree = lxml_html.fromstring(self._fr('/my/activity/%s' % self.act_player.id))
-        terms = [_text(dt) for dt in tree.xpath('//*[@data-sc-section="activity.detail"]//dt')]
+        terms = [_text(dt) for dt in tree.xpath('//*[@data-pk-section="activity.detail"]//dt')]
         self.assertIn('Créée le', terms)
         self.assertIn('Enregistrement associé', terms)

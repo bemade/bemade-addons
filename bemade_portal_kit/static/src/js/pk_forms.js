@@ -2,24 +2,24 @@
  * Owner review 2026-10-14 — app shell form behaviours (progressive
  * enhancement; inert outside .o_sc_app):
  *
- * - filter forms (form[data-sc-autosubmit]: the events list and calendar
+ * - filter forms (form[data-pk-autosubmit]: the events list and calendar
  *   filter bar, the clinics and the timesheets filters) apply AS SOON AS
  *   they change: a select / checkbox on change; a date input once its value
  *   is complete — when the user leaves it, presses Enter or picks in the
  *   picker, never while typing (the day « 15 » would apply « 01 » first) and
  *   never with a half-typed value. Text boxes keep « Enter ». The « Apply
- *   filters » button ([data-sc-autosubmit-fallback]) is only hidden here:
+ *   filters » button ([data-pk-autosubmit-fallback]) is only hidden here:
  *   without JS it is still there; with JS it stays in the form (visually
  *   hidden) so « Enter » still submits. The filter panel stays open across
  *   the reload a change causes.
  * - Review round 1 (2026-10-26, #1679): a filter panel's « Reset » link
- *   ([data-sc-filter-reset], any filter form: events, calendar, timesheets,
+ *   ([data-pk-filter-reset], any filter form: events, calendar, timesheets,
  *   clinics, players) keeps the panel as it was — open stays open across
  *   the reload (closed stays closed: the defaults open nothing).
  */
 
 const DATE_TYPES = ["date", "datetime-local", "time", "month", "week"];
-const OPEN_KEY = "sc_filters_open:";
+const OPEN_KEY = "pk_filters_open:";
 
 function inApp(el) {
     return Boolean(el && el.closest(".o_sc_app"));
@@ -30,7 +30,7 @@ function isDateInput(el) {
 }
 
 function autosubmitForm(el) {
-    const form = el && el.closest && el.closest("form[data-sc-autosubmit]");
+    const form = el && el.closest && el.closest("form[data-pk-autosubmit]");
     return form && inApp(form) ? form : null;
 }
 
@@ -38,7 +38,7 @@ function rememberOpen(form) {
     const details = form.querySelector("details.o_sc_disclosure");
     try {
         if (details && details.open) {
-            window.sessionStorage.setItem(OPEN_KEY + (form.dataset.scSection || ""), "1");
+            window.sessionStorage.setItem(OPEN_KEY + (form.dataset.pkSection || ""), "1");
         }
     } catch {
         // Storage refused (private mode): the panel just closes.
@@ -46,7 +46,7 @@ function rememberOpen(form) {
 }
 
 function applyFilters(form) {
-    if (form.dataset.scSubmitting) {
+    if (form.dataset.pkSubmitting) {
         return;
     }
     for (const input of form.querySelectorAll("input")) {
@@ -54,7 +54,7 @@ function applyFilters(form) {
             return; // a half-typed date: wait until it is complete
         }
     }
-    form.dataset.scSubmitting = "1";
+    form.dataset.pkSubmitting = "1";
     rememberOpen(form);
     if (typeof form.requestSubmit === "function") {
         form.requestSubmit();
@@ -65,7 +65,7 @@ function applyFilters(form) {
 
 // Review round 1 (#1679): « Reset » keeps an open filter panel open.
 document.addEventListener("click", (ev) => {
-    const link = ev.target instanceof Element && ev.target.closest("a[data-sc-filter-reset]");
+    const link = ev.target instanceof Element && ev.target.closest("a[data-pk-filter-reset]");
     const form = link && inApp(link) ? link.closest("form") : null;
     if (form) {
         rememberOpen(form);
@@ -126,16 +126,16 @@ document.addEventListener("change", (ev) => {
 });
 
 function init() {
-    for (const button of document.querySelectorAll(".o_sc_app [data-sc-autosubmit-fallback]")) {
+    for (const button of document.querySelectorAll(".o_sc_app [data-pk-autosubmit-fallback]")) {
         button.classList.add("visually-hidden");
         button.tabIndex = -1;
     }
-    const forms = new Set(document.querySelectorAll(".o_sc_app form[data-sc-autosubmit]"));
-    for (const link of document.querySelectorAll(".o_sc_app form a[data-sc-filter-reset]")) {
+    const forms = new Set(document.querySelectorAll(".o_sc_app form[data-pk-autosubmit]"));
+    for (const link of document.querySelectorAll(".o_sc_app form a[data-pk-filter-reset]")) {
         forms.add(link.closest("form"));
     }
     for (const form of forms) {
-        const key = OPEN_KEY + (form.dataset.scSection || "");
+        const key = OPEN_KEY + (form.dataset.pkSection || "");
         let reopen = false;
         try {
             reopen = window.sessionStorage.getItem(key) === "1";
@@ -152,8 +152,8 @@ function init() {
 
 // Back from the next page (bfcache): the form may be applied again.
 window.addEventListener("pageshow", () => {
-    for (const form of document.querySelectorAll("form[data-sc-autosubmit][data-sc-submitting]")) {
-        delete form.dataset.scSubmitting;
+    for (const form of document.querySelectorAll("form[data-pk-autosubmit][data-pk-submitting]")) {
+        delete form.dataset.pkSubmitting;
     }
 });
 

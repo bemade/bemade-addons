@@ -103,7 +103,7 @@ class TestCardTopBars1736(TopBars1736Common):
     def test_player_hero_star_and_pencil(self):
         self._login_tp()
         _text, tree = self._get(self._player_url())
-        hero = self._one(tree, '//*[@data-sc-section="player.hero"]')
+        hero = self._one(tree, '//*[@data-pk-section="player.hero"]')
         self._assert_order(hero, ('o_sc_follow', 'o_sc_card_edit'))
         star = self._one(hero, './/button[@data-sc-follow]')
         self.assertIn('o_sc_icon_btn', star.get('class'))
@@ -114,7 +114,7 @@ class TestCardTopBars1736(TopBars1736Common):
         # Following: pressed, « Unfollow » as its title.
         self._post('/my/player/%s/follow' % self.player.id, follow='1')
         _text, tree = self._get(self._player_url())
-        star = self._one(tree, '//*[@data-sc-section="player.hero"]//button[@data-sc-follow]')
+        star = self._one(tree, '//*[@data-pk-section="player.hero"]//button[@data-sc-follow]')
         self.assertEqual(star.get('aria-pressed'), 'true')
         self.assertEqual(star.get('title'), 'Unfollow')
 
@@ -148,7 +148,7 @@ class TestCardTopBars1736(TopBars1736Common):
         # The status pill stays in the summary; the Details group has no
         # pencil of its own; no bottom « Delete injury ».
         self.assertTrue(summary.xpath('.//*[@data-sc-pill-key="stage"]'))
-        details = self._one(card, './/*[@data-sc-edit-card="injury-details"]')
+        details = self._one(card, './/*[@data-pk-edit-card="injury-details"]')
         self.assertFalse(details.xpath('.//button[@data-sc-edit-toggle]'))
         self.assertFalse(card.xpath('.//*[contains(@class, "o_sc_injury_card_actions")]'))
         self.assertEqual(len(card.xpath('.//*[@data-sc-action="injury.delete"]')), 1)
@@ -171,7 +171,7 @@ class TestCardTopBars1736(TopBars1736Common):
         # No « Delete » text button left in the edit view.
         edit = self._one(card, './/*[@data-sc-edit-view="edit"]')
         self.assertFalse(edit.xpath('.//button[@data-sc-action="contact.delete"]'))
-        self.assertTrue(edit.xpath('.//button[@data-sc-edit-done]'))
+        self.assertTrue(edit.xpath('.//button[@data-pk-edit-done]'))
         # A coach edits but never deletes.
         self._login_coach()
         _text, tree = self._get(self._player_url('info'))
@@ -315,7 +315,7 @@ class TestCardTopBars1736(TopBars1736Common):
     def test_event_hero_top_bar(self):
         self._login_tp()
         _text, tree = self._get('/my/event/%s' % self.event.id)
-        hero = self._one(tree, '//section[@data-sc-section="event.hero"]')
+        hero = self._one(tree, '//section[@data-pk-section="event.hero"]')
         # Task 1736 r1 (deliberate update): no archive icon — « Cancel Event »
         # is its own red action again (below the hero's details).
         self._assert_order(hero, ('o_sc_card_clock', 'o_sc_card_edit'))
@@ -339,13 +339,13 @@ class TestCardTopBars1736(TopBars1736Common):
         # No activity of mine: the clock still leads to them, without a badge.
         self.act_event.unlink()
         _text, tree = self._get('/my/event/%s' % self.event.id)
-        clock = self._one(tree, '//section[@data-sc-section="event.hero"]//a[contains(@class, "o_sc_card_clock")]')
+        clock = self._one(tree, '//section[@data-pk-section="event.hero"]//a[contains(@class, "o_sc_card_clock")]')
         self.assertEqual(clock.get('data-sc-activity-clock'), '0')
         self.assertFalse(clock.xpath('./span[contains(@class, "o_sc_card_badge")]'))
         # Cancelled: « Restore event » (its counterpart), no « Cancel Event ».
         self.event.sudo().write({'state': 'cancelled'})
         _text, tree = self._get('/my/event/%s' % self.event.id)
-        hero = self._one(tree, '//section[@data-sc-section="event.hero"]')
+        hero = self._one(tree, '//section[@data-pk-section="event.hero"]')
         self.assertNotIn('o_sc_card_archive', self._icons(hero))
         self.assertTrue(hero.xpath('.//button[@data-sc-action="event.restore"]'))
         self.assertFalse(hero.xpath('.//button[@data-sc-action="event.cancel"]'))
@@ -368,7 +368,7 @@ class TestCardTopBars1736(TopBars1736Common):
         self.assertEqual(actions[-1], 'activity.complete')
         self.assertNotIn('activity.cancel', actions)
         _text, tree = self._get('/my/activity/%s' % self.act_team.id)
-        card = self._one(tree, '//section[@data-sc-section="activity.detail"]')
+        card = self._one(tree, '//section[@data-pk-section="activity.detail"]')
         self._assert_order(card, ('o_sc_card_trash', 'o_sc_card_edit'))
         self.assertEqual(self._one(card, './/button[contains(@class, "o_sc_card_trash")]').get('hidden'), 'hidden')
         bar = tree.xpath('//*[contains(@class, "o_sc_actionbar")]/button/@data-sc-action')
@@ -380,9 +380,9 @@ class TestCardTopBars1736(TopBars1736Common):
         self.team_a.sudo().write({'announcement': 'SC1736 synthetic announcement'})
         self._login_tp()
         _text, tree = self._get('/my/team?team_id=%s' % self.team_a.id)
-        area = self._one(tree, '//section[@data-sc-section="team.announcement.area"]')
+        area = self._one(tree, '//section[@data-pk-section="team.announcement.area"]')
         self._assert_order(area, ('o_sc_card_archive', 'o_sc_card_edit'))
-        self.assertTrue(area.xpath('.//form[@data-sc-section="team.announcement.archive"]'))
+        self.assertTrue(area.xpath('.//form[@data-pk-section="team.announcement.archive"]'))
 
     # -- AC-2: dashboard sections ---------------------------------------------
     def test_dashboard_remove_is_trash_with_confirm(self):
@@ -407,7 +407,7 @@ class TestCardTopBars1736(TopBars1736Common):
             self.assertEqual(form.get('action'), '/my/app/dashboard/configure/remove')
             self.assertEqual(form.get('data-sc-dash-remove-form'), '1')
             self.assertEqual(form.get('data-sc-confirm-title'), 'Remove this section?')
-            self.assertTrue(form.get('data-sc-confirm-ok'))
+            self.assertTrue(form.get('data-pk-confirm-ok'))
             # The item's top bar: its own icon group, after the head.
             self.assertEqual(trash.getparent().getparent(), item)
 
@@ -441,14 +441,14 @@ class TestCardTopBarsI18n1736(TopBars1736Common):
         labels = [b.get('aria-label') for b in icons.xpath('.//button')]
         self.assertEqual(labels, ['Archiver', 'Supprimer', 'Modifier'])
         _text, tree = self._fr('/my/event/%s' % self.event.id)
-        hero = self._one(tree, '//section[@data-sc-section="event.hero"]')
+        hero = self._one(tree, '//section[@data-pk-section="event.hero"]')
         self.assertEqual(self._one(hero, './/a[contains(@class, "o_sc_card_clock")]').get('aria-label'),
                          'Mes activités : 1')
         # Task 1736 r1 (deliberate update): its own red button again.
         self.assertEqual(self._one(hero, './/button[@data-sc-action="event.cancel"]').text_content().strip(),
                          "Annuler l'événement")
         _text, tree = self._fr(self._player_url('injuries'))
-        hero = self._one(tree, '//*[@data-sc-section="player.hero"]')
+        hero = self._one(tree, '//*[@data-pk-section="player.hero"]')
         self.assertEqual(self._one(hero, './/button[@data-sc-follow]').get('aria-label'), 'Suivre')
         card = self._one(tree, '//details[@id="injury-%s"]' % self.injury.id)
         self.assertEqual(self._one(card, './/button[contains(@class, "o_sc_card_trash")]').get('aria-label'),

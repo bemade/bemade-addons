@@ -388,7 +388,7 @@ class TestAssigneeRoutes1024(AssignHttpCommon):
     def test_app_hides_picker_with_reason(self):
         self._login_rf()
         tree = self._tree('/my/event/%s' % self.ev_other.id)
-        edit = tree.xpath('//*[@data-sc-edit-card="event"]//*[@data-sc-edit-view="edit"]')[0]
+        edit = tree.xpath('//*[@data-pk-edit-card="event"]//*[@data-sc-edit-view="edit"]')[0]
         props = [json.loads(p) for p in edit.xpath(
             './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
         self.assertNotIn('assigned_staff_ids', {p['field'] for p in props})
@@ -397,7 +397,7 @@ class TestAssigneeRoutes1024(AssignHttpCommon):
         self.assertEqual(reason[0].text_content().strip(), POLICY_EN)
         # Own team: the picker is there, no reason.
         tree = self._tree('/my/event/%s' % self.ev_own.id)
-        edit = tree.xpath('//*[@data-sc-edit-card="event"]//*[@data-sc-edit-view="edit"]')[0]
+        edit = tree.xpath('//*[@data-pk-edit-card="event"]//*[@data-sc-edit-view="edit"]')[0]
         props = [json.loads(p) for p in edit.xpath(
             './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
         self.assertIn('assigned_staff_ids', {p['field'] for p in props})

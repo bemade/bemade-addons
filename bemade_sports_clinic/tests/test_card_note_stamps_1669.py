@@ -48,7 +48,7 @@ class Stamps1669Common(AppShellCommon):
     def _notes_read(self, tree, injury=None):
         injury = injury or self.injury
         # Task 1675: the Notes section holds one card per note.
-        nodes = tree.xpath('//details[@id="injury-%s"]//section[@data-sc-section="injury.notes"]' % injury.id)
+        nodes = tree.xpath('//details[@id="injury-%s"]//section[@data-pk-section="injury.notes"]' % injury.id)
         self.assertEqual(len(nodes), 1)
         return nodes[0]
 

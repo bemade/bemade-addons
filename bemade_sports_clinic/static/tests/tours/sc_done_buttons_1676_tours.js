@@ -22,9 +22,9 @@ function visible(el) {
     return rect.width > 0 && rect.height > 0;
 }
 
-const IDENTITY = '[data-sc-edit-card="identity"]';
+const IDENTITY = '[data-pk-edit-card="identity"]';
 const PENCIL = `${IDENTITY} button[data-sc-edit-toggle]`;
-const NOTE = 'details.o_sc_injury_item[open] [data-sc-edit-card="injury-notes-external"]';
+const NOTE = 'details.o_sc_injury_item[open] [data-pk-edit-card="injury-notes-external"]';
 
 tours.add("sc_1676_info_check", {
     steps: () => [
@@ -41,9 +41,9 @@ tours.add("sc_1676_info_check", {
             content: "Edit mode: no visible « Done », the pencil is a ✓",
             trigger: `${IDENTITY}[data-sc-edit-open] ${"button[data-sc-edit-toggle]"}[data-sc-edit-toggle-done]`,
             run() {
-                const done = document.querySelector(`${IDENTITY} [data-sc-edit-done]`);
+                const done = document.querySelector(`${IDENTITY} [data-pk-edit-done]`);
                 assert(done && !visible(done), "« Done » is visible");
-                for (const button of document.querySelectorAll(".o_sc_app [data-sc-edit-done].o_sc_btn_primary")) {
+                for (const button of document.querySelectorAll(".o_sc_app [data-pk-edit-done].o_sc_btn_primary")) {
                     assert(!visible(button), "a « Done » is visible somewhere");
                 }
                 assert(this.anchor.getAttribute("aria-label") !== window.__sc1676Label, "the ✓ kept the pencil's label");
@@ -128,7 +128,7 @@ tours.add("sc_1676_info_done_on", {
         },
         {
             content: "« Done » is visible and closes the card",
-            trigger: `${IDENTITY}[data-sc-edit-open] button[data-sc-edit-done]`,
+            trigger: `${IDENTITY}[data-sc-edit-open] button[data-pk-edit-done]`,
             run: "click",
         },
         {

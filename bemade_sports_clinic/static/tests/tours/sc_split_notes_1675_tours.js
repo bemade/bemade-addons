@@ -19,9 +19,9 @@ function assert(condition, message) {
     }
 }
 
-const NOTES = 'details.o_sc_injury_item[open] section[data-sc-section="injury.notes"]';
-const EXT = `${NOTES} [data-sc-edit-card="injury-notes-external"]`;
-const INT = `${NOTES} [data-sc-edit-card="injury-notes-internal"]`;
+const NOTES = 'details.o_sc_injury_item[open] section[data-pk-section="injury.notes"]';
+const EXT = `${NOTES} [data-pk-edit-card="injury-notes-external"]`;
+const INT = `${NOTES} [data-pk-edit-card="injury-notes-internal"]`;
 
 function editing(card) {
     return !document.querySelector(`${card} [data-sc-edit-view="edit"]`).hidden;

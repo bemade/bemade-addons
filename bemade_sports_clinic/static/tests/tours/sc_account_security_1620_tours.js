@@ -49,8 +49,8 @@ function reloadIfRestored() {
 }
 
 const FORM = ".o_customer_address_fill form.address_autoformat";
-const CONTACT = `${FORM} section[data-sc-edit-card="account-contact"]`;
-const ADDRESS = `${FORM} section[data-sc-edit-card="account-address"]`;
+const CONTACT = `${FORM} section[data-pk-edit-card="account-contact"]`;
+const ADDRESS = `${FORM} section[data-pk-edit-card="account-address"]`;
 
 async function waitFor(check, message, timeout = 8000) {
     const start = Date.now();
@@ -105,7 +105,7 @@ tours.add("sc_1620_account", {
             trigger: `.o_sc_app ${CONTACT} [data-sc-edit-view="read"]`,
             run() {
                 window.__sc1018bNoReload = "1";
-                assert(document.querySelector("a[data-sc-back]"), "no back arrow");
+                assert(document.querySelector("a[data-pk-back]"), "no back arrow");
                 assert(!document.querySelector("header#top"), "website header shown");
                 assert(readText(CONTACT).includes("PC Coach"), "name not in the read view");
                 assert(readText(ADDRESS).includes("Testville"), "city not in the read view");
@@ -131,7 +131,7 @@ tours.add("sc_1620_account", {
                 const state = h('select[name="state_id"]');
                 assert(Math.abs(state - country) <= 2, `province ${state}px vs country ${country}px`);
                 assert(Math.abs(state - city) <= 4, `province ${state}px vs input ${city}px`);
-                assert(document.querySelector(`${ADDRESS} button[data-sc-edit-done]`), "no Done");
+                assert(document.querySelector(`${ADDRESS} button[data-pk-edit-done]`), "no Done");
                 noOverflow();
             },
         },
@@ -158,7 +158,7 @@ tours.add("sc_1620_account", {
         },
         {
             content: "« Done » closes the card: the read view shows the new city, no reload",
-            trigger: `${ADDRESS} button[data-sc-edit-done]`,
+            trigger: `${ADDRESS} button[data-pk-edit-done]`,
             run: "click",
         },
         {
@@ -221,7 +221,7 @@ tours.add("sc_1620_account", {
         },
         {
             content: "« Done »: the read view shows the new phone",
-            trigger: `${CONTACT} button[data-sc-edit-done]`,
+            trigger: `${CONTACT} button[data-pk-edit-done]`,
             run: "click",
         },
         {
@@ -235,7 +235,7 @@ tours.add("sc_1620_account", {
         },
         {
             content: "Back → Paramètres",
-            trigger: "a[data-sc-back]",
+            trigger: "a[data-pk-back]",
             run: "click",
             expectUnloadPage: true,
         },
@@ -284,7 +284,7 @@ tours.add("sc_1620_security", {
             content: "The shell page",
             trigger: `.o_sc_app .o_portal_security_body ${PW}`,
             run() {
-                assert(document.querySelector("a[data-sc-back]"), "no back arrow");
+                assert(document.querySelector("a[data-pk-back]"), "no back arrow");
                 assert(document.querySelector("#portal_revoke_all_sessions_popup"), "no « log out everywhere »");
                 noOverflow();
             },
@@ -312,7 +312,7 @@ tours.add("sc_1620_security", {
         ...passwordSteps("pc-coach", "pc-coach-tour-1620"),
         {
             content: "Changed",
-            trigger: '.o_sc_app [data-sc-section="security.password.done"]',
+            trigger: '.o_sc_app [data-pk-section="security.password.done"]',
         },
         {
             content: "Open « Delete account »",
@@ -338,7 +338,7 @@ tours.add("sc_1620_security", {
         },
         {
             content: "Back → Paramètres",
-            trigger: "a[data-sc-back]",
+            trigger: "a[data-pk-back]",
             run: "click",
             expectUnloadPage: true,
         },

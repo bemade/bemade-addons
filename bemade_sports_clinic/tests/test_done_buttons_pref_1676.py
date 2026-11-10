@@ -51,7 +51,7 @@ class Done1676Common(AppShellCommon):
         return '/my/player?player_id=%s&tab=injuries&injury=%s' % (self.player.id, self.injury.id)
 
     def _app(self, tree):
-        return tree.xpath('//*[@data-sc-app-shell]')[0]
+        return tree.xpath('//*[@data-pk-app-shell]')[0]
 
 
 @tagged('post_install', '-at_install')
@@ -64,7 +64,7 @@ class TestDoneButtonsPref1676(Done1676Common):
     def test_setting_persists_own_user_only(self):
         self._login_tp()
         _text, tree = self._get('/my/app/settings')
-        section = tree.xpath('//section[@data-sc-section="settings.done_buttons"]')[0]
+        section = tree.xpath('//section[@data-pk-section="settings.done_buttons"]')[0]
         # Task 1726: a switch, off by default.
         self.assertEqual(section.xpath('.//input[@role="switch"][@name="sc_show_done_buttons"]/@aria-checked'),
                          ['false'])
@@ -76,7 +76,7 @@ class TestDoneButtonsPref1676(Done1676Common):
         self.assertTrue(self.tp.sc_show_done_buttons)
         self.assertFalse(self.coach.sc_show_done_buttons)
         _text, tree = self._get('/my/app/settings')
-        section = tree.xpath('//section[@data-sc-section="settings.done_buttons"]')[0]
+        section = tree.xpath('//section[@data-pk-section="settings.done_buttons"]')[0]
         self.assertEqual(section.xpath('.//input[@role="switch"]/@aria-checked'), ['true'])
         self.assertIsNone(self._app(tree).get('data-sc-hide-done'))
         with mute_logger('odoo.http'):
@@ -116,7 +116,7 @@ class TestDoneButtonsPref1676(Done1676Common):
     def test_done_buttons_marked(self):
         self._login_tp()
         _text, tree = self._get(self._card_url())
-        for done in tree.xpath('//*[@data-sc-edit-card]//button[@data-sc-edit-done][contains(@class, "o_sc_btn_primary")]'):
+        for done in tree.xpath('//*[@data-pk-edit-card]//button[@data-pk-edit-done][contains(@class, "o_sc_btn_primary")]'):
             self.assertTrue('o_sc_edit_done' in done.get('class')
                             or 'o_sc_edit_done_actions' in done.getparent().get('class', ''), done.get('class'))
 
@@ -143,7 +143,7 @@ class TestDoneButtonsPrefI18n1676(Done1676Common):
     def test_french(self):
         self._login_tp()
         text, tree = self._fr('/my/app/settings')
-        section = tree.xpath('//section[@data-sc-section="settings.done_buttons"]')[0]
+        section = tree.xpath('//section[@data-pk-section="settings.done_buttons"]')[0]
         self.assertIn('Afficher les boutons Terminé', section.text_content())
         self.assertIn('terminer la modification', section.text_content())
         text, tree = self._fr(self._card_url())

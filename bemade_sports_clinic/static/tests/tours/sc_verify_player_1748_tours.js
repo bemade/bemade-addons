@@ -15,7 +15,7 @@ function assert(condition, message) {
 }
 
 const LINE = 'section[data-sc-instance="todo"] details[data-sc-todo="verify"]';
-const YELLOW = `${LINE} details[data-sc-edit-card="injury"]:has([data-sc-injury-player-link]:contains("Synth, Yellow"))`;
+const YELLOW = `${LINE} details[data-pk-edit-card="injury"]:has([data-sc-injury-player-link]:contains("Synth, Yellow"))`;
 
 function visible(el) {
     const box = el && el.getBoundingClientRect();
@@ -33,7 +33,7 @@ tours.add("sc_1748_verify_card_player", {
             content: "Each card names its player and team(s), the header inside the card",
             trigger: `${YELLOW} > summary [data-sc-injury-player] .o_sc_injury_player_teams:contains("DB Team C")`,
             run() {
-                const cards = [...document.querySelectorAll(`${LINE} details[data-sc-edit-card="injury"]`)];
+                const cards = [...document.querySelectorAll(`${LINE} details[data-pk-edit-card="injury"]`)];
                 assert(cards.length === 2, `2 cards expected, got ${cards.length}`);
                 for (const card of cards) {
                     const link = card.querySelector(":scope > summary [data-sc-injury-player-link]");

@@ -3,8 +3,8 @@
  *
  * One trigger at every width (task 1638: the rail footer menu is gone): the
  * initials avatar at the right end of the app bar, a
- * button[data-sc-user-menu-toggle][aria-haspopup="menu"] whose aria-controls
- * names its popup ([data-sc-user-menu-popup], rendered hidden).
+ * button[data-pk-user-menu-toggle][aria-haspopup="menu"] whose aria-controls
+ * names its popup ([data-pk-user-menu-popup], rendered hidden).
  *
  * - tap / Enter / Space toggles; ArrowDown / ArrowUp on the trigger open it
  *   on the first / last item;
@@ -16,7 +16,7 @@
  * sc_app_ui.js still clears the device drafts on it). Inert outside .o_sc_app.
  *
  * Task 1607: the list header's sort menu is the same kind of popup —
- * button[data-sc-menu-toggle] + [data-sc-menu-popup] whose items are
+ * button[data-pk-menu-toggle] + [data-pk-menu-popup] whose items are
  * a[role="menuitemradio"] links (the checked one gets the focus on open).
  *
  * Task 1627: open / close / closeAll are exported for menus whose clicks
@@ -24,12 +24,15 @@
  * may sit in a <summary>, handled in the capture phase).
  */
 
-// Clinic selector, P3 replaces with a generic data-pk-* hook: the popups
-// kept inside the content area (keepInView).
-export const KEEP_IN_VIEW_POPUP_CLASS = "o_sc_pill_popup";
+// Task 5198 (P3a): a popup the consumer marks data-pk-keep-in-view is kept
+// inside the content area (keepInView); the other menus have their own
+// placement.
+export function keepsInView(popup) {
+    return Boolean(popup && popup.hasAttribute("data-pk-keep-in-view"));
+}
 
-const TOGGLE = "[data-sc-user-menu-toggle], [data-sc-menu-toggle]";
-const POPUP = "[data-sc-user-menu-popup], [data-sc-menu-popup]";
+const TOGGLE = "[data-pk-user-menu-toggle], [data-pk-menu-toggle]";
+const POPUP = "[data-pk-user-menu-popup], [data-pk-menu-popup]";
 const ITEM = '[role="menuitem"], [role="menuitemradio"]';
 
 function popupOf(toggle) {
@@ -96,7 +99,7 @@ export function open(toggle, which = "first") {
     }
     closeAll(toggle);
     popup.hidden = false;
-    if (popup.classList.contains(KEEP_IN_VIEW_POPUP_CLASS)) {
+    if (keepsInView(popup)) {
         keepInView(popup); // the other menus have their own placement
     }
     toggle.setAttribute("aria-expanded", "true");

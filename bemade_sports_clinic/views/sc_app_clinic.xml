@@ -33,8 +33,8 @@
             </t>
 
             <!-- Owner review 2026-10-14: applied on change (sc_forms.js). -->
-            <form method="get" action="/my/clinics" class="o_sc_filters" data-sc-section="clinics.filters"
-                  data-sc-autosubmit="1">
+            <form method="get" action="/my/clinics" class="o_sc_filters" data-pk-section="clinics.filters"
+                  data-pk-autosubmit="1">
                 <input type="hidden" name="filters_applied" value="1"/>
                 <input type="hidden" name="time_filter" t-att-value="time_filter"/>
                 <div class="o_sc_chips">
@@ -71,13 +71,13 @@
                         </div>
                     </div>
                     <div class="o_sc_form_actions">
-                        <a href="/my/clinics" class="o_sc_btn o_sc_btn_ghost" data-sc-filter-reset="1">Reset</a>
-                        <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-autosubmit-fallback="1">Apply filters</button>
+                        <a href="/my/clinics" class="o_sc_btn o_sc_btn_ghost" data-pk-filter-reset="1">Reset</a>
+                        <button type="submit" class="o_sc_btn o_sc_btn_primary" data-pk-autosubmit-fallback="1">Apply filters</button>
                     </div>
                 </details>
             </form>
 
-            <div t-if="sc_clinic_rows" class="o_sc_list" data-sc-section="clinics.list">
+            <div t-if="sc_clinic_rows" class="o_sc_list" data-pk-section="clinics.list">
                 <t t-foreach="sc_clinic_rows" t-as="row">
                     <t t-call="bemade_sports_clinic.sc_entity_row">
                         <t t-set="href" t-value="row['url']"/>
@@ -142,7 +142,7 @@
             <div t-if="success == 'note_added' and sc_note_draft_prefix"
                  t-att-data-sc-draft-clear="sc_note_draft_prefix" hidden="hidden"/>
 
-            <div class="o_sc_card o_sc_clinic_head" data-sc-section="clinic.head">
+            <div class="o_sc_card o_sc_clinic_head" data-pk-section="clinic.head">
                 <div class="o_sc_clinic_head_text">
                     <strong t-out="sc_clinic_when"/>
                     <span t-if="sc_clinic_teams" class="o_sc_meta" t-out="sc_clinic_teams"/>
@@ -166,7 +166,7 @@
             <div class="o_sc_clinic_panes">
                 <!-- ======================= waiting list ======================= -->
                 <section class="o_sc_tab_panel o_sc_clinic_pane" data-sc-tab-panel="worklist" role="tabpanel"
-                         id="clinic-worklist" data-sc-section="clinic.worklist"
+                         id="clinic-worklist" data-pk-section="clinic.worklist"
                          t-att-hidden="None if sc_clinic_active_tab == 'worklist' else 'hidden'">
                     <!-- Task 1607: « + Ajouter » (the add-patient sheet, was in
                          the app bar) right above the worklist. -->
@@ -183,7 +183,7 @@
 
                 <!-- ========================== file ========================== -->
                 <section class="o_sc_tab_panel o_sc_clinic_pane" data-sc-tab-panel="dossier" role="tabpanel"
-                         id="clinic-dossier" data-sc-section="clinic.dossier"
+                         id="clinic-dossier" data-pk-section="clinic.dossier"
                          t-att-hidden="None if sc_clinic_active_tab == 'dossier' else 'hidden'">
                     <t t-if="not selected_patient" t-call="bemade_sports_clinic.sc_empty_state">
                         <t t-set="message">Pick a patient on the worklist to open their file here.</t>
@@ -198,7 +198,7 @@
                              notes. Review round 2 (owner 2026-10-27): the
                              medical pills are INSIDE the card (sc_player_row,
                              their popups the page's « card » sheets). -->
-                        <div class="o_sc_list o_sc_clinic_player" data-sc-section="clinic.dossier.player"
+                        <div class="o_sc_list o_sc_clinic_player" data-pk-section="clinic.dossier.player"
                              t-att-data-sc-patient-id="patient.id" id="clinic-status">
                             <t t-call="bemade_sports_clinic.sc_player_row">
                                 <t t-set="row" t-value="sc_clinic_player_row"/>
@@ -206,7 +206,7 @@
                             </t>
                         </div>
 
-                        <section class="o_sc_section" data-sc-section="clinic.dossier.injuries" id="clinic-injuries">
+                        <section class="o_sc_section" data-pk-section="clinic.dossier.injuries" id="clinic-injuries">
                             <t t-call="bemade_sports_clinic.sc_section_header">
                                 <t t-set="title">Injuries</t>
                             </t>
@@ -230,22 +230,22 @@
                                  the card between them in place (its islands
                                  kept) — a resolved card set back to « Actif »
                                  joins the active list without a reload. -->
-                            <div class="o_sc_clinic_injuries" data-sc-section="clinic.dossier.injury_lists"
+                            <div class="o_sc_clinic_injuries" data-pk-section="clinic.dossier.injury_lists"
                                  t-att-data-sc-fragment="sc_fragment_key(patient, 'injury-lists')" data-sc-fragment-mode="list">
-                                <div t-if="sc_injury_rows" class="o_sc_list" data-sc-section="clinic.dossier.injury_list">
+                                <div t-if="sc_injury_rows" class="o_sc_list" data-pk-section="clinic.dossier.injury_list">
                                     <t t-foreach="sc_injury_rows" t-as="row">
                                         <t t-call="bemade_sports_clinic.sc_injury_card"/>
                                     </t>
                                 </div>
-                                <p t-else="" class="o_sc_empty" data-sc-section="clinic.dossier.no_active">No active injuries.</p>
+                                <p t-else="" class="o_sc_empty" data-pk-section="clinic.dossier.no_active">No active injuries.</p>
                                 <!-- Task 1721: the resolved injuries, folded; the
                                      fold stays open across a refresh
                                      (data-sc-keep-open, sc_fragments.js). -->
-                                <div class="o_sc_clinic_resolved" data-sc-section="clinic.dossier.resolved">
+                                <div class="o_sc_clinic_resolved" data-pk-section="clinic.dossier.resolved">
                                     <details t-if="sc_resolved_injury_rows" class="o_sc_resolved_injuries"
                                              data-sc-resolved-injuries="1" data-sc-keep-open="resolved-injuries">
                                         <summary class="o_sc_link_btn o_sc_resolved_toggle" t-out="sc_resolved_injuries_label"/>
-                                        <div class="o_sc_list" data-sc-section="clinic.dossier.resolved_list">
+                                        <div class="o_sc_list" data-pk-section="clinic.dossier.resolved_list">
                                             <t t-foreach="sc_resolved_injury_rows" t-as="row">
                                                 <t t-call="bemade_sports_clinic.sc_injury_card"/>
                                             </t>
@@ -255,7 +255,7 @@
                             </div>
                         </section>
 
-                        <section class="o_sc_section" data-sc-section="clinic.dossier.notes" id="clinic-notes">
+                        <section class="o_sc_section" data-pk-section="clinic.dossier.notes" id="clinic-notes">
                             <t t-call="bemade_sports_clinic.sc_section_header">
                                 <t t-set="title">Treatment notes</t>
                             </t>
@@ -268,7 +268,7 @@
                                 <t t-set="note_injury" t-value="note_default_injury_id"/>
                                 <t t-set="note_draft_prefix" t-value="sc_note_draft_prefix"/>
                             </t>
-                            <div t-if="treatment_notes" class="o_sc_list" data-sc-section="clinic.dossier.note_list">
+                            <div t-if="treatment_notes" class="o_sc_list" data-pk-section="clinic.dossier.note_list">
                                 <t t-foreach="treatment_notes" t-as="note">
                                     <t t-call="bemade_sports_clinic.sc_note_card">
                                         <t t-set="injury_url" t-value="False"/>

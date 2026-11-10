@@ -110,7 +110,7 @@ tours.add("sc_1722_venue_org_pickers", {
         },
         {
             content: "The event page",
-            trigger: '[data-sc-section="event.hero"]',
+            trigger: '[data-pk-section="event.hero"]',
         },
     ],
 });

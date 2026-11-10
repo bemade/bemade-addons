@@ -116,11 +116,11 @@ class TestCalendarFilters1591(Calendar1591Common):
         _text, tree = self._get(
             '/my/events/calendar?event_type=game&team_id=%s&show_cancelled=1&search=lighthouse'
             '&date_from=2000-01-01&date_to=2000-01-31&sortby=name&view_type=all' % self.team_a.id)
-        chips = tree.xpath('//*[@data-sc-section="events.types"]//a[@aria-pressed="true"]/@data-sc-event-type')
+        chips = tree.xpath('//*[@data-pk-section="events.types"]//a[@aria-pressed="true"]/@data-sc-event-type')
         self.assertEqual(chips, ['game'])
-        views = tree.xpath('//*[@data-sc-section="events.views"]//a/@data-sc-view')
+        views = tree.xpath('//*[@data-pk-section="events.views"]//a/@data-sc-view')
         self.assertEqual(views, ['all', 'my', 'unassigned', 'missing_timesheets'])
-        form = tree.xpath('//form[@data-sc-section="events.filters"]')[0]
+        form = tree.xpath('//form[@data-pk-section="events.filters"]')[0]
         self.assertEqual(form.get('action'), '/my/events/calendar')
         names = set(form.xpath('.//*[@name]/@name'))
         for name in ('organization_id', 'team_id', 'assigned_user_id', 'show_cancelled',
@@ -141,8 +141,8 @@ class TestCalendarFilters1591(Calendar1591Common):
         # The coach gets no « Missing timesheets » view, as on the list.
         self._login_coach()
         _text, tree = self._get('/my/events/calendar')
-        self.assertNotIn('missing_timesheets', tree.xpath('//*[@data-sc-section="events.views"]//a/@data-sc-view'))
-        self.assertFalse(tree.xpath('//form[@data-sc-section="events.filters"]//details[@open]'))
+        self.assertNotIn('missing_timesheets', tree.xpath('//*[@data-pk-section="events.views"]//a/@data-sc-view'))
+        self.assertFalse(tree.xpath('//form[@data-pk-section="events.filters"]//details[@open]'))
 
     # -- UC-3 ------------------------------------------------------------
     def test_list_to_calendar_keeps_filters_not_dates(self):
@@ -187,17 +187,17 @@ class TestCalendarFilters1591(Calendar1591Common):
         self.assertNotIn('date_from', past)
         # The list opened from there applies its own default range and the filters.
         _text, list_tree = self._get(upcoming)
-        ids = {int(x) for x in list_tree.xpath('//*[@data-sc-section="events.list"]//@data-sc-event-id')}
+        ids = {int(x) for x in list_tree.xpath('//*[@data-pk-section="events.list"]//@data-sc-event-id')}
         self.assertIn(self.ev_practice_a.id, ids)
         self.assertNotIn(self.ev_game_a.id, ids)
-        self.assertEqual(list_tree.xpath('//form[@data-sc-section="events.filters"]//select[@name="team_id"]'
+        self.assertEqual(list_tree.xpath('//form[@data-pk-section="events.filters"]//select[@name="team_id"]'
                                          '/option[@selected]/@value'), [str(self.team_a.id)])
         # The calendar's chips stay on the calendar and keep the other filters.
-        chip = tree.xpath('//*[@data-sc-section="events.types"]//a[@data-sc-event-type="game"]/@href')[0]
+        chip = tree.xpath('//*[@data-pk-section="events.types"]//a[@data-sc-event-type="game"]/@href')[0]
         self.assertTrue(chip.startswith('/my/events/calendar?'), chip)
         self.assertEqual(self._query(chip), {
             'team_id': str(self.team_a.id), 'event_type': 'game', 'show_cancelled': '1', 'view_type': 'all'})
-        mine = tree.xpath('//*[@data-sc-section="events.views"]//a[@data-sc-view="missing_timesheets"]/@href')[0]
+        mine = tree.xpath('//*[@data-pk-section="events.views"]//a[@data-sc-view="missing_timesheets"]/@href')[0]
         self.assertTrue(mine.startswith('/my/events/calendar?'), mine)
         self.assertNotIn('no_default_dates', self._query(mine))
 
@@ -235,11 +235,11 @@ class TestCalendarFiltersI18n1591(TestAppShellI18n1538):
         self._switch(True)
         self._login_tp()
         tree = lxml_html.fromstring(self._fr('/my/events/calendar'))
-        form = tree.xpath('//form[@data-sc-section="events.filters"]')[0]
+        form = tree.xpath('//form[@data-pk-section="events.filters"]')[0]
         text = ' '.join(form.text_content().split())
         for term in ('Filtres', 'Afficher les événements annulés', 'Appliquer les filtres',
                      'Toutes les organisations', 'Toutes les équipes'):
             self.assertIn(term, text)
         views = [' '.join(a.text_content().split())
-                 for a in tree.xpath('//*[@data-sc-section="events.views"]//a')]
+                 for a in tree.xpath('//*[@data-pk-section="events.views"]//a')]
         self.assertIn('Mes événements', views)

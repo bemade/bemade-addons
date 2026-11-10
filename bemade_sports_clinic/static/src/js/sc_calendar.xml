@@ -7,7 +7,7 @@
             <div class="o_sc_calendar" t-ref="calendar"/>
             <!-- Task 1605: the people of the visible range; tap = filter. -->
             <div t-if="props.staffColors and (state.legend.people.length or state.legend.unassigned or activeMissing)"
-                 class="o_sc_staff_legend" data-sc-section="calendar.legend"
+                 class="o_sc_staff_legend" data-pk-section="calendar.legend"
                  role="group" t-att-aria-label="legendTitle">
                 <span class="o_sc_staff_legend_title" t-esc="legendTitle"/>
                 <t t-foreach="state.legend.people" t-as="person" t-key="person.id">

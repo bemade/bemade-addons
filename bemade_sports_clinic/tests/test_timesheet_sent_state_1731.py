@@ -145,7 +145,7 @@ class TestTimesheetSent1731(TimesheetSent1731Common):
     def test_editable_card_hint_and_sent_label(self):
         self._login_tp()
         card = self._card(self._tree('/my/event/%s' % self.event.id), self.timesheet)
-        self.assertEqual(card.get('data-sc-edit-card'), 'timesheet-%s' % self.timesheet.id)
+        self.assertEqual(card.get('data-pk-edit-card'), 'timesheet-%s' % self.timesheet.id)
         hint = card.xpath('.//*[@data-sc-edit-view="edit"]//*[@data-sc-ts-sent-hint]')
         self.assertTrue(hint, 'the hint sits in the edit view')
         self.assertEqual(self._hint(card), HINT_EN)

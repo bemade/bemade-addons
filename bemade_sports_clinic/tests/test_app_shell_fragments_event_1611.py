@@ -128,7 +128,7 @@ class TestFragmentsEvent1611(FragmentsCommon):
         def group_of_card():
             node = self._fragment(url, key)
             self.assertEqual(node.get('data-sc-fragment-mode'), 'list')
-            card = node.xpath('.//*[@data-sc-fragment-item="%s"]' % self._tkey('card'))[0]
+            card = node.xpath('.//*[@data-pk-fragment-item="%s"]' % self._tkey('card'))[0]
             group = card.xpath('ancestor::*[@data-sc-group][1]')[0]
             return self._text(group.xpath('./h3')[0])
         self.assertEqual(group_of_card(), '2026-02-02')

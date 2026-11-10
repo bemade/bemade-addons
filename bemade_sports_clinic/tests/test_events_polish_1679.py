@@ -18,7 +18,7 @@ Review round 1 (owner UAT 2026-10-26, iPhone 390 px):
 
 * AC-4 « Reset » keeps an open filter panel open after the reload — the
   events list (and calendar: same form), the players and the clinics
-  filters; every filter panel's reset link carries ``data-sc-filter-reset``
+  filters; every filter panel's reset link carries ``data-pk-filter-reset``
   (sc_forms.js remembers the open state, like a filter change does).
 * AC-5 The app's date / date-time / time inputs fit their cell (appearance
   reset, ``min-width: 0``) — iOS's intrinsic width made « Du » stick out.
@@ -61,7 +61,7 @@ class EventsPolish1679Common(AppShellCommon):
 
     @staticmethod
     def _listed(tree, event):
-        return bool(tree.xpath('//*[@data-sc-section="events.list"]//*[@data-sc-event-id="%s"]' % event.id))
+        return bool(tree.xpath('//*[@data-pk-section="events.list"]//*[@data-sc-event-id="%s"]' % event.id))
 
 
 @tagged('post_install', '-at_install')
@@ -70,7 +70,7 @@ class TestEventsPolish1679(EventsPolish1679Common):
     def test_ac1_group_by_label_visually_hidden(self):
         self._login_tp()
         tree = self._tree('/my/events')
-        group = tree.xpath('//fieldset[@data-sc-section="events.group"]')[0]
+        group = tree.xpath('//fieldset[@data-pk-section="events.group"]')[0]
         self.assertEqual(len(group.xpath('./legend')), 1)
         label = group.xpath('.//label[@for="sc_ev_group"]')[0]
         self.assertIn('visually-hidden', label.get('class').split())
@@ -80,7 +80,7 @@ class TestEventsPolish1679(EventsPolish1679Common):
         self._login_tp()
         tree = self._tree('/my/events?no_default_dates=1&view_type=my')
         self.assertTrue(self._listed(tree, self.event), 'the past event is listed without the default')
-        reset = tree.xpath('//form[@data-sc-section="events.filters"]'
+        reset = tree.xpath('//form[@data-pk-section="events.filters"]'
                            '//a[contains(@class, "o_sc_btn_ghost")]')[0]
         href = reset.get('href')
         self.assertNotIn('no_default_dates', href)
@@ -127,5 +127,5 @@ class TestEventsPolishResetLinks1679(EventsPolish1679Common):
                              ('/my/sc/timesheets', 'timesheets.filters'), ('/my/players', 'players.search'),
                              ('/my/clinics', 'clinics.filters')):
             tree = self._tree(url)
-            links = tree.xpath('//form[@data-sc-section="%s"]//a[@data-sc-filter-reset]' % section)
+            links = tree.xpath('//form[@data-pk-section="%s"]//a[@data-pk-filter-reset]' % section)
             self.assertEqual(len(links), 1, url)

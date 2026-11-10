@@ -2,8 +2,8 @@
  * Task 1540 review (2026-09-29) — live counters of the app shell.
  *
  * A server-rendered chip marked
- *   data-sc-live-count-url="/my/clinics/today/count"   (JSON: {count: N})
- *   data-sc-live-poll="20"                              (seconds, optional)
+ *   data-pk-live-count-url="/my/clinics/today/count"   (JSON: {count: N})
+ *   data-pk-live-poll="20"                              (seconds, optional)
  * is refreshed in place — the same mechanism as the live clinic worklist
  * (sc_clinic_worklist.js): a poll every 20 s while the tab is visible,
  * through pkFetch (toast: false); an error backs off (x2, up to 5 min), a
@@ -11,15 +11,15 @@
  * resumes at once when the tab is shown again. Inert outside .o_sc_app.
  *
  * The chip's text becomes the count and its tone follows it
- * (data-sc-live-tone-on when > 0, data-sc-live-tone-off at 0), exactly like
+ * (data-pk-live-tone-on when > 0, data-pk-live-tone-off at 0), exactly like
  * the first server render.
  *
  * Task 1592 (the app bar's activity clock badge):
- *   data-sc-live-eager="1"      first fetch at once (the count is NOT
+ *   data-pk-live-eager="1"      first fetch at once (the count is NOT
  *                               rendered server-side on every page)
- *   data-sc-live-hide-zero="1"  the chip is hidden while the count is 0
+ *   data-pk-live-hide-zero="1"  the chip is hidden while the count is 0
  *
- * Task 1611: « sc:live-count-refresh » on the document polls every counter
+ * Task 1611: « pk:live-count-refresh » on the document polls every counter
  * at once (an activity save, a page restored by « back »).
  */
 import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
@@ -29,8 +29,8 @@ const MAX_BACKOFF = 300000;
 class LiveCount {
     constructor(el) {
         this.el = el;
-        this.url = el.dataset.scLiveCountUrl;
-        this.base = (parseInt(el.dataset.scLivePoll, 10) || 20) * 1000;
+        this.url = el.dataset.pkLiveCountUrl;
+        this.base = (parseInt(el.dataset.pkLivePoll, 10) || 20) * 1000;
         this.interval = this.base;
         this.timer = null;
         this.onVisibility = () => {
@@ -39,7 +39,7 @@ class LiveCount {
             }
         };
         document.addEventListener("visibilitychange", this.onVisibility);
-        this.schedule(el.dataset.scLiveEager ? 0 : this.interval);
+        this.schedule(el.dataset.pkLiveEager ? 0 : this.interval);
     }
 
     schedule(delay = this.interval) {
@@ -73,11 +73,11 @@ class LiveCount {
         if (el.textContent !== text) {
             el.textContent = text;
         }
-        if (el.dataset.scLiveHideZero) {
+        if (el.dataset.pkLiveHideZero) {
             el.hidden = count <= 0;
         }
-        const on = el.dataset.scLiveToneOn;
-        const off = el.dataset.scLiveToneOff;
+        const on = el.dataset.pkLiveToneOn;
+        const off = el.dataset.pkLiveToneOff;
         if (on && off) {
             el.classList.toggle(`o_sc_chip_${on}`, count > 0);
             el.classList.toggle(`o_sc_chip_${off}`, count <= 0);
@@ -87,8 +87,8 @@ class LiveCount {
 
 // Task 1611: an activity save (or a page shown again by « back ») refreshes
 // every live counter at once — e.g. the app bar's overdue badge.
-document.addEventListener("sc:live-count-refresh", () => {
-    for (const el of document.querySelectorAll(".o_sc_app [data-sc-live-count-url]")) {
+document.addEventListener("pk:live-count-refresh", () => {
+    for (const el of document.querySelectorAll(".o_sc_app [data-pk-live-count-url]")) {
         if (el.scLiveCount) {
             el.scLiveCount.schedule(0);
         }
@@ -96,7 +96,7 @@ document.addEventListener("sc:live-count-refresh", () => {
 });
 
 function start() {
-    for (const el of document.querySelectorAll(".o_sc_app [data-sc-live-count-url]")) {
+    for (const el of document.querySelectorAll(".o_sc_app [data-pk-live-count-url]")) {
         if (!el.scLiveCount) {
             el.scLiveCount = new LiveCount(el);
         }

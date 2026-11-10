@@ -81,7 +81,7 @@ class TestAppShellPencil(AppShellCommon):
             './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
 
     def _card(self, tree, key):
-        cards = tree.xpath('//*[@data-sc-edit-card="%s"]' % key)
+        cards = tree.xpath('//*[@data-pk-edit-card="%s"]' % key)
         self.assertEqual(len(cards), 1, key)
         card = cards[0]
         # Task 1736 (deliberate update): a card's pencil may sit in its
@@ -112,7 +112,7 @@ class TestAppShellPencil(AppShellCommon):
             card, edit = self._card(tree, 'injury-notes-%s' % scope)
             self.assertEqual([f['field'] for f in self._fields(edit)], ['%s_notes' % scope])
             self.assertIn(text_, card.xpath('.//*[@data-sc-edit-view="read"]')[0].text_content())
-        notes = tree.xpath('//section[@data-sc-section="injury.notes"]')[0]
+        notes = tree.xpath('//section[@data-pk-section="injury.notes"]')[0]
         # Task 1616: the injury page is the open card (per-injury sheet ids).
         self.assertTrue(notes.xpath('.//*[@data-sc-sheet-open="sc_note_history_sheet_%s"]'
                                     '[not(ancestor::*[@data-sc-edit-view="edit"])]' % self.injury.id))
@@ -126,13 +126,13 @@ class TestAppShellPencil(AppShellCommon):
         self.assertEqual({f['field'] for f in self._fields(edit)}, {'sc_injury_date'})
         # Owner review 2026-10-25 (#1675): the external note reads, without
         # a pencil or an editor, for a coach.
-        card = tree.xpath('//*[@data-sc-edit-card="injury-notes-external"]')[0]
+        card = tree.xpath('//*[@data-pk-edit-card="injury-notes-external"]')[0]
         self.assertFalse(card.xpath('.//button[@data-sc-edit-toggle]'))
         self.assertFalse(card.xpath('.//*[@data-sc-edit-view="edit"]'))
         self.assertFalse(self._fields(card))
         self.assertIn('Synthetic ext', card.xpath('.//*[@data-sc-edit-view="read"]')[0].text_content())
-        self.assertFalse(tree.xpath('//*[@data-sc-edit-card="injury-notes-internal"]'))
-        notes = tree.xpath('//section[@data-sc-section="injury.notes"]')[0]
+        self.assertFalse(tree.xpath('//*[@data-pk-edit-card="injury-notes-internal"]'))
+        notes = tree.xpath('//section[@data-pk-section="injury.notes"]')[0]
         self.assertNotIn('Synthetic int', notes.text_content())
 
     # -- UC-PE3 ----------------------------------------------------------
@@ -267,7 +267,7 @@ class TestAppShellPencil(AppShellCommon):
         self.assertIn('Synthetic plan', event.description)
         self._login_coach()
         _text, tree = self._get('/my/event/%s' % event.id)
-        self.assertFalse(tree.xpath('//*[@data-sc-edit-card="event"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-edit-card="event"]'))
         with mute_logger('odoo.http'):
             self.assertIn(self._save(event, 'name', 'Nope').status_code, (403, 404))
 

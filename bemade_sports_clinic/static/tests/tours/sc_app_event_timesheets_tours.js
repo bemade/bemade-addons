@@ -7,7 +7,7 @@
  */
 import { registry } from "@web/core/registry";
 
-const SECTION = '.o_sc_app [data-sc-section="event.timesheets"]';
+const SECTION = '.o_sc_app [data-pk-section="event.timesheets"]';
 
 registry.category("web_tour.tours").add("sc_1584_event_timesheets_admin", {
     steps: () => [

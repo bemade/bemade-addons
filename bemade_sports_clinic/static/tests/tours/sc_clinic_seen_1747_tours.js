@@ -10,8 +10,8 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
-const LIST = '[data-sc-section="clinic.worklist"]';
-const PANE = '[data-sc-section="clinic.dossier"]';
+const LIST = '[data-pk-section="clinic.worklist"]';
+const PANE = '[data-pk-section="clinic.dossier"]';
 
 function assert(condition, message) {
     if (!condition) {
@@ -73,7 +73,7 @@ tours.add("sc_1747_seen_opens_file", {
         },
         {
             content: "B's file opened (a new page, B in the URL and the pane)",
-            trigger: `${PANE} [data-sc-section="clinic.dossier.player"] .o_sc_player_row:contains("Bravo")`,
+            trigger: `${PANE} [data-pk-section="clinic.dossier.player"] .o_sc_player_row:contains("Bravo")`,
             run() {
                 assert(!window.__sc1747Page, "no navigation");
                 assert(patientParam() === this.anchor.dataset.scPlayerId, `URL patient ${patientParam()}`);

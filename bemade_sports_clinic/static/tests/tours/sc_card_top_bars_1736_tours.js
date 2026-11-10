@@ -110,7 +110,7 @@ tours.add("sc_1736_injury", {
         },
         {
             content: "Details in edit mode, the pencil a ✓, the red trash next to it",
-            trigger: `${CARD} [data-sc-edit-card="injury-details"][data-sc-edit-open] [data-sc-edit-view="edit"]:not([hidden])`,
+            trigger: `${CARD} [data-pk-edit-card="injury-details"][data-sc-edit-open] [data-sc-edit-view="edit"]:not([hidden])`,
             run() {
                 const trash = q(TRASH);
                 assert(shown(trash), "no trash while editing");
@@ -129,7 +129,7 @@ tours.add("sc_1736_injury", {
         },
         {
             content: "Read mode: the trash is hidden again",
-            trigger: `${CARD} [data-sc-edit-card="injury-details"]:not([data-sc-edit-open]) [data-sc-edit-view="read"]:not([hidden])`,
+            trigger: `${CARD} [data-pk-edit-card="injury-details"]:not([data-sc-edit-open]) [data-sc-edit-view="read"]:not([hidden])`,
             run() {
                 assert(!shown(q(TRASH)), "the trash still shows");
             },
@@ -150,7 +150,7 @@ tours.add("sc_1736_injury", {
         },
         {
             content: "Unfolded, Details editing; the trash opens « Delete injury »",
-            trigger: `${CARD}[open] [data-sc-edit-card="injury-details"][data-sc-edit-open]`,
+            trigger: `${CARD}[open] [data-pk-edit-card="injury-details"][data-sc-edit-open]`,
             run() {
                 q(TRASH).click();
             },
@@ -166,9 +166,9 @@ tours.add("sc_1736_star", {
     steps: () => [
         {
             content: "The ★ (not followed), left of the pencil",
-            trigger: '[data-sc-section="player.hero"] button[data-sc-follow][aria-pressed="false"]',
+            trigger: '[data-pk-section="player.hero"] button[data-sc-follow][aria-pressed="false"]',
             run(helpers) {
-                const pencil = q('[data-sc-section="player.hero"] [data-sc-card-icons] button[data-sc-edit-toggle]');
+                const pencil = q('[data-pk-section="player.hero"] [data-sc-card-icons] button[data-sc-edit-toggle]');
                 assert(pencil, "no pencil in the hero's icon group");
                 assert(this.anchor.getBoundingClientRect().right <= pencil.getBoundingClientRect().left + 1,
                     "the ★ is not left of the pencil");
@@ -178,7 +178,7 @@ tours.add("sc_1736_star", {
         },
         {
             content: "Followed: pressed, the star filled",
-            trigger: '[data-sc-section="player.hero"] button[data-sc-follow][aria-pressed="true"][data-sc-followed="1"]:not([disabled])',
+            trigger: '[data-pk-section="player.hero"] button[data-sc-follow][aria-pressed="true"][data-sc-followed="1"]:not([disabled])',
             run(helpers) {
                 assert(getComputedStyle(this.anchor.querySelector("svg")).fill !== window.__sc1736Star, "the star is not filled");
                 return helpers.click();
@@ -186,7 +186,7 @@ tours.add("sc_1736_star", {
         },
         {
             content: "Unfollowed again",
-            trigger: '[data-sc-section="player.hero"] button[data-sc-follow][aria-pressed="false"][data-sc-followed="0"]:not([disabled])',
+            trigger: '[data-pk-section="player.hero"] button[data-sc-follow][aria-pressed="false"][data-sc-followed="0"]:not([disabled])',
         },
     ],
 });
@@ -219,14 +219,14 @@ tours.add("sc_1736_contact", {
     ],
 });
 
-const ALLERGY = 'dialog[open] [data-sc-section="medical.allergy"]';
+const ALLERGY = 'dialog[open] [data-pk-section="medical.allergy"]';
 const ITEM = `${ALLERGY} [data-sc-med-item]`;
 
 tours.add("sc_1736_med_delete", {
     steps: () => [
         {
             content: "The Allergies pill",
-            trigger: '[data-sc-section="player.medical"] button[data-sc-med-pill="allergy"]',
+            trigger: '[data-pk-section="player.medical"] button[data-sc-med-pill="allergy"]',
             run: "click",
         },
         {
@@ -244,7 +244,7 @@ tours.add("sc_1736_med_delete", {
         },
         {
             content: "It asks first — Cancel",
-            trigger: "dialog[data-sc-confirm][open] [data-sc-confirm-cancel]",
+            trigger: "dialog[data-pk-confirm][open] [data-pk-confirm-cancel]",
             run: "click",
         },
         {
@@ -258,7 +258,7 @@ tours.add("sc_1736_med_delete", {
         },
         {
             content: "Confirm",
-            trigger: "dialog[data-sc-confirm][open] [data-sc-confirm-ok]",
+            trigger: "dialog[data-pk-confirm][open] [data-pk-confirm-ok]",
             run: "click",
         },
         {

@@ -58,7 +58,7 @@ const create = {
 
 const created = {
     content: "The new event's page",
-    trigger: '[data-sc-section="event.hero"]',
+    trigger: '[data-pk-section="event.hero"]',
 };
 
 // Typed then picked from the list.

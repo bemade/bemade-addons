@@ -124,9 +124,9 @@ class TestAppShellAdminCoach1598(AppShellCommon):
             _text, tree = self._get(self.team_url)
             self.assertIsNotNone(self._shell(tree), user.name)
             panel = self._panel(tree, 'players')
-            self.assertTrue(panel.xpath('.//details[@data-sc-section="team.add_player"]'), user.name)
-            self.assertFalse(panel.xpath('.//details[@data-sc-section="team.request_add"]'), user.name)
-            self.assertTrue(tree.xpath('//*[@data-sc-section="team.announcement.edit"]'), user.name)
+            self.assertTrue(panel.xpath('.//details[@data-pk-section="team.add_player"]'), user.name)
+            self.assertFalse(panel.xpath('.//details[@data-pk-section="team.request_add"]'), user.name)
+            self.assertTrue(tree.xpath('//*[@data-pk-section="team.announcement.edit"]'), user.name)
 
     # -- UC-A3 -----------------------------------------------------------
     def test_team_page_pending_removals_banner(self):
@@ -153,9 +153,9 @@ class TestAppShellAdminCoach1598(AppShellCommon):
         self._login_coach()
         text, tree = self._get(self.team_url)
         panel = self._panel(tree, 'players')
-        self.assertTrue(panel.xpath('.//details[@data-sc-section="team.request_add"]'))
-        self.assertFalse(panel.xpath('.//details[@data-sc-section="team.add_player"]'))
-        self.assertFalse(tree.xpath('//*[@data-sc-section="team.announcement.edit"]'))
+        self.assertTrue(panel.xpath('.//details[@data-pk-section="team.request_add"]'))
+        self.assertFalse(panel.xpath('.//details[@data-pk-section="team.add_player"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="team.announcement.edit"]'))
         self.assertNotIn('Pending removals', text)
         _text, tree = self._get(self.player_url)
         self.assertFalse(tree.xpath('//dialog[@id="sc_remove_player_sheet"]'))

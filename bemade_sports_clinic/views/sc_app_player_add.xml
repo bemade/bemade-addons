@@ -9,7 +9,7 @@
     <template id="sc_player_add_panel" name="App shell: create a player (inline)">
         <t t-set="d" t-value="panel['data']"/>
         <details t-att-id="panel['id']" class="o_sc_card o_sc_disclosure o_sc_list_add_panel o_sc_player_add"
-                 t-att-data-sc-section="panel['section']" t-att-open="'open' if panel['open'] else None">
+                 t-att-data-pk-section="panel['section']" t-att-open="'open' if panel['open'] else None">
             <summary class="o_sc_disclosure_summary">
                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                 <span>Create a player</span>

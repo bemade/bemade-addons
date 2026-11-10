@@ -182,7 +182,7 @@ tours.add("sc_1624_dashboard_configure", {
         },
         {
             content: "Confirm",
-            trigger: "dialog[open] button[data-sc-confirm-ok]",
+            trigger: "dialog[open] button[data-pk-confirm-ok]",
             run: "click",
             expectUnloadPage: true,
         },

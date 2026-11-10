@@ -232,7 +232,7 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
 
         def cards(payload, key):
             node = lxml_html.fragment_fromstring(payload['fragments'][key])
-            items = node.xpath('.//*[@data-sc-fragment-item]/@data-sc-fragment-item')
+            items = node.xpath('.//*[@data-pk-fragment-item]/@data-pk-fragment-item')
             self.assertEqual(len(items), len(set(items)))
             return items, node
 

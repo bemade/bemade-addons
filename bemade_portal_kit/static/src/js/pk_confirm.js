@@ -23,7 +23,7 @@
  *       Without it (or when neither URL has one of them), « this page » is
  *       the same path and query.
  */
-export const PENDING_TOAST_KEY = "sc_pending_toast:v1";
+export const PENDING_TOAST_KEY = "pk_pending_toast:v1";
 
 let sheet = null;
 
@@ -31,14 +31,14 @@ function build() {
     const dialog = document.createElement("dialog");
     dialog.className = "o_sc_sheet o_sc_confirm_sheet";
     dialog.setAttribute("aria-labelledby", "sc_confirm_title");
-    dialog.dataset.scConfirm = "1";
+    dialog.dataset.pkConfirm = "1";
     dialog.innerHTML = `
         <div class="o_sc_sheet_head"><h2 class="o_sc_sheet_title" id="sc_confirm_title"></h2></div>
         <div class="o_sc_sheet_body">
             <p class="o_sc_confirm_message"></p>
             <div class="o_sc_form_actions">
-                <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-confirm-cancel="1"></button>
-                <button type="button" class="o_sc_btn o_sc_btn_danger" data-sc-confirm-ok="1"></button>
+                <button type="button" class="o_sc_btn o_sc_btn_ghost" data-pk-confirm-cancel="1"></button>
+                <button type="button" class="o_sc_btn o_sc_btn_danger" data-pk-confirm-ok="1"></button>
             </div>
         </div>`;
     (document.querySelector(".o_sc_app") || document.body).appendChild(dialog);
@@ -50,8 +50,8 @@ export function pkConfirm({ title = "", message = "", confirm = "OK", cancel = "
     const dialog = sheet;
     dialog.querySelector(".o_sc_sheet_title").textContent = title;
     dialog.querySelector(".o_sc_confirm_message").textContent = message;
-    const ok = dialog.querySelector("[data-sc-confirm-ok]");
-    const no = dialog.querySelector("[data-sc-confirm-cancel]");
+    const ok = dialog.querySelector("[data-pk-confirm-ok]");
+    const no = dialog.querySelector("[data-pk-confirm-cancel]");
     ok.textContent = confirm;
     no.textContent = cancel;
     return new Promise((resolve) => {

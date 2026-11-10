@@ -123,7 +123,7 @@ document.addEventListener(
 
 // Keyboard toggles (Enter / Space on a summary or a « Détails » button)
 // fire a click too; a lazy body that lands later is kept in place as well.
-document.addEventListener("sc:lazy-loaded", (ev) => {
+document.addEventListener("pk:lazy-loaded", (ev) => {
     if (hold && hold.dash.contains(ev.target)) {
         hold.until = Math.max(hold.until, performance.now() + 300);
         keep();

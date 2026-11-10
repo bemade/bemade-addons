@@ -69,7 +69,7 @@ class TestCoachExternalNoteReadOnly1675(AppShellCommon):
     def _external_card(self):
         _text, tree = self._get('/my/player?player_id=%s&tab=injuries&injury=%s'
                                 % (self.player.id, self.injury.id))
-        cards = tree.xpath('//details[@id="injury-%s"]//*[@data-sc-edit-card="injury-notes-external"]'
+        cards = tree.xpath('//details[@id="injury-%s"]//*[@data-pk-edit-card="injury-notes-external"]'
                            % self.injury.id)
         self.assertEqual(len(cards), 1)
         return cards[0]

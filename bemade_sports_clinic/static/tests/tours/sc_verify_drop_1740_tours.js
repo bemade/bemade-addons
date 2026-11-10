@@ -24,7 +24,7 @@ async function waitFor(check, message, timeout = 10000) {
 }
 
 const LINE = 'section[data-sc-instance="todo"] details[data-sc-todo="verify"]';
-const cards = () => [...document.querySelectorAll(`${LINE} details[data-sc-edit-card="injury"]`)];
+const cards = () => [...document.querySelectorAll(`${LINE} details[data-pk-edit-card="injury"]`)];
 const count = () => (document.querySelector(`${LINE} [data-sc-todo-count]`) || {}).textContent;
 const line = () => document.querySelector(LINE);
 
@@ -44,7 +44,7 @@ tours.add("sc_1740_verify_drop", {
             content: "Verify the first: the card leaves, the count follows",
             trigger: `${LINE} button[data-sc-injury-quick="verify"]`,
             async run() {
-                const card = this.anchor.closest('details[data-sc-edit-card="injury"]');
+                const card = this.anchor.closest('details[data-pk-edit-card="injury"]');
                 const id = card.dataset.scInjuryId;
                 this.anchor.click();
                 await waitFor(() => !cards().some((c) => c.dataset.scInjuryId === id), "the card leaves");

@@ -33,7 +33,7 @@
         the current filter values (organization_id, team_id, …).
     -->
     <template id="sc_event_filter_bar" name="App shell: events filter bar">
-        <div class="o_sc_chips" data-sc-section="events.types">
+        <div class="o_sc_chips" data-pk-section="events.types">
             <t t-foreach="sc_event_chips" t-as="chip">
                 <a t-att-href="chip[2]" t-attf-class="o_sc_chip #{'o_sc_chip_mauve' if chip[3] else 'o_sc_chip_ghost'}"
                    t-att-aria-pressed="'true' if chip[3] else 'false'" t-att-data-sc-event-type="chip[0] or 'all'" t-out="chip[1]"/>
@@ -41,18 +41,18 @@
         </div>
         <!-- Owner review 2026-10-11: the legacy portal's views and
              filters are back (the legacy route does the filtering). -->
-        <div class="o_sc_chips" data-sc-section="events.views">
+        <div class="o_sc_chips" data-pk-section="events.views">
             <t t-foreach="sc_event_views" t-as="view">
                 <a t-att-href="view[2]" t-attf-class="o_sc_chip #{'o_sc_chip_mauve' if view[3] else 'o_sc_chip_ghost'}"
                    t-att-aria-pressed="'true' if view[3] else 'false'" t-att-data-sc-view="view[0]" t-out="view[1]"/>
             </t>
         </div>
         <!-- Owner review 2026-10-14: the filters apply as soon as they change
-             (sc_forms.js, data-sc-autosubmit; a date once complete); without
+             (sc_forms.js, data-pk-autosubmit; a date once complete); without
              JS, the « Apply filters » button stays. Sort / group by are not
              filters: their own labelled group. -->
-        <form method="get" t-att-action="sc_event_filter_action" class="o_sc_filters" data-sc-section="events.filters"
-              data-sc-autosubmit="1">
+        <form method="get" t-att-action="sc_event_filter_action" class="o_sc_filters" data-pk-section="events.filters"
+              data-pk-autosubmit="1">
             <input type="hidden" name="view_type" t-att-value="sc_event_view"/>
             <input type="hidden" name="event_type" t-att-value="sc_event_type"/>
             <input t-if="search" type="hidden" name="search" t-att-value="search"/>
@@ -116,7 +116,7 @@
                 </div>
                 <!-- Task 1607: the sort is in the list header (sc_list_header);
                      the group by stays here, in its own labelled group. -->
-                <fieldset t-if="sc_event_filter_list" class="o_sc_filter_group" data-sc-section="events.group">
+                <fieldset t-if="sc_event_filter_list" class="o_sc_filter_group" data-pk-section="events.group">
                     <legend class="o_sc_filter_group_title">Group by</legend>
                     <div class="o_sc_filter_grid">
                         <div class="o_sc_field">
@@ -133,8 +133,8 @@
                     </div>
                 </fieldset>
                 <div class="o_sc_form_actions">
-                    <a t-att-href="sc_event_filter_reset" class="o_sc_btn o_sc_btn_ghost" data-sc-filter-reset="1">Reset</a>
-                    <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-autosubmit-fallback="1">Apply filters</button>
+                    <a t-att-href="sc_event_filter_reset" class="o_sc_btn o_sc_btn_ghost" data-pk-filter-reset="1">Reset</a>
+                    <button type="submit" class="o_sc_btn o_sc_btn_primary" data-pk-autosubmit-fallback="1">Apply filters</button>
                 </div>
             </details>
         </form>
@@ -168,7 +168,7 @@
                 <t t-set="sort_label">Sort events</t>
                 <t t-set="sort_section" t-value="'events.sort'"/>
             </t>
-            <div t-if="sc_event_groups" class="o_sc_list" data-sc-section="events.list">
+            <div t-if="sc_event_groups" class="o_sc_list" data-pk-section="events.list">
                 <section t-foreach="sc_event_groups" t-as="group" class="o_sc_group" t-att-data-sc-group="group['key']">
                     <h3 class="o_sc_group_title" t-out="group['label']"/>
                     <t t-foreach="group['rows']" t-as="row">
@@ -176,14 +176,14 @@
                     </t>
                 </section>
             </div>
-            <div t-elif="sc_event_rows" class="o_sc_list" data-sc-section="events.list">
+            <div t-elif="sc_event_rows" class="o_sc_list" data-pk-section="events.list">
                 <t t-foreach="sc_event_rows" t-as="row">
                     <t t-call="bemade_sports_clinic.sc_event_list_row"/>
                 </t>
             </div>
             <!-- Task 1730: « My events » (a therapist's default view) empty
                  points at « All ». -->
-            <p t-elif="sc_event_view == 'my'" class="o_sc_empty" data-sc-section="events.empty_mine">No events assigned to you. <a t-att-href="sc_event_all_url" class="o_sc_link o_sc_hint_link" data-sc-view-link="all">See all events</a></p>
+            <p t-elif="sc_event_view == 'my'" class="o_sc_empty" data-pk-section="events.empty_mine">No events assigned to you. <a t-att-href="sc_event_all_url" class="o_sc_link o_sc_hint_link" data-sc-view-link="all">See all events</a></p>
             <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
                 <t t-set="message">No events found.</t>
             </t>
@@ -216,7 +216,7 @@
         props (JSON: feedUrl, params, locale, detailKeys).
     -->
     <template id="sc_calendar" name="App shell: calendar">
-        <div class="o_sc_calendar_wrap" data-sc-section="calendar">
+        <div class="o_sc_calendar_wrap" data-pk-section="calendar">
             <owl-component name="bemade_sports_clinic.sc_calendar" t-att-props="props">
                 <p class="o_sc_empty">Loading…</p>
             </owl-component>
@@ -258,8 +258,8 @@
         <!-- Task 1611: the head and the read lines are read fragments (a save
              refreshes the « when », the lines and their totals in place). -->
         <article t-attf-class="o_sc_card o_sc_timesheet #{'o_sc_edit_card' if row['editable'] else ''}" t-att-data-sc-timesheet-id="row['id']"
-                 t-att-data-sc-state="row['state']" t-att-data-sc-edit-card="('timesheet-%s' % row['id']) if row['editable'] else None"
-                 t-att-data-sc-fragment-item="sc_fragment_key(row['record'], 'card')">
+                 t-att-data-sc-state="row['state']" t-att-data-pk-edit-card="('timesheet-%s' % row['id']) if row['editable'] else None"
+                 t-att-data-pk-fragment-item="sc_fragment_key(row['record'], 'card')">
             <div class="o_sc_card_head">
                 <div t-att-data-sc-fragment="sc_fragment_key(row['record'], 'head')">
                     <a t-if="show_event" t-att-href="row['event_url']" class="o_sc_row_title" t-out="row['title']"/>
@@ -398,8 +398,8 @@
             <!-- Owner review 2026-10-11: the pencil edit paradigm — a therapist
                  edits the event in place (was a separate edit page). -->
             <t t-set="sc_event_editable" t-value="bool(can_edit and sc_event_edit_options)"/>
-            <section t-attf-class="o_sc_card o_sc_hero #{'o_sc_edit_card' if sc_event_editable else ''}" data-sc-section="event.hero"
-                     t-att-data-sc-edit-card="'event' if sc_event_editable else None">
+            <section t-attf-class="o_sc_card o_sc_hero #{'o_sc_edit_card' if sc_event_editable else ''}" data-pk-section="event.hero"
+                     t-att-data-pk-edit-card="'event' if sc_event_editable else None">
                 <div class="o_sc_edit_card_head">
                     <span class="o_sc_chips" t-att-data-sc-fragment="sc_fragment_key(event, 'chips')">
                         <span class="o_sc_chip o_sc_chip_ghost" t-out="sc_event_kind"/>
@@ -502,7 +502,7 @@
                  being read fragments: assigning yourself shows them in place
                  (it takes no room while every holder is empty). -->
             <section t-if="can_view_timesheets or sc_event_editable" class="o_sc_section o_sc_event_timesheets"
-                     data-sc-section="event.timesheets">
+                     data-pk-section="event.timesheets">
                 <!-- Task 1584: admins see every therapist's rows — a neutral
                      title; a therapist sees their own. -->
                 <div t-att-data-sc-fragment="sc_fragment_key(event, 'ts-title')"><t t-if="can_view_timesheets">
@@ -642,7 +642,7 @@
                      teams / staff multi-selects below (form-mode tags fields). -->
                 <input type="hidden" id="sc_event_team_ids" name="team_ids" t-att-value="sc_form['team_csv']"/>
                 <input type="hidden" id="sc_event_staff_ids" name="assigned_staff_ids" t-att-value="sc_form['staff_csv']"/>
-                <section class="o_sc_card o_sc_fields" data-sc-section="event.form.main">
+                <section class="o_sc_card o_sc_fields" data-pk-section="event.form.main">
                     <div class="o_sc_field">
                         <label class="o_sc_field_label" for="sc_event_name">Event Name</label>
                         <input type="text" id="sc_event_name" name="name" class="o_sc_input" required="required" t-att-value="sc_form['name']"/>
@@ -674,7 +674,7 @@
                         <textarea id="sc_event_description" name="description" class="o_sc_input o_sc_textarea" rows="3" t-out="sc_form['description']"/>
                     </div>
                 </section>
-                <section class="o_sc_card o_sc_fields" data-sc-section="event.form.times">
+                <section class="o_sc_card o_sc_fields" data-pk-section="event.form.times">
                     <div class="o_sc_field">
                         <label class="o_sc_field_label" for="sc_event_date_start">Event Start</label>
                         <input type="datetime-local" id="sc_event_date_start" name="date_start" class="o_sc_input" required="required" t-att-value="sc_form['date_start']"/>
@@ -700,7 +700,7 @@
                              role="alert" t-att-data-sc-field-error="'therapist_end'" t-out="sc_form['field_errors']['therapist_end']"/>
                     </div>
                 </section>
-                <section class="o_sc_card o_sc_fields" data-sc-section="event.form.teams">
+                <section class="o_sc_card o_sc_fields" data-pk-section="event.form.teams">
                     <!-- Task 1597: picking an organization narrows the teams
                          to its own and drops the others (the tags field's
                          groupSelect); the model refuses the teams of two
@@ -721,7 +721,7 @@
                         <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_form['team_props']"/></t>
                     </div>
                 </section>
-                <section class="o_sc_card o_sc_fields" data-sc-section="event.form.staff">
+                <section class="o_sc_card o_sc_fields" data-pk-section="event.form.staff">
                     <div data-sc-event-pick="staff">
                         <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_form['staff_props']"/></t>
                     </div>

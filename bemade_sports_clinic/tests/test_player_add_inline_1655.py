@@ -116,7 +116,7 @@ class TestPlayerAddInline1655(PlayerAdd1655Common):
         self.assertIn('tab=info', location)
         self.assertIn('created_player=%s' % player.id, location)
         tree = lxml_html.fromstring(self.url_open(location).text)
-        self.assertEqual(tree.xpath('//*[@data-sc-edit-card="identity"]/@data-sc-edit-open-on-load'), ['1'])
+        self.assertEqual(tree.xpath('//*[@data-pk-edit-card="identity"]/@data-sc-edit-open-on-load'), ['1'])
         undo = tree.xpath('//form[@data-sc-form="player.undo"]/@action')
         self.assertEqual(undo, ['/my/player/%s/undo-create' % player.id])
         resp = self.url_open(undo[0], data={'csrf_token': self._csrf(), 'return_url': '/my/players'},
@@ -172,7 +172,7 @@ class TestPlayerAddInline1655(PlayerAdd1655Common):
         # The TP's only team pre-filled.
         self.assertEqual(panel[0].xpath('.//input[@name="team_ids"]/@value'), [str(self.team_a.id)])
         _text, tree = self._get('/my/team?team_id=%s&tab=players' % self.team_a.id)
-        panel = tree.xpath('//details[@id="sc_add_player"][@data-sc-section="team.add_player"][contains(@class, "o_sc_player_add")]')
+        panel = tree.xpath('//details[@id="sc_add_player"][@data-pk-section="team.add_player"][contains(@class, "o_sc_player_add")]')
         self.assertEqual(len(panel), 1)
         self.assertEqual(panel[0].xpath('.//input[@name="team_ids"]/@value'), [str(self.team_a.id)])
         self.assertEqual(panel[0].xpath('.//input[@name="context_team_id"]/@value'), [str(self.team_a.id)])

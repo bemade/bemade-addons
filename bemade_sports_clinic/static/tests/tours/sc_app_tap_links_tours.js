@@ -6,8 +6,8 @@
  */
 import { registry } from "@web/core/registry";
 
-const CARD = '[data-sc-edit-card^="contact-"]';
-const MOBILE = `${CARD} [data-sc-edit-view="read"] a[data-sc-display-href="tel"][data-sc-display$=":mobile"]`;
+const CARD = '[data-pk-edit-card^="contact-"]';
+const MOBILE = `${CARD} [data-sc-edit-view="read"] a[data-pk-display-href="tel"][data-sc-display$=":mobile"]`;
 
 registry.category("web_tour.tours").add("sc_1585_tap_links", {
     steps: () => [
@@ -16,7 +16,7 @@ registry.category("web_tour.tours").add("sc_1585_tap_links", {
             trigger: `${MOBILE}[href="tel:5550100456"]`,
             run() {
                 const email = document.querySelector(
-                    `${CARD} [data-sc-edit-view="read"] a[data-sc-display-href="mailto"][data-sc-display$=":email"]`
+                    `${CARD} [data-sc-edit-view="read"] a[data-pk-display-href="mailto"][data-sc-display$=":email"]`
                 );
                 if (!email || email.getAttribute("href") !== "mailto:parent.one@example.com") {
                     throw new Error(`email link is « ${email && email.getAttribute("href")} »`);
@@ -45,7 +45,7 @@ registry.category("web_tour.tours").add("sc_1585_tap_links", {
         },
         {
             content: "Done: back to read mode",
-            trigger: `${CARD} button[data-sc-edit-done]`,
+            trigger: `${CARD} button[data-pk-edit-done]`,
             run: "click",
         },
         {

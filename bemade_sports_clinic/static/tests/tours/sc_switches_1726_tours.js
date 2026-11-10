@@ -71,14 +71,14 @@ tours.add("sc_1726_switch_pref", {
     ],
 });
 
-const FILTERS = 'form[data-sc-section="events.filters"]';
+const FILTERS = 'form[data-pk-section="events.filters"]';
 const CANCELLED = 'input[role="switch"][name="show_cancelled"]';
 
 tours.add("sc_1726_switch_filter", {
     steps: () => [
         {
             content: "Open the filters",
-            trigger: 'form[data-sc-section="events.filters"] details.o_sc_disclosure > summary',
+            trigger: 'form[data-pk-section="events.filters"] details.o_sc_disclosure > summary',
             run() {
                 this.anchor.closest("details").open = true;
             },
@@ -136,14 +136,14 @@ tours.add("sc_1726_switch_autosave", {
     ],
 });
 
-const CONDITION = 'dialog[open] [data-sc-section="medical.medical_alert"]';
+const CONDITION = 'dialog[open] [data-pk-section="medical.medical_alert"]';
 const NONE = 'input[role="switch"][data-sc-med-set="medical_none_confirmed"]';
 
 tours.add("sc_1726_switch_fetch", {
     steps: () => [
         {
             content: "The Medical alert pill",
-            trigger: '[data-sc-section="player.medical"] button[data-sc-med-pill="medical_alert"]',
+            trigger: '[data-pk-section="player.medical"] button[data-sc-med-pill="medical_alert"]',
             run() {
                 window.__sc1726NoReload = true;
                 this.anchor.click();

@@ -52,7 +52,7 @@ class TestAppShellEvents1540(Events1540Common):
                         '/my/event/%s/edit' % self.event.id, '/my/event/create'):
                 text, tree = self._get(url)
                 self.assertIsNone(self._shell(tree), url)
-                self.assertNotIn('data-sc-app-shell', text, url)
+                self.assertNotIn('data-pk-app-shell', text, url)
         finally:
             for p in patches:
                 p.stop()
@@ -117,14 +117,14 @@ class TestAppShellEvents1540(Events1540Common):
                          ['sc_ts_add_sheet'])
         self.assertFalse(tree.xpath('//header//button/@data-sc-sheet-open'))
         # The own timesheet is edited in place (pencil card, owner review 2026-10-11).
-        self.assertTrue(tree.xpath('//*[@data-sc-edit-card="timesheet-%s"]' % self.timesheet.id))
+        self.assertTrue(tree.xpath('//*[@data-pk-edit-card="timesheet-%s"]' % self.timesheet.id))
 
     def test_detail_coach_no_timesheets(self):
         self._switch(True)
         self._login_coach()
         _text, tree = self._get('/my/event/%s' % self.event.id)
         self.assertIsNotNone(self._shell(tree))
-        self.assertFalse(tree.xpath('//*[@data-sc-section="event.timesheets"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="event.timesheets"]'))
         self.assertFalse(tree.xpath('//*[@data-sc-action="event.edit"]'))
 
     # -- UC-E5 -----------------------------------------------------------
@@ -158,7 +158,7 @@ class TestAppShellEvents1540(Events1540Common):
         self.assertIn(resp.status_code, (302, 303))
         _text, tree = self._get('/my/event/%s' % event.id)
         props = {json.loads(p)['field']: json.loads(p) for p in tree.xpath(
-            '//*[@data-sc-edit-card="event"]//owl-component/@props')}
+            '//*[@data-pk-edit-card="event"]//owl-component/@props')}
         self.assertEqual(props['team_ids']['value'], str(self.team_a.id))
         self.assertEqual(props['description']['value'], 'Line one\nLine two')
         resp = self._post('/my/event/%s/save' % event.id, {

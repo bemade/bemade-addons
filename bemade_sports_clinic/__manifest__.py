@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.135.1",
+    'version': "19.0.1.136.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -331,31 +331,12 @@ therapists, Missing timesheets.
             # Task 1539: P2 page / component styles.
             "bemade_sports_clinic/static/src/scss/sc_p2.scss",
             # Task 5197 (kit P2): the shell's 13 generic scripts moved to
-            # bemade_portal_kit (pk_*.js, bundled by the kit, a dependency).
-            # The 10 that had exports keep their old path here one release
-            # as a pure re-export — remove in the next kit phase (the kit
-            # module runs once, a shim never binds anything). sc_forms,
-            # sc_switch and sc_live_count had none: no shim.
-            "bemade_sports_clinic/static/src/js/sc_fetch.js",
-            "bemade_sports_clinic/static/src/js/sc_draft_store.js",
-            # Task 1656: the confirm sheet + leaving a page whose access ended.
-            "bemade_sports_clinic/static/src/js/sc_confirm.js",
-            # Task 1646: the focus rule of add panels / edit views.
-            "bemade_sports_clinic/static/src/js/sc_focus.js",
-            # Task 1640: 4-digit year cap (min / max) on date inputs — app
-            # shell and legacy portal pages alike.
-            "bemade_sports_clinic/static/src/js/sc_date_bounds.js",
-            # Task 1585: tap-to-call / tap-to-email hrefs.
-            "bemade_sports_clinic/static/src/js/sc_contact_href.js",
+            # bemade_portal_kit (pk_*.js, bundled by the kit, a dependency);
+            # task 5198 (P3a) removed their one-release aliases.
             "bemade_sports_clinic/static/src/js/sc_app_ui.js",
-            # Task 1642: after an edit, back to the top of the edited block.
-            "bemade_sports_clinic/static/src/js/sc_edit_anchor.js",
-            # Task 1606: the user menu (rail footer / app-bar avatar).
-            "bemade_sports_clinic/static/src/js/sc_user_menu.js",
             "bemade_sports_clinic/static/src/js/sc_help.js",
             # Task 1660: guide videos on the public Knowledge article pages.
             "bemade_sports_clinic/static/src/js/sc_guide_video.js",
-            "bemade_sports_clinic/static/src/js/sc_list_header.js",
             # Task 1650: the header search (magnifier, « / », Ctrl/⌘-K).
             "bemade_sports_clinic/static/src/js/sc_search.js",
             # Task 1648: the type-to-filter picker of the link fields.
@@ -379,7 +360,6 @@ therapists, Missing timesheets.
             "bemade_sports_clinic/static/src/js/sc_status_pills.js",
             "bemade_sports_clinic/static/src/js/sc_injury_card.js",
             "bemade_sports_clinic/static/src/js/sc_account.js",
-            "bemade_sports_clinic/static/src/js/sc_app_nav.js",
             "bemade_sports_clinic/static/src/js/sc_sw_register.js",
             # Task 1624: « Configurer » the dashboard (saves as you go).
             "bemade_sports_clinic/static/src/js/sc_dashboard_config.js",

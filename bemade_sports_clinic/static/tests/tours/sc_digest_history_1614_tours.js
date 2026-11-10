@@ -48,7 +48,7 @@ function contrast(el) {
     return (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
 }
 
-const ROW = '[data-sc-section="digest.history"] details[data-sc-digest-row]';
+const ROW = '[data-pk-section="digest.history"] details[data-sc-digest-row]';
 
 tours.add("sc_1614_digest_history_inline", {
     steps: () => [
@@ -63,7 +63,7 @@ tours.add("sc_1614_digest_history_inline", {
             run() {
                 const row = document.querySelector(`${ROW}[open]`);
                 assert(
-                    row.querySelector('.o_sc_lazy_body [data-sc-section="digest.snapshot"]'),
+                    row.querySelector('.o_sc_lazy_body [data-pk-section="digest.snapshot"]'),
                     "no snapshot line"
                 );
                 assert(window.location.pathname.endsWith("/digest-history"), "left the list");

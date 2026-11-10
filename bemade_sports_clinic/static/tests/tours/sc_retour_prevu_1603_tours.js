@@ -44,12 +44,12 @@ function typeAndLeave(input, value) {
 
 const CARD = ".o_sc_injury_item[open]";
 const SHEET = "dialog#sc_proposal_sheet";
-const HEADER_FIELD = '[data-sc-section="player.predicted_return"] .o_sc_autosave[data-sc-field="predicted_return_date"]';
+const HEADER_FIELD = '[data-pk-section="player.predicted_return"] .o_sc_autosave[data-sc-field="predicted_return_date"]';
 
 // Review fixes 2026-10-18: the header's fields are behind its one pencil.
 const HEADER_PENCIL = {
     content: "Open the header's pencil",
-    trigger: '[data-sc-section="player.hero"] [data-sc-card-icons] > button[data-sc-edit-toggle][aria-expanded="false"]',
+    trigger: '[data-pk-section="player.hero"] [data-sc-card-icons] > button[data-sc-edit-toggle][aria-expanded="false"]',
     run: "click",
 };
 
@@ -230,7 +230,7 @@ tours.add("sc_1603_last_resolved", {
                 // actual return date (its read view shows ONE date).
                 await waitFor(
                     () => document.querySelector(
-                        '[data-sc-section="player.return_date.edit"] .o_sc_autosave[data-sc-field="return_date"] input'
+                        '[data-pk-section="player.return_date.edit"] .o_sc_autosave[data-sc-field="return_date"] input'
                     ).value === "2030-01-31",
                     "actual return date in the header"
                 );

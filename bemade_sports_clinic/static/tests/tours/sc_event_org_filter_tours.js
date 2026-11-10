@@ -144,7 +144,7 @@ tours.add("sc_1597_event_org_filter", {
         },
         {
             content: "The event page opens",
-            trigger: ".o_sc_app [data-sc-section='event.hero']",
+            trigger: ".o_sc_app [data-pk-section='event.hero']",
         },
     ],
 });

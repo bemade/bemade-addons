@@ -61,7 +61,7 @@ class TestReviewFixes1018(PlayerInlineCommon):
         for url in ('/my/events',
                     '/my/events?team_id=%s&show_cancelled=1&group_by=team' % self.team_a.id):
             _text_, tree = self._get(url)
-            form = tree.xpath('//form[@data-sc-section="events.filters"]')[0]
+            form = tree.xpath('//form[@data-pk-section="events.filters"]')[0]
             details = form.xpath('.//details[contains(@class, "o_sc_disclosure")]')
             self.assertEqual(len(details), 1)
             self.assertIsNone(details[0].get('open'), url)
@@ -71,7 +71,7 @@ class TestReviewFixes1018(PlayerInlineCommon):
                                  [str(self.team_a.id)])
         # The calendar keeps opening its panel on an active filter.
         _text_, tree = self._get('/my/events/calendar?team_id=%s' % self.team_a.id)
-        self.assertTrue(tree.xpath('//form[@data-sc-section="events.filters"]//details[@open]'))
+        self.assertTrue(tree.xpath('//form[@data-pk-section="events.filters"]//details[@open]'))
 
     # -- RF-CREATE -------------------------------------------------------
     def _submit_label(self, url, selector):
@@ -200,7 +200,7 @@ class TestReviewFixes1018(PlayerInlineCommon):
     def test_remove_player_only_in_the_header_edit_view(self):
         self._login_tp()
         _text_, tree = self._get(self._url(tab='injuries', team_id=self.team_a.id))
-        hero = tree.xpath('//*[@data-sc-section="player.hero"]')[0]
+        hero = tree.xpath('//*[@data-pk-section="player.hero"]')[0]
         removes = hero.xpath('.//*[@data-sc-action="player.remove"]')
         for node in removes:
             self.assertTrue(node.xpath('ancestor::*[@data-sc-edit-view="edit"]'))
@@ -235,8 +235,8 @@ class TestReviewFixes1018I18n(TestAppShellI18n1538):
         self.player.sudo().write({'match_status': 'yes', 'practice_status': 'yes', 'return_date': '2026-11-02'})
         self._login_tp()
         tree = lxml_html.fromstring(self._fr('/my/player?player_id=%s' % self.player.id))
-        ret = tree.xpath('//*[@data-sc-section="player.return"]')[0]
+        ret = tree.xpath('//*[@data-pk-section="player.return"]')[0]
         self.assertIn('Retour réel', _text(ret))
         # Task 1736 (deliberate update): in the hero's top-bar icon group.
-        toggle = tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-card-icons]/button[@data-sc-edit-toggle]')[0]
+        toggle = tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-sc-card-icons]/button[@data-sc-edit-toggle]')[0]
         self.assertEqual(toggle.get('aria-label'), 'Modifier')

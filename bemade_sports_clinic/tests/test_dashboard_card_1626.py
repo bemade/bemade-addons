@@ -61,7 +61,7 @@ class Dashboard1626Common(AppShellCommon):
             return_value={'players': {self.player.id}, 'injuries': set()})
 
     def _dashboard_row(self, tree):
-        rows = tree.xpath('//*[@data-sc-section="team.recent_changes"]'
+        rows = tree.xpath('//*[@data-pk-section="team.recent_changes"]'
                           '//*[contains(@class, "o_sc_player_row")][@data-sc-player-id="%s"]'
                           % self.player.id)
         self.assertEqual(len(rows), 1)
@@ -78,7 +78,7 @@ class TestDashboardCard1626(Dashboard1626Common):
             login()
             with self._presence():
                 _t, tree = self._get(self.url)
-            section = tree.xpath('//*[@data-sc-section="team.recent_changes"]')[0]
+            section = tree.xpath('//*[@data-pk-section="team.recent_changes"]')[0]
             self.assertFalse(section.xpath('.//details'), 'a native <details> card is left')
             row = self._dashboard_row(tree)
             main = row.xpath('.//a[contains(@class, "o_sc_link_row_main")]')
@@ -211,7 +211,7 @@ class TestDashboardCardI18n1626(TestAppShellI18n1538):
         with patch.object(type(self.env['sports.patient']), '_dashboard_card_presence',
                           return_value={'players': {self.player.id}, 'injuries': set()}):
             tree = lxml_html.fromstring(self._fr('/my/team?team_id=%s' % self.team_a.id))
-        row = tree.xpath('//*[@data-sc-section="team.recent_changes"]'
+        row = tree.xpath('//*[@data-pk-section="team.recent_changes"]'
                          '//*[contains(@class, "o_sc_player_row")][@data-sc-player-id="%s"]'
                          % self.player.id)[0]
         self.assertEqual(_text(row.xpath('.//button[@data-sc-row-expand]')[0]), 'Détails')

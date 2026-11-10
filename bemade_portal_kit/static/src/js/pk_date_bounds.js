@@ -11,8 +11,8 @@
  * - stampDateBounds(root): set the defaults on the date / datetime-local
  *   inputs under ``root`` that have no min / max of their own (an existing
  *   bound — min=today on a deadline, max=today on « Résoudre » — is never
- *   overridden). Runs on load, after a fragment swap (``sc:fragments``),
- *   after a lazy body is injected (``sc:lazy-loaded``) and, as a safety net
+ *   overridden). Runs on load, after a fragment swap (``pk:fragments``),
+ *   after a lazy body is injected (``pk:lazy-loaded``) and, as a safety net
  *   for any other injected input, on focus (capture phase). App shell AND
  *   legacy portal pages (the same frontend bundle).
  */
@@ -93,8 +93,8 @@ if (typeof document !== "undefined") {
     } else {
         stampDateBounds();
     }
-    document.addEventListener("sc:fragments", () => stampDateBounds());
-    document.addEventListener("sc:lazy-loaded", (ev) => stampDateBounds(ev.target));
+    document.addEventListener("pk:fragments", () => stampDateBounds());
+    document.addEventListener("pk:lazy-loaded", (ev) => stampDateBounds(ev.target));
     document.addEventListener(
         "focusin",
         (ev) => {

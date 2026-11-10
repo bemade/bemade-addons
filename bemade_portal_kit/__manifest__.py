@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.1.0',
+    'version': '19.0.1.2.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -89,9 +89,34 @@ so they are inert on other portal pages:
   ``pk_switch`` (``window.pkSwitchSync``), ``pk_live_count``,
   ``pk_date_bounds``, ``pk_contact_href``, ``pk_edit_anchor``.
 
-Until the templates move to the kit, these scripts still read the markup
-names of their first consumer (``data-sc-*`` attributes, ``o_sc_*``
-classes, ``sc:*`` events).
+Markup contract
+---------------
+The scripts read and write ``pk`` names (version 1.2):
+
+* attributes ``data-pk-*``: ``app-shell``, ``db`` and ``uid`` on the shell
+  root; ``back``; ``section``, ``edit-card``, ``edit-done``,
+  ``fragment-item``; ``list-add-toggle``, ``list-add-cancel``,
+  ``draft-prefix``, ``submitted``, ``submitting``; ``autosubmit``,
+  ``autosubmit-fallback``, ``filter-reset``; ``user-menu-toggle``,
+  ``user-menu-popup``, ``menu-toggle``, ``menu-popup``; ``confirm``,
+  ``confirm-ok``, ``confirm-cancel``; ``switch-submit``, ``switch-off``;
+  ``live-count-url``, ``live-eager``, ``live-hide-zero``, ``live-poll``,
+  ``live-tone-on``, ``live-tone-off``; ``display-href``;
+* hooks a consumer sets on its own markup: ``data-pk-focus-skip`` (a field
+  that never takes the focus, e.g. a picker's search box),
+  ``data-pk-keep-in-view`` (a menu popup kept inside the content area) and
+  ``data-pk-list-reset`` (an always-open add card reset like an add panel);
+* events ``pk:fragments``, ``pk:form-reset``, ``pk:create-success``,
+  ``pk:lazy-loaded``, ``pk:live-count-refresh``, ``pk:fetch-error``,
+  ``pk:nav-sync``;
+* storage keys ``pk_draft:``, ``pk_pending_toast:v1``
+  (``PENDING_TOAST_KEY``), ``pk_nav_*:v1`` (``NAV_STACK_KEY``,
+  ``NAV_BF_RELOAD_KEY``) and ``pk_filters_open:``. A consumer imports the
+  exported constants, never repeats the strings. A device draft stored
+  under the old ``sc_draft:`` prefix is moved under ``pk_draft:`` when read.
+
+The shell's classes (``o_sc_*``) are still those of the first consumer;
+they move to the kit in a later version.
 """,
     'author': 'Bemade Inc.',
     'maintainers': ['dureposd'],
@@ -126,6 +151,9 @@ classes, ``sc:*`` events).
             'bemade_portal_kit/static/src/js/pk_draft_store.js',
             'bemade_portal_kit/static/src/js/pk_confirm.js',
             'bemade_portal_kit/static/src/js/pk_app_nav.js',
+            'bemade_portal_kit/static/src/js/pk_focus.js',
+            'bemade_portal_kit/static/src/js/pk_list_header.js',
+            'bemade_portal_kit/static/src/js/pk_user_menu.js',
         ],
         'web.assets_unit_tests': [
             'bemade_portal_kit/static/tests/**/*',

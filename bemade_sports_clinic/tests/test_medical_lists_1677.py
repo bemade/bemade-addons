@@ -145,7 +145,7 @@ class TestMedicalLists1677(MedicalLists1677Common):
         for state, tone, level in cases:
             set_medical(self.player, **state)
             tree = self._tree()
-            pill = tree.xpath('//*[@data-sc-section="player.medical"]//button[@data-sc-med-pill="allergy"]')[0]
+            pill = tree.xpath('//*[@data-pk-section="player.medical"]//button[@data-sc-med-pill="allergy"]')[0]
             self.assertIn('o_sc_med_%s' % tone, pill.get('class'), state)
             self.assertEqual(pill.get('data-sc-med-level'), level, state)
             head = self._sheet(tree, 'allergy').xpath('.//*[@data-sc-med-head]')[0]
@@ -281,7 +281,7 @@ class TestMedicalLists1677(MedicalLists1677Common):
         self._login_tp()
         set_url = '/my/app/medical/%s/set' % self.player.id
         tree = self._tree()
-        card = self._sheet(tree, 'allergy').xpath('.//*[@data-sc-section="medical.allergy.epipen"]')[0]
+        card = self._sheet(tree, 'allergy').xpath('.//*[@data-pk-section="medical.allergy.epipen"]')[0]
         self.assertFalse(card.xpath('.//*[@data-sc-med-epipen-note]'))
         self.assertEqual(card.xpath('.//*[@data-sc-med-epipen-note-field]')[0].get('hidden'), 'hidden')
         resp = self._post(set_url, field='allergy_epipen', value='1')
@@ -292,7 +292,7 @@ class TestMedicalLists1677(MedicalLists1677Common):
         self.player.invalidate_recordset()
         self.assertEqual((self.player.sudo().allergy_epipen, self.player.sudo().allergy_epipen_note),
                          (True, 'Synthetic front pocket'))
-        card = self._sheet(self._tree(), 'allergy').xpath('.//*[@data-sc-section="medical.allergy.epipen"]')[0]
+        card = self._sheet(self._tree(), 'allergy').xpath('.//*[@data-pk-section="medical.allergy.epipen"]')[0]
         read = card.xpath('.//*[@data-sc-edit-view="read"]')[0]
         self.assertEqual(read.get('data-sc-fragment'), 'sports.patient:%s:medical-epipen' % self.player.id)
         self.assertIn('Synthetic front pocket', read.text_content())
@@ -308,7 +308,7 @@ class TestMedicalLists1677(MedicalLists1677Common):
         self.assertEqual((self.player.sudo().allergy_epipen, self.player.sudo().allergy_epipen_note), (False, False))
         self.assertIn('PC TP', self.player.sudo().allergy_updated_info)
         # Medical alerts: no EpiPen card.
-        self.assertFalse(self._sheet(self._tree(), 'medical_alert').xpath('.//*[@data-sc-section="medical.allergy.epipen"]'))
+        self.assertFalse(self._sheet(self._tree(), 'medical_alert').xpath('.//*[@data-pk-section="medical.allergy.epipen"]'))
 
     # -- NONE-1 -------------------------------------------------------------
     def test_none_known(self):
@@ -398,7 +398,7 @@ class TestMedicalLists1677(MedicalLists1677Common):
             self.assertFalse(sheet.xpath('.//owl-component'), key)
             self.assertEqual(sheet.xpath('.//*[@data-sc-med-head]/..')[0].get('data-sc-fragment'),
                              'sports.patient:%s:medical-%s-head' % (pid, key))
-            header = sheet.xpath('.//*[contains(@class, "o_sc_list_header")]//button[@data-sc-list-add-toggle]')[0]
+            header = sheet.xpath('.//*[contains(@class, "o_sc_list_header")]//button[@data-pk-list-add-toggle]')[0]
             panel = sheet.xpath('.//details[@id="%s"]' % header.get('aria-controls'))[0]
             self.assertIn('o_sc_list_add_panel', panel.get('class'))
             form = panel.xpath('.//form[@data-sc-med-add]')[0]
@@ -410,7 +410,7 @@ class TestMedicalLists1677(MedicalLists1677Common):
             cards = items.xpath('./li[@data-sc-med-item]')
             self.assertEqual(len(cards), 2 if key == 'allergy' else 1)
             for card in cards:
-                self.assertTrue(card.get('data-sc-fragment-item'))
+                self.assertTrue(card.get('data-pk-fragment-item'))
                 self.assertTrue(card.xpath('.//button[@data-sc-edit-toggle]'))
                 edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
                 self.assertEqual(edit.get('hidden'), 'hidden')
@@ -454,7 +454,7 @@ class TestMedicalLists1677(MedicalLists1677Common):
             sheet = self._sheet(tree, key)
             self.assertFalse(sheet.xpath(
                 './/button[@data-sc-edit-toggle] | .//input | .//textarea | .//form | .//details'
-                ' | .//*[@data-sc-edit-view="edit"] | .//*[@data-sc-list-add-toggle]'), key)
+                ' | .//*[@data-sc-edit-view="edit"] | .//*[@data-pk-list-add-toggle]'), key)
         self.assertIn('Synthetic bag', self._sheet(tree, 'allergy').text_content())
         self.assertIn('Synthetic inhaler', self._sheet(tree, 'medical_alert').text_content())
         # Grey families: no pill for a coach.

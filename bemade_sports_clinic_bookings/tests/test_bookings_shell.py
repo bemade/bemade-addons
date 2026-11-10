@@ -34,7 +34,7 @@ class TestBookingsShell(BookingsShellCommon):
         for url in ('/my/bookings', '/my/bookings/calendar'):
             text, tree = self._get(url)
             self.assertIsNone(self._shell(tree), url)
-            self.assertNotIn('data-sc-app-shell', text)
+            self.assertNotIn('data-pk-app-shell', text)
 
     def test_list_in_shell(self):
         self._switch(True)

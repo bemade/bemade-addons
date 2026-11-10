@@ -62,7 +62,7 @@ class EventTimesheets1584Common(Parity1577Common):
         })
 
     def _section(self, tree):
-        nodes = tree.xpath('//*[@data-sc-section="event.timesheets"]')
+        nodes = tree.xpath('//*[@data-pk-section="event.timesheets"]')
         return nodes[0] if nodes else None
 
     def _title(self, section):
@@ -94,7 +94,7 @@ class TestAppShellEventTimesheets1584(EventTimesheets1584Common):
         self.assertEqual(self._employee(cards[self.timesheet.id]), 'PC TP')
         self.assertEqual(self._employee(cards[self.ts_tp2.id]), 'SC84 Second Therapist')
         # Not theirs: read-only (no pencil) for the admin.
-        self.assertFalse(section.xpath('.//*[@data-sc-edit-card]'))
+        self.assertFalse(section.xpath('.//*[@data-pk-edit-card]'))
         self.assertEqual(self._missing_text(section), 'Missing timesheets: P77 Internal TP')
 
     # -- UC-1 ------------------------------------------------------------

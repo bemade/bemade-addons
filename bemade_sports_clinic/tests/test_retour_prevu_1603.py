@@ -197,8 +197,8 @@ class TestRetourPrevuApp1603(RetourPrevuFixtures, FragmentsCommon):
         self._login_tp()
         _text, tree = self._get(self._url())
         # Review fixes 2026-10-18: in the header's edit view (its pencil).
-        section = tree.xpath('//*[@data-sc-section="player.hero"]/*[@data-sc-edit-view="edit"]'
-                             '/*[@data-sc-section="player.predicted_return"]')
+        section = tree.xpath('//*[@data-pk-section="player.hero"]/*[@data-sc-edit-view="edit"]'
+                             '/*[@data-pk-section="player.predicted_return"]')
         self.assertEqual(len(section), 1)
         props = [json.loads(node.get('props')) for node in section[0].xpath('.//owl-component')]
         self.assertEqual([(p['field'], p['inputType']) for p in props], [('predicted_return_date', 'date')])
@@ -224,8 +224,8 @@ class TestRetourPrevuApp1603(RetourPrevuFixtures, FragmentsCommon):
         self.player.write({'predicted_return_date': '2030-03-01', 'match_status': 'no', 'practice_status': 'no'})
         self._login_coach()
         _text, tree = self._get(self._url())
-        self.assertFalse(tree.xpath('//*[@data-sc-section="player.predicted_return"]'))
-        section = tree.xpath('//*[@data-sc-section="player.return"]')[0]
+        self.assertFalse(tree.xpath('//*[@data-pk-section="player.predicted_return"]'))
+        section = tree.xpath('//*[@data-pk-section="player.return"]')[0]
         self.assertFalse(section.xpath('.//owl-component'))
         self.assertEqual(section.get('data-sc-return-kind'), 'predicted')
         read = self._node(tree, 'sports.patient:%s:predicted-return' % self.player.id)

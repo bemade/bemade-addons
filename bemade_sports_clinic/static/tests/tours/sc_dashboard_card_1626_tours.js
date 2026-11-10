@@ -9,8 +9,8 @@
  */
 import { registry } from "@web/core/registry";
 
-const DASH = '[data-sc-section="team.recent_changes"] .o_sc_player_row';
-const ROSTER = '[data-sc-section="team.roster"] .o_sc_player_row';
+const DASH = '[data-pk-section="team.recent_changes"] .o_sc_player_row';
+const ROSTER = '[data-pk-section="team.roster"] .o_sc_player_row';
 const FACE = ".o_sc_link_row";
 
 function assertFace(row, visible) {

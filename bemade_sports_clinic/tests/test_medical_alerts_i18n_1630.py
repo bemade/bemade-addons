@@ -54,7 +54,7 @@ class TestMedicalAlertsI18n1630(TestAppShellI18n1538):
         self._login_tp()
         text = self._fr(self._url()).replace('&#39;', "'")
         tree = lxml_html.fromstring(text)
-        pills = tree.xpath('//*[@data-sc-section="player.medical"]//button[@data-sc-med-pill]')
+        pills = tree.xpath('//*[@data-pk-section="player.medical"]//button[@data-sc-med-pill]')
         self.assertEqual([' '.join(p.text_content().split()) for p in pills], ['Synthetic kiwi', 'Alerte médicale'])
         self.assertEqual(pills[0].get('title'), 'Allergies : Urgente – risque vital')
         self.assertEqual(pills[1].get('title'), 'Alerte médicale : Non renseigné')

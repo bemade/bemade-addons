@@ -339,7 +339,7 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         self._login_tp()
         _text, tree = self._get(self._url())
         card = self._card(tree)
-        details = card.xpath('.//section[@data-sc-edit-card="injury-details"]')[0]
+        details = card.xpath('.//section[@data-pk-edit-card="injury-details"]')[0]
         row = details.xpath('.//*[contains(@class, "o_sc_injury_flags")]')
         self.assertEqual(len(row), 1)
         row = row[0]
@@ -397,7 +397,7 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
     def test_single_notes_history(self):
         self._login_tp()
         _text, tree = self._get(self._url())
-        notes = self._card(tree).xpath('.//section[@data-sc-section="injury.notes"]')[0]
+        notes = self._card(tree).xpath('.//section[@data-pk-section="injury.notes"]')[0]
         opens = notes.xpath('.//*[starts-with(@data-sc-sheet-open, "sc_note_history_sheet_")]')
         self.assertEqual(len(opens), 1)
         self.assertEqual(opens[0].get('data-sc-sheet-open'), 'sc_note_history_sheet_%s' % self.injury.id)

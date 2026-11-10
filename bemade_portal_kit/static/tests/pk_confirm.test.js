@@ -4,7 +4,7 @@
  */
 import { describe, expect, getFixture, test } from "@odoo/hoot";
 
-import { pkHomeOf, pkLeaveTarget } from "@bemade_portal_kit/js/pk_confirm";
+import { PENDING_TOAST_KEY, pkHomeOf, pkLeaveTarget } from "@bemade_portal_kit/js/pk_confirm";
 
 const O = "https://app.example";
 const PLAYERS = { home: "/my/things", sameParams: ["thing_id"] };
@@ -82,5 +82,11 @@ describe("pk_confirm: pkHomeOf", () => {
         getFixture().innerHTML = '<div class="root"></div>';
         expect(pkHomeOf(getFixture().querySelector(".root"))).toEqual({ home: "/my", sameParams: null });
         expect(pkHomeOf(null)).toEqual({ home: "/my", sameParams: null });
+    });
+});
+
+describe("pk_confirm: storage key", () => {
+    test("task 5198 (P3a): the pending toast key takes the pk_ prefix", () => {
+        expect(PENDING_TOAST_KEY).toBe("pk_pending_toast:v1");
     });
 });

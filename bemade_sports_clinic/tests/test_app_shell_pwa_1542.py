@@ -188,9 +188,13 @@ class TestAppShellPwa1542(AppShellCommon):
                 if isinstance(path, str)]
         self.assertFalse([path for path in lazy if '/sc_' in path])
         frontend = assets['web.assets_frontend']
-        for name in ('sc_fetch.js', 'sc_app_ui.js', 'sc_sw_register.js',
+        for name in ('sc_app_ui.js', 'sc_sw_register.js',
                      'sc_autosave_field.js', 'sc_autosave_field.xml'):
             self.assertTrue(any(path.endswith(name) for path in frontend), name)
+        # Task 5198 (P3a): the fetch helper is the kit's (no clinic alias).
+        kit_frontend = get_manifest('bemade_portal_kit')['assets']['web.assets_frontend']
+        self.assertIn('bemade_portal_kit/static/src/js/pk_fetch.js', kit_frontend)
+        self.assertFalse([path for path in frontend if path.endswith('sc_fetch.js')])
         # The service worker source is served by its route, never bundled.
         bundled = [p for paths in assets.values() for p in paths if isinstance(p, str)]
         self.assertFalse([p for p in bundled if 'sc_service_worker' in p or p.endswith('/sw/*')])

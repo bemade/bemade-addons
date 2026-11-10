@@ -26,8 +26,8 @@ function assert(condition, message) {
 }
 
 function draftKey(recordKey) {
-    const app = document.querySelector(".o_sc_app[data-sc-uid]");
-    return `sc_draft:${app.dataset.scDb || ""}:${app.dataset.scUid}:${recordKey}`;
+    const app = document.querySelector(".o_sc_app[data-pk-uid]");
+    return `pk_draft:${app.dataset.pkDb || ""}:${app.dataset.pkUid}:${recordKey}`;
 }
 
 function teamId() {
@@ -44,7 +44,7 @@ tours.add("sc_1640_team", {
     steps: () => [
         {
             content: "Seed a bad deadline draft (6-digit year), then reload",
-            trigger: ".o_sc_app[data-sc-uid]",
+            trigger: ".o_sc_app[data-pk-uid]",
             run() {
                 window.localStorage.setItem(
                     draftKey(`sports.team.${teamId()}.announcement_deadline`),
@@ -56,7 +56,7 @@ tours.add("sc_1640_team", {
         },
         {
             content: "Open the compose form (the announcement card's pencil)",
-            trigger: '[data-sc-edit-card="announcement"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="announcement"] button[data-sc-edit-toggle]',
             run: "click",
         },
         {
@@ -94,7 +94,7 @@ tours.add("sc_1640_team", {
                     '<input type="date" id="t1640_today" max="2026-01-01"/>' +
                     '<input type="datetime-local" id="t1640_dt"/>';
                 main.appendChild(box);
-                document.dispatchEvent(new CustomEvent("sc:fragments"));
+                document.dispatchEvent(new CustomEvent("pk:fragments"));
                 assertBounds(document.querySelector("#t1640_frag"), "fragment input");
                 assertBounds(document.querySelector("#t1640_today"), "own max kept", MIN, "2026-01-01");
                 assertBounds(
@@ -107,7 +107,7 @@ tours.add("sc_1640_team", {
                 const lazy = document.createElement("div");
                 main.appendChild(lazy);
                 lazy.innerHTML = '<input type="date" id="t1640_lazy" min="2026-10-22"/>';
-                lazy.dispatchEvent(new CustomEvent("sc:lazy-loaded", { bubbles: true }));
+                lazy.dispatchEvent(new CustomEvent("pk:lazy-loaded", { bubbles: true }));
                 assertBounds(document.querySelector("#t1640_lazy"), "lazy input (own min kept)", "2026-10-22", MAX);
 
                 const late = document.createElement("input");

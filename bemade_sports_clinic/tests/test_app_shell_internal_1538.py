@@ -71,7 +71,7 @@ class TestAppShellInternal1538(AppShellCommon):
         self.assertIn('clinic', self._nav_keys(tree, 'o_sc_rail_nav'))
         # Task 1624 (deliberate update): the dashboard's sections, no team list.
         self.assertTrue(tree.xpath('//section[@data-sc-widget="indicators"]'))
-        self.assertTrue(tree.xpath('//*[@data-sc-section="home.clinic_teaser"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="home.clinic_teaser"]'))
         _text, tree = self._get('/my/teams')
         self.assertIsNotNone(self._shell(tree))
         self.assertTrue(tree.xpath('//a[@data-sc-team-id="%s"]' % self.team_a.id))

@@ -4,7 +4,7 @@
  *
  * A pill is [data-sc-pill-select] holding its target (data-sc-model,
  * -record-id, -field, -write-date, -old-value, -undo-message), a toggle
- * button[data-sc-menu-toggle] and a [data-sc-menu-popup] of
+ * button[data-pk-menu-toggle] and a [data-pk-menu-popup] of
  * button[role="menuitemradio"] items (data-sc-pill-post = the value a pick
  * saves; aria-disabled = greyed, with its hint, posts nothing).
  *
@@ -46,7 +46,7 @@ function toast(detail) {
 }
 
 function toggleOf(pill) {
-    return pill.querySelector("[data-sc-menu-toggle]");
+    return pill.querySelector("[data-pk-menu-toggle]");
 }
 
 /** Every pill of the same record field on the page (e.g. Match + Practice). */
@@ -131,7 +131,7 @@ async function pick(pill, item) {
     // <summary> — a focused card never moves in its list (sc_fragments.js),
     // e.g. a resolved injury set back to « Actif » joining the active ones.
     const held = document.activeElement;
-    if (held && held !== document.body && held.closest && held.closest("[data-sc-fragment-item]")) {
+    if (held && held !== document.body && held.closest && held.closest("[data-pk-fragment-item]")) {
         held.blur();
     }
     const value = item.dataset.scPillPost;
@@ -183,7 +183,7 @@ function handOff(pill, item) {
 
 // A keyboard pick: once the fresh pill is in, the focus goes back to it.
 let refocus = null;
-document.addEventListener("sc:fragments", () => {
+document.addEventListener("pk:fragments", () => {
     if (!refocus) {
         return;
     }
@@ -210,7 +210,7 @@ document.addEventListener(
         if (!pill || !inShell(pill)) {
             return;
         }
-        const toggle = target.closest("[data-sc-menu-toggle]");
+        const toggle = target.closest("[data-pk-menu-toggle]");
         const item = target.closest('[role="menuitemradio"]');
         if (!toggle && !item) {
             return; // the popup's padding: nothing to do, stay open

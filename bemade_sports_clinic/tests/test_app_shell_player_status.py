@@ -66,12 +66,12 @@ class TestAppShellPlayerStatus(PlayerStatusCommon):
         choices), from its status block (task 1753: outside the read and
         edit views); nothing behind the pencil."""
         _text, tree = self._get('/my/player?player_id=%s' % self.player.id)
-        hero = tree.xpath('//*[@data-sc-section="player.hero"]')[0]
+        hero = tree.xpath('//*[@data-pk-section="player.hero"]')[0]
         self.assertFalse(hero.xpath('.//*[@data-sc-stage-chip]'))
         props = [json.loads(p) for p in hero.xpath('.//owl-component/@props')]
         self.assertFalse([p for p in props if p.get('field') == 'sc_status'])
         checked = {}
-        for pill in hero.xpath('./*[@data-sc-section="player.status"]//*[@data-sc-pill-select]'):
+        for pill in hero.xpath('./*[@data-pk-section="player.status"]//*[@data-sc-pill-select]'):
             popup = tree.xpath('//*[@id="%s"]' % pill.xpath('./button/@aria-controls')[0])[0]
             checked[pill.get('data-sc-pill-key')] = popup.xpath(
                 './/*[@aria-checked="true"]/@data-sc-pill-value')[0]
@@ -150,11 +150,11 @@ class TestAppShellPlayerStatus(PlayerStatusCommon):
         its title + ONE « History » link; the field below carries no label
         row of its own in read, and the edit island no second link (its
         label stays, visually hidden, as the textarea's accessible name)."""
-        read = tree.xpath('//*[@data-sc-section="player.training"]')
+        read = tree.xpath('//*[@data-pk-section="player.training"]')
         self.assertEqual(len(read), 1)
         self._title_link(read[0])
         self.assertFalse(read[0].xpath('.//*[contains(@class, "o_sc_field_label")]'))
-        edits = tree.xpath('//*[@data-sc-section="player.training.edit"]')
+        edits = tree.xpath('//*[@data-pk-section="player.training.edit"]')
         self.assertEqual(len(edits), 1 if edit else 0)
         if edit:
             self._title_link(edits[0])

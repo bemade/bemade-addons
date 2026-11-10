@@ -132,7 +132,7 @@
         if (!("serviceWorker" in navigator)) {
             return;
         }
-        if (document.querySelector(".o_sc_app[data-sc-app-shell]")) {
+        if (document.querySelector(".o_sc_app[data-pk-app-shell]")) {
             register();
         } else {
             killSwitch();

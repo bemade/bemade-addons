@@ -8,7 +8,7 @@ registry.category("web_tour.tours").add("sc_1540_bookings", {
     steps: () => [
         {
             content: "The booking is listed on the shell",
-            trigger: '.o_sc_app [data-sc-section="bookings.list"] [data-sc-booking-id]',
+            trigger: '.o_sc_app [data-pk-section="bookings.list"] [data-sc-booking-id]',
         },
         {
             // Task 1585: the client's email is a tap-to-email link.

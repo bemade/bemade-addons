@@ -46,18 +46,18 @@ describe("pk_fetch", () => {
         expect(body.get("name")).toBe("Alpha");
     });
 
-    test("a failure dispatches sc:fetch-error and throws PkFetchError", async () => {
+    test("a failure dispatches pk:fetch-error and throws PkFetchError", async () => {
         mockFetch(() => new Response(JSON.stringify({ error: "nope" }), { status: 500 }));
         const seen = [];
         const onError = (ev) => seen.push(ev.detail);
-        document.addEventListener("sc:fetch-error", onError);
+        document.addEventListener("pk:fetch-error", onError);
         let thrown = null;
         try {
             await pkFetch("/pk/test/fail");
         } catch (err) {
             thrown = err;
         } finally {
-            document.removeEventListener("sc:fetch-error", onError);
+            document.removeEventListener("pk:fetch-error", onError);
         }
         expect(thrown).toBeInstanceOf(PkFetchError);
         expect(thrown.status).toBe(500);
@@ -70,14 +70,14 @@ describe("pk_fetch", () => {
         mockFetch(() => new Response("", { status: 404 }));
         const seen = [];
         const onError = (ev) => seen.push(ev.detail);
-        document.addEventListener("sc:fetch-error", onError);
+        document.addEventListener("pk:fetch-error", onError);
         let thrown = null;
         try {
             await pkFetch("/pk/test/missing", { toast: false });
         } catch (err) {
             thrown = err;
         } finally {
-            document.removeEventListener("sc:fetch-error", onError);
+            document.removeEventListener("pk:fetch-error", onError);
         }
         expect(thrown).toBeInstanceOf(PkFetchError);
         expect(seen).toHaveLength(0);

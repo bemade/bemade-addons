@@ -44,7 +44,7 @@ Back = where you came from
 --------------------------
 The server always renders the RESOLVED parent as the back link's href (deep
 link, shared link, fresh PWA launch, reload). In a browser,
-``static/src/js/sc_app_nav.js`` keeps a per-tab stack of in-app page visits
+``bemade_portal_kit/static/src/js/pk_app_nav.js`` keeps a per-tab stack of in-app page visits
 and turns the back control into ``history.back()`` when the previous entry of
 this tab is an in-app page.
 
@@ -290,7 +290,7 @@ def sc_pages(kit):
                        parent=lambda v: ('sc_app_more', {})),
         # Task 1606: « Paramètres », opened from the user menu (not a page of
         # « Plus »): a sub-page of the home — back = where the user came from
-        # (sc_app_nav.js), else the home.
+        # (pk_app_nav.js), else the home.
         pk_static_page('sc_app_settings', '/my/app/settings', _lt('Settings'),
                        parent=lambda v: ('sc_app_home', {})),
         # Task 1624: « Configurer » the dashboard — a sub-page of the home.

@@ -89,7 +89,7 @@ class TestAppShellInjury1539(AppShellCommon):
             'csrf_token': self._csrf(), 'patient_id': self.player.id,
             'diagnosis': 'Synthetic legacy report', 'injury_date': '2026-03-03'})
         self.assertEqual(resp.status_code, 200)
-        self.assertNotIn('data-sc-app-shell', resp.text)
+        self.assertNotIn('data-pk-app-shell', resp.text)
         self.assertNotIn('data-sc-draft-clear', resp.text)
 
     def test_clinic_fragments_stay_legacy_with_switch_on(self):
@@ -100,7 +100,7 @@ class TestAppShellInjury1539(AppShellCommon):
                     % (self.player.id, self.clinic.id)):
             resp = self.url_open(url)
             self.assertEqual(resp.status_code, 200, url)
-            self.assertNotIn('data-sc-app-shell', resp.text)
+            self.assertNotIn('data-pk-app-shell', resp.text)
             self.assertNotIn('owl-component', resp.text)
             self.assertIn('name="csrf_token"', resp.text)
 
@@ -266,17 +266,17 @@ class TestAppShellNotes1539(AppShellCommon):
         self._login_tp()
         fragment = self.history_url + '/fragment'
         text, tree = self._get(fragment)
-        scopes = tree.xpath('//*[@data-sc-section="injury.notes.history"]//li/@data-sc-scope')
+        scopes = tree.xpath('//*[@data-pk-section="injury.notes.history"]//li/@data-sc-scope')
         self.assertIn('internal', scopes)
         self.assertIn('external', scopes)
-        self.assertTrue(tree.xpath('//*[@data-sc-section="history.scope"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="history.scope"]'))
         self._login_coach()
         for url in (fragment, fragment + '?scope=internal'):
             text, tree = self._get(url)
-            scopes = tree.xpath('//*[@data-sc-section="injury.notes.history"]//li/@data-sc-scope')
+            scopes = tree.xpath('//*[@data-pk-section="injury.notes.history"]//li/@data-sc-scope')
             self.assertEqual(set(scopes), {'external'}, url)
             self.assertNotIn('Internal synthetic history', text)
-            self.assertFalse(tree.xpath('//*[@data-sc-section="history.scope"]'))
+            self.assertFalse(tree.xpath('//*[@data-pk-section="history.scope"]'))
 
 
 @tagged('post_install', '-at_install')

@@ -96,8 +96,8 @@ class TestClinicDossierInline1590(ClinicDossier1590Common):
         self.injury.sudo().write({'external_notes': 'Synthetic ext 1590'})
         self._login_tp()
         text, tree = self._get(self._dossier_url())
-        section = tree.xpath('//section[@data-sc-section="clinic.dossier.injuries"]')[0]
-        add = section.xpath('.//details[@id="sc_clinic_injury_add"][@data-sc-section="injury.new"]')
+        section = tree.xpath('//section[@data-pk-section="clinic.dossier.injuries"]')[0]
+        add = section.xpath('.//details[@id="sc_clinic_injury_add"][@data-pk-section="injury.new"]')
         self.assertEqual(len(add), 1)
         form = add[0].xpath('.//form[@data-sc-form="injury.quick"]')[0]
         self.assertEqual(form.get('action'), '/my/patient/injury/create')
@@ -107,13 +107,13 @@ class TestClinicDossierInline1590(ClinicDossier1590Common):
         self.assertEqual(hidden['clinic_id'], str(self.clinic.id))
         self.assertEqual(hidden['sc_origin'], 'clinic')
         self.assertTrue(form.xpath('.//input[@name="coach_visibility"][@required]'))
-        cards = section.xpath('.//details[@data-sc-edit-card="injury"]')
+        cards = section.xpath('.//details[@data-pk-edit-card="injury"]')
         self.assertEqual([c.get('id') for c in cards], ['clinic-injury-%s' % self.injury.id])
         card = cards[0]
         # Task 1611: no reload on « Done » — the card is a read-fragment
         # list item (its summary and read view refresh in place).
         self.assertIsNone(card.get('data-sc-edit-reload'))
-        self.assertEqual(card.get('data-sc-fragment-item'), 'sports.patient.injury:%s:card' % self.injury.id)
+        self.assertEqual(card.get('data-pk-fragment-item'), 'sports.patient.injury:%s:card' % self.injury.id)
         self.assertTrue(card.xpath('.//button[@data-sc-edit-toggle]'))
         props = self._props(card)
         for fname in ('external_notes', 'internal_notes'):
@@ -131,8 +131,8 @@ class TestClinicDossierInline1590(ClinicDossier1590Common):
         # Task 1721: no hero « New injury » any more — the injuries' own
         # « + Ajouter » (right above the list) opens the inline card.
         self.assertFalse(tree.xpath('//a[@data-sc-action="clinic.injury_new"]'))
-        self.assertTrue(tree.xpath('//section[@data-sc-section="clinic.dossier.injuries"]'
-                                   '//button[@data-sc-list-add-toggle][@aria-controls="sc_clinic_injury_add"]'))
+        self.assertTrue(tree.xpath('//section[@data-pk-section="clinic.dossier.injuries"]'
+                                   '//button[@data-pk-list-add-toggle][@aria-controls="sc_clinic_injury_add"]'))
 
     # -- UC-CD2 ----------------------------------------------------------
     def test_create_lands_back_on_dossier(self):
@@ -243,13 +243,13 @@ class TestClinicDossierInline1590(ClinicDossier1590Common):
         _text, tree = self._get(self._dossier_url())
         # Task 1721: the resolved one is no longer absent — it is folded
         # under « Show resolved injuries (N) », out of the active list.
-        ids = tree.xpath('//*[@data-sc-section="clinic.dossier.injury_list"]'
-                         '//details[@data-sc-edit-card="injury"]/@data-sc-injury-id')
+        ids = tree.xpath('//*[@data-pk-section="clinic.dossier.injury_list"]'
+                         '//details[@data-pk-edit-card="injury"]/@data-sc-injury-id')
         self.assertIn(str(unverified.id), ids)
         self.assertIn(str(self.injury.id), ids)
         self.assertNotIn(str(resolved.id), ids)
         folded = tree.xpath('//details[@data-sc-resolved-injuries]'
-                            '//details[@data-sc-edit-card="injury"]/@data-sc-injury-id')
+                            '//details[@data-pk-edit-card="injury"]/@data-sc-injury-id')
         self.assertEqual(folded, [str(resolved.id)])
         # A coach's report from the player page (unverified) shows in the
         # therapist's dossier as soon as it exists.

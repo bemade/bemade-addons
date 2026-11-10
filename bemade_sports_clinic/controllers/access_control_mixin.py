@@ -23,7 +23,7 @@ import pytz
 _logger = logging.getLogger(__name__)
 
 # Task 1640: the date range a portal / app form may post (the browser's
-# date inputs carry the same 4-digit-year bounds, sc_date_bounds.js).
+# date inputs carry the same 4-digit-year bounds, pk_date_bounds.js).
 PORTAL_MIN_YEAR = 1900
 PORTAL_MAX_YEAR = 9999
 

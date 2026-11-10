@@ -11,7 +11,7 @@ const tours = registry.category("web_tour.tours");
 
 const CAL = ".o_sc_calendar_box[data-sc-calendar-ready='1']";
 const EVENT = ".fc-event"; // list rows carry it too
-const LEGEND = '.o_sc_staff_legend[data-sc-section="calendar.legend"]';
+const LEGEND = '.o_sc_staff_legend[data-pk-section="calendar.legend"]';
 const SECOND = `${LEGEND} button.o_sc_staff_legend_item:contains(ZZ Second TP 1605)`;
 
 function assert(condition, message) {
