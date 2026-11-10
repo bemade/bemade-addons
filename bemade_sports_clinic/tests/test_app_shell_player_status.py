@@ -63,14 +63,15 @@ class TestAppShellPlayerStatus(PlayerStatusCommon):
 
     def _hero_status(self):
         """Task 1627: the pair the header's pills show (their checked
-        choices), from its read view; nothing behind the pencil."""
+        choices), from its status block (task 1753: outside the read and
+        edit views); nothing behind the pencil."""
         _text, tree = self._get('/my/player?player_id=%s' % self.player.id)
         hero = tree.xpath('//*[@data-sc-section="player.hero"]')[0]
         self.assertFalse(hero.xpath('.//*[@data-sc-stage-chip]'))
         props = [json.loads(p) for p in hero.xpath('.//owl-component/@props')]
         self.assertFalse([p for p in props if p.get('field') == 'sc_status'])
         checked = {}
-        for pill in hero.xpath('./*[@data-sc-edit-view="read"]//*[@data-sc-pill-select]'):
+        for pill in hero.xpath('./*[@data-sc-section="player.status"]//*[@data-sc-pill-select]'):
             popup = tree.xpath('//*[@id="%s"]' % pill.xpath('./button/@aria-controls')[0])[0]
             checked[pill.get('data-sc-pill-key')] = popup.xpath(
                 './/*[@aria-checked="true"]/@data-sc-pill-value')[0]

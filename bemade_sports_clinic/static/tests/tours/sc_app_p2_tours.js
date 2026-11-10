@@ -235,8 +235,8 @@ tours.add("sc_status_pill_refresh", {
     // Practice no.
     steps: () => [
         {
-            content: "Read view: the Match pill (green); mark the page to detect a reload, open it",
-            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="read"] [data-sc-pill-key="match"] button.o_sc_pill_select.o_sc_chip_green',
+            content: "Header: the Match pill (green; task 1753: outside the read view); mark the page to detect a reload, open it",
+            trigger: '[data-sc-section="player.hero"] [data-sc-section="player.status"] [data-sc-pill-key="match"] button.o_sc_pill_select.o_sc_chip_green',
             run() {
                 window.__scPillNoReload = true;
                 this.anchor.click();
@@ -264,7 +264,7 @@ tours.add("sc_status_pill_refresh", {
         },
         {
             content: "The read view shows the new status (read fragment, no reload)",
-            trigger: '[data-sc-section="player.hero"] [data-sc-edit-view="read"] [data-sc-pill-key="practice"]:not([aria-busy]) button.o_sc_chip_red',
+            trigger: '[data-sc-section="player.hero"] [data-sc-section="player.status"] [data-sc-pill-key="practice"]:not([aria-busy]) button.o_sc_chip_red',
             run() {
                 if (!window.__scPillNoReload) {
                     throw new Error("the page reloaded");

@@ -158,10 +158,10 @@ class TestPlayerInline(PlayerInlineCommon):
         panel = tree.xpath('//*[@data-sc-app-shell]')[0]
         live = ' '.join(self._fields_in(panel))
         self.assertIn('"training_recommendation"', live)
-        # Task 1627: the status is the header's pill dropdowns (read view,
-        # outside the pencil), no autosave field.
+        # Task 1627: the status is the header's pill dropdowns (outside the
+        # pencil), no autosave field. Task 1753: outside the read view too.
         self.assertNotIn('"sc_status"', live)
-        self.assertEqual(len(panel.xpath('.//*[@data-sc-section="player.hero"]/*[@data-sc-edit-view="read"]'
+        self.assertEqual(len(panel.xpath('.//*[@data-sc-section="player.hero"]/*[@data-sc-section="player.status"]'
                                          '//*[@data-sc-pill-select][@data-sc-field="sc_status"]')), 2)
         # Review fixes 2026-10-18: the training recommendation behind the
         # HEADER's one pencil (its edit view), still an autosaving field.

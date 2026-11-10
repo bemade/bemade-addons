@@ -318,38 +318,43 @@
                 </div>
                 </div>
 
-                <!-- ============================== READ ============================== -->
-                <div class="o_sc_hero_read" data-sc-edit-view="read" data-sc-section="player.header.read">
-                    <!-- Task 1627: the play status as two coloured pills, Match
-                         and Practice (no computed stage pill any more). For
-                         therapists each pill is its own dropdown, always live
-                         (never behind the pencil): two taps change it, invalid
-                         choices greyed with a hint. Coaches: the same pills,
-                         read-only. Inside the « status » read fragment, so a
-                         change recolours them in place and the next change
-                         posts fresh values. -->
-                    <div class="o_sc_hero_status" data-sc-section="player.status">
-                        <t t-set="sc_status_undo">Status changed</t>
-                        <div class="o_sc_chips" data-sc-section="player.status.readonly"
-                             t-att-data-sc-fragment="sc_fragment_key(player, 'status')">
-                            <t t-foreach="player._sc_status_pills()" t-as="pill">
-                                <t t-call="bemade_sports_clinic.sc_status_pill_select">
-                                    <t t-set="editable" t-value="sc_hero_status_edit"/>
-                                    <t t-set="undo_message" t-value="sc_status_undo"/>
-                                </t>
+                <!-- Task 1753: the status and medical pills sit OUTSIDE the
+                     read / edit views (between the top bar and them), so the
+                     header pencil no longer hides them: still shown and live
+                     while the card is edited, same place in read mode. -->
+                <!-- Task 1627: the play status as two coloured pills, Match
+                     and Practice (no computed stage pill any more). For
+                     therapists each pill is its own dropdown, always live
+                     (never behind the pencil): two taps change it, invalid
+                     choices greyed with a hint. Coaches: the same pills,
+                     read-only. Inside the « status » read fragment, so a
+                     change recolours them in place and the next change
+                     posts fresh values. -->
+                <div class="o_sc_hero_status" data-sc-section="player.status">
+                    <t t-set="sc_status_undo">Status changed</t>
+                    <div class="o_sc_chips" data-sc-section="player.status.readonly"
+                         t-att-data-sc-fragment="sc_fragment_key(player, 'status')">
+                        <t t-foreach="player._sc_status_pills()" t-as="pill">
+                            <t t-call="bemade_sports_clinic.sc_status_pill_select">
+                                <t t-set="editable" t-value="sc_hero_status_edit"/>
+                                <t t-set="undo_message" t-value="sc_status_undo"/>
                             </t>
-                        </div>
-                        <!-- Review round 2 (owner 2026-10-27): the « Allergies » /
-                             « Medical alert » pills INSIDE the card, on the
-                             line under Match / Practice — the same spot as on
-                             every player card (were top right). -->
-                        <t t-if="sc_hero_medical" t-call="bemade_sports_clinic.sc_medical_pills">
-                            <t t-set="patient" t-value="player"/>
-                            <t t-set="scope" t-value="'player'"/>
-                            <t t-set="tp" t-value="sc_hero_medical_tp"/>
-                            <t t-set="section" t-value="'player.medical'"/>
                         </t>
                     </div>
+                    <!-- Review round 2 (owner 2026-10-27): the « Allergies » /
+                         « Medical alert » pills INSIDE the card, on the
+                         line under Match / Practice — the same spot as on
+                         every player card (were top right). -->
+                    <t t-if="sc_hero_medical" t-call="bemade_sports_clinic.sc_medical_pills">
+                        <t t-set="patient" t-value="player"/>
+                        <t t-set="scope" t-value="'player'"/>
+                        <t t-set="tp" t-value="sc_hero_medical_tp"/>
+                        <t t-set="section" t-value="'player.medical'"/>
+                    </t>
+                </div>
+
+                <!-- ============================== READ ============================== -->
+                <div class="o_sc_hero_read" data-sc-edit-view="read" data-sc-section="player.header.read">
                     <!-- Task 1615: the training recommendation right under the
                          play status (read; its stamp and History). Task 1629:
                          an all-caps in-card title with « History » right after

@@ -11,7 +11,9 @@ Acceptance criteria:
   else « Retour réel », a muted « not set » line while that date is empty
   (review fixes 2026-10-18, 1018c). Task 1630: the allergies banner left
   the read view for the « Allergies » / « Medical alert » pills in the
-  header's top row (test_medical_alerts_1630).
+  header's top row (test_medical_alerts_1630). Task 1753: the play status
+  (with the medical pills) sits just above the read view, outside it, so
+  it stays shown while the pencil is open (test_hero_pills_edit_mode_1753).
 * AC-2 Edit view (therapists, behind the header's one pencil): the
   training recommendation (live; task 1627: no status selector), « Retour
   prévu », « Retour réel », « Remove player » (task 1630: no allergies) (edit view
@@ -66,7 +68,12 @@ class TestHeaderOrder1615(PlayerInlineCommon):
         self.assertIn('o_sc_hero_head', children[0][0].get('class'))
         self.assertIn('o_sc_actions_row', children[-1].get('class'))
         read = hero.xpath('./*[@data-sc-edit-view="read"]')[0]
-        blocks = self._children(read)
+        # Task 1753 (deliberate update): the play status sits right after
+        # the top row, OUTSIDE the read view (the pencil no longer hides
+        # it), immediately followed by the read view (training, return).
+        self.assertEqual(children[1].get('data-sc-section'), 'player.status')
+        self.assertIs(children[2], read)
+        blocks = [children[1]] + self._children(read)
         sections = [child.get('data-sc-section') for child in blocks]
         self.assertEqual(sections, ORDER, sections)
         self.assertFalse(read.xpath('.//owl-component'))
@@ -94,7 +101,8 @@ class TestHeaderOrder1615(PlayerInlineCommon):
             self.assertTrue(fields[section].xpath('.//owl-component[contains(@props, \'"%s"\')]' % field),
                             section)
         # « Remove player » only in the edit view; « Done » closes it.
-        self.assertFalse(read['player.status'].getparent().xpath('.//*[@data-sc-action="player.remove"]'))
+        self.assertFalse(hero.xpath('./*[@data-sc-edit-view="read"]//*[@data-sc-action="player.remove"]'))
+        self.assertFalse(read['player.status'].xpath('.//*[@data-sc-action="player.remove"]'))
         self.assertTrue(edit.xpath('.//button[@data-sc-edit-done]'))
 
     def test_coach_order(self):
