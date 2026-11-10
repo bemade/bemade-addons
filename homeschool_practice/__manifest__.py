@@ -76,7 +76,13 @@ attached to the learner) only.
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
     "depends": ["homeschool", "homeschool_portal"],
-    "data": [],
+    "data": [
+        "security/ir.model.access.csv",
+        "security/practice_rules.xml",
+        "data/practice_data.xml",
+        "views/practice_views.xml",
+        "views/portal_templates.xml",
+    ],
     "installable": True,
     "application": False,
 }
