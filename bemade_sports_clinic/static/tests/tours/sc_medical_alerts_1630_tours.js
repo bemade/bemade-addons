@@ -13,7 +13,7 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
-const PILLS = '[data-sc-section="player.medical"]';
+const PILLS = '[data-pk-section="player.medical"]';
 
 function assert(condition, message) {
     if (!condition) {
@@ -35,7 +35,7 @@ tours.add("sc_1630_medical_coach", {
         },
         {
             content: "Its popup: the condition, no pencil, no editor",
-            trigger: "dialog[open] [data-sc-section='medical.medical_alert']",
+            trigger: "dialog[open] [data-pk-section='medical.medical_alert']",
             run() {
                 assert(this.anchor.textContent.includes("Synthetic asthma"), "details missing");
                 const dialog = this.anchor.closest("dialog");
@@ -62,7 +62,7 @@ tours.add("sc_1630_card_pills", {
     steps: () => [
         {
             content: "The red pills on the roster card",
-            trigger: '[data-sc-section="team.roster"] .o_sc_row_status [data-sc-med-pill="allergy"].o_sc_med_urgent',
+            trigger: '[data-pk-section="team.roster"] .o_sc_row_status [data-sc-med-pill="allergy"].o_sc_med_urgent',
             run() {
                 const row = this.anchor.closest(".o_sc_link_row");
                 assert(row.querySelector('.o_sc_row_status [data-sc-med-pill="medical_alert"].o_sc_med_urgent'),

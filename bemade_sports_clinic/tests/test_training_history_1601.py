@@ -254,7 +254,7 @@ class TestTrainingHistoryPortal1601(History1581Common):
     def _training_props(self, tree):
         # Review fixes 2026-10-18: the therapist's island is in the header's
         # edit view (``player.training.edit``); the read view is static.
-        for node in tree.xpath('//*[@data-sc-section="player.training" or @data-sc-section="player.training.edit"]'
+        for node in tree.xpath('//*[@data-pk-section="player.training" or @data-pk-section="player.training.edit"]'
                                '//owl-component'):
             props = json.loads(node.get('props'))
             if props.get('field') == 'training_recommendation':
@@ -301,11 +301,11 @@ class TestTrainingHistoryPortal1601(History1581Common):
         self._login_coach()
         _text, tree = self._get('/my/player?player_id=%s&tab=info' % self.player.id)
         self.assertIsNone(self._training_props(tree))
-        hint = tree.xpath('//*[@data-sc-section="player.training"]//*[contains(@class, "o_sc_hint")]')
+        hint = tree.xpath('//*[@data-pk-section="player.training"]//*[contains(@class, "o_sc_hint")]')
         self.assertEqual([h.text_content().strip() for h in hint],
                          [_stamp(self.env, row.change_datetime, 'PC TP')])
         # Task 1629: the stamp stays under the value, below the title + link.
-        section = tree.xpath('//*[@data-sc-section="player.training"]')[0]
+        section = tree.xpath('//*[@data-pk-section="player.training"]')[0]
         self.assertEqual(section.xpath('./*')[0].tag, 'h3')
         self.assertEqual(len(section.xpath('.//*[@data-sc-sheet-open="sc_training_history_sheet"]')), 1)
         entries = self._entries(self._fragment('/my/player/%s/training-history' % self.player.id))
@@ -369,7 +369,7 @@ class TestTrainingStampClinic1601(Clinic1540Common):
         # page's player card, which shows the recommendation (read); the
         # stamp lives in the player page's editor (and the card's details).
         self.assertNotIn('training_recommendation', self._owl_fields(tree))
-        card = tree.xpath('//*[@data-sc-section="clinic.dossier.player"]')[0]
+        card = tree.xpath('//*[@data-pk-section="clinic.dossier.player"]')[0]
         self.assertIn('Synthetic clinic', card.text_content())
         # Legacy (switch off) dossier: the stamp under the textarea.
         self._switch(False)

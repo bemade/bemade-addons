@@ -6,7 +6,7 @@ Acceptance criteria:
 
 * UC-1 /my/players: the « First name » / « Last name » boxes and « Search »
   stay in sight; « Suivis ★ » (#1738), jersey, team, organization, match,
-  practice and « Clear » are inside ONE disclosure (data-sc-section
+  practice and « Clear » are inside ONE disclosure (data-pk-section
   « players.filters »), closed without an active filter.
 * UC-2 With filters set (« Suivis » counts) the disclosure is open and its
   summary reads « Filters (N) » (« Filtres (N) »).
@@ -22,7 +22,7 @@ from odoo.tests import tagged
 
 from odoo.addons.bemade_sports_clinic.tests.dashboard_common_1624 import Dashboard1624Common
 
-FILTERS = '//form[@data-sc-section="players.search"]/details[@data-sc-section="players.filters"]'
+FILTERS = '//form[@data-pk-section="players.search"]/details[@data-pk-section="players.filters"]'
 
 
 class _Common1743(Dashboard1624Common):
@@ -49,7 +49,7 @@ class TestPhoneFiltersEmail1743(_Common1743):
         self._login_tp()
         tree, details = self._filters('/my/players')
         self.assertIsNone(details.get('open'))
-        form = tree.xpath('//form[@data-sc-section="players.search"]')[0]
+        form = tree.xpath('//form[@data-pk-section="players.search"]')[0]
         # In sight: the name boxes and « Search ».
         for name in ('first_name', 'last_name'):
             box = form.xpath('.//input[@name="%s"]' % name)[0]
@@ -61,7 +61,7 @@ class TestPhoneFiltersEmail1743(_Common1743):
         self.assertTrue(details.xpath('.//a[@data-sc-action="players.followed"]'))
         for name in ('jersey_number', 'team_id', 'organization_id', 'match_status', 'practice_status'):
             self.assertTrue(details.xpath('.//*[@name="%s"]' % name), name)
-        self.assertTrue(details.xpath('.//a[@data-sc-filter-reset]'))
+        self.assertTrue(details.xpath('.//a[@data-pk-filter-reset]'))
         self.assertFalse(details.xpath('./summary//*[@data-sc-filter-count]'))
         self.assertEqual(len(form.xpath('.//details')), 1, 'ONE disclosure')
 

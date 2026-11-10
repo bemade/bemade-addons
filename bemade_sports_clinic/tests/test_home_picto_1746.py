@@ -89,7 +89,7 @@ class TestHomePicto1746(_Picto1746):
         for url in self.top_pages:
             _text, tree = self._get(url)
             self.assertFalse(tree.xpath(PICTO), url)
-            self.assertFalse(tree.xpath('//header//a[@data-sc-back]'), url)
+            self.assertFalse(tree.xpath('//header//a[@data-pk-back]'), url)
             self.assertEqual(
                 tree.xpath('//header//a[contains(concat(" ", @class, " "), " o_sc_logo ")]/@href'),
                 [HOME], url)

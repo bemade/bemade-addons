@@ -71,7 +71,7 @@
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-set="sc_title">My account</t>
             <t t-set="sc_active_nav" t-value="False"/>
-            <div class="o_customer_address_fill o_sc_account" data-sc-section="account">
+            <div class="o_customer_address_fill o_sc_account" data-pk-section="account">
                 <!-- The core address JS looks it up; the cards show the errors. -->
                 <div id="errors" class="o_sc_account_errors" hidden="hidden"/>
                 <form action="/my/address/submit" method="post" name="address_form" novalidate="novalidate"
@@ -80,8 +80,8 @@
                       t-att-data-company-country-code="res_company.country_id.code"
                       data-submit-url="/my/address/submit">
 
-                    <section class="o_sc_card o_sc_edit_card" data-sc-edit-card="account-contact"
-                             data-sc-section="account.contact">
+                    <section class="o_sc_card o_sc_edit_card" data-pk-edit-card="account-contact"
+                             data-pk-section="account.contact">
                         <t t-call="bemade_sports_clinic.sc_edit_card_head">
                             <t t-set="title">Contact details</t>
                             <t t-set="editable" t-value="True"/>
@@ -123,8 +123,8 @@
                         </div>
                     </section>
 
-                    <section class="o_sc_card o_sc_edit_card" data-sc-edit-card="account-address"
-                             data-sc-section="account.address">
+                    <section class="o_sc_card o_sc_edit_card" data-pk-edit-card="account-address"
+                             data-pk-section="account.address">
                         <t t-call="bemade_sports_clinic.sc_edit_card_head">
                             <t t-set="title">Address</t>
                             <t t-set="editable" t-value="True"/>
@@ -259,9 +259,9 @@
             <div class="o_portal_security_body o_sc_security">
 
                 <!-- Change password (core POST /my/security). -->
-                <section class="o_sc_section" id="sc_security_password" data-sc-section="security.password">
+                <section class="o_sc_section" id="sc_security_password" data-pk-section="security.password">
                     <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Change password</t></t>
-                    <div t-if="success and success.get('password')" data-sc-section="security.password.done">
+                    <div t-if="success and success.get('password')" data-pk-section="security.password.done">
                         <t t-call="bemade_sports_clinic.sc_banner">
                             <t t-set="tone" t-value="'ok'"/>
                             Your password has been changed.
@@ -313,7 +313,7 @@
                     <div class="d-none" id="totp_wizard_view">
                         <t t-esc="env.ref('auth_totp.view_totp_wizard').sudo().get_combined_arch()"/>
                     </div>
-                    <section class="o_sc_section" id="sc_security_totp" data-sc-section="security.totp">
+                    <section class="o_sc_section" id="sc_security_totp" data-pk-section="security.totp">
                         <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Two-factor authentication</t></t>
                         <div class="o_sc_card o_sc_form">
                             <t t-if="not env.user.totp_enabled">
@@ -352,7 +352,7 @@
                 </t>
 
                 <!-- Sessions (core PortalSecurity interaction). -->
-                <section class="o_sc_section" id="sc_security_sessions" data-sc-section="security.sessions">
+                <section class="o_sc_section" id="sc_security_sessions" data-pk-section="security.sessions">
                     <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Sessions</t></t>
                     <div class="o_sc_card o_sc_form">
                         <p class="o_sc_meta">Signs you out everywhere you are signed in, this device included.</p>
@@ -366,7 +366,7 @@
 
                 <!-- Developer API keys: debug mode + portal.allow_api_keys
                      only (the core rule). -->
-                <section t-if="debug and allow_api_keys" class="o_sc_section" data-sc-section="security.api_keys">
+                <section t-if="debug and allow_api_keys" class="o_sc_section" data-pk-section="security.api_keys">
                     <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Developer API keys</t></t>
                     <div class="o_sc_card o_sc_legacy">
                         <table class="table">
@@ -389,7 +389,7 @@
 
                 <!-- Delete account: portal users only (the core block's
                      groups); the core POST /my/deactivate_account. -->
-                <section t-if="sc_can_deactivate" class="o_sc_section" id="sc_security_delete" data-sc-section="security.delete">
+                <section t-if="sc_can_deactivate" class="o_sc_section" id="sc_security_delete" data-pk-section="security.delete">
                     <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Delete account</t></t>
                     <div class="o_sc_card o_sc_form">
                         <p class="o_sc_meta">Disables your account: you can no longer sign in. This cannot be undone.</p>

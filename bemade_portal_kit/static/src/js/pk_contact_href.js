@@ -20,10 +20,10 @@ export function pkContactHref(kind, value) {
 }
 
 /* Show ``display`` in a read-view element; a contact link
- * ([data-sc-display-href]) follows with its href (none while empty). */
+ * ([data-pk-display-href]) follows with its href (none while empty). */
 export function pkSetDisplay(el, display) {
     el.textContent = display || "—";
-    const kind = el.dataset.scDisplayHref;
+    const kind = el.dataset.pkDisplayHref;
     if (!kind) {
         return;
     }

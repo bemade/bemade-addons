@@ -6,15 +6,15 @@
  * keyboard closing (the viewport grows back), the autosave's fragment swap
  * (a notes history one entry longer, a textarea collapsing) and « Terminé »
  * collapsing the injury card. One shared rule for every card edit block
- * ([data-sc-edit-card] — the injury card's Details / Notes / a document,
+ * ([data-pk-edit-card] — the injury card's Details / Notes / a document,
  * the player's info groups, the medical card…):
  *
  * - the block is remembered when the user LEAVES one of its fields for
  *   something that is not another field (a tap elsewhere, the keyboard's
- *   « done »), when its « Done » ([data-sc-edit-done]) is pressed, or — the
+ *   « done »), when its « Done » ([data-pk-edit-done]) is pressed, or — the
  *   whole card — on the injury card's « Terminé » (sc_injury_card.js calls
  *   anchorEdited(card));
- * - once things settle — after a fragment swap (« sc:fragments »), a
+ * - once things settle — after a fragment swap (« pk:fragments »), a
  *   visualViewport resize (the keyboard closing), or a short timeout — the
  *   window scrolls so the block's top sits just below the sticky app bar.
  *   Re-applied on each of those until ANCHOR_MS has passed;
@@ -47,11 +47,11 @@ function laptop() {
 }
 
 function keyOf(block) {
-    const item = block.closest("[data-sc-fragment-item]");
+    const item = block.closest("[data-pk-fragment-item]");
     return {
         id: block.id || "",
-        item: item ? item.dataset.scFragmentItem : "",
-        card: block.dataset.scEditCard || "",
+        item: item ? item.dataset.pkFragmentItem : "",
+        card: block.dataset.pkEditCard || "",
     };
 }
 
@@ -70,16 +70,16 @@ function resolve() {
         }
     }
     const scope = item
-        ? [...document.querySelectorAll("[data-sc-fragment-item]")].find((el) => el.dataset.scFragmentItem === item)
+        ? [...document.querySelectorAll("[data-pk-fragment-item]")].find((el) => el.dataset.pkFragmentItem === item)
         : document;
     if (!scope) {
         return null;
     }
-    if (scope !== document && scope.dataset.scEditCard === card) {
+    if (scope !== document && scope.dataset.pkEditCard === card) {
         return scope;
     }
     return (
-        [...scope.querySelectorAll("[data-sc-edit-card]")].find((el) => el.dataset.scEditCard === card) || null
+        [...scope.querySelectorAll("[data-pk-edit-card]")].find((el) => el.dataset.pkEditCard === card) || null
     );
 }
 
@@ -156,7 +156,7 @@ document.addEventListener(
         if (!isEditable(field) || !inShell(field)) {
             return;
         }
-        const block = field.closest("[data-sc-edit-card]");
+        const block = field.closest("[data-pk-edit-card]");
         if (!block || isEditable(ev.relatedTarget)) {
             return;
         }
@@ -168,18 +168,18 @@ document.addEventListener(
 // « Done » of a card block (also clicked by the injury card's « Terminé »,
 // which then anchors on the whole card).
 document.addEventListener("click", (ev) => {
-    const done = ev.target.closest && ev.target.closest("[data-sc-edit-done]");
+    const done = ev.target.closest && ev.target.closest("[data-pk-edit-done]");
     if (!done || !inShell(done)) {
         return;
     }
-    const block = done.closest("[data-sc-edit-card]");
+    const block = done.closest("[data-pk-edit-card]");
     if (block) {
         anchorEdited(block);
     }
 });
 
 // Settling: the fragment swap, the keyboard closing.
-document.addEventListener("sc:fragments", () => schedule(50));
+document.addEventListener("pk:fragments", () => schedule(50));
 if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", () => schedule(150));
 }

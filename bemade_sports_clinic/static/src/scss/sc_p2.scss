@@ -1817,7 +1817,7 @@ $sc-p2-laptop: 992px;
 // Review 2026-10-20 (#1629): in the pencil view the training title is a
 // section title above the field; the field's own label row (« Effacer »,
 // the save state) sits on the title's line instead of a line of its own.
-.o_sc_app [data-sc-section="player.training.edit"] {
+.o_sc_app [data-pk-section="player.training.edit"] {
     position: relative;
 
     .o_sc_autosave > .o_sc_field_label {
@@ -1840,7 +1840,7 @@ $sc-p2-laptop: 992px;
 // wraps). The label box is dissolved (display: contents) so its parts can
 // be placed around the input; it stays the input's <label> (accessible name).
 @media (max-width: 767.98px) {
-    .o_sc_app [data-sc-section="player.header.edit"] {
+    .o_sc_app [data-pk-section="player.header.edit"] {
         .o_sc_autosave {
             display: flex;
             flex-direction: row;
@@ -1894,7 +1894,7 @@ $sc-p2-laptop: 992px;
         }
 
         // The training label row is no longer laid over the title line.
-        [data-sc-section="player.training.edit"] .o_sc_autosave > .o_sc_field_label {
+        [data-pk-section="player.training.edit"] .o_sc_autosave > .o_sc_field_label {
             position: static;
             min-height: 0;
         }

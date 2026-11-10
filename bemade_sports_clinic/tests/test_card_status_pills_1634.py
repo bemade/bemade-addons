@@ -85,7 +85,7 @@ class CardPills1634Common(FragmentsCommon):
         return 'sports.patient:%s:row-%s' % ((player or self.player).id, scope)
 
     def _row(self, tree, scope, player=None):
-        rows = tree.xpath('//*[@data-sc-section="%s"]//*[contains(@class, "o_sc_player_row")]'
+        rows = tree.xpath('//*[@data-pk-section="%s"]//*[contains(@class, "o_sc_player_row")]'
                           '[@data-sc-player-id="%s"]' % (SECTIONS[scope], (player or self.player).id))
         self.assertEqual(len(rows), 1, scope)
         return rows[0]

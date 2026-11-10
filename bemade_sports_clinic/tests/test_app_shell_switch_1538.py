@@ -4,7 +4,7 @@ Acceptance criteria covered here:
 
 * UC-S1 (AC1) Switch OFF (prod, the default): ``/my/home`` and ``/my/teams``
   render today's templates — the legacy markers are there, no
-  ``data-sc-app-shell`` marker anywhere.
+  ``data-pk-app-shell`` marker anywhere.
 * UC-S2 (AC2/AC4) Switch ON (staging): a coach gets the phone tabs without
   « Clinique », a therapist gets « Clinique »; both get « Réservations » only
   when the bookings card is enabled; the website/portal header and footer are
@@ -56,7 +56,7 @@ class AppShellCommon(PortalCovCommon):
 
     @staticmethod
     def _shell(tree):
-        nodes = tree.xpath('//*[@data-sc-app-shell]')
+        nodes = tree.xpath('//*[@data-pk-app-shell]')
         return nodes[0] if nodes else None
 
 
@@ -72,10 +72,10 @@ class TestAppShellSwitch1538(AppShellCommon):
             self.assertIn('o_portal_my_home', text)
             self.assertIn('portal_sports_category', text)
             self.assertIsNone(self._shell(tree))
-            self.assertNotIn('data-sc-app-shell', text)
+            self.assertNotIn('data-pk-app-shell', text)
             text, tree = self._get('/my/teams')
             self.assertIn('o_sc_teams_sort', text)
-            self.assertNotIn('data-sc-app-shell', text)
+            self.assertNotIn('data-pk-app-shell', text)
 
     def test_switch_on_plain_user_keeps_stock_portal(self):
         self._switch(True)
@@ -109,14 +109,14 @@ class TestAppShellSwitch1538(AppShellCommon):
                          ['teams', 'players', 'notepad', 'activities', 'more'])
         self.assertIn('clinic', self._nav_keys(tree, 'o_sc_rail_nav'))
         # The therapist-only home section.
-        self.assertTrue(tree.xpath('//*[@data-sc-section="home.clinic_teaser"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="home.clinic_teaser"]'))
 
     def test_coach_home_has_no_clinic_teaser(self):
         self._switch(True)
         self._login_coach()
         _text, tree = self._get('/my/home')
-        self.assertFalse(tree.xpath('//*[@data-sc-section="home.clinic_teaser"]'))
-        self.assertTrue(tree.xpath('//*[@data-sc-section="home.team_status"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="home.clinic_teaser"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="home.team_status"]'))
 
     def test_bookings_only_when_enabled(self):
         self._switch(True)

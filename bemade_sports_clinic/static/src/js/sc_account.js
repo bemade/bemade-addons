@@ -34,11 +34,11 @@ function accountForm(node) {
 }
 
 function cards(form) {
-    return [...form.querySelectorAll("[data-sc-edit-card^='account-']")];
+    return [...form.querySelectorAll("[data-pk-edit-card^='account-']")];
 }
 
 function cardOf(node) {
-    return (node && node.closest && node.closest("[data-sc-edit-card^='account-']")) || null;
+    return (node && node.closest && node.closest("[data-pk-edit-card^='account-']")) || null;
 }
 
 /** A card's editable field (an input / select of its edit view), or null. */

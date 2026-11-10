@@ -16,8 +16,8 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
-const ROSTER = '[data-sc-section="team.roster"]';
-const DASH = '[data-sc-section="team.recent_changes"]';
+const ROSTER = '[data-pk-section="team.roster"]';
+const DASH = '[data-pk-section="team.recent_changes"]';
 const TARGET = `${ROSTER} .o_sc_player_row[data-sc-tour-1634]`;
 
 function assert(condition, message) {

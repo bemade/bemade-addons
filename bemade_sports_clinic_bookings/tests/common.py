@@ -59,7 +59,7 @@ class BookingsShellCommon(HttpCase):
 
     @staticmethod
     def _shell(tree):
-        nodes = tree.xpath('//*[@data-sc-app-shell]')
+        nodes = tree.xpath('//*[@data-pk-app-shell]')
         return nodes[0] if nodes else None
 
     @staticmethod

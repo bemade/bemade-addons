@@ -155,9 +155,9 @@ tours.add("sc_1018b_player_documents", {
         },
         {
             content: "Back on the Documents tab with both documents",
-            trigger: '[data-sc-section="player.documents"]',
+            trigger: '[data-pk-section="player.documents"]',
             run() {
-                const text = document.querySelector('[data-sc-section="player.documents"]').textContent;
+                const text = document.querySelector('[data-pk-section="player.documents"]').textContent;
                 for (const name of ["Synthetic A report", "Synthetic b.pdf"]) {
                     assert(text.includes(name), `${name} missing`);
                 }

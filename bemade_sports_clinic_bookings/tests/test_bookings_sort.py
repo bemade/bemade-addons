@@ -57,11 +57,11 @@ class TestBookingsSort(BookingsShellCommon):
 
     @staticmethod
     def _sort_links(tree):
-        return {a.get('data-sc-sort'): a for a in tree.xpath('//*[@data-sc-section="bookings.sort"]//a[@data-sc-sort]')}
+        return {a.get('data-sc-sort'): a for a in tree.xpath('//*[@data-pk-section="bookings.sort"]//a[@data-sc-sort]')}
 
     @staticmethod
     def _active_sort(tree):
-        return tree.xpath('//*[@data-sc-section="bookings.sort"]//a[@aria-checked="true"]/@data-sc-sort')
+        return tree.xpath('//*[@data-pk-section="bookings.sort"]//a[@aria-checked="true"]/@data-sc-sort')
 
     @staticmethod
     def _segment_hrefs(tree):
@@ -123,7 +123,7 @@ class TestBookingsSort(BookingsShellCommon):
                 'date_from': '2000-01-01', 'date_to': '2099-12-31',
             }, key)
         self.assertEqual(hrefs['calendar'], '/my/bookings/calendar')
-        self.assertEqual(tree.xpath('//form[@data-sc-section="bookings.filters"]//input[@name="sortby"]/@value'),
+        self.assertEqual(tree.xpath('//form[@data-pk-section="bookings.filters"]//input[@name="sortby"]/@value'),
                          ['date_desc'])
         # The choice survives the switch: upcoming newest first -> all, still newest first.
         _text, tree = self._get(hrefs['all'])
@@ -141,18 +141,18 @@ class TestBookingsSort(BookingsShellCommon):
         for key in ('upcoming', 'past', 'all'):
             path, query = self._query(hrefs[key])
             self.assertEqual((path, query), ('/my/bookings', {'filterby': key}), key)
-        self.assertFalse(tree.xpath('//form[@data-sc-section="bookings.filters"]//input[@name="sortby"]'))
+        self.assertFalse(tree.xpath('//form[@data-pk-section="bookings.filters"]//input[@name="sortby"]'))
         _text, tree = self._get(hrefs['past'])
         self.assertEqual(self._active_sort(tree), ['date_desc'])
 
     def test_sort_in_the_list_header(self):
         """UC-S4"""
         _text, tree = self._get('/my/bookings')
-        headers = tree.xpath('//div[contains(@class, "o_sc_list_header")][@data-sc-section="bookings.header"]')
+        headers = tree.xpath('//div[contains(@class, "o_sc_list_header")][@data-pk-section="bookings.header"]')
         self.assertEqual(len(headers), 1)
         header = headers[0]
-        self.assertTrue(header.xpath('.//*[@data-sc-section="bookings.sort"]//a[@role="menuitemradio"]'))
+        self.assertTrue(header.xpath('.//*[@data-pk-section="bookings.sort"]//a[@role="menuitemradio"]'))
         self.assertFalse(header.xpath('.//*[contains(@class, "o_sc_list_add")]'))
         following = header.getnext()
         self.assertIsNotNone(following)
-        self.assertEqual(following.get('data-sc-section'), 'bookings.list')
+        self.assertEqual(following.get('data-pk-section'), 'bookings.list')

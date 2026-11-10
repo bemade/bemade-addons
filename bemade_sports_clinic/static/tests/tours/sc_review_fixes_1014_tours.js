@@ -43,13 +43,13 @@ function typeDate(input, key, value) {
     input.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-const RETURN = '[data-sc-edit-card="medical"] .o_sc_autosave[data-sc-field="return_date"]';
+const RETURN = '[data-pk-edit-card="medical"] .o_sc_autosave[data-sc-field="return_date"]';
 
 tours.add("sc_1014_date_complete", {
     steps: () => [
         {
             content: "Open the Medical Information card",
-            trigger: '[data-sc-edit-card="medical"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="medical"] button[data-sc-edit-toggle]',
             run: "click",
         },
         {
@@ -86,13 +86,13 @@ tours.add("sc_1014_date_complete", {
 });
 
 // Review fixes 2026-10-18: the island is in the header's edit view.
-const TRAINING = '[data-sc-section="player.training.edit"] .o_sc_autosave[data-sc-field="training_recommendation"]';
+const TRAINING = '[data-pk-section="player.training.edit"] .o_sc_autosave[data-sc-field="training_recommendation"]';
 
 tours.add("sc_1014_serialized_saves", {
     steps: () => [
         {
             content: "Open the header's pencil",
-            trigger: '[data-sc-section="player.hero"] [data-sc-card-icons] > button[data-sc-edit-toggle]',
+            trigger: '[data-pk-section="player.hero"] [data-sc-card-icons] > button[data-sc-edit-toggle]',
             run: "click",
         },
         {
@@ -125,7 +125,7 @@ tours.add("sc_1014_serialized_saves", {
     ],
 });
 
-const FORM = 'form[data-sc-section="events.filters"][data-sc-autosubmit]';
+const FORM = 'form[data-pk-section="events.filters"][data-pk-autosubmit]';
 
 tours.add("sc_1014_filters_autosubmit", {
     steps: () => [
@@ -133,7 +133,7 @@ tours.add("sc_1014_filters_autosubmit", {
             content: "No « Apply filters » button to press; open the filters",
             trigger: `${FORM} details summary`,
             run(helpers) {
-                const fallback = document.querySelector(`${FORM} [data-sc-autosubmit-fallback]`);
+                const fallback = document.querySelector(`${FORM} [data-pk-autosubmit-fallback]`);
                 assert(fallback && fallback.classList.contains("visually-hidden"),
                     "the apply button is hidden (kept for Enter / no-JS)");
                 window.__sc1014NoReload = true;

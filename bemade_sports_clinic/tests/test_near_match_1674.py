@@ -187,7 +187,7 @@ class TestNearMatchApp1674(PlayerAdd1655Common):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/players?first_name=Jonathn&last_name=Synthwell')
-        near = tree.xpath('//*[@data-sc-section="players.near"]//li/@data-sc-near-player')
+        near = tree.xpath('//*[@data-pk-section="players.near"]//li/@data-sc-near-player')
         self.assertIn(str(self.jonathan.id), near)
 
     # -- AC-4 --------------------------------------------------------------

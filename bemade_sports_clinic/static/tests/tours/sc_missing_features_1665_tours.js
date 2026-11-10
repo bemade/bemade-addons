@@ -24,7 +24,7 @@ tours.add("sc_1665_timesheet_existing", {
         },
         {
             content: "The existing card is in edit, the add sheet stays closed",
-            trigger: "[data-sc-timesheet-id][data-sc-edit-card][data-sc-edit-open]",
+            trigger: "[data-sc-timesheet-id][data-pk-edit-card][data-sc-edit-open]",
             run() {
                 const sheet = document.getElementById("sc_ts_add_sheet");
                 assert(!sheet.open, "the add sheet opened instead");

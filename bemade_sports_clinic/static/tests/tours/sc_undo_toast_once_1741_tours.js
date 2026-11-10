@@ -49,7 +49,7 @@ tours.add("sc_1741_undo_toast_once", {
         },
         {
             content: "Back",
-            trigger: ".o_sc_app[data-sc-app-shell]",
+            trigger: ".o_sc_app[data-pk-app-shell]",
             expectUnloadPage: true,
             run() {
                 window.history.back();

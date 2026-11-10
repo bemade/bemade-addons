@@ -26,6 +26,7 @@ import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 import { focusFirstField } from "@bemade_portal_kit/js/pk_focus";
 import { pkSetDisplay } from "@bemade_portal_kit/js/pk_contact_href";
 import { anchorEdited } from "@bemade_portal_kit/js/pk_edit_anchor";
+import { PENDING_TOAST_KEY } from "@bemade_portal_kit/js/pk_confirm";
 import { markDirty } from "@bemade_sports_clinic/js/sc_fragments";
 import {
     clearAllDrafts,
@@ -39,7 +40,7 @@ const SC_CHECK_PATH = "M20 6L9 17l-5-5";
 const scPencils = new WeakMap();
 
 function app() {
-    return document.querySelector(".o_sc_app[data-sc-app-shell]");
+    return document.querySelector(".o_sc_app[data-pk-app-shell]");
 }
 
 // ---------------------------------------------------------------- toast
@@ -322,8 +323,8 @@ if (document.readyState === "loading") {
 function showPendingToast() {
     let message = null;
     try {
-        message = window.sessionStorage.getItem("sc_pending_toast:v1");
-        window.sessionStorage.removeItem("sc_pending_toast:v1");
+        message = window.sessionStorage.getItem(PENDING_TOAST_KEY);
+        window.sessionStorage.removeItem(PENDING_TOAST_KEY);
     } catch {
         return;
     }
@@ -345,7 +346,7 @@ function offerUndoCreatePlayer() {
     if (form) {
         showToast(form.dataset.scToastMessage, form.dataset.scToastAction, () => form.submit(), SC_UNDO_CREATE_MS);
     }
-    for (const card of document.querySelectorAll(".o_sc_app [data-sc-edit-card][data-sc-edit-open-on-load]")) {
+    for (const card of document.querySelectorAll(".o_sc_app [data-pk-edit-card][data-sc-edit-open-on-load]")) {
         setCardEditing(card, true);
         card.scrollIntoView({ block: "start" });
     }
@@ -428,17 +429,17 @@ function setToggleDone(toggle, editing) {
 // the same enclosing edit card.
 function ownerCard(control) {
     const key = control.dataset.scEditFor;
-    const nearest = control.closest("[data-sc-edit-card]");
+    const nearest = control.closest("[data-pk-edit-card]");
     if (!key) {
         return nearest;
     }
     let scope = nearest;
     while (scope) {
-        const target = scope.querySelector(`[data-sc-edit-card="${CSS.escape(key)}"]`);
+        const target = scope.querySelector(`[data-pk-edit-card="${CSS.escape(key)}"]`);
         if (target) {
             return target;
         }
-        scope = scope.parentElement && scope.parentElement.closest("[data-sc-edit-card]");
+        scope = scope.parentElement && scope.parentElement.closest("[data-pk-edit-card]");
     }
     return null;
 }
@@ -447,8 +448,8 @@ function ownerCard(control) {
 // its own (not a nested card's), and the ones pointing at it from outside.
 function cardControls(card, selector) {
     const own = [...card.querySelectorAll(selector)].filter((el) => ownerCard(el) === card);
-    const key = card.dataset.scEditCard;
-    const host = card.parentElement && card.parentElement.closest("[data-sc-edit-card]");
+    const key = card.dataset.pkEditCard;
+    const host = card.parentElement && card.parentElement.closest("[data-pk-edit-card]");
     const outside = key && host
         ? [...host.querySelectorAll(`${selector}[data-sc-edit-for="${CSS.escape(key)}"]`)].filter(
             (el) => !card.contains(el) && ownerCard(el) === card)
@@ -498,7 +499,7 @@ function syncCardControls(card, editing) {
 // Task 1736: a card rendered in edit mode (e.g. a just-created injury's
 // Details) shows its ✓ and its edit-only controls from the start.
 function syncOpenCards() {
-    for (const card of document.querySelectorAll(".o_sc_app [data-sc-edit-card][data-sc-edit-open]")) {
+    for (const card of document.querySelectorAll(".o_sc_app [data-pk-edit-card][data-sc-edit-open]")) {
         syncCardControls(card, true);
     }
 }
@@ -508,10 +509,10 @@ if (document.readyState === "loading") {
     syncOpenCards();
 }
 // A refreshed read fragment brings its controls back as rendered: re-sync.
-document.addEventListener("sc:fragments", syncOpenCards);
+document.addEventListener("pk:fragments", syncOpenCards);
 
 document.addEventListener("sc:edit-open", (ev) => {
-    const card = ev.target.closest && ev.target.closest("[data-sc-edit-card]");
+    const card = ev.target.closest && ev.target.closest("[data-pk-edit-card]");
     if (card && !card.dataset.scEditOpen) {
         setCardEditing(card, true);
     }
@@ -519,8 +520,8 @@ document.addEventListener("sc:edit-open", (ev) => {
 
 document.addEventListener("click", (ev) => {
     const toggle = ev.target.closest && ev.target.closest("[data-sc-edit-toggle]");
-    const done = !toggle && ev.target.closest && ev.target.closest("[data-sc-edit-done]");
-    const card = toggle ? ownerCard(toggle) : done && done.closest("[data-sc-edit-card]");
+    const done = !toggle && ev.target.closest && ev.target.closest("[data-pk-edit-done]");
+    const card = toggle ? ownerCard(toggle) : done && done.closest("[data-pk-edit-card]");
     if (!card) {
         return;
     }
@@ -553,7 +554,7 @@ document.addEventListener("click", (ev) => {
     }
     document.dispatchEvent(new CustomEvent("sc:refresh-now"));
 });
-document.addEventListener("sc:fetch-error", (ev) => {
+document.addEventListener("pk:fetch-error", (ev) => {
     const error = ev.detail || {};
     if (error.status === 0) {
         showToast(_t("No connection. Try again when you are back online."));
@@ -601,7 +602,7 @@ async function loadLazy(container, url, target) {
         const html = await pkFetch(url, { as: "html" });
         target.innerHTML = html;
         // Task 1640: listeners may enhance the injected body (date bounds).
-        target.dispatchEvent(new CustomEvent("sc:lazy-loaded", { bubbles: true }));
+        target.dispatchEvent(new CustomEvent("pk:lazy-loaded", { bubbles: true }));
         // A fragment with its own empty state (task 1581 histories) keeps it.
         // Task 1614: [data-sc-lazy-filled] = content even without a link
         // (a digest day whose players have no page link).
@@ -664,7 +665,7 @@ document.addEventListener("click", (ev) => {
 // Task 1634: a player card's face is a read fragment (a status pick swaps
 // it): its fresh « Details » control follows the region it controls, which
 // stays open or closed under the card.
-document.addEventListener("sc:fragments", () => {
+document.addEventListener("pk:fragments", () => {
     for (const toggle of document.querySelectorAll(".o_sc_app [data-sc-row-expand]")) {
         const region = document.getElementById(toggle.dataset.scRowExpand);
         if (region) {
@@ -708,7 +709,7 @@ function openSheet(id) {
 // « Add another timesheet » (the add sheet, split shifts). The sheet's own
 // « Edit my timesheet » does the same from inside it.
 function editExistingTimesheet(id, behavior) {
-    const card = document.querySelector(`.o_sc_app [data-sc-timesheet-id="${id}"][data-sc-edit-card]`);
+    const card = document.querySelector(`.o_sc_app [data-sc-timesheet-id="${id}"][data-pk-edit-card]`);
     if (!card) {
         return false;
     }
@@ -983,4 +984,4 @@ if (document.readyState === "loading") {
 } else {
     setupClamps();
 }
-document.addEventListener("sc:fragments", setupClamps);
+document.addEventListener("pk:fragments", setupClamps);

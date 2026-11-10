@@ -16,7 +16,7 @@
     <template id="sc_app_home" name="Sports Clinic App: home">
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-set="sc_title">Dashboard</t>
-            <div class="o_sc_dash_head" data-sc-section="dashboard.head">
+            <div class="o_sc_dash_head" data-pk-section="dashboard.head">
                 <a t-att-href="sc_dash_configure_url" class="o_sc_btn o_sc_btn_ghost o_sc_dash_configure"
                    data-sc-action="dashboard.configure">
                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'settings'"/></t>
@@ -75,7 +75,7 @@
         <t t-set="sc_dw_live" t-value="section.get('fragment_key')"/>
         <section t-attf-class="o_sc_section o_sc_dw o_sc_dw_#{section['widget']}"
                  t-att-data-sc-widget="section['widget']" t-att-data-sc-instance="section['id']"
-                 t-att-data-sc-section="'dashboard.%s' % section['widget']"
+                 t-att-data-pk-section="'dashboard.%s' % section['widget']"
                  t-att-data-sc-fragment="sc_dw_live or None"
                  t-att-data-sc-fragment-mode="'list' if sc_dw_live else None"
                  t-att-data-sc-fragment-keep-empty="'1' if sc_dw_live else None">
@@ -110,7 +110,7 @@
     <!-- « Aujourd'hui »: my events / clinics of the day; the live clinics
          chip (therapists, the former home teaser). -->
     <template id="sc_dw_today" name="App dashboard: today">
-        <div t-if="section['show_clinics']" class="o_sc_dw_clinics" data-sc-section="home.clinic_teaser">
+        <div t-if="section['show_clinics']" class="o_sc_dw_clinics" data-pk-section="home.clinic_teaser">
         <t t-call="bemade_sports_clinic.sc_entity_row">
             <t t-set="href" t-value="'/my/clinics'"/>
             <t t-set="lead_icon" t-value="'clinic'"/>
@@ -119,10 +119,10 @@
             <!-- Live count (review 2026-09-29): sc_live_count.js polls the
                  JSON route every 20 s while the tab is visible. -->
             <span t-attf-class="o_sc_chip o_sc_chip_#{'mauve' if section['clinics_today'] else 'ghost'}"
-                  data-sc-live-count-url="/my/clinics/today/count"
-                  data-sc-live-poll="20"
-                  data-sc-live-tone-on="mauve"
-                  data-sc-live-tone-off="ghost"
+                  data-pk-live-count-url="/my/clinics/today/count"
+                  data-pk-live-poll="20"
+                  data-pk-live-tone-on="mauve"
+                  data-pk-live-tone-off="ghost"
                   t-out="section['clinics_today'] or 0"/>
         </t>
         </div>
@@ -286,7 +286,7 @@
 
     <!-- « Indicateurs »: the three tiles over the scope's players. -->
     <template id="sc_dw_indicators" name="App dashboard: indicators">
-        <div class="o_sc_stats" data-sc-section="home.team_status">
+        <div class="o_sc_stats" data-pk-section="home.team_status">
             <t t-call="bemade_sports_clinic.sc_stat_tile">
                 <t t-set="tone" t-value="'red'"/>
                 <t t-set="value" t-value="section['injured']"/>
@@ -431,7 +431,7 @@
             <t t-set="sc_dash_remove_title">Remove this section?</t>
             <t t-set="sc_dash_remove_ok">Remove</t>
             <t t-set="sc_dash_remove_cancel">Cancel</t>
-            <div class="o_sc_dash_cfg_zones" data-sc-section="dashboard.configure" data-sc-dash-zones="1">
+            <div class="o_sc_dash_cfg_zones" data-pk-section="dashboard.configure" data-sc-dash-zones="1">
                 <section t-foreach="sc_dash_cfg_zones" t-as="cfg_zone"
                          t-attf-class="o_sc_dash_cfg_zone o_sc_dash_cfg_zone_#{cfg_zone['zone']}"
                          t-att-data-sc-dash-cfg-zone="cfg_zone['zone']">
@@ -575,7 +575,7 @@
                                       t-att-id="'sc_dash_remove_%s' % row['id']" hidden="hidden"
                                       class="o_sc_inline_form o_sc_dash_cfg_remove" data-sc-dash-remove-form="1"
                                       t-att-data-sc-confirm-title="sc_dash_remove_title" t-att-data-sc-confirm-message="row['title'] or row['widget_title']"
-                                      t-att-data-sc-confirm-ok="sc_dash_remove_ok" t-att-data-sc-confirm-cancel="sc_dash_remove_cancel">
+                                      t-att-data-pk-confirm-ok="sc_dash_remove_ok" t-att-data-pk-confirm-cancel="sc_dash_remove_cancel">
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                     <input type="hidden" name="instance_id" t-att-value="row['id']"/>
                                 </form>
@@ -586,7 +586,7 @@
             </div>
 
             <form action="/my/app/dashboard/configure/add" method="post" class="o_sc_card o_sc_form o_sc_dash_cfg_add"
-                  data-sc-section="dashboard.add">
+                  data-pk-section="dashboard.add">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <label class="o_sc_field_label" for="sc_dash_add_widget">Add a section</label>
                 <div class="o_sc_dash_cfg_add_row">
@@ -613,9 +613,9 @@
             <t t-set="sc_reset_ok">Restore the default</t>
             <t t-set="sc_reset_cancel">Cancel</t>
             <form action="/my/app/dashboard/configure/reset" method="post" class="o_sc_dash_cfg_reset"
-                  data-sc-dash-reset-form="1" data-sc-section="dashboard.reset"
+                  data-sc-dash-reset-form="1" data-pk-section="dashboard.reset"
                   t-att-data-sc-confirm-title="sc_reset_title" t-att-data-sc-confirm-message="sc_reset_message"
-                  t-att-data-sc-confirm-ok="sc_reset_ok" t-att-data-sc-confirm-cancel="sc_reset_cancel">
+                  t-att-data-pk-confirm-ok="sc_reset_ok" t-att-data-pk-confirm-cancel="sc_reset_cancel">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <button type="submit" class="o_sc_btn o_sc_btn_ghost" data-sc-dash-reset="1">Restore the default</button>
             </form>

@@ -20,7 +20,7 @@ function type(el, value) {
 }
 
 function cancelSteps(panelId, fieldSelector, name) {
-    const ADD = `button[data-sc-list-add-toggle][aria-controls="${panelId}"]`;
+    const ADD = `button[data-pk-list-add-toggle][aria-controls="${panelId}"]`;
     const PANEL = `details#${panelId}`;
     return [
         {
@@ -37,7 +37,7 @@ function cancelSteps(panelId, fieldSelector, name) {
         },
         {
             content: `${name}: « Annuler »`,
-            trigger: `${PANEL}[open] button[data-sc-list-add-cancel]`,
+            trigger: `${PANEL}[open] button[data-pk-list-add-cancel]`,
             run: "click",
         },
         {

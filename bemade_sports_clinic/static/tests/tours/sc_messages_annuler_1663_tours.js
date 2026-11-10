@@ -21,7 +21,7 @@ tours.add("sc_1663_announcement_undo", {
             trigger: ".o_sc_announcement_body:contains(Synthetic tour announcement)",
             expectUnloadPage: true,
             run() {
-                document.querySelector('[data-sc-section="team.announcement.archive"] button[type="submit"]').click();
+                document.querySelector('[data-pk-section="team.announcement.archive"] button[type="submit"]').click();
             },
         },
         {
@@ -47,12 +47,12 @@ tours.add("sc_1663_activity_delete", {
             // Task 1736 (deliberate update): the delete is the card's red
             // trash, shown while the activity is being edited.
             content: "The activity card's pencil",
-            trigger: '[data-sc-edit-card="activity"] [data-sc-card-icons] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="activity"] [data-sc-card-icons] button[data-sc-edit-toggle]',
             run: "click",
         },
         {
             content: "« Delete » (the trash) on the activity page",
-            trigger: '[data-sc-edit-card="activity"][data-sc-edit-open] button[data-sc-action="activity.cancel"][aria-label="Delete"]:visible',
+            trigger: '[data-pk-edit-card="activity"][data-sc-edit-open] button[data-sc-action="activity.cancel"][aria-label="Delete"]:visible',
             run: "click",
         },
         {

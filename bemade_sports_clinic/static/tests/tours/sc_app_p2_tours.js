@@ -17,7 +17,7 @@ function draftKeys(fragment = "") {
     const keys = [];
     for (let i = 0; i < window.localStorage.length; i++) {
         const key = window.localStorage.key(i);
-        if (key && key.startsWith("sc_draft:") && key.includes(fragment)) {
+        if (key && key.startsWith("pk_draft:") && key.includes(fragment)) {
             keys.push(key);
         }
     }
@@ -33,7 +33,7 @@ tours.add("sc_1539_players_to_player", {
         },
         {
             content: "Open the first player",
-            trigger: '[data-sc-section="players.list"] [data-sc-player-id] a.o_sc_link_row_main',
+            trigger: '[data-pk-section="players.list"] [data-sc-player-id] a.o_sc_link_row_main',
             run: "click",
             expectUnloadPage: true,
         },
@@ -47,7 +47,7 @@ tours.add("sc_1539_players_to_player", {
             run: "click",
         },
         {
-            trigger: 'section[data-sc-tab-panel="info"]:not([hidden]) [data-sc-section="player.info.teams"]',
+            trigger: 'section[data-sc-tab-panel="info"]:not([hidden]) [data-pk-section="player.info.teams"]',
             run() {
                 assert(window.location.search.includes("tab=info"), "?tab= kept in the URL");
                 const injuries = document.querySelector('section[data-sc-tab-panel="injuries"]');
@@ -70,7 +70,7 @@ tours.add("sc_1539_injury_autosave", {
     steps: () => [
         {
             content: "Edit the notes card (pencil paradigm, owner review 2026-10-11)",
-            trigger: '[data-sc-edit-card="injury-notes-external"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="injury-notes-external"] button[data-sc-edit-toggle]',
             run: "click",
         },
         {
@@ -236,7 +236,7 @@ tours.add("sc_status_pill_refresh", {
     steps: () => [
         {
             content: "Header: the Match pill (green; task 1753: outside the read view); mark the page to detect a reload, open it",
-            trigger: '[data-sc-section="player.hero"] [data-sc-section="player.status"] [data-sc-pill-key="match"] button.o_sc_pill_select.o_sc_chip_green',
+            trigger: '[data-pk-section="player.hero"] [data-pk-section="player.status"] [data-sc-pill-key="match"] button.o_sc_pill_select.o_sc_chip_green',
             run() {
                 window.__scPillNoReload = true;
                 this.anchor.click();
@@ -244,14 +244,14 @@ tours.add("sc_status_pill_refresh", {
         },
         {
             content: "Match: No",
-            trigger: '[data-sc-section="player.hero"] [data-sc-pill-key="match"] [role="menuitemradio"][data-sc-pill-value="no"]',
+            trigger: '[data-pk-section="player.hero"] [data-sc-pill-key="match"] [role="menuitemradio"][data-sc-pill-value="no"]',
             run: "click",
         },
         {
             content: "Saved in place: Match red; open Practice",
-            trigger: '[data-sc-section="player.hero"] [data-sc-pill-key="practice"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_green',
+            trigger: '[data-pk-section="player.hero"] [data-sc-pill-key="practice"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_green',
             run() {
-                if (!document.querySelector('[data-sc-section="player.hero"] [data-sc-pill-key="match"]:not([aria-busy]) button.o_sc_chip_red')) {
+                if (!document.querySelector('[data-pk-section="player.hero"] [data-sc-pill-key="match"]:not([aria-busy]) button.o_sc_chip_red')) {
                     throw new Error("the match pill did not turn red");
                 }
                 this.anchor.click();
@@ -259,12 +259,12 @@ tours.add("sc_status_pill_refresh", {
         },
         {
             content: "Practice: No",
-            trigger: '[data-sc-section="player.hero"] [data-sc-pill-key="practice"] [role="menuitemradio"][data-sc-pill-value="no"]:not([aria-disabled])',
+            trigger: '[data-pk-section="player.hero"] [data-sc-pill-key="practice"] [role="menuitemradio"][data-sc-pill-value="no"]:not([aria-disabled])',
             run: "click",
         },
         {
             content: "The read view shows the new status (read fragment, no reload)",
-            trigger: '[data-sc-section="player.hero"] [data-sc-section="player.status"] [data-sc-pill-key="practice"]:not([aria-busy]) button.o_sc_chip_red',
+            trigger: '[data-pk-section="player.hero"] [data-pk-section="player.status"] [data-sc-pill-key="practice"]:not([aria-busy]) button.o_sc_chip_red',
             run() {
                 if (!window.__scPillNoReload) {
                     throw new Error("the page reloaded");
@@ -390,28 +390,28 @@ tours.add("sc_event_pencil", {
     steps: () => [
         {
             content: "Read view first; open the pencil",
-            trigger: '[data-sc-edit-card="event"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="event"] button[data-sc-edit-toggle]',
             run: "click",
         },
         {
             content: "Rename the event",
-            trigger: '[data-sc-edit-card="event"] .o_sc_autosave[data-sc-field="name"] input',
+            trigger: '[data-pk-edit-card="event"] .o_sc_autosave[data-sc-field="name"] input',
             run: "edit Synthetic pencil event",
         },
         {
             content: "Leave the field so it saves",
-            trigger: '[data-sc-edit-card="event"] .o_sc_autosave[data-sc-field="name"] input',
+            trigger: '[data-pk-edit-card="event"] .o_sc_autosave[data-sc-field="name"] input',
             run() {
                 this.anchor.blur(); this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI: blur() fires no event without window focus
             },
         },
         {
             content: "Saved",
-            trigger: '[data-sc-edit-card="event"] .o_sc_autosave[data-sc-field="name"][data-sc-state="saved"]',
+            trigger: '[data-pk-edit-card="event"] .o_sc_autosave[data-sc-field="name"][data-sc-state="saved"]',
         },
         {
             content: "Done: the card closes (task 1611: no reload, the title is a read fragment)",
-            trigger: '[data-sc-edit-card="event"] [data-sc-edit-done]',
+            trigger: '[data-pk-edit-card="event"] [data-pk-edit-done]',
             run: "click",
         },
         {
@@ -427,7 +427,7 @@ tours.add("sc_training_history_refresh", {
         {
             // Task 1629: the link sits right after the all-caps section title.
             content: "Open the (empty) training history; mark the page to detect a reload",
-            trigger: '[data-sc-section="player.training"] > h3.o_sc_edit_card_title > button.o_sc_section_more[data-sc-sheet-open="sc_training_history_sheet"]',
+            trigger: '[data-pk-section="player.training"] > h3.o_sc_edit_card_title > button.o_sc_section_more[data-sc-sheet-open="sc_training_history_sheet"]',
             run(helpers) {
                 window.__scTrainingNoReload = true;
                 helpers.click();
@@ -444,7 +444,7 @@ tours.add("sc_training_history_refresh", {
         },
         {
             content: "Review fixes 2026-10-18: the header's pencil opens its edit view",
-            trigger: '[data-sc-section="player.hero"] [data-sc-card-icons] > button[data-sc-edit-toggle]',
+            trigger: '[data-pk-section="player.hero"] [data-sc-card-icons] > button[data-sc-edit-toggle]',
             run: "click",
         },
         {
@@ -472,9 +472,9 @@ tours.add("sc_training_history_refresh", {
             // Task 1629: one title + one History link in the edit view; the
             // island's label stays as the textarea's accessible name.
             content: "The edit view has one History link, next to its title",
-            trigger: '[data-sc-section="player.training.edit"] > h3.o_sc_edit_card_title > button.o_sc_section_more',
+            trigger: '[data-pk-section="player.training.edit"] > h3.o_sc_edit_card_title > button.o_sc_section_more',
             run() {
-                const section = this.anchor.closest('[data-sc-section="player.training.edit"]');
+                const section = this.anchor.closest('[data-pk-section="player.training.edit"]');
                 const links = section.querySelectorAll('[data-sc-sheet-open="sc_training_history_sheet"]');
                 if (links.length !== 1) {
                     throw new Error(`expected one History link in the edit view, got ${links.length}`);
@@ -488,7 +488,7 @@ tours.add("sc_training_history_refresh", {
         },
         {
             content: "Open the history again (the edit view's title link)",
-            trigger: '[data-sc-section="player.training.edit"] > h3.o_sc_edit_card_title > button[data-sc-sheet-open="sc_training_history_sheet"]',
+            trigger: '[data-pk-section="player.training.edit"] > h3.o_sc_edit_card_title > button[data-sc-sheet-open="sc_training_history_sheet"]',
             run: "click",
         },
         {
@@ -508,9 +508,9 @@ tours.add("sc_player_inline_edit", {
     steps: () => [
         {
             content: "Identity card in read mode; mark the page to detect a reload",
-            trigger: '[data-sc-edit-card="identity"] [data-sc-edit-view="read"]',
+            trigger: '[data-pk-edit-card="identity"] [data-sc-edit-view="read"]',
             run() {
-                const edit = document.querySelector('[data-sc-edit-card="identity"] [data-sc-edit-view="edit"]');
+                const edit = document.querySelector('[data-pk-edit-card="identity"] [data-sc-edit-view="edit"]');
                 if (!edit || !edit.hidden) {
                     throw new Error("the edit view is not hidden by default");
                 }
@@ -519,12 +519,12 @@ tours.add("sc_player_inline_edit", {
         },
         {
             content: "Pencil: the card's fields appear",
-            trigger: '[data-sc-edit-card="identity"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="identity"] button[data-sc-edit-toggle]',
             run: "click",
         },
         {
             content: "Edit the position",
-            trigger: '[data-sc-edit-card="identity"] [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="position"] input',
+            trigger: '[data-pk-edit-card="identity"] [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="position"] input',
             run: "edit Safety",
         },
         {
@@ -534,21 +534,21 @@ tours.add("sc_player_inline_edit", {
         },
         {
             content: "Saved",
-            trigger: '[data-sc-edit-card="identity"] .o_sc_autosave[data-sc-field="position"][data-sc-state="saved"]',
+            trigger: '[data-pk-edit-card="identity"] .o_sc_autosave[data-sc-field="position"][data-sc-state="saved"]',
         },
         {
             content: "Done: back to read mode",
-            trigger: '[data-sc-edit-card="identity"] button[data-sc-edit-done]',
+            trigger: '[data-pk-edit-card="identity"] button[data-pk-edit-done]',
             run: "click",
         },
         {
             content: "The read view shows the new position, without a reload",
-            trigger: '[data-sc-edit-card="identity"] [data-sc-edit-view="read"]',
+            trigger: '[data-pk-edit-card="identity"] [data-sc-edit-view="read"]',
             run() {
-                if (!document.querySelector('[data-sc-edit-card="identity"] [data-sc-edit-view="edit"]').hidden) {
+                if (!document.querySelector('[data-pk-edit-card="identity"] [data-sc-edit-view="edit"]').hidden) {
                     throw new Error("« Done » left the edit view open");
                 }
-                const shown = document.querySelector('[data-sc-edit-card="identity"] [data-sc-display$=":position"]');
+                const shown = document.querySelector('[data-pk-edit-card="identity"] [data-sc-display$=":position"]');
                 if (!window.__scInlineNoReload) {
                     throw new Error("the page reloaded");
                 }
@@ -562,7 +562,7 @@ tours.add("sc_player_inline_edit", {
             // laptop, where this tour runs): check its text, not visibility.
             // Task 1611: refreshed as a read fragment (a fetch after the save).
             content: "The app bar context follows",
-            trigger: '[data-sc-edit-card="identity"] [data-sc-edit-view="read"]',
+            trigger: '[data-pk-edit-card="identity"] [data-sc-edit-view="read"]',
             async run() {
                 const start = Date.now();
                 const context = () => document.querySelector(".o_sc_appbar_context");
@@ -582,37 +582,37 @@ tours.add("sc_player_teams_tags", {
     steps: () => [
         {
             content: "Open the Teams card",
-            trigger: '[data-sc-edit-card="teams"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="teams"] button[data-sc-edit-toggle]',
             run: "click",
         },
         {
             content: "The current team is a chip",
-            trigger: '[data-sc-edit-card="teams"] .o_sc_tags .o_sc_tag:contains("PC Team A")',
+            trigger: '[data-pk-edit-card="teams"] .o_sc_tags .o_sc_tag:contains("PC Team A")',
         },
         {
             content: "Search a team to add",
-            trigger: '[data-sc-edit-card="teams"] .o_sc_tags_search',
+            trigger: '[data-pk-edit-card="teams"] .o_sc_tags_search',
             run: "edit Team C",
         },
         {
             content: "Pick it in the suggestions",
-            trigger: '[data-sc-edit-card="teams"] .o_sc_tags_option:contains("PC Team C")',
+            trigger: '[data-pk-edit-card="teams"] .o_sc_tags_option:contains("PC Team C")',
             run: "click",
         },
         {
             content: "Added and saved",
             trigger:
-                '[data-sc-edit-card="teams"] .o_sc_autosave[data-sc-state="saved"] .o_sc_tag:contains("PC Team C")',
+                '[data-pk-edit-card="teams"] .o_sc_autosave[data-sc-state="saved"] .o_sc_tag:contains("PC Team C")',
         },
         {
             content: "Remove Team A",
-            trigger: '[data-sc-edit-card="teams"] .o_sc_tag:contains("PC Team A") button.o_sc_tag_remove',
+            trigger: '[data-pk-edit-card="teams"] .o_sc_tag:contains("PC Team A") button.o_sc_tag_remove',
             run: "click",
         },
         {
             content: "Only Team C left, saved",
             trigger:
-                '[data-sc-edit-card="teams"] .o_sc_autosave[data-sc-state="saved"] .o_sc_tags:not(:has(.o_sc_tag:contains("PC Team A")))',
+                '[data-pk-edit-card="teams"] .o_sc_autosave[data-sc-state="saved"] .o_sc_tags:not(:has(.o_sc_tag:contains("PC Team A")))',
         },
     ],
 });

@@ -119,7 +119,7 @@ class TestAppShellPrefs1538(AppShellCommon):
                 self.assertIn(href, hrefs)
             # Review fixes 2026-10-18: no classic-portal link on Settings.
             self.assertNotIn('/my/home?classic=1', hrefs)
-            menu = set(tree.xpath('//*[@data-sc-user-menu-popup]//a/@href'))
+            menu = set(tree.xpath('//*[@data-pk-user-menu-popup]//a/@href'))
             self.assertTrue([h for h in menu if h.startswith('/web/session/logout')])
             # Appearance control; no navigation setting (task 1579).
             self.assertTrue(tree.xpath('//form[@data-sc-pref]//*[@name="sc_theme"]'))

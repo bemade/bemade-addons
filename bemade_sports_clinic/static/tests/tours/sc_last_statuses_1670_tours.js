@@ -14,7 +14,7 @@ function assert(condition, message) {
 
 const SHEET = "dialog#sc_injury_resolve_sheet";
 const PROPOSAL = "dialog#sc_proposal_sheet";
-const HERO = '[data-sc-section="player.hero"]';
+const HERO = '[data-pk-section="player.hero"]';
 
 function card(diagnosis) {
     return [...document.querySelectorAll("details.o_sc_injury_item")].find((node) =>

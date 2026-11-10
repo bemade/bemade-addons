@@ -9,7 +9,7 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
-const PANE = '[data-sc-section="clinic.dossier"]';
+const PANE = '[data-pk-section="clinic.dossier"]';
 const FOLD = `${PANE} details[data-sc-resolved-injuries]`;
 
 function assert(condition, message) {
@@ -22,7 +22,7 @@ tours.add("sc_1721_clinic_pane", {
     steps: () => [
         {
             content: "The player card on top; the resolved injury hidden",
-            trigger: `${PANE} [data-sc-section="clinic.dossier.player"] .o_sc_player_row`,
+            trigger: `${PANE} [data-pk-section="clinic.dossier.player"] .o_sc_player_row`,
             run() {
                 const fold = document.querySelector(FOLD);
                 assert(fold && !fold.open, "the resolved injuries are not folded");
@@ -48,7 +48,7 @@ tours.add("sc_1721_clinic_pane", {
         },
         {
             content: "« + Ajouter » above the injuries",
-            trigger: `${PANE} button[data-sc-list-add-toggle][aria-controls="sc_clinic_injury_add"]`,
+            trigger: `${PANE} button[data-pk-list-add-toggle][aria-controls="sc_clinic_injury_add"]`,
             run: "click",
         },
         {
@@ -60,8 +60,8 @@ tours.add("sc_1721_clinic_pane", {
 
 // Review round 1 (owner 2026-10-27): a resolved injury set back to « Actif »
 // joins the active list at once (no reload), the fold-out's count follows.
-const LISTS = `${PANE} [data-sc-section="clinic.dossier.injury_lists"]`;
-const ACTIVE = `${LISTS} [data-sc-section="clinic.dossier.injury_list"]`;
+const LISTS = `${PANE} [data-pk-section="clinic.dossier.injury_lists"]`;
+const ACTIVE = `${LISTS} [data-pk-section="clinic.dossier.injury_list"]`;
 
 tours.add("sc_1721_resolved_back_to_active", {
     steps: () => [
@@ -75,7 +75,7 @@ tours.add("sc_1721_resolved_back_to_active", {
         },
         {
             content: "The resolved card's status pill",
-            trigger: `${FOLD}[open] [data-sc-fragment-item] [data-sc-pill-select][data-sc-pill-key="stage"] button[data-sc-menu-toggle]`,
+            trigger: `${FOLD}[open] [data-pk-fragment-item] [data-sc-pill-select][data-sc-pill-key="stage"] button[data-pk-menu-toggle]`,
             run: "click",
         },
         {
@@ -85,7 +85,7 @@ tours.add("sc_1721_resolved_back_to_active", {
         },
         {
             content: "The card moved to the active list; no fold-out left; no reload",
-            trigger: `${ACTIVE} [data-sc-fragment-item]:contains("Synthetic old knee")`,
+            trigger: `${ACTIVE} [data-pk-fragment-item]:contains("Synthetic old knee")`,
             run() {
                 assert(window.__sc1721NoReload, "the page reloaded");
                 assert(!document.querySelector(FOLD), "the fold-out is still there");
@@ -99,7 +99,7 @@ tours.add("sc_1721_note_check_top_right", {
     steps: () => [
         {
             content: "A note's pencil",
-            trigger: `${PANE} .o_sc_note_card[data-sc-edit-card] .o_sc_note_head button[data-sc-edit-toggle]`,
+            trigger: `${PANE} .o_sc_note_card[data-pk-edit-card] .o_sc_note_head button[data-sc-edit-toggle]`,
             run: "click",
         },
         {
@@ -121,9 +121,9 @@ tours.add("sc_1721_split_widths", {
     steps: () => [
         {
             content: "Both panes side by side",
-            trigger: `${PANE} [data-sc-section="clinic.dossier.player"] .o_sc_player_row`,
+            trigger: `${PANE} [data-pk-section="clinic.dossier.player"] .o_sc_player_row`,
             run() {
-                const list = document.querySelector('[data-sc-section="clinic.worklist"]').getBoundingClientRect();
+                const list = document.querySelector('[data-pk-section="clinic.worklist"]').getBoundingClientRect();
                 const pane = document.querySelector(PANE).getBoundingClientRect();
                 assert(list.width >= 320 && list.width <= 440, `worklist ${list.width}px wide`);
                 assert(pane.left > list.right, "the dossier is not right of the worklist");

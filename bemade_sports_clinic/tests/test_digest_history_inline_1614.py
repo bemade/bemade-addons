@@ -71,7 +71,7 @@ class Digest1614Common(ChangeDetailFixture, AppShellCommon):
         return '/my/team/%s/digest/%s/body' % ((team or self.team_a).id, digest.id)
 
     def _rows(self, tree):
-        return tree.xpath('//*[@data-sc-section="digest.history"]//details[@data-sc-digest-row]')
+        return tree.xpath('//*[@data-pk-section="digest.history"]//details[@data-sc-digest-row]')
 
     def _row(self, tree, digest):
         rows = [r for r in self._rows(tree) if r.get('data-sc-digest-row') == str(digest.id)]
@@ -142,10 +142,10 @@ class TestDigestHistoryInline1614(Digest1614Common):
         resp = self.url_open(self._body_url(self.digest))
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.headers.get('Cache-Control'), 'no-store')
-        self.assertNotIn('data-sc-app-shell', resp.text)
+        self.assertNotIn('data-pk-app-shell', resp.text)
         self.assertNotIn('<html', resp.text.lower())
         tree = lxml_html.fromstring(resp.text)
-        line = ' '.join(''.join(tree.xpath('//*[@data-sc-section="digest.snapshot"]//text()')).split())
+        line = ' '.join(''.join(tree.xpath('//*[@data-pk-section="digest.snapshot"]//text()')).split())
         self.assertTrue(line.startswith('Snapshot of '), line)
         self.assertIn('(America/Toronto)', line)
         self.assertTrue(line.endswith('changes over the last 24 h'), line)
@@ -202,10 +202,10 @@ class TestDigestHistoryInline1614(Digest1614Common):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/team/%s/digest/%s' % (self.team_a.id, self.digest.id))
-        body = tree.xpath('//*[@data-sc-section="digest.body"]')
+        body = tree.xpath('//*[@data-pk-section="digest.body"]')
         self.assertTrue(body)
         self.assertIn('o_sc_legacy', body[0].get('class'))
-        line = ' '.join(''.join(tree.xpath('//*[@data-sc-section="digest.snapshot"]//text()')).split())
+        line = ' '.join(''.join(tree.xpath('//*[@data-pk-section="digest.snapshot"]//text()')).split())
         self.assertTrue(line.startswith('Snapshot of '), line)
         self.assertIn('(America/Toronto)', line)
 
@@ -244,6 +244,6 @@ class TestDigestHistoryInlineFr1614(Digest1614Common):
         self.assertIn('Ouvrir cette journée', self._fr(self.history_url))
         text = self._fr(self._body_url(self.digest))
         tree = lxml_html.fromstring(text)
-        line = ' '.join(''.join(tree.xpath('//*[@data-sc-section="digest.snapshot"]//text()')).split())
+        line = ' '.join(''.join(tree.xpath('//*[@data-pk-section="digest.snapshot"]//text()')).split())
         self.assertTrue(line.startswith('Instantané du '), line)
         self.assertTrue(line.endswith('changements des dernières 24 h'), line)

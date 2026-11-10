@@ -24,7 +24,7 @@ Acceptance criteria covered here:
   title's main link carrying the whole title as its label — no nested
   anchors; a record the viewer may not open stays plain text.
 * RF6 The events list / calendar, clinics and timesheets filters apply on
-  change (``data-sc-autosubmit``; the « Apply filters » button kept only as
+  change (``data-pk-autosubmit``; the « Apply filters » button kept only as
   the no-JS / Enter fallback); the group by sits in its own labelled
   « Group by » group, not among the filters (task 1607: the sort moved to
   the list header). Tour: a date applies
@@ -219,11 +219,11 @@ class TestReviewFixes1014Pages(AppShellCommon):
 
     # -- RF6 -------------------------------------------------------------
     def _filter_form(self, tree, section):
-        forms = tree.xpath('//form[@data-sc-section="%s"]' % section)
+        forms = tree.xpath('//form[@data-pk-section="%s"]' % section)
         self.assertEqual(len(forms), 1, section)
         form = forms[0]
-        self.assertEqual(form.get('data-sc-autosubmit'), '1', section)
-        fallback = form.xpath('.//button[@type="submit"][@data-sc-autosubmit-fallback]')
+        self.assertEqual(form.get('data-pk-autosubmit'), '1', section)
+        fallback = form.xpath('.//button[@type="submit"][@data-pk-autosubmit-fallback]')
         self.assertEqual(len(fallback), 1, section)
         return form
 
@@ -236,7 +236,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
                 ('/my/sc/timesheets', 'timesheets.filters', 'timesheets.group')):
             _text_, tree = self._get(url)
             form = self._filter_form(tree, section)
-            group = form.xpath('.//fieldset[@data-sc-section="%s"]' % group_section)
+            group = form.xpath('.//fieldset[@data-pk-section="%s"]' % group_section)
             self.assertEqual(len(group), 1, url)
             self.assertEqual(_text(group[0].xpath('./legend')[0]), 'Group by')
             self.assertEqual(group[0].xpath('.//select/@name'), ['group_by'])
@@ -247,7 +247,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
         # The calendar shares the bar, without sort / group by.
         _text_, tree = self._get('/my/events/calendar')
         form = self._filter_form(tree, 'events.filters')
-        self.assertFalse(form.xpath('.//fieldset[@data-sc-section="events.group"]'))
+        self.assertFalse(form.xpath('.//fieldset[@data-pk-section="events.group"]'))
         _text_, tree = self._get('/my/clinics')
         self._filter_form(tree, 'clinics.filters')
 
@@ -281,7 +281,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
     # -- RF9 -------------------------------------------------------------
     def _add_card(self, tree):
         return tree.xpath('//section[@data-sc-tab-panel="players"]'
-                          '/details[@data-sc-section="team.add_player"]')[0]
+                          '/details[@data-pk-section="team.add_player"]')[0]
 
     def test_add_player_one_set_of_fields(self):
         # Task 1655 (deliberate update): ONE set of name fields still — the

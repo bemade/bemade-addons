@@ -118,7 +118,7 @@ tours.add("sc_1658_contact", {
         },
         {
             content: "The contact is listed",
-            trigger: '[data-sc-section="player.contacts"] [data-sc-contact-id]',
+            trigger: '[data-pk-section="player.contacts"] [data-sc-contact-id]',
         },
     ],
 });
@@ -266,7 +266,7 @@ tours.add("sc_1658_announcement", {
     steps: () => [
         {
             content: "Edit the announcement: empty → greyed",
-            trigger: '[data-sc-edit-card="announcement"] [data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="announcement"] [data-sc-edit-toggle]',
             run: "click",
         },
         {

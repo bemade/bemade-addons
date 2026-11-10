@@ -33,12 +33,12 @@ function typeAndLeave(input, value) {
 }
 
 const CARD = "details.o_sc_injury_item[open]";
-const DETAILS = `${CARD} section[data-sc-edit-card="injury-details"]`;
+const DETAILS = `${CARD} section[data-pk-edit-card="injury-details"]`;
 // Task 1675: the Notes section holds one edit card per note.
-const NOTES = `${CARD} section[data-sc-section="injury.notes"]`;
-const NOTES_EXT = `${NOTES} [data-sc-edit-card="injury-notes-external"]`;
-const NOTES_INT = `${NOTES} [data-sc-edit-card="injury-notes-internal"]`;
-const DOCS = `${CARD} section[data-sc-section="injury.documents"]`;
+const NOTES = `${CARD} section[data-pk-section="injury.notes"]`;
+const NOTES_EXT = `${NOTES} [data-pk-edit-card="injury-notes-external"]`;
+const NOTES_INT = `${NOTES} [data-pk-edit-card="injury-notes-internal"]`;
+const DOCS = `${CARD} section[data-pk-section="injury.documents"]`;
 const ADD_SHEET = 'dialog[id$="_documents_add"]';
 
 function el(selector) {
@@ -102,7 +102,7 @@ tours.add("sc_1616_card_sections", {
         },
         {
             content: "Details « Done »",
-            trigger: `${DETAILS} [data-sc-edit-done]`,
+            trigger: `${DETAILS} [data-pk-edit-done]`,
             run: "click",
         },
         {
@@ -143,7 +143,7 @@ tours.add("sc_1616_card_sections", {
             trigger: "details.o_sc_injury_item:not([open])",
             run() {
                 assert(!document.querySelector(`${CARD}`), "a card is still open");
-                assert(!document.querySelector('[data-sc-edit-card^="injury-notes-"][data-sc-edit-open]'),
+                assert(!document.querySelector('[data-pk-edit-card^="injury-notes-"][data-sc-edit-open]'),
                     "the Notes group stayed in edit mode");
             },
         },

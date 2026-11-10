@@ -13,8 +13,8 @@ function assert(condition, message) {
     }
 }
 
-const FORM = 'form[data-sc-section="players.search"]';
-const FILTERS = `${FORM} details[data-sc-section="players.filters"]`;
+const FORM = 'form[data-pk-section="players.search"]';
+const FILTERS = `${FORM} details[data-pk-section="players.filters"]`;
 
 tours.add("sc_1743_phone_filters", {
     steps: () => [
@@ -40,7 +40,7 @@ tours.add("sc_1743_phone_filters", {
             content: "Open: the « Suivis » chip and « Clear » inside",
             trigger: `${FILTERS}[open] a[data-sc-action="players.followed"]:visible`,
             run() {
-                assert(document.querySelector(`${FILTERS} a[data-sc-filter-reset]`).checkVisibility(), "no Clear");
+                assert(document.querySelector(`${FILTERS} a[data-pk-filter-reset]`).checkVisibility(), "no Clear");
             },
         },
     ],

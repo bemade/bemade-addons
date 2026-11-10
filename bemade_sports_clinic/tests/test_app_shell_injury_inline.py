@@ -60,7 +60,7 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
 
     def _add_card(self, tree):
         panel = tree.xpath('//section[@data-sc-tab-panel="injuries"]')[0]
-        cards = panel.xpath('.//details[@id="sc_new_injury"][@data-sc-section="injury.new"]')
+        cards = panel.xpath('.//details[@id="sc_new_injury"][@data-pk-section="injury.new"]')
         self.assertEqual(len(cards), 1)
         return cards[0]
 
@@ -179,7 +179,7 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         self.assertIn(stages['unverified'], item.xpath('.//summary')[0].text_content())
         self.assertIn('"diagnosis"', ' '.join(self._fields_in(item)))
         self.assertFalse(item.xpath('.//*[@data-sc-injury-quick]'))
-        self.assertFalse(item.xpath('.//*[@data-sc-edit-card="injury-notes-internal"]'))
+        self.assertFalse(item.xpath('.//*[@data-pk-edit-card="injury-notes-internal"]'))
         fields_ = ' '.join(self._fields_in(item))
         self.assertNotIn('"internal_notes"', fields_)
         self.assertNotIn('"hidden_from_coaches"', fields_)
@@ -262,7 +262,7 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
                                   'parental_consent': False})
         self._login_tp()
         _text, tree = self._get(self._tab())
-        item = tree.xpath('//details[@id="injury-%s"][@data-sc-edit-card]' % self.injury.id)[0]
+        item = tree.xpath('//details[@id="injury-%s"][@data-pk-edit-card]' % self.injury.id)[0]
         self.assertIsNone(item.get('open'))
         # Task 1616: the read views (Details, then Notes), one pencil per
         # group; together they edit what the card's single pencil did.

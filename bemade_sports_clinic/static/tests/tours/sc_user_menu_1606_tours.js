@@ -21,7 +21,7 @@ function assert(condition, message) {
 }
 
 function menuSteps(where) {
-    const toggle = `button[data-sc-user-menu-toggle][aria-controls="sc_user_menu_${where}"]`;
+    const toggle = `button[data-pk-user-menu-toggle][aria-controls="sc_user_menu_${where}"]`;
     const popup = `#sc_user_menu_${where}`;
     const settings = `${popup}:not([hidden]) a[role="menuitem"][href$="/my/app/settings"]`;
     const signOut = `${popup}:not([hidden]) a[role="menuitem"][href^="/web/session/logout"]`;
@@ -162,17 +162,17 @@ function menuSteps(where) {
  * bubble, fully in view.
  */
 function placementSteps() {
-    const toggle = 'header.o_sc_appbar button[data-sc-user-menu-toggle][aria-controls="sc_user_menu_bar"]';
+    const toggle = 'header.o_sc_appbar button[data-pk-user-menu-toggle][aria-controls="sc_user_menu_bar"]';
     return [
         {
             content: "1638: one user menu, at the top right of the app bar",
             trigger: toggle,
             run() {
-                assert(document.querySelectorAll("[data-sc-user-menu-popup]").length === 1,
+                assert(document.querySelectorAll("[data-pk-user-menu-popup]").length === 1,
                     "more than one user menu in the DOM");
-                assert(document.querySelectorAll("button[data-sc-user-menu-toggle]").length === 1,
+                assert(document.querySelectorAll("button[data-pk-user-menu-toggle]").length === 1,
                     "more than one user-menu trigger");
-                assert(!document.querySelector(".o_sc_rail [data-sc-user-menu-toggle]"),
+                assert(!document.querySelector(".o_sc_rail [data-pk-user-menu-toggle]"),
                     "the rail still holds a user menu");
                 const rail = document.querySelector(".o_sc_rail");
                 assert(rail && rail.getClientRects().length, "the rail should show at laptop width");
@@ -247,7 +247,7 @@ tours.add("sc_1606_menu_phone", {
                     .getBoundingClientRect();
                 assert(avatar.right <= window.innerWidth, "the avatar is off screen");
                 assert(avatar.height >= 44, `tap target ${avatar.height}px tall`);
-                assert(document.querySelectorAll("[data-sc-user-menu-popup]").length === 1,
+                assert(document.querySelectorAll("[data-pk-user-menu-popup]").length === 1,
                     "more than one user menu in the DOM");
             },
         },
@@ -258,12 +258,12 @@ tours.add("sc_1606_menu_phone", {
 tours.add("sc_1606_sign_out", {
     steps: () => [
         {
-            trigger: "button[data-sc-user-menu-toggle]",
+            trigger: "button[data-pk-user-menu-toggle]",
             run: "click",
         },
         {
             content: "« Se déconnecter »",
-            trigger: '[data-sc-user-menu-popup]:not([hidden]) a[role="menuitem"][href^="/web/session/logout"]',
+            trigger: '[data-pk-user-menu-popup]:not([hidden]) a[role="menuitem"][href^="/web/session/logout"]',
             run: "click",
             expectUnloadPage: true,
         },

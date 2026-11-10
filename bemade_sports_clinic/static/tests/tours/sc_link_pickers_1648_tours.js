@@ -114,7 +114,7 @@ tours.add("sc_1648_note_injury", {
     steps: () => [
         {
             content: "« + Ajouter » of the Notes list",
-            trigger: 'button[data-sc-list-add-toggle][aria-controls="sc_note_add"]',
+            trigger: 'button[data-pk-list-add-toggle][aria-controls="sc_note_add"]',
             run: "click",
         },
         {

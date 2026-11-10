@@ -6,3 +6,4 @@ from . import test_pk_safe_return_url
 from . import test_pk_no_leak
 from . import test_pk_assets
 from . import test_pk_hoot
+from . import test_pk_retired_names

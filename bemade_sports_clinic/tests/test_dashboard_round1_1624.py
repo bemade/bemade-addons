@@ -177,7 +177,7 @@ class TestDashboardRound1_1624(Dashboard1624Common):
         _text, tree = self._get('/my/home')
         todo = self._section(tree, 'todo')
         verify = todo.xpath('.//details[@data-sc-todo="verify"]')[0]
-        cards = verify.xpath('.//details[@data-sc-edit-card="injury"]')
+        cards = verify.xpath('.//details[@data-pk-edit-card="injury"]')
         self.assertEqual([int(c.get('data-sc-injury-id')) for c in cards], [injury.id])
         # The injury card's quick « Verify ».
         self.assertTrue(verify.xpath('.//button[@data-sc-injury-quick="verify"]'))
@@ -309,7 +309,7 @@ class TestDashboardRound1_1624(Dashboard1624Common):
         _text, tree = self._get('/my/player/%s/row-detail' % self.shared.id)
         self.assertEqual(tree.xpath('//button[@data-sc-follow="%s"]/@data-sc-followed' % self.shared.id), ['0'])
         _text, tree = self._get('/my/player?player_id=%s' % self.red.id)
-        self.assertEqual(tree.xpath('//*[@data-sc-section="player.hero"]'
+        self.assertEqual(tree.xpath('//*[@data-pk-section="player.hero"]'
                                     '//button[@data-sc-follow="%s"]/@data-sc-followed' % self.red.id), ['1'])
 
     def test_followed_widget(self):

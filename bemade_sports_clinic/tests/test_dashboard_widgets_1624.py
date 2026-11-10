@@ -93,13 +93,13 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         ids = [int(i) for i in today.xpath('.//*[@data-sc-event-id]/@data-sc-event-id')]
         self.assertEqual(ids, [self.ev_today.id])
         self.assertIn('Synthetic Arena', today.text_content())
-        self.assertTrue(today.xpath('.//*[@data-sc-section="home.clinic_teaser"]//*[@data-sc-live-count-url]'))
+        self.assertTrue(today.xpath('.//*[@data-pk-section="home.clinic_teaser"]//*[@data-pk-live-count-url]'))
         self._login_coach()
         _text, tree = self._get('/my/home')
         today = self._section(tree, 'today')
         ids = [int(i) for i in today.xpath('.//*[@data-sc-event-id]/@data-sc-event-id')]
         self.assertEqual(ids, [self.ev_today.id])
-        self.assertFalse(today.xpath('.//*[@data-sc-section="home.clinic_teaser"]'))
+        self.assertFalse(today.xpath('.//*[@data-pk-section="home.clinic_teaser"]'))
 
     # -- UC-W2 ---------------------------------------------------------------
     def test_todo_activities_match_clock_badge(self):

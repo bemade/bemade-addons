@@ -13,7 +13,7 @@ function assert(condition, message) {
     }
 }
 
-const AREA = '[data-sc-section="team.announcement.area"]';
+const AREA = '[data-pk-section="team.announcement.area"]';
 const BODY = `${AREA} .o_sc_announcement_body`;
 const MORE = `${AREA} button[data-sc-clamp-more]`;
 const LESS = `${AREA} button[data-sc-clamp-less]`;
@@ -98,7 +98,7 @@ tours.add("sc_1719_empty_pencil", {
         },
         {
             content: "The compose form opens",
-            trigger: `${AREA} [data-sc-section="team.announcement.edit"]:not([hidden]) #sc_team_announcement`,
+            trigger: `${AREA} [data-pk-section="team.announcement.edit"]:not([hidden]) #sc_team_announcement`,
         },
     ],
 });

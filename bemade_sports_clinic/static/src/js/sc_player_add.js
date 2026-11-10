@@ -278,7 +278,7 @@ async function create(form) {
         if (result && result.redirect) {
             // Task 1672: the panel resets before the page changes (back on
             // the team page, reopening it shows an empty form).
-            form.dispatchEvent(new CustomEvent("sc:create-success", { bubbles: true }));
+            form.dispatchEvent(new CustomEvent("pk:create-success", { bubbles: true }));
             window.location.assign(result.redirect);
             return;
         }
@@ -374,7 +374,7 @@ function showAccepted(form) {
 // Task 1672: the check's first content, to put back on a reset.
 const checkHints = new WeakMap();
 
-document.addEventListener("sc:form-reset", (ev) => {
+document.addEventListener("pk:form-reset", (ev) => {
     const form = playerForm(ev.target);
     if (!form) {
         return;

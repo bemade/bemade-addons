@@ -7,10 +7,10 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
-const HERO = '[data-sc-section="player.hero"]';
-const EDIT = '[data-sc-section="player.header.edit"]';
-const TRAINING = '[data-sc-section="player.training.edit"]';
-const ROWS = [TRAINING, '[data-sc-section="player.predicted_return"]', '[data-sc-section="player.return_date.edit"]'];
+const HERO = '[data-pk-section="player.hero"]';
+const EDIT = '[data-pk-section="player.header.edit"]';
+const TRAINING = '[data-pk-section="player.training.edit"]';
+const ROWS = [TRAINING, '[data-pk-section="player.predicted_return"]', '[data-pk-section="player.return_date.edit"]'];
 const CONTROLS = 'button, a[href], input:not([type="hidden"]), textarea, select';
 
 function assert(condition, message) {
@@ -76,7 +76,7 @@ const everyClear = {
 
 const pastDate = {
     content: "Type a past « Retour prévu » (refused inline, #1727)",
-    trigger: '[data-sc-section="player.predicted_return"] input[type="date"]',
+    trigger: '[data-pk-section="player.predicted_return"] input[type="date"]',
     run() {
         typeAndLeave(this.anchor, "2001-01-01");
     },
@@ -89,7 +89,7 @@ tours.add("sc_1729_header_edit_phone", {
         pastDate,
         {
             content: "No overlap, no overflow; fields full width, actions under them",
-            trigger: '[data-sc-section="player.predicted_return"] .o_sc_field_error',
+            trigger: '[data-pk-section="player.predicted_return"] .o_sc_field_error',
             run() {
                 const hero = document.querySelector(HERO);
                 const found = overlaps(hero);
@@ -122,7 +122,7 @@ tours.add("sc_1729_header_edit_laptop", {
         pastDate,
         {
             content: "Laptop: nothing overlaps; « Effacer » stays on the training title's line",
-            trigger: '[data-sc-section="player.predicted_return"] .o_sc_field_error',
+            trigger: '[data-pk-section="player.predicted_return"] .o_sc_field_error',
             run() {
                 const found = overlaps(document.querySelector(HERO));
                 assert(!found.length, `overlapping controls: ${found.join(" | ")}`);

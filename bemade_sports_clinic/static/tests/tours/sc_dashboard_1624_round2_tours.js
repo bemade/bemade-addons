@@ -78,10 +78,10 @@ tours.add("sc_1624_dashboard_round2", {
     steps: () => [
         {
             content: "The clinics row and the first event card do not touch",
-            trigger: `${TODAY} [data-sc-section="home.clinic_teaser"] + .o_sc_dw_events .o_sc_event_row`,
+            trigger: `${TODAY} [data-pk-section="home.clinic_teaser"] + .o_sc_dw_events .o_sc_event_row`,
             run() {
                 window.__sc1624r2NoReload = true;
-                const clinics = document.querySelector(`${TODAY} [data-sc-section="home.clinic_teaser"]`);
+                const clinics = document.querySelector(`${TODAY} [data-pk-section="home.clinic_teaser"]`);
                 const gap = this.anchor.getBoundingClientRect().top - clinics.getBoundingClientRect().bottom;
                 assert(gap >= 4, `gap ${gap}`);
                 noHorizontalScroll();
@@ -159,7 +159,7 @@ tours.add("sc_1624_dashboard_round2", {
                 await waitFor(() => row.querySelector(`${toggle}[data-sc-followed="0"]`), "the follow toggle");
                 row.querySelector(toggle).click();
                 await waitFor(
-                    () => document.querySelector(`${FOLLOWED} [data-sc-fragment-item="p${id}"]`),
+                    () => document.querySelector(`${FOLLOWED} [data-pk-fragment-item="p${id}"]`),
                     "the card in « Players I follow »"
                 );
                 const count = document.querySelector(`${FOLLOWED} [data-sc-dw-count]`);
@@ -169,7 +169,7 @@ tours.add("sc_1624_dashboard_round2", {
                 await waitFor(() => row.querySelector(`${toggle}[data-sc-followed="1"]`), "followed");
                 row.querySelector(toggle).click();
                 await waitFor(
-                    () => !document.querySelector(`${FOLLOWED} [data-sc-fragment-item]`),
+                    () => !document.querySelector(`${FOLLOWED} [data-pk-fragment-item]`),
                     "the card leaves « Players I follow »"
                 );
                 await waitFor(() => document.querySelector(`${FOLLOWED} > .o_sc_dw_body > .o_sc_empty`), "the empty state");

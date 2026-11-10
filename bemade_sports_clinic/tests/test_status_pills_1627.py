@@ -133,7 +133,7 @@ class TestStatusPills1627(StatusPillsMixin, FragmentsCommon):
 
     @staticmethod
     def _hero(tree):
-        return tree.xpath('//*[@data-sc-section="player.hero"]')[0]
+        return tree.xpath('//*[@data-pk-section="player.hero"]')[0]
 
     # -- AC-1 --------------------------------------------------------------
     def test_no_stage_chip(self):
@@ -155,7 +155,7 @@ class TestStatusPills1627(StatusPillsMixin, FragmentsCommon):
             # update): outside both the read and the edit view, so the
             # pencil (which hides the read view) no longer hides them.
             for pill in pills.values():
-                self.assertTrue(pill.xpath('ancestor::*[@data-sc-section="player.hero"]'))
+                self.assertTrue(pill.xpath('ancestor::*[@data-pk-section="player.hero"]'))
                 self.assertFalse(pill.xpath('ancestor::*[@data-sc-edit-view]'))
 
     # -- AC-3 --------------------------------------------------------------
@@ -214,7 +214,7 @@ class TestStatusPills1627(StatusPillsMixin, FragmentsCommon):
         self._login_tp()
         tree = self._page(self._url())
         self.assertFalse(tree.xpath('//owl-component[contains(@props, \'"sc_status"\')]'))
-        self.assertFalse(tree.xpath('//*[@data-sc-section="player.status.edit"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="player.status.edit"]'))
         # The pencil stays for the header's other fields (training, dates; task 1630: the allergies are the pills' popups).
         hero = self._hero(tree)
         self.assertEqual(len(hero.xpath('.//button[@data-sc-edit-toggle]')), 1)
@@ -340,11 +340,11 @@ class TestDossierStatusPills1627(StatusPillsMixin, Clinic1540Common):
     def test_dossier_pills_replace_the_changer(self):
         self._login_tp()
         tree = self._page(self._url())
-        card = tree.xpath('//*[@data-sc-section="clinic.dossier.player"]')[0]
+        card = tree.xpath('//*[@data-pk-section="clinic.dossier.player"]')[0]
         self.assertFalse(card.xpath('.//owl-component'))
         self.assertFalse(tree.xpath('//owl-component[contains(@props, \'"sc_status"\')]'))
         status = self._status_node(tree)
-        self.assertTrue(status.xpath('ancestor::*[@data-sc-section="clinic.dossier.player"]'))
+        self.assertTrue(status.xpath('ancestor::*[@data-pk-section="clinic.dossier.player"]'))
         self._assert_dropdowns(tree, 'yes:yes')
         self.assertEqual(self._menu_state(tree)['practice'], {'yes': 'yes:yes', 'no_contact': None, 'no': None})
 

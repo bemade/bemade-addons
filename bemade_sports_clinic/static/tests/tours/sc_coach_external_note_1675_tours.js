@@ -11,7 +11,7 @@ function assert(condition, message) {
     }
 }
 
-const CARD = 'details.o_sc_injury_item[open] [data-sc-edit-card="injury-notes-external"]';
+const CARD = 'details.o_sc_injury_item[open] [data-pk-edit-card="injury-notes-external"]';
 
 registry.category("web_tour.tours").add("sc_1675_coach_external_readonly", {
     steps: () => [

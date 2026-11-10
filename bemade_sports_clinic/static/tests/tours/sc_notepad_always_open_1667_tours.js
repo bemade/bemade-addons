@@ -39,7 +39,7 @@ tours.add("sc_1667_notepad_always_open", {
                 assert(visible(textarea), "the quick-note textarea is not visible");
                 assert(visible(add), "« Ajouter » is not visible");
                 assert(!document.querySelector("details#sc_notepad_add"), "the form is still collapsible");
-                assert(!document.querySelector('[data-sc-list-add-toggle][aria-controls="sc_notepad_add"]'),
+                assert(!document.querySelector('[data-pk-list-add-toggle][aria-controls="sc_notepad_add"]'),
                     "the « + Ajouter » header toggle is still there");
                 assert(document.activeElement !== textarea, "the textarea was auto-focused");
             },
@@ -66,7 +66,7 @@ tours.add("sc_1667_notepad_always_open", {
         },
         {
             content: "The note is listed and the form is still open",
-            trigger: `[data-sc-section="notepad.list"] .o_sc_quick_note:contains("${NOTE}")`,
+            trigger: `[data-pk-section="notepad.list"] .o_sc_quick_note:contains("${NOTE}")`,
             run() {
                 assert(visible(document.querySelector(`${FORM} .o_sc_autosave textarea`)),
                     "the form is gone after the add");

@@ -91,7 +91,7 @@ class TestFragmentsInjury1611(FragmentsCommon):
         def order():
             node = self._fragment(self._url(), self._pkey('injuries'))
             self.assertEqual(node.get('data-sc-fragment-mode'), 'list')
-            return node.xpath('.//*[@data-sc-fragment-item]/@data-sc-fragment-item')
+            return node.xpath('.//*[@data-pk-fragment-item]/@data-pk-fragment-item')
         self.assertEqual(order(), [self._ikey(self.injury, 'card'), self._ikey(self.injury_b, 'card')])
         payload = self._saved(self.injury, 'stage', 'resolved')
         self.assertRefreshes(payload, self._pkey('injuries'))
@@ -155,13 +155,13 @@ class TestFragmentsDossier1611(FragmentsMixin, ClinicDossier1590Common):
         tree = self._get(self._dossier_url())[1]
         node = tree.xpath('//*[@data-sc-fragment="%s"]' % key)[0]
         self.assertEqual(node.get('data-sc-fragment-mode'), 'list')
-        self.assertTrue(node.xpath('.//*[@data-sc-section="clinic.dossier.injury_list"]'
-                                   '//*[@data-sc-fragment-item="%s"]' % item))
+        self.assertTrue(node.xpath('.//*[@data-pk-section="clinic.dossier.injury_list"]'
+                                   '//*[@data-pk-fragment-item="%s"]' % item))
         payload = self._saved(self.injury, 'stage', 'resolved')
         self.assertRefreshes(payload, key)
         answer = self._fragments(self._dossier_url(), [key])
         fresh = lxml_html.fragment_fromstring(answer['fragments'][key])
-        self.assertFalse(fresh.xpath('.//*[@data-sc-section="clinic.dossier.injury_list"]'
-                                     '//*[@data-sc-fragment-item="%s"]' % item))
+        self.assertFalse(fresh.xpath('.//*[@data-pk-section="clinic.dossier.injury_list"]'
+                                     '//*[@data-pk-fragment-item="%s"]' % item))
         self.assertTrue(fresh.xpath('.//details[@data-sc-resolved-injuries]'
-                                    '//*[@data-sc-fragment-item="%s"]' % item))
+                                    '//*[@data-pk-fragment-item="%s"]' % item))

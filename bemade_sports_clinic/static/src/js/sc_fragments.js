@@ -23,7 +23,7 @@
  * - task 1624 round 2: data-sc-fragment-keep-empty on a list — it carries
  *   its own empty state, so it stays shown without items;
  * - data-sc-fragment-mode="list": the container's live items
- *   (data-sc-fragment-item) are KEPT — their islands survive — and only
+ *   (data-pk-fragment-item) are KEPT — their islands survive — and only
  *   re-ordered / dropped / regrouped as in the fresh render (an item may
  *   move between the list's sub-lists; a details[data-sc-keep-open] keeps
  *   its open state); while an item is
@@ -38,11 +38,12 @@
  * API for other modules: requestRefresh(patterns, {immediate}),
  * flushFragments(), applyFragments(payload), matchFragmentKeys(patterns);
  * or the DOM event « sc:refresh » {detail: {patterns, immediate}}.
- * After a swap the document receives « sc:fragments » {detail: {keys}}.
+ * After a swap the document receives « pk:fragments » {detail: {keys}}.
  */
 import { _t } from "@web/core/l10n/translation";
 import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 import { pkLeavePage } from "@bemade_portal_kit/js/pk_confirm";
+import { NAV_BF_RELOAD_KEY } from "@bemade_portal_kit/js/pk_app_nav";
 
 export const FRAGMENTS_HEADER = "X-Sc-Fragments";
 const DEBOUNCE_MS = 300;
@@ -52,7 +53,7 @@ const MAX_KEYS = 200;
 const LOADED_AT = Date.now();
 
 function app() {
-    return document.querySelector(".o_sc_app[data-sc-app-shell]");
+    return document.querySelector(".o_sc_app[data-pk-app-shell]");
 }
 
 function escapeRe(text) {
@@ -161,8 +162,8 @@ function itemSignature(node) {
                 parts.push(text);
             }
         } else if (child.nodeType === Node.ELEMENT_NODE) {
-            if (child.dataset.scFragmentItem) {
-                parts.push(`[${child.dataset.scFragmentItem}]`);
+            if (child.dataset.pkFragmentItem) {
+                parts.push(`[${child.dataset.pkFragmentItem}]`);
             } else {
                 parts.push(`<${child.tagName}>${itemSignature(child)}</>`);
             }
@@ -184,8 +185,8 @@ function reconcileList(live, fresh, key) {
         return false;
     }
     const liveItems = new Map();
-    for (const item of live.querySelectorAll("[data-sc-fragment-item]")) {
-        liveItems.set(item.dataset.scFragmentItem, item);
+    for (const item of live.querySelectorAll("[data-pk-fragment-item]")) {
+        liveItems.set(item.dataset.pkFragmentItem, item);
     }
     // An item being edited (or holding the focus) never moves or goes under
     // the user's hands: the new order waits for « Done » / focus out.
@@ -205,8 +206,8 @@ function reconcileList(live, fresh, key) {
         }
     }
     const active = document.activeElement;
-    for (const slot of [...fresh.querySelectorAll("[data-sc-fragment-item]")]) {
-        const existing = liveItems.get(slot.dataset.scFragmentItem);
+    for (const slot of [...fresh.querySelectorAll("[data-pk-fragment-item]")]) {
+        const existing = liveItems.get(slot.dataset.pkFragmentItem);
         if (existing) {
             slot.replaceWith(existing);
         } else if (slot.querySelector("owl-component")) {
@@ -266,7 +267,7 @@ export function applyFragments(payload) {
             swapped.push(key);
             // Task 1624 round 2: data-sc-fragment-keep-empty — a list that
             // renders its own empty state (a dashboard section) stays shown.
-            if (!el.querySelector("[data-sc-fragment-item]") && !el.dataset.scFragmentKeepEmpty) {
+            if (!el.querySelector("[data-pk-fragment-item]") && !el.dataset.scFragmentKeepEmpty) {
                 el.hidden = true;
             }
         }
@@ -274,7 +275,7 @@ export function applyFragments(payload) {
     if (payload && payload.title) {
         document.title = payload.title;
     }
-    document.dispatchEvent(new CustomEvent("sc:fragments", { detail: { keys: swapped } }));
+    document.dispatchEvent(new CustomEvent("pk:fragments", { detail: { keys: swapped } }));
     return swapped;
 }
 
@@ -290,7 +291,7 @@ async function run() {
         // Retried once nothing holds it any more.
         const held = nodesFor(key).some((el) =>
             el.dataset.scFragmentMode === "list"
-                ? [...el.querySelectorAll("[data-sc-fragment-item]")].some(itemBusy)
+                ? [...el.querySelectorAll("[data-pk-fragment-item]")].some(itemBusy)
                 : isBusy(el)
         );
         if (!held) {
@@ -408,13 +409,13 @@ window.addEventListener("pageshow", (ev) => {
         // Task 1618: this reload replays a back/forward step — the nav stack
         // (pk_app_nav.js) must not treat it as a reload (which resets it).
         try {
-            storage() && storage().setItem("sc_nav_bf_reload:v1", "1");
+            storage() && storage().setItem(NAV_BF_RELOAD_KEY, "1");
         } catch {
             // ignore: the stack falls back to the declared parent
         }
         window.location.reload();
     } else if (ev.persisted) {
-        document.dispatchEvent(new CustomEvent("sc:live-count-refresh"));
+        document.dispatchEvent(new CustomEvent("pk:live-count-refresh"));
     }
 });
 
@@ -426,7 +427,7 @@ document.addEventListener("sc:saved", (ev) => {
     }
     markDirty(result.saved_at);
     if (result.live_counts) {
-        document.dispatchEvent(new CustomEvent("sc:live-count-refresh"));
+        document.dispatchEvent(new CustomEvent("pk:live-count-refresh"));
     }
     if (Array.isArray(result.refresh) && result.refresh.length) {
         requestRefresh(result.refresh);

@@ -42,13 +42,13 @@ class TestHeroPillsEditMode1753(StatusPillsMixin, FragmentsCommon):
 
     @staticmethod
     def _hero(tree):
-        return tree.xpath('//*[@data-sc-section="player.hero"]')[0]
+        return tree.xpath('//*[@data-pk-section="player.hero"]')[0]
 
     def _status_block(self, tree):
         """The header's ``player.status`` block, checked to sit outside every
         read / edit view, between the top row and the read view."""
         hero = self._hero(tree)
-        blocks = hero.xpath('.//*[@data-sc-section="player.status"]')
+        blocks = hero.xpath('.//*[@data-pk-section="player.status"]')
         self.assertEqual(len(blocks), 1)
         status = blocks[0]
         self.assertIs(status.getparent(), hero)
@@ -56,8 +56,8 @@ class TestHeroPillsEditMode1753(StatusPillsMixin, FragmentsCommon):
         self.assertFalse(status.xpath('.//*[@data-sc-edit-view]'))
         self.assertIn('o_sc_hero_top', status.getprevious().get('class'))
         self.assertEqual(status.getnext().get('data-sc-edit-view'), 'read')
-        self.assertFalse(hero.xpath('./*[@data-sc-edit-view]//*[@data-sc-section="player.status"]'
-                                    ' | ./*[@data-sc-edit-view]//*[@data-sc-section="player.medical"]'))
+        self.assertFalse(hero.xpath('./*[@data-sc-edit-view]//*[@data-pk-section="player.status"]'
+                                    ' | ./*[@data-sc-edit-view]//*[@data-pk-section="player.medical"]'))
         return status
 
     # -- AC-1 --------------------------------------------------------------
@@ -65,12 +65,12 @@ class TestHeroPillsEditMode1753(StatusPillsMixin, FragmentsCommon):
         self._login_tp()
         tree = self._page(self._url())
         hero = self._hero(tree)
-        self.assertEqual(hero.get('data-sc-edit-card'), 'player-header')
+        self.assertEqual(hero.get('data-pk-edit-card'), 'player-header')
         self.assertEqual(len(hero.xpath('./*[@data-sc-edit-view="edit"]')), 1)
         status = self._status_block(tree)
-        self.assertEqual(len(status.xpath('./*[@data-sc-section="player.status.readonly"]'
+        self.assertEqual(len(status.xpath('./*[@data-pk-section="player.status.readonly"]'
                                           '//button[contains(@class, "o_sc_pill_select")]')), 2)
-        self.assertTrue(status.xpath('./*[@data-sc-section="player.medical"]'
+        self.assertTrue(status.xpath('./*[@data-pk-section="player.medical"]'
                                      '//button[@data-sc-med-pill="allergy"]'))
 
     # -- AC-2 --------------------------------------------------------------
@@ -81,7 +81,7 @@ class TestHeroPillsEditMode1753(StatusPillsMixin, FragmentsCommon):
         self.assertFalse(hero.xpath('.//*[@data-sc-edit-view="edit"] | .//*[@data-sc-edit-toggle]'))
         status = self._status_block(tree)
         self.assertEqual(len(status.xpath('.//*[@data-sc-pill-readonly]')), 2)
-        self.assertFalse(status.xpath('.//*[@data-sc-section="player.status.readonly"]//button'))
+        self.assertFalse(status.xpath('.//*[@data-pk-section="player.status.readonly"]//button'))
 
     # -- AC-3 --------------------------------------------------------------
     def test_fragments_once_and_unchanged(self):
@@ -92,7 +92,7 @@ class TestHeroPillsEditMode1753(StatusPillsMixin, FragmentsCommon):
             nodes = tree.xpath('//*[@data-sc-fragment="%s"]' % self._key(part))
             self.assertEqual(len(nodes), 1, part)
             self.assertIn(nodes[0], status.iter(), part)
-        self.assertEqual(self._status_node(tree).get('data-sc-section'), 'player.status.readonly')
+        self.assertEqual(self._status_node(tree).get('data-pk-section'), 'player.status.readonly')
         self.assertFragmentMatchesPage(self._url(), self._key('status'))
 
     # -- AC-4 --------------------------------------------------------------

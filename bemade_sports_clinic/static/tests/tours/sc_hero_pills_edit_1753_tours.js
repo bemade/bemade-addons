@@ -13,9 +13,9 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
-const HERO = '[data-sc-section="player.hero"]';
-const STATUS = `${HERO} > [data-sc-section="player.status"]`;
-const MEDICAL = `${STATUS} [data-sc-section="player.medical"]`;
+const HERO = '[data-pk-section="player.hero"]';
+const STATUS = `${HERO} > [data-pk-section="player.status"]`;
+const MEDICAL = `${STATUS} [data-pk-section="player.medical"]`;
 const EDIT = `${HERO} > [data-sc-edit-view="edit"]`;
 const READ = `${HERO} > [data-sc-edit-view="read"]`;
 const PENCIL = `${HERO} button[data-sc-edit-toggle]`;
@@ -36,9 +36,9 @@ function toggle(key, tone) {
 }
 
 function assertOnce() {
-    assert(document.querySelectorAll('[data-sc-section="player.status"]').length === 1, "status block duplicated");
-    assert(document.querySelectorAll('[data-sc-section="player.status.readonly"]').length === 1, "status pills duplicated");
-    assert(document.querySelectorAll(`${HERO} [data-sc-section="player.medical"]`).length === 1, "medical pills duplicated");
+    assert(document.querySelectorAll('[data-pk-section="player.status"]').length === 1, "status block duplicated");
+    assert(document.querySelectorAll('[data-pk-section="player.status.readonly"]').length === 1, "status pills duplicated");
+    assert(document.querySelectorAll(`${HERO} [data-pk-section="player.medical"]`).length === 1, "medical pills duplicated");
     assert(document.querySelectorAll(`${STATUS} [data-sc-pill-key="match"]`).length === 1, "match pill duplicated");
 }
 

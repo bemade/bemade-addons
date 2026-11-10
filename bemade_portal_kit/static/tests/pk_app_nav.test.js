@@ -7,11 +7,13 @@ import { beforeEach, describe, expect, getFixture, test } from "@odoo/hoot";
 import {
     backDistance,
     backIsUseful,
+    NAV_BF_RELOAD_KEY,
+    NAV_STACK_KEY,
     pageKey,
     syncStack,
 } from "@bemade_portal_kit/js/pk_app_nav";
 
-const STORE_KEY = "sc_nav_stack:v1";
+const STORE_KEY = "pk_nav_stack:v1";
 
 function here() {
     return pageKey(window.location.pathname + window.location.search);
@@ -79,7 +81,12 @@ describe("pk_app_nav", () => {
     test("backIsUseful follows the back chevron in the shell", () => {
         getFixture().innerHTML = '<div class="o_sc_app"></div>';
         expect(backIsUseful()).toBe(false);
-        getFixture().innerHTML = '<div class="o_sc_app"><a href="/my" data-sc-back="1">Back</a></div>';
+        getFixture().innerHTML = '<div class="o_sc_app"><a href="/my" data-pk-back="1">Back</a></div>';
         expect(backIsUseful()).toBe(true);
+    });
+
+    test("task 5198 (P3a): the tab's storage keys take the pk_ prefix", () => {
+        expect(NAV_STACK_KEY).toBe("pk_nav_stack:v1");
+        expect(NAV_BF_RELOAD_KEY).toBe("pk_nav_bf_reload:v1");
     });
 });

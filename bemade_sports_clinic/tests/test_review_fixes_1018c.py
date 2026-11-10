@@ -17,7 +17,7 @@ Acceptance criteria:
   card sheet (behaviour: tour ``sc_1018b_player_documents``).
 * C3 « Mon compte » like the rest of the app: no « Cancel » / « Save » in
   the cards (``data-sc-account-save`` / ``data-sc-account-cancel`` gone),
-  each card has the usual « Done » (``data-sc-edit-done``) and its error box
+  each card has the usual « Done » (``data-pk-edit-done``) and its error box
   (``data-sc-account-errors``); every field has a save-state holder next to
   its label (``data-sc-account-state``) — each field autosaves on its own
   (behaviour: tour ``sc_1620_account``).
@@ -63,7 +63,7 @@ class TestReturnPlaceholder1018c(AppShellCommon):
         self._switch(True)
 
     def _return(self, tree):
-        nodes = tree.xpath('//*[@data-sc-section="player.hero"]//*[@data-sc-section="player.return"]')
+        nodes = tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-pk-section="player.return"]')
         self.assertEqual(len(nodes), 1)
         return nodes[0]
 
@@ -103,7 +103,7 @@ class TestReturnPlaceholder1018c(AppShellCommon):
         self.assertFalse(ret.xpath('.//*[@data-sc-return-empty]'))
         self.assertIn('2030', _text(ret))
         # Coaches: no pencil on the header.
-        self.assertFalse(tree.xpath('//*[@data-sc-section="player.hero"]//button[@data-sc-edit-toggle]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="player.hero"]//button[@data-sc-edit-toggle]'))
 
     def test_placeholder_in_french(self):
         self._login_tp()
@@ -145,7 +145,7 @@ class TestDocPickerSharedGroup1018c(DocPicker1018bMixin, AppShellCommon):
 class Account1018cCommon(AccountShellCommon):
 
     def _card(self, tree, key):
-        cards = tree.xpath('//section[@data-sc-edit-card="%s"]' % key)
+        cards = tree.xpath('//section[@data-pk-edit-card="%s"]' % key)
         self.assertEqual(len(cards), 1, key)
         return cards[0]
 
@@ -176,7 +176,7 @@ class TestAccountAutosave1018c(Account1018cCommon):
                            ('account-address', {'street', 'street2', 'zip', 'city', 'country_id', 'state_id'})):
             card = self._card(tree, key)
             edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
-            self.assertEqual(len(edit.xpath('.//button[@data-sc-edit-done]')), 1, key)
+            self.assertEqual(len(edit.xpath('.//button[@data-pk-edit-done]')), 1, key)
             self.assertFalse(edit.xpath('.//button[@type="submit"]'), key)
             self.assertTrue(edit.xpath('.//*[@data-sc-account-errors]'), key)
             # One save-state holder per field, next to its label.
@@ -258,4 +258,4 @@ class TestAccountAutosave1018c(Account1018cCommon):
         _french(self, self.coach)
         text, tree = self._get('/my/account')
         card = self._card(tree, 'account-contact')
-        self.assertEqual(_text(card.xpath('.//button[@data-sc-edit-done]')[0]), 'Terminé')
+        self.assertEqual(_text(card.xpath('.//button[@data-pk-edit-done]')[0]), 'Terminé')

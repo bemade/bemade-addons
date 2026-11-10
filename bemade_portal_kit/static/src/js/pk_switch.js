@@ -9,7 +9,7 @@
  *   - keeps aria-checked in sync with the checked state;
  *   - enables the « off » hidden twin (sw_off) while the switch is off, so
  *     the form posts exactly ONE value;
- *   - submits the form of a switch marked data-sc-switch-submit (the
+ *   - submits the form of a switch marked data-pk-switch-submit (the
  *     Paramètres preferences: a switch has no submit button).
  * Every other behaviour (autosubmit filters, fetch forms, autosave) stays
  * with the script that owned the former checkbox.
@@ -20,7 +20,7 @@
     function syncSwitch(input) {
         input.setAttribute("aria-checked", input.checked ? "true" : "false");
         const row = input.closest(".o_sc_switch");
-        const twin = row && row.querySelector("input[data-sc-switch-off]");
+        const twin = row && row.querySelector("input[data-pk-switch-off]");
         if (twin) {
             twin.disabled = input.checked;
         }
@@ -38,7 +38,7 @@
                 return;
             }
             syncSwitch(input);
-            if (input.hasAttribute("data-sc-switch-submit") && input.form) {
+            if (input.hasAttribute("data-pk-switch-submit") && input.form) {
                 if (input.form.requestSubmit) {
                     input.form.requestSubmit();
                 } else {

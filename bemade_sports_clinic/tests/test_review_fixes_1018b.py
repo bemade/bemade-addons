@@ -73,7 +73,7 @@ class TestAllergiesHeaderOnly1018b(AppShellCommon):
     def test_medical_card_has_no_allergies(self):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&tab=overview' % self.player.id)
-        medical = tree.xpath('//section[@data-sc-edit-card="medical"]')
+        medical = tree.xpath('//section[@data-pk-edit-card="medical"]')
         self.assertEqual(len(medical), 1)
         read = medical[0].xpath('.//*[@data-sc-edit-view="read"]')[0]
         self.assertNotIn('Allergies', [' '.join(dt.itertext()).strip() for dt in read.xpath('.//dt')])
@@ -87,7 +87,7 @@ class TestAllergiesHeaderOnly1018b(AppShellCommon):
         _text, tree = self._get('/my/player?player_id=%s' % self.player.id)
         # Task 1630: the pill in the header, the details + editor in its popup
         # (task 1677: the list — plain inputs, no island).
-        pill = tree.xpath('//*[@data-sc-section="player.medical"]//button[@data-sc-med-pill="allergy"]')
+        pill = tree.xpath('//*[@data-pk-section="player.medical"]//button[@data-sc-med-pill="allergy"]')
         self.assertEqual(len(pill), 1)
         sheet = tree.xpath('//dialog[@id="sc_med_player_allergy_%s"]' % self.player.id)
         self.assertEqual(len(sheet), 1)
@@ -237,7 +237,7 @@ class TestDocumentPicker1018b(DocPicker1018bMixin, AppShellCommon):
 class AccountCards1018bCommon(AccountShellCommon):
 
     def _card(self, tree, key):
-        cards = tree.xpath('//section[@data-sc-edit-card="%s"]' % key)
+        cards = tree.xpath('//section[@data-pk-edit-card="%s"]' % key)
         self.assertEqual(len(cards), 1, key)
         return cards[0]
 
@@ -252,7 +252,7 @@ class TestAccountCards1018b(AccountCards1018bCommon):
     def test_no_company_card_and_no_page_save(self):
         self._login_coach()
         _text, tree = self._get('/my/account')
-        self.assertFalse(tree.xpath('//*[@data-sc-section="account.company"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="account.company"]'))
         form = tree.xpath('//form[contains(@class, "address_autoformat")]')[0]
         names = set(form.xpath('.//input/@name | .//select/@name'))
         self.assertNotIn('company_name', names)
@@ -287,7 +287,7 @@ class TestAccountCards1018b(AccountCards1018bCommon):
             self.assertEqual(edit.get('hidden'), 'hidden')
             self.assertEqual(set(edit.xpath('.//input/@name | .//select/@name')), field_names, key)
             # Round 2 (1018c): no « Save » / « Cancel », a « Done ».
-            self.assertTrue(edit.xpath('.//button[@data-sc-edit-done]'), key)
+            self.assertTrue(edit.xpath('.//button[@data-pk-edit-done]'), key)
             self.assertTrue(edit.xpath('.//*[@data-sc-account-errors]'), key)
         # The read views show the state and country names.
         address = ' '.join(self._card(tree, 'account-address').xpath(

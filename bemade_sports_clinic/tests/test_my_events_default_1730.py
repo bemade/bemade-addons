@@ -67,15 +67,15 @@ class TestMyEventsDefault1730(Calendar1591Common):
 
     # -- helpers -----------------------------------------------------------
     def _rows(self, tree):
-        return {int(i) for i in tree.xpath('//*[@data-sc-section="events.list"]//a/@data-sc-event-id')} & self.ours
+        return {int(i) for i in tree.xpath('//*[@data-pk-section="events.list"]//a/@data-sc-event-id')} & self.ours
 
     @staticmethod
     def _active_view(tree):
-        return tree.xpath('//*[@data-sc-section="events.views"]//a[@aria-pressed="true"]/@data-sc-view')
+        return tree.xpath('//*[@data-pk-section="events.views"]//a[@aria-pressed="true"]/@data-sc-view')
 
     @staticmethod
     def _view_href(tree, key):
-        return tree.xpath('//*[@data-sc-section="events.views"]//a[@data-sc-view="%s"]/@href' % key)[0]
+        return tree.xpath('//*[@data-pk-section="events.views"]//a[@data-sc-view="%s"]/@href' % key)[0]
 
     @staticmethod
     def _query(url):
@@ -91,7 +91,7 @@ class TestMyEventsDefault1730(Calendar1591Common):
         _text, tree = self._get('/my/events')
         self.assertEqual(self._active_view(tree), ['my'])
         self.assertEqual(self._rows(tree), {self.ev_game_a.id})
-        form = tree.xpath('//form[@data-sc-section="events.filters"]')[0]
+        form = tree.xpath('//form[@data-pk-section="events.filters"]')[0]
         self.assertEqual(form.xpath('.//input[@name="view_type"]/@value'), ['my'])
         self.assertEqual(form.xpath('.//select[@name="assigned_user_id"]/option[@selected]/@value'),
                          [str(self.tp.id)])
@@ -116,7 +116,7 @@ class TestMyEventsDefault1730(Calendar1591Common):
         _text, tree = self._get(all_href)
         self.assertEqual(self._active_view(tree), ['all'])
         self.assertEqual(self._rows(tree), {self.ev_game_a.id, self.ev_practice_a.id, self.ev_game_c.id})
-        form = tree.xpath('//form[@data-sc-section="events.filters"]')[0]
+        form = tree.xpath('//form[@data-pk-section="events.filters"]')[0]
         self.assertEqual(form.xpath('.//input[@name="view_type"]/@value'), ['all'])
         for key in ('upcoming', 'past', 'calendar'):
             href = tree.xpath('//nav[@data-sc-tabs]//a[@data-sc-tab="%s"]/@href' % key)[0]
@@ -158,7 +158,7 @@ class TestMyEventsDefault1730(Calendar1591Common):
         self.assertEqual(self._props(tree)['params'],
                          {'view_type': 'my', 'assigned_user_id': str(self.tp.id)})
         # The view chip is not a filter of the panel's: it stays closed.
-        self.assertFalse(tree.xpath('//form[@data-sc-section="events.filters"]//details[@open]'))
+        self.assertFalse(tree.xpath('//form[@data-pk-section="events.filters"]//details[@open]'))
         upcoming = tree.xpath('//nav[@data-sc-tabs]//a[@data-sc-tab="upcoming"]/@href')[0]
         self.assertEqual(self._query(upcoming).get('view_type'), 'my')
         # « All » sticks on the calendar too.
@@ -167,7 +167,7 @@ class TestMyEventsDefault1730(Calendar1591Common):
         self.assertEqual(self._props(tree)['params'], {'view_type': 'all'})
         # Another professional chosen in the panel still opens it.
         _text, tree = self._get('/my/events/calendar?view_type=all&assigned_user_id=%s' % self.itp.id)
-        self.assertTrue(tree.xpath('//form[@data-sc-section="events.filters"]//details[@open]'))
+        self.assertTrue(tree.xpath('//form[@data-pk-section="events.filters"]//details[@open]'))
         self._login_coach()
         _text, tree = self._get('/my/events/calendar')
         self.assertEqual(self._active_view(tree), ['all'])
@@ -178,11 +178,11 @@ class TestMyEventsDefault1730(Calendar1591Common):
         self.authenticate('zz1730.idle@example.com', 'zz1730-idle-pass')
         _text, tree = self._get('/my/events')
         self.assertEqual(self._active_view(tree), ['my'])
-        empty = tree.xpath('//*[@data-sc-section="events.empty_mine"]')
+        empty = tree.xpath('//*[@data-pk-section="events.empty_mine"]')
         self.assertEqual(len(empty), 1)
         href = empty[0].xpath('.//a[@data-sc-view-link="all"]/@href')[0]
         self.assertEqual(self._query(href).get('view_type'), 'all')
         # « All » has events: the generic empty state is not shown there.
         _text, tree = self._get(href)
-        self.assertFalse(tree.xpath('//*[@data-sc-section="events.empty_mine"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="events.empty_mine"]'))
         self.assertTrue(self._rows(tree))

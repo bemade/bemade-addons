@@ -101,7 +101,7 @@ class AccountShellCommon(UserMenuCommon):
     def _assert_shell_sub_page_of_settings(self, tree, title):
         self.assertIsNotNone(self._shell(tree))
         self.assertFalse(tree.xpath('//header[@id="top"]'), 'website header in the shell')
-        self.assertEqual(tree.xpath('//a[@data-sc-back]/@href'), ['/my/app/settings'])
+        self.assertEqual(tree.xpath('//a[@data-pk-back]/@href'), ['/my/app/settings'])
         crumbs = tree.xpath('//nav[contains(@class, "o_sc_crumbs")]//a/@href')
         self.assertIn('/my/app/settings', crumbs)
         self.assertEqual(
@@ -133,7 +133,7 @@ class TestAccountShell1620(AccountShellCommon):
             # name / VAT. Round 2 (1018c): each field autosaves, each card
             # has the usual « Done ».
             self.assertFalse(form[0].xpath('.//button[@id="save_address"]'))
-            self.assertEqual(len(form[0].xpath('.//button[@data-sc-edit-done]')), 2)
+            self.assertEqual(len(form[0].xpath('.//button[@data-pk-edit-done]')), 2)
             names = set(form[0].xpath('.//input/@name | .//select/@name'))
             self.assertFalse({'company_name', 'vat'} & names)
             for name in ('name', 'email', 'phone', 'street', 'street2',
@@ -200,7 +200,7 @@ class TestAccountShell1620(AccountShellCommon):
         self._login_coach()
         text, tree = self._get('/my/account')
         self.assertIsNone(self._shell(tree))
-        self.assertNotIn('data-sc-app-shell', text)
+        self.assertNotIn('data-pk-app-shell', text)
         self.assertTrue(tree.xpath('//div[@name="address_div"]'))
         self.assertEqual(self._form_values(tree)['callback'], '/my')
 
@@ -270,7 +270,7 @@ class TestSecurityShell1620(AccountShellCommon):
         error = tree.xpath('normalize-space(//*[@data-sc-error-for="old"])')
         self.assertIn('incorrect', error)
         self.assertEqual(tree.xpath('//input[@name="old"]/@aria-invalid'), ['true'])
-        self.assertFalse(tree.xpath('//*[@data-sc-section="security.password.done"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="security.password.done"]'))
         self.authenticate('pc.coach@example.com', 'pc-coach')
 
     def test_mismatched_confirmation(self):
@@ -295,7 +295,7 @@ class TestSecurityShell1620(AccountShellCommon):
         self._login_coach()
         _text, tree = self._security_post('pc-coach', 'pc-coach-new-1620', 'pc-coach-new-1620')
         self.assertIsNotNone(self._shell(tree))
-        self.assertTrue(tree.xpath('//*[@data-sc-section="security.password.done"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="security.password.done"]'))
         self.assertFalse(tree.xpath('//*[@data-sc-error-for]'))
         # The session survives the change (core updates its token).
         _text, tree = self._get('/my/security')
@@ -340,10 +340,10 @@ class TestSecurityShell1620(AccountShellCommon):
     def test_security_shell_off_is_the_core_page(self):
         self._login_coach()
         text, tree = self._get('/my/security')
-        self.assertNotIn('data-sc-app-shell', text)
+        self.assertNotIn('data-pk-app-shell', text)
         self.assertTrue(tree.xpath('//section[@name="portal_change_password"]'))
         text, tree = self._security_post('not-the-password', 'x-1620-x', 'x-1620-x')
-        self.assertNotIn('data-sc-app-shell', text)
+        self.assertNotIn('data-pk-app-shell', text)
         self.assertTrue(tree.xpath('//section[@name="portal_change_password"]'))
         self.assertIn('incorrect', text)
 
@@ -351,7 +351,7 @@ class TestSecurityShell1620(AccountShellCommon):
         self._switch(True)
         self._login_plain()
         text, tree = self._get('/my/security')
-        self.assertNotIn('data-sc-app-shell', text)
+        self.assertNotIn('data-pk-app-shell', text)
         self.assertTrue(tree.xpath('//section[@name="portal_change_password"]'))
 
 

@@ -197,7 +197,7 @@ document.addEventListener("sc:pill-action", (ev) => {
     if (detail.model !== MODEL || !detail.pill || !inShell(detail.pill)) {
         return;
     }
-    const toggle = detail.pill.querySelector("[data-sc-menu-toggle]") || detail.pill;
+    const toggle = detail.pill.querySelector("[data-pk-menu-toggle]") || detail.pill;
     if (detail.action === "injury.verify") {
         verify(toggle, detail.recordId);
     } else if (detail.action === "injury.resolve") {

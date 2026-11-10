@@ -20,8 +20,8 @@ function assert(condition, message) {
     }
 }
 
-const HEADER = '.o_sc_list_header[data-sc-section="players.header"]';
-const TOGGLE = `${HEADER} button[data-sc-menu-toggle][aria-controls="sc_players_sort"]`;
+const HEADER = '.o_sc_list_header[data-pk-section="players.header"]';
+const TOGGLE = `${HEADER} button[data-pk-menu-toggle][aria-controls="sc_players_sort"]`;
 const POPUP = "#sc_players_sort";
 
 tours.add("sc_1607_players", {
@@ -34,7 +34,7 @@ tours.add("sc_1607_players", {
                 assert(!document.querySelector("header.o_sc_appbar .o_sc_appbar_action"),
                     "a page action is still in the app bar");
                 const add = header.querySelector(".o_sc_list_add");
-                const toggle = header.querySelector("button[data-sc-menu-toggle]");
+                const toggle = header.querySelector("button[data-pk-menu-toggle]");
                 const a = add.getBoundingClientRect();
                 const t = toggle.getBoundingClientRect();
                 assert(a.height >= 44 && t.height >= 44, `targets ${a.height} / ${t.height}px tall`);
@@ -55,7 +55,7 @@ tours.add("sc_1607_players", {
                     assert(!next.open && !next.getClientRects().length, "the closed panel shows");
                     next = next.nextElementSibling;
                 }
-                assert(next && next.matches('[data-sc-section="players.list"], .o_sc_empty'),
+                assert(next && next.matches('[data-pk-section="players.list"], .o_sc_empty'),
                     "the list does not follow the header");
             },
         },
@@ -122,7 +122,7 @@ tours.add("sc_1607_players", {
     ],
 });
 
-const ADD = '.o_sc_list_header[data-sc-section="team.roster.header"] button.o_sc_list_add[aria-controls="sc_add_player"]';
+const ADD = '.o_sc_list_header[data-pk-section="team.roster.header"] button.o_sc_list_add[aria-controls="sc_add_player"]';
 
 tours.add("sc_1607_team_add", {
     steps: () => [

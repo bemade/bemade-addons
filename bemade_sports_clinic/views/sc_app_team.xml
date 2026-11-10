@@ -79,7 +79,7 @@
                      mode; « Publier » posts the unchanged PRG form). -->
                 <section t-if="team.announcement or sc_show_compose"
                          t-attf-class="o_sc_section o_sc_announcement #{'o_sc_announcement_expired' if team.announcement_is_expired else ''} #{'' if team.announcement else 'o_sc_announcement_none'}"
-                         data-sc-section="team.announcement.area" data-sc-edit-card="announcement">
+                         data-pk-section="team.announcement.area" data-pk-edit-card="announcement">
                     <div class="o_sc_announcement_titleline">
                         <h2 class="o_sc_section_header">
                             <span class="o_sc_announcement_heading">Team announcement</span>
@@ -106,7 +106,7 @@
                             </t>
                         </t>
                     </div>
-                    <div data-sc-edit-view="read" data-sc-section="team.announcement">
+                    <div data-sc-edit-view="read" data-pk-section="team.announcement">
                         <div t-if="team.announcement" class="o_sc_announcement_content">
                             <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'megaphone'"/></t>
                             <div class="o_sc_announcement_text">
@@ -130,7 +130,7 @@
                         <p t-else="" class="o_sc_muted o_sc_announcement_empty">No current announcement.</p>
                     </div>
                     <div t-if="sc_show_compose" data-sc-edit-view="edit" hidden="hidden"
-                         data-sc-section="team.announcement.edit">
+                         data-pk-section="team.announcement.edit">
                         <t t-call="bemade_sports_clinic.sc_banner">
                             <t t-set="tone" t-value="'warn'"/>
                             Visible to all team staff (coaches included) and sent by email — do not include any confidential medical information about a player.
@@ -147,7 +147,7 @@
                                            t-att-props="json.dumps({'mode': 'draft', 'name': 'announcement_deadline', 'inputType': 'date', 'inputId': 'sc_team_announcement_deadline', 'label': sc_deadline_label, 'value': team.announcement_deadline and team.announcement_deadline.strftime('%Y-%m-%d') or '', 'draftKey': 'sports.team.%s.announcement_deadline' % team.id})"/>
                             <div class="o_sc_form_actions">
                                 <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="team.announcement.publish">Publish</button>
-                                <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-edit-done="1">Cancel</button>
+                                <button type="button" class="o_sc_btn o_sc_btn_ghost" data-pk-edit-done="1">Cancel</button>
                             </div>
                             <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_announcement'"/></t>
                         </form>
@@ -162,7 +162,7 @@
                     </t>
                 </section>
 
-                <div class="o_sc_stats" data-sc-section="team.stats">
+                <div class="o_sc_stats" data-pk-section="team.stats">
                     <t t-call="bemade_sports_clinic.sc_stat_tile">
                         <t t-set="tone" t-value="'red'"/>
                         <t t-set="value" t-value="team.stage_no_play_count"/>
@@ -181,7 +181,7 @@
                 </div>
 
                 <div class="o_sc_grid2">
-                    <section class="o_sc_section" data-sc-section="team.recent_changes">
+                    <section class="o_sc_section" data-pk-section="team.recent_changes">
                         <h2 class="o_sc_section_header">
                             <span>Recent changes <small class="o_sc_section_sub" t-out="sc_window_label"/></span>
                             <!-- Task 1579 (owner decision 2026-10-11): straight to
@@ -208,7 +208,7 @@
                     </section>
 
                     <div class="o_sc_section">
-                        <section t-if="sc_watch_rows" class="o_sc_section" data-sc-section="team.watchlist">
+                        <section t-if="sc_watch_rows" class="o_sc_section" data-pk-section="team.watchlist">
                             <t t-call="bemade_sports_clinic.sc_section_header">
                                 <t t-set="title">Other players to watch</t>
                             </t>
@@ -221,7 +221,7 @@
                             </div>
                         </section>
 
-                        <section class="o_sc_section" data-sc-section="team.upcoming">
+                        <section class="o_sc_section" data-pk-section="team.upcoming">
                             <h2 class="o_sc_section_header">
                                 <span>Upcoming events <small class="o_sc_section_sub" t-out="upcoming_events_window_label"/></span>
                                 <a href="/my/events" class="o_sc_section_more">Calendar</a>
@@ -240,7 +240,7 @@
                         </section>
 
                         <!-- Task 1416: read-only temporary staff. -->
-                        <section t-if="temp_staff_rows" class="o_sc_section" data-sc-section="team.temp_staff" id="temporary-staff">
+                        <section t-if="temp_staff_rows" class="o_sc_section" data-pk-section="team.temp_staff" id="temporary-staff">
                             <t t-call="bemade_sports_clinic.sc_section_header">
                                 <t t-set="title">Temporary staff</t>
                             </t>
@@ -313,7 +313,7 @@
                     <t t-set="panel" t-value="sc_player_add"/>
                 </t>
                 <details t-if="sc_show_request" class="o_sc_card o_sc_disclosure o_sc_list_add_panel" id="sc_request_add"
-                         data-sc-section="team.request_add">
+                         data-pk-section="team.request_add">
                     <summary class="o_sc_disclosure_summary">
                         <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                         <span>Request a player addition</span>
@@ -344,7 +344,7 @@
                         <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_request_add'"/></t>
                     </form>
                 </details>
-                <div t-if="sc_roster_rows" class="o_sc_list" data-sc-section="team.roster">
+                <div t-if="sc_roster_rows" class="o_sc_list" data-pk-section="team.roster">
                     <t t-foreach="sc_roster_rows" t-as="row">
                         <!-- Task 1593: the legacy card's content (no team links
                              on the team's own roster, as legacy). -->

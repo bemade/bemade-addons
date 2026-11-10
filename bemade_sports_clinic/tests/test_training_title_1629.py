@@ -44,8 +44,8 @@ class TestTrainingTitleI18n1629(TestAppShellI18n1538):
         login()
         text = self._fr('/my/player?player_id=%s' % self.player.id)
         tree = lxml_html.fromstring(text)
-        return tree, tree.xpath('//*[@data-sc-section="player.training"]'), \
-            tree.xpath('//*[@data-sc-section="player.training.edit"]')
+        return tree, tree.xpath('//*[@data-pk-section="player.training"]'), \
+            tree.xpath('//*[@data-pk-section="player.training.edit"]')
 
     def _assert_title(self, section):
         title = section.xpath('./*')[0]

@@ -194,7 +194,7 @@ def sc_contact_href(kind, value):
     email (``kind`` = ``'tel'`` / ``'mailto'``), or None when there is
     nothing to dial or write to. A phone keeps only ``+`` and its digits
     (« +1 (555) 010-0123 » -> ``tel:+15550100123``). Same rule in the
-    browser: static/src/js/sc_contact_href.js."""
+    browser: bemade_portal_kit/static/src/js/pk_contact_href.js."""
     value = (value or '').strip() if isinstance(value, str) else ''
     if not value:
         return None
@@ -1121,7 +1121,7 @@ def _validate_save_registry(registry):
 # * The client swaps each node in place, never one holding an OWL island or
 #   the focused element (retried once that element loses focus).
 # * ``data-sc-fragment-mode="list"`` on a container whose children carry
-#   ``data-sc-fragment-item="<key>"``: the live items are kept (their islands
+#   ``data-pk-fragment-item="<key>"``: the live items are kept (their islands
 #   survive) and only re-ordered / dropped / added as in the fresh render.
 # ---------------------------------------------------------------------------
 SC_FRAGMENTS_HEADER = 'X-Sc-Fragments'

@@ -16,7 +16,7 @@ import { registry } from "@web/core/registry";
 
 const tours = registry.category("web_tour.tours");
 
-const STATUS = '[data-sc-section="player.status"]';
+const STATUS = '[data-pk-section="player.status"]';
 
 function assert(condition, message) {
     if (!condition) {
@@ -92,7 +92,7 @@ tours.add("sc_1627_status_pills", {
                 noReload();
                 assert(document.querySelector(toggle(STATUS, "practice", "green")), "practice changed");
                 assert(
-                    document.querySelector('[data-sc-section="player.return"][data-sc-return-kind="predicted"]'),
+                    document.querySelector('[data-pk-section="player.return"][data-sc-return-kind="predicted"]'),
                     "the return line did not flip to « Retour prévu »"
                 );
             },
@@ -128,7 +128,7 @@ tours.add("sc_1627_status_pills", {
                 noReload();
                 assert(document.querySelector(toggle(STATUS, "practice", "green")), "practice not green");
                 assert(
-                    document.querySelector('[data-sc-section="player.return"][data-sc-return-kind="actual"]'),
+                    document.querySelector('[data-pk-section="player.return"][data-sc-return-kind="actual"]'),
                     "the return line did not flip to « Retour réel »"
                 );
             },
@@ -137,7 +137,7 @@ tours.add("sc_1627_status_pills", {
 });
 
 // Task 1721: the dossier's pills are the player card's.
-const DOSSIER = '[data-sc-section="clinic.dossier.player"]';
+const DOSSIER = '[data-pk-section="clinic.dossier.player"]';
 
 tours.add("sc_1627_status_pills_dossier", {
     steps: () => [

@@ -80,8 +80,8 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
     def test_header_status_selector(self):
         self._login_tp()
         _text, tree = self._get(self._url(tab='injuries'))
-        hero = tree.xpath('//*[@data-sc-section="player.hero"]')[0]
-        self.assertEqual(hero.get('data-sc-edit-card'), 'player-header')
+        hero = tree.xpath('//*[@data-pk-section="player.hero"]')[0]
+        self.assertEqual(hero.get('data-pk-edit-card'), 'player-header')
         # Task 1736 (deliberate update): the pencil sits in the hero's top-bar
         # icon group (with the ★), no longer a direct child of the card.
         self.assertEqual(len(hero.xpath('.//*[@data-sc-card-icons]/button[@data-sc-edit-toggle]')), 1)
@@ -92,24 +92,24 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         # Task 1627: the status pills are live dropdowns (no stage chip, no
         # selector behind the pencil). Task 1753 (deliberate update): they
         # sit outside the read view, so the pencil no longer hides them.
-        status = hero.xpath('./*[@data-sc-section="player.status"]')[0]
+        status = hero.xpath('./*[@data-pk-section="player.status"]')[0]
         self.assertFalse(hero.xpath('.//*[@data-sc-stage-chip]'))
-        self.assertEqual(len(status.xpath('./*[@data-sc-section="player.status.readonly"]'
+        self.assertEqual(len(status.xpath('./*[@data-pk-section="player.status.readonly"]'
                                           '//button[contains(@class, "o_sc_pill_select")]')), 2)
-        self.assertFalse(read.xpath('.//*[@data-sc-section="player.status"]'))
+        self.assertFalse(read.xpath('.//*[@data-pk-section="player.status"]'))
         self.assertFalse(read.xpath('.//owl-component'))
         self.assertFalse(status.xpath('.//owl-component'))
         self.assertNotIn('sc_status', self._owl(edit))
         self.assertFalse(tree.xpath('//owl-component[contains(@props, \'"sc_status"\')]'))
         self._login_coach()
         _text, tree = self._get(self._url(tab='injuries'))
-        hero = tree.xpath('//*[@data-sc-section="player.hero"]')[0]
+        hero = tree.xpath('//*[@data-pk-section="player.hero"]')[0]
         self.assertNotIn('sc_status', self._owl(hero))
-        self.assertIsNone(hero.get('data-sc-edit-card'))
+        self.assertIsNone(hero.get('data-pk-edit-card'))
         self.assertFalse(hero.xpath('.//*[@data-sc-edit-toggle]'))
         self.assertFalse(hero.xpath('.//*[@data-sc-edit-view="edit"]'))
-        self.assertTrue(hero.xpath('.//*[@data-sc-section="player.status.readonly"]'))
-        self.assertFalse(hero.xpath('.//*[@data-sc-section="player.status.readonly"]//button'))
+        self.assertTrue(hero.xpath('.//*[@data-pk-section="player.status.readonly"]'))
+        self.assertFalse(hero.xpath('.//*[@data-pk-section="player.status.readonly"]//button'))
 
     def _assert_training_title(self, section):
         """Task 1629: ``section`` opens with the h3 ``o_sc_edit_card_title``
@@ -128,21 +128,21 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         self._login_tp()
         _text, tree = self._get(self._url(tab='info'))
         panel = tree.xpath('//section[@data-sc-tab-panel="info"]')[0]
-        identity = panel.xpath('.//*[@data-sc-edit-card="identity"]')[0]
+        identity = panel.xpath('.//*[@data-pk-edit-card="identity"]')[0]
         read = ' '.join(identity.xpath('.//*[@data-sc-edit-view="read"]')[0].text_content().split())
         self.assertIn('Date of birth', read)
         self.assertIn('Age', read)
         self.assertIn('date_of_birth', self._owl(identity))
-        medical = panel.xpath('.//*[@data-sc-edit-card="medical"]')[0]
+        medical = panel.xpath('.//*[@data-pk-edit-card="medical"]')[0]
         self.assertNotIn('Date of birth', medical.text_content())
         self.assertNotIn('date_of_birth', self._owl(medical))
         # Owner review 2026-10-14: the training recommendation left the Info
         # tab for the header; task 1615: right under the play status, then
         # « Retour prévu » (the full order: test_header_order_1615).
-        self.assertFalse(panel.xpath('.//*[@data-sc-section="player.training"]'))
-        training = tree.xpath('//*[@data-sc-section="player.training"]')
+        self.assertFalse(panel.xpath('.//*[@data-pk-section="player.training"]'))
+        training = tree.xpath('//*[@data-pk-section="player.training"]')
         self.assertEqual(len(training), 1)
-        hero = tree.xpath('//*[@data-sc-section="player.hero"]')[0]
+        hero = tree.xpath('//*[@data-pk-section="player.hero"]')[0]
         read = hero.xpath('./*[@data-sc-edit-view="read"]')[0]
         self.assertIs(training[0].getparent(), read)
         # Task 1611: the banner sits in its always-rendered read-fragment
@@ -150,12 +150,12 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         # Task 1753 (deliberate update): the play status sits just above
         # the read view (outside it), so the banner opens the read view.
         self.assertIsNone(training[0].getprevious())
-        self.assertEqual(read.getprevious().get('data-sc-section'), 'player.status')
-        self.assertEqual(training[0].getnext().get('data-sc-section'), 'player.return')
+        self.assertEqual(read.getprevious().get('data-pk-section'), 'player.status')
+        self.assertEqual(training[0].getnext().get('data-pk-section'), 'player.return')
         # Task 1630: no allergies banner in the read view — the pill in the
         # header's top row, its details in the popup.
-        self.assertFalse(read.xpath('./*[@data-sc-section="player.allergies"]'))
-        self.assertTrue(hero.xpath('.//*[@data-sc-section="player.medical"]//button[@data-sc-med-pill="allergy"]'))
+        self.assertFalse(read.xpath('./*[@data-pk-section="player.allergies"]'))
+        self.assertTrue(hero.xpath('.//*[@data-pk-section="player.medical"]//button[@data-sc-med-pill="allergy"]'))
         self.assertIn('Synthetic peanuts', tree.xpath(
             '//dialog[@id="sc_med_player_allergy_%s"]' % self.player.id)[0].text_content())
         self.assertIn('Synthetic bike', training[0].text_content())
@@ -165,16 +165,16 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         # edit view (live, with its History). Task 1629: the same title +
         # link heads it; the island draws no second link.
         edit = hero.xpath('./*[@data-sc-edit-view="edit"]')[0]
-        training_edit = edit.xpath('./*[@data-sc-section="player.training.edit"]')[0]
+        training_edit = edit.xpath('./*[@data-pk-section="player.training.edit"]')[0]
         self.assertIn('training_recommendation', self._owl(training_edit))
         self._assert_training_title(training_edit)
         self.assertFalse(training_edit.xpath('.//owl-component[contains(@props, "sc_training_history_sheet")]'))
         self._login_coach()
         _text, tree = self._get(self._url(tab='info'))
         self.assertFalse(tree.xpath(
-            '//section[@data-sc-tab-panel="info"]//*[@data-sc-section="player.training"]'))
-        training = tree.xpath('//*[@data-sc-section="player.hero"]/*[@data-sc-edit-view="read"]'
-                              '/*[@data-sc-section="player.training"]')[0]
+            '//section[@data-sc-tab-panel="info"]//*[@data-pk-section="player.training"]'))
+        training = tree.xpath('//*[@data-pk-section="player.hero"]/*[@data-sc-edit-view="read"]'
+                              '/*[@data-pk-section="player.training"]')[0]
         self.assertIn('Synthetic bike', training.text_content())
         self.assertNotIn('training_recommendation', self._owl(training))
         self._assert_training_title(training)
@@ -185,7 +185,7 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
             login()
             _text, tree = self._get(self._url(tab='info'))
             panel = tree.xpath('//section[@data-sc-tab-panel="info"]')[0]
-            self.assertTrue(panel.xpath('.//*[@data-sc-section="player.contacts"]'))
+            self.assertTrue(panel.xpath('.//*[@data-pk-section="player.contacts"]'))
             form = panel.xpath('.//form[@data-sc-form="contact.add"]')[0]
             back = form.xpath('.//input[@name="return_url"]/@value')[0]
             self.assertTrue(back.endswith('#info') or 'tab=info' in back, back)

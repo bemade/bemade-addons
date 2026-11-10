@@ -4,11 +4,11 @@ Synthetic fixtures only.
 Acceptance criteria:
 
 * AC-1 ``/my/sc/timesheets`` renders the filter disclosure
-  (``form[data-sc-section="timesheets.filters"] details.o_sc_disclosure``)
+  (``form[data-pk-section="timesheets.filters"] details.o_sc_disclosure``)
   OPEN on every visit — with no filter, with filters, with a chosen sort —
   and it stays a disclosure (``<summary>`` toggle), so it can be collapsed.
 * AC-2 Nothing else moves: the form still applies on change
-  (``data-sc-autosubmit``), carries no sort select (the sort stays in the
+  (``data-pk-autosubmit``), carries no sort select (the sort stays in the
   list header, #1607), keeps its « Group by » group, and the list header
   follows the form.
 * AC-3 No remembered state: collapsing lasts for that visit only — the
@@ -29,7 +29,7 @@ class TestTimesheetFiltersOpen1617(AppShellCommon):
 
     @staticmethod
     def _form(tree):
-        forms = tree.xpath('//form[@data-sc-section="timesheets.filters"]')
+        forms = tree.xpath('//form[@data-pk-section="timesheets.filters"]')
         return forms[0] if forms else None
 
     # -- AC-1 ------------------------------------------------------------
@@ -53,9 +53,9 @@ class TestTimesheetFiltersOpen1617(AppShellCommon):
         self._login_tp()
         _text, tree = self._get('/my/sc/timesheets')
         form = self._form(tree)
-        self.assertEqual(form.get('data-sc-autosubmit'), '1')
+        self.assertEqual(form.get('data-pk-autosubmit'), '1')
         self.assertFalse(form.xpath('.//select[@name="sortby"]'))
-        self.assertEqual(form.xpath('.//fieldset[@data-sc-section="timesheets.group"]//select/@name'), ['group_by'])
-        header = tree.xpath('//*[@data-sc-section="timesheets.header"]')
+        self.assertEqual(form.xpath('.//fieldset[@data-pk-section="timesheets.group"]//select/@name'), ['group_by'])
+        header = tree.xpath('//*[@data-pk-section="timesheets.header"]')
         self.assertTrue(header)
-        self.assertTrue(header[0].xpath('.//*[@data-sc-section="timesheets.sort"]'))
+        self.assertTrue(header[0].xpath('.//*[@data-pk-section="timesheets.sort"]'))

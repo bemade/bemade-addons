@@ -81,7 +81,7 @@ class Rows1593Common(AppShellCommon):
 
     @staticmethod
     def _row(tree, section, player):
-        rows = tree.xpath('//*[@data-sc-section="%s"]//*[contains(@class, "o_sc_player_row")]'
+        rows = tree.xpath('//*[@data-pk-section="%s"]//*[contains(@class, "o_sc_player_row")]'
                           '[@data-sc-player-id="%s"]' % (section, player.id))
         return rows[0] if rows else None
 

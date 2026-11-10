@@ -41,7 +41,7 @@ class Split1675Common(AppShellCommon):
         return '/my/player?player_id=%s&tab=injuries&injury=%s' % (self.player.id, self.injury.id)
 
     def _section(self, tree):
-        nodes = tree.xpath('//details[@id="injury-%s"]//section[@data-sc-section="injury.notes"]' % self.injury.id)
+        nodes = tree.xpath('//details[@id="injury-%s"]//section[@data-pk-section="injury.notes"]' % self.injury.id)
         self.assertEqual(len(nodes), 1)
         return nodes[0]
 
@@ -58,10 +58,10 @@ class TestSplitInjuryNotes1675(Split1675Common):
         self._login_tp()
         _text, tree = self._get(self._url())
         section = self._section(tree)
-        self.assertIsNone(section.get('data-sc-edit-card'))
+        self.assertIsNone(section.get('data-pk-edit-card'))
         key = 'sports.patient.injury:%s:' % self.injury.id
         for scope in ('external', 'internal'):
-            cards = section.xpath('.//*[@data-sc-edit-card="injury-notes-%s"]' % scope)
+            cards = section.xpath('.//*[@data-pk-edit-card="injury-notes-%s"]' % scope)
             self.assertEqual(len(cards), 1, scope)
             card = cards[0]
             self.assertEqual(len(card.xpath('.//button[@data-sc-edit-toggle]')), 1, scope)
@@ -79,17 +79,17 @@ class TestSplitInjuryNotes1675(Split1675Common):
         links = section.xpath('.//*[starts-with(@data-sc-sheet-open, "sc_note_history_sheet_")]')
         self.assertEqual(len(links), 1)
         self.assertTrue(links[0].xpath('parent::*/parent::div[contains(@class, "o_sc_edit_card_head")]'
-                                       '/parent::section[@data-sc-section="injury.notes"]'))
-        self.assertFalse(links[0].xpath('ancestor::*[@data-sc-edit-card][ancestor::section[@data-sc-section="injury.notes"]]'))
+                                       '/parent::section[@data-pk-section="injury.notes"]'))
+        self.assertFalse(links[0].xpath('ancestor::*[@data-pk-edit-card][ancestor::section[@data-pk-section="injury.notes"]]'))
 
     def test_coach_external_only(self):
         self._login_coach()
         text, tree = self._get(self._url())
         section = self._section(tree)
-        self.assertEqual(len(section.xpath('.//*[@data-sc-edit-card="injury-notes-external"]')), 1)
-        self.assertFalse(section.xpath('.//*[@data-sc-edit-card="injury-notes-internal"]'))
+        self.assertEqual(len(section.xpath('.//*[@data-pk-edit-card="injury-notes-external"]')), 1)
+        self.assertFalse(section.xpath('.//*[@data-pk-edit-card="injury-notes-internal"]'))
         # Owner review 2026-10-25: the coach reads it — no pencil, no editor.
-        external = section.xpath('.//*[@data-sc-edit-card="injury-notes-external"]')[0]
+        external = section.xpath('.//*[@data-pk-edit-card="injury-notes-external"]')[0]
         self.assertFalse(external.xpath('.//button[@data-sc-edit-toggle]'))
         self.assertEqual(self._fields(section), [])
         self.assertIn('Synthetic ext 1675', external.text_content())

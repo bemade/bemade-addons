@@ -295,7 +295,7 @@ export class ScAutosaveField extends Component {
                 this.discardDraft();
             }
         };
-        document.addEventListener("sc:form-reset", this.onFormReset);
+        document.addEventListener("pk:form-reset", this.onFormReset);
         onMounted(() => {
             this.restore();
             const select = this.groupSelectEl;
@@ -319,7 +319,7 @@ export class ScAutosaveField extends Component {
             clearTimeout(this.timer);
             window.removeEventListener("online", this.onOnline);
             document.removeEventListener("sc:saved", this.onSiblingSaved);
-            document.removeEventListener("sc:form-reset", this.onFormReset);
+            document.removeEventListener("pk:form-reset", this.onFormReset);
             const select = this.groupSelectEl;
             if (select) {
                 select.removeEventListener("change", this.onGroupChange);
@@ -513,7 +513,7 @@ export class ScAutosaveField extends Component {
             details.open = true;
         }
         // Inside an edit card's hidden edit view: ask sc_app_ui to open it.
-        const card = this.inputRef.el && this.inputRef.el.closest("[data-sc-edit-card]");
+        const card = this.inputRef.el && this.inputRef.el.closest("[data-pk-edit-card]");
         if (card) {
             card.dispatchEvent(new CustomEvent("sc:edit-open", { bubbles: true }));
         }

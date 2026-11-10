@@ -11,7 +11,7 @@ const tours = registry.category("web_tour.tours");
 const FORM = "form[data-sc-event-form]";
 const TEAMS = `${FORM} [data-sc-event-pick="teams"]`;
 const STAFF = `${FORM} [data-sc-event-pick="staff"]`;
-const CARD = '[data-sc-edit-card="event"]';
+const CARD = '[data-pk-edit-card="event"]';
 
 function assert(condition, message) {
     if (!condition) {
@@ -190,7 +190,7 @@ tours.add("sc_1608_event_form_pickers", {
         },
         {
             content: "The event page opens",
-            trigger: ".o_sc_app [data-sc-section='event.hero']",
+            trigger: ".o_sc_app [data-pk-section='event.hero']",
         },
     ],
 });

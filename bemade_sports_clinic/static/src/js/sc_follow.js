@@ -65,7 +65,7 @@ document.addEventListener("submit", async (ev) => {
             setFollowed(button.dataset.scFollow, Boolean(answer.followed));
             // A focused card waits in a list refresh: let go of it, so an
             // unfollow from inside « Joueurs que je suis » drops it at once.
-            if (button.closest("[data-sc-fragment-item]")) {
+            if (button.closest("[data-pk-fragment-item]")) {
                 button.blur();
             }
             requestRefresh([FOLLOWED_SECTIONS], { immediate: true });

@@ -20,7 +20,7 @@ function type(selector, value) {
     el.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-const ADD = 'button[data-sc-list-add-toggle][aria-controls="sc_add_player"]';
+const ADD = 'button[data-pk-list-add-toggle][aria-controls="sc_add_player"]';
 const PANEL = "details#sc_add_player";
 const FORM = `${PANEL}[open] form[data-sc-player-add]`;
 
@@ -72,7 +72,7 @@ tours.add("sc_1672_team_add_player", {
         },
         {
             content: "The new player's page; back to the team page",
-            trigger: '[data-sc-edit-card="identity"][data-sc-edit-open] [data-sc-edit-view="edit"]:not([hidden])',
+            trigger: '[data-pk-edit-card="identity"][data-sc-edit-open] [data-sc-edit-view="edit"]:not([hidden])',
             run() {
                 window.history.back();
             },
@@ -121,7 +121,7 @@ tours.add("sc_1672_team_add_player", {
     ],
 });
 
-const IADD = 'button[data-sc-list-add-toggle][aria-controls="sc_new_injury"]';
+const IADD = 'button[data-pk-list-add-toggle][aria-controls="sc_new_injury"]';
 const IPANEL = "details#sc_new_injury";
 
 tours.add("sc_1672_injury_add_panel", {
@@ -145,7 +145,7 @@ tours.add("sc_1672_injury_add_panel", {
                 type(`${IPANEL} input[name="diagnosis"]`, "Synthetic typed diagnosis");
                 // The shared reset a successful create runs (the guard's fetch post).
                 document.querySelector(`${IPANEL} form`).dispatchEvent(
-                    new CustomEvent("sc:create-success", { bubbles: true })
+                    new CustomEvent("pk:create-success", { bubbles: true })
                 );
             },
         },

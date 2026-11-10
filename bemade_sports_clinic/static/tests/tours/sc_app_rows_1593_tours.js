@@ -6,7 +6,7 @@
  */
 import { registry } from "@web/core/registry";
 
-const ROW = '[data-sc-section="team.roster"] .o_sc_player_row';
+const ROW = '[data-pk-section="team.roster"] .o_sc_player_row';
 
 registry.category("web_tour.tours").add("sc_1593_row_expand", {
     steps: () => [

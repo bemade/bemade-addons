@@ -13,9 +13,9 @@ function assert(condition, message) {
     }
 }
 
-const FORM = 'form[data-sc-section="timesheets.filters"]';
+const FORM = 'form[data-pk-section="timesheets.filters"]';
 const PANEL = `${FORM} details.o_sc_disclosure`;
-const HEADER = '.o_sc_list_header[data-sc-section="timesheets.header"]';
+const HEADER = '.o_sc_list_header[data-pk-section="timesheets.header"]';
 
 function checkOpenLayout() {
     const details = document.querySelector(PANEL);
@@ -25,7 +25,7 @@ function checkOpenLayout() {
     console.log(`sc_1617: list header top ${Math.round(top)}px / viewport ${window.innerHeight}px`);
     if (window.innerWidth < 576) {
         // Phone: the compact « Group by » row keeps the panel short.
-        const group = document.querySelector(`${PANEL} fieldset[data-sc-section="timesheets.group"]`);
+        const group = document.querySelector(`${PANEL} fieldset[data-pk-section="timesheets.group"]`);
         const select = group.querySelector("select");
         const legend = group.querySelector("legend");
         const s = select.getBoundingClientRect();

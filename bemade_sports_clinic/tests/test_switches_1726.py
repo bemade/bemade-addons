@@ -65,7 +65,7 @@ class TestSwitches1726(Switch1726Common):
         self._login_tp()
         for url in ('/my/events', '/my/events/calendar'):
             _text, tree = self._get(url)
-            form = tree.xpath('//form[@data-sc-section="events.filters"]')[0]
+            form = tree.xpath('//form[@data-pk-section="events.filters"]')[0]
             switch = self._one(form, name='show_cancelled')
             self.assertEqual(switch.get('value'), '1')
             self._assert_state(switch, False)
@@ -88,7 +88,7 @@ class TestSwitches1726(Switch1726Common):
         self.player.sudo().write({'allergy_epipen_state': False})
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&team_id=%s' % (self.player.id, self.team_a.id))
-        allergy = tree.xpath('//div[@data-sc-section="medical.allergy"]')[0]
+        allergy = tree.xpath('//div[@data-pk-section="medical.allergy"]')[0]
         none_allergy = self._one(allergy, data_sc_med_set='allergy_none_confirmed')
         self.assertEqual(none_allergy.get('disabled'), 'disabled')
         row = none_allergy.xpath('ancestor::label[1]')[0]
@@ -96,7 +96,7 @@ class TestSwitches1726(Switch1726Common):
         self.assertTrue(row.xpath('.//*[@data-sc-switch-reason]'))
         # The EpiPen (tri-state, #1717) is never a switch.
         self.assertFalse(allergy.xpath('.//input[@role="switch"][@data-sc-med-set="allergy_epipen_state"]'))
-        condition = tree.xpath('//div[@data-sc-section="medical.medical_alert"]')[0]
+        condition = tree.xpath('//div[@data-pk-section="medical.medical_alert"]')[0]
         add = self._one(condition, name='life_threatening')
         self.assertEqual(add.get('value'), '1')
         edit = self._one(condition, data_sc_med_item_field='life_threatening')
@@ -108,7 +108,7 @@ class TestSwitches1726(Switch1726Common):
                     none_allergy=True, none_condition=False)
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&team_id=%s' % (self.player.id, self.team_a.id))
-        allergy = tree.xpath('//div[@data-sc-section="medical.allergy"]')[0]
+        allergy = tree.xpath('//div[@data-pk-section="medical.allergy"]')[0]
         switch = self._one(allergy, data_sc_med_set='allergy_none_confirmed')
         self.assertIsNone(switch.get('disabled'))
         self._assert_state(switch, True)
@@ -136,7 +136,7 @@ class TestSwitches1726(Switch1726Common):
             self.assertFalse(section.xpath('.//*[contains(@class, "o_sc_segmented")]'), section_id)
             switch = self._one(section, name=name)
             self.assertEqual(switch.get('value'), on_value)
-            self.assertEqual(switch.get('data-sc-switch-submit'), '1')
+            self.assertEqual(switch.get('data-pk-switch-submit'), '1')
             self._assert_state(switch, on)
             twin = section.xpath('.//input[@type="hidden"][@name="%s"]' % name)
             self.assertEqual(len(twin), 1)

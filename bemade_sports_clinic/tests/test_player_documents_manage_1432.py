@@ -258,7 +258,7 @@ class TestPlayerDocuments1432(PlayerDocuments1432Common):
         self._login_tp()
         _text, tree = self._get(self._tab_url())
         item = self._tab_item(tree, self.doc_player)
-        self.assertEqual(item.get('data-sc-edit-card'), 'player-document-%s' % self.doc_player.id)
+        self.assertEqual(item.get('data-pk-edit-card'), 'player-document-%s' % self.doc_player.id)
         self.assertTrue(item.xpath('.//button[@data-sc-action="documents.edit"]'))
         self.assertTrue(item.xpath('.//button[@data-sc-action="documents.delete"]'))
         props = {json.loads(p)['field'] for p in item.xpath('.//owl-component/@props')}
@@ -276,7 +276,7 @@ class TestPlayerDocuments1432(PlayerDocuments1432Common):
         self.assertEqual(form.get('action'), '/my/injury/document/delete/%s' % self.doc_player.id)
         self.assertIn('documents', form.xpath('.//input[@name="return_url"]/@value')[0])
         # The injury card too.
-        card = tree.xpath('//*[@data-sc-edit-card="document-%s"]' % self.doc_injury.id)
+        card = tree.xpath('//*[@data-pk-edit-card="document-%s"]' % self.doc_injury.id)
         self.assertTrue(card)
         self.assertTrue(card[0].xpath('.//form[.//button[@data-sc-action="documents.delete"]]'))
 
@@ -286,11 +286,11 @@ class TestPlayerDocuments1432(PlayerDocuments1432Common):
         for doc in (self.doc_player, self.doc_injury):
             item = self._tab_item(tree, doc)
             self.assertIsNotNone(item, 'listed (read-only)')
-            self.assertFalse(item.get('data-sc-edit-card'))
+            self.assertFalse(item.get('data-pk-edit-card'))
             self.assertFalse(item.xpath('.//button[@data-sc-action="documents.edit"]'))
             self.assertFalse(item.xpath('.//button[@data-sc-action="documents.delete"]'))
             self.assertTrue(item.xpath('.//a[@data-sc-action="documents.download"]'))
-        self.assertFalse(tree.xpath('//*[@data-sc-edit-card="document-%s"]' % self.doc_injury.id))
+        self.assertFalse(tree.xpath('//*[@data-pk-edit-card="document-%s"]' % self.doc_injury.id))
         self.assertFalse(tree.xpath('//dialog[@id="sc_delete_document_%s"]' % self.doc_injury.id))
         self.assertFalse(tree.xpath('//dialog[starts-with(@id, "sc_delete_player_document_")]'))
 
@@ -306,7 +306,7 @@ class TestPlayerDocuments1432(PlayerDocuments1432Common):
         self._login_tp()
         _text, tree = self._get(self._tab_url())
         rows = [self._tab_item(tree, self.doc_player)]
-        rows += tree.xpath('//*[@data-sc-edit-card="document-%s"]' % self.doc_injury.id)
+        rows += tree.xpath('//*[@data-pk-edit-card="document-%s"]' % self.doc_injury.id)
         self.assertEqual(len(rows), 2)
         for row in rows:
             trailing = row.xpath('.//*[contains(@class, "o_sc_doc_row")]/*[contains(@class, "o_sc_row_trailing")]')[0]

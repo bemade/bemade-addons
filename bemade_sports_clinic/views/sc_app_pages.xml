@@ -127,7 +127,7 @@
             </div>
 
             <!-- Task 1660: the user guide (new tab), every app role. -->
-            <div t-if="sc_help and sc_help['home']" class="o_sc_list" data-sc-section="more.guide">
+            <div t-if="sc_help and sc_help['home']" class="o_sc_list" data-pk-section="more.guide">
                 <t t-call="bemade_sports_clinic.sc_entity_row">
                     <t t-set="href" t-value="sc_help['home']"/>
                     <t t-set="lead_icon" t-value="'help'"/>
@@ -183,7 +183,7 @@
                         <t t-set="sw_value" t-value="'dark'"/>
                         <t t-set="sw_off" t-value="'light'"/>
                         <t t-set="sw_checked" t-value="sc_theme == 'dark'"/>
-                        <t t-set="sw_attrs" t-value="{'data-sc-switch-submit': '1', 'data-sc-theme-switch': '1'}"/>
+                        <t t-set="sw_attrs" t-value="{'data-pk-switch-submit': '1', 'data-sc-theme-switch': '1'}"/>
                         <t t-set="sw_label">Dark mode</t>
                     </t>
                 </form>
@@ -191,7 +191,7 @@
 
             <!-- Task 1665: the morning summary opt-out, for every app role
                  (the user's own preference; default on). -->
-            <section class="o_sc_section" id="sc_morning_summary" data-sc-section="settings.morning_summary">
+            <section class="o_sc_section" id="sc_morning_summary" data-pk-section="settings.morning_summary">
                 <form method="post" action="/my/app/pref" class="o_sc_card o_sc_switch_card">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="redirect" value="/my/app/settings"/>
@@ -200,7 +200,7 @@
                         <t t-set="sw_value" t-value="'1'"/>
                         <t t-set="sw_off" t-value="'0'"/>
                         <t t-set="sw_checked" t-value="request.env.user.digest_daily_enabled"/>
-                        <t t-set="sw_attrs" t-value="{'data-sc-switch-submit': '1'}"/>
+                        <t t-set="sw_attrs" t-value="{'data-pk-switch-submit': '1'}"/>
                         <t t-set="sw_label">Receive the daily summary by email</t>
                     </t>
                 </form>
@@ -208,7 +208,7 @@
 
             <!-- Task 1676: the edit cards' « Done » buttons (default hidden:
                  the pencil turns into a ✓ that closes the card). -->
-            <section class="o_sc_section" id="sc_done_buttons" data-sc-section="settings.done_buttons">
+            <section class="o_sc_section" id="sc_done_buttons" data-pk-section="settings.done_buttons">
                 <form method="post" action="/my/app/pref" class="o_sc_card o_sc_switch_card">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="redirect" value="/my/app/settings"/>
@@ -217,7 +217,7 @@
                         <t t-set="sw_value" t-value="'1'"/>
                         <t t-set="sw_off" t-value="'0'"/>
                         <t t-set="sw_checked" t-value="sc_show_done"/>
-                        <t t-set="sw_attrs" t-value="{'data-sc-switch-submit': '1'}"/>
+                        <t t-set="sw_attrs" t-value="{'data-pk-switch-submit': '1'}"/>
                         <t t-set="sw_hint">When off, tap ✓ at the top of a card to finish editing.</t>
                         <t t-set="sw_label">Show « Done » buttons</t>
                     </t>

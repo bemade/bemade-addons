@@ -9,13 +9,13 @@
   its old copy), would run the module twice and bind its listeners twice.
   The hoot test bundles (``web.assets_unit_tests*``) are not runtime
   bundles: there the modules are only defined, and run per test file;
-* a consumer's one-release alias of a moved module (a « kit shim ») is a
-  pure re-export: only ``export … from`` lines and comments, no code.
+* task 5198 (P3a): the consumers' one-release aliases of the moved modules
+  (« kit shims ») are gone: no bundled file is one any more, and the clinic's
+  10 old paths no longer exist.
 """
 import fnmatch
 import glob
 import os
-import re
 
 from odoo.modules.module import get_manifest, get_module_path, get_modules
 from odoo.tests import TransactionCase, tagged
@@ -28,14 +28,10 @@ KIT_JS = (
     'switch', 'user_menu',
 )
 SHIM_MARKER = 'bemade_portal_kit shim'
-# A shim: block / line comments and ``export { … } from "…";`` statements.
-SHIM_RE = re.compile(
-    r'^(?:\s+'
-    r'|/\*.*?\*/'
-    r'|//[^\n]*'
-    r'|export\s*\{[^}]*\}\s*from\s*"@bemade_portal_kit/js/pk_[a-z_]+"\s*;'
-    r')*$',
-    re.S,
+# The clinic's aliases removed by task 5198 (P3a).
+CLINIC_SHIMS = (
+    'fetch', 'draft_store', 'confirm', 'focus', 'date_bounds', 'contact_href',
+    'user_menu', 'edit_anchor', 'list_header', 'app_nav',
 )
 
 
@@ -85,7 +81,7 @@ class TestPkAssets(TransactionCase):
         tests = get_manifest(KIT)['assets']['web.assets_unit_tests']
         self.assertIn(f'{KIT}/static/tests/**/*', tests)
 
-    def test_shims_are_pure_reexports(self):
+    def test_no_shim_left(self):
         shims = []
         for module in get_modules():
             manifest = get_manifest(module)
@@ -102,10 +98,11 @@ class TestPkAssets(TransactionCase):
                         continue
                     if SHIM_MARKER in source:
                         shims.append(path)
-                        self.assertRegex(source, SHIM_RE, f'{path} is not a pure re-export')
-                        self.assertIn('remove in the next kit phase', source, path)
-        if get_module_path('bemade_sports_clinic', display_warning=False):
-            # The clinic's one-release aliases (task 5197): the 10 moved
-            # modules that have exports; sc_switch / sc_forms / sc_live_count
-            # have none and get no shim.
-            self.assertEqual(len([p for p in shims if p.startswith('bemade_sports_clinic/')]), 10, shims)
+        self.assertEqual(shims, [])
+        clinic = get_module_path('bemade_sports_clinic', display_warning=False)
+        if clinic:
+            left = [
+                name for name in CLINIC_SHIMS
+                if os.path.exists(os.path.join(clinic, 'static', 'src', 'js', f'sc_{name}.js'))
+            ]
+            self.assertEqual(left, [])

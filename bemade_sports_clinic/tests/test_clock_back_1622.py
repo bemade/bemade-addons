@@ -3,7 +3,7 @@ back (owner 2026-10-18). Synthetic fixtures only (this repository is public).
 
 ``/my/activities`` is a top-level page (logo, no back). Opened from the app
 bar clock (#1592) it shows the back arrow (phone AND laptop) to the page the
-user was on: ``sc_app_nav.js`` turns it into ``history.back()`` when the
+user was on: ``pk_app_nav.js`` turns it into ``history.back()`` when the
 previous entry of the tab is an in-app page; otherwise its href is the page
 the clock link was clicked on, passed along as ``sc_from``.
 

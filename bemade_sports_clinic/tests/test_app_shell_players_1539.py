@@ -4,7 +4,7 @@ player create / edit and the emergency-contact forms. Synthetic fixtures.
 Acceptance criteria covered here:
 
 * UC-P1 (AC1) Switch OFF: every P2 player URL renders today's template
-  (legacy markers, no ``data-sc-app-shell``), the shell values are not even
+  (legacy markers, no ``data-pk-app-shell``), the shell values are not even
   computed, and the e-mail deep link ``/my/player?player_id=`` keeps
   working.
 * UC-P3 (AC2/AC5) Player page in the shell: segmented tabs per role
@@ -92,7 +92,7 @@ class TestAppShellPlayersList1539(PlayersCommon1539):
                 text, tree = self._get('/my/players')
             self.assertIn('o_portal_search_panel', text)
             self.assertIsNone(self._shell(tree))
-            self.assertNotIn('data-sc-app-shell', text)
+            self.assertNotIn('data-pk-app-shell', text)
 
     # -- UC-P2 -----------------------------------------------------------
     def test_players_rows_in_shell(self):
@@ -101,7 +101,7 @@ class TestAppShellPlayersList1539(PlayersCommon1539):
         text, tree = self._get('/my/players')
         self.assertIsNotNone(self._shell(tree))
         self.assertNotIn('o_portal_search_panel', text)
-        hrefs = tree.xpath('//*[@data-sc-section="players.list"]//a/@href')
+        hrefs = tree.xpath('//*[@data-pk-section="players.list"]//a/@href')
         self.assertIn('/my/player?player_id=%s' % self.player.id, hrefs)
         self.assertIn('#12', text)
         # Coach: no « Créer un joueur ».
@@ -121,7 +121,7 @@ class TestAppShellPlayersList1539(PlayersCommon1539):
         self.assertEqual(ids, [self.player.id])
         self.assertEqual(tree.xpath('//input[@name="jersey_number"]/@value'), ['12'])
         _text, tree = self._get('/my/players?team_id=%s&match_status=no' % self.team_a.id)
-        self.assertFalse(tree.xpath('//*[@data-sc-section="players.list"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="players.list"]'))
 
     def test_name_search_out_of_team_offers_add(self):
         self._switch(True)
@@ -145,7 +145,7 @@ class TestAppShellPlayersList1539(PlayersCommon1539):
         _text, tree = self._get('/my/players')
         # Task 1593: the teams are a links line (team B, not staffed by the
         # coach, as plain text), no longer a joined subtitle.
-        row = tree.xpath('//*[@data-sc-section="players.list"]//*[@data-sc-player-id="%s"]'
+        row = tree.xpath('//*[@data-pk-section="players.list"]//*[@data-sc-player-id="%s"]'
                          % self.player.id)[0]
         teams = [' '.join(node.text_content().split())
                  for node in row.xpath('.//*[contains(concat(" ", @class, " "), " o_sc_row_link ")]')]
@@ -192,7 +192,7 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         self.assertNotIn('sc_status', self._owl_fields(tree))
         self.assertNotIn('training_recommendation', self._owl_fields(tree))
         self.assertIn('Bike 15 min (synthetic)', text)
-        self.assertTrue(tree.xpath('//*[@data-sc-section="player.status.readonly"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="player.status.readonly"]'))
         self.assertFalse(tree.xpath('//*[@data-sc-pill-select]'))
         # « Report Injury » for coaches too, with the team context kept —
         # inline on the Injuries tab since the owner review of 2026-10-10.
@@ -260,7 +260,7 @@ class TestAppShellPlayer1539(PlayersCommon1539):
                  # Task 1736 r1 (deliberate update): no « Reschedule » sheet
                  # (the card's pencil edits the due date in place).
                  for sheet in ('complete', 'cancel')}
-        forms['add'] = tree.xpath('//details[@data-sc-section="activity.add"]//form')
+        forms['add'] = tree.xpath('//details[@data-pk-section="activity.add"]//form')
         for sheet, form in forms.items():
             self.assertTrue(form, sheet)
             self.assertTrue(form[0].xpath('.//input[@name="csrf_token"]/@value')[0], sheet)
@@ -423,5 +423,5 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         form = tree.xpath('//form[@data-sc-form="contact.add"]')[0]
         self.assertEqual(form.get('action'), '/my/player/contact/save')
         self.assertTrue(form.xpath('.//input[@name="mobile"]'))
-        card = tree.xpath('//*[@data-sc-edit-card="contact-%s"]' % self.contact.id)[0]
+        card = tree.xpath('//*[@data-pk-edit-card="contact-%s"]' % self.contact.id)[0]
         self.assertIn('Parent One', card.text_content())

@@ -6,7 +6,7 @@ Acceptance criteria:
 * UC-T1 Player Contact Information card: the email reads as a ``mailto:``
   link and the phone as a ``tel:`` link (the href keeps only ``+`` and the
   digits); each link carries the ``data-sc-display`` hook (a pencil save
-  updates its text) and ``data-sc-display-href`` (the kind, so the save
+  updates its text) and ``data-pk-display-href`` (the kind, so the save
   updates the href too — browser half: the ``sc_1585_tap_links`` tour).
 * UC-T2 Emergency contact cards: the mobile is a ``tel:`` link, the email a
   ``mailto:`` link, same hooks.
@@ -74,11 +74,11 @@ class TestTapLinks(TapLinksCommon):
             self.assertEqual(len(phone), 1)
             self.assertEqual(email[0].tag, 'a')
             self.assertEqual(email[0].get('href'), 'mailto:pat.one@example.com')
-            self.assertEqual(email[0].get('data-sc-display-href'), 'mailto')
+            self.assertEqual(email[0].get('data-pk-display-href'), 'mailto')
             self.assertEqual(email[0].text_content().strip(), 'pat.one@example.com')
             self.assertEqual(phone[0].tag, 'a')
             self.assertEqual(phone[0].get('href'), 'tel:+15550100123')
-            self.assertEqual(phone[0].get('data-sc-display-href'), 'tel')
+            self.assertEqual(phone[0].get('data-pk-display-href'), 'tel')
             self.assertEqual(phone[0].text_content().strip(), '+1 (555) 010-0123')
             # Other read rows stay plain text.
             street = self._display(tree, self.player, 'street')
@@ -105,7 +105,7 @@ class TestTapLinks(TapLinksCommon):
             self.assertIsNone(node.get('href'), field)
             self.assertEqual(node.text_content().strip(), '—', field)
             # Still carries the kind, so a later save can make it a link.
-            self.assertTrue(node.get('data-sc-display-href'), field)
+            self.assertTrue(node.get('data-pk-display-href'), field)
 
     def test_save_answers_display_for_links(self):
         """The pencil save's ``display`` is the raw value the browser turns
@@ -125,7 +125,7 @@ class TestTapLinks(TapLinksCommon):
         for login in (self._login_tp, self._login_coach):
             login()
             _text, tree = self._get('/my/event/%s' % self.event.id)
-            hero = tree.xpath('//*[@data-sc-section="event.hero"]')[0]
+            hero = tree.xpath('//*[@data-pk-section="event.hero"]')[0]
             staff = hero.xpath('.//*[@data-sc-event-staff]')
             self.assertEqual(len(staff), 1)
             self.assertIn('PC TP', staff[0].text_content())
@@ -140,7 +140,7 @@ class TestTapLinks(TapLinksCommon):
         self.org.write({'email': False})
         self._login_tp()
         _text, tree = self._get('/my/event/%s' % self.event.id)
-        hero = tree.xpath('//*[@data-sc-section="event.hero"]')[0]
+        hero = tree.xpath('//*[@data-pk-section="event.hero"]')[0]
         staff = hero.xpath('.//*[@data-sc-event-staff]')
         self.assertIn('PC TP', staff[0].text_content())
         self.assertFalse(hero.xpath('.//a[starts-with(@href, "mailto:")]'))
@@ -151,7 +151,7 @@ class TestTapLinks(TapLinksCommon):
         self._switch(False)
         self._login_tp()
         text, _tree = self._get('/my/event/%s' % self.event.id)
-        self.assertNotIn('data-sc-display-href', text)
+        self.assertNotIn('data-pk-display-href', text)
         self.assertNotIn('data-sc-event-staff', text)
 
 

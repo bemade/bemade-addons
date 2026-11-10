@@ -21,11 +21,12 @@
  * ``isStandalone()`` stays exported for the installed-app checks.
  */
 
-const STORE_KEY = "sc_nav_stack:v1";
-const POST_KEY = "sc_nav_post:v1";
-const UP_KEY = "sc_nav_up:v1";
-// Set by sc_fragments.js when a back/forward step reloads a stale page.
-const BF_RELOAD_KEY = "sc_nav_bf_reload:v1";
+export const NAV_STACK_KEY = "pk_nav_stack:v1";
+const POST_KEY = "pk_nav_post:v1";
+const UP_KEY = "pk_nav_up:v1";
+// Set by a consumer (sc_fragments.js) when a back/forward step reloads a
+// stale page: import it, never repeat the string.
+export const NAV_BF_RELOAD_KEY = "pk_nav_bf_reload:v1";
 const MAX_DEPTH = 50;
 
 function storage() {
@@ -42,7 +43,7 @@ function load() {
         return [];
     }
     try {
-        const stack = JSON.parse(store.getItem(STORE_KEY) || "[]");
+        const stack = JSON.parse(store.getItem(NAV_STACK_KEY) || "[]");
         return Array.isArray(stack) ? stack.filter((entry) => entry && entry.u) : [];
     } catch {
         return [];
@@ -55,7 +56,7 @@ function save(stack) {
         return;
     }
     try {
-        store.setItem(STORE_KEY, JSON.stringify(stack.slice(-MAX_DEPTH)));
+        store.setItem(NAV_STACK_KEY, JSON.stringify(stack.slice(-MAX_DEPTH)));
     } catch {
         // quota / private mode: back falls back to the server parent
     }
@@ -129,7 +130,7 @@ export function syncStack(type) {
     const wentUp = takeFlag(UP_KEY);
     let stack = load();
     const top = stack[stack.length - 1];
-    if (takeFlag(BF_RELOAD_KEY) && type === "reload") {
+    if (takeFlag(NAV_BF_RELOAD_KEY) && type === "reload") {
         // #1611 reloads a stale page restored by back/forward: the stack
         // already stepped back to it — keep it (task 1618).
         if (top && top.k === key) {
@@ -212,19 +213,19 @@ export function isStandalone() {
  * something » rule any more).
  */
 export function backIsUseful() {
-    return Boolean(document.querySelector(".o_sc_app a[data-sc-back]"));
+    return Boolean(document.querySelector(".o_sc_app a[data-pk-back]"));
 }
 
 /** Toggle ``o_sc_back_useful`` on the shell root (task 1618). */
 export function updateBackUseful() {
-    const shell = document.querySelector(".o_sc_app[data-sc-app-shell]");
+    const shell = document.querySelector(".o_sc_app[data-pk-app-shell]");
     if (shell) {
         shell.classList.toggle("o_sc_back_useful", backIsUseful());
     }
 }
 
 function inShell() {
-    return Boolean(document.querySelector(".o_sc_app[data-sc-app-shell]"));
+    return Boolean(document.querySelector(".o_sc_app[data-pk-app-shell]"));
 }
 
 function init() {
@@ -250,7 +251,7 @@ window.addEventListener("pageshow", (ev) => {
 });
 
 // Task 1618: the page can switch to the installed display (« Open in app »);
-// ``sc:nav-sync`` re-checks it on demand (tours stub matchMedia).
+// ``pk:nav-sync`` re-checks it on demand (tours stub matchMedia).
 try {
     const standalone = window.matchMedia && window.matchMedia("(display-mode: standalone)");
     standalone && standalone.addEventListener && standalone.addEventListener("change", () => {
@@ -261,7 +262,7 @@ try {
 } catch {
     // no matchMedia
 }
-document.addEventListener("sc:nav-sync", () => {
+document.addEventListener("pk:nav-sync", () => {
     if (inShell()) {
         updateBackUseful();
     }
@@ -270,7 +271,7 @@ document.addEventListener("sc:nav-sync", () => {
 // The back chevron: history.back() to the previous in-app page of this tab
 // (skipping that page's own POST round-trips), else its href — the parent.
 document.addEventListener("click", (ev) => {
-    const back = ev.target.closest && ev.target.closest(".o_sc_app a[data-sc-back]");
+    const back = ev.target.closest && ev.target.closest(".o_sc_app a[data-pk-back]");
     if (!back || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button) {
         return;
     }

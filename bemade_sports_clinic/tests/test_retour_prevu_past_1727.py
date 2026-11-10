@@ -176,11 +176,11 @@ class TestRetourPrevuApp1727(FragmentsCommon):
     def test_header_input_starts_today(self):
         self._login_tp()
         _text, tree = self._get(self._url())
-        [node] = tree.xpath('//*[@data-sc-section="player.predicted_return"]//owl-component')
+        [node] = tree.xpath('//*[@data-pk-section="player.predicted_return"]//owl-component')
         props = json.loads(node.get('props'))
         self.assertEqual(props['min'], fields.Date.to_string(_today(self.player.with_user(self.tp))))
         # « Retour réel » has no such bound.
-        [actual] = tree.xpath('//*[@data-sc-section="player.return_date.edit"]//owl-component')
+        [actual] = tree.xpath('//*[@data-pk-section="player.return_date.edit"]//owl-component')
         self.assertNotIn('min', json.loads(actual.get('props')))
 
     @mute_logger('odoo.http')
@@ -238,7 +238,7 @@ class TestRetourPrevuApp1727(FragmentsCommon):
         for login in (self._login_tp, self._login_coach):
             login()
             _text, tree = self._get(self._url())
-            [section] = tree.xpath('//*[@data-sc-section="player.return"]')
+            [section] = tree.xpath('//*[@data-pk-section="player.return"]')
             flags = self._flags(section)
             self.assertEqual(len(flags), 1, login.__name__)
             self.assertIn('Passed', self._text(flags[0]))
@@ -298,7 +298,7 @@ class TestRetourPrevuPastI18n1727(TestAppShellI18n1538):
         self._login_tp()
         text = self._fr('/my/player?player_id=%s&tab=injuries' % self.player.id)
         [flag] = lxml_html.fromstring(text).xpath(
-            '//*[@data-sc-section="player.return"]//*[@data-sc-overdue]')
+            '//*[@data-pk-section="player.return"]//*[@data-sc-overdue]')
         self.assertEqual(flag.text_content().strip(), 'Dépassé')
         # The refusals (save route, apply route) in the user's language.
         self.player.invalidate_recordset()

@@ -79,7 +79,7 @@ tours.add("sc_1655_create_new", {
         },
         {
             content: "The player page, identity card in edit",
-            trigger: '[data-sc-edit-card="identity"][data-sc-edit-open] [data-sc-edit-view="edit"]:not([hidden])',
+            trigger: '[data-pk-edit-card="identity"][data-sc-edit-open] [data-sc-edit-view="edit"]:not([hidden])',
         },
     ],
 });

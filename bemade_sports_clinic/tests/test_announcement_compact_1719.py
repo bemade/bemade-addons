@@ -41,7 +41,7 @@ class Announcement1719Common(AppShellCommon):
         self.url = '/my/team?team_id=%s' % self.team_a.id
 
     def _area(self, tree):
-        areas = tree.xpath('//section[@data-sc-section="team.announcement.area"]')
+        areas = tree.xpath('//section[@data-pk-section="team.announcement.area"]')
         return areas[0] if areas else None
 
 
@@ -55,7 +55,7 @@ class TestAnnouncementCompact1719(Announcement1719Common):
         _text, tree = self._get(self.url)
         area = self._area(tree)
         self.assertIsNotNone(area)
-        self.assertEqual(area.get('data-sc-edit-card'), 'announcement')
+        self.assertEqual(area.get('data-pk-edit-card'), 'announcement')
         self.assertFalse(area.xpath('.//*[contains(concat(" ", @class, " "), " o_sc_card ")]'))
         self.assertFalse(area.xpath('.//*[contains(concat(" ", @class, " "), " o_sc_announcement_head ")]'))
         line = area.xpath('./div[contains(@class, "o_sc_announcement_titleline")]')
@@ -64,7 +64,7 @@ class TestAnnouncementCompact1719(Announcement1719Common):
         self.assertIn('Team announcement', line.text_content())
         self.assertTrue(line.xpath('.//button[@data-sc-sheet-open="sc_announcement_history_sheet"]'))
         self.assertEqual(len(line.xpath('.//button[@data-sc-edit-toggle]')), 1)
-        self.assertEqual(len(line.xpath('.//form[@data-sc-section="team.announcement.archive"]//button')), 1)
+        self.assertEqual(len(line.xpath('.//form[@data-pk-section="team.announcement.archive"]//button')), 1)
         # The text: megaphone beside it, clamped, « See more » hidden by default.
         content = area.xpath('.//div[contains(@class, "o_sc_announcement_content")]')[0]
         self.assertTrue(content.xpath('./*[local-name()="svg" or contains(@class, "o_sc_icon")]'))
@@ -96,7 +96,7 @@ class TestAnnouncementCompact1719(Announcement1719Common):
         self.assertEqual(meta.get('hidden'), 'hidden')
         # A coach: no pencil, no archive.
         self.assertFalse(area.xpath('.//button[@data-sc-edit-toggle]'))
-        self.assertFalse(area.xpath('.//*[@data-sc-section="team.announcement.archive"]'))
+        self.assertFalse(area.xpath('.//*[@data-pk-section="team.announcement.archive"]'))
 
     def test_empty_author_and_viewer(self):
         self.team_a.sudo().write({'announcement': False})
@@ -110,12 +110,12 @@ class TestAnnouncementCompact1719(Announcement1719Common):
         self.assertIn('o_sc_muted', empty[0].get('class'))
         self.assertEqual(len(area.xpath('.//button[@data-sc-edit-toggle]')), 1)
         self.assertFalse(area.xpath('.//*[contains(@class, "o_sc_list_add")]'))
-        self.assertTrue(area.xpath('.//*[@data-sc-section="team.announcement.edit"]'))
+        self.assertTrue(area.xpath('.//*[@data-pk-section="team.announcement.edit"]'))
         self._login_coach()
         _text, tree = self._get(self.url)
         self.assertIsNone(self._area(tree))
         # The counters are still there.
-        self.assertTrue(tree.xpath('//*[@data-sc-section="team.stats"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="team.stats"]'))
 
     def test_french(self):
         env = self.env

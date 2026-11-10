@@ -102,7 +102,7 @@ tours.add("sc_1716_twin_create_anyway", {
         },
         {
             content: "The new player's page",
-            trigger: '[data-sc-edit-card="identity"]',
+            trigger: '[data-pk-edit-card="identity"]',
         },
     ],
 });
@@ -162,7 +162,7 @@ tours.add("sc_1716_dob_today", {
         },
         {
             content: "The new player's page",
-            trigger: '[data-sc-edit-card="identity"]',
+            trigger: '[data-pk-edit-card="identity"]',
         },
     ],
 });

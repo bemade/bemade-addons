@@ -40,7 +40,7 @@ tours.add("sc_1579_back_came_from", {
     steps: () => [
         {
             content: "Filtered players list (top level: logo, no back)",
-            trigger: '.o_sc_app[data-sc-top="1"] [data-sc-section="players.list"] [data-sc-player-id] a.o_sc_link_row_main:contains("One")',
+            trigger: '.o_sc_app[data-sc-top="1"] [data-pk-section="players.list"] [data-sc-player-id] a.o_sc_link_row_main:contains("One")',
             run(helpers) {
                 reloadIfRestored();
                 return helpers.click();
@@ -58,7 +58,7 @@ tours.add("sc_1579_back_came_from", {
         },
         {
             content: "Back returned to the FILTERED list we came from (history), not the href",
-            trigger: '.o_sc_app[data-sc-top="1"] [data-sc-section="players.list"]',
+            trigger: '.o_sc_app[data-sc-top="1"] [data-pk-section="players.list"]',
             run() {
                 assert(window.location.pathname === "/my/players", window.location.href);
                 assert(
@@ -109,12 +109,12 @@ tours.add("sc_1579_digest_chain", {
             // Task 1614: a date expands in place; its « Open this day » link
             // leads to the day's page.
             content: "Digest list: expand a date",
-            trigger: '[data-sc-section="digest.history"] details[data-sc-digest-row] > summary',
+            trigger: '[data-pk-section="digest.history"] details[data-sc-digest-row] > summary',
             run: "click",
         },
         {
             content: "Digest list: open the day's page",
-            trigger: '[data-sc-section="digest.history"] details[open] a[data-sc-digest-id]',
+            trigger: '[data-pk-section="digest.history"] details[open] a[data-sc-digest-id]',
             run(helpers) {
                 reloadIfRestored();
                 return helpers.click();
@@ -123,7 +123,7 @@ tours.add("sc_1579_digest_chain", {
         },
         {
             content: "Snapshot: back",
-            trigger: '[data-sc-section="digest.body"]',
+            trigger: '[data-pk-section="digest.body"]',
             run() {
                 phoneChrome();
                 document.querySelector("a.o_sc_back").click();
@@ -132,7 +132,7 @@ tours.add("sc_1579_digest_chain", {
         },
         {
             content: "Back on the digest list; back again",
-            trigger: '[data-sc-section="digest.history"]',
+            trigger: '[data-pk-section="digest.history"]',
             run() {
                 assert(window.location.pathname.endsWith("/digest-history"), window.location.href);
                 document.querySelector("a.o_sc_back").click();
@@ -155,7 +155,7 @@ tours.add("sc_1579_digest_deep_link", {
     steps: () => [
         {
             content: "Snapshot opened directly: back",
-            trigger: '[data-sc-section="digest.body"]',
+            trigger: '[data-pk-section="digest.body"]',
             run() {
                 document.querySelector("a.o_sc_back").click();
             },
@@ -163,7 +163,7 @@ tours.add("sc_1579_digest_deep_link", {
         },
         {
             content: "The digest list (the declared parent); back again",
-            trigger: '[data-sc-section="digest.history"]',
+            trigger: '[data-pk-section="digest.history"]',
             run() {
                 assert(window.location.pathname.endsWith("/digest-history"), window.location.href);
                 document.querySelector("a.o_sc_back").click();

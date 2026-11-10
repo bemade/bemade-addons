@@ -162,7 +162,7 @@ export function enhance(select) {
     const label = select.id && document.querySelector(`label[for="${select.id}"]`);
     picker.innerHTML = `
         <div class="o_sc_picker_box">
-            <input type="text" class="o_sc_input o_sc_picker_input" autocomplete="off" spellcheck="false"
+            <input type="text" class="o_sc_input o_sc_picker_input" data-pk-focus-skip="1" autocomplete="off" spellcheck="false"
                    role="combobox" aria-autocomplete="list" aria-expanded="false"/>
             <button type="button" class="o_sc_icon_btn o_sc_picker_clear" hidden="hidden">×</button>
         </div>

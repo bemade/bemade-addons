@@ -8,7 +8,7 @@
  */
 import { registry } from "@web/core/registry";
 
-const CARD = "[data-sc-timesheet-id][data-sc-edit-card]";
+const CARD = "[data-sc-timesheet-id][data-pk-edit-card]";
 
 function assert(condition, message) {
     if (!condition) {
@@ -36,7 +36,7 @@ registry.category("web_tour.tours").add("sc_1731_timesheet_sent", {
             trigger: `${CARD}[data-sc-edit-open] .o_sc_autosave[data-sc-field="travel_start"] input`,
             run() {
                 const input = this.anchor;
-                const card = input.closest("[data-sc-edit-card]");
+                const card = input.closest("[data-pk-edit-card]");
                 const start = card.querySelector('.o_sc_autosave[data-sc-field="coverage_start"] input').value;
                 assert(start, "the coverage start is filled");
                 const at = new Date(new Date(start).getTime() - 30 * 60 * 1000);

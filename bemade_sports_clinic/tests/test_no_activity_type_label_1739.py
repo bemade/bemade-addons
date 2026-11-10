@@ -41,7 +41,7 @@ class _NoTypeCommon(ActivityCards1736r1Common):
     def _popout_text(self, activity):
         resp = self.url_open('/my/activity/%s/popout' % activity.id)
         self.assertEqual(resp.status_code, 200)
-        root = lxml_html.fromstring(resp.text).xpath('//*[@data-sc-section="activity.popout"]')
+        root = lxml_html.fromstring(resp.text).xpath('//*[@data-pk-section="activity.popout"]')
         self.assertTrue(root)
         return self._flat(root[0])
 

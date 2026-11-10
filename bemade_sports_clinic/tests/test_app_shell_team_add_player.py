@@ -50,7 +50,7 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
     def _card(self, tree):
         panel = tree.xpath('//section[@data-sc-tab-panel="players"]')[0]
         # Task 1655: the shared inline create panel (same id, sc_add_player).
-        cards = panel.xpath('./details[@id="sc_add_player"][@data-sc-section="team.add_player"]')
+        cards = panel.xpath('./details[@id="sc_add_player"][@data-pk-section="team.add_player"]')
         self.assertEqual(len(cards), 1)
         return cards[0]
 
@@ -139,6 +139,6 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
         self._login_coach()
         _text, tree = self._get(self.url)
         panel = tree.xpath('//section[@data-sc-tab-panel="players"]')[0]
-        self.assertFalse(panel.xpath('./details[@data-sc-section="team.add_player"]'))
-        form = panel.xpath('./details[@data-sc-section="team.request_add"]//form')[0]
+        self.assertFalse(panel.xpath('./details[@data-pk-section="team.add_player"]'))
+        form = panel.xpath('./details[@data-pk-section="team.request_add"]//form')[0]
         self.assertEqual(form.get('action'), '/my/team/%s/player/request_add' % self.team_a.id)

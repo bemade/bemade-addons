@@ -34,7 +34,7 @@ class TestPlayersFollowedFilter1738(Dashboard1624Common):
 
     def _row_ids(self, tree):
         return sorted(int(i) for i in tree.xpath(
-            '//*[@data-sc-section="players.list"]/*[@data-sc-player-id]/@data-sc-player-id'))
+            '//*[@data-pk-section="players.list"]/*[@data-sc-player-id]/@data-sc-player-id'))
 
     def _chip(self, tree):
         return tree.xpath('//a[@data-sc-action="players.followed"]')
@@ -71,14 +71,14 @@ class TestPlayersFollowedFilter1738(Dashboard1624Common):
         self.assertEqual(args.get('team_id'), [str(self.team_c.id)])
         self.assertNotIn('followed', args)
         # The search form carries the filter.
-        self.assertEqual(tree.xpath('//form[@data-sc-section="players.search"]'
+        self.assertEqual(tree.xpath('//form[@data-pk-section="players.search"]'
                                     '//input[@name="followed"]/@value'), ['1'])
         # Off: the chip turns it on, keeping the team.
         _text, tree = self._get('/my/players?team_id=%s' % self.team_c.id)
         args = parse_qs(urlparse(self._chip(tree)[0].get('href')).query)
         self.assertEqual(args.get('team_id'), [str(self.team_c.id)])
         self.assertEqual(args.get('followed'), ['1'])
-        self.assertFalse(tree.xpath('//form[@data-sc-section="players.search"]'
+        self.assertFalse(tree.xpath('//form[@data-pk-section="players.search"]'
                                     '//input[@name="followed"]'))
 
     # -- UC3 -----------------------------------------------------------------

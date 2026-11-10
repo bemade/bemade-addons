@@ -134,7 +134,7 @@ class TestAppShellActivities1539(AppShellCommon):
         resp = self.url_open('/my/activity/%s/edit' % self.act_player.id, allow_redirects=False)
         self.assertIn(resp.status_code, (302, 303))
         _text, tree = self._get('/my/activity/%s' % self.act_player.id)
-        self.assertTrue(tree.xpath('//*[@data-sc-section="activity.detail"][@data-sc-edit-card="activity"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="activity.detail"][@data-pk-edit-card="activity"]'))
         form = tree.xpath('//dialog[@id="sc_activity_complete_sheet"]//form')[0]
         self.assertEqual(form.xpath('.//input[@name="return_url"]/@value'),
                          ['/my/player?player_id=%s' % self.player.id])
@@ -154,7 +154,7 @@ class TestAppShellActivities1539(AppShellCommon):
         panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
         self.assertFalse(panel.xpath('.//*[contains(@class, "o_sc_legacy")]'))
         self.assertTrue(panel.xpath('.//*[@data-sc-activity-row="%s"]' % self.act_team.id))
-        form = panel.xpath('.//details[@data-sc-section="activity.add"]//form')[0]
+        form = panel.xpath('.//details[@data-pk-section="activity.add"]//form')[0]
         self.assertEqual(form.get('action'), '/my/activity/save')
         count = self.env['mail.activity'].search_count([('res_model', '=', 'sports.team')])
         resp = self.url_open('/my/activity/save', data={

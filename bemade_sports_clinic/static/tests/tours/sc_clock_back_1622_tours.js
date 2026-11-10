@@ -33,7 +33,7 @@ function activitiesSteps() {
     return [
         {
             content: "Activities from the clock: the back arrow shows",
-            trigger: ".o_sc_app.o_sc_back_useful a.o_sc_back[data-sc-back]",
+            trigger: ".o_sc_app.o_sc_back_useful a.o_sc_back[data-pk-back]",
             run() {
                 assert(window.location.pathname.endsWith("/my/activities"), window.location.href);
                 assert(visible(".o_sc_back"), "clock: back arrow hidden");

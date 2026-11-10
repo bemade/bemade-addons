@@ -234,7 +234,7 @@ class TestAppShellNav1579(Nav1579Common):
     def test_digest_chain(self):
         _text, tree = self._get(self.team_url)
         history_url = '/my/team/%s/digest-history' % self.team_a.id
-        links = tree.xpath('//*[@data-sc-section="team.recent_changes"]'
+        links = tree.xpath('//*[@data-pk-section="team.recent_changes"]'
                            '//a[@data-sc-action="team.digest_history"]/@href')
         self.assertEqual(links, [history_url])
         self.assertFalse(tree.xpath('//dialog[@id="sc_digest_history_sheet"]'))

@@ -98,7 +98,7 @@ class TestAppShellClinic1540(Clinic1540Common):
             text, tree = self._get('/my/clinic/%s' % self.clinic.id)
             self.assertIn('o_sc_clinic_detail', text)
             self.assertIn('o_sc_worklist', text)
-            self.assertNotIn('data-sc-app-shell', text)
+            self.assertNotIn('data-pk-app-shell', text)
             self.assertNotIn('sc_clinic_worklist', text)
         text, _tree = self._get('/my/clinic/%s/worklist/fragment' % self.clinic.id)
         self.assertIn('o_sc_worklist', text)
@@ -167,7 +167,7 @@ class TestAppShellClinic1540(Clinic1540Common):
         self.assertEqual(form.xpath('.//input[@name="event_id"]/@value'), [str(self.clinic.id)])
         self.assertEqual(form.getparent().get('open'), 'open')
         # Task 1590: the injuries are inline pencil cards (no fragment sheet).
-        self.assertTrue(tree.xpath('//details[@id="clinic-injury-%s"][@data-sc-edit-card="injury"]'
+        self.assertTrue(tree.xpath('//details[@id="clinic-injury-%s"][@data-pk-edit-card="injury"]'
                                    % self.injury.id))
         self.assertFalse(tree.xpath('//dialog[@id="sc_clinic_injury_%s"]' % self.injury.id))
         # The legacy fragment route still answers (the legacy page uses it).
@@ -349,11 +349,11 @@ class TestClinicTeaserLive1540(Clinic1540Common):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/home')
-        chips = tree.xpath('//*[@data-sc-section="home.clinic_teaser"]'
-                           '//*[@data-sc-live-count-url]')
+        chips = tree.xpath('//*[@data-pk-section="home.clinic_teaser"]'
+                           '//*[@data-pk-live-count-url]')
         self.assertEqual(len(chips), 1)
         chip = chips[0]
-        self.assertEqual(chip.get('data-sc-live-count-url'), self.URL)
-        self.assertEqual(chip.get('data-sc-live-poll'), '20')
+        self.assertEqual(chip.get('data-pk-live-count-url'), self.URL)
+        self.assertEqual(chip.get('data-pk-live-poll'), '20')
         self.assertEqual(chip.text_content().strip(), '1')
         self.assertIn('o_sc_chip_mauve', chip.get('class'))

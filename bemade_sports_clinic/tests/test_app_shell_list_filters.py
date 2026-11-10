@@ -46,26 +46,26 @@ class TestAppShellListFilters(AppShellCommon):
 
     @staticmethod
     def _event_ids(tree):
-        return {int(x) for x in tree.xpath('//*[@data-sc-section="events.list"]//*[@data-sc-event-id]/@data-sc-event-id')}
+        return {int(x) for x in tree.xpath('//*[@data-pk-section="events.list"]//*[@data-sc-event-id]/@data-sc-event-id')}
 
     # -- UC-LF1 ----------------------------------------------------------
     def test_events_views_and_filter_panel(self):
         self._login_tp()
         _text, tree = self._get('/my/events?event_type=game')
-        views = tree.xpath('//*[@data-sc-section="events.views"]//a/@data-sc-view')
+        views = tree.xpath('//*[@data-pk-section="events.views"]//a/@data-sc-view')
         self.assertEqual(views, ['all', 'my', 'unassigned', 'missing_timesheets'])
-        form = tree.xpath('//form[@data-sc-section="events.filters"]')[0]
+        form = tree.xpath('//form[@data-pk-section="events.filters"]')[0]
         names = set(form.xpath('.//*[@name]/@name'))
         # Task 1607 (deliberate update): the sort is in the list header (the
         # form carries it as a hidden field once chosen).
         for name in ('organization_id', 'team_id', 'assigned_user_id', 'date_from', 'date_to',
                      'show_cancelled', 'group_by', 'event_type', 'view_type'):
             self.assertIn(name, names)
-        self.assertTrue(tree.xpath('//*[@data-sc-section="events.sort"]//a[@data-sc-sort="date_desc"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="events.sort"]//a[@data-sc-sort="date_desc"]'))
         self.assertEqual(form.xpath('.//input[@name="event_type"]/@value'), ['game'])
         self._login_coach()
         _text, tree = self._get('/my/events')
-        views = tree.xpath('//*[@data-sc-section="events.views"]//a/@data-sc-view')
+        views = tree.xpath('//*[@data-pk-section="events.views"]//a/@data-sc-view')
         self.assertNotIn('missing_timesheets', views)
 
     # -- UC-LF2 ----------------------------------------------------------
@@ -80,7 +80,7 @@ class TestAppShellListFilters(AppShellCommon):
         _text, tree = self._get('/my/events?team_id=%s&show_cancelled=1&view_type=all' % self.team_a.id)
         self.assertIn(self.ev_cancel.id, self._event_ids(tree))
         _text, tree = self._get('/my/events?group_by=team&view_type=all')
-        groups = tree.xpath('//*[@data-sc-section="events.list"]//*[@data-sc-group]')
+        groups = tree.xpath('//*[@data-pk-section="events.list"]//*[@data-sc-group]')
         titles = [' '.join(g.xpath('.//*[contains(@class, "o_sc_group_title")]')[0].text_content().split())
                   for g in groups]
         # The therapist staffs Team A only (Team B's events are out of scope).
@@ -92,11 +92,11 @@ class TestAppShellListFilters(AppShellCommon):
     def test_timesheets_filters_and_group(self):
         self._login_tp()
         _text, tree = self._get('/my/sc/timesheets')
-        form = tree.xpath('//form[@data-sc-section="timesheets.filters"]')[0]
+        form = tree.xpath('//form[@data-pk-section="timesheets.filters"]')[0]
         names = set(form.xpath('.//*[@name]/@name'))
         for name in ('search', 'date_from', 'date_to', 'team_id', 'organization_id', 'group_by'):
             self.assertIn(name, names)
-        self.assertTrue(tree.xpath('//*[@data-sc-section="timesheets.sort"]//a[@data-sc-sort="state"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="timesheets.sort"]//a[@data-sc-sort="state"]'))
         _text, tree = self._get('/my/sc/timesheets?group_by=team&no_default_dates=1&date_from=2000-01-01')
-        groups = tree.xpath('//*[@data-sc-section="timesheets.list"]//*[@data-sc-group]')
+        groups = tree.xpath('//*[@data-pk-section="timesheets.list"]//*[@data-sc-group]')
         self.assertTrue(groups)

@@ -385,7 +385,7 @@ async function post(form, submitter) {
         navigating = true;
         // Task 1672: an add panel resets before the page changes (back on
         // this page, the form is empty again).
-        form.dispatchEvent(new CustomEvent("sc:create-success", { bubbles: true }));
+        form.dispatchEvent(new CustomEvent("pk:create-success", { bubbles: true }));
         // Task 1741: a target that differs from this page by its #fragment
         // only would not load (a same-document navigation): the page would
         // stay stale and its pending notification would pop on a LATER page.
@@ -451,7 +451,7 @@ document.addEventListener("focusout", refreshFrom);
 const watched = new WeakSet();
 
 // Task 1672: an add panel reset after a create — no stale error / reason.
-document.addEventListener("sc:form-reset", (ev) => {
+document.addEventListener("pk:form-reset", (ev) => {
     const form = guardForm(ev.target);
     if (form && !form.matches("[data-sc-player-add]")) {
         guardClearError(form);
@@ -494,4 +494,4 @@ if (document.readyState === "loading") {
     guardBoot();
 }
 // Fragments (task 1611) re-render parts of the page: re-arm new forms.
-document.addEventListener("sc:fragments", () => guardBoot());
+document.addEventListener("pk:fragments", () => guardBoot());

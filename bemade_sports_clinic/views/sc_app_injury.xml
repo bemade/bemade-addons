@@ -27,7 +27,7 @@
     -->
     <template id="sc_injury_new_form" name="App shell: new injury form">
         <form action="/my/patient/injury/create" method="post" class="o_sc_form" data-sc-form="injury.new"
-              t-att-data-sc-draft-prefix="sc_draft_prefix" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"diagnosis"}]'>
+              t-att-data-pk-draft-prefix="sc_draft_prefix" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"diagnosis"}]'>
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
             <input type="hidden" name="patient_id" t-att-value="patient.id"/>
             <input type="hidden" name="return_url" t-att-value="return_url"/>
@@ -133,7 +133,7 @@
                 <t t-set="note_injury_choices" t-value="sc_injury_choices"/>
                 <t t-set="note_draft_prefix" t-value="sc_note_draft_prefix"/>
             </t>
-            <div t-if="notes" class="o_sc_list" data-sc-section="notes.list">
+            <div t-if="notes" class="o_sc_list" data-pk-section="notes.list">
                 <t t-foreach="notes" t-as="note">
                     <t t-call="bemade_sports_clinic.sc_note_card">
                         <t t-set="injury_url" t-value="note.injury_id and '/my/player?player_id=%s%s&amp;tab=injuries&amp;injury=%s#injury-%s' % (patient.id, ctx_qs or '', note.injury_id.id, note.injury_id.id)"/>
@@ -156,7 +156,7 @@
         <t t-call="bemade_sports_clinic.sc_history_list">
             <t t-set="section" t-value="'injury.notes.history'"/>
             <nav t-if="is_treatment_prof" class="o_sc_segmented o_sc_segmented_full" role="group"
-                 aria-label="Scope filter" data-sc-section="history.scope">
+                 aria-label="Scope filter" data-pk-section="history.scope">
                 <a t-att-href="sc_scope_urls['all']" data-sc-sheet-refetch="1"
                    t-att-aria-pressed="'true' if scope == 'all' else 'false'">All notes</a>
                 <a t-att-href="sc_scope_urls['internal']" data-sc-sheet-refetch="1"

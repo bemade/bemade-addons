@@ -281,8 +281,8 @@ document.addEventListener("submit", (ev) => {
         pkConfirm({
             title: form.dataset.scConfirmTitle,
             message: form.dataset.scConfirmMessage,
-            confirm: form.dataset.scConfirmOk,
-            cancel: form.dataset.scConfirmCancel,
+            confirm: form.dataset.pkConfirmOk,
+            cancel: form.dataset.pkConfirmCancel,
         }).then((ok) => {
             if (ok) {
                 form.dataset.scDashConfirmed = "1";

@@ -9,8 +9,9 @@
  * field: nothing is focused.
  */
 
-// Clinic selector, P3 replaces with a generic data-pk-* hook.
-export const PICKER_INPUT_SELECTOR = ".o_sc_picker_input";
+// Task 5198 (P3a): a field the consumer marks data-pk-focus-skip (e.g. a
+// picker's search box) never takes the focus.
+const FOCUS_SKIP = "[data-pk-focus-skip]";
 
 const TEXT_FIELD = [
     "textarea",
@@ -23,7 +24,7 @@ const TEXT_FIELD = [
     'input[type="url"]',
 ]
     // Task 1648: a picker's search box is a picker, not a text field.
-    .map((selector) => `${selector}:not([disabled]):not([readonly]):not(${PICKER_INPUT_SELECTOR})`)
+    .map((selector) => `${selector}:not([disabled]):not([readonly]):not(${FOCUS_SKIP})`)
     .join(", ");
 
 export function isCoarsePointer() {
