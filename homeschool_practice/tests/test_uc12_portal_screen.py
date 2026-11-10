@@ -23,8 +23,46 @@ Acceptance criteria
 7. Rendering is checked by HttpCase tests; real touch behaviour is checked by hand on
    the iPad before release (noted in the review artifact).
 """
-from odoo.addons.homeschool.tests.common import HomeschoolCase
+import json
 
+from odoo.tests import tagged
 
-class TestPortalScreen(HomeschoolCase):
-    pass
+from .common import PracticeHttpCase
+
+@tagged("post_install", "-at_install")
+class TestPortalScreen(PracticeHttpCase):
+
+    def test_page_renders_touch_first(self):
+        self.authenticate("hs_learner", "hs_learner")
+        r = self.url_open("/my/homeschool/practice")
+        self.assertEqual(r.status_code, 200)
+        html = r.text
+        self.assertIn('user-scalable=no', html)
+        self.assertIn('rel="manifest"', html)
+        self.assertIn('data-handedness="right"', html)
+        self.assertNotIn("<input", html)
+        js = self.url_open("/homeschool_practice/static/src/js/practice.js").text
+        self.assertNotIn("<input", js)
+        self.assertNotIn("setInterval", js)  # no clock anywhere
+        self.assertIn("pointerdown", js)
+        css = self.url_open("/homeschool_practice/static/src/css/practice.css").text
+        self.assertIn("--tap: 72px", css)
+
+    def test_left_handed(self):
+        self.student.practice_handedness = "left"
+        self.authenticate("hs_learner", "hs_learner")
+        self.assertIn('data-handedness="left"', self.url_open("/my/homeschool/practice").text)
+
+    def test_manifest(self):
+        r = self.url_open("/my/homeschool/practice/manifest.webmanifest")
+        body = json.loads(r.text)
+        self.assertEqual(body["display"], "standalone")
+        self.assertEqual(body["start_url"], "/my/homeschool/practice")
+
+    def test_only_the_learner(self):
+        self.authenticate("hs_teacher", "hs_teacher")
+        self.assertEqual(self.url_open("/my/homeschool/practice").status_code, 403)
+
+    def test_link_on_portal_home(self):
+        self.authenticate("hs_learner", "hs_learner")
+        self.assertIn("/my/homeschool/practice", self.url_open("/my/homeschool").text)

@@ -56,36 +56,40 @@ class PracticeDeck(models.Model):
         Item = self.env["homeschool.practice.item"]
         existing = set(self.item_ids.with_context(active_test=False).mapped("key"))
         for a in tables:
-            name = self.env._("Table of %(n)s", n=a)
-            unit = self.unit_ids.filtered(lambda u, n=name: u.name == n)[:1]
+            unit = self.unit_ids.filtered(lambda u, a=a: u.sequence == a)[:1]
             if not unit:
-                unit = Unit.create({
-                    "deck_id": self.id, "name": name, "sequence": a,
-                    "intro": self.env._(
-                        "%(a)s × 3 means 3 groups of %(a)s: %(a)s + %(a)s + %(a)s = %(p)s. "
-                        "If you know %(a)s × 2, add one more %(a)s.", a=a, p=a * 3),
+                unit = Unit.create({"deck_id": self.id, "sequence": a, "name": "%s" % a})
+                self._translate_all(unit, lambda env, a=a: {
+                    "name": env._("Table of %(n)s", n=a),
+                    "intro": env._("%(a)s × 3 means 3 groups of %(a)s: %(a)s + %(a)s + %(a)s = %(p)s. "
+                                   "If you know %(a)s × 2, add one more %(a)s.", a=a, p=a * 3),
                 })
-            vals = []
             for b in range(0, upto + 1):
                 key = "%sx%s" % (a, b)
                 if key in existing:
                     continue
-                vals.append({
+                item = Item.create({
                     "unit_id": unit.id, "key": key, "step": b,
                     "prompt": "%s × %s" % (a, b), "answer": str(a * b), "answer_mode": "keypad",
-                    "hint": self._multiplication_hint(a, b),
                     "calibration": b in (0, 1, 10) or a in (0, 1, 10),
                 })
-            Item.create(vals)
+                self._translate_all(item, lambda env, a=a, b=b: {"hint": self._multiplication_hint(env, a, b)})
         return True
 
-    def _multiplication_hint(self, a, b):
+    def _translate_all(self, record, values):
+        """Write ``values(env)`` in every active language (the generated texts are translatable)."""
+        langs = [code for code, _name in self.env["res.lang"].get_installed()]
+        for lang in ["en_US"] + [l for l in langs if l != "en_US"]:
+            rec = record.with_context(lang=lang)
+            rec.write(values(rec.env))
+
+    @staticmethod
+    def _multiplication_hint(env, a, b):
         if b == 0 or a == 0:
-            return self.env._("Zero groups, or groups of zero: always 0.")
+            return env._("Zero groups, or groups of zero: always 0.")
         if b == 1:
-            return self.env._("One group of %(a)s is %(a)s.", a=a)
-        return self.env._(
-            "You know %(a)s × %(c)s = %(p)s… add one more %(a)s.", a=a, c=b - 1, p=a * (b - 1))
+            return env._("One group of %(a)s is %(a)s.", a=a)
+        return env._("You know %(a)s × %(c)s = %(p)s… add one more %(a)s.", a=a, c=b - 1, p=a * (b - 1))
 
     def _generate_choice_cards(self, unit, cards):
         """``cards``: list of ``(key, prompt, [(label, correct), …], hint)``; options keep their order."""

@@ -13,8 +13,9 @@ Acceptance criteria
    (same ``client_uuid``) is stored once.
 3. Latencies above a sanity bound (default 120 s: he walked away) are kept but flagged
    ``outlier`` and ignored by mastery (UC-05).
-4. The timing fields are restricted to the Homeschool manager group (field ``groups``);
-   reading them as a portal user raises AccessError (see also UC-11).
+4. The timing fields are for educators only: managers and the resource users attached
+   to the student read attempts; the learner himself cannot read attempts at all
+   (AccessError) and the portal API never returns a timing (UC-11).
 """
 from odoo import fields
 from odoo.exceptions import AccessError, UserError

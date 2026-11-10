@@ -1,0 +1,1960 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* homeschool_practice
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-10 15:20+0000\n"
+"PO-Revision-Date: 2026-11-10 15:20+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr_CA\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid ""
+"%(a)s × 3 means 3 groups of %(a)s: %(a)s + %(a)s + %(a)s = %(p)s. If you "
+"know %(a)s × 2, add one more %(a)s."
+msgstr ""
+"%(a)s × 3, c’est 3 groupes de %(a)s : %(a)s + %(a)s + %(a)s = %(p)s. Si tu "
+"connais %(a)s × 2, ajoute encore un %(a)s."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/reward.py:0
+msgid "%(name)s has %(bal)s %(unit)s in the bank; %(amt)s cannot be used."
+msgstr ""
+"%(name)s a %(bal)s %(unit)s en banque ; on ne peut pas en utiliser %(amt)s."
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_xp_1000
+msgid "1,000 XP"
+msgstr "1 000 XP"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_perfect_10
+msgid "10 perfect sessions"
+msgstr "10 séances parfaites"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_sessions_10
+msgid "10 sessions"
+msgstr "10 séances"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_xp_100
+msgid "100 XP"
+msgstr "100 XP"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_sessions_100
+msgid "100 sessions"
+msgstr "100 séances"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_goals_20
+msgid "20 daily goals"
+msgstr "20 objectifs du jour"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_goals_5
+msgid "5 daily goals"
+msgstr "5 objectifs du jour"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_xp_5000
+msgid "5,000 XP"
+msgstr "5 000 XP"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_goals_50
+msgid "50 daily goals"
+msgstr "50 objectifs du jour"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_sessions_50
+msgid "50 sessions"
+msgstr "50 séances"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_xp_500
+msgid "500 XP"
+msgstr "500 XP"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid ""
+"A choices item needs at least two choices and exactly one correct (%(key)s)."
+msgstr ""
+"Une question à choix demande au moins deux choix, dont un seul bon "
+"(%(key)s)."
+
+#. module: homeschool_practice
+#: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_practice_goal_achievement_one_per_period
+msgid "A goal is reached once per period."
+msgstr "Un objectif est atteint une seule fois par période."
+
+#. module: homeschool_practice
+#: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_practice_goal_target_positive
+msgid "A goal target is positive."
+msgstr "La cible d’un objectif est positive."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "A hint"
+msgstr "Un indice"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "A keypad answer is digits only (%(key)s)."
+msgstr "Une réponse au pavé numérique ne contient que des chiffres (%(key)s)."
+
+#. module: homeschool_practice
+#: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_practice_quest_one_per_template_day
+msgid "A quest template is drawn at most once a day."
+msgstr "Un modèle de quête est tiré au plus une fois par jour."
+
+#. module: homeschool_practice
+#: model:homeschool.practice.quest.template,name:homeschool_practice.quest_review_session
+msgid "A review session"
+msgstr "Une séance de révision"
+
+#. module: homeschool_practice
+#: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_reward_rule_amount_positive
+msgid "A reward amount is positive."
+msgstr "Le montant d’une récompense est positif."
+
+#. module: homeschool_practice
+#: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_practice_deck_session_size_positive
+msgid "A session needs at least one item."
+msgstr "Une séance compte au moins une question."
+
+#. module: homeschool_practice
+#: model:homeschool.practice.quest.template,name:homeschool_practice.quest_unit_session
+msgid "A session on {unit}"
+msgstr "Une séance sur la {unit}"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.quest.template,name:homeschool_practice.quest_perfect
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_quest_template__kind__perfect
+msgid "A session without a miss"
+msgstr "Une séance sans erreur"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_badge_template__kind__unit_proficiency
+msgid "A unit reaches a proficiency level (%)"
+msgstr "Une unité atteint un niveau de maîtrise (%)"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/session.py:0
+msgid "A unit session needs a unit."
+msgstr "Une séance d’unité demande une unité."
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_session__state__abandoned
+msgid "Abandoned"
+msgstr "Abandonnée"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal_achievement__achieved_at
+msgid "Achieved At"
+msgstr "Atteint le"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__active
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__active
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal__active
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__active
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest_template__active
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__active
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__active
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_type__active
+msgid "Active"
+msgstr "Actif"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_res_company__practice_timing_margin_ms
+msgid "Added to the learner's calibration median to get his threshold."
+msgstr ""
+"Ajoutée à la médiane de calibration de l’élève pour obtenir son seuil."
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_xp__reason__adjustment
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_reward_ledger__kind__adjustment
+msgid "Adjustment"
+msgstr "Ajustement"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Almost!"
+msgstr "Presque !"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_xp__amount
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__amount
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_redeem_wizard__amount
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__amount
+msgid "Amount"
+msgstr "Montant"
+
+#. module: homeschool_practice
+#: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_practice_attempt_client_uuid_unique
+msgid "An attempt is stored once."
+msgstr "Une réponse est enregistrée une seule fois."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_badge_template__icon
+msgid "An emoji or a short symbol."
+msgstr "Un émoji ou un court symbole."
+
+#. module: homeschool_practice
+#: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_practice_item_key_unique
+msgid "An item key is unique inside its deck."
+msgstr "La clé d’une question est unique dans son paquet."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__answer
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_xp__reason__answer
+msgid "Answer"
+msgstr "Réponse"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__answer_mode
+msgid "Answer Mode"
+msgstr "Mode de réponse"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.quest.template,name:homeschool_practice.quest_answers
+msgid "Answer {target} questions"
+msgstr "Réponds à {target} questions"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_quest_template__kind__answers
+msgid "Answers given"
+msgstr "Réponses données"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_append_only
+msgid "Append-only ledger"
+msgstr "Registre en ajout seulement"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_xp__source__homeschool_practice_attempt
+msgid "Attempt"
+msgstr "Réponse"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__attempt_ids
+#: model:ir.ui.menu,name:homeschool_practice.menu_practice_attempts
+msgid "Attempts"
+msgstr "Réponses"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_res_company__practice_outlier_ms
+msgid ""
+"Attempts slower than this (he walked away) are kept but ignored by mastery."
+msgstr ""
+"Les réponses plus lentes que ceci (il s’est absenté) sont gardées, mais "
+"ignorées pour la maîtrise."
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_mastery__state__automatic
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_mastery_search
+msgid "Automatic"
+msgstr "Automatisé"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__automatic_since
+msgid "Automatic Since"
+msgstr "Automatisé depuis"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_res_company__practice_timing_fallback_ms
+msgid "Automaticity fallback threshold (ms)"
+msgstr "Seuil d’automatisation par défaut (ms)"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_res_company__practice_timing_margin_ms
+msgid "Automaticity margin (ms)"
+msgstr "Marge d’automatisation (ms)"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__practice_threshold_override_ms
+msgid "Automaticity threshold override (ms)"
+msgstr "Seuil d’automatisation imposé (ms)"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Back"
+msgstr "Retour"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_badge_template
+msgid "Badge"
+msgstr "Badge"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_badge
+msgid "Badge earned"
+msgstr "Badge obtenu"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+#: model:ir.actions.act_window,name:homeschool_practice.action_badge_template
+#: model:ir.ui.menu,name:homeschool_practice.menu_practice_badges
+msgid "Badges"
+msgstr "Badges"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_balance__balance
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_redeem_wizard__balance
+msgid "Balance"
+msgstr "Solde"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_xp_day_50
+msgid "Big day: 50 XP"
+msgstr "Grosse journée : 50 XP"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__box
+msgid "Box"
+msgstr "Boîte"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__box_intervals
+msgid "Box Intervals"
+msgstr "Intervalles des boîtes"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Box intervals are five whole numbers of days, e.g. 0,1,3,7,14."
+msgstr ""
+"Les intervalles sont cinq nombres entiers de jours, p. ex. 0,1,3,7,14."
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_unit_bronze
+msgid "Bronze"
+msgstr "Bronze"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__calibration
+msgid "Calibration"
+msgstr "Calibration"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_redeem_wizard_form
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_unlock_wizard_form
+msgid "Cancel"
+msgstr "Annuler"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Check"
+msgstr "Valider"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__choice_ids
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_item__answer_mode__choices
+msgid "Choices"
+msgstr "Choix"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__client_uuid
+msgid "Client Uuid"
+msgstr "UUID de l’appareil"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_res_company
+msgid "Companies"
+msgstr "Sociétés"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal_achievement__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery_history__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest_template__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_xp__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_balance__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__company_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_type__company_id
+msgid "Company"
+msgstr "Société"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Connection lost: your answer is saved, retrying…"
+msgstr "Connexion perdue : ta réponse est gardée, on réessaie…"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Continue"
+msgstr "Continuer"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__correct
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_choice__correct
+msgid "Correct"
+msgstr "Bonne réponse"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__correct_count
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__correct_count
+msgid "Correct Count"
+msgstr "Bonnes réponses"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_xp__reason__correct
+msgid "Correct answer"
+msgstr "Bonne réponse"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_quest_template__kind__no_hint
+msgid "Correct answers without a hint"
+msgstr "Bonnes réponses sans indice"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_choice__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal_achievement__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery_history__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest_template__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unlock_wizard__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_xp__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_redeem_wizard__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__create_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_type__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_choice__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal_achievement__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery_history__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest_template__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unlock_wizard__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_xp__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_redeem_wizard__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__create_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_type__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__curriculum_item_ids
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__curriculum_item_ids
+msgid "Curriculum items"
+msgstr "Éléments du programme"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Daily goal reached!"
+msgstr "Objectif du jour atteint !"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_badge_template__kind__goals_total
+msgid "Daily goals reached"
+msgstr "Objectifs du jour atteints"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_quest
+msgid "Daily quest"
+msgstr "Quête du jour"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery_history__date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_xp__date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__date
+msgid "Date"
+msgstr "Date"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal__date_from
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__date_from
+msgid "Date From"
+msgstr "À partir du"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__day
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_xp__day
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_goal__period__day
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_goal_achievement__period__day
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_reward_rule__goal_period__day
+msgid "Day"
+msgstr "Jour"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__box_intervals
+msgid "Days before an item comes back, for boxes 1 to 5 (spaced repetition)."
+msgstr ""
+"Jours avant le retour d’une question, pour les boîtes 1 à 5 (répétition "
+"espacée)."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__deck_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__deck_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__deck_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__deck_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__deck_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__deck_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__deck_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__deck_id
+msgid "Deck"
+msgstr "Paquet"
+
+#. module: homeschool_practice
+#: model:ir.ui.menu,name:homeschool_practice.menu_practice_decks
+msgid "Decks"
+msgstr "Paquets"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_mastery__state__derived
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_mastery_search
+msgid "Derived"
+msgstr "Dérivé"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__description
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__description
+msgid "Description"
+msgstr "Description"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__device
+msgid "Device"
+msgstr "Appareil"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_append_only__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_choice__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal_achievement__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery_history__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest_template__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unlock_wizard__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_xp__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_balance__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_redeem_wizard__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_type__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__display_name
+#: model:ir.model.fields,field_description:homeschool_practice.field_res_company__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__done
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_session__state__done
+msgid "Done"
+msgstr "Terminée"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__done_at
+msgid "Done At"
+msgstr "Terminée le"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Done!"
+msgstr "Terminé !"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_quest_template__weight
+msgid "Draw frequency in the pool."
+msgstr "Fréquence de tirage."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__due_on
+msgid "Due On"
+msgstr "À revoir le"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_reward_ledger__kind__earned
+msgid "Earned"
+msgstr "Gagné"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge__earned_at
+msgid "Earned At"
+msgstr "Obtenu le"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_badge_template__repeatable
+msgid "Earned again each time (e.g. every perfect session)."
+msgstr "Obtenu de nouveau chaque fois (p. ex. à chaque séance parfaite)."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_badge_template__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_quest_template__company_id
+msgid "Empty: available to every family."
+msgstr "Vide : offert à toutes les familles."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__ended_at
+msgid "Ended At"
+msgstr "Terminée à"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Erase"
+msgstr "Effacer"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_res_company__practice_xp_correct
+msgid "Extra XP per correct answer"
+msgstr "XP de plus par bonne réponse"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_quest_template__kind__review_session
+msgid "Finish a review session"
+msgstr "Terminer une séance de révision"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_quest_template__kind__unit_session
+msgid "Finish a session on the unit that needs it most"
+msgstr "Terminer une séance sur l’unité qui en a le plus besoin"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__first_served
+msgid "First Served"
+msgstr "Déjà présentée"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_perfect_1
+msgid "First perfect session"
+msgstr "Première séance parfaite"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__first_touch_ms
+msgid "First touch (ms)"
+msgstr "Premier toucher (ms)"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Free practice"
+msgstr "Pratique libre"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery_history__from_state
+msgid "From State"
+msgstr "État avant"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__frontend
+msgid "Frontend"
+msgstr "Interface"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__given
+msgid "Given"
+msgstr "Donnée"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal_achievement__goal_id
+msgid "Goal"
+msgstr "Objectif"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__goal_period
+msgid "Goal Period"
+msgstr "Période de l’objectif"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_goal_achievement
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_reward_ledger__source__homeschool_practice_goal_achievement
+msgid "Goal reached"
+msgstr "Objectif atteint"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Goals"
+msgstr "Objectifs"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_unit_gold
+msgid "Gold"
+msgstr "Or"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Got it!"
+msgstr "Compris !"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Great!"
+msgstr "Bravo !"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,description:homeschool_practice.badge_unit_bronze
+msgid "Half of the unit is solid"
+msgstr "La moitié de l’unité est solide"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__hint
+msgid "Hint"
+msgstr "Indice"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__hint_used
+msgid "Hint Used"
+msgstr "Indice utilisé"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__history_ids
+msgid "History"
+msgstr "Historique"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_student
+msgid "Home-schooled student"
+msgstr "Élève à la maison"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__intro_size
+msgid ""
+"How many items of a unit (in step order) are introduced when it is unlocked."
+msgstr ""
+"Nombre de questions d’une unité (dans l’ordre des étapes) présentées au "
+"déverrouillage."
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_xp_day_100
+msgid "Huge day: 100 XP"
+msgstr "Énorme journée : 100 XP"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_append_only__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_choice__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal_achievement__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery_history__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest_template__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unlock_wizard__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_xp__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_balance__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_redeem_wizard__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_type__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__id
+#: model:ir.model.fields,field_description:homeschool_practice.field_res_company__id
+msgid "ID"
+msgstr "ID"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__icon
+msgid "Icon"
+msgstr "Icône"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "In the bank"
+msgstr "En banque"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_session__position
+msgid "Index of the item being served."
+msgstr "Rang de la question en cours."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__input_type
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__input_type
+msgid "Input Type"
+msgstr "Type d’entrée"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__intro
+msgid "Intro"
+msgstr "Introduction"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__item_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_choice__item_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__item_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery_history__item_id
+msgid "Item"
+msgstr "Question"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__item_count
+msgid "Item Count"
+msgstr "Nombre de questions"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_mastery
+msgid "Item mastery (educators only)"
+msgstr "Maîtrise d’une question (éducateurs seulement)"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_xp__reason__automatic
+msgid "Item secure"
+msgstr "Question solide"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__item_ids
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__item_ids
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_form
+msgid "Items"
+msgstr "Questions"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__intro_size
+msgid "Items introduced at unlock"
+msgstr "Questions présentées au déverrouillage"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__session_size
+msgid "Items per session (a number of items, never a duration)."
+msgstr "Questions par séance (un nombre de questions, jamais une durée)."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__key
+msgid "Key"
+msgstr "Clé"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_session__input_type__keyboard
+msgid "Keyboard"
+msgstr "Clavier"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_item__answer_mode__keypad
+msgid "Keypad"
+msgstr "Pavé numérique"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__kind
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__kind
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest_template__kind
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__kind
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__kind
+msgid "Kind"
+msgstr "Type"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_choice__label
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__label
+msgid "Label"
+msgstr "Libellé"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__last_seen
+msgid "Last Seen"
+msgstr "Vue la dernière fois"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_choice__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal_achievement__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery_history__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest_template__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unlock_wizard__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_xp__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_redeem_wizard__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__write_uid
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_type__write_uid
+msgid "Last Updated by"
+msgstr "Dernière mise à jour par"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_choice__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal_achievement__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery_history__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest_template__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unlock_wizard__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_xp__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_redeem_wizard__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__write_date
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_type__write_date
+msgid "Last Updated on"
+msgstr "Dernière mise à jour le"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__access_ids
+msgid "Learner access"
+msgstr "Accès de l’élève"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_student__practice_threshold_override_ms
+msgid "Leave empty to use the calibration median + the family's margin."
+msgstr ""
+"Laisser vide pour utiliser la médiane de calibration + la marge de la "
+"famille."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/xp.py:0
+msgid "Ledger lines are never changed; record a new line instead."
+msgstr ""
+"On ne modifie jamais une ligne du registre ; enregistrez plutôt une nouvelle"
+" ligne."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/xp.py:0
+msgid "Ledger lines are never deleted; record a new line instead."
+msgstr ""
+"On ne supprime jamais une ligne du registre ; enregistrez plutôt une "
+"nouvelle ligne."
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_student__practice_handedness__left
+msgid "Left-handed"
+msgstr "Gaucher"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__practice_level
+msgid "Level"
+msgstr "Niveau"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_level_10
+msgid "Level 10"
+msgstr "Niveau 10"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_level_5
+msgid "Level 5"
+msgstr "Niveau 5"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_res_company__practice_level_base
+msgid "Level curve base"
+msgstr "Base de la courbe des niveaux"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_res_company__practice_level_base
+msgid ""
+"Level n needs base × (n − 1) × n / 2 XP in total: level 2 at 50, 3 at 150, 4"
+" at 300…"
+msgstr ""
+"Le niveau n demande base × (n − 1) × n / 2 XP au total : niveau 2 à 50, 3 à "
+"150, 4 à 300…"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_student_form_practice
+msgid "Lock"
+msgstr "Verrouiller"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_unit_access__state__locked
+msgid "Locked"
+msgstr "Verrouillée"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery_history__mastery_id
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_xp__source__homeschool_practice_mastery
+#: model:ir.ui.menu,name:homeschool_practice.menu_practice_mastery
+msgid "Mastery"
+msgstr "Maîtrise"
+
+#. module: homeschool_practice
+#: model:ir.actions.act_window,name:homeschool_practice.action_mastery
+msgid "Mastery (educators)"
+msgstr "Maîtrise (éducateurs)"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_mastery_history
+msgid "Mastery change (educators only)"
+msgstr "Changement de maîtrise (éducateurs seulement)"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__max_new_per_session
+msgid "Max New Per Session"
+msgstr "Nouvelles questions par séance (max.)"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__miss_count
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__miss_count
+msgid "Miss Count"
+msgstr "Erreurs"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_goal__period__month
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_goal_achievement__period__month
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_reward_rule__goal_period__month
+msgid "Month"
+msgstr "Mois"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Monthly goal reached!"
+msgstr "Objectif du mois atteint !"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,description:homeschool_practice.badge_unit_silver
+msgid "Most of the unit is solid"
+msgstr "La plus grande partie de l’unité est solide"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_session__input_type__mouse
+msgid "Mouse"
+msgstr "Souris"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_badge_template__kind__xp_day
+msgid "N XP in one day"
+msgstr "N XP en une journée"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest_template__name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__name
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_type__name
+msgid "Name"
+msgstr "Nom"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_item__calibration
+msgid ""
+"Needs no recall (× 0, × 1, × 10): used for the learner's timing baseline."
+msgstr ""
+"Ne demande pas de rappel (× 0, × 1, × 10) : sert de référence pour les temps"
+" de l’élève."
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_mastery__state__new
+msgid "New"
+msgstr "Nouveau"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "New badge!"
+msgstr "Nouveau badge !"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "New level!"
+msgstr "Nouveau niveau !"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__note
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_redeem_wizard__note
+msgid "Note"
+msgstr "Note"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Nothing to practice here yet."
+msgstr "Rien à pratiquer ici pour l’instant."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__client_ts
+msgid "On the device"
+msgstr "Sur l’appareil"
+
+#. module: homeschool_practice
+#: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_practice_unit_access_student_unit_unique
+msgid "One access row per learner and unit."
+msgstr "Une ligne d’accès par élève et par unité."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "One group of %(a)s is %(a)s."
+msgstr "Un groupe de %(a)s, c’est %(a)s."
+
+#. module: homeschool_practice
+#: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_practice_mastery_student_item_unique
+msgid "One mastery row per learner and item."
+msgstr "Une ligne de maîtrise par élève et par question."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/progress.py:0
+msgid "Only a parent (homeschool manager) unlocks or locks a unit."
+msgstr "Seul un parent (gestionnaire) déverrouille ou verrouille une unité."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/reward.py:0
+msgid "Only a parent records a reward used."
+msgstr "Seul un parent enregistre une récompense utilisée."
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_session__state__open
+msgid "Open"
+msgstr "En cours"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__outlier
+msgid "Outlier"
+msgstr "Hors norme"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_res_company__practice_outlier_ms
+msgid "Outlier bound (ms)"
+msgstr "Limite hors norme (ms)"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__perfect
+msgid "Perfect"
+msgstr "Parfaite"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal__period
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal_achievement__period
+msgid "Period"
+msgstr "Période"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal_achievement__period_start
+msgid "Period Start"
+msgstr "Début de la période"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_session__queue
+msgid "Planned item ids (engine state)."
+msgstr "Questions prévues (état du moteur)."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__position
+msgid "Position"
+msgstr "Position"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+#: model:ir.ui.menu,name:homeschool_practice.menu_practice
+#: model:ir.ui.menu,name:homeschool_practice.menu_practice_config
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_home_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_student_form_practice
+msgid "Practice"
+msgstr "Pratique"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__practice_handedness
+msgid "Practice Handedness"
+msgstr "Main dominante"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__practice_quests_per_day
+msgid "Practice Quests Per Day"
+msgstr "Quêtes par jour"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__practice_weekdays
+msgid "Practice Weekdays"
+msgstr "Jours de pratique"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_attempt
+msgid "Practice attempt"
+msgstr "Réponse de pratique"
+
+#. module: homeschool_practice
+#: model:ir.actions.act_window,name:homeschool_practice.action_attempt
+msgid "Practice attempts"
+msgstr "Réponses de pratique"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_choice
+msgid "Practice choice"
+msgstr "Choix de réponse"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_student__practice_weekdays
+msgid ""
+"Practice days (ISO weekdays, 1 = Monday): quests are drawn on these days "
+"only."
+msgstr ""
+"Jours de pratique (1 = lundi … 7 = dimanche) : les quêtes sont tirées ces "
+"jours-là seulement."
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_deck
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_form
+msgid "Practice deck"
+msgstr "Paquet de pratique"
+
+#. module: homeschool_practice
+#: model:ir.actions.act_window,name:homeschool_practice.action_deck
+msgid "Practice decks"
+msgstr "Paquets de pratique"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_goal
+msgid "Practice goal"
+msgstr "Objectif de pratique"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_item
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_item_form
+msgid "Practice item"
+msgstr "Question de pratique"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_session
+msgid "Practice session"
+msgstr "Séance de pratique"
+
+#. module: homeschool_practice
+#: model:ir.actions.act_window,name:homeschool_practice.action_session
+msgid "Practice sessions"
+msgstr "Séances de pratique"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_unit
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_unit_form
+msgid "Practice unit"
+msgstr "Unité de pratique"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__progress
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_student_form_practice
+msgid "Progress"
+msgstr "Progrès"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_item__step
+msgid "Progression order inside the unit (smaller first)."
+msgstr "Ordre de progression dans l’unité (les plus petits d’abord)."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__prompt
+msgid "Prompt"
+msgstr "Énoncé"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__quest_id
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_xp__reason__quest
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_xp__source__homeschool_practice_quest
+msgid "Quest"
+msgstr "Quête"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Quest complete!"
+msgstr "Quête réussie !"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_quest_template
+msgid "Quest template"
+msgstr "Modèle de quête"
+
+#. module: homeschool_practice
+#: model:ir.actions.act_window,name:homeschool_practice.action_quest_template
+#: model:ir.ui.menu,name:homeschool_practice.menu_practice_quests
+msgid "Quests"
+msgstr "Quêtes"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__queue
+msgid "Queue"
+msgstr "File"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_badge_template__kind__xp_total
+msgid "Reach N XP"
+msgstr "Atteindre N XP"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_badge_template__kind__level
+msgid "Reach level N"
+msgstr "Atteindre le niveau N"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_xp__reason
+msgid "Reason"
+msgstr "Raison"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__received_at
+msgid "Received At"
+msgstr "Reçue le"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_redeem_wizard_form
+msgid "Record"
+msgstr "Enregistrer"
+
+#. module: homeschool_practice
+#: model:ir.actions.act_window,name:homeschool_practice.action_redeem_wizard
+#: model:ir.model,name:homeschool_practice.model_homeschool_reward_redeem_wizard
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_redeem_wizard_form
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_student_form_practice
+msgid "Record a reward used"
+msgstr "Enregistrer une récompense utilisée"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__recorded_by
+msgid "Recorded By"
+msgstr "Enregistré par"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__repeatable
+msgid "Repeatable"
+msgstr "Répétable"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Rest day! No quests today. You can still practice for fun."
+msgstr ""
+"Jour de repos ! Pas de quête aujourd’hui. Tu peux quand même pratiquer pour "
+"le plaisir."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__retries
+msgid "Retries"
+msgstr "Reprises"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_session__kind__review
+msgid "Review"
+msgstr "Révision"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Reward"
+msgstr "Récompense"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_balance__reward_type_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__reward_type_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_redeem_wizard__reward_type_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__reward_type_id
+msgid "Reward Type"
+msgstr "Type de récompense"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_reward_balance
+msgid "Reward balance"
+msgstr "Solde des récompenses"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_reward_ledger
+msgid "Reward earned or spent"
+msgstr "Récompense gagnée ou utilisée"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__reward_rule_ids
+msgid "Reward rules"
+msgstr "Règles de récompense"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_reward_type
+msgid "Reward type"
+msgstr "Type de récompense"
+
+#. module: homeschool_practice
+#: model:ir.actions.act_window,name:homeschool_practice.action_reward_type
+#: model:ir.ui.menu,name:homeschool_practice.menu_practice_reward_types
+msgid "Reward types"
+msgstr "Types de récompense"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__reward_balance_ids
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_student_form_practice
+msgid "Rewards in the bank"
+msgstr "Récompenses en banque"
+
+#. module: homeschool_practice
+#: model:ir.actions.act_window,name:homeschool_practice.action_reward_ledger
+#: model:ir.ui.menu,name:homeschool_practice.menu_practice_ledger
+msgid "Rewards ledger"
+msgstr "Registre des récompenses"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_student__practice_handedness__right
+msgid "Right-handed"
+msgstr "Droitier"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__secure_ratio
+msgid "Secure Ratio"
+msgstr "Proportion solide"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge__seen
+msgid "Seen"
+msgstr "Vu"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_choice__sequence
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__sequence
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__sequence
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest_template__sequence
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit__sequence
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_type__sequence
+msgid "Sequence"
+msgstr "Séquence"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__session_id
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_xp__source__homeschool_practice_session
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_session_form
+msgid "Session"
+msgstr "Séance"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__session_size
+msgid "Session Size"
+msgstr "Taille de la séance"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_xp__reason__session_done
+msgid "Session finished"
+msgstr "Séance terminée"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Session finished!"
+msgstr "Séance terminée !"
+
+#. module: homeschool_practice
+#: model:ir.ui.menu,name:homeschool_practice.menu_practice_sessions
+msgid "Sessions"
+msgstr "Séances"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_badge_template__kind__sessions_total
+msgid "Sessions finished"
+msgstr "Séances terminées"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_badge_template__kind__perfect_session
+msgid "Sessions without a miss"
+msgstr "Séances sans erreur"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_student_form_practice
+msgid "Settings"
+msgstr "Réglages"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_reward_ledger__amount
+msgid "Signed: positive when earned, negative when used."
+msgstr "Signé : positif quand gagné, négatif quand utilisé."
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,name:homeschool_practice.badge_unit_silver
+msgid "Silver"
+msgstr "Argent"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Something new!"
+msgstr "Du nouveau !"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_xp__source
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__source
+msgid "Source"
+msgstr "Source"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_item__key
+msgid "Stable id inside the deck, e.g. 7x8."
+msgstr "Identifiant stable dans le paquet, p. ex. 7x8."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Start"
+msgstr "Commencer"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__started_at
+msgid "Started At"
+msgstr "Commencée à"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__state
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__state
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__state
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_mastery_search
+msgid "State"
+msgstr "État"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__step
+msgid "Step"
+msgstr "Étape"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__student_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge__student_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal__student_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal_achievement__student_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__student_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery_history__student_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__student_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__student_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__student_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unlock_wizard__student_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_xp__student_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_balance__student_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_ledger__student_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_redeem_wizard__student_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_rule__student_id
+msgid "Student"
+msgstr "Élève"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_attempt__submit_ms
+msgid "Submit (ms)"
+msgstr "Validation (ms)"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Table of %(n)s"
+msgstr "table de %(n)s"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_goal__target
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__target
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest_template__target
+msgid "Target"
+msgstr "Cible"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge__template_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__template_id
+msgid "Template"
+msgstr "Modèle"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/reward.py:0
+msgid "The amount used must be positive."
+msgstr "Le montant utilisé doit être positif."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "The answer is"
+msgstr "La réponse est"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__curriculum_item_ids
+msgid "The competencies this deck practices."
+msgstr "Les compétences que ce paquet fait pratiquer."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_attempt__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_badge__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_goal__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_goal_achievement__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_item__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_mastery__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_mastery_history__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_quest__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_session__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_unit__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_unit_access__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_xp__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_reward_ledger__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_reward_rule__company_id
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_reward_type__company_id
+msgid "The family this record belongs to."
+msgstr "La famille à qui appartient cet enregistrement."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_student__practice_handedness
+msgid "The lesson screen puts the keypad and the choices on this side."
+msgstr "L’écran de leçon met le pavé et les choix de ce côté."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__secure_ratio
+msgid ""
+"The next item of a unit is introduced when this share of the introduced "
+"items is in box 3 or more."
+msgstr ""
+"La question suivante d’une unité est présentée quand cette proportion des "
+"questions déjà présentées est en boîte 3 ou plus."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_item__hint
+msgid "The strategy shown after a miss."
+msgstr "La stratégie montrée après une erreur."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_unit_access__first_served
+msgid "The unit's intro has been shown."
+msgstr "L’introduction de l’unité a été montrée."
+
+#. module: homeschool_practice
+#: model:homeschool.practice.badge.template,description:homeschool_practice.badge_unit_gold
+msgid "The whole unit is solid"
+msgstr "Toute l’unité est solide"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_unit_form
+msgid "The worked example shown the first time"
+msgstr "L’exemple montré la première fois"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_unit__intro
+msgid "The worked example shown the first time the unit is served."
+msgstr "L’exemple montré la première fois que l’unité est présentée."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/session.py:0
+msgid "This is not the item being served."
+msgstr "Ce n’est pas la question en cours."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "This month"
+msgstr "Ce mois-ci"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/session.py:0
+msgid "This session is over."
+msgstr "Cette séance est terminée."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "This week"
+msgstr "Cette semaine"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__threshold
+msgid "Threshold"
+msgstr "Seuil"
+
+#. module: homeschool_practice
+#: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_practice_attempt_timings_positive
+msgid "Timings are positive."
+msgstr "Les temps sont positifs."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery_history__to_state
+msgid "To State"
+msgstr "État après"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Today"
+msgstr "Aujourd’hui"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Today's quests"
+msgstr "Les quêtes du jour"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_reward_ledger_list
+msgid "Total"
+msgstr "Total"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_session__input_type__touch
+msgid "Touch"
+msgstr "Tactile"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge__unit_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_badge_template__unit_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_item__unit_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_mastery__unit_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest__unit_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__unit_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__unit_id
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_reward_type__unit
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_session__kind__unit
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_mastery_search
+msgid "Unit"
+msgstr "Unité"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_unit_access
+msgid "Unit unlocked for a learner"
+msgstr "Unité déverrouillée pour un élève"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__unit_ids
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__practice_unit_access_ids
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_form
+msgid "Units"
+msgstr "Unités"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unlock_wizard__unit_ids
+msgid "Units taught"
+msgstr "Unités enseignées"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_student_form_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_unlock_wizard_form
+msgid "Unlock"
+msgstr "Déverrouiller"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_unlock_wizard
+msgid "Unlock practice units"
+msgstr "Déverrouiller des unités"
+
+#. module: homeschool_practice
+#: model:ir.actions.act_window,name:homeschool_practice.action_unlock_wizard
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_student_form_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_unlock_wizard_form
+msgid "Unlock units taught"
+msgstr "Déverrouiller les unités enseignées"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_unit_access__state__unlocked
+msgid "Unlocked"
+msgstr "Déverrouillée"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__unlocked_by
+msgid "Unlocked By"
+msgstr "Déverrouillée par"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_unit_access__unlocked_on
+msgid "Unlocked On"
+msgstr "Déverrouillée le"
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_reward_ledger__kind__redeemed
+msgid "Used"
+msgstr "Utilisé"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_res_company__practice_timing_fallback_ms
+msgid "Used until the learner has 10 calibration attempts on the input type."
+msgstr ""
+"Utilisé jusqu’à ce que l’élève ait 10 réponses de calibration sur ce type "
+"d’entrée."
+
+#. module: homeschool_practice
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_goal__period__week
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_goal_achievement__period__week
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_reward_rule__goal_period__week
+msgid "Week"
+msgstr "Semaine"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Weekly goal reached!"
+msgstr "Objectif de la semaine atteint !"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest_template__weight
+msgid "Weight"
+msgstr "Poids"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Well done for practicing!"
+msgstr "Bravo d’avoir pratiqué !"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_reward_rule
+msgid "What a goal pays"
+msgstr "Ce que rapporte un objectif"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_student_form_practice
+msgid "What goals pay"
+msgstr "Ce que rapportent les objectifs"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_quest_template__name
+msgid "What the learner reads. May use {unit} and {target}."
+msgstr "Ce que l’élève lit. Peut contenir {unit} et {target}."
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_form
+msgid "What this deck practices"
+msgstr "Ce que ce paquet fait pratiquer"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_student__practice_xp
+msgid "XP"
+msgstr "XP"
+
+#. module: homeschool_practice
+#: model:ir.model,name:homeschool_practice.model_homeschool_practice_xp
+msgid "XP earned"
+msgstr "XP gagnés"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_res_company__practice_xp_answer
+msgid "XP per answer"
+msgstr "XP par réponse"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_res_company__practice_xp_session
+msgid "XP per finished session"
+msgstr "XP par séance terminée"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_res_company__practice_xp_secure
+msgid "XP when an item becomes automatic"
+msgstr "XP quand une question devient automatisée"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_quest_template__xp
+msgid "Xp"
+msgstr "XP"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "You know %(a)s × %(c)s = %(p)s… add one more %(a)s."
+msgstr "Tu sais que %(a)s × %(c)s = %(p)s… ajoute encore un %(a)s."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Zero groups, or groups of zero: always 0."
+msgstr "Zéro groupe, ou des groupes de zéro : toujours 0."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "answers"
+msgstr "réponses"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "correct"
+msgstr "bonnes"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_reward_type__name
+msgid "e.g. Gaming time, Credit toward games"
+msgstr "p. ex. Temps de jeu, Crédit pour des jeux"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_reward_type__unit
+msgid "e.g. min, $"
+msgstr "p. ex. min, $"
+
+#. module: homeschool_practice
+#: model:homeschool.practice.quest.template,name:homeschool_practice.quest_no_hint
+msgid "{target} correct answers without a hint"
+msgstr "{target} bonnes réponses sans indice"
