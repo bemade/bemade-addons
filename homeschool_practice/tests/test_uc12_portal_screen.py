@@ -14,13 +14,16 @@ Acceptance criteria
    on-screen number pad (0–9, erase, « Valider »); choices items use large buttons. No
    clock, countdown or speed anywhere; no item-level « je le sais » label.
 4. Celebration on every finished session, quest, goal, level and badge (praise for the
-   work done, not for speed or for « knowing »).
+   work done, not for speed or for « knowing »). Celebrations earned during a lesson are
+   held and shown at the end of the lesson (or when he leaves it), never mid-lesson.
 5. Touch targets ≥ 64 px; zoom gestures disabled on the page; a web-app manifest so it
    can be added to the iPad home screen and open full screen. Target: Safari on
    iPadOS 17 and later.
 6. Answers not yet sent (no network) are queued on the device and sent in order when
    the connection returns (each with its ``client_uuid``).
-7. Rendering is checked by HttpCase tests; real touch behaviour is checked by hand on
+7. The script and stylesheet URLs carry a hash of their content, so a code change
+   reaches an iPad running it from the home screen without a version bump.
+8. Rendering is checked by HttpCase tests; real touch behaviour is checked by hand on
    the iPad before release (noted in the review artifact).
 """
 import json
@@ -50,6 +53,22 @@ class TestPortalScreen(PracticeHttpCase):
         self.assertIn("pointerdown", js)
         css = self.url_open("/homeschool_practice/static/src/css/practice.css").text
         self.assertIn("--tap: 72px", css)
+
+    def test_celebrations_held_to_end_of_lesson(self):
+        js = self.url_open("/homeschool_practice/static/src/js/practice.js").text
+        feedback = js[js.index("function feedback("):js.index("function hold(")]
+        self.assertNotIn("celebrate(", feedback)
+        self.assertIn("hold(eventsToCelebrations(res))", feedback)
+        self.assertIn("release()", js[js.index("function summary("):js.index("function finish(")])
+        self.assertIn("release()", js[js.index("function quit("):])
+
+    def test_asset_version_follows_content(self):
+        from odoo.addons.homeschool_practice.controllers.portal import asset_version
+        self.authenticate("hs_learner", "hs_learner")
+        html = self.url_open("/my/homeschool/practice").text
+        self.assertIn("practice.js?v=%s" % asset_version(), html)
+        self.assertIn("practice.css?v=%s" % asset_version(), html)
+        self.assertRegex(asset_version(), r"^[0-9a-f]{12}$")
 
     def test_left_handed(self):
         self.student.practice_handedness = "left"

@@ -1,10 +1,28 @@
 # -*- coding: utf-8 -*-
+import hashlib
 import json
+import os
 
 from werkzeug.exceptions import Forbidden
 
 from odoo import http
 from odoo.http import request
+
+
+_STATIC = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "src")
+_asset_version = None
+
+
+def asset_version():
+    """Hash of the lesson script and stylesheet, so a code change reaches a home-screen iPad without a version bump."""
+    global _asset_version
+    if _asset_version is None:
+        digest = hashlib.sha1()
+        for name in ("js/practice.js", "css/practice.css"):
+            with open(os.path.join(_STATIC, name), "rb") as f:
+                digest.update(f.read())
+        _asset_version = digest.hexdigest()[:12]
+    return _asset_version
 
 
 class PracticePortal(http.Controller):
@@ -16,8 +34,7 @@ class PracticePortal(http.Controller):
             raise Forbidden()
         html = request.env["ir.qweb"]._render("homeschool_practice.practice_app", {
             "student": student, "lang": (request.env.user.lang or "fr_CA").replace("_", "-"),
-            "asset_version": request.env["ir.module.module"].sudo().search(
-                [("name", "=", "homeschool_practice")], limit=1).latest_version or "1",
+            "asset_version": asset_version(),
         })
         return request.make_response("<!DOCTYPE html>\n" + str(html), headers=[("Content-Type", "text/html; charset=utf-8")])
 

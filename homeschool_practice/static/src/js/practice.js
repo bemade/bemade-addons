@@ -137,6 +137,7 @@
         rpc("/session/start", params).then(function (res) {
             state.busy = false;
             state.session = res.session_id;
+            state.held = [];
             if (!res.item) { finish(); return; }
             showItem(res.item);
         }, function () { state.busy = false; });
@@ -231,10 +232,10 @@
         }
         var fb = document.getElementById("hp-feedback");
         var xp = res.xp ? '<span class="hp-xp">+' + res.xp + " " + esc(L.xp) + "</span>" : "";
+        // Celebrations earned mid-lesson are held for the end of the lesson: nothing interrupts the practice.
+        hold(eventsToCelebrations(res));
         var next = function () {
-            celebrate(eventsToCelebrations(res)).then(function () {
-                if (res.done) { summary(res.summary); } else { showItem(res.next); }
-            });
+            if (res.done) { summary(res.summary); } else { showItem(res.next); }
         };
         if (res.correct) {
             fb.className = "hp-feedback is-good";
@@ -247,6 +248,17 @@
                 '<button class="hp-big" id="hp-next">' + esc(L.continue) + "</button>";
             document.getElementById("hp-next").addEventListener("click", next);
         }
+    }
+    function hold(list) {
+        state.held = state.held || [];
+        list.forEach(function (c) {
+            var dup = state.held.some(function (o) { return o.title === c.title && o.text === c.text; });
+            if (!dup) { state.held.push(c); }
+        });
+    }
+    function release() {
+        var list = state.held || []; state.held = [];
+        return celebrate(list);
     }
     function celebrate(list) {
         if (!list.length) { return Promise.resolve(); }
@@ -272,14 +284,16 @@
             "<div><b>" + (s.correct || 0) + "</b><span>" + esc(L.correct) + "</span></div>" +
             "<div><b>+" + (s.xp_session || 0) + "</b><span>" + esc(L.xp) + "</span></div></div>" +
             '<button class="hp-big" id="hp-home">' + esc(L.home) + "</button></div>");
-        celebrate(eventsToCelebrations(s));
+        hold(eventsToCelebrations(s));
+        release();
         document.getElementById("hp-home").addEventListener("click", loadHome);
     }
     function finish() {
         rpc("/session/finish", { session_id: state.session }).then(function (res) { summary(res.summary); }, loadHome);
     }
     function quit() {
-        if (state.session) { rpc("/session/finish", { session_id: state.session }).then(loadHome, loadHome); } else { loadHome(); }
+        var home = function () { release().then(loadHome); };
+        if (state.session) { rpc("/session/finish", { session_id: state.session }).then(home, home); } else { home(); }
     }
 
     // ------------------------------------------------------------------ boot
