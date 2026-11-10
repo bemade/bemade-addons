@@ -245,7 +245,7 @@ nothing; PDF reports never carry it.
         # switch) — components, layout, then the pages that t-call them.
         "views/sc_components.xml",
         "views/sc_app_layout.xml",
-        "views/sc_instance_banner.xml",
+        "views/instance_banner.xml",
         "views/sc_app_search.xml",
         "views/sc_app_player_add.xml",
         "views/sc_app_pages.xml",

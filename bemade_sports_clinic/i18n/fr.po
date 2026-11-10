@@ -18230,7 +18230,7 @@ msgid "DÉMO"
 msgstr "DÉMO"
 
 #. module: bemade_sports_clinic
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_instance_banner
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.instance_banner_layout
 msgid ""
 "<span class=\"visually-hidden\">Non-production instance: the data shown here"
 " is fictitious.</span>"
