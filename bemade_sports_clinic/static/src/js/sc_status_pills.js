@@ -8,7 +8,7 @@
  * button[role="menuitemradio"] items (data-sc-pill-post = the value a pick
  * saves; aria-disabled = greyed, with its hint, posts nothing).
  *
- * - The menu is sc_user_menu.js's (keyboard: arrows / Home / End / Escape /
+ * - The menu is pk_user_menu.js's (keyboard: arrows / Home / End / Escape /
  *   Tab / Space; outside tap; one open at a time). Clicks on the toggle and
  *   the items are handled HERE in the capture phase (preventDefault +
  *   stopPropagation): inside a <summary> a pick never toggles the card.
@@ -30,9 +30,9 @@
  *   one means « nothing to post ».
  */
 import { _t } from "@web/core/l10n/translation";
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 import { requestRefresh } from "@bemade_sports_clinic/js/sc_fragments";
-import { close, closeAll, open } from "@bemade_sports_clinic/js/sc_user_menu";
+import { close, closeAll, open } from "@bemade_portal_kit/js/pk_user_menu";
 
 const PILL = "[data-sc-pill-select]";
 const BUSY_MS = 8000;
@@ -84,7 +84,7 @@ async function save(pill, value) {
     setBusy(pills, true);
     const timer = setTimeout(() => setBusy(siblings(pill), false), BUSY_MS);
     try {
-        const result = await scFetch(`/my/app/save/${encodeURIComponent(model)}/${recordId}`, {
+        const result = await pkFetch(`/my/app/save/${encodeURIComponent(model)}/${recordId}`, {
             method: "POST",
             data: {
                 field,

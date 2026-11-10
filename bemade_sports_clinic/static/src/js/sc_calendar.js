@@ -6,7 +6,7 @@
  *
  * FullCalendar comes from Odoo's own lazy bundle ``web.fullcalendar_lib``
  * (loaded once, on mount — never a raw <script src>, never on other
- * pages). Events are fetched from props.feedUrl through scFetch with the
+ * pages). Events are fetched from props.feedUrl through pkFetch with the
  * visible range (start / end ISO) plus props.params (the page's filters);
  * the feed's JSON shape is unchanged. An event with a ``url`` navigates;
  * otherwise (bookings) a click shows its details under the calendar, from
@@ -25,8 +25,8 @@ import { Component, onMounted, onWillStart, onWillUnmount, useRef, useState } fr
 import { registry } from "@web/core/registry";
 import { loadBundle } from "@web/core/assets";
 import { _t } from "@web/core/l10n/translation";
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
-import { scContactHref } from "@bemade_sports_clinic/js/sc_contact_href";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
+import { pkContactHref } from "@bemade_portal_kit/js/pk_contact_href";
 
 const PHONE = 700;
 const ASSIGNED = "assigned_user_id";
@@ -195,7 +195,7 @@ export class ScCalendar extends Component {
             start: info.startStr,
             end: info.endStr,
         });
-        scFetch(`${this.props.feedUrl}?${query}`, { toast: false })
+        pkFetch(`${this.props.feedUrl}?${query}`, { toast: false })
             .then((events) => success(events || []))
             .catch((error) => {
                 this.state.error = true;
@@ -261,7 +261,7 @@ export class ScCalendar extends Component {
                 const shown = Array.isArray(value) ? value.join(", ") : String(value);
                 // Task 1585: a [key, label, "tel" | "mailto"] entry is a
                 // tap-to-call / tap-to-email link.
-                lines.push({ key, label, value: shown, href: kind ? scContactHref(kind, shown) : null });
+                lines.push({ key, label, value: shown, href: kind ? pkContactHref(kind, shown) : null });
             }
         }
         this.state.selected = { title: event.title, when, lines, cancelled: Boolean(props.cancelled) };

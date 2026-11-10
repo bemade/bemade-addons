@@ -1,5 +1,7 @@
 /*
- * Task 1726 — the shared switch (bemade_sports_clinic.sc_switch).
+ * Task 1726 — the shared switch. Task 5197 (P2): moved from
+ * bemade_sports_clinic (sc_switch.js) to the portal kit; the global is now
+ * window.pkSwitchSync.
  *
  * The switch IS a checkbox (<input type="checkbox" role="switch">), so the
  * forms post what they posted before and Space toggles it natively. This
@@ -59,5 +61,5 @@
         true
     );
 
-    window.scSwitchSync = syncSwitch;
+    window.pkSwitchSync = syncSwitch;
 })();

@@ -7,7 +7,7 @@
  * - an item card's edit view (its pencil, sc_app_ui.js; the pencil turns
  *   into the ✓ that closes it, #1676): each [data-sc-med-item-field] input
  *   is saved on change; [data-sc-med-item-delete] (the trash can) removes
- *   the item — task 1736: once confirmed (scConfirm: it cannot be undone);
+ *   the item — task 1736: once confirmed (pkConfirm: it cannot be undone);
  * - [data-sc-med-set] inputs (the EpiPen card, « none known ») save one
  *   field of the player; the EpiPen note shows only while EpiPen is ticked.
  *
@@ -17,9 +17,9 @@
  * place, without a reload.
  */
 import { _t } from "@web/core/l10n/translation";
-import { scConfirm } from "@bemade_sports_clinic/js/sc_confirm";
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
-import { resetAddPanel } from "@bemade_sports_clinic/js/sc_list_header";
+import { pkConfirm } from "@bemade_portal_kit/js/pk_confirm";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
+import { resetAddPanel } from "@bemade_portal_kit/js/pk_list_header";
 
 function sheetOf(el) {
     return el && el.closest && el.closest(".o_sc_app .o_sc_med_sheet");
@@ -69,7 +69,7 @@ function revert(input) {
         }
     } else if (input.type === "checkbox") {
         input.checked = input.defaultChecked;
-        // Task 1726: a switch's aria-checked follows (sc_switch.js).
+        // Task 1726: a switch's aria-checked follows (pk_switch.js).
         input.setAttribute("aria-checked", input.checked ? "true" : "false");
     } else {
         input.value = input.defaultValue;
@@ -118,7 +118,7 @@ document.addEventListener(
         button.disabled = true;
         showError(form, "");
         try {
-            const result = await scFetch("/my/app/medical/item/add", { method: "POST", data, toast: false });
+            const result = await pkFetch("/my/app/medical/item/add", { method: "POST", data, toast: false });
             if (document.activeElement && form.contains(document.activeElement)) {
                 document.activeElement.blur();
             }
@@ -143,7 +143,7 @@ async function saveItemField(input) {
     const field = input.dataset.scMedItemField;
     showError(card, "");
     try {
-        const result = await scFetch(`/my/app/medical/item/${card.dataset.scMedItem}/save`, {
+        const result = await pkFetch(`/my/app/medical/item/${card.dataset.scMedItem}/save`, {
             method: "POST",
             data: { [field]: inputValue(input) },
             toast: false,
@@ -179,7 +179,7 @@ async function savePlayerField(input) {
     }
     showError(holder, "");
     try {
-        const result = await scFetch(`/my/app/medical/${sheet.dataset.scPatient}/set`, {
+        const result = await pkFetch(`/my/app/medical/${sheet.dataset.scPatient}/set`, {
             method: "POST",
             data: { field, value },
             toast: false,
@@ -244,7 +244,7 @@ document.addEventListener("click", async (ev) => {
     const card = button.closest("[data-sc-med-item]");
     // Task 1736 (owner 2026-11-01): a permanent delete asks first.
     const nameInput = card && card.querySelector('[data-sc-med-item-field="name"]');
-    const ok = await scConfirm({
+    const ok = await pkConfirm({
         title: _t("Delete this item?"),
         message: (nameInput && nameInput.value) || "",
         confirm: _t("Delete"),
@@ -256,7 +256,7 @@ document.addEventListener("click", async (ev) => {
     button.disabled = true;
     button.blur(); // a focused element pins its read fragment (#1641)
     try {
-        const result = await scFetch(`/my/app/medical/item/${button.dataset.scMedItemDelete}/delete`, {
+        const result = await pkFetch(`/my/app/medical/item/${button.dataset.scMedItemDelete}/delete`, {
             method: "POST",
             toast: false,
         });

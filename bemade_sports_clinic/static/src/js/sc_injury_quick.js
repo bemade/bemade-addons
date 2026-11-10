@@ -30,7 +30,7 @@
  * from any read fragment before the sheet opens and again after it closes.
  */
 import { _t } from "@web/core/l10n/translation";
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 import { requestRefresh } from "@bemade_sports_clinic/js/sc_fragments";
 
 const MODEL = "sports.patient.injury";
@@ -73,7 +73,7 @@ function releaseFragmentFocus() {
 }
 
 async function post(injuryId, action, data = {}) {
-    return scFetch(`/my/injury/${injuryId}/${action}`, { method: "POST", data, toast: false });
+    return pkFetch(`/my/injury/${injuryId}/${action}`, { method: "POST", data, toast: false });
 }
 
 async function verify(button, injuryId = button.dataset.scInjuryId) {

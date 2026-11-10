@@ -5,11 +5,11 @@
  * - segmented page tabs (data-sc-tabs): switch panels in place, keep ?tab=
  *   in the address bar; without JS each tab is a plain link;
  * - sheets: [data-sc-sheet-open="<dialog id>"] opens the <dialog>, lazy body
- *   (data-sc-lazy-url) fetched once through sc_fetch — on EVERY open with
+ *   (data-sc-lazy-url) fetched once through pk_fetch — on EVERY open with
  *   data-sc-lazy-fresh (the histories, task 1581); a [data-sc-sheet-refetch]
  *   link inside a sheet reloads its body from its href (filter chips);
  * - lazy rows: <details data-sc-lazy-url> fetch their body on first open;
- * - the status toast (sc_fetch errors, offline / back online; task 1583:
+ * - the status toast (pk_fetch errors, offline / back online; task 1583:
  *   the pending session notification of a POST round-trip, on load);
  * - the device draft store: foreign drafts purged on load, every draft
  *   cleared on « Déconnexion »;
@@ -22,16 +22,16 @@
  * - task 1620: a sheet marked data-sc-sheet-open-on-load opens on load.
  */
 import { _t } from "@web/core/l10n/translation";
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
-import { focusFirstField } from "@bemade_sports_clinic/js/sc_focus";
-import { scSetDisplay } from "@bemade_sports_clinic/js/sc_contact_href";
-import { anchorEdited } from "@bemade_sports_clinic/js/sc_edit_anchor";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
+import { focusFirstField } from "@bemade_portal_kit/js/pk_focus";
+import { pkSetDisplay } from "@bemade_portal_kit/js/pk_contact_href";
+import { anchorEdited } from "@bemade_portal_kit/js/pk_edit_anchor";
 import { markDirty } from "@bemade_sports_clinic/js/sc_fragments";
 import {
     clearAllDrafts,
     purgeForeignDrafts,
     removeDraftsWithPrefix,
-} from "@bemade_sports_clinic/js/sc_draft_store";
+} from "@bemade_portal_kit/js/pk_draft_store";
 
 // Task 1676: the pencil ↔ ✓ swap (setToggleDone). Declared up here: the
 // load-time handlers below (e.g. offerUndoCreatePlayer) already open cards.
@@ -251,7 +251,7 @@ document.addEventListener("sc:saved", (ev) => {
     // Task 1594: a holder flagged data-sc-display-hide-empty (the hero's
     // « Actual return » chip) shows only while its value is set.
     const show = (el, display) => {
-        scSetDisplay(el, display);
+        pkSetDisplay(el, display);
         const holder = el.closest("[data-sc-display-hide-empty]");
         if (holder) {
             holder.hidden = !display;
@@ -318,7 +318,7 @@ if (document.readyState === "loading") {
 }
 
 // Task 1656: a toast kept for this page by the previous one (it was left
-// after its viewer lost access to it: sc_confirm.js scLeavePage).
+// after its viewer lost access to it: pk_confirm.js pkLeavePage).
 function showPendingToast() {
     let message = null;
     try {
@@ -598,7 +598,7 @@ async function loadLazy(container, url, target) {
     }
     container.dataset.scLoaded = "1";
     try {
-        const html = await scFetch(url, { as: "html" });
+        const html = await pkFetch(url, { as: "html" });
         target.innerHTML = html;
         // Task 1640: listeners may enhance the injected body (date bounds).
         target.dispatchEvent(new CustomEvent("sc:lazy-loaded", { bubbles: true }));

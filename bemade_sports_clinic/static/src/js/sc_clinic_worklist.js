@@ -6,14 +6,14 @@
  *
  * - First paint from props.data (no fetch); then a poll of props.dataUrl
  *   every props.pollSeconds (20 s) while the page is visible, through
- *   scFetch (toast: false). The poll is PAUSED while a row is dragged,
+ *   pkFetch (toast: false). The poll is PAUSED while a row is dragged,
  *   while an action is in flight and while a sheet is open (resolve,
  *   add, kiosk…); an error backs off (x2, up to 5 min) and a success resets
  *   the interval. Rows are replaced only when the server's version hash
  *   changed.
  * - Actions (status, confirm, remove, reorder by drag or up / down) apply
  *   at once (optimistic) and POST to the JSON twins of the attendance routes
- *   (props.actionUrl + state | confirm | remove | reorder; CSRF by scFetch).
+ *   (props.actionUrl + state | confirm | remove | reorder; CSRF by pkFetch).
  *   The answer carries the CURRENT worklist, which replaces the local one
  *   (reconcile); a failure rolls back (to the server's list when the answer
  *   carries it) and shows a toast.
@@ -28,7 +28,7 @@
 import { Component, onMounted, onWillUnmount, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { _t } from "@web/core/l10n/translation";
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 
 const MAX_BACKOFF = 300000;
 const ARM_MS = 4000;
@@ -156,7 +156,7 @@ export class ScClinicWorklist extends Component {
             return;
         }
         try {
-            const data = await scFetch(this.props.dataUrl, { toast: false });
+            const data = await pkFetch(this.props.dataUrl, { toast: false });
             if (!this.paused) {
                 this.apply(data);
             }
@@ -185,7 +185,7 @@ export class ScClinicWorklist extends Component {
         }
         this.state.pending++;
         try {
-            const result = await scFetch(this.props.actionUrl + action, {
+            const result = await pkFetch(this.props.actionUrl + action, {
                 method: "POST",
                 data: fields,
                 toast: false,

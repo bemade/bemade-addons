@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.134.0",
+    'version': "19.0.1.135.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -330,6 +330,12 @@ therapists, Missing timesheets.
             "bemade_sports_clinic/static/src/scss/sc_pages.scss",
             # Task 1539: P2 page / component styles.
             "bemade_sports_clinic/static/src/scss/sc_p2.scss",
+            # Task 5197 (kit P2): the shell's 13 generic scripts moved to
+            # bemade_portal_kit (pk_*.js, bundled by the kit, a dependency).
+            # The 10 that had exports keep their old path here one release
+            # as a pure re-export — remove in the next kit phase (the kit
+            # module runs once, a shim never binds anything). sc_forms,
+            # sc_switch and sc_live_count had none: no shim.
             "bemade_sports_clinic/static/src/js/sc_fetch.js",
             "bemade_sports_clinic/static/src/js/sc_draft_store.js",
             # Task 1656: the confirm sheet + leaving a page whose access ended.
@@ -373,11 +379,8 @@ therapists, Missing timesheets.
             "bemade_sports_clinic/static/src/js/sc_status_pills.js",
             "bemade_sports_clinic/static/src/js/sc_injury_card.js",
             "bemade_sports_clinic/static/src/js/sc_account.js",
-            "bemade_sports_clinic/static/src/js/sc_forms.js",
             "bemade_sports_clinic/static/src/js/sc_app_nav.js",
             "bemade_sports_clinic/static/src/js/sc_sw_register.js",
-            # Task 1726: the shared switch (aria-checked, off twin, submit).
-            "bemade_sports_clinic/static/src/js/sc_switch.js",
             # Task 1624: « Configurer » the dashboard (saves as you go).
             "bemade_sports_clinic/static/src/js/sc_dashboard_config.js",
             # Task 1624 review round 1: « Suivre » a player (fetch toggle).
@@ -400,8 +403,6 @@ therapists, Missing timesheets.
             "bemade_sports_clinic/static/src/scss/sc_account.scss",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.js",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.xml",
-            # Review 2026-09-29: live counters (the home's clinics-today chip).
-            "bemade_sports_clinic/static/src/js/sc_live_count.js",
             # Task 1540: the shared calendar (FullCalendar lazy-loaded from
             # web.fullcalendar_lib) and the event form behaviours.
             "bemade_sports_clinic/static/src/js/sc_calendar.js",

@@ -7,7 +7,7 @@
  * Two modes:
  *
  * - « draft »: the value stays a LOCAL draft on the device while typing
- *   (sc_draft_store, per db + user + record key). It comes back after
+ *   (pk_draft_store, per db + user + record key). It comes back after
  *   leaving the page or losing signal (« Brouillon restauré »), and is
  *   dropped once the server holds the same value (the enclosing form was
  *   published), on « Jeter le brouillon », on logout, and — task 1539 — when
@@ -76,10 +76,10 @@
 import { Component, onMounted, onWillUnmount, useEffect, useRef, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { _t } from "@web/core/l10n/translation";
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
-import { readDraft, removeDraft, writeDraft } from "@bemade_sports_clinic/js/sc_draft_store";
-import { DATE_BOUNDS, isValidDateValue } from "@bemade_sports_clinic/js/sc_date_bounds";
-import { scConfirm, scLeavePage } from "@bemade_sports_clinic/js/sc_confirm";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
+import { readDraft, removeDraft, writeDraft } from "@bemade_portal_kit/js/pk_draft_store";
+import { DATE_BOUNDS, isValidDateValue } from "@bemade_portal_kit/js/pk_date_bounds";
+import { pkConfirm, pkLeavePage } from "@bemade_portal_kit/js/pk_confirm";
 
 const DRAFT_DEBOUNCE = 300;
 // Owner review 2026-10-14: inputs whose value is only complete once the
@@ -277,7 +277,7 @@ export class ScAutosaveField extends Component {
         }
         this.onGroupChange = (ev) => this.requestGroup(ev.target.value || "");
         // Task 1672: an add panel reset after a successful create (« sc:form-
-        // reset » on its form, sc_list_header.js): a form-mode field goes back
+        // reset » on its form, pk_list_header.js): a form-mode field goes back
         // to its default (e.g. the page's team), a draft-mode one is emptied
         // and its device draft dropped.
         this.onFormReset = (ev) => {
@@ -980,7 +980,7 @@ export class ScAutosaveField extends Component {
         const others = this.checkedKeys.filter((k) => String(k) !== String(key) && access.has(String(k)));
         if (rule && access.has(String(key)) && !others.length) {
             const label = (this.options.find((opt) => String(opt[0]) === String(key)) || [key, key])[1];
-            const go = await scConfirm({
+            const go = await pkConfirm({
                 title: String(rule.title || "").replace("%s", label),
                 message: rule.message,
                 confirm: rule.confirm,
@@ -1056,7 +1056,7 @@ export class ScAutosaveField extends Component {
                     duration: undo.ms,
                     action: async () => {
                         try {
-                            const result = await scFetch(undo.url, {
+                            const result = await pkFetch(undo.url, {
                                 method: "POST",
                                 data: { token: undo.token },
                                 toast: false,
@@ -1171,7 +1171,7 @@ export class ScAutosaveField extends Component {
         const sent = this.state.value;
         this.rememberSent(norm(sent));
         try {
-            const result = await scFetch(this.saveUrl, {
+            const result = await pkFetch(this.saveUrl, {
                 method: "POST",
                 data: Object.assign(
                     {
@@ -1189,7 +1189,7 @@ export class ScAutosaveField extends Component {
             // (the popup's « Remove and leave », or a stale page): leave it.
             if (result && result.lost_access) {
                 this.state.status = "saved";
-                scLeavePage(result.message);
+                pkLeavePage(result.message);
                 return true;
             }
             this.leaving = false;

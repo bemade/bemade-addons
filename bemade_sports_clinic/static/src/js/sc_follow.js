@@ -6,10 +6,10 @@
  * The toggle is a small form posting to /my/player/<id>/follow (the no-JS
  * fallback). Here it is saved with fetch, no reload: on success every toggle
  * of that player on the page flips (a player may be listed in several
- * sections); on a refusal nothing moves (scFetch shows the error toast).
+ * sections); on a refusal nothing moves (pkFetch shows the error toast).
  * Round 2: then the « Joueurs que je suis » sections refresh (read fragments).
  */
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 import { requestRefresh } from "@bemade_sports_clinic/js/sc_fragments";
 
 // Task 1624 review round 2 (owner 2026-10-29): every « Joueurs que je suis »
@@ -57,7 +57,7 @@ document.addEventListener("submit", async (ev) => {
     const follow = button.dataset.scFollowed !== "1";
     button.disabled = true;
     try {
-        const answer = await scFetch(form.getAttribute("action"), {
+        const answer = await pkFetch(form.getAttribute("action"), {
             method: "POST",
             data: { follow: follow ? "1" : "0" },
         });
@@ -71,7 +71,7 @@ document.addEventListener("submit", async (ev) => {
             requestRefresh([FOLLOWED_SECTIONS], { immediate: true });
         }
     } catch {
-        // scFetch already showed the error toast; the toggle stays as is.
+        // pkFetch already showed the error toast; the toggle stays as is.
     } finally {
         button.disabled = false;
     }

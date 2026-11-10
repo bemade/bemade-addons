@@ -6,7 +6,7 @@
  *   data-sc-live-poll="20"                              (seconds, optional)
  * is refreshed in place — the same mechanism as the live clinic worklist
  * (sc_clinic_worklist.js): a poll every 20 s while the tab is visible,
- * through scFetch (toast: false); an error backs off (x2, up to 5 min), a
+ * through pkFetch (toast: false); an error backs off (x2, up to 5 min), a
  * success resets the interval; a hidden tab stops polling and the poll
  * resumes at once when the tab is shown again. Inert outside .o_sc_app.
  *
@@ -22,7 +22,7 @@
  * Task 1611: « sc:live-count-refresh » on the document polls every counter
  * at once (an activity save, a page restored by « back »).
  */
-import { scFetch } from "@bemade_sports_clinic/js/sc_fetch";
+import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 
 const MAX_BACKOFF = 300000;
 
@@ -56,7 +56,7 @@ class LiveCount {
             return; // resumed by visibilitychange
         }
         try {
-            const data = await scFetch(this.url, { toast: false });
+            const data = await pkFetch(this.url, { toast: false });
             if (data && Number.isInteger(data.count)) {
                 this.apply(data.count);
             }
