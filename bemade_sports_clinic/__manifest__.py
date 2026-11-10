@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.137.0",
+    'version': "19.0.1.137.1",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -117,6 +117,12 @@ its activity / injury / player cards), Recent changes, Players to watch,
 Players I follow (a personal « Follow » on the player cards and page),
 Announcements, Upcoming coverage (« Upcoming events » for coaches) and, for
 therapists, Missing timesheets.
+
+Instance banner: Settings > Sports Clinic Portal > Instance banner
+(``bemade_sports_clinic.instance_banner``) puts a red strip with that text
+(e.g. « DÉMO ») at the top of every page (login, backend, portal, app
+shell) to mark a non-production instance. Empty, the default, shows
+nothing; PDF reports never carry it.
     """,
     "category": "Services/Medical",
     "author": "Bemade Inc.",
@@ -239,6 +245,7 @@ therapists, Missing timesheets.
         # switch) — components, layout, then the pages that t-call them.
         "views/sc_components.xml",
         "views/sc_app_layout.xml",
+        "views/sc_instance_banner.xml",
         "views/sc_app_search.xml",
         "views/sc_app_player_add.xml",
         "views/sc_app_pages.xml",

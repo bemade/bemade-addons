@@ -18197,3 +18197,43 @@ msgstr "Créé automatiquement"
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_mail_activity__sc_created_by_label
 msgid "Created by (label)"
 msgstr "Créé par (libellé)"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,field_description:bemade_sports_clinic.field_res_config_settings__sc_instance_banner
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "Instance banner"
+msgstr "Bandeau d'instance"
+
+#. module: bemade_sports_clinic
+#: model:ir.model.fields,help:bemade_sports_clinic.field_res_config_settings__sc_instance_banner
+msgid ""
+"Text of a red strip shown at the top of every page (backend, portal, app "
+"shell, login) to mark a non-production instance, e.g. « DÉMO ». Leave empty"
+" in production."
+msgstr ""
+"Texte d'un bandeau rouge affiché en haut de chaque page (backend, portail, "
+"application, connexion) pour signaler une instance hors production, p. ex. "
+"« DÉMO ». Laisser vide en production."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid ""
+"Text of a red strip shown at the top of every page to mark a non-production "
+"instance (e.g. « DÉMO »). Leave empty in production."
+msgstr ""
+"Texte d'un bandeau rouge affiché en haut de chaque page pour signaler une "
+"instance hors production (p. ex. « DÉMO »). Laisser vide en production."
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_res_config_settings_bemade_sports_clinic
+msgid "DÉMO"
+msgstr "DÉMO"
+
+#. module: bemade_sports_clinic
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_instance_banner
+msgid ""
+"<span class=\"visually-hidden\">Non-production instance: the data shown here"
+" is fictitious.</span>"
+msgstr ""
+"<span class=\"visually-hidden\">Instance hors production : les données "
+"affichées sont fictives.</span>"

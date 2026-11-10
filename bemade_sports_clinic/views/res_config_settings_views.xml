@@ -136,6 +136,10 @@
             <setting string="New Portal App (preview)" help="Show the sports-clinic portal (home, teams, « More ») in the new Fit Crew app shell. Leave off in production until the launch; a staging refresh from production turns it off again.">
               <field name="sc_app_shell_enabled"/>
             </setting>
+            <!-- Task 1752: the instance banner (empty = none). -->
+            <setting string="Instance banner" help="Text of a red strip shown at the top of every page to mark a non-production instance (e.g. « DÉMO »). Leave empty in production.">
+              <field name="sc_instance_banner" placeholder="DÉMO"/>
+            </setting>
           </block>
         </xpath>
       </field>
