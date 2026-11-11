@@ -1,5 +1,9 @@
 // Task 1620 — « Mon compte » / « Sécurité » in the shell
 // (views/sc_app_account.xml). Scoped under .o_pk_app.
+//
+// Task 5357 (kit P3b2): the generic rules (only o_pk_* classes, data-pk-*
+// attributes, generic elements) moved to bemade_portal_kit (pk_components /
+// pk_pages.scss, loaded first); this file keeps the clinic's own.
 
 .o_pk_app {
     .o_sc_account,
@@ -75,8 +79,7 @@
 
     // The core validation flags fields and fills #errors.
     .o_sc_account .o_pk_input.is-invalid,
-    .o_sc_security .o_pk_input[aria-invalid="true"],
-    .o_pk_sheet .o_pk_input[aria-invalid="true"] {
+    .o_sc_security .o_pk_input[aria-invalid="true"] {
         border-color: var(--pk-bad);
     }
 
@@ -110,14 +113,6 @@
     .o_sc_account_locked {
         pointer-events: none;
         opacity: 0.6;
-    }
-
-    .o_pk_banner_ok {
-        border-left-color: var(--pk-ok);
-    }
-
-    .o_pk_form_actions_start {
-        justify-content: flex-start;
     }
 
     // Password + the core « show password » eye.

@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.3.0',
+    'version': '19.0.1.4.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -136,20 +136,60 @@ theme attribute since version 1.3):
 * the theme attribute ``data-pk-theme`` (``dark`` or ``light``) on the
   shell root.
 
-The styles themselves (SCSS) and the brand palette (``--sc-*`` colours) are
-still those of the first consumer; they move to the kit in a later version.
+Styles
+------
+Version 1.4 moves the shell's generic styles into the kit (SCSS in
+``web.assets_frontend``, in this order):
+
+* ``pk_variables.scss``: ``$pk-laptop`` (992 px, the one generic
+  breakpoint) and the picker icons ``$pk-icon-calendar`` /
+  ``$pk-icon-clock``;
+* ``pk_tokens.scss``: every ``--pk-*`` slot with NEUTRAL defaults (slate
+  greys, one blue accent, the system font stack, no web font), LIGHT on
+  ``.o_pk_app`` and ``body.o_pk_app_body``, dark under
+  ``[data-pk-theme="dark"]`` (body: ``o_pk_app_body_dark``). The mixins
+  ``pk-scale-tokens``, ``pk-theme-light`` and ``pk-theme-dark`` are
+  public;
+* ``pk_components.scss`` and ``pk_pages.scss``: the components, scoped
+  under ``.o_pk_app``. They read the slots only.
+
+Slots added in 1.4: ``title-transform``, ``title-spacing``,
+``appbar-title-spacing``, ``label-transform``, ``label-spacing``,
+``stat-label-spacing`` (letter case and tracking: normal case in the
+kit), ``brand-mark``, ``avatar-bg``, ``avatar-fg``, ``secondary-fg``,
+``install-icon-bg``, ``close-filter`` and ``color-scheme``.
+
+A consumer brands the shell by setting the slots in its own stylesheet, on
+the same roots with at least the kit's specificity (``.o_pk_app``,
+``.o_pk_app[data-pk-theme="dark"]``, ``.o_pk_app[data-pk-theme="light"]``
+and the body's), and keeps its own rules for its own classes. The brand
+palette (``--sc-*`` colours) and fonts stay with the first consumer.
+
+Style guide
+-----------
+``/pk/styleguide`` (internal users) shows every generic component with the
+neutral slots; ``?theme=dark`` shows the dark theme.
 """,
     'author': 'Bemade Inc.',
     'maintainers': ['dureposd'],
     'website': 'https://www.bemade.org',
     'license': 'LGPL-3',
     'depends': ['portal'],
-    'data': [],
+    'data': [
+        'views/pk_styleguide.xml',
+    ],
     'assets': {
         # Task 5197 (P2): the shell's generic scripts. assets_frontend ONLY:
         # the lazy bundle includes this one, listing them there too would
         # bind them twice (tests/test_pk_assets.py).
         'web.assets_frontend': [
+            # Task 5357 (P3b2): the shell's generic styles. One SCSS unit per
+            # bundle, the kit's first: the consumers read $pk-* and override
+            # the --pk-* slots.
+            'bemade_portal_kit/static/src/scss/pk_variables.scss',
+            'bemade_portal_kit/static/src/scss/pk_tokens.scss',
+            'bemade_portal_kit/static/src/scss/pk_components.scss',
+            'bemade_portal_kit/static/src/scss/pk_pages.scss',
             'bemade_portal_kit/static/src/js/pk_fetch.js',
             'bemade_portal_kit/static/src/js/pk_draft_store.js',
             'bemade_portal_kit/static/src/js/pk_confirm.js',

@@ -28,7 +28,17 @@
     src: url("/bemade_sports_clinic/static/src/fonts/DMSans-Variable-latin.woff2") format("woff2");
 }
 
-// Palette, type and scale — shared by every root.
+// Task 5357 (kit P3b2): Fit Crew's brand file. The kit (bemade_portal_kit,
+// pk_tokens.scss) declares every --pk-* slot with neutral defaults (light,
+// system fonts, normal case); this file sets Fit Crew's values on the same
+// roots with at least the kit's specificity: [data-pk-theme="dark"] and
+// [data-pk-theme="light"] (higher than the kit's light .o_pk_app), and
+// .o_pk_app without the attribute = dark, as before (same specificity as the
+// kit's: wins by load order, the kit being a dependency). The shell's body
+// the same way.
+
+// Palette, type and letter case — shared by every root (the scales are the
+// kit's, pk-scale-tokens).
 @mixin sc-brand-tokens {
     // Brand palette
     --sc-forest: #243925;
@@ -41,29 +51,19 @@
     // Type
     --pk-font-title: "Teko", "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --pk-font-text: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --pk-text-xs: 11px;
-    --pk-text-sm: 12px;
-    --pk-text-md: 14px;
-    --pk-text-lg: 16px;
-    --pk-title-md: 20px;
-    --pk-title-lg: 24px;
-    --pk-title-xl: 30px;
+    --pk-title-transform: uppercase;
+    --pk-title-spacing: 0.03em;
+    --pk-appbar-title-spacing: 0.02em;
+    --pk-label-transform: uppercase;
+    --pk-label-spacing: 0.04em;
+    --pk-stat-label-spacing: 0.06em;
 
-    // Spacing / radius / elevation scale
-    --pk-space-1: 4px;
-    --pk-space-2: 8px;
-    --pk-space-3: 12px;
-    --pk-space-4: 16px;
-    --pk-space-5: 22px;
-    --pk-space-6: 32px;
-    --pk-radius-sm: 10px;
-    --pk-radius-md: 12px;
-    --pk-radius-lg: 14px;
-    --pk-radius-pill: 999px;
-    --pk-tap: 44px;
-    --pk-rail-width: 232px;
-    --pk-appbar-height: 56px;
-    --pk-tabs-height: 64px;
+    // The brand mark, the avatar and the install icon
+    --pk-brand-mark: var(--sc-neon);
+    --pk-avatar-bg: var(--sc-mauve);
+    --pk-avatar-fg: #ffffff;
+    --pk-install-icon-bg: var(--sc-midnight);
+    --pk-secondary-fg: #ffffff;
 }
 
 @mixin sc-theme-dark {
@@ -90,6 +90,8 @@
     --pk-hover: rgba(255, 255, 255, 0.06);
     --pk-focus: #a4c754;
     --pk-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    --pk-close-filter: invert(0.8);
+    --pk-color-scheme: dark;
 }
 
 @mixin sc-theme-light {
@@ -116,67 +118,29 @@
     --pk-hover: rgba(18, 14, 18, 0.06);
     --pk-focus: #783e88;
     --pk-shadow: 0 6px 20px rgba(18, 14, 18, 0.12);
+    --pk-close-filter: none;
+    --pk-color-scheme: light;
 }
 
-.o_pk_app {
+// The shell root and its body: dark unless the light theme is chosen.
+.o_pk_app,
+.o_pk_app[data-pk-theme="dark"],
+body.o_pk_app_body,
+body.o_pk_app_body.o_pk_app_body_dark,
+body.o_pk_app_body[data-pk-theme="dark"] {
     @include sc-brand-tokens;
     @include sc-theme-dark;
+}
 
-    &[data-pk-theme="light"] {
-        @include sc-theme-light;
-    }
+.o_pk_app[data-pk-theme="light"],
+body.o_pk_app_body.o_pk_app_body_light,
+body.o_pk_app_body[data-pk-theme="light"] {
+    @include sc-theme-light;
 }
 
 // Task 1540: the sign-in kiosk root (clinic_kiosk_layout's <body>).
 .o_sc_kiosk_body {
+    @include pk-scale-tokens;
     @include sc-brand-tokens;
     @include sc-theme-light;
-}
-
-// The page behind the shell (overscroll, safe areas) follows the theme too.
-body.o_pk_app_body {
-    background: #120e12;
-    &.o_pk_app_body_light {
-        background: #f4f5f2;
-    }
-}
-
-// Task 1643: in the mobile BROWSER (not the installed app) the app bar and
-// the tabs must stay pinned while the address bar collapses / expands. The
-// window is the only scroller: the frontend layout's html / body
-// « height: 100% » (a viewport-sized box the page overflows) gives way to a
-// growing box, and #wrapwrap never scrolls, clips or transforms (each would
-// break the app bar's « sticky » or re-base the tabs' « fixed »). Scoped to
-// the shell's body; the legacy portal keeps the stock layout.
-html:has(> body.o_pk_app_body),
-body.o_pk_app_body {
-    height: auto;
-    min-height: 100%;
-    overflow: visible;
-}
-
-body.o_pk_app_body > #wrapwrap {
-    overflow: visible !important;
-    transform: none !important;
-    filter: none !important;
-    contain: none !important;
-    will-change: auto !important;
-    min-height: 100vh;
-    min-height: 100dvh;
-}
-
-// Task 1643 addendum: on a neutralized (test) database the red banner
-// (#oe_neutralize_banner, web.neutralize_banner — absent on prod) sat over
-// the bottom tabs on a phone. Phone width: the banner is pinned at the very
-// bottom and the tabs (and what floats above them) rise by its height,
-// --pk-ribbon-h, measured by sc_app_ui.js. The banner stays fully visible.
-@media (max-width: 991.98px) {
-    body.o_pk_app_body #oe_neutralize_banner {
-        position: fixed !important;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 25;
-        padding-bottom: env(safe-area-inset-bottom, 0px);
-    }
 }
