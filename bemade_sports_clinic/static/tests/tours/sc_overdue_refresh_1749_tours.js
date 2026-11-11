@@ -16,7 +16,7 @@ function assert(condition, message) {
 }
 
 const LINE = 'section[data-sc-instance="todo"] details[data-sc-todo="returns"]';
-const card = (name) => `${LINE} [data-sc-player-id]:has(.o_sc_row_title:contains("${name}"))`;
+const card = (name) => `${LINE} [data-sc-player-id]:has(.o_pk_row_title:contains("${name}"))`;
 
 /** Practice « Oui », then Match « Oui » (Match needs Practice: Oui) on one
  * overdue card; each pick checked on the fresh card (pill + dot). */
@@ -52,7 +52,7 @@ function promote(name) {
             trigger: `${sel} [data-sc-pill-key="match"] > button[data-sc-pill-value="yes"]`,
             run() {
                 const node = this.anchor.closest("[data-sc-player-id]");
-                assert(node.querySelector(".o_sc_dot.o_sc_tone_green"), `${name}: green dot`);
+                assert(node.querySelector(".o_pk_dot.o_pk_tone_green"), `${name}: green dot`);
                 assert(window.__sc1749, "no reload");
             },
         },
@@ -82,7 +82,7 @@ tours.add("sc_1749_overdue_refresh", {
         ...promote("Synth, Shared"),
         {
             content: "« Recent changes » shows the same, fresh",
-            trigger: 'section[data-sc-instance="recent_changes"] [data-sc-player-id]:has(.o_sc_row_title:contains("Synth, Shared")) [data-sc-pill-key="match"] > button[data-sc-pill-value="yes"]',
+            trigger: 'section[data-sc-instance="recent_changes"] [data-sc-player-id]:has(.o_pk_row_title:contains("Synth, Shared")) [data-sc-pill-key="match"] > button[data-sc-pill-value="yes"]',
         },
     ],
 });

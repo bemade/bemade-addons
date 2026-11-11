@@ -10,7 +10,7 @@ import { resetAddPanel } from "@bemade_portal_kit/js/pk_list_header";
 
 function mount(wrapper) {
     getFixture().innerHTML = `
-        <div class="o_sc_app" data-pk-db="db_a" data-pk-uid="7">
+        <div class="o_pk_app" data-pk-db="db_a" data-pk-uid="7">
             ${wrapper.replace(
                 "FORM",
                 `<form data-pk-draft-prefix="thing:new">

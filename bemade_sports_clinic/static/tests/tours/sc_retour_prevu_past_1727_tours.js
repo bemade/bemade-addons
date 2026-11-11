@@ -39,7 +39,7 @@ function typeAndLeave(input, value) {
     input.dispatchEvent(new FocusEvent("blur")); // headless CI: blur() fires no event without window focus
 }
 
-const FIELD = '[data-pk-section="player.predicted_return"] .o_sc_autosave[data-sc-field="predicted_return_date"]';
+const FIELD = '[data-pk-section="player.predicted_return"] .o_pk_autosave[data-sc-field="predicted_return_date"]';
 const READ = '[data-pk-section="player.return"]';
 const SHEET = "dialog#sc_proposal_sheet";
 const CARD = ".o_sc_injury_item[open]";
@@ -67,7 +67,7 @@ tours.add("sc_1727_header_past", {
         },
         {
             content: "Refused inline; the typed value is kept",
-            trigger: `${FIELD} .o_sc_field_error`,
+            trigger: `${FIELD} .o_pk_field_error`,
             run() {
                 const input = document.querySelector(`${FIELD} input[type="date"]`);
                 assert(input.value === shift(window.__sc1727Min, -3), `kept ${input.value}`);
@@ -86,7 +86,7 @@ tours.add("sc_1727_header_past", {
             trigger: `${FIELD}[data-sc-state="saved"]`,
             async run() {
                 await waitFor(() => !document.querySelector(`${READ} [data-sc-overdue]`), "flag gone");
-                assert(!document.querySelector(`${FIELD} .o_sc_field_error`), "no error left");
+                assert(!document.querySelector(`${FIELD} .o_pk_field_error`), "no error left");
             },
         },
     ],
@@ -101,7 +101,7 @@ tours.add("sc_1727_proposal_past", {
         },
         {
             content: "A predicted resolution date already past",
-            trigger: `${CARD} .o_sc_autosave[data-sc-field="predicted_resolution_date"] input`,
+            trigger: `${CARD} .o_pk_autosave[data-sc-field="predicted_resolution_date"] input`,
             run() {
                 // The header's « Retour prévu » input carries today.
                 const min = document.querySelector(`${FIELD} input[type="date"]`).min;
@@ -141,7 +141,7 @@ tours.add("sc_1727_proposal_past", {
         },
         {
             content: "Applied: the sheet closes",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => !document.querySelector(`${SHEET}[open]`), "sheet closed");
                 await waitFor(

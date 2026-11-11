@@ -59,15 +59,15 @@ tours.add("sc_1614_digest_history_inline", {
         },
         {
             content: "The day's body is loaded inside the row, player name readable",
-            trigger: `${ROW}[open] .o_sc_lazy_body .team-digest .card-header a`,
+            trigger: `${ROW}[open] .o_pk_lazy_body .team-digest .card-header a`,
             run() {
                 const row = document.querySelector(`${ROW}[open]`);
                 assert(
-                    row.querySelector('.o_sc_lazy_body [data-pk-section="digest.snapshot"]'),
+                    row.querySelector('.o_pk_lazy_body [data-pk-section="digest.snapshot"]'),
                     "no snapshot line"
                 );
                 assert(window.location.pathname.endsWith("/digest-history"), "left the list");
-                const name = row.querySelector(".o_sc_lazy_body .team-digest .card-header a");
+                const name = row.querySelector(".o_pk_lazy_body .team-digest .card-header a");
                 const ratio = contrast(name);
                 assert(ratio >= 3, `player name contrast too low: ${ratio.toFixed(2)}`);
                 const detail = row.querySelector("details.o_sc_card_detail");

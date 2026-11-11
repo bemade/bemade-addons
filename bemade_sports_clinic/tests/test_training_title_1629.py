@@ -6,9 +6,9 @@ Acceptance criteria (the English structure: test_app_shell_player_status
 ``sc_training_history_refresh`` tour):
 
 * AC-1 Read view (therapists and coaches): « Training Recommendation » is an
-  all-caps in-card title (``h3.o_sc_edit_card_title``, as « Details » /
+  all-caps in-card title (``h3.o_pk_edit_card_title``, as « Details » /
   « Notes ») heading the ``player.training`` section, with « History »
-  (``o_sc_section_more o_sc_link_btn``) right after the label, inside the
+  (``o_pk_section_more o_pk_link_btn``) right after the label, inside the
   title; it opens ``sc_training_history_sheet``. The value and its stamp
   follow, with no label row of their own.
 * AC-2 Pencil edit view (therapists): the same title + link heads
@@ -50,7 +50,7 @@ class TestTrainingTitleI18n1629(TestAppShellI18n1538):
     def _assert_title(self, section):
         title = section.xpath('./*')[0]
         self.assertEqual(title.tag, 'h3')
-        self.assertIn('o_sc_edit_card_title', title.get('class').split())
+        self.assertIn('o_pk_edit_card_title', title.get('class').split())
         label, link = title.xpath('./*')
         self.assertEqual(label.text_content().strip(), "Recommandation d'entraînement")
         self.assertEqual(link.text_content().strip(), 'Historique')

@@ -4,7 +4,7 @@ Synthetic fixtures only.
 Acceptance criteria:
 
 * AC-1 ``/my/sc/timesheets`` renders the filter disclosure
-  (``form[data-pk-section="timesheets.filters"] details.o_sc_disclosure``)
+  (``form[data-pk-section="timesheets.filters"] details.o_pk_disclosure``)
   OPEN on every visit — with no filter, with filters, with a chosen sort —
   and it stays a disclosure (``<summary>`` toggle), so it can be collapsed.
 * AC-2 Nothing else moves: the form still applies on change
@@ -42,7 +42,7 @@ class TestTimesheetFiltersOpen1617(AppShellCommon):
             _text, tree = self._get(url)
             form = self._form(tree)
             self.assertIsNotNone(form, url)
-            details = form.xpath('./details[contains(concat(" ", @class, " "), " o_sc_disclosure ")]')
+            details = form.xpath('./details[contains(concat(" ", @class, " "), " o_pk_disclosure ")]')
             self.assertEqual(len(details), 1, url)
             self.assertEqual(details[0].get('open'), 'open', url)
             # Still collapsible: a summary toggle first.

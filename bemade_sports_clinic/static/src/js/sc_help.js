@@ -24,7 +24,7 @@ document.addEventListener("click", (ev) => {
     if (!tab) {
         return;
     }
-    const link = document.querySelector(".o_sc_app a[data-sc-help]");
+    const link = document.querySelector(".o_pk_app a[data-sc-help]");
     if (!link || !["player", "team"].includes(link.dataset.scHelpBase)) {
         return;
     }

@@ -148,11 +148,11 @@ class TestBookingsSort(BookingsShellCommon):
     def test_sort_in_the_list_header(self):
         """UC-S4"""
         _text, tree = self._get('/my/bookings')
-        headers = tree.xpath('//div[contains(@class, "o_sc_list_header")][@data-pk-section="bookings.header"]')
+        headers = tree.xpath('//div[contains(@class, "o_pk_list_header")][@data-pk-section="bookings.header"]')
         self.assertEqual(len(headers), 1)
         header = headers[0]
         self.assertTrue(header.xpath('.//*[@data-pk-section="bookings.sort"]//a[@role="menuitemradio"]'))
-        self.assertFalse(header.xpath('.//*[contains(@class, "o_sc_list_add")]'))
+        self.assertFalse(header.xpath('.//*[contains(@class, "o_pk_list_add")]'))
         following = header.getnext()
         self.assertIsNotNone(following)
         self.assertEqual(following.get('data-pk-section'), 'bookings.list')

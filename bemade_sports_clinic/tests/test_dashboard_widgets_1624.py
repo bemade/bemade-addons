@@ -115,10 +115,10 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         badge = json.loads(self.url_open('/my/activities/overdue/count').text)['count']
         _text, tree = self._get('/my/home')
         todo = self._section(tree, 'todo')
-        overdue = todo.xpath('.//*[@data-sc-todo="activities_overdue"]//*[contains(@class, "o_sc_chip")]')
+        overdue = todo.xpath('.//*[@data-sc-todo="activities_overdue"]//*[contains(@class, "o_pk_chip")]')
         self.assertEqual(int(overdue[0].text_content()), badge)
         self.assertGreaterEqual(badge, 2)
-        due = todo.xpath('.//*[@data-sc-todo="activities_today"]//*[contains(@class, "o_sc_chip")]')
+        due = todo.xpath('.//*[@data-sc-todo="activities_today"]//*[contains(@class, "o_pk_chip")]')
         self.assertGreaterEqual(int(due[0].text_content()), 1)
 
     def test_todo_team_lines(self):
@@ -227,7 +227,7 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         self._login_coach()
         _text, tree = self._get('/my/home')
         values = [v.text_content().strip() for v in self._section(tree, 'indicators').xpath(
-            './/*[contains(@class, "o_sc_stat_value")]')]
+            './/*[contains(@class, "o_pk_stat_value")]')]
         self.assertEqual(values, ['2', '1', '1'])
 
     def test_clinic_admin_indicators_default_to_staffed(self):
@@ -240,7 +240,7 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         self._login_cadmin()
         _text, tree = self._get('/my/home')
         values = [v.text_content().strip() for v in self._section(tree, 'indicators').xpath(
-            './/*[contains(@class, "o_sc_stat_value")]')]
+            './/*[contains(@class, "o_pk_stat_value")]')]
         self.assertEqual(values, ['1', '0', '0'])
 
     # -- UC-W7 ---------------------------------------------------------------
@@ -256,7 +256,7 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         _text, tree = self._get('/my/home')
         self.assertEqual(self._coverage_ids(tree), [self.ev_soon.id, self.ev_far.id])
         self.assertIn('30', self._section(tree, 'coverage').xpath(
-            './/*[contains(@class, "o_sc_section_sub")]')[0].text_content())
+            './/*[contains(@class, "o_pk_section_sub")]')[0].text_content())
         # Scoped to Team C: only its events.
         self._dash(self.tp)._sc_layout_update('coverage', settings={'scope_team_ids': [self.team_c.id]})
         _text, tree = self._get('/my/home')

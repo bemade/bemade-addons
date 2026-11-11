@@ -1,6 +1,6 @@
 /*
  * Task 1624 — « Configurer le tableau de bord » (/my/app/dashboard/configure).
- * Inert outside .o_sc_app.
+ * Inert outside .o_pk_app.
  *
  * Each instance row is ONE form (form[data-sc-dash-instance]) posting to
  * /my/app/dashboard/configure/save. Saved as you go: any change in the form
@@ -36,7 +36,7 @@ const TITLE_DELAY = 700;
 const timers = new WeakMap();
 
 function inApp(el) {
-    return Boolean(el && el.closest && el.closest(".o_sc_app"));
+    return Boolean(el && el.closest && el.closest(".o_pk_app"));
 }
 
 function instanceForm(target) {
@@ -117,7 +117,7 @@ function syncRow(form) {
         item.classList.toggle("o_sc_dash_cfg_off", !toggle.checked);
     }
     const title = form.querySelector('input[name="title"]');
-    const label = form.querySelector(".o_sc_dash_cfg_switch .o_sc_switch_label");
+    const label = form.querySelector(".o_sc_dash_cfg_switch .o_pk_switch_label");
     if (title && label) {
         label.textContent = title.value.trim() || title.placeholder;
     }
@@ -144,13 +144,13 @@ async function postMove(data) {
 }
 
 function csrf() {
-    const input = document.querySelector('.o_sc_app [data-sc-dash-zones] input[name="csrf_token"]');
+    const input = document.querySelector('.o_pk_app [data-sc-dash-zones] input[name="csrf_token"]');
     return input ? input.value : "";
 }
 
 /** ▲ / ▼ and « Move to » follow each row's zone and place. */
 function syncZones() {
-    for (const list of document.querySelectorAll(".o_sc_app ol[data-sc-dash-zone]")) {
+    for (const list of document.querySelectorAll(".o_pk_app ol[data-sc-dash-zone]")) {
         const items = [...list.querySelectorAll(":scope > li[data-sc-dash-item]")];
         items.forEach((item, index) => {
             const up = item.querySelector('button[data-sc-dash-move="up"]');
@@ -183,7 +183,7 @@ document.addEventListener("change", (ev) => {
     }
     const item = select.closest("li[data-sc-dash-item]");
     const zone = select.value;
-    const target = document.querySelector(`.o_sc_app ol[data-sc-dash-zone="${zone}"]`);
+    const target = document.querySelector(`.o_pk_app ol[data-sc-dash-zone="${zone}"]`);
     if (!item || !target) {
         return;
     }
@@ -201,7 +201,7 @@ document.addEventListener("change", (ev) => {
 });
 
 function initSortable() {
-    const root = document.querySelector(".o_sc_app [data-sc-dash-zones]");
+    const root = document.querySelector(".o_pk_app [data-sc-dash-zones]");
     if (!root) {
         return;
     }
@@ -293,11 +293,11 @@ document.addEventListener("submit", (ev) => {
 });
 
 function init() {
-    for (const button of document.querySelectorAll(".o_sc_app [data-sc-dash-save]")) {
+    for (const button of document.querySelectorAll(".o_pk_app [data-sc-dash-save]")) {
         button.hidden = true;
     }
     // « Move to » saves on pick: its no-JS « OK » goes.
-    for (const button of document.querySelectorAll(".o_sc_app [data-sc-dash-zone-go]")) {
+    for (const button of document.querySelectorAll(".o_pk_app [data-sc-dash-zone-go]")) {
         button.hidden = true;
     }
     initSortable();

@@ -19,20 +19,20 @@ function assert(condition, message) {
 }
 
 const TEAMS = 'section[data-pk-edit-card="teams"]';
-const REMOVE = `${TEAMS} [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="sc_team_ids"] .o_sc_tag:contains("PC Team A") button.o_sc_tag_remove`;
+const REMOVE = `${TEAMS} [data-sc-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="sc_team_ids"] .o_pk_tag:contains("PC Team A") button.o_pk_tag_remove`;
 
 function removeButton() {
     const tag = [...document.querySelectorAll(
-        `${TEAMS} [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="sc_team_ids"] .o_sc_tag`
+        `${TEAMS} [data-sc-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="sc_team_ids"] .o_pk_tag`
     )].find((li) => li.textContent.includes("PC Team A"));
-    return tag ? tag.querySelector("button.o_sc_tag_remove") : null;
+    return tag ? tag.querySelector("button.o_pk_tag_remove") : null;
 }
 
 tours.add("sc_1656_lose_access", {
     steps: () => [
         {
             content: "From the team page, open the player",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             run() {
                 const link = document.querySelector('a[href*="/my/player?player_id="]');
                 assert(link, "no player link on the team page");
@@ -76,7 +76,7 @@ tours.add("sc_1656_lose_access", {
         },
         {
             content: "Back on the team page, the toast",
-            trigger: '.o_sc_app .o_sc_toast:not([hidden]):contains("removed from")',
+            trigger: '.o_pk_app .o_pk_toast:not([hidden]):contains("removed from")',
             run() {
                 assert(window.location.pathname === "/my/team", window.location.pathname);
             },

@@ -58,7 +58,7 @@ tours.add("sc_1624_dashboard_configure", {
         },
         {
             content: "One row per section; switch « Today » off (tap the row)",
-            trigger: `${ITEM("today")} label.o_sc_switch`,
+            trigger: `${ITEM("today")} label.o_pk_switch`,
             run() {
                 noHorizontalScroll();
                 assert(!document.querySelector("[data-sc-dash-save]:not([hidden])"), "no-JS save button hidden");
@@ -112,24 +112,24 @@ tours.add("sc_1624_dashboard_configure", {
             trigger: `${FORM("watch-2")}:not([data-sc-dash-saving]) [data-sc-dash-status]:not(:empty)`,
             async run() {
                 await waitFor(
-                    () => document.querySelector(`${ITEM("watch-2")} .o_sc_switch_label`).textContent.trim() === "Watch C only",
+                    () => document.querySelector(`${ITEM("watch-2")} .o_pk_switch_label`).textContent.trim() === "Watch C only",
                     "the row shows the title"
                 );
             },
         },
         {
             content: "Limit it to DB Team C: type in the teams picker",
-            trigger: `${FORM("watch-2")} [data-sc-dash-scope] input.o_sc_tags_search:last`,
+            trigger: `${FORM("watch-2")} [data-sc-dash-scope] input.o_pk_tags_search:last`,
             run: "edit Team C",
         },
         {
             content: "Pick DB Team C",
-            trigger: `${FORM("watch-2")} .o_sc_tags_option:contains("DB Team C")`,
+            trigger: `${FORM("watch-2")} .o_pk_tags_option:contains("DB Team C")`,
             run: "click",
         },
         {
             content: "The scope is saved",
-            trigger: `${FORM("watch-2")} .o_sc_tag:contains("DB Team C")`,
+            trigger: `${FORM("watch-2")} .o_pk_tag:contains("DB Team C")`,
             async run() {
                 const hidden = document.querySelector(`${FORM("watch-2")} input[name="scope_team_ids"]`);
                 await waitFor(() => hidden.value !== "", "scope filled");

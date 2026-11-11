@@ -51,7 +51,7 @@ from odoo.addons.bemade_sports_clinic.tests.test_player_documents_manage_1432 im
     PlayerDocuments1432Common,
 )
 
-ORDER = ('o_sc_follow', 'o_sc_card_clock', 'o_sc_card_archive', 'o_sc_card_trash', 'o_sc_card_edit')
+ORDER = ('o_sc_follow', 'o_sc_card_clock', 'o_pk_card_archive', 'o_pk_card_trash', 'o_pk_card_edit')
 
 
 class TopBars1736Common(PlayerDocuments1432Common):
@@ -104,9 +104,9 @@ class TestCardTopBars1736(TopBars1736Common):
         self._login_tp()
         _text, tree = self._get(self._player_url())
         hero = self._one(tree, '//*[@data-pk-section="player.hero"]')
-        self._assert_order(hero, ('o_sc_follow', 'o_sc_card_edit'))
+        self._assert_order(hero, ('o_sc_follow', 'o_pk_card_edit'))
         star = self._one(hero, './/button[@data-sc-follow]')
-        self.assertIn('o_sc_icon_btn', star.get('class'))
+        self.assertIn('o_pk_icon_btn', star.get('class'))
         self.assertEqual(star.get('aria-pressed'), 'false')
         self.assertEqual(star.get('aria-label'), 'Follow')
         self.assertFalse(star.text_content().strip(), 'an icon, no text')
@@ -129,15 +129,15 @@ class TestCardTopBars1736(TopBars1736Common):
         self.assertTrue(summary.xpath('./*[@data-sc-fragment="sports.patient.injury:%s:summary"]'
                                       % self.injury.id))
         # act_injury is the therapist's: clock with 1.
-        self._assert_order(summary, ('o_sc_card_clock', 'o_sc_card_trash', 'o_sc_card_edit'))
+        self._assert_order(summary, ('o_sc_card_clock', 'o_pk_card_trash', 'o_pk_card_edit'))
         clock = self._one(summary, './/a[contains(@class, "o_sc_card_clock")]')
         self.assertEqual(clock.get('data-sc-activity-clock'), '1')
-        trash = self._one(summary, './/button[contains(@class, "o_sc_card_trash")]')
+        trash = self._one(summary, './/button[contains(@class, "o_pk_card_trash")]')
         self.assertEqual(trash.get('hidden'), 'hidden')
         self.assertEqual(trash.get('data-sc-edit-only'), '1')
         self.assertEqual(trash.get('data-sc-edit-for'), 'injury-details')
         self.assertEqual(trash.get('data-sc-sheet-open'), 'sc_delete_injury_sheet_%s' % self.injury.id)
-        self.assertIn('o_sc_icon_btn_danger', trash.get('class'))
+        self.assertIn('o_pk_icon_btn_danger', trash.get('class'))
         self.assertTrue(tree.xpath('//dialog[@id="sc_delete_injury_sheet_%s"]' % self.injury.id))
         pencil = self._one(summary, './/button[@data-sc-edit-toggle]')
         self.assertEqual(pencil.get('data-sc-edit-for'), 'injury-details')
@@ -157,15 +157,15 @@ class TestCardTopBars1736(TopBars1736Common):
         self._login_coach()
         _text, tree = self._get(self._player_url('injuries'))
         card = self._one(tree, '//details[@id="injury-%s"]' % self.injury.id)
-        self.assertNotIn('o_sc_card_trash', self._icons(card.xpath('./summary')[0]))
+        self.assertNotIn('o_pk_card_trash', self._icons(card.xpath('./summary')[0]))
 
     # -- AC-2: emergency contact ----------------------------------------------
     def test_contact_trash_edit_only(self):
         self._login_tp()
         _text, tree = self._get(self._player_url('info'))
         card = self._one(tree, '//section[@data-sc-contact-id="%s"]' % self.contact.id)
-        self._assert_order(card, ('o_sc_card_trash', 'o_sc_card_edit'))
-        trash = self._one(card, './/button[contains(@class, "o_sc_card_trash")]')
+        self._assert_order(card, ('o_pk_card_trash', 'o_pk_card_edit'))
+        trash = self._one(card, './/button[contains(@class, "o_pk_card_trash")]')
         self.assertEqual(trash.get('hidden'), 'hidden')
         self.assertEqual(trash.get('data-sc-sheet-open'), 'sc_delete_contact_%s' % self.contact.id)
         # No « Delete » text button left in the edit view.
@@ -176,7 +176,7 @@ class TestCardTopBars1736(TopBars1736Common):
         self._login_coach()
         _text, tree = self._get(self._player_url('info'))
         card = self._one(tree, '//section[@data-sc-contact-id="%s"]' % self.contact.id)
-        self._assert_order(card, ('o_sc_card_edit',))
+        self._assert_order(card, ('o_pk_card_edit',))
 
     # -- AC-2: medical list item ----------------------------------------------
     def test_medical_item_trash(self):
@@ -184,7 +184,7 @@ class TestCardTopBars1736(TopBars1736Common):
         _text, tree = self._get(self._player_url('injuries'))
         sheet = self._one(tree, '//dialog[@id="sc_med_player_allergy_%s"]' % self.player.id)
         card = sheet.xpath('.//li[@data-sc-med-item]')[0]
-        self._assert_order(card, ('o_sc_card_trash', 'o_sc_card_edit'))
+        self._assert_order(card, ('o_pk_card_trash', 'o_pk_card_edit'))
         trash = self._one(card, './/button[@data-sc-med-item-delete]')
         self.assertEqual(trash.get('hidden'), 'hidden')
         self.assertEqual(trash.get('data-sc-edit-only'), '1')
@@ -195,10 +195,10 @@ class TestCardTopBars1736(TopBars1736Common):
         self._login_tp()
         _text, tree = self._get(self._tab_url())
         item = self._tab_item(tree, self.doc_player)
-        self._assert_order(item, ('o_sc_card_archive', 'o_sc_card_edit'))
-        archive = self._one(item, './/button[contains(@class, "o_sc_card_archive")]')
+        self._assert_order(item, ('o_pk_card_archive', 'o_pk_card_edit'))
+        archive = self._one(item, './/button[contains(@class, "o_pk_card_archive")]')
         self.assertIsNone(archive.get('hidden'), 'visible in read mode')
-        self.assertNotIn('o_sc_icon_btn_danger', archive.get('class'))
+        self.assertNotIn('o_pk_icon_btn_danger', archive.get('class'))
         form = archive.getparent()
         self.assertEqual(form.get('action'), '/my/injury/document/delete/%s' % self.doc_player.id)
         self.assertEqual(form.xpath('./input[@name="sc_undo"]/@value'), ['1'])
@@ -213,7 +213,7 @@ class TestCardTopBars1736(TopBars1736Common):
         self.assertFalse(self._alive(self.doc_player))
         text, tree = self._get(resp.headers['Location'])
         self.assertNotIn('Document deleted.', text)
-        toast = self._one(tree, '//*[contains(@class, "o_sc_toast")]')
+        toast = self._one(tree, '//*[contains(@class, "o_pk_toast")]')
         self.assertEqual(toast.get('data-sc-notify'), 'Document archived.')
         undo = self._one(tree, '//form[@data-sc-form="sc.undo"]')
         self.assertTrue(undo.get('action').startswith('/my/injury/document/restore/%s' % self.doc_player.id))
@@ -245,8 +245,8 @@ class TestCardTopBars1736(TopBars1736Common):
         url = '/my/event/%s' % self.event.id
         _text, tree = self._get(url)
         card = self._one(tree, '//article[@data-sc-timesheet-id="%s"]' % self.timesheet.id)
-        self._assert_order(card, ('o_sc_card_archive', 'o_sc_card_edit'))
-        archive = self._one(card, './/button[contains(@class, "o_sc_card_archive")]')
+        self._assert_order(card, ('o_pk_card_archive', 'o_pk_card_edit'))
+        archive = self._one(card, './/button[contains(@class, "o_pk_card_archive")]')
         self.assertIsNone(archive.get('hidden'))
         self.assertEqual(archive.get('type'), 'submit')
         form = self._one(tree, '//form[@id="%s"]' % archive.get('form'))
@@ -254,14 +254,14 @@ class TestCardTopBars1736(TopBars1736Common):
         self.assertEqual(form.xpath('./input[@name="sc_undo"]/@value'), ['1'])
         # The state chip sits first in the group; no bottom « Delete ».
         self.assertTrue(card.xpath('.//*[@data-sc-card-icons]/span[@data-sc-ts-state]'))
-        self.assertFalse(card.xpath('.//*[contains(@class, "o_sc_card_actions")]'))
+        self.assertFalse(card.xpath('.//*[contains(@class, "o_pk_card_actions")]'))
         self.assertFalse(tree.xpath('//dialog[starts-with(@id, "sc_ts_delete_")]'))
         resp = self._post(form.get('action'), return_url=url, sc_undo='1')
         self.assertEqual(resp.headers['Location'].rsplit(url, 1)[-1], '')
         self.timesheet.invalidate_recordset()
         self.assertFalse(self.timesheet.active)
         _text, tree = self._get(url)
-        self.assertEqual(self._one(tree, '//*[contains(@class, "o_sc_toast")]').get('data-sc-notify'),
+        self.assertEqual(self._one(tree, '//*[contains(@class, "o_pk_toast")]').get('data-sc-notify'),
                          'Timesheet archived.')
         undo = self._one(tree, '//form[@data-sc-form="sc.undo"]')
         resp = self._post(undo.get('action'))
@@ -283,13 +283,13 @@ class TestCardTopBars1736(TopBars1736Common):
         self._login_tp()
         _text, tree = self._get('/my/notepad')
         card = self._one(tree, '//article[@data-sc-quick-note-id="%s"]' % self.qnote.id)
-        self._assert_order(card, ('o_sc_card_archive', 'o_sc_card_trash', 'o_sc_card_edit'))
-        trash = self._one(card, './/button[contains(@class, "o_sc_card_trash")]')
+        self._assert_order(card, ('o_pk_card_archive', 'o_pk_card_trash', 'o_pk_card_edit'))
+        trash = self._one(card, './/button[contains(@class, "o_pk_card_trash")]')
         self.assertEqual(trash.get('hidden'), 'hidden')
         self.assertEqual(trash.get('data-sc-sheet-open'), 'sc_qn_delete_%s' % self.qnote.id)
         self.assertTrue(tree.xpath('//dialog[@id="sc_qn_delete_%s"]' % self.qnote.id))
-        self.assertFalse(card.xpath('.//*[contains(@class, "o_sc_card_actions")]'))
-        form = self._one(card, './/form[.//button[contains(@class, "o_sc_card_archive")]]')
+        self.assertFalse(card.xpath('.//*[contains(@class, "o_pk_card_actions")]'))
+        form = self._one(card, './/form[.//button[contains(@class, "o_pk_card_archive")]]')
         self.assertEqual(form.get('action'), '/my/notepad/%s/archive' % self.qnote.id)
         resp = self._post(form.get('action'), sc_undo='1')
         self.assertNotIn('success=', resp.headers['Location'])
@@ -307,8 +307,8 @@ class TestCardTopBars1736(TopBars1736Common):
         self.qnote.active = False
         _text, tree = self._get('/my/notepad?show_archived=1')
         card = self._one(tree, '//article[@data-sc-quick-note-id="%s"]' % self.qnote.id)
-        self._assert_order(card, ('o_sc_card_trash',))
-        self.assertIsNone(self._one(card, './/button[contains(@class, "o_sc_card_trash")]').get('hidden'))
+        self._assert_order(card, ('o_pk_card_trash',))
+        self.assertIsNone(self._one(card, './/button[contains(@class, "o_pk_card_trash")]').get('hidden'))
         self.assertTrue(card.xpath('.//button[@data-sc-action="note.restore"]'))
 
     # -- AC-4: event hero -----------------------------------------------------
@@ -318,20 +318,20 @@ class TestCardTopBars1736(TopBars1736Common):
         hero = self._one(tree, '//section[@data-pk-section="event.hero"]')
         # Task 1736 r1 (deliberate update): no archive icon — « Cancel Event »
         # is its own red action again (below the hero's details).
-        self._assert_order(hero, ('o_sc_card_clock', 'o_sc_card_edit'))
+        self._assert_order(hero, ('o_sc_card_clock', 'o_pk_card_edit'))
         clock = self._one(hero, './/a[contains(@class, "o_sc_card_clock")]')
         self.assertEqual(clock.get('href'), '/my/event/activities?event_id=%s' % self.event.id)
         # act_event: the therapist's — the same count as the event's row.
         self.assertEqual(clock.get('data-sc-activity-clock'), '1')
-        self.assertEqual(clock.xpath('./span[contains(@class, "o_sc_card_badge")]/text()'), ['1'])
-        self.assertFalse(hero.xpath('.//*[contains(@class, "o_sc_card_archive")]'))
-        cancel = self._one(hero, './/*[contains(@class, "o_sc_actions_row")]/button[@data-sc-action="event.cancel"]')
+        self.assertEqual(clock.xpath('./span[contains(@class, "o_pk_card_badge")]/text()'), ['1'])
+        self.assertFalse(hero.xpath('.//*[contains(@class, "o_pk_card_archive")]'))
+        cancel = self._one(hero, './/*[contains(@class, "o_pk_actions_row")]/button[@data-sc-action="event.cancel"]')
         self.assertEqual(cancel.get('data-sc-sheet-open'), 'sc_event_cancel_sheet')
-        self.assertIn('o_sc_btn_danger', cancel.get('class'))
+        self.assertIn('o_pk_btn_danger', cancel.get('class'))
         self.assertEqual(cancel.text_content().strip(), 'Cancel Event')
         self.assertTrue(tree.xpath('//dialog[@id="sc_event_cancel_sheet"]'))
         # Only « Cancel Event » in that row (« Activities » is the clock).
-        self.assertEqual(hero.xpath('.//*[contains(@class, "o_sc_actions_row")]//@data-sc-action'), ['event.cancel'])
+        self.assertEqual(hero.xpath('.//*[contains(@class, "o_pk_actions_row")]//@data-sc-action'), ['event.cancel'])
         # Its sheet posts the cancel itself — no archive « Undo » toast.
         form = self._one(tree, '//dialog[@id="sc_event_cancel_sheet"]//form')
         self.assertEqual(form.get('action'), '/my/event/%s/cancel' % self.event.id)
@@ -341,12 +341,12 @@ class TestCardTopBars1736(TopBars1736Common):
         _text, tree = self._get('/my/event/%s' % self.event.id)
         clock = self._one(tree, '//section[@data-pk-section="event.hero"]//a[contains(@class, "o_sc_card_clock")]')
         self.assertEqual(clock.get('data-sc-activity-clock'), '0')
-        self.assertFalse(clock.xpath('./span[contains(@class, "o_sc_card_badge")]'))
+        self.assertFalse(clock.xpath('./span[contains(@class, "o_pk_card_badge")]'))
         # Cancelled: « Restore event » (its counterpart), no « Cancel Event ».
         self.event.sudo().write({'state': 'cancelled'})
         _text, tree = self._get('/my/event/%s' % self.event.id)
         hero = self._one(tree, '//section[@data-pk-section="event.hero"]')
-        self.assertNotIn('o_sc_card_archive', self._icons(hero))
+        self.assertNotIn('o_pk_card_archive', self._icons(hero))
         self.assertTrue(hero.xpath('.//button[@data-sc-action="event.restore"]'))
         self.assertFalse(hero.xpath('.//button[@data-sc-action="event.cancel"]'))
 
@@ -358,8 +358,8 @@ class TestCardTopBars1736(TopBars1736Common):
         row = tree.xpath('//*[@data-sc-activity-row="%s"]' % self.act_team.id)[0]
         # Task 1736 r1 (deliberate update): the card has a pencil — the
         # trash shows while editing only.
-        self._assert_order(row, ('o_sc_card_trash', 'o_sc_card_edit'))
-        trash = self._one(row, './/button[contains(@class, "o_sc_card_trash")]')
+        self._assert_order(row, ('o_pk_card_trash', 'o_pk_card_edit'))
+        trash = self._one(row, './/button[contains(@class, "o_pk_card_trash")]')
         self.assertEqual(trash.get('hidden'), 'hidden')
         self.assertEqual(trash.get('data-sc-edit-only'), '1')
         self.assertEqual(trash.get('data-sc-activity-id'), str(self.act_team.id))
@@ -369,9 +369,9 @@ class TestCardTopBars1736(TopBars1736Common):
         self.assertNotIn('activity.cancel', actions)
         _text, tree = self._get('/my/activity/%s' % self.act_team.id)
         card = self._one(tree, '//section[@data-pk-section="activity.detail"]')
-        self._assert_order(card, ('o_sc_card_trash', 'o_sc_card_edit'))
-        self.assertEqual(self._one(card, './/button[contains(@class, "o_sc_card_trash")]').get('hidden'), 'hidden')
-        bar = tree.xpath('//*[contains(@class, "o_sc_actionbar")]/button/@data-sc-action')
+        self._assert_order(card, ('o_pk_card_trash', 'o_pk_card_edit'))
+        self.assertEqual(self._one(card, './/button[contains(@class, "o_pk_card_trash")]').get('hidden'), 'hidden')
+        bar = tree.xpath('//*[contains(@class, "o_pk_actionbar")]/button/@data-sc-action')
         self.assertEqual(bar[-1], 'activity.complete')
         self.assertNotIn('activity.cancel', bar)
 
@@ -381,7 +381,7 @@ class TestCardTopBars1736(TopBars1736Common):
         self._login_tp()
         _text, tree = self._get('/my/team?team_id=%s' % self.team_a.id)
         area = self._one(tree, '//section[@data-pk-section="team.announcement.area"]')
-        self._assert_order(area, ('o_sc_card_archive', 'o_sc_card_edit'))
+        self._assert_order(area, ('o_pk_card_archive', 'o_pk_card_edit'))
         self.assertTrue(area.xpath('.//form[@data-pk-section="team.announcement.archive"]'))
 
     # -- AC-2: dashboard sections ---------------------------------------------
@@ -398,9 +398,9 @@ class TestCardTopBars1736(TopBars1736Common):
         removable = [item for item in items if item.xpath('.//button[@data-sc-dash-remove]')]
         self.assertEqual(len(removable), 1)
         for item in removable:
-            self._assert_order(item, ('o_sc_card_trash',))
+            self._assert_order(item, ('o_pk_card_trash',))
             trash = self._one(item, './/button[@data-sc-dash-remove]')
-            self.assertIn('o_sc_icon_btn_danger', trash.get('class'))
+            self.assertIn('o_pk_icon_btn_danger', trash.get('class'))
             self.assertIsNone(trash.get('hidden'))
             self.assertEqual(trash.get('type'), 'submit')
             form = self._one(tree, '//form[@id="%s"]' % trash.get('form'))
@@ -451,7 +451,7 @@ class TestCardTopBarsI18n1736(TopBars1736Common):
         hero = self._one(tree, '//*[@data-pk-section="player.hero"]')
         self.assertEqual(self._one(hero, './/button[@data-sc-follow]').get('aria-label'), 'Suivre')
         card = self._one(tree, '//details[@id="injury-%s"]' % self.injury.id)
-        self.assertEqual(self._one(card, './/button[contains(@class, "o_sc_card_trash")]').get('aria-label'),
+        self.assertEqual(self._one(card, './/button[contains(@class, "o_pk_card_trash")]').get('aria-label'),
                          'Supprimer la blessure')
         self.assertEqual(self._one(card, './/button[@data-sc-injury-toggle]').get('aria-label'),
                          'Afficher ou masquer la blessure')
@@ -467,7 +467,7 @@ class TestCardTopBarsI18n1736(TopBars1736Common):
         self.opener.cookies.set('frontend_lang', 'fr_CA')
         self._post('/my/notepad/%s/archive' % self.qnote.id, sc_undo='1')
         _text, tree = self._get('/my/notepad')
-        self.assertEqual(self._one(tree, '//*[contains(@class, "o_sc_toast")]').get('data-sc-notify'),
+        self.assertEqual(self._one(tree, '//*[contains(@class, "o_pk_toast")]').get('data-sc-notify'),
                          'Note archivée.')
         self.assertEqual(self._one(tree, '//form[@data-sc-form="sc.undo"]').get('data-sc-toast-action'),
                          'Annuler')

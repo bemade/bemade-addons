@@ -4,7 +4,7 @@
  */
 import { describe, expect, getFixture, test } from "@odoo/hoot";
 
-import { PENDING_TOAST_KEY, pkHomeOf, pkLeaveTarget } from "@bemade_portal_kit/js/pk_confirm";
+import { PENDING_TOAST_KEY, pkConfirm, pkHomeOf, pkLeaveTarget } from "@bemade_portal_kit/js/pk_confirm";
 
 const O = "https://app.example";
 const PLAYERS = { home: "/my/things", sameParams: ["thing_id"] };
@@ -88,5 +88,24 @@ describe("pk_confirm: pkHomeOf", () => {
 describe("pk_confirm: storage key", () => {
     test("task 5198 (P3a): the pending toast key takes the pk_ prefix", () => {
         expect(PENDING_TOAST_KEY).toBe("pk_pending_toast:v1");
+    });
+});
+
+describe("pk_confirm: the confirm sheet", () => {
+    test("task 5344 (P3b1): the sheet takes the kit's o_pk_* classes", async () => {
+        getFixture().innerHTML = '<div class="o_pk_app"></div>';
+        const answer = pkConfirm({ title: "Remove?", message: "Synthetic message", confirm: "Remove" });
+        const dialog = document.querySelector("dialog[data-pk-confirm]");
+        expect(dialog.closest(".o_pk_app")).not.toBe(null);
+        expect(dialog.classList.contains("o_pk_sheet")).toBe(true);
+        expect(dialog.classList.contains("o_pk_confirm_sheet")).toBe(true);
+        expect(dialog.querySelector(".o_pk_sheet_title").textContent).toBe("Remove?");
+        expect(dialog.querySelector(".o_pk_confirm_message").textContent).toBe("Synthetic message");
+        expect(dialog.querySelector("[data-pk-confirm-ok]").classList.contains("o_pk_btn_danger")).toBe(true);
+        expect(dialog.querySelector("[data-pk-confirm-cancel]").classList.contains("o_pk_btn_ghost")).toBe(true);
+        expect(dialog.querySelector('[class*="o_sc_"]')).toBe(null);
+        dialog.querySelector("[data-pk-confirm-cancel]").click();
+        expect(await answer).toBe(false);
+        dialog.remove();
     });
 });

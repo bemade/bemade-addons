@@ -79,10 +79,15 @@ describe("pk_app_nav", () => {
     });
 
     test("backIsUseful follows the back chevron in the shell", () => {
-        getFixture().innerHTML = '<div class="o_sc_app"></div>';
+        getFixture().innerHTML = '<div class="o_pk_app"></div>';
         expect(backIsUseful()).toBe(false);
-        getFixture().innerHTML = '<div class="o_sc_app"><a href="/my" data-pk-back="1">Back</a></div>';
+        getFixture().innerHTML = '<div class="o_pk_app"><a href="/my" data-pk-back="1">Back</a></div>';
         expect(backIsUseful()).toBe(true);
+    });
+
+    test("task 5344 (P3b1): the shell root is .o_pk_app, an o_sc_app root is not read", () => {
+        getFixture().innerHTML = '<div class="o_sc_app"><a href="/my" data-pk-back="1">Back</a></div>';
+        expect(backIsUseful()).toBe(false);
     });
 
     test("task 5198 (P3a): the tab's storage keys take the pk_ prefix", () => {

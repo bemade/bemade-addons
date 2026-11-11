@@ -62,7 +62,7 @@ tours.add("sc_1604_verify_row", {
         },
         {
             content: "The row turns into « Resolve » in place — the card stays closed, no reload",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => {
                     const button = quick("Synthetic strain");
@@ -117,7 +117,7 @@ tours.add("sc_1604_resolve_row", {
         },
         {
             content: "The ankle's row has no quick action any more — no reload",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => !quick("Synthetic ankle"), "ankle row refreshed");
                 assertNoReload();
@@ -139,7 +139,7 @@ tours.add("sc_1604_page_verify", {
         },
         {
             content: "The row now offers « Resolve » — the card stays open, no reload",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => {
                     const button = quick("Synthetic strain");

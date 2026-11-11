@@ -1,5 +1,5 @@
 /*
- * Task 1650 — the app header's search (inert outside .o_sc_app).
+ * Task 1650 — the app header's search (inert outside .o_pk_app).
  *
  * The magnifier ([data-sc-search-open], a link to /my/players without JS),
  * « / » or Ctrl/⌘-K (laptop; never while typing in a field) open
@@ -26,7 +26,7 @@ function results(dialog) {
 
 function highlight(dialog, index) {
     const items = results(dialog);
-    items.forEach((item, i) => item.classList.toggle("o_sc_search_active", i === index));
+    items.forEach((item, i) => item.classList.toggle("o_pk_search_active", i === index));
     active = items.length ? Math.max(-1, Math.min(index, items.length - 1)) : -1;
     if (active >= 0) {
         items[active].scrollIntoView({ block: "nearest" });
@@ -90,7 +90,7 @@ function typing(target) {
 
 document.addEventListener("click", (ev) => {
     const opener = ev.target.closest && ev.target.closest("[data-sc-search-open]");
-    if (!opener || !opener.closest(".o_sc_app")) {
+    if (!opener || !opener.closest(".o_pk_app")) {
         return;
     }
     if (ev.metaKey || ev.ctrlKey || ev.shiftKey) {
@@ -113,7 +113,7 @@ document.addEventListener("input", (ev) => {
 
 document.addEventListener("keydown", (ev) => {
     const dialog = sheet();
-    if (!dialog || !document.querySelector(".o_sc_app")) {
+    if (!dialog || !document.querySelector(".o_pk_app")) {
         return;
     }
     if (dialog.open && dialog.contains(ev.target)) {

@@ -78,7 +78,7 @@ class TestSplitInjuryNotes1675(Split1675Common):
         section = self._section(tree)
         links = section.xpath('.//*[starts-with(@data-sc-sheet-open, "sc_note_history_sheet_")]')
         self.assertEqual(len(links), 1)
-        self.assertTrue(links[0].xpath('parent::*/parent::div[contains(@class, "o_sc_edit_card_head")]'
+        self.assertTrue(links[0].xpath('parent::*/parent::div[contains(@class, "o_pk_edit_card_head")]'
                                        '/parent::section[@data-pk-section="injury.notes"]'))
         self.assertFalse(links[0].xpath('ancestor::*[@data-pk-edit-card][ancestor::section[@data-pk-section="injury.notes"]]'))
 

@@ -17,7 +17,7 @@ function assert(condition, message) {
 
 const CURRENT = "T1582 tour current text";
 const NEW = "T1582 tour replaced text";
-const FIELD = '.o_sc_autosave[data-sc-field="external_notes"]';
+const FIELD = '.o_pk_autosave[data-sc-field="external_notes"]';
 
 tours.add("sc_1582_note_replace", {
     steps: () => [
@@ -98,7 +98,7 @@ tours.add("sc_1582_note_replace", {
         // scopes, each entry labelled), in edit mode too.
         {
             content: "No « History » next to the replace hint; the head's one opens the history",
-            trigger: `section[data-pk-section="injury.notes"] > .o_sc_edit_card_head [data-sc-sheet-open^="sc_note_history_sheet_"]`,
+            trigger: `section[data-pk-section="injury.notes"] > .o_pk_edit_card_head [data-sc-sheet-open^="sc_note_history_sheet_"]`,
             run(helpers) {
                 assert(
                     !document.querySelector(`${FIELD} [data-sc-sheet-open^="sc_note_history_sheet_"]`),
@@ -109,9 +109,9 @@ tours.add("sc_1582_note_replace", {
         },
         {
             content: "The history lists the new text and keeps the previous one",
-            trigger: `dialog[id^="sc_note_history_sheet_"][open] li.o_sc_history_entry:contains(${NEW})`,
+            trigger: `dialog[id^="sc_note_history_sheet_"][open] li.o_pk_history_entry:contains(${NEW})`,
             run() {
-                const rows = [...document.querySelectorAll('dialog[id^="sc_note_history_sheet_"][open] li.o_sc_history_entry')];
+                const rows = [...document.querySelectorAll('dialog[id^="sc_note_history_sheet_"][open] li.o_pk_history_entry')];
                 assert(
                     rows.some((li) => li.textContent.includes(CURRENT)),
                     "the previous text is not kept in the history"

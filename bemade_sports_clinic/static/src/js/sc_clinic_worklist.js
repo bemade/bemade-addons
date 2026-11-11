@@ -104,7 +104,7 @@ export class ScClinicWorklist extends Component {
 
     get paused() {
         return Boolean(
-            this.state.dragId || this.state.pending || document.querySelector("dialog.o_sc_sheet[open]")
+            this.state.dragId || this.state.pending || document.querySelector("dialog.o_pk_sheet[open]")
         );
     }
 
@@ -318,7 +318,7 @@ registry.category("public_components").add("bemade_sports_clinic.sc_clinic_workl
 // « Resolve » (#1418): point the page's resolve sheet at the clicked row.
 document.addEventListener("click", (ev) => {
     const opener = ev.target.closest && ev.target.closest("[data-sc-resolve-id]");
-    if (!opener || !opener.closest(".o_sc_app")) {
+    if (!opener || !opener.closest(".o_pk_app")) {
         return;
     }
     const sheet = document.getElementById("sc_clinic_resolve_sheet");

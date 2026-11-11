@@ -8,7 +8,7 @@
  * nothing at all on a phone (pk_focus.js). aria-expanded follows the panel however it opens —
  * the button, a « …#<id> » link (sc_app_ui.js), a script — through the
  * <details> « toggle » event. The sort menu is pk_user_menu.js's popup.
- * Inert outside .o_sc_app.
+ * Inert outside .o_pk_app.
  *
  * Task 1672:
  * - a panel the header toggles never opens / closes from its own title
@@ -34,7 +34,7 @@ import { removeDraftsWithPrefix } from "@bemade_portal_kit/js/pk_draft_store";
 
 // Task 5198 (P3a): an always-open add card the consumer marks
 // data-pk-list-reset is reset like an add panel.
-const RESETTABLE = "details.o_sc_list_add_panel, [data-pk-list-reset]";
+const RESETTABLE = "details.o_pk_list_add_panel, [data-pk-list-reset]";
 
 function togglesOf(panel) {
     return [...document.querySelectorAll("[data-pk-list-add-toggle]")].filter(
@@ -44,7 +44,7 @@ function togglesOf(panel) {
 
 document.addEventListener("click", (ev) => {
     const button = ev.target.closest && ev.target.closest("[data-pk-list-add-toggle]");
-    if (!button || !button.closest(".o_sc_app")) {
+    if (!button || !button.closest(".o_pk_app")) {
         return;
     }
     const panel = document.getElementById(button.getAttribute("aria-controls") || "");
@@ -64,7 +64,7 @@ document.addEventListener(
     "toggle",
     (ev) => {
         const panel = ev.target;
-        if (!(panel instanceof HTMLDetailsElement) || !panel.id || !panel.closest(".o_sc_app")) {
+        if (!(panel instanceof HTMLDetailsElement) || !panel.id || !panel.closest(".o_pk_app")) {
             return;
         }
         for (const button of togglesOf(panel)) {
@@ -80,7 +80,7 @@ document.addEventListener(
     (ev) => {
         const summary = ev.target.closest && ev.target.closest("summary");
         const panel = summary && summary.parentElement;
-        if (!panel || !panel.matches("details.o_sc_list_add_panel") || !panel.id || !panel.closest(".o_sc_app")) {
+        if (!panel || !panel.matches("details.o_pk_list_add_panel") || !panel.id || !panel.closest(".o_pk_app")) {
             return;
         }
         if (togglesOf(panel).length) {
@@ -93,7 +93,7 @@ document.addEventListener(
 /** Task 1672: an add panel back to an empty form (see the header). */
 export function resetAddPanel(form) {
     const panel = form && form.closest && form.closest(RESETTABLE);
-    if (!panel || !panel.closest(".o_sc_app")) {
+    if (!panel || !panel.closest(".o_pk_app")) {
         return false;
     }
     form.reset();
@@ -123,7 +123,7 @@ document.addEventListener("pk:create-success", (ev) => {
 // from the browser cache shows the form as it was posted — reset it.
 document.addEventListener("submit", (ev) => {
     const form = ev.target;
-    if (!ev.defaultPrevented && form.closest && form.closest(RESETTABLE) && form.closest(".o_sc_app")) {
+    if (!ev.defaultPrevented && form.closest && form.closest(RESETTABLE) && form.closest(".o_pk_app")) {
         form.dataset.pkSubmitted = "1";
     }
 });
@@ -131,7 +131,7 @@ window.addEventListener("pageshow", (ev) => {
     if (!ev.persisted) {
         return;
     }
-    for (const form of document.querySelectorAll(".o_sc_app form[data-pk-submitted]")) {
+    for (const form of document.querySelectorAll(".o_pk_app form[data-pk-submitted]")) {
         resetAddPanel(form);
     }
 });
@@ -139,10 +139,10 @@ window.addEventListener("pageshow", (ev) => {
 // Task 1724: « Annuler » of an inline add panel.
 document.addEventListener("click", (ev) => {
     const button = ev.target.closest && ev.target.closest("[data-pk-list-add-cancel]");
-    if (!button || !button.closest(".o_sc_app")) {
+    if (!button || !button.closest(".o_pk_app")) {
         return;
     }
-    const panel = button.closest("details.o_sc_list_add_panel");
+    const panel = button.closest("details.o_pk_list_add_panel");
     const form = button.closest("form");
     if (!panel || !form) {
         return;

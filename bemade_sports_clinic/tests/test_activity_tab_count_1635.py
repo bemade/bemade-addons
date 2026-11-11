@@ -46,7 +46,7 @@ class TabCount1635Mixin(Clock1592Mixin):
 
     @staticmethod
     def _badge(tab):
-        badges = tab.xpath('.//span[contains(@class, "o_sc_tab_badge")]')
+        badges = tab.xpath('.//span[contains(@class, "o_pk_tab_badge")]')
         return badges[0] if badges else None
 
     def _assert_badge(self, tree, key, count, overdue):
@@ -59,13 +59,13 @@ class TabCount1635Mixin(Clock1592Mixin):
         self.assertIsNotNone(badge, 'no pill on the %s tab' % key)
         self.assertEqual(_text(badge), str(count))
         classes = badge.get('class').split()
-        tone = 'o_sc_tab_badge_red' if overdue else 'o_sc_tab_badge_neutral'
-        other = 'o_sc_tab_badge_neutral' if overdue else 'o_sc_tab_badge_red'
+        tone = 'o_pk_tab_badge_red' if overdue else 'o_pk_tab_badge_neutral'
+        other = 'o_pk_tab_badge_neutral' if overdue else 'o_pk_tab_badge_red'
         self.assertIn(tone, classes)
         self.assertNotIn(other, classes)
         self.assertTrue(badge.get('aria-label'))
         # Task 1647: the pill comes first, the label right after it.
-        self.assertTrue(badge.getnext() is not None and 'o_sc_tab_label' in badge.getnext().get('class'))
+        self.assertTrue(badge.getnext() is not None and 'o_pk_tab_label' in badge.getnext().get('class'))
         self.assertTrue(badge.getnext().text_content().strip())
         return badge
 
@@ -157,7 +157,7 @@ class TestActivityTabCount1635(TabCount1635Mixin, AppShellCommon):
         for url in ('/my/activities', '/my/events?no_default_dates=1'):
             _t, tree = self._get(url)
             self.assertTrue(tree.xpath('//nav[@data-sc-tabs]/a'), url)
-            self.assertFalse(tree.xpath('//*[contains(@class, "o_sc_tab_badge")]'), url)
+            self.assertFalse(tree.xpath('//*[contains(@class, "o_pk_tab_badge")]'), url)
 
     # -- UC-5 ------------------------------------------------------------
     def test_count_follows_completion(self):

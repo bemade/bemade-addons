@@ -148,7 +148,7 @@ class TestIdentityWarning1716(Warning1716Common):
         resp, tree = self._check(first='Élodie', last='Synthé-Côté', dob='2010-02-03')
         self.assertNotIn('SYNTH-DIAG-1716', resp.text)
         row = tree.xpath('//li[@data-sc-check-player="%s"]' % self.elodie.id)[0]
-        texts = [' '.join(n.text_content().split()) for n in row.xpath('.//span[contains(@class, "o_sc_row_subtitle")]')]
+        texts = [' '.join(n.text_content().split()) for n in row.xpath('.//span[contains(@class, "o_pk_row_subtitle")]')]
         self.assertEqual(len(texts), 2, texts)  # team(s), date of birth
         self._login_coach()
         resp, _tree = self._check(first='Élodie', last='Synthé-Côté')

@@ -136,7 +136,7 @@ class TestBookingManageButtons(_ManageCommon):
         self._login()
         _text, tree = self._get('/my/bookings?filterby=all')
         row = self._row(tree, self.booking_soon)
-        actions = row.xpath('.//*[contains(@class, "o_sc_row_trailing")]//*[@data-sc-action]')
+        actions = row.xpath('.//*[contains(@class, "o_pk_row_trailing")]//*[@data-sc-action]')
         self.assertEqual([a.get('data-sc-action') for a in actions], ['booking.cancel', 'booking.edit'])
         self.assertTrue(actions[0].get('href').startswith('/my/bookings/%s/cancel' % self.booking_soon.id))
         self.assertTrue(actions[1].get('href').startswith('/my/bookings/%s/edit' % self.booking_soon.id))

@@ -22,32 +22,32 @@
             <!-- Owner review 2026-10-14: applied on change (sc_forms.js); group
                  by in its own labelled group (it is not a filter). Task 1607:
                  the sort is in the list header, the form keeps its choice. -->
-            <form method="get" action="/my/sc/timesheets" class="o_sc_filters o_sc_filters_compact" data-pk-section="timesheets.filters"
+            <form method="get" action="/my/sc/timesheets" class="o_pk_filters o_pk_filters_compact" data-pk-section="timesheets.filters"
                   data-pk-autosubmit="1">
                 <input t-if="sortby" type="hidden" name="sortby" t-att-value="sortby"/>
                 <!-- Task 1617: open on every visit (still collapsible; no
                      remembered state — collapsing lasts for that visit). -->
-                <details class="o_sc_disclosure" open="open">
-                    <summary class="o_sc_disclosure_summary">
+                <details class="o_pk_disclosure" open="open">
+                    <summary class="o_pk_disclosure_summary">
                         <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
                         <span>Filters</span>
                     </summary>
-                    <div class="o_sc_filter_grid">
-                        <div class="o_sc_field">
-                            <label for="sc_ts_search" class="o_sc_field_label">Search</label>
-                            <input type="search" id="sc_ts_search" name="search" class="o_sc_input" t-att-value="search or ''"/>
+                    <div class="o_pk_filter_grid">
+                        <div class="o_pk_field">
+                            <label for="sc_ts_search" class="o_pk_field_label">Search</label>
+                            <input type="search" id="sc_ts_search" name="search" class="o_pk_input" t-att-value="search or ''"/>
                         </div>
-                        <div class="o_sc_field">
-                            <label for="sc_ts_from" class="o_sc_field_label">From</label>
-                            <input type="date" id="sc_ts_from" name="date_from" class="o_sc_input" t-att-value="date_from or ''"/>
+                        <div class="o_pk_field">
+                            <label for="sc_ts_from" class="o_pk_field_label">From</label>
+                            <input type="date" id="sc_ts_from" name="date_from" class="o_pk_input" t-att-value="date_from or ''"/>
                         </div>
-                        <div class="o_sc_field">
-                            <label for="sc_ts_to" class="o_sc_field_label">To</label>
-                            <input type="date" id="sc_ts_to" name="date_to" class="o_sc_input" t-att-value="date_to or ''"/>
+                        <div class="o_pk_field">
+                            <label for="sc_ts_to" class="o_pk_field_label">To</label>
+                            <input type="date" id="sc_ts_to" name="date_to" class="o_pk_input" t-att-value="date_to or ''"/>
                         </div>
-                        <div class="o_sc_field">
-                            <label for="sc_ts_team" class="o_sc_field_label">Team</label>
-                            <select id="sc_ts_team" data-sc-picker="1" data-sc-picker-key="team-filter" name="team_id" class="o_sc_input o_sc_select">
+                        <div class="o_pk_field">
+                            <label for="sc_ts_team" class="o_pk_field_label">Team</label>
+                            <select id="sc_ts_team" data-sc-picker="1" data-sc-picker-key="team-filter" name="team_id" class="o_pk_input o_pk_select">
                                 <option value="">All teams</option>
                                 <t t-foreach="teams" t-as="team_opt">
                                     <option t-att-value="team_opt.id" t-att-selected="'selected' if team_id == team_opt.id else None" t-out="team_opt.name"/>
@@ -55,9 +55,9 @@
                             </select>
                         </div>
                         <!-- Owner review 2026-10-11: the legacy portal's other filters. -->
-                        <div class="o_sc_field">
-                            <label for="sc_ts_org" class="o_sc_field_label">Organization</label>
-                            <select id="sc_ts_org" data-sc-picker="1" data-sc-picker-key="org" name="organization_id" class="o_sc_input o_sc_select">
+                        <div class="o_pk_field">
+                            <label for="sc_ts_org" class="o_pk_field_label">Organization</label>
+                            <select id="sc_ts_org" data-sc-picker="1" data-sc-picker-key="org" name="organization_id" class="o_pk_input o_pk_select">
                                 <option value="">All organizations</option>
                                 <t t-foreach="organizations" t-as="org_opt">
                                     <option t-att-value="org_opt.id" t-att-selected="'selected' if organization_id == org_opt.id else None" t-out="org_opt.name"/>
@@ -65,12 +65,12 @@
                             </select>
                         </div>
                     </div>
-                    <fieldset class="o_sc_filter_group" data-pk-section="timesheets.group">
-                        <legend class="o_sc_filter_group_title">Group by</legend>
-                        <div class="o_sc_filter_grid">
-                            <div class="o_sc_field">
-                                <label for="sc_ts_group" class="o_sc_field_label">Group by</label>
-                                <select id="sc_ts_group" name="group_by" class="o_sc_input o_sc_select">
+                    <fieldset class="o_pk_filter_group" data-pk-section="timesheets.group">
+                        <legend class="o_pk_filter_group_title">Group by</legend>
+                        <div class="o_pk_filter_grid">
+                            <div class="o_pk_field">
+                                <label for="sc_ts_group" class="o_pk_field_label">Group by</label>
+                                <select id="sc_ts_group" name="group_by" class="o_pk_input o_pk_select">
                                     <option value="" t-att-selected="'selected' if not group_by else None">None</option>
                                     <option value="date" t-att-selected="'selected' if group_by == 'date' else None">Date</option>
                                     <option value="organization" t-att-selected="'selected' if group_by == 'organization' else None">Organization</option>
@@ -79,9 +79,9 @@
                             </div>
                         </div>
                     </fieldset>
-                    <div class="o_sc_form_actions">
-                        <a href="/my/sc/timesheets" class="o_sc_btn o_sc_btn_ghost" data-pk-filter-reset="1">Reset</a>
-                        <button type="submit" class="o_sc_btn o_sc_btn_primary" data-pk-autosubmit-fallback="1">Apply filters</button>
+                    <div class="o_pk_form_actions">
+                        <a href="/my/sc/timesheets" class="o_pk_btn o_pk_btn_ghost" data-pk-filter-reset="1">Reset</a>
+                        <button type="submit" class="o_pk_btn o_pk_btn_primary" data-pk-autosubmit-fallback="1">Apply filters</button>
                     </div>
                 </details>
             </form>
@@ -105,13 +105,13 @@
                  (accent, 600) to MY events missing a timesheet (the events
                  page's « Feuilles de temps manquantes » segment). Round 2
                  (owner 2026-10-27): the link says where it goes. -->
-            <p class="o_sc_muted o_sc_list_hint" data-pk-section="timesheets.hint">To add a timesheet, open the event concerned: <a t-attf-href="/my/events?view_type=missing_timesheets&amp;assigned_user_id=#{request.env.user.id}&amp;no_default_dates=1" class="o_sc_link o_sc_hint_link" data-sc-hint-link="events">My events without timesheets</a></p>
+            <p class="o_pk_muted o_pk_list_hint" data-pk-section="timesheets.hint">To add a timesheet, open the event concerned: <a t-attf-href="/my/events?view_type=missing_timesheets&amp;assigned_user_id=#{request.env.user.id}&amp;no_default_dates=1" class="o_pk_link o_pk_hint_link" data-sc-hint-link="events">My events without timesheets</a></p>
             <!-- Task 1611: a read-fragment list — a time change moves the card
                  to its date group (headings and order as after a reload). -->
-            <div t-if="sc_timesheet_groups" class="o_sc_list" data-pk-section="timesheets.list"
+            <div t-if="sc_timesheet_groups" class="o_pk_list" data-pk-section="timesheets.list"
                  data-sc-fragment="page:timesheets:list" data-sc-fragment-mode="list">
-                <section t-foreach="sc_timesheet_groups" t-as="group" class="o_sc_group" t-att-data-sc-group="group['key']">
-                    <h3 class="o_sc_group_title" t-out="group['label']"/>
+                <section t-foreach="sc_timesheet_groups" t-as="group" class="o_pk_group" t-att-data-sc-group="group['key']">
+                    <h3 class="o_pk_group_title" t-out="group['label']"/>
                     <t t-foreach="group['rows']" t-as="row">
                         <t t-call="bemade_sports_clinic.sc_timesheet_card">
                             <t t-set="show_event" t-value="True"/>
@@ -119,7 +119,7 @@
                     </t>
                 </section>
             </div>
-            <div t-elif="sc_timesheet_rows" class="o_sc_list" data-pk-section="timesheets.list"
+            <div t-elif="sc_timesheet_rows" class="o_pk_list" data-pk-section="timesheets.list"
                  data-sc-fragment="page:timesheets:list" data-sc-fragment-mode="list">
                 <t t-foreach="sc_timesheet_rows" t-as="row">
                     <t t-call="bemade_sports_clinic.sc_timesheet_card">
@@ -127,12 +127,12 @@
                     </t>
                 </t>
             </div>
-            <p t-else="" class="o_sc_empty" data-pk-section="timesheets.empty">No timesheets. Add one from the event's page: <a t-attf-href="/my/events?view_type=missing_timesheets&amp;assigned_user_id=#{request.env.user.id}&amp;no_default_dates=1" class="o_sc_link o_sc_hint_link" data-sc-hint-link="events">My events without timesheets</a></p>
+            <p t-else="" class="o_pk_empty" data-pk-section="timesheets.empty">No timesheets. Add one from the event's page: <a t-attf-href="/my/events?view_type=missing_timesheets&amp;assigned_user_id=#{request.env.user.id}&amp;no_default_dates=1" class="o_pk_link o_pk_hint_link" data-sc-hint-link="events">My events without timesheets</a></p>
             <t t-call="bemade_sports_clinic.sc_timesheet_sheets">
                 <t t-set="rows" t-value="sc_timesheet_rows"/>
                 <t t-set="return_url" t-value="sc_timesheets_return"/>
             </t>
-            <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_sc_pager">
+            <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_pk_pager">
                 <t t-call="portal.pager"/>
             </div>
         </t>
@@ -146,10 +146,10 @@
          plain select (the POST is unchanged; without JS, the select); a team
          narrows the players and events, a player the injuries. -->
     <template id="sc_notepad_links" name="App shell: notepad links">
-        <div class="o_sc_filter_grid" data-sc-picker-scope="1">
-            <div class="o_sc_field">
-                <label class="o_sc_field_label" t-att-for="'%s_team' % prefix">Team</label>
-                <select name="team_id" t-att-id="'%s_team' % prefix" class="o_sc_input o_sc_select"
+        <div class="o_pk_filter_grid" data-sc-picker-scope="1">
+            <div class="o_pk_field">
+                <label class="o_pk_field_label" t-att-for="'%s_team' % prefix">Team</label>
+                <select name="team_id" t-att-id="'%s_team' % prefix" class="o_pk_input o_pk_select"
                         data-sc-picker="1" data-sc-picker-key="team">
                     <option value="">—</option>
                     <t t-foreach="teams" t-as="team_opt">
@@ -157,9 +157,9 @@
                     </t>
                 </select>
             </div>
-            <div class="o_sc_field">
-                <label class="o_sc_field_label" t-att-for="'%s_patient' % prefix">Player</label>
-                <select name="patient_id" t-att-id="'%s_patient' % prefix" class="o_sc_input o_sc_select"
+            <div class="o_pk_field">
+                <label class="o_pk_field_label" t-att-for="'%s_patient' % prefix">Player</label>
+                <select name="patient_id" t-att-id="'%s_patient' % prefix" class="o_pk_input o_pk_select"
                         data-sc-picker="1" data-sc-picker-key="player">
                     <option value="">—</option>
                     <t t-foreach="patients" t-as="patient_opt">
@@ -170,9 +170,9 @@
                     </t>
                 </select>
             </div>
-            <div class="o_sc_field">
-                <label class="o_sc_field_label" t-att-for="'%s_injury' % prefix">Injury</label>
-                <select name="injury_id" t-att-id="'%s_injury' % prefix" class="o_sc_input o_sc_select"
+            <div class="o_pk_field">
+                <label class="o_pk_field_label" t-att-for="'%s_injury' % prefix">Injury</label>
+                <select name="injury_id" t-att-id="'%s_injury' % prefix" class="o_pk_input o_pk_select"
                         data-sc-picker="1" data-sc-picker-key="injury">
                     <option value="">—</option>
                     <t t-foreach="injuries" t-as="injury_opt">
@@ -181,9 +181,9 @@
                     </t>
                 </select>
             </div>
-            <div class="o_sc_field">
-                <label class="o_sc_field_label" t-att-for="'%s_event' % prefix">Event</label>
-                <select name="event_id" t-att-id="'%s_event' % prefix" class="o_sc_input o_sc_select"
+            <div class="o_pk_field">
+                <label class="o_pk_field_label" t-att-for="'%s_event' % prefix">Event</label>
+                <select name="event_id" t-att-id="'%s_event' % prefix" class="o_pk_input o_pk_select"
                         data-sc-picker="1" data-sc-picker-key="event">
                     <option value="">—</option>
                     <t t-foreach="events" t-as="event_opt">
@@ -200,15 +200,15 @@
     <template id="sc_quick_note_card" name="App shell: quick note card">
         <!-- Owner review 2026-10-11: the pencil edit paradigm — an open note
              is edited in place (was an « Edit » sheet with « Save »). -->
-        <article t-attf-class="o_sc_card o_sc_quick_note #{'o_sc_edit_card' if not archived else ''}"
+        <article t-attf-class="o_pk_card o_sc_quick_note #{'o_pk_edit_card' if not archived else ''}"
                  t-att-data-sc-quick-note-id="row['id']" t-att-id="'note-%s' % row['id']"
                  t-att-data-pk-edit-card="('quick-note-%s' % row['id']) if not archived else None">
             <!-- Task 1736 (owner 2026-11-01): the shared top bar — archive
                  (recoverable: an undo toast), the red trash (for good: it
                  asks first; while editing, or always on an archived note,
                  which has no pencil), the pencil. -->
-            <div class="o_sc_edit_card_head">
-                <p class="o_sc_meta" t-out="row['when']"/>
+            <div class="o_pk_edit_card_head">
+                <p class="o_pk_meta" t-out="row['when']"/>
                 <t t-call="bemade_sports_clinic.sc_card_icons">
                     <t t-set="ci_archive" t-value="not archived and {'action': '/my/notepad/%s/archive' % row['id'], 'hidden': {'sc_undo': '1'}, 'key': 'note.archive'}"/>
                     <t t-set="ci_editable" t-value="not archived"/>
@@ -218,14 +218,14 @@
             </div>
             <!-- Task 1611: the text and the link chips, a read fragment. -->
             <div data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(row['record'], 'read')">
-                <p class="o_sc_note_text o_sc_pre" t-out="row['note']"/>
-                <div t-if="row['chips']" class="o_sc_chips">
+                <p class="o_sc_note_text o_pk_pre" t-out="row['note']"/>
+                <div t-if="row['chips']" class="o_pk_chips">
                     <t t-foreach="row['chips']" t-as="chip">
-                        <span class="o_sc_chip o_sc_chip_ghost" t-out="chip"/>
+                        <span class="o_pk_chip o_pk_chip_ghost" t-out="chip"/>
                     </t>
                 </div>
             </div>
-            <div t-if="not archived" class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
+            <div t-if="not archived" class="o_pk_fields" data-sc-edit-view="edit" hidden="hidden">
                 <t t-set="lbl">Note</t>
                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'note', lbl, 'textarea')"/></t>
                 <t t-set="lbl">Team</t>
@@ -240,10 +240,10 @@
             </div>
             <!-- « Restore » of an archived note stays a text button (owner
                  2026-11-01: unchanged). -->
-            <div t-if="archived" class="o_sc_card_actions">
-                <form t-att-action="'/my/notepad/%s/restore' % row['id']" method="post" class="o_sc_inline_form">
+            <div t-if="archived" class="o_pk_card_actions">
+                <form t-att-action="'/my/notepad/%s/restore' % row['id']" method="post" class="o_pk_inline_form">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <button type="submit" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-action="note.restore">Restore</button>
+                    <button type="submit" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm" data-sc-action="note.restore">Restore</button>
                 </form>
             </div>
         </article>
@@ -269,29 +269,29 @@
             <!-- Task 1667: the quick-note form is always there — no « + Ajouter »
                  header toggle, no collapsible wrapper (it replaced #1607's
                  docked-open panel). « Link this note » stays a disclosure. -->
-            <section class="o_sc_card o_sc_notepad_add" id="sc_notepad_add" data-pk-section="notepad.add" data-pk-list-reset="1">
-            <form action="/my/notepad/add" method="post" class="o_sc_form" id="quick-add" data-sc-form="note.add" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"note"}]'>
+            <section class="o_pk_card o_sc_notepad_add" id="sc_notepad_add" data-pk-section="notepad.add" data-pk-list-reset="1">
+            <form action="/my/notepad/add" method="post" class="o_pk_form" id="quick-add" data-sc-form="note.add" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"note"}]'>
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <t t-set="sc_qn_label">Quick note</t>
                 <t t-set="sc_qn_placeholder">Type a note to self…</t>
                 <t t-call="bemade_sports_clinic.sc_field_autosave">
                     <t t-set="props" t-value="sc_draft_props(sc_quick_note_prefix + 'note', 'note', sc_qn_label, 'textarea', placeholder=sc_qn_placeholder, required=True)"/>
                 </t>
-                <details class="o_sc_disclosure">
-                    <summary class="o_sc_disclosure_summary"><span>Link this note (optional)</span></summary>
+                <details class="o_pk_disclosure">
+                    <summary class="o_pk_disclosure_summary"><span>Link this note (optional)</span></summary>
                     <t t-call="bemade_sports_clinic.sc_notepad_links">
                         <t t-set="prefix" t-value="'sc_qn_new'"/>
                         <t t-set="selected" t-value="{}"/>
                     </t>
                 </details>
-                <div class="o_sc_form_actions">
-                    <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="note.add">Add</button>
+                <div class="o_pk_form_actions">
+                    <button type="submit" class="o_pk_btn o_pk_btn_primary" data-sc-action="note.add">Add</button>
                 </div>
                 <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_quick_note_add'"/></t>
             </form>
             </section>
 
-            <div t-if="sc_note_rows" class="o_sc_list" data-pk-section="notepad.list">
+            <div t-if="sc_note_rows" class="o_pk_list" data-pk-section="notepad.list">
                 <t t-foreach="sc_note_rows" t-as="row">
                     <t t-call="bemade_sports_clinic.sc_quick_note_card">
                         <t t-set="archived" t-value="False"/>
@@ -302,14 +302,14 @@
                 <t t-set="message">No note yet.</t>
             </t>
 
-            <section class="o_sc_section" data-pk-section="notepad.archived">
+            <section class="o_pk_section" data-pk-section="notepad.archived">
                 <t t-if="show_archived">
                     <t t-call="bemade_sports_clinic.sc_section_header">
                         <t t-set="title">Archived notes</t>
                         <t t-set="more_url" t-value="'/my/notepad'"/>
                         <t t-set="more_label">Hide</t>
                     </t>
-                    <div t-if="sc_archived_rows" class="o_sc_list">
+                    <div t-if="sc_archived_rows" class="o_pk_list">
                         <t t-foreach="sc_archived_rows" t-as="row">
                             <t t-call="bemade_sports_clinic.sc_quick_note_card">
                                 <t t-set="archived" t-value="True"/>
@@ -320,10 +320,10 @@
                         <t t-set="message">No archived note.</t>
                     </t>
                 </t>
-                <a t-elif="archived_count" href="/my/notepad?show_archived=1" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
+                <a t-elif="archived_count" href="/my/notepad?show_archived=1" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm"
                    data-sc-action="notepad.archived">
                     <span>Archived notes</span>
-                    <span class="o_sc_chip o_sc_chip_ghost" t-out="archived_count"/>
+                    <span class="o_pk_chip o_pk_chip_ghost" t-out="archived_count"/>
                 </a>
             </section>
         </t>
@@ -335,16 +335,16 @@
             <t t-set="sc_title">Daily digest</t>
             <t t-set="sc_active_nav" t-value="'teams'"/>
             <!-- Task 1614: the legacy page's « Snapshot of … » line, and the
-                 Bootstrap digest re-themed by o_sc_legacy (player names were
+                 Bootstrap digest re-themed by o_pk_legacy (player names were
                  white on white in dark mode). -->
-            <p class="o_sc_meta" data-pk-section="digest.snapshot" t-out="digest._sc_snapshot_line()"/>
-            <div class="o_sc_card o_sc_legacy o_sc_digest_body" data-pk-section="digest.body">
+            <p class="o_pk_meta" data-pk-section="digest.snapshot" t-out="digest._sc_snapshot_line()"/>
+            <div class="o_pk_card o_pk_legacy o_sc_digest_body" data-pk-section="digest.body">
                 <t t-call="bemade_sports_clinic.team_digest_render">
                     <t t-set="players" t-value="players"/>
                     <t t-set="announcement" t-value="announcement"/>
                 </t>
             </div>
-            <a t-attf-href="/my/team/#{team.id}/digest-history" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm" data-sc-action="digest.history">
+            <a t-attf-href="/my/team/#{team.id}/digest-history" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm" data-sc-action="digest.history">
                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'history'"/></t>
                 <span>Digest history</span>
             </a>
@@ -354,10 +354,10 @@
     <!-- /my/team/<t>/digest/<d>/body (task 1614): one day's body alone, the
          lazy body of its row in the digest history. data-sc-lazy-filled keeps
          the shell's loader from swapping a day without links for « Nothing to
-         show. »; an empty day carries .o_sc_empty (team_digest_render). -->
+         show. »; an empty day carries .o_pk_empty (team_digest_render). -->
     <template id="sc_digest_body" name="Sports Clinic App: digest body fragment">
         <div class="o_sc_digest_fragment" data-sc-lazy-filled="1">
-            <p class="o_sc_meta" data-pk-section="digest.snapshot" t-out="digest._sc_snapshot_line()"/>
+            <p class="o_pk_meta" data-pk-section="digest.snapshot" t-out="digest._sc_snapshot_line()"/>
             <t t-call="bemade_sports_clinic.team_digest_render">
                 <t t-set="players" t-value="players"/>
                 <t t-set="announcement" t-value="announcement"/>
@@ -373,25 +373,25 @@
             <!-- Task 1614: each date expands in place; its body (the same
                  role re-gated team_digest_render as the day's page) is fetched
                  on first open. The subtitle = the day's counts. -->
-            <div t-if="sc_digest_rows" class="o_sc_list" data-pk-section="digest.history">
+            <div t-if="sc_digest_rows" class="o_pk_list" data-pk-section="digest.history">
                 <t t-foreach="sc_digest_rows" t-as="row">
-                    <details class="o_sc_expand o_sc_digest_row" t-att-data-sc-digest-row="row['id']"
+                    <details class="o_pk_expand o_sc_digest_row" t-att-data-sc-digest-row="row['id']"
                              t-att-data-sc-lazy-url="row['body_url']">
-                        <summary class="o_sc_entity_row">
-                            <span class="o_sc_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'summary'"/></t></span>
-                            <span class="o_sc_row_text">
-                                <span class="o_sc_row_title" t-out="row['label']"/>
-                                <span class="o_sc_row_subtitle" t-out="row['subtitle']"/>
+                        <summary class="o_pk_entity_row">
+                            <span class="o_pk_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'summary'"/></t></span>
+                            <span class="o_pk_row_text">
+                                <span class="o_pk_row_title" t-out="row['label']"/>
+                                <span class="o_pk_row_subtitle" t-out="row['subtitle']"/>
                             </span>
-                            <span class="o_sc_row_trailing">
+                            <span class="o_pk_row_trailing">
                                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
                             </span>
                         </summary>
-                        <div class="o_sc_expand_body">
-                            <div class="o_sc_legacy o_sc_lazy_body">
-                                <p class="o_sc_empty o_sc_lazy_loading">Loading…</p>
+                        <div class="o_pk_expand_body">
+                            <div class="o_pk_legacy o_pk_lazy_body">
+                                <p class="o_pk_empty o_pk_lazy_loading">Loading…</p>
                             </div>
-                            <a t-att-href="row['url']" class="o_sc_section_more" data-sc-action="digest.open"
+                            <a t-att-href="row['url']" class="o_pk_section_more" data-sc-action="digest.open"
                                t-att-data-sc-digest-id="row['id']">Open this day</a>
                         </div>
                     </details>
@@ -400,7 +400,7 @@
             <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
                 <t t-set="message">No digest recorded yet.</t>
             </t>
-            <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_sc_pager">
+            <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_pk_pager">
                 <t t-call="portal.pager"/>
             </div>
         </t>

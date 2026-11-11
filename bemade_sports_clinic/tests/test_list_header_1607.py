@@ -4,8 +4,8 @@ right, no list action left in the app bar. Synthetic fixtures only.
 Acceptance criteria covered here:
 
 * UC-H1 The app bar carries no page action on any shell page (no
-  ``o_sc_appbar_action`` / action slot): only the app-wide items.
-* UC-H2 One list header (``.o_sc_list_header``) right above each list: its
+  ``o_pk_appbar_action`` / action slot): only the app-wide items.
+* UC-H2 One list header (``.o_pk_list_header``) right above each list: its
   « + Ajouter » always reads « Add » (« Ajouter »), its accessible name is the
   full action (``aria-label``), and it reaches the SAME target as before —
   a link (players « Create a player », events « New event » on the list's
@@ -50,7 +50,7 @@ class ListHeader1607Common(Clinic1540Common):
 
     @staticmethod
     def _headers(tree, section=None):
-        xpath = '//div[contains(concat(" ", @class, " "), " o_sc_list_header ")]'
+        xpath = '//div[contains(concat(" ", @class, " "), " o_pk_list_header ")]'
         if section:
             xpath += '[@data-pk-section="%s"]' % section
         return tree.xpath(xpath)
@@ -61,7 +61,7 @@ class ListHeader1607Common(Clinic1540Common):
         return headers[0]
 
     def _add(self, header):
-        adds = header.xpath('.//*[contains(concat(" ", @class, " "), " o_sc_list_add ")]')
+        adds = header.xpath('.//*[contains(concat(" ", @class, " "), " o_pk_list_add ")]')
         self.assertEqual(len(adds), 1)
         add = adds[0]
         self.assertEqual(' '.join(add.text_content().split()), 'Add')
@@ -76,8 +76,8 @@ class ListHeader1607Common(Clinic1540Common):
         return header.xpath('.//a[@role="menuitemradio"][@aria-checked="true"]/@data-sc-sort')
 
     def assertNoAppBarAction(self, tree):
-        bar = tree.xpath('//header[contains(@class, "o_sc_appbar")]')[0]
-        self.assertFalse(bar.xpath('.//*[contains(@class, "o_sc_appbar_action")]'))
+        bar = tree.xpath('//header[contains(@class, "o_pk_appbar")]')[0]
+        self.assertFalse(bar.xpath('.//*[contains(@class, "o_pk_appbar_action")]'))
         self.assertFalse(bar.xpath('.//*[@data-sc-action]'))
         self.assertFalse(bar.xpath('.//*[@data-sc-sheet-open]'))
 
@@ -90,7 +90,7 @@ class ListHeader1607Common(Clinic1540Common):
         self.assertIsNotNone(panel)
         self.assertEqual(panel.tag, 'details')
         self.assertEqual(panel.get('id'), panel_id)
-        self.assertIn('o_sc_list_add_panel', panel.get('class'))
+        self.assertIn('o_pk_list_add_panel', panel.get('class'))
         return add, panel
 
 
@@ -106,7 +106,7 @@ class TestListHeader1607(ListHeader1607Common):
                     '/my/sc/timesheets', '/my/player?player_id=%s' % self.player.id):
             _text, tree = self._get(url)
             self.assertNoAppBarAction(tree)
-            self.assertNotIn('o_sc_appbar_action', _text, url)
+            self.assertNotIn('o_pk_appbar_action', _text, url)
 
     # -- UC-H2 / UC-H3: players --------------------------------------------
     def test_players_header_add_and_sort(self):
@@ -118,7 +118,7 @@ class TestListHeader1607(ListHeader1607Common):
         self.assertEqual((add.tag, add.get('aria-controls')), ('button', 'sc_player_add'))
         self.assertEqual(add.get('aria-label'), 'Create a player')
         self.assertEqual(add.get('data-sc-action'), 'players.create')
-        self.assertTrue(header.xpath('.//*[contains(@class, "o_sc_list_header_count")]'))
+        self.assertTrue(header.xpath('.//*[contains(@class, "o_pk_list_header_count")]'))
         sorts = self._sorts(header)
         self.assertEqual(sorted(sorts), ['name', 'status'])
         path, query = _q(sorts['name'].get('href'))
@@ -135,7 +135,7 @@ class TestListHeader1607(ListHeader1607Common):
         self._login_coach()
         _text, tree = self._get('/my/players')
         header = self._header(tree, 'players.header')
-        self.assertFalse(header.xpath('.//*[contains(@class, "o_sc_list_add")]'))
+        self.assertFalse(header.xpath('.//*[contains(@class, "o_pk_list_add")]'))
         self.assertTrue(self._sorts(header))
 
     # -- events ------------------------------------------------------------
@@ -166,7 +166,7 @@ class TestListHeader1607(ListHeader1607Common):
         self._login_coach()
         _text, tree = self._get('/my/events')
         header = self._header(tree, 'events.header')
-        self.assertFalse(header.xpath('.//*[contains(@class, "o_sc_list_add")]'))
+        self.assertFalse(header.xpath('.//*[contains(@class, "o_pk_list_add")]'))
 
     # -- activities ----------------------------------------------------------
     def test_activities_header_add(self):
@@ -218,7 +218,7 @@ class TestListHeader1607(ListHeader1607Common):
         self.assertEqual((add.get('aria-label'), add.get('data-sc-action')), ('Add My Timesheet', 'timesheet.add'))
         self.assertEqual(header.getparent().get('data-sc-fragment'), 'sports.event:%s:ts-head' % self.event.id)
         # The list follows the header holder.
-        self.assertIn('o_sc_list', header.getparent().getnext().get('class'))
+        self.assertIn('o_pk_list', header.getparent().getnext().get('class'))
 
     def test_event_coach_has_no_timesheets_section(self):
         self._login_coach()
@@ -268,7 +268,7 @@ class TestListHeader1607(ListHeader1607Common):
         self._login_tp()
         _text, tree = self._get('/my/teams?search=PC&sort=alpha')
         header = self._header(tree, 'teams.header')
-        self.assertFalse(header.xpath('.//*[contains(@class, "o_sc_list_add")]'))
+        self.assertFalse(header.xpath('.//*[contains(@class, "o_pk_list_add")]'))
         sorts = self._sorts(header)
         self.assertIn('activity', sorts)
         self.assertIn('alpha', sorts)
@@ -317,7 +317,7 @@ class TestListHeader1607(ListHeader1607Common):
         add = self._add(header)
         self.assertEqual(add.get('data-sc-sheet-open'), 'sc_injury_%s_documents_add' % self.injury.id)
         self.assertEqual((add.get('aria-label'), add.get('data-sc-action')), ('Add documents', 'injury.documents.add'))
-        self.assertFalse(docs.xpath('.//*[contains(@class, "o_sc_edit_card_head")]//button'))
+        self.assertFalse(docs.xpath('.//*[contains(@class, "o_pk_edit_card_head")]//button'))
 
     # -- notepad / timesheets ---------------------------------------------------
     def test_notepad_header(self):
@@ -332,7 +332,7 @@ class TestListHeader1607(ListHeader1607Common):
         self._login_tp()
         _text, tree = self._get('/my/sc/timesheets?team_id=%s&sortby=state' % self.team_a.id)
         header = self._header(tree, 'timesheets.header')
-        self.assertFalse(header.xpath('.//*[contains(@class, "o_sc_list_add")]'))
+        self.assertFalse(header.xpath('.//*[contains(@class, "o_pk_list_add")]'))
         sorts = self._sorts(header)
         self.assertEqual(sorted(sorts), ['date', 'date_desc', 'org', 'state', 'team'])
         self.assertEqual(self._checked(header), ['state'])
@@ -392,7 +392,7 @@ class TestListHeaderI18n1607(ListHeader1607Common):
         self._login_tp()
         _text, tree = self._fr('/my/players')
         header = self._header(tree, 'players.header')
-        add = header.xpath('.//*[contains(@class, "o_sc_list_add")]')[0]
+        add = header.xpath('.//*[contains(@class, "o_pk_list_add")]')[0]
         self.assertEqual(' '.join(add.text_content().split()), 'Ajouter')
         self.assertEqual(add.get('aria-label'), 'Créer un joueur')
         labels = [' '.join(a.text_content().split()) for a in header.xpath('.//a[@role="menuitemradio"]')]

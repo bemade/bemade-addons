@@ -32,9 +32,9 @@ tours.add("sc_1667_notepad_always_open", {
     steps: () => [
         {
             content: "The form is there with no tap: textarea + « Ajouter »",
-            trigger: `${FORM} .o_sc_autosave textarea`,
+            trigger: `${FORM} .o_pk_autosave textarea`,
             run() {
-                const textarea = document.querySelector(`${FORM} .o_sc_autosave textarea`);
+                const textarea = document.querySelector(`${FORM} .o_pk_autosave textarea`);
                 const add = document.querySelector(`${FORM} button[data-sc-action="note.add"]`);
                 assert(visible(textarea), "the quick-note textarea is not visible");
                 assert(visible(add), "« Ajouter » is not visible");
@@ -46,16 +46,16 @@ tours.add("sc_1667_notepad_always_open", {
         },
         {
             content: "« Lier cette note » still opens",
-            trigger: `${FORM} details.o_sc_disclosure > summary`,
+            trigger: `${FORM} details.o_pk_disclosure > summary`,
             run: "click",
         },
         {
             content: "The link fields show",
-            trigger: `${FORM} details.o_sc_disclosure[open] .o_sc_picker`,
+            trigger: `${FORM} details.o_pk_disclosure[open] .o_pk_picker`,
         },
         {
             content: "Type a note",
-            trigger: `${FORM} .o_sc_autosave textarea`,
+            trigger: `${FORM} .o_pk_autosave textarea`,
             run: `edit ${NOTE}`,
         },
         {
@@ -68,7 +68,7 @@ tours.add("sc_1667_notepad_always_open", {
             content: "The note is listed and the form is still open",
             trigger: `[data-pk-section="notepad.list"] .o_sc_quick_note:contains("${NOTE}")`,
             run() {
-                assert(visible(document.querySelector(`${FORM} .o_sc_autosave textarea`)),
+                assert(visible(document.querySelector(`${FORM} .o_pk_autosave textarea`)),
                     "the form is gone after the add");
             },
         },

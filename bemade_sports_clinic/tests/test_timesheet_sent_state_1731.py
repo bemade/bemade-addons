@@ -114,7 +114,7 @@ class TestTimesheetSent1731(TimesheetSent1731Common):
         chip = self._chip(card)
         self.assertEqual(chip.get('data-sc-ts-state'), 'submitted')
         self.assertEqual(self._text(chip), 'Submitted ✓')
-        self.assertIn('o_sc_chip_green', chip.get('class'))
+        self.assertIn('o_pk_chip_green', chip.get('class'))
 
     def test_timesheets_list_chips(self):
         self._login_tp()
@@ -124,7 +124,7 @@ class TestTimesheetSent1731(TimesheetSent1731Common):
         self.assertEqual(self._text(submitted), 'Submitted ✓')
         self.assertEqual(billed.get('data-sc-ts-state'), 'invoiced')
         self.assertEqual(self._text(billed), 'Billed')
-        self.assertNotIn('o_sc_chip_green', billed.get('class'))
+        self.assertNotIn('o_pk_chip_green', billed.get('class'))
 
     # -- UC-2 -------------------------------------------------------------
     def test_add_says_sent(self):

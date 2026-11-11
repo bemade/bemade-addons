@@ -90,9 +90,9 @@ class TestHeaderSearch1650(Search1650Common):
         players = self._players(tree)
         self.assertIn(self.other.id, players)
         locked = players[self.other.id]
-        self.assertIn('o_sc_search_locked', locked.get('class'))
+        self.assertIn('o_pk_search_locked', locked.get('class'))
         self.assertFalse(locked.xpath('.//a[contains(@href, "/my/player?")]'))
-        add = locked.xpath('.//a[contains(@class, "o_sc_search_add")]/@href')
+        add = locked.xpath('.//a[contains(@class, "o_pk_search_add")]/@href')
         self.assertEqual(len(add), 1)
         self.assertTrue(add[0].startswith('/my/players?'), add)
         self.assertIn('PC Team B', locked.text_content())
@@ -112,7 +112,7 @@ class TestHeaderSearch1650(Search1650Common):
         self.assertIn(self.old.id, ids)
         self.assertEqual(ids[-1], self.old.id, ids)
         row = self._players(tree)[self.old.id]
-        self.assertIn('o_sc_search_archived', row.get('class'))
+        self.assertIn('o_pk_search_archived', row.get('class'))
         self.assertIn('Archived player', row.text_content())
 
     def test_teams_and_events(self):
@@ -128,13 +128,13 @@ class TestHeaderSearch1650(Search1650Common):
     def test_short_query_and_no_private_data(self):
         self._login_tp()
         _text, tree = self._search('e')
-        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_search_hint")]'))
+        self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_search_hint")]'))
         self.assertFalse(tree.xpath('//li[@data-sc-search-player]'))
         text, _tree = self._search('eloise')
         for private in ('2010', '514', '555-0190'):
             self.assertNotIn(private, text)
         _text, tree = self._search('zzzz')
-        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_empty")]'))
+        self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_empty")]'))
 
     def test_header_opens_the_sheet(self):
         self._login_coach()

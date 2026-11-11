@@ -5,9 +5,9 @@ Acceptance criteria:
 
 * AC-1 In ``sc_list_header`` the Add control — all three variants
   (``add_url`` link, ``add_sheet`` and ``add_panel`` buttons) — carries the
-  green-text link classes (``o_sc_section_more o_sc_link_btn``), keeps the
-  stable ``o_sc_list_add`` hook, the plus icon and « Add » (« Ajouter »), and
-  is no longer a filled button (no ``o_sc_btn`` / ``o_sc_btn_primary``).
+  green-text link classes (``o_pk_section_more o_pk_link_btn``), keeps the
+  stable ``o_pk_list_add`` hook, the plus icon and « Add » (« Ajouter »), and
+  is no longer a filled button (no ``o_pk_btn`` / ``o_pk_btn_primary``).
 * AC-2 It is the LAST item of the header (right-aligned, after the count and
   the sort menu). Superseded by review round 1 (owner 2026-10-27): it is
   the FIRST item (just above the list's top-left edge, where the filled
@@ -28,17 +28,17 @@ from odoo.addons.bemade_sports_clinic.tests.test_list_header_1607 import ListHea
 class TestListAddLink1718(ListHeader1607Common):
 
     def _all_adds(self, tree):
-        return tree.xpath('//div[contains(concat(" ", @class, " "), " o_sc_list_header ")]'
-                          '//*[contains(concat(" ", @class, " "), " o_sc_list_add ")]')
+        return tree.xpath('//div[contains(concat(" ", @class, " "), " o_pk_list_header ")]'
+                          '//*[contains(concat(" ", @class, " "), " o_pk_list_add ")]')
 
     def _check(self, add):
         classes = add.get('class').split()
-        self.assertIn('o_sc_section_more', classes)
-        self.assertIn('o_sc_link_btn', classes)
-        self.assertNotIn('o_sc_btn', classes)
-        self.assertNotIn('o_sc_btn_primary', classes)
+        self.assertIn('o_pk_section_more', classes)
+        self.assertIn('o_pk_link_btn', classes)
+        self.assertNotIn('o_pk_btn', classes)
+        self.assertNotIn('o_pk_btn_primary', classes)
         # Review round 1: no « + » icon, the FIRST item of its header.
-        self.assertFalse(add.xpath('.//*[contains(@class, "o_sc_icon")]'))
+        self.assertFalse(add.xpath('.//*[contains(@class, "o_pk_icon")]'))
         self.assertEqual(' '.join(add.text_content().split()), 'Add')
         self.assertIsNone(add.getprevious())
 
@@ -69,4 +69,4 @@ class TestListAddLink1718(ListHeader1607Common):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&tab=activities' % self.player.id)
         submit = tree.xpath('//details[@id="sc_activity_add"]//button[@type="submit"]')[0]
-        self.assertIn('o_sc_btn_primary', submit.get('class'))
+        self.assertIn('o_pk_btn_primary', submit.get('class'))

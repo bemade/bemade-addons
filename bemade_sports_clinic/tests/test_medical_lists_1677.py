@@ -398,9 +398,9 @@ class TestMedicalLists1677(MedicalLists1677Common):
             self.assertFalse(sheet.xpath('.//owl-component'), key)
             self.assertEqual(sheet.xpath('.//*[@data-sc-med-head]/..')[0].get('data-sc-fragment'),
                              'sports.patient:%s:medical-%s-head' % (pid, key))
-            header = sheet.xpath('.//*[contains(@class, "o_sc_list_header")]//button[@data-pk-list-add-toggle]')[0]
+            header = sheet.xpath('.//*[contains(@class, "o_pk_list_header")]//button[@data-pk-list-add-toggle]')[0]
             panel = sheet.xpath('.//details[@id="%s"]' % header.get('aria-controls'))[0]
-            self.assertIn('o_sc_list_add_panel', panel.get('class'))
+            self.assertIn('o_pk_list_add_panel', panel.get('class'))
             form = panel.xpath('.//form[@data-sc-med-add]')[0]
             self.assertEqual(form.get('data-sc-family'), key)
             self.assertTrue(form.xpath('.//input[@name="life_threatening"]'))

@@ -8,7 +8,7 @@ registry.category("web_tour.tours").add("sc_1540_bookings", {
     steps: () => [
         {
             content: "The booking is listed on the shell",
-            trigger: '.o_sc_app [data-pk-section="bookings.list"] [data-sc-booking-id]',
+            trigger: '.o_pk_app [data-pk-section="bookings.list"] [data-sc-booking-id]',
         },
         {
             // Task 1585: the client's email is a tap-to-email link.
@@ -28,7 +28,7 @@ registry.category("web_tour.tours").add("sc_1540_bookings", {
         },
         {
             content: "Details shown under the calendar",
-            trigger: '[data-sc-calendar-detail] .o_sc_kv',
+            trigger: '[data-sc-calendar-detail] .o_pk_kv',
         },
         {
             // Task 1585: tap to call / write from the details.
@@ -67,16 +67,16 @@ registry.category("web_tour.tours").add("sc_1732_booking_answers", {
         },
         {
             content: "The answers are in the details; a multi-line one keeps its breaks",
-            trigger: '[data-sc-calendar-detail] .o_sc_kv dd:contains("Worse on stairs")',
+            trigger: '[data-sc-calendar-detail] .o_pk_kv dd:contains("Worse on stairs")',
             run() {
-                const dd = [...document.querySelectorAll("[data-sc-calendar-detail] .o_sc_kv dd")].find((el) =>
+                const dd = [...document.querySelectorAll("[data-sc-calendar-detail] .o_pk_kv dd")].find((el) =>
                     el.textContent.includes("Worse on stairs")
                 );
                 const ws = getComputedStyle(dd).whiteSpace;
                 if (!["pre-line", "pre-wrap"].includes(ws)) {
                     throw new Error(`white-space is « ${ws} »`);
                 }
-                if (!document.querySelector('[data-sc-calendar-detail] .o_sc_kv dd')) {
+                if (!document.querySelector('[data-sc-calendar-detail] .o_pk_kv dd')) {
                     throw new Error("no details");
                 }
             },

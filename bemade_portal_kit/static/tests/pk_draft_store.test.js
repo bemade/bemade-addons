@@ -17,7 +17,7 @@ import {
 } from "@bemade_portal_kit/js/pk_draft_store";
 
 function mountShell(db, uid) {
-    getFixture().innerHTML = `<div class="o_sc_app" data-pk-db="${db}" data-pk-uid="${uid}"></div>`;
+    getFixture().innerHTML = `<div class="o_pk_app" data-pk-db="${db}" data-pk-uid="${uid}"></div>`;
 }
 
 function storedKeys() {
@@ -52,7 +52,12 @@ describe("pk_draft_store", () => {
     });
 
     test("the old data-sc-* root attributes are not read any more", () => {
-        getFixture().innerHTML = '<div class="o_sc_app" data-sc-db="db_a" data-sc-uid="7"></div>';
+        getFixture().innerHTML = '<div class="o_pk_app" data-sc-db="db_a" data-sc-uid="7"></div>';
+        expect(writeDraft("note:new", { value: "x" })).toBe(false);
+    });
+
+    test("task 5344 (P3b1): an o_sc_app root is not read any more", () => {
+        getFixture().innerHTML = '<div class="o_sc_app" data-pk-db="db_a" data-pk-uid="7"></div>';
         expect(writeDraft("note:new", { value: "x" })).toBe(false);
     });
 

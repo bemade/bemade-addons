@@ -40,18 +40,18 @@ tours.add("sc_1594_country_province", {
         },
         {
             content: "Choose another country",
-            trigger: `${CONTACT} [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="country_id"] select`,
+            trigger: `${CONTACT} [data-sc-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="country_id"] select`,
             run() {
                 pick(this.anchor, "United States");
             },
         },
         {
             content: "The country is saved",
-            trigger: `${CONTACT} .o_sc_autosave[data-sc-field="country_id"][data-sc-state="saved"]`,
+            trigger: `${CONTACT} .o_pk_autosave[data-sc-field="country_id"][data-sc-state="saved"]`,
         },
         {
             content: "The province choices are the new country's; the old province is gone",
-            trigger: `${CONTACT} .o_sc_autosave[data-sc-field="state_id"] select`,
+            trigger: `${CONTACT} .o_pk_autosave[data-sc-field="state_id"] select`,
             run() {
                 const labels = [...this.anchor.options].map((opt) => opt.text);
                 assert(labels.includes("New York"), "the new country's provinces are offered");
@@ -62,7 +62,7 @@ tours.add("sc_1594_country_province", {
         },
         {
             content: "The province is saved",
-            trigger: `${CONTACT} .o_sc_autosave[data-sc-field="state_id"][data-sc-state="saved"]`,
+            trigger: `${CONTACT} .o_pk_autosave[data-sc-field="state_id"][data-sc-state="saved"]`,
         },
         {
             content: "Done: back to read mode",
@@ -93,7 +93,7 @@ tours.add("sc_1594_return_date", {
             trigger: '[data-pk-section="player.hero"] [data-sc-edit-view="read"]',
             run() {
                 const holder = this.anchor.querySelector('[data-pk-section="player.return"][data-sc-return-kind="actual"]');
-                assert(holder && !holder.querySelector(".o_sc_field_static"), "an empty « Retour réel » is shown");
+                assert(holder && !holder.querySelector(".o_pk_field_static"), "an empty « Retour réel » is shown");
                 window.__sc1594NoReload = true;
             },
         },
@@ -104,7 +104,7 @@ tours.add("sc_1594_return_date", {
         },
         {
             content: "Set the actual return date",
-            trigger: '[data-pk-edit-card="medical"] .o_sc_autosave[data-sc-field="return_date"] input[type="date"]',
+            trigger: '[data-pk-edit-card="medical"] .o_pk_autosave[data-sc-field="return_date"] input[type="date"]',
             run() {
                 this.anchor.value = "2026-11-02";
                 this.anchor.dispatchEvent(new Event("input", { bubbles: true }));
@@ -113,11 +113,11 @@ tours.add("sc_1594_return_date", {
         },
         {
             content: "Saved",
-            trigger: '[data-pk-edit-card="medical"] .o_sc_autosave[data-sc-field="return_date"][data-sc-state="saved"]',
+            trigger: '[data-pk-edit-card="medical"] .o_pk_autosave[data-sc-field="return_date"][data-sc-state="saved"]',
         },
         {
             content: "The header's read view shows it (read fragment, no reload)",
-            trigger: '[data-pk-section="player.hero"] [data-pk-section="player.return"][data-sc-return-kind="actual"] .o_sc_field_value',
+            trigger: '[data-pk-section="player.hero"] [data-pk-section="player.return"][data-sc-return-kind="actual"] .o_pk_field_value',
             run() {
                 assert(window.__sc1594NoReload, "the page reloaded");
                 const shown = this.anchor.textContent.trim();

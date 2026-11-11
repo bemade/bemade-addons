@@ -21,7 +21,7 @@ tours.add("sc_1679_group_by_once", {
     steps: () => [
         {
             content: "Open the filters",
-            trigger: 'form[data-pk-section="events.filters"] summary.o_sc_disclosure_summary',
+            trigger: 'form[data-pk-section="events.filters"] summary.o_pk_disclosure_summary',
             run: "click",
         },
         {
@@ -48,14 +48,14 @@ tours.add("sc_1679_toast_clear", {
         },
         {
             content: "The toast is up",
-            trigger: ".o_sc_toast:not([hidden]) button[data-sc-toast-action]",
+            trigger: ".o_pk_toast:not([hidden]) button[data-sc-toast-action]",
         },
         {
             content: "The open card's buttons are above the toast",
             trigger: "[data-sc-timesheet-id][data-pk-edit-card][data-sc-edit-open]",
             run() {
                 const card = document.querySelector("[data-sc-timesheet-id][data-pk-edit-card][data-sc-edit-open]");
-                const toast = document.querySelector(".o_sc_toast:not([hidden])");
+                const toast = document.querySelector(".o_pk_toast:not([hidden])");
                 const bottom = card.getBoundingClientRect().bottom;
                 const top = toast.getBoundingClientRect().top;
                 console.log(`sc_1679: card bottom ${bottom}, toast top ${top}`);
@@ -72,9 +72,9 @@ function resetKeepsOpen(section) {
     return [
         {
             content: "Open the filters (if closed)",
-            trigger: `${form} summary.o_sc_disclosure_summary`,
+            trigger: `${form} summary.o_pk_disclosure_summary`,
             run() {
-                const details = document.querySelector(`${form} details.o_sc_disclosure`);
+                const details = document.querySelector(`${form} details.o_pk_disclosure`);
                 if (!details.open) {
                     details.querySelector("summary").click();
                 }
@@ -88,7 +88,7 @@ function resetKeepsOpen(section) {
         },
         {
             content: "The panel is still open after the reload",
-            trigger: `${form} details.o_sc_disclosure[open]`,
+            trigger: `${form} details.o_pk_disclosure[open]`,
             run() {
                 assert(!document.querySelector(`${form}[data-pk-submitting]`), "a fresh page is expected");
             },
@@ -106,7 +106,7 @@ tours.add("sc_1679_date_inputs_fit", {
     steps: () => [
         {
             content: "Open the filters",
-            trigger: 'form[data-pk-section="events.filters"] summary.o_sc_disclosure_summary',
+            trigger: 'form[data-pk-section="events.filters"] summary.o_pk_disclosure_summary',
             run: "click",
         },
         {
@@ -115,7 +115,7 @@ tours.add("sc_1679_date_inputs_fit", {
             run() {
                 for (const id of ["sc_ev_from", "sc_ev_to"]) {
                     const input = document.getElementById(id);
-                    const cell = input.closest(".o_sc_field").getBoundingClientRect();
+                    const cell = input.closest(".o_pk_field").getBoundingClientRect();
                     const box = input.getBoundingClientRect();
                     const style = getComputedStyle(input);
                     assert(box.right <= cell.right + 0.5 && box.left >= cell.left - 0.5,

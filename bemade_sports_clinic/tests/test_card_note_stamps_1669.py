@@ -8,7 +8,7 @@ Acceptance criteria:
   detail) has no « Last consultation » line; the player file's Infos still
   shows it.
 * AC-2 The injury card's Notes read view (``data-sc-edit-view="read"``)
-  carries, under each note, its stamp as an ``o_sc_meta`` line
+  carries, under each note, its stamp as an ``o_pk_meta`` line
   (``data-sc-note-stamp="external" / "internal"``): a therapist sees both,
   a coach only the external one, nobody sees one when the note has no
   history.
@@ -89,7 +89,7 @@ class TestCardNoteStamps1669(Stamps1669Common):
         internal = read.xpath('.//*[@data-sc-note-stamp="internal"]')
         self.assertEqual(len(ext), 1)
         self.assertEqual(len(internal), 1)
-        self.assertIn('o_sc_meta', ext[0].get('class'))
+        self.assertIn('o_pk_meta', ext[0].get('class'))
         self.assertEqual(_text(ext[0]), self.injury.last_external_note_info)
         self.assertEqual(_text(internal[0]), self.injury.last_internal_note_info)
         self.assertIn('PC TP', _text(ext[0]))

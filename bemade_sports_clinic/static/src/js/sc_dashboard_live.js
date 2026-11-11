@@ -21,7 +21,7 @@ import { requestRefresh } from "@bemade_sports_clinic/js/sc_fragments";
 const HOLD_MS = 900;
 
 function dashboard() {
-    return document.querySelector(".o_sc_app [data-sc-dashboard]");
+    return document.querySelector(".o_pk_app [data-sc-dashboard]");
 }
 
 // ------------------------------------------------------- scroll anchoring
@@ -114,7 +114,7 @@ document.addEventListener(
     "click",
     (ev) => {
         const anchor = anchorOf(ev.target);
-        if (anchor && anchor.closest(".o_sc_app [data-sc-dashboard]")) {
+        if (anchor && anchor.closest(".o_pk_app [data-sc-dashboard]")) {
             holdAnchor(anchor);
         }
     },
@@ -168,7 +168,7 @@ document.addEventListener("sc:saved", (ev) => {
     if (model !== "sports.patient" || field !== "predicted_return_date" || !result || !dashboard()) {
         return;
     }
-    for (const holder of document.querySelectorAll(`.o_sc_app [data-sc-row-return-value="${recordId}"]`)) {
+    for (const holder of document.querySelectorAll(`.o_pk_app [data-sc-row-return-value="${recordId}"]`)) {
         const date = holder.querySelector("[data-sc-row-return-date]");
         if (date && result.display !== undefined) {
             date.textContent = result.display || "—";

@@ -30,8 +30,8 @@ function noReload() {
 
 /** The pill toggle of ``key`` (match / practice), fresh (not busy). */
 function toggle(scope, key, tone = "") {
-    return `${scope} [data-sc-pill-select][data-sc-pill-key="${key}"]:not([aria-busy]) button.o_sc_pill_select${
-        tone ? `.o_sc_chip_${tone}` : ""
+    return `${scope} [data-sc-pill-select][data-sc-pill-key="${key}"]:not([aria-busy]) button.o_pk_pill_select${
+        tone ? `.o_pk_chip_${tone}` : ""
     }`;
 }
 
@@ -74,14 +74,14 @@ tours.add("sc_1627_status_pills", {
                 const contact = document.querySelector(item(STATUS, "practice", "no_contact"));
                 assert(contact.getAttribute("aria-disabled") === "true", "no contact not greyed");
                 for (const el of [contact, this.anchor]) {
-                    assert(el.querySelector(".o_sc_pill_hint")?.textContent.trim(), "a greyed choice has no hint");
+                    assert(el.querySelector(".o_pk_pill_hint")?.textContent.trim(), "a greyed choice has no hint");
                 }
                 this.anchor.click(); // does nothing
             },
         },
         {
             content: "A greyed pick saved nothing; the menu is still open — close it",
-            trigger: `${STATUS} [data-sc-pill-key="practice"] button.o_sc_pill_select.o_sc_chip_green[aria-expanded="true"]`,
+            trigger: `${STATUS} [data-sc-pill-key="practice"] button.o_pk_pill_select.o_pk_chip_green[aria-expanded="true"]`,
             run: "click",
         },
         ...pickSteps(STATUS, "match", "no", "green"),
@@ -109,7 +109,7 @@ tours.add("sc_1627_status_pills", {
         },
         {
             content: "« Annuler » on the toast",
-            trigger: ".o_sc_toast:not([hidden]) button[data-sc-toast-action]",
+            trigger: ".o_pk_toast:not([hidden]) button[data-sc-toast-action]",
             run: "click",
         },
         {
@@ -147,7 +147,7 @@ tours.add("sc_1627_status_pills_dossier", {
             run() {
                 window.__sc1627NoReload = true;
                 assert(
-                    !document.querySelector('.o_sc_autosave[data-sc-field="sc_status"]'),
+                    !document.querySelector('.o_pk_autosave[data-sc-field="sc_status"]'),
                     "the 4-way changer is still there"
                 );
                 this.anchor.click();
@@ -173,7 +173,7 @@ tours.add("sc_1627_status_pills_coach", {
     steps: () => [
         {
             content: "Coach: coloured read-only pills, no button, no menu",
-            trigger: `${STATUS} [data-sc-pill-readonly][data-sc-pill-key="match"].o_sc_status_pill`,
+            trigger: `${STATUS} [data-sc-pill-readonly][data-sc-pill-key="match"].o_pk_status_pill`,
             run() {
                 assert(document.querySelector(`${STATUS} [data-sc-pill-readonly][data-sc-pill-key="practice"]`), "no practice pill");
                 assert(!document.querySelector(`${STATUS} button`), "a button on a coach's pills");

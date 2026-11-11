@@ -3,7 +3,7 @@
  * a form's primary action stays greyed (aria-disabled + aria-describedby,
  * never a dead click) with a short reason line until it can succeed; a
  * server refusal shows INSIDE the form, the typed values kept, no page
- * change. Inert outside .o_sc_app.
+ * change. Inert outside .o_pk_app.
  *
  * Declarative, on the form (form[data-sc-guard]):
  *
@@ -61,7 +61,7 @@ const ERROR_PARAMS = ["error", "ts_error"];
 const posting = new WeakSet();
 
 function inApp(form) {
-    return Boolean(form && form.closest && form.closest(".o_sc_app"));
+    return Boolean(form && form.closest && form.closest(".o_pk_app"));
 }
 
 export function guardForm(target) {
@@ -102,7 +102,7 @@ function labelOf(el, form) {
         return legend.textContent.replace(/\s+/g, " ").trim();
     }
     const byFor = el.id && form.querySelector(`label[for="${el.id}"]`);
-    const label = byFor || (el.closest(".o_sc_field") || el.parentElement || form).querySelector("label, .o_sc_field_label");
+    const label = byFor || (el.closest(".o_pk_field") || el.parentElement || form).querySelector("label, .o_pk_field_label");
     return ((label && label.textContent) || el.name || "").replace(/\*/g, "").replace(/\s+/g, " ").trim();
 }
 
@@ -212,10 +212,10 @@ function ensureSlots(form) {
     if (!submit) {
         return;
     }
-    const anchor = submit.closest(".o_sc_form_actions") || submit;
+    const anchor = submit.closest(".o_pk_form_actions") || submit;
     if (!form.querySelector("[data-sc-guard-error]")) {
         const box = document.createElement("p");
-        box.className = "o_sc_field_message o_sc_field_error";
+        box.className = "o_pk_field_message o_pk_field_error";
         box.setAttribute("role", "alert");
         box.dataset.scGuardError = "1";
         box.hidden = true;
@@ -223,7 +223,7 @@ function ensureSlots(form) {
     }
     if (!form.querySelector("[data-sc-guard-reason]")) {
         const line = document.createElement("p");
-        line.className = "o_sc_hint o_sc_guard_reason";
+        line.className = "o_pk_hint o_sc_guard_reason";
         line.id = `sc_guard_reason_${++slotSeq}`;
         line.setAttribute("aria-live", "polite");
         line.dataset.scGuardReason = "1";
@@ -294,7 +294,7 @@ export function guardShowError(form, message, field = "") {
     const input = field && named(form, field);
     if (input) {
         const note = document.createElement("p");
-        note.className = "o_sc_field_message o_sc_field_error";
+        note.className = "o_pk_field_message o_pk_field_error";
         note.setAttribute("role", "alert");
         note.dataset.scGuardFieldError = field;
         note.textContent = message;
@@ -329,7 +329,7 @@ export function guardRefusal(responseUrl, html, status) {
             field: fieldError.dataset.scErrorFor || fieldError.dataset.scFieldError || "",
         };
     }
-    const toast = doc.querySelector('.o_sc_toast[data-sc-notify][data-sc-notify-tone="error"]');
+    const toast = doc.querySelector('.o_pk_toast[data-sc-notify][data-sc-notify-tone="error"]');
     if (toast) {
         return { message: toast.dataset.scNotify };
     }
@@ -460,7 +460,7 @@ document.addEventListener("pk:form-reset", (ev) => {
 });
 
 export function guardBoot(root = document) {
-    for (const form of root.querySelectorAll(".o_sc_app form[data-sc-guard]")) {
+    for (const form of root.querySelectorAll(".o_pk_app form[data-sc-guard]")) {
         if (form.matches("[data-sc-player-add]")) {
             continue;
         }

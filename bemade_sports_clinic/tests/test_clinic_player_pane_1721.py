@@ -33,7 +33,7 @@ Review round 1 (owner UAT 2026-10-27):
   player page keeps every injury (its list shows them all, #1665).
 * AC-9 A note card's pencil / ✓ sits in the card's head (top right, the
   meta line), not in the body.
-* AC-10 The page uses the full width on a laptop (``o_sc_content_wide``).
+* AC-10 The page uses the full width on a laptop (``o_pk_content_wide``).
 * AC-11 (owner decision, app-wide) the Allergies / Medical alert pills are
   inside the player card — its own line right under Match / Practice —
   even when empty (grey); no separate pills under the card.
@@ -168,7 +168,7 @@ class TestClinicPlayerPane1721(Pane1721Common):
         self._note(self.inj_new)
         self._login_tp()
         _text, tree = self._get(self._dossier_url())
-        self.assertIn('o_sc_content_wide', tree.xpath('//main[@id="sc_content"]')[0].get('class'))
+        self.assertIn('o_pk_content_wide', tree.xpath('//main[@id="sc_content"]')[0].get('class'))
         card = tree.xpath('//*[@data-pk-section="clinic.dossier"]//*[@data-sc-note-id][@data-pk-edit-card]')[0]
         head = card.xpath('./div[contains(@class, "o_sc_note_head")]')[0]
         self.assertTrue(head.xpath('./button[@data-sc-edit-toggle]'))

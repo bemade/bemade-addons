@@ -53,7 +53,7 @@ class TestNotepadAlwaysOpen1667(Notepad1667Common):
     def test_link_disclosure_is_still_collapsible(self):
         self._login_tp()
         _text, tree = self._get('/my/notepad')
-        disclosure = tree.xpath('//form[@id="quick-add"]//details[contains(@class, "o_sc_disclosure")]')
+        disclosure = tree.xpath('//form[@id="quick-add"]//details[contains(@class, "o_pk_disclosure")]')
         self.assertEqual(len(disclosure), 1)
         self.assertIsNone(disclosure[0].get('open'))
         self.assertTrue(disclosure[0].xpath('./summary'))

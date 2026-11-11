@@ -44,7 +44,7 @@ const PANEL = "dialog#sc_documents_upload"; // task 1644: a sheet
 const FORM = `${PANEL} form[data-sc-doc-upload]`;
 
 function rows() {
-    return [...document.querySelectorAll(`${FORM} [data-sc-file-list] li.o_sc_file`)];
+    return [...document.querySelectorAll(`${FORM} [data-sc-file-list] li.o_pk_file`)];
 }
 
 function sharedShown() {
@@ -54,19 +54,19 @@ function sharedShown() {
 }
 
 function row(name) {
-    return rows().find((li) => li.querySelector(".o_sc_file_name").textContent === name);
+    return rows().find((li) => li.querySelector(".o_pk_file_name").textContent === name);
 }
 
 tours.add("sc_1018b_player_documents", {
     steps: () => [
         {
             content: "« + Ajouter » of the Documents list",
-            trigger: '.o_sc_list_header button.o_sc_list_add[data-sc-sheet-open="sc_documents_upload"]',
+            trigger: '.o_pk_list_header button.o_pk_list_add[data-sc-sheet-open="sc_documents_upload"]',
             run: "click",
         },
         {
             content: "1018c: the shared fields are never shown (empty list, a row, emptied again)",
-            trigger: `${PANEL}[open] form[data-sc-doc-upload] .o_sc_dropzone`,
+            trigger: `${PANEL}[open] form[data-sc-doc-upload] .o_pk_dropzone`,
             run() {
                 const form = document.querySelector(FORM);
                 assert(!sharedShown(), "shared fields shown on an empty list");
@@ -82,7 +82,7 @@ tours.add("sc_1018b_player_documents", {
         },
         {
             content: "Shared values, then the first file",
-            trigger: `${PANEL}[open] form[data-sc-doc-upload] .o_sc_dropzone`,
+            trigger: `${PANEL}[open] form[data-sc-doc-upload] .o_pk_dropzone`,
             run() {
                 const form = document.querySelector(FORM);
                 setValue(form.querySelector('select[name="category"]'), "prescription");
@@ -138,7 +138,7 @@ tours.add("sc_1018b_player_documents", {
                 const doc = document.documentElement;
                 assert(doc.scrollWidth <= window.innerWidth + 1, `overflow ${doc.scrollWidth}`);
                 if (window.innerWidth < 576) {
-                    const fields = row("Synthetic a.pdf").querySelectorAll(".o_sc_file_field");
+                    const fields = row("Synthetic a.pdf").querySelectorAll(".o_pk_file_field");
                     assert(fields[0].getBoundingClientRect().top < fields[1].getBoundingClientRect().top,
                         "row not stacked on a phone");
                 }

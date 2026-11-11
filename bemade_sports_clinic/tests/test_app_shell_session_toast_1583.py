@@ -29,7 +29,7 @@ class SessionToastCommon1583(AppShellCommon):
     @staticmethod
     def _notify(tree):
         """(message, title, tone) carried by the toast host, or None."""
-        hosts = tree.xpath('//div[contains(concat(" ", @class, " "), " o_sc_toast ")]')
+        hosts = tree.xpath('//div[contains(concat(" ", @class, " "), " o_pk_toast ")]')
         if not hosts or not hosts[0].get('data-sc-notify'):
             return None
         host = hosts[0]

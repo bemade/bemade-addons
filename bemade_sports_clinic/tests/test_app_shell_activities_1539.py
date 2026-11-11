@@ -110,7 +110,7 @@ class TestAppShellActivities1539(AppShellCommon):
                            % self.act_team.id)[0]
         self.assertIn(str(self.coach.id), [str(o[0]) for o in json.loads(props)['options']])
         # Task 1607 (deliberate update): « + Ajouter » is in the list header.
-        add = tree.xpath('//div[contains(@class, "o_sc_list_header")]//a[@data-sc-action="activity.add"]/@href')
+        add = tree.xpath('//div[contains(@class, "o_pk_list_header")]//a[@data-sc-action="activity.add"]/@href')
         self.assertEqual(add, ['/my/activity/create?model=sports.team&res_id=%s&return_url=%s'
                                % (self.team_a.id, quote(url, safe=''))])
         resp = self.url_open('/my/activity/reassign', data={
@@ -152,7 +152,7 @@ class TestAppShellActivities1539(AppShellCommon):
         self.act_team.user_id = self.coach
         _text, tree = self._get('/my/team?team_id=%s&tab=activities' % self.team_a.id)
         panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
-        self.assertFalse(panel.xpath('.//*[contains(@class, "o_sc_legacy")]'))
+        self.assertFalse(panel.xpath('.//*[contains(@class, "o_pk_legacy")]'))
         self.assertTrue(panel.xpath('.//*[@data-sc-activity-row="%s"]' % self.act_team.id))
         form = panel.xpath('.//details[@data-pk-section="activity.add"]//form')[0]
         self.assertEqual(form.get('action'), '/my/activity/save')

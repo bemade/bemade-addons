@@ -32,14 +32,14 @@ function optionFor(name, text) {
 }
 
 function type(name, text) {
-    const input = picker(name).querySelector(".o_sc_picker_input");
+    const input = picker(name).querySelector(".o_pk_picker_input");
     input.focus();
     input.value = text;
     input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function pick(name, text) {
-    const item = [...picker(name).querySelectorAll(".o_sc_picker_option")].find((li) =>
+    const item = [...picker(name).querySelectorAll(".o_pk_picker_option")].find((li) =>
         li.textContent.includes(text)
     );
     assert(item, `« ${text} » not listed in the ${name} picker`);
@@ -50,34 +50,34 @@ tours.add("sc_1648_notepad", {
     steps: () => [
         {
             content: "Open « Link this note »",
-            trigger: `${FORM} details.o_sc_disclosure > summary`,
+            trigger: `${FORM} details.o_pk_disclosure > summary`,
             run: "click",
         },
         {
             content: "Team B narrows the players and events",
-            trigger: `${FORM} details.o_sc_disclosure[open] .o_sc_picker .o_sc_picker_input`,
+            trigger: `${FORM} details.o_pk_disclosure[open] .o_pk_picker .o_pk_picker_input`,
             run() {
-                assert(!document.activeElement.classList.contains("o_sc_picker_input"), "a picker was auto-focused");
+                assert(!document.activeElement.classList.contains("o_pk_picker_input"), "a picker was auto-focused");
                 type("team_id", "team b");
                 pick("team_id", "PC Team B");
                 assert(document.querySelector(`${FORM} select[name="team_id"]`).value, "team not set");
                 assert(optionFor("patient_id", "One").dataset.scPickerOut, "Pat One (team A) still offered");
                 assert(!optionFor("patient_id", "Zoé").dataset.scPickerOut, "Zoé (team B) narrowed out");
                 type("patient_id", "");
-                const listed = [...picker("patient_id").querySelectorAll(".o_sc_picker_option")].map((li) => li.textContent);
+                const listed = [...picker("patient_id").querySelectorAll(".o_pk_picker_option")].map((li) => li.textContent);
                 assert(!listed.some((t) => t.includes("One")), `team A player listed: ${listed}`);
             },
         },
         {
             content: "Clearing the team widens the lists",
-            trigger: `${FORM} .o_sc_picker_clear:not([hidden])`,
+            trigger: `${FORM} .o_pk_picker_clear:not([hidden])`,
             run(helpers) {
                 return helpers.click();
             },
         },
         {
             content: "Type part of the name, pick Zoé: the injuries narrow to hers",
-            trigger: `${FORM} select[name="team_id"] + .o_sc_picker .o_sc_picker_input`,
+            trigger: `${FORM} select[name="team_id"] + .o_pk_picker .o_pk_picker_input`,
             run() {
                 assert(!document.querySelector(`${FORM} select[name="team_id"]`).value, "team not cleared");
                 assert(!optionFor("patient_id", "One").dataset.scPickerOut, "the players did not widen");
@@ -119,14 +119,14 @@ tours.add("sc_1648_note_injury", {
         },
         {
             content: "« Link to Injury » is a picker: type, pick",
-            trigger: "details#sc_note_add[open] select#sc_note_injury + .o_sc_picker .o_sc_picker_input",
+            trigger: "details#sc_note_add[open] select#sc_note_injury + .o_pk_picker .o_pk_picker_input",
             run() {
                 const select = document.querySelector("select#sc_note_injury");
                 const input = this.anchor;
                 input.focus();
                 input.value = "spr";
                 input.dispatchEvent(new Event("input", { bubbles: true }));
-                const item = [...select.nextElementSibling.querySelectorAll(".o_sc_picker_option")]
+                const item = [...select.nextElementSibling.querySelectorAll(".o_pk_picker_option")]
                     .find((li) => li.textContent.includes("Sprain"));
                 assert(item, "« Sprain » not listed");
                 item.click();
@@ -147,13 +147,13 @@ tours.add("sc_1648_card", {
         },
         {
             content: "Player picker: type, pick Zoé",
-            trigger: 'article.o_sc_quick_note [data-sc-edit-view="edit"] select[data-sc-picker-key="player"] + .o_sc_picker .o_sc_picker_input',
+            trigger: 'article.o_sc_quick_note [data-sc-edit-view="edit"] select[data-sc-picker-key="player"] + .o_pk_picker .o_pk_picker_input',
             run() {
                 const input = this.anchor;
                 input.focus();
                 input.value = "zoe";
                 input.dispatchEvent(new Event("input", { bubbles: true }));
-                const item = [...input.closest(".o_sc_picker").querySelectorAll(".o_sc_picker_option")]
+                const item = [...input.closest(".o_pk_picker").querySelectorAll(".o_pk_picker_option")]
                     .find((li) => li.textContent.includes("Zoé"));
                 assert(item, "Zoé not listed");
                 item.click();
@@ -161,7 +161,7 @@ tours.add("sc_1648_card", {
         },
         {
             content: "Saved by the autosave",
-            trigger: 'article.o_sc_quick_note .o_sc_autosave[data-sc-state="saved"] select[data-sc-picker-key="player"]:not(:visible)',
+            trigger: 'article.o_sc_quick_note .o_pk_autosave[data-sc-state="saved"] select[data-sc-picker-key="player"]:not(:visible)',
         },
     ],
 });

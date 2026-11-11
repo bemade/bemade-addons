@@ -1,22 +1,22 @@
 // Task 1624 — the app dashboard (configurable widget sections) and its
-// « Configurer » page. Everything scoped under .o_sc_app.
+// « Configurer » page. Everything scoped under .o_pk_app.
 
 $sc-dash-laptop: 1024px;
 
-.o_sc_app {
+.o_pk_app {
     // ------------------------------------------------------------ dashboard
     .o_sc_dash_head {
         display: flex;
         justify-content: flex-end;
-        margin-bottom: var(--sc-space-2);
+        margin-bottom: var(--pk-space-2);
 
         .o_sc_dash_configure {
             display: inline-flex;
             align-items: center;
-            gap: var(--sc-space-2);
-            min-height: var(--sc-tap);
+            gap: var(--pk-space-2);
+            min-height: var(--pk-tap);
 
-            .o_sc_icon {
+            .o_pk_icon {
                 width: 18px;
                 height: 18px;
             }
@@ -26,7 +26,7 @@ $sc-dash-laptop: 1024px;
     .o_sc_dash {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-5);
+        gap: var(--pk-space-5);
         min-width: 0;
         // Review round 2: sc_dashboard_live.js keeps a toggled fold-out's
         // header in place itself; the browser's own anchoring would pick
@@ -40,7 +40,7 @@ $sc-dash-laptop: 1024px;
     .o_sc_dash_zone {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-5);
+        gap: var(--pk-space-5);
         min-width: 0;
     }
 
@@ -50,7 +50,7 @@ $sc-dash-laptop: 1024px;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             grid-template-areas: "left right" "bottom bottom";
             align-items: start;
-            gap: var(--sc-space-5) var(--sc-space-6);
+            gap: var(--pk-space-5) var(--pk-space-6);
         }
 
         .o_sc_dash_zone_left {
@@ -88,7 +88,7 @@ $sc-dash-laptop: 1024px;
         }
 
         .o_sc_dw_scope {
-            margin: 0 0 var(--sc-space-2);
+            margin: 0 0 var(--pk-space-2);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -104,7 +104,7 @@ $sc-dash-laptop: 1024px;
         gap: 6px;
         min-width: 0;
 
-        > .o_sc_dw_clinics > .o_sc_entity_row {
+        > .o_sc_dw_clinics > .o_pk_entity_row {
             margin: 0;
         }
     }
@@ -112,7 +112,7 @@ $sc-dash-laptop: 1024px;
     .o_sc_dw_more {
         margin: 0;
 
-        > .o_sc_list {
+        > .o_pk_list {
             margin-top: 6px;
         }
 
@@ -128,8 +128,8 @@ $sc-dash-laptop: 1024px;
     // Review round 2: the quick « Retour prévu » under a « Retours
     // dépassés » card.
     .o_sc_row_quick {
-        border-top: 1px solid var(--sc-line);
-        padding: var(--sc-space-2) var(--sc-space-3);
+        border-top: 1px solid var(--pk-line);
+        padding: var(--pk-space-2) var(--pk-space-3);
         min-width: 0;
     }
 
@@ -140,29 +140,29 @@ $sc-dash-laptop: 1024px;
     }
 
     .o_sc_dw_ts_add {
-        margin-top: var(--sc-space-1);
+        margin-top: var(--pk-space-1);
         display: inline-flex;
         align-items: center;
         gap: 6px;
 
-        .o_sc_icon {
+        .o_pk_icon {
             width: 16px;
             height: 16px;
         }
     }
 
     .o_sc_dw_event_details {
-        .o_sc_kv {
-            margin: var(--sc-space-1) 0;
+        .o_pk_kv {
+            margin: var(--pk-space-1) 0;
         }
 
         .o_sc_dw_event_desc {
-            margin: 0 0 var(--sc-space-1);
+            margin: 0 0 var(--pk-space-1);
             overflow-wrap: anywhere;
         }
     }
 
-    .o_sc_dw_venue .o_sc_row_line_text {
+    .o_sc_dw_venue .o_pk_row_line_text {
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -173,9 +173,9 @@ $sc-dash-laptop: 1024px;
         align-self: flex-start;
     }
 
-    .o_sc_chip_orange {
-        background: var(--sc-overdue);
-        color: var(--sc-tone-fg);
+    .o_pk_chip_orange {
+        background: var(--pk-overdue);
+        color: var(--pk-tone-fg);
     }
 
     // Review round 1: « À faire » lines fold out into their cards.
@@ -190,12 +190,12 @@ $sc-dash-laptop: 1024px;
                 display: none;
             }
 
-            .o_sc_icon {
+            .o_pk_icon {
                 transition: transform 0.15s ease;
             }
         }
 
-        &[open] > summary .o_sc_icon {
+        &[open] > summary .o_pk_icon {
             transform: rotate(180deg);
         }
     }
@@ -209,7 +209,7 @@ $sc-dash-laptop: 1024px;
         display: flex;
         flex-direction: column;
         gap: 6px;
-        padding: 6px 0 var(--sc-space-3);
+        padding: 6px 0 var(--pk-space-3);
         min-width: 0;
     }
 
@@ -220,12 +220,12 @@ $sc-dash-laptop: 1024px;
         gap: 6px;
         white-space: nowrap;
 
-        .o_sc_icon {
+        .o_pk_icon {
             width: 16px;
             height: 16px;
         }
 
-        &[data-sc-followed="1"] .o_sc_icon {
+        &[data-sc-followed="1"] .o_pk_icon {
             fill: currentColor;
         }
     }
@@ -233,7 +233,7 @@ $sc-dash-laptop: 1024px;
     .o_sc_row_detail_follow {
         display: flex;
         justify-content: flex-end;
-        margin-bottom: var(--sc-space-2);
+        margin-bottom: var(--pk-space-2);
     }
 
     .o_sc_hero_top {
@@ -246,7 +246,7 @@ $sc-dash-laptop: 1024px;
     .o_sc_dw_announcements {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
 
         .o_sc_dw_announcement:last-child {
             border-bottom: 0;
@@ -256,21 +256,21 @@ $sc-dash-laptop: 1024px;
 
     .o_sc_dw_announcement_team {
         font-weight: 600;
-        color: var(--sc-accent);
+        color: var(--pk-accent);
         text-decoration: none;
     }
 
     // ------------------------------------------------------------ configure
     .o_sc_dash_cfg_intro {
-        margin: 0 0 var(--sc-space-3);
+        margin: 0 0 var(--pk-space-3);
     }
 
     // Review round 2: the zones of « Configurer » (as on the dashboard).
     .o_sc_dash_cfg_zones {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-4);
-        margin-bottom: var(--sc-space-4);
+        gap: var(--pk-space-4);
+        margin-bottom: var(--pk-space-4);
         min-width: 0;
     }
 
@@ -280,14 +280,14 @@ $sc-dash-laptop: 1024px;
         > .o_sc_dash_cfg {
             min-height: 56px;
             margin: 0;
-            padding: var(--sc-space-2);
-            border: 1px dashed var(--sc-line);
-            border-radius: var(--sc-radius-md);
+            padding: var(--pk-space-2);
+            border: 1px dashed var(--pk-line);
+            border-radius: var(--pk-radius-md);
         }
     }
 
     .o_sc_dash_cfg_zone_title {
-        margin-bottom: var(--sc-space-2);
+        margin-bottom: var(--pk-space-2);
     }
 
     @media (min-width: $sc-dash-laptop) {
@@ -296,7 +296,7 @@ $sc-dash-laptop: 1024px;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             grid-template-areas: "left right" "bottom bottom";
             align-items: stretch;
-            gap: var(--sc-space-4) var(--sc-space-5);
+            gap: var(--pk-space-4) var(--pk-space-5);
         }
 
         .o_sc_dash_cfg_zone_left {
@@ -321,7 +321,7 @@ $sc-dash-laptop: 1024px;
     .o_sc_dash_cfg_drag {
         display: none;
         cursor: grab;
-        color: var(--sc-fg-3);
+        color: var(--pk-fg-3);
         letter-spacing: -3px;
         font-weight: 700;
     }
@@ -346,9 +346,9 @@ $sc-dash-laptop: 1024px;
         flex-wrap: wrap;
         align-items: center;
         gap: 6px;
-        margin: 0 0 var(--sc-space-1);
+        margin: 0 0 var(--pk-space-1);
 
-        .o_sc_input {
+        .o_pk_input {
             width: auto;
             min-width: 0;
             padding-top: 4px;
@@ -358,11 +358,11 @@ $sc-dash-laptop: 1024px;
 
     .o_sc_dash_cfg {
         list-style: none;
-        margin: 0 0 var(--sc-space-4);
+        margin: 0 0 var(--pk-space-4);
         padding: 0;
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
     }
 
     // Task 1736: a third column for the item's top bar (the red trash of
@@ -371,7 +371,7 @@ $sc-dash-laptop: 1024px;
         display: grid;
         grid-template-columns: auto minmax(0, 1fr) auto;
         align-items: start;
-        gap: 0 var(--sc-space-2);
+        gap: 0 var(--pk-space-2);
 
         > .o_sc_dash_cfg_head {
             grid-column: 1;
@@ -383,11 +383,11 @@ $sc-dash-laptop: 1024px;
             grid-row: 1;
         }
 
-        > .o_sc_card_icons {
+        > .o_pk_card_icons {
             grid-column: 3;
             grid-row: 1;
             margin-left: 0;
-            margin-right: calc(var(--sc-space-2) * -1);
+            margin-right: calc(var(--pk-space-2) * -1);
         }
 
         > .o_sc_dash_cfg_remove,
@@ -397,8 +397,8 @@ $sc-dash-laptop: 1024px;
         }
     }
 
-    .o_sc_dash_cfg_off .o_sc_dash_cfg_switch .o_sc_switch_label {
-        color: var(--sc-fg-3);
+    .o_sc_dash_cfg_off .o_sc_dash_cfg_switch .o_pk_switch_label {
+        color: var(--pk-fg-3);
     }
 
     .o_sc_dash_cfg_head {
@@ -411,26 +411,26 @@ $sc-dash-laptop: 1024px;
         display: flex;
         flex-direction: column;
 
-        .o_sc_icon_btn[disabled] {
+        .o_pk_icon_btn[disabled] {
             opacity: 0.3;
         }
     }
 
     .o_sc_dash_cfg_form {
-        gap: var(--sc-space-1);
+        gap: var(--pk-space-1);
         min-width: 0;
     }
 
     .o_sc_dash_cfg_fields {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-2);
-        padding: var(--sc-space-2) 0;
+        gap: var(--pk-space-2);
+        padding: var(--pk-space-2) 0;
 
         fieldset {
             display: flex;
             flex-direction: column;
-            gap: var(--sc-space-2);
+            gap: var(--pk-space-2);
             margin: 0;
             padding: 0;
             border: 0;
@@ -447,7 +447,7 @@ $sc-dash-laptop: 1024px;
         display: flex;
         align-items: center;
         justify-content: flex-end;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
         min-height: 0;
 
         .o_sc_dash_cfg_status:empty {
@@ -456,28 +456,28 @@ $sc-dash-laptop: 1024px;
     }
 
     .o_sc_dash_cfg_add {
-        margin-bottom: var(--sc-space-4);
+        margin-bottom: var(--pk-space-4);
     }
 
     .o_sc_dash_cfg_add_row {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
 
-        .o_sc_input {
+        .o_pk_input {
             flex: 1 1 180px;
             min-width: 0;
         }
 
-        .o_sc_btn {
+        .o_pk_btn {
             display: inline-flex;
             align-items: center;
-            gap: var(--sc-space-2);
+            gap: var(--pk-space-2);
         }
     }
 
     .o_sc_dash_cfg_reset,
     .o_sc_dash_cfg_back {
-        margin: 0 0 var(--sc-space-3);
+        margin: 0 0 var(--pk-space-3);
     }
 }

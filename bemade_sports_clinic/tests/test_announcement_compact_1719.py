@@ -56,7 +56,7 @@ class TestAnnouncementCompact1719(Announcement1719Common):
         area = self._area(tree)
         self.assertIsNotNone(area)
         self.assertEqual(area.get('data-pk-edit-card'), 'announcement')
-        self.assertFalse(area.xpath('.//*[contains(concat(" ", @class, " "), " o_sc_card ")]'))
+        self.assertFalse(area.xpath('.//*[contains(concat(" ", @class, " "), " o_pk_card ")]'))
         self.assertFalse(area.xpath('.//*[contains(concat(" ", @class, " "), " o_sc_announcement_head ")]'))
         line = area.xpath('./div[contains(@class, "o_sc_announcement_titleline")]')
         self.assertEqual(len(line), 1)
@@ -67,7 +67,7 @@ class TestAnnouncementCompact1719(Announcement1719Common):
         self.assertEqual(len(line.xpath('.//form[@data-pk-section="team.announcement.archive"]//button')), 1)
         # The text: megaphone beside it, clamped, « See more » hidden by default.
         content = area.xpath('.//div[contains(@class, "o_sc_announcement_content")]')[0]
-        self.assertTrue(content.xpath('./*[local-name()="svg" or contains(@class, "o_sc_icon")]'))
+        self.assertTrue(content.xpath('./*[local-name()="svg" or contains(@class, "o_pk_icon")]'))
         body = content.xpath('.//p[contains(@class, "o_sc_announcement_body")]')[0]
         self.assertEqual(body.get('data-sc-clamp'), '3')
         self.assertEqual(body.text_content(), 'Synthetic short note')
@@ -107,9 +107,9 @@ class TestAnnouncementCompact1719(Announcement1719Common):
         empty = area.xpath('.//p[contains(@class, "o_sc_announcement_empty")]')
         self.assertEqual(len(empty), 1)
         self.assertEqual(empty[0].text_content().strip(), 'No current announcement.')
-        self.assertIn('o_sc_muted', empty[0].get('class'))
+        self.assertIn('o_pk_muted', empty[0].get('class'))
         self.assertEqual(len(area.xpath('.//button[@data-sc-edit-toggle]')), 1)
-        self.assertFalse(area.xpath('.//*[contains(@class, "o_sc_list_add")]'))
+        self.assertFalse(area.xpath('.//*[contains(@class, "o_pk_list_add")]'))
         self.assertTrue(area.xpath('.//*[@data-pk-section="team.announcement.edit"]'))
         self._login_coach()
         _text, tree = self._get(self.url)

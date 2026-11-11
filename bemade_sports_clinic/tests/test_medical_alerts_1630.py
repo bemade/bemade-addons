@@ -331,7 +331,7 @@ class TestMedicalDossier1630(Clinic1540Common):
         self.assertEqual(sheet.get('id'), 'sc_med_card_allergy_%s' % self.player.id)
         self.assertIn('Synthetic pollen', sheet.text_content())
         self.assertTrue(sheet.xpath('.//button[@data-sc-edit-toggle]'))
-        self.assertFalse(hero.xpath('.//*[contains(@class, "o_sc_banner")]'), 'no allergies banner')
+        self.assertFalse(hero.xpath('.//*[contains(@class, "o_pk_banner")]'), 'no allergies banner')
 
 
 @tagged('post_install', '-at_install')

@@ -102,7 +102,7 @@ class TestDoneButtonsPref1676(Done1676Common):
         self.assertEqual(len(buttons), 1)
         self.assertTrue(buttons[0].xpath('ancestor::summary'))
         self.assertEqual(buttons[0].get('aria-label'), 'Delete injury')
-        self.assertIn('o_sc_icon_btn_danger', buttons[0].get('class'))
+        self.assertIn('o_pk_icon_btn_danger', buttons[0].get('class'))
         self.assertEqual(buttons[0].get('data-sc-sheet-open'), 'sc_delete_injury_sheet_%s' % self.injury.id)
 
     def test_coach_has_no_foot(self):
@@ -116,9 +116,9 @@ class TestDoneButtonsPref1676(Done1676Common):
     def test_done_buttons_marked(self):
         self._login_tp()
         _text, tree = self._get(self._card_url())
-        for done in tree.xpath('//*[@data-pk-edit-card]//button[@data-pk-edit-done][contains(@class, "o_sc_btn_primary")]'):
-            self.assertTrue('o_sc_edit_done' in done.get('class')
-                            or 'o_sc_edit_done_actions' in done.getparent().get('class', ''), done.get('class'))
+        for done in tree.xpath('//*[@data-pk-edit-card]//button[@data-pk-edit-done][contains(@class, "o_pk_btn_primary")]'):
+            self.assertTrue('o_pk_edit_done' in done.get('class')
+                            or 'o_pk_edit_done_actions' in done.getparent().get('class', ''), done.get('class'))
 
 
 @tagged('post_install', '-at_install')

@@ -62,7 +62,7 @@ class TestReviewFixes1018(PlayerInlineCommon):
                     '/my/events?team_id=%s&show_cancelled=1&group_by=team' % self.team_a.id):
             _text_, tree = self._get(url)
             form = tree.xpath('//form[@data-pk-section="events.filters"]')[0]
-            details = form.xpath('.//details[contains(@class, "o_sc_disclosure")]')
+            details = form.xpath('.//details[contains(@class, "o_pk_disclosure")]')
             self.assertEqual(len(details), 1)
             self.assertIsNone(details[0].get('open'), url)
             # The filter is still applied and shown in the (closed) panel.
@@ -205,7 +205,7 @@ class TestReviewFixes1018(PlayerInlineCommon):
         for node in removes:
             self.assertTrue(node.xpath('ancestor::*[@data-sc-edit-view="edit"]'))
         self.assertFalse(hero.xpath('./*[@data-sc-edit-view="read"]//*[@data-sc-action="player.remove"]'))
-        self.assertFalse(hero.xpath('./*[contains(@class, "o_sc_actions_row")]//*[@data-sc-action="player.remove"]'))
+        self.assertFalse(hero.xpath('./*[contains(@class, "o_pk_actions_row")]//*[@data-sc-action="player.remove"]'))
 
 
 @tagged('post_install', '-at_install')

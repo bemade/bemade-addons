@@ -31,7 +31,7 @@ from odoo.addons.bemade_sports_clinic.tests.test_app_shell_i18n_1538 import Test
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_nav_1579 import Nav1579Common
 
 HOME = '/my/home'
-PICTO = '//header[contains(@class, "o_sc_appbar")]//a[contains(concat(" ", @class, " "), " o_sc_home_picto ")]'
+PICTO = '//header[contains(@class, "o_pk_appbar")]//a[contains(concat(" ", @class, " "), " o_pk_home_picto ")]'
 
 
 class _Picto1746(Nav1579Common):
@@ -73,16 +73,16 @@ class TestHomePicto1746(_Picto1746):
             self.assertEqual(picto.get('href'), HOME, url)
             self.assertEqual(picto.get('aria-label'), 'Dashboard', url)
             self.assertEqual(picto.get('title'), 'Dashboard', url)
-            self.assertTrue(picto.xpath('.//img[contains(@class, "o_sc_logo_mark")]'), url)
+            self.assertTrue(picto.xpath('.//img[contains(@class, "o_pk_logo_mark")]'), url)
             # Right after the chevron, before the title.
             previous = picto.getprevious()
             self.assertIsNotNone(previous, url)
-            self.assertIn('o_sc_back', previous.get('class', '').split(), url)
+            self.assertIn('o_pk_back', previous.get('class', '').split(), url)
             following = picto.getnext()
             self.assertEqual(following.tag, 'h1', url)
-            self.assertIn('o_sc_appbar_title', following.get('class', ''), url)
+            self.assertIn('o_pk_appbar_title', following.get('class', ''), url)
             # The sub-page has no top-level logo.
-            self.assertFalse(tree.xpath('//header//a[contains(concat(" ", @class, " "), " o_sc_logo ")]'), url)
+            self.assertFalse(tree.xpath('//header//a[contains(concat(" ", @class, " "), " o_pk_logo ")]'), url)
 
     # -- UC-P2 -----------------------------------------------------------
     def test_top_level_pages_unchanged(self):
@@ -91,7 +91,7 @@ class TestHomePicto1746(_Picto1746):
             self.assertFalse(tree.xpath(PICTO), url)
             self.assertFalse(tree.xpath('//header//a[@data-pk-back]'), url)
             self.assertEqual(
-                tree.xpath('//header//a[contains(concat(" ", @class, " "), " o_sc_logo ")]/@href'),
+                tree.xpath('//header//a[contains(concat(" ", @class, " "), " o_pk_logo ")]/@href'),
                 [HOME], url)
 
     def test_coach_sub_page_has_the_picto(self):
@@ -130,4 +130,4 @@ class TestHomePictoFr1746(TestAppShellI18n1538):
         self._switch(True)
         self._login_tp()
         text = self._fr('/my/team?team_id=%s' % self.team_a.id)
-        self.assertIn('class="o_sc_home_picto" aria-label="Tableau de bord" title="Tableau de bord"', text)
+        self.assertIn('class="o_pk_home_picto" aria-label="Tableau de bord" title="Tableau de bord"', text)

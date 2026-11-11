@@ -1,6 +1,6 @@
 /*
  * Task 1627 — status pill dropdowns (the shared « sc_status_pill_select »
- * component, views/sc_components.xml). Inert outside .o_sc_app.
+ * component, views/sc_components.xml). Inert outside .o_pk_app.
  *
  * A pill is [data-sc-pill-select] holding its target (data-sc-model,
  * -record-id, -field, -write-date, -old-value, -undo-message), a toggle
@@ -38,7 +38,7 @@ const PILL = "[data-sc-pill-select]";
 const BUSY_MS = 8000;
 
 function inShell(node) {
-    return Boolean(node && node.closest(".o_sc_app"));
+    return Boolean(node && node.closest(".o_pk_app"));
 }
 
 function toast(detail) {

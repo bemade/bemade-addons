@@ -32,7 +32,7 @@ tours.add("sc_1676_info_check", {
             content: "Settings off: the app hides « Done »; open a player info card (pencil)",
             trigger: PENCIL,
             run(helpers) {
-                assert(document.querySelector('.o_sc_app[data-sc-hide-done="1"]'), "Done not hidden by default");
+                assert(document.querySelector('.o_pk_app[data-sc-hide-done="1"]'), "Done not hidden by default");
                 window.__sc1676Label = this.anchor.getAttribute("aria-label");
                 return helpers.click();
             },
@@ -43,7 +43,7 @@ tours.add("sc_1676_info_check", {
             run() {
                 const done = document.querySelector(`${IDENTITY} [data-pk-edit-done]`);
                 assert(done && !visible(done), "« Done » is visible");
-                for (const button of document.querySelectorAll(".o_sc_app [data-pk-edit-done].o_sc_btn_primary")) {
+                for (const button of document.querySelectorAll(".o_pk_app [data-pk-edit-done].o_pk_btn_primary")) {
                     assert(!visible(button), "a « Done » is visible somewhere");
                 }
                 assert(this.anchor.getAttribute("aria-label") !== window.__sc1676Label, "the ✓ kept the pencil's label");
@@ -80,7 +80,7 @@ tours.add("sc_1676_injury_check", {
                 const card = this.anchor.closest("details");
                 assert(!card.querySelector(".o_sc_injury_card_actions"), "the foot is back");
                 assert(!card.querySelector("[data-sc-injury-done]"), "the bottom « Done » is back");
-                const trash = card.querySelector(":scope > summary button.o_sc_card_trash[data-sc-action='injury.delete']");
+                const trash = card.querySelector(":scope > summary button.o_pk_card_trash[data-sc-action='injury.delete']");
                 assert(trash, "no « Delete injury » in the top bar");
                 assert(!visible(trash), "the trash shows in read mode");
             },
@@ -106,7 +106,7 @@ tours.add("sc_1676_injury_check", {
         },
         {
             content: "« Delete injury » (the trash, now shown) opens its confirm",
-            trigger: "details.o_sc_injury_item[open] > summary button.o_sc_card_trash[data-sc-action='injury.delete']:visible",
+            trigger: "details.o_sc_injury_item[open] > summary button.o_pk_card_trash[data-sc-action='injury.delete']:visible",
             run: "click",
         },
         {
@@ -122,7 +122,7 @@ tours.add("sc_1676_info_done_on", {
             content: "Setting on: open a player info card",
             trigger: PENCIL,
             run(helpers) {
-                assert(!document.querySelector(".o_sc_app[data-sc-hide-done]"), "Done hidden while the setting is on");
+                assert(!document.querySelector(".o_pk_app[data-sc-hide-done]"), "Done hidden while the setting is on");
                 return helpers.click();
             },
         },

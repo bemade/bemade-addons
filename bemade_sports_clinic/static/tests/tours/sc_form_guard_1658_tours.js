@@ -68,7 +68,7 @@ tours.add("sc_1658_contact", {
     steps: () => [
         {
             content: "« + Ajouter » of the contacts",
-            trigger: 'button.o_sc_list_add[aria-controls="sc_contact_add"]',
+            trigger: 'button.o_pk_list_add[aria-controls="sc_contact_add"]',
             run: "click",
         },
         {
@@ -175,7 +175,7 @@ tours.add("sc_1658_injury", {
     steps: () => [
         {
             content: "« + Ajouter » of the injuries",
-            trigger: 'button.o_sc_list_add[aria-controls="sc_new_injury"]',
+            trigger: 'button.o_pk_list_add[aria-controls="sc_new_injury"]',
             run: "click",
         },
         {

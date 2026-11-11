@@ -1,6 +1,6 @@
 /*
  * Task 1542 (epic #1535) — app shell page behaviours (progressive
- * enhancement; inert outside .o_sc_app):
+ * enhancement; inert outside .o_pk_app):
  *
  * - segmented page tabs (data-sc-tabs): switch panels in place, keep ?tab=
  *   in the address bar; without JS each tab is a plain link;
@@ -40,7 +40,7 @@ const SC_CHECK_PATH = "M20 6L9 17l-5-5";
 const scPencils = new WeakMap();
 
 function app() {
-    return document.querySelector(".o_sc_app[data-pk-app-shell]");
+    return document.querySelector(".o_pk_app[data-pk-app-shell]");
 }
 
 // ---------------------------------------------------------------- toast
@@ -64,7 +64,7 @@ function placeToast(root, toast) {
 document.addEventListener(
     "close",
     (ev) => {
-        const toast = ev.target instanceof HTMLDialogElement && ev.target.querySelector(":scope > .o_sc_toast");
+        const toast = ev.target instanceof HTMLDialogElement && ev.target.querySelector(":scope > .o_pk_toast");
         if (toast && toastHome) {
             toastHome.appendChild(toast);
         }
@@ -74,7 +74,7 @@ document.addEventListener(
 
 function showToast(message, actionLabel, action, duration, options) {
     const root = app();
-    const toast = root && root.querySelector(".o_sc_toast");
+    const toast = root && root.querySelector(".o_pk_toast");
     if (!toast) {
         return;
     }
@@ -84,15 +84,15 @@ function showToast(message, actionLabel, action, duration, options) {
     // button beside that column — under it, right-aligned, on a phone or
     // when it does not fit (sc_p2.scss, review round 1).
     const body = document.createElement("span");
-    body.className = "o_sc_toast_body";
+    body.className = "o_pk_toast_body";
     if (title) {
         const strong = document.createElement("strong");
-        strong.className = "o_sc_toast_title";
+        strong.className = "o_pk_toast_title";
         strong.textContent = title;
         body.appendChild(strong);
     }
     const text = document.createElement("span");
-    text.className = "o_sc_toast_text";
+    text.className = "o_pk_toast_text";
     text.textContent = message;
     body.appendChild(text);
     const parts = [body];
@@ -104,7 +104,7 @@ function showToast(message, actionLabel, action, duration, options) {
     if (actionLabel && action) {
         const button = document.createElement("button");
         button.type = "button";
-        button.className = "o_sc_toast_action";
+        button.className = "o_pk_toast_action";
         button.dataset.scToastAction = "1";
         button.textContent = actionLabel;
         button.addEventListener("click", () => {
@@ -130,7 +130,7 @@ function showToast(message, actionLabel, action, duration, options) {
 // keeps its top in view).
 function keepClearOfToast(el, { fitOnly = false } = {}) {
     const root = app();
-    const toast = root && root.querySelector(".o_sc_toast");
+    const toast = root && root.querySelector(".o_pk_toast");
     if (!el || !toast || toast.hidden) {
         return;
     }
@@ -202,7 +202,7 @@ function notificationSeen(id) {
 // of the page that showed it), never twice for the same notification.
 function showSessionNotification() {
     const root = app();
-    const toast = root && root.querySelector(".o_sc_toast[data-sc-notify]");
+    const toast = root && root.querySelector(".o_pk_toast[data-sc-notify]");
     if (!toast) {
         return;
     }
@@ -276,7 +276,7 @@ document.addEventListener("sc:saved", (ev) => {
 // without offering the undo again.
 const SC_UNDO_CREATE_MS = 2 * 60 * 1000;
 function offerUndoCreate() {
-    const card = document.querySelector(".o_sc_app [data-sc-created-injury]");
+    const card = document.querySelector(".o_pk_app [data-sc-created-injury]");
     const form = card && card.querySelector('form[data-sc-form="injury.undo"]');
     if (!form) {
         return;
@@ -302,7 +302,7 @@ if (document.readyState === "loading") {
 // Undo » for the pills' undo time (~8 s; the server re-checks its window);
 // the address loses ?announcement_archived= so a reload does not offer it.
 function offerUndoAnnouncement() {
-    const form = document.querySelector('.o_sc_app form[data-sc-form="announcement.undo"]');
+    const form = document.querySelector('.o_pk_app form[data-sc-form="announcement.undo"]');
     if (form) {
         showToast(form.dataset.scToastMessage, form.dataset.scToastAction, () => form.submit(), 8000);
     }
@@ -342,11 +342,11 @@ if (document.readyState === "loading") {
 // and « Player created · Undo » is offered for the undo window; the address
 // loses ?created_player= so a reload offers neither again.
 function offerUndoCreatePlayer() {
-    const form = document.querySelector('.o_sc_app form[data-sc-form="player.undo"]');
+    const form = document.querySelector('.o_pk_app form[data-sc-form="player.undo"]');
     if (form) {
         showToast(form.dataset.scToastMessage, form.dataset.scToastAction, () => form.submit(), SC_UNDO_CREATE_MS);
     }
-    for (const card of document.querySelectorAll(".o_sc_app [data-pk-edit-card][data-sc-edit-open-on-load]")) {
+    for (const card of document.querySelectorAll(".o_pk_app [data-pk-edit-card][data-sc-edit-open-on-load]")) {
         setCardEditing(card, true);
         card.scrollIntoView({ block: "start" });
     }
@@ -367,7 +367,7 @@ if (document.readyState === "loading") {
 function openHashedDetails() {
     const id = window.location.hash.slice(1);
     const details = id && /^[\w-]+$/.test(id) && document.getElementById(id);
-    if (details && details.tagName === "DETAILS" && details.closest(".o_sc_app")) {
+    if (details && details.tagName === "DETAILS" && details.closest(".o_pk_app")) {
         details.open = true;
         details.scrollIntoView({ block: "start" });
     }
@@ -402,7 +402,7 @@ function setToggleDone(toggle, editing) {
         const label = (root && root.dataset.scEditDoneLabel) || "✓";
         toggle.setAttribute("aria-label", label);
         toggle.setAttribute("title", label);
-        toggle.classList.add("o_sc_edit_toggle_done");
+        toggle.classList.add("o_pk_edit_toggle_done");
         toggle.dataset.scEditToggleDone = "1";
         return;
     }
@@ -419,7 +419,7 @@ function setToggleDone(toggle, editing) {
             }
         }
     }
-    toggle.classList.remove("o_sc_edit_toggle_done");
+    toggle.classList.remove("o_pk_edit_toggle_done");
     delete toggle.dataset.scEditToggleDone;
 }
 
@@ -499,7 +499,7 @@ function syncCardControls(card, editing) {
 // Task 1736: a card rendered in edit mode (e.g. a just-created injury's
 // Details) shows its ✓ and its edit-only controls from the start.
 function syncOpenCards() {
-    for (const card of document.querySelectorAll(".o_sc_app [data-pk-edit-card][data-sc-edit-open]")) {
+    for (const card of document.querySelectorAll(".o_pk_app [data-pk-edit-card][data-sc-edit-open]")) {
         syncCardControls(card, true);
     }
 }
@@ -576,7 +576,7 @@ function measureRibbon() {
     const update = () => {
         const fixed = getComputedStyle(banner).position === "fixed";
         document.documentElement.style.setProperty(
-            "--sc-ribbon-h",
+            "--pk-ribbon-h",
             fixed ? `${banner.getBoundingClientRect().height}px` : "0px"
         );
     };
@@ -606,16 +606,16 @@ async function loadLazy(container, url, target) {
         // A fragment with its own empty state (task 1581 histories) keeps it.
         // Task 1614: [data-sc-lazy-filled] = content even without a link
         // (a digest day whose players have no page link).
-        if (!target.querySelector("li, a, tr, .o_sc_empty, [data-sc-lazy-filled]")) {
+        if (!target.querySelector("li, a, tr, .o_pk_empty, [data-sc-lazy-filled]")) {
             const empty = document.createElement("p");
-            empty.className = "o_sc_empty";
+            empty.className = "o_pk_empty";
             empty.textContent = _t("Nothing to show.");
             target.replaceChildren(empty);
         }
     } catch {
         container.dataset.scLoaded = "0"; // retry on next open
         const failed = document.createElement("p");
-        failed.className = "o_sc_empty";
+        failed.className = "o_pk_empty";
         failed.textContent = _t("Could not load. Close and open again to retry.");
         target.replaceChildren(failed);
     }
@@ -630,9 +630,9 @@ document.addEventListener(
             details instanceof HTMLDetailsElement &&
             details.open &&
             details.dataset.scLazyUrl &&
-            details.closest(".o_sc_app")
+            details.closest(".o_pk_app")
         ) {
-            loadLazy(details, details.dataset.scLazyUrl, details.querySelector(".o_sc_lazy_body"));
+            loadLazy(details, details.dataset.scLazyUrl, details.querySelector(".o_pk_lazy_body"));
         }
     },
     true
@@ -644,7 +644,7 @@ document.addEventListener(
 // link stays one stretched link and the detail spans the row's full width.
 document.addEventListener("click", (ev) => {
     const toggle = ev.target.closest && ev.target.closest("[data-sc-row-expand]");
-    if (!toggle || !toggle.closest(".o_sc_app")) {
+    if (!toggle || !toggle.closest(".o_pk_app")) {
         return;
     }
     const region = document.getElementById(toggle.dataset.scRowExpand);
@@ -656,9 +656,9 @@ document.addEventListener("click", (ev) => {
     region.hidden = !open;
     toggle.setAttribute("aria-expanded", open ? "true" : "false");
     // Task 1624 round 2: any row group (player or event card).
-    toggle.closest(".o_sc_row_group")?.classList.toggle("o_sc_row_open", open);
+    toggle.closest(".o_pk_row_group")?.classList.toggle("o_pk_row_open", open);
     if (open && region.dataset.scLazyUrl) {
-        loadLazy(region, region.dataset.scLazyUrl, region.querySelector(".o_sc_lazy_body"));
+        loadLazy(region, region.dataset.scLazyUrl, region.querySelector(".o_pk_lazy_body"));
     }
 });
 
@@ -666,7 +666,7 @@ document.addEventListener("click", (ev) => {
 // it): its fresh « Details » control follows the region it controls, which
 // stays open or closed under the card.
 document.addEventListener("pk:fragments", () => {
-    for (const toggle of document.querySelectorAll(".o_sc_app [data-sc-row-expand]")) {
+    for (const toggle of document.querySelectorAll(".o_pk_app [data-sc-row-expand]")) {
         const region = document.getElementById(toggle.dataset.scRowExpand);
         if (region) {
             toggle.setAttribute("aria-expanded", region.hidden ? "false" : "true");
@@ -676,10 +676,10 @@ document.addEventListener("pk:fragments", () => {
 
 // --------------------------------------------------------------- sheets
 function refetchSheet(dialog, url) {
-    const body = dialog.querySelector(".o_sc_sheet_body");
+    const body = dialog.querySelector(".o_pk_sheet_body");
     dialog.dataset.scLoaded = "0";
     const loading = document.createElement("p");
-    loading.className = "o_sc_empty o_sc_lazy_loading";
+    loading.className = "o_pk_empty o_pk_lazy_loading";
     loading.textContent = _t("Loading…");
     body.replaceChildren(loading);
     return loadLazy(dialog, url, body);
@@ -700,7 +700,7 @@ function openSheet(id) {
             refetchSheet(dialog, dialog.dataset.scLazyUrl);
             return;
         }
-        loadLazy(dialog, dialog.dataset.scLazyUrl, dialog.querySelector(".o_sc_sheet_body"));
+        loadLazy(dialog, dialog.dataset.scLazyUrl, dialog.querySelector(".o_pk_sheet_body"));
     }
 }
 
@@ -709,7 +709,7 @@ function openSheet(id) {
 // « Add another timesheet » (the add sheet, split shifts). The sheet's own
 // « Edit my timesheet » does the same from inside it.
 function editExistingTimesheet(id, behavior) {
-    const card = document.querySelector(`.o_sc_app [data-sc-timesheet-id="${id}"][data-pk-edit-card]`);
+    const card = document.querySelector(`.o_pk_app [data-sc-timesheet-id="${id}"][data-pk-edit-card]`);
     if (!card) {
         return false;
     }
@@ -778,7 +778,7 @@ document.addEventListener("click", (ev) => {
     }
     // Task 1581: filters INSIDE a lazy sheet (the injury notes' scope
     // chips) re-fetch its body from their href, the sheet stays open.
-    const refetch = ev.target.closest("dialog.o_sc_sheet [data-sc-sheet-refetch]");
+    const refetch = ev.target.closest("dialog.o_pk_sheet [data-sc-sheet-refetch]");
     if (refetch && !ev.metaKey && !ev.ctrlKey && !ev.shiftKey) {
         ev.preventDefault();
         refetchSheet(refetch.closest("dialog"), refetch.getAttribute("href"));
@@ -793,7 +793,7 @@ document.addEventListener("click", (ev) => {
         return;
     }
     // A click on the backdrop lands on the <dialog> itself.
-    if (ev.target instanceof HTMLDialogElement && ev.target.classList.contains("o_sc_sheet")) {
+    if (ev.target instanceof HTMLDialogElement && ev.target.classList.contains("o_pk_sheet")) {
         const rect = ev.target.getBoundingClientRect();
         const inside =
             ev.clientX >= rect.left && ev.clientX <= rect.right &&
@@ -868,7 +868,7 @@ function init() {
     }
     // Task 1620: a sheet the server answered an error in (« Supprimer le
     // compte » with a wrong password) opens again on load.
-    const reopen = root.querySelector("dialog.o_sc_sheet[data-sc-sheet-open-on-load]");
+    const reopen = root.querySelector("dialog.o_pk_sheet[data-sc-sheet-open-on-load]");
     if (reopen) {
         openSheet(reopen.id);
     }
@@ -914,7 +914,7 @@ const scClampObserver = window.ResizeObserver
     : null;
 
 function setupClamps() {
-    for (const text of document.querySelectorAll(".o_sc_app [data-sc-clamp]:not([data-sc-clamp-ready])")) {
+    for (const text of document.querySelectorAll(".o_pk_app [data-sc-clamp]:not([data-sc-clamp-ready])")) {
         text.dataset.scClampReady = "1";
         measureClamp(text);
         if (scClampObserver) {
@@ -934,7 +934,7 @@ function clampMetaVisible(box) {
 
 document.addEventListener("click", (ev) => {
     const button = ev.target.closest && ev.target.closest("[data-sc-clamp-more], [data-sc-clamp-less]");
-    if (!button || !button.closest(".o_sc_app")) {
+    if (!button || !button.closest(".o_pk_app")) {
         return;
     }
     const box = button.closest("[data-sc-clamp-meta]")?.parentElement;

@@ -14205,13 +14205,13 @@ msgstr "%s en reprise"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
-msgid "<span class=\"o_sc_crumb_sep\" aria-hidden=\"true\">›</span>"
-msgstr "<span class=\"o_sc_crumb_sep\" aria-hidden=\"true\">›</span>"
+msgid "<span class=\"o_pk_crumb_sep\" aria-hidden=\"true\">›</span>"
+msgstr "<span class=\"o_pk_crumb_sep\" aria-hidden=\"true\">›</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
-msgid "<span class=\"o_sc_rail_brand_name\">Le Fit Crew</span>"
-msgstr "<span class=\"o_sc_rail_brand_name\">Le Fit Crew</span>"
+msgid "<span class=\"o_pk_rail_brand_name\">Le Fit Crew</span>"
+msgstr "<span class=\"o_pk_rail_brand_name\">Le Fit Crew</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_settings
@@ -14878,13 +14878,13 @@ msgstr "<option value=\"\">Choisir…</option>"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
 msgid ""
-"<select id=\"sc_new_practice\" name=\"practice_status\" class=\"o_sc_input o_sc_select\">\n"
+"<select id=\"sc_new_practice\" name=\"practice_status\" class=\"o_pk_input o_pk_select\">\n"
 "                                    <option value=\"yes\">Yes</option>\n"
 "                                    <option value=\"no_contact\">Yes, no contact</option>\n"
 "                                    <option value=\"no\">No</option>\n"
 "                                </select>"
 msgstr ""
-"<select id=\"sc_new_practice\" name=\"practice_status\" class=\"o_sc_input o_sc_select\">\n"
+"<select id=\"sc_new_practice\" name=\"practice_status\" class=\"o_pk_input o_pk_select\">\n"
 "                                    <option value=\"yes\">Oui</option>\n"
 "                                    <option value=\"no_contact\">Oui, sans contact</option>\n"
 "                                    <option value=\"no\">Non</option>\n"
@@ -14893,29 +14893,29 @@ msgstr ""
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_create
 msgid ""
-"<select id=\"sc_new_status\" name=\"match_status\" class=\"o_sc_input o_sc_select\">\n"
+"<select id=\"sc_new_status\" name=\"match_status\" class=\"o_pk_input o_pk_select\">\n"
 "                                    <option value=\"yes\">Yes</option>\n"
 "                                    <option value=\"no\">No</option>\n"
 "                                </select>"
 msgstr ""
-"<select id=\"sc_new_status\" name=\"match_status\" class=\"o_sc_input o_sc_select\">\n"
+"<select id=\"sc_new_status\" name=\"match_status\" class=\"o_pk_input o_pk_select\">\n"
 "                                    <option value=\"yes\">Oui</option>\n"
 "                                    <option value=\"no\">Non</option>\n"
 "                                </select>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_injury_edit
-msgid "<span class=\"o_sc_field_label\">Injury status</span>"
-msgstr "<span class=\"o_sc_field_label\">Statut de la blessure</span>"
+msgid "<span class=\"o_pk_field_label\">Injury status</span>"
+msgstr "<span class=\"o_pk_field_label\">Statut de la blessure</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 msgid ""
-"<span class=\"o_sc_row_trailing\"><span class=\"o_sc_chip "
-"o_sc_chip_ghost\">No access</span></span>"
+"<span class=\"o_pk_row_trailing\"><span class=\"o_pk_chip "
+"o_pk_chip_ghost\">No access</span></span>"
 msgstr ""
-"<span class=\"o_sc_row_trailing\"><span class=\"o_sc_chip "
-"o_sc_chip_ghost\">Aucun accès</span></span>"
+"<span class=\"o_pk_row_trailing\"><span class=\"o_pk_chip "
+"o_pk_chip_ghost\">Aucun accès</span></span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_activity_add_sheet
@@ -16004,26 +16004,26 @@ msgstr "%(size)s — plus de 10 Mo"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
-msgid "<small class=\"o_sc_hint\">Several files at once — 10 MB maximum each</small>"
-msgstr "<small class=\"o_sc_hint\">Plusieurs fichiers à la fois — 10 Mo maximum chacun</small>"
+msgid "<small class=\"o_pk_hint\">Several files at once — 10 MB maximum each</small>"
+msgstr "<small class=\"o_pk_hint\">Plusieurs fichiers à la fois — 10 Mo maximum chacun</small>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
 msgid ""
-"<span class=\"o_sc_dropzone_text\">Choose files or drop them here</span>\n"
-"                    <span class=\"o_sc_dropzone_text_touch\">Add files</span>"
+"<span class=\"o_pk_dropzone_text\">Choose files or drop them here</span>\n"
+"                    <span class=\"o_pk_dropzone_text_touch\">Add files</span>"
 msgstr ""
-"<span class=\"o_sc_dropzone_text\">Choisissez des fichiers ou déposez-les ici</span>\n"
-"                    <span class=\"o_sc_dropzone_text_touch\">Ajouter des fichiers</span>"
+"<span class=\"o_pk_dropzone_text\">Choisissez des fichiers ou déposez-les ici</span>\n"
+"                    <span class=\"o_pk_dropzone_text_touch\">Ajouter des fichiers</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
 msgid ""
-"<span class=\"o_sc_btn_idle\">Upload</span>\n"
-"                    <span class=\"o_sc_btn_busy\" hidden=\"hidden\"><span class=\"o_sc_spinner\" aria-hidden=\"true\"/>Uploading…</span>"
+"<span class=\"o_pk_btn_idle\">Upload</span>\n"
+"                    <span class=\"o_pk_btn_busy\" hidden=\"hidden\"><span class=\"o_pk_spinner\" aria-hidden=\"true\"/>Uploading…</span>"
 msgstr ""
-"<span class=\"o_sc_btn_idle\">Téléverser</span>\n"
-"                    <span class=\"o_sc_btn_busy\" hidden=\"hidden\"><span class=\"o_sc_spinner\" aria-hidden=\"true\"/>Téléversement…</span>"
+"<span class=\"o_pk_btn_idle\">Téléverser</span>\n"
+"                    <span class=\"o_pk_btn_busy\" hidden=\"hidden\"><span class=\"o_pk_spinner\" aria-hidden=\"true\"/>Téléversement…</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
@@ -16068,26 +16068,26 @@ msgstr "Aucune organisation"
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
 msgid ""
-"<small class=\"o_sc_hint\">Applied to each file you add; change a file below"
+"<small class=\"o_pk_hint\">Applied to each file you add; change a file below"
 " to change only that one.</small>"
 msgstr ""
-"<small class=\"o_sc_hint\">Appliquée à chaque fichier ajouté; modifiez un "
+"<small class=\"o_pk_hint\">Appliquée à chaque fichier ajouté; modifiez un "
 "fichier ci-dessous pour ne changer que celui-là.</small>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
-msgid "<span class=\"o_sc_field_label\">Category</span>"
-msgstr "<span class=\"o_sc_field_label\">Catégorie</span>"
+msgid "<span class=\"o_pk_field_label\">Category</span>"
+msgstr "<span class=\"o_pk_field_label\">Catégorie</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
-msgid "<span class=\"o_sc_field_label\">Description</span>"
-msgstr "<span class=\"o_sc_field_label\">Description</span>"
+msgid "<span class=\"o_pk_field_label\">Description</span>"
+msgstr "<span class=\"o_pk_field_label\">Description</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
-msgid "<span class=\"o_sc_field_label\">Name</span>"
-msgstr "<span class=\"o_sc_field_label\">Nom</span>"
+msgid "<span class=\"o_pk_field_label\">Name</span>"
+msgstr "<span class=\"o_pk_field_label\">Nom</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_account
@@ -17677,8 +17677,8 @@ msgstr "%(days)s jours"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_dashboard_configure
-msgid "<small class=\"o_sc_hint\">Nothing chosen: all your teams.</small>"
-msgstr "<small class=\"o_sc_hint\">Rien de choisi : toutes vos équipes.</small>"
+msgid "<small class=\"o_pk_hint\">Nothing chosen: all your teams.</small>"
+msgstr "<small class=\"o_pk_hint\">Rien de choisi : toutes vos équipes.</small>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_dashboard_configure

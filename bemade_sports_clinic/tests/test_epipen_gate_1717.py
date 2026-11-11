@@ -20,7 +20,7 @@ Acceptance criteria:
 * AC-6 French: « Non renseigné », « EpiPen ? », the gate message, the To-Do.
 * AC-7 (review round 1, owner 2026-10-27): the answer is ONE line — the
   « EpiPen » label and a segmented Oui / Non slider pill
-  (``o_sc_toggle_pill``, a radiogroup named by the label), nothing selected
+  (``o_pk_toggle_pill``, a radiogroup named by the label), nothing selected
   while unanswered.
 * AC-8 (review round 2, owner 2026-10-27): the pill reads Non | Oui (Non
   left); the switch label has its own text (#1739: the field's « EpiPen? » /
@@ -155,15 +155,15 @@ class TestEpiPenGate1717(EpiPen1717Common):
         label = ask.xpath('./span[contains(@class, "o_sc_med_epipen_ask_label")]')[0]
         self.assertEqual(ask.get('aria-labelledby'), label.get('id'))
         self.assertEqual(label.text_content().strip(), 'EpiPen?')  # #1739
-        pill = ask.xpath('./div[contains(@class, "o_sc_toggle_pill")]')[0]
+        pill = ask.xpath('./div[contains(@class, "o_pk_toggle_pill")]')[0]
         # AC-8: Non | Oui.
         self.assertEqual([' '.join(o.text_content().split()) for o in pill.xpath('./label')], ['No', 'Yes'])
         self.assertEqual(pill.xpath('./label/@data-sc-toggle-opt'), ['no', 'yes'])
         self.assertEqual(pill.xpath('./label/input/@value'), ['no', 'yes'])
         # AC-8: the level pill in the popup's header, next to the title.
-        head = sheet.xpath('./div[contains(@class, "o_sc_sheet_head")]')[0]
+        head = sheet.xpath('./div[contains(@class, "o_pk_sheet_head")]')[0]
         self.assertTrue(head.xpath('./div[contains(@class, "o_sc_med_head")]/*[@data-sc-med-head]'))
-        self.assertFalse(sheet.xpath('.//*[contains(@class, "o_sc_sheet_body")]//*[@data-sc-med-head]'))
+        self.assertFalse(sheet.xpath('.//*[contains(@class, "o_pk_sheet_body")]//*[@data-sc-med-head]'))
         self.assertFalse(pill.xpath('.//input[@checked]'))
         self.assertTrue(sheet.xpath('.//*[@data-sc-med-epipen-first]'))
         self.assertFalse(sheet.xpath('.//button[@data-pk-list-add-toggle]'))

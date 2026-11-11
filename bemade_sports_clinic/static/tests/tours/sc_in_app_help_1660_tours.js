@@ -32,7 +32,7 @@ tours.add("sc_1660_video_links", {
     steps: () => [
         {
             content: "Same-origin video attachment → inline player; anything else stays a link",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 const mod = odoo.loader.modules.get("@bemade_sports_clinic/js/sc_guide_video");
                 assert(mod && mod.scUpgradeVideoLinks, "sc_guide_video module not loaded");

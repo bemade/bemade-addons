@@ -42,11 +42,11 @@ const mouse = (type, x, y) =>
 /** Open the picker of ``select`` and click the option ``label``, held HOLD_MS. */
 async function heldPick(select, label) {
     const picker = select.nextElementSibling;
-    const input = picker.querySelector(".o_sc_picker_input");
+    const input = picker.querySelector(".o_pk_picker_input");
     input.focus();
     input.click();
-    await waitFor(() => !picker.querySelector(".o_sc_picker_list").hidden, "the list opens");
-    const option = [...picker.querySelectorAll(".o_sc_picker_option")].find(
+    await waitFor(() => !picker.querySelector(".o_pk_picker_list").hidden, "the list opens");
+    const option = [...picker.querySelectorAll(".o_pk_picker_option")].find(
         (el) => el.textContent.trim() === label
     );
     assert(option, `« ${label} » is listed`);
@@ -73,7 +73,7 @@ function labelOf(select) {
 function pickOrg(label) {
     return {
         content: `Pick the organisation « ${label} » once, a held click`,
-        trigger: `${ORG} + .o_sc_picker .o_sc_picker_input`,
+        trigger: `${ORG} + .o_pk_picker .o_pk_picker_input`,
         async run() {
             await heldPick(document.querySelector(ORG), label);
         },
@@ -82,20 +82,20 @@ function pickOrg(label) {
 
 function pickTeam(label) {
     return [
-        { content: "Focus the teams box", trigger: `${TEAMS} input.o_sc_tags_search`, run: "click" },
-        { content: `Pick « ${label} »`, trigger: `${TEAMS} .o_sc_tags_option:contains("${label}")`, run: "click" },
-        { content: `« ${label} » chosen`, trigger: `${TEAMS} .o_sc_tag:contains("${label}")` },
+        { content: "Focus the teams box", trigger: `${TEAMS} input.o_pk_tags_search`, run: "click" },
+        { content: `Pick « ${label} »`, trigger: `${TEAMS} .o_pk_tags_option:contains("${label}")`, run: "click" },
+        { content: `« ${label} » chosen`, trigger: `${TEAMS} .o_pk_tag:contains("${label}")` },
     ];
 }
 
 function stuck(label, { warning = false } = {}) {
     return {
         content: `« ${label} » stuck on the first pick${warning ? ", the drop warning shows" : ", no warning"}`,
-        trigger: `${ORG} + .o_sc_picker .o_sc_picker_input:value("${label}")`,
+        trigger: `${ORG} + .o_pk_picker .o_pk_picker_input:value("${label}")`,
         run() {
             const select = document.querySelector(ORG);
             assert(labelOf(select) === label, `the organisation is « ${labelOf(select)} »`);
-            assert(select.nextElementSibling.querySelector(".o_sc_picker_list").hidden, "the list stayed open");
+            assert(select.nextElementSibling.querySelector(".o_pk_picker_list").hidden, "the list stayed open");
             const box = document.querySelector(`${TEAMS} [data-sc-org-confirm-box]`);
             assert(Boolean(box) === warning, warning ? "no drop warning" : "a drop warning with no team to drop");
         },
@@ -107,7 +107,7 @@ tours.add("sc_r3_org_pick_no_teams", {
     steps: () => [
         {
             content: "The form opens on « All organizations »",
-            trigger: `${ORG} + .o_sc_picker .o_sc_picker_input`,
+            trigger: `${ORG} + .o_pk_picker .o_pk_picker_input`,
             run() {
                 assert(!document.querySelector(ORG).value, "an organisation is already set");
             },
@@ -126,7 +126,7 @@ tours.add("sc_r3_org_pick_with_teams", {
         stuck("PC Org"),
         {
             content: "The team is kept",
-            trigger: `${TEAMS} .o_sc_tag:contains("PC Team A")`,
+            trigger: `${TEAMS} .o_pk_tag:contains("PC Team A")`,
         },
         pickOrg("ZZ Org 1597"),
         stuck("ZZ Org 1597", { warning: true }),
@@ -138,14 +138,14 @@ tours.add("sc_r3_org_pick_filters", {
     steps: () => [
         {
             content: "Open the filters",
-            trigger: "details.o_sc_disclosure:has(#sc_ev_org) > summary",
+            trigger: "details.o_pk_disclosure:has(#sc_ev_org) > summary",
             run() {
                 this.anchor.closest("details").open = true;
             },
         },
         {
             content: "Pick « ZZ Org 1597 » once, a held click",
-            trigger: "#sc_ev_org + .o_sc_picker .o_sc_picker_input",
+            trigger: "#sc_ev_org + .o_pk_picker .o_pk_picker_input",
             async run() {
                 await heldPick(document.querySelector("#sc_ev_org"), "ZZ Org 1597");
             },
@@ -153,7 +153,7 @@ tours.add("sc_r3_org_pick_filters", {
         },
         {
             content: "The list is filtered on it",
-            trigger: "#sc_ev_org + .o_sc_picker .o_sc_picker_input:value(ZZ Org 1597)",
+            trigger: "#sc_ev_org + .o_pk_picker .o_pk_picker_input:value(ZZ Org 1597)",
             run() {
                 const select = document.querySelector("#sc_ev_org");
                 assert(labelOf(select) === "ZZ Org 1597", `the filter is « ${labelOf(select)} »`);

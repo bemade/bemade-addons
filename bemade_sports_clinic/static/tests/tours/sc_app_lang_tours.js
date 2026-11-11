@@ -24,7 +24,7 @@ registry.category("web_tour.tours").add("sc_1588_lang_switch", {
         },
         {
             content: "Tamper the language cookie back to French, reload",
-            trigger: 'html[lang="en-US"] .o_sc_app',
+            trigger: 'html[lang="en-US"] .o_pk_app',
             run() {
                 document.cookie = "frontend_lang=fr_CA; path=/";
                 window.location.reload();

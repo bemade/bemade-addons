@@ -123,7 +123,7 @@ class TestAppShellClinic1540(Clinic1540Common):
         self.assertIn(self.other_clinic.id, ids)
         # the counts chip (2 patients on the list, the kiosk row is not one)
         self.assertIn('2', ' '.join(tree.xpath(
-            '//*[@data-sc-clinic-id="%s"]//*[contains(@class, "o_sc_chip")]//text()' % self.clinic.id)))
+            '//*[@data-sc-clinic-id="%s"]//*[contains(@class, "o_pk_chip")]//text()' % self.clinic.id)))
 
     def test_clinic_page_in_shell(self):
         self._switch(True)
@@ -356,4 +356,4 @@ class TestClinicTeaserLive1540(Clinic1540Common):
         self.assertEqual(chip.get('data-pk-live-count-url'), self.URL)
         self.assertEqual(chip.get('data-pk-live-poll'), '20')
         self.assertEqual(chip.text_content().strip(), '1')
-        self.assertIn('o_sc_chip_mauve', chip.get('class'))
+        self.assertIn('o_pk_chip_secondary', chip.get('class'))

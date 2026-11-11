@@ -30,7 +30,7 @@ async function waitFor(check, message, timeout = 8000) {
 }
 
 function optionLabels(root) {
-    return [...document.querySelectorAll(`${root} .o_sc_tags_option`)].map((el) => el.textContent.trim());
+    return [...document.querySelectorAll(`${root} .o_pk_tags_option`)].map((el) => el.textContent.trim());
 }
 
 function value(selector) {
@@ -51,18 +51,18 @@ tours.add("sc_1608_event_form_pickers", {
     steps: () => [
         {
             content: "Focus the teams field without typing: the full list opens",
-            trigger: `${TEAMS} input.o_sc_tags_search`,
+            trigger: `${TEAMS} input.o_pk_tags_search`,
             run: "click",
         },
         {
             content: "Every team is listed, grouped by organization",
-            trigger: `${TEAMS} [data-sc-tags-open="1"] ul.o_sc_tags_options .o_sc_tags_option`,
+            trigger: `${TEAMS} [data-sc-tags-open="1"] ul.o_pk_tags_options .o_pk_tags_option`,
             run() {
                 const labels = optionLabels(TEAMS);
                 for (const name of ["AA Unstaffed 1577", "PC Team A", "PC Team B", "ZZ Team C 1597", "ZZ Free Team 1597"]) {
                     assert(labels.includes(name), `${name} listed (got ${labels.join(", ")})`);
                 }
-                const groups = [...document.querySelectorAll(`${TEAMS} .o_sc_tags_group`)].map((el) =>
+                const groups = [...document.querySelectorAll(`${TEAMS} .o_pk_tags_group`)].map((el) =>
                     el.textContent.trim()
                 );
                 assert(groups.includes("PC Org") && groups.includes("ZZ Org 1597"), `groups: ${groups.join(", ")}`);
@@ -71,27 +71,27 @@ tours.add("sc_1608_event_form_pickers", {
         },
         {
             content: "Pick PC Team A from the list",
-            trigger: `${TEAMS} .o_sc_tags_option:contains("PC Team A")`,
+            trigger: `${TEAMS} .o_pk_tags_option:contains("PC Team A")`,
             run: "click",
         },
         {
             content: "A chip, the hidden field holds it, the list CLOSED after the pick",
-            trigger: `${TEAMS} .o_sc_tag:contains("PC Team A")`,
+            trigger: `${TEAMS} .o_pk_tag:contains("PC Team A")`,
             async run() {
                 await waitFor(() => value('input[name="team_ids"]') !== "", "team_ids filled");
                 assert(value('input[name="team_ids"]').split(",").length === 1, "one team");
                 await waitFor(() => document.querySelector(`${TEAMS} [data-sc-tags-open="0"]`), "the list closes");
-                assert(!document.querySelector(`${TEAMS} ul.o_sc_tags_options`), "no option list after a pick");
+                assert(!document.querySelector(`${TEAMS} ul.o_pk_tags_options`), "no option list after a pick");
             },
         },
         {
             content: "Clicking the box again reopens the list, without the picked team",
-            trigger: `${TEAMS} input.o_sc_tags_search`,
+            trigger: `${TEAMS} input.o_pk_tags_search`,
             run: "click",
         },
         {
             content: "Reopened: the picked team left the list",
-            trigger: `${TEAMS} [data-sc-tags-open="1"] ul.o_sc_tags_options .o_sc_tags_option`,
+            trigger: `${TEAMS} [data-sc-tags-open="1"] ul.o_pk_tags_options .o_pk_tags_option`,
             run() {
                 assert(!optionLabels(TEAMS).includes("PC Team A"), "a picked team leaves the list");
                 assert(optionLabels(TEAMS).includes("PC Team B"), "the others are still offered");
@@ -99,12 +99,12 @@ tours.add("sc_1608_event_form_pickers", {
         },
         {
             content: "Type to narrow the list",
-            trigger: `${TEAMS} input.o_sc_tags_search`,
+            trigger: `${TEAMS} input.o_pk_tags_search`,
             run: "edit team b",
         },
         {
             content: "Only the match is left",
-            trigger: `${TEAMS} .o_sc_tags_option:contains("PC Team B")`,
+            trigger: `${TEAMS} .o_pk_tags_option:contains("PC Team B")`,
             run() {
                 const labels = optionLabels(TEAMS);
                 assert(JSON.stringify(labels) === JSON.stringify(["PC Team B"]), `narrowed to ${labels.join(", ")}`);
@@ -112,24 +112,24 @@ tours.add("sc_1608_event_form_pickers", {
         },
         {
             content: "Pick it with the keyboard",
-            trigger: `${TEAMS} input.o_sc_tags_search`,
+            trigger: `${TEAMS} input.o_pk_tags_search`,
             run: "press ArrowDown",
         },
         {
             content: "Enter picks the highlighted option",
-            trigger: `${TEAMS} .o_sc_tags_option_active:contains("PC Team B")`,
+            trigger: `${TEAMS} .o_pk_tags_option_active:contains("PC Team B")`,
             run() {
-                const input = document.querySelector(`${TEAMS} input.o_sc_tags_search`);
+                const input = document.querySelector(`${TEAMS} input.o_pk_tags_search`);
                 input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
             },
         },
         {
             content: "Two teams in the hidden field; Enter closed the list too",
-            trigger: `${TEAMS} .o_sc_tag:contains("PC Team B")`,
+            trigger: `${TEAMS} .o_pk_tag:contains("PC Team B")`,
             async run() {
                 await waitFor(() => value('input[name="team_ids"]').split(",").length === 2, "two teams");
                 await waitFor(() => document.querySelector(`${TEAMS} [data-sc-tags-open="0"]`), "Enter closes the list");
-                const input = document.querySelector(`${TEAMS} input.o_sc_tags_search`);
+                const input = document.querySelector(`${TEAMS} input.o_pk_tags_search`);
                 assert(document.activeElement === input, "the keyboard keeps the focus in the box");
                 // ArrowDown reopens it, Escape closes it again.
                 input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
@@ -140,17 +140,17 @@ tours.add("sc_1608_event_form_pickers", {
         },
         {
             content: "Focus the staff field: every therapist is listed",
-            trigger: `${STAFF} input.o_sc_tags_search`,
+            trigger: `${STAFF} input.o_pk_tags_search`,
             run: "click",
         },
         {
             content: "Pick the therapist",
-            trigger: `${STAFF} .o_sc_tags_option:contains("PC TP")`,
+            trigger: `${STAFF} .o_pk_tags_option:contains("PC TP")`,
             run: "click",
         },
         {
             content: "The staff hidden field holds them; that list closed too",
-            trigger: `${STAFF} .o_sc_tag:contains("PC TP")`,
+            trigger: `${STAFF} .o_pk_tag:contains("PC TP")`,
             async run() {
                 await waitFor(() => value('input[name="assigned_staff_ids"]') !== "", "staff filled");
                 await waitFor(() => document.querySelector(`${STAFF} [data-sc-tags-open="0"]`), "the staff list closes");
@@ -190,7 +190,7 @@ tours.add("sc_1608_event_form_pickers", {
         },
         {
             content: "The event page opens",
-            trigger: ".o_sc_app [data-pk-section='event.hero']",
+            trigger: ".o_pk_app [data-pk-section='event.hero']",
         },
     ],
 });
@@ -204,16 +204,16 @@ tours.add("sc_1608_event_page_snap", {
         },
         {
             content: "Pick a new start and leave it",
-            trigger: `${CARD} .o_sc_autosave[data-sc-field="date_start"] input`,
+            trigger: `${CARD} .o_pk_autosave[data-sc-field="date_start"] input`,
             run() {
-                pick(`${CARD} .o_sc_autosave[data-sc-field="date_start"] input`, "2026-03-05T17:30");
+                pick(`${CARD} .o_pk_autosave[data-sc-field="date_start"] input`, "2026-03-05T17:30");
             },
         },
         {
             content: "The end and both coverage times follow in the card",
-            trigger: `${CARD} .o_sc_autosave[data-sc-field="date_start"][data-sc-state="saved"]`,
+            trigger: `${CARD} .o_pk_autosave[data-sc-field="date_start"][data-sc-state="saved"]`,
             async run() {
-                const field = (name) => document.querySelector(`${CARD} .o_sc_autosave[data-sc-field="${name}"] input`);
+                const field = (name) => document.querySelector(`${CARD} .o_pk_autosave[data-sc-field="${name}"] input`);
                 await waitFor(() => field("date_end").value === "2026-03-05T19:30", "end follows");
                 await waitFor(() => field("therapist_start").value === "2026-03-05T17:30", "coverage start follows");
                 await waitFor(() => field("therapist_end").value === "2026-03-05T19:30", "coverage end follows");

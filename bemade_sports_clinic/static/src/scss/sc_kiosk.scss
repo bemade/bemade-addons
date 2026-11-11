@@ -7,9 +7,9 @@
 
 .o_sc_kiosk_body {
     min-height: 100vh;
-    background: var(--sc-bg);
-    color: var(--sc-fg);
-    font-family: var(--sc-font-text);
+    background: var(--pk-bg);
+    color: var(--pk-fg);
+    font-family: var(--pk-font-text);
 
     .o_sc_kiosk {
         max-width: 34rem;
@@ -36,28 +36,28 @@
     .h2,
     .h3,
     .h4 {
-        font-family: var(--sc-font-title);
+        font-family: var(--pk-font-title);
         font-weight: 600;
         letter-spacing: 0.02em;
         text-transform: uppercase;
-        color: var(--sc-fg);
+        color: var(--pk-fg);
     }
 
     .text-muted {
-        color: var(--sc-fg-2) !important;
+        color: var(--pk-fg-2) !important;
     }
 
     .form-control {
         font-size: 1.5rem;
         padding: 0.9rem 1rem;
         min-height: 3.75rem;
-        border-radius: var(--sc-radius-md);
-        border-color: var(--sc-line);
-        background: var(--sc-surface);
-        color: var(--sc-fg);
+        border-radius: var(--pk-radius-md);
+        border-color: var(--pk-line);
+        background: var(--pk-surface);
+        color: var(--pk-fg);
 
         &:focus {
-            border-color: var(--sc-accent);
+            border-color: var(--pk-accent);
             box-shadow: 0 0 0 3px rgba(164, 199, 84, 0.45);
         }
     }
@@ -65,42 +65,42 @@
     .form-label {
         font-size: 1.15rem;
         font-weight: 600;
-        color: var(--sc-fg-2);
+        color: var(--pk-fg-2);
     }
 
     .btn-lg {
         font-size: 1.5rem;
         padding: 1rem 1.5rem;
         min-height: 4.25rem;
-        border-radius: var(--sc-radius-md);
+        border-radius: var(--pk-radius-md);
         font-weight: 600;
     }
 
     .btn-primary {
-        background: var(--sc-accent);
-        border-color: var(--sc-accent);
-        color: var(--sc-accent-fg);
+        background: var(--pk-accent);
+        border-color: var(--pk-accent);
+        color: var(--pk-accent-fg);
 
         &:hover,
         &:focus,
         &:active {
             background: var(--sc-forest);
             border-color: var(--sc-neon);
-            color: var(--sc-accent-fg);
+            color: var(--pk-accent-fg);
         }
     }
 
     .btn-outline-secondary {
-        border-color: var(--sc-line);
-        color: var(--sc-fg);
+        border-color: var(--pk-line);
+        color: var(--pk-fg);
     }
 
     a {
-        color: var(--sc-secondary);
+        color: var(--pk-secondary);
     }
 
     .alert-warning {
-        border-radius: var(--sc-radius-md);
+        border-radius: var(--pk-radius-md);
     }
 
     .o_sc_kiosk_result {

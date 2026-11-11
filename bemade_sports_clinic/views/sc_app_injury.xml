@@ -26,15 +26,15 @@
         sc_draft_prefix, sc_consent_options, cancel_url (page only).
     -->
     <template id="sc_injury_new_form" name="App shell: new injury form">
-        <form action="/my/patient/injury/create" method="post" class="o_sc_form" data-sc-form="injury.new"
+        <form action="/my/patient/injury/create" method="post" class="o_pk_form" data-sc-form="injury.new"
               t-att-data-pk-draft-prefix="sc_draft_prefix" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"diagnosis"}]'>
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
             <input type="hidden" name="patient_id" t-att-value="patient.id"/>
             <input type="hidden" name="return_url" t-att-value="return_url"/>
             <input t-if="team_context_id" type="hidden" name="team_context_id" t-att-value="team_context_id"/>
             <input t-if="clinic_event" type="hidden" name="clinic_id" t-att-value="clinic_event.id"/>
-            <div class="o_sc_grid2">
-                <div class="o_sc_card o_sc_fields">
+            <div class="o_pk_grid2">
+                <div class="o_pk_card o_pk_fields">
                     <t t-set="lbl">Diagnosis/Description</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave">
                         <t t-set="props" t-value="sc_draft_props(sc_draft_prefix + 'diagnosis', 'diagnosis', lbl, 'text', required=True)"/>
@@ -64,7 +64,7 @@
                      note, they no longer write it — a coach's report is the
                      diagnosis and the date (the create route ignores a coach's
                      external note in the app). -->
-                <div t-if="is_treatment_prof" class="o_sc_card o_sc_fields">
+                <div t-if="is_treatment_prof" class="o_pk_card o_pk_fields">
                     <t t-set="lbl">External Notes</t>
                     <t t-set="hint">Notes visible to all team members</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave">
@@ -79,9 +79,9 @@
                     </t>
                 </div>
             </div>
-            <div t-attf-class="#{'o_sc_actionbar' if cancel_url else 'o_sc_form_actions'}">
-                <a t-if="cancel_url" t-att-href="cancel_url" class="o_sc_btn o_sc_btn_ghost">Cancel</a>
-                <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="injury.create">
+            <div t-attf-class="#{'o_pk_actionbar' if cancel_url else 'o_pk_form_actions'}">
+                <a t-if="cancel_url" t-att-href="cancel_url" class="o_pk_btn o_pk_btn_ghost">Cancel</a>
+                <button type="submit" class="o_pk_btn o_pk_btn_primary" data-sc-action="injury.create">
                     <span t-if="is_treatment_prof">Create</span>
                     <span t-else="">Submit Report</span>
                 </button>
@@ -133,7 +133,7 @@
                 <t t-set="note_injury_choices" t-value="sc_injury_choices"/>
                 <t t-set="note_draft_prefix" t-value="sc_note_draft_prefix"/>
             </t>
-            <div t-if="notes" class="o_sc_list" data-pk-section="notes.list">
+            <div t-if="notes" class="o_pk_list" data-pk-section="notes.list">
                 <t t-foreach="notes" t-as="note">
                     <t t-call="bemade_sports_clinic.sc_note_card">
                         <t t-set="injury_url" t-value="note.injury_id and '/my/player?player_id=%s%s&amp;tab=injuries&amp;injury=%s#injury-%s' % (patient.id, ctx_qs or '', note.injury_id.id, note.injury_id.id)"/>
@@ -155,7 +155,7 @@
         <t t-set="empty_message">No note history yet.</t>
         <t t-call="bemade_sports_clinic.sc_history_list">
             <t t-set="section" t-value="'injury.notes.history'"/>
-            <nav t-if="is_treatment_prof" class="o_sc_segmented o_sc_segmented_full" role="group"
+            <nav t-if="is_treatment_prof" class="o_pk_segmented o_pk_segmented_full" role="group"
                  aria-label="Scope filter" data-pk-section="history.scope">
                 <a t-att-href="sc_scope_urls['all']" data-sc-sheet-refetch="1"
                    t-att-aria-pressed="'true' if scope == 'all' else 'false'">All notes</a>

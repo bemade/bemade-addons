@@ -1,6 +1,6 @@
 /*
  * Task 1611 — read fragments: what shows on screen follows an in-place save,
- * without a reload and without « Done ». Inert outside .o_sc_app.
+ * without a reload and without « Done ». Inert outside .o_pk_app.
  *
  * Server side (controllers/app_shell.py, « Read fragments »): a READ-ONLY
  * region of a shell page carries data-sc-fragment="<model>:<id>:<part>"; a
@@ -53,7 +53,7 @@ const MAX_KEYS = 200;
 const LOADED_AT = Date.now();
 
 function app() {
-    return document.querySelector(".o_sc_app[data-pk-app-shell]");
+    return document.querySelector(".o_pk_app[data-pk-app-shell]");
 }
 
 function escapeRe(text) {
@@ -459,7 +459,7 @@ document.addEventListener("submit", (ev) => {
     const form = ev.target;
     if (
         form instanceof HTMLFormElement &&
-        form.closest(".o_sc_app") &&
+        form.closest(".o_pk_app") &&
         (form.method || "").toLowerCase() === "post" &&
         !form.matches("form[data-sc-pref]")
     ) {

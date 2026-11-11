@@ -35,13 +35,13 @@ function noteSteps(card, scope, text, other) {
             run(helpers) {
                 // CI 2026-10-25: compare the other note's TEXT only (its « last note »
                 // stamp may legitimately be redrawn by the save's refresh).
-                window[`__sc1675Other_${scope}`] = readText(document.querySelector(`${other} [data-sc-edit-view="read"] .o_sc_pre`));
+                window[`__sc1675Other_${scope}`] = readText(document.querySelector(`${other} [data-sc-edit-view="read"] .o_pk_pre`));
                 return helpers.click();
             },
         },
         {
             content: `Only the ${scope} editor opens`,
-            trigger: `${card}[data-sc-edit-open] .o_sc_autosave[data-sc-field="${scope}_notes"] textarea[data-sc-replace="new"]`,
+            trigger: `${card}[data-sc-edit-open] .o_pk_autosave[data-sc-field="${scope}_notes"] textarea[data-sc-replace="new"]`,
             run() {
                 assert(!editing(other), "the other note opened too");
                 assert(!document.querySelector(`${other}[data-sc-edit-open]`), "the other card is in edit mode");
@@ -49,12 +49,12 @@ function noteSteps(card, scope, text, other) {
         },
         {
             content: `Write a new ${scope} note`,
-            trigger: `${card} .o_sc_autosave[data-sc-field="${scope}_notes"] textarea[data-sc-replace="new"]`,
+            trigger: `${card} .o_pk_autosave[data-sc-field="${scope}_notes"] textarea[data-sc-replace="new"]`,
             run: `edit ${text}`,
         },
         {
             content: "Leave the field so it saves",
-            trigger: `${card} .o_sc_autosave[data-sc-field="${scope}_notes"] textarea[data-sc-replace="new"]`,
+            trigger: `${card} .o_pk_autosave[data-sc-field="${scope}_notes"] textarea[data-sc-replace="new"]`,
             run() {
                 this.anchor.blur(); this.anchor.dispatchEvent(new FocusEvent("blur"));
             },
@@ -76,7 +76,7 @@ function noteSteps(card, scope, text, other) {
             trigger: `${card}:not([data-sc-edit-open]) [data-sc-edit-view="read"] [data-sc-note-stamp="${scope}"]`,
             run() {
                 const before = window[`__sc1675Other_${scope}`];
-                const after = readText(document.querySelector(`${other} [data-sc-edit-view="read"] .o_sc_pre`));
+                const after = readText(document.querySelector(`${other} [data-sc-edit-view="read"] .o_pk_pre`));
                 assert(before === after, `the other note's text changed: «${before}» → «${after}»`);
                 assert(!editing(other), "the other note is in edit mode");
             },

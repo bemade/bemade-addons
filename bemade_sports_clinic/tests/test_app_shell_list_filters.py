@@ -81,7 +81,7 @@ class TestAppShellListFilters(AppShellCommon):
         self.assertIn(self.ev_cancel.id, self._event_ids(tree))
         _text, tree = self._get('/my/events?group_by=team&view_type=all')
         groups = tree.xpath('//*[@data-pk-section="events.list"]//*[@data-sc-group]')
-        titles = [' '.join(g.xpath('.//*[contains(@class, "o_sc_group_title")]')[0].text_content().split())
+        titles = [' '.join(g.xpath('.//*[contains(@class, "o_pk_group_title")]')[0].text_content().split())
                   for g in groups]
         # The therapist staffs Team A only (Team B's events are out of scope).
         self.assertTrue(any(self.team_a.name in t for t in titles), titles)

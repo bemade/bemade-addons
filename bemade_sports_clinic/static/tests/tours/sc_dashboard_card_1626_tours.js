@@ -11,7 +11,7 @@ import { registry } from "@web/core/registry";
 
 const DASH = '[data-pk-section="team.recent_changes"] .o_sc_player_row';
 const ROSTER = '[data-pk-section="team.roster"] .o_sc_player_row';
-const FACE = ".o_sc_link_row";
+const FACE = ".o_pk_link_row";
 
 function assertFace(row, visible) {
     for (const sel of ["[data-sc-row-training]", "[data-sc-row-return]"]) {
@@ -33,7 +33,7 @@ registry.category("web_tour.tours").add("sc_1626_card_details", {
             trigger: `${DASH} ${FACE} [data-sc-row-training]:visible`,
             run() {
                 window.__sc1626NoReload = "1";
-                if (!document.querySelector(`${DASH} a.o_sc_link_row_main[href*="/my/player"]`)) {
+                if (!document.querySelector(`${DASH} a.o_pk_link_row_main[href*="/my/player"]`)) {
                     throw new Error("no link to the player page on the card face");
                 }
                 assertFace(DASH, true);
@@ -46,7 +46,7 @@ registry.category("web_tour.tours").add("sc_1626_card_details", {
         },
         {
             content: "The change detail loads under the card; face lines hidden",
-            trigger: `${DASH} [data-sc-row-detail]:not([hidden]) .o_sc_change_detail a.o_sc_section_more:visible`,
+            trigger: `${DASH} [data-sc-row-detail]:not([hidden]) .o_sc_change_detail a.o_pk_section_more:visible`,
             run() {
                 if (window.__sc1626NoReload !== "1") {
                     throw new Error("the page reloaded");
@@ -82,9 +82,9 @@ registry.category("web_tour.tours").add("sc_1626_card_details", {
         },
         {
             content: "Roster card: detail open, face lines hidden",
-            trigger: `${ROSTER} [data-sc-row-detail]:not([hidden]) .o_sc_row_detail_body:visible`,
+            trigger: `${ROSTER} [data-sc-row-detail]:not([hidden]) .o_pk_row_detail_body:visible`,
             run() {
-                assertFace(`${ROSTER}.o_sc_row_open`, false);
+                assertFace(`${ROSTER}.o_pk_row_open`, false);
             },
         },
         {
@@ -94,7 +94,7 @@ registry.category("web_tour.tours").add("sc_1626_card_details", {
         },
         {
             content: "Roster card face lines are back",
-            trigger: `${ROSTER}:not(.o_sc_row_open):has([data-sc-row-return]) [data-sc-row-detail][hidden]:not(:visible)`,
+            trigger: `${ROSTER}:not(.o_pk_row_open):has([data-sc-row-return]) [data-sc-row-detail][hidden]:not(:visible)`,
             run() {
                 assertFace(`${ROSTER}:has([data-sc-row-return])`, true);
             },

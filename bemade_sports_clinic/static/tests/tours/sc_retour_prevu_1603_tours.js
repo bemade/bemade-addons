@@ -44,7 +44,7 @@ function typeAndLeave(input, value) {
 
 const CARD = ".o_sc_injury_item[open]";
 const SHEET = "dialog#sc_proposal_sheet";
-const HEADER_FIELD = '[data-pk-section="player.predicted_return"] .o_sc_autosave[data-sc-field="predicted_return_date"]';
+const HEADER_FIELD = '[data-pk-section="player.predicted_return"] .o_pk_autosave[data-sc-field="predicted_return_date"]';
 
 // Review fixes 2026-10-18: the header's fields are behind its one pencil.
 const HEADER_PENCIL = {
@@ -70,7 +70,7 @@ tours.add("sc_1603_injury_to_player", {
         },
         {
             content: "Change the predicted resolution date and leave it",
-            trigger: `${CARD} .o_sc_autosave[data-sc-field="predicted_resolution_date"] input`,
+            trigger: `${CARD} .o_pk_autosave[data-sc-field="predicted_resolution_date"] input`,
             run() {
                 typeAndLeave(this.anchor, "2030-05-01");
             },
@@ -92,7 +92,7 @@ tours.add("sc_1603_injury_to_player", {
         },
         {
             content: "The header field shows the edited date — no reload",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => !document.querySelector(`${SHEET}[open]`), "sheet closed");
                 await waitFor(
@@ -168,7 +168,7 @@ tours.add("sc_1603_player_to_injuries", {
         },
         {
             content: "The knee's card follows in place — no reload",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => !document.querySelector(`${SHEET}[open]`), "sheet closed");
                 await waitFor(() => kneeRead().textContent !== window.__sc1603Knee, "knee read view");
@@ -192,7 +192,7 @@ tours.add("sc_1603_last_resolved", {
         // Task 1631: « Resolved » from the header pill (the resolve sheet).
         {
             content: "Open the status pill",
-            trigger: `${CARD} [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select`,
+            trigger: `${CARD} [data-sc-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select`,
             run: "click",
         },
         {
@@ -222,7 +222,7 @@ tours.add("sc_1603_last_resolved", {
         },
         {
             content: "Header: Retour prévu cleared, the actual return date set — no reload",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => !document.querySelector(`${SHEET}[open]`), "sheet closed");
                 await waitFor(() => document.querySelector(`${HEADER_FIELD} input`).value === "", "cleared");
@@ -230,7 +230,7 @@ tours.add("sc_1603_last_resolved", {
                 // actual return date (its read view shows ONE date).
                 await waitFor(
                     () => document.querySelector(
-                        '[data-pk-section="player.return_date.edit"] .o_sc_autosave[data-sc-field="return_date"] input'
+                        '[data-pk-section="player.return_date.edit"] .o_pk_autosave[data-sc-field="return_date"] input'
                     ).value === "2030-01-31",
                     "actual return date in the header"
                 );
@@ -258,7 +258,7 @@ tours.add("sc_1603_dismiss", {
         },
         {
             content: "Closed",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => !document.querySelector(`${SHEET}[open]`), "sheet closed");
                 await waitFor(() => document.querySelector(`${HEADER_FIELD}[data-sc-state="saved"]`), "saved");

@@ -277,8 +277,8 @@ class TestPlayerInline(PlayerInlineCommon):
             rows = panel.xpath('.//*[@data-sc-activity-row]')
             self.assertTrue(rows, url)
             for row in rows:
-                self.assertIn('o_sc_card', row.get('class').split(), url)
-                self.assertTrue(row.xpath('.//*[contains(@class, "o_sc_card_actions")]'
+                self.assertIn('o_pk_card', row.get('class').split(), url)
+                self.assertTrue(row.xpath('.//*[contains(@class, "o_pk_card_actions")]'
                                           '//button[@data-sc-action="activity.complete"]'), url)
 
     # -- UC-10 -----------------------------------------------------------

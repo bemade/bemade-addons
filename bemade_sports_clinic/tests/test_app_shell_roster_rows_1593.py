@@ -88,11 +88,11 @@ class Rows1593Common(AppShellCommon):
     @staticmethod
     def _team_links(row):
         return [(a.get('href'), _text(a))
-                for a in row.xpath('.//a[contains(@class, "o_sc_row_link")]')]
+                for a in row.xpath('.//a[contains(@class, "o_pk_row_link")]')]
 
     @staticmethod
     def _plain_teams(row):
-        return [_text(s) for s in row.xpath('.//*[contains(@class, "o_sc_row_link_plain")]')]
+        return [_text(s) for s in row.xpath('.//*[contains(@class, "o_pk_row_link_plain")]')]
 
     def _detail(self, row):
         region = row.xpath('.//*[@data-sc-row-detail]')
@@ -113,7 +113,7 @@ class TestAppShellRosterRows1593(Rows1593Common):
         row = self._row(tree, 'team.roster', self.player)
         self.assertIsNotNone(row)
         # One main link, to the player page with the team context.
-        main = row.xpath('.//a[contains(@class, "o_sc_link_row_main")]')
+        main = row.xpath('.//a[contains(@class, "o_pk_link_row_main")]')
         self.assertEqual(len(main), 1)
         self.assertEqual(main[0].get('href'), '/my/player?player_id=%s&team_id=%s'
                          % (self.player.id, self.team_a.id))
@@ -179,7 +179,7 @@ class TestAppShellRosterRows1593(Rows1593Common):
         for section in ('team.roster', 'team.watchlist'):
             row = self._row(tree, section, self.player)
             self.assertIsNotNone(row, section)
-            self.assertFalse(row.xpath('.//*[contains(@class, "o_sc_row_link")]'), section)
+            self.assertFalse(row.xpath('.//*[contains(@class, "o_pk_row_link")]'), section)
 
     def test_hero_team_links(self):
         self._switch(True)
@@ -209,7 +209,7 @@ class TestAppShellRosterRows1593(Rows1593Common):
                       _text(detail.xpath('//*[@data-sc-row-detail-section="training"]')[0]))
         self.assertNotIn('02/01/2026', _text(detail))
         self.assertNotIn('Last consultation', _text(detail))
-        self.assertEqual(detail.xpath('//a[contains(@class, "o_sc_section_more")]/@href'),
+        self.assertEqual(detail.xpath('//a[contains(@class, "o_pk_section_more")]/@href'),
                          ['/my/player?player_id=%s&team_id=%s' % (self.player.id, self.team_a.id)])
 
     def test_therapist_detail_shows_what_legacy_showed(self):

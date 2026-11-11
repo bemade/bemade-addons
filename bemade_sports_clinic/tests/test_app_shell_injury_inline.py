@@ -90,7 +90,7 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         step = form.xpath('.//*[@data-sc-step="diagnosis"]')[0]
         self.assertTrue(step.xpath('.//input[@name="diagnosis"][@required]'))
         self.assertTrue(step.xpath('.//button[@type="submit"][@data-sc-action="injury.create"]'))
-        self.assertFalse(card.xpath('.//*[contains(@class, "o_sc_banner")]'))
+        self.assertFalse(card.xpath('.//*[contains(@class, "o_pk_banner")]'))
         self.assertFalse(card.xpath('.//owl-component'))
         self._login_coach()
         _text, tree = self._get(self._tab())

@@ -40,7 +40,7 @@ tours.add("sc_1748_verify_card_player", {
                     assert(link && visible(link), "every card shows its player link");
                     assert(link.textContent.trim(), "the link names the player");
                     // The name line sits above the card's title (not beside it).
-                    const title = card.querySelector(":scope > summary .o_sc_row_title");
+                    const title = card.querySelector(":scope > summary .o_pk_row_title");
                     assert(link.getBoundingClientRect().bottom <= title.getBoundingClientRect().top + 1,
                            "the player line is above the injury title");
                 }

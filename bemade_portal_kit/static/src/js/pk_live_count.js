@@ -8,7 +8,7 @@
  * (sc_clinic_worklist.js): a poll every 20 s while the tab is visible,
  * through pkFetch (toast: false); an error backs off (x2, up to 5 min), a
  * success resets the interval; a hidden tab stops polling and the poll
- * resumes at once when the tab is shown again. Inert outside .o_sc_app.
+ * resumes at once when the tab is shown again. Inert outside .o_pk_app.
  *
  * The chip's text becomes the count and its tone follows it
  * (data-pk-live-tone-on when > 0, data-pk-live-tone-off at 0), exactly like
@@ -68,27 +68,35 @@ class LiveCount {
     }
 
     apply(count) {
-        const el = this.el;
-        const text = String(count);
-        if (el.textContent !== text) {
-            el.textContent = text;
-        }
-        if (el.dataset.pkLiveHideZero) {
-            el.hidden = count <= 0;
-        }
-        const on = el.dataset.pkLiveToneOn;
-        const off = el.dataset.pkLiveToneOff;
-        if (on && off) {
-            el.classList.toggle(`o_sc_chip_${on}`, count > 0);
-            el.classList.toggle(`o_sc_chip_${off}`, count <= 0);
-        }
+        applyCount(this.el, count);
+    }
+}
+
+/**
+ * Show ``count`` on a live chip: its text, hidden at 0 with
+ * data-pk-live-hide-zero, and the tone class of data-pk-live-tone-on (> 0)
+ * or data-pk-live-tone-off (0).
+ */
+export function applyCount(el, count) {
+    const text = String(count);
+    if (el.textContent !== text) {
+        el.textContent = text;
+    }
+    if (el.dataset.pkLiveHideZero) {
+        el.hidden = count <= 0;
+    }
+    const on = el.dataset.pkLiveToneOn;
+    const off = el.dataset.pkLiveToneOff;
+    if (on && off) {
+        el.classList.toggle(`o_pk_chip_${on}`, count > 0);
+        el.classList.toggle(`o_pk_chip_${off}`, count <= 0);
     }
 }
 
 // Task 1611: an activity save (or a page shown again by « back ») refreshes
 // every live counter at once — e.g. the app bar's overdue badge.
 document.addEventListener("pk:live-count-refresh", () => {
-    for (const el of document.querySelectorAll(".o_sc_app [data-pk-live-count-url]")) {
+    for (const el of document.querySelectorAll(".o_pk_app [data-pk-live-count-url]")) {
         if (el.scLiveCount) {
             el.scLiveCount.schedule(0);
         }
@@ -96,7 +104,7 @@ document.addEventListener("pk:live-count-refresh", () => {
 });
 
 function start() {
-    for (const el of document.querySelectorAll(".o_sc_app [data-pk-live-count-url]")) {
+    for (const el of document.querySelectorAll(".o_pk_app [data-pk-live-count-url]")) {
         if (!el.scLiveCount) {
             el.scLiveCount = new LiveCount(el);
         }

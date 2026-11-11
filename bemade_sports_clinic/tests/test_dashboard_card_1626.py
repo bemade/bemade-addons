@@ -81,7 +81,7 @@ class TestDashboardCard1626(Dashboard1626Common):
             section = tree.xpath('//*[@data-pk-section="team.recent_changes"]')[0]
             self.assertFalse(section.xpath('.//details'), 'a native <details> card is left')
             row = self._dashboard_row(tree)
-            main = row.xpath('.//a[contains(@class, "o_sc_link_row_main")]')
+            main = row.xpath('.//a[contains(@class, "o_pk_link_row_main")]')
             self.assertEqual(len(main), 1)
             self.assertEqual(main[0].get('href'), '/my/player?player_id=%s&team_id=%s'
                              % (self.player.id, self.team_a.id))
@@ -140,7 +140,7 @@ class TestDashboardCard1626(Dashboard1626Common):
         ):
             _t, tree = self._get(url)
             body = tree.xpath('//*[contains(@class, "o_sc_change_detail")]')[0]
-            links = body.xpath('.//a[contains(@class, "o_sc_section_more")]')
+            links = body.xpath('.//a[contains(@class, "o_pk_section_more")]')
             self.assertTrue(links, url)
             last = links[-1]
             self.assertEqual(_text(last), 'Open the player page')

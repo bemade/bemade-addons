@@ -81,7 +81,7 @@ class TestEventsPolish1679(EventsPolish1679Common):
         tree = self._tree('/my/events?no_default_dates=1&view_type=my')
         self.assertTrue(self._listed(tree, self.event), 'the past event is listed without the default')
         reset = tree.xpath('//form[@data-pk-section="events.filters"]'
-                           '//a[contains(@class, "o_sc_btn_ghost")]')[0]
+                           '//a[contains(@class, "o_pk_btn_ghost")]')[0]
         href = reset.get('href')
         self.assertNotIn('no_default_dates', href)
         self.assertEqual(href, '/my/events')

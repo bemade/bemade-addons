@@ -3,7 +3,7 @@
 <templates xml:space="preserve">
     <t t-name="bemade_sports_clinic.ScCalendar">
         <div class="o_sc_calendar_box" t-att-class="{'o_sc_calendar_staff': props.staffColors}" t-att-data-sc-calendar-ready="state.ready ? '1' : '0'">
-            <p t-if="state.error" class="o_sc_banner o_sc_banner_warn" role="alert" t-esc="errorLabel"/>
+            <p t-if="state.error" class="o_pk_banner o_pk_banner_warn" role="alert" t-esc="errorLabel"/>
             <div class="o_sc_calendar" t-ref="calendar"/>
             <!-- Task 1605: the people of the visible range; tap = filter. -->
             <div t-if="props.staffColors and (state.legend.people.length or state.legend.unassigned or activeMissing)"
@@ -31,14 +31,14 @@
                     <span t-esc="unassignedLabel"/>
                 </span>
             </div>
-            <div t-if="state.selected" class="o_sc_card o_sc_calendar_detail" data-sc-calendar-detail="1" role="status">
-                <div class="o_sc_card_head">
+            <div t-if="state.selected" class="o_pk_card o_sc_calendar_detail" data-sc-calendar-detail="1" role="status">
+                <div class="o_pk_card_head">
                     <strong t-esc="state.selected.title"/>
-                    <button type="button" class="o_sc_icon_btn" t-on-click="close" aria-label="Close" title="Close">×</button>
+                    <button type="button" class="o_pk_icon_btn" t-on-click="close" aria-label="Close" title="Close">×</button>
                 </div>
-                <p class="o_sc_meta" t-esc="state.selected.when"/>
-                <span t-if="state.selected.cancelled" class="o_sc_chip o_sc_chip_red">Cancelled</span>
-                <dl t-if="state.selected.lines.length" class="o_sc_kv">
+                <p class="o_pk_meta" t-esc="state.selected.when"/>
+                <span t-if="state.selected.cancelled" class="o_pk_chip o_pk_chip_red">Cancelled</span>
+                <dl t-if="state.selected.lines.length" class="o_pk_kv">
                     <t t-foreach="state.selected.lines" t-as="line" t-key="line.key">
                         <dt t-esc="line.label"/>
                         <dd t-if="line.href"><a class="o_sc_contact_link" t-att-href="line.href" t-att-data-sc-detail-link="line.key" t-esc="line.value"/></dd>

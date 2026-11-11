@@ -32,7 +32,7 @@ tours.add("sc_1719_see_more", {
                 assert(!meta.hidden && meta.textContent.includes("2030"), "the « Until » line");
                 assert(!document.querySelector(`${AREA} [data-sc-clamp-sep]`).hidden, "no separator");
                 const t = document.querySelector(`${AREA} .o_sc_announcement_titleline`).getBoundingClientRect();
-                for (const btn of document.querySelectorAll(`${AREA} .o_sc_announcement_titleline .o_sc_icon_btn`)) {
+                for (const btn of document.querySelectorAll(`${AREA} .o_sc_announcement_titleline .o_pk_icon_btn`)) {
                     const r = btn.getBoundingClientRect();
                     assert(r.width >= 40 && r.height >= 44, `icon target ${r.width}x${r.height}`);
                     assert(Math.abs(r.top + r.height / 2 - (t.top + t.height / 2)) < 4, "the icons are not on the title line");

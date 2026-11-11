@@ -1,94 +1,94 @@
 // Task 1539 (epic #1535) — app shell P2: player, injury, notes, documents,
 // activities. Components added in sc_components.xml / sc_autosave_field.
-// Everything scoped under .o_sc_app (see sc_tokens.scss).
+// Everything scoped under .o_pk_app (see sc_tokens.scss).
 
 $sc-p2-laptop: 992px;
 
-.o_sc_app {
+.o_pk_app {
     // ---------------------------------------------------------- fields
-    .o_sc_hint {
-        font-size: var(--sc-text-xs);
-        color: var(--sc-fg-3);
+    .o_pk_hint {
+        font-size: var(--pk-text-xs);
+        color: var(--pk-fg-3);
     }
 
-    .o_sc_muted {
-        color: var(--sc-fg-3);
+    .o_pk_muted {
+        color: var(--pk-fg-3);
     }
 
-    .o_sc_field_static .o_sc_field_value {
+    .o_pk_field_static .o_pk_field_value {
         margin: 0;
         min-height: 20px;
     }
 
-    .o_sc_field_message {
-        font-size: var(--sc-text-sm);
-        color: var(--sc-warn);
+    .o_pk_field_message {
+        font-size: var(--pk-text-sm);
+        color: var(--pk-warn);
     }
 
-    .o_sc_field_error {
-        color: var(--sc-bad);
+    .o_pk_field_error {
+        color: var(--pk-bad);
     }
 
-    .o_sc_clear_btn {
+    .o_pk_clear_btn {
         margin-left: auto;
         min-height: 24px;
-        font-size: var(--sc-text-xs);
+        font-size: var(--pk-text-xs);
     }
 
-    .o_sc_select {
+    .o_pk_select {
         appearance: auto;
     }
 
-    .o_sc_date_na {
+    .o_pk_date_na {
         display: flex;
         align-items: center;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
 
-        .o_sc_input {
+        .o_pk_input {
             flex: 1;
         }
     }
 
-    .o_sc_check {
+    .o_pk_check {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        min-height: var(--sc-tap);
+        min-height: var(--pk-tap);
         font-weight: 600;
-        color: var(--sc-fg-2);
+        color: var(--pk-fg-2);
         cursor: pointer;
 
         input {
             width: 18px;
             height: 18px;
-            accent-color: var(--sc-accent);
+            accent-color: var(--pk-accent);
         }
     }
 
     // Play status (owner review 2026-10-10): the pressed choice wears the
     // tone of the status pill it produces.
-    .o_sc_seg_input > button[aria-pressed="true"] {
+    .o_pk_seg_input > button[aria-pressed="true"] {
         &[data-sc-value="no:yes"],
         &[data-sc-value="no:no_contact"] {
-            background: var(--sc-warn);
-            color: var(--sc-tone-fg);
+            background: var(--pk-warn);
+            color: var(--pk-tone-fg);
         }
 
         &[data-sc-value="no:no"] {
-            background: var(--sc-bad);
-            color: var(--sc-tone-fg);
+            background: var(--pk-bad);
+            color: var(--pk-tone-fg);
         }
     }
 
-    .o_sc_seg_input > button:disabled {
+    .o_pk_seg_input > button:disabled {
         cursor: default;
         opacity: 0.6;
     }
 
-    .o_sc_fields {
+    .o_pk_fields {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
     }
 
     // Review fixes 2026-10-18: a field shown for one injury status only
@@ -99,60 +99,60 @@ $sc-p2-laptop: 992px;
 
     // ------------------------------------------- inline-edit cards (2026-10-10)
     // One pencil per card; read view by default (sc_app_ui.js toggles).
-    .o_sc_edit_card {
+    .o_pk_edit_card {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
 
         [data-sc-edit-view][hidden] {
             display: none !important;
         }
     }
 
-    .o_sc_edit_card_head {
+    .o_pk_edit_card_head {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: var(--sc-space-2);
-        min-height: var(--sc-tap);
+        gap: var(--pk-space-2);
+        min-height: var(--pk-tap);
     }
 
-    .o_sc_edit_card_title {
+    .o_pk_edit_card_title {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
         margin: 0;
-        font-family: var(--sc-font-title);
+        font-family: var(--pk-font-title);
         font-weight: 500;
-        font-size: var(--sc-title-md);
+        font-size: var(--pk-title-md);
         letter-spacing: 0.03em;
         text-transform: uppercase;
-        color: var(--sc-fg);
+        color: var(--pk-fg);
         min-width: 0;
 
-        .o_sc_chip {
-            font-family: var(--sc-font-text);
+        .o_pk_chip {
+            font-family: var(--pk-font-text);
             text-transform: none;
             letter-spacing: 0;
         }
     }
 
-    .o_sc_edit_card[data-sc-edit-open] [data-sc-edit-toggle] {
-        color: var(--sc-accent);
+    .o_pk_edit_card[data-sc-edit-open] [data-sc-edit-toggle] {
+        color: var(--pk-accent);
     }
 
     // tags field: chips + a search box with a few suggestions.
-    .o_sc_tags_field {
+    .o_pk_tags_field {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
     }
 
-    .o_sc_tags {
+    .o_pk_tags {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
         margin: 0;
         padding: 0;
         list-style: none;
@@ -162,16 +162,16 @@ $sc-p2-laptop: 992px;
         }
     }
 
-    .o_sc_tag {
+    .o_pk_tag {
         display: inline-flex;
         align-items: center;
-        gap: var(--sc-space-1);
+        gap: var(--pk-space-1);
         max-width: 100%;
         padding: 2px 2px 2px 12px;
-        border-radius: var(--sc-radius-pill);
-        background: var(--sc-surface-2);
-        border: 1px solid var(--sc-line);
-        font-size: var(--sc-text-md);
+        border-radius: var(--pk-radius-pill);
+        background: var(--pk-surface-2);
+        border: 1px solid var(--pk-line);
+        font-size: var(--pk-text-md);
 
         > span {
             min-width: 0;
@@ -179,7 +179,7 @@ $sc-p2-laptop: 992px;
         }
     }
 
-    .o_sc_tag_remove {
+    .o_pk_tag_remove {
         appearance: none;
         flex: none;
         width: 32px;
@@ -187,27 +187,27 @@ $sc-p2-laptop: 992px;
         border: 0;
         border-radius: 50%;
         background: transparent;
-        color: var(--sc-fg-2);
+        color: var(--pk-fg-2);
         font-size: 18px;
         line-height: 1;
         cursor: pointer;
 
         &:hover,
         &:focus-visible {
-            background: var(--sc-hover);
-            color: var(--sc-bad);
+            background: var(--pk-hover);
+            color: var(--pk-bad);
         }
     }
 
     // Task 1608: the full list (browse) — scrollable, grouped.
-    .o_sc_tags_options {
+    .o_pk_tags_options {
         display: flex;
         flex-direction: column;
         margin: 0;
         padding: 0;
         list-style: none;
-        border: 1px solid var(--sc-line);
-        border-radius: var(--sc-radius-sm);
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-sm);
         max-height: unquote("min(50vh, 22rem)");
         overflow-x: hidden;
         overflow-y: auto;
@@ -219,19 +219,19 @@ $sc-p2-laptop: 992px;
         }
     }
 
-    .o_sc_tags_search {
+    .o_pk_tags_search {
         scroll-margin-top: 72px;
     }
 
-    .o_sc_tags_group {
+    .o_pk_tags_group {
         position: sticky;
         top: 0;
         z-index: 1;
-        padding: var(--sc-space-1) var(--sc-space-3);
-        background: var(--sc-surface-2);
-        border-top: 1px solid var(--sc-line);
-        color: var(--sc-fg-2);
-        font-size: var(--sc-text-sm);
+        padding: var(--pk-space-1) var(--pk-space-3);
+        background: var(--pk-surface-2);
+        border-top: 1px solid var(--pk-line);
+        color: var(--pk-fg-2);
+        font-size: var(--pk-text-sm);
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.04em;
@@ -241,71 +241,71 @@ $sc-p2-laptop: 992px;
         }
     }
 
-    .o_sc_tags_option_active {
-        background: var(--sc-hover);
-        box-shadow: inset 3px 0 0 var(--sc-accent);
+    .o_pk_tags_option_active {
+        background: var(--pk-hover);
+        box-shadow: inset 3px 0 0 var(--pk-accent);
     }
 
-    .o_sc_tags_option {
+    .o_pk_tags_option {
         appearance: none;
         width: 100%;
-        min-height: var(--sc-tap);
-        padding: 0 var(--sc-space-3);
+        min-height: var(--pk-tap);
+        padding: 0 var(--pk-space-3);
         border: 0;
-        border-top: 1px solid var(--sc-line);
-        background: var(--sc-surface);
-        color: var(--sc-fg);
+        border-top: 1px solid var(--pk-line);
+        background: var(--pk-surface);
+        color: var(--pk-fg);
         font: inherit;
         text-align: left;
         cursor: pointer;
 
         &:hover,
         &:focus-visible {
-            background: var(--sc-hover);
+            background: var(--pk-hover);
         }
     }
 
-    .o_sc_tags_options > li:first-child .o_sc_tags_option {
+    .o_pk_tags_options > li:first-child .o_pk_tags_option {
         border-top: 0;
     }
 
-    .o_sc_tags_group + li .o_sc_tags_option {
+    .o_pk_tags_group + li .o_pk_tags_option {
         border-top: 0;
     }
 
     // ---------------------------------------------------------- buttons
-    .o_sc_btn_danger {
+    .o_pk_btn_danger {
         background: transparent;
-        border-color: var(--sc-bad);
-        color: var(--sc-bad);
+        border-color: var(--pk-bad);
+        color: var(--pk-bad);
     }
 
-    .o_sc_icon_btn_danger {
-        color: var(--sc-bad);
+    .o_pk_icon_btn_danger {
+        color: var(--pk-bad);
     }
 
-    .o_sc_actionbar {
+    .o_pk_actionbar {
         position: sticky;
         // Above the phone's fixed bottom tabs; 0 on a laptop (no tabs).
-        bottom: calc(var(--sc-tabs-height) + env(safe-area-inset-bottom, 0px) + var(--sc-ribbon-h, 0px));
+        bottom: calc(var(--pk-tabs-height) + env(safe-area-inset-bottom, 0px) + var(--pk-ribbon-h, 0px));
         z-index: 5;
         display: flex;
-        gap: var(--sc-space-2);
-        padding: var(--sc-space-3) 0 calc(var(--sc-space-2) + env(safe-area-inset-bottom, 0px));
-        background: linear-gradient(to top, var(--sc-bg) 70%, transparent);
+        gap: var(--pk-space-2);
+        padding: var(--pk-space-3) 0 calc(var(--pk-space-2) + env(safe-area-inset-bottom, 0px));
+        background: linear-gradient(to top, var(--pk-bg) 70%, transparent);
 
-        > .o_sc_btn,
+        > .o_pk_btn,
         > form {
             flex: 1;
         }
 
-        form .o_sc_btn {
+        form .o_pk_btn {
             width: 100%;
         }
     }
 
     @media (min-width: $sc-p2-laptop) {
-        .o_sc_actionbar {
+        .o_pk_actionbar {
             bottom: 0;
         }
     }
@@ -313,14 +313,14 @@ $sc-p2-laptop: 992px;
     // Task 1678: title above the text, the action button beside them.
     // Review round 1 (2026-10-26): the action wraps under the text, right-
     // aligned, when it does not fit beside it — always on a phone.
-    .o_sc_toast {
+    .o_pk_toast {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 4px var(--sc-space-3);
+        gap: 4px var(--pk-space-3);
     }
 
-    .o_sc_toast_body {
+    .o_pk_toast_body {
         display: flex;
         flex-direction: column;
         gap: 2px;
@@ -328,36 +328,36 @@ $sc-p2-laptop: 992px;
         flex: 1 1 auto;
     }
 
-    .o_sc_toast_text {
+    .o_pk_toast_text {
         overflow-wrap: anywhere;
     }
 
     @media (max-width: 480px) {
-        .o_sc_toast_body {
+        .o_pk_toast_body {
             flex-basis: 100%;
         }
     }
 
     // Task 1583: the session notification (title + message; errors marked).
-    .o_sc_toast_title {
+    .o_pk_toast_title {
         font-weight: 600;
     }
 
-    .o_sc_toast[data-sc-toast-tone="error"] {
-        border-left: 4px solid var(--sc-bad);
+    .o_pk_toast[data-sc-toast-tone="error"] {
+        border-left: 4px solid var(--pk-bad);
     }
 
-    .o_sc_toast[data-sc-toast-tone="success"] {
-        border-left: 4px solid var(--sc-ok);
+    .o_pk_toast[data-sc-toast-tone="success"] {
+        border-left: 4px solid var(--pk-ok);
     }
 
-    .o_sc_toast_action {
+    .o_pk_toast_action {
         flex: none;
         margin-left: auto;
         appearance: none;
         border: 0;
         background: transparent;
-        color: var(--sc-accent);
+        color: var(--pk-accent);
         font: inherit;
         font-weight: 600;
         cursor: pointer;
@@ -365,13 +365,13 @@ $sc-p2-laptop: 992px;
         padding: 0 4px;
     }
 
-    .o_sc_confirm_message {
+    .o_pk_confirm_message {
         margin: 0;
     }
 
     // Many tabs (the player page's seven): scroll sideways on a phone
     // instead of squeezing the labels.
-    .o_sc_page_tabs_scroll {
+    .o_pk_page_tabs_scroll {
         overflow-x: auto;
         scrollbar-width: none;
 
@@ -387,7 +387,7 @@ $sc-p2-laptop: 992px;
     }
 
     @media (min-width: $sc-p2-laptop) {
-        .o_sc_page_tabs_scroll > a {
+        .o_pk_page_tabs_scroll > a {
             flex: 1 0 auto;
         }
     }
@@ -396,13 +396,13 @@ $sc-p2-laptop: 992px;
     .o_sc_hero {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
     }
 
     .o_sc_hero_head {
         display: flex;
         align-items: center;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
         min-width: 0;
     }
 
@@ -417,7 +417,7 @@ $sc-p2-laptop: 992px;
         display: flex;
         flex-wrap: nowrap;
         align-items: flex-start;
-        gap: var(--sc-space-2) var(--sc-space-3);
+        gap: var(--pk-space-2) var(--pk-space-3);
         min-width: 0;
 
         > .o_sc_hero_head {
@@ -427,8 +427,8 @@ $sc-p2-laptop: 992px;
 
         > .o_sc_hero_follow {
             flex: none;
-            margin-top: calc(var(--sc-space-2) * -1);
-            margin-right: calc(var(--sc-space-2) * -1);
+            margin-top: calc(var(--pk-space-2) * -1);
+            margin-right: calc(var(--pk-space-2) * -1);
         }
     }
 
@@ -452,9 +452,9 @@ $sc-p2-laptop: 992px;
         min-height: 26px;
         padding: 2px 10px;
         border: 1px solid transparent;
-        border-radius: var(--sc-radius-pill);
+        border-radius: var(--pk-radius-pill);
         font: inherit;
-        font-size: var(--sc-text-xs);
+        font-size: var(--pk-text-xs);
         font-weight: 700;
         line-height: 1.2;
         white-space: nowrap;
@@ -467,7 +467,7 @@ $sc-p2-laptop: 992px;
             inset: -8px -2px;
         }
 
-        .o_sc_icon {
+        .o_pk_icon {
             width: 14px;
             height: 14px;
         }
@@ -489,7 +489,7 @@ $sc-p2-laptop: 992px;
     // beside it (same padding, border, font metrics; the compact
     // quick-change pills' 22 px).
     .o_sc_med_pill.o_sc_med_card_pill {
-        // Above the card's stretched link (.o_sc_link_row_main::after), so
+        // Above the card's stretched link (.o_pk_link_row_main::after), so
         // a tap lands on the pill, not on the card.
         position: relative;
         z-index: 1;
@@ -503,16 +503,16 @@ $sc-p2-laptop: 992px;
         cursor: pointer;
         vertical-align: middle;
 
-        .o_sc_icon {
+        .o_pk_icon {
             width: 1em;
             height: 1em;
         }
     }
 
-    .o_sc_med_urgent { background: var(--sc-bad); color: var(--sc-tone-fg); }
-    .o_sc_med_minor { background: var(--sc-warn); color: var(--sc-tone-fg); }
-    .o_sc_med_none { background: var(--sc-surface-2); color: var(--sc-fg-2); }
-    .o_sc_med_unset { background: transparent; border-color: var(--sc-line); border-style: dashed; color: var(--sc-fg-2); }
+    .o_sc_med_urgent { background: var(--pk-bad); color: var(--pk-tone-fg); }
+    .o_sc_med_minor { background: var(--pk-warn); color: var(--pk-tone-fg); }
+    .o_sc_med_none { background: var(--pk-surface-2); color: var(--pk-fg-2); }
+    .o_sc_med_unset { background: transparent; border-color: var(--pk-line); border-style: dashed; color: var(--pk-fg-2); }
 
     .o_sc_med_epipen {
         display: inline-flex;
@@ -522,28 +522,28 @@ $sc-p2-laptop: 992px;
     .o_sc_med_sheet {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
     }
 
     // Task 1677: the popup's head pill, the EpiPen card, the item cards.
     .o_sc_med_head {
         display: flex;
         align-items: center;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
     }
 
     .o_sc_med_card {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-2);
-        padding: var(--sc-space-2) var(--sc-space-3);
+        gap: var(--pk-space-2);
+        padding: var(--pk-space-2) var(--pk-space-3);
         margin: 0;
     }
 
     .o_sc_med_card_row {
         display: flex;
         align-items: flex-start;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
         min-width: 0;
 
         > .o_sc_med_card_read {
@@ -558,17 +558,17 @@ $sc-p2-laptop: 992px;
             }
         }
 
-        > .o_sc_icon_btn {
+        > .o_pk_icon_btn {
             margin-left: auto;
-            margin-right: calc(var(--sc-space-2) * -1);
-            margin-top: calc((26px - var(--sc-tap)) / 2);
+            margin-right: calc(var(--pk-space-2) * -1);
+            margin-top: calc((26px - var(--pk-tap)) / 2);
         }
     }
 
     .o_sc_med_card_edit {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
     }
 
     .o_sc_med_items {
@@ -577,14 +577,14 @@ $sc-p2-laptop: 992px;
         padding: 0;
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
     }
 
     .o_sc_med_item_line {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 4px var(--sc-space-2);
+        gap: 4px var(--pk-space-2);
         min-height: 26px;
     }
 
@@ -602,8 +602,8 @@ $sc-p2-laptop: 992px;
     }
 
     .o_sc_med_vital_chip {
-        background: var(--sc-bad);
-        color: var(--sc-tone-fg);
+        background: var(--pk-bad);
+        color: var(--pk-tone-fg);
         font-weight: 700;
     }
 
@@ -611,15 +611,15 @@ $sc-p2-laptop: 992px;
         display: flex;
         flex-direction: column;
         gap: 2px;
-        font-size: var(--sc-text-sm);
+        font-size: var(--pk-text-sm);
     }
 
     // Review round 1 (owner 2026-10-27): an item's trash sits next to its ✓
     // (top right), shown while the card is being edited — task 1736: the
     // shared top bar (sc_card_icons: red, data-sc-edit-only).
-    .o_sc_med_card_row > .o_sc_card_icons {
-        margin-right: calc(var(--sc-space-2) * -1);
-        margin-top: calc((26px - var(--sc-tap)) / 2);
+    .o_sc_med_card_row > .o_pk_card_icons {
+        margin-right: calc(var(--pk-space-2) * -1);
+        margin-top: calc((26px - var(--pk-tap)) / 2);
     }
 
     // Review round 1 (owner 2026-10-27): EpiPen as ONE line — the label, then
@@ -628,8 +628,8 @@ $sc-p2-laptop: 992px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: var(--sc-space-3);
-        min-height: var(--sc-tap);
+        gap: var(--pk-space-3);
+        min-height: var(--pk-tap);
     }
 
     .o_sc_med_epipen_ask_label {
@@ -643,12 +643,12 @@ $sc-p2-laptop: 992px;
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
-        column-gap: var(--sc-space-2);
+        column-gap: var(--pk-space-2);
 
         > .o_sc_med_card_row {
             display: contents;
 
-            > .o_sc_icon_btn {
+            > .o_pk_icon_btn {
                 grid-column: 2;
                 grid-row: 1;
                 margin-top: 0;
@@ -662,23 +662,23 @@ $sc-p2-laptop: 992px;
     }
 
     // Review round 2: the level pill in the popup's header, next to the title.
-    .o_sc_sheet_head > .o_sc_med_head {
+    .o_pk_sheet_head > .o_sc_med_head {
         flex: 0 1 auto;
         min-width: 0;
         margin-right: auto;
     }
 
-    .o_sc_toggle_pill {
+    .o_pk_toggle_pill {
         display: inline-flex;
         flex: none;
         padding: 2px;
         gap: 2px;
-        border: 1px solid var(--sc-line);
+        border: 1px solid var(--pk-line);
         border-radius: 999px;
-        background: var(--sc-surface-2);
+        background: var(--pk-surface-2);
     }
 
-    .o_sc_toggle_pill_opt {
+    .o_pk_toggle_pill_opt {
         position: relative;
         display: inline-flex;
         align-items: center;
@@ -690,7 +690,7 @@ $sc-p2-laptop: 992px;
         border-radius: 999px;
         font-weight: 600;
         font-size: 14px;
-        color: var(--sc-fg-2);
+        color: var(--pk-fg-2);
         cursor: pointer;
 
         > input {
@@ -706,17 +706,17 @@ $sc-p2-laptop: 992px;
         // Review round 2 (owner 2026-10-27): a chosen « Oui » is green (the
         // accent), a chosen « Non » a neutral grey; unchosen, both neutral.
         &:has(> input:checked) {
-            background: var(--sc-line);
-            color: var(--sc-fg);
+            background: var(--pk-line);
+            color: var(--pk-fg);
         }
 
         &[data-sc-toggle-opt="yes"]:has(> input:checked) {
-            background: var(--sc-accent);
-            color: var(--sc-accent-fg);
+            background: var(--pk-accent);
+            color: var(--pk-accent-fg);
         }
 
         &:has(> input:focus-visible) {
-            outline: 2px solid var(--sc-focus);
+            outline: 2px solid var(--pk-focus);
             outline-offset: 1px;
         }
     }
@@ -727,7 +727,7 @@ $sc-p2-laptop: 992px;
     }
 
     .o_sc_med_none_check {
-        margin-top: var(--sc-space-2);
+        margin-top: var(--pk-space-2);
     }
 
     .o_sc_med_legacy > p {
@@ -738,7 +738,7 @@ $sc-p2-laptop: 992px;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
         margin: 0;
     }
 
@@ -748,7 +748,7 @@ $sc-p2-laptop: 992px;
         gap: 4px;
         font-weight: 700;
 
-        .o_sc_icon {
+        .o_pk_icon {
             width: 16px;
             height: 16px;
         }
@@ -777,14 +777,14 @@ $sc-p2-laptop: 992px;
     .o_sc_hero_read {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
         min-width: 0;
     }
 
     // Task 1629: the training recommendation's title (+ « History ») sits
     // just above its value / editor.
     .o_sc_training_title {
-        margin-bottom: var(--sc-space-1);
+        margin-bottom: var(--pk-space-1);
     }
 
     .o_sc_hero_return:empty {
@@ -794,12 +794,12 @@ $sc-p2-laptop: 992px;
     // Review fixes 2026-10-18 (1018c): an empty date's placeholder line.
     .o_sc_hero_return_empty {
         margin: 0;
-        font-size: var(--sc-text-sm);
+        font-size: var(--pk-text-sm);
     }
 
     .o_sc_hero_title {
         margin: 0;
-        font-family: var(--sc-font-title);
+        font-family: var(--pk-font-title);
         font-weight: 600;
         font-size: 26px;
         line-height: 1;
@@ -807,67 +807,67 @@ $sc-p2-laptop: 992px;
         overflow-wrap: anywhere;
     }
 
-    .o_sc_chips {
+    .o_pk_chips {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
     }
 
-    .o_sc_actions_row {
+    .o_pk_actions_row {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
 
         form {
             margin: 0;
         }
     }
 
-    .o_sc_filters {
+    .o_pk_filters {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
     }
 
-    .o_sc_filter_grid {
+    .o_pk_filter_grid {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
     }
 
     @media (min-width: $sc-p2-laptop) {
-        .o_sc_filter_grid {
+        .o_pk_filter_grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
         }
     }
 
     // Task 1684: in a filter panel a field keeps its own height — an open
     // picker list (in flow, sc_picker.js) grows its row, and a stretched
-    // neighbour's input (.o_sc_input is flex: 1) grew with it.
-    .o_sc_filters .o_sc_filter_grid {
+    // neighbour's input (.o_pk_input is flex: 1) grew with it.
+    .o_pk_filters .o_pk_filter_grid {
         align-items: start;
     }
 
     // Owner review 2026-10-14: sort / group by are not filters — their own
     // labelled group under the filters.
-    .o_sc_filter_group {
-        margin: var(--sc-space-3) 0 0;
-        padding: var(--sc-space-3) 0 0;
+    .o_pk_filter_group {
+        margin: var(--pk-space-3) 0 0;
+        padding: var(--pk-space-3) 0 0;
         border: 0;
-        border-top: 1px solid var(--sc-line);
+        border-top: 1px solid var(--pk-line);
         min-width: 0;
     }
 
-    .o_sc_filter_group_title {
+    .o_pk_filter_group_title {
         float: left; // keeps the legend inside the fieldset's flow
         width: 100%;
-        margin: 0 0 var(--sc-space-2);
+        margin: 0 0 var(--pk-space-2);
         padding: 0;
-        font-size: var(--sc-text-sm);
+        font-size: var(--pk-text-sm);
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        color: var(--sc-fg-2);
+        color: var(--pk-fg-2);
 
         + * {
             clear: both;
@@ -879,28 +879,28 @@ $sc-p2-laptop: 992px;
     // select's own label stays for screen readers) so the list header still
     // shows on the first screen.
     @media (max-width: $sc-p2-laptop - 0.02px) {
-        .o_sc_filters_compact .o_sc_filter_group {
-            margin-top: var(--sc-space-2);
-            padding-top: var(--sc-space-2);
+        .o_pk_filters_compact .o_pk_filter_group {
+            margin-top: var(--pk-space-2);
+            padding-top: var(--pk-space-2);
         }
 
         // Still floated (a rendered legend is no flow content): half the
         // row, the grid (its own formatting context) beside it.
-        .o_sc_filters_compact .o_sc_filter_group_title {
-            width: calc(50% - var(--sc-space-2) / 2);
-            margin: 0 var(--sc-space-2) 0 0;
-            line-height: var(--sc-tap);
+        .o_pk_filters_compact .o_pk_filter_group_title {
+            width: calc(50% - var(--pk-space-2) / 2);
+            margin: 0 var(--pk-space-2) 0 0;
+            line-height: var(--pk-tap);
 
             + * {
                 clear: none;
             }
         }
 
-        .o_sc_filters_compact .o_sc_filter_group .o_sc_filter_grid {
+        .o_pk_filters_compact .o_pk_filter_group .o_pk_filter_grid {
             grid-template-columns: minmax(0, 1fr);
         }
 
-        .o_sc_filters_compact .o_sc_filter_group .o_sc_field_label {
+        .o_pk_filters_compact .o_pk_filter_group .o_pk_field_label {
             position: absolute;
             width: 1px;
             height: 1px;
@@ -916,27 +916,27 @@ $sc-p2-laptop: 992px;
     .o_sc_add_to_team {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--sc-space-2);
-        padding: 0 var(--sc-space-3) var(--sc-space-3);
+        gap: var(--pk-space-2);
+        padding: 0 var(--pk-space-3) var(--pk-space-3);
 
-        .o_sc_input {
+        .o_pk_input {
             flex: 1 1 160px;
         }
     }
 
-    .o_sc_row_group {
-        background: var(--sc-surface);
-        border: 1px solid var(--sc-line);
-        border-radius: var(--sc-radius-md);
+    .o_pk_row_group {
+        background: var(--pk-surface);
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-md);
 
-        > .o_sc_entity_row {
+        > .o_pk_entity_row {
             border: 0;
         }
     }
 
     // ---------------------------------------------------------- notes
     .o_sc_note_card {
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
     }
 
     .o_sc_note_meta {
@@ -956,15 +956,15 @@ $sc-p2-laptop: 992px;
         padding: 0;
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
 
         li {
-            border-left: 3px solid var(--sc-line);
+            border-left: 3px solid var(--pk-line);
             padding: 2px 10px;
         }
 
         li[data-sc-scope="internal"] {
-            border-left-color: var(--sc-secondary);
+            border-left-color: var(--pk-secondary);
         }
     }
 
@@ -976,46 +976,46 @@ $sc-p2-laptop: 992px;
         gap: 0;
         overflow: hidden;
 
-        > .o_sc_entity_row,
-        > .o_sc_activity_head > .o_sc_entity_row {
+        > .o_pk_entity_row,
+        > .o_sc_activity_head > .o_pk_entity_row {
             border: 0;
             border-radius: 0;
             background: transparent;
         }
 
         &:hover {
-            border-color: var(--sc-fg-3);
+            border-color: var(--pk-fg-3);
         }
     }
 
     // Task 1736 r1: the card's top-bar icons in the regular icon colour
     // (the link row's trailing area is muted).
-    .o_sc_activity .o_sc_row_trailing > .o_sc_card_icons {
-        color: var(--sc-fg);
+    .o_sc_activity .o_pk_row_trailing > .o_pk_card_icons {
+        color: var(--pk-fg);
     }
 
     // Task 1736 r1: the in-place edit (the fields, then « Done »).
     .o_sc_activity_edit {
-        border-top: 1px solid var(--sc-line);
-        padding: var(--sc-space-3);
+        border-top: 1px solid var(--pk-line);
+        padding: var(--pk-space-3);
 
-        > .o_sc_fields_lazy {
+        > .o_pk_fields_lazy {
             display: flex;
             flex-direction: column;
-            gap: var(--sc-space-3);
+            gap: var(--pk-space-3);
         }
     }
 
     .o_sc_activity_actions {
-        border-top: 1px solid var(--sc-line);
-        padding: var(--sc-space-2) var(--sc-space-3);
+        border-top: 1px solid var(--pk-line);
+        padding: var(--pk-space-2) var(--pk-space-3);
     }
 
     // Task 1736 r1: the popout's note, set apart from the details.
     .o_sc_activity_popout .o_sc_activity_note {
-        margin-top: var(--sc-space-3);
-        padding-top: var(--sc-space-3);
-        border-top: 1px solid var(--sc-line);
+        margin-top: var(--pk-space-3);
+        padding-top: var(--pk-space-3);
+        border-top: 1px solid var(--pk-line);
     }
 
     // Task 1736 r1: the details popout's head (the title + its state chip).
@@ -1023,22 +1023,22 @@ $sc-p2-laptop: 992px;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: var(--sc-space-2);
-        margin: 0 0 var(--sc-space-3);
+        gap: var(--pk-space-2);
+        margin: 0 0 var(--pk-space-3);
         font-size: 1.05rem;
     }
 }
 
 // Player Injuries tab (owner decision 2026-10-11): the inline « Add
 // Injury » card and the expandable injury cards.
-.o_sc_app {
+.o_pk_app {
     // Therapists answer « Can coaches see this injury? » first; the
     // diagnosis and « Create » appear once a choice is made (no default).
     .o_sc_injury_add {
         .o_sc_injury_add_diag {
             display: flex;
             flex-direction: column;
-            gap: var(--sc-space-3);
+            gap: var(--pk-space-3);
 
             &.o_sc_after_choice {
                 display: none;
@@ -1059,8 +1059,8 @@ $sc-p2-laptop: 992px;
 
     .o_sc_choice_options {
         display: flex;
-        border: 1px solid var(--sc-line);
-        border-radius: var(--sc-radius-sm);
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-sm);
         overflow: hidden;
     }
 
@@ -1070,15 +1070,15 @@ $sc-p2-laptop: 992px;
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: var(--sc-tap);
+        min-height: var(--pk-tap);
         padding: 0 12px;
-        background: var(--sc-surface);
-        color: var(--sc-fg);
+        background: var(--pk-surface);
+        color: var(--pk-fg);
         font-weight: 600;
         cursor: pointer;
 
         + .o_sc_choice_option {
-            border-left: 1px solid var(--sc-line);
+            border-left: 1px solid var(--pk-line);
         }
 
         input {
@@ -1090,17 +1090,17 @@ $sc-p2-laptop: 992px;
         }
 
         &:has(input:checked) {
-            background: var(--sc-accent);
-            color: var(--sc-accent-fg);
+            background: var(--pk-accent);
+            color: var(--pk-accent-fg);
         }
 
         &:has(input:focus-visible) {
-            outline: 2px solid var(--sc-secondary);
+            outline: 2px solid var(--pk-secondary);
             outline-offset: -2px;
         }
     }
 
-    .o_sc_injury_item.o_sc_edit_card {
+    .o_sc_injury_item.o_pk_edit_card {
         gap: 0;
     }
 
@@ -1110,7 +1110,7 @@ $sc-p2-laptop: 992px;
     .o_sc_injury_sections {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-4);
+        gap: var(--pk-space-4);
         min-width: 0;
     }
 
@@ -1118,8 +1118,8 @@ $sc-p2-laptop: 992px;
         min-width: 0;
 
         + .o_sc_injury_section {
-            border-top: 1px solid var(--sc-line);
-            padding-top: var(--sc-space-3);
+            border-top: 1px solid var(--pk-line);
+            padding-top: var(--pk-space-3);
         }
     }
 
@@ -1129,8 +1129,8 @@ $sc-p2-laptop: 992px;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: var(--sc-space-2);
-        margin-bottom: var(--sc-space-3);
+        gap: var(--pk-space-2);
+        margin-bottom: var(--pk-space-3);
     }
 
     @media (max-width: 575.98px) {
@@ -1155,8 +1155,8 @@ $sc-p2-laptop: 992px;
                 "details notes"
                 "documents notes";
             grid-template-rows: auto 1fr;
-            column-gap: var(--sc-space-5);
-            row-gap: var(--sc-space-4);
+            column-gap: var(--pk-space-5);
+            row-gap: var(--pk-space-4);
             align-items: start;
         }
 
@@ -1166,8 +1166,8 @@ $sc-p2-laptop: 992px;
         .o_sc_injury_notes {
             grid-area: notes;
             align-self: stretch;
-            border-left: 1px solid var(--sc-line);
-            padding-left: var(--sc-space-5);
+            border-left: 1px solid var(--pk-line);
+            padding-left: var(--pk-space-5);
         }
 
         .o_sc_injury_section + .o_sc_injury_section {
@@ -1176,23 +1176,23 @@ $sc-p2-laptop: 992px;
         }
 
         .o_sc_injury_documents {
-            border-top: 1px solid var(--sc-line);
-            padding-top: var(--sc-space-3);
+            border-top: 1px solid var(--pk-line);
+            padding-top: var(--pk-space-3);
         }
     }
 
     // Task 1675: the external / internal notes are two edit cards, one
     // pencil each, under the Notes head (its one « History »).
     .o_sc_injury_note_card {
-        margin-top: var(--sc-space-2);
+        margin-top: var(--pk-space-2);
 
         & + .o_sc_injury_note_card {
-            margin-top: var(--sc-space-3);
-            padding-top: var(--sc-space-3);
-            border-top: 1px dashed var(--sc-line);
+            margin-top: var(--pk-space-3);
+            padding-top: var(--pk-space-3);
+            border-top: 1px dashed var(--pk-line);
         }
 
-        .o_sc_injury_note_head .o_sc_edit_card_title {
+        .o_sc_injury_note_head .o_pk_edit_card_title {
             font-size: 0.95em;
         }
 
@@ -1202,42 +1202,42 @@ $sc-p2-laptop: 992px;
     }
 
     .o_sc_injury_doc_list {
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
     }
 
-    .o_sc_injury_doc.o_sc_edit_card {
-        gap: var(--sc-space-2);
+    .o_sc_injury_doc.o_pk_edit_card {
+        gap: var(--pk-space-2);
     }
 
     // The « Add documents » sheet: a drop zone (a tap opens the picker),
     // the chosen files with their size, an oversized one flagged.
-    .o_sc_dropzone {
+    .o_pk_dropzone {
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: var(--sc-space-2);
-        min-height: calc(var(--sc-tap) * 2);
-        padding: var(--sc-space-3);
-        border: 2px dashed var(--sc-line);
-        border-radius: var(--sc-radius-md);
-        color: var(--sc-fg-2);
+        gap: var(--pk-space-2);
+        min-height: calc(var(--pk-tap) * 2);
+        padding: var(--pk-space-3);
+        border: 2px dashed var(--pk-line);
+        border-radius: var(--pk-radius-md);
+        color: var(--pk-fg-2);
         text-align: center;
         cursor: pointer;
 
-        &.o_sc_dropzone_over,
+        &.o_pk_dropzone_over,
         &:hover {
-            border-color: var(--sc-accent);
-            color: var(--sc-fg);
+            border-color: var(--pk-accent);
+            color: var(--pk-fg);
         }
 
         &:has(input:focus-visible) {
-            outline: 2px solid var(--sc-focus);
+            outline: 2px solid var(--pk-focus);
             outline-offset: 2px;
         }
     }
 
-    .o_sc_dropzone_input {
+    .o_pk_dropzone_input {
         position: absolute;
         inset: 0;
         width: 100%;
@@ -1249,7 +1249,7 @@ $sc-p2-laptop: 992px;
     // Task 1644: the upload sheet — pinned head (title, the picker) and
     // actions (Cancel / Upload), only the file list scrolls between, within
     // the visible viewport (the keyboard included: dvh).
-    .o_sc_sheet[open]:has(form[data-sc-doc-upload]) {
+    .o_pk_sheet[open]:has(form[data-sc-doc-upload]) {
         display: flex;
         flex-direction: column;
         max-height: calc(100vh - env(safe-area-inset-top, 0px) - 8px);
@@ -1259,11 +1259,11 @@ $sc-p2-laptop: 992px;
         overflow: hidden;
         overflow: clip;
 
-        > .o_sc_sheet_head {
+        > .o_pk_sheet_head {
             flex: none;
         }
 
-        > .o_sc_sheet_body {
+        > .o_pk_sheet_body {
             flex: 1 1 auto;
             min-height: 0;
             overflow: hidden;
@@ -1292,61 +1292,61 @@ $sc-p2-laptop: 992px;
         }
 
         .o_sc_doc_upload_actions {
-            margin: 0 calc(-1 * var(--sc-space-4));
-            padding: var(--sc-space-3) var(--sc-space-4) calc(var(--sc-space-3) + env(safe-area-inset-bottom, 0px));
-            background: var(--sc-surface);
-            border-top: 1px solid var(--sc-line);
+            margin: 0 calc(-1 * var(--pk-space-4));
+            padding: var(--pk-space-3) var(--pk-space-4) calc(var(--pk-space-3) + env(safe-area-inset-bottom, 0px));
+            background: var(--pk-surface);
+            border-top: 1px solid var(--pk-line);
         }
     }
 
     .o_sc_doc_upload_scroll {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
     }
 
     // The touch label shows on phones / touch screens only.
-    .o_sc_dropzone_text_touch {
+    .o_pk_dropzone_text_touch {
         display: none;
     }
 
     @media (max-width: #{$sc-p2-laptop - 0.02px}), (pointer: coarse) {
-        .o_sc_dropzone {
-            min-height: var(--sc-tap);
-            padding: 0 var(--sc-space-3);
-            border: 1px solid var(--sc-line);
-            background: var(--sc-surface-2, var(--sc-surface));
-            color: var(--sc-fg);
+        .o_pk_dropzone {
+            min-height: var(--pk-tap);
+            padding: 0 var(--pk-space-3);
+            border: 1px solid var(--pk-line);
+            background: var(--pk-surface-2, var(--pk-surface));
+            color: var(--pk-fg);
             font-weight: 600;
         }
 
-        .o_sc_dropzone_text {
+        .o_pk_dropzone_text {
             display: none;
         }
 
-        .o_sc_dropzone_text_touch {
+        .o_pk_dropzone_text_touch {
             display: inline;
         }
     }
 
     // Task 1644: « Uploading… » (the busy submit).
-    .o_sc_btn_busy {
+    .o_pk_btn_busy {
         display: inline-flex;
         align-items: center;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
 
         &[hidden] {
             display: none;
         }
     }
 
-    .o_sc_spinner {
+    .o_pk_spinner {
         width: 1em;
         height: 1em;
         border: 2px solid currentColor;
         border-right-color: transparent;
         border-radius: 50%;
-        animation: o_sc_spin 0.8s linear infinite;
+        animation: o_pk_spin 0.8s linear infinite;
     }
 
     form[aria-busy="true"] .o_sc_doc_upload_scroll,
@@ -1355,44 +1355,44 @@ $sc-p2-laptop: 992px;
         pointer-events: none;
     }
 
-    .o_sc_file_list {
+    .o_pk_file_list {
         list-style: none;
-        margin: var(--sc-space-2) 0 0;
+        margin: var(--pk-space-2) 0 0;
         padding: 0;
         display: flex;
         flex-direction: column;
         gap: 4px;
-        font-size: var(--sc-text-sm);
+        font-size: var(--pk-text-sm);
     }
 
-    .o_sc_file {
+    .o_pk_file {
         display: flex;
         justify-content: space-between;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
         min-width: 0;
     }
 
-    .o_sc_file_name {
+    .o_pk_file_name {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
-    .o_sc_file_size {
+    .o_pk_file_size {
         flex: none;
-        color: var(--sc-fg-2);
+        color: var(--pk-fg-2);
     }
 
     // Review fixes 2026-10-18 (#1616): one « × » per chosen file.
-    .o_sc_file {
+    .o_pk_file {
         align-items: center;
     }
 
-    .o_sc_file_name {
+    .o_pk_file_name {
         flex: 1 1 auto;
     }
 
-    .o_sc_file_remove {
+    .o_pk_file_remove {
         appearance: none;
         flex: none;
         width: 32px;
@@ -1400,47 +1400,47 @@ $sc-p2-laptop: 992px;
         border: 0;
         border-radius: 50%;
         background: transparent;
-        color: var(--sc-fg-2);
+        color: var(--pk-fg-2);
         font-size: 18px;
         line-height: 1;
         cursor: pointer;
 
         &:hover,
         &:focus-visible {
-            background: var(--sc-hover);
-            color: var(--sc-bad);
+            background: var(--pk-hover);
+            color: var(--pk-bad);
         }
     }
 
-    .o_sc_file_too_large .o_sc_file_size {
-        color: var(--sc-bad);
+    .o_pk_file_too_large .o_pk_file_size {
+        color: var(--pk-bad);
         font-weight: 600;
     }
 
     // Review fixes 2026-10-18 b: each chosen file is a small block — its
     // head (name, size, « × ») then its own name / category / description
     // (two columns when there is room, stacked on a phone).
-    .o_sc_doc_upload .o_sc_file_list {
-        gap: var(--sc-space-2);
+    .o_sc_doc_upload .o_pk_file_list {
+        gap: var(--pk-space-2);
     }
 
-    .o_sc_doc_upload .o_sc_file {
+    .o_sc_doc_upload .o_pk_file {
         flex-direction: column;
         align-items: stretch;
-        gap: var(--sc-space-2);
-        padding: var(--sc-space-2) var(--sc-space-3) var(--sc-space-3);
-        border: 1px solid var(--sc-line);
-        border-radius: var(--sc-radius-md);
+        gap: var(--pk-space-2);
+        padding: var(--pk-space-2) var(--pk-space-3) var(--pk-space-3);
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-md);
     }
 
-    .o_sc_doc_upload .o_sc_file_too_large {
-        border-color: var(--sc-bad);
+    .o_sc_doc_upload .o_pk_file_too_large {
+        border-color: var(--pk-bad);
     }
 
-    .o_sc_file_head {
+    .o_pk_file_head {
         display: flex;
         align-items: center;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
         min-width: 0;
     }
 
@@ -1449,77 +1449,77 @@ $sc-p2-laptop: 992px;
     .o_sc_doc_shared_group {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
 
         &[hidden] {
             display: none;
         }
     }
 
-    .o_sc_file_fields {
+    .o_pk_file_fields {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
 
         &[hidden] {
             display: none;
         }
     }
 
-    .o_sc_file_field {
+    .o_pk_file_field {
         margin: 0;
 
-        .o_sc_field_label {
-            font-size: var(--sc-text-xs);
+        .o_pk_field_label {
+            font-size: var(--pk-text-xs);
         }
     }
 
-    .o_sc_file_field_wide {
+    .o_pk_file_field_wide {
         grid-column: 1 / -1;
 
-        .o_sc_textarea {
-            min-height: var(--sc-tap);
+        .o_pk_textarea {
+            min-height: var(--pk-tap);
         }
     }
 
     @media (max-width: 575.98px) {
-        .o_sc_file_fields {
+        .o_pk_file_fields {
             grid-template-columns: minmax(0, 1fr);
         }
     }
 }
 
 // Grouped lists (events, timesheets: « Group by », owner review 2026-10-11).
-.o_sc_app {
-    .o_sc_group {
+.o_pk_app {
+    .o_pk_group {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
 
-        + .o_sc_group {
-            margin-top: var(--sc-space-3);
+        + .o_pk_group {
+            margin-top: var(--pk-space-3);
         }
     }
 
-    .o_sc_group_title {
+    .o_pk_group_title {
         margin: 0;
-        font-size: var(--sc-text-xs);
+        font-size: var(--pk-text-xs);
         font-weight: 700;
         letter-spacing: .04em;
         text-transform: uppercase;
-        color: var(--sc-fg-2);
+        color: var(--pk-fg-2);
     }
 }
 
 // Pencil edit paradigm (owner review 2026-10-11): note cards and stacked
 // read views (long notes under their label).
-.o_sc_app {
+.o_pk_app {
     // Task 1721 (review round 1): the note card's head — the meta line,
     // the pencil / ✓ at the top right (as on every edit card).
     .o_sc_note_head {
         display: flex;
         align-items: flex-start;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
         min-width: 0;
 
         > .o_sc_note_meta {
@@ -1530,8 +1530,8 @@ $sc-p2-laptop: 992px;
         > .o_sc_note_edit_toggle {
             flex: none;
             margin-left: auto;
-            margin-top: calc((20px - var(--sc-tap)) / 2);
-            margin-right: calc(var(--sc-space-2) * -1);
+            margin-top: calc((20px - var(--pk-tap)) / 2);
+            margin-right: calc(var(--pk-space-2) * -1);
         }
     }
 
@@ -1542,7 +1542,7 @@ $sc-p2-laptop: 992px;
     .o_sc_note_body {
         display: flex;
         align-items: flex-start;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
 
         .o_sc_note_text {
             flex: 1;
@@ -1550,40 +1550,40 @@ $sc-p2-laptop: 992px;
         }
     }
 
-    .o_sc_kv_stacked {
+    .o_pk_kv_stacked {
         grid-template-columns: minmax(0, 1fr);
 
         dd {
-            margin-bottom: var(--sc-space-2);
+            margin-bottom: var(--pk-space-2);
         }
     }
 }
 
 // Task 1582 — the injury notes' « replace » editor (sc_autosave_field
 // replace=True): the current text read-only above an empty « New note ».
-.o_sc_app {
+.o_pk_app {
     .o_sc_replace_current {
         display: flex;
         flex-direction: column;
         gap: 4px;
-        margin-bottom: var(--sc-space-2);
-        padding: var(--sc-space-2);
-        border: 1px solid var(--sc-line);
-        border-radius: var(--sc-radius-sm);
-        background: var(--sc-surface-2);
+        margin-bottom: var(--pk-space-2);
+        padding: var(--pk-space-2);
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-sm);
+        background: var(--pk-surface-2);
     }
 
     .o_sc_replace_current_text {
         max-height: 9.5em;
         overflow-y: auto;
-        color: var(--sc-fg-2);
+        color: var(--pk-fg-2);
         overflow-wrap: anywhere;
     }
 
     .o_sc_replace_caption {
-        font-size: var(--sc-text-xs);
+        font-size: var(--pk-text-xs);
         font-weight: 600;
-        color: var(--sc-fg-3);
+        color: var(--pk-fg-3);
         text-transform: uppercase;
         letter-spacing: 0.04em;
     }
@@ -1593,37 +1593,37 @@ $sc-p2-laptop: 992px;
         flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
         margin-bottom: 4px;
     }
 
     .o_sc_replace_reuse {
-        font-size: var(--sc-text-xs);
+        font-size: var(--pk-text-xs);
     }
 
     .o_sc_replace_hint {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 4px var(--sc-space-2);
+        gap: 4px var(--pk-space-2);
         margin-top: 4px;
 
-        .o_sc_link_btn {
-            font-size: var(--sc-text-xs);
+        .o_pk_link_btn {
+            font-size: var(--pk-text-xs);
         }
     }
 }
 
 // Task 1603: the player header's « Retour prévu » and the follow-up
 // proposal sheet (sc_proposal.js).
-.o_sc_app {
-    .o_sc_hero_return .o_sc_input[type="date"] {
+.o_pk_app {
+    .o_sc_hero_return .o_pk_input[type="date"] {
         max-width: 16rem;
     }
 
     .o_sc_proposal_message {
         margin: 0;
-        color: var(--sc-fg-2);
+        color: var(--pk-fg-2);
     }
 
     .o_sc_proposal_items {
@@ -1632,15 +1632,15 @@ $sc-p2-laptop: 992px;
         padding: 0;
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
     }
 
     .o_sc_proposal_item {
         display: flex;
         flex-direction: column;
         gap: 4px;
-        padding: var(--sc-space-2) 0;
-        border-bottom: 1px solid var(--sc-line);
+        padding: var(--pk-space-2) 0;
+        border-bottom: 1px solid var(--pk-line);
 
         &:last-child {
             border-bottom: 0;
@@ -1656,37 +1656,37 @@ $sc-p2-laptop: 992px;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: var(--sc-space-2);
-        color: var(--sc-fg-2);
+        gap: var(--pk-space-2);
+        color: var(--pk-fg-2);
 
-        .o_sc_input {
+        .o_pk_input {
             flex: 0 1 12rem;
-            min-height: var(--sc-tap);
+            min-height: var(--pk-tap);
         }
     }
 
     .o_sc_proposal_current {
         text-decoration: line-through;
-        color: var(--sc-fg-3);
+        color: var(--pk-fg-3);
     }
 
     .o_sc_proposal_proposed {
-        color: var(--sc-fg);
+        color: var(--pk-fg);
     }
 
     .o_sc_proposal_actions {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
 
-        .o_sc_btn {
-            min-height: var(--sc-tap);
+        .o_pk_btn {
+            min-height: var(--pk-tap);
         }
     }
 
     // Task 1604: the quick « Vérifier » / « Résoudre » of an injury — a
     // compact button of its own in the card row. Task 1662: the same
-    // metrics as the status pill beside it (.o_sc_pill_select: 32 px, xs
+    // metrics as the status pill beside it (.o_pk_pill_select: 32 px, xs
     // text, pill radius), so the row is one pill high; 32 px stays a
     // comfortable tap target. Colours unchanged (primary / ghost).
     .o_sc_quick_btn {
@@ -1694,8 +1694,8 @@ $sc-p2-laptop: 992px;
         height: 32px;
         padding: 2px 10px;
         border-width: 1px;
-        border-radius: var(--sc-radius-pill);
-        font-size: var(--sc-text-xs);
+        border-radius: var(--pk-radius-pill);
+        font-size: var(--pk-text-xs);
         line-height: 1.2;
     }
 
@@ -1709,18 +1709,18 @@ $sc-p2-laptop: 992px;
     // pill line goes under the title, the icons stay on the title's line.
     .o_sc_injury_item > summary.o_sc_injury_head {
         grid-template-columns: auto minmax(0, 1fr) auto;
-        row-gap: var(--sc-space-1);
+        row-gap: var(--pk-space-1);
         cursor: default;
 
         > .o_sc_injury_head_main {
             display: contents;
 
-            > .o_sc_row_trailing {
+            > .o_pk_row_trailing {
                 grid-column: 2 / -1;
                 grid-row: 2;
                 flex-wrap: wrap;
                 justify-content: flex-start;
-                row-gap: var(--sc-space-1);
+                row-gap: var(--pk-space-1);
                 min-width: 0;
 
                 &:empty {
@@ -1733,21 +1733,21 @@ $sc-p2-laptop: 992px;
             grid-column: 3;
             grid-row: 1;
             gap: 0;
-            margin-right: calc(var(--sc-space-2) * -1);
+            margin-right: calc(var(--pk-space-2) * -1);
 
             // The card icons in the text colour, as on every other card
             // (an entity row greys its trailing icons); the chevron stays
             // the rows' grey.
-            .o_sc_card_icons {
+            .o_pk_card_icons {
                 gap: 0;
-                color: var(--sc-fg);
+                color: var(--pk-fg);
             }
         }
 
         @media (min-width: 768px) {
             grid-template-columns: auto minmax(0, 1fr) auto auto;
 
-            > .o_sc_injury_head_main > .o_sc_row_trailing {
+            > .o_sc_injury_head_main > .o_pk_row_trailing {
                 grid-column: 3;
                 grid-row: 1;
                 justify-content: flex-end;
@@ -1767,48 +1767,48 @@ $sc-p2-laptop: 992px;
             display: flex;
             flex-wrap: wrap;
             align-items: baseline;
-            column-gap: var(--sc-space-2);
+            column-gap: var(--pk-space-2);
             min-width: 0;
 
             > .o_sc_injury_player_link {
                 font-weight: 600;
-                color: var(--sc-fg);
+                color: var(--pk-fg);
                 text-decoration: underline;
                 text-underline-offset: 2px;
                 overflow-wrap: anywhere;
             }
 
             > .o_sc_injury_player_teams {
-                color: var(--sc-fg-2);
-                font-size: var(--sc-text-xs);
+                color: var(--pk-fg-2);
+                font-size: var(--pk-text-xs);
                 overflow-wrap: anywhere;
             }
         }
 
         &.o_sc_injury_head_with_player {
-            > .o_sc_injury_head_main > .o_sc_dot,
-            > .o_sc_injury_head_main > .o_sc_row_text,
+            > .o_sc_injury_head_main > .o_pk_dot,
+            > .o_sc_injury_head_main > .o_pk_row_text,
             > .o_sc_injury_head_icons {
                 grid-row: 2;
             }
 
-            > .o_sc_injury_head_main > .o_sc_row_trailing {
+            > .o_sc_injury_head_main > .o_pk_row_trailing {
                 grid-row: 3;
             }
 
             @media (min-width: 768px) {
-                > .o_sc_injury_head_main > .o_sc_row_trailing {
+                > .o_sc_injury_head_main > .o_pk_row_trailing {
                     grid-row: 2;
                 }
             }
         }
     }
 
-    .o_sc_injury_toggle .o_sc_icon {
+    .o_sc_injury_toggle .o_pk_icon {
         transition: transform .15s ease;
     }
 
-    .o_sc_injury_item[open] > summary .o_sc_injury_toggle .o_sc_icon {
+    .o_sc_injury_item[open] > summary .o_sc_injury_toggle .o_pk_icon {
         transform: rotate(180deg);
     }
 
@@ -1817,18 +1817,18 @@ $sc-p2-laptop: 992px;
 // Review 2026-10-20 (#1629): in the pencil view the training title is a
 // section title above the field; the field's own label row (« Effacer »,
 // the save state) sits on the title's line instead of a line of its own.
-.o_sc_app [data-pk-section="player.training.edit"] {
+.o_pk_app [data-pk-section="player.training.edit"] {
     position: relative;
 
-    .o_sc_autosave > .o_sc_field_label {
+    .o_pk_autosave > .o_pk_field_label {
         position: absolute;
         top: 0;
         right: 0;
         margin: 0;
-        min-height: calc(var(--sc-title-md) * 1.2);
+        min-height: calc(var(--pk-title-md) * 1.2);
         display: flex;
         align-items: center;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
     }
 }
 
@@ -1836,17 +1836,17 @@ $sc-p2-laptop: 992px;
 // sat on the training title's « Historique »). Each field takes the full
 // width; its label text stays above it and its actions (save state,
 // « Effacer ») go on their own line under it, right-aligned; the title's
-// « Historique » wraps under the title when short (.o_sc_edit_card_title
+// « Historique » wraps under the title when short (.o_pk_edit_card_title
 // wraps). The label box is dissolved (display: contents) so its parts can
 // be placed around the input; it stays the input's <label> (accessible name).
 @media (max-width: 767.98px) {
-    .o_sc_app [data-pk-section="player.header.edit"] {
-        .o_sc_autosave {
+    .o_pk_app [data-pk-section="player.header.edit"] {
+        .o_pk_autosave {
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
             align-items: center;
-            gap: 5px var(--sc-space-3);
+            gap: 5px var(--pk-space-3);
             text-align: start;
 
             > * {
@@ -1855,7 +1855,7 @@ $sc-p2-laptop: 992px;
                 order: 0;
             }
 
-            > .o_sc_field_label {
+            > .o_pk_field_label {
                 display: contents;
 
                 > span:first-child {
@@ -1863,45 +1863,45 @@ $sc-p2-laptop: 992px;
                     order: 0;
                 }
 
-                > .o_sc_save_state,
-                > .o_sc_clear_btn,
-                > .o_sc_field_history {
+                > .o_pk_save_state,
+                > .o_pk_clear_btn,
+                > .o_pk_field_history {
                     flex: 0 0 auto;
                     order: 2;
                 }
 
-                > .o_sc_save_state {
+                > .o_pk_save_state {
                     margin-left: auto;
                 }
 
-                > .o_sc_save_state + .o_sc_clear_btn {
+                > .o_pk_save_state + .o_pk_clear_btn {
                     margin-left: 0;
                 }
             }
 
-            > .o_sc_input,
-            > .o_sc_textarea,
-            > .o_sc_date_na {
+            > .o_pk_input,
+            > .o_pk_textarea,
+            > .o_pk_date_na {
                 order: 1;
                 width: 100%;
                 max-width: none;
             }
 
-            > .o_sc_hint,
-            > .o_sc_field_message {
+            > .o_pk_hint,
+            > .o_pk_field_message {
                 order: 3;
             }
         }
 
         // The training label row is no longer laid over the title line.
-        [data-pk-section="player.training.edit"] .o_sc_autosave > .o_sc_field_label {
+        [data-pk-section="player.training.edit"] .o_pk_autosave > .o_pk_field_label {
             position: static;
             min-height: 0;
         }
     }
 }
 
-@keyframes o_sc_spin {
+@keyframes o_pk_spin {
     to {
         transform: rotate(360deg);
     }

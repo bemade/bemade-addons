@@ -83,7 +83,7 @@ class InjuryCard1631Mixin:
 
     @staticmethod
     def _items(tree, pill):
-        toggle = pill.xpath('.//button[contains(@class, "o_sc_pill_select")]')[0]
+        toggle = pill.xpath('.//button[contains(@class, "o_pk_pill_select")]')[0]
         popup = tree.xpath('//*[@id="%s"]' % toggle.get('aria-controls'))[0]
         return {item.get('data-sc-pill-value'): item
                 for item in popup.xpath('.//*[@role="menuitemradio"]')}
@@ -128,16 +128,16 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         self.assertEqual(pill.get('data-sc-record-id'), str(self.injury.id))
         self.assertEqual(pill.get('data-sc-field'), 'stage')
         self.assertEqual(pill.get('data-sc-old-value'), 'active')
-        toggle = pill.xpath('.//button[contains(@class, "o_sc_pill_select")]')[0]
+        toggle = pill.xpath('.//button[contains(@class, "o_pk_pill_select")]')[0]
         self.assertEqual(toggle.get('aria-haspopup'), 'menu')
-        self.assertIn('o_sc_chip_red', toggle.get('class'))
+        self.assertIn('o_pk_chip_red', toggle.get('class'))
         items = self._items(tree, pill)
         self.assertEqual(list(items), ['unverified', 'active', 'resolved'])
-        tones = {value: item.xpath('.//span[contains(@class, "o_sc_pill_swatch")]')[0].get('class')
+        tones = {value: item.xpath('.//span[contains(@class, "o_pk_pill_swatch")]')[0].get('class')
                  for value, item in items.items()}
-        self.assertIn('o_sc_chip_yellow', tones['unverified'])
-        self.assertIn('o_sc_chip_red', tones['active'])
-        self.assertIn('o_sc_chip_green', tones['resolved'])
+        self.assertIn('o_pk_chip_yellow', tones['unverified'])
+        self.assertIn('o_pk_chip_red', tones['active'])
+        self.assertIn('o_pk_chip_green', tones['resolved'])
         self.assertEqual(items['active'].get('aria-checked'), 'true')
         self.assertEqual(items['resolved'].get('data-sc-pill-action'), 'injury.resolve')
         self.assertIsNone(items['unverified'].get('data-sc-pill-action'))
@@ -147,8 +147,8 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         # No in-body status selector any more.
         self.assertNotIn('stage', self._fields(card))
         # The static status chip is gone from the row.
-        self.assertFalse(summary.xpath('.//span[contains(@class, "o_sc_row_trailing")]'
-                                       '/span[contains(concat(" ", @class, " "), " o_sc_chip ")]'))
+        self.assertFalse(summary.xpath('.//span[contains(@class, "o_pk_row_trailing")]'
+                                       '/span[contains(concat(" ", @class, " "), " o_pk_chip ")]'))
 
     def test_unverified_pill_actions(self):
         self.injury.sudo().with_context(mail_notrack=True).write({'stage': 'unverified'})
@@ -166,7 +166,7 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         self._login_tp()
         _text, tree = self._get(self._url())
         pill = self._pill(self._card(tree).xpath('./summary')[0], 'stage')
-        self.assertIn('o_sc_chip_green', pill.xpath('.//button')[0].get('class'))
+        self.assertIn('o_pk_chip_green', pill.xpath('.//button')[0].get('class'))
         items = self._items(tree, pill)
         for value in ('unverified', 'active'):
             self.assertIsNone(items[value].get('data-sc-pill-action'), value)
@@ -180,8 +180,8 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         pill = self._pill(card.xpath('./summary')[0], 'stage')
         self.assertIsNotNone(pill)
         self.assertEqual(pill.get('data-sc-pill-readonly'), '1')
-        self.assertIn('o_sc_chip_red', pill.get('class'))
-        self.assertFalse(card.xpath('.//button[contains(@class, "o_sc_pill_select")]'))
+        self.assertIn('o_pk_chip_red', pill.get('class'))
+        self.assertFalse(card.xpath('.//button[contains(@class, "o_pk_pill_select")]'))
         self.assertIsNone(self._pill(card, 'consent'))
         self.assertIsNone(self._pill(card, 'visibility'))
 
@@ -350,25 +350,25 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         self.assertEqual(consent.get('data-sc-field'), 'parental_consent')
         self.assertEqual(consent.get('data-sc-old-value'), '')
         toggle = consent.xpath('.//button')[0]
-        self.assertIn('o_sc_chip_yellow', toggle.get('class'))
+        self.assertIn('o_pk_chip_yellow', toggle.get('class'))
         self.assertIn('To be specified', ' '.join(toggle.itertext()))
         items = self._items(tree, consent)
         self.assertEqual(list(items), ['yes', 'no', 'na', ''])
-        swatch = {k: v.xpath('.//span[contains(@class, "o_sc_pill_swatch")]')[0].get('class')
+        swatch = {k: v.xpath('.//span[contains(@class, "o_pk_pill_swatch")]')[0].get('class')
                   for k, v in items.items()}
-        self.assertIn('o_sc_chip_green', swatch['yes'])
-        self.assertIn('o_sc_chip_red', swatch['no'])
-        self.assertIn('o_sc_chip_ghost', swatch['na'])
-        self.assertIn('o_sc_chip_yellow', swatch[''])
+        self.assertIn('o_pk_chip_green', swatch['yes'])
+        self.assertIn('o_pk_chip_red', swatch['no'])
+        self.assertIn('o_pk_chip_ghost', swatch['na'])
+        self.assertIn('o_pk_chip_yellow', swatch[''])
         self.assertEqual(items[''].get('data-sc-pill-post'), '', 'blank is pickable')
         visibility = self._pill(row, 'visibility')
         self.assertEqual(visibility.get('data-sc-field'), 'hidden_from_coaches')
         self.assertEqual(visibility.get('data-sc-old-value'), '0')
-        self.assertIn('o_sc_chip_ghost', visibility.xpath('.//button')[0].get('class'))
+        self.assertIn('o_pk_chip_ghost', visibility.xpath('.//button')[0].get('class'))
         vitems = self._items(tree, visibility)
         self.assertEqual(list(vitems), ['0', '1'])
-        self.assertIn('o_sc_chip_yellow',
-                      vitems['1'].xpath('.//span[contains(@class, "o_sc_pill_swatch")]')[0].get('class'))
+        self.assertIn('o_pk_chip_yellow',
+                      vitems['1'].xpath('.//span[contains(@class, "o_pk_pill_swatch")]')[0].get('class'))
         # The Details edit view holds the dates only now.
         self.assertEqual(self._fields(details.xpath('.//*[@data-sc-edit-view="edit"]')[0]), [
             'diagnosis', 'sc_injury_date', 'predicted_resolution_date', 'resolution_date'])
@@ -382,10 +382,10 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         self.assertRefreshes(payload, key)
         node = self._fragment(self._url(), key)
         consent = self._pill(node, 'consent')
-        self.assertIn('o_sc_chip_red', consent.xpath('.//button')[0].get('class'))
+        self.assertIn('o_pk_chip_red', consent.xpath('.//button')[0].get('class'))
         self.assertEqual(consent.get('data-sc-old-value'), 'no')
         visibility = self._pill(node, 'visibility')
-        self.assertIn('o_sc_chip_yellow', visibility.xpath('.//button')[0].get('class'))
+        self.assertIn('o_pk_chip_yellow', visibility.xpath('.//button')[0].get('class'))
         self.assertEqual(visibility.get('data-sc-old-value'), '1')
         self.assertFragmentMatchesPage(self._url(), key)
         # Back to blank.
@@ -401,7 +401,7 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         opens = notes.xpath('.//*[starts-with(@data-sc-sheet-open, "sc_note_history_sheet_")]')
         self.assertEqual(len(opens), 1)
         self.assertEqual(opens[0].get('data-sc-sheet-open'), 'sc_note_history_sheet_%s' % self.injury.id)
-        self.assertTrue(opens[0].xpath('ancestor::div[contains(@class, "o_sc_edit_card_head")]'))
+        self.assertTrue(opens[0].xpath('ancestor::div[contains(@class, "o_pk_edit_card_head")]'))
         for props in notes.xpath('.//owl-component/@props'):
             self.assertNotIn('historySheet', json.loads(props))
         self.assertEqual(notes.xpath('.//dialog[starts-with(@id, "sc_note_history_sheet_")]/@id'),

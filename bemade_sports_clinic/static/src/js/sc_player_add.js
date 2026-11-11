@@ -1,5 +1,5 @@
 /*
- * Task 1655 — the inline « create a player » panel (inert outside .o_sc_app).
+ * Task 1655 — the inline « create a player » panel (inert outside .o_pk_app).
  *
  * form[data-sc-player-add]: once a first AND a last name are typed, the
  * existence check (GET /my/app/player-check, 300 ms after the last key; a
@@ -166,7 +166,7 @@ function showError(form, message, field) {
             ec.open = true;
         }
         const note = document.createElement("p");
-        note.className = "o_sc_field_message o_sc_field_error";
+        note.className = "o_pk_field_message o_pk_field_error";
         note.setAttribute("role", "alert");
         note.dataset.scPlayerAddFieldError = field;
         note.textContent = message;
@@ -240,7 +240,7 @@ function schedule(form) {
 
 function playerForm(target) {
     const form = target && target.closest && target.closest("form[data-sc-player-add]");
-    return form && form.closest(".o_sc_app") ? form : null;
+    return form && form.closest(".o_pk_app") ? form : null;
 }
 
 document.addEventListener("input", (ev) => {
@@ -402,7 +402,7 @@ document.addEventListener("pk:form-reset", (ev) => {
 
 // A panel re-opened with typed values (a refused create): check at once.
 function boot() {
-    for (const form of document.querySelectorAll(".o_sc_app form[data-sc-player-add]")) {
+    for (const form of document.querySelectorAll(".o_pk_app form[data-sc-player-add]")) {
         const region = form.querySelector("[data-sc-player-check]");
         if (region && !checkHints.has(region) && !region.querySelector("[data-sc-check-results]")) {
             checkHints.set(region, region.innerHTML);

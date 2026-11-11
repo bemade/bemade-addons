@@ -4,7 +4,7 @@
  * longer hard-coded (see pkLeaveTarget).
  *
  * pkConfirm({title, message, confirm, cancel}) → Promise<boolean>: an app
- * sheet (<dialog class="o_sc_sheet">, built once, reused) with « Cancel » /
+ * sheet (<dialog class="o_pk_sheet">, built once, reused) with « Cancel » /
  * the confirm button; Escape or a tap outside = cancel.
  *
  * pkLeavePage(message): the viewer just lost access to this page (e.g. they
@@ -29,27 +29,27 @@ let sheet = null;
 
 function build() {
     const dialog = document.createElement("dialog");
-    dialog.className = "o_sc_sheet o_sc_confirm_sheet";
+    dialog.className = "o_pk_sheet o_pk_confirm_sheet";
     dialog.setAttribute("aria-labelledby", "sc_confirm_title");
     dialog.dataset.pkConfirm = "1";
     dialog.innerHTML = `
-        <div class="o_sc_sheet_head"><h2 class="o_sc_sheet_title" id="sc_confirm_title"></h2></div>
-        <div class="o_sc_sheet_body">
-            <p class="o_sc_confirm_message"></p>
-            <div class="o_sc_form_actions">
-                <button type="button" class="o_sc_btn o_sc_btn_ghost" data-pk-confirm-cancel="1"></button>
-                <button type="button" class="o_sc_btn o_sc_btn_danger" data-pk-confirm-ok="1"></button>
+        <div class="o_pk_sheet_head"><h2 class="o_pk_sheet_title" id="sc_confirm_title"></h2></div>
+        <div class="o_pk_sheet_body">
+            <p class="o_pk_confirm_message"></p>
+            <div class="o_pk_form_actions">
+                <button type="button" class="o_pk_btn o_pk_btn_ghost" data-pk-confirm-cancel="1"></button>
+                <button type="button" class="o_pk_btn o_pk_btn_danger" data-pk-confirm-ok="1"></button>
             </div>
         </div>`;
-    (document.querySelector(".o_sc_app") || document.body).appendChild(dialog);
+    (document.querySelector(".o_pk_app") || document.body).appendChild(dialog);
     return dialog;
 }
 
 export function pkConfirm({ title = "", message = "", confirm = "OK", cancel = "Cancel" } = {}) {
     sheet = sheet && sheet.isConnected ? sheet : build();
     const dialog = sheet;
-    dialog.querySelector(".o_sc_sheet_title").textContent = title;
-    dialog.querySelector(".o_sc_confirm_message").textContent = message;
+    dialog.querySelector(".o_pk_sheet_title").textContent = title;
+    dialog.querySelector(".o_pk_confirm_message").textContent = message;
     const ok = dialog.querySelector("[data-pk-confirm-ok]");
     const no = dialog.querySelector("[data-pk-confirm-cancel]");
     ok.textContent = confirm;

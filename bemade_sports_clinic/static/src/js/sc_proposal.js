@@ -1,5 +1,5 @@
 /*
- * Task 1603 — follow-up proposals (inert outside .o_sc_app).
+ * Task 1603 — follow-up proposals (inert outside .o_pk_app).
  *
  * A save may answer ``propose`` (controllers/app_shell.py, SAVE_REGISTRY
  * ``propose``; payload documented in models/patient_return_proposal.py):
@@ -36,7 +36,7 @@ import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 const APPLY_URL = "/my/app/apply-proposal";
 
 function sheet() {
-    return document.querySelector(".o_sc_app #sc_proposal_sheet");
+    return document.querySelector(".o_pk_app #sc_proposal_sheet");
 }
 
 function el(tag, className, text) {
@@ -59,7 +59,7 @@ function buildRow(item) {
     row.dataset.scProposalItem = itemKey(item);
     const head = el(item.tickable ? "label" : "div", "o_sc_proposal_head");
     if (item.tickable) {
-        head.classList.add("o_sc_check");
+        head.classList.add("o_pk_check");
         const box = el("input");
         box.type = "checkbox";
         box.checked = item.checked !== false;
@@ -73,7 +73,7 @@ function buildRow(item) {
     change.append(el("span", "o_sc_proposal_arrow", "→"));
     if (item.type === "selection" && Array.isArray(item.options)) {
         // Task 1670: a status row — the field's own choices.
-        const select = el("select", "o_sc_input o_sc_proposal_select");
+        const select = el("select", "o_pk_input o_sc_proposal_select");
         for (const option of item.options) {
             const node = el("option", null, option.label);
             node.value = option.value;
@@ -84,7 +84,7 @@ function buildRow(item) {
         select.setAttribute("aria-label", item.label);
         change.append(select);
     } else if (item.editable) {
-        const input = el("input", "o_sc_input o_sc_proposal_date");
+        const input = el("input", "o_pk_input o_sc_proposal_date");
         input.type = "date";
         input.value = item.proposed || "";
         input.dataset.scProposalValue = "1";
@@ -101,7 +101,7 @@ function buildRow(item) {
         row.dataset.scProposalNeedsDate = "1";
     }
     if (item.hint) {
-        row.append(el("p", "o_sc_hint o_sc_proposal_hint", item.hint));
+        row.append(el("p", "o_pk_hint o_sc_proposal_hint", item.hint));
     }
     return row;
 }

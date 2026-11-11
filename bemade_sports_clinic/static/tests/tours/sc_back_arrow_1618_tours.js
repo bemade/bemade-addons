@@ -33,7 +33,7 @@ tours.add("sc_1618_laptop_drill_down", {
     steps: () => [
         {
             content: "Team page (players tab): open a player of the roster",
-            trigger: '.o_sc_app section[data-sc-tab-panel="players"] a.o_sc_link_row_main[href*="/my/player?player_id="]',
+            trigger: '.o_pk_app section[data-sc-tab-panel="players"] a.o_pk_link_row_main[href*="/my/player?player_id="]',
             run(helpers) {
                 reloadIfRestored();
                 return helpers.click();
@@ -42,18 +42,18 @@ tours.add("sc_1618_laptop_drill_down", {
         },
         {
             content: "Player page after a drill-down: breadcrumb AND back arrow",
-            trigger: 'nav.o_sc_crumbs ol li[aria-current="page"]',
+            trigger: 'nav.o_pk_crumbs ol li[aria-current="page"]',
             run() {
                 assert(window.location.pathname === "/my/player", window.location.href);
-                assert(visible("nav.o_sc_crumbs"), "laptop: no trail");
-                assert(visible(".o_sc_back"), "drill-down: back arrow hidden on a laptop");
-                document.querySelector("a.o_sc_back").click();
+                assert(visible("nav.o_pk_crumbs"), "laptop: no trail");
+                assert(visible(".o_pk_back"), "drill-down: back arrow hidden on a laptop");
+                document.querySelector("a.o_pk_back").click();
             },
             expectUnloadPage: true,
         },
         {
             content: "Back on the team's players tab",
-            trigger: '.o_sc_app section[data-sc-tab-panel="players"]',
+            trigger: '.o_pk_app section[data-sc-tab-panel="players"]',
             run() {
                 assert(window.location.pathname === "/my/team", window.location.href);
             },
@@ -69,7 +69,7 @@ tours.add("sc_1618_laptop_sideways", {
             // details popout; the activity PAGE stays the link's target (a
             // new tab, a notification's deep link) — followed here.
             content: "Activities list (with its filter): open the activity",
-            trigger: '.o_sc_app [data-sc-activity-row] a.o_sc_link_row_main[href^="/my/activity/"]',
+            trigger: '.o_pk_app [data-sc-activity-row] a.o_pk_link_row_main[href^="/my/activity/"]',
             run() {
                 reloadIfRestored();
                 window.location.assign(this.anchor.href);
@@ -78,20 +78,20 @@ tours.add("sc_1618_laptop_sideways", {
         },
         {
             content: "Activity page (parent = the player): arrow AND trail",
-            trigger: ".o_sc_app.o_sc_back_useful a.o_sc_back[data-pk-back]",
+            trigger: ".o_pk_app.o_pk_back_useful a.o_pk_back[data-pk-back]",
             run() {
                 assert(window.location.pathname.startsWith("/my/activity/"), window.location.href);
-                assert(visible("nav.o_sc_crumbs"), "laptop: no trail");
-                assert(visible(".o_sc_back"), "sideways: back arrow hidden on a laptop");
-                const href = document.querySelector("a.o_sc_back").getAttribute("href");
+                assert(visible("nav.o_pk_crumbs"), "laptop: no trail");
+                assert(visible(".o_pk_back"), "sideways: back arrow hidden on a laptop");
+                const href = document.querySelector("a.o_pk_back").getAttribute("href");
                 assert(href.startsWith("/my/player?"), `back href is not the player: ${href}`);
-                document.querySelector("a.o_sc_back").click();
+                document.querySelector("a.o_pk_back").click();
             },
             expectUnloadPage: true,
         },
         {
             content: "Back on the activities list we came from, its filter kept",
-            trigger: ".o_sc_app [data-sc-activity-row]",
+            trigger: ".o_pk_app [data-sc-activity-row]",
             run() {
                 assert(window.location.pathname === "/my/activities", window.location.href);
                 assert(window.location.search.includes("sc_clock=1"), window.location.href);
@@ -105,9 +105,9 @@ tours.add("sc_1618_laptop_standalone", {
     steps: () => [
         {
             content: "Deep link in a browser tab: arrow (to the parent) + trail",
-            trigger: 'nav.o_sc_crumbs ol li[aria-current="page"]',
+            trigger: 'nav.o_pk_crumbs ol li[aria-current="page"]',
             run() {
-                assert(visible(".o_sc_back"), "browser tab deep link: back arrow hidden");
+                assert(visible(".o_pk_back"), "browser tab deep link: back arrow hidden");
                 // Emulate the installed app (display-mode: standalone).
                 const original = window.matchMedia.bind(window);
                 window.matchMedia = (query) =>
@@ -119,10 +119,10 @@ tours.add("sc_1618_laptop_standalone", {
         },
         {
             content: "Installed: the arrow shows next to the trail",
-            trigger: ".o_sc_app.o_sc_back_useful a.o_sc_back",
+            trigger: ".o_pk_app.o_pk_back_useful a.o_pk_back",
             run() {
-                assert(visible(".o_sc_back"), "standalone: back arrow hidden");
-                assert(visible("nav.o_sc_crumbs"), "standalone: trail hidden");
+                assert(visible(".o_pk_back"), "standalone: back arrow hidden");
+                assert(visible("nav.o_pk_crumbs"), "standalone: trail hidden");
             },
         },
     ],
@@ -133,16 +133,16 @@ tours.add("sc_1618_phone_unchanged", {
     steps: () => [
         {
             content: "Team page: open a player of the roster",
-            trigger: '.o_sc_app section[data-sc-tab-panel="players"] a.o_sc_link_row_main[href*="/my/player?player_id="]',
+            trigger: '.o_pk_app section[data-sc-tab-panel="players"] a.o_pk_link_row_main[href*="/my/player?player_id="]',
             run: "click",
             expectUnloadPage: true,
         },
         {
             content: "Phone: the back chevron after a drill-down, no trail",
-            trigger: ".o_sc_app a.o_sc_back[data-pk-back]",
+            trigger: ".o_pk_app a.o_pk_back[data-pk-back]",
             run() {
-                assert(visible(".o_sc_back"), "phone: back chevron hidden");
-                assert(!visible("nav.o_sc_crumbs"), "phone: trail visible");
+                assert(visible(".o_pk_back"), "phone: back chevron hidden");
+                assert(!visible("nav.o_pk_crumbs"), "phone: trail visible");
             },
         },
     ],

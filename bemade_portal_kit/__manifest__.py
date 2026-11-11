@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.2.0',
+    'version': '19.0.1.3.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -91,7 +91,8 @@ so they are inert on other portal pages:
 
 Markup contract
 ---------------
-The scripts read and write ``pk`` names (version 1.2):
+The scripts read and write ``pk`` names (version 1.2; classes, tokens and
+theme attribute since version 1.3):
 
 * attributes ``data-pk-*``: ``app-shell``, ``db`` and ``uid`` on the shell
   root; ``back``; ``section``, ``edit-card``, ``edit-done``,
@@ -115,8 +116,28 @@ The scripts read and write ``pk`` names (version 1.2):
   exported constants, never repeats the strings. A device draft stored
   under the old ``sc_draft:`` prefix is moved under ``pk_draft:`` when read.
 
-The shell's classes (``o_sc_*``) are still those of the first consumer;
-they move to the kit in a later version.
+* classes ``o_pk_*``, the shell's generic components: the shell root
+  ``o_pk_app`` (outside of which the scripts are inert), the app bar, rail,
+  tabs, crumbs, cards and edit cards, rows, lists and add panels, fields,
+  pickers, pills, chips, sheets, toasts, switches and their parts. The
+  scripts read ``o_pk_app``, ``o_pk_appbar``, ``o_pk_content``,
+  ``o_pk_crumbs``, ``o_pk_list_add_panel``, ``o_pk_disclosure`` and
+  ``o_pk_switch``; they write ``o_pk_back_useful``, ``o_pk_popup_end`` /
+  ``o_pk_popup_up``, the confirm sheet's ``o_pk_sheet`` classes and a live
+  chip's tone ``o_pk_chip_<tone>`` (``red``, ``orange``, ``yellow``,
+  ``green``, ``secondary``, ``ghost``);
+* style tokens ``--pk-*``: the colour slots (``bg``, ``surface``,
+  ``surface-2``, ``line``, ``fg``, ``fg-2``, ``fg-3``, ``accent``,
+  ``accent-fg``, ``secondary``, ``ok``, ``warn``, ``bad``, ``overdue``,
+  ``tone-fg``, ``bar*``, ``hover``, ``focus``, ``shadow``), the fonts
+  (``font-title``, ``font-text``) and the scales (``text-*``, ``title-*``,
+  ``space-1`` to ``space-6``, ``radius-*``, ``tap``, ``rail-width``,
+  ``appbar-height``, ``tabs-height``, ``switch-*``, ``ribbon-h``);
+* the theme attribute ``data-pk-theme`` (``dark`` or ``light``) on the
+  shell root.
+
+The styles themselves (SCSS) and the brand palette (``--sc-*`` colours) are
+still those of the first consumer; they move to the kit in a later version.
 """,
     'author': 'Bemade Inc.',
     'maintainers': ['dureposd'],
@@ -154,6 +175,7 @@ they move to the kit in a later version.
             'bemade_portal_kit/static/src/js/pk_focus.js',
             'bemade_portal_kit/static/src/js/pk_list_header.js',
             'bemade_portal_kit/static/src/js/pk_user_menu.js',
+            'bemade_portal_kit/static/src/js/pk_live_count.js',
         ],
         'web.assets_unit_tests': [
             'bemade_portal_kit/static/tests/**/*',

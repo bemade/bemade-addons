@@ -10,13 +10,13 @@
     <template id="sc_app_settings_booking_emails" inherit_id="bemade_sports_clinic.sc_app_settings"
               name="Sports Clinic App: settings, booking emails">
         <xpath expr="//section[@id='sc_morning_summary']" position="after">
-            <section t-if="request.env.user._sc_booking_prefs_apply()" class="o_sc_section" id="sc_booking_emails"
+            <section t-if="request.env.user._sc_booking_prefs_apply()" class="o_pk_section" id="sc_booking_emails"
                      data-pk-section="settings.booking_emails">
                 <t t-call="bemade_sports_clinic.sc_section_header">
                     <t t-set="title">Booking emails</t>
                 </t>
                 <t t-set="sc_bk_pref" t-value="request.env.user.sc_booking_email_pref"/>
-                <form method="post" action="/my/app/pref/booking-emails" class="o_sc_segmented o_sc_segmented_full">
+                <form method="post" action="/my/app/pref/booking-emails" class="o_pk_segmented o_pk_segmented_full">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <button type="submit" name="sc_booking_email_pref" value="all"
                             t-att-aria-pressed="'true' if sc_bk_pref == 'all' else 'false'">All emails</button>
@@ -25,7 +25,7 @@
                     <button type="submit" name="sc_booking_email_pref" value="none"
                             t-att-aria-pressed="'true' if sc_bk_pref == 'none' else 'false'">None</button>
                 </form>
-                <p class="o_sc_meta o_sc_booking_emails_hint">All: an email for every booking, change and reminder. Daily summary: one email each morning with the day's bookings, plus an email at once for a change later the same day. None: no booking emails — see them in the app. Clients still get theirs.</p>
+                <p class="o_pk_meta o_sc_booking_emails_hint">All: an email for every booking, change and reminder. Daily summary: one email each morning with the day's bookings, plus an email at once for a change later the same day. None: no booking emails — see them in the app. Clients still get theirs.</p>
             </section>
         </xpath>
     </template>

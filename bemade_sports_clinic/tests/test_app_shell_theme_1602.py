@@ -5,7 +5,7 @@ Acceptance criteria covered here:
 
 * UC-T1 Parameter ``bemade_sports_clinic.sc_theme_choice_enabled`` absent /
   off (the default): a user whose saved ``sc_theme`` is « light » gets the
-  dark shell (``data-sc-theme``, body class, ``theme-color`` meta), and NO
+  dark shell (``data-pk-theme``, body class, ``theme-color`` meta), and NO
   theme toggle markup — neither the app-bar moon nor the « Plus › Apparence »
   block. The saved preference is kept untouched.
 * UC-T2 Parameter on: the same user gets the light shell again and both
@@ -32,15 +32,15 @@ class TestAppShellTheme1602(AppShellCommon):
         self._login_tp()
 
     def _assert_theme(self, tree, theme):
-        self.assertEqual(self._shell(tree).get('data-sc-theme'), theme)
+        self.assertEqual(self._shell(tree).get('data-pk-theme'), theme)
         body_class = tree.xpath('//body/@class')[0].split()
-        self.assertIn('o_sc_app_body_%s' % theme, body_class)
+        self.assertIn('o_pk_app_body_%s' % theme, body_class)
         meta = tree.xpath('//meta[@name="theme-color"]/@content')
         self.assertEqual(meta, ['#243925' if theme == 'light' else '#120e12'])
 
     @staticmethod
     def _toggles(tree):
-        return tree.xpath('//*[@name="sc_theme"] | //*[contains(@class, "o_sc_theme_toggle")]'
+        return tree.xpath('//*[@name="sc_theme"] | //*[contains(@class, "o_pk_theme_toggle")]'
                           ' | //*[@id="sc_appearance"]')
 
     # -- UC-T1 -----------------------------------------------------------
@@ -64,7 +64,7 @@ class TestAppShellTheme1602(AppShellCommon):
         self._theme_choice(True)
         _text, tree = self._get('/my/home')
         self._assert_theme(tree, 'light')
-        self.assertTrue(tree.xpath('//form[contains(@class, "o_sc_theme_toggle")]'
+        self.assertTrue(tree.xpath('//form[contains(@class, "o_pk_theme_toggle")]'
                                    '//button[@name="sc_theme"]'))
         _text, tree = self._get('/my/app/settings')  # task 1606: out of « Plus »
         self._assert_theme(tree, 'light')

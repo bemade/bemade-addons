@@ -15,7 +15,7 @@ in test_app_shell_tours_1581.py):
   archived announcement carries the « Archived » chip and state.
 * UC-H2 Empty states: each history fragment says so when there is nothing.
 * UC-H3 Triggers: the team announcement, the training recommendation and the
-  injury notes each have a green link (``o_sc_link_btn``) opening a sheet
+  injury notes each have a green link (``o_pk_link_btn``) opening a sheet
   with ``data-sc-lazy-url`` + ``data-sc-lazy-fresh``; the announcement history
   is no longer rendered with the page; the injury page's « Note History »
   button is gone.
@@ -106,12 +106,12 @@ class History1581Common(Parity1577Common):
     @staticmethod
     def _entries(tree):
         out = []
-        for li in tree.xpath('//li[contains(concat(" ", @class, " "), " o_sc_history_entry ")]'):
+        for li in tree.xpath('//li[contains(concat(" ", @class, " "), " o_pk_history_entry ")]'):
             out.append({
-                'when': ''.join(li.xpath('.//*[contains(@class, "o_sc_history_when")]//text()')).strip(),
-                'author': ''.join(li.xpath('.//*[contains(@class, "o_sc_history_author")]//text()')).strip(),
-                'chips': [c.text_content().strip() for c in li.xpath('.//*[contains(@class, "o_sc_chip")]')],
-                'body': ''.join(li.xpath('.//*[contains(@class, "o_sc_history_body")]//text()')).strip(),
+                'when': ''.join(li.xpath('.//*[contains(@class, "o_pk_history_when")]//text()')).strip(),
+                'author': ''.join(li.xpath('.//*[contains(@class, "o_pk_history_author")]//text()')).strip(),
+                'chips': [c.text_content().strip() for c in li.xpath('.//*[contains(@class, "o_pk_chip")]')],
+                'body': ''.join(li.xpath('.//*[contains(@class, "o_pk_history_body")]//text()')).strip(),
                 'state': li.get('data-sc-history-state'),
                 'text': ' '.join(li.text_content().split()),
                 'scope': li.get('data-sc-scope'),
@@ -188,7 +188,7 @@ class TestAppShellHistory1581(History1581Common):
                  'No note history yet.')):
             tree = self._fragment(url)
             self.assertFalse(self._entries(tree), url)
-            self.assertEqual(tree.xpath('//*[contains(@class, "o_sc_empty")]/text()'), [message], url)
+            self.assertEqual(tree.xpath('//*[contains(@class, "o_pk_empty")]/text()'), [message], url)
 
     # -- UC-H3 -----------------------------------------------------------
     def _sheet(self, tree, sheet_id):
@@ -200,10 +200,10 @@ class TestAppShellHistory1581(History1581Common):
         self._login_tp()
         _text, tree = self._get(self.team_url)
         link = tree.xpath('//*[@data-pk-section="team.announcement.area"]'
-                          '//*[contains(@class, "o_sc_section_header")]'
+                          '//*[contains(@class, "o_pk_section_header")]'
                           '//*[@data-sc-sheet-open="sc_announcement_history_sheet"]')
         self.assertEqual(len(link), 1)
-        self.assertIn('o_sc_link_btn', link[0].get('class'))
+        self.assertIn('o_pk_link_btn', link[0].get('class'))
         sheet = self._sheet(tree, 'sc_announcement_history_sheet')
         self.assertEqual(sheet.get('data-sc-lazy-url'), self.ann_url)
         self.assertEqual(sheet.get('data-sc-lazy-fresh'), '1')
@@ -220,8 +220,8 @@ class TestAppShellHistory1581(History1581Common):
         # Pencil paradigm (owner review 2026-10-11): ONE « History » link in
         # the notes card's head, reachable while reading.
         links = tree.xpath('//details[@id="injury-%s"]//section[@data-pk-section="injury.notes"]'
-                           '/*[contains(@class, "o_sc_edit_card_head")]'
-                           '//*[@data-sc-sheet-open="sc_note_history_sheet_%s"][contains(@class, "o_sc_link_btn")]'
+                           '/*[contains(@class, "o_pk_edit_card_head")]'
+                           '//*[@data-sc-sheet-open="sc_note_history_sheet_%s"][contains(@class, "o_pk_link_btn")]'
                            % (self.injury.id, self.injury.id))
         self.assertEqual(len(links), 1)
 

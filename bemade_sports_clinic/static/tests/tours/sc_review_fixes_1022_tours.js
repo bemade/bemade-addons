@@ -134,7 +134,7 @@ tours.add("sc_1022_player_add_team", {
         },
         {
             content: "« + Add »",
-            trigger: 'button.o_sc_list_add[aria-controls="sc_add_player"]',
+            trigger: 'button.o_pk_list_add[aria-controls="sc_add_player"]',
             run: "click",
         },
         ...panelSteps(),

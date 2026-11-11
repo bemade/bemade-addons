@@ -45,12 +45,12 @@ tours.add("sc_1624_dashboard_round1", {
         },
         {
             content: "« Follow » in the details",
-            trigger: `${WATCH} .o_sc_row_detail:not([hidden]) button[data-sc-follow][data-sc-followed="0"]`,
+            trigger: `${WATCH} .o_pk_row_detail:not([hidden]) button[data-sc-follow][data-sc-followed="0"]`,
             run: "click",
         },
         {
             content: "Followed in place (no reload)",
-            trigger: `${WATCH} .o_sc_row_detail:not([hidden]) button[data-sc-follow][data-sc-followed="1"]`,
+            trigger: `${WATCH} .o_pk_row_detail:not([hidden]) button[data-sc-follow][data-sc-followed="1"]`,
             run() {
                 assert(window.__sc1624NoReload, "the page reloaded");
                 const on = this.anchor.querySelector('[data-sc-follow-label="on"]');

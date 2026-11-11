@@ -169,7 +169,7 @@ class TestFragmentsEvent1611(FragmentsCommon):
         payload = self._saved(note, 'patient_id', str(self.player.id))
         self.assertRefreshes(payload, key)
         read = self._fragment('/my/notepad', key)
-        chips = [self._text(chip) for chip in read.xpath('.//span[contains(concat(" ", @class, " "), " o_sc_chip ")]')]
+        chips = [self._text(chip) for chip in read.xpath('.//span[contains(concat(" ", @class, " "), " o_pk_chip ")]')]
         self.assertEqual(chips, [self.player._portal_list_name()])
         self.assertEqual(payload['display'], self.player._portal_list_name())
         self._saved(note, 'note', 'Synthetic jot, edited')
@@ -198,4 +198,4 @@ class TestFragmentsMissingTimesheets1611(FragmentsMixin, EventTimesheets1584Comm
         self.authenticate('p77.cadmin@example.com', 'p77-cadmin-pass')
         banner = self._fragment(url, key)
         self.assertNotIn('P77 Internal TP', self._text(banner))
-        self.assertFalse(banner.xpath('.//*[contains(@class, "o_sc_banner")]'))
+        self.assertFalse(banner.xpath('.//*[contains(@class, "o_pk_banner")]'))

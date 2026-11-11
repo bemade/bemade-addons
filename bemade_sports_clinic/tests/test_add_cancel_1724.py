@@ -3,7 +3,7 @@
 Acceptance criteria:
 
 * AC-1 Every inline add panel opened from a list header
-  (``details.o_sc_list_add_panel``: activity, emergency contact, injury,
+  (``details.o_pk_list_add_panel``: activity, emergency contact, injury,
   note, player add — team page and players list —, player request, medical
   list items) has a ``button[data-pk-list-add-cancel]`` « Cancel » next to
   its submit (type=button, never submits). Bottom-sheet adds (documents,
@@ -28,8 +28,8 @@ class TestAddCancel1724(PlayerAdd1655Common):
         panels = tree.xpath('//details[@id="%s"]' % panel_id)
         self.assertEqual(len(panels), 1, panel_id)
         panel = panels[0]
-        self.assertIn('o_sc_list_add_panel', panel.get('class'), panel_id)
-        buttons = panel.xpath('.//form//*[contains(concat(" ", @class, " "), " o_sc_form_actions ")]'
+        self.assertIn('o_pk_list_add_panel', panel.get('class'), panel_id)
+        buttons = panel.xpath('.//form//*[contains(concat(" ", @class, " "), " o_pk_form_actions ")]'
                               '/button[@data-pk-list-add-cancel]')
         self.assertEqual(len(buttons), 1, panel_id)
         self.assertEqual(buttons[0].get('type'), 'button', panel_id)
@@ -56,7 +56,7 @@ class TestAddCancel1724(PlayerAdd1655Common):
         # Every header-toggled panel of the player info tab (medical lists
         # included) carries one.
         _text, tree = self._get(player + '&tab=info')
-        panels = tree.xpath('//details[contains(concat(" ", @class, " "), " o_sc_list_add_panel ")]')
+        panels = tree.xpath('//details[contains(concat(" ", @class, " "), " o_pk_list_add_panel ")]')
         self.assertTrue(panels)
         for panel in panels:
             self.assertEqual(len(panel.xpath('.//button[@data-pk-list-add-cancel]')), 1, panel.get('id'))

@@ -19,7 +19,7 @@ const CARD = "details.o_sc_injury_item[open]";
 const DETAILS = `${CARD} [data-pk-edit-card="injury-details"]`;
 // Task 1675: the Notes section (one « History » in its head), one edit card per note.
 const NOTES = `${CARD} section[data-pk-section="injury.notes"]`;
-const FIELD = `${NOTES} .o_sc_autosave[data-sc-field="external_notes"]`;
+const FIELD = `${NOTES} .o_pk_autosave[data-sc-field="external_notes"]`;
 const PROPOSAL = "#sc_proposal_sheet";
 const NEW_NOTE = "Synthetic rewritten 1631";
 
@@ -44,8 +44,8 @@ async function waitFor(check, what, timeout = 5000) {
 }
 
 function toggle(scope, key, tone = "") {
-    return `${scope} [data-sc-pill-select][data-sc-pill-key="${key}"]:not([aria-busy]) button.o_sc_pill_select${
-        tone ? `.o_sc_chip_${tone}` : ""
+    return `${scope} [data-sc-pill-select][data-sc-pill-key="${key}"]:not([aria-busy]) button.o_pk_pill_select${
+        tone ? `.o_pk_chip_${tone}` : ""
     }`;
 }
 
@@ -67,7 +67,7 @@ tours.add("sc_1631_injury_card", {
             trigger: toggle(`${CARD} > summary`, "stage", "red"),
             run() {
                 window.__sc1631NoReload = true;
-                assert(!document.querySelector(`${CARD} .o_sc_autosave[data-sc-field="stage"]`), "a status selector in the body");
+                assert(!document.querySelector(`${CARD} .o_pk_autosave[data-sc-field="stage"]`), "a status selector in the body");
                 assert(document.querySelector(`${CARD} > summary button[data-sc-injury-quick="resolve"]`), "no quick Resolve");
             },
         },
@@ -152,7 +152,7 @@ tours.add("sc_1631_injury_card", {
         // -- one Historique
         {
             content: "One notes « History », in the head",
-            trigger: `${NOTES} .o_sc_edit_card_head [data-sc-sheet-open^="sc_note_history_sheet_"]`,
+            trigger: `${NOTES} .o_pk_edit_card_head [data-sc-sheet-open^="sc_note_history_sheet_"]`,
             run() {
                 const links = document.querySelectorAll(`${NOTES} [data-sc-sheet-open^="sc_note_history_sheet_"]`);
                 assert(links.length === 1, `${links.length} History links`);
@@ -176,7 +176,7 @@ tours.add("sc_1631_injury_card", {
         // -- « Effacer », then a new note: one history entry
         {
             content: "« Effacer » the external note",
-            trigger: `${FIELD} .o_sc_clear_btn`,
+            trigger: `${FIELD} .o_pk_clear_btn`,
             run: "click",
         },
         {

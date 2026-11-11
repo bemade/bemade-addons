@@ -151,8 +151,8 @@ class TestAppShellPwa1542(AppShellCommon):
             self.assertTrue(tree.xpath('//button[@data-sc-install-prompt]'))
         # Not on the tabs / rail, no banner on the home.
         _text, tree = self._get('/my/home')
-        self.assertNotIn('install', self._nav_keys(tree, 'o_sc_tabs'))
-        self.assertNotIn('install', self._nav_keys(tree, 'o_sc_rail_nav'))
+        self.assertNotIn('install', self._nav_keys(tree, 'o_pk_tabs'))
+        self.assertNotIn('install', self._nav_keys(tree, 'o_pk_rail_nav'))
         self.assertFalse(tree.xpath('//*[@data-sc-install]'))
 
     def test_manifest_links_in_shell_only(self):

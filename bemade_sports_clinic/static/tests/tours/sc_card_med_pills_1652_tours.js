@@ -45,7 +45,7 @@ tours.add("sc_1652_card_pill", {
                 const line = pill.closest(".o_sc_row_status");
                 assert(line.matches("[data-sc-row-med]"), "not on the card's medical line");
                 const above = line.previousElementSibling;
-                const status = above && above.querySelector(".o_sc_status_pill, .o_sc_pill_select");
+                const status = above && above.querySelector(".o_pk_status_pill, .o_pk_pill_select");
                 assert(status, "no Match / Practice line right above it");
                 const diff = Math.abs(pill.getBoundingClientRect().height - status.getBoundingClientRect().height);
                 assert(diff <= 1, `heights differ: ${pill.getBoundingClientRect().height} vs ${status.getBoundingClientRect().height}`);
@@ -74,7 +74,7 @@ tours.add("sc_1652_card_pill", {
         },
         {
             content: "Turn off « Risque vital » (task 1726: a switch — tap its row)",
-            trigger: 'dialog[id^="sc_med_card_allergy_"][open] [data-sc-med-item] [data-sc-edit-view="edit"]:not([hidden]) label.o_sc_switch:has(input[data-sc-med-item-field="life_threatening"])',
+            trigger: 'dialog[id^="sc_med_card_allergy_"][open] [data-sc-med-item] [data-sc-edit-view="edit"]:not([hidden]) label.o_pk_switch:has(input[data-sc-med-item-field="life_threatening"])',
             run: "click",
         },
         {
@@ -86,7 +86,7 @@ tours.add("sc_1652_card_pill", {
         },
         {
             content: "The card refreshed: the Allergies pill turned yellow, no reload",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(
                     () => document.querySelector(`button.o_sc_med_minor[data-sc-med-card-sheet="${window.__sc1652Sheet}"]`),

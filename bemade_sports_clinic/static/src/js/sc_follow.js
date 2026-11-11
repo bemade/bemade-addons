@@ -1,7 +1,7 @@
 /*
  * Task 1624, review round 1 (owner 2026-10-29) — « Suivre / Ne plus suivre »
  * a player (template sc_follow_toggle: the player cards' « Details » and the
- * player page header). Inert outside .o_sc_app.
+ * player page header). Inert outside .o_pk_app.
  *
  * The toggle is a small form posting to /my/player/<id>/follow (the no-JS
  * fallback). Here it is saved with fetch, no reload: on success every toggle
@@ -19,7 +19,7 @@ import { requestRefresh } from "@bemade_sports_clinic/js/sc_fragments";
 const FOLLOWED_SECTIONS = "sc.dashboard:followed:*";
 
 function setFollowed(playerId, followed) {
-    for (const button of document.querySelectorAll(`.o_sc_app [data-sc-follow="${playerId}"]`)) {
+    for (const button of document.querySelectorAll(`.o_pk_app [data-sc-follow="${playerId}"]`)) {
         button.dataset.scFollowed = followed ? "1" : "0";
         button.setAttribute("aria-pressed", followed ? "true" : "false");
         // Task 1736: the top-bar ★ (an icon button) keeps its look — the
@@ -30,8 +30,8 @@ function setFollowed(playerId, followed) {
                 button.setAttribute("title", title);
             }
         } else {
-            button.classList.toggle("o_sc_btn_primary", followed);
-            button.classList.toggle("o_sc_btn_ghost", !followed);
+            button.classList.toggle("o_pk_btn_primary", followed);
+            button.classList.toggle("o_pk_btn_ghost", !followed);
         }
         for (const label of button.querySelectorAll("[data-sc-follow-label]")) {
             label.hidden = (label.dataset.scFollowLabel === "on") !== followed;
@@ -46,7 +46,7 @@ function setFollowed(playerId, followed) {
 document.addEventListener("submit", async (ev) => {
     const form = ev.target;
     if (!(form instanceof HTMLFormElement) || !form.classList.contains("o_sc_follow_form")
-            || !form.closest(".o_sc_app")) {
+            || !form.closest(".o_pk_app")) {
         return;
     }
     ev.preventDefault();

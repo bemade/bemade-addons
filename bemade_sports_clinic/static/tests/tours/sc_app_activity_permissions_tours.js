@@ -15,7 +15,7 @@ function assert(condition, message) {
 const PANEL = 'section[data-sc-tab-panel="activities"]:not([hidden])';
 
 function rowTitles() {
-    return [...document.querySelectorAll(`${PANEL} [data-sc-activity-row] .o_sc_row_title`)].map(
+    return [...document.querySelectorAll(`${PANEL} [data-sc-activity-row] .o_pk_row_title`)].map(
         (el) => el.textContent.trim()
     );
 }
@@ -36,7 +36,7 @@ registry.category("web_tour.tours").add("sc_1589_coach_own_activities", {
         },
         {
             content: "« Fait » on the activity assigned to the coach",
-            trigger: `${PANEL} [data-sc-activity-row]:has(.o_sc_row_title:contains("Coach assigned task")) button[data-sc-action="activity.complete"]`,
+            trigger: `${PANEL} [data-sc-activity-row]:has(.o_pk_row_title:contains("Coach assigned task")) button[data-sc-action="activity.complete"]`,
             run: "click",
         },
         {

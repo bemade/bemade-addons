@@ -73,7 +73,7 @@ function resolveSteps(diagnosis, { open, focus }) {
         },
         {
             content: "The card reads « resolved », its « Resolve » button gone — no reload",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => !document.querySelector(`${SHEET}[open]`), "sheet closed");
                 await waitFor(
