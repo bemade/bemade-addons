@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="zeffy_campaign_view_list" model="ir.ui.view">
+        <field name="name">zeffy.campaign.list</field>
+        <field name="model">zeffy.campaign</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0">
+                <field name="name" />
+                <field name="campaign_type" />
+                <field name="status" />
+                <field name="utm_campaign_id" />
+                <field name="goal_amount" />
+                <field name="amount_raised" />
+                <field name="currency_id" column_invisible="1" />
+                <field name="company_id" groups="base.group_multi_company" />
+            </list>
+        </field>
+    </record>
+
+    <record id="zeffy_campaign_view_form" model="ir.ui.view">
+        <field name="name">zeffy.campaign.form</field>
+        <field name="model">zeffy.campaign</field>
+        <field name="arch" type="xml">
+            <form create="0">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" /></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="campaign_type" />
+                            <field name="category" />
+                            <field name="status" />
+                            <field name="is_archived" />
+                            <field name="deleted_at" invisible="not deleted_at" />
+                            <field name="url" widget="url" />
+                        </group>
+                        <group>
+                            <field name="utm_campaign_id" />
+                            <field name="goal_amount" />
+                            <field name="amount_raised" />
+                            <field name="currency_id" invisible="1" />
+                            <field name="zeffy_id" />
+                            <field
+                name="company_id"
+                groups="base.group_multi_company"
+              />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Payments" name="payments">
+                            <field name="payment_ids" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="zeffy_campaign_view_search" model="ir.ui.view">
+        <field name="name">zeffy.campaign.search</field>
+        <field name="model">zeffy.campaign</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" />
+                <field name="utm_campaign_id" />
+                <filter
+          name="active_campaigns"
+          string="Active"
+          domain="[('status', '=', 'active')]"
+        />
+                <filter
+          name="group_type"
+          string="Type"
+          context="{'group_by': 'campaign_type'}"
+        />
+            </search>
+        </field>
+    </record>
+
+    <record id="zeffy_campaign_action" model="ir.actions.act_window">
+        <field name="name">Zeffy Campaigns</field>
+        <field name="res_model">zeffy.campaign</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

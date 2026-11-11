@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <menuitem
+    id="menu_zeffy_root"
+    name="Zeffy"
+    parent="contacts.menu_contacts"
+    sequence="20"
+    groups="group_zeffy_user"
+  />
+    <menuitem
+    id="menu_zeffy_payment"
+    action="zeffy_payment_action"
+    parent="menu_zeffy_root"
+    sequence="10"
+  />
+    <menuitem
+    id="menu_zeffy_contact"
+    action="zeffy_contact_action"
+    parent="menu_zeffy_root"
+    sequence="20"
+  />
+    <menuitem
+    id="menu_zeffy_campaign"
+    action="zeffy_campaign_action"
+    parent="menu_zeffy_root"
+    sequence="30"
+  />
+</odoo>
