@@ -1,0 +1,162 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* product_cost_source
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-11 01:48+0000\n"
+"PO-Revision-Date: 2026-11-11 01:48+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid " Covers %(qty)s of %(total)s."
+msgstr " Couvre %(qty)s sur %(total)s."
+
+#. module: product_cost_source
+#: model_terms:ir.ui.view,arch_db:product_cost_source.res_config_settings_view_form
+msgid "<span class=\"ms-2\">months</span>"
+msgstr "<span class=\"ms-2\">mois</span>"
+
+#. module: product_cost_source
+#: model:ir.model,name:product_cost_source.model_res_config_settings
+msgid "Config Settings"
+msgstr "Paramètres de configuration"
+
+#. module: product_cost_source
+#: model_terms:ir.ui.view,arch_db:product_cost_source.res_config_settings_view_form
+msgid "Costing"
+msgstr "Coût de revient"
+
+#. module: product_cost_source
+#: model_terms:ir.ui.view,arch_db:product_cost_source.res_config_settings_view_form
+msgid ""
+"How long a price stays trustworthy when no vendor agreement backs it. A "
+"price covered by a date-bounded vendor pricelist stays firm for as long as "
+"that agreement runs, however old it is."
+msgstr ""
+"Pendant combien de temps un prix reste fiable quand aucune entente "
+"fournisseur ne le soutient. Un prix couvert par une liste de prix "
+"fournisseur à durée limitée reste ferme tant que l'entente est en vigueur, "
+"quel que soit son âge."
+
+#. module: product_cost_source
+#: model:ir.model.fields,help:product_cost_source.field_res_config_settings__price_age_months
+msgid ""
+"How many months a price stays trustworthy once nothing else backs it up.\n"
+"\n"
+"This only applies outside a vendor agreement. A price covered by a date-bounded vendor pricelist is firm for as long as that agreement runs, however old the price is.\n"
+"\n"
+"Outside one, a price older than this is reported as an estimate, and the components responsible are named so they can be requoted."
+msgstr ""
+"Pendant combien de mois un prix reste fiable quand rien d'autre ne le soutient.\n"
+"\n"
+"Cela ne s'applique qu'en dehors d'une entente fournisseur. Un prix couvert par une liste de prix fournisseur à durée limitée est ferme tant que l'entente est en vigueur, quel que soit l'âge du prix.\n"
+"\n"
+"En dehors d'une entente, un prix plus vieux que ce délai est signalé comme une estimation, et les composants en cause sont nommés pour qu'on en redemande le prix."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid ""
+"No price is known for this product: it has no vendor price and no stock on "
+"hand."
+msgstr ""
+"Aucun prix n'est connu pour ce produit : il n'a ni prix fournisseur ni stock"
+" disponible."
+
+#. module: product_cost_source
+#: model:ir.model.fields,field_description:product_cost_source.field_res_config_settings__price_age_months
+msgid "Price considered current for"
+msgstr "Prix considéré à jour pendant"
+
+#. module: product_cost_source
+#: model_terms:ir.ui.view,arch_db:product_cost_source.res_config_settings_view_form
+msgid "Price freshness"
+msgstr "Délai des prix"
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid "Pricing based on current stock availability and stock valuation."
+msgstr "Prix établi d'après le stock disponible et sa valorisation."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid ""
+"Pricing is firm based on a date-bounded vendor pricelist, valid until "
+"%(until)s."
+msgstr ""
+"Prix ferme d'après une liste de prix fournisseur à durée limitée, valide "
+"jusqu'au %(until)s."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid ""
+"Pricing is firm based on an open-ended vendor agreement, in force since "
+"%(since)s."
+msgstr ""
+"Prix ferme d'après une entente fournisseur sans date de fin, en vigueur "
+"depuis le %(since)s."
+
+#. module: product_cost_source
+#: model:ir.model,name:product_cost_source.model_product_product
+msgid "Product Variant"
+msgstr "Variante de produit"
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid ""
+"Supplier price is more than %(months)s months old. No transaction since "
+"%(since)s."
+msgstr ""
+"Le prix fournisseur date de plus de %(months)s mois. Aucune transaction "
+"depuis le %(since)s."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid ""
+"Supplier price is on file but undated, so its age cannot be established. "
+"Treat it as an estimate until confirmed."
+msgstr ""
+"Le prix fournisseur au dossier n'est pas daté : son âge ne peut pas être "
+"établi. Traitez-le comme une estimation jusqu'à confirmation."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid ""
+"Supplier price was last set on %(since)s, within the last %(months)s months."
+msgstr ""
+"Le prix fournisseur a été fixé pour la dernière fois le %(since)s, dans les "
+"%(months)s derniers mois."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/res_config_settings.py:0
+msgid "The price age must be a whole number of months greater than zero."
+msgstr ""
+"Le délai des prix doit être un nombre entier de mois supérieur à zéro."
+
+#. module: product_cost_source
+#. odoo-python
+#: code:addons/product_cost_source/models/product_product.py:0
+msgid ""
+"The vendor agreement backing this price expires on %(expiry)s, before the "
+"delivery date of %(delivery)s."
+msgstr ""
+"L'entente fournisseur qui soutient ce prix expire le %(expiry)s, avant la "
+"date de livraison du %(delivery)s."
