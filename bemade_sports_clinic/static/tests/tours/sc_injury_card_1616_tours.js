@@ -94,10 +94,10 @@ tours.add("sc_1616_card_sections", {
                 assert(!editShown(NOTES), "Notes opened too");
                 // Task 1631: status in the header pill, consent + visibility
                 // as pills in Details (outside the pencil).
-                assert(el(`${DETAILS} .o_sc_autosave[data-sc-field="predicted_resolution_date"]`), "dates in Details");
-                assert(!el(`${DETAILS} .o_sc_autosave[data-sc-field="stage"]`), "status still in Details");
+                assert(el(`${DETAILS} .o_pk_autosave[data-sc-field="predicted_resolution_date"]`), "dates in Details");
+                assert(!el(`${DETAILS} .o_pk_autosave[data-sc-field="stage"]`), "status still in Details");
                 assert(el(`${DETAILS} .o_sc_injury_flags [data-sc-pill-key="consent"]`), "no consent pill");
-                assert(!el(`${DETAILS} .o_sc_autosave[data-sc-field="external_notes"]`), "notes in Details");
+                assert(!el(`${DETAILS} .o_pk_autosave[data-sc-field="external_notes"]`), "notes in Details");
             },
         },
         {
@@ -114,7 +114,7 @@ tours.add("sc_1616_card_sections", {
         },
         {
             content: "External note in edit mode; internal note and Details reading",
-            trigger: `${NOTES_EXT}[data-sc-edit-open] .o_sc_autosave[data-sc-field="external_notes"]`,
+            trigger: `${NOTES_EXT}[data-sc-edit-open] .o_pk_autosave[data-sc-field="external_notes"]`,
             run() {
                 assert(!editShown(DETAILS), "Details opened too");
                 assert(!editShown(NOTES_INT), "the internal note opened too");
@@ -123,7 +123,7 @@ tours.add("sc_1616_card_sections", {
         },
         {
             content: "The internal-note pencil opens the internal note too",
-            trigger: `${NOTES_INT}[data-sc-edit-open] .o_sc_autosave[data-sc-field="internal_notes"]`,
+            trigger: `${NOTES_INT}[data-sc-edit-open] .o_pk_autosave[data-sc-field="internal_notes"]`,
         },
         {
             // Task 1676: no bottom « Done » — each group closes with its ✓,
@@ -155,12 +155,12 @@ tours.add("sc_1616_documents_upload", {
     steps: () => [
         {
             content: "« + Ajouter » in the card's Documents list header",
-            trigger: `${DOCS} .o_sc_list_header button.o_sc_list_add[data-sc-action="injury.documents.add"]`,
+            trigger: `${DOCS} .o_pk_list_header button.o_pk_list_add[data-sc-action="injury.documents.add"]`,
             run: "click",
         },
         {
             content: "A file over 10 MB is flagged and blocks the upload",
-            trigger: `${ADD_SHEET}[open] .o_sc_dropzone`,
+            trigger: `${ADD_SHEET}[open] .o_pk_dropzone`,
             run() {
                 window.__sc1616NoReload = "1";
                 // Review fixes 2026-10-18 b: the shared category / description
@@ -191,14 +191,14 @@ tours.add("sc_1616_documents_upload", {
                 this.anchor.click();
                 const sheet = el(`${ADD_SHEET}[open]`);
                 assert(sheet.querySelector("[data-sc-file-error]").hidden, "error still shown");
-                const names = [...sheet.querySelectorAll("[data-sc-file-list] .o_sc_file_name")].map((n) => n.textContent);
+                const names = [...sheet.querySelectorAll("[data-sc-file-list] .o_pk_file_name")].map((n) => n.textContent);
                 assert(JSON.stringify(names) === JSON.stringify(["Synthetic small.pdf"]), `left: ${names}`);
                 assert(sheet.querySelector('input[type="file"]').files.length === 1, "input not rebuilt");
             },
         },
         {
             content: "Review fixes 2026-10-18: choosing again ADDS (a, then b + a duplicate)",
-            trigger: `${ADD_SHEET}[open] .o_sc_dropzone`,
+            trigger: `${ADD_SHEET}[open] .o_pk_dropzone`,
             run() {
                 const input = this.anchor.querySelector('input[type="file"]');
                 const a = new File(["synthetic a"], "Synthetic a.pdf", { type: "application/pdf", lastModified: 1 });
@@ -209,7 +209,7 @@ tours.add("sc_1616_documents_upload", {
                 ]);
                 const sheet = el(`${ADD_SHEET}[open]`);
                 assert(sheet.querySelector("[data-sc-file-error]").hidden, "error still shown");
-                const names = [...sheet.querySelectorAll("[data-sc-file-list] .o_sc_file_name")].map((n) => n.textContent);
+                const names = [...sheet.querySelectorAll("[data-sc-file-list] .o_pk_file_name")].map((n) => n.textContent);
                 assert(
                     JSON.stringify(names) === JSON.stringify(["Synthetic small.pdf", "Synthetic a.pdf", "Synthetic b.pdf"]),
                     `accumulated list: ${names}`
@@ -235,7 +235,7 @@ tours.add("sc_1616_documents_upload", {
             content: "Back on the open card: both documents listed",
             trigger: `${DOCS} .o_sc_injury_doc_list`,
             run() {
-                const names = [...document.querySelectorAll(`${DOCS} .o_sc_doc_row .o_sc_row_title`)].map(
+                const names = [...document.querySelectorAll(`${DOCS} .o_sc_doc_row .o_pk_row_title`)].map(
                     (node) => node.textContent.trim()
                 );
                 for (const name of ["Synthetic small.pdf", "Synthetic a.pdf", "Synthetic b.pdf"]) {
@@ -250,7 +250,7 @@ tours.add("sc_1616_documents_upload", {
         },
         {
             content: "Rename it and leave the field",
-            trigger: `${DOCS} .o_sc_injury_doc[data-sc-edit-open] .o_sc_autosave[data-sc-field="name"] input`,
+            trigger: `${DOCS} .o_sc_injury_doc[data-sc-edit-open] .o_pk_autosave[data-sc-field="name"] input`,
             run() {
                 window.__sc1616NoReload = "1";
                 typeAndLeave(this.anchor, "Synthetic X-ray report");
@@ -258,11 +258,11 @@ tours.add("sc_1616_documents_upload", {
         },
         {
             content: "Its row follows (read fragment) — no reload",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(
                     () =>
-                        [...document.querySelectorAll(`${DOCS} .o_sc_doc_row .o_sc_row_title`)].some(
+                        [...document.querySelectorAll(`${DOCS} .o_sc_doc_row .o_pk_row_title`)].some(
                             (node) => node.textContent.trim() === "Synthetic X-ray report"
                         ),
                     "row renamed"

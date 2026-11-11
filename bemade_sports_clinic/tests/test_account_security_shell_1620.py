@@ -102,10 +102,10 @@ class AccountShellCommon(UserMenuCommon):
         self.assertIsNotNone(self._shell(tree))
         self.assertFalse(tree.xpath('//header[@id="top"]'), 'website header in the shell')
         self.assertEqual(tree.xpath('//a[@data-pk-back]/@href'), ['/my/app/settings'])
-        crumbs = tree.xpath('//nav[contains(@class, "o_sc_crumbs")]//a/@href')
+        crumbs = tree.xpath('//nav[contains(@class, "o_pk_crumbs")]//a/@href')
         self.assertIn('/my/app/settings', crumbs)
         self.assertEqual(
-            tree.xpath('normalize-space(//*[contains(@class, "o_sc_appbar_title_text")])'), title)
+            tree.xpath('normalize-space(//*[contains(@class, "o_pk_appbar_title_text")])'), title)
 
 
 @tagged('post_install', '-at_install')
@@ -171,13 +171,13 @@ class TestAccountShell1620(AccountShellCommon):
         self.assertEqual(result, {'redirectUrl': SAVED_URL})
         self.assertIn('555-0199', self.coach.partner_id.phone)
         _text, tree = self._get(SAVED_URL)
-        toast = tree.xpath('//*[contains(@class, "o_sc_toast")]')
+        toast = tree.xpath('//*[contains(@class, "o_pk_toast")]')
         self.assertEqual(len(toast), 1)
         self.assertEqual(toast[0].get('data-sc-notify'), 'Your details have been saved.')
         self.assertEqual(toast[0].get('data-sc-notify-tone'), 'success')
         # A plain visit: no toast.
         _text, tree = self._get('/my/account')
-        self.assertIsNone(tree.xpath('//*[contains(@class, "o_sc_toast")]')[0].get('data-sc-notify'))
+        self.assertIsNone(tree.xpath('//*[contains(@class, "o_pk_toast")]')[0].get('data-sc-notify'))
 
     def test_explicit_redirect_is_kept(self):
         self._switch(True)

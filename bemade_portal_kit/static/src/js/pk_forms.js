@@ -1,6 +1,6 @@
 /*
  * Owner review 2026-10-14 — app shell form behaviours (progressive
- * enhancement; inert outside .o_sc_app):
+ * enhancement; inert outside .o_pk_app):
  *
  * - filter forms (form[data-pk-autosubmit]: the events list and calendar
  *   filter bar, the clinics and the timesheets filters) apply AS SOON AS
@@ -22,7 +22,7 @@ const DATE_TYPES = ["date", "datetime-local", "time", "month", "week"];
 const OPEN_KEY = "pk_filters_open:";
 
 function inApp(el) {
-    return Boolean(el && el.closest(".o_sc_app"));
+    return Boolean(el && el.closest(".o_pk_app"));
 }
 
 function isDateInput(el) {
@@ -35,7 +35,7 @@ function autosubmitForm(el) {
 }
 
 function rememberOpen(form) {
-    const details = form.querySelector("details.o_sc_disclosure");
+    const details = form.querySelector("details.o_pk_disclosure");
     try {
         if (details && details.open) {
             window.sessionStorage.setItem(OPEN_KEY + (form.dataset.pkSection || ""), "1");
@@ -126,12 +126,12 @@ document.addEventListener("change", (ev) => {
 });
 
 function init() {
-    for (const button of document.querySelectorAll(".o_sc_app [data-pk-autosubmit-fallback]")) {
+    for (const button of document.querySelectorAll(".o_pk_app [data-pk-autosubmit-fallback]")) {
         button.classList.add("visually-hidden");
         button.tabIndex = -1;
     }
-    const forms = new Set(document.querySelectorAll(".o_sc_app form[data-pk-autosubmit]"));
-    for (const link of document.querySelectorAll(".o_sc_app form a[data-pk-filter-reset]")) {
+    const forms = new Set(document.querySelectorAll(".o_pk_app form[data-pk-autosubmit]"));
+    for (const link of document.querySelectorAll(".o_pk_app form a[data-pk-filter-reset]")) {
         forms.add(link.closest("form"));
     }
     for (const form of forms) {
@@ -143,7 +143,7 @@ function init() {
         } catch {
             reopen = false;
         }
-        const details = form.querySelector("details.o_sc_disclosure");
+        const details = form.querySelector("details.o_pk_disclosure");
         if (reopen && details) {
             details.open = true;
         }

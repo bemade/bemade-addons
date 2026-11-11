@@ -106,9 +106,9 @@ tours.add("sc_1728_digest_contrast", {
     steps: () => [
         {
             content: "The day's digest renders in the shell",
-            trigger: '.o_sc_app [data-pk-section="digest.body"] .team-digest .card',
+            trigger: '.o_pk_app [data-pk-section="digest.body"] .team-digest .card',
             run() {
-                const root = document.querySelector(".o_sc_app");
+                const root = document.querySelector(".o_pk_app");
                 OPEN_DETAILS(root);
                 checkAll(root);
             },
@@ -127,7 +127,7 @@ tours.add("sc_1728_digest_history_contrast", {
         },
         {
             content: "The inline body reads in the dark theme",
-            trigger: `${ROW}[open] .o_sc_lazy_body .team-digest .card`,
+            trigger: `${ROW}[open] .o_pk_lazy_body .team-digest .card`,
             run() {
                 const row = document.querySelector(`${ROW}[open]`);
                 OPEN_DETAILS(row);

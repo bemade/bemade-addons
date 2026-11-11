@@ -69,7 +69,7 @@ class TestHeroPillsEditMode1753(StatusPillsMixin, FragmentsCommon):
         self.assertEqual(len(hero.xpath('./*[@data-sc-edit-view="edit"]')), 1)
         status = self._status_block(tree)
         self.assertEqual(len(status.xpath('./*[@data-pk-section="player.status.readonly"]'
-                                          '//button[contains(@class, "o_sc_pill_select")]')), 2)
+                                          '//button[contains(@class, "o_pk_pill_select")]')), 2)
         self.assertTrue(status.xpath('./*[@data-pk-section="player.medical"]'
                                      '//button[@data-sc-med-pill="allergy"]'))
 

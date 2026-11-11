@@ -14,7 +14,7 @@ function assert(condition, message) {
 function toast(detail) {
     return {
         content: `Show a toast (${detail.title ? "title" : "no title"}, ${detail.actionLabel ? "action" : "no action"})`,
-        trigger: ".o_sc_app",
+        trigger: ".o_pk_app",
         run() {
             document.dispatchEvent(new CustomEvent("sc:toast", { detail }));
         },
@@ -32,14 +32,14 @@ function overlaps(a, b) {
 function check(withTitle, withAction) {
     return {
         content: "The toast is laid out as a column (+ the action beside / under it)",
-        trigger: ".o_sc_app .o_sc_toast:not([hidden]) .o_sc_toast_text",
+        trigger: ".o_pk_app .o_pk_toast:not([hidden]) .o_pk_toast_text",
         run() {
-            const el = document.querySelector(".o_sc_app .o_sc_toast:not([hidden])");
-            const body = el.querySelector(":scope > .o_sc_toast_body");
+            const el = document.querySelector(".o_pk_app .o_pk_toast:not([hidden])");
+            const body = el.querySelector(":scope > .o_pk_toast_body");
             assert(body, "no toast body column");
-            const textEl = body.querySelector(".o_sc_toast_text");
+            const textEl = body.querySelector(".o_pk_toast_text");
             const text = textEl.getBoundingClientRect();
-            const title = body.querySelector(".o_sc_toast_title");
+            const title = body.querySelector(".o_pk_toast_title");
             if (withTitle) {
                 assert(title && title === body.firstElementChild, "the title must come first");
                 assert(title.getBoundingClientRect().bottom <= text.top + 1, "the title must sit above the text");
@@ -57,7 +57,7 @@ function check(withTitle, withAction) {
             assert(text.width >= Math.min(inner, textEl.scrollWidth) - 2,
                 `the text (${text.width}px) is squeezed in its toast (${inner}px)`);
             assert(textEl.scrollWidth <= textEl.clientWidth + 1, "the text overflows its block");
-            const action = el.querySelector(":scope > .o_sc_toast_action");
+            const action = el.querySelector(":scope > .o_pk_toast_action");
             if (withAction) {
                 assert(action, "no action button");
                 const act = action.getBoundingClientRect();

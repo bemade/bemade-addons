@@ -86,7 +86,7 @@ class ActivityCards1736r1Common(ActivityPermissionsCommon):
         kinds = []
         for el in group.iter('button', 'a'):
             classes = (el.get('class') or '').split()
-            kinds += [k for k in ('o_sc_card_trash', 'o_sc_card_edit') if k in classes]
+            kinds += [k for k in ('o_pk_card_trash', 'o_pk_card_edit') if k in classes]
         return kinds
 
 
@@ -99,16 +99,16 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         self._login('tp')
         _text, tree = self._get('/my/player?player_id=%s&tab=activities' % self.player.id)
         card = self._card(tree, self.act_player)
-        self.assertIn('o_sc_edit_card', card.get('class'))
+        self.assertIn('o_pk_edit_card', card.get('class'))
         self.assertEqual(card.get('data-pk-edit-card'), 'activity-%s' % self.act_player.id)
-        self.assertEqual(self._icons(card), ['o_sc_card_trash', 'o_sc_card_edit'])
-        trash = card.xpath('.//button[contains(@class, "o_sc_card_trash")]')[0]
+        self.assertEqual(self._icons(card), ['o_pk_card_trash', 'o_pk_card_edit'])
+        trash = card.xpath('.//button[contains(@class, "o_pk_card_trash")]')[0]
         self.assertEqual(trash.get('hidden'), 'hidden')
         self.assertEqual(trash.get('data-sc-edit-only'), '1')
         self.assertEqual(trash.get('data-sc-sheet-open'), 'sc_activity_cancel_sheet')
         self.assertEqual(trash.get('data-sc-activity-id'), str(self.act_player.id))
         self.assertTrue(tree.xpath('//dialog[@id="sc_activity_cancel_sheet"]'))
-        pencil = card.xpath('.//button[contains(@class, "o_sc_card_edit")]')[0]
+        pencil = card.xpath('.//button[contains(@class, "o_pk_card_edit")]')[0]
         self.assertEqual(pencil.get('data-sc-edit-toggle'), '1')
         self.assertEqual(pencil.get('data-sc-action'), 'activity.edit')
         # The edit view: hidden, its fields inside the inert lazy template.
@@ -153,7 +153,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
                 ('/my/activities', self.act_injury)):
             _text, tree = self._get(url)
             card = self._card(tree, activity)
-            self.assertEqual(self._icons(card), ['o_sc_card_trash', 'o_sc_card_edit'], url)
+            self.assertEqual(self._icons(card), ['o_pk_card_trash', 'o_pk_card_edit'], url)
             self.assertTrue(card.xpath('.//template[@data-sc-lazy-edit]'), url)
             self.assertTrue(tree.xpath('//dialog[@id="sc_activity_detail_sheet"]'), url)
         # The dashboard's « Overdue activities » cards.
@@ -162,9 +162,9 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         card = tree.xpath('//details[@data-sc-todo="activities_overdue"]'
                           '//*[@data-sc-activity-row="%s"]' % self.act_player.id)
         self.assertTrue(card)
-        self.assertEqual(self._icons(card[0]), ['o_sc_card_trash', 'o_sc_card_edit'])
+        self.assertEqual(self._icons(card[0]), ['o_pk_card_trash', 'o_pk_card_edit'])
         self.assertTrue(tree.xpath('//dialog[@id="sc_activity_detail_sheet"]'))
-        self.assertEqual(card[0].xpath('.//a[contains(@class, "o_sc_link_row_main")]/@data-sc-sheet-url'),
+        self.assertEqual(card[0].xpath('.//a[contains(@class, "o_pk_link_row_main")]/@data-sc-sheet-url'),
                          ['/my/activity/%s/popout' % self.act_player.id])
 
     def test_coach_assignee_field_follows_reassign_right(self):
@@ -174,7 +174,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         self._login('coach')
         _text, tree = self._get('/my/player?player_id=%s&tab=activities' % self.player.id)
         card = self._card(tree, self.act_coach_assigned)
-        self.assertEqual(self._icons(card), ['o_sc_card_trash', 'o_sc_card_edit'])
+        self.assertEqual(self._icons(card), ['o_pk_card_trash', 'o_pk_card_edit'])
         props = {p['field']: p for p in self._props(card)}
         self.assertEqual(set(props), set(FIELDS))
         options = {str(o[0]) for o in props['user_id']['options']}
@@ -190,7 +190,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         with patch.object(AccessControlMixin, '_activity_act_access', return_value=False):
             _text, tree = self._get('/my/player?player_id=%s&tab=activities' % self.player.id)
         card = self._card(tree, self.act_player)
-        self.assertNotIn('o_sc_edit_card', card.get('class'))
+        self.assertNotIn('o_pk_edit_card', card.get('class'))
         self.assertIsNone(card.get('data-pk-edit-card'))
         self.assertEqual(self._icons(card), [])
         self.assertFalse(card.xpath('.//*[@data-sc-edit-view] | .//owl-component | .//template'))
@@ -239,7 +239,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         self._login('coach')
         _text, tree = self._get('/my/player?player_id=%s&tab=activities' % self.player.id)
         card = self._card(tree, self.act_coach_created)
-        link = card.xpath('.//a[contains(@class, "o_sc_link_row_main")]')[0]
+        link = card.xpath('.//a[contains(@class, "o_pk_link_row_main")]')[0]
         self.assertEqual(link.get('href'), '/my/activity/%s' % self.act_coach_created.id)
         self.assertEqual(link.get('data-sc-sheet-open'), 'sc_activity_detail_sheet')
         self.assertEqual(link.get('data-sc-sheet-url'), '/my/activity/%s/popout' % self.act_coach_created.id)
@@ -264,7 +264,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
                         'the related record link')
         self.assertTrue(root[0].xpath('.//a[@href="/my/activity/%s/attachment/%s"]'
                                       % (self.act_coach_created.id, attachment.id)))
-        self.assertTrue(root[0].xpath('.//*[contains(@class, "o_sc_chip")]'), 'the state chip')
+        self.assertTrue(root[0].xpath('.//*[contains(@class, "o_pk_chip")]'), 'the state chip')
         # Read-only: no control, no in-place refresh keys.
         self.assertFalse(root[0].xpath('.//owl-component | .//button | .//form | .//input'))
         self.assertFalse(root[0].xpath('.//*[@data-sc-fragment or @data-sc-display]'))
@@ -288,7 +288,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         self.assertIn('Created by', text)
         self.assertIn('PC Coach', text)
         self.assertTrue(card.xpath('.//*[@data-sc-fragment="mail.activity:%s:read"]' % self.act_coach_created.id))
-        self.assertEqual(tree.xpath('//*[contains(@class, "o_sc_actionbar")]//@data-sc-action'),
+        self.assertEqual(tree.xpath('//*[contains(@class, "o_pk_actionbar")]//@data-sc-action'),
                          ['activity.complete'])
 
     # -- AC-9 --------------------------------------------------------------
@@ -298,10 +298,10 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         _text, tree = self._get('/my/event/%s' % self.event.id)
         hero = tree.xpath('//section[@data-pk-section="event.hero"]')[0]
         self.assertFalse(hero.xpath('.//*[@data-sc-card-icons]//*[@data-sc-action="event.cancel"]'))
-        self.assertFalse(hero.xpath('.//*[contains(@class, "o_sc_card_archive")]'))
-        cancel = hero.xpath('.//*[contains(@class, "o_sc_actions_row")]/button[@data-sc-action="event.cancel"]')
+        self.assertFalse(hero.xpath('.//*[contains(@class, "o_pk_card_archive")]'))
+        cancel = hero.xpath('.//*[contains(@class, "o_pk_actions_row")]/button[@data-sc-action="event.cancel"]')
         self.assertEqual(len(cancel), 1)
-        self.assertIn('o_sc_btn_danger', cancel[0].get('class'))
+        self.assertIn('o_pk_btn_danger', cancel[0].get('class'))
         self.assertEqual(cancel[0].get('data-sc-sheet-open'), 'sc_event_cancel_sheet')
         self.assertTrue(hero.xpath('.//*[@data-sc-card-icons]//a[contains(@class, "o_sc_card_clock")]'))
 
@@ -330,7 +330,7 @@ class TestActivityCards1736r1I18n(ActivityCards1736r1Common):
         self.assertEqual(tree.xpath('//dialog[@id="sc_activity_detail_sheet"]//h2/text()'), ['Activité'])
         card = self._card(tree, self.act_coach_created)
         self.assertEqual(card.xpath('.//*[@data-sc-action="activity.complete"]//span/text()'), ['Terminé'])
-        self.assertEqual(card.xpath('.//button[contains(@class, "o_sc_card_edit")]/@aria-label'), ['Modifier'])
+        self.assertEqual(card.xpath('.//button[contains(@class, "o_pk_card_edit")]/@aria-label'), ['Modifier'])
         labels = [p['label'] for p in self._props(card)]
         self.assertEqual(labels, ['Résumé', "Date d'échéance", 'Assigné à', 'Note'])
         resp = self.url_open('/my/activity/%s/popout' % self.act_coach_created.id)

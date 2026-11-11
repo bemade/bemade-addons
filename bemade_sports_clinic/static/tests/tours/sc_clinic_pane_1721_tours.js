@@ -26,7 +26,7 @@ tours.add("sc_1721_clinic_pane", {
             run() {
                 const fold = document.querySelector(FOLD);
                 assert(fold && !fold.open, "the resolved injuries are not folded");
-                const old = [...fold.querySelectorAll(".o_sc_list > *")];
+                const old = [...fold.querySelectorAll(".o_pk_list > *")];
                 assert(old.length && !old[0].checkVisibility(), "a resolved card shows");
             },
         },
@@ -37,7 +37,7 @@ tours.add("sc_1721_clinic_pane", {
         },
         {
             content: "They show; fold them back",
-            trigger: `${FOLD}[open] .o_sc_list:contains("Synthetic old knee")`,
+            trigger: `${FOLD}[open] .o_pk_list:contains("Synthetic old knee")`,
             run() {
                 document.querySelector(`${FOLD} > summary`).click();
             },

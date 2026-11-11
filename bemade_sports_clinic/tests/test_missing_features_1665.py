@@ -82,7 +82,7 @@ class TestMissingFeatures1665(Features1665Common):
         self.assertTrue(messages.filtered(lambda m: 'restored via portal' in str(m.body or '')))
         tree = self._tree('/my/event/%s' % self.event.id)
         self.assertFalse(tree.xpath('//button[@data-sc-action="event.restore"]'))
-        self.assertFalse(tree.xpath('//span[contains(@class, "o_sc_chip_red")][normalize-space()="Cancelled"]'))
+        self.assertFalse(tree.xpath('//span[contains(@class, "o_pk_chip_red")][normalize-space()="Cancelled"]'))
         self.assertTrue(tree.xpath('//button[@data-sc-action="event.cancel"]'))
 
     @mute_logger('odoo.http')

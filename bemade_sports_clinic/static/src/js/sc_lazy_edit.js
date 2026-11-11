@@ -16,7 +16,7 @@ import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
 
 export class ScLazyEdit extends Interaction {
-    static selector = ".o_sc_app[data-pk-app-shell]";
+    static selector = ".o_pk_app[data-pk-app-shell]";
 
     start() {
         this.addListener(this.el, "sc:edit-view-open", (ev) => this.mountLazy(ev.target));

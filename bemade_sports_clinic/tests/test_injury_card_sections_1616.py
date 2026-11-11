@@ -134,7 +134,7 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         # Task 1676: no bottom « Done ». Task 1736 (deliberate update):
         # « Delete injury » is the top bar's trash, the only delete action.
         self.assertFalse(card.xpath('.//div[contains(@class, "o_sc_injury_card_actions")]'))
-        actions = card.xpath('./summary//button[contains(@class, "o_sc_card_trash")]/@data-sc-action')
+        actions = card.xpath('./summary//button[contains(@class, "o_pk_card_trash")]/@data-sc-action')
         self.assertEqual(actions, ['injury.delete'])
         sheet = card.xpath('.//dialog[@id="sc_delete_injury_sheet_%s"]//form' % self.injury.id)[0]
         self.assertEqual(sheet.get('action'), '/my/injury/delete')
@@ -174,7 +174,7 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         self.assertTrue(ext['replace'])
         self.assertNotIn('historySheet', ext)  # task 1631: the head's one only
         # The combined « History » sheet from the Notes head.
-        self.assertTrue(notes.xpath('.//div[contains(@class, "o_sc_edit_card_head")]'
+        self.assertTrue(notes.xpath('.//div[contains(@class, "o_pk_edit_card_head")]'
                                     '//button[@data-sc-sheet-open="sc_note_history_sheet_%s"]' % self.injury.id))
         lazy = notes.xpath('.//dialog[@id="sc_note_history_sheet_%s"]/@data-sc-lazy-url' % self.injury.id)
         self.assertEqual(lazy, ['/my/injury/%s/notes/history/fragment' % self.injury.id])
@@ -225,7 +225,7 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         # left part (its icons stay outside: a refresh keeps the pencil's ✓).
         summary = card.xpath('./summary/*[@data-sc-fragment]')[0]
         self.assertEqual(summary.get('data-sc-fragment'), key + 'summary')
-        self.assertTrue(summary.xpath('.//span[contains(@class, "o_sc_row_trailing")]/button[@data-sc-injury-quick]'))
+        self.assertTrue(summary.xpath('.//span[contains(@class, "o_pk_row_trailing")]/button[@data-sc-injury-quick]'))
         read = card.xpath('.//section[@data-pk-edit-card="injury-details"]/dl[@data-sc-edit-view="read"]')[0]
         self.assertEqual(read.get('data-sc-fragment'), key + 'read')
         # Task 1675: one read fragment per note.

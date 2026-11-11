@@ -24,9 +24,9 @@ function visible(el) {
 }
 
 function checkPill() {
-    const pill = document.querySelector('nav[data-sc-tabs] a[data-sc-tab="activities"] .o_sc_tab_badge');
+    const pill = document.querySelector('nav[data-sc-tabs] a[data-sc-tab="activities"] .o_pk_tab_badge');
     assert(pill, "no count pill on Activities");
-    assert(pill.nextElementSibling && pill.nextElementSibling.classList.contains("o_sc_tab_label"),
+    assert(pill.nextElementSibling && pill.nextElementSibling.classList.contains("o_pk_tab_label"),
         "the pill does not come before the label");
     return pill;
 }
@@ -50,11 +50,11 @@ tours.add("sc_1647_player_phone", {
                 const pill = checkPill().getBoundingClientRect();
                 assert(pill.right <= window.innerWidth && pill.width > 0, "the pill is out of view");
                 const docs = nav.querySelector('a[data-sc-tab="documents"]');
-                assert(visible(docs.querySelector(".o_sc_tab_label_short")), "« Docs » not shown");
-                assert(!visible(docs.querySelector(".o_sc_tab_label_long")), "« Documents » shown on a phone");
-                assert(docs.getAttribute("title") === docs.querySelector(".o_sc_tab_label_long").textContent,
+                assert(visible(docs.querySelector(".o_pk_tab_label_short")), "« Docs » not shown");
+                assert(!visible(docs.querySelector(".o_pk_tab_label_long")), "« Documents » shown on a phone");
+                assert(docs.getAttribute("title") === docs.querySelector(".o_pk_tab_label_long").textContent,
                     "the full label is not the title");
-                for (const label of nav.querySelectorAll(".o_sc_tab_label")) {
+                for (const label of nav.querySelectorAll(".o_pk_tab_label")) {
                     if (visible(label)) {
                         assert(label.scrollWidth <= label.clientWidth + 1, `« ${label.textContent} » is cut`);
                     }
@@ -71,8 +71,8 @@ tours.add("sc_1647_player_laptop", {
             trigger: 'nav[data-sc-tabs] a[data-sc-tab="activities"]',
             run() {
                 const docs = document.querySelector('nav[data-sc-tabs] a[data-sc-tab="documents"]');
-                assert(visible(docs.querySelector(".o_sc_tab_label_long")), "« Documents » hidden on a laptop");
-                assert(!visible(docs.querySelector(".o_sc_tab_label_short")), "« Docs » shown on a laptop");
+                assert(visible(docs.querySelector(".o_pk_tab_label_long")), "« Documents » hidden on a laptop");
+                assert(!visible(docs.querySelector(".o_pk_tab_label_short")), "« Docs » shown on a laptop");
                 checkPill();
             },
         },

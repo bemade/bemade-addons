@@ -18,7 +18,7 @@ Acceptance criteria:
   Mes événements sans feuilles de temps » (the link), same in the empty
   line.
 * AC-4 (review round 1, 2026-10-27) Both « Events » links are app links
-  (``o_sc_hint_link``: accent colour, weight 600) opening MY events with
+  (``o_pk_hint_link``: accent colour, weight 600) opening MY events with
   missing timesheets — the events page's « Missing timesheets » segment
   (``view_type=missing_timesheets``, the viewer as ``assigned_user_id``,
   ``no_default_dates=1``) — and that page shows the segment active.
@@ -66,7 +66,7 @@ class TestTimesheetsHint1725(AppShellCommon):
         self.assertEqual(len(links), 1)
         # website may prefix the language (/fr/…) on CI.
         self.assertTrue(links[0].get('href').endswith(self._missing_url()), links[0].get('href'))
-        self.assertIn('o_sc_hint_link', links[0].get('class'))
+        self.assertIn('o_pk_hint_link', links[0].get('class'))
 
     # -- AC-4 ------------------------------------------------------------
     def test_link_opens_missing_timesheets(self):
@@ -82,7 +82,7 @@ class TestTimesheetsHint1725(AppShellCommon):
         _text, tree = self._get('/my/sc/timesheets')
         self.assertTrue(tree.xpath('//*[@data-pk-section="timesheets.list"]'))
         hint = self._hint(tree)
-        self.assertIn('o_sc_muted', hint.get('class'))
+        self.assertIn('o_pk_muted', hint.get('class'))
         self.assertIn('To add a timesheet, open the event concerned:', self._text(hint))
         self._assert_missing_link(hint)
         self.assertEqual(self._text(hint.xpath('.//a')[0]), 'My events without timesheets')

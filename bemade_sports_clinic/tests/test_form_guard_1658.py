@@ -119,11 +119,11 @@ class TestFormGuard1658(Guard1658Common):
         url = '/my/team?team_id=%s' % self.team_a.id
         probe = self.url_open(url, headers={'X-Sc-Guard': '1'})
         tree = lxml_html.fromstring(probe.text)
-        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_toast")][@data-sc-notify]'), 'the probe sees it')
+        self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_toast")][@data-sc-notify]'), 'the probe sees it')
         tree = self._tree(url)
-        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_toast")][@data-sc-notify]'), 'the real page still shows it')
+        self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_toast")][@data-sc-notify]'), 'the real page still shows it')
         tree = self._tree(url)
-        self.assertFalse(tree.xpath('//*[contains(@class, "o_sc_toast")][@data-sc-notify]'), 'shown once')
+        self.assertFalse(tree.xpath('//*[contains(@class, "o_pk_toast")][@data-sc-notify]'), 'shown once')
 
 
 @tagged('post_install', '-at_install')

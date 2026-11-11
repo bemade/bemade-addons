@@ -106,7 +106,7 @@ class TestNoteReplaceEditor1582(PlayerInlineCommon):
         self.injury.sudo().write({'external_notes': 'T1582 synthetic external v2'})
         _text, tree = self._get(
             '/my/injury/%s/notes/history/fragment?scope=external' % self.injury.id)
-        scopes = set(tree.xpath('//li[contains(@class, "o_sc_history_entry")]/@data-sc-scope'))
+        scopes = set(tree.xpath('//li[contains(@class, "o_pk_history_entry")]/@data-sc-scope'))
         self.assertEqual(scopes, {'external'})
 
     # -- UC-R2 -----------------------------------------------------------
@@ -301,7 +301,7 @@ class TestNoteReplaceFr1582(TestAppShellI18n1538):
         links = tree.xpath('//section[@data-pk-section="injury.notes"]//*[@data-sc-sheet-open="sc_note_history_sheet_%s"]'
                            % self.injury.id)
         self.assertEqual([' '.join(link.text_content().split()) for link in links], ['Historique'])
-        titles = {t.strip() for t in tree.xpath('//dialog//h2[contains(@class, "o_sc_sheet_title")]/text()')}
+        titles = {t.strip() for t in tree.xpath('//dialog//h2[contains(@class, "o_pk_sheet_title")]/text()')}
         self.assertNotIn('Historique des notes externes', titles)
         self.assertNotIn('Historique des notes internes', titles)
 

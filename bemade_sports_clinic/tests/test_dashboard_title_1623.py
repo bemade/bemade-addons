@@ -18,7 +18,7 @@ from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import Ap
 
 
 def _title(tree):
-    return tree.xpath('normalize-space(//*[contains(@class, "o_sc_appbar_title_text")])')
+    return tree.xpath('normalize-space(//*[contains(@class, "o_pk_appbar_title_text")])')
 
 
 def _doc_title(tree):
@@ -62,6 +62,6 @@ class TestDashboardTitleFrench1623(TestAppShellI18n1538):
         self._switch(True)
         self._login_tp()
         text = self._fr('/my/home')
-        self.assertIn('<span class="o_sc_appbar_title_text">Tableau de bord</span>', text)
+        self.assertIn('<span class="o_pk_appbar_title_text">Tableau de bord</span>', text)
         self.assertIn('<title>Tableau de bord', text)
         self.assertIn('Équipes', text)  # the menu entry

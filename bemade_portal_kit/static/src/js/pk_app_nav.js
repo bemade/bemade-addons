@@ -12,12 +12,12 @@
  * A page's identity is its path + its « …id » query args: the view state
  * (?tab=, filters, ?success= flashes) is not « another page », and a form
  * POST that redirects back to the same page adds one more history entry for
- * it (counted, so back skips them all). Inert outside .o_sc_app.
+ * it (counted, so back skips them all). Inert outside .o_pk_app.
  *
  * Task 1618 (owner review 2026-10-18, « always »): on a laptop the back
  * chevron shows on every sub-page next to the breadcrumb, exactly as on a
  * phone (previous in-app page, else the parent). The shell still gets
- * ``o_sc_back_useful`` whenever there is a chevron (kept for styling hooks);
+ * ``o_pk_back_useful`` whenever there is a chevron (kept for styling hooks);
  * ``isStandalone()`` stays exported for the installed-app checks.
  */
 
@@ -213,19 +213,19 @@ export function isStandalone() {
  * something » rule any more).
  */
 export function backIsUseful() {
-    return Boolean(document.querySelector(".o_sc_app a[data-pk-back]"));
+    return Boolean(document.querySelector(".o_pk_app a[data-pk-back]"));
 }
 
-/** Toggle ``o_sc_back_useful`` on the shell root (task 1618). */
+/** Toggle ``o_pk_back_useful`` on the shell root (task 1618). */
 export function updateBackUseful() {
-    const shell = document.querySelector(".o_sc_app[data-pk-app-shell]");
+    const shell = document.querySelector(".o_pk_app[data-pk-app-shell]");
     if (shell) {
-        shell.classList.toggle("o_sc_back_useful", backIsUseful());
+        shell.classList.toggle("o_pk_back_useful", backIsUseful());
     }
 }
 
 function inShell() {
-    return Boolean(document.querySelector(".o_sc_app[data-pk-app-shell]"));
+    return Boolean(document.querySelector(".o_pk_app[data-pk-app-shell]"));
 }
 
 function init() {
@@ -271,7 +271,7 @@ document.addEventListener("pk:nav-sync", () => {
 // The back chevron: history.back() to the previous in-app page of this tab
 // (skipping that page's own POST round-trips), else its href — the parent.
 document.addEventListener("click", (ev) => {
-    const back = ev.target.closest && ev.target.closest(".o_sc_app a[data-pk-back]");
+    const back = ev.target.closest && ev.target.closest(".o_pk_app a[data-pk-back]");
     if (!back || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button) {
         return;
     }
@@ -290,7 +290,7 @@ document.addEventListener("click", (ev) => {
 // comes back with its view state (the team's Dashboard vs Players tab, its
 // filters) instead of the crumb's canonical URL.
 document.addEventListener("click", (ev) => {
-    const crumb = ev.target.closest && ev.target.closest(".o_sc_app .o_sc_crumbs a[href]");
+    const crumb = ev.target.closest && ev.target.closest(".o_pk_app .o_pk_crumbs a[href]");
     if (!crumb || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button) {
         return;
     }
@@ -307,7 +307,7 @@ document.addEventListener("click", (ev) => {
 // entry for it: remember it for the next page load.
 document.addEventListener("submit", (ev) => {
     const form = ev.target;
-    if (!form || !form.closest || !form.closest(".o_sc_app")) {
+    if (!form || !form.closest || !form.closest(".o_pk_app")) {
         return;
     }
     if ((form.method || "").toLowerCase() !== "post") {

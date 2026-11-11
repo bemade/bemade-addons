@@ -77,7 +77,7 @@ function readText(card) {
 // Review fixes 2026-10-18 b: two pencil cards; round 2 (1018c): each field
 // autosaves on its own, « Done » closes the card.
 function fieldBox(card, name) {
-    return document.querySelector(`${card} [name="${name}"]`).closest(".o_sc_field");
+    return document.querySelector(`${card} [name="${name}"]`).closest(".o_pk_field");
 }
 
 function stateOf(card, name) {
@@ -102,7 +102,7 @@ tours.add("sc_1620_account", {
         },
         {
             content: "The shell page: two read cards, no company, no save / cancel",
-            trigger: `.o_sc_app ${CONTACT} [data-sc-edit-view="read"]`,
+            trigger: `.o_pk_app ${CONTACT} [data-sc-edit-view="read"]`,
             run() {
                 window.__sc1018bNoReload = "1";
                 assert(document.querySelector("a[data-pk-back]"), "no back arrow");
@@ -282,7 +282,7 @@ tours.add("sc_1620_security", {
         },
         {
             content: "The shell page",
-            trigger: `.o_sc_app .o_portal_security_body ${PW}`,
+            trigger: `.o_pk_app .o_portal_security_body ${PW}`,
             run() {
                 assert(document.querySelector("a[data-pk-back]"), "no back arrow");
                 assert(document.querySelector("#portal_revoke_all_sessions_popup"), "no « log out everywhere »");
@@ -307,12 +307,12 @@ tours.add("sc_1620_security", {
         ...passwordSteps("not-the-password", "pc-coach-tour-1620"),
         {
             content: "The core error, in the shell",
-            trigger: '.o_sc_app [data-sc-error-for="old"]',
+            trigger: '.o_pk_app [data-sc-error-for="old"]',
         },
         ...passwordSteps("pc-coach", "pc-coach-tour-1620"),
         {
             content: "Changed",
-            trigger: '.o_sc_app [data-pk-section="security.password.done"]',
+            trigger: '.o_pk_app [data-pk-section="security.password.done"]',
         },
         {
             content: "Open « Delete account »",
@@ -329,7 +329,7 @@ tours.add("sc_1620_security", {
         },
         {
             content: "Cancel",
-            trigger: "dialog#sc_deactivate_account_sheet[open] .o_sc_form_actions [data-sc-sheet-close]",
+            trigger: "dialog#sc_deactivate_account_sheet[open] .o_pk_form_actions [data-sc-sheet-close]",
             run: "click",
         },
         {

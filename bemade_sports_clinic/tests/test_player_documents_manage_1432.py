@@ -309,13 +309,13 @@ class TestPlayerDocuments1432(PlayerDocuments1432Common):
         rows += tree.xpath('//*[@data-pk-edit-card="document-%s"]' % self.doc_injury.id)
         self.assertEqual(len(rows), 2)
         for row in rows:
-            trailing = row.xpath('.//*[contains(@class, "o_sc_doc_row")]/*[contains(@class, "o_sc_row_trailing")]')[0]
+            trailing = row.xpath('.//*[contains(@class, "o_sc_doc_row")]/*[contains(@class, "o_pk_row_trailing")]')[0]
             self.assertEqual(
                 trailing.xpath('.//*[@data-sc-card-icons]//*[self::a or self::button]/@data-sc-action'),
                 ['documents.download', 'documents.delete', 'documents.edit'])
             archive = trailing.xpath('.//*[@data-sc-action="documents.delete"]')[0]
-            self.assertIn('o_sc_card_archive', archive.get('class').split())
-            self.assertNotIn('o_sc_icon_btn_danger', archive.get('class').split())
+            self.assertIn('o_pk_card_archive', archive.get('class').split())
+            self.assertNotIn('o_pk_icon_btn_danger', archive.get('class').split())
             self.assertIsNone(archive.get('hidden'))
 
     # -- AC-6 ------------------------------------------------------------

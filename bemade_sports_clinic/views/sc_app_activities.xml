@@ -19,7 +19,7 @@
         can_reassign, empty_message.
     -->
     <template id="sc_activity_list" name="App shell: activity list">
-        <div t-if="activities" class="o_sc_list" data-pk-section="activities.list">
+        <div t-if="activities" class="o_pk_list" data-pk-section="activities.list">
             <t t-foreach="activities" t-as="activity">
                 <!-- Task 1595: computed in the controller, access-gated
                      (was a non-sudo browse here). -->
@@ -43,17 +43,17 @@
             <t t-set="sheet_id" t-value="'sc_activity_complete_sheet'"/>
             <t t-set="title">Complete Activity</t>
             <t t-set="lazy_url" t-value="False"/>
-            <form method="post" action="/my/activity/complete" class="o_sc_form" data-sc-form="activity.complete" data-sc-guard="1" data-sc-guard-mode="fetch">
+            <form method="post" action="/my/activity/complete" class="o_pk_form" data-sc-form="activity.complete" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="activity_id" value=""/>
                 <input type="hidden" name="return_url" t-att-value="return_url"/>
-                <div class="o_sc_field">
-                    <label for="sc_activity_feedback" class="o_sc_field_label">Comment (optional)</label>
-                    <textarea id="sc_activity_feedback" name="feedback" class="o_sc_input o_sc_textarea" rows="3"/>
+                <div class="o_pk_field">
+                    <label for="sc_activity_feedback" class="o_pk_field_label">Comment (optional)</label>
+                    <textarea id="sc_activity_feedback" name="feedback" class="o_pk_input o_pk_textarea" rows="3"/>
                 </div>
-                <div class="o_sc_form_actions">
-                    <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
-                    <button type="submit" class="o_sc_btn o_sc_btn_primary">Complete Activity</button>
+                <div class="o_pk_form_actions">
+                    <button type="button" class="o_pk_btn o_pk_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                    <button type="submit" class="o_pk_btn o_pk_btn_primary">Complete Activity</button>
                 </div>
                 <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_complete'"/></t>
             </form>
@@ -64,14 +64,14 @@
                  « Annuler », which is the undo everywhere else. -->
             <t t-set="title">Delete activity</t>
             <t t-set="lazy_url" t-value="False"/>
-            <form method="post" action="/my/activity/cancel" class="o_sc_form" data-sc-form="activity.cancel" data-sc-guard="1" data-sc-guard-mode="fetch">
+            <form method="post" action="/my/activity/cancel" class="o_pk_form" data-sc-form="activity.cancel" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="activity_id" value=""/>
                 <input type="hidden" name="return_url" t-att-value="return_url"/>
-                <p class="o_sc_confirm_message">Delete this activity?</p>
-                <div class="o_sc_form_actions">
-                    <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">No</button>
-                    <button type="submit" class="o_sc_btn o_sc_btn_danger" data-sc-action="activity.cancel.confirm">Yes, delete</button>
+                <p class="o_pk_confirm_message">Delete this activity?</p>
+                <div class="o_pk_form_actions">
+                    <button type="button" class="o_pk_btn o_pk_btn_ghost" data-sc-sheet-close="1">No</button>
+                    <button type="submit" class="o_pk_btn o_pk_btn_danger" data-sc-action="activity.cancel.confirm">Yes, delete</button>
                 </div>
                 <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_cancel'"/></t>
             </form>
@@ -101,12 +101,12 @@
             <t t-set="add_panel" t-value="'sc_activity_add'"/>
             <t t-set="add_key" t-value="'activity.add'"/>
         </t>
-        <details class="o_sc_card o_sc_disclosure o_sc_list_add_panel" id="sc_activity_add" data-pk-section="activity.add">
-            <summary class="o_sc_disclosure_summary">
+        <details class="o_pk_card o_pk_disclosure o_pk_list_add_panel" id="sc_activity_add" data-pk-section="activity.add">
+            <summary class="o_pk_disclosure_summary">
                 <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                 <span>Add Activity</span>
             </summary>
-            <form action="/my/activity/save" method="post" class="o_sc_form" data-sc-form="activity.add" data-sc-guard="1" data-sc-guard-mode="fetch">
+            <form action="/my/activity/save" method="post" class="o_pk_form" data-sc-form="activity.add" data-sc-guard="1" data-sc-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="model" t-att-value="add_model"/>
                 <input type="hidden" name="res_id" t-att-value="add_res_id"/>
@@ -114,28 +114,28 @@
                 <input t-if="add_team_id" type="hidden" name="team_id" t-att-value="add_team_id"/>
                 <!-- Task 1739 (owner 2026-11-02): no type choice — every
                      activity is a To-Do (« À faire »), set by the server. -->
-                <div class="o_sc_field">
-                    <label for="sc_add_activity_summary" class="o_sc_field_label">Summary</label>
-                    <input type="text" id="sc_add_activity_summary" name="summary" class="o_sc_input" required="required"
+                <div class="o_pk_field">
+                    <label for="sc_add_activity_summary" class="o_pk_field_label">Summary</label>
+                    <input type="text" id="sc_add_activity_summary" name="summary" class="o_pk_input" required="required"
                            placeholder="Brief description of the activity"/>
                 </div>
-                <div class="o_sc_field">
-                    <label for="sc_add_activity_deadline" class="o_sc_field_label">Due Date</label>
-                    <input type="date" id="sc_add_activity_deadline" name="date_deadline" class="o_sc_input" required="required"
+                <div class="o_pk_field">
+                    <label for="sc_add_activity_deadline" class="o_pk_field_label">Due Date</label>
+                    <input type="date" id="sc_add_activity_deadline" name="date_deadline" class="o_pk_input" required="required"
                            t-att-min="sc_today" t-att-value="sc_today"/>
                 </div>
-                <div class="o_sc_field">
-                    <label for="sc_add_activity_user" class="o_sc_field_label">Assigned To</label>
-                    <select id="sc_add_activity_user" data-sc-picker="1" data-sc-picker-key="user" name="user_id" class="o_sc_input o_sc_select" required="required">
+                <div class="o_pk_field">
+                    <label for="sc_add_activity_user" class="o_pk_field_label">Assigned To</label>
+                    <select id="sc_add_activity_user" data-sc-picker="1" data-sc-picker-key="user" name="user_id" class="o_pk_input o_pk_select" required="required">
                         <t t-foreach="assignable_users" t-as="au">
                             <option t-att-value="au.id" t-out="au.name"
                                     t-att-selected="'selected' if au.id == request.env.user.id else None"/>
                         </t>
                     </select>
                 </div>
-                <div class="o_sc_form_actions">
+                <div class="o_pk_form_actions">
                     <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
-                    <button type="submit" class="o_sc_btn o_sc_btn_primary">Add Activity</button>
+                    <button type="submit" class="o_pk_btn o_pk_btn_primary">Add Activity</button>
                 </div>
                 <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_add'"/></t>
             </form>
@@ -180,7 +180,7 @@
                 </t>
                 <t t-call="bemade_sports_clinic.sc_activities_header"/>
                 <t t-foreach="sc_activity_tabs" t-as="atab">
-                    <section class="o_sc_tab_panel" t-att-data-sc-tab-panel="atab[0]" role="tabpanel"
+                    <section class="o_pk_tab_panel" t-att-data-sc-tab-panel="atab[0]" role="tabpanel"
                              t-att-hidden="None if sc_activity_active_tab == atab[0] else 'hidden'">
                         <t t-call="bemade_sports_clinic.sc_activity_list">
                             <t t-set="activities" t-value="sc_activity_groups[atab[0]]"/>
@@ -216,7 +216,7 @@
             <t t-set="sc_active_nav" t-value="'activities'"/>
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
             <form t-att-action="'/my/activity/update' if activity else '/my/activity/save'" method="post"
-                  class="o_sc_card o_sc_form" data-sc-form="activity.form">
+                  class="o_pk_card o_pk_form" data-sc-form="activity.form">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <t t-if="activity">
                     <input type="hidden" name="activity_id" t-att-value="activity.id"/>
@@ -230,42 +230,42 @@
                     <input t-if="clinic_event" type="hidden" name="clinic_id" t-att-value="clinic_event.id"/>
                 </t>
                 <!-- Task 1739: no type choice (all To-Do). -->
-                <div class="o_sc_field">
-                    <label for="sc_act_summary" class="o_sc_field_label">Summary</label>
-                    <input type="text" id="sc_act_summary" name="summary" class="o_sc_input" required="required"
+                <div class="o_pk_field">
+                    <label for="sc_act_summary" class="o_pk_field_label">Summary</label>
+                    <input type="text" id="sc_act_summary" name="summary" class="o_pk_input" required="required"
                            t-att-value="activity.summary if activity else ''"/>
                 </div>
-                <div class="o_sc_field">
-                    <label for="sc_act_deadline" class="o_sc_field_label">Due Date</label>
+                <div class="o_pk_field">
+                    <label for="sc_act_deadline" class="o_pk_field_label">Due Date</label>
                     <!-- Task 1744: no NEW due date in the past (the server
                          refuses it too; a stored overdue one stays). -->
-                    <input type="date" id="sc_act_deadline" name="date_deadline" class="o_sc_input" required="required"
+                    <input type="date" id="sc_act_deadline" name="date_deadline" class="o_pk_input" required="required"
                            t-att-min="min(sc_today, activity.date_deadline.isoformat()) if activity else sc_today"
                            t-att-value="activity.date_deadline.isoformat() if activity else sc_today"/>
                 </div>
-                <div class="o_sc_field">
-                    <label for="sc_act_user" class="o_sc_field_label">Assigned To</label>
+                <div class="o_pk_field">
+                    <label for="sc_act_user" class="o_pk_field_label">Assigned To</label>
                     <t t-set="sc_users" t-value="available_users if activity else assignable_users"/>
                     <t t-set="sc_selected_user" t-value="activity.user_id.id if activity else default_user_id"/>
-                    <select id="sc_act_user" data-sc-picker="1" data-sc-picker-key="user" name="user_id" class="o_sc_input o_sc_select" required="required"
+                    <select id="sc_act_user" data-sc-picker="1" data-sc-picker-key="user" name="user_id" class="o_pk_input o_pk_select" required="required"
                             data-sc-assignee-select="1" t-att-data-sc-no-access="sc_no_access_ids">
                         <t t-foreach="sc_users" t-as="au">
                             <option t-att-value="au.id" t-out="au.name"
                                     t-att-selected="'selected' if au.id == sc_selected_user else None"/>
                         </t>
                     </select>
-                    <div class="o_sc_banner o_sc_banner_warn" data-sc-assignee-warning="1" hidden="hidden" role="status">
+                    <div class="o_pk_banner o_pk_banner_warn" data-sc-assignee-warning="1" hidden="hidden" role="status">
                         This person is not on the staff of this team and may not be able to open the activity.
                     </div>
                 </div>
-                <div class="o_sc_field">
-                    <label for="sc_act_note" class="o_sc_field_label">Notes</label>
-                    <textarea id="sc_act_note" name="note" class="o_sc_input o_sc_textarea" rows="4"
+                <div class="o_pk_field">
+                    <label for="sc_act_note" class="o_pk_field_label">Notes</label>
+                    <textarea id="sc_act_note" name="note" class="o_pk_input o_pk_textarea" rows="4"
                               t-out="(activity and activity.note and activity.note.striptags()) or ''"/>
                 </div>
-                <div class="o_sc_form_actions">
-                    <a t-att-href="sc_form_back" class="o_sc_btn o_sc_btn_ghost">Cancel</a>
-                    <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="activity.form.submit">Save</button>
+                <div class="o_pk_form_actions">
+                    <a t-att-href="sc_form_back" class="o_pk_btn o_pk_btn_ghost">Cancel</a>
+                    <button type="submit" class="o_pk_btn o_pk_btn_primary" data-sc-action="activity.form.submit">Save</button>
                 </div>
             </form>
         </t>
@@ -279,7 +279,7 @@
         in-place refresh keys — the popout is fetched on every open).
     -->
     <template id="sc_activity_detail_read" name="App shell: activity details">
-        <dl class="o_sc_kv">
+        <dl class="o_pk_kv">
             <dt>Summary</dt><dd><span t-att-data-sc-display="None if act_popout else sc_display_key(activity, 'summary')" t-out="activity.summary or '—'"/></dd>
             <!-- Task 1739 review (owner 2026-11-02): no « Activity Type »
                  line — every activity is a To-Do « À faire » now. -->
@@ -288,7 +288,7 @@
             <!-- Task 1595: the same access-gated links as the row. -->
             <t t-if="act_links">
                 <dt>Related Record</dt>
-                <dd class="o_sc_row_links" data-pk-section="activity.related">
+                <dd class="o_pk_row_links" data-pk-section="activity.related">
                     <t t-call="bemade_sports_clinic.sc_row_links"><t t-set="links" t-value="act_links"/></t>
                 </dd>
             </t>
@@ -308,16 +308,16 @@
     <!-- The attachments of an activity (task 1586: each a download).
          Variables: activity, attachments. -->
     <template id="sc_activity_attachments" name="App shell: activity attachments">
-        <section t-if="attachments" class="o_sc_section" data-pk-section="activity.attachments">
+        <section t-if="attachments" class="o_pk_section" data-pk-section="activity.attachments">
             <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Attachments</t></t>
-            <div class="o_sc_list">
+            <div class="o_pk_list">
                 <t t-foreach="attachments" t-as="attachment">
                     <a t-attf-href="/my/activity/#{activity.id}/attachment/#{attachment.id}" download=""
-                       class="o_sc_entity_row" t-att-data-sc-attachment="attachment.id">
-                        <span class="o_sc_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'documents'"/></t></span>
-                        <span class="o_sc_row_text">
-                            <span class="o_sc_row_title" t-field="attachment.name"/>
-                            <span class="o_sc_row_subtitle" t-out="sc_file_size(attachment.file_size)"/>
+                       class="o_pk_entity_row" t-att-data-sc-attachment="attachment.id">
+                        <span class="o_pk_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'documents'"/></t></span>
+                        <span class="o_pk_row_text">
+                            <span class="o_pk_row_title" t-field="attachment.name"/>
+                            <span class="o_pk_row_subtitle" t-out="sc_file_size(attachment.file_size)"/>
                         </span>
                     </a>
                 </t>
@@ -333,9 +333,9 @@
              data-sc-lazy-filled="1">
             <h3 class="o_sc_activity_popout_title">
                 <span t-out="activity.summary or activity.activity_type_id.name"/>
-                <span t-if="act_state == 'overdue'" class="o_sc_chip o_sc_chip_red">Overdue</span>
-                <span t-elif="act_state == 'today'" class="o_sc_chip o_sc_chip_yellow">Today</span>
-                <span t-else="" class="o_sc_chip o_sc_chip_ghost">Planned</span>
+                <span t-if="act_state == 'overdue'" class="o_pk_chip o_pk_chip_red">Overdue</span>
+                <span t-elif="act_state == 'today'" class="o_pk_chip o_pk_chip_yellow">Today</span>
+                <span t-else="" class="o_pk_chip o_pk_chip_ghost">Planned</span>
             </h3>
             <t t-call="bemade_sports_clinic.sc_activity_detail_read">
                 <t t-set="act_popout" t-value="True"/>
@@ -357,13 +357,13 @@
             <!-- Owner review 2026-10-11: the pencil edit paradigm — the
                  activity is edited in place (was a separate edit page); the
                  type stays read-only, as the edit route always treated it. -->
-            <section t-attf-class="o_sc_card #{'o_sc_edit_card' if sc_activity_editable else ''}" data-pk-section="activity.detail"
+            <section t-attf-class="o_pk_card #{'o_pk_edit_card' if sc_activity_editable else ''}" data-pk-section="activity.detail"
                      t-att-data-pk-edit-card="'activity' if sc_activity_editable else None">
-                <div class="o_sc_edit_card_head">
-                    <span class="o_sc_chips" t-att-data-sc-fragment="sc_fragment_key(activity, 'chips')">
-                        <span t-if="act_state == 'overdue'" class="o_sc_chip o_sc_chip_red">Overdue</span>
-                        <span t-elif="act_state == 'today'" class="o_sc_chip o_sc_chip_yellow">Today</span>
-                        <span t-else="" class="o_sc_chip o_sc_chip_ghost">Planned</span>
+                <div class="o_pk_edit_card_head">
+                    <span class="o_pk_chips" t-att-data-sc-fragment="sc_fragment_key(activity, 'chips')">
+                        <span t-if="act_state == 'overdue'" class="o_pk_chip o_pk_chip_red">Overdue</span>
+                        <span t-elif="act_state == 'today'" class="o_pk_chip o_pk_chip_yellow">Today</span>
+                        <span t-else="" class="o_pk_chip o_pk_chip_ghost">Planned</span>
                     </span>
                     <!-- Task 1736 (owner 2026-11-01): the shared top bar — the
                          red trash (it asks first) next to the ✓ while
@@ -378,7 +378,7 @@
                         <t t-set="act_links" t-value="sc_related_links"/>
                     </t>
                 </div>
-                <div t-if="sc_activity_editable" class="o_sc_fields" data-sc-edit-view="edit" hidden="hidden">
+                <div t-if="sc_activity_editable" class="o_pk_fields" data-sc-edit-view="edit" hidden="hidden">
                     <t t-set="lbl">Summary</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'summary', lbl)"/></t>
                     <t t-set="lbl">Due Date</t>
@@ -395,8 +395,8 @@
                  route re-checks). Task 1736: the delete is the card's trash;
                  r1 (owner 2026-11-01): « Reschedule » / « Reassign » are the
                  pencil's in-place edit (due date, assignee). -->
-            <div t-if="sc_activity_editable" class="o_sc_actionbar">
-                <button type="button" class="o_sc_btn o_sc_btn_primary" data-sc-sheet-open="sc_activity_complete_sheet"
+            <div t-if="sc_activity_editable" class="o_pk_actionbar">
+                <button type="button" class="o_pk_btn o_pk_btn_primary" data-sc-sheet-open="sc_activity_complete_sheet"
                         t-att-data-sc-activity-id="activity.id" data-sc-action="activity.complete">Done</button>
             </div>
             <t t-call="bemade_sports_clinic.sc_activity_sheets">

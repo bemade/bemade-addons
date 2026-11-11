@@ -89,17 +89,17 @@ tours.add("sc_1600_pencil_confirm", {
         {
             content: "Correct the last name",
             trigger:
-                '[data-pk-edit-card="identity"] [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="last_name"] input',
+                '[data-pk-edit-card="identity"] [data-sc-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="last_name"] input',
             run: "edit Onesynth",
         },
         {
             content: "Leave the field",
-            trigger: ".o_sc_appbar_title",
+            trigger: ".o_pk_appbar_title",
             run: "click",
         },
         {
             content: "The confirmation shows old → new; nothing saved yet",
-            trigger: '.o_sc_autosave[data-sc-field="last_name"][data-sc-state="confirm"] .o_sc_identity_banner',
+            trigger: '.o_pk_autosave[data-sc-field="last_name"][data-sc-state="confirm"] .o_sc_identity_banner',
             run() {
                 const text = document.querySelector(".o_sc_identity_banner .o_sc_identity_change").textContent;
                 assert(text.includes("One → Onesynth"), `banner: ${text}`);
@@ -112,7 +112,7 @@ tours.add("sc_1600_pencil_confirm", {
         },
         {
             content: "The field shows the saved value again",
-            trigger: '.o_sc_autosave[data-sc-field="last_name"][data-sc-state="idle"]:not(:has(.o_sc_identity_banner)) input',
+            trigger: '.o_pk_autosave[data-sc-field="last_name"][data-sc-state="idle"]:not(:has(.o_sc_identity_banner)) input',
             run(helpers) {
                 assert(helpers.anchor.value === "One", `value: ${helpers.anchor.value}`);
                 return helpers.edit("Onesynth");
@@ -120,17 +120,17 @@ tours.add("sc_1600_pencil_confirm", {
         },
         {
             content: "Leave the field again",
-            trigger: ".o_sc_appbar_title",
+            trigger: ".o_pk_appbar_title",
             run: "click",
         },
         {
             content: "Confirm",
-            trigger: '.o_sc_autosave[data-sc-field="last_name"] .o_sc_identity_banner .o_sc_identity_confirm',
+            trigger: '.o_pk_autosave[data-sc-field="last_name"] .o_sc_identity_banner .o_sc_identity_confirm',
             run: "click",
         },
         {
             content: "Saved",
-            trigger: '.o_sc_autosave[data-sc-field="last_name"][data-sc-state="saved"]:not(:has(.o_sc_identity_banner))',
+            trigger: '.o_pk_autosave[data-sc-field="last_name"][data-sc-state="saved"]:not(:has(.o_sc_identity_banner))',
         },
     ],
 });

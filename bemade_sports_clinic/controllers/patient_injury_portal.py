@@ -1129,7 +1129,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         keyed = [((row.note_datetime or row.create_date, 1, row.id), self._sc_history_entry(
             row.note_datetime, row.author_id.name, row.content,
             action=scope_labels.get(row.scope) if is_treatment_prof else None,
-            tone='mauve' if row.scope == 'internal' else 'ghost',
+            tone='secondary' if row.scope == 'internal' else 'ghost',
             scope=row.scope,
         )) for row in histories]
         if is_treatment_prof and scope in ('all', 'internal'):

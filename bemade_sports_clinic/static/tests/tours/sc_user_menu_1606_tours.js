@@ -162,7 +162,7 @@ function menuSteps(where) {
  * bubble, fully in view.
  */
 function placementSteps() {
-    const toggle = 'header.o_sc_appbar button[data-pk-user-menu-toggle][aria-controls="sc_user_menu_bar"]';
+    const toggle = 'header.o_pk_appbar button[data-pk-user-menu-toggle][aria-controls="sc_user_menu_bar"]';
     return [
         {
             content: "1638: one user menu, at the top right of the app bar",
@@ -172,11 +172,11 @@ function placementSteps() {
                     "more than one user menu in the DOM");
                 assert(document.querySelectorAll("button[data-pk-user-menu-toggle]").length === 1,
                     "more than one user-menu trigger");
-                assert(!document.querySelector(".o_sc_rail [data-pk-user-menu-toggle]"),
+                assert(!document.querySelector(".o_pk_rail [data-pk-user-menu-toggle]"),
                     "the rail still holds a user menu");
-                const rail = document.querySelector(".o_sc_rail");
+                const rail = document.querySelector(".o_pk_rail");
                 assert(rail && rail.getClientRects().length, "the rail should show at laptop width");
-                const bar = document.querySelector("header.o_sc_appbar");
+                const bar = document.querySelector("header.o_pk_appbar");
                 const barRect = bar.getBoundingClientRect();
                 const button = document.querySelector(toggle);
                 const rect = button.getBoundingClientRect();
@@ -190,7 +190,7 @@ function placementSteps() {
                 assert(visible[visible.length - 1].contains(button), "the avatar is not last in the bar");
                 assert(bar.scrollWidth <= bar.clientWidth + 0.5,
                     `the app bar overflows: ${bar.scrollWidth} > ${bar.clientWidth}`);
-                const title = document.querySelector(".o_sc_appbar_title").getBoundingClientRect();
+                const title = document.querySelector(".o_pk_appbar_title").getBoundingClientRect();
                 assert(title.width >= 120, `the title is squeezed to ${title.width}px`);
             },
         },
@@ -234,14 +234,14 @@ tours.add("sc_1606_menu_phone", {
     steps: () => [
         {
             content: "360 px: the avatar fits next to the clock and search, the title keeps room",
-            trigger: 'header.o_sc_appbar button[aria-controls="sc_user_menu_bar"]',
+            trigger: 'header.o_pk_appbar button[aria-controls="sc_user_menu_bar"]',
             run() {
-                const bar = document.querySelector("header.o_sc_appbar");
+                const bar = document.querySelector("header.o_pk_appbar");
                 assert(bar.scrollWidth <= bar.clientWidth + 0.5,
                     `the app bar overflows: ${bar.scrollWidth} > ${bar.clientWidth}`);
                 assert(document.documentElement.scrollWidth <= window.innerWidth + 0.5,
                     "the page scrolls sideways");
-                const title = document.querySelector(".o_sc_appbar_title").getBoundingClientRect();
+                const title = document.querySelector(".o_pk_appbar_title").getBoundingClientRect();
                 assert(title.width >= 80, `the title is squeezed to ${title.width}px`);
                 const avatar = document.querySelector('button[aria-controls="sc_user_menu_bar"]')
                     .getBoundingClientRect();
@@ -269,7 +269,7 @@ tours.add("sc_1606_sign_out", {
         },
         {
             content: "Signed out: the login page",
-            trigger: 'form.oe_login_form, form[action="/web/login"], .oe_website_login_container, body:not(:has(.o_sc_app))',
+            trigger: 'form.oe_login_form, form[action="/web/login"], .oe_website_login_container, body:not(:has(.o_pk_app))',
         },
     ],
 });

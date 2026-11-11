@@ -89,7 +89,7 @@ class TestAppShellTools1540(Tools1540Common):
         self.assertEqual(resp.status_code, 303)
         self.assertIn('/my/sc/timesheets?deleted=1', resp.headers['Location'])
         _text, tree = self._get('/my/sc/timesheets?deleted=1')
-        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_banner")]'))
+        self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_banner")]'))
         self._login_itp()
         _text, tree = self._get('/my/sc/timesheets')
         self.assertIsNotNone(self._shell(tree))

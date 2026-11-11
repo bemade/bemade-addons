@@ -136,7 +136,7 @@ tours.add("sc_1624_dashboard_round2", {
                 assert(card.querySelector(".o_sc_overdue_flag"), "« Passed » before");
                 typeAndLeave(input, shift(input.min, 7));
                 await waitFor(
-                    () => !line.querySelector(`[data-sc-player-id="${id}"] .o_sc_link_row .o_sc_overdue_flag`),
+                    () => !line.querySelector(`[data-sc-player-id="${id}"] .o_pk_link_row .o_sc_overdue_flag`),
                     "« Passed » gone"
                 );
                 await waitFor(
@@ -151,7 +151,7 @@ tours.add("sc_1624_dashboard_round2", {
             trigger: `${WATCH} .o_sc_player_row button[data-sc-row-expand]`,
             async run() {
                 const followed = document.querySelector(FOLLOWED);
-                assert(followed.querySelector(":scope > .o_sc_dw_body > .o_sc_empty"), "empty at first");
+                assert(followed.querySelector(":scope > .o_sc_dw_body > .o_pk_empty"), "empty at first");
                 const row = this.anchor.closest(".o_sc_player_row");
                 const id = row.dataset.scPlayerId;
                 this.anchor.click();
@@ -164,7 +164,7 @@ tours.add("sc_1624_dashboard_round2", {
                 );
                 const count = document.querySelector(`${FOLLOWED} [data-sc-dw-count]`);
                 assert(count && count.textContent.includes("1"), "the count");
-                assert(!document.querySelector(`${FOLLOWED} > .o_sc_dw_body > .o_sc_empty`), "no empty state");
+                assert(!document.querySelector(`${FOLLOWED} > .o_sc_dw_body > .o_pk_empty`), "no empty state");
                 // Unfollow (from the same card).
                 await waitFor(() => row.querySelector(`${toggle}[data-sc-followed="1"]`), "followed");
                 row.querySelector(toggle).click();
@@ -172,7 +172,7 @@ tours.add("sc_1624_dashboard_round2", {
                     () => !document.querySelector(`${FOLLOWED} [data-pk-fragment-item]`),
                     "the card leaves « Players I follow »"
                 );
-                await waitFor(() => document.querySelector(`${FOLLOWED} > .o_sc_dw_body > .o_sc_empty`), "the empty state");
+                await waitFor(() => document.querySelector(`${FOLLOWED} > .o_sc_dw_body > .o_pk_empty`), "the empty state");
                 assert(!document.querySelector(`${FOLLOWED} [data-sc-dw-count]`), "no count");
                 assert(window.__sc1624r2NoReload, "the page reloaded");
                 noHorizontalScroll();

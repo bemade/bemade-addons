@@ -239,7 +239,7 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
             _text, tree = self._get(self._url())
             ret = self._hero_return(tree)
             self.assertEqual(ret.get('data-sc-return-kind'), 'actual')
-            value = ret.xpath('.//*[contains(@class, "o_sc_field_value")]')
+            value = ret.xpath('.//*[contains(@class, "o_pk_field_value")]')
             # Formatted for humans (the save route's display string).
             self.assertTrue(value[0].text_content().strip())
             self.assertNotIn('2026-11-02', ret.text_content())
@@ -252,7 +252,7 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
         ret = self._hero_return(tree)
         # The holder stays (a read fragment); no value line while empty,
         # a muted « not set » line instead (review fixes 2026-10-18, 1018c).
-        self.assertFalse(ret.xpath('.//*[contains(@class, "o_sc_field_static")]'))
+        self.assertFalse(ret.xpath('.//*[contains(@class, "o_pk_field_static")]'))
         self.assertEqual(ret.text_content().strip(), 'Actual return: not set')
 
     # -- UC-4 ------------------------------------------------------------
@@ -275,7 +275,7 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
             pills = hero.xpath('.//*[@data-sc-pill-readonly]')
             self.assertEqual([p.get('data-sc-pill-key') for p in pills], ['match', 'practice'], vals)
             for pill, tone, label in zip(pills, tones, labels):
-                self.assertIn('o_sc_chip_%s' % tone, pill.get('class'), vals)
+                self.assertIn('o_pk_chip_%s' % tone, pill.get('class'), vals)
                 self.assertEqual(' '.join(pill.text_content().split()), label)
 
     def test_therapist_changes_status_with_the_pills(self):
@@ -286,7 +286,7 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
         _text, tree = self._get(self._url())
         status = tree.xpath('//*[@data-pk-section="player.hero"]/*[@data-pk-section="player.status"]')[0]
         self.assertFalse(tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-sc-stage-chip]'))
-        self.assertEqual(len(status.xpath('.//button[contains(@class, "o_sc_pill_select")]')), 2)
+        self.assertEqual(len(status.xpath('.//button[contains(@class, "o_pk_pill_select")]')), 2)
         self.assertFalse(status.xpath('.//owl-component'))
         edit = tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-sc-edit-view="edit"]')[0]
         self.assertFalse(self._props(edit, 'sc_status', scope='.//*'))
@@ -301,7 +301,7 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
         card = tree.xpath('//*[@data-sc-injury-id="%s"]' % injury.id)
         self.assertEqual(len(card), 1)
         stage_label = dict(injury._fields['stage']._description_selection(self.env))['active']
-        chips = [c.text_content().strip() for c in card[0].xpath('.//summary//*[contains(@class, "o_sc_chip")]')]
+        chips = [c.text_content().strip() for c in card[0].xpath('.//summary//*[contains(@class, "o_pk_chip")]')]
         self.assertIn(stage_label, chips)
 
 

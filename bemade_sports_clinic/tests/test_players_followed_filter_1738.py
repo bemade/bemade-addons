@@ -88,7 +88,7 @@ class TestPlayersFollowedFilter1738(Dashboard1624Common):
         with patch.object(TeamStaffPortal, '_items_per_page', 1):
             _text, tree = self._get('/my/players?followed=1')
             self.assertEqual(len(self._row_ids(tree)), 1)
-            page_links = tree.xpath('//*[contains(@class, "o_sc_pager")]//a[contains(@href, "/page/2")]/@href')
+            page_links = tree.xpath('//*[contains(@class, "o_pk_pager")]//a[contains(@href, "/page/2")]/@href')
             self.assertTrue(page_links)
             for href in page_links:
                 self.assertEqual(parse_qs(urlparse(href).query).get('followed'), ['1'])

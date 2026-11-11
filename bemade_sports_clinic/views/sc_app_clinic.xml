@@ -33,25 +33,25 @@
             </t>
 
             <!-- Owner review 2026-10-14: applied on change (sc_forms.js). -->
-            <form method="get" action="/my/clinics" class="o_sc_filters" data-pk-section="clinics.filters"
+            <form method="get" action="/my/clinics" class="o_pk_filters" data-pk-section="clinics.filters"
                   data-pk-autosubmit="1">
                 <input type="hidden" name="filters_applied" value="1"/>
                 <input type="hidden" name="time_filter" t-att-value="time_filter"/>
-                <div class="o_sc_chips">
-                    <a t-att-href="sc_clinic_mine_url" t-attf-class="o_sc_chip #{'o_sc_chip_mauve' if mine else 'o_sc_chip_ghost'}"
+                <div class="o_pk_chips">
+                    <a t-att-href="sc_clinic_mine_url" t-attf-class="o_pk_chip #{'o_pk_chip_secondary' if mine else 'o_pk_chip_ghost'}"
                        t-att-aria-pressed="'true' if mine else 'false'" data-sc-action="clinics.mine">Assigned to me</a>
                 </div>
                 <input t-if="mine" type="hidden" name="mine" value="1"/>
                 <input t-else="" type="hidden" name="mine" value="0"/>
-                <details class="o_sc_disclosure" t-att-open="'open' if team_id or organization_id else None">
-                    <summary class="o_sc_disclosure_summary">
+                <details class="o_pk_disclosure" t-att-open="'open' if team_id or organization_id else None">
+                    <summary class="o_pk_disclosure_summary">
                         <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
                         <span>Filters</span>
                     </summary>
-                    <div class="o_sc_filter_grid">
-                        <div class="o_sc_field">
-                            <label for="sc_clinics_team" class="o_sc_field_label">Team</label>
-                            <select id="sc_clinics_team" data-sc-picker="1" data-sc-picker-key="team-filter" name="team_id" class="o_sc_input o_sc_select">
+                    <div class="o_pk_filter_grid">
+                        <div class="o_pk_field">
+                            <label for="sc_clinics_team" class="o_pk_field_label">Team</label>
+                            <select id="sc_clinics_team" data-sc-picker="1" data-sc-picker-key="team-filter" name="team_id" class="o_pk_input o_pk_select">
                                 <option value="">All teams</option>
                                 <t t-foreach="teams" t-as="team_opt">
                                     <option t-att-value="team_opt.id" t-att-selected="'selected' if team_id == team_opt.id else None"
@@ -59,9 +59,9 @@
                                 </t>
                             </select>
                         </div>
-                        <div class="o_sc_field">
-                            <label for="sc_clinics_org" class="o_sc_field_label">Organization</label>
-                            <select id="sc_clinics_org" data-sc-picker="1" data-sc-picker-key="org" name="organization_id" class="o_sc_input o_sc_select">
+                        <div class="o_pk_field">
+                            <label for="sc_clinics_org" class="o_pk_field_label">Organization</label>
+                            <select id="sc_clinics_org" data-sc-picker="1" data-sc-picker-key="org" name="organization_id" class="o_pk_input o_pk_select">
                                 <option value="">All organizations</option>
                                 <t t-foreach="organizations" t-as="org_opt">
                                     <option t-att-value="org_opt.id" t-att-selected="'selected' if organization_id == org_opt.id else None"
@@ -70,14 +70,14 @@
                             </select>
                         </div>
                     </div>
-                    <div class="o_sc_form_actions">
-                        <a href="/my/clinics" class="o_sc_btn o_sc_btn_ghost" data-pk-filter-reset="1">Reset</a>
-                        <button type="submit" class="o_sc_btn o_sc_btn_primary" data-pk-autosubmit-fallback="1">Apply filters</button>
+                    <div class="o_pk_form_actions">
+                        <a href="/my/clinics" class="o_pk_btn o_pk_btn_ghost" data-pk-filter-reset="1">Reset</a>
+                        <button type="submit" class="o_pk_btn o_pk_btn_primary" data-pk-autosubmit-fallback="1">Apply filters</button>
                     </div>
                 </details>
             </form>
 
-            <div t-if="sc_clinic_rows" class="o_sc_list" data-pk-section="clinics.list">
+            <div t-if="sc_clinic_rows" class="o_pk_list" data-pk-section="clinics.list">
                 <t t-foreach="sc_clinic_rows" t-as="row">
                     <t t-call="bemade_sports_clinic.sc_entity_row">
                         <t t-set="href" t-value="row['url']"/>
@@ -95,7 +95,7 @@
             <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
                 <t t-set="message">No clinic matches these filters.</t>
             </t>
-            <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_sc_pager">
+            <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_pk_pager">
                 <t t-call="portal.pager"/>
             </div>
         </t>
@@ -107,24 +107,24 @@
     -->
     <template id="sc_clinic_worklist_static" name="App shell: static waiting list">
         <div class="o_sc_wl" data-sc-worklist-static="1">
-            <p t-if="not attendances" class="o_sc_empty">Nobody on the list yet. Add the patients you expect to see, or pair the sign-in kiosk.</p>
+            <p t-if="not attendances" class="o_pk_empty">Nobody on the list yet. Add the patients you expect to see, or pair the sign-in kiosk.</p>
             <t t-foreach="attendances" t-as="attendance">
                 <t t-set="wl_patient" t-value="attendance.patient_id"/>
                 <div class="o_sc_wl_row" t-att-data-sc-attendance-id="attendance.id" t-att-data-sc-state="attendance.state">
                     <span class="o_sc_wl_num" t-out="attendance_index + 1"/>
-                    <span class="o_sc_row_text">
-                        <a t-if="wl_patient and wl_patient.id in accessible_patient_ids" class="o_sc_row_title"
+                    <span class="o_pk_row_text">
+                        <a t-if="wl_patient and wl_patient.id in accessible_patient_ids" class="o_pk_row_title"
                            t-attf-href="/my/clinic/#{event.id}?patient=#{wl_patient.id}&amp;tab=dossier" t-out="wl_patient._portal_list_name()"/>
-                        <span t-elif="wl_patient" class="o_sc_row_title" t-out="wl_patient._portal_list_name()"/>
-                        <span t-else="" class="o_sc_row_title" t-out="attendance._kiosk_display_name()"/>
+                        <span t-elif="wl_patient" class="o_pk_row_title" t-out="wl_patient._portal_list_name()"/>
+                        <span t-else="" class="o_pk_row_title" t-out="attendance._kiosk_display_name()"/>
                     </span>
-                    <form t-if="wl_patient" t-attf-action="/my/clinic/#{event.id}/attendance/#{attendance.id}/state" method="post" class="o_sc_segmented">
+                    <form t-if="wl_patient" t-attf-action="/my/clinic/#{event.id}/attendance/#{attendance.id}/state" method="post" class="o_pk_segmented">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <button type="submit" name="state" value="expected" t-att-aria-pressed="'true' if attendance.state == 'expected' else 'false'">Expected</button>
                         <button type="submit" name="state" value="arrived" t-att-aria-pressed="'true' if attendance.state == 'arrived' else 'false'">Arrived</button>
                         <button type="submit" name="state" value="seen" t-att-aria-pressed="'true' if attendance.state == 'seen' else 'false'">Seen</button>
                     </form>
-                    <span t-else="" class="o_sc_chip o_sc_chip_mauve">Unregistered</span>
+                    <span t-else="" class="o_pk_chip o_pk_chip_secondary">Unregistered</span>
                 </div>
             </t>
         </div>
@@ -136,23 +136,23 @@
             <t t-set="sc_title" t-value="event.name"/>
             <t t-set="sc_active_nav" t-value="'clinic'"/>
             <!-- Task 1721 (review round 1): the whole width on a laptop. -->
-            <t t-set="sc_content_class" t-value="'o_sc_content_wide'"/>
+            <t t-set="sc_content_class" t-value="'o_pk_content_wide'"/>
 
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
             <div t-if="success == 'note_added' and sc_note_draft_prefix"
                  t-att-data-sc-draft-clear="sc_note_draft_prefix" hidden="hidden"/>
 
-            <div class="o_sc_card o_sc_clinic_head" data-pk-section="clinic.head">
+            <div class="o_pk_card o_sc_clinic_head" data-pk-section="clinic.head">
                 <div class="o_sc_clinic_head_text">
                     <strong t-out="sc_clinic_when"/>
-                    <span t-if="sc_clinic_teams" class="o_sc_meta" t-out="sc_clinic_teams"/>
-                    <span t-if="sc_clinic_staff" class="o_sc_meta" t-out="sc_clinic_staff"/>
+                    <span t-if="sc_clinic_teams" class="o_pk_meta" t-out="sc_clinic_teams"/>
+                    <span t-if="sc_clinic_staff" class="o_pk_meta" t-out="sc_clinic_staff"/>
                 </div>
-                <button t-if="kiosk_can_manage" type="button" class="o_sc_btn o_sc_btn_ghost o_sc_btn_sm"
+                <button t-if="kiosk_can_manage" type="button" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm"
                         data-sc-sheet-open="sc_clinic_kiosk_sheet" data-sc-action="clinic.kiosk">
                     <span>Sign-in kiosk</span>
-                    <span t-if="kiosk_devices" class="o_sc_chip o_sc_chip_green">Paired</span>
-                    <span t-else="" class="o_sc_chip o_sc_chip_ghost">Not paired</span>
+                    <span t-if="kiosk_devices" class="o_pk_chip o_pk_chip_green">Paired</span>
+                    <span t-else="" class="o_pk_chip o_pk_chip_ghost">Not paired</span>
                 </button>
             </div>
 
@@ -165,7 +165,7 @@
 
             <div class="o_sc_clinic_panes">
                 <!-- ======================= waiting list ======================= -->
-                <section class="o_sc_tab_panel o_sc_clinic_pane" data-sc-tab-panel="worklist" role="tabpanel"
+                <section class="o_pk_tab_panel o_sc_clinic_pane" data-sc-tab-panel="worklist" role="tabpanel"
                          id="clinic-worklist" data-pk-section="clinic.worklist"
                          t-att-hidden="None if sc_clinic_active_tab == 'worklist' else 'hidden'">
                     <!-- Task 1607: « + Ajouter » (the add-patient sheet, was in
@@ -182,7 +182,7 @@
                 </section>
 
                 <!-- ========================== file ========================== -->
-                <section class="o_sc_tab_panel o_sc_clinic_pane" data-sc-tab-panel="dossier" role="tabpanel"
+                <section class="o_pk_tab_panel o_sc_clinic_pane" data-sc-tab-panel="dossier" role="tabpanel"
                          id="clinic-dossier" data-pk-section="clinic.dossier"
                          t-att-hidden="None if sc_clinic_active_tab == 'dossier' else 'hidden'">
                     <t t-if="not selected_patient" t-call="bemade_sports_clinic.sc_empty_state">
@@ -198,7 +198,7 @@
                              notes. Review round 2 (owner 2026-10-27): the
                              medical pills are INSIDE the card (sc_player_row,
                              their popups the page's « card » sheets). -->
-                        <div class="o_sc_list o_sc_clinic_player" data-pk-section="clinic.dossier.player"
+                        <div class="o_pk_list o_sc_clinic_player" data-pk-section="clinic.dossier.player"
                              t-att-data-sc-patient-id="patient.id" id="clinic-status">
                             <t t-call="bemade_sports_clinic.sc_player_row">
                                 <t t-set="row" t-value="sc_clinic_player_row"/>
@@ -206,7 +206,7 @@
                             </t>
                         </div>
 
-                        <section class="o_sc_section" data-pk-section="clinic.dossier.injuries" id="clinic-injuries">
+                        <section class="o_pk_section" data-pk-section="clinic.dossier.injuries" id="clinic-injuries">
                             <t t-call="bemade_sports_clinic.sc_section_header">
                                 <t t-set="title">Injuries</t>
                             </t>
@@ -232,20 +232,20 @@
                                  joins the active list without a reload. -->
                             <div class="o_sc_clinic_injuries" data-pk-section="clinic.dossier.injury_lists"
                                  t-att-data-sc-fragment="sc_fragment_key(patient, 'injury-lists')" data-sc-fragment-mode="list">
-                                <div t-if="sc_injury_rows" class="o_sc_list" data-pk-section="clinic.dossier.injury_list">
+                                <div t-if="sc_injury_rows" class="o_pk_list" data-pk-section="clinic.dossier.injury_list">
                                     <t t-foreach="sc_injury_rows" t-as="row">
                                         <t t-call="bemade_sports_clinic.sc_injury_card"/>
                                     </t>
                                 </div>
-                                <p t-else="" class="o_sc_empty" data-pk-section="clinic.dossier.no_active">No active injuries.</p>
+                                <p t-else="" class="o_pk_empty" data-pk-section="clinic.dossier.no_active">No active injuries.</p>
                                 <!-- Task 1721: the resolved injuries, folded; the
                                      fold stays open across a refresh
                                      (data-sc-keep-open, sc_fragments.js). -->
                                 <div class="o_sc_clinic_resolved" data-pk-section="clinic.dossier.resolved">
                                     <details t-if="sc_resolved_injury_rows" class="o_sc_resolved_injuries"
                                              data-sc-resolved-injuries="1" data-sc-keep-open="resolved-injuries">
-                                        <summary class="o_sc_link_btn o_sc_resolved_toggle" t-out="sc_resolved_injuries_label"/>
-                                        <div class="o_sc_list" data-pk-section="clinic.dossier.resolved_list">
+                                        <summary class="o_pk_link_btn o_sc_resolved_toggle" t-out="sc_resolved_injuries_label"/>
+                                        <div class="o_pk_list" data-pk-section="clinic.dossier.resolved_list">
                                             <t t-foreach="sc_resolved_injury_rows" t-as="row">
                                                 <t t-call="bemade_sports_clinic.sc_injury_card"/>
                                             </t>
@@ -255,7 +255,7 @@
                             </div>
                         </section>
 
-                        <section class="o_sc_section" data-pk-section="clinic.dossier.notes" id="clinic-notes">
+                        <section class="o_pk_section" data-pk-section="clinic.dossier.notes" id="clinic-notes">
                             <t t-call="bemade_sports_clinic.sc_section_header">
                                 <t t-set="title">Treatment notes</t>
                             </t>
@@ -268,7 +268,7 @@
                                 <t t-set="note_injury" t-value="note_default_injury_id"/>
                                 <t t-set="note_draft_prefix" t-value="sc_note_draft_prefix"/>
                             </t>
-                            <div t-if="treatment_notes" class="o_sc_list" data-pk-section="clinic.dossier.note_list">
+                            <div t-if="treatment_notes" class="o_pk_list" data-pk-section="clinic.dossier.note_list">
                                 <t t-foreach="treatment_notes" t-as="note">
                                     <t t-call="bemade_sports_clinic.sc_note_card">
                                         <t t-set="injury_url" t-value="False"/>
@@ -290,24 +290,24 @@
                 <t t-set="sheet_id" t-value="'sc_clinic_add_sheet'"/>
                 <t t-set="title">Add a patient</t>
                 <t t-set="lazy_url" t-value="False"/>
-                <form t-attf-action="/my/clinic/#{event.id}/attendance/add" method="post" class="o_sc_form" data-sc-form="clinic.add" data-sc-guard="1" data-sc-guard-mode="fetch">
+                <form t-attf-action="/my/clinic/#{event.id}/attendance/add" method="post" class="o_pk_form" data-sc-form="clinic.add" data-sc-guard="1" data-sc-guard-mode="fetch">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <div class="o_sc_field">
-                        <label class="o_sc_field_label" for="sc_clinic_add_patient">Player</label>
+                    <div class="o_pk_field">
+                        <label class="o_pk_field_label" for="sc_clinic_add_patient">Player</label>
                         <t t-set="combo_label_clinic">Clinic teams</t>
                         <t t-set="combo_label_other">Other teams</t>
                         <t t-set="combo_empty_label">Pick a patient…</t>
                         <t t-call="bemade_sports_clinic.portal_patient_combo">
                             <t t-set="combo_name" t-value="'patient_id'"/>
                             <t t-set="combo_id" t-value="'sc_clinic_add_patient'"/>
-                            <t t-set="combo_class" t-value="'o_sc_input o_sc_select'"/>
+                            <t t-set="combo_class" t-value="'o_pk_input o_pk_select'"/>
                             <t t-set="combo_required" t-value="True"/>
                             <t t-set="combo_groups" t-value="[(combo_label_clinic, addable_clinic_patients), (combo_label_other, addable_other_patients)]"/>
                         </t>
                     </div>
-                    <div class="o_sc_form_actions">
-                        <button type="button" class="o_sc_btn o_sc_btn_ghost" data-sc-sheet-close="1">Cancel</button>
-                        <button type="submit" class="o_sc_btn o_sc_btn_primary">Add</button>
+                    <div class="o_pk_form_actions">
+                        <button type="button" class="o_pk_btn o_pk_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                        <button type="submit" class="o_pk_btn o_pk_btn_primary">Add</button>
                     </div>
                     <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_clinic_add'"/></t>
                 </form>
@@ -320,48 +320,48 @@
                 <t t-set="sheet_id" t-value="'sc_clinic_resolve_sheet'"/>
                 <t t-set="title">Resolve the sign-in</t>
                 <t t-set="lazy_url" t-value="False"/>
-                <p class="o_sc_meta"><strong data-sc-resolve-name="1"/></p>
-                <form t-attf-action="/my/clinic/#{event.id}/attendance/0/link" method="post" class="o_sc_form"
+                <p class="o_pk_meta"><strong data-sc-resolve-name="1"/></p>
+                <form t-attf-action="/my/clinic/#{event.id}/attendance/0/link" method="post" class="o_pk_form"
                       data-sc-resolve="link" t-attf-data-sc-action-template="/my/clinic/#{event.id}/attendance/__ID__/link" data-sc-guard="1" data-sc-guard-mode="fetch">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <div class="o_sc_field">
-                        <label class="o_sc_field_label" for="sc_clinic_resolve_patient">Link to an existing file</label>
+                    <div class="o_pk_field">
+                        <label class="o_pk_field_label" for="sc_clinic_resolve_patient">Link to an existing file</label>
                         <t t-set="combo_label_clinic">Clinic teams</t>
                         <t t-set="combo_label_other">Other teams</t>
                         <t t-set="combo_empty_label">Pick a patient…</t>
                         <t t-call="bemade_sports_clinic.portal_patient_combo">
                             <t t-set="combo_name" t-value="'patient_id'"/>
                             <t t-set="combo_id" t-value="'sc_clinic_resolve_patient'"/>
-                            <t t-set="combo_class" t-value="'o_sc_input o_sc_select'"/>
+                            <t t-set="combo_class" t-value="'o_pk_input o_pk_select'"/>
                             <t t-set="combo_required" t-value="True"/>
                             <t t-set="combo_groups" t-value="[(combo_label_clinic, sc_resolve_groups[0]), (combo_label_other, sc_resolve_groups[1])]"/>
                         </t>
                     </div>
-                    <div class="o_sc_form_actions">
-                        <button type="submit" class="o_sc_btn o_sc_btn_primary">Link</button>
+                    <div class="o_pk_form_actions">
+                        <button type="submit" class="o_pk_btn o_pk_btn_primary">Link</button>
                     </div>
                     <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_clinic_resolve_link'"/></t>
                 </form>
-                <form t-attf-action="/my/clinic/#{event.id}/attendance/0/create_patient" method="post" class="o_sc_form"
+                <form t-attf-action="/my/clinic/#{event.id}/attendance/0/create_patient" method="post" class="o_pk_form"
                       data-sc-resolve="create" t-attf-data-sc-action-template="/my/clinic/#{event.id}/attendance/__ID__/create_patient" data-sc-guard="1" data-sc-guard-mode="fetch">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <div t-if="len(event.team_ids) &gt; 1" class="o_sc_field">
-                        <label class="o_sc_field_label" for="sc_clinic_resolve_team">Team</label>
-                        <select id="sc_clinic_resolve_team" data-sc-picker="1" data-sc-picker-key="team-filter" name="team_id" class="o_sc_input o_sc_select" required="required">
+                    <div t-if="len(event.team_ids) &gt; 1" class="o_pk_field">
+                        <label class="o_pk_field_label" for="sc_clinic_resolve_team">Team</label>
+                        <select id="sc_clinic_resolve_team" data-sc-picker="1" data-sc-picker-key="team-filter" name="team_id" class="o_pk_input o_pk_select" required="required">
                             <option t-foreach="sc_resolve_teams" t-as="team" t-att-value="team.id" t-out="team.name"/>
                         </select>
                     </div>
-                    <div class="o_sc_form_actions">
-                        <button type="submit" class="o_sc_btn o_sc_btn_ghost" t-att-disabled="'disabled' if not sc_resolve_teams else None">Create the player</button>
+                    <div class="o_pk_form_actions">
+                        <button type="submit" class="o_pk_btn o_pk_btn_ghost" t-att-disabled="'disabled' if not sc_resolve_teams else None">Create the player</button>
                     </div>
                     <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_clinic_resolve_create'"/></t>
                 </form>
-                <form t-attf-action="/my/clinic/#{event.id}/attendance/0/remove" method="post" class="o_sc_form"
+                <form t-attf-action="/my/clinic/#{event.id}/attendance/0/remove" method="post" class="o_pk_form"
                       data-sc-resolve="remove" t-attf-data-sc-action-template="/my/clinic/#{event.id}/attendance/__ID__/remove" data-sc-guard="1" data-sc-guard-mode="fetch">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="patient" t-att-value="selected_patient.id if selected_patient else ''"/>
-                    <div class="o_sc_form_actions">
-                        <button type="submit" class="o_sc_btn o_sc_btn_danger">Remove</button>
+                    <div class="o_pk_form_actions">
+                        <button type="submit" class="o_pk_btn o_pk_btn_danger">Remove</button>
                     </div>
                     <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_clinic_resolve_remove'"/></t>
                 </form>
@@ -372,35 +372,35 @@
                 <t t-set="sheet_id" t-value="'sc_clinic_kiosk_sheet'"/>
                 <t t-set="title">Sign-in kiosk</t>
                 <t t-set="lazy_url" t-value="False"/>
-                <p class="o_sc_meta">Patients sign themselves in on the clinic iPad (name and date of birth). The iPad shows a pairing code: type it here to activate the kiosk for this clinic — the iPad continues by itself. The pairing lasts until 30 minutes after the clinic ends.</p>
-                <form t-attf-action="/my/clinic/#{event.id}/kiosk/pair" method="post" class="o_sc_form" data-sc-form="clinic.kiosk.pair">
+                <p class="o_pk_meta">Patients sign themselves in on the clinic iPad (name and date of birth). The iPad shows a pairing code: type it here to activate the kiosk for this clinic — the iPad continues by itself. The pairing lasts until 30 minutes after the clinic ends.</p>
+                <form t-attf-action="/my/clinic/#{event.id}/kiosk/pair" method="post" class="o_pk_form" data-sc-form="clinic.kiosk.pair">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <div class="o_sc_field">
-                        <label class="o_sc_field_label" for="sc_clinic_kiosk_code">Pairing code</label>
-                        <input type="text" id="sc_clinic_kiosk_code" name="code" class="o_sc_input" maxlength="8"
+                    <div class="o_pk_field">
+                        <label class="o_pk_field_label" for="sc_clinic_kiosk_code">Pairing code</label>
+                        <input type="text" id="sc_clinic_kiosk_code" name="code" class="o_pk_input" maxlength="8"
                                autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false"
                                placeholder="ABC234" required="required"/>
                     </div>
-                    <div class="o_sc_form_actions">
-                        <button type="submit" class="o_sc_btn o_sc_btn_primary">Pair the kiosk</button>
+                    <div class="o_pk_form_actions">
+                        <button type="submit" class="o_pk_btn o_pk_btn_primary">Pair the kiosk</button>
                     </div>
                 </form>
                 <t t-if="kiosk_devices">
-                    <h3 class="o_sc_section_sub">Paired devices</h3>
-                    <div class="o_sc_list">
-                        <div t-foreach="kiosk_devices" t-as="kiosk_device" class="o_sc_entity_row o_sc_entity_row_static"
+                    <h3 class="o_pk_section_sub">Paired devices</h3>
+                    <div class="o_pk_list">
+                        <div t-foreach="kiosk_devices" t-as="kiosk_device" class="o_pk_entity_row o_pk_entity_row_static"
                              t-att-data-sc-kiosk-device-id="kiosk_device.id">
-                            <span class="o_sc_row_text">
-                                <span class="o_sc_row_title" t-out="kiosk_device.name"/>
-                                <span t-if="kiosk_device.last_seen_at" class="o_sc_row_subtitle">
+                            <span class="o_pk_row_text">
+                                <span class="o_pk_row_title" t-out="kiosk_device.name"/>
+                                <span t-if="kiosk_device.last_seen_at" class="o_pk_row_subtitle">
                                     <span>Last seen</span>
                                     <span t-out="kiosk_device.last_seen_at" t-options="{'widget': 'datetime'}"/>
                                 </span>
                             </span>
-                            <form t-attf-action="/my/clinic/#{event.id}/kiosk/unbind" method="post" class="o_sc_row_trailing">
+                            <form t-attf-action="/my/clinic/#{event.id}/kiosk/unbind" method="post" class="o_pk_row_trailing">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="device_id" t-att-value="kiosk_device.id"/>
-                                <button type="submit" class="o_sc_btn o_sc_btn_danger o_sc_btn_sm">Unpair</button>
+                                <button type="submit" class="o_pk_btn o_pk_btn_danger o_pk_btn_sm">Unpair</button>
                             </form>
                         </div>
                     </div>

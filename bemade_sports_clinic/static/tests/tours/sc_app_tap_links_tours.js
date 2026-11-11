@@ -31,17 +31,17 @@ registry.category("web_tour.tours").add("sc_1585_tap_links", {
         },
         {
             content: "Edit the mobile",
-            trigger: `${CARD} [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="mobile"] input`,
+            trigger: `${CARD} [data-sc-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="mobile"] input`,
             run: "edit 514 555 0177", // task 1645: a valid number, saved formatted
         },
         {
             content: "Leave the field (saves)",
-            trigger: ".o_sc_appbar_title",
+            trigger: ".o_pk_appbar_title",
             run: "click",
         },
         {
             content: "Saved",
-            trigger: `${CARD} .o_sc_autosave[data-sc-field="mobile"][data-sc-state="saved"]`,
+            trigger: `${CARD} .o_pk_autosave[data-sc-field="mobile"][data-sc-state="saved"]`,
         },
         {
             content: "Done: back to read mode",

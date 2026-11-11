@@ -28,7 +28,7 @@ describe("pk_focus", () => {
     test("the hook is generic: no consumer class is skipped by itself", () => {
         getFixture().innerHTML = `
             <form>
-                <input type="text" name="search" class="o_sc_picker_input"/>
+                <input type="text" name="search" class="o_pk_picker_input"/>
                 <textarea name="body"></textarea>
             </form>`;
         expect(firstTextField(getFixture()).name).toBe("search");

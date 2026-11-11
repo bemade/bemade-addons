@@ -194,9 +194,9 @@ class TestReviewFixes1014Pages(AppShellCommon):
             title = row.xpath('.//*[@data-sc-title-split]')
             self.assertEqual(len(title), 1, activity.summary)
             self.assertEqual(_text(title[0]), activity.summary)
-            links = title[0].xpath('.//a[contains(@class, "o_sc_row_title_link")]')
+            links = title[0].xpath('.//a[contains(@class, "o_pk_row_title_link")]')
             self.assertEqual([(a.get('href'), _text(a)) for a in links], [(url, name)])
-            main = row.xpath('.//a[contains(@class, "o_sc_link_row_main")]')
+            main = row.xpath('.//a[contains(@class, "o_pk_link_row_main")]')
             self.assertEqual(len(main), 1)
             self.assertEqual(main[0].get('href'), '/my/activity/%s' % activity.id)
             self.assertEqual(main[0].get('aria-label'), activity.summary)
@@ -204,7 +204,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
         # A title without a record name stays the plain main link.
         row = self._activity_row(tree, self.act_event)
         self.assertFalse(row.xpath('.//*[@data-sc-title-split]'))
-        self.assertEqual(_text(row.xpath('.//a[contains(@class, "o_sc_link_row_main")]')[0]),
+        self.assertEqual(_text(row.xpath('.//a[contains(@class, "o_pk_link_row_main")]')[0]),
                          self.act_event.summary)
 
     def test_activity_title_name_plain_when_refused(self):
@@ -267,7 +267,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
         self.assertEqual(_text(error[0]), 'Event end time must be after start time.')
         self.assertEqual(tree.xpath('//input[@name="date_end"]/@aria-invalid'), ['true'])
         self.assertNotIn('Event end time must be after start time.',
-                         ' '.join(_text(b) for b in tree.xpath('//*[contains(@class, "o_sc_banner")]')))
+                         ' '.join(_text(b) for b in tree.xpath('//*[contains(@class, "o_pk_banner")]')))
         # On the event page (edited in place), the autosave answers the
         # refusal as the field's own message (400 + message).
         self.event.invalidate_recordset()

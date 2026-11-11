@@ -45,7 +45,7 @@ class TestBookingsShell(BookingsShellCommon):
                          ['upcoming', 'past', 'all', 'calendar'])
         ids = [int(x) for x in tree.xpath('//*[@data-sc-booking-id]/@data-sc-booking-id')]
         self.assertEqual(ids, [self.booking_soon.id])
-        self.assertIn('bookings', tree.xpath('//nav[contains(@class, "o_sc_rail_nav")]//a/@data-sc-nav-key'))
+        self.assertIn('bookings', tree.xpath('//nav[contains(@class, "o_pk_rail_nav")]//a/@data-sc-nav-key'))
         _text, tree = self._get('/my/bookings?filterby=past')
         ids = [int(x) for x in tree.xpath('//*[@data-sc-booking-id]/@data-sc-booking-id')]
         self.assertEqual(ids, [self.booking_past.id])
@@ -70,7 +70,7 @@ class TestBookingsShell(BookingsShellCommon):
         row = tree.xpath('//*[@data-sc-booking-id="%s"]' % self.booking_soon.id)[0]
         self.assertEqual(row.xpath('.//a[@data-sc-booking-link="phone"]/@href'), ['tel:+15550100321'])
         self.assertEqual(row.xpath('.//a[@data-sc-booking-link="email"]/@href'), ['mailto:quinn@bk.example.com'])
-        subtitle = row.xpath('.//*[contains(@class, "o_sc_row_subtitle")]')[0].text_content()
+        subtitle = row.xpath('.//*[contains(@class, "o_pk_row_subtitle")]')[0].text_content()
         self.assertNotIn('quinn@bk.example.com', subtitle)
         self.client.write({'phone': False})
         _text, tree = self._get('/my/bookings')

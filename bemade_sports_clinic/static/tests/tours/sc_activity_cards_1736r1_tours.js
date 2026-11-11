@@ -64,7 +64,7 @@ tours.add("sc_1736r1_activity_card", {
             run() {
                 const el = card();
                 assert(el, "the activity's card");
-                const trash = el.querySelector("button.o_sc_card_trash");
+                const trash = el.querySelector("button.o_pk_card_trash");
                 assert(trash && !shown(trash), "the trash shows before editing");
                 const icons = [...el.querySelector("[data-sc-card-icons]").querySelectorAll("button")];
                 assert(icons[icons.length - 1].dataset.scEditToggle === "1", "the pencil is not rightmost");
@@ -77,25 +77,25 @@ tours.add("sc_1736r1_activity_card", {
         },
         {
             content: "Edit view: the fields are mounted, the trash shows left of the ✓",
-            trigger: `${CARD}[data-sc-edit-open] .o_sc_autosave[data-sc-field="date_deadline"] input[type="date"]`,
+            trigger: `${CARD}[data-sc-edit-open] .o_pk_autosave[data-sc-field="date_deadline"] input[type="date"]`,
             run() {
                 const el = card();
                 assert(el.dataset.scEditOpen === "1", "another card opened");
-                assert(shown(el.querySelector("button.o_sc_card_trash")), "no trash while editing");
+                assert(shown(el.querySelector("button.o_pk_card_trash")), "no trash while editing");
                 assert(el.querySelector("button[data-sc-edit-toggle]").dataset.scEditToggleDone === "1", "no ✓");
                 assert(!el.querySelector("template[data-sc-lazy-edit]"), "the template is still there");
                 for (const field of ["summary", "date_deadline", "user_id", "note"]) {
-                    assert(el.querySelector(`.o_sc_autosave[data-sc-field="${field}"]`), `no ${field} field`);
+                    assert(el.querySelector(`.o_pk_autosave[data-sc-field="${field}"]`), `no ${field} field`);
                 }
                 noHorizontalScroll();
-                setValue(el.querySelector('.o_sc_autosave[data-sc-field="date_deadline"] input[type="date"]'), "2031-05-06");
+                setValue(el.querySelector('.o_pk_autosave[data-sc-field="date_deadline"] input[type="date"]'), "2031-05-06");
             },
         },
         {
             content: "The due date is saved",
-            trigger: `${CARD}[data-sc-edit-open] .o_sc_autosave[data-sc-field="date_deadline"][data-sc-state="saved"]`,
+            trigger: `${CARD}[data-sc-edit-open] .o_pk_autosave[data-sc-field="date_deadline"][data-sc-state="saved"]`,
             run() {
-                const select = card().querySelector('.o_sc_autosave[data-sc-field="user_id"] select');
+                const select = card().querySelector('.o_pk_autosave[data-sc-field="user_id"] select');
                 assert(select, "no assignee select");
                 assert([...select.options].some((o) => o.value === param("xuser")), "the new assignee is offered");
                 setValue(select, param("xuser"));
@@ -103,31 +103,31 @@ tours.add("sc_1736r1_activity_card", {
         },
         {
             content: "The assignee is saved",
-            trigger: `${CARD}[data-sc-edit-open] .o_sc_autosave[data-sc-field="user_id"][data-sc-state="saved"]`,
+            trigger: `${CARD}[data-sc-edit-open] .o_pk_autosave[data-sc-field="user_id"][data-sc-state="saved"]`,
             run() {
-                setValue(card().querySelector('.o_sc_autosave[data-sc-field="note"] textarea'), "SC1736r1 tour note");
+                setValue(card().querySelector('.o_pk_autosave[data-sc-field="note"] textarea'), "SC1736r1 tour note");
             },
         },
         {
             content: "The note is saved; close with the ✓",
-            trigger: `${CARD}[data-sc-edit-open] .o_sc_autosave[data-sc-field="note"][data-sc-state="saved"]`,
+            trigger: `${CARD}[data-sc-edit-open] .o_pk_autosave[data-sc-field="note"][data-sc-state="saved"]`,
             run() {
                 card().querySelector("button[data-sc-edit-toggle]").click();
             },
         },
         {
             content: "Closed: the trash hides, the card shows the new date",
-            trigger: `${CARD}:not([data-sc-edit-open]) .o_sc_row_subtitle:contains(2031)`,
+            trigger: `${CARD}:not([data-sc-edit-open]) .o_pk_row_subtitle:contains(2031)`,
             run() {
                 const el = card();
                 assert(!el.dataset.scEditOpen, "still editing");
-                assert(!shown(el.querySelector("button.o_sc_card_trash")), "the trash still shows");
+                assert(!shown(el.querySelector("button.o_pk_card_trash")), "the trash still shows");
                 el.querySelector('button[data-sc-action="activity.edit"]').click();
             },
         },
         {
             content: "Edit again: the trash asks first",
-            trigger: `${CARD}[data-sc-edit-open] button.o_sc_card_trash:not([hidden])`,
+            trigger: `${CARD}[data-sc-edit-open] button.o_pk_card_trash:not([hidden])`,
             run: "click",
         },
         {
@@ -141,10 +141,10 @@ tours.add("sc_1736r1_activity_card", {
         },
         {
             content: "Tap the card: its details popout opens (same page)",
-            trigger: `${CARD}:not([data-sc-edit-open]) a.o_sc_link_row_main[data-sc-sheet-url]`,
+            trigger: `${CARD}:not([data-sc-edit-open]) a.o_pk_link_row_main[data-sc-sheet-url]`,
             run() {
                 window.__sc1736r1Url = window.location.href;
-                card().querySelector("a.o_sc_link_row_main").click();
+                card().querySelector("a.o_pk_link_row_main").click();
             },
         },
         {

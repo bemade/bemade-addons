@@ -1,6 +1,6 @@
 /*
  * Task 1648 — the type-to-filter single-select picker for link fields
- * (inert outside .o_sc_app).
+ * (inert outside .o_pk_app).
  *
  * Progressive enhancement of a <select data-sc-picker>: the select stays the
  * form value (POST routes and the autosave unchanged; without JS it is the
@@ -57,7 +57,7 @@ function scopeOf(select) {
 
 function pickerOf(select) {
     const next = select.nextElementSibling;
-    return next && next.classList.contains("o_sc_picker") ? next : null;
+    return next && next.classList.contains("o_pk_picker") ? next : null;
 }
 
 function keepsEmpty(select) {
@@ -77,7 +77,7 @@ function allowed(option) {
 }
 
 function render(select, picker, query) {
-    const list = picker.querySelector(".o_sc_picker_list");
+    const list = picker.querySelector(".o_pk_picker_list");
     const words = scWords(query);
     const matches = [...select.options].filter(
         (option) =>
@@ -91,33 +91,33 @@ function render(select, picker, query) {
         item.setAttribute("role", "option");
         item.id = `${picker.id}_opt_${index}`;
         item.dataset.scPickerValue = option.value;
-        item.className = "o_sc_picker_option";
+        item.className = "o_pk_picker_option";
         item.textContent = option.textContent.trim();
         if (option.value === select.value) {
             item.setAttribute("aria-selected", "true");
         }
         list.appendChild(item);
     }
-    const more = picker.querySelector(".o_sc_picker_more");
+    const more = picker.querySelector(".o_pk_picker_more");
     more.hidden = matches.length <= MAX_SHOWN;
-    const none = picker.querySelector(".o_sc_picker_none");
+    const none = picker.querySelector(".o_pk_picker_none");
     none.hidden = Boolean(matches.length);
     picker.dataset.scPickerActive = "-1";
 }
 
 function openList(select, picker, query = "") {
-    const list = picker.querySelector(".o_sc_picker_list");
+    const list = picker.querySelector(".o_pk_picker_list");
     render(select, picker, query);
     list.hidden = false;
-    picker.querySelector(".o_sc_picker_input").setAttribute("aria-expanded", "true");
+    picker.querySelector(".o_pk_picker_input").setAttribute("aria-expanded", "true");
 }
 
 function closeList(picker, { restore = true } = {}) {
     const select = picker.previousElementSibling;
-    picker.querySelector(".o_sc_picker_list").hidden = true;
-    picker.querySelector(".o_sc_picker_more").hidden = true;
-    picker.querySelector(".o_sc_picker_none").hidden = true;
-    const input = picker.querySelector(".o_sc_picker_input");
+    picker.querySelector(".o_pk_picker_list").hidden = true;
+    picker.querySelector(".o_pk_picker_more").hidden = true;
+    picker.querySelector(".o_pk_picker_none").hidden = true;
+    const input = picker.querySelector(".o_pk_picker_input");
     input.setAttribute("aria-expanded", "false");
     input.removeAttribute("aria-activedescendant");
     if (restore && select) {
@@ -133,66 +133,66 @@ function choose(select, value) {
     const picker = pickerOf(select);
     if (picker) {
         closeList(picker);
-        picker.querySelector(".o_sc_picker_clear").hidden = !select.value;
+        picker.querySelector(".o_pk_picker_clear").hidden = !select.value;
     }
 }
 
 function highlight(picker, index) {
-    const items = [...picker.querySelectorAll(".o_sc_picker_option")];
+    const items = [...picker.querySelectorAll(".o_pk_picker_option")];
     if (!items.length) {
         return;
     }
     const next = Math.max(0, Math.min(items.length - 1, index));
-    items.forEach((item, i) => item.classList.toggle("o_sc_picker_option_active", i === next));
+    items.forEach((item, i) => item.classList.toggle("o_pk_picker_option_active", i === next));
     picker.dataset.scPickerActive = String(next);
-    picker.querySelector(".o_sc_picker_input").setAttribute("aria-activedescendant", items[next].id);
+    picker.querySelector(".o_pk_picker_input").setAttribute("aria-activedescendant", items[next].id);
     items[next].scrollIntoView({ block: "nearest" });
 }
 
 let counter = 0;
 
 export function enhance(select) {
-    if (!select || select.dataset.scPickerReady || !select.closest(".o_sc_app")) {
+    if (!select || select.dataset.scPickerReady || !select.closest(".o_pk_app")) {
         return;
     }
     select.dataset.scPickerReady = "1";
     const picker = document.createElement("div");
-    picker.className = "o_sc_picker";
+    picker.className = "o_pk_picker";
     picker.id = `sc_picker_${++counter}`;
     const label = select.id && document.querySelector(`label[for="${select.id}"]`);
     picker.innerHTML = `
-        <div class="o_sc_picker_box">
-            <input type="text" class="o_sc_input o_sc_picker_input" data-pk-focus-skip="1" autocomplete="off" spellcheck="false"
+        <div class="o_pk_picker_box">
+            <input type="text" class="o_pk_input o_pk_picker_input" data-pk-focus-skip="1" autocomplete="off" spellcheck="false"
                    role="combobox" aria-autocomplete="list" aria-expanded="false"/>
-            <button type="button" class="o_sc_icon_btn o_sc_picker_clear" hidden="hidden">×</button>
+            <button type="button" class="o_pk_icon_btn o_pk_picker_clear" hidden="hidden">×</button>
         </div>
-        <ul class="o_sc_picker_list" role="listbox" hidden="hidden"></ul>
-        <small class="o_sc_hint o_sc_picker_more" hidden="hidden"></small>
-        <small class="o_sc_hint o_sc_picker_none" hidden="hidden"></small>
-        <small class="o_sc_hint o_sc_picker_cleared" role="status" hidden="hidden"></small>`;
-    const input = picker.querySelector(".o_sc_picker_input");
+        <ul class="o_pk_picker_list" role="listbox" hidden="hidden"></ul>
+        <small class="o_pk_hint o_pk_picker_more" hidden="hidden"></small>
+        <small class="o_pk_hint o_pk_picker_none" hidden="hidden"></small>
+        <small class="o_pk_hint o_pk_picker_cleared" role="status" hidden="hidden"></small>`;
+    const input = picker.querySelector(".o_pk_picker_input");
     input.setAttribute("aria-controls", `${picker.id}_list`);
-    picker.querySelector(".o_sc_picker_list").id = `${picker.id}_list`;
+    picker.querySelector(".o_pk_picker_list").id = `${picker.id}_list`;
     input.placeholder = _t("Type to search…");
     if (label) {
         input.setAttribute("aria-label", label.textContent.trim());
     }
     input.disabled = select.disabled;
-    const clear = picker.querySelector(".o_sc_picker_clear");
+    const clear = picker.querySelector(".o_pk_picker_clear");
     clear.setAttribute("aria-label", _t("Clear"));
     clear.title = _t("Clear");
-    picker.querySelector(".o_sc_picker_more").textContent = _t("Keep typing to narrow the list.");
-    picker.querySelector(".o_sc_picker_none").textContent = _t("No match");
+    picker.querySelector(".o_pk_picker_more").textContent = _t("Keep typing to narrow the list.");
+    picker.querySelector(".o_pk_picker_none").textContent = _t("No match");
     input.value = labelOf(select);
     clear.hidden = !select.value || select.disabled;
-    select.classList.add("o_sc_picker_native");
+    select.classList.add("o_pk_picker_native");
     select.setAttribute("tabindex", "-1");
     select.setAttribute("aria-hidden", "true");
     select.after(picker);
 }
 
 export function enhanceAll(root = document) {
-    for (const select of root.querySelectorAll(".o_sc_app select[data-sc-picker]")) {
+    for (const select of root.querySelectorAll(".o_pk_app select[data-sc-picker]")) {
         enhance(select);
     }
 }
@@ -224,11 +224,11 @@ function narrow(child, test, hint) {
         choose(child, "");
     }
     if (picker) {
-        const note = picker.querySelector(".o_sc_picker_cleared");
+        const note = picker.querySelector(".o_pk_picker_cleared");
         note.hidden = !cleared;
         note.textContent = cleared ? hint : "";
         if (!cleared) {
-            picker.querySelector(".o_sc_picker_input").value = labelOf(child);
+            picker.querySelector(".o_pk_picker_input").value = labelOf(child);
         }
     }
 }
@@ -252,10 +252,10 @@ function applyNarrowing(select) {
 // --------------------------------------------------------------- events
 document.addEventListener("input", (ev) => {
     const input = ev.target;
-    if (!input.classList || !input.classList.contains("o_sc_picker_input")) {
+    if (!input.classList || !input.classList.contains("o_pk_picker_input")) {
         return;
     }
-    const picker = input.closest(".o_sc_picker");
+    const picker = input.closest(".o_pk_picker");
     openList(picker.previousElementSibling, picker, input.value);
 });
 
@@ -264,30 +264,30 @@ document.addEventListener("click", (ev) => {
     if (!target.closest) {
         return;
     }
-    const option = target.closest(".o_sc_picker_option");
+    const option = target.closest(".o_pk_picker_option");
     if (option) {
-        const picker = option.closest(".o_sc_picker");
+        const picker = option.closest(".o_pk_picker");
         choose(picker.previousElementSibling, option.dataset.scPickerValue);
         return;
     }
-    const clear = target.closest(".o_sc_picker_clear");
+    const clear = target.closest(".o_pk_picker_clear");
     if (clear) {
-        const picker = clear.closest(".o_sc_picker");
+        const picker = clear.closest(".o_pk_picker");
         choose(picker.previousElementSibling, "");
-        picker.querySelector(".o_sc_picker_input").value = "";
+        picker.querySelector(".o_pk_picker_input").value = "";
         return;
     }
-    const input = target.closest(".o_sc_picker_input");
+    const input = target.closest(".o_pk_picker_input");
     if (input) {
-        const picker = input.closest(".o_sc_picker");
-        if (picker.querySelector(".o_sc_picker_list").hidden) {
+        const picker = input.closest(".o_pk_picker");
+        if (picker.querySelector(".o_pk_picker_list").hidden) {
             input.select();
             openList(picker.previousElementSibling, picker, "");
         }
         return;
     }
-    for (const picker of document.querySelectorAll(".o_sc_picker")) {
-        if (!picker.contains(target) && !picker.querySelector(".o_sc_picker_list").hidden) {
+    for (const picker of document.querySelectorAll(".o_pk_picker")) {
+        if (!picker.contains(target) && !picker.querySelector(".o_pk_picker_list").hidden) {
             closeList(picker);
         }
     }
@@ -295,11 +295,11 @@ document.addEventListener("click", (ev) => {
 
 document.addEventListener("keydown", (ev) => {
     const input = ev.target;
-    if (!input.classList || !input.classList.contains("o_sc_picker_input")) {
+    if (!input.classList || !input.classList.contains("o_pk_picker_input")) {
         return;
     }
-    const picker = input.closest(".o_sc_picker");
-    const list = picker.querySelector(".o_sc_picker_list");
+    const picker = input.closest(".o_pk_picker");
+    const list = picker.querySelector(".o_pk_picker_list");
     const current = Number(picker.dataset.scPickerActive || -1);
     if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
         ev.preventDefault();
@@ -309,7 +309,7 @@ document.addEventListener("keydown", (ev) => {
         highlight(picker, current + (ev.key === "ArrowDown" ? 1 : -1));
     } else if (ev.key === "Enter" && !list.hidden) {
         ev.preventDefault();
-        const items = picker.querySelectorAll(".o_sc_picker_option");
+        const items = picker.querySelectorAll(".o_pk_picker_option");
         const item = items[current >= 0 ? current : 0];
         if (item) {
             choose(picker.previousElementSibling, item.dataset.scPickerValue);
@@ -333,8 +333,8 @@ document.addEventListener("mousedown", (ev) => {
     if (!target.closest) {
         return;
     }
-    const picker = target.closest(".o_sc_picker");
-    if (picker && !target.closest(".o_sc_picker_input") && picker.contains(document.activeElement)) {
+    const picker = target.closest(".o_pk_picker");
+    if (picker && !target.closest(".o_pk_picker_input") && picker.contains(document.activeElement)) {
         ev.preventDefault();
     }
 });
@@ -342,10 +342,10 @@ document.addEventListener("mousedown", (ev) => {
 // Leaving the box without a pick: back to the chosen value's label.
 document.addEventListener("focusout", (ev) => {
     const input = ev.target;
-    if (!input.classList || !input.classList.contains("o_sc_picker_input")) {
+    if (!input.classList || !input.classList.contains("o_pk_picker_input")) {
         return;
     }
-    const picker = input.closest(".o_sc_picker");
+    const picker = input.closest(".o_pk_picker");
     if (ev.relatedTarget && picker.contains(ev.relatedTarget)) {
         return;
     }
@@ -364,8 +364,8 @@ document.addEventListener("change", (ev) => {
     }
     const picker = pickerOf(select);
     if (picker) {
-        picker.querySelector(".o_sc_picker_input").value = labelOf(select);
-        picker.querySelector(".o_sc_picker_clear").hidden = !select.value || select.disabled;
+        picker.querySelector(".o_pk_picker_input").value = labelOf(select);
+        picker.querySelector(".o_pk_picker_clear").hidden = !select.value || select.disabled;
     }
     applyNarrowing(select);
 });
@@ -375,7 +375,7 @@ document.addEventListener("change", (ev) => {
 function boot(root) {
     enhanceAll(root);
     for (const select of (root.querySelectorAll ? root : document).querySelectorAll(
-        '.o_sc_app select[data-sc-picker-key="team"], .o_sc_app select[data-sc-picker-key="player"]'
+        '.o_pk_app select[data-sc-picker-key="team"], .o_pk_app select[data-sc-picker-key="player"]'
     )) {
         if (select.value && !select.dataset.scPickerNarrowed) {
             select.dataset.scPickerNarrowed = "1";
@@ -387,7 +387,7 @@ function boot(root) {
 if (typeof document !== "undefined") {
     const start = () => {
         boot(document);
-        const app = document.querySelector(".o_sc_app");
+        const app = document.querySelector(".o_pk_app");
         if (app && window.MutationObserver) {
             let pending = false;
             new MutationObserver(() => {

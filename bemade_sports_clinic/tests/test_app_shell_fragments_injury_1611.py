@@ -62,7 +62,7 @@ class TestFragmentsInjury1611(FragmentsCommon):
         for part in ('summary', 'read'):
             self.assertRefreshes(payload, self._ikey(self.injury, part))
         summary = self._fragment(self._url(), self._ikey(self.injury, 'summary'))
-        self.assertTrue(summary.xpath('.//*[contains(@class, "o_sc_tone_green")]'))
+        self.assertTrue(summary.xpath('.//*[contains(@class, "o_pk_tone_green")]'))
         self.assertIn('Resolved', self._text(summary))
         read = self._fragment(self._url(), self._ikey(self.injury, 'read'))
         self.assertIn('Resolution Date', [self._text(dt) for dt in read.xpath('.//dt')])

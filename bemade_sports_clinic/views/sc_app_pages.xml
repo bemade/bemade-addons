@@ -41,13 +41,13 @@
                 <t t-out="error"/>
             </t>
 
-            <form method="get" action="/my/teams" class="o_sc_search" role="search">
+            <form method="get" action="/my/teams" class="o_pk_search" role="search">
                 <input type="hidden" name="sort" t-att-value="sort_mode"/>
-                <label for="sc_teams_search" class="o_sc_field_label">Search</label>
-                <div class="o_sc_search_row">
-                    <input type="search" id="sc_teams_search" name="search" class="o_sc_input"
+                <label for="sc_teams_search" class="o_pk_field_label">Search</label>
+                <div class="o_pk_search_row">
+                    <input type="search" id="sc_teams_search" name="search" class="o_pk_input"
                            placeholder="Team or organization" t-att-value="search or ''"/>
-                    <button type="submit" class="o_sc_btn o_sc_btn_ghost">Search</button>
+                    <button type="submit" class="o_pk_btn o_pk_btn_ghost">Search</button>
                 </div>
             </form>
 
@@ -64,21 +64,21 @@
                 <t t-set="sort_section" t-value="'teams.sort'"/>
             </t>
 
-            <div t-if="teams" class="o_sc_list">
+            <div t-if="teams" class="o_pk_list">
                 <t t-foreach="teams" t-as="team">
                     <t t-set="row" t-value="sc_team_row(team, True, sc_team_clocks)"/>
-                    <div t-attf-class="o_sc_row_wrap #{'o_sc_row_wrap_reorder' if sort_mode == 'mine' else ''}"
+                    <div t-attf-class="o_pk_row_wrap #{'o_pk_row_wrap_reorder' if sort_mode == 'mine' else ''}"
                          t-attf-id="team-#{team.id}">
                         <t t-call="bemade_sports_clinic.sc_team_list_row"/>
                         <!-- « My order »: the up/down posts of task 1401 (no drag in the shell). -->
-                        <div t-if="sort_mode == 'mine'" class="o_sc_reorder">
+                        <div t-if="sort_mode == 'mine'" class="o_pk_reorder">
                             <form action="/my/teams/reorder" method="post">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="team_id" t-att-value="team.id"/>
                                 <input type="hidden" name="direction" value="up"/>
                                 <input type="hidden" name="search" t-att-value="search or ''"/>
                                 <input type="hidden" name="page" t-att-value="page or 1"/>
-                                <button type="submit" class="o_sc_icon_btn" aria-label="Move up" title="Move up">
+                                <button type="submit" class="o_pk_icon_btn" aria-label="Move up" title="Move up">
                                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'up'"/></t>
                                 </button>
                             </form>
@@ -88,7 +88,7 @@
                                 <input type="hidden" name="direction" value="down"/>
                                 <input type="hidden" name="search" t-att-value="search or ''"/>
                                 <input type="hidden" name="page" t-att-value="page or 1"/>
-                                <button type="submit" class="o_sc_icon_btn" aria-label="Move down" title="Move down">
+                                <button type="submit" class="o_pk_icon_btn" aria-label="Move down" title="Move down">
                                     <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
                                 </button>
                             </form>
@@ -100,7 +100,7 @@
                 <t t-set="message">No team matches.</t>
             </t>
 
-            <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_sc_pager">
+            <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_pk_pager">
                 <t t-call="portal.pager"/>
             </div>
         </t>
@@ -112,7 +112,7 @@
             <t t-set="sc_title">More</t>
             <t t-set="sc_active_nav" t-value="'more'"/>
 
-            <div t-if="sc_plus" class="o_sc_list">
+            <div t-if="sc_plus" class="o_pk_list">
                 <t t-foreach="sc_plus" t-as="entry">
                     <t t-call="bemade_sports_clinic.sc_entity_row">
                         <t t-set="href" t-value="entry['url']"/>
@@ -127,7 +127,7 @@
             </div>
 
             <!-- Task 1660: the user guide (new tab), every app role. -->
-            <div t-if="sc_help and sc_help['home']" class="o_sc_list" data-pk-section="more.guide">
+            <div t-if="sc_help and sc_help['home']" class="o_pk_list" data-pk-section="more.guide">
                 <t t-call="bemade_sports_clinic.sc_entity_row">
                     <t t-set="href" t-value="sc_help['home']"/>
                     <t t-set="lead_icon" t-value="'help'"/>
@@ -137,7 +137,7 @@
                 </t>
             </div>
 
-            <p class="o_sc_footnote">Le Fit Crew</p>
+            <p class="o_pk_footnote">Le Fit Crew</p>
         </t>
     </template>
 
@@ -152,11 +152,11 @@
 
             <!-- Task 1588: the profile language (res.users.lang), a plain
                  POST (full reload: the whole page changes language). -->
-            <section t-if="sc_langs" class="o_sc_section" id="sc_language">
+            <section t-if="sc_langs" class="o_pk_section" id="sc_language">
                 <t t-call="bemade_sports_clinic.sc_section_header">
                     <t t-set="title">Language</t>
                 </t>
-                <form method="post" action="/my/app/pref" class="o_sc_segmented o_sc_segmented_full">
+                <form method="post" action="/my/app/pref" class="o_pk_segmented o_pk_segmented_full">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="redirect" value="/my/app/settings"/>
                     <t t-foreach="sc_langs" t-as="sc_lang">
@@ -170,12 +170,12 @@
             </section>
 
             <!-- Task 1602: hidden while the app is forced dark. -->
-            <section t-if="sc_theme_choice" class="o_sc_section" id="sc_appearance">
+            <section t-if="sc_theme_choice" class="o_pk_section" id="sc_appearance">
                 <t t-call="bemade_sports_clinic.sc_section_header">
                     <t t-set="title">Appearance</t>
                 </t>
                 <!-- Task 1726: a switch (on = dark); sc_switch.js posts on change. -->
-                <form method="post" action="/my/app/pref" data-sc-pref="1" class="o_sc_card o_sc_switch_card">
+                <form method="post" action="/my/app/pref" data-sc-pref="1" class="o_pk_card o_pk_switch_card">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="redirect" value="/my/app/settings"/>
                     <t t-call="bemade_sports_clinic.sc_switch">
@@ -191,8 +191,8 @@
 
             <!-- Task 1665: the morning summary opt-out, for every app role
                  (the user's own preference; default on). -->
-            <section class="o_sc_section" id="sc_morning_summary" data-pk-section="settings.morning_summary">
-                <form method="post" action="/my/app/pref" class="o_sc_card o_sc_switch_card">
+            <section class="o_pk_section" id="sc_morning_summary" data-pk-section="settings.morning_summary">
+                <form method="post" action="/my/app/pref" class="o_pk_card o_pk_switch_card">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="redirect" value="/my/app/settings"/>
                     <t t-call="bemade_sports_clinic.sc_switch">
@@ -208,8 +208,8 @@
 
             <!-- Task 1676: the edit cards' « Done » buttons (default hidden:
                  the pencil turns into a ✓ that closes the card). -->
-            <section class="o_sc_section" id="sc_done_buttons" data-pk-section="settings.done_buttons">
-                <form method="post" action="/my/app/pref" class="o_sc_card o_sc_switch_card">
+            <section class="o_pk_section" id="sc_done_buttons" data-pk-section="settings.done_buttons">
+                <form method="post" action="/my/app/pref" class="o_pk_card o_pk_switch_card">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="redirect" value="/my/app/settings"/>
                     <t t-call="bemade_sports_clinic.sc_switch">
@@ -224,11 +224,11 @@
                 </form>
             </section>
 
-            <section class="o_sc_section" id="sc_account">
+            <section class="o_pk_section" id="sc_account">
                 <t t-call="bemade_sports_clinic.sc_section_header">
                     <t t-set="title">Account</t>
                 </t>
-                <div class="o_sc_list">
+                <div class="o_pk_list">
                     <t t-call="bemade_sports_clinic.sc_entity_row">
                         <t t-set="href" t-value="'/my/account'"/>
                         <t t-set="lead_icon" t-value="'account'"/>

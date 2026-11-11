@@ -91,9 +91,9 @@ class TestAppShellSwitch1538(AppShellCommon):
         text, tree = self._get('/my/home')
         self.assertIsNotNone(self._shell(tree))
         self.assertNotIn('o_portal_my_home', text)
-        self.assertEqual(self._nav_keys(tree, 'o_sc_tabs'),
+        self.assertEqual(self._nav_keys(tree, 'o_pk_tabs'),
                          ['teams', 'players', 'activities', 'more'])
-        self.assertNotIn('clinic', self._nav_keys(tree, 'o_sc_rail_nav'))
+        self.assertNotIn('clinic', self._nav_keys(tree, 'o_pk_rail_nav'))
         # Task 1624 (deliberate update): the home is the configurable
         # dashboard — « My teams » left it (still under « Teams »).
         self.assertTrue(tree.xpath('//section[@data-sc-widget="indicators"]'))
@@ -105,9 +105,9 @@ class TestAppShellSwitch1538(AppShellCommon):
         _text, tree = self._get('/my/home')
         # Owner review 2026-10-10: « Clinic » left the phone tabs for
         # « More »; the laptop rail keeps it.
-        self.assertEqual(self._nav_keys(tree, 'o_sc_tabs'),
+        self.assertEqual(self._nav_keys(tree, 'o_pk_tabs'),
                          ['teams', 'players', 'notepad', 'activities', 'more'])
-        self.assertIn('clinic', self._nav_keys(tree, 'o_sc_rail_nav'))
+        self.assertIn('clinic', self._nav_keys(tree, 'o_pk_rail_nav'))
         # The therapist-only home section.
         self.assertTrue(tree.xpath('//*[@data-pk-section="home.clinic_teaser"]'))
 
@@ -124,13 +124,13 @@ class TestAppShellSwitch1538(AppShellCommon):
             login()
             with patch.object(AppShellMixin, '_sc_booking_enabled', return_value=False):
                 _text, tree = self._get('/my/home')
-                self.assertNotIn('bookings', self._nav_keys(tree, 'o_sc_rail_nav'))
+                self.assertNotIn('bookings', self._nav_keys(tree, 'o_pk_rail_nav'))
                 _text, tree = self._get('/my/app/more')
                 self.assertFalse(tree.xpath('//a[@data-sc-nav-key="bookings"]'))
             with patch.object(AppShellMixin, '_sc_booking_enabled', return_value=True):
                 _text, tree = self._get('/my/home')
-                self.assertIn('bookings', self._nav_keys(tree, 'o_sc_rail_nav'))
-                self.assertNotIn('bookings', self._nav_keys(tree, 'o_sc_tabs'))
+                self.assertIn('bookings', self._nav_keys(tree, 'o_pk_rail_nav'))
+                self.assertNotIn('bookings', self._nav_keys(tree, 'o_pk_tabs'))
                 _text, tree = self._get('/my/app/more')
                 self.assertTrue(tree.xpath('//a[@data-sc-nav-key="bookings"]'))
 
@@ -156,10 +156,10 @@ class TestAppShellSwitch1538(AppShellCommon):
         self.assertIn('PC Team A', text)
         # Task 1592 (deliberate update): a team row is a link row now (its
         # activity clock is its own link); the team id is on the main link.
-        rows = tree.xpath('//*[contains(@class, "o_sc_entity_row")]//a[@data-sc-team-id]')
+        rows = tree.xpath('//*[contains(@class, "o_pk_entity_row")]//a[@data-sc-team-id]')
         self.assertTrue(rows)
         # Sticky sort (task 1401) survives in the shell.
-        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_sort")]'))
+        self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_sort")]'))
 
     # -- UC-S3 -----------------------------------------------------------
     def test_sub_page_renders_back_and_crumbs(self):
@@ -168,9 +168,9 @@ class TestAppShellSwitch1538(AppShellCommon):
         self._switch(True)
         self._login_coach()
         _text, tree = self._get('/my/team?team_id=%s' % self.team_a.id)
-        self.assertTrue(tree.xpath('//a[contains(@class, "o_sc_back")]'))
-        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_appbar_context")]'))
-        crumbs = tree.xpath('//nav[contains(@class, "o_sc_crumbs")]')
+        self.assertTrue(tree.xpath('//a[contains(@class, "o_pk_back")]'))
+        self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_appbar_context")]'))
+        crumbs = tree.xpath('//nav[contains(@class, "o_pk_crumbs")]')
         self.assertTrue(crumbs)
         self.assertTrue(crumbs[0].xpath('.//a[@href="/my/teams"]'))
         self.assertIsNone(self._shell(tree).get('data-sc-nav'))
@@ -179,8 +179,8 @@ class TestAppShellSwitch1538(AppShellCommon):
         self._switch(True)
         self._login_coach()
         _text, tree = self._get('/my/home')
-        self.assertTrue(tree.xpath('//*[contains(@class, "o_sc_logo")]'))
-        self.assertFalse(tree.xpath('//a[contains(@class, "o_sc_back")]'))
+        self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_logo")]'))
+        self.assertFalse(tree.xpath('//a[contains(@class, "o_pk_back")]'))
 
     # -- UC-S4 -----------------------------------------------------------
     def test_theme_attribute_follows_preference(self):
@@ -189,10 +189,10 @@ class TestAppShellSwitch1538(AppShellCommon):
         self._login_tp()
         self.assertEqual(self.tp.sc_theme, 'dark')
         _text, tree = self._get('/my/home')
-        self.assertEqual(self._shell(tree).get('data-sc-theme'), 'dark')
+        self.assertEqual(self._shell(tree).get('data-pk-theme'), 'dark')
         self.tp.sc_theme = 'light'
         _text, tree = self._get('/my/home')
-        self.assertEqual(self._shell(tree).get('data-sc-theme'), 'light')
+        self.assertEqual(self._shell(tree).get('data-pk-theme'), 'light')
 
     # -- UC-S5 -----------------------------------------------------------
     def test_classic_home_reachable(self):

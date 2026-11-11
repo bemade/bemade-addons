@@ -13,7 +13,7 @@
  * - a tap outside closes it; opening one menu closes any other.
  *
  * The items are plain links: « Se déconnecter » keeps the logout route (and
- * sc_app_ui.js still clears the device drafts on it). Inert outside .o_sc_app.
+ * sc_app_ui.js still clears the device drafts on it). Inert outside .o_pk_app.
  *
  * Task 1607: the list header's sort menu is the same kind of popup —
  * button[data-pk-menu-toggle] + [data-pk-menu-popup] whose items are
@@ -57,7 +57,7 @@ export function close(toggle, { focus = false } = {}) {
 
 export function closeAll(except) {
     for (const toggle of document.querySelectorAll(TOGGLE)) {
-        if (toggle.getAttribute("aria-expanded") !== "true" || !toggle.closest(".o_sc_app")) {
+        if (toggle.getAttribute("aria-expanded") !== "true" || !toggle.closest(".o_pk_app")) {
             continue;
         }
         if (toggle !== except) {
@@ -73,22 +73,22 @@ export function closeAll(except) {
  * window, flip it to open upwards.
  */
 function keepInView(popup) {
-    popup.classList.remove("o_sc_popup_end");
-    const area = popup.closest(".o_sc_content");
+    popup.classList.remove("o_pk_popup_end");
+    const area = popup.closest(".o_pk_content");
     const limit = Math.min(
         window.innerWidth,
         area ? area.getBoundingClientRect().right : window.innerWidth
     );
     if (popup.getBoundingClientRect().right > limit - 8) {
-        popup.classList.add("o_sc_popup_end");
+        popup.classList.add("o_pk_popup_end");
     }
     // …and one opened near the bottom (the last injury card, under the
     // test-DB ribbon) opens upwards when there is more room above.
-    popup.classList.remove("o_sc_popup_up");
+    popup.classList.remove("o_pk_popup_up");
     const rect = popup.getBoundingClientRect();
     const toggleRect = popup.parentElement.getBoundingClientRect();
     if (rect.bottom > window.innerHeight - 56 && toggleRect.top > window.innerHeight - toggleRect.bottom) {
-        popup.classList.add("o_sc_popup_up");
+        popup.classList.add("o_pk_popup_up");
     }
 }
 
@@ -122,7 +122,7 @@ function toggleOf(el) {
 }
 
 document.addEventListener("click", (ev) => {
-    if (!ev.target.closest || !ev.target.closest(".o_sc_app")) {
+    if (!ev.target.closest || !ev.target.closest(".o_pk_app")) {
         closeAll();
         return;
     }
@@ -150,7 +150,7 @@ document.addEventListener("keydown", (ev) => {
         return;
     }
     const toggle = target.closest(TOGGLE);
-    if (toggle && toggle.closest(".o_sc_app")) {
+    if (toggle && toggle.closest(".o_pk_app")) {
         if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
             ev.preventDefault();
             open(toggle, ev.key === "ArrowUp" ? "last" : "first");
@@ -161,7 +161,7 @@ document.addEventListener("keydown", (ev) => {
         return;
     }
     const item = target.closest(ITEM);
-    if (!item || !item.closest(POPUP) || !item.closest(".o_sc_app")) {
+    if (!item || !item.closest(POPUP) || !item.closest(".o_pk_app")) {
         return;
     }
     const owner = toggleOf(item);

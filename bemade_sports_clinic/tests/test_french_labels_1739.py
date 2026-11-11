@@ -63,7 +63,7 @@ class TestInvoicedCard1739(TimesheetSent1731Common):
         card = self._card(tree, self.ts_billed)
         self.assertEqual(self._text(self._chip(card)), 'Billed')
         self.assertNotIn('read-only', self._text(card))
-        self.assertFalse(card.xpath('./p[contains(@class, "o_sc_meta")]'))
+        self.assertFalse(card.xpath('./p[contains(@class, "o_pk_meta")]'))
 
     def test_invoiced_card_chip_only_french(self):
         _load_fr(self.env)

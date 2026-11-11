@@ -762,7 +762,7 @@ export class ScAutosaveField extends Component {
      */
     syncGuardBlock() {
         const input = this.inputRef.el;
-        const root = input && input.closest(".o_sc_tags_field");
+        const root = input && input.closest(".o_pk_tags_field");
         if (!root) {
             return;
         }

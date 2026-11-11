@@ -124,7 +124,7 @@ class TestAdversarialSearch1022(Search1650Common):
         self.assertIn(self.other.id, ids, 'active out-of-team players still are (locked)')
         self.assertEqual(ids[-1], self.old.id, 'the own archived player stays, last')
         row = self._players(tree)[self.old.id]
-        self.assertIn('o_sc_search_archived', row.get('class'))
+        self.assertIn('o_pk_search_archived', row.get('class'))
         # A clinic admin still finds it (their scope is everything).
         self.authenticate('search1650.admin@example.com', 'search-1650-admin')
         resp = self.url_open('/my/app/search?q=synth')

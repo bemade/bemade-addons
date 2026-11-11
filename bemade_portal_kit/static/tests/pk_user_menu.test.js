@@ -9,7 +9,7 @@ import { close, keepsInView, open } from "@bemade_portal_kit/js/pk_user_menu";
 
 function mount(popupAttrs = "") {
     getFixture().innerHTML = `
-        <div class="o_sc_app">
+        <div class="o_pk_app">
             <button type="button" data-pk-menu-toggle="1" aria-controls="pk_test_popup" aria-expanded="false">Menu</button>
             <div id="pk_test_popup" data-pk-menu-popup="1" ${popupAttrs} hidden="">
                 <button type="button" role="menuitem">One</button>
@@ -37,7 +37,7 @@ describe("pk_user_menu", () => {
     });
 
     test("the hook is generic: no consumer class keeps a popup in view", () => {
-        mount('class="o_sc_pill_popup"');
+        mount('class="o_pk_pill_popup"');
         expect(keepsInView(getFixture().querySelector("#pk_test_popup"))).toBe(false);
     });
 });

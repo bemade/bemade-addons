@@ -95,7 +95,7 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         status = hero.xpath('./*[@data-pk-section="player.status"]')[0]
         self.assertFalse(hero.xpath('.//*[@data-sc-stage-chip]'))
         self.assertEqual(len(status.xpath('./*[@data-pk-section="player.status.readonly"]'
-                                          '//button[contains(@class, "o_sc_pill_select")]')), 2)
+                                          '//button[contains(@class, "o_pk_pill_select")]')), 2)
         self.assertFalse(read.xpath('.//*[@data-pk-section="player.status"]'))
         self.assertFalse(read.xpath('.//owl-component'))
         self.assertFalse(status.xpath('.//owl-component'))
@@ -112,15 +112,15 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         self.assertFalse(hero.xpath('.//*[@data-pk-section="player.status.readonly"]//button'))
 
     def _assert_training_title(self, section):
-        """Task 1629: ``section`` opens with the h3 ``o_sc_edit_card_title``
+        """Task 1629: ``section`` opens with the h3 ``o_pk_edit_card_title``
         « Training Recommendation » and its « History » link right after the
-        label (``o_sc_section_more o_sc_link_btn``), the only one inside."""
+        label (``o_pk_section_more o_pk_link_btn``), the only one inside."""
         title = section.xpath('./*')[0]
         self.assertEqual(title.tag, 'h3')
-        self.assertIn('o_sc_edit_card_title', title.get('class').split())
+        self.assertIn('o_pk_edit_card_title', title.get('class').split())
         label, link = title.xpath('./*')
         self.assertEqual(label.text_content().strip(), 'Training Recommendation')
-        self.assertTrue({'o_sc_section_more', 'o_sc_link_btn'} <= set(link.get('class').split()))
+        self.assertTrue({'o_pk_section_more', 'o_pk_link_btn'} <= set(link.get('class').split()))
         self.assertEqual(section.xpath('.//*[@data-sc-sheet-open="sc_training_history_sheet"]'), [link])
 
     # -- UC-PL3 / UC-PL4 -------------------------------------------------

@@ -19,7 +19,7 @@ Acceptance criteria covered here:
   the training recommendation card. Owner review 2026-10-11: the link is
   ALWAYS there, green (a link button), for therapists and coaches. Task
   1629: « Training Recommendation » is an all-caps in-card title
-  (``o_sc_edit_card_title``) with ONE « History » link right after it, in
+  (``o_pk_edit_card_title``) with ONE « History » link right after it, in
   the read view and the pencil edit view alike; the sheet loads the
   list fresh on every open (``/my/player/<id>/training-history``), so a
   change made on the page shows without a reload (browser half: the
@@ -106,11 +106,11 @@ class TestAppShellPlayerStatus(PlayerStatusCommon):
     def test_app_bar_number_team_position(self):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&team_id=%s' % (self.player.id, self.team_a.id))
-        title = tree.xpath('//*[contains(@class, "o_sc_appbar_title_text")]')[0].text_content().strip()
+        title = tree.xpath('//*[contains(@class, "o_pk_appbar_title_text")]')[0].text_content().strip()
         # Owner review 2026-10-11: « #12 Last, First », as the hero below it.
         self.assertEqual(title, self.player._portal_list_name())
         self.assertIn(', ', title)
-        context = tree.xpath('//*[contains(@class, "o_sc_appbar_context")]')[0].text_content().strip()
+        context = tree.xpath('//*[contains(@class, "o_pk_appbar_context")]')[0].text_content().strip()
         self.assertEqual(context, '%s · Linebacker' % self.team_a.name)
 
 
@@ -126,19 +126,19 @@ class TestAppShellPlayerStatus(PlayerStatusCommon):
 
     def _title_link(self, section):
         """Task 1629: the section opens with the all-caps in-card title
-        (``o_sc_edit_card_title``, as « Details » / « Notes ») holding the
+        (``o_pk_edit_card_title``, as « Details » / « Notes ») holding the
         label and, right after it, the ONE green « History » link (the team
-        page's ``o_sc_section_more o_sc_link_btn`` pattern)."""
+        page's ``o_pk_section_more o_pk_link_btn`` pattern)."""
         children = section.xpath('./*')
         title = children[0]
         self.assertEqual(title.tag, 'h3')
-        self.assertIn('o_sc_edit_card_title', title.get('class').split())
+        self.assertIn('o_pk_edit_card_title', title.get('class').split())
         parts = title.xpath('./*')
         self.assertEqual([p.tag for p in parts], ['span', 'button'])
         self.assertEqual(parts[0].text_content().strip(), 'Training Recommendation')
         link = parts[1]
         self.assertEqual(link.get('data-sc-sheet-open'), 'sc_training_history_sheet')
-        self.assertTrue({'o_sc_section_more', 'o_sc_link_btn'} <= set(link.get('class').split()))
+        self.assertTrue({'o_pk_section_more', 'o_pk_link_btn'} <= set(link.get('class').split()))
         self.assertEqual(link.text_content().strip(), 'History')
         # Exactly one History link in this mode.
         self.assertEqual(section.xpath('.//*[@data-sc-sheet-open="sc_training_history_sheet"]'), [link])
@@ -153,7 +153,7 @@ class TestAppShellPlayerStatus(PlayerStatusCommon):
         read = tree.xpath('//*[@data-pk-section="player.training"]')
         self.assertEqual(len(read), 1)
         self._title_link(read[0])
-        self.assertFalse(read[0].xpath('.//*[contains(@class, "o_sc_field_label")]'))
+        self.assertFalse(read[0].xpath('.//*[contains(@class, "o_pk_field_label")]'))
         edits = tree.xpath('//*[@data-pk-section="player.training.edit"]')
         self.assertEqual(len(edits), 1 if edit else 0)
         if edit:

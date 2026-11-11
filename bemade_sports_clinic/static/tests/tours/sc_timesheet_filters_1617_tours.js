@@ -14,8 +14,8 @@ function assert(condition, message) {
 }
 
 const FORM = 'form[data-pk-section="timesheets.filters"]';
-const PANEL = `${FORM} details.o_sc_disclosure`;
-const HEADER = '.o_sc_list_header[data-pk-section="timesheets.header"]';
+const PANEL = `${FORM} details.o_pk_disclosure`;
+const HEADER = '.o_pk_list_header[data-pk-section="timesheets.header"]';
 
 function checkOpenLayout() {
     const details = document.querySelector(PANEL);

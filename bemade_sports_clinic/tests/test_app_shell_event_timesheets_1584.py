@@ -66,7 +66,7 @@ class EventTimesheets1584Common(Parity1577Common):
         return nodes[0] if nodes else None
 
     def _title(self, section):
-        return ' '.join(' '.join(section.xpath('.//h2[contains(@class, "o_sc_section_header")]//text()')).split())
+        return ' '.join(' '.join(section.xpath('.//h2[contains(@class, "o_pk_section_header")]//text()')).split())
 
     def _cards(self, section):
         return {int(card.get('data-sc-timesheet-id')): card

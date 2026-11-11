@@ -1,9 +1,9 @@
 // Task 1732 — the booking form's answers on « Mes rendez-vous ».
-// Scoped under .o_sc_app (the shell); no inline style in the views.
+// Scoped under .o_pk_app (the shell); no inline style in the views.
 
-.o_sc_app {
+.o_pk_app {
     .o_sc_booking_answers {
-        margin-top: var(--sc-space-2);
+        margin-top: var(--pk-space-2);
 
         dt {
             white-space: normal;
@@ -21,27 +21,27 @@
             row-gap: 0;
 
             dt:not(:first-child) {
-                margin-top: var(--sc-space-1);
+                margin-top: var(--pk-space-1);
             }
         }
     }
 
     // The calendar's booking details (sc_calendar, shared component):
     // a multi-line answer keeps its line breaks.
-    .o_sc_calendar_detail .o_sc_kv dd {
+    .o_sc_calendar_detail .o_pk_kv dd {
         white-space: pre-line;
     }
 }
 
 // Task 1737: change / cancel a booking (list rows, calendar details, the
 // edit / cancel pages).
-.o_sc_app {
-    .o_sc_booking_action .o_sc_icon,
-    .o_sc_booking_detail_actions .o_sc_icon {
-        color: var(--sc-fg-2);
+.o_pk_app {
+    .o_sc_booking_action .o_pk_icon,
+    .o_sc_booking_detail_actions .o_pk_icon {
+        color: var(--pk-fg-2);
     }
 
-    .o_sc_calendar_detail .o_sc_card_head > strong {
+    .o_sc_calendar_detail .o_pk_card_head > strong {
         flex: 1 1 auto;
     }
 
@@ -53,7 +53,7 @@
     }
 
     .o_sc_booking_overlaps {
-        margin: var(--sc-space-1) 0 0;
+        margin: var(--pk-space-1) 0 0;
         padding-left: 1.2em;
     }
 }

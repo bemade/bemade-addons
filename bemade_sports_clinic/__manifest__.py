@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.136.0",
+    'version': "19.0.1.137.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -316,7 +316,7 @@ therapists, Missing timesheets.
             "bemade_sports_clinic/static/src/scss/portal_widgets.scss",
             "bemade_sports_clinic/static/src/js/portal_patient_combo.js",
             # Task 1538: portal app shell (tokens + components are scoped
-            # under .o_sc_app — inert outside the shell; the JS only acts on
+            # under .o_pk_app — inert outside the shell; the JS only acts on
             # data-sc-pref forms inside it). Not duplicated in the lazy list.
             "bemade_sports_clinic/static/src/scss/sc_tokens.scss",
             "bemade_sports_clinic/static/src/scss/sc_components.scss",

@@ -40,7 +40,7 @@ tours.add("sc_1630_medical_coach", {
                 assert(this.anchor.textContent.includes("Synthetic asthma"), "details missing");
                 const dialog = this.anchor.closest("dialog");
                 assert(!dialog.querySelector("[data-sc-edit-toggle], [data-sc-action='medical.edit']"), "a pencil");
-                assert(!dialog.querySelector(".o_sc_autosave, owl-component"), "an editor");
+                assert(!dialog.querySelector(".o_pk_autosave, owl-component"), "an editor");
             },
         },
         {
@@ -64,7 +64,7 @@ tours.add("sc_1630_card_pills", {
             content: "The red pills on the roster card",
             trigger: '[data-pk-section="team.roster"] .o_sc_row_status [data-sc-med-pill="allergy"].o_sc_med_urgent',
             run() {
-                const row = this.anchor.closest(".o_sc_link_row");
+                const row = this.anchor.closest(".o_pk_link_row");
                 assert(row.querySelector('.o_sc_row_status [data-sc-med-pill="medical_alert"].o_sc_med_urgent'),
                     "no medical-alert pill");
                 assert(this.anchor.querySelector("[data-sc-med-epipen] svg"), "no EpiPen icon");

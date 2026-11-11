@@ -88,7 +88,7 @@ class TestMessagesAnnuler1663(Messages1663Common):
         self.assertNotIn('success=player_undone', resp.headers['Location'])
         self.assertFalse(player.exists())
         _text, tree = self._page('/my/players')
-        self.assertEqual(tree.xpath('//*[contains(@class, "o_sc_toast")]/@data-sc-notify'),
+        self.assertEqual(tree.xpath('//*[contains(@class, "o_pk_toast")]/@data-sc-notify'),
                          ['Création du joueur annulée.'])
 
     def test_player_undo_refused_message(self):
@@ -163,7 +163,7 @@ class TestMessagesAnnuler1663(Messages1663Common):
         self.env.invalidate_all()
         self.assertFalse(self.team_a.announcement)
         _text, tree = self._page(resp.headers['Location'])
-        self.assertEqual(tree.xpath('//*[contains(@class, "o_sc_toast")]/@data-sc-notify'),
+        self.assertEqual(tree.xpath('//*[contains(@class, "o_pk_toast")]/@data-sc-notify'),
                          ['Cette annonce ne peut plus être restaurée.'])
 
     def test_restore_refused_after_window_or_change(self):

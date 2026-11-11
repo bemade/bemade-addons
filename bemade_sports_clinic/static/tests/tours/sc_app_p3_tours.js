@@ -50,7 +50,7 @@ tours.add("sc_1540_clinic", {
         },
         {
             content: "Open the patient's file",
-            trigger: '.o_sc_wl_live li[data-sc-state="arrived"] a.o_sc_row_title',
+            trigger: '.o_sc_wl_live li[data-sc-state="arrived"] a.o_pk_row_title',
             run: "click",
             expectUnloadPage: true,
         },
@@ -100,14 +100,14 @@ tours.add("sc_1540_event_timesheet", {
         },
         {
             content: "« + Ajouter » (Add My Timesheet) in the timesheets list header",
-            trigger: '[data-pk-section="event.timesheets"] .o_sc_list_header button.o_sc_list_add[data-sc-sheet-open="sc_ts_add_sheet"]',
+            trigger: '[data-pk-section="event.timesheets"] .o_pk_list_header button.o_pk_list_add[data-sc-sheet-open="sc_ts_add_sheet"]',
             run: "click",
         },
         {
             // Task 1665: with my timesheet already on the event, the button
             // opens it in edit and the toast offers « Add another timesheet ».
             content: "The add sheet (or the toast's « Add another timesheet »)",
-            trigger: 'dialog#sc_ts_add_sheet[open], .o_sc_toast:not([hidden]) button[data-sc-toast-action]',
+            trigger: 'dialog#sc_ts_add_sheet[open], .o_pk_toast:not([hidden]) button[data-sc-toast-action]',
             run() {
                 if (!document.querySelector("dialog#sc_ts_add_sheet[open]")) {
                     this.anchor.click();
@@ -160,7 +160,7 @@ tours.add("sc_1540_notepad", {
     steps: () => [
         {
             content: "Type a quick note (kept as a device draft)",
-            trigger: 'form[data-sc-form="note.add"] .o_sc_autosave textarea',
+            trigger: 'form[data-sc-form="note.add"] .o_pk_autosave textarea',
             run: `edit ${QUICK}`,
         },
         {
@@ -198,7 +198,7 @@ tours.add("sc_1587_note_date_injury", {
         },
         {
             content: "Change the note's date",
-            trigger: `${NOTE_CARD} .o_sc_autosave[data-sc-field="date"] input[type="date"]`,
+            trigger: `${NOTE_CARD} .o_pk_autosave[data-sc-field="date"] input[type="date"]`,
             run() {
                 this.anchor.value = "2026-02-14";
                 this.anchor.dispatchEvent(new Event("input", { bubbles: true }));
@@ -207,11 +207,11 @@ tours.add("sc_1587_note_date_injury", {
         },
         {
             content: "The date is saved",
-            trigger: `${NOTE_CARD} .o_sc_autosave[data-sc-field="date"][data-sc-state="saved"]`,
+            trigger: `${NOTE_CARD} .o_pk_autosave[data-sc-field="date"][data-sc-state="saved"]`,
         },
         {
             content: "Link the note to another injury of the player",
-            trigger: `${NOTE_CARD} .o_sc_autosave[data-sc-field="injury_id"] select`,
+            trigger: `${NOTE_CARD} .o_pk_autosave[data-sc-field="injury_id"] select`,
             run() {
                 const option = [...this.anchor.options].find((opt) => opt.text === "Synthetic strain");
                 assert(option, "the player's open injury is offered");
@@ -222,7 +222,7 @@ tours.add("sc_1587_note_date_injury", {
         },
         {
             content: "The injury is saved",
-            trigger: `${NOTE_CARD} .o_sc_autosave[data-sc-field="injury_id"][data-sc-state="saved"]`,
+            trigger: `${NOTE_CARD} .o_pk_autosave[data-sc-field="injury_id"][data-sc-state="saved"]`,
         },
         {
             content: "Done: the card closes (task 1611: no reload, the meta line is a read fragment)",

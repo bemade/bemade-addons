@@ -52,7 +52,7 @@ async function waitFor(check, message, timeout = 8000) {
 
 const CARD = "details.o_sc_injury_item";
 const HEAD = `${CARD} > summary`;
-const TRASH = `${HEAD} button.o_sc_card_trash`;
+const TRASH = `${HEAD} button.o_pk_card_trash`;
 const PENCIL = `${HEAD} button[data-sc-edit-toggle]`;
 const CHEVRON = `${HEAD} button[data-sc-injury-toggle]`;
 
@@ -63,10 +63,10 @@ tours.add("sc_1736_injury", {
             trigger: `${CARD}:not([open]) ${"> summary"} button[data-sc-injury-toggle][aria-expanded="false"]`,
             run() {
                 const icons = [...q(`${HEAD} [data-sc-card-icons]`).querySelectorAll("a, button")];
-                const kinds = icons.map((el) => ["o_sc_card_clock", "o_sc_card_trash", "o_sc_card_edit"]
+                const kinds = icons.map((el) => ["o_sc_card_clock", "o_pk_card_trash", "o_pk_card_edit"]
                     .find((cls) => el.classList.contains(cls))).filter(Boolean);
                 // (the clock only when the viewer has an activity on it)
-                assert(["o_sc_card_clock,o_sc_card_trash,o_sc_card_edit", "o_sc_card_trash,o_sc_card_edit"]
+                assert(["o_sc_card_clock,o_pk_card_trash,o_pk_card_edit", "o_pk_card_trash,o_pk_card_edit"]
                     .includes(kinds.join()), `order: ${kinds}`);
                 assert(!shown(q(TRASH)), "the trash shows in read mode");
                 const pencil = q(PENCIL).getBoundingClientRect();
@@ -78,7 +78,7 @@ tours.add("sc_1736_injury", {
         },
         {
             content: "A tap on the header's title does not unfold the card",
-            trigger: `${HEAD} .o_sc_row_title`,
+            trigger: `${HEAD} .o_pk_row_title`,
             async run(helpers) {
                 await helpers.click();
                 await pause();
@@ -96,7 +96,7 @@ tours.add("sc_1736_injury", {
         },
         {
             content: "A tap on the header's title does not fold it",
-            trigger: `${CARD}[open] > summary .o_sc_row_title`,
+            trigger: `${CARD}[open] > summary .o_pk_row_title`,
             async run(helpers) {
                 await helpers.click();
                 await pause();
@@ -114,7 +114,7 @@ tours.add("sc_1736_injury", {
             run() {
                 const trash = q(TRASH);
                 assert(shown(trash), "no trash while editing");
-                assert(trash.classList.contains("o_sc_icon_btn_danger")
+                assert(trash.classList.contains("o_pk_icon_btn_danger")
                     && getComputedStyle(trash).color !== getComputedStyle(q(`${HEAD} [data-sc-card-icons] .o_sc_card_clock`) || q(PENCIL)).color,
                     "the trash is not red");
                 assert(q(PENCIL).dataset.scEditToggleDone === "1", "the pencil is not a ✓");
@@ -199,13 +199,13 @@ tours.add("sc_1736_contact", {
             content: "Read mode: no trash; the pencil",
             trigger: `${CONTACT}:not([data-sc-edit-open]) button[data-sc-edit-toggle]`,
             run(helpers) {
-                assert(!shown(q(`${CONTACT} button.o_sc_card_trash`)), "the trash shows in read mode");
+                assert(!shown(q(`${CONTACT} button.o_pk_card_trash`)), "the trash shows in read mode");
                 return helpers.click();
             },
         },
         {
             content: "Editing: the red trash left of the ✓",
-            trigger: `${CONTACT}[data-sc-edit-open] button.o_sc_card_trash:visible`,
+            trigger: `${CONTACT}[data-sc-edit-open] button.o_pk_card_trash:visible`,
             run(helpers) {
                 const done = q(`${CONTACT} button[data-sc-edit-toggle-done]`);
                 assert(this.anchor.getBoundingClientRect().right <= done.getBoundingClientRect().left + 1, "order");
@@ -275,11 +275,11 @@ tours.add("sc_1736_note_undo", {
     steps: () => [
         {
             content: "The note's archive icon (read mode), left of the pencil; no trash yet",
-            trigger: "article.o_sc_quick_note button.o_sc_card_archive",
+            trigger: "article.o_sc_quick_note button.o_pk_card_archive",
             expectUnloadPage: true,
             run(helpers) {
                 const card = this.anchor.closest("article");
-                assert(!shown(card.querySelector("button.o_sc_card_trash")), "the trash shows in read mode");
+                assert(!shown(card.querySelector("button.o_pk_card_trash")), "the trash shows in read mode");
                 const pencil = card.querySelector("button[data-sc-edit-toggle]");
                 assert(this.anchor.getBoundingClientRect().right <= pencil.getBoundingClientRect().left + 1, "order");
                 return helpers.click();
@@ -287,7 +287,7 @@ tours.add("sc_1736_note_undo", {
         },
         {
             content: "Archived: the toast offers « Undo »",
-            trigger: ".o_sc_toast:not([hidden]) button[data-sc-toast-action]",
+            trigger: ".o_pk_toast:not([hidden]) button[data-sc-toast-action]",
             expectUnloadPage: true,
             run(helpers) {
                 assert(!q("article.o_sc_quick_note"), "the note is still listed");
@@ -296,7 +296,7 @@ tours.add("sc_1736_note_undo", {
         },
         {
             content: "Back in the notes",
-            trigger: "article.o_sc_quick_note button.o_sc_card_archive",
+            trigger: "article.o_sc_quick_note button.o_pk_card_archive",
         },
     ],
 });

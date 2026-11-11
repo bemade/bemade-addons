@@ -87,10 +87,10 @@ class TestReturnPlaceholder1018c(AppShellCommon):
                 empty = ret.xpath('.//*[@data-sc-return-empty]')
                 self.assertEqual(len(empty), 1, (login, vals))
                 self.assertEqual(empty[0].get('data-sc-return-empty'), kind)
-                self.assertIn('o_sc_muted', empty[0].get('class'))
+                self.assertIn('o_pk_muted', empty[0].get('class'))
                 self.assertEqual(_text(empty[0]), placeholder)
                 # No value line (and not the OTHER date).
-                self.assertFalse(ret.xpath('.//*[contains(@class, "o_sc_field_static")]'))
+                self.assertFalse(ret.xpath('.//*[contains(@class, "o_pk_field_static")]'))
                 self.assertNotIn('2029', _text(ret))
                 self.assertNotIn('2030', _text(ret))
 

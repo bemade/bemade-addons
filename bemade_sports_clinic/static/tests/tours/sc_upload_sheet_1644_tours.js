@@ -47,7 +47,7 @@ function checkLayout(sheetSelector) {
     assert(sheet, "the sheet is not open");
     const form = sheet.querySelector("form[data-sc-doc-upload]");
     setFiles(form.querySelector('input[type="file"]'), sixFiles());
-    assert(form.querySelectorAll("[data-sc-file-list] li.o_sc_file").length === 6, "six rows expected");
+    assert(form.querySelectorAll("[data-sc-file-list] li.o_pk_file").length === 6, "six rows expected");
     const scroll = form.querySelector("[data-sc-doc-scroll]");
     assert(scroll.scrollHeight > scroll.clientHeight + 10,
         `the middle does not scroll: ${scroll.scrollHeight} / ${scroll.clientHeight}`);
@@ -60,18 +60,18 @@ function checkLayout(sheetSelector) {
         const cs = getComputedStyle(sheet);
         const r = sheet.getBoundingClientRect();
         const ss = getComputedStyle(scroll);
-        const body = sheet.querySelector(".o_sc_sheet_body");
+        const body = sheet.querySelector(".o_pk_sheet_body");
         return `#${sheet.id} modal=${sheet.matches(":modal")} open=${document.querySelectorAll("dialog[open]").length} ` +
             `pos=${cs.position} vh=${window.innerHeight} scrollY=${window.scrollY} sheet ${Math.round(r.top)}-${Math.round(r.bottom)} display=${cs.display} max-h=${cs.maxHeight} ` +
             `overflow=${cs.overflow} scrollTop=${sheet.scrollTop}; body scrollTop=${body.scrollTop} ` +
             `overflow=${getComputedStyle(body).overflow}; middle overflow=${ss.overflowY} h=${scroll.clientHeight}`;
     };
     assert(zone.top >= 0 && zone.bottom <= window.innerHeight, `the picker scrolled away: ${zone.top} (${why()})`);
-    const title = sheet.querySelector(".o_sc_sheet_head").getBoundingClientRect();
+    const title = sheet.querySelector(".o_pk_sheet_head").getBoundingClientRect();
     assert(title.top >= 0, "the sheet head left the screen");
     // Phone: the drop zone is a plain « Add files » button.
-    assert(visible(form.querySelector(".o_sc_dropzone_text_touch")), "« Add files » not shown on a phone");
-    assert(!visible(form.querySelector(".o_sc_dropzone_text")), "the drop-zone text still shows on a phone");
+    assert(visible(form.querySelector(".o_pk_dropzone_text_touch")), "« Add files » not shown on a phone");
+    assert(!visible(form.querySelector(".o_pk_dropzone_text")), "the drop-zone text still shows on a phone");
     return form;
 }
 
@@ -79,8 +79,8 @@ function checkBusy(form) {
     const submit = form.querySelector("[data-sc-doc-submit]");
     assert(submit.disabled, "Upload stays enabled while sending");
     assert(form.getAttribute("aria-busy") === "true", "no aria-busy");
-    assert(visible(submit.querySelector(".o_sc_btn_busy")), "no « Uploading… » label");
-    assert(!visible(submit.querySelector(".o_sc_btn_idle")), "the idle label still shows");
+    assert(visible(submit.querySelector(".o_pk_btn_busy")), "no « Uploading… » label");
+    assert(!visible(submit.querySelector(".o_pk_btn_idle")), "the idle label still shows");
     const cancel = form.querySelector("button[data-sc-sheet-close]");
     assert(!cancel || cancel.disabled, "Cancel stays enabled while sending");
 }
@@ -89,12 +89,12 @@ tours.add("sc_1644_player_tab", {
     steps: () => [
         {
             content: "« + Ajouter » of the Documents list opens the sheet",
-            trigger: '.o_sc_list_header button.o_sc_list_add[data-sc-sheet-open="sc_documents_upload"]',
+            trigger: '.o_pk_list_header button.o_pk_list_add[data-sc-sheet-open="sc_documents_upload"]',
             run: "click",
         },
         {
             content: "Six files: pinned head and Upload, the middle scrolls",
-            trigger: "dialog#sc_documents_upload[open] .o_sc_dropzone",
+            trigger: "dialog#sc_documents_upload[open] .o_pk_dropzone",
             run() {
                 checkLayout("dialog#sc_documents_upload");
             },
@@ -111,7 +111,7 @@ tours.add("sc_1644_player_tab", {
         },
         {
             content: "The documents are listed",
-            trigger: '.o_sc_app section[data-sc-tab-panel="documents"]:contains("Synthetic 1644 6.pdf")',
+            trigger: '.o_pk_app section[data-sc-tab-panel="documents"]:contains("Synthetic 1644 6.pdf")',
         },
     ],
 });
@@ -120,12 +120,12 @@ tours.add("sc_1644_injury_card", {
     steps: () => [
         {
             content: "The card's « Add documents »",
-            trigger: 'details.o_sc_injury_item[open] .o_sc_list_header button.o_sc_list_add[data-sc-action="injury.documents.add"]',
+            trigger: 'details.o_sc_injury_item[open] .o_pk_list_header button.o_pk_list_add[data-sc-action="injury.documents.add"]',
             run: "click",
         },
         {
             content: "Six files: pinned head and Upload; busy on submit; a second submit refused; idle again on pageshow",
-            trigger: 'dialog[id$="_documents_add"][open] .o_sc_dropzone',
+            trigger: 'dialog[id$="_documents_add"][open] .o_pk_dropzone',
             run() {
                 const form = checkLayout('dialog[id$="_documents_add"]');
                 // A synthetic submit event runs the handlers without posting.
@@ -143,7 +143,7 @@ tours.add("sc_1644_injury_card", {
                 window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: false }));
                 const submit = form.querySelector("[data-sc-doc-submit]");
                 assert(!submit.disabled && !form.hasAttribute("aria-busy"), "not idle after pageshow");
-                assert(visible(submit.querySelector(".o_sc_btn_idle")), "idle label missing");
+                assert(visible(submit.querySelector(".o_pk_btn_idle")), "idle label missing");
             },
         },
     ],

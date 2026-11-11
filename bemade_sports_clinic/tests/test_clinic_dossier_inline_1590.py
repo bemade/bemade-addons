@@ -261,7 +261,7 @@ class TestClinicDossierInline1590(ClinicDossier1590Common):
         _text, tree = self._get(self._dossier_url())
         card = tree.xpath('//details[@id="clinic-injury-%s"]' % report.id)
         self.assertTrue(card)
-        self.assertIn('o_sc_tone_yellow', ' '.join(card[0].xpath('.//summary//span/@class')))
+        self.assertIn('o_pk_tone_yellow', ' '.join(card[0].xpath('.//summary//span/@class')))
 
     # -- UC-CD6 ----------------------------------------------------------
     def test_quick_note_saves_with_stamp(self):
@@ -293,7 +293,7 @@ class TestClinicDossierInline1590(ClinicDossier1590Common):
         self.assertTrue(hidden.hidden_from_coaches)
         _text, tree = self._get(self._dossier_url())
         card = tree.xpath('//details[@id="clinic-injury-%s"]' % hidden.id)[0]
-        self.assertTrue(card.xpath('.//*[contains(@class, "o_sc_chip_mauve")]'))
+        self.assertTrue(card.xpath('.//*[contains(@class, "o_pk_chip_secondary")]'))
         self._login_coach()
         text, tree = self._get('/my/player?player_id=%s&tab=injuries' % self.player.id)
         self.assertFalse(tree.xpath('//details[@id="injury-%s"]' % hidden.id))

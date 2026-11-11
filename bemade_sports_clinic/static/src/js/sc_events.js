@@ -1,6 +1,6 @@
 /*
  * Task 1540 (epic #1535, P3) — event form behaviours of the app shell
- * (progressive enhancement; inert outside .o_sc_app). Replaces, in the
+ * (progressive enhancement; inert outside .o_pk_app). Replaces, in the
  * shell only, the legacy create / edit pages' inline scripts:
  *
  * - task 1608: teams and assigned staff are form-mode tags fields
@@ -23,7 +23,7 @@ import { _t } from "@web/core/l10n/translation";
 import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 
 function inShell(el) {
-    return Boolean(el && el.closest && el.closest(".o_sc_app"));
+    return Boolean(el && el.closest && el.closest(".o_pk_app"));
 }
 
 // ------------------------------------------------- task 1608: coverage snapping

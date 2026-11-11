@@ -36,7 +36,7 @@ LOGIN = 'pc.tp@example.com'
 
 
 def _toast(tree):
-    hosts = tree.xpath('//*[contains(@class, "o_sc_toast")]')
+    hosts = tree.xpath('//*[contains(@class, "o_pk_toast")]')
     return hosts[0] if hosts else None
 
 

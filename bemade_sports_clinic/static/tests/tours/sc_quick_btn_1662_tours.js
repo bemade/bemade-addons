@@ -24,14 +24,14 @@ function intersects(a, b) {
 function checkRow(quick) {
     const summary = quick.closest("summary");
     assert(summary, "the quick button is not in a card summary");
-    const pill = summary.querySelector(".o_sc_pill_select, .o_sc_status_pill");
+    const pill = summary.querySelector(".o_pk_pill_select, .o_pk_status_pill");
     assert(pill, "no status pill on the row");
     const qh = quick.getBoundingClientRect().height;
     const ph = pill.getBoundingClientRect().height;
     assert(Math.abs(qh - ph) <= 1, `quick button ${qh}px vs status pill ${ph}px`);
     // Every pill / chip / control of the row: pairwise no overlap.
     const items = [...summary.querySelectorAll(
-        ".o_sc_quick_btn, .o_sc_pill_select_wrap, .o_sc_status_pill:not(.o_sc_pill_select), .o_sc_chip, .o_sc_activity_clock, .o_sc_row_trailing > .o_sc_icon"
+        ".o_sc_quick_btn, .o_pk_pill_select_wrap, .o_pk_status_pill:not(.o_pk_pill_select), .o_pk_chip, .o_sc_activity_clock, .o_pk_row_trailing > .o_pk_icon"
     )].filter((el) => el.getClientRects().length);
     for (let i = 0; i < items.length; i++) {
         for (let j = i + 1; j < items.length; j++) {
@@ -58,7 +58,7 @@ tours.add("sc_1662_quick_btn_height", {
                 const resolve = document.querySelectorAll('[data-sc-injury-quick="resolve"]');
                 const verify = document.querySelectorAll('[data-sc-injury-quick="verify"]');
                 assert(resolve.length && verify.length, "both quick buttons expected");
-                const chips = resolve[0].closest("summary").querySelectorAll(".o_sc_chip");
+                const chips = resolve[0].closest("summary").querySelectorAll(".o_pk_chip");
                 assert(chips.length >= 2, "the active injury should carry its two chips");
                 [...resolve, ...verify].forEach(checkRow);
             },

@@ -32,7 +32,7 @@ tours.add("sc_1665_timesheet_existing", {
         },
         {
             content: "The toast offers « Add another timesheet »",
-            trigger: ".o_sc_toast:not([hidden]) button[data-sc-toast-action]:contains(Add another timesheet)",
+            trigger: ".o_pk_toast:not([hidden]) button[data-sc-toast-action]:contains(Add another timesheet)",
             run: "click",
         },
         {

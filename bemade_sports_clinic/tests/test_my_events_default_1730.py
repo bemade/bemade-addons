@@ -133,7 +133,7 @@ class TestMyEventsDefault1730(Calendar1591Common):
         } for i in range(81)])
         self._login_tp()
         _text, tree = self._get('/my/events?view_type=all')
-        pages = [href for href in tree.xpath('//*[contains(@class, "o_sc_pager")]//a/@href') if '/page/2' in href]
+        pages = [href for href in tree.xpath('//*[contains(@class, "o_pk_pager")]//a/@href') if '/page/2' in href]
         self.assertTrue(pages)
         self.assertEqual(self._query(pages[0]).get('view_type'), 'all')
         _text, tree = self._get(pages[0])

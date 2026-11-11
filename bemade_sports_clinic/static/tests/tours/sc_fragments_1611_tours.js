@@ -64,36 +64,36 @@ tours.add("sc_1611_player_fragments", {
         },
         {
             content: "Rename the player and leave the field",
-            trigger: `${IDENTITY} [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="last_name"] input`,
+            trigger: `${IDENTITY} [data-sc-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="last_name"] input`,
             run() {
                 typeAndLeave(this.anchor, "Zedsynth");
             },
         },
         {
             content: "Confirm the identity correction",
-            trigger: '.o_sc_autosave[data-sc-field="last_name"] .o_sc_identity_banner .o_sc_identity_confirm',
+            trigger: '.o_pk_autosave[data-sc-field="last_name"] .o_sc_identity_banner .o_sc_identity_confirm',
             run: "click",
         },
         {
             content: "Saved",
-            trigger: '.o_sc_autosave[data-sc-field="last_name"][data-sc-state="saved"]',
+            trigger: '.o_pk_autosave[data-sc-field="last_name"][data-sc-state="saved"]',
         },
         {
             content: "Title, document title, hero name + initials follow — no « Done », no reload",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => frag("appbar") && frag("appbar").textContent.includes("Zedsynth"), "app bar title");
                 await waitFor(() => document.title.includes("Zedsynth"), "document title");
                 const hero = frag("hero-head");
                 assert(hero.textContent.includes("Zedsynth"), "hero name");
-                assert(hero.querySelector(".o_sc_avatar").textContent.trim() === "PZ", "hero initials");
+                assert(hero.querySelector(".o_pk_avatar").textContent.trim() === "PZ", "hero initials");
                 assert(document.querySelector(`${IDENTITY}[data-sc-edit-open]`), "the card closed");
                 assertNoReload();
             },
         },
         {
             content: "Set the date of birth and leave it",
-            trigger: `${IDENTITY} .o_sc_autosave[data-sc-field="date_of_birth"] input`,
+            trigger: `${IDENTITY} .o_pk_autosave[data-sc-field="date_of_birth"] input`,
             run() {
                 const year = new Date().getFullYear() - 16;
                 typeAndLeave(this.anchor, `${year}-01-02`);
@@ -101,11 +101,11 @@ tours.add("sc_1611_player_fragments", {
         },
         {
             content: "Saved",
-            trigger: `${IDENTITY} .o_sc_autosave[data-sc-field="date_of_birth"][data-sc-state="saved"]`,
+            trigger: `${IDENTITY} .o_pk_autosave[data-sc-field="date_of_birth"][data-sc-state="saved"]`,
         },
         {
             content: "The identity read view (behind the open card) shows the age",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => {
                     const read = frag("identity");
@@ -124,7 +124,7 @@ tours.add("sc_1611_player_fragments", {
         },
         {
             content: "« + Ajouter »",
-            trigger: `dialog[open] [data-pk-section="medical.allergy"] .o_sc_list_header button[data-pk-list-add-toggle]`,
+            trigger: `dialog[open] [data-pk-section="medical.allergy"] .o_pk_list_header button[data-pk-list-add-toggle]`,
             run: "click",
         },
         {
@@ -137,7 +137,7 @@ tours.add("sc_1611_player_fragments", {
         },
         {
             content: "The popup's list is refreshed in place",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => {
                     const list = frag("medical-allergy-items");
@@ -164,7 +164,7 @@ tours.add("sc_1611_player_fragments", {
         },
         {
             content: "The item goes",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => !frag("medical-allergy-items").textContent.includes("Synthetic pollen"), "item gone");
                 assertNoReload();
@@ -193,7 +193,7 @@ tours.add("sc_1611_injury_stage", {
         // resolve sheet), no longer in the Details edit view.
         {
             content: "Open the status pill",
-            trigger: `${CARD} > summary [data-sc-pill-key="stage"]:not([aria-busy]) button.o_sc_pill_select`,
+            trigger: `${CARD} > summary [data-sc-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select`,
             run: "click",
         },
         {
@@ -208,7 +208,7 @@ tours.add("sc_1611_injury_stage", {
         },
         {
             content: "The summary turns green at once, the card stays open in edit mode",
-            trigger: `${CARD} > summary .o_sc_dot.o_sc_tone_green`,
+            trigger: `${CARD} > summary .o_pk_dot.o_pk_tone_green`,
             run() {
                 assert(document.querySelector(`${CARD_DETAILS}[data-sc-edit-open]`), "the card closed");
                 assertNoReload();
@@ -254,18 +254,18 @@ tours.add("sc_1611_event_when", {
         },
         {
             content: "New start time",
-            trigger: `${EVENT} .o_sc_autosave[data-sc-field="date_start"] input`,
+            trigger: `${EVENT} .o_pk_autosave[data-sc-field="date_start"] input`,
             run() {
                 typeAndLeave(this.anchor, "2026-02-02T08:15");
             },
         },
         {
             content: "Saved",
-            trigger: `${EVENT} .o_sc_autosave[data-sc-field="date_start"][data-sc-state="saved"]`,
+            trigger: `${EVENT} .o_pk_autosave[data-sc-field="date_start"][data-sc-state="saved"]`,
         },
         {
             content: "« When » follows (read view behind the open card)",
-            trigger: ".o_sc_app",
+            trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => frag("read") && frag("read").textContent.includes("08:15"), "When 08:15");
                 assertNoReload();
@@ -283,14 +283,14 @@ tours.add("sc_1611_event_when", {
         },
         {
             content: "Coverage end two hours after the start",
-            trigger: '[data-pk-edit-card^="timesheet-"] .o_sc_autosave[data-sc-field="coverage_end"] input',
+            trigger: '[data-pk-edit-card^="timesheet-"] .o_pk_autosave[data-sc-field="coverage_end"] input',
             run() {
                 typeAndLeave(this.anchor, "2026-02-02T12:00");
             },
         },
         {
             content: "Saved",
-            trigger: '[data-pk-edit-card^="timesheet-"] .o_sc_autosave[data-sc-field="coverage_end"][data-sc-state="saved"]',
+            trigger: '[data-pk-edit-card^="timesheet-"] .o_pk_autosave[data-sc-field="coverage_end"][data-sc-state="saved"]',
         },
         {
             content: "Done: the read lines show the new total",
@@ -317,16 +317,16 @@ function reloadIfRestored() {
     });
 }
 
-const ROSTER_ROW = '[data-pk-section="team.roster"] .o_sc_player_row:has(a.o_sc_link_row_main:contains("Zedback"))';
+const ROSTER_ROW = '[data-pk-section="team.roster"] .o_sc_player_row:has(a.o_pk_link_row_main:contains("Zedback"))';
 
 tours.add("sc_1611_back_roster", {
     steps: () => [
         {
             content: "Team roster: the player is available",
-            trigger: `${ROSTER_ROW} .o_sc_dot.o_sc_tone_green`,
+            trigger: `${ROSTER_ROW} .o_pk_dot.o_pk_tone_green`,
             run() {
                 reloadIfRestored();
-                this.anchor.closest(".o_sc_player_row").querySelector("a.o_sc_link_row_main").click();
+                this.anchor.closest(".o_sc_player_row").querySelector("a.o_pk_link_row_main").click();
             },
             expectUnloadPage: true,
         },
@@ -334,7 +334,7 @@ tours.add("sc_1611_back_roster", {
         // then Practice no) — no pencil.
         {
             content: "Player page: open the Match pill",
-            trigger: '[data-sc-pill-key="match"]:not([aria-busy]) button.o_sc_pill_select',
+            trigger: '[data-sc-pill-key="match"]:not([aria-busy]) button.o_pk_pill_select',
             run: "click",
         },
         {
@@ -344,9 +344,9 @@ tours.add("sc_1611_back_roster", {
         },
         {
             content: "Saved in place; open the Practice pill",
-            trigger: '[data-sc-pill-key="practice"]:not([aria-busy]) button.o_sc_pill_select',
+            trigger: '[data-sc-pill-key="practice"]:not([aria-busy]) button.o_pk_pill_select',
             run() {
-                if (!document.querySelector('[data-sc-pill-key="match"]:not([aria-busy]) button.o_sc_chip_red')) {
+                if (!document.querySelector('[data-sc-pill-key="match"]:not([aria-busy]) button.o_pk_chip_red')) {
                     throw new Error("match not saved yet");
                 }
                 this.anchor.click();
@@ -359,7 +359,7 @@ tours.add("sc_1611_back_roster", {
         },
         {
             content: "Saved; back",
-            trigger: '[data-sc-pill-key="practice"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_red',
+            trigger: '[data-sc-pill-key="practice"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_red',
             run() {
                 window.history.back();
             },
@@ -367,21 +367,21 @@ tours.add("sc_1611_back_roster", {
         },
         {
             content: "The roster row shows the new status",
-            trigger: `${ROSTER_ROW} .o_sc_dot.o_sc_tone_red`,
+            trigger: `${ROSTER_ROW} .o_pk_dot.o_pk_tone_red`,
         },
     ],
 });
 
 // ----------------------------------- the « back » check, deterministic
 function renderedAt() {
-    return Number(document.querySelector(".o_sc_app").dataset.scRenderedAt);
+    return Number(document.querySelector(".o_pk_app").dataset.scRenderedAt);
 }
 
 tours.add("sc_1611_back_check", {
     steps: () => [
         {
             content: "Shown again from the cache, nothing saved since: no reload",
-            trigger: ".o_sc_app[data-sc-rendered-at]",
+            trigger: ".o_pk_app[data-sc-rendered-at]",
             async run() {
                 markNoReload();
                 window.sessionStorage.setItem("sc_dirty_at:v1", String(renderedAt() - 60000));
@@ -392,7 +392,7 @@ tours.add("sc_1611_back_check", {
         },
         {
             content: "Shown again after a save made elsewhere: it reloads",
-            trigger: ".o_sc_app[data-sc-rendered-at]",
+            trigger: ".o_pk_app[data-sc-rendered-at]",
             run() {
                 window.sessionStorage.setItem("sc_dirty_at:v1", String(renderedAt() + 60000));
                 window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
@@ -401,7 +401,7 @@ tours.add("sc_1611_back_check", {
         },
         {
             content: "Reloaded (a fresh render, no loop)",
-            trigger: ".o_sc_app[data-sc-rendered-at]",
+            trigger: ".o_pk_app[data-sc-rendered-at]",
             run() {
                 assert(window.__sc1611NoReload !== "1", "the page did not reload");
                 window.sessionStorage.removeItem("sc_dirty_at:v1");

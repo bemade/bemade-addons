@@ -43,7 +43,7 @@ function typeDate(input, key, value) {
     input.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-const RETURN = '[data-pk-edit-card="medical"] .o_sc_autosave[data-sc-field="return_date"]';
+const RETURN = '[data-pk-edit-card="medical"] .o_pk_autosave[data-sc-field="return_date"]';
 
 tours.add("sc_1014_date_complete", {
     steps: () => [
@@ -79,14 +79,14 @@ tours.add("sc_1014_date_complete", {
             trigger: `${RETURN}[data-sc-state="saved"]`,
             run() {
                 assert(window.__scSaves === 1, `saves: ${window.__scSaves}`);
-                assert(!document.querySelector(`${RETURN} .o_sc_conflict_banner`), "no conflict");
+                assert(!document.querySelector(`${RETURN} .o_pk_conflict_banner`), "no conflict");
             },
         },
     ],
 });
 
 // Review fixes 2026-10-18: the island is in the header's edit view.
-const TRAINING = '[data-pk-section="player.training.edit"] .o_sc_autosave[data-sc-field="training_recommendation"]';
+const TRAINING = '[data-pk-section="player.training.edit"] .o_pk_autosave[data-sc-field="training_recommendation"]';
 
 tours.add("sc_1014_serialized_saves", {
     steps: () => [
@@ -116,7 +116,7 @@ tours.add("sc_1014_serialized_saves", {
             trigger: `${TRAINING}[data-sc-state="saved"]`,
             run() {
                 assert(window.__scSaves === 2, `saves: ${window.__scSaves}`);
-                assert(!document.querySelector(`${TRAINING} .o_sc_conflict_banner`),
+                assert(!document.querySelector(`${TRAINING} .o_pk_conflict_banner`),
                     "no « changed elsewhere » banner");
                 const area = document.querySelector(`${TRAINING} textarea`);
                 assert(area.value === "Synthetic second", `value: ${area.value}`);

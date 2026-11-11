@@ -48,7 +48,7 @@ class TestFragmentsPlayer1611(FragmentsCommon):
         for part in ('appbar', 'crumb'):
             self.assertIn('Renamed', answer['fragments'][self._key(part)])
         hero = self._fragment(self._url(), self._key('hero-head'))
-        self.assertEqual(self._text(hero.xpath('.//*[contains(@class, "o_sc_avatar")]')[0]), 'PR')
+        self.assertEqual(self._text(hero.xpath('.//*[contains(@class, "o_pk_avatar")]')[0]), 'PR')
         self.assertIn('Renamed', self._text(hero.xpath('.//h2')[0]))
 
     # -- AC-P2 -------------------------------------------------------------
@@ -119,4 +119,4 @@ class TestFragmentsPlayer1611(FragmentsCommon):
         self.assertRefreshes(payload, self._key('status'))
         self._login_coach()
         chips = self._fragment(self._url(), self._key('status'))
-        self.assertTrue(chips.xpath('.//*[contains(@class, "o_sc_chip_red")]'))
+        self.assertTrue(chips.xpath('.//*[contains(@class, "o_pk_chip_red")]'))

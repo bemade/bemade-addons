@@ -34,7 +34,7 @@ async function waitFor(check, message, timeout = 5000) {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function barBottom() {
-    return document.querySelector(".o_sc_appbar").getBoundingClientRect().bottom;
+    return document.querySelector(".o_pk_appbar").getBoundingClientRect().bottom;
 }
 
 function anchored(selector) {

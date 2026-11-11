@@ -78,8 +78,8 @@ class TestInjuryHistoryFollowupNotes1735(History1581Common):
         self._login_tp()
         tree = self._fragment(self.notes_url)
         classes = {chip.text_content().strip(): chip.get('class')
-                   for chip in tree.xpath('//li//*[contains(@class, "o_sc_chip")]')}
-        self.assertIn('o_sc_chip_green', classes['Follow-up note'])
+                   for chip in tree.xpath('//li//*[contains(@class, "o_pk_chip")]')}
+        self.assertIn('o_pk_chip_green', classes['Follow-up note'])
         self.assertNotEqual(classes['Follow-up note'], classes['Internal'])
         self.assertNotEqual(classes['Follow-up note'], classes['External'])
 
@@ -124,12 +124,12 @@ class TestInjuryHistoryFollowupNotes1735(History1581Common):
         self._login_tp()
         tree = self._fragment(url)
         self.assertEqual([e['body'] for e in self._entries(tree)], ['Synthetic note on the other injury'])
-        self.assertFalse(tree.xpath('//*[contains(@class, "o_sc_empty")]'))
+        self.assertFalse(tree.xpath('//*[contains(@class, "o_pk_empty")]'))
         self.env['sports.treatment.note'].sudo().search(
             [('injury_id', '=', self.other_injury.id)]).unlink()
         tree = self._fragment(url)
         self.assertFalse(self._entries(tree))
-        self.assertEqual(tree.xpath('//*[contains(@class, "o_sc_empty")]/text()'), ['No note history yet.'])
+        self.assertEqual(tree.xpath('//*[contains(@class, "o_pk_empty")]/text()'), ['No note history yet.'])
 
 
 @tagged('post_install', '-at_install')

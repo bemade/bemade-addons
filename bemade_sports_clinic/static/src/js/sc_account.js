@@ -1,5 +1,5 @@
 /*
- * « Mon compte » (views/sc_app_account.xml, inert outside .o_sc_app):
+ * « Mon compte » (views/sc_app_account.xml, inert outside .o_pk_app):
  * « Contact details » and « Address » are edit cards (pencil → edit view,
  * « Done » closes it — sc_app_ui.js) inside ONE core address form.
  *
@@ -30,7 +30,7 @@ const queues = new WeakMap(); // form → { busy, pending: Set<field> }
 
 function accountForm(node) {
     const form = node && node.closest && node.closest("form[data-sc-account-form]");
-    return form && form.closest(".o_sc_app") ? form : null;
+    return form && form.closest(".o_pk_app") ? form : null;
 }
 
 function cards(form) {
@@ -63,13 +63,13 @@ function remember(form) {
 }
 
 function stateNode(field) {
-    const box = field.closest(".o_sc_field");
+    const box = field.closest(".o_pk_field");
     return box ? box.querySelector("[data-sc-account-state]") : null;
 }
 
 function setState(field, status) {
     const node = stateNode(field);
-    const box = field.closest(".o_sc_field");
+    const box = field.closest(".o_pk_field");
     if (box) {
         if (status) {
             box.dataset.scState = status;
@@ -89,7 +89,7 @@ function setState(field, status) {
     } else if (status === "error") {
         text = _t("Error — not saved");
     }
-    node.className = status ? `o_sc_save_state o_sc_save_state_${status}` : "o_sc_save_state";
+    node.className = status ? `o_pk_save_state o_pk_save_state_${status}` : "o_pk_save_state";
     node.textContent = text;
     node.hidden = !text;
 }
@@ -227,7 +227,7 @@ function changed(field) {
 
 // The values the page was rendered with = the saved ones.
 function init() {
-    for (const form of document.querySelectorAll(".o_sc_app form[data-sc-account-form]")) {
+    for (const form of document.querySelectorAll(".o_pk_app form[data-sc-account-form]")) {
         remember(form);
     }
 }

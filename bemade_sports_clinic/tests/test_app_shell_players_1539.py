@@ -109,7 +109,7 @@ class TestAppShellPlayersList1539(PlayersCommon1539):
         self._login_tp()
         _text, tree = self._get('/my/players')
         # Task 1607 (deliberate update): « + Ajouter » is in the list header.
-        action = tree.xpath('//div[contains(@class, "o_sc_list_header")]//button[@data-sc-action="players.create"]')
+        action = tree.xpath('//div[contains(@class, "o_pk_list_header")]//button[@data-sc-action="players.create"]')
         # Task 1655: it opens the inline create panel.
         self.assertEqual(action[0].get('aria-controls'), 'sc_player_add')
 
@@ -148,7 +148,7 @@ class TestAppShellPlayersList1539(PlayersCommon1539):
         row = tree.xpath('//*[@data-pk-section="players.list"]//*[@data-sc-player-id="%s"]'
                          % self.player.id)[0]
         teams = [' '.join(node.text_content().split())
-                 for node in row.xpath('.//*[contains(concat(" ", @class, " "), " o_sc_row_link ")]')]
+                 for node in row.xpath('.//*[contains(concat(" ", @class, " "), " o_pk_row_link ")]')]
         self.assertEqual(teams, ['PC Team A', 'PC Team B'])
 
 

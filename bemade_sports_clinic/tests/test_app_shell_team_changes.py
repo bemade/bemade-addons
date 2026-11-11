@@ -111,7 +111,7 @@ class TestAppShellTeamChanges(AppShellCommon):
         with self._presence():
             _text, tree = self._get(self.url)
         row = self._changed_row(tree)
-        self.assertFalse(row.xpath('.//*[contains(@class, "o_sc_chip_mauve")]'))
+        self.assertFalse(row.xpath('.//*[contains(@class, "o_pk_chip_secondary")]'))
         pill = row.xpath('.//*[contains(@class, "o_sc_recent_pill")]')
         self.assertEqual(len(pill), 1)
         self.assertTrue(pill[0].xpath('.//i[contains(@class, "fa-bolt")]'))
@@ -205,16 +205,16 @@ class TestAppShellTeamChanges(AppShellCommon):
             _text, tree = self._get('/my/players')
         row = tree.xpath('//*[@data-pk-section="players.list"]//*[@data-sc-player-id="%s"]'
                          % self.player.id)[0]
-        self.assertFalse(row.xpath('.//*[contains(@class, "o_sc_chip_mauve")]'))
+        self.assertFalse(row.xpath('.//*[contains(@class, "o_pk_chip_secondary")]'))
         self.assertTrue(row.xpath('.//*[contains(@class, "o_sc_recent_pill")]//i[contains(@class, "fa-bolt")]'))
     # -- UC-RC9 ----------------------------------------------------------
     def _pills(self, tree, section, player):
         node = tree.xpath('//*[@data-pk-section="%s"]//*[@data-sc-player-id="%s"]'
                           % (section, player.id))[0]
         return [(' '.join(p.text_content().split()),
-                 p.get('class').split('o_sc_chip_')[1].split()[0],
+                 p.get('class').split('o_pk_chip_')[1].split()[0],
                  p.xpath('./i/@class')[0])
-                for p in node.xpath('.//*[contains(@class, "o_sc_status_pill")]')]
+                for p in node.xpath('.//*[contains(@class, "o_pk_status_pill")]')]
 
     def test_rows_show_match_and_practice_pills(self):
         yellow = self.env['sports.patient'].create({
@@ -231,7 +231,7 @@ class TestAppShellTeamChanges(AppShellCommon):
             ('Match', 'red', 'fa fa-ban'),
             ('Practice', 'yellow', 'fa fa-exclamation-triangle')])
         self.assertFalse(tree.xpath('//*[@data-pk-section="team.roster"]'
-                                    '//*[contains(@class, "o_sc_chip")]'
+                                    '//*[contains(@class, "o_pk_chip")]'
                                     '[normalize-space()="Injured"]'))
         _text, tree = self._get('/my/players')
         self.assertEqual(self._pills(tree, 'players.list', yellow), [
@@ -264,16 +264,16 @@ class TestAppShellTeamChanges(AppShellCommon):
         self.assertIn(str(self.player.id), watch)  # red, stamp in window
         self.assertNotIn(str(healthy.id), watch)
         self.assertTrue(tree.xpath('//*[@data-pk-section="team.recent_changes"]'
-                                   '//*[contains(@class, "o_sc_empty")]'))
+                                   '//*[contains(@class, "o_pk_empty")]'))
 
     # -- UC-AN1 ----------------------------------------------------------
     def _announcement(self, tree):
         area = tree.xpath('//*[@data-pk-section="team.announcement.area"]')
         self.assertEqual(len(area), 1)
-        header = area[0].xpath('.//h2[contains(@class, "o_sc_section_header")]')[0]
+        header = area[0].xpath('.//h2[contains(@class, "o_pk_section_header")]')[0]
         self.assertIn('Team announcement', header.text_content())
         links = header.xpath('.//button[@data-sc-sheet-open="sc_announcement_history_sheet"]'
-                             '[contains(@class, "o_sc_link_btn")]')
+                             '[contains(@class, "o_pk_link_btn")]')
         self.assertEqual(len(links), 1)
         self.assertEqual(len(tree.xpath(
             '//*[@data-sc-sheet-open="sc_announcement_history_sheet"]')), 1)
@@ -291,7 +291,7 @@ class TestAppShellTeamChanges(AppShellCommon):
         _text, tree = self._get(self.url)
         self._announcement(tree)
         self.assertTrue(tree.xpath('//dialog[@id="sc_announcement_history_sheet"]'
-                                   '//*[contains(@class, "o_sc_empty")]'))
+                                   '//*[contains(@class, "o_pk_empty")]'))
         self._login_coach()
         _text, tree = self._get(self.url)
         self.assertFalse(tree.xpath('//*[@data-pk-section="team.announcement.area"]'))
@@ -308,10 +308,10 @@ class TestAppShellTeamChanges(AppShellCommon):
         self.team_a.sudo().write({'announcement': 'Synthetic standing note'})
         _text, tree = self._get(self.url)
         card = self._announcement(tree)
-        icons = card.xpath('.//*[contains(@class, "o_sc_card_icons")]')[0]
+        icons = card.xpath('.//*[contains(@class, "o_pk_card_icons")]')[0]
         self.assertEqual(len(icons.xpath('.//button[@data-sc-edit-toggle]')), 1)
         archive = icons.xpath('.//form[@data-pk-section="team.announcement.archive"]'
-                              '//button[contains(@class, "o_sc_icon_btn")]')
+                              '//button[contains(@class, "o_pk_icon_btn")]')
         self.assertEqual(len(archive), 1)
         self.assertEqual(archive[0].get('aria-label'), 'Archive')
         self.assertEqual(archive[0].text_content().strip(), '')
@@ -350,7 +350,7 @@ class TestAppShellTeamChangesFr(TestAppShellI18n1538):
         # UC-RC9's pills: label + tooltip (selection label) in French.
         # Task 1634: a therapist's card pills are the compact dropdowns
         # (short label on the face, the full value as the title).
-        self.assertIn('<span class="o_sc_pill_text">Pratique</span>', text)
+        self.assertIn('<span class="o_pk_pill_text">Pratique</span>', text)
         self.assertIn('title="Match : Oui"', text)
         self.assertIn('title="Blessures actives"', text)
         text = self._fr('/my/player/%s/recent-changes?detail=1' % self.player.id)

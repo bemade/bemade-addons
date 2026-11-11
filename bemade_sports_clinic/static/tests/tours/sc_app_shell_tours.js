@@ -31,21 +31,21 @@ tours.add("sc_1542_nav_phone", {
     steps: () => [
         {
             content: "Phone: bottom tabs shown, « Équipes » active",
-            trigger: '.o_sc_tabs a[data-sc-nav-key="teams"][aria-current="page"]',
+            trigger: '.o_pk_tabs a[data-sc-nav-key="teams"][aria-current="page"]',
         },
         {
             content: "Phone: no left rail",
-            trigger: ".o_sc_rail:not(:visible)",
+            trigger: ".o_pk_rail:not(:visible)",
         },
         {
             content: "Open « Plus » from the tabs",
-            trigger: '.o_sc_tabs a[data-sc-nav-key="more"]',
+            trigger: '.o_pk_tabs a[data-sc-nav-key="more"]',
             run: "click",
             expectUnloadPage: true,
         },
         {
             content: "« Plus » is the active tab and lists « Installer l'application »",
-            trigger: '.o_sc_tabs a[data-sc-nav-key="more"][aria-current="page"]',
+            trigger: '.o_pk_tabs a[data-sc-nav-key="more"][aria-current="page"]',
         },
         {
             trigger: 'main a[data-sc-nav-key="install"]',
@@ -57,20 +57,20 @@ tours.add("sc_1542_nav_laptop", {
     steps: () => [
         {
             content: "Laptop: left rail shown, « Équipes » active",
-            trigger: '.o_sc_rail_nav a[data-sc-nav-key="teams"][aria-current="page"]',
+            trigger: '.o_pk_rail_nav a[data-sc-nav-key="teams"][aria-current="page"]',
         },
         {
             content: "Laptop: no bottom tabs",
-            trigger: ".o_sc_tabs:not(:visible)",
+            trigger: ".o_pk_tabs:not(:visible)",
         },
         {
             content: "Open « Plus » from the rail",
-            trigger: '.o_sc_rail_nav a[data-sc-nav-key="more"]',
+            trigger: '.o_pk_rail_nav a[data-sc-nav-key="more"]',
             run: "click",
             expectUnloadPage: true,
         },
         {
-            trigger: '.o_sc_rail_nav a[data-sc-nav-key="more"][aria-current="page"]',
+            trigger: '.o_pk_rail_nav a[data-sc-nav-key="more"][aria-current="page"]',
         },
     ],
 });
@@ -80,27 +80,27 @@ tours.add("sc_1542_prefs", {
     steps: () => [
         {
             content: "Dark by default; mark the page to detect a reload",
-            trigger: '.o_sc_app[data-sc-theme="dark"]',
+            trigger: '.o_pk_app[data-pk-theme="dark"]',
             run() {
                 window.__sc1542NoReload = true;
             },
         },
         {
             content: "Toggle the theme from the app bar",
-            trigger: ".o_sc_theme_toggle button",
+            trigger: ".o_pk_theme_toggle button",
             run: "click",
         },
         {
             content: "Light theme applied IN PLACE (no reload)",
-            trigger: '.o_sc_app[data-sc-theme="light"]',
+            trigger: '.o_pk_app[data-pk-theme="light"]',
             run() {
                 assert(window.__sc1542NoReload, "the theme toggle reloaded the page");
-                assert(document.body.classList.contains("o_sc_app_body_light"), "body class");
+                assert(document.body.classList.contains("o_pk_app_body_light"), "body class");
             },
         },
         {
             content: "Go to « Paramètres » (task 1606: out of « Plus »)",
-            trigger: '.o_sc_app[data-sc-theme="light"]',
+            trigger: '.o_pk_app[data-pk-theme="light"]',
             run() {
                 window.location.assign("/my/app/settings");
             },
@@ -108,7 +108,7 @@ tours.add("sc_1542_prefs", {
         },
         {
             content: "Light theme persisted; no navigation setting (task 1579)",
-            trigger: '.o_sc_app[data-sc-theme="light"] #sc_appearance',
+            trigger: '.o_pk_app[data-pk-theme="light"] #sc_appearance',
             run() {
                 assert(!document.querySelector("#sc_navigation"), "« Navigation » setting still there");
                 window.location.assign("/my/teams");
@@ -125,9 +125,9 @@ tours.add("sc_1542_prefs", {
             // Task 1618 (owner review 2026-10-18): the chevron always shows
             // next to the trail on a laptop sub-page.
             content: "Laptop: the crumb trail shows, and the back chevron too",
-            trigger: 'nav.o_sc_crumbs a[href$="/my/teams"]',
+            trigger: 'nav.o_pk_crumbs a[href$="/my/teams"]',
             run() {
-                const back = document.querySelector(".o_sc_back");
+                const back = document.querySelector(".o_pk_back");
                 assert(back && back.offsetParent, "back chevron hidden on a laptop");
             },
         },
@@ -205,21 +205,21 @@ tours.add("sc_1542_announcement_draft", {
         },
         {
             content: "Draft kept on the device",
-            trigger: '.o_sc_autosave[data-sc-state="draft"]',
+            trigger: '.o_pk_autosave[data-sc-state="draft"]',
             run() {
                 assert(draftKeys().length === 1, "expected one device draft");
             },
         },
         {
             content: "Leave the page",
-            trigger: '.o_sc_autosave[data-sc-state="draft"]',
+            trigger: '.o_pk_autosave[data-sc-state="draft"]',
             run() {
                 window.location.assign("/my/home");
             },
             expectUnloadPage: true,
         },
         {
-            trigger: ".o_sc_app[data-pk-app-shell]",
+            trigger: ".o_pk_app[data-pk-app-shell]",
             run() {
                 window.location.assign(window.sessionStorage.getItem("sc1542TeamUrl"));
             },
@@ -227,7 +227,7 @@ tours.add("sc_1542_announcement_draft", {
         },
         {
             content: "« Brouillon restauré », compose re-opened with the text",
-            trigger: '.o_sc_autosave[data-sc-restored="1"] .o_sc_draft_banner',
+            trigger: '.o_pk_autosave[data-sc-restored="1"] .o_pk_draft_banner',
             run() {
                 const value = document.querySelector("#sc_team_announcement").value;
                 assert(value === DRAFT_TEXT, `restored value: ${value}`);
@@ -244,7 +244,7 @@ tours.add("sc_1542_announcement_draft", {
             trigger: `.o_sc_announcement_body:contains(${DRAFT_TEXT})`,
             run() {
                 assert(draftKeys().length === 0, `drafts left: ${draftKeys()}`);
-                assert(!document.querySelector(".o_sc_draft_banner"), "restore banner shown");
+                assert(!document.querySelector(".o_pk_draft_banner"), "restore banner shown");
             },
         },
     ],
@@ -261,7 +261,7 @@ tours.add("sc_1542_logout_clears_drafts", {
             run: "edit Tour 1542 draft to forget",
         },
         {
-            trigger: '.o_sc_autosave[data-sc-state="draft"]',
+            trigger: '.o_pk_autosave[data-sc-state="draft"]',
             run() {
                 assert(draftKeys().length === 1, "expected one device draft");
                 window.location.assign("/my/teams");
@@ -270,7 +270,7 @@ tours.add("sc_1542_logout_clears_drafts", {
         },
         {
             content: "Open the user menu (task 1606: logout left « Plus »; task 1638: the app-bar avatar at every width)",
-            trigger: "header.o_sc_appbar button[data-pk-user-menu-toggle]",
+            trigger: "header.o_pk_appbar button[data-pk-user-menu-toggle]",
             run: "click",
         },
         {
@@ -344,7 +344,7 @@ tours.add("sc_1542_sw_kill_switch", {
         },
         {
             content: "Legacy page: the worker answers 404 -> EVERY registration removed",
-            trigger: 'html[data-sc-sw="unregistered"]:not(:has(.o_sc_app))',
+            trigger: 'html[data-sc-sw="unregistered"]:not(:has(.o_pk_app))',
             timeout: 20000,
             async run() {
                 const regs = await navigator.serviceWorker.getRegistrations();
@@ -367,7 +367,7 @@ tours.add("sc_1542_fr_draft", {
         },
         {
             content: "Save state in French (OWL template + _t)",
-            trigger: '.o_sc_autosave[data-sc-state="draft"] .o_sc_save_state:contains(Brouillon gardé sur cet appareil)',
+            trigger: '.o_pk_autosave[data-sc-state="draft"] .o_pk_save_state:contains(Brouillon gardé sur cet appareil)',
             run() {
                 window.location.reload();
             },
@@ -375,7 +375,7 @@ tours.add("sc_1542_fr_draft", {
         },
         {
             content: "Restore banner in French",
-            trigger: ".o_sc_draft_banner:contains(Brouillon restauré):contains(Jeter le brouillon)",
+            trigger: ".o_pk_draft_banner:contains(Brouillon restauré):contains(Jeter le brouillon)",
         },
     ],
 });

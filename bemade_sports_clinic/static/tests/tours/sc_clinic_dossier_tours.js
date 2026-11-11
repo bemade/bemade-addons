@@ -19,7 +19,7 @@ function assert(condition, message) {
 
 const ADD = "details#sc_clinic_injury_add";
 const NEW_CARD = '[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[data-sc-created-injury]';
-const NOTE = '.o_sc_autosave[data-sc-field="external_notes"]';
+const NOTE = '.o_pk_autosave[data-sc-field="external_notes"]';
 const DIAG_EDIT = "Tour 1590 synthetic shoulder";
 const DIAG_UNDO = "Tour 1590 synthetic undo";
 const QUICK_NOTE = "Tour 1590 synthetic current state";
@@ -36,7 +36,7 @@ function addSteps(diagnosis) {
     return [
         {
             content: "Open « Add Injury » on the patient file (the list header's « + Ajouter »)",
-            trigger: '.o_sc_list_header button.o_sc_list_add[aria-controls="sc_clinic_injury_add"]',
+            trigger: '.o_pk_list_header button.o_pk_list_add[aria-controls="sc_clinic_injury_add"]',
             run: "click",
         },
         {
@@ -91,7 +91,7 @@ tours.add("sc_1590_clinic_injury_edit", {
         },
         {
             content: "Saved in place, with the « last note » stamp",
-            trigger: `${NEW_CARD} ${NOTE}[data-sc-state="saved"] .o_sc_replace_current .o_sc_hint`,
+            trigger: `${NEW_CARD} ${NOTE}[data-sc-state="saved"] .o_sc_replace_current .o_pk_hint`,
             run() {
                 assert(this.anchor.textContent.trim(), "empty stamp");
                 const current = document.querySelector(`${NEW_CARD} ${NOTE} .o_sc_replace_current_text`);
@@ -110,7 +110,7 @@ tours.add("sc_1590_clinic_injury_edit", {
             run() {
                 onClinicDossier();
                 assert(this.anchor.textContent.includes(QUICK_NOTE), "the read view misses the note");
-                assert(!document.querySelector("dialog.o_sc_sheet[open]"), "a sheet opened");
+                assert(!document.querySelector("dialog.o_pk_sheet[open]"), "a sheet opened");
             },
         },
         {
@@ -126,7 +126,7 @@ tours.add("sc_1590_clinic_injury_edit", {
         },
         {
             content: "Edit view shown, no legacy form anywhere",
-            trigger: '[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-pk-edit-card="injury-details"] [data-sc-edit-view="edit"]:not([hidden]) .o_sc_autosave[data-sc-field="sc_injury_date"]',
+            trigger: '[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-pk-edit-card="injury-details"] [data-sc-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="sc_injury_date"]',
             run() {
                 assert(!document.querySelector('form[action*="/my/injury/save"]'), "a legacy injury form");
             },
@@ -140,7 +140,7 @@ tours.add("sc_1590_clinic_injury_undo", {
         ...addSteps(DIAG_UNDO),
         {
             content: "Undo",
-            trigger: ".o_sc_toast:not([hidden]) [data-sc-toast-action]",
+            trigger: ".o_pk_toast:not([hidden]) [data-sc-toast-action]",
             run: "click",
             expectUnloadPage: true,
         },

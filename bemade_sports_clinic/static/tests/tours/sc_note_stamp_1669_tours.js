@@ -14,7 +14,7 @@ function assert(condition, message) {
 }
 
 const CARD = 'details.o_sc_injury_item[open] [data-pk-edit-card="injury-notes-external"]';  // task 1675
-const FIELD = `${CARD} .o_sc_autosave[data-sc-field="external_notes"]`;
+const FIELD = `${CARD} .o_pk_autosave[data-sc-field="external_notes"]`;
 const NEW = "T1669 tour new note";
 
 tours.add("sc_1669_note_stamp", {
@@ -59,7 +59,7 @@ tours.add("sc_1669_note_stamp", {
                 const read = document.querySelector(`${CARD} [data-sc-edit-view="read"]`);
                 assert(read.textContent.includes(NEW), "read text not refreshed");
                 const stamp = read.querySelector('[data-sc-note-stamp="external"]');
-                assert(stamp.classList.contains("o_sc_meta"), "stamp not an o_sc_meta line");
+                assert(stamp.classList.contains("o_pk_meta"), "stamp not an o_pk_meta line");
                 assert(stamp.textContent.includes("PC TP"), `stamp: ${stamp.textContent}`);
             },
         },

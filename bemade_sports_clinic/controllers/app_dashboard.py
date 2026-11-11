@@ -309,7 +309,7 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
                               'label': env._("Overdue activities"), 'card': 'activity',
                               'url': '/my/activities?tab=overdue', 'cards': overdue})
             if due_today:
-                lines.append({'kind': 'activities_today', 'tone': 'mauve',
+                lines.append({'kind': 'activities_today', 'tone': 'secondary',
                               'label': env._("Activities due today"), 'card': 'activity',
                               'url': '/my/activities?tab=today', 'cards': due_today})
             if activities:

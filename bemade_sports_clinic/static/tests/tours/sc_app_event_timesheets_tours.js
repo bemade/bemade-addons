@@ -7,7 +7,7 @@
  */
 import { registry } from "@web/core/registry";
 
-const SECTION = '.o_sc_app [data-pk-section="event.timesheets"]';
+const SECTION = '.o_pk_app [data-pk-section="event.timesheets"]';
 
 registry.category("web_tour.tours").add("sc_1584_event_timesheets_admin", {
     steps: () => [
@@ -25,7 +25,7 @@ registry.category("web_tour.tours").add("sc_1584_event_timesheets_admin", {
         },
         {
             content: "Other therapists' timesheets are read-only (no pencil)",
-            trigger: `${SECTION} .o_sc_list`,
+            trigger: `${SECTION} .o_pk_list`,
             run() {
                 const cards = document.querySelectorAll(`${SECTION} [data-sc-timesheet-id]`);
                 if (cards.length !== 2) {

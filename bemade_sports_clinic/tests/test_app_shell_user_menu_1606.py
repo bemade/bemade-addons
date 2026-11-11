@@ -91,7 +91,7 @@ class TestUserMenu1606(UserMenuCommon):
                 # Task 1638: exactly one user menu in the DOM, none in the rail.
                 self.assertEqual(len(tree.xpath('//*[@data-pk-user-menu-popup]')), 1, url)
                 self.assertEqual(len(tree.xpath('//button[@data-pk-user-menu-toggle]')), 1, url)
-                self.assertFalse(tree.xpath('//aside[contains(@class, "o_sc_rail")]'
+                self.assertFalse(tree.xpath('//aside[contains(@class, "o_pk_rail")]'
                                             '//*[@data-pk-user-menu-toggle or @data-sc-user-menu]'))
                 self.assertEqual(self._menu(tree, 'rail'), (None, None))
                 for where in ('bar',):
@@ -121,8 +121,8 @@ class TestUserMenu1606(UserMenuCommon):
                 # in the opened menu's head, task 1638).
                 trigger, _menu = self._menu(tree, 'bar')
                 self.assertEqual(trigger.get('aria-label'), 'User menu')
-                self.assertTrue(trigger.xpath('ancestor::header[contains(@class, "o_sc_appbar")]'))
-                initials = trigger.xpath('.//*[contains(@class, "o_sc_avatar")]')
+                self.assertTrue(trigger.xpath('ancestor::header[contains(@class, "o_pk_appbar")]'))
+                initials = trigger.xpath('.//*[contains(@class, "o_pk_avatar")]')
                 self.assertEqual(len(initials), 1)
                 self.assertEqual(initials[0].text_content().strip(),
                                  ''.join(p[0] for p in user.name.split()[:2]).upper())
@@ -132,7 +132,7 @@ class TestUserMenu1606(UserMenuCommon):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/teams')
-        bar = tree.xpath('//header[contains(@class, "o_sc_appbar")]')[0]
+        bar = tree.xpath('//header[contains(@class, "o_pk_appbar")]')[0]
         last = bar.getchildren()[-1]
         self.assertTrue(last.xpath('.//button[@aria-controls="sc_user_menu_bar"]'))
         self.assertTrue(bar.xpath('.//*[@data-sc-activity-clock-bar]'))
@@ -194,9 +194,9 @@ class TestUserMenu1606(UserMenuCommon):
         self.assertEqual(self._shell(tree).get('data-sc-top'), '0')
         self.assertEqual(tree.xpath('//header//a[@data-pk-back]/@href'), ['/my/home'])
         crumbs = [(a.get('href'), a.text_content().strip())
-                  for a in tree.xpath('//nav[contains(@class, "o_sc_crumbs")]//li/a')]
+                  for a in tree.xpath('//nav[contains(@class, "o_pk_crumbs")]//li/a')]
         self.assertEqual(crumbs, [('/my/home', 'Dashboard')])
-        current = tree.xpath('//nav[contains(@class, "o_sc_crumbs")]//li[@aria-current="page"]')
+        current = tree.xpath('//nav[contains(@class, "o_pk_crumbs")]//li[@aria-current="page"]')
         self.assertEqual(current[0].text_content().strip(), 'Settings')
         # Nothing on the bottom tabs / rail claims to be the current page.
         self.assertFalse(tree.xpath('//nav//a[@aria-current="page"]'))

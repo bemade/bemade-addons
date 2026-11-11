@@ -26,7 +26,7 @@ function assert(condition, message) {
 }
 
 function draftKey(recordKey) {
-    const app = document.querySelector(".o_sc_app[data-pk-uid]");
+    const app = document.querySelector(".o_pk_app[data-pk-uid]");
     return `pk_draft:${app.dataset.pkDb || ""}:${app.dataset.pkUid}:${recordKey}`;
 }
 
@@ -44,7 +44,7 @@ tours.add("sc_1640_team", {
     steps: () => [
         {
             content: "Seed a bad deadline draft (6-digit year), then reload",
-            trigger: ".o_sc_app[data-pk-uid]",
+            trigger: ".o_pk_app[data-pk-uid]",
             run() {
                 window.localStorage.setItem(
                     draftKey(`sports.team.${teamId()}.announcement_deadline`),
@@ -71,7 +71,7 @@ tours.add("sc_1640_team", {
                     ) === null,
                     "the bad draft was kept"
                 );
-                assert(!document.querySelector(".o_sc_draft_banner"), "« Brouillon restauré » shown");
+                assert(!document.querySelector(".o_pk_draft_banner"), "« Brouillon restauré » shown");
                 assertBounds(input, "Valide jusqu'au (OWL)");
             },
         },
@@ -129,9 +129,9 @@ tours.add("sc_1640_player", {
     steps: () => [
         {
             content: "The player's autosave date inputs carry the bounds",
-            trigger: 'main#sc_content:has(.o_sc_autosave input[type="date"])',
+            trigger: 'main#sc_content:has(.o_pk_autosave input[type="date"])',
             run() {
-                const inputs = [...document.querySelectorAll('.o_sc_autosave input[type="date"]')];
+                const inputs = [...document.querySelectorAll('.o_pk_autosave input[type="date"]')];
                 assert(inputs.length >= 1, "no autosave date input");
                 for (const input of inputs) {
                     // Task 1727: « Retour prévu » starts at today (its own

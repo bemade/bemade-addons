@@ -1,6 +1,6 @@
 /*
  * Task 1642 — after an edit, the screen comes back to the top of the block
- * just edited (inert outside .o_sc_app).
+ * just edited (inert outside .o_pk_app).
  *
  * On a phone several things move the page once the user leaves a field: the
  * keyboard closing (the viewport grows back), the autosave's fragment swap
@@ -35,7 +35,7 @@ let timer = null;
 let deadline = null;
 
 function inShell(node) {
-    return Boolean(node && node.closest && node.closest(".o_sc_app"));
+    return Boolean(node && node.closest && node.closest(".o_pk_app"));
 }
 
 function isEditable(node) {
@@ -85,7 +85,7 @@ function resolve() {
 
 /** The bottom edge of the sticky app bar (0 when there is none). */
 function barBottom() {
-    const bar = document.querySelector(".o_sc_app .o_sc_appbar");
+    const bar = document.querySelector(".o_pk_app .o_pk_appbar");
     return bar ? Math.max(0, bar.getBoundingClientRect().bottom) : 0;
 }
 

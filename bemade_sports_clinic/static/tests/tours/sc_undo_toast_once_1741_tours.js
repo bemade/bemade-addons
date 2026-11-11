@@ -15,7 +15,7 @@ function assert(condition, message) {
 
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const toastShown = () => {
-    const toast = document.querySelector(".o_sc_toast");
+    const toast = document.querySelector(".o_pk_toast");
     return Boolean(toast && !toast.hidden && toast.textContent.trim());
 };
 
@@ -23,19 +23,19 @@ tours.add("sc_1741_undo_toast_once", {
     steps: () => [
         {
             content: "Archive the note (its archive icon)",
-            trigger: "article.o_sc_quick_note button.o_sc_card_archive",
+            trigger: "article.o_sc_quick_note button.o_pk_card_archive",
             expectUnloadPage: true,
             run: "click",
         },
         {
             content: "« Undo » in the toast",
-            trigger: ".o_sc_toast:not([hidden]) button[data-sc-toast-action]",
+            trigger: ".o_pk_toast:not([hidden]) button[data-sc-toast-action]",
             expectUnloadPage: true,
             run: "click",
         },
         {
             content: "« restored » shows once, remembered by its id",
-            trigger: ".o_sc_toast:not([hidden]) .o_sc_toast_text",
+            trigger: ".o_pk_toast:not([hidden]) .o_pk_toast_text",
             run() {
                 const shown = JSON.parse(window.sessionStorage.getItem("sc_notify_shown:v1") || "[]");
                 assert(shown.length >= 1, "the notification id is not remembered");
@@ -43,13 +43,13 @@ tours.add("sc_1741_undo_toast_once", {
         },
         {
             content: "Another tab",
-            trigger: ".o_sc_tabs a[href^='/my/activities']",
+            trigger: ".o_pk_tabs a[href^='/my/activities']",
             expectUnloadPage: true,
             run: "click",
         },
         {
             content: "Back",
-            trigger: ".o_sc_app[data-pk-app-shell]",
+            trigger: ".o_pk_app[data-pk-app-shell]",
             expectUnloadPage: true,
             run() {
                 window.history.back();
@@ -57,7 +57,7 @@ tours.add("sc_1741_undo_toast_once", {
         },
         {
             content: "Back on the notes: no message",
-            trigger: "article.o_sc_quick_note button.o_sc_card_archive",
+            trigger: "article.o_sc_quick_note button.o_pk_card_archive",
             async run() {
                 await pause(1500);
                 assert(!toastShown(), "the message shows again");

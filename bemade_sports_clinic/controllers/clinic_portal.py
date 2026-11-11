@@ -974,7 +974,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'subtitle': subtitle,
                 'url': '/my/clinic/%s' % clinic.id,
                 'chip': summary or env._("%(count)s on the list", count=count),
-                'tone': 'ghost' if summary or not count else 'mauve',
+                'tone': 'ghost' if summary or not count else 'secondary',
             })
         return {
             'sc_clinic_segments': [(key, labels[key], _url(time_filter=key))

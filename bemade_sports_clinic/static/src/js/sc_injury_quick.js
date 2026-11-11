@@ -1,6 +1,6 @@
 /*
  * Task 1604 — quick « Vérifier » / « Résoudre » of an injury (inert outside
- * .o_sc_app). Therapists only: the buttons and the sheet are rendered for
+ * .o_pk_app). Therapists only: the buttons and the sheet are rendered for
  * them alone, and the routes refuse anyone else.
  *
  * - button[data-sc-injury-quick="verify"] (an unverified injury's card row
@@ -37,7 +37,7 @@ const MODEL = "sports.patient.injury";
 const SHEET_ID = "sc_injury_resolve_sheet";
 
 function inShell(node) {
-    return Boolean(node && node.closest(".o_sc_app"));
+    return Boolean(node && node.closest(".o_pk_app"));
 }
 
 function toast(message) {
@@ -100,8 +100,8 @@ function resolveSheet() {
 function injuryName(button) {
     const row = button.closest("summary");
     const title = row
-        ? row.querySelector(".o_sc_row_title")
-        : document.querySelector(".o_sc_appbar_title_text");
+        ? row.querySelector(".o_pk_row_title")
+        : document.querySelector(".o_pk_appbar_title_text");
     return title ? title.textContent.trim() : "";
 }
 

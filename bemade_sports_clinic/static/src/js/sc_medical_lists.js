@@ -1,6 +1,6 @@
 /*
  * Task 1677 — the medical popups' structured lists (sc_medical_sheets;
- * controllers/app_critical_items.py). Inert outside .o_sc_app.
+ * controllers/app_critical_items.py). Inert outside .o_pk_app.
  *
  * - form[data-sc-med-add] (the list header's « + Ajouter » panel) adds an
  *   item; the panel is reset and closed after a successful add (#1672);
@@ -22,7 +22,7 @@ import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 import { resetAddPanel } from "@bemade_portal_kit/js/pk_list_header";
 
 function sheetOf(el) {
-    return el && el.closest && el.closest(".o_sc_app .o_sc_med_sheet");
+    return el && el.closest && el.closest(".o_pk_app .o_sc_med_sheet");
 }
 
 function announce(sheet, result) {

@@ -22,7 +22,7 @@ Acceptance criteria:
   gets neither the line nor the field.
 * UC-E1 Event cards = player cards: Aujourd'hui, Couvertures / Événements
   à venir and Feuilles de temps manquantes render each event as a row
-  group (``o_sc_row_group``) with a link row (``sc_link_row``) whose main
+  group (``o_pk_row_group``) with a link row (``sc_link_row``) whose main
   link (« › » chevron) opens the event, and the shared « Détails »
   expander ([data-sc-row-expand], aria-expanded) controlling a details
   region under the row; ids are unique on the page.
@@ -182,24 +182,24 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         _text, tree = self._get('/my/home')
         for instance_id in ('today', 'coverage', 'missing_timesheets'):
             section = self._section(tree, instance_id)
-            groups = section.xpath('.//div[contains(@class, "o_sc_row_group")][@data-sc-event-row]')
+            groups = section.xpath('.//div[contains(@class, "o_pk_row_group")][@data-sc-event-row]')
             self.assertTrue(groups, instance_id)
             for group in groups:
                 event_id = group.get('data-sc-event-row')
-                row = group.xpath('./div[contains(@class, "o_sc_link_row")]')
+                row = group.xpath('./div[contains(@class, "o_pk_link_row")]')
                 self.assertEqual(len(row), 1, instance_id)
-                main = row[0].xpath('.//a[contains(@class, "o_sc_link_row_main")]')[0]
+                main = row[0].xpath('.//a[contains(@class, "o_pk_link_row_main")]')[0]
                 self.assertIn('/my/event/%s' % event_id, main.get('href'))
                 self.assertEqual(main.get('data-sc-event-id'), event_id)
                 # The « › » chevron on the right.
-                self.assertTrue(row[0].xpath('./span[@class="o_sc_row_trailing"]//*[local-name()="svg"]'))
+                self.assertTrue(row[0].xpath('./span[@class="o_pk_row_trailing"]//*[local-name()="svg"]'))
                 # The shared expander, controlling the region under the row.
                 toggle = row[0].xpath('.//button[@data-sc-row-expand]')[0]
                 self.assertEqual(toggle.get('aria-expanded'), 'false')
                 region = group.xpath('./div[@id="%s"]' % toggle.get('data-sc-row-expand'))[0]
                 self.assertEqual(region.get('data-sc-event-details'), event_id)
                 self.assertEqual(region.get('hidden'), 'hidden')
-                self.assertIn('o_sc_row_detail', region.get('class'))
+                self.assertIn('o_pk_row_detail', region.get('class'))
         # « Add my timesheet » stays on the missing ones.
         self.assertTrue(self._section(tree, 'missing_timesheets').xpath(
             './/a[@data-sc-action="dashboard.timesheet.add"]'))
@@ -214,7 +214,7 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         self.assertEqual(section.get('data-sc-fragment'), 'sc.dashboard:followed:followed')
         self.assertEqual(section.get('data-sc-fragment-mode'), 'list')
         self.assertEqual(section.get('data-sc-fragment-keep-empty'), '1')
-        self.assertTrue(section.xpath('.//*[contains(@class, "o_sc_empty")]'))
+        self.assertTrue(section.xpath('.//*[contains(@class, "o_pk_empty")]'))
         self.assertFalse(section.xpath('.//*[@data-sc-dw-count]'))
 
     def test_follow_refreshes_every_instance(self):
@@ -244,7 +244,7 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         # The scoped instance: Red is not on Team C — still empty.
         items, node = cards(payload, keys[1])
         self.assertEqual(items, [])
-        self.assertTrue(node.xpath('.//*[contains(@class, "o_sc_empty")]'))
+        self.assertTrue(node.xpath('.//*[contains(@class, "o_pk_empty")]'))
 
         follow(self.yellow, True)
         payload = self._fragments('/my/home', keys)
@@ -258,7 +258,7 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         for key in keys:
             items, node = cards(payload, key)
             self.assertEqual(items, [], key)
-            self.assertTrue(node.xpath('.//*[contains(@class, "o_sc_empty")]'), key)
+            self.assertTrue(node.xpath('.//*[contains(@class, "o_pk_empty")]'), key)
 
     # -- UC-C1 ---------------------------------------------------------------
     def test_assigned_events_on_any_team(self):

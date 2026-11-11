@@ -41,7 +41,7 @@ class Switch1726Common(AppShellCommon):
 
     @staticmethod
     def _switches(node, **attrs):
-        expr = './/label[contains(concat(" ", @class, " "), " o_sc_switch ")]' \
+        expr = './/label[contains(concat(" ", @class, " "), " o_pk_switch ")]' \
                '//input[@type="checkbox"][@role="switch"]'
         for key, value in attrs.items():
             expr += '[@%s="%s"]' % (key.replace('_', '-'), value)
@@ -69,7 +69,7 @@ class TestSwitches1726(Switch1726Common):
             switch = self._one(form, name='show_cancelled')
             self.assertEqual(switch.get('value'), '1')
             self._assert_state(switch, False)
-            self.assertFalse(form.xpath('.//label[contains(@class, "o_sc_check")]'), url)
+            self.assertFalse(form.xpath('.//label[contains(@class, "o_pk_check")]'), url)
         _text, tree = self._get('/my/events/calendar?show_cancelled=1&team_id=%s' % self.team_a.id)
         self._assert_state(self._one(tree, name='show_cancelled'), True)
 
@@ -133,7 +133,7 @@ class TestSwitches1726(Switch1726Common):
                 ('sc_morning_summary', 'digest_daily_enabled', '1', '0', True),
                 ('sc_done_buttons', 'sc_show_done_buttons', '1', '0', False)):
             section = tree.xpath('//section[@id="%s"]' % section_id)[0]
-            self.assertFalse(section.xpath('.//*[contains(@class, "o_sc_segmented")]'), section_id)
+            self.assertFalse(section.xpath('.//*[contains(@class, "o_pk_segmented")]'), section_id)
             switch = self._one(section, name=name)
             self.assertEqual(switch.get('value'), on_value)
             self.assertEqual(switch.get('data-pk-switch-submit'), '1')

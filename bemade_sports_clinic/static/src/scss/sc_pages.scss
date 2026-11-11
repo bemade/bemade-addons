@@ -1,101 +1,101 @@
 // Task 1542 (epic #1535) — app shell P1b: team page, sheets, autosave field,
-// install page, toast, and the .o_sc_legacy wrapper that restyles today's
+// install page, toast, and the .o_pk_legacy wrapper that restyles today's
 // Bootstrap partials (activities, recent-changes fragment) with the tokens.
-// Everything scoped under .o_sc_app (see sc_tokens.scss).
+// Everything scoped under .o_pk_app (see sc_tokens.scss).
 
 $sc-laptop: 992px;
 
-.o_sc_app {
+.o_pk_app {
     [hidden] {
         display: none !important;
     }
 
-    .o_sc_grid2 {
+    .o_pk_grid2 {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-4);
+        gap: var(--pk-space-4);
         min-width: 0;
     }
 
     @media (min-width: $sc-laptop) {
-        .o_sc_grid2 {
+        .o_pk_grid2 {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             align-items: start;
         }
     }
 
-    .o_sc_tab_panel {
+    .o_pk_tab_panel {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-4);
+        gap: var(--pk-space-4);
         min-width: 0;
     }
 
-    .o_sc_page_tabs {
+    .o_pk_page_tabs {
         position: sticky;
-        top: calc(var(--sc-appbar-height) + env(safe-area-inset-top, 0px));
+        top: calc(var(--pk-appbar-height) + env(safe-area-inset-top, 0px));
         z-index: 10;
 
         // Owner review 2026-10-11: the active page tab is Mauve (the brand
         // secondary), not the green accent of the other toggles.
         > a[aria-pressed="true"] {
-            background: var(--sc-secondary);
+            background: var(--pk-secondary);
             color: #ffffff;
         }
     }
 
-    .o_sc_section_sub {
-        font-family: var(--sc-font-text);
-        font-size: var(--sc-text-xs);
+    .o_pk_section_sub {
+        font-family: var(--pk-font-text);
+        font-size: var(--pk-text-xs);
         font-weight: 500;
         letter-spacing: 0;
         text-transform: none;
-        color: var(--sc-fg-3);
+        color: var(--pk-fg-3);
         margin-left: 4px;
     }
 
-    .o_sc_link_btn {
+    .o_pk_link_btn {
         appearance: none;
         border: 0;
         background: transparent;
         padding: 0 2px;
         font: inherit;
         font-weight: 600;
-        color: var(--sc-accent);
+        color: var(--pk-accent);
         cursor: pointer;
         min-height: 32px;
     }
 
-    .o_sc_section_more.o_sc_link_btn {
-        font-family: var(--sc-font-text);
-        font-size: var(--sc-text-sm);
+    .o_pk_section_more.o_pk_link_btn {
+        font-family: var(--pk-font-text);
+        font-size: var(--pk-text-sm);
         letter-spacing: 0;
         text-transform: none;
         padding: 0;
     }
 
-    .o_sc_btn_sm {
+    .o_pk_btn_sm {
         min-height: 36px;
         padding: 0 12px;
         font-size: 13px;
 
-        .o_sc_icon {
+        .o_pk_icon {
             width: 16px;
             height: 16px;
         }
     }
 
-    .o_sc_pre {
+    .o_pk_pre {
         margin: 0;
         white-space: pre-wrap;
         overflow-wrap: anywhere;
     }
 
-    .o_sc_meta {
+    .o_pk_meta {
         margin: 0;
-        font-size: var(--sc-text-sm);
-        color: var(--sc-fg-2);
+        font-size: var(--pk-text-sm);
+        color: var(--pk-fg-2);
     }
 
     // Announcement — task 1719 (layout B): no card; a title line, the
@@ -105,8 +105,8 @@ $sc-laptop: 992px;
         display: flex;
         flex-direction: column;
         gap: 6px;
-        padding-bottom: var(--sc-space-4);
-        border-bottom: 1px solid var(--sc-line);
+        padding-bottom: var(--pk-space-4);
+        border-bottom: 1px solid var(--pk-line);
     }
 
     .o_sc_announcement_titleline {
@@ -115,7 +115,7 @@ $sc-laptop: 992px;
         gap: 2px;
         min-width: 0;
 
-        .o_sc_section_header {
+        .o_pk_section_header {
             flex: 1 1 auto;
             min-width: 0;
             margin-top: 0;
@@ -126,17 +126,17 @@ $sc-laptop: 992px;
             min-width: 0;
         }
 
-        .o_sc_card_icons {
+        .o_pk_card_icons {
             gap: 0;
             margin-right: -10px;
         }
 
-        .o_sc_icon_btn {
+        .o_pk_icon_btn {
             width: 40px;
             min-width: 40px;
-            height: var(--sc-tap);
+            height: var(--pk-tap);
 
-            .o_sc_icon {
+            .o_pk_icon {
                 width: 18px;
                 height: 18px;
             }
@@ -149,18 +149,18 @@ $sc-laptop: 992px;
     // inside an entity row whose trailing icons are greyed), except: the
     // red trash, the green ✓, the filled ★ (following), the red clock (an
     // overdue activity).
-    .o_sc_card_icons {
+    .o_pk_card_icons {
         display: inline-flex;
         flex: none;
         align-items: center;
         gap: 2px;
         margin-left: auto;
 
-        .o_sc_inline_form {
+        .o_pk_inline_form {
             display: inline-flex;
         }
 
-        &[data-sc-card-icons] .o_sc_icon_btn .o_sc_icon {
+        &[data-sc-card-icons] .o_pk_icon_btn .o_pk_icon {
             color: inherit;
         }
 
@@ -169,20 +169,20 @@ $sc-laptop: 992px;
         }
     }
 
-    .o_sc_icon_btn.o_sc_icon_btn_danger,
-    .o_sc_icon_btn.o_sc_icon_btn_danger .o_sc_icon {
-        color: var(--sc-bad);
+    .o_pk_icon_btn.o_pk_icon_btn_danger,
+    .o_pk_icon_btn.o_pk_icon_btn_danger .o_pk_icon {
+        color: var(--pk-bad);
     }
 
     .o_sc_follow.o_sc_follow_icon {
         display: inline-grid;
 
-        .o_sc_icon {
+        .o_pk_icon {
             width: 20px;
             height: 20px;
         }
 
-        &[data-sc-followed="1"] .o_sc_icon {
+        &[data-sc-followed="1"] .o_pk_icon {
             fill: currentColor;
         }
     }
@@ -191,26 +191,26 @@ $sc-laptop: 992px;
     .o_sc_chip_follow {
         text-decoration: none;
 
-        .o_sc_icon {
+        .o_pk_icon {
             width: 14px;
             height: 14px;
         }
 
-        &[aria-pressed="true"] .o_sc_icon {
+        &[aria-pressed="true"] .o_pk_icon {
             fill: currentColor;
         }
     }
 
     // (beats the row's neutral trailing-icon colour, sc_components)
-    .o_sc_entity_row .o_sc_row_trailing .o_sc_row_followed {
+    .o_pk_entity_row .o_pk_row_trailing .o_sc_row_followed {
         display: inline-flex;
         align-items: center;
-        color: var(--sc-accent);
+        color: var(--pk-accent);
 
-        .o_sc_icon {
+        .o_pk_icon {
             width: 16px;
             height: 16px;
-            color: var(--sc-accent);
+            color: var(--pk-accent);
             fill: currentColor;
         }
     }
@@ -228,16 +228,16 @@ $sc-laptop: 992px;
 
     // The app bar's badge look (sc_p3 .o_sc_appbar_badge), neutral unless
     // an activity is overdue.
-    .o_sc_card_badge {
+    .o_pk_card_badge {
         position: absolute;
         top: 3px;
         right: 1px;
         min-width: 18px;
         height: 18px;
         padding: 0 5px;
-        border-radius: var(--sc-radius-pill);
-        background: var(--sc-fg-2);
-        color: var(--sc-surface);
+        border-radius: var(--pk-radius-pill);
+        background: var(--pk-fg-2);
+        color: var(--pk-surface);
         font-size: 11px;
         font-weight: 700;
         line-height: 18px;
@@ -246,11 +246,11 @@ $sc-laptop: 992px;
     }
 
     .o_sc_card_clock_overdue {
-        color: var(--sc-bad);
+        color: var(--pk-bad);
 
-        .o_sc_card_badge {
-            background: var(--sc-bad);
-            color: var(--sc-tone-fg);
+        .o_pk_card_badge {
+            background: var(--pk-bad);
+            color: var(--pk-tone-fg);
         }
     }
 
@@ -260,12 +260,12 @@ $sc-laptop: 992px;
         gap: 10px;
         padding-top: 2px;
 
-        > .o_sc_icon {
+        > .o_pk_icon {
             flex: none;
             width: 18px;
             height: 18px;
             margin-top: 2px;
-            color: var(--sc-secondary);
+            color: var(--pk-secondary);
         }
     }
 
@@ -291,8 +291,8 @@ $sc-laptop: 992px;
     }
 
     .o_sc_announcement_meta {
-        font-size: var(--sc-text-xs);
-        color: var(--sc-fg-3);
+        font-size: var(--pk-text-xs);
+        color: var(--pk-fg-3);
 
         .o_sc_announcement_more {
             min-height: 0;
@@ -310,25 +310,25 @@ $sc-laptop: 992px;
         opacity: 0.7;
     }
 
-    .o_sc_card_actions {
+    .o_pk_card_actions {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
     }
 
-    .o_sc_inline_form {
+    .o_pk_inline_form {
         margin: 0;
     }
 
     // Disclosure (compose)
-    .o_sc_disclosure {
-        > .o_sc_disclosure_summary {
+    .o_pk_disclosure {
+        > .o_pk_disclosure_summary {
             display: flex;
             align-items: center;
-            gap: var(--sc-space-2);
-            min-height: var(--sc-tap);
+            gap: var(--pk-space-2);
+            min-height: var(--pk-tap);
             font-weight: 600;
-            color: var(--sc-accent);
+            color: var(--pk-accent);
             cursor: pointer;
             list-style: none;
 
@@ -336,79 +336,79 @@ $sc-laptop: 992px;
                 display: none;
             }
 
-            .o_sc_icon {
+            .o_pk_icon {
                 width: 18px;
                 height: 18px;
             }
         }
     }
 
-    .o_sc_form {
+    .o_pk_form {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
         margin: 0;
     }
 
-    .o_sc_field {
+    .o_pk_field {
         display: flex;
         flex-direction: column;
         gap: 5px;
         min-width: 0;
 
-        .o_sc_field_label {
+        .o_pk_field_label {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: var(--sc-space-2);
+            gap: var(--pk-space-2);
             margin: 0;
         }
 
-        .o_sc_input {
+        .o_pk_input {
             width: 100%;
         }
     }
 
-    .o_sc_textarea {
+    .o_pk_textarea {
         min-height: 96px;
         resize: vertical;
     }
 
-    .o_sc_form_actions {
+    .o_pk_form_actions {
         display: flex;
         justify-content: flex-end;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
         flex-wrap: wrap;
     }
 
-    .o_sc_save_state {
-        font-size: var(--sc-text-xs);
+    .o_pk_save_state {
+        font-size: var(--pk-text-xs);
         font-weight: 500;
-        color: var(--sc-fg-3);
+        color: var(--pk-fg-3);
     }
 
-    .o_sc_save_state_saving { color: var(--sc-fg-2); }
-    .o_sc_save_state_saved,
-    .o_sc_save_state_draft { color: var(--sc-ok); }
-    .o_sc_save_state_queued { color: var(--sc-warn); }
-    .o_sc_save_state_error,
-    .o_sc_save_state_conflict { color: var(--sc-bad); }
+    .o_pk_save_state_saving { color: var(--pk-fg-2); }
+    .o_pk_save_state_saved,
+    .o_pk_save_state_draft { color: var(--pk-ok); }
+    .o_pk_save_state_queued { color: var(--pk-warn); }
+    .o_pk_save_state_error,
+    .o_pk_save_state_conflict { color: var(--pk-bad); }
 
-    .o_sc_banner {
+    .o_pk_banner {
         display: flex;
         flex-direction: column;
         gap: 4px;
     }
 
-    .o_sc_banner_actions {
+    .o_pk_banner_actions {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
         margin-top: 4px;
     }
 
     // Expandable row (recent changes)
-    .o_sc_expand {
+    .o_pk_expand {
         min-width: 0;
 
         > summary {
@@ -424,43 +424,43 @@ $sc-laptop: 992px;
             border-bottom-left-radius: 0;
             border-bottom-right-radius: 0;
 
-            .o_sc_row_trailing > .o_sc_icon {
+            .o_pk_row_trailing > .o_pk_icon {
                 transform: rotate(180deg);
             }
         }
     }
 
-    .o_sc_expand_body {
-        background: var(--sc-surface);
-        border: 1px solid var(--sc-line);
+    .o_pk_expand_body {
+        background: var(--pk-surface);
+        border: 1px solid var(--pk-line);
         border-top: 0;
-        border-radius: 0 0 var(--sc-radius-md) var(--sc-radius-md);
-        padding: var(--sc-space-2) var(--sc-space-3) var(--sc-space-3);
+        border-radius: 0 0 var(--pk-radius-md) var(--pk-radius-md);
+        padding: var(--pk-space-2) var(--pk-space-3) var(--pk-space-3);
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-2);
+        gap: var(--pk-space-2);
     }
 
-    .o_sc_entity_row_static {
+    .o_pk_entity_row_static {
         cursor: default;
 
         &:hover {
-            border-color: var(--sc-line);
+            border-color: var(--pk-line);
         }
     }
 
     // Sheets: bottom sheet on phone, centred dialog on laptop.
-    .o_sc_sheet {
-        border: 1px solid var(--sc-line);
-        background: var(--sc-surface);
-        color: var(--sc-fg);
+    .o_pk_sheet {
+        border: 1px solid var(--pk-line);
+        background: var(--pk-surface);
+        color: var(--pk-fg);
         padding: 0;
         width: 100%;
         max-width: 100%;
         max-height: 85vh;
         margin: auto 0 0;
-        border-radius: var(--sc-radius-lg) var(--sc-radius-lg) 0 0;
-        box-shadow: var(--sc-shadow);
+        border-radius: var(--pk-radius-lg) var(--pk-radius-lg) 0 0;
+        box-shadow: var(--pk-shadow);
 
         &::backdrop {
             background: rgba(0, 0, 0, 0.55);
@@ -476,88 +476,88 @@ $sc-laptop: 992px;
     }
 
     @media (min-width: $sc-laptop) {
-        .o_sc_sheet {
+        .o_pk_sheet {
             margin: auto;
             max-width: 560px;
-            border-radius: var(--sc-radius-lg);
+            border-radius: var(--pk-radius-lg);
         }
     }
 
-    .o_sc_sheet_head {
+    .o_pk_sheet_head {
         position: sticky;
         top: 0;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: var(--sc-space-2);
-        padding: var(--sc-space-2) var(--sc-space-2) var(--sc-space-2) var(--sc-space-4);
-        background: var(--sc-surface);
-        border-bottom: 1px solid var(--sc-line);
+        gap: var(--pk-space-2);
+        padding: var(--pk-space-2) var(--pk-space-2) var(--pk-space-2) var(--pk-space-4);
+        background: var(--pk-surface);
+        border-bottom: 1px solid var(--pk-line);
     }
 
-    .o_sc_sheet_title {
+    .o_pk_sheet_title {
         margin: 0;
-        font-family: var(--sc-font-title);
+        font-family: var(--pk-font-title);
         font-weight: 500;
-        font-size: var(--sc-title-md);
+        font-size: var(--pk-title-md);
         letter-spacing: 0.03em;
         text-transform: uppercase;
     }
 
-    .o_sc_sheet_body {
-        padding: var(--sc-space-3) var(--sc-space-4) calc(var(--sc-space-4) + env(safe-area-inset-bottom, 0px));
+    .o_pk_sheet_body {
+        padding: var(--pk-space-3) var(--pk-space-4) calc(var(--pk-space-4) + env(safe-area-inset-bottom, 0px));
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
     }
 
-    .o_sc_history {
+    .o_pk_history {
         list-style: none;
         margin: 0;
         padding: 0;
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
 
         li {
-            border-left: 3px solid var(--sc-line);
+            border-left: 3px solid var(--pk-line);
             padding: 2px 10px;
         }
     }
 
     // Task 1581: the shared history entry / sheet body (sc_history_entry).
-    .o_sc_history_fragment {
+    .o_pk_history_fragment {
         display: flex;
         flex-direction: column;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
     }
 
-    .o_sc_history_meta {
+    .o_pk_history_meta {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 4px;
     }
 
-    .o_sc_history_body {
+    .o_pk_history_body {
         margin: 4px 0 0;
     }
 
-    .o_sc_history_cleared {
+    .o_pk_history_cleared {
         margin: 4px 0 0;
         font-style: italic;
     }
 
-    .o_sc_history_entry[data-sc-history-state="archived"] .o_sc_history_body {
-        color: var(--sc-fg-2);
+    .o_pk_history_entry[data-sc-history-state="archived"] .o_pk_history_body {
+        color: var(--pk-fg-2);
     }
 
     // Toast
-    .o_sc_toast {
+    .o_pk_toast {
         position: fixed;
         left: 50%;
         transform: translateX(-50%);
-        bottom: calc(var(--sc-tabs-height) + 16px + env(safe-area-inset-bottom, 0px) + var(--sc-ribbon-h, 0px));
+        bottom: calc(var(--pk-tabs-height) + 16px + env(safe-area-inset-bottom, 0px) + var(--pk-ribbon-h, 0px));
         z-index: 40;
         // Review round 1 (2026-10-26, #1678): as wide as its content up to
         // the screen minus the margins. Shrink-to-fit alone measured it
@@ -566,31 +566,31 @@ $sc-laptop: 992px;
         width: max-content;
         box-sizing: border-box;
         max-width: calc(100% - 32px);
-        background: var(--sc-surface-2);
-        color: var(--sc-fg);
-        border: 1px solid var(--sc-line);
-        border-radius: var(--sc-radius-md);
+        background: var(--pk-surface-2);
+        color: var(--pk-fg);
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-md);
         padding: 10px 14px;
         font-size: 13px;
-        box-shadow: var(--sc-shadow);
+        box-shadow: var(--pk-shadow);
     }
 
     @media (min-width: $sc-laptop) {
-        .o_sc_toast {
+        .o_pk_toast {
             bottom: 24px;
-            left: calc(50% + var(--sc-rail-width) / 2);
-            max-width: calc(100% - var(--sc-rail-width) - 48px);
+            left: calc(50% + var(--pk-rail-width) / 2);
+            max-width: calc(100% - var(--pk-rail-width) - 48px);
         }
     }
 
     // Install page
-    .o_sc_install_hero {
+    .o_pk_install_hero {
         flex-direction: row;
         align-items: center;
-        gap: var(--sc-space-3);
+        gap: var(--pk-space-3);
     }
 
-    .o_sc_install_icon {
+    .o_pk_install_icon {
         width: 56px;
         height: 56px;
         border-radius: 13px;
@@ -598,14 +598,14 @@ $sc-laptop: 992px;
         flex: none;
     }
 
-    .o_sc_steps {
+    .o_pk_steps {
         margin: 0;
         padding-left: 22px;
         display: flex;
         flex-direction: column;
         gap: 6px;
 
-        .o_sc_icon {
+        .o_pk_icon {
             width: 16px;
             height: 16px;
             vertical-align: -3px;
@@ -613,29 +613,29 @@ $sc-laptop: 992px;
     }
 
     // ------------------------------------------------------------------
-    // .o_sc_legacy — today's Bootstrap partials rendered inside the shell
+    // .o_pk_legacy — today's Bootstrap partials rendered inside the shell
     // (activities tab, recent-changes fragment, digest-history list):
     // minimal token restyling only; their rework is P2.
     // ------------------------------------------------------------------
-    .o_sc_legacy {
-        --bs-body-color: var(--sc-fg);
-        --bs-body-bg: var(--sc-surface);
-        --bs-secondary-color: var(--sc-fg-2);
-        --bs-border-color: var(--sc-line);
-        --bs-emphasis-color: var(--sc-fg);
-        --bs-link-color: var(--sc-accent);
+    .o_pk_legacy {
+        --bs-body-color: var(--pk-fg);
+        --bs-body-bg: var(--pk-surface);
+        --bs-secondary-color: var(--pk-fg-2);
+        --bs-border-color: var(--pk-line);
+        --bs-emphasis-color: var(--pk-fg);
+        --bs-link-color: var(--pk-accent);
         --bs-link-color-rgb: 164, 199, 84;
-        --bs-link-hover-color: var(--sc-accent);
-        color: var(--sc-fg);
+        --bs-link-hover-color: var(--pk-accent);
+        color: var(--pk-fg);
         min-width: 0;
         overflow-x: auto;
 
         a {
-            color: var(--sc-accent);
+            color: var(--pk-accent);
         }
 
         .text-muted {
-            color: var(--sc-fg-2) !important;
+            color: var(--pk-fg-2) !important;
         }
 
         // Task 1728: inside a .card-body, Odoo's frontend gives .text-muted
@@ -647,28 +647,28 @@ $sc-laptop: 992px;
         // muted token wins in both themes.
         .card-body:not(.card[data-vxml] .card-body) .text-muted,
         .card-body .text-muted {
-            color: var(--sc-fg-2) !important;
+            color: var(--pk-fg-2) !important;
         }
 
         // Task 1614: the digest's « Show details » link and its team
         // announcement (alert-info / alert-secondary) on the shell surface.
         .text-primary {
-            color: var(--sc-accent) !important;
+            color: var(--pk-accent) !important;
         }
 
         .alert {
-            --bs-alert-bg: var(--sc-surface-2);
-            --bs-alert-color: var(--sc-fg);
-            --bs-alert-border-color: var(--sc-line);
+            --bs-alert-bg: var(--pk-surface-2);
+            --bs-alert-color: var(--pk-fg);
+            --bs-alert-border-color: var(--pk-line);
         }
 
         .card,
         .list-group-item,
         .modal-content,
         .dropdown-menu {
-            background: var(--sc-surface);
-            color: var(--sc-fg);
-            border-color: var(--sc-line);
+            background: var(--pk-surface);
+            color: var(--pk-fg);
+            border-color: var(--pk-line);
         }
 
         // Task 1614: Odoo's frontend paints every .card-body with a 90 %
@@ -677,30 +677,30 @@ $sc-laptop: 992px;
         // any selector of ours.
         .card-body {
             background-color: transparent !important;
-            color: var(--sc-fg) !important;
+            color: var(--pk-fg) !important;
         }
 
         .card-header,
         .card-footer {
-            background: var(--sc-surface-2);
-            border-color: var(--sc-line);
+            background: var(--pk-surface-2);
+            border-color: var(--pk-line);
         }
 
         .table {
             --bs-table-bg: transparent;
-            --bs-table-color: var(--sc-fg);
-            --bs-table-striped-bg: var(--sc-hover);
-            --bs-table-hover-bg: var(--sc-hover);
-            --bs-table-border-color: var(--sc-line);
-            color: var(--sc-fg);
+            --bs-table-color: var(--pk-fg);
+            --bs-table-striped-bg: var(--pk-hover);
+            --bs-table-hover-bg: var(--pk-hover);
+            --bs-table-border-color: var(--pk-line);
+            color: var(--pk-fg);
         }
 
         .form-control,
         .form-select {
-            background-color: var(--sc-surface);
-            color: var(--sc-fg);
-            border-color: var(--sc-line);
-            min-height: var(--sc-tap);
+            background-color: var(--pk-surface);
+            color: var(--pk-fg);
+            border-color: var(--pk-line);
+            min-height: var(--pk-tap);
         }
 
         .btn {
@@ -709,8 +709,8 @@ $sc-laptop: 992px;
 
         .list-group-item-action:hover,
         .list-group-item-action:focus {
-            background: var(--sc-hover);
-            color: var(--sc-fg);
+            background: var(--pk-hover);
+            color: var(--pk-fg);
         }
 
         .btn-close {
@@ -718,21 +718,21 @@ $sc-laptop: 992px;
         }
     }
 
-    &[data-sc-theme="light"] .o_sc_legacy .btn-close {
+    &[data-pk-theme="light"] .o_pk_legacy .btn-close {
         filter: none;
     }
 }
 
 // Task 1676: « Afficher les boutons Terminé » off (the default) — the edit
 // cards' « Done » buttons are hidden; the head pencil's ✓ closes the card.
-.o_sc_app[data-sc-hide-done="1"] {
-    .o_sc_edit_done_actions,
-    .o_sc_edit_done {
+.o_pk_app[data-sc-hide-done="1"] {
+    .o_pk_edit_done_actions,
+    .o_pk_edit_done {
         display: none !important;
     }
 }
 
 // Task 1676: the head pencil while its card is in edit mode (a ✓).
-.o_sc_app [data-sc-edit-toggle].o_sc_edit_toggle_done {
-    color: var(--sc-accent, currentColor);
+.o_pk_app [data-sc-edit-toggle].o_pk_edit_toggle_done {
+    color: var(--pk-accent, currentColor);
 }

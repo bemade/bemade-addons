@@ -28,7 +28,7 @@ function storage() {
 
 /** ``<db>:<uid>:`` of the current shell, or null outside the shell. */
 function scope() {
-    const app = document.querySelector(".o_sc_app[data-pk-uid]");
+    const app = document.querySelector(".o_pk_app[data-pk-uid]");
     if (!app || !app.dataset.pkUid) {
         return null;
     }

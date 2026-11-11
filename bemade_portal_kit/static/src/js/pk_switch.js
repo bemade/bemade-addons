@@ -19,7 +19,7 @@
 
     function syncSwitch(input) {
         input.setAttribute("aria-checked", input.checked ? "true" : "false");
-        const row = input.closest(".o_sc_switch");
+        const row = input.closest(".o_pk_switch");
         const twin = row && row.querySelector("input[data-pk-switch-off]");
         if (twin) {
             twin.disabled = input.checked;

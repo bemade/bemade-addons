@@ -51,7 +51,7 @@ class TestFrCaGaps1661(TestAppShellI18n1538):
         text = self._fr_text('/my/player?player_id=%s' % self.player.id)
         tree = lxml_html.fromstring(text)
         pill_texts = ' '.join(' '.join(n.itertext()) for n in tree.xpath(
-            '//*[@data-sc-pill-field="stage" or contains(@class, "o_sc_status_pill")]'))
+            '//*[@data-sc-pill-field="stage" or contains(@class, "o_pk_status_pill")]'))
         self.assertIn('Active', pill_texts)
         self.assertNotIn('Actif', pill_texts)
 

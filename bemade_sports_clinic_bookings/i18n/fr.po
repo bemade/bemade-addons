@@ -37,10 +37,10 @@ msgstr "<span>Filtres</span>"
 #. module: bemade_sports_clinic_bookings
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic_bookings.sc_app_booking_edit
 msgid ""
-"<strong class=\"o_sc_banner_title\">This time slot overlaps another booking."
+"<strong class=\"o_pk_banner_title\">This time slot overlaps another booking."
 " Save anyway?</strong>"
 msgstr ""
-"<strong class=\"o_sc_banner_title\">Ce créneau chevauche un autre rendez-"
+"<strong class=\"o_pk_banner_title\">Ce créneau chevauche un autre rendez-"
 "vous — enregistrer quand même ?</strong>"
 
 #. module: bemade_sports_clinic_bookings

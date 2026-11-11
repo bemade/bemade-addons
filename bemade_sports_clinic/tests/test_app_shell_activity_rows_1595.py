@@ -47,7 +47,7 @@ class _ActivityRowsMixin:
     @staticmethod
     def _related(row):
         return [(a.get('data-sc-row-link'), a.get('href'), _text(a))
-                for a in row.xpath('.//a[contains(@class, "o_sc_row_link")]')]
+                for a in row.xpath('.//a[contains(@class, "o_pk_row_link")]')]
 
 
 @tagged('post_install', '-at_install')
@@ -66,7 +66,7 @@ class TestAppShellActivityRows1595(_ActivityRowsMixin, AppShellCommon):
         for activity, link in expected.items():
             row = self._row(tree, activity)
             self.assertIsNotNone(row, activity.summary)
-            main = row.xpath('.//a[contains(@class, "o_sc_link_row_main")]')
+            main = row.xpath('.//a[contains(@class, "o_pk_link_row_main")]')
             self.assertEqual(len(main), 1, activity.summary)
             self.assertEqual(main[0].get('href'), '/my/activity/%s' % activity.id)
             self.assertEqual(_text(main[0]), activity.summary)
@@ -84,7 +84,7 @@ class TestAppShellActivityRows1595(_ActivityRowsMixin, AppShellCommon):
         self._login_tp()
         _text_, tree = self._get('/my/activities')
         row = self._row(tree, self.act_team)
-        self.assertEqual(_text(row.xpath('.//a[contains(@class, "o_sc_link_row_main")]')[0]),
+        self.assertEqual(_text(row.xpath('.//a[contains(@class, "o_pk_link_row_main")]')[0]),
                          self.act_team.activity_type_id.name)
         # Not repeated in the subtitle.
         self.assertFalse(row.xpath('.//*[contains(@class, "o_sc_activity_type")]'))

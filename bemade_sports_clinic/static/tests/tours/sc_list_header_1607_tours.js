@@ -20,7 +20,7 @@ function assert(condition, message) {
     }
 }
 
-const HEADER = '.o_sc_list_header[data-pk-section="players.header"]';
+const HEADER = '.o_pk_list_header[data-pk-section="players.header"]';
 const TOGGLE = `${HEADER} button[data-pk-menu-toggle][aria-controls="sc_players_sort"]`;
 const POPUP = "#sc_players_sort";
 
@@ -31,9 +31,9 @@ tours.add("sc_1607_players", {
             trigger: HEADER,
             run() {
                 const header = document.querySelector(HEADER);
-                assert(!document.querySelector("header.o_sc_appbar .o_sc_appbar_action"),
+                assert(!document.querySelector("header.o_pk_appbar .o_pk_appbar_action"),
                     "a page action is still in the app bar");
-                const add = header.querySelector(".o_sc_list_add");
+                const add = header.querySelector(".o_pk_list_add");
                 const toggle = header.querySelector("button[data-pk-menu-toggle]");
                 const a = add.getBoundingClientRect();
                 const t = toggle.getBoundingClientRect();
@@ -45,17 +45,17 @@ tours.add("sc_1607_players", {
                 const h = header.getBoundingClientRect();
                 assert(Math.abs(a.left - h.left) < 2, "« Ajouter » is not at the left edge");
                 assert(a.right <= t.left + 0.5, "« Ajouter » is not left of the sort");
-                assert(!add.querySelector(".o_sc_icon"), "« Ajouter » still has an icon");
+                assert(!add.querySelector(".o_pk_icon"), "« Ajouter » still has an icon");
                 assert(t.left > h.left + h.width / 3, "the sort is not on the right");
                 assert(document.documentElement.scrollWidth <= window.innerWidth + 0.5,
                     "the page scrolls sideways");
                 // Task 1655: the (closed) create panel sits between them.
                 let next = header.nextElementSibling;
-                if (next && next.matches("details.o_sc_list_add_panel")) {
+                if (next && next.matches("details.o_pk_list_add_panel")) {
                     assert(!next.open && !next.getClientRects().length, "the closed panel shows");
                     next = next.nextElementSibling;
                 }
-                assert(next && next.matches('[data-pk-section="players.list"], .o_sc_empty'),
+                assert(next && next.matches('[data-pk-section="players.list"], .o_pk_empty'),
                     "the list does not follow the header");
             },
         },
@@ -110,7 +110,7 @@ tours.add("sc_1607_players", {
         },
         {
             content: "« + Ajouter » opens the inline creation panel (task 1655)",
-            trigger: `${HEADER} button.o_sc_list_add[data-sc-action="players.create"][aria-controls="sc_player_add"]`,
+            trigger: `${HEADER} button.o_pk_list_add[data-sc-action="players.create"][aria-controls="sc_player_add"]`,
             run: "click",
         },
         {
@@ -122,7 +122,7 @@ tours.add("sc_1607_players", {
     ],
 });
 
-const ADD = '.o_sc_list_header[data-pk-section="team.roster.header"] button.o_sc_list_add[aria-controls="sc_add_player"]';
+const ADD = '.o_pk_list_header[data-pk-section="team.roster.header"] button.o_pk_list_add[aria-controls="sc_add_player"]';
 
 tours.add("sc_1607_team_add", {
     steps: () => [
@@ -144,7 +144,7 @@ tours.add("sc_1607_team_add", {
             run() {
                 const panel = document.getElementById("sc_add_player");
                 assert(panel.open, "the panel did not open");
-                const header = document.querySelector(ADD).closest(".o_sc_list_header");
+                const header = document.querySelector(ADD).closest(".o_pk_list_header");
                 assert(header.nextElementSibling === panel, "the panel is not under the header");
                 assert(document.activeElement && panel.contains(document.activeElement),
                     "the focus is not in the panel");

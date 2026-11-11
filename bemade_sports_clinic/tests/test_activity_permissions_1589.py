@@ -359,7 +359,7 @@ class TestActivityPermissions1589(ActivityPermissionsCommon):
         self._switch(True)
         self._login('coach')
         _text, tree = self._get('/my/activity/%s' % self.act_coach_created.id)
-        bar = tree.xpath('//div[contains(@class, "o_sc_actionbar")]')
+        bar = tree.xpath('//div[contains(@class, "o_pk_actionbar")]')
         self.assertTrue(bar)
         actions = set(bar[0].xpath('.//@data-sc-action'))
         # Task 1664 (deliberate update): « Réassigner » on the detail page too.
@@ -375,7 +375,7 @@ class TestActivityPermissions1589(ActivityPermissionsCommon):
         with patch.object(AccessControlMixin, '_activity_act_access', return_value=False), \
                 patch.object(AccessControlMixin, '_activity_view_access', return_value=True):
             _text, tree = self._get('/my/activity/%s' % self.act_coach_created.id)
-            self.assertFalse(tree.xpath('//div[contains(@class, "o_sc_actionbar")]'))
+            self.assertFalse(tree.xpath('//div[contains(@class, "o_pk_actionbar")]'))
             self.assertFalse(tree.xpath('//*[@data-pk-edit-card="activity"]'))
             _text, tree = self._get('/my/player?player_id=%s&tab=activities' % self.player.id)
             self.assertTrue(self._row_ids(tree))

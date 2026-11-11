@@ -1,7 +1,7 @@
 /* Task 1542 — the data-free offline page (/my/app/offline). Plain CSS, no
    bundle: it is precached by the service worker with the page. */
 html, body { margin: 0; min-height: 100%; }
-body.o_sc_offline {
+body.o_pk_offline {
     min-height: 100vh;
     display: grid;
     place-items: center;
@@ -13,9 +13,9 @@ body.o_sc_offline {
     padding: 24px 16px;
     box-sizing: border-box;
 }
-.o_sc_offline_main { max-width: 420px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.o_sc_offline_main img { width: 96px; height: 96px; object-fit: contain; }
-.o_sc_offline_main h1 {
+.o_pk_offline_main { max-width: 420px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.o_pk_offline_main img { width: 96px; height: 96px; object-fit: contain; }
+.o_pk_offline_main h1 {
     margin: 0;
     font-family: "Teko", "DM Sans", system-ui, sans-serif;
     font-weight: 600;
@@ -23,8 +23,8 @@ body.o_sc_offline {
     letter-spacing: 0.02em;
     text-transform: uppercase;
 }
-.o_sc_offline_main p { margin: 0; color: #a9a8ae; }
-.o_sc_offline_retry {
+.o_pk_offline_main p { margin: 0; color: #a9a8ae; }
+.o_pk_offline_retry {
     margin-top: 8px;
     display: inline-flex;
     align-items: center;

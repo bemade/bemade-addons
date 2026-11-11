@@ -35,13 +35,13 @@ async function waitFor(check, message, timeout = 8000) {
 
 // The switch ROW (the visible label) of the input ``input`` within ``scope``.
 function row(scope, input) {
-    return `${scope} label.o_sc_switch:has(${input})`;
+    return `${scope} label.o_pk_switch:has(${input})`;
 }
 
 function assertSwitchLayout(label) {
     // One line: the label on the left, the switch on the right, 44 px tall.
-    const text = label.querySelector(".o_sc_switch_label").getBoundingClientRect();
-    const track = label.querySelector(".o_sc_switch_track").getBoundingClientRect();
+    const text = label.querySelector(".o_pk_switch_label").getBoundingClientRect();
+    const track = label.querySelector(".o_pk_switch_track").getBoundingClientRect();
     assert(track.left >= text.left, "the switch is not right of its label");
     assert(label.getBoundingClientRect().height >= 43, "the row is under 44 px");
 }
@@ -78,7 +78,7 @@ tours.add("sc_1726_switch_filter", {
     steps: () => [
         {
             content: "Open the filters",
-            trigger: 'form[data-pk-section="events.filters"] details.o_sc_disclosure > summary',
+            trigger: 'form[data-pk-section="events.filters"] details.o_pk_disclosure > summary',
             run() {
                 this.anchor.closest("details").open = true;
             },
@@ -99,7 +99,7 @@ tours.add("sc_1726_switch_filter", {
     ],
 });
 
-const NA_SCOPE = ".o_sc_date_na";
+const NA_SCOPE = ".o_pk_date_na";
 const NA = 'input[role="switch"][name="injury_date_na"]';
 // The date input is rendered by the OWL field, so its disabled state is
 // the proof that the field took the toggle. aria-checked alone is not:

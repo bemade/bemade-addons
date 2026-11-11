@@ -4,7 +4,7 @@
  * Replaces, FOR THE SHELL ONLY, the inline scripts of the legacy
  * activity_list_table / reassign modal / assignee warning (those partials
  * stay unchanged for the legacy pages). Progressive enhancement, inert
- * outside .o_sc_app:
+ * outside .o_pk_app:
  *
  * - a row action ([data-sc-activity-id] + data-sc-sheet-open) fills the
  *   opened sheet's form: activity_id, the current assignee's name
@@ -14,7 +14,7 @@
  *   its data-sc-no-access attribute.
  */
 function inShell(el) {
-    return Boolean(el && el.closest && el.closest(".o_sc_app"));
+    return Boolean(el && el.closest && el.closest(".o_pk_app"));
 }
 
 document.addEventListener("click", (ev) => {
@@ -57,7 +57,7 @@ document.addEventListener("change", (ev) => {
 });
 
 function init() {
-    for (const select of document.querySelectorAll(".o_sc_app select[data-sc-assignee-select]")) {
+    for (const select of document.querySelectorAll(".o_pk_app select[data-sc-assignee-select]")) {
         refreshAssigneeWarning(select);
     }
 }

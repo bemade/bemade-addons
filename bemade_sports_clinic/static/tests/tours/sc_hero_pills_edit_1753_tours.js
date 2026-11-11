@@ -32,7 +32,7 @@ function visible(selector) {
 }
 
 function toggle(key, tone) {
-    return `${STATUS} [data-sc-pill-select][data-sc-pill-key="${key}"]:not([aria-busy]) button.o_sc_pill_select.o_sc_chip_${tone}`;
+    return `${STATUS} [data-sc-pill-select][data-sc-pill-key="${key}"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_${tone}`;
 }
 
 function assertOnce() {

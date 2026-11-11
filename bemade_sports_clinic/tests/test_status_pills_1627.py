@@ -9,7 +9,7 @@ Acceptance criteria:
   « Pratiques autorisées » / « Matchs autorisés », ``data-sc-stage-chip``),
   for therapists and coaches.
 * AC-2 Therapist: the Match and Practice pills are two
-  ``button.o_sc_pill_select`` (``aria-haspopup="menu"``) coloured by value —
+  ``button.o_pk_pill_select`` (``aria-haspopup="menu"``) coloured by value —
   Oui = green, Oui sans contact = yellow, Non = red (the player rows' tones)
   — each opening a ``role="menu"`` of ``menuitemradio`` items (the current
   one ``aria-checked``).
@@ -57,7 +57,7 @@ def _pills(node):
 
 def _items(tree, pill):
     """{value: item} of a dropdown pill's menu."""
-    toggle = pill.xpath('.//button[contains(@class, "o_sc_pill_select")]')[0]
+    toggle = pill.xpath('.//button[contains(@class, "o_pk_pill_select")]')[0]
     popup = tree.xpath('//*[@id="%s"]' % toggle.get('aria-controls'))[0]
     return popup, {item.get('data-sc-pill-value'): item
                    for item in popup.xpath('.//*[@role="menuitemradio"]')}
@@ -85,13 +85,13 @@ class StatusPillsMixin(FragmentsMixin):
         pills = _pills(node)
         self.assertEqual(sorted(pills), ['match', 'practice'])
         for key, value in (('match', match), ('practice', practice)):
-            buttons = pills[key].xpath('.//button[contains(@class, "o_sc_pill_select")]')
+            buttons = pills[key].xpath('.//button[contains(@class, "o_pk_pill_select")]')
             self.assertEqual(len(buttons), 1, key)
             button = buttons[0]
             self.assertEqual(button.get('aria-haspopup'), 'menu')
             self.assertEqual(button.get('aria-expanded'), 'false')
-            self.assertIn('o_sc_status_pill', button.get('class'))
-            self.assertIn('o_sc_chip_%s' % TONES[value], button.get('class'), (key, pair))
+            self.assertIn('o_pk_status_pill', button.get('class'))
+            self.assertIn('o_pk_chip_%s' % TONES[value], button.get('class'), (key, pair))
             popup, items = _items(tree, pills[key])
             self.assertEqual(popup.get('role'), 'menu')
             self.assertEqual(popup.get('hidden'), 'hidden')
@@ -108,7 +108,7 @@ class StatusPillsMixin(FragmentsMixin):
             state[key] = {}
             for value, item in items.items():
                 disabled = item.get('aria-disabled') == 'true'
-                hint = ' '.join(item.xpath('.//*[contains(@class, "o_sc_pill_hint")]//text()')).strip()
+                hint = ' '.join(item.xpath('.//*[contains(@class, "o_pk_pill_hint")]//text()')).strip()
                 if disabled:
                     self.assertTrue(hint, 'a greyed choice says why (%s %s)' % (key, value))
                     self.assertFalse(item.get('data-sc-pill-post'))
@@ -168,12 +168,12 @@ class TestStatusPills1627(StatusPillsMixin, FragmentsCommon):
             pills = _pills(node)
             self.assertEqual(sorted(pills), ['match', 'practice'])
             self.assertFalse(node.xpath('.//button'))
-            self.assertFalse(tree.xpath('//*[contains(@class, "o_sc_pill_popup")]'))
+            self.assertFalse(tree.xpath('//*[contains(@class, "o_pk_pill_popup")]'))
             match, practice = pair.split(':')
             for key, value in (('match', match), ('practice', practice)):
                 self.assertEqual(pills[key].tag, 'span')
-                self.assertIn('o_sc_status_pill', pills[key].get('class'))
-                self.assertIn('o_sc_chip_%s' % TONES[value], pills[key].get('class'), (key, pair))
+                self.assertIn('o_pk_status_pill', pills[key].get('class'))
+                self.assertIn('o_pk_chip_%s' % TONES[value], pills[key].get('class'), (key, pair))
 
     # -- AC-4 --------------------------------------------------------------
     def test_invalid_choices_greyed(self):
@@ -244,8 +244,8 @@ class TestStatusPills1627(StatusPillsMixin, FragmentsCommon):
             self.assertRefreshes(payload, self._key(part))
         status = self._fragment(self._url(), self._key('status'))
         for key, pill in _pills(status).items():
-            button = pill.xpath('.//button[contains(@class, "o_sc_pill_select")]')[0]
-            self.assertIn('o_sc_chip_red', button.get('class'), key)
+            button = pill.xpath('.//button[contains(@class, "o_pk_pill_select")]')[0]
+            self.assertIn('o_pk_chip_red', button.get('class'), key)
         # The fresh fragment carries the write_date the NEXT change posts.
         self.player.invalidate_recordset()
         self.assertEqual(status.xpath('.//*[@data-sc-pill-select]/@data-sc-write-date')[0],
@@ -355,8 +355,8 @@ class TestDossierStatusPills1627(StatusPillsMixin, Clinic1540Common):
         self.assertRefreshes(payload, self._key('row-clinic'))
         status = self._fragment(self._url(), self._key('row-clinic'))
         classes = {key: pill.xpath('.//button')[0].get('class') for key, pill in _pills(status).items()}
-        self.assertIn('o_sc_chip_red', classes['match'])
-        self.assertIn('o_sc_chip_yellow', classes['practice'])
+        self.assertIn('o_pk_chip_red', classes['match'])
+        self.assertIn('o_pk_chip_yellow', classes['practice'])
         self.assertFragmentMatchesPage(self._url(), self._key('row-clinic'))
 
     def test_dossier_tour(self):

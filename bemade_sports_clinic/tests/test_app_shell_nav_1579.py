@@ -86,15 +86,15 @@ class Nav1579Common(Parity1577Common):
     def _nav(self, url):
         """(back hrefs, [(crumb href, label)], current crumb, context line)."""
         _text, tree = self._get(url)
-        back = tree.xpath('//a[contains(concat(" ", @class, " "), " o_sc_back ")]/@href')
-        trail = tree.xpath('//nav[contains(concat(" ", @class, " "), " o_sc_crumbs ")]')
+        back = tree.xpath('//a[contains(concat(" ", @class, " "), " o_pk_back ")]/@href')
+        trail = tree.xpath('//nav[contains(concat(" ", @class, " "), " o_pk_crumbs ")]')
         crumbs, current = [], None
         if trail:
             crumbs = [(a.get('href'), a.text_content().strip())
                       for a in trail[0].xpath('./ol/li/a')]
             last = trail[0].xpath('./ol/li[@aria-current="page"]')
             current = last[0].text_content().strip() if last else None
-        context = tree.xpath('//*[contains(@class, "o_sc_appbar_context")]')
+        context = tree.xpath('//*[contains(@class, "o_pk_appbar_context")]')
         return back, crumbs, current, (context[0].text_content().strip() if context else None)
 
 
@@ -135,13 +135,13 @@ class TestAppShellNav1579(Nav1579Common):
     # -- UC-N2 / UC-N4 ---------------------------------------------------
     def test_top_level_page_has_logo_no_back_no_trail(self):
         _text, tree = self._get('/my/teams')
-        self.assertTrue(tree.xpath('//a[contains(@class, "o_sc_logo")]'))
+        self.assertTrue(tree.xpath('//a[contains(@class, "o_pk_logo")]'))
         back, crumbs, current, _context = self._nav('/my/teams')
         self.assertEqual((back, crumbs, current), ([], [], None))
 
     def test_sub_page_renders_back_and_accessible_trail(self):
         _text, tree = self._get(self.team_url)
-        nav = tree.xpath('//nav[contains(@class, "o_sc_crumbs")]')
+        nav = tree.xpath('//nav[contains(@class, "o_pk_crumbs")]')
         self.assertEqual(len(nav), 1)
         self.assertTrue(nav[0].get('aria-label'))
         self.assertTrue(nav[0].xpath('./ol/li'))

@@ -62,7 +62,7 @@
             </t>
 
             <!-- ============================ Dashboard ============================ -->
-            <section class="o_sc_tab_panel" data-sc-tab-panel="dashboard" role="tabpanel"
+            <section class="o_pk_tab_panel" data-sc-tab-panel="dashboard" role="tabpanel"
                      t-att-hidden="None if sc_active_tab == 'dashboard' else 'hidden'">
 
                 <!-- Team announcement (task 1270): all-staff, TP-authored.
@@ -78,12 +78,12 @@
                      form (a LOCAL draft while typing, sc_autosave_field draft
                      mode; « Publier » posts the unchanged PRG form). -->
                 <section t-if="team.announcement or sc_show_compose"
-                         t-attf-class="o_sc_section o_sc_announcement #{'o_sc_announcement_expired' if team.announcement_is_expired else ''} #{'' if team.announcement else 'o_sc_announcement_none'}"
+                         t-attf-class="o_pk_section o_sc_announcement #{'o_sc_announcement_expired' if team.announcement_is_expired else ''} #{'' if team.announcement else 'o_sc_announcement_none'}"
                          data-pk-section="team.announcement.area" data-pk-edit-card="announcement">
                     <div class="o_sc_announcement_titleline">
-                        <h2 class="o_sc_section_header">
+                        <h2 class="o_pk_section_header">
                             <span class="o_sc_announcement_heading">Team announcement</span>
-                            <button type="button" class="o_sc_section_more o_sc_link_btn"
+                            <button type="button" class="o_pk_section_more o_pk_link_btn"
                                     data-sc-sheet-open="sc_announcement_history_sheet">History</button>
                         </h2>
                         <!-- Task 1736 (owner 2026-11-01): the shared top bar —
@@ -110,8 +110,8 @@
                         <div t-if="team.announcement" class="o_sc_announcement_content">
                             <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'megaphone'"/></t>
                             <div class="o_sc_announcement_text">
-                                <p class="o_sc_pre o_sc_announcement_body" data-sc-clamp="3" t-out="team.announcement"/>
-                                <p class="o_sc_meta o_sc_announcement_meta" data-sc-clamp-meta="1"
+                                <p class="o_pk_pre o_sc_announcement_body" data-sc-clamp="3" t-out="team.announcement"/>
+                                <p class="o_pk_meta o_sc_announcement_meta" data-sc-clamp-meta="1"
                                    t-att-hidden="None if (sc_announcement_until or team.announcement_is_expired) else 'hidden'">
                                     <t t-if="team.announcement_is_expired" t-call="bemade_sports_clinic.sc_status_chip">
                                         <t t-set="tone" t-value="'ghost'"/>
@@ -119,15 +119,15 @@
                                     </t>
                                     <span t-if="sc_announcement_until" class="o_sc_announcement_until" t-out="sc_announcement_until"/>
                                     <span class="o_sc_announcement_more_sep" data-sc-clamp-sep="1" hidden="hidden"> · </span>
-                                    <button type="button" class="o_sc_link_btn o_sc_announcement_more" data-sc-clamp-more="1"
+                                    <button type="button" class="o_pk_link_btn o_sc_announcement_more" data-sc-clamp-more="1"
                                             aria-expanded="false" hidden="hidden">See more</button>
                                     <!-- Review round 1 (owner 2026-10-27): « See less » folds it back. -->
-                                    <button type="button" class="o_sc_link_btn o_sc_announcement_more" data-sc-clamp-less="1"
+                                    <button type="button" class="o_pk_link_btn o_sc_announcement_more" data-sc-clamp-less="1"
                                             aria-expanded="true" hidden="hidden">See less</button>
                                 </p>
                             </div>
                         </div>
-                        <p t-else="" class="o_sc_muted o_sc_announcement_empty">No current announcement.</p>
+                        <p t-else="" class="o_pk_muted o_sc_announcement_empty">No current announcement.</p>
                     </div>
                     <div t-if="sc_show_compose" data-sc-edit-view="edit" hidden="hidden"
                          data-pk-section="team.announcement.edit">
@@ -135,7 +135,7 @@
                             <t t-set="tone" t-value="'warn'"/>
                             Visible to all team staff (coaches included) and sent by email — do not include any confidential medical information about a player.
                         </t>
-                        <form t-attf-action="/my/team/#{team.id}/announcement" method="post" class="o_sc_form"
+                        <form t-attf-action="/my/team/#{team.id}/announcement" method="post" class="o_pk_form"
                               data-sc-draft-form="1" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"announcement"}]'>
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <t t-set="sc_ann_label">Announcement</t>
@@ -145,9 +145,9 @@
                                            t-att-props="json.dumps({'mode': 'draft', 'name': 'announcement', 'inputType': 'textarea', 'inputId': 'sc_team_announcement', 'label': sc_ann_label, 'placeholder': sc_ann_placeholder, 'value': team.announcement or '', 'draftKey': 'sports.team.%s.announcement' % team.id})"/>
                             <owl-component name="bemade_sports_clinic.sc_autosave_field"
                                            t-att-props="json.dumps({'mode': 'draft', 'name': 'announcement_deadline', 'inputType': 'date', 'inputId': 'sc_team_announcement_deadline', 'label': sc_deadline_label, 'value': team.announcement_deadline and team.announcement_deadline.strftime('%Y-%m-%d') or '', 'draftKey': 'sports.team.%s.announcement_deadline' % team.id})"/>
-                            <div class="o_sc_form_actions">
-                                <button type="submit" class="o_sc_btn o_sc_btn_primary" data-sc-action="team.announcement.publish">Publish</button>
-                                <button type="button" class="o_sc_btn o_sc_btn_ghost" data-pk-edit-done="1">Cancel</button>
+                            <div class="o_pk_form_actions">
+                                <button type="submit" class="o_pk_btn o_pk_btn_primary" data-sc-action="team.announcement.publish">Publish</button>
+                                <button type="button" class="o_pk_btn o_pk_btn_ghost" data-pk-edit-done="1">Cancel</button>
                             </div>
                             <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_announcement'"/></t>
                         </form>
@@ -162,7 +162,7 @@
                     </t>
                 </section>
 
-                <div class="o_sc_stats" data-pk-section="team.stats">
+                <div class="o_pk_stats" data-pk-section="team.stats">
                     <t t-call="bemade_sports_clinic.sc_stat_tile">
                         <t t-set="tone" t-value="'red'"/>
                         <t t-set="value" t-value="team.stage_no_play_count"/>
@@ -180,18 +180,18 @@
                     </t>
                 </div>
 
-                <div class="o_sc_grid2">
-                    <section class="o_sc_section" data-pk-section="team.recent_changes">
-                        <h2 class="o_sc_section_header">
-                            <span>Recent changes <small class="o_sc_section_sub" t-out="sc_window_label"/></span>
+                <div class="o_pk_grid2">
+                    <section class="o_pk_section" data-pk-section="team.recent_changes">
+                        <h2 class="o_pk_section_header">
+                            <span>Recent changes <small class="o_pk_section_sub" t-out="sc_window_label"/></span>
                             <!-- Task 1579 (owner decision 2026-10-11): straight to
                                  the full digest list, no popup; back steps up
                                  snapshot → list → this page. -->
                             <a t-attf-href="/my/team/#{team.id}/digest-history"
-                               class="o_sc_section_more o_sc_link_btn"
+                               class="o_pk_section_more o_pk_link_btn"
                                data-sc-action="team.digest_history">History</a>
                         </h2>
-                        <div t-if="sc_dashboard_rows" class="o_sc_list">
+                        <div t-if="sc_dashboard_rows" class="o_pk_list">
                             <!-- Task 1626: a player row like « Other players to
                                  watch » (link to the player page always on the
                                  face, « Details » toggle); its detail is the
@@ -207,12 +207,12 @@
                         </t>
                     </section>
 
-                    <div class="o_sc_section">
-                        <section t-if="sc_watch_rows" class="o_sc_section" data-pk-section="team.watchlist">
+                    <div class="o_pk_section">
+                        <section t-if="sc_watch_rows" class="o_pk_section" data-pk-section="team.watchlist">
                             <t t-call="bemade_sports_clinic.sc_section_header">
                                 <t t-set="title">Other players to watch</t>
                             </t>
-                            <div class="o_sc_list">
+                            <div class="o_pk_list">
                                 <t t-foreach="sc_watch_rows" t-as="row">
                                     <t t-call="bemade_sports_clinic.sc_player_row">
                                         <t t-set="row_scope" t-value="'watch'"/>
@@ -221,13 +221,13 @@
                             </div>
                         </section>
 
-                        <section class="o_sc_section" data-pk-section="team.upcoming">
-                            <h2 class="o_sc_section_header">
-                                <span>Upcoming events <small class="o_sc_section_sub" t-out="upcoming_events_window_label"/></span>
-                                <a href="/my/events" class="o_sc_section_more">Calendar</a>
+                        <section class="o_pk_section" data-pk-section="team.upcoming">
+                            <h2 class="o_pk_section_header">
+                                <span>Upcoming events <small class="o_pk_section_sub" t-out="upcoming_events_window_label"/></span>
+                                <a href="/my/events" class="o_pk_section_more">Calendar</a>
                             </h2>
                             <t t-if="sc_upcoming_rows" t-call="bemade_sports_clinic.sc_card">
-                                <dl class="o_sc_kv">
+                                <dl class="o_pk_kv">
                                     <t t-foreach="sc_upcoming_rows" t-as="ev">
                                         <dt t-out="ev['when']"/>
                                         <dd><a t-att-href="ev['url']"><strong t-out="ev['kind']"/> <t t-out="ev['name']"/></a></dd>
@@ -240,23 +240,23 @@
                         </section>
 
                         <!-- Task 1416: read-only temporary staff. -->
-                        <section t-if="temp_staff_rows" class="o_sc_section" data-pk-section="team.temp_staff" id="temporary-staff">
+                        <section t-if="temp_staff_rows" class="o_pk_section" data-pk-section="team.temp_staff" id="temporary-staff">
                             <t t-call="bemade_sports_clinic.sc_section_header">
                                 <t t-set="title">Temporary staff</t>
                             </t>
-                            <div class="o_sc_list">
+                            <div class="o_pk_list">
                                 <t t-foreach="temp_staff_rows" t-as="staff_row">
-                                    <div class="o_sc_entity_row o_sc_entity_row_static">
-                                        <span class="o_sc_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'user'"/></t></span>
-                                        <span class="o_sc_row_text">
-                                            <span class="o_sc_row_title" t-out="staff_row.partner_id.name"/>
-                                            <span class="o_sc_row_subtitle" t-field="staff_row.role"/>
+                                    <div class="o_pk_entity_row o_pk_entity_row_static">
+                                        <span class="o_pk_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'user'"/></t></span>
+                                        <span class="o_pk_row_text">
+                                            <span class="o_pk_row_title" t-out="staff_row.partner_id.name"/>
+                                            <span class="o_pk_row_subtitle" t-field="staff_row.role"/>
                                             <!-- Under the name, wrapping: the access label is long
                                                  (event, players, end date) and squeezed the name to
                                                  0 px in the trailing slot. -->
-                                            <span class="o_sc_row_chip_line">
+                                            <span class="o_pk_row_chip_line">
                                                 <t t-call="bemade_sports_clinic.sc_status_chip">
-                                                    <t t-set="tone" t-value="'mauve' if staff_row.source == 'temp' else 'yellow'"/>
+                                                    <t t-set="tone" t-value="'secondary' if staff_row.source == 'temp' else 'yellow'"/>
                                                     <t t-set="label" t-value="staff_row.temp_access_label"/>
                                                 </t>
                                             </span>
@@ -271,7 +271,7 @@
             </section>
 
             <!-- ============================= Players ============================= -->
-            <section class="o_sc_tab_panel" data-sc-tab-panel="players" role="tabpanel"
+            <section class="o_pk_tab_panel" data-sc-tab-panel="players" role="tabpanel"
                      t-att-hidden="None if sc_active_tab == 'players' else 'hidden'">
                 <t t-if="sc_pending_count and can_remove_on_team and sc_can('team.pending_removals')"
                    t-call="bemade_sports_clinic.sc_banner">
@@ -312,39 +312,39 @@
                 <t t-if="sc_show_add and sc_player_add" t-call="bemade_sports_clinic.sc_player_add_panel">
                     <t t-set="panel" t-value="sc_player_add"/>
                 </t>
-                <details t-if="sc_show_request" class="o_sc_card o_sc_disclosure o_sc_list_add_panel" id="sc_request_add"
+                <details t-if="sc_show_request" class="o_pk_card o_pk_disclosure o_pk_list_add_panel" id="sc_request_add"
                          data-pk-section="team.request_add">
-                    <summary class="o_sc_disclosure_summary">
+                    <summary class="o_pk_disclosure_summary">
                         <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
                         <span>Request a player addition</span>
                     </summary>
-                    <form t-attf-action="/my/team/#{team.id}/player/request_add" method="post" class="o_sc_form" data-sc-guard="1" data-sc-guard-mode="fetch">
+                    <form t-attf-action="/my/team/#{team.id}/player/request_add" method="post" class="o_pk_form" data-sc-guard="1" data-sc-guard-mode="fetch">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                        <div class="o_sc_field">
-                            <label class="o_sc_field_label" for="sc_req_first_name">First name</label>
-                            <input type="text" id="sc_req_first_name" name="first_name" class="o_sc_input" required="required"/>
+                        <div class="o_pk_field">
+                            <label class="o_pk_field_label" for="sc_req_first_name">First name</label>
+                            <input type="text" id="sc_req_first_name" name="first_name" class="o_pk_input" required="required"/>
                         </div>
-                        <div class="o_sc_field">
-                            <label class="o_sc_field_label" for="sc_req_last_name">Last name</label>
-                            <input type="text" id="sc_req_last_name" name="last_name" class="o_sc_input" required="required"/>
+                        <div class="o_pk_field">
+                            <label class="o_pk_field_label" for="sc_req_last_name">Last name</label>
+                            <input type="text" id="sc_req_last_name" name="last_name" class="o_pk_input" required="required"/>
                         </div>
-                        <div class="o_sc_field">
-                            <label class="o_sc_field_label" for="sc_req_dob">Date of birth</label>
-                            <input type="date" id="sc_req_dob" name="date_of_birth" class="o_sc_input" required="required"/>
+                        <div class="o_pk_field">
+                            <label class="o_pk_field_label" for="sc_req_dob">Date of birth</label>
+                            <input type="date" id="sc_req_dob" name="date_of_birth" class="o_pk_input" required="required"/>
                         </div>
-                        <div class="o_sc_field">
-                            <label class="o_sc_field_label" for="sc_req_reason">Reason</label>
-                            <textarea id="sc_req_reason" name="reason" class="o_sc_input" rows="3"
+                        <div class="o_pk_field">
+                            <label class="o_pk_field_label" for="sc_req_reason">Reason</label>
+                            <textarea id="sc_req_reason" name="reason" class="o_pk_input" rows="3"
                                       placeholder="Explain why this player should be added"/>
                         </div>
-                        <div class="o_sc_form_actions">
+                        <div class="o_pk_form_actions">
                             <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
-                            <button type="submit" class="o_sc_btn o_sc_btn_primary">Send the request</button>
+                            <button type="submit" class="o_pk_btn o_pk_btn_primary">Send the request</button>
                         </div>
                         <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_request_add'"/></t>
                     </form>
                 </details>
-                <div t-if="sc_roster_rows" class="o_sc_list" data-pk-section="team.roster">
+                <div t-if="sc_roster_rows" class="o_pk_list" data-pk-section="team.roster">
                     <t t-foreach="sc_roster_rows" t-as="row">
                         <!-- Task 1593: the legacy card's content (no team links
                              on the team's own roster, as legacy). -->
@@ -361,7 +361,7 @@
             <!-- ============================ Activities =========================== -->
             <!-- Task 1539: the shell's activity list + sheets (the legacy
                  partials stay for the legacy page). -->
-            <section t-if="sc_show_activities" class="o_sc_tab_panel" data-sc-tab-panel="activities" role="tabpanel"
+            <section t-if="sc_show_activities" class="o_pk_tab_panel" data-sc-tab-panel="activities" role="tabpanel"
                      t-att-hidden="None if sc_active_tab == 'activities' else 'hidden'">
                 <t t-set="sc_team_activities_return" t-value="'/my/team?team_id=%s&amp;tab=activities' % team.id"/>
                 <t t-call="bemade_sports_clinic.sc_activity_add_sheet">
@@ -392,16 +392,16 @@
             <t t-set="sc_title">Install the app</t>
             <t t-set="sc_active_nav" t-value="'more'"/>
 
-            <div class="o_sc_card o_sc_install_hero" data-sc-install="1">
-                <img src="/bemade_sports_clinic/static/src/img/sc_icon_192.png" alt="" width="56" height="56" class="o_sc_install_icon"/>
+            <div class="o_pk_card o_pk_install_hero" data-sc-install="1">
+                <img src="/bemade_sports_clinic/static/src/img/sc_icon_192.png" alt="" width="56" height="56" class="o_pk_install_icon"/>
                 <div>
                     <strong>Le Fit Crew</strong>
-                    <p class="o_sc_meta">Full screen, an icon on your home screen, instant opening. Health data is never stored on the device.</p>
+                    <p class="o_pk_meta">Full screen, an icon on your home screen, instant opening. Health data is never stored on the device.</p>
                 </div>
             </div>
 
             <!-- Shown by sc_sw_register.js when display-mode is standalone. -->
-            <div class="o_sc_install_done" hidden="hidden" data-sc-install-state="installed">
+            <div class="o_pk_install_done" hidden="hidden" data-sc-install-state="installed">
                 <t t-call="bemade_sports_clinic.sc_banner">
                     <t t-set="title">The app is installed</t>
                     You are using Le Fit Crew from your home screen.
@@ -409,42 +409,42 @@
             </div>
 
             <!-- Android / Chrome / Edge: the browser's own prompt, when offered. -->
-            <section class="o_sc_section" data-sc-install-state="prompt" hidden="hidden">
-                <button type="button" class="o_sc_btn o_sc_btn_primary" data-sc-install-prompt="1">Install Le Fit Crew</button>
+            <section class="o_pk_section" data-sc-install-state="prompt" hidden="hidden">
+                <button type="button" class="o_pk_btn o_pk_btn_primary" data-sc-install-prompt="1">Install Le Fit Crew</button>
             </section>
 
-            <section class="o_sc_section" data-sc-install-steps="ios">
+            <section class="o_pk_section" data-sc-install-steps="ios">
                 <t t-call="bemade_sports_clinic.sc_section_header">
                     <t t-set="title">iPhone and iPad (Safari or Chrome)</t>
                 </t>
-                <ol class="o_sc_steps">
+                <ol class="o_pk_steps">
                     <li>Open this page in Safari or Chrome.</li>
                     <li>Tap the Share button <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'share'"/></t> at the bottom of the screen (Safari) or in the address bar (Chrome).</li>
                     <li>Choose « Add to Home Screen », then « Add ».</li>
                 </ol>
             </section>
 
-            <section class="o_sc_section" data-sc-install-steps="android">
+            <section class="o_pk_section" data-sc-install-steps="android">
                 <t t-call="bemade_sports_clinic.sc_section_header">
                     <t t-set="title">Android (Chrome)</t>
                 </t>
-                <ol class="o_sc_steps">
+                <ol class="o_pk_steps">
                     <li>Open this page in Chrome.</li>
                     <li>Open the ⋮ menu at the top right.</li>
                     <li>Choose « Install app » (or « Add to Home screen »).</li>
                 </ol>
             </section>
 
-            <section class="o_sc_section" data-sc-install-steps="desktop">
+            <section class="o_pk_section" data-sc-install-steps="desktop">
                 <t t-call="bemade_sports_clinic.sc_section_header">
                     <t t-set="title">Computer (Chrome or Edge)</t>
                 </t>
-                <ol class="o_sc_steps">
+                <ol class="o_pk_steps">
                     <li>Click the install icon at the right of the address bar.</li>
                     <li>Confirm « Install ».</li>
                 </ol>
             </section>
-            <p class="o_sc_footnote">Without a connection the app only shows an offline page: no team or player data is kept on the device.</p>
+            <p class="o_pk_footnote">Without a connection the app only shows an offline page: no team or player data is kept on the device.</p>
         </t>
     </template>
 
@@ -464,12 +464,12 @@
                 <title>Le Fit Crew</title>
                 <link rel="stylesheet" href="/bemade_sports_clinic/static/src/css/sc_offline.css"/>
             </head>
-            <body class="o_sc_offline">
-                <main class="o_sc_offline_main">
+            <body class="o_pk_offline">
+                <main class="o_pk_offline_main">
                     <img src="/bemade_sports_clinic/static/src/img/sc_logo_chrome.png" alt="" width="96" height="96"/>
                     <h1>You are offline</h1>
                     <p>Le Fit Crew needs a connection to show teams and players. Your drafts stay on this device and come back when you return to the page.</p>
-                    <a href="/my/home" class="o_sc_offline_retry">Try again</a>
+                    <a href="/my/home" class="o_pk_offline_retry">Try again</a>
                 </main>
             </body>
         </html>
@@ -488,8 +488,8 @@
         </div>
         <div t-if="(player.training_recommendation or '').strip()" class="o_sc_row_detail_training" data-sc-row-detail-section="training">
             <h3 class="o_sc_change_detail_sub">Training Recommendation</h3>
-            <p class="o_sc_pre" t-out="player.training_recommendation"/>
-            <p t-if="player.last_training_recommendation_info" class="o_sc_meta"
+            <p class="o_pk_pre" t-out="player.training_recommendation"/>
+            <p t-if="player.last_training_recommendation_info" class="o_pk_meta"
                data-sc-change-detail-stamp="1" t-out="player.last_training_recommendation_info"/>
         </div>
         <div t-if="player.stage != 'healthy'" class="text-muted small d-flex align-items-center mb-2">
@@ -508,9 +508,9 @@
          non-injury changes, then the injuries, each with its own changes.
          Reuses the legacy injury card and change list. -->
     <template id="sc_player_change_detail" name="App shell: player change detail">
-        <!-- Task 1626: o_sc_legacy here (was on the <details> body that
+        <!-- Task 1626: o_pk_legacy here (was on the <details> body that
              held it) — the legacy partials keep the shell's tokens. -->
-        <div class="o_sc_change_detail o_sc_legacy">
+        <div class="o_sc_change_detail o_pk_legacy">
             <!-- Task 1651: the shared head (as in the other player cards). -->
             <t t-call="bemade_sports_clinic.sc_player_detail_head"/>
             <div t-if="items" class="o_sc_recent_changes_content mb-2">
@@ -545,7 +545,7 @@
             </t>
             <!-- Task 1626: the app's dashboard card detail ends with the
                  player page link (the legacy fragment has no player_url). -->
-            <a t-if="player_url" t-att-href="player_url" class="o_sc_section_more">Open the player page</a>
+            <a t-if="player_url" t-att-href="player_url" class="o_pk_section_more">Open the player page</a>
         </div>
     </template>
 
@@ -556,7 +556,7 @@
          the active injuries (sports.patient._card_active_injuries, read as
          the viewer: no hidden injury nor internal note for a coach). -->
     <template id="sc_player_row_detail" name="App shell: player row detail">
-        <div class="o_sc_change_detail o_sc_row_detail_body" t-att-data-sc-row-detail-player="player.id">
+        <div class="o_sc_change_detail o_pk_row_detail_body" t-att-data-sc-row-detail-player="player.id">
             <!-- Task 1651: the shared head (as in the other player cards). -->
             <t t-call="bemade_sports_clinic.sc_player_detail_head"/>
             <t t-if="active_injuries">
@@ -567,8 +567,8 @@
                     </t>
                 </t>
             </t>
-            <p t-else="" class="o_sc_empty" data-sc-row-detail-section="no_injury">No active injuries.</p>
-            <a t-att-href="player_url" class="o_sc_section_more">Open the player page</a>
+            <p t-else="" class="o_pk_empty" data-sc-row-detail-section="no_injury">No active injuries.</p>
+            <a t-att-href="player_url" class="o_pk_section_more">Open the player page</a>
         </div>
     </template>
 

@@ -1,5 +1,5 @@
 /*
- * Task 1616 — the injury card as the injury's page (inert outside .o_sc_app):
+ * Task 1616 — the injury card as the injury's page (inert outside .o_pk_app):
  *
  * - (task 1676: the bottom « Done » is gone — each edit group closes with
  *   its pencil's ✓ or its own « Done »);
@@ -29,7 +29,7 @@
 import { _t } from "@web/core/l10n/translation";
 
 function inShell(node) {
-    return Boolean(node && node.closest && node.closest(".o_sc_app"));
+    return Boolean(node && node.closest && node.closest(".o_pk_app"));
 }
 
 // --------------------------------------- chevron-only fold (task 1736)
@@ -101,7 +101,7 @@ document.addEventListener("sc:saved", (ev) => {
     if (!stage) {
         return;
     }
-    for (const holder of document.querySelectorAll(`.o_sc_app [data-sc-stage-of="${detail.recordId}"]`)) {
+    for (const holder of document.querySelectorAll(`.o_pk_app [data-sc-stage-of="${detail.recordId}"]`)) {
         const show = holder.dataset.scStageShow;
         const hide = holder.dataset.scStageHide;
         holder.hidden = show ? stage !== show : hide ? stage === hide : holder.hidden;
@@ -203,27 +203,27 @@ function checkFiles(form) {
                 const item = document.createElement("li");
                 const tooLarge = max && file.size > max;
                 ok = ok && !tooLarge;
-                item.className = tooLarge ? "o_sc_file o_sc_file_too_large" : "o_sc_file";
+                item.className = tooLarge ? "o_pk_file o_pk_file_too_large" : "o_pk_file";
                 item.dataset.scFileTooLarge = tooLarge ? "1" : "0";
                 item.dataset.scFileIndex = String(index);
                 const name = document.createElement("span");
-                name.className = "o_sc_file_name";
+                name.className = "o_pk_file_name";
                 name.textContent = file.name;
                 const size = document.createElement("span");
-                size.className = "o_sc_file_size";
+                size.className = "o_pk_file_size";
                 size.textContent = tooLarge
                     ? _t("%(size)s — over 10 MB", { size: formatSize(file.size) })
                     : formatSize(file.size);
                 const remove = document.createElement("button");
                 remove.type = "button";
-                remove.className = "o_sc_file_remove";
+                remove.className = "o_pk_file_remove";
                 remove.dataset.scFileRemove = String(index);
                 const label = _t("Remove %(file)s", { file: file.name });
                 remove.setAttribute("aria-label", label);
                 remove.title = label;
                 remove.textContent = "×";
                 const head = document.createElement("div");
-                head.className = "o_sc_file_head";
+                head.className = "o_pk_file_head";
                 head.append(name, size, remove);
                 item.append(head);
                 const row = fileRow(form, file);
@@ -248,7 +248,7 @@ function checkFiles(form) {
         // Owner 2026-10-18: never shown (hidden defaults only).
         shared.hidden = true;
     }
-    const text = form.querySelector(".o_sc_dropzone_text");
+    const text = form.querySelector(".o_pk_dropzone_text");
     if (text) {
         text.dataset.scOriginal = text.dataset.scOriginal || text.textContent;
         text.textContent = files.length
@@ -361,8 +361,8 @@ export function setUploadBusy(form, busy) {
         }
     }
     if (submit) {
-        const idle = submit.querySelector(".o_sc_btn_idle");
-        const label = submit.querySelector(".o_sc_btn_busy");
+        const idle = submit.querySelector(".o_pk_btn_idle");
+        const label = submit.querySelector(".o_pk_btn_busy");
         if (idle && label) {
             idle.hidden = busy;
             label.hidden = !busy;
@@ -420,14 +420,14 @@ for (const type of ["dragenter", "dragover"]) {
         const zone = ev.target.closest && ev.target.closest("[data-sc-dropzone]");
         if (zone && inShell(zone)) {
             ev.preventDefault();
-            zone.classList.add("o_sc_dropzone_over");
+            zone.classList.add("o_pk_dropzone_over");
         }
     });
 }
 document.addEventListener("dragleave", (ev) => {
     const zone = ev.target.closest && ev.target.closest("[data-sc-dropzone]");
     if (zone && !zone.contains(ev.relatedTarget)) {
-        zone.classList.remove("o_sc_dropzone_over");
+        zone.classList.remove("o_pk_dropzone_over");
     }
 });
 document.addEventListener("drop", (ev) => {
@@ -436,7 +436,7 @@ document.addEventListener("drop", (ev) => {
         return;
     }
     ev.preventDefault();
-    zone.classList.remove("o_sc_dropzone_over");
+    zone.classList.remove("o_pk_dropzone_over");
     const form = uploadForm(zone);
     if (form && ev.dataTransfer && ev.dataTransfer.files.length) {
         // Review fixes 2026-10-18: dropped files are ADDED to the selection.

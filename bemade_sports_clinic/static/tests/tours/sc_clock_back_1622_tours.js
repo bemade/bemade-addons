@@ -33,33 +33,33 @@ function activitiesSteps() {
     return [
         {
             content: "Activities from the clock: the back arrow shows",
-            trigger: ".o_sc_app.o_sc_back_useful a.o_sc_back[data-pk-back]",
+            trigger: ".o_pk_app.o_pk_back_useful a.o_pk_back[data-pk-back]",
             run() {
                 assert(window.location.pathname.endsWith("/my/activities"), window.location.href);
-                assert(visible(".o_sc_back"), "clock: back arrow hidden");
-                assert(!document.querySelector(".o_sc_appbar a.o_sc_logo"), "clock: logo instead of back");
-                const href = document.querySelector("a.o_sc_back").getAttribute("href");
+                assert(visible(".o_pk_back"), "clock: back arrow hidden");
+                assert(!document.querySelector(".o_pk_appbar a.o_pk_logo"), "clock: logo instead of back");
+                const href = document.querySelector("a.o_pk_back").getAttribute("href");
                 assert(href.includes("/my/player?player_id="), `back href is not the player: ${href}`);
             },
         },
         {
             content: "Switch to the All tab",
-            trigger: '.o_sc_app a[data-sc-tab="all"]',
+            trigger: '.o_pk_app a[data-sc-tab="all"]',
             run: "click",
         },
         {
             content: "All tab: the arrow is still there; go back",
-            trigger: '.o_sc_app section[data-sc-tab-panel="all"]:not([hidden])',
+            trigger: '.o_pk_app section[data-sc-tab-panel="all"]:not([hidden])',
             run() {
                 assert(window.location.search.includes("sc_from="), window.location.href);
-                assert(visible(".o_sc_back"), "tab switch: back arrow gone");
-                document.querySelector("a.o_sc_back").click();
+                assert(visible(".o_pk_back"), "tab switch: back arrow gone");
+                document.querySelector("a.o_pk_back").click();
             },
             expectUnloadPage: true,
         },
         {
             content: "Back on the player page",
-            trigger: ".o_sc_app .o_sc_appbar_title",
+            trigger: ".o_pk_app .o_pk_appbar_title",
             run() {
                 assert(window.location.pathname.endsWith("/my/player"), window.location.href);
                 assert(window.location.search.includes("player_id="), window.location.href);
@@ -73,7 +73,7 @@ tours.add("sc_1622_clock_back", {
     steps: () => [
         {
             content: "Player page: tap the app-bar clock",
-            trigger: ".o_sc_appbar a[data-sc-activity-clock-bar]",
+            trigger: ".o_pk_appbar a[data-sc-activity-clock-bar]",
             run(helpers) {
                 assert(window.location.pathname.endsWith("/my/player"), window.location.href);
                 reloadIfRestored();

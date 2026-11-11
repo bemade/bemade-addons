@@ -6,7 +6,7 @@ Synthetic fixtures only.
 Acceptance criteria:
 
 * AC-1 Therapist: every player card's Match and Practice pills are two
-  compact ``button.o_sc_pill_select`` (short label « Match » / « Practice »,
+  compact ``button.o_pk_pill_select`` (short label « Match » / « Practice »,
   coloured by value, chevron), each opening a ``role="menu"`` — on the
   dashboard, the roster and /my/players. The full « Match: Yes » text stays
   the button's title.
@@ -19,7 +19,7 @@ Acceptance criteria:
 * AC-5 In-place refresh: each card's link-row part (dot, pills, ⚡, training
   and « Retour prévu » lines) is the read fragment
   ``sports.patient:<id>:row-<scope>`` — unique on the page, never holding
-  the lazy ``.o_sc_row_detail``, kept (not emptied) when a fresh render
+  the lazy ``.o_pk_row_detail``, kept (not emptied) when a fresh render
   lists the player elsewhere; a ``sc_status`` save refreshes it and the
   fresh fragment carries the new colours, dot and return line plus the
   ``write_date`` / ``old_value`` the next pick posts.
@@ -93,7 +93,7 @@ class CardPills1634Common(FragmentsCommon):
     @staticmethod
     def _toggles(node):
         return {b.getparent().get('data-sc-pill-key'): b
-                for b in node.xpath('.//button[contains(@class, "o_sc_pill_select")]')}
+                for b in node.xpath('.//button[contains(@class, "o_pk_pill_select")]')}
 
     @staticmethod
     def _menu(tree, toggle):
@@ -119,11 +119,11 @@ class TestCardStatusPills1634(CardPills1634Common):
                 for key, value in (('match', match), ('practice', practice)):
                     button = toggles[key]
                     self.assertEqual(button.get('aria-haspopup'), 'menu')
-                    self.assertIn('o_sc_chip_%s' % TONES[value], button.get('class'), (scope, key))
+                    self.assertIn('o_pk_chip_%s' % TONES[value], button.get('class'), (scope, key))
                     wrap = button.getparent()
-                    self.assertIn('o_sc_pill_select_compact', wrap.get('class'))
+                    self.assertIn('o_pk_pill_select_compact', wrap.get('class'))
                     # Short label on the face, the full value as the title.
-                    text = ' '.join(button.xpath('.//*[contains(@class, "o_sc_pill_text")]//text()')).strip()
+                    text = ' '.join(button.xpath('.//*[contains(@class, "o_pk_pill_text")]//text()')).strip()
                     self.assertEqual(text, {'match': 'Match', 'practice': 'Practice'}[key])
                     self.assertIn(':', button.get('title'))
                     self.assertTrue(button.xpath('.//*[local-name()="svg"]'), 'no chevron')
@@ -142,15 +142,15 @@ class TestCardStatusPills1634(CardPills1634Common):
             tree = self._page(self.team_url)
         for scope in ('dash', 'roster'):
             row = self._row(tree, scope)
-            self.assertFalse(row.xpath('.//*[contains(@class, "o_sc_pill_select")]'), scope)
+            self.assertFalse(row.xpath('.//*[contains(@class, "o_pk_pill_select")]'), scope)
             self.assertFalse(row.xpath('.//*[@data-sc-pill-select]'), scope)
-            pills = row.xpath('.//*[contains(@class, "o_sc_row_status")]/span[contains(@class, "o_sc_status_pill")]')
+            pills = row.xpath('.//*[contains(@class, "o_sc_row_status")]/span[contains(@class, "o_pk_status_pill")]')
             self.assertEqual(len(pills), 2, scope)
             for pill in pills:
-                self.assertIn('o_sc_chip_red', pill.get('class'))
-        self.assertFalse(tree.xpath('//*[contains(@class, "o_sc_pill_popup")]'))
+                self.assertIn('o_pk_chip_red', pill.get('class'))
+        self.assertFalse(tree.xpath('//*[contains(@class, "o_pk_pill_popup")]'))
         tree = self._page('/my/players')
-        self.assertFalse(self._row(tree, 'players').xpath('.//*[contains(@class, "o_sc_pill_select")]'))
+        self.assertFalse(self._row(tree, 'players').xpath('.//*[contains(@class, "o_pk_pill_select")]'))
 
     # -- AC-3 ------------------------------------------------------------
     def test_menu_ids_unique_per_row_scope(self):
@@ -159,7 +159,7 @@ class TestCardStatusPills1634(CardPills1634Common):
             tree = self._page(self.team_url)
         ids = tree.xpath('//@id')
         self.assertEqual(len(ids), len(set(ids)), 'duplicate ids on the team page')
-        controls = tree.xpath('//button[contains(@class, "o_sc_pill_select")]/@aria-controls')
+        controls = tree.xpath('//button[contains(@class, "o_pk_pill_select")]/@aria-controls')
         self.assertGreaterEqual(len(controls), 6)  # 2 players on the roster + the dashboard card
         for control in controls:
             self.assertEqual(len(tree.xpath('//*[@id="%s"]' % control)), 1, control)
@@ -178,7 +178,7 @@ class TestCardStatusPills1634(CardPills1634Common):
         popup = self._menu(tree, toggles['practice'])[0]
         state = {}
         for item in popup.xpath('.//*[@role="menuitemradio"]'):
-            hint = ' '.join(item.xpath('.//*[contains(@class, "o_sc_pill_hint")]//text()')).strip()
+            hint = ' '.join(item.xpath('.//*[contains(@class, "o_pk_pill_hint")]//text()')).strip()
             if item.get('aria-disabled') == 'true':
                 self.assertTrue(hint)
                 self.assertFalse(item.get('data-sc-pill-post'))
@@ -199,11 +199,11 @@ class TestCardStatusPills1634(CardPills1634Common):
             node = self._node(tree, self._key(scope))
             self.assertIsNotNone(node, scope)
             self.assertTrue(node.xpath('ancestor::*[@data-sc-player-id="%s"]' % self.player.id))
-            self.assertIn('o_sc_link_row', node.get('class'))
+            self.assertIn('o_pk_link_row', node.get('class'))
             self.assertEqual(node.get('data-sc-fragment-keep'), '1')
             # Pills, dot and lines inside; the lazy detail outside.
             self.assertEqual(len(self._toggles(node)), 2)
-            self.assertTrue(node.xpath('.//*[contains(@class, "o_sc_dot")]'))
+            self.assertTrue(node.xpath('.//*[contains(@class, "o_pk_dot")]'))
             self.assertFalse(node.xpath('.//*[@data-sc-row-detail]'))
             self.assertTrue(row.xpath('./*[@data-sc-row-detail]'))
         with self._presence():
@@ -223,8 +223,8 @@ class TestCardStatusPills1634(CardPills1634Common):
         for scope in ('dash', 'roster'):
             node = lxml_html.fragment_fromstring(answer['fragments'][self._key(scope)])
             for key, button in self._toggles(node).items():
-                self.assertIn('o_sc_chip_red', button.get('class'), (scope, key))
-            self.assertTrue(node.xpath('.//*[contains(@class, "o_sc_dot") and contains(@class, "o_sc_tone_red")]'))
+                self.assertIn('o_pk_chip_red', button.get('class'), (scope, key))
+            self.assertTrue(node.xpath('.//*[contains(@class, "o_pk_dot") and contains(@class, "o_pk_tone_red")]'))
             self.assertTrue(node.xpath('.//*[@data-sc-row-return]'), 'no « Retour prévu » line')
             wrap = node.xpath('.//*[@data-sc-pill-select]')[0]
             self.assertEqual(wrap.get('data-sc-write-date'), payload['write_date'])
@@ -236,9 +236,9 @@ class TestCardStatusPills1634(CardPills1634Common):
         tree = self._page('/my/players?last_name=Two')
         locked = tree.xpath('//*[@data-sc-row-locked][@data-sc-player-id="%s"]' % self.player_b.id)
         self.assertTrue(locked)
-        self.assertFalse(locked[0].xpath('.//*[contains(@class, "o_sc_pill_select")]'))
+        self.assertFalse(locked[0].xpath('.//*[contains(@class, "o_pk_pill_select")]'))
         self.assertFalse(locked[0].xpath('.//*[@data-sc-fragment]'))
-        self.assertEqual(len(locked[0].xpath('.//span[contains(@class, "o_sc_status_pill")]')), 2)
+        self.assertEqual(len(locked[0].xpath('.//span[contains(@class, "o_pk_status_pill")]')), 2)
 
     # -- AC-7 ------------------------------------------------------------
     def test_selection_labels_once_per_request(self):

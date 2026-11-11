@@ -47,7 +47,7 @@ class _NoTypeCommon(ActivityCards1736r1Common):
 
     def _page_read_text(self, activity):
         _text, page = self._get('/my/activity/%s' % activity.id)
-        kv = page.xpath('//dl[contains(@class, "o_sc_kv")]')
+        kv = page.xpath('//dl[contains(@class, "o_pk_kv")]')
         self.assertTrue(kv, 'the read view')
         return ' '.join(self._flat(dl) for dl in kv)
 

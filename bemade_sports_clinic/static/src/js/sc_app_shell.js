@@ -8,20 +8,20 @@
  * With it, the post goes through fetch (JSON answer) and the theme switches
  * in place, no reload. (Task 1579 removed the navigation-mode setting.)
  *
- * Inert outside the shell: it only acts on forms inside .o_sc_app.
+ * Inert outside the shell: it only acts on forms inside .o_pk_app.
  */
 (function () {
     "use strict";
 
     function applyTheme(app, theme) {
-        app.setAttribute("data-sc-theme", theme);
-        document.body.classList.remove("o_sc_app_body_dark", "o_sc_app_body_light");
-        document.body.classList.add("o_sc_app_body_" + theme);
+        app.setAttribute("data-pk-theme", theme);
+        document.body.classList.remove("o_pk_app_body_dark", "o_pk_app_body_light");
+        document.body.classList.add("o_pk_app_body_" + theme);
         var meta = document.querySelector('meta[name="theme-color"]');
         if (meta) {
             meta.setAttribute("content", theme === "light" ? "#243925" : "#120e12");
         }
-        var toggles = app.querySelectorAll('.o_sc_theme_toggle button[name="sc_theme"]');
+        var toggles = app.querySelectorAll('.o_pk_theme_toggle button[name="sc_theme"]');
         toggles.forEach(function (button) {
             button.value = theme === "light" ? "dark" : "light";
         });
@@ -43,7 +43,7 @@
         if (!form || !form.matches || !form.matches("form[data-sc-pref]")) {
             return;
         }
-        var app = form.closest(".o_sc_app");
+        var app = form.closest(".o_pk_app");
         if (!app || !window.fetch || !window.FormData) {
             return;
         }
