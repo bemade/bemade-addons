@@ -1,4 +1,4 @@
-from odoo import api, models
+from odoo import api, fields, models
 
 # Employee fields deciding whether its user is subject to the policy.
 POLICY_FIELDS = frozenset(("user_id", "company_id", "active"))
@@ -6,6 +6,13 @@ POLICY_FIELDS = frozenset(("user_id", "company_id", "active"))
 
 class HrEmployee(models.Model):
     _inherit = "hr.employee"
+
+    signature_show_mobile = fields.Boolean(
+        string="Show cell phone in email signature",
+        default=False,
+        help="Show the work mobile in the company-standard email signature. "
+        "Each person can also change it from their own preferences.",
+    )
 
     def _company_signature_policy_active(self):
         return bool(
@@ -40,3 +47,13 @@ class HrEmployee(models.Model):
         users = self.sudo().with_context(active_test=False).user_id
         with users._company_signature_transition():
             return super().unlink()
+
+
+class HrEmployeePublic(models.Model):
+    _inherit = "hr.employee.public"
+
+    # Public so that a non-HR user can read their own toggle from the
+    # preferences (hr reads ``hr.employee`` through the public profile).
+    signature_show_mobile = fields.Boolean(
+        string="Show cell phone in email signature", readonly=True
+    )
