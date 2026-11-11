@@ -110,6 +110,23 @@ class TestShowMobile(CompanySignatureCommon):
         self.assertFalse(self.emp_cell.signature_show_mobile)
         self.assertNotIn(MOBILE, user.signature)
 
+    def test_non_hr_user_reads_own_preferences(self):
+        """Every field of the preferences form must stay self-readable.
+
+        One field outside SELF_READABLE_FIELDS makes res.users.read() drop its
+        self-read sudo, and a non-HR user's My Preferences then fails on hr's
+        private employee fields (seen with ``company_signature_enforced``).
+        """
+        user = self.u_cell
+        self.assertFalse(user.has_group("hr.group_hr_user"))
+        users = self.env["res.users"].with_user(user)
+        view_id = self.env.ref(PREFERENCES_VIEW).id
+        fields = users.get_views([[view_id, "form"]])["models"]["res.users"]["fields"]
+        spec = {name: {} for name in fields}
+        values = users.browse(user.id).web_read(spec)[0]
+        self.assertIn("company_signature_enforced", values)
+        self.assertIn("signature_show_mobile", values)
+
     def test_user_cannot_toggle_someone_else(self):
         with mute_logger("odoo.models", "odoo.addons.base.models.ir_rule"):
             with self.assertRaises(AccessError):

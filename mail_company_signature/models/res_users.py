@@ -47,7 +47,14 @@ class ResUsers(models.Model):
 
     @property
     def SELF_READABLE_FIELDS(self):
-        return super().SELF_READABLE_FIELDS + ["signature_show_mobile"]
+        # company_signature_enforced sits (invisible) on the preferences form.
+        # A form field missing from this list makes res.users.read() drop its
+        # self-read sudo, so a non-HR user's My Preferences then fails on hr's
+        # private employee fields (pin, private_street, ...).
+        return super().SELF_READABLE_FIELDS + [
+            "company_signature_enforced",
+            "signature_show_mobile",
+        ]
 
     @property
     def SELF_WRITEABLE_FIELDS(self):
