@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="email_compose_message_wizard_form" model="ir.ui.view">
+        <field name="name">mail.compose.message.form.notified.preview</field>
+        <field name="model">mail.compose.message</field>
+        <field name="inherit_id" ref="mail.email_compose_message_wizard_form" />
+        <field name="arch" type="xml">
+            <!-- Anchored before Subject, not after the To row: the recipient
+                 rows other modules add after To (e.g. mail_composer_cc_bcc's
+                 Cc/Bcc) stay above the line whatever the load order. -->
+            <xpath expr="//field[@name='subject']" position="before">
+                <field
+          name="notified_followers_preview"
+          nolabel="1"
+          colspan="2"
+          class="o_notified_followers_preview text-muted fst-italic"
+          invisible="not notified_followers_preview"
+        />
+            </xpath>
+        </field>
+    </record>
+</odoo>
