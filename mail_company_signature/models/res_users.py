@@ -189,6 +189,28 @@ class ResUsers(models.Model):
                 company._company_signature_render(values_by_user[user.id])
             )
 
+    @api.onchange("signature_show_mobile")
+    def _onchange_signature_show_mobile(self):
+        """Refresh the signature preview in the form before saving.
+
+        The stored signature is regenerated on save; this only renders what
+        it will become, from the saved employee data and the box as ticked
+        in the form.
+        """
+        for user in self:
+            origin = user._origin
+            if not origin or origin not in origin._company_signature_enforced_users():
+                continue
+            values = origin.sudo()._company_signature_values()[origin.id]
+            emp = origin.sudo()._company_signature_employees().get(origin.id)
+            values["mobile_phone"] = (
+                (emp.mobile_phone or "") if emp and user.signature_show_mobile else ""
+            )
+            company = origin.company_id.sudo()
+            user.signature = company._company_signature_compact(
+                company._company_signature_render(values)
+            )
+
     def _company_signature_values(self):
         """Placeholder values for every user of the recordset, in one batch.
 

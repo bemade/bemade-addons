@@ -110,6 +110,16 @@ class TestShowMobile(CompanySignatureCommon):
         self.assertFalse(self.emp_cell.signature_show_mobile)
         self.assertNotIn(MOBILE, user.signature)
 
+    def test_preferences_preview_refreshes_before_save(self):
+        self._enable()
+        user = self.u_cell
+        form = Form(user.with_user(user), view=PREFERENCES_VIEW)
+        self.assertNotIn(MOBILE, form.signature)
+        form.signature_show_mobile = True
+        self.assertIn(MOBILE, form.signature)
+        form.signature_show_mobile = False
+        self.assertNotIn(MOBILE, form.signature)
+
     def test_non_hr_user_reads_own_preferences(self):
         """Every field of the preferences form must stay self-readable.
 
