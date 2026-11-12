@@ -14,14 +14,25 @@
   left, and every ``bemade_portal_kit.<new name>`` row exists (a view).
 * UC-A4 The kit's views name no consumer: no ``o_sc_`` class, no
   ``data-sc-`` attribute, no ``bemade_sports_clinic.`` reference.
+* UC-A5 (task 5372) The kit adopts at INSTALL too: the manifest declares a
+  ``pre_init_hook`` that adopts the views of ``ADOPTED_VIEWS`` (a database
+  with the consumer but not the kit installs the kit as a new dependency,
+  and an installed module runs no migration script).
+* UC-A6 (task 5372) When both the kit's external id and the old consumer
+  external id exist, ``adopt_views`` changes nothing but logs a WARNING
+  naming both, so a broken upgrade path shows in the log. An already
+  adopted view (old external id gone) logs no warning.
 Synthetic views only (module ``pk_test_consumer``).
 """
 import os
 import re
+from unittest.mock import patch
 
-from odoo.modules.module import get_module_path
+from odoo.modules.module import get_manifest, get_module_path
 from odoo.tests import TransactionCase, tagged
 
+from odoo.addons import bemade_portal_kit
+from odoo.addons.bemade_portal_kit.tools import adopt
 from odoo.addons.bemade_portal_kit.tools.adopt import ADOPTED_VIEWS, KIT, adopt_views
 
 CONSUMER = 'pk_test_consumer'
@@ -81,10 +92,38 @@ class TestPkAdopt(TransactionCase):
         self.env['ir.model.data'].create({
             'module': KIT, 'name': 'pk_test_new', 'model': 'ir.ui.view', 'res_id': other.id,
         })
-        self.assertEqual(adopt_views(self.env.cr, self.mapping), [])
+        with self.assertLogs(adopt._logger, 'WARNING') as logs:
+            self.assertEqual(adopt_views(self.env.cr, self.mapping), [])
         self.env.invalidate_all()
         self.assertEqual(self._imd(CONSUMER, 'pk_test_old').res_id, self.view.id)
         self.assertEqual(self.view.key, '%s.pk_test_old' % CONSUMER)
+        self.assertEqual(self.view.exists(), self.view)
+        # UC-A6: the warning names both external ids and both view ids.
+        self.assertEqual(len(logs.records), 1)
+        message = logs.records[0].getMessage()
+        for part in ('%s.pk_test_old' % CONSUMER, '%s.pk_test_new' % KIT, str(self.view.id), str(other.id)):
+            self.assertIn(part, message)
+
+    def test_already_adopted_no_warning(self):
+        self.assertTrue(adopt_views(self.env.cr, self.mapping))
+        with self.assertNoLogs(adopt._logger, 'WARNING'):
+            self.assertEqual(adopt_views(self.env.cr, self.mapping), [])
+
+    def test_install_hook_adopts(self):
+        manifest = get_manifest(KIT)
+        self.assertEqual(manifest.get('pre_init_hook'), 'pre_init_hook')
+        hook = getattr(bemade_portal_kit, manifest['pre_init_hook'])
+        with patch.object(adopt, 'ADOPTED_VIEWS', self.mapping):
+            hook(self.env)
+        self.env.invalidate_all()
+        self.assertFalse(self._imd(CONSUMER, 'pk_test_old'))
+        new = self._imd(KIT, 'pk_test_new')
+        self.assertEqual((new.model, new.res_id), ('ir.ui.view', self.view.id))
+        self.assertEqual(self.view.key, '%s.pk_test_new' % KIT)
+        self.assertEqual(self.child.inherit_id, self.view)
+        # A second run (an install hook after a migration) finds nothing to do.
+        with patch.object(adopt, 'ADOPTED_VIEWS', self.mapping), self.assertNoLogs(adopt._logger, 'WARNING'):
+            hook(self.env)
 
     def test_missing_old_view_skipped(self):
         self.assertEqual(adopt_views(self.env.cr, ((CONSUMER, 'pk_test_absent', 'pk_test_absent_new'),)), [])

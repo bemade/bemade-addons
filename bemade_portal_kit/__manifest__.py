@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.6.0',
+    'version': '19.0.1.6.1',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -182,8 +182,9 @@ with ``t-call="bemade_portal_kit.<name>"``):
 
 They were the first consumer's templates: their records keep their ids
 (inheriting views and translations stay) and only their external ids
-change, in a pre-migration of the kit and of the consumer
-(``tools/adopt.py``, ``ADOPTED_VIEWS``).
+change, in a pre-migration of the kit and of the consumer, and in the
+kit's ``pre_init_hook`` when the kit is installed into a database that has
+the consumer already (version 1.6.1; ``tools/adopt.py``, ``ADOPTED_VIEWS``).
 
 The glyphs are taken from, or drawn after, Feather Icons 4.29 (MIT License,
 copyright Cole Bemis): ``static/src/icons/LICENSE-feather.txt``.
@@ -283,6 +284,7 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/tests/**/*',
         ],
     },
+    'pre_init_hook': 'pre_init_hook',
     'installable': True,
     'application': False,
 }
