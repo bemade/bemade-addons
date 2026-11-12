@@ -1,4 +1,9 @@
 .o-mail-Composer-signaturePreview {
+  // The composer is a 2-column grid (avatar | core). Without an explicit
+  // position this block was auto-placed in the narrow avatar column. Put it
+  // in the core column, on its own row below the input and attachments.
+  grid-column: 2;
+  grid-row: 4;
   font-size: 0.85em;
   opacity: 0.85;
 

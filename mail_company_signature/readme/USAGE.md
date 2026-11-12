@@ -8,11 +8,16 @@
    be restored with "Restore personal signature".
 3. Company notice: in the same block, type the notice and optionally a "Show
    until" date; put `{{company_notice}}` in the template where it must appear.
-4. To let one user keep their own signature: Settings > Users > the user >
+4. Cell phone: hidden by default. Tick "Show cell phone in email signature"
+   on the employee form (next to the work mobile), or let each person tick it
+   in their own preferences (avatar > My Profile / Preferences).
+5. To let one user keep their own signature: Settings > Users > the user >
    Preferences tab, tick "Manage own signature".
 
 Rollout notes:
 
+* When the policy is switched on, every cell number stays hidden until people
+  tick "Show cell phone in email signature": tell them.
 * Review HR job titles before enabling: they are mostly single-language, and a
   bilingual title should be entered as such on the employee. With
   `{{job_position}}`, translate the job positions in French instead.

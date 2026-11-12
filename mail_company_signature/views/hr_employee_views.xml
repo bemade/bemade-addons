@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_employee_form" model="ir.ui.view">
+        <field name="name">hr.employee.form.company.signature</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='mobile_phone']/.." position="after">
+                <div class="d-flex align-items-baseline mb-1">
+                    <field name="signature_show_mobile" class="w-auto me-1" />
+                    <label for="signature_show_mobile" class="fw-normal" />
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

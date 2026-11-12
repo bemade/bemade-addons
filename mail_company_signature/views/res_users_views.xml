@@ -46,6 +46,7 @@
             </field>
             <field name="signature" position="before">
                 <field name="company_signature_enforced" invisible="1" />
+                <field name="employee_id" invisible="1" />
             </field>
             <field name="signature" position="after">
                 <div
@@ -55,6 +56,7 @@
         >
                     This signature is generated from the company template and cannot be edited.
                 </div>
+                <field name="signature_show_mobile" invisible="not employee_id" />
             </field>
         </field>
     </record>

@@ -140,6 +140,11 @@ msgstr ""
 "Seuls les utilisateurs ayant une fiche employé dans cette entreprise la reçoivent. Désactiver la politique conserve la dernière signature générée de chaque utilisateur; l'originale est conservée dans la fiche de l'utilisateur et peut y être restaurée."
 
 #. module: mail_company_signature
+#: model:ir.model,name:mail_company_signature.model_hr_employee_public
+msgid "Public Employee"
+msgstr "Employé public"
+
+#. module: mail_company_signature
 #. odoo-javascript
 #: code:addons/mail_company_signature/static/src/composer_patch.xml:0
 msgid "Remove signature"
@@ -164,6 +169,24 @@ msgid ""
 msgstr ""
 "Coché lorsque la signature actuelle a été produite par le modèle de "
 "l'entreprise plutôt qu'écrite par une personne."
+
+#. module: mail_company_signature
+#: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee__signature_show_mobile
+#: model:ir.model.fields,field_description:mail_company_signature.field_hr_employee_public__signature_show_mobile
+#: model:ir.model.fields,field_description:mail_company_signature.field_res_users__signature_show_mobile
+msgid "Show cell phone in email signature"
+msgstr "Afficher le cellulaire dans la signature courriel"
+
+#. module: mail_company_signature
+#: model:ir.model.fields,help:mail_company_signature.field_hr_employee__signature_show_mobile
+#: model:ir.model.fields,help:mail_company_signature.field_res_users__signature_show_mobile
+msgid ""
+"Show the work mobile in the company-standard email signature. Each person "
+"can also change it from their own preferences."
+msgstr ""
+"Afficher le cellulaire de travail dans la signature courriel standard de "
+"l'entreprise. Chaque personne peut aussi le changer dans ses propres "
+"préférences."
 
 #. module: mail_company_signature
 #: model:ir.model.fields,field_description:mail_company_signature.field_res_company__company_signature_notice_until
