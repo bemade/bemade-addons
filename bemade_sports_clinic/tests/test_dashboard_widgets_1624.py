@@ -302,5 +302,5 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         self.assertIn('DB Team C', second.xpath('.//*[@data-sc-dw-scope]')[0].text_content())
         self.assertEqual(sorted(self._player_ids(second)), sorted((self.shared | self.yellow).ids))
         # Row fragments / detail ids stay unique on the page.
-        frags = tree.xpath('//*[@data-sc-fragment]/@data-sc-fragment')
+        frags = tree.xpath('//*[@data-pk-fragment]/@data-pk-fragment')
         self.assertEqual(len(frags), len(set(frags)))

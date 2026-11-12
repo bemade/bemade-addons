@@ -227,7 +227,7 @@ class SportsClinicPortalKit(models.AbstractModel):
             # rule: each key is ALSO gated in the template by the controller's
             # existing server-side value (the legacy page's ``is_treatment_prof`` /
             # ``can_*`` flags), and the save route refuses the field server-side
-            # (SAVE_REGISTRY per-role allowlists, controllers/app_shell.py).
+            # (the save specs' per-role allowlists, controllers/app_shell.py).
             'injury.internal_notes': {'include': TP, 'model': 'sports.patient.injury',
                                       'field': 'internal_notes'},
             'players.create': {'include': TP},
@@ -264,6 +264,46 @@ class SportsClinicPortalKit(models.AbstractModel):
     @api.model
     def _pk_pages(self):
         return list(super()._pk_pages()) + sc_app_nav.sc_pages(self)
+
+    # -----------------------------------------------------------------------
+    # Save engine and screen refresh (task 5199: the kit's hooks)
+    # -----------------------------------------------------------------------
+    @api.model
+    def _pk_save_specs(self):
+        """The clinic's save specs (``controllers/app_shell.py``,
+        ``sc_save_specs()``) and its role allowlist on the kit's
+        ``mail.activity`` spec (every staff role)."""
+        from ..controllers.app_shell import SC_ACTIVITY_FIELD_ROLES, sc_save_specs
+        specs = dict(super()._pk_save_specs())
+        if 'mail.activity' in specs:
+            specs['mail.activity'] = dict(
+                specs['mail.activity'], fields={name: STAFF for name in SC_ACTIVITY_FIELD_ROLES})
+        specs.update(sc_save_specs())
+        return specs
+
+    @api.model
+    def _pk_fragment_fillers(self):
+        """Review 2026-10-21 (#1634): a player card moved to another section
+        is refilled from that section (``sc_fill_moved_row_fragments``)."""
+        from ..controllers.app_shell import sc_fill_moved_row_fragments
+        return list(super()._pk_fragment_fillers()) + [sc_fill_moved_row_fragments]
+
+    @staticmethod
+    def _sc_access_controller():
+        from ..controllers.app_shell import AppShellPortal
+        return AppShellPortal()
+
+    @api.model
+    def _pk_activity_can_act(self, activity):
+        """Task 1589: the one act rule of the activity portal
+        (``AccessControlMixin._activity_act_access``)."""
+        return bool(self._sc_access_controller()._activity_act_access(activity))
+
+    @api.model
+    def _pk_activity_assignable_users(self, activity):
+        """Task 1500: the per-actor assignee rule
+        (``AccessControlMixin._activity_assignable_users_for``)."""
+        return self._sc_access_controller()._activity_assignable_users_for(self.env.user)
 
 
 # ---------------------------------------------------------------------------

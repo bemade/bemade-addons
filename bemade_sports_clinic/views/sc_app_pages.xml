@@ -175,7 +175,7 @@
                     <t t-set="title">Appearance</t>
                 </t>
                 <!-- Task 1726: a switch (on = dark); sc_switch.js posts on change. -->
-                <form method="post" action="/my/app/pref" data-sc-pref="1" class="o_pk_card o_pk_switch_card">
+                <form method="post" action="/my/app/pref" data-sc-pref="1" data-pk-no-dirty="1" class="o_pk_card o_pk_switch_card">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="redirect" value="/my/app/settings"/>
                     <t t-call="bemade_sports_clinic.sc_switch">

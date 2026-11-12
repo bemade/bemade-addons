@@ -160,11 +160,11 @@
     // The event page's timesheets section (task 1607): its read-fragment
     // holders take no room while empty, nor does the section when all are.
     .o_sc_event_timesheets {
-        > [data-sc-fragment]:empty {
+        > [data-pk-fragment]:empty {
             display: none;
         }
 
-        &:not(:has(> [data-sc-fragment]:not(:empty))) {
+        &:not(:has(> [data-pk-fragment]:not(:empty))) {
             display: none;
         }
     }

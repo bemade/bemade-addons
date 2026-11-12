@@ -16,7 +16,7 @@
             <t t-set="no_livechat" t-value="True"/>
             <t t-set="body_classname" t-value="'o_pk_app_body o_pk_app_body_%s' % pk_theme"/>
             <t t-set="title">Portal kit style guide</t>
-            <div class="o_pk_app" t-att-data-pk-theme="pk_theme">
+            <div class="o_pk_app" t-att-data-pk-theme="pk_theme" t-att-data-pk-rendered-at="pk_rendered_at">
                 <div class="o_pk_main">
                     <header class="o_pk_appbar">
                         <span class="o_pk_logo">
@@ -65,7 +65,7 @@
 
                         <section class="o_pk_section">
                             <h2 class="o_pk_section_header"><span>Stats</span></h2>
-                            <div class="o_pk_stats">
+                            <div class="o_pk_stats" data-pk-fragment="page:styleguide:stats">
                                 <div class="o_pk_stat o_pk_tone_green"><span class="o_pk_stat_value">12</span><span class="o_pk_stat_label">Ready</span></div>
                                 <div class="o_pk_stat o_pk_tone_yellow"><span class="o_pk_stat_value">3</span><span class="o_pk_stat_label">To check</span></div>
                                 <div class="o_pk_stat o_pk_tone_red"><span class="o_pk_stat_value">1</span><span class="o_pk_stat_label">Blocked</span></div>

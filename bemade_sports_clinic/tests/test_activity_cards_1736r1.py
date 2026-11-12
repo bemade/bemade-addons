@@ -267,7 +267,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         self.assertTrue(root[0].xpath('.//*[contains(@class, "o_pk_chip")]'), 'the state chip')
         # Read-only: no control, no in-place refresh keys.
         self.assertFalse(root[0].xpath('.//owl-component | .//button | .//form | .//input'))
-        self.assertFalse(root[0].xpath('.//*[@data-sc-fragment or @data-sc-display]'))
+        self.assertFalse(root[0].xpath('.//*[@data-pk-fragment or @data-sc-display]'))
 
     def test_popout_refused(self):
         self._switch(True)
@@ -287,7 +287,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         text = ' '.join(card.text_content().split())
         self.assertIn('Created by', text)
         self.assertIn('PC Coach', text)
-        self.assertTrue(card.xpath('.//*[@data-sc-fragment="mail.activity:%s:read"]' % self.act_coach_created.id))
+        self.assertTrue(card.xpath('.//*[@data-pk-fragment="mail.activity:%s:read"]' % self.act_coach_created.id))
         self.assertEqual(tree.xpath('//*[contains(@class, "o_pk_actionbar")]//@data-sc-action'),
                          ['activity.complete'])
 

@@ -16,7 +16,7 @@
  *   card's date follows and « Dépassé » goes (a past date is refused by the
  *   field, #1727); the line counts refresh as read fragments.
  */
-import { requestRefresh } from "@bemade_sports_clinic/js/sc_fragments";
+import { requestRefresh } from "@bemade_portal_kit/js/pk_fragments";
 
 const HOLD_MS = 900;
 
@@ -163,7 +163,7 @@ window.addEventListener(
 );
 
 // ------------------------------------------------ quick « Retour prévu »
-document.addEventListener("sc:saved", (ev) => {
+document.addEventListener("pk:saved", (ev) => {
     const { model, recordId, field, result } = ev.detail || {};
     if (model !== "sports.patient" || field !== "predicted_return_date" || !result || !dashboard()) {
         return;

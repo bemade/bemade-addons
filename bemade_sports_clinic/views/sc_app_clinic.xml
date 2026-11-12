@@ -231,7 +231,7 @@
                                  kept) — a resolved card set back to « Actif »
                                  joins the active list without a reload. -->
                             <div class="o_sc_clinic_injuries" data-pk-section="clinic.dossier.injury_lists"
-                                 t-att-data-sc-fragment="sc_fragment_key(patient, 'injury-lists')" data-sc-fragment-mode="list">
+                                 t-att-data-pk-fragment="pk_fragment_key(patient, 'injury-lists')" data-pk-fragment-mode="list">
                                 <div t-if="sc_injury_rows" class="o_pk_list" data-pk-section="clinic.dossier.injury_list">
                                     <t t-foreach="sc_injury_rows" t-as="row">
                                         <t t-call="bemade_sports_clinic.sc_injury_card"/>
@@ -240,10 +240,10 @@
                                 <p t-else="" class="o_pk_empty" data-pk-section="clinic.dossier.no_active">No active injuries.</p>
                                 <!-- Task 1721: the resolved injuries, folded; the
                                      fold stays open across a refresh
-                                     (data-sc-keep-open, sc_fragments.js). -->
+                                     (data-pk-keep-open, pk_fragments.js). -->
                                 <div class="o_sc_clinic_resolved" data-pk-section="clinic.dossier.resolved">
                                     <details t-if="sc_resolved_injury_rows" class="o_sc_resolved_injuries"
-                                             data-sc-resolved-injuries="1" data-sc-keep-open="resolved-injuries">
+                                             data-sc-resolved-injuries="1" data-pk-keep-open="resolved-injuries">
                                         <summary class="o_pk_link_btn o_sc_resolved_toggle" t-out="sc_resolved_injuries_label"/>
                                         <div class="o_pk_list" data-pk-section="clinic.dossier.resolved_list">
                                             <t t-foreach="sc_resolved_injury_rows" t-as="row">

@@ -61,13 +61,13 @@ class TestVerifyDrop1740(_Verify1740, FragmentsMixin, Dashboard1624Common):
         _text, tree = self._get('/my/home')
         todo = self._section(tree, 'todo')
         line = todo.xpath('.//details[@data-sc-todo="verify"]')[0]
-        self.assertEqual(line.get('data-sc-fragment'), LIST_KEY)
-        self.assertEqual(line.get('data-sc-fragment-mode'), 'list')
+        self.assertEqual(line.get('data-pk-fragment'), LIST_KEY)
+        self.assertEqual(line.get('data-pk-fragment-mode'), 'list')
         self.assertEqual(sorted(line.xpath('.//*[@data-pk-fragment-item]/@data-pk-fragment-item')),
                          sorted('sports.patient.injury:%s:card' % i.id for i in (self.inj_one, self.inj_two)))
         overdue = todo.xpath('.//details[@data-sc-todo="activities_overdue"]')[0]
-        self.assertIsNone(overdue.get('data-sc-fragment'))
-        self.assertIsNone(overdue.get('data-sc-fragment-mode'))
+        self.assertIsNone(overdue.get('data-pk-fragment'))
+        self.assertIsNone(overdue.get('data-pk-fragment-mode'))
         self.assertFragmentMatchesPage('/my/home', LIST_KEY)
 
     # -- UC-2 ---------------------------------------------------------------
@@ -91,7 +91,7 @@ class TestVerifyDrop1740(_Verify1740, FragmentsMixin, Dashboard1624Common):
     def test_player_page_has_no_dashboard_key(self):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&tab=injuries' % self.yellow.id)
-        self.assertFalse([k for k in tree.xpath('//@data-sc-fragment') if k.startswith('sc.dashboard:')])
+        self.assertFalse([k for k in tree.xpath('//@data-pk-fragment') if k.startswith('sc.dashboard:')])
         self.assertTrue(tree.xpath('//*[@data-pk-fragment-item="sports.patient.injury:%s:card"]'
                                    % self.inj_one.id))
 

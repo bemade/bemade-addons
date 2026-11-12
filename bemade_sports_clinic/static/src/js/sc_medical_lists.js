@@ -11,7 +11,7 @@
  * - [data-sc-med-set] inputs (the EpiPen card, « none known ») save one
  *   field of the player; the EpiPen note shows only while EpiPen is ticked.
  *
- * Each answer is announced as an « sc:saved » of the player (its
+ * Each answer is announced as an « pk:saved » of the player (its
  * ``refresh`` patterns): the pills, the popup's head pill, the list (a
  * « list » fragment — the open cards keep their state), the cards follow in
  * place, without a reload.
@@ -27,7 +27,7 @@ function sheetOf(el) {
 
 function announce(sheet, result) {
     document.dispatchEvent(
-        new CustomEvent("sc:saved", {
+        new CustomEvent("pk:saved", {
             detail: {
                 model: "sports.patient",
                 recordId: Number(sheet.dataset.scPatient),
@@ -173,7 +173,7 @@ async function savePlayerField(input) {
     if (field === "allergy_epipen" || field === "allergy_epipen_state") {
         syncEpipenNote(sheet, epipenOn);
     }
-    if (input.type === "checkbox" && input.closest("[data-sc-fragment]")) {
+    if (input.type === "checkbox" && input.closest("[data-pk-fragment]")) {
         // A focused element pins its read fragment (#1641).
         input.blur();
     }

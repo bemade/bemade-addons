@@ -360,7 +360,7 @@
             <section t-attf-class="o_pk_card #{'o_pk_edit_card' if sc_activity_editable else ''}" data-pk-section="activity.detail"
                      t-att-data-pk-edit-card="'activity' if sc_activity_editable else None">
                 <div class="o_pk_edit_card_head">
-                    <span class="o_pk_chips" t-att-data-sc-fragment="sc_fragment_key(activity, 'chips')">
+                    <span class="o_pk_chips" t-att-data-pk-fragment="pk_fragment_key(activity, 'chips')">
                         <span t-if="act_state == 'overdue'" class="o_pk_chip o_pk_chip_red">Overdue</span>
                         <span t-elif="act_state == 'today'" class="o_pk_chip o_pk_chip_yellow">Today</span>
                         <span t-else="" class="o_pk_chip o_pk_chip_ghost">Planned</span>
@@ -373,7 +373,7 @@
                         <t t-set="ci_editable" t-value="sc_activity_editable"/>
                     </t>
                 </div>
-                <div data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(activity, 'read')">
+                <div data-sc-edit-view="read" t-att-data-pk-fragment="pk_fragment_key(activity, 'read')">
                     <t t-call="bemade_sports_clinic.sc_activity_detail_read">
                         <t t-set="act_links" t-value="sc_related_links"/>
                     </t>

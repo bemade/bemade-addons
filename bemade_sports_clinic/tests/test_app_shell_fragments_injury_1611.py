@@ -90,7 +90,7 @@ class TestFragmentsInjury1611(FragmentsCommon):
         self._login_tp()
         def order():
             node = self._fragment(self._url(), self._pkey('injuries'))
-            self.assertEqual(node.get('data-sc-fragment-mode'), 'list')
+            self.assertEqual(node.get('data-pk-fragment-mode'), 'list')
             return node.xpath('.//*[@data-pk-fragment-item]/@data-pk-fragment-item')
         self.assertEqual(order(), [self._ikey(self.injury, 'card'), self._ikey(self.injury_b, 'card')])
         payload = self._saved(self.injury, 'stage', 'resolved')
@@ -153,8 +153,8 @@ class TestFragmentsDossier1611(FragmentsMixin, ClinicDossier1590Common):
         key = 'sports.patient:%s:injury-lists' % self.player.id
         item = 'sports.patient.injury:%s:card' % self.injury.id
         tree = self._get(self._dossier_url())[1]
-        node = tree.xpath('//*[@data-sc-fragment="%s"]' % key)[0]
-        self.assertEqual(node.get('data-sc-fragment-mode'), 'list')
+        node = tree.xpath('//*[@data-pk-fragment="%s"]' % key)[0]
+        self.assertEqual(node.get('data-pk-fragment-mode'), 'list')
         self.assertTrue(node.xpath('.//*[@data-pk-section="clinic.dossier.injury_list"]'
                                    '//*[@data-pk-fragment-item="%s"]' % item))
         payload = self._saved(self.injury, 'stage', 'resolved')

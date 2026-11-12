@@ -4,8 +4,9 @@ from odoo.tools import format_datetime, html2plaintext, plaintext2html
 from odoo.exceptions import UserError, AccessError
 from datetime import datetime, timedelta
 from .access_control_mixin import AccessControlMixin
-from .app_shell import (AppShellMixin, sc_event_team_choices, sc_event_team_ids_check, sc_now_ms,
-                        sc_refresh_patterns)
+from odoo.addons.bemade_portal_kit.tools import pk_now_ms
+
+from .app_shell import AppShellMixin, sc_event_team_choices, sc_event_team_ids_check
 import json
 import logging
 import pytz
@@ -1367,8 +1368,8 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'success': True, 'id': venue.id, 'name': venue.name,
             'event_write_date': fields.Datetime.to_string(event.sudo().write_date),
             'venue_options': self._sc_options(self._sc_event_venue_options(event.sudo())),
-            'refresh': sc_refresh_patterns('sports.event', event, 'venue_id'),
-            'saved_at': sc_now_ms(),
+            'refresh': http.request.env['portal.kit'].pk_refresh_patterns(event, 'venue_id'),
+            'saved_at': pk_now_ms(),
         }
 
     @staticmethod

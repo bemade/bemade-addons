@@ -150,13 +150,13 @@ class TestHeaderOrder1615(PlayerInlineCommon):
             login()
             _text, tree = self._get(self._url(tab='injuries'))
             hero = self._hero(tree)
-            keys = set(hero.xpath('.//@data-sc-fragment'))
+            keys = set(hero.xpath('.//@data-pk-fragment'))
             for part in ('hero-head', 'hero-chips', 'medical-pills', 'hero-actions', 'status', 'predicted-return',
                          'training'):
                 self.assertIn('sports.patient:%s:%s' % (pid, part), keys)
             # Never an island inside a read fragment.
-            for node in hero.xpath('.//*[@data-sc-fragment]'):
-                self.assertFalse(node.xpath('.//owl-component'), node.get('data-sc-fragment'))
+            for node in hero.xpath('.//*[@data-pk-fragment]'):
+                self.assertFalse(node.xpath('.//owl-component'), node.get('data-pk-fragment'))
 
 
 @tagged('post_install', '-at_install')

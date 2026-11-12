@@ -87,7 +87,7 @@
                             <t t-set="editable" t-value="True"/>
                         </t>
                         <dl class="o_pk_kv" data-sc-edit-view="read"
-                            t-att-data-sc-fragment="sc_fragment_key(partner_sudo, 'account-contact')">
+                            t-att-data-pk-fragment="pk_fragment_key(partner_sudo, 'account-contact')">
                             <dt>Name</dt>
                             <dd t-out="partner_sudo.name or '—'"/>
                             <dt>Email</dt>
@@ -130,7 +130,7 @@
                             <t t-set="editable" t-value="True"/>
                         </t>
                         <div class="o_sc_account_address" data-sc-edit-view="read"
-                             t-att-data-sc-fragment="sc_fragment_key(partner_sudo, 'account-address')">
+                             t-att-data-pk-fragment="pk_fragment_key(partner_sudo, 'account-address')">
                             <t t-set="sc_zip_city" t-value="' '.join(p for p in ((partner_sudo.zip, partner_sudo.city) if zip_before_city else (partner_sudo.city, partner_sudo.zip)) if p)"/>
                             <t t-set="sc_region" t-value="', '.join(p for p in (partner_sudo.state_id.name, partner_sudo.country_id.name) if p)"/>
                             <address t-if="partner_sudo.street or partner_sudo.street2 or sc_zip_city or sc_region" class="o_sc_account_address_lines">

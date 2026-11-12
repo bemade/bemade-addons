@@ -11,7 +11,7 @@
     portal_card_injury_detail, dashboard_change_item(s),
     portal_treatment_note_edit_form, portal_field_label_clear) are NOT
     modified. Every form posts to the SAME routes as today; the player form
-    saves field by field through /my/app/save (SAVE_REGISTRY).
+    saves field by field through /my/app/save (the save specs).
 
     Sections and actions ask the registry (sc_can) AND the controller's
     existing server-side value (the legacy page's is_treatment_prof / can_*
@@ -290,7 +290,7 @@
             <div t-attf-class="o_pk_card o_sc_hero#{' o_pk_edit_card o_sc_hero_editable' if sc_hero_editable else ''}"
                  data-pk-section="player.hero" t-att-data-pk-edit-card="'player-header' if sc_hero_editable else None">
                 <div class="o_sc_hero_top">
-                <div class="o_sc_hero_head" t-att-data-sc-fragment="sc_fragment_key(player, 'hero-head')">
+                <div class="o_sc_hero_head" t-att-data-pk-fragment="pk_fragment_key(player, 'hero-head')">
                     <span class="o_pk_avatar" t-out="''.join(part[:1] for part in [player.first_name or '', player.last_name or '']).upper()"/>
                     <div>
                         <h2 class="o_sc_hero_title" t-out="player._portal_list_name()"/>
@@ -333,7 +333,7 @@
                 <div class="o_sc_hero_status" data-pk-section="player.status">
                     <t t-set="sc_status_undo">Status changed</t>
                     <div class="o_pk_chips" data-pk-section="player.status.readonly"
-                         t-att-data-sc-fragment="sc_fragment_key(player, 'status')">
+                         t-att-data-pk-fragment="pk_fragment_key(player, 'status')">
                         <t t-foreach="player._sc_status_pills()" t-as="pill">
                             <t t-call="bemade_sports_clinic.sc_status_pill_select">
                                 <t t-set="editable" t-value="sc_hero_status_edit"/>
@@ -363,7 +363,7 @@
                     <t t-set="sc_training_label">Training Recommendation</t>
                     <t t-set="sc_training_history_label">History</t>
                     <div class="o_sc_hero_training" data-pk-section="player.training"
-                         t-att-data-sc-fragment="sc_fragment_key(player, 'training')">
+                         t-att-data-pk-fragment="pk_fragment_key(player, 'training')">
                         <t t-call="bemade_sports_clinic.sc_training_title"/>
                         <t t-call="bemade_sports_clinic.sc_field_static">
                             <t t-set="no_label" t-value="True"/>
@@ -382,7 +382,7 @@
                     <t t-set="sc_hero_return_field" t-value="'predicted_return_date' if sc_hero_injured else 'return_date'"/>
                     <div class="o_sc_hero_return" data-pk-section="player.return"
                          t-att-data-sc-return-kind="'predicted' if sc_hero_injured else 'actual'"
-                         t-att-data-sc-fragment="sc_fragment_key(player, 'predicted-return')">
+                         t-att-data-pk-fragment="pk_fragment_key(player, 'predicted-return')">
                         <t t-if="player[sc_hero_return_field]" t-call="bemade_sports_clinic.sc_field_static">
                             <t t-if="sc_hero_injured"><t t-set="label">Predicted return</t></t>
                             <t t-else=""><t t-set="label">Actual return</t></t>
@@ -441,12 +441,12 @@
                     <t t-set="lazy_url" t-value="'/my/player/%s/training-history' % player.id"/>
                     <t t-set="lazy_fresh" t-value="True"/>
                 </t>
-                <div class="o_pk_chips" t-att-data-sc-fragment="sc_fragment_key(player, 'hero-chips')">
+                <div class="o_pk_chips" t-att-data-pk-fragment="pk_fragment_key(player, 'hero-chips')">
                     <span t-if="player.pending_removal" class="o_pk_chip o_pk_chip_ghost">Removal pending</span>
                     <!-- Review fixes 2026-10-18: the actual return date moved to
                          the read view's one return date (above). -->
                 </div>
-                <div class="o_pk_actions_row" t-att-data-sc-fragment="sc_fragment_key(player, 'hero-actions')">
+                <div class="o_pk_actions_row" t-att-data-pk-fragment="pk_fragment_key(player, 'hero-actions')">
                     <!-- Without the header pencil (no therapist edit rights) a
                          direct removal stays here. -->
                     <button t-if="sc_hero_can_remove and not sc_hero_editable" type="button"
@@ -485,7 +485,7 @@
                     <t t-set="card_patient" t-value="player"/>
                 </t>
                 <div t-if="sc_injury_rows" class="o_pk_list" data-pk-section="player.injuries"
-                     t-att-data-sc-fragment="sc_fragment_key(player, 'injuries')" data-sc-fragment-mode="list">
+                     t-att-data-pk-fragment="pk_fragment_key(player, 'injuries')" data-pk-fragment-mode="list">
                     <t t-foreach="sc_injury_rows" t-as="row">
                         <t t-call="bemade_sports_clinic.sc_injury_card"/>
                     </t>
@@ -519,7 +519,7 @@
                                 <t t-set="title">Player</t>
                                 <t t-set="editable" t-value="True"/>
                             </t>
-                            <dl class="o_pk_kv" data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(player, 'identity')">
+                            <dl class="o_pk_kv" data-sc-edit-view="read" t-att-data-pk-fragment="pk_fragment_key(player, 'identity')">
                                 <t t-call="bemade_sports_clinic.sc_display_row"><t t-set="label">First name</t><t t-set="record" t-value="player"/><t t-set="field" t-value="'first_name'"/></t>
                                 <t t-call="bemade_sports_clinic.sc_display_row"><t t-set="label">Last name</t><t t-set="record" t-value="player"/><t t-set="field" t-value="'last_name'"/></t>
                                 <t t-call="bemade_sports_clinic.sc_display_row"><t t-set="label">Jersey no.</t><t t-set="record" t-value="player"/><t t-set="field" t-value="'jersey_number'"/></t>
@@ -576,7 +576,7 @@
                                 <t t-set="title">Other medical history</t>
                                 <t t-set="editable" t-value="True"/>
                             </t>
-                            <div data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(player, 'medical-history')">
+                            <div data-sc-edit-view="read" t-att-data-pk-fragment="pk_fragment_key(player, 'medical-history')">
                                 <t t-call="bemade_sports_clinic.sc_field_static">
                                     <t t-set="no_label" t-value="True"/>
                                     <t t-set="value" t-value="player.medical_history_other"/>
@@ -639,7 +639,7 @@
                                 <t t-set="title">Team Memberships</t>
                                 <t t-set="editable" t-value="sc_teams_editable"/>
                             </t>
-                            <div data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(player, 'memberships')">
+                            <div data-sc-edit-view="read" t-att-data-pk-fragment="pk_fragment_key(player, 'memberships')">
                                 <div t-if="sc_memberships" class="o_pk_list">
                                     <t t-foreach="sc_memberships" t-as="membership">
                                         <t t-if="membership['url']" t-call="bemade_sports_clinic.sc_entity_row">
@@ -784,7 +784,7 @@
                         <t t-set="upload_patient_id" t-value="player.id"/>
                         <t t-set="upload_injury" t-value="False"/>
                         <t t-set="upload_injury_choices" t-value="sc_injury_choices"/>
-                        <t t-set="upload_injury_fragment" t-value="sc_fragment_key(player, 'doc-injury-choices')"/>
+                        <t t-set="upload_injury_fragment" t-value="pk_fragment_key(player, 'doc-injury-choices')"/>
                         <t t-set="upload_return_url" t-value="documents_tab_return"/>
                         <t t-set="upload_category_options" t-value="sc_document_category_options"/>
                         <t t-set="upload_cancel" t-value="True"/>
@@ -807,7 +807,7 @@
                                 <t t-set="download_url" t-value="'/my/patient/document/download/%s' % doc.id"/>
                                 <t t-set="archive_return" t-value="sc_doc_delete and documents_tab_return"/>
                                 <t t-set="edit_toggle" t-value="sc_doc_edit"/>
-                                <t t-set="fragment_key" t-value="sc_fragment_key(doc, 'tabrow')"/>
+                                <t t-set="fragment_key" t-value="pk_fragment_key(doc, 'tabrow')"/>
                             </t>
                             <div t-if="sc_doc_edit" class="o_pk_fields" data-sc-edit-view="edit" hidden="hidden">
                                 <t t-set="lbl">Name</t>
@@ -887,7 +887,7 @@
 
             <!-- Removal sheets (same routes as today's modals); a read fragment
                  with the hero's actions (a Teams save changes the team). -->
-            <div t-att-data-sc-fragment="sc_fragment_key(player, 'removal-sheets')">
+            <div t-att-data-pk-fragment="pk_fragment_key(player, 'removal-sheets')">
             <t t-if="can_direct_remove and removal_team_id and sc_can('patient.remove')" t-call="bemade_sports_clinic.sc_confirm_sheet">
                 <t t-set="sheet_id" t-value="'sc_remove_player_sheet'"/>
                 <t t-set="title">Remove Player from Team</t>
@@ -1068,7 +1068,7 @@
                 <label t-att-for="'%s_injury' % upload_prefix" class="o_pk_field_label">Link to Injury (optional)</label>
                 <select t-att-id="'%s_injury' % upload_prefix" name="injury_id" class="o_pk_input o_pk_select"
                         data-sc-picker="1" data-sc-picker-key="injury"
-                        t-att-data-sc-fragment="upload_injury_fragment or None">
+                        t-att-data-pk-fragment="upload_injury_fragment or None">
                     <option value="">-- None --</option>
                     <t t-foreach="upload_injury_choices or []" t-as="choice">
                         <option t-att-value="choice[0]" t-out="choice[1]"/>
@@ -1134,7 +1134,7 @@
     <template id="sc_injury_card" name="App shell: inline injury card">
         <t t-set="injury" t-value="row['injury']"/>
         <details t-att-id="'%s%s' % (card_id_prefix or 'injury-', row['id'])" class="o_pk_expand o_pk_edit_card o_sc_injury_item"
-                 data-pk-edit-card="injury" t-att-data-pk-fragment-item="sc_fragment_key(injury, 'card')"
+                 data-pk-edit-card="injury" t-att-data-pk-fragment-item="pk_fragment_key(injury, 'card')"
                  t-att-data-sc-injury-id="row['id']" t-att-open="'open' if row['open'] else None"
                  t-att-data-sc-created-injury="row['id'] if row['created'] else None">
             <!-- Task 1616 (owner decision 2026-10-17): the open card IS the
@@ -1171,7 +1171,7 @@
                     <span t-if="row['player_head']['teams']" class="o_sc_injury_player_teams"
                           t-out="row['player_head']['teams']"/>
                 </span>
-                <span class="o_sc_injury_head_main" t-att-data-sc-fragment="sc_fragment_key(injury, 'summary')">
+                <span class="o_sc_injury_head_main" t-att-data-pk-fragment="pk_fragment_key(injury, 'summary')">
                 <span t-attf-class="o_pk_dot o_pk_tone_#{row['dot']}" aria-hidden="true"/>
                 <span class="o_pk_row_text">
                     <span class="o_pk_row_title" t-out="row['title']"/>
@@ -1235,7 +1235,7 @@
                              always live — never behind the pencil. Their
                              own read fragment (« flags »). -->
                         <div t-if="sc_card_tp_fields or sc_card_visibility" class="o_sc_injury_flags"
-                             data-pk-section="injury.flags" t-att-data-sc-fragment="sc_fragment_key(injury, 'flags')">
+                             data-pk-section="injury.flags" t-att-data-pk-fragment="pk_fragment_key(injury, 'flags')">
                             <t t-set="sc_flag_pills" t-value="injury._sc_flag_pills()"/>
                             <t t-if="sc_card_tp_fields" t-call="bemade_sports_clinic.sc_status_pill_select">
                                 <t t-set="pill" t-value="sc_flag_pills[0]"/>
@@ -1249,7 +1249,7 @@
                             </t>
                         </div>
                         <dl class="o_pk_kv" data-sc-edit-view="read" t-att-hidden="'hidden' if row['created'] else None"
-                            t-att-data-sc-fragment="sc_fragment_key(injury, 'read')">
+                            t-att-data-pk-fragment="pk_fragment_key(injury, 'read')">
                             <t t-call="bemade_sports_clinic.sc_display_row"><t t-set="label">Date of Injury</t><t t-set="record" t-value="injury"/><t t-set="field" t-value="'sc_injury_date'"/></t>
                             <t t-if="sc_card_tp_fields">
                                 <!-- Review fixes 2026-10-18: the predicted date until the
@@ -1326,7 +1326,7 @@
                                     </button>
                                 </span>
                             </div>
-                            <div class="o_sc_injury_note_read" data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(injury, 'notes-external')">
+                            <div class="o_sc_injury_note_read" data-sc-edit-view="read" t-att-data-pk-fragment="pk_fragment_key(injury, 'notes-external')">
                                 <p class="o_pk_pre" t-att-data-sc-display="sc_display_key(injury, 'external_notes')" t-out="injury.external_notes or '—'"/>
                                 <p t-if="injury.last_external_note_info" class="o_pk_meta o_sc_note_stamp" data-sc-note-stamp="external"
                                    t-out="injury.last_external_note_info"/>
@@ -1350,7 +1350,7 @@
                                     </button>
                                 </span>
                             </div>
-                            <div class="o_sc_injury_note_read" data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(injury, 'notes-internal')">
+                            <div class="o_sc_injury_note_read" data-sc-edit-view="read" t-att-data-pk-fragment="pk_fragment_key(injury, 'notes-internal')">
                                 <p class="o_pk_pre" t-att-data-sc-display="sc_display_key(injury, 'internal_notes')" t-out="injury.internal_notes or '—'"/>
                                 <p t-if="injury.last_internal_note_info" class="o_pk_meta o_sc_note_stamp" data-sc-note-stamp="internal"
                                    t-out="injury.last_internal_note_info"/>
@@ -1398,7 +1398,7 @@
                                         <t t-set="download_url" t-value="'/my/injury/document/download/%s' % doc.id"/>
                                         <t t-set="archive_return" t-value="sc_doc_delete and row['card_url']"/>
                                         <t t-set="edit_toggle" t-value="sc_doc_edit"/>
-                                        <t t-set="fragment_key" t-value="sc_fragment_key(doc, 'row')"/>
+                                        <t t-set="fragment_key" t-value="pk_fragment_key(doc, 'row')"/>
                                     </t>
                                     <div t-if="sc_doc_edit" class="o_pk_fields" data-sc-edit-view="edit" hidden="hidden">
                                         <t t-set="lbl">Name</t>
@@ -1499,7 +1499,7 @@
                     <label for="sc_note_injury" class="o_pk_field_label">Link to Injury (optional)</label>
                     <select id="sc_note_injury" name="injury_id" class="o_pk_input o_pk_select"
                             data-sc-picker="1" data-sc-picker-key="injury"
-                            t-att-data-sc-fragment="sc_fragment_key(note_patient, 'note-injury-choices')">
+                            t-att-data-pk-fragment="pk_fragment_key(note_patient, 'note-injury-choices')">
                         <option value="">-- General note --</option>
                         <t t-foreach="note_injury_choices" t-as="choice">
                             <option t-att-value="choice[0]" t-out="choice[1]"

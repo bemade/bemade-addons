@@ -24,7 +24,7 @@
 export const NAV_STACK_KEY = "pk_nav_stack:v1";
 const POST_KEY = "pk_nav_post:v1";
 const UP_KEY = "pk_nav_up:v1";
-// Set by a consumer (sc_fragments.js) when a back/forward step reloads a
+// Set by pk_fragments.js when a back/forward step reloads a
 // stale page: import it, never repeat the string.
 export const NAV_BF_RELOAD_KEY = "pk_nav_bf_reload:v1";
 const MAX_DEPTH = 50;

@@ -216,7 +216,7 @@ class TestListHeader1607(ListHeader1607Common):
         add = self._add(header)
         self.assertEqual((add.tag, add.get('data-sc-sheet-open')), ('button', 'sc_ts_add_sheet'))
         self.assertEqual((add.get('aria-label'), add.get('data-sc-action')), ('Add My Timesheet', 'timesheet.add'))
-        self.assertEqual(header.getparent().get('data-sc-fragment'), 'sports.event:%s:ts-head' % self.event.id)
+        self.assertEqual(header.getparent().get('data-pk-fragment'), 'sports.event:%s:ts-head' % self.event.id)
         # The list follows the header holder.
         self.assertIn('o_pk_list', header.getparent().getnext().get('class'))
 

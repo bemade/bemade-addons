@@ -41,7 +41,7 @@ export function notifyFetchError(error) {
  * @param {number} [options.timeout] ms
  * @param {boolean} [options.toast] dispatch pk:fetch-error on failure
  * @param {Object} [options.headers] extra request headers (task 1611:
- *     X-Sc-Fragments)
+ *     X-Pk-Fragments)
  */
 export async function pkFetch(url, options = {}) {
     const { method = "GET", data = null, as = "json", timeout = 15000, toast = true, headers = {} } = options;

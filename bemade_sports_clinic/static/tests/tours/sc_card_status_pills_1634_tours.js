@@ -34,7 +34,7 @@ function rosterOrder() {
 
 function headerOf(init) {
     const headers = (init && init.headers) || {};
-    return headers instanceof Headers ? headers.get("X-Sc-Fragments") : headers["X-Sc-Fragments"];
+    return headers instanceof Headers ? headers.get("X-Pk-Fragments") : headers["X-Pk-Fragments"];
 }
 
 tours.add("sc_1634_card_pills", {

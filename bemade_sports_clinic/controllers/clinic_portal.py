@@ -1047,7 +1047,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         file), laptop = two panes; the worklist is the live component
         (initial data rendered into its props — no fetch before first
         paint); the dossier reuses the P2 building blocks (status pair
-        through SAVE_REGISTRY, note cards with server autosave, the device
+        through the save specs, note cards with server autosave, the device
         draft note form posting to /my/injury/note/add with event_id)."""
         env = request.env
         selected = values['selected_patient']

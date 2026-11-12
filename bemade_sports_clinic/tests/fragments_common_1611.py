@@ -7,7 +7,7 @@ from lxml import html as lxml_html
 
 from odoo import fields
 
-from odoo.addons.bemade_sports_clinic.controllers.app_shell import SC_FRAGMENTS_HEADER
+from odoo.addons.bemade_portal_kit.tools import PK_FRAGMENTS_HEADER
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
 _CSRF_RE = re.compile(r'(name="csrf_token"[^>]*value=")[^"]*(")')
@@ -42,7 +42,7 @@ class FragmentsMixin:
 
     def _fragments(self, url, keys):
         """GET ``url`` asking for ``keys`` -> the JSON answer."""
-        resp = self.url_open(url, headers={SC_FRAGMENTS_HEADER: ','.join(keys)})
+        resp = self.url_open(url, headers={PK_FRAGMENTS_HEADER: ','.join(keys)})
         self.assertEqual(resp.status_code, 200, resp.text[:300])
         self.assertIn('application/json', resp.headers.get('Content-Type', ''))
         self.assertEqual(resp.headers.get('Cache-Control'), 'no-store')
@@ -60,7 +60,7 @@ class FragmentsMixin:
 
     @staticmethod
     def _node(tree, key):
-        nodes = tree.xpath('//*[@data-sc-fragment="%s"]' % key)
+        nodes = tree.xpath('//*[@data-pk-fragment="%s"]' % key)
         return nodes[0] if nodes else None
 
     @staticmethod

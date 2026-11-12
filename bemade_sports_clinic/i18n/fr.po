@@ -13620,12 +13620,6 @@ msgstr "Vous n'avez pas accès à ce patient."
 
 #. module: bemade_sports_clinic
 #. odoo-python
-#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
-msgid "You do not have access to this activity."
-msgstr "Vous n'avez pas accès à cette activité."
-
-#. module: bemade_sports_clinic
-#. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/access_control_mixin.py:0
 msgid "You do not have access to this event."
 msgstr "Vous n'avez pas accès à cet événement."
@@ -16537,12 +16531,6 @@ msgstr "Retirer et quitter"
 #: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
 msgid "%(player)s removed from %(team)s"
 msgstr "%(player)s retiré de %(team)s"
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_fragments.js:0
-msgid "You no longer have access to this page."
-msgstr "Vous n'avez plus accès à cette page."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_medical_sheets

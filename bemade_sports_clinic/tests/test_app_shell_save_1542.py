@@ -3,7 +3,8 @@ Synthetic fixtures only.
 
 Acceptance criteria covered here (AC4):
 
-* UC-A1 ``SAVE_REGISTRY`` holds ONLY the P2 entries (task 1539 filled it:
+* UC-A1 The save specs (task 5199: ``portal.kit.pk_save_specs()``, the
+  clinic's ``_pk_save_specs``) hold ONLY the P2 entries (task 1539 filled it:
   player, injury, treatment note, primary contact); any other model / field
   is refused with 403.
 * UC-A2 With a TEST-ONLY registry entry (sports.team.announcement_deadline,
@@ -15,14 +16,12 @@ Acceptance criteria covered here (AC4):
   written as the user; a second save with that write_date succeeds.
 * UC-A5 CSRF is required (no token -> 400, nothing written).
 """
-from unittest.mock import patch
-
 from odoo import fields
 from odoo.exceptions import AccessError
 from odoo.tests import tagged
 from odoo.tools.misc import mute_logger
 
-from odoo.addons.bemade_sports_clinic.controllers import app_shell
+from odoo.addons.bemade_portal_kit.tests.common import pk_hook
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
 
@@ -43,6 +42,10 @@ TEST_REGISTRY = {
 @tagged('post_install', '-at_install')
 class TestAppShellSave1542(AppShellCommon):
 
+    def _test_spec(self):
+        """Task 5199: the test-only spec added to the installed ones."""
+        return pk_hook(self.env, '_pk_save_specs', lambda orig: dict(orig, **TEST_REGISTRY))
+
     def _url(self, team=None):
         return '/my/app/save/sports.team/%s' % (team or self.team_a).id
 
@@ -58,7 +61,7 @@ class TestAppShellSave1542(AppShellCommon):
 
     # -- UC-A1 -----------------------------------------------------------
     def test_registry_documents_the_allowed_entries(self):
-        self.assertEqual(set(app_shell.SAVE_REGISTRY), {
+        self.assertEqual(set(self.env['portal.kit'].pk_save_specs()), {
             'sports.patient', 'sports.patient.injury', 'sports.treatment.note',
             'sports.patient.contact',
             # Owner review 2026-10-11 (pencil paradigm portal-wide).
@@ -74,14 +77,14 @@ class TestAppShellSave1542(AppShellCommon):
     # -- UC-A2 -----------------------------------------------------------
     def test_field_outside_allowlist_forbidden(self):
         self._login_tp()
-        with patch.dict(app_shell.SAVE_REGISTRY, TEST_REGISTRY):
+        with self._test_spec():
             resp = self._post({'field': 'name', 'value': 'Hijacked', 'write_date': self._wd()})
         self.assertEqual(resp.status_code, 403)
         self.team_a.invalidate_recordset(['name'])
         self.assertEqual(self.team_a.name, 'PC Team A')
 
     def test_no_access_forbidden(self):
-        with patch.dict(app_shell.SAVE_REGISTRY, TEST_REGISTRY):
+        with self._test_spec():
             # A coach of the team: the check (announcement guard) refuses.
             self._login_coach()
             resp = self._post({'field': 'announcement_deadline', 'value': '2030-01-01',
@@ -100,7 +103,7 @@ class TestAppShellSave1542(AppShellCommon):
     def test_stale_write_date_conflict(self):
         self.team_a.write({'announcement_deadline': '2030-02-02'})
         self._login_tp()
-        with patch.dict(app_shell.SAVE_REGISTRY, TEST_REGISTRY):
+        with self._test_spec():
             resp = self._post({'field': 'announcement_deadline', 'value': '2030-03-03',
                                'write_date': '2000-01-01 00:00:00'})
         self.assertEqual(resp.status_code, 409)
@@ -116,7 +119,7 @@ class TestAppShellSave1542(AppShellCommon):
     def test_success_returns_new_write_date(self):
         self._login_tp()
         before = self._wd()
-        with patch.dict(app_shell.SAVE_REGISTRY, TEST_REGISTRY):
+        with self._test_spec():
             resp = self._post({'field': 'announcement_deadline', 'value': '2030-04-04',
                                'write_date': before})
             self.assertEqual(resp.status_code, 200, resp.text)
@@ -137,7 +140,7 @@ class TestAppShellSave1542(AppShellCommon):
     @mute_logger('odoo.http')
     def test_csrf_required(self):
         self._login_tp()
-        with patch.dict(app_shell.SAVE_REGISTRY, TEST_REGISTRY):
+        with self._test_spec():
             resp = self._post({'field': 'announcement_deadline', 'value': '2030-05-05',
                                'write_date': self._wd()}, csrf=False)
         self.assertEqual(resp.status_code, 400)

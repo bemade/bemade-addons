@@ -343,7 +343,7 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         row = details.xpath('.//*[contains(@class, "o_sc_injury_flags")]')
         self.assertEqual(len(row), 1)
         row = row[0]
-        self.assertEqual(row.get('data-sc-fragment'), 'sports.patient.injury:%s:flags' % self.injury.id)
+        self.assertEqual(row.get('data-pk-fragment'), 'sports.patient.injury:%s:flags' % self.injury.id)
         self.assertEqual([p.get('data-sc-pill-key') for p in row.xpath('.//*[@data-sc-pill-key]')],
                          ['consent', 'visibility'])
         consent = self._pill(row, 'consent')

@@ -41,7 +41,7 @@ class TestCardMedPills1652(MedicalCards1630Common):
                     sheet_id = 'sc_med_card_%s_%s' % (key, self.player.id)
                     sheets = tree.xpath('//dialog[@id="%s"]' % sheet_id)
                     self.assertEqual(len(sheets), 1, (url, key))
-                    self.assertFalse(sheets[0].xpath('ancestor::*[@data-sc-fragment]'), (url, key))
+                    self.assertFalse(sheets[0].xpath('ancestor::*[@data-pk-fragment]'), (url, key))
                     self.assertTrue(tree.xpath('//button[@data-sc-med-card-sheet="%s"]' % sheet_id), (url, key))
 
     def test_editable_for_therapist_read_only_for_coach(self):

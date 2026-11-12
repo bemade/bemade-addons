@@ -273,7 +273,7 @@ export class ScAutosaveField extends Component {
             this.writeDate = detail.result.write_date;
         };
         if (this.isServer) {
-            document.addEventListener("sc:saved", this.onSiblingSaved);
+            document.addEventListener("pk:saved", this.onSiblingSaved);
         }
         this.onGroupChange = (ev) => this.requestGroup(ev.target.value || "");
         // Task 1672: an add panel reset after a successful create (« sc:form-
@@ -318,7 +318,7 @@ export class ScAutosaveField extends Component {
         onWillUnmount(() => {
             clearTimeout(this.timer);
             window.removeEventListener("online", this.onOnline);
-            document.removeEventListener("sc:saved", this.onSiblingSaved);
+            document.removeEventListener("pk:saved", this.onSiblingSaved);
             document.removeEventListener("pk:form-reset", this.onFormReset);
             const select = this.groupSelectEl;
             if (select) {
@@ -1044,7 +1044,7 @@ export class ScAutosaveField extends Component {
      * Owner review 2026-10-22: the toast of a save the SERVER can undo
      * (« Details cleared · Undo »): ``undo`` = {url, token, message, action,
      * ms}. The restore answers like a save of this field (its siblings, the
-     * pills and the lists follow, « sc:saved »).
+     * pills and the lists follow, « pk:saved »).
      */
     offerServerUndo(undo) {
         const { model, recordId, field } = this.props;
@@ -1062,7 +1062,7 @@ export class ScAutosaveField extends Component {
                                 toast: false,
                             });
                             document.dispatchEvent(
-                                new CustomEvent("sc:saved", {
+                                new CustomEvent("pk:saved", {
                                     detail: { model, recordId, field: result.field || field, result, source: "server-undo" },
                                 })
                             );
@@ -1223,7 +1223,7 @@ export class ScAutosaveField extends Component {
             // Lets the page reflect a save elsewhere (e.g. the player's
             // status pill, owner review 2026-10-10).
             document.dispatchEvent(
-                new CustomEvent("sc:saved", {
+                new CustomEvent("pk:saved", {
                     detail: {
                         model: this.props.model,
                         recordId: this.props.recordId,

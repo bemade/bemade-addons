@@ -128,7 +128,7 @@ function kneeRead() {
     const card = [...document.querySelectorAll(".o_sc_injury_item")].find((node) =>
         node.querySelector("summary").textContent.includes("Synthetic knee")
     );
-    return card.querySelector('[data-sc-fragment$=":read"]');
+    return card.querySelector('[data-pk-fragment$=":read"]');
 }
 
 tours.add("sc_1603_player_to_injuries", {

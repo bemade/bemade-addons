@@ -91,7 +91,7 @@ document.addEventListener(
 // « Date prévue de résolution » until the injury is resolved, « Date de
 // résolution » once it is: a status save (the stage island, its undo, the
 // quick « Résoudre ») flips their holders ([data-sc-stage-of]) in place.
-document.addEventListener("sc:saved", (ev) => {
+document.addEventListener("pk:saved", (ev) => {
     const detail = ev.detail || {};
     if (detail.model !== "sports.patient.injury" || detail.field !== "stage" || !detail.result) {
         return;

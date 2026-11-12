@@ -394,6 +394,18 @@ msgid "Owner"
 msgstr "Responsable"
 
 #. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/tools/save.py:0
+msgid "Please enter a valid date."
+msgstr "Veuillez saisir une date valide."
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/tools/activity.py:0
+msgid "Please fill in all required fields."
+msgstr "Veuillez remplir tous les champs obligatoires."
+
+#. module: bemade_portal_kit
 #: model:ir.model,name:bemade_portal_kit.model_portal_kit
 msgid "Portal Kit Registries"
 msgstr "Registres de la trousse portail"
@@ -402,6 +414,12 @@ msgstr "Registres de la trousse portail"
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Portal kit style guide"
 msgstr "Guide de style de la trousse portail"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/pk_app.py:0
+msgid "Record not found."
+msgstr "Enregistrement introuvable."
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -457,6 +475,12 @@ msgid ""
 msgstr "Les composants génériques de l’application portail, dessinés avec les jetons de style neutres de la trousse (--pk-*). Un module leur donne sa marque en définissant ces jetons sur .o_pk_app."
 
 #. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/tools/activity.py:0
+msgid "The due date cannot be in the past."
+msgstr "La date d'échéance ne peut pas être dans le passé."
+
+#. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Toggle theme"
 msgstr "Changer de thème"
@@ -480,3 +504,27 @@ msgstr "Utilisateur"
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Week"
 msgstr "Semaine"
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/tools/activity.py:0
+msgid "You cannot assign this activity to that user."
+msgstr "Vous ne pouvez pas assigner cette activité à cet utilisateur."
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/controllers/pk_app.py:0
+msgid "You cannot edit this record."
+msgstr "Vous ne pouvez pas modifier cet enregistrement."
+
+#. module: bemade_portal_kit
+#. odoo-python
+#: code:addons/bemade_portal_kit/tools/activity.py:0
+msgid "You do not have access to this activity."
+msgstr "Vous n'avez pas accès à cette activité."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_fragments.js:0
+msgid "You no longer have access to this page."
+msgstr "Vous n'avez plus accès à cette page."

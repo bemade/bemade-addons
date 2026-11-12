@@ -10,7 +10,7 @@
  * Round 2: then the « Joueurs que je suis » sections refresh (read fragments).
  */
 import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
-import { requestRefresh } from "@bemade_sports_clinic/js/sc_fragments";
+import { requestRefresh } from "@bemade_portal_kit/js/pk_fragments";
 
 // Task 1624 review round 2 (owner 2026-10-29): every « Joueurs que je suis »
 // section of the page (a LIST read fragment per instance, each with its own

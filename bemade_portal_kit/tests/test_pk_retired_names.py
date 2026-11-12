@@ -36,9 +36,27 @@ adopted: ``bemade_sports_clinic.sc_<moved>`` -> ``bemade_portal_kit.pk_<moved>``
 (``tools/adopt.py``, ``ADOPTED_VIEWS``), as exact names
 (``bemade_sports_clinic.sc_card_icons`` stays a clinic template).
 
+Task 5199 (P4a) retires the save engine's and the screen refresh's
+clinic names, moved to the kit under ``pk`` names:
+
+* the attributes ``data-sc-fragment``, ``-fragment-mode``,
+  ``-fragment-keep``, ``-fragment-keep-empty``, ``-keep-open`` and
+  ``-rendered-at`` -> ``data-pk-*``;
+* the events ``sc:saved``, ``sc:refresh``, ``sc:refresh-now`` -> ``pk:*``;
+* the header ``X-Sc-Fragments`` -> ``X-Pk-Fragments``, the storage key
+  ``sc_dirty_at:v1`` -> ``pk_dirty_at:v1``;
+* the Python / QWeb names ``SAVE_REGISTRY`` (now the hook
+  ``portal.kit._pk_save_specs()``), ``sc_fragment_key``, ``sc_now_ms``,
+  ``sc_rendered_at``, ``_sc_save_json`` / ``_value`` / ``_display``,
+  ``_sc_field_unchanged``, ``_sc_save_allowed``, ``sc_refresh_patterns``,
+  ``sc_extract_fragments``, ``_sc_fragment_keys``, ``SC_FRAGMENTS_HEADER``
+  / ``_MAX``, and the module path ``@bemade_sports_clinic/js/sc_fragments``
+  (its one-release alias file names none of them).
+
 The one exception is the documented draft fallback of the kit
 (``pk_draft_store.js`` still reads ``sc_draft:`` once, and its hoot test
-checks that).
+checks that), and the dirty-stamp fallback of ``pk_fragments.js`` (it reads
+``sc_dirty_at:v1`` once).
 """
 import os
 import re
@@ -62,14 +80,30 @@ ATTRIBUTES = (
     'live-tone-off', 'menu-popup', 'menu-toggle', 'section', 'submitted',
     'submitting', 'switch-off', 'switch-submit', 'user-menu-popup',
     'user-menu-toggle',
+    # Task 5199 (P4a): the screen refresh.
+    'fragment', 'fragment-mode', 'fragment-keep', 'fragment-keep-empty',
+    'keep-open', 'rendered-at',
 )
 EVENTS = (
     'fragments', 'form-reset', 'create-success', 'lazy-loaded',
     'live-count-refresh', 'fetch-error', 'nav-sync',
+    # Task 5199 (P4a).
+    'saved', 'refresh', 'refresh-now',
 )
 STORAGE_KEYS = (
     'sc_draft:', 'sc_pending_toast:v1', 'sc_nav_stack:v1', 'sc_nav_post:v1',
     'sc_nav_up:v1', 'sc_nav_bf_reload:v1', 'sc_filters_open:',
+    # Task 5199 (P4a).
+    'sc_dirty_at:v1', 'X-Sc-Fragments', '@bemade_sports_clinic/js/sc_fragments',
+)
+# Task 5199 (P4a): the save engine's and the refresh's Python / QWeb names,
+# as whole words.
+SAVE_NAMES = (
+    'SAVE_REGISTRY', 'sc_fragment_key', 'sc_now_ms', 'sc_rendered_at',
+    '_sc_save_json', '_sc_save_value', '_sc_save_display',
+    '_sc_field_unchanged', '_sc_save_allowed', 'sc_refresh_patterns',
+    'sc_extract_fragments', '_sc_fragment_keys', 'SC_FRAGMENTS_HEADER',
+    'SC_FRAGMENTS_MAX',
 )
 
 # Task 5344 (P3b1): the generic classes, as the name after ``o_sc_``. A name
@@ -166,6 +200,10 @@ ALLOWED = {
     # Task 5344: these hoot tests check that an old o_sc_app root is not read.
     (KIT, 'static/tests/pk_app_nav.test.js'): {'o_sc_app'},
     (KIT, 'tests/test_pk_retired_names.py'): None,  # this file: every name
+    # Task 5199: the dirty-stamp fallback (read once) and its hoot test.
+    (KIT, 'static/src/js/pk_fragments.js'): {'sc_dirty_at:v1'},
+    # (and it checks that the old markers are not read any more).
+    (KIT, 'static/tests/pk_fragments.test.js'): {'sc_dirty_at:v1', 'data-sc-fragment', 'data-sc-rendered-at'},
 }
 
 
@@ -194,6 +232,7 @@ THEME_RE = re.compile(r'(?<![\w])data-sc-theme(?![\w-])')
 # Task 5369 (P3c1): the adopted templates' old full names.
 ADOPTED_OLD_NAMES = tuple('%s.%s' % (module, old) for module, old, _new in ADOPTED_VIEWS)
 TEMPLATE_RE = re.compile(r'(?<![\w.])(%s)(?![\w])' % _alternation(ADOPTED_OLD_NAMES))
+SAVE_RE = re.compile(r'(?<![\w])(%s)(?![\w])' % _alternation(SAVE_NAMES))
 
 
 def retired_names(line):
@@ -207,6 +246,7 @@ def retired_names(line):
     found += [m.group(0) for m in TOKEN_RE.finditer(line)]
     found += [m.group(0) for m in THEME_RE.finditer(line)]
     found += [m.group(0) for m in TEMPLATE_RE.finditer(line)]
+    found += [m.group(0) for m in SAVE_RE.finditer(line)]
     return found
 
 
@@ -290,6 +330,25 @@ class TestPkRetiredNames(TransactionCase):
         self.assertEqual(retired_names('arch_db:bemade_sports_clinic.sc_list_add_cancel'),
                          ['bemade_sports_clinic.sc_list_add_cancel'])
         self.assertEqual(retired_names('t-call="bemade_portal_kit.pk_icon" sc_card'), [])
+
+    def test_matcher_save_engine(self):
+        """Task 5199 (P4a): the save engine and screen refresh names."""
+        self.assertEqual(retired_names('<div t-att-data-sc-fragment="sc_fragment_key(p, \'hero\')">'),
+                         ['data-sc-fragment', 'sc_fragment_key'])
+        self.assertEqual(retired_names('<ul data-sc-fragment-mode="list" data-sc-fragment-keep-empty="1">'),
+                         ['data-sc-fragment-mode', 'data-sc-fragment-keep-empty'])
+        self.assertEqual(retired_names('el.dataset.scFragment; el.dataset.scFragmentKeep; root.dataset.scRenderedAt'),
+                         ['dataset.scFragment', 'dataset.scFragmentKeep', 'dataset.scRenderedAt'])
+        self.assertEqual(retired_names('<details data-sc-keep-open="x">'), ['data-sc-keep-open'])
+        self.assertEqual(retired_names('"sc:saved" "sc:refresh" "sc:refresh-now"'),
+                         ['sc:saved', 'sc:refresh', 'sc:refresh-now'])
+        self.assertEqual(retired_names("headers={'X-Sc-Fragments': k}"), ['X-Sc-Fragments'])
+        self.assertEqual(retired_names('import { x } from "@bemade_sports_clinic/js/sc_fragments";'),
+                         ['@bemade_sports_clinic/js/sc_fragments'])
+        self.assertEqual(retired_names('self._sc_save_json(p) or sc_now_ms() or SAVE_REGISTRY'),
+                         ['_sc_save_json', 'sc_now_ms', 'SAVE_REGISTRY'])
+        self.assertEqual(retired_names('_pk_save_json pk_now_ms pk_fragment_key data-pk-fragment pk:saved'), [])
+        self.assertEqual(retired_names('_sc_save_proposal sc_fragments_1611 data-sc-edit-open'), [])
 
     def test_no_retired_name_left(self):
         hits = []

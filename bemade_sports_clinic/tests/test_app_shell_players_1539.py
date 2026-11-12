@@ -17,7 +17,7 @@ Acceptance criteria covered here:
   every activity sheet carries its CSRF token and return URL; a created note
   clears its device draft on landing.
 * UC-P4 (AC2/AC3/AC5) Player form in the shell: every field is a server
-  autosave field (SAVE_REGISTRY), therapist-only fields are not rendered for
+  autosave field (the save specs), therapist-only fields are not rendered for
   a coach; the primary emergency contact is editable by a coach; the team
   multi-select posts to today's /my/player/save; create keeps the
   search-first flow and posts to /my/player/create/save; the contact add /
