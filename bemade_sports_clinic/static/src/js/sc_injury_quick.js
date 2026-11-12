@@ -12,7 +12,7 @@
  *
  * The buttons sit in the card's <summary>: a click acts and never toggles
  * the card. The answer is shaped like a save of ``stage`` and announced as
- * an « sc:saved »: the status island, the read views and the read fragments
+ * an « pk:saved »: the status island, the read views and the read fragments
  * (summary, card order, the player's lists — task 1611) follow in place, and
  * a ``propose`` opens the follow-up sheet (task 1603: the last active injury
  * resolved -> clear Retour prévu + actual return).
@@ -23,7 +23,7 @@
  * « Non vérifié » too: the sheet then posts ``from_unverified=1``).
  *
  * Task 1641: a read fragment holding the focus is never swapped
- * (sc_fragments.js), and WebKit (Safari, Chrome on iPhone) never focuses a
+ * (pk_fragments.js), and WebKit (Safari, Chrome on iPhone) never focuses a
  * tapped button — the focus lands on the card's <summary>, so blurring the
  * button left the summary focused; the native <dialog> then gave that focus
  * back on close and the card never showed « Résolu ». The focus is released
@@ -31,7 +31,7 @@
  */
 import { _t } from "@web/core/l10n/translation";
 import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
-import { requestRefresh } from "@bemade_sports_clinic/js/sc_fragments";
+import { requestRefresh } from "@bemade_portal_kit/js/pk_fragments";
 
 const MODEL = "sports.patient.injury";
 const SHEET_ID = "sc_injury_resolve_sheet";
@@ -49,7 +49,7 @@ function toast(message) {
 /** Announce the answer like an autosave of the injury's status. */
 function announce(injuryId, result) {
     document.dispatchEvent(
-        new CustomEvent("sc:saved", {
+        new CustomEvent("pk:saved", {
             detail: { model: MODEL, recordId: Number(injuryId), field: "stage", result },
         })
     );
@@ -67,7 +67,7 @@ function refreshInjury(injuryId) {
  */
 function releaseFragmentFocus() {
     const active = document.activeElement;
-    if (active && active !== document.body && active.closest && active.closest("[data-sc-fragment]")) {
+    if (active && active !== document.body && active.closest && active.closest("[data-pk-fragment]")) {
         active.blur();
     }
 }

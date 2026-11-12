@@ -26,6 +26,8 @@ from odoo.exceptions import AccessError, ValidationError
 from odoo.http import request
 from odoo.tools import format_date, format_datetime, html2plaintext
 
+from odoo.addons.bemade_portal_kit.controllers.pk_app import PortalKitApp
+
 from ..models import sc_dashboard
 from .task_management_portal import TaskManagementPortal
 from .team_management_portal import TeamManagementPortal
@@ -142,13 +144,13 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
         takes the player out of it (« Match : Oui » leaves « Retours en
         retard »; any change makes a recent change, out of « À
         surveiller »). The page keeps such a card where it is until the
-        next visit (data-sc-fragment-keep, #1634); rendered here with its
+        next visit (data-pk-fragment-keep, #1634); rendered here with its
         own scope, it is refreshed in place instead of staying stale.
         Never on a full page render; only players the viewer may read, on
         the section's teams.
 
         ``[{'scope', 'row'}]`` (sc_app_home, a hidden holder)."""
-        keys = self._sc_fragment_keys()
+        keys = PortalKitApp._pk_fragment_keys()
         if not keys:
             return []
         wanted = {}
@@ -375,7 +377,7 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
     def _sc_dash_return_quick_edit(self, cards, players, row_scope):
         """Review round 2 (owner 2026-10-29): each « Retours dépassés » card
         gets the player header's « Retour prévu » autosave field — the same
-        save route, field rules (therapists: ``SAVE_REGISTRY``) and #1727
+        save route, field rules (therapists: the save specs) and #1727
         « not in the past » rule (``min`` = today; the model refuses a past
         date, shown inline). The line is therapist-only already; a player I
         cannot write gets no field."""

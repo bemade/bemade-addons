@@ -27,12 +27,20 @@ import { focusFirstField } from "@bemade_portal_kit/js/pk_focus";
 import { pkSetDisplay } from "@bemade_portal_kit/js/pk_contact_href";
 import { anchorEdited } from "@bemade_portal_kit/js/pk_edit_anchor";
 import { PENDING_TOAST_KEY } from "@bemade_portal_kit/js/pk_confirm";
-import { markDirty } from "@bemade_sports_clinic/js/sc_fragments";
+import { markDirty, registerRefreshMarkers } from "@bemade_portal_kit/js/pk_fragments";
 import {
     clearAllDrafts,
     purgeForeignDrafts,
     removeDraftsWithPrefix,
 } from "@bemade_portal_kit/js/pk_draft_store";
+
+// Task 5199 (P4a): the kit's screen refresh learns the edit cards' markers —
+// an open card holds its list (it never moves under the user's hands) and
+// a card's read view keeps its hidden state while the card is open.
+registerRefreshMarkers({
+    editing: ['[data-sc-edit-open]:not([data-sc-edit-open=""])'],
+    keepsHidden: ["[data-sc-edit-view]"],
+});
 
 // Task 1676: the pencil ↔ ✓ swap (setToggleDone). Declared up here: the
 // load-time handlers below (e.g. offerUndoCreatePlayer) already open cards.
@@ -242,9 +250,9 @@ if (document.readyState === "loading") {
 // of inline-edit cards ([data-sc-display="model:id:field"]) at once; a
 // tap-to-call / tap-to-email link's href follows (task 1585). Task 1611:
 // everything else the save touches (titles, hero, chips, lists…) refreshes as
-// read fragments (sc_fragments.js) — the former ad-hoc « heading » / « stage »
+// read fragments (pk_fragments.js) — the former ad-hoc « heading » / « stage »
 // payloads are gone.
-document.addEventListener("sc:saved", (ev) => {
+document.addEventListener("pk:saved", (ev) => {
     const { model, recordId, field, result } = ev.detail || {};
     if (!result) {
         return;
@@ -541,7 +549,7 @@ document.addEventListener("click", (ev) => {
             if (card.contains(document.activeElement)) {
                 document.activeElement.blur();
             }
-            document.dispatchEvent(new CustomEvent("sc:refresh-now"));
+            document.dispatchEvent(new CustomEvent("pk:refresh-now"));
             anchorEdited(card);
         }
         return;
@@ -552,7 +560,7 @@ document.addEventListener("click", (ev) => {
     if (done && done.contains(document.activeElement)) {
         document.activeElement.blur();
     }
-    document.dispatchEvent(new CustomEvent("sc:refresh-now"));
+    document.dispatchEvent(new CustomEvent("pk:refresh-now"));
 });
 document.addEventListener("pk:fetch-error", (ev) => {
     const error = ev.detail || {};

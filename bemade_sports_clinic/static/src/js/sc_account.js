@@ -22,7 +22,7 @@
  * the province list for that country; the user then picks one).
  */
 import { _t } from "@web/core/l10n/translation";
-import { requestRefresh } from "@bemade_sports_clinic/js/sc_fragments";
+import { requestRefresh } from "@bemade_portal_kit/js/pk_fragments";
 import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 
 const lastSaved = new WeakMap(); // field → the value the server holds
@@ -188,7 +188,7 @@ async function send(form, fields) {
         for (const card of cards(form)) {
             showErrors(card, []);
         }
-        const keys = [...form.querySelectorAll("[data-sc-fragment]")].map((n) => n.dataset.scFragment);
+        const keys = [...form.querySelectorAll("[data-pk-fragment]")].map((n) => n.dataset.pkFragment);
         if (keys.length) {
             requestRefresh(keys, { immediate: true });
         }

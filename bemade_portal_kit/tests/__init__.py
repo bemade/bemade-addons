@@ -11,3 +11,6 @@ from . import test_pk_styleguide
 from . import test_pk_styles
 from . import test_pk_adopt
 from . import test_pk_icon
+from . import test_pk_save
+from . import test_pk_save_activity
+from . import test_pk_fragments

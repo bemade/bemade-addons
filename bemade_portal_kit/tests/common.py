@@ -9,6 +9,7 @@ hook answers instead. Pass ``lambda _orig: {...}`` to REPLACE the content
 whatever consumer is installed), or extend ``_orig`` to ADD an entry (the
 consumers' tests do). The per-registry cache is cleared on enter and exit.
 """
+import re
 from contextlib import contextmanager, ExitStack
 from unittest.mock import patch
 
@@ -43,3 +44,14 @@ def pk_extra_roles(env, func):
     """Swap ``res.users._pk_extra_roles`` (per-user, never cached)."""
     with patch.object(type(env['res.users']), '_pk_extra_roles', func):
         yield
+
+
+_CSRF_RE = re.compile(r'csrf_token:\s*"([^"]+)"')
+
+
+def pk_csrf(case, url='/my'):
+    """A CSRF token of the test opener's session (read from a portal page's
+    session info)."""
+    match = _CSRF_RE.search(case.url_open(url).text)
+    case.assertTrue(match, 'no csrf token on %s' % url)
+    return match.group(1)

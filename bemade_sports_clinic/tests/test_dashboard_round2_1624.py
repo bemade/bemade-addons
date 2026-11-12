@@ -134,7 +134,7 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         self.assertEqual(len(ids), len(set(ids)), [i for i in ids if ids.count(i) > 1])
         # The count is a read fragment of the page.
         key = 'sc.dashboard:todo:dash-todo-returns'
-        self.assertEqual(line.xpath('.//*[@data-sc-todo-count]/@data-sc-fragment'), [key])
+        self.assertEqual(line.xpath('.//*[@data-sc-todo-count]/@data-pk-fragment'), [key])
 
         # A past date: refused inline (#1727), nothing stored.
         past = fields.Date.today() - timedelta(days=1)
@@ -211,9 +211,9 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         self._login_tp()
         _text, tree = self._get('/my/home')
         section = self._section(tree, 'followed')
-        self.assertEqual(section.get('data-sc-fragment'), 'sc.dashboard:followed:followed')
-        self.assertEqual(section.get('data-sc-fragment-mode'), 'list')
-        self.assertEqual(section.get('data-sc-fragment-keep-empty'), '1')
+        self.assertEqual(section.get('data-pk-fragment'), 'sc.dashboard:followed:followed')
+        self.assertEqual(section.get('data-pk-fragment-mode'), 'list')
+        self.assertEqual(section.get('data-pk-fragment-keep-empty'), '1')
         self.assertTrue(section.xpath('.//*[contains(@class, "o_pk_empty")]'))
         self.assertFalse(section.xpath('.//*[@data-sc-dw-count]'))
 

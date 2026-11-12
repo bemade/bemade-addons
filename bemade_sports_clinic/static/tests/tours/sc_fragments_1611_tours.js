@@ -27,7 +27,7 @@ async function waitFor(check, message, timeout = 8000) {
 }
 
 function frag(suffix) {
-    return document.querySelector(`[data-sc-fragment$=":${suffix}"]`);
+    return document.querySelector(`[data-pk-fragment$=":${suffix}"]`);
 }
 
 function markNoReload() {
@@ -374,17 +374,17 @@ tours.add("sc_1611_back_roster", {
 
 // ----------------------------------- the « back » check, deterministic
 function renderedAt() {
-    return Number(document.querySelector(".o_pk_app").dataset.scRenderedAt);
+    return Number(document.querySelector(".o_pk_app").dataset.pkRenderedAt);
 }
 
 tours.add("sc_1611_back_check", {
     steps: () => [
         {
             content: "Shown again from the cache, nothing saved since: no reload",
-            trigger: ".o_pk_app[data-sc-rendered-at]",
+            trigger: ".o_pk_app[data-pk-rendered-at]",
             async run() {
                 markNoReload();
-                window.sessionStorage.setItem("sc_dirty_at:v1", String(renderedAt() - 60000));
+                window.sessionStorage.setItem("pk_dirty_at:v1", String(renderedAt() - 60000));
                 window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
                 await new Promise((resolve) => setTimeout(resolve, 500));
                 assertNoReload();
@@ -392,19 +392,19 @@ tours.add("sc_1611_back_check", {
         },
         {
             content: "Shown again after a save made elsewhere: it reloads",
-            trigger: ".o_pk_app[data-sc-rendered-at]",
+            trigger: ".o_pk_app[data-pk-rendered-at]",
             run() {
-                window.sessionStorage.setItem("sc_dirty_at:v1", String(renderedAt() + 60000));
+                window.sessionStorage.setItem("pk_dirty_at:v1", String(renderedAt() + 60000));
                 window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
             },
             expectUnloadPage: true,
         },
         {
             content: "Reloaded (a fresh render, no loop)",
-            trigger: ".o_pk_app[data-sc-rendered-at]",
+            trigger: ".o_pk_app[data-pk-rendered-at]",
             run() {
                 assert(window.__sc1611NoReload !== "1", "the page did not reload");
-                window.sessionStorage.removeItem("sc_dirty_at:v1");
+                window.sessionStorage.removeItem("pk_dirty_at:v1");
             },
         },
     ],

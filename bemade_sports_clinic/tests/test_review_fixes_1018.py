@@ -93,7 +93,7 @@ class TestReviewFixes1018(PlayerInlineCommon):
     # -- RF-DATES (a) ----------------------------------------------------
     def _card(self, injury):
         _text_, tree = self._get(self._url(tab='injuries', injury=injury.id))
-        cards = tree.xpath('//details[@id and .//*[@data-sc-fragment="sports.patient.injury:%s:read"]]' % injury.id)
+        cards = tree.xpath('//details[@id and .//*[@data-pk-fragment="sports.patient.injury:%s:read"]]' % injury.id)
         self.assertEqual(len(cards), 1)
         return cards[0]
 
@@ -102,7 +102,7 @@ class TestReviewFixes1018(PlayerInlineCommon):
         injury.write({'predicted_resolution_date': '2030-03-01'})
         self._login_tp()
         card = self._card(injury)
-        read = _text(card.xpath('.//*[@data-sc-fragment="sports.patient.injury:%s:read"]' % injury.id)[0])
+        read = _text(card.xpath('.//*[@data-pk-fragment="sports.patient.injury:%s:read"]' % injury.id)[0])
         self.assertIn('Predicted Resolution Date', read)
         self.assertNotIn('Resolution Date', read.replace('Predicted Resolution Date', ''))
         predicted = card.xpath('.//*[@data-sc-stage-of="%s"][@data-sc-stage-hide="resolved"]' % injury.id)[0]
@@ -114,7 +114,7 @@ class TestReviewFixes1018(PlayerInlineCommon):
         # Resolved: the resolution date, not the predicted one.
         injury.action_resolve_injury(resolution_date=date(2026, 10, 1))
         card = self._card(injury)
-        read = _text(card.xpath('.//*[@data-sc-fragment="sports.patient.injury:%s:read"]' % injury.id)[0])
+        read = _text(card.xpath('.//*[@data-pk-fragment="sports.patient.injury:%s:read"]' % injury.id)[0])
         self.assertNotIn('Predicted Resolution Date', read)
         self.assertIn('Resolution Date', read)
         predicted = card.xpath('.//*[@data-sc-stage-of="%s"][@data-sc-stage-hide="resolved"]' % injury.id)[0]

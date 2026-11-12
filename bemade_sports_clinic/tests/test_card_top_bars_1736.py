@@ -125,8 +125,8 @@ class TestCardTopBars1736(TopBars1736Common):
         card = self._one(tree, '//details[@id="injury-%s"]' % self.injury.id)
         summary = self._one(card, './summary')
         self.assertEqual(summary.get('tabindex'), '-1')
-        self.assertFalse(summary.get('data-sc-fragment'), 'the icons are outside the fragment')
-        self.assertTrue(summary.xpath('./*[@data-sc-fragment="sports.patient.injury:%s:summary"]'
+        self.assertFalse(summary.get('data-pk-fragment'), 'the icons are outside the fragment')
+        self.assertTrue(summary.xpath('./*[@data-pk-fragment="sports.patient.injury:%s:summary"]'
                                       % self.injury.id))
         # act_injury is the therapist's: clock with 1.
         self._assert_order(summary, ('o_sc_card_clock', 'o_pk_card_trash', 'o_pk_card_edit'))

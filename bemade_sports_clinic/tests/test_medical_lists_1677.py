@@ -294,7 +294,7 @@ class TestMedicalLists1677(MedicalLists1677Common):
                          (True, 'Synthetic front pocket'))
         card = self._sheet(self._tree(), 'allergy').xpath('.//*[@data-pk-section="medical.allergy.epipen"]')[0]
         read = card.xpath('.//*[@data-sc-edit-view="read"]')[0]
-        self.assertEqual(read.get('data-sc-fragment'), 'sports.patient:%s:medical-epipen' % self.player.id)
+        self.assertEqual(read.get('data-pk-fragment'), 'sports.patient:%s:medical-epipen' % self.player.id)
         self.assertIn('Synthetic front pocket', read.text_content())
         self.assertIsNone(card.xpath('.//*[@data-sc-med-epipen-note-field]')[0].get('hidden'))
         # Task 1717: Yes / No radios (was a checkbox).
@@ -396,7 +396,7 @@ class TestMedicalLists1677(MedicalLists1677Common):
             sheet = self._sheet(tree, key)
             self.assertIsNotNone(sheet, key)
             self.assertFalse(sheet.xpath('.//owl-component'), key)
-            self.assertEqual(sheet.xpath('.//*[@data-sc-med-head]/..')[0].get('data-sc-fragment'),
+            self.assertEqual(sheet.xpath('.//*[@data-sc-med-head]/..')[0].get('data-pk-fragment'),
                              'sports.patient:%s:medical-%s-head' % (pid, key))
             header = sheet.xpath('.//*[contains(@class, "o_pk_list_header")]//button[@data-pk-list-add-toggle]')[0]
             panel = sheet.xpath('.//details[@id="%s"]' % header.get('aria-controls'))[0]
@@ -405,8 +405,8 @@ class TestMedicalLists1677(MedicalLists1677Common):
             self.assertEqual(form.get('data-sc-family'), key)
             self.assertTrue(form.xpath('.//input[@name="life_threatening"]'))
             self.assertEqual(bool(form.xpath('.//textarea[@name="first_aid_note"]')), key == 'medical_alert')
-            items = sheet.xpath('.//ul[@data-sc-fragment="sports.patient:%s:medical-%s-items"]' % (pid, key))[0]
-            self.assertEqual(items.get('data-sc-fragment-mode'), 'list')
+            items = sheet.xpath('.//ul[@data-pk-fragment="sports.patient:%s:medical-%s-items"]' % (pid, key))[0]
+            self.assertEqual(items.get('data-pk-fragment-mode'), 'list')
             cards = items.xpath('./li[@data-sc-med-item]')
             self.assertEqual(len(cards), 2 if key == 'allergy' else 1)
             for card in cards:
@@ -429,7 +429,7 @@ class TestMedicalLists1677(MedicalLists1677Common):
                 self.assertTrue(buttons[1].get('data-sc-edit-toggle'))
                 self.assertEqual(buttons[0].get('data-sc-edit-only'), '1')
                 read = card.xpath('.//*[@data-sc-edit-view="read"]')[0]
-                self.assertEqual(read.get('data-sc-fragment'),
+                self.assertEqual(read.get('data-pk-fragment'),
                                  'sports.patient:%s:medical-item-%s' % (pid, card.get('data-sc-med-item')))
         allergy = self._sheet(tree, 'allergy')
         vital = allergy.xpath('.//li[@data-sc-med-vital="1"]')

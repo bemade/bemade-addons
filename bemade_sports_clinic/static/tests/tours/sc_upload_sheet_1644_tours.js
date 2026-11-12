@@ -139,7 +139,7 @@ tours.add("sc_1644_injury_card", {
                 const escape = new Event("cancel", { cancelable: true });
                 form.closest("dialog").dispatchEvent(escape);
                 assert(escape.defaultPrevented, "Escape would drop a busy upload");
-                // (persisted: true would replay sc_fragments' « stale page » reload)
+                // (persisted: true would replay pk_fragments' « stale page » reload)
                 window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: false }));
                 const submit = form.querySelector("[data-sc-doc-submit]");
                 assert(!submit.disabled && !form.hasAttribute("aria-busy"), "not idle after pageshow");

@@ -9,6 +9,12 @@ Hooks (extend them with ``super()`` in an ``_inherit = 'portal.kit'``)
 * ``_pk_nav()``         ``[pk_nav(...), ...]``
 * ``_pk_visibility()``  ``{key: {'include', 'exclude', 'system', 'model', 'field'}}``
 * ``_pk_pages()``       ``[Page(...), ...]``
+* ``_pk_save_specs()``  ``{model: spec}`` (task 5199: the save engine, see
+  ``tools/save.py``; the kit declares ``mail.activity``)
+* ``_pk_fragment_fillers()`` ``[callable(found, keys), ...]`` (task 5199:
+  fill the fragments a render missed; never cached)
+* ``_pk_activity_can_act(activity)`` / ``_pk_activity_assignable_users(activity)``
+  (task 5199: the ``mail.activity`` spec's rules; per user, never cached)
 
 Each hook is built ONCE per registry (``tools.ormcache``) and frozen: the
 result is shared by every user and request of the database, so a hook holds
@@ -23,7 +29,10 @@ from urllib.parse import parse_qs, urlsplit
 
 from odoo import api, models, tools
 
-from ..tools import pk_freeze, pk_id_key, pk_is_visible, pk_safe_return_url
+from ..tools import (
+    pk_activity_save_spec, pk_freeze, pk_id_key, pk_is_visible, pk_refresh_patterns,
+    pk_safe_return_url,
+)
 
 
 def _by_key(items, key_of):
@@ -57,6 +66,32 @@ class PortalKit(models.AbstractModel):
     def _pk_pages(self):
         return []
 
+    @api.model
+    def _pk_save_specs(self):
+        """Task 5199 (P4a): ``{model: spec}``, what the save route may write
+        (``tools/save.py``). The kit declares ``mail.activity``."""
+        return {'mail.activity': pk_activity_save_spec()}
+
+    @api.model
+    def _pk_fragment_fillers(self):
+        """Task 5199 (P4a): ``[callable(found, keys)]``, run on a fragment
+        answer: each may add to ``found`` (``{key: outer html}``) keys of
+        ``keys`` the render did not carry. Not cached (cheap)."""
+        return []
+
+    @api.model
+    def _pk_activity_can_act(self, activity):
+        """Task 5199 (P4a): may the current user edit ``activity`` through
+        the save route? Default: their own write right (ACL + rules)."""
+        activity = activity.exists()
+        return bool(activity) and activity.has_access('write')
+
+    @api.model
+    def _pk_activity_assignable_users(self, activity):
+        """Task 5199 (P4a): the users ``activity`` may be assigned to by the
+        current user. Default: the internal users and the user themself."""
+        return self.env['res.users'].sudo().search([('share', '=', False)]) | self.env.user
+
     # ------------------------------------------------------------------
     # Cached, frozen registries (one per database registry)
     # ------------------------------------------------------------------
@@ -86,6 +121,29 @@ class PortalKit(models.AbstractModel):
     @tools.ormcache()
     def _pk_get_pages(self):
         return pk_freeze(_by_key(self._pk_pages(), lambda page: page.key))
+
+    @api.model
+    @tools.ormcache()
+    def _pk_get_save_specs(self):
+        return pk_freeze({model: pk_freeze(spec) for model, spec in self._pk_save_specs().items()})
+
+    # ------------------------------------------------------------------
+    # Save engine (task 5199)
+    # ------------------------------------------------------------------
+    @api.model
+    def pk_save_specs(self):
+        """``{model: spec}`` (read-only)."""
+        return self._pk_get_save_specs()
+
+    @api.model
+    def pk_save_spec(self, model):
+        """The save spec of ``model`` (read-only), or None."""
+        return self._pk_get_save_specs().get(model)
+
+    @api.model
+    def pk_refresh_patterns(self, record, field):
+        """The fragment key patterns a save of ``record.field`` makes stale."""
+        return pk_refresh_patterns(self.pk_save_spec(record._name), record, field)
 
     # ------------------------------------------------------------------
     # Roles

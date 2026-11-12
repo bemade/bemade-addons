@@ -1,7 +1,7 @@
 /*
  * Task 1603 — follow-up proposals (inert outside .o_pk_app).
  *
- * A save may answer ``propose`` (controllers/app_shell.py, SAVE_REGISTRY
+ * A save may answer ``propose`` (controllers/app_shell.py, the save specs
  * ``propose``; payload documented in models/patient_return_proposal.py):
  * {kind, patient_id, title, message, items: [{model, id, field, label,
  * current, proposed, current_display, proposed_display, editable, tickable,
@@ -15,7 +15,7 @@
  * - « Apply » posts the ticked rows to /my/app/apply-proposal
  *   ({patient_id, changes: JSON [{model, id, field, value}]}), which
  *   re-validates and writes them through the normal save paths; on success
- *   the sheet closes, each written field is announced as an « sc:saved »
+ *   the sheet closes, each written field is announced as an « pk:saved »
  *   (the autosave islands and data-sc-display read views follow, the read
  *   fragments refresh — task 1611) and the toast confirms;
  * - « Dismiss », the close button, Escape or the backdrop: nothing written.
@@ -25,7 +25,7 @@
  *   instead of posting — the same when the server answers ``needs_date``
  *   (the date passed while the sheet was open).
  *
- * Sources: an « sc:saved » whose result carries ``propose``; the
+ * Sources: an « pk:saved » whose result carries ``propose``; the
  * data-sc-proposal JSON a POST round-trip left on the sheet (shown on load);
  * the « sc:propose » DOM event ({detail: proposal}); or openProposal() from
  * other modules (task 1604's « Résoudre »).
@@ -209,7 +209,7 @@ function announce(result) {
     for (const entry of result.saved || []) {
         const shown = { value: entry.value, display: entry.display };
         document.dispatchEvent(
-            new CustomEvent("sc:saved", {
+            new CustomEvent("pk:saved", {
                 detail: {
                     model: entry.model,
                     recordId: entry.id,
@@ -293,7 +293,7 @@ document.addEventListener("click", (ev) => {
     }
 });
 
-document.addEventListener("sc:saved", (ev) => {
+document.addEventListener("pk:saved", (ev) => {
     const result = ev.detail && ev.detail.result;
     if (result && result.propose) {
         openProposal(result.propose);

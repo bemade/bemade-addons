@@ -92,7 +92,7 @@ class TestMedicalHeader1630(MedicalCommon):
         status = hero.xpath('.//*[@data-pk-section="player.status"]')[0]
         holder = status.xpath('./*[@data-pk-section="player.medical"]')[0]
         self.assertEqual(holder.getprevious().get('data-pk-section'), 'player.status.readonly')
-        self.assertEqual(holder.get('data-sc-fragment'), 'sports.patient:%s:medical-pills' % self.player.id)
+        self.assertEqual(holder.get('data-pk-fragment'), 'sports.patient:%s:medical-pills' % self.player.id)
         self.assertFalse(holder.xpath('.//owl-component'))
         pills = self._pills(tree)
         self.assertEqual(list(pills), ['allergy', 'medical_alert'])
@@ -137,8 +137,8 @@ class TestMedicalHeader1630(MedicalCommon):
         sheet = self._sheet(tree, 'allergy')
         self.assertIsNotNone(sheet)
         self.assertIn('Synthetic kiwi', sheet.text_content())
-        for node in tree.xpath('//*[@data-sc-fragment]'):
-            self.assertFalse(node.xpath('.//dialog[starts-with(@id, "sc_med_")]'), node.get('data-sc-fragment'))
+        for node in tree.xpath('//*[@data-pk-fragment]'):
+            self.assertFalse(node.xpath('.//dialog[starts-with(@id, "sc_med_")]'), node.get('data-pk-fragment'))
         hero = tree.xpath(HERO)[0]
         self.assertFalse(hero.xpath('.//*[@data-sc-edit-view="edit"]//owl-component[contains(@props, \'"allergies"\')]'))
         self.assertFalse(hero.xpath('.//*[@data-pk-section="player.allergies.edit"]'))

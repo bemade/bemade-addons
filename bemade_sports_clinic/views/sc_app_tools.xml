@@ -109,7 +109,7 @@
             <!-- Task 1611: a read-fragment list — a time change moves the card
                  to its date group (headings and order as after a reload). -->
             <div t-if="sc_timesheet_groups" class="o_pk_list" data-pk-section="timesheets.list"
-                 data-sc-fragment="page:timesheets:list" data-sc-fragment-mode="list">
+                 data-pk-fragment="page:timesheets:list" data-pk-fragment-mode="list">
                 <section t-foreach="sc_timesheet_groups" t-as="group" class="o_pk_group" t-att-data-sc-group="group['key']">
                     <h3 class="o_pk_group_title" t-out="group['label']"/>
                     <t t-foreach="group['rows']" t-as="row">
@@ -120,7 +120,7 @@
                 </section>
             </div>
             <div t-elif="sc_timesheet_rows" class="o_pk_list" data-pk-section="timesheets.list"
-                 data-sc-fragment="page:timesheets:list" data-sc-fragment-mode="list">
+                 data-pk-fragment="page:timesheets:list" data-pk-fragment-mode="list">
                 <t t-foreach="sc_timesheet_rows" t-as="row">
                     <t t-call="bemade_sports_clinic.sc_timesheet_card">
                         <t t-set="show_event" t-value="True"/>
@@ -217,7 +217,7 @@
                 </t>
             </div>
             <!-- Task 1611: the text and the link chips, a read fragment. -->
-            <div data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(row['record'], 'read')">
+            <div data-sc-edit-view="read" t-att-data-pk-fragment="pk_fragment_key(row['record'], 'read')">
                 <p class="o_sc_note_text o_pk_pre" t-out="row['note']"/>
                 <div t-if="row['chips']" class="o_pk_chips">
                     <t t-foreach="row['chips']" t-as="chip">

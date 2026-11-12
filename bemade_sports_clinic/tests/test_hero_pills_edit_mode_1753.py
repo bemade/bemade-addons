@@ -89,7 +89,7 @@ class TestHeroPillsEditMode1753(StatusPillsMixin, FragmentsCommon):
         tree = self._page(self._url())
         status = self._status_block(tree)
         for part in ('status', 'medical-pills'):
-            nodes = tree.xpath('//*[@data-sc-fragment="%s"]' % self._key(part))
+            nodes = tree.xpath('//*[@data-pk-fragment="%s"]' % self._key(part))
             self.assertEqual(len(nodes), 1, part)
             self.assertIn(nodes[0], status.iter(), part)
         self.assertEqual(self._status_node(tree).get('data-pk-section'), 'player.status.readonly')

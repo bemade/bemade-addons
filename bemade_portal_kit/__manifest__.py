@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.5.0',
+    'version': '19.0.1.6.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -16,8 +16,8 @@ consumers) bring the content: their roles, menu entries, visibility keys and
 pages. The kit installs on Odoo Community and depends on ``portal`` only.
 
 Version 1.0 provides the four registries of the shell; version 1.1 adds the
-shell's generic scripts (below). Templates, styles and the save / fragment
-engines follow in later versions.
+shell's generic scripts (below), later versions its styles and first
+templates; version 1.6 its save engine and screen refresh.
 
 Registries
 ----------
@@ -188,6 +188,40 @@ change, in a pre-migration of the kit and of the consumer
 The glyphs are taken from, or drawn after, Feather Icons 4.29 (MIT License,
 copyright Cole Bemis): ``static/src/icons/LICENSE-feather.txt``.
 
+Save engine
+-----------
+Version 1.6 moves the field-by-field save of the shell into the kit:
+``POST /my/app/save/<model>/<id>`` (``field``, ``value``, ``write_date``,
+optional ``old_value`` and ``confirm=1``; CSRF) answers 200 (saved, with the
+value, its display, the fragments to refresh, ``saved_at``…), 409 (changed
+since), 403, 400 or 428 (confirm first). A consumer's portal controller
+inherits ``controllers.pk_app.PortalKitApp`` and never declares the route.
+
+What may be saved, and by whom, is the hook ``portal.kit._pk_save_specs()``
+-> ``{model: spec}`` (``tools/save.py`` documents a spec: ``fields`` per role,
+``check``, ``write``, ``read``, ``display``, ``hint``, ``refresh``,
+``propose``, ``live_counts``, ``sudo_write`` + ``permission``, ``context``,
+``confirm``, ``before_write`` / ``after_write``). The kit declares
+``mail.activity`` (summary, due date, assignee, note); a consumer sets who
+may act and to whom an activity may go with
+``_pk_activity_can_act(activity)`` and
+``_pk_activity_assignable_users(activity)``.
+
+Screen refresh
+--------------
+A read-only region of a page carries ``data-pk-fragment="<key>"``
+(``pk_fragment_key(record, part)``). A save answers the key patterns its
+spec's ``refresh`` names; the script ``pk_fragments`` re-asks the page with
+the header ``X-Pk-Fragments`` and swaps the regions in place. A page route
+answers it with ``PortalKitApp._pk_render(template, values)`` (or
+``_pk_fragment_keys()`` + ``_pk_fragments_response()``); fillers
+(``portal.kit._pk_fragment_fillers()``) may add regions the render missed.
+Markers: ``data-pk-fragment``, ``-fragment-mode="list"``,
+``-fragment-keep``, ``-fragment-keep-empty``, ``data-pk-keep-open``,
+``data-pk-rendered-at`` (shell root) and ``data-pk-no-dirty`` (a POST form
+that changes no data). Events: ``pk:saved`` (a save's ``result``),
+``pk:refresh`` and ``pk:refresh-now``; storage key ``pk_dirty_at:v1``.
+
 Style guide
 -----------
 ``/pk/styleguide`` (internal users) shows every generic component with the
@@ -228,6 +262,8 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/src/js/pk_app_nav.js',
             'bemade_portal_kit/static/src/js/pk_switch.js',
             'bemade_portal_kit/static/src/js/pk_live_count.js',
+            # Task 5199 (P4a): the screen refresh.
+            'bemade_portal_kit/static/src/js/pk_fragments.js',
         ],
         # The hoot unit tests (tests/test_pk_hoot.py runs them headless).
         # The modules they test are only DEFINED in the test page and run
@@ -241,6 +277,7 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/src/js/pk_list_header.js',
             'bemade_portal_kit/static/src/js/pk_user_menu.js',
             'bemade_portal_kit/static/src/js/pk_live_count.js',
+            'bemade_portal_kit/static/src/js/pk_fragments.js',
         ],
         'web.assets_unit_tests': [
             'bemade_portal_kit/static/tests/**/*',

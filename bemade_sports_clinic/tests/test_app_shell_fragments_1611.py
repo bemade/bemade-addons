@@ -9,10 +9,10 @@ Acceptance criteria:
 * AC-F1 Every save answers ``refresh`` (the spec's key patterns resolved for
   the record) and ``saved_at`` (server time, ms); an activity save also
   answers ``live_counts`` (the app bar's overdue badge).
-* AC-F2 Every SAVE_REGISTRY spec declares a ``refresh`` map; ``'*'`` resolves
+* AC-F2 Every save spec (``portal.kit.pk_save_specs()``, task 5199) declares a ``refresh`` map; ``'*'`` resolves
   to every fragment of the record, cross-record entries to the other
   record's keys (an injury -> its player; a timesheet -> its event).
-* AC-F3 A page GET with ``X-Sc-Fragments: k1,k2`` answers JSON
+* AC-F3 A page GET with ``X-Pk-Fragments: k1,k2`` answers JSON
   ``{fragments, missing, title, rendered_at}`` (no-store); each fragment is
   byte-identical to that node of a full render; unknown keys are
   ``missing``; malformed keys are ignored.
@@ -21,7 +21,7 @@ Acceptance criteria:
 * AC-F5 Fragment keys are unique on every shell page, and no fragment holds an
   OWL island (``owl-component``).
 * AC-F6 Every shell page carries its server render time
-  (``data-sc-rendered-at``, the « back » check).
+  (``data-pk-rendered-at``, the « back » check).
 * AC-F7 The retired ``data-sc-edit-reload`` / ``data-sc-heading`` /
   ``heading`` / ``stage`` paths are gone.
 * AC-F8 A coach's fragments follow the coach's page: a hidden injury and the
@@ -31,7 +31,6 @@ from collections import Counter
 
 from odoo.tests import tagged
 
-from odoo.addons.bemade_sports_clinic.controllers.app_shell import SAVE_REGISTRY
 from odoo.addons.bemade_sports_clinic.tests.medical_common_1677 import set_medical
 from odoo.addons.bemade_sports_clinic.tests.fragments_common_1611 import FragmentsCommon
 
@@ -55,7 +54,7 @@ class TestFragments1611(FragmentsCommon):
 
     # -- AC-F2 -------------------------------------------------------------
     def test_every_spec_declares_refresh(self):
-        for model, spec in SAVE_REGISTRY.items():
+        for model, spec in self.env['portal.kit'].pk_save_specs().items():
             self.assertIn('*', spec.get('refresh') or {}, model)
 
     def test_cross_record_patterns(self):
@@ -109,16 +108,16 @@ class TestFragments1611(FragmentsCommon):
     # -- AC-F5 / AC-F6 -----------------------------------------------------
     def _check_page(self, url):
         tree = self._page(url)
-        keys = tree.xpath('//*[@data-sc-fragment]/@data-sc-fragment')
+        keys = tree.xpath('//*[@data-pk-fragment]/@data-pk-fragment')
         dupes = [key for key, count in Counter(keys).items() if count > 1]
         self.assertFalse(dupes, '%s: duplicate fragment keys %s' % (url, dupes))
-        for node in tree.xpath('//*[@data-sc-fragment]'):
-            if node.get('data-sc-fragment-mode') == 'list':
+        for node in tree.xpath('//*[@data-pk-fragment]'):
+            if node.get('data-pk-fragment-mode') == 'list':
                 continue
             self.assertFalse(node.xpath('.//owl-component'),
-                             '%s: %s holds an OWL island' % (url, node.get('data-sc-fragment')))
+                             '%s: %s holds an OWL island' % (url, node.get('data-pk-fragment')))
         shell = self._shell(tree)
-        self.assertTrue(int(shell.get('data-sc-rendered-at')), url)
+        self.assertTrue(int(shell.get('data-pk-rendered-at')), url)
         return tree
 
     def test_pages_keys_unique_and_island_free(self):

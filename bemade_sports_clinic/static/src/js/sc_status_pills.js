@@ -14,8 +14,8 @@
  *   stopPropagation): inside a <summary> a pick never toggles the card.
  * - A pick POSTs /my/app/save/<model>/<id> {field, value, write_date,
  *   old_value} (the values rendered in the read fragment), then closes the
- *   menu, BLURS (sc_fragments never swaps the node holding the focus),
- *   announces « sc:saved » (the read fragments refresh in place), and shows
+ *   menu, BLURS (pk_fragments never swaps the node holding the focus),
+ *   announces « pk:saved » (the read fragments refresh in place), and shows
  *   the « Annuler » toast (re-posts the previous value).
  * - Until the fresh fragment lands, the record's pills are busy (a second
  *   pick waits for the fresh values instead of posting stale ones); the
@@ -31,7 +31,7 @@
  */
 import { _t } from "@web/core/l10n/translation";
 import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
-import { requestRefresh } from "@bemade_sports_clinic/js/sc_fragments";
+import { requestRefresh } from "@bemade_portal_kit/js/pk_fragments";
 import { close, closeAll, open } from "@bemade_portal_kit/js/pk_user_menu";
 
 const PILL = "[data-sc-pill-select]";
@@ -100,7 +100,7 @@ async function save(pill, value) {
             el.dataset.scOldValue = result.value !== undefined ? String(result.value) : value;
         }
         document.dispatchEvent(
-            new CustomEvent("sc:saved", {
+            new CustomEvent("pk:saved", {
                 detail: { model, recordId: Number(recordId), field, result },
             })
         );
@@ -128,7 +128,7 @@ async function pick(pill, item) {
     }
     item.blur();
     // Task 1721 (review round 1): WebKit leaves a tap's focus on the card's
-    // <summary> — a focused card never moves in its list (sc_fragments.js),
+    // <summary> — a focused card never moves in its list (pk_fragments.js),
     // e.g. a resolved injury set back to « Actif » joining the active ones.
     const held = document.activeElement;
     if (held && held !== document.body && held.closest && held.closest("[data-pk-fragment-item]")) {

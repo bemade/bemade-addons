@@ -13,8 +13,9 @@ change per page.
 P1b (task 1542) adds:
 
 * the server autosave pattern — ``POST /my/app/save/<model>/<id>`` driven by
-  the declarative ``SAVE_REGISTRY`` (EMPTY in production code until P2: the
-  tests register a test-only entry);
+  declarative save specs (task 5199: the route and the spec format moved to
+  bemade_portal_kit; the clinic's specs are ``sc_save_specs()``, registered
+  through ``portal.kit._pk_save_specs()``);
 * the installable app — ``/my/app.webmanifest``, ``/my/service-worker.js``,
   the data-free ``/my/app/offline`` page and « Plus › Installer
   l'application » (``/my/app/install``). The manifest, the service worker
@@ -30,15 +31,12 @@ routes themselves stay ``multilang=False`` (stable, unprefixed URLs).
 import json
 import logging
 import re
-import time
 import uuid
 from datetime import timedelta
 from urllib.parse import urlencode
 
 from dateutil.relativedelta import relativedelta
 import werkzeug.exceptions
-from lxml import etree
-from lxml import html as lxml_html
 
 from markupsafe import Markup
 
@@ -48,13 +46,14 @@ from odoo.http import request
 from odoo.modules.module import get_manifest
 from odoo.tools import file_open, format_date, format_datetime, html2plaintext, plaintext2html
 
-from odoo.addons.portal.controllers.portal import CustomerPortal
+from odoo.addons.bemade_portal_kit.controllers.pk_app import PortalKitApp
+from odoo.addons.bemade_portal_kit.tools import pk_fragment_key, pk_now_ms
 
 from ..models import sc_app_nav, sc_app_roles
 from ..models.patient import IDENTITY_CONFIRM_KEY, IDENTITY_FIELDS
 from ..models.patient_injury import STAGE_ORDER
 from .access_control_mixin import (
-    AccessControlMixin, parse_portal_date, sc_deadline_in_past, sc_past_deadline_message,
+    AccessControlMixin, parse_portal_date,
 )
 
 _logger = logging.getLogger(__name__)
@@ -82,79 +81,16 @@ PREF_BOOLEANS = ('digest_daily_enabled', 'sc_show_done_buttons')
 PREF_LANG = 'lang'
 # ---------------------------------------------------------------------------
 # Server autosave (task 1542, filled by task 1539) — WHAT may be saved field
-# by field, and BY WHOM.
-#
-#   SAVE_REGISTRY = {
-#       '<model>': {
-#           'fields': {'field_a': ROLES, ...},       # per-role allowlist: the
-#                                                    # field is refused (403)
-#                                                    # unless the caller holds
-#                                                    # one of ROLES. A plain
-#                                                    # tuple = any app role.
-#           'check': callable(controller, record),   # raises AccessError /
-#                                                    # MissingError to refuse;
-#                                                    # reuse AccessControlMixin
-#           'write': callable(controller, record, field, value) -> dict | None
-#                                                    # optional write hook (the
-#                                                    # controller's existing
-#                                                    # rules: validation, pairs,
-#                                                    # normalisation). Raises
-#                                                    # UserError/ValidationError
-#                                                    # -> 400; returns extra
-#                                                    # payload keys (``message``).
-#           'read': callable(record, field) -> value # optional, for VIRTUAL
-#                                                    # fields (not on the model)
-#           'hint': callable(record, field) -> str | None
-#                                                    # optional (task 1601): the
-#                                                    # field's fresh « updated on
-#                                                    # … by … » stamp, answered
-#                                                    # as ``hint`` so the page
-#                                                    # updates it in place; None
-#                                                    # = the field has no stamp.
-#           'refresh': {field | '*': [entry, ...]}   # task 1611: the READ
-#                                                    # FRAGMENTS of the page a
-#                                                    # save of ``field`` makes
-#                                                    # stale (``'*'`` key: every
-#                                                    # field). An entry is a part
-#                                                    # of THIS record's keys
-#                                                    # (``'hero'`` ->
-#                                                    # ``<model>:<id>:hero``,
-#                                                    # ``'*'`` = all of them), a
-#                                                    # full key pattern
-#                                                    # (``'sports.treatment.note:*:meta'``)
-#                                                    # or callable(record) -> [patterns]
-#                                                    # (another record's keys).
-#                                                    # Answered as ``refresh``.
-#           'propose': callable(record, field) -> dict | None
-#                                                    # task 1603: a FOLLOW-UP
-#                                                    # PROPOSAL after the save
-#                                                    # (therapists only), answered
-#                                                    # as ``propose`` — see
-#                                                    # models/patient_return_proposal.py
-#                                                    # and /my/app/apply-proposal.
-#           'live_counts': True,                     # task 1611: the save also
-#                                                    # refreshes the app bar's
-#                                                    # live counters (overdue
-#                                                    # activities badge).
-#           'sudo_write': True,                      # the hook writes as sudo …
-#           'permission': callable(controller, record) -> bool,
-#                                                    # … which REQUIRES this
-#                                                    # permission callable,
-#                                                    # checked before any write
-#                                                    # (asserted at import).
-#       },
-#   }
-#
-# The write runs AS THE USER unless a spec declares ``sudo_write`` (only where
-# the user genuinely lacks the ACL for the write — portal therapists have a
-# read-only ACL on treatment notes): ACLs, record rules and the models' own
-# write guards still apply on top of ``check``. Role-restricted fields are
-# refused server-side even when the ORM would allow them (a coach holds a
-# write ACL on injuries, yet may not change their stage).
+# by field, and BY WHOM. Task 5199 (P4a): the route (``POST
+# /my/app/save/<model>/<id>``) and the spec format moved to the kit
+# (bemade_portal_kit/tools/save.py documents every key). The clinic's specs
+# are built by ``sc_save_specs()`` below and registered per database through
+# ``portal.kit._pk_save_specs()`` (models/sc_app_roles.py); ``mail.activity``
+# is the kit's spec, with the clinic's rules in its two hooks.
 # ---------------------------------------------------------------------------
 _TP_ROLES = sc_app_roles.TP
 # Task 1603: what an applied follow-up proposal may write (on top of the
-# SAVE_REGISTRY role allowlist and check), and how many changes at once.
+# save spec's role allowlist and check), and how many changes at once.
 PROPOSAL_FIELDS = {
     # Task 1670: the last active injury resolved also proposes the statuses
     # (applied together as one « sc_status » save — the pair rule).
@@ -259,64 +195,8 @@ def _date_value(value):
 
 
 # -- mail.activity (owner review 2026-10-11: the activity page's pencil card) --
-def _activity_check(ctrl, activity):
-    if not ctrl._activity_act_access(activity):
-        raise AccessError(_("You do not have access to this activity."))
-
-
-def _activity_permission(ctrl, activity):
-    return ctrl._activity_act_access(activity)
-
-
-def _activity_write(ctrl, activity, field, value):
-    """/my/activity/update's rules, one field at a time; sudo (coaches hold a
-    read-only mail.activity ACL — the access check is the authorization)."""
-    record = activity.sudo()
-    if field == 'summary':
-        value = (value or '').strip()
-        if not value:
-            raise ValidationError(_("Please fill in all required fields."))
-        record.write({'summary': value})
-    elif field == 'date_deadline':
-        day = _date_value(value)
-        if not day:
-            raise ValidationError(_("Please fill in all required fields."))
-        # Task 1744: never a NEW due date in the past.
-        if sc_deadline_in_past(day, record.date_deadline):
-            raise ValidationError(sc_past_deadline_message(request.env))
-        record.write({'date_deadline': day})
-    elif field == 'note':
-        record.write({'note': plaintext2html(value) if (value or '').strip() else False})
-    elif field == 'user_id':
-        try:
-            user = request.env['res.users'].browse(int(value))
-        except (TypeError, ValueError):
-            user = request.env['res.users']
-        if user != record.user_id:
-            if user not in ctrl._activity_assignable_users_for(request.env.user):
-                raise ValidationError(_("You cannot assign this activity to that user."))
-            record.write({'user_id': user.id})
-    return {}
-
-
-def _activity_read(activity, field):
-    activity = activity.sudo()
-    if field == 'note':
-        return html2plaintext(activity.note or '').strip()
-    if field == 'user_id':
-        return activity.user_id.id or False
-    if field == 'date_deadline':
-        return fields.Date.to_string(activity.date_deadline) if activity.date_deadline else ''
-    return activity[field] or ''
-
-
-def _activity_display(activity, field):
-    activity = activity.sudo()
-    if field == 'note':
-        return html2plaintext(activity.note or '').strip()
-    if field == 'user_id':
-        return activity.user_id.name or ''
-    return None
+# Task 5199 (P4a): the kit's spec (bemade_portal_kit/tools/activity.py); the
+# clinic's act / assign rules are its hooks (models/sc_app_roles.py).
 
 
 # -- sports.quick.note (owner review 2026-10-11: notepad pencil cards) -------
@@ -544,7 +424,7 @@ def _patient_read(patient, field):
         # posts back) those; the player's other teams are not theirs to touch.
         mine = patient.sudo().team_ids & _assignable_teams()
         return ','.join(str(team_id) for team_id in sorted(mine.ids))
-    return AppShellPortal._sc_save_value(patient, field, raw=True)
+    return AppShellPortal._pk_save_value(patient, field, raw=True)
 
 
 def _patient_display(patient, field):
@@ -632,6 +512,40 @@ def _patient_write(ctrl, patient, field, value):
     return extra
 
 
+def _patient_context(ctrl, patient, field, kw):
+    """Task 1639: the identity guard applies to everyone working through the
+    app (internal users included). Task 1600: a confirmed identity
+    correction (``confirm=1``) is recorded on the file by the model."""
+    context = {'sc_identity_guard': True}
+    if field in IDENTITY_FIELDS and kw.get('confirm') == '1':
+        context[IDENTITY_CONFIRM_KEY] = True
+    return context
+
+
+def _patient_confirm(ctrl, patient, field, value, kw):
+    """Task 1600: changing an existing name / date of birth is an explicit,
+    confirmed step — the 428 payload (``confirm_identity``, message, old,
+    new) until the field's confirm banner re-posts with ``confirm=1``."""
+    if field not in IDENTITY_FIELDS:
+        return None
+    return ctrl._sc_identity_confirm_needed(patient, field, value)
+
+
+def _patient_before_write(ctrl, patient, field):
+    """Task 1656: the teams before a player's teams save (a removal may end
+    the viewer's own access)."""
+    return patient.sudo().team_ids if field == 'sc_team_ids' else None
+
+
+def _patient_after_write(ctrl, patient, field, teams_before):
+    """Task 1656: the viewer removed the team that gave them access — the
+    answer is ``{ok, lost_access, message}`` only (``replace``)."""
+    if teams_before is None:
+        return None
+    lost = ctrl._sc_lost_access_payload(patient, teams_before)
+    return dict(lost, replace=True) if lost else None
+
+
 def _patient_propose(patient, field):
     """Task 1603: Retour prévu changed by hand -> align the active injuries'
     predicted resolution dates (a follow-up proposal)."""
@@ -660,7 +574,7 @@ def _injury_read(injury, field):
     if field == 'hidden_from_coaches':
         # The segmented control's values (« Entraîneurs » / « Masquée »).
         return '1' if injury.hidden_from_coaches else '0'
-    return AppShellPortal._sc_save_value(injury, field, raw=True)
+    return AppShellPortal._pk_save_value(injury, field, raw=True)
 
 
 def _injury_display(injury, field):
@@ -888,7 +802,7 @@ def _document_permission(ctrl, document):
 def _document_read(document, field):
     if field == 'category':
         return _DOCUMENT_LEGACY_CATEGORIES.get(document.category, document.category)
-    return AppShellPortal._sc_save_value(document, field, raw=True)
+    return AppShellPortal._pk_save_value(document, field, raw=True)
 
 
 def _document_write(ctrl, document, field, value):
@@ -932,7 +846,10 @@ def _timesheet_event_fragments(timesheet):
     return ['sports.event:%s:*' % timesheet.event_id.id] if timesheet.event_id else []
 
 
-SAVE_REGISTRY = {
+def sc_save_specs():
+    """The clinic's save specs ``{model: spec}`` (a fresh dict on each call:
+    ``portal.kit._pk_save_specs()`` caches the merged result per database)."""
+    return {
     'sports.patient': {
         'fields': {
             # Every staff role, as on today's player form.
@@ -971,6 +888,12 @@ SAVE_REGISTRY = {
         'display': _patient_display,
         'hint': _patient_hint,
         'propose': _patient_propose,
+        # Tasks 1600 / 1639 / 1656: the identity guard and its confirmation,
+        # the lost-access answer of a teams save.
+        'context': _patient_context,
+        'confirm': _patient_confirm,
+        'before_write': _patient_before_write,
+        'after_write': _patient_after_write,
         # The player page / dossier: title, hero (initials, teams, the
         # allergy / medical-alert pills and their popups), identity read view
         # (age), memberships, removal actions.
@@ -1011,21 +934,6 @@ SAVE_REGISTRY = {
         'permission': _note_permission,
         # The note's meta line (date, linked injury) and « modified » stamp.
         'refresh': {'*': ['*']},
-    },
-    'mail.activity': {
-        'fields': {
-            'summary': _STAFF_ROLES, 'date_deadline': _STAFF_ROLES,
-            'user_id': _STAFF_ROLES, 'note': _STAFF_ROLES,
-        },
-        'check': _activity_check,
-        'write': _activity_write,
-        'read': _activity_read,
-        'display': _activity_display,
-        'sudo_write': True,
-        'permission': _activity_permission,
-        # Title, state chip, note; the app bar's overdue badge.
-        'refresh': {'*': ['*']},
-        'live_counts': True,
     },
     'sports.quick.note': {
         'fields': {name: _TP_ROLES for name in ('note',) + _QUICK_NOTE_LINKS},
@@ -1081,57 +989,23 @@ SAVE_REGISTRY = {
         # The document row (name, category · date · author, description).
         'refresh': {'*': ['*']},
     },
-}
+    }
 
 
-def _validate_save_registry(registry):
-    """A spec that writes as sudo MUST carry its permission callable."""
-    for model, spec in registry.items():
-        assert callable(spec.get('check')), "%s: 'check' is mandatory" % model
-        if spec.get('sudo_write'):
-            assert callable(spec.get('permission')), (
-                "%s: a sudo_write spec requires a 'permission' callable" % model)
-            assert callable(spec.get('write')), (
-                "%s: a sudo_write spec requires its 'write' hook" % model)
-        assert spec.get('propose') is None or callable(spec['propose']), (
-            "%s: 'propose' must be callable(record, field)" % model)
-        for field, entries in (spec.get('refresh') or {}).items():
-            assert field == '*' or field in (spec.get('fields') or ()), (
-                "%s: 'refresh' names an unknown field %r" % (model, field))
-            assert all(callable(entry) or isinstance(entry, str) for entry in entries), (
-                "%s: a 'refresh' entry is a key pattern or a callable" % model)
+# The kit's mail.activity spec, with the clinic's role allowlist (every staff
+# role, as on the activity page).
+SC_ACTIVITY_FIELD_ROLES = ('summary', 'date_deadline', 'user_id', 'note')
 
 
 # ---------------------------------------------------------------------------
-# Read fragments (task 1611) — what refreshes on screen after a save.
-#
-# A server-built, READ-ONLY region of a shell page carries
-# ``data-sc-fragment="<model>:<id>:<part>"`` (``sc_fragment_key(record,
-# part)`` in the templates; page-level regions use ``page:<name>:<part>``).
-# Keys are unique on the page and stable across renders. A region never holds
-# an OWL island (``owl-component``) — mark its read-only parts instead.
-#
-# * A save answers ``refresh`` (the spec's ``refresh`` map, resolved for the
-#   record) — key patterns where ``*`` matches one key segment.
-# * The page (static/src/js/sc_fragments.js) matches them against the keys it
-#   carries and GETs ITS OWN URL with the ``X-Sc-Fragments: k1,k2`` header:
-#   the page route renders exactly as for a reload (same values, same access
-#   rules, same QWeb) and ``_sc_shell_response`` answers only those nodes as
-#   JSON ``{fragments: {key: outer html}, missing: [...], title, rendered_at}``.
-# * The client swaps each node in place, never one holding an OWL island or
-#   the focused element (retried once that element loses focus).
-# * ``data-sc-fragment-mode="list"`` on a container whose children carry
-#   ``data-pk-fragment-item="<key>"``: the live items are kept (their islands
-#   survive) and only re-ordered / dropped / added as in the fresh render.
+# Read fragments (task 1611) — what refreshes on screen after a save. Task
+# 5199 (P4a): moved to the kit (bemade_portal_kit/tools/fragments.py,
+# @bemade_portal_kit/js/pk_fragments): ``data-pk-fragment`` regions keyed
+# ``pk_fragment_key(record, part)``, the ``X-Pk-Fragments`` request,
+# ``PortalKitApp._pk_fragments_response``. The clinic keeps its filler
+# (``sc_fill_moved_row_fragments``, registered in
+# ``portal.kit._pk_fragment_fillers()``).
 # ---------------------------------------------------------------------------
-SC_FRAGMENTS_HEADER = 'X-Sc-Fragments'
-SC_FRAGMENTS_MAX = 200
-_SC_FRAGMENT_KEY_RE = re.compile(r'^[\w.\-]+(?::[\w.\-*]+)*$')
-
-
-def sc_fragment_key(record, part):
-    """The fragment key of ``part`` of ``record`` (``<model>:<id>:<part>``)."""
-    return '%s:%s:%s' % (record._name, record.id, part)
 
 
 # Task 1607: the list header's sort menu — each option re-opens the CURRENT
@@ -1159,43 +1033,6 @@ def sc_sort_options(path, args, param, options, current, drop=()):
     } for key, label in options]
 
 
-def sc_now_ms():
-    """Server time in ms (the render stamp and the save's ``saved_at``: both
-    on the server clock, so the « back » check never compares two clocks)."""
-    return int(time.time() * 1000)
-
-
-def sc_refresh_patterns(model, record, field):
-    """The fragment key patterns a save of ``record.field`` makes stale."""
-    spec = SAVE_REGISTRY.get(model) or {}
-    refresh = spec.get('refresh') or {}
-    base = '%s:%s' % (model, record.id)
-    patterns = []
-    for entry in list(refresh.get('*', ())) + list(refresh.get(field, ())):
-        items = entry(record.sudo()) if callable(entry) else [entry]
-        for item in items or ():
-            if not item:
-                continue
-            if ':' not in item:
-                item = '%s:%s' % (base, item)
-            if item not in patterns:
-                patterns.append(item)
-    return patterns
-
-
-def sc_extract_fragments(html, keys):
-    """``{key: outer html}`` of the nodes of the rendered page ``html`` whose
-    ``data-sc-fragment`` is one of ``keys``, and the document title."""
-    tree = lxml_html.document_fromstring(html)
-    wanted = set(keys)
-    found = {}
-    for node in tree.iterfind('.//*[@data-sc-fragment]'):
-        key = node.get('data-sc-fragment')
-        if key in wanted and key not in found:
-            found[key] = etree.tostring(node, encoding='unicode', method='html', with_tail=False)
-    title = tree.find('.//title')
-    return found, (title.text_content().strip() if title is not None else '')
-
 SC_ROW_KEY_RE = re.compile(r'^sports\.patient:(\d+):row-(\w+)$')
 
 
@@ -1206,7 +1043,7 @@ def sc_fill_moved_row_fragments(found, keys):
     player's fresh card from another section, its row scope rewritten (the
     fragment key, the pill menu ids, the details region id) — so the card the
     user just changed updates in place instead of staying stale (it is kept
-    where it is until the next visit, data-sc-fragment-keep)."""
+    where it is until the next visit, data-pk-fragment-keep)."""
     by_player = {}
     for key, html in found.items():
         match = SC_ROW_KEY_RE.match(key)
@@ -1318,7 +1155,7 @@ class AppShellMixin:
         toast payload ``{message, title, tone}`` — tone ``error`` for the
         danger / warning types, ``success`` otherwise — or False. A fragment
         request (task 1611) leaves it for the next real page."""
-        if AppShellMixin._sc_fragment_keys() is not None:
+        if PortalKitApp._pk_fragment_keys() is not None:
             return False
         # Task 1658: a guarded form's fetch (X-Sc-Guard) reads the page it
         # landed on to find a refusal — peek, so the real navigation that
@@ -1370,7 +1207,7 @@ class AppShellMixin:
     def _sc_pop_proposal():
         """Task 1603: the pending proposal as JSON (popped: shown once), or
         False. A fragment request (task 1611) leaves it for the next page."""
-        if AppShellMixin._sc_fragment_keys() is not None or AppShellMixin._sc_guard_probe():
+        if PortalKitApp._pk_fragment_keys() is not None or AppShellMixin._sc_guard_probe():
             return False
         proposal = request.session.pop(SC_PROPOSAL_SESSION_KEY, None)
         return json.dumps(proposal) if isinstance(proposal, dict) else False
@@ -1443,15 +1280,16 @@ class AppShellMixin:
             'sc_today': fields.Date.to_string(fields.Date.context_today(user)),
             # Owner review 2026-10-10: a card's read view (same strings the
             # save route answers, so an in-place update matches a reload).
-            'sc_display': lambda record, field: AppShellPortal._sc_save_display(record, field),
+            'sc_display': lambda record, field: AppShellPortal._pk_save_display(record, field),
             'sc_display_key': lambda record, field: '%s:%s:%s' % (record._name, record.id, field),
             # Task 1611: read fragments (keys of the regions a save refreshes)
-            # and the render stamp the « back » check compares against.
-            'sc_fragment_key': sc_fragment_key,
+            # and the render stamp the « back » check compares against (task
+            # 5199: the kit's names).
+            'pk_fragment_key': pk_fragment_key,
             # Task 1607: the sort menu of a list header (sc_list_header).
             'sc_sort_options': lambda param, options, current, drop=(): sc_sort_options(
                 path, request.httprequest.args, param, options, current, drop),
-            'sc_rendered_at': sc_now_ms(),
+            'pk_rendered_at': pk_now_ms(),
             # Task 1585: tap-to-call / tap-to-email hrefs (sc_display_row
             # with ``href_kind``, the event page's staff / organization).
             'sc_contact_href': sc_contact_href,
@@ -1621,7 +1459,7 @@ class AppShellMixin:
             'label': str(label),
             'inputType': input_type,
             'inputId': 'sc_%s_%s_%s' % (record._name.replace('.', '_'), record.id, field),
-            'value': AppShellPortal._sc_save_value(record, field),
+            'value': AppShellPortal._pk_save_value(record, field),
         }
         if extra.get('options') is not None:
             extra['options'] = AppShellMixin._sc_options(extra['options'])
@@ -1864,42 +1702,15 @@ class AppShellMixin:
     # ------------------------------------------------------------------
     # Task 1611: read fragments (see « Read fragments » above)
     # ------------------------------------------------------------------
-    @staticmethod
-    def _sc_fragment_keys():
-        """The fragment keys a request asks for (``X-Sc-Fragments``), or None
-        for a normal page request."""
-        try:
-            raw = request.httprequest.headers.get(SC_FRAGMENTS_HEADER)
-        except RuntimeError:
-            return None
-        if raw is None:
-            return None
-        keys = []
-        for key in raw.split(','):
-            key = key.strip()
-            if key and _SC_FRAGMENT_KEY_RE.match(key) and key not in keys:
-                keys.append(key)
-        return keys[:SC_FRAGMENTS_MAX]
-
     def _sc_shell_response(self, template, values):
-        """A shell page: the page itself, or — asked with ``X-Sc-Fragments`` —
-        the requested read fragments of the SAME render, as JSON (never
-        cached)."""
+        """A shell page: the page itself, or — asked with ``X-Pk-Fragments``
+        — the requested read fragments of the SAME render, as JSON (never
+        cached; task 5199: the kit's fragment answer)."""
         response = request.render(template, values)
-        keys = self._sc_fragment_keys()
+        keys = PortalKitApp._pk_fragment_keys()
         if keys is None:
             return response
-        found, title = sc_extract_fragments(response.render(), keys)
-        sc_fill_moved_row_fragments(found, keys)
-        response = request.make_json_response({
-            'fragments': found,
-            'missing': [key for key in keys if key not in found],
-            'title': title,
-            'rendered_at': values.get('sc_rendered_at') or sc_now_ms(),
-        })
-        response.headers['Cache-Control'] = 'no-store'
-        response.headers['Vary'] = SC_FRAGMENTS_HEADER
-        return response
+        return PortalKitApp._pk_fragments_response(response, keys, values.get('pk_rendered_at'))
 
     # ------------------------------------------------------------------
     # Task 1540: timesheet rows (event page + /my/sc/timesheets)
@@ -2020,7 +1831,7 @@ class AppShellMixin:
             teams, lambda t: '/my/team?team_id=%s&tab=activities' % t.id)
 
 
-class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
+class AppShellPortal(PortalKitApp, AccessControlMixin, AppShellMixin):
 
     # ------------------------------------------------------------------
     # /my/home — app home (« Équipes ») when the shell is active
@@ -2146,74 +1957,11 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return response
 
     # ------------------------------------------------------------------
-    # /my/app/save/<model>/<id> — the server autosave pattern (task 1542)
+    # /my/app/save/<model>/<id> — the server autosave pattern (task 1542).
+    # Task 5199 (P4a): the route and its helpers (``_pk_save_json``,
+    # ``_pk_save_value``, ``_pk_save_display``, …) are the kit's
+    # (PortalKitApp); the clinic's specs carry its own rules.
     # ------------------------------------------------------------------
-    @staticmethod
-    def _sc_save_json(payload, status=200):
-        return request.make_json_response(payload, status=status)
-
-    @staticmethod
-    def _sc_save_value(record, name, raw=False):
-        spec = SAVE_REGISTRY.get(record._name) or {}
-        if not raw and spec.get('read'):
-            return spec['read'](record, name)
-        value = record[name]
-        field = record._fields[name]
-        if field.type in ('many2one',):
-            return value.id or False
-        if field.type in ('date', 'datetime'):
-            return field.to_string(value) if value else False
-        return value
-
-    @staticmethod
-    def _sc_save_display(record, name):
-        """The saved value as a reader sees it (owner review 2026-10-10: a
-        card's read view updates in place after a save) — a name for a
-        many2one, a label for a selection, a formatted date; '' when empty."""
-        spec = SAVE_REGISTRY.get(record._name) or {}
-        if spec.get('display'):
-            shown = spec['display'](record, name)
-            if shown is not None:
-                return shown
-        field = record._fields.get(name)
-        if field is None:
-            return ''
-        value = record[name]
-        if not value:
-            return ''
-        if field.type == 'many2one':
-            # The plain name, as the select options show it (a province reads
-            # « Quebec », not « Quebec (CA) »).
-            value = value.sudo()
-            return (value.name if 'name' in value._fields else value.display_name) or ''
-        if field.type == 'selection':
-            return dict(field._description_selection(record.env)).get(value, '')
-        if field.type == 'date':
-            return format_date(record.env, value)
-        if field.type == 'datetime':
-            return format_datetime(record.env, value)
-        return str(value)
-
-    @classmethod
-    def _sc_field_unchanged(cls, record, field, old_value):
-        """Does ``record.field`` still hold what the client last saw?"""
-        if old_value is None:
-            return False
-        current = cls._sc_save_value(record, field)
-        if current is False or current is None:
-            current = ''
-        return str(current).strip() == str(old_value).strip()
-
-    @staticmethod
-    def _sc_save_allowed(spec, field):
-        """Is ``field`` in the spec's allowlist for the CALLER's roles?"""
-        allowed = spec.get('fields') or ()
-        if field not in allowed:
-            return False
-        if isinstance(allowed, dict):
-            return bool(request.env.user._sc_app_roles() & frozenset(allowed[field]))
-        return True
-
     def _sc_lost_access_payload(self, patient, teams_before):
         """Task 1656: the viewer removed the team that gave them access to
         ``patient`` — ``{ok, lost_access, message}`` (no refresh patterns, no
@@ -2235,7 +1983,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
 
     @staticmethod
     def _sc_identity_confirm_needed(patient, field, value):
-        """The 409 payload asking the client to confirm an identity
+        """The 428 payload asking the client to confirm an identity
         correction (an existing first / last name or date of birth changed
         by a portal user), or None when no confirmation is needed."""
         new = _date_value(value) if field == 'date_of_birth' else (value or '').strip()
@@ -2255,21 +2003,16 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'new': new_text,
         }
 
-    @staticmethod
-    def _sc_save_proposal(spec, record, field):
-        """Task 1603: the spec's follow-up proposal for this save (therapists
-        only), or None. A builder failure never fails the save it follows."""
-        if not spec.get('propose') or not (request.env.user._sc_app_roles() & _TP_ROLES):
+    def _pk_save_proposal(self, spec, record, field):
+        """Task 1603: the spec's follow-up proposal for this save — for
+        therapists only (the kit's builder call otherwise)."""
+        if not (request.env.user._sc_app_roles() & _TP_ROLES):
             return None
-        try:
-            return spec['propose'](record, field) or None
-        except Exception:  # noqa: BLE001 — a proposal is a convenience only
-            _logger.exception("Follow-up proposal failed for %s.%s", record._name, field)
-            return None
+        return super()._pk_save_proposal(spec, record, field)
 
     def _sc_apply_changes(self, patient, changes):
         """Task 1603: write the changes of an applied proposal — each one
-        re-validated (the proposal allowlist, the SAVE_REGISTRY role
+        re-validated (the proposal allowlist, the save spec's role
         allowlist and check, the record belongs to ``patient``) and written
         by the spec's write hook (the normal save path: validation,
         tracking, history). Raises AccessError / ValidationError; the
@@ -2283,10 +2026,10 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             model, field = change.get('model'), change.get('field')
             if field not in PROPOSAL_FIELDS.get(model, ()):
                 raise AccessError(_("This change cannot be applied here."))
-            spec = SAVE_REGISTRY.get(model)
+            spec = self._pk_save_spec(model)
             # Match / practice are saved as the player's one « sc_status ».
             allowed_as = 'sc_status' if field in _STATUS_FIELDS else field
-            if not spec or not self._sc_save_allowed(spec, allowed_as):
+            if not spec or not self._pk_save_allowed(spec, allowed_as):
                 raise AccessError(_("This change cannot be applied here."))
             try:
                 record = request.env[model].browse(int(change.get('id'))).exists()
@@ -2344,7 +2087,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             if 'practice_status' in statuses and practice != 'yes' and match == 'yes':
                 raise ValidationError(_("Set Match to No first"))
             raise ValidationError(_("Requires Practice: Yes"))
-        SAVE_REGISTRY['sports.patient']['write'](self, patient, 'sc_status', '%s:%s' % (match, practice))
+        self._pk_save_spec('sports.patient')['write'](self, patient, 'sc_status', '%s:%s' % (match, practice))
         return [(patient, name) for name in ('match_status', 'practice_status') if name in statuses]
 
     @http.route(['/my/app/apply-proposal'], type='http', auth='user',
@@ -2367,14 +2110,14 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
           (nothing written).
         """
         if not (request.env.user._sc_app_roles() & _TP_ROLES):
-            return self._sc_save_json({'error': 'forbidden'}, 403)
+            return self._pk_save_json({'error': 'forbidden'}, 403)
         try:
             parsed = json.loads(changes or '')
             patient_id = int(patient_id)
         except (TypeError, ValueError):
-            return self._sc_save_json({'error': 'bad_request'}, 400)
+            return self._pk_save_json({'error': 'bad_request'}, 400)
         if not isinstance(parsed, list) or not parsed or len(parsed) > PROPOSAL_MAX_CHANGES:
-            return self._sc_save_json({'error': 'bad_request'}, 400)
+            return self._pk_save_json({'error': 'bad_request'}, 400)
         try:
             patient = self._check_access_to_patient(patient_id)
             # Task 1727: a « Retour prévu » that has passed since the sheet
@@ -2382,7 +2125,7 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # written.
             stale = self._sc_past_return_changes(patient, parsed)
             if stale:
-                return self._sc_save_json({
+                return self._pk_save_json({
                     'error': 'invalid',
                     'needs_date': stale,
                     'min': fields.Date.to_string(fields.Date.context_today(patient)),
@@ -2399,25 +2142,25 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     'model': record._name,
                     'id': record.id,
                     'field': field,
-                    'value': self._sc_save_value(record, field),
-                    'display': self._sc_save_display(record, field),
+                    'value': self._pk_save_value(record, field),
+                    'display': self._pk_save_display(record, field),
                     'write_date': fields.Datetime.to_string(record.write_date),
                 })
-                for pattern in sc_refresh_patterns(record._name, record, field):
+                for pattern in request.env['portal.kit'].pk_refresh_patterns(record, field):
                     if pattern not in refresh:
                         refresh.append(pattern)
-            return self._sc_save_json({
+            return self._pk_save_json({
                 'ok': True,
                 'saved': saved,
                 'refresh': refresh,
-                'saved_at': sc_now_ms(),
+                'saved_at': pk_now_ms(),
                 'message': _("Changes applied."),
             })
         except (AccessError, MissingError):
-            return self._sc_save_json({'error': 'forbidden'}, 403)
+            return self._pk_save_json({'error': 'forbidden'}, 403)
         except (UserError, ValidationError, ValueError) as exc:
             message = exc.args[0] if getattr(exc, 'args', None) else str(exc)
-            return self._sc_save_json({'error': 'invalid', 'message': str(message)}, 400)
+            return self._pk_save_json({'error': 'invalid', 'message': str(message)}, 400)
 
     # ------------------------------------------------------------------
     # Task 1604 — quick « Vérifier » / « Résoudre » (the injury card row and
@@ -2432,40 +2175,39 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         access), 400 ``{error, message}`` (wrong stage, invalid date —
         nothing written)."""
         if not (request.env.user._sc_app_roles() & _TP_ROLES):
-            return self._sc_save_json({'error': 'forbidden'}, 403)
+            return self._pk_save_json({'error': 'forbidden'}, 403)
         try:
             injury = self._check_access_to_injury(injury_id)
         except (AccessError, MissingError, UserError):
-            return self._sc_save_json({'error': 'forbidden'}, 403)
+            return self._pk_save_json({'error': 'forbidden'}, 403)
         try:
             with request.env.cr.savepoint():
                 run(injury)
                 injury.flush_recordset()
         except (AccessError, MissingError):
-            return self._sc_save_json({'error': 'forbidden'}, 403)
+            return self._pk_save_json({'error': 'forbidden'}, 403)
         except (UserError, ValidationError, ValueError) as exc:
             message = exc.args[0] if getattr(exc, 'args', None) else str(exc)
-            return self._sc_save_json({'error': 'invalid', 'message': str(message)}, 400)
+            return self._pk_save_json({'error': 'invalid', 'message': str(message)}, 400)
         injury.invalidate_recordset()
-        model = injury._name
         payload = {
             'ok': True,
             'write_date': fields.Datetime.to_string(injury.write_date),
-            'value': self._sc_save_value(injury, 'stage'),
-            'display': self._sc_save_display(injury, 'stage'),
+            'value': self._pk_save_value(injury, 'stage'),
+            'display': self._pk_save_display(injury, 'stage'),
             'also': {name: {
-                'value': self._sc_save_value(injury, name),
-                'display': self._sc_save_display(injury, name),
+                'value': self._pk_save_value(injury, name),
+                'display': self._pk_save_display(injury, name),
             } for name in ('stage', 'resolution_date', 'predicted_resolution_date')},
-            'refresh': sc_refresh_patterns(model, injury, 'stage'),
-            'saved_at': sc_now_ms(),
+            'refresh': request.env['portal.kit'].pk_refresh_patterns(injury, 'stage'),
+            'saved_at': pk_now_ms(),
             'live_counts': True,
             'message': message,
         }
-        proposal = self._sc_save_proposal(SAVE_REGISTRY[model], injury, 'stage')
+        proposal = self._pk_save_proposal(self._pk_save_spec(injury._name), injury, 'stage')
         if proposal:
             payload['propose'] = proposal
-        return self._sc_save_json(payload)
+        return self._pk_save_json(payload)
 
     @http.route(['/my/injury/<int:injury_id>/verify'], type='http', auth='user',
                 methods=['POST'], csrf=True, multilang=False)
@@ -2494,145 +2236,6 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 raise ValidationError(_("The resolution date cannot be in the future."))
             injury.action_resolve_injury(resolution_date=day)
         return self._sc_injury_quick(injury_id, run, _("Injury resolved."))
-
-    @http.route(['/my/app/save/<string:model>/<int:record_id>'], type='http', auth='user',
-                methods=['POST'], csrf=True, multilang=False)
-    def sc_app_save(self, model, record_id, field=None, value=None, write_date=None,
-                    old_value=None, **kw):
-        """Save ONE field of ONE record, as the user.
-
-        Body (form-encoded, CSRF enforced by the http POST route):
-        ``field``, ``value``, ``write_date`` (the value the client last saw),
-        optional ``old_value`` (task 1539: the FIELD value the client last
-        saw — a record written since, but whose field still holds
-        ``old_value``, is not a conflict: e.g. a sibling field of the same
-        form was saved a moment ago).
-        Answers JSON:
-
-        * 200 ``{ok, write_date, value[, message]}`` — saved (``value`` is the
-          stored value, e.g. a normalised jersey number; ``message`` a soft
-          warning such as a duplicate jersey number);
-        * 409 ``{conflict, current_value, current_write_date, by}`` — the
-          record changed since ``write_date`` (nothing written);
-        * 403 ``{error}`` — model / field outside ``SAVE_REGISTRY``, a field
-          outside the caller's role allowlist, the registry check or
-          permission refused, or the ORM refused the write;
-        * 400 ``{error}`` — missing parameters or an invalid value;
-        * 428 ``{confirm_identity, message, old, new}`` — task 1600: a portal
-          user changes an existing first / last name or date of birth; nothing
-          is written until the same save is re-posted with ``confirm=1``.
-        """
-        spec = SAVE_REGISTRY.get(model)
-        if not spec or not field or not self._sc_save_allowed(spec, field):
-            return self._sc_save_json({'error': 'forbidden'}, 403)
-        if value is None or not write_date:
-            return self._sc_save_json({'error': 'bad_request'}, 400)
-        record = request.env[model].browse(record_id)
-        try:
-            if not record.exists():
-                raise MissingError(_("Record not found."))
-            spec['check'](self, record)
-            if spec.get('sudo_write') and not spec['permission'](self, record):
-                raise AccessError(_("You cannot edit this record."))
-            current = fields.Datetime.to_string(record.write_date)
-            # Owner review 2026-10-14: the stale-check and the 409 payload read
-            # the field through sudo — the caller's role allowlist and the
-            # spec's check passed above, and a group-restricted field (the
-            # injury's internal notes) is not readable by a portal therapist
-            # through the ORM after a sibling save changed the write_date.
-            if current != write_date and not self._sc_field_unchanged(record.sudo(), field, old_value):
-                return self._sc_save_json({
-                    'conflict': True,
-                    'current_value': self._sc_save_value(record.sudo(), field),
-                    'current_write_date': current,
-                    'by': record.sudo().write_uid.name or '',
-                }, 409)
-            if model == 'sports.patient':
-                # Task 1639: the identity guard applies to everyone working
-                # through the app (internal users included).
-                record = record.with_context(sc_identity_guard=True)
-            if model == 'sports.patient' and field in IDENTITY_FIELDS:
-                # Task 1600: changing an existing name / date of birth is an
-                # explicit, confirmed step (``confirm=1``, posted by the
-                # field's confirm banner) — the model records it on the file.
-                if kw.get('confirm') == '1':
-                    record = record.with_context(**{IDENTITY_CONFIRM_KEY: True})
-                else:
-                    refusal = self._sc_identity_confirm_needed(record, field, value)
-                    if refusal:
-                        return self._sc_save_json(refusal, 428)
-            extra = {}
-            # A refused / invalid write leaves nothing behind (a hook may
-            # write more than one field).
-            # Task 1656: the teams before a player's teams save (a removal may
-            # end the viewer's own access).
-            teams_before = (record.sudo().team_ids
-                            if model == 'sports.patient' and field == 'sc_team_ids' else None)
-            with request.env.cr.savepoint():
-                if spec.get('write'):
-                    extra = spec['write'](self, record, field, value) or {}
-                else:
-                    if value == '' and record._fields[field].type not in _TEXT_TYPES:
-                        value = False
-                    record.write({field: value})
-                record.flush_recordset()
-            record.invalidate_recordset()
-            if teams_before is not None:
-                lost = self._sc_lost_access_payload(record, teams_before)
-                if lost:
-                    return self._sc_save_json(lost)
-            payload = {
-                'ok': True,
-                'write_date': fields.Datetime.to_string(record.write_date),
-                'value': self._sc_save_value(record, field),
-                'display': self._sc_save_display(record, field),
-            }
-            # Other fields the write hook set along (e.g. an injury's
-            # resolution date with « Resolved »), so the page updates them
-            # in place: {field: {value, display}}.
-            also = extra.pop('also_fields', None) or ()
-            # Task 1594: and their fresh choices when they changed (a country
-            # save answers the province choices of the new country).
-            also_options = extra.pop('also_options', None) or {}
-            # Task 1653: and whether they are locked now.
-            also_disabled = extra.pop('also_disabled', None) or {}
-            if also:
-                payload['also'] = {name: {
-                    'value': self._sc_save_value(record, name),
-                    'display': self._sc_save_display(record, name),
-                } for name in also}
-                for name, options in also_options.items():
-                    if name in payload['also']:
-                        payload['also'][name]['options'] = AppShellMixin._sc_options(options)
-                for name, disabled in also_disabled.items():
-                    if name in payload['also']:
-                        payload['also'][name]['disabled'] = bool(disabled)
-            hint = spec['hint'](record, field) if spec.get('hint') else None
-            if hint is not None:
-                payload['hint'] = hint
-            # Task 1611: the read fragments this save makes stale, the
-            # server time of the save (the « back » check) and the live
-            # counters to refresh.
-            payload['refresh'] = sc_refresh_patterns(model, record, field)
-            payload['saved_at'] = sc_now_ms()
-            if spec.get('live_counts'):
-                payload['live_counts'] = True
-            # Task 1603: a follow-up proposal — never blocking (the field is
-            # saved); the page shows it as a sheet (sc_proposal.js).
-            # Task 1631: what the write hook knew before writing (e.g. an
-            # injury's previous stage) reaches the proposal builder.
-            propose_context = extra.pop('propose_context', None)
-            proposal = self._sc_save_proposal(
-                spec, record.with_context(**propose_context) if propose_context else record, field)
-            if proposal:
-                payload['propose'] = proposal
-            payload.update(extra)
-            return self._sc_save_json(payload)
-        except (AccessError, MissingError):
-            return self._sc_save_json({'error': 'forbidden'}, 403)
-        except (UserError, ValidationError, ValueError) as exc:
-            message = exc.args[0] if getattr(exc, 'args', None) else str(exc)
-            return self._sc_save_json({'error': 'invalid', 'message': str(message)}, 400)
 
     # ------------------------------------------------------------------
     # PWA — manifest, service worker, offline page, install page (1542)
@@ -2724,5 +2327,3 @@ class AppShellPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return self._sc_shell_response('bemade_sports_clinic.sc_app_install',
                                        self._sc_app_values(values, 'sc_app_install'))
 
-
-_validate_save_registry(SAVE_REGISTRY)

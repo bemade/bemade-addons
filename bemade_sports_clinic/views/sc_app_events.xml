@@ -259,9 +259,9 @@
              refreshes the « when », the lines and their totals in place). -->
         <article t-attf-class="o_pk_card o_sc_timesheet #{'o_pk_edit_card' if row['editable'] else ''}" t-att-data-sc-timesheet-id="row['id']"
                  t-att-data-sc-state="row['state']" t-att-data-pk-edit-card="('timesheet-%s' % row['id']) if row['editable'] else None"
-                 t-att-data-pk-fragment-item="sc_fragment_key(row['record'], 'card')">
+                 t-att-data-pk-fragment-item="pk_fragment_key(row['record'], 'card')">
             <div class="o_pk_card_head">
-                <div t-att-data-sc-fragment="sc_fragment_key(row['record'], 'head')">
+                <div t-att-data-pk-fragment="pk_fragment_key(row['record'], 'head')">
                     <a t-if="show_event" t-att-href="row['event_url']" class="o_pk_row_title" t-out="row['title']"/>
                     <strong t-else="" t-out="row['when']"/>
                     <p class="o_pk_meta">
@@ -284,7 +284,7 @@
                           t-att-data-sc-ts-state="row['state']" t-out="row['state_label']"/>
                 </t>
             </div>
-            <dl class="o_pk_kv" data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(row['record'], 'read')">
+            <dl class="o_pk_kv" data-sc-edit-view="read" t-att-data-pk-fragment="pk_fragment_key(row['record'], 'read')">
                 <t t-foreach="row['lines']" t-as="line">
                     <dt t-out="line[0]"/>
                     <dd t-out="line[1]"/>
@@ -401,7 +401,7 @@
             <section t-attf-class="o_pk_card o_sc_hero #{'o_pk_edit_card' if sc_event_editable else ''}" data-pk-section="event.hero"
                      t-att-data-pk-edit-card="'event' if sc_event_editable else None">
                 <div class="o_pk_edit_card_head">
-                    <span class="o_pk_chips" t-att-data-sc-fragment="sc_fragment_key(event, 'chips')">
+                    <span class="o_pk_chips" t-att-data-pk-fragment="pk_fragment_key(event, 'chips')">
                         <span class="o_pk_chip o_pk_chip_ghost" t-out="sc_event_kind"/>
                         <span t-attf-class="o_pk_chip #{'o_pk_chip_red' if event_sudo.state == 'cancelled' else 'o_pk_chip_ghost'}" t-out="sc_event_state"/>
                     </span>
@@ -416,7 +416,7 @@
                         <t t-set="ci_edit_key" t-value="'event.edit'"/>
                     </t>
                 </div>
-                <div data-sc-edit-view="read" t-att-data-sc-fragment="sc_fragment_key(event, 'read')">
+                <div data-sc-edit-view="read" t-att-data-pk-fragment="pk_fragment_key(event, 'read')">
                 <dl class="o_pk_kv">
                     <dt>When</dt><dd t-out="sc_event_when or '—'"/>
                     <t t-if="sc_event_therapist_when"><dt>Coverage</dt><dd t-out="sc_event_therapist_when"/></t>
@@ -505,19 +505,19 @@
                      data-pk-section="event.timesheets">
                 <!-- Task 1584: admins see every therapist's rows — a neutral
                      title; a therapist sees their own. -->
-                <div t-att-data-sc-fragment="sc_fragment_key(event, 'ts-title')"><t t-if="can_view_timesheets">
+                <div t-att-data-pk-fragment="pk_fragment_key(event, 'ts-title')"><t t-if="can_view_timesheets">
                     <t t-call="bemade_portal_kit.pk_section_header">
                         <t t-if="show_all_timesheets" t-set="title">Timesheets</t>
                         <t t-else="" t-set="title">My Timesheets</t>
                     </t>
                 </t></div>
-                <div t-att-data-sc-fragment="sc_fragment_key(event, 'missing')"><t t-if="missing_count and show_all_timesheets">
+                <div t-att-data-pk-fragment="pk_fragment_key(event, 'missing')"><t t-if="missing_count and show_all_timesheets">
                     <t t-call="bemade_sports_clinic.sc_banner">
                         <t t-set="tone" t-value="'warn'"/>
                         <span data-sc-missing-timesheets="1"><strong>Missing timesheets:</strong> <t t-out="missing_names"/></span>
                     </t>
                 </t></div>
-                <div t-att-data-sc-fragment="sc_fragment_key(event, 'ts-head')"><t t-if="can_view_timesheets">
+                <div t-att-data-pk-fragment="pk_fragment_key(event, 'ts-head')"><t t-if="can_view_timesheets">
                     <t t-call="bemade_sports_clinic.sc_list_header">
                         <t t-set="header_section" t-value="'event.timesheets.header'"/>
                         <t t-if="can_add_timesheet">
@@ -536,7 +536,7 @@
                     </t>
                 </t></div>
                 <div t-if="sc_timesheet_rows" class="o_pk_list"
-                     t-att-data-sc-fragment="sc_fragment_key(event, 'timesheets')" data-sc-fragment-mode="list">
+                     t-att-data-pk-fragment="pk_fragment_key(event, 'timesheets')" data-pk-fragment-mode="list">
                     <t t-foreach="sc_timesheet_rows" t-as="row">
                         <t t-call="bemade_sports_clinic.sc_timesheet_card"/>
                     </t>
@@ -549,7 +549,7 @@
 
             <!-- Task 1611: with the list header's « Add My Timesheet », a read
                  fragment (assigning yourself to the event offers it at once). -->
-            <div t-att-data-sc-fragment="sc_fragment_key(event, 'ts-add')">
+            <div t-att-data-pk-fragment="pk_fragment_key(event, 'ts-add')">
             <t t-if="can_add_timesheet" t-call="bemade_sports_clinic.sc_sheet">
                 <t t-set="sheet_id" t-value="'sc_ts_add_sheet'"/>
                 <t t-set="title">Add My Timesheet</t>

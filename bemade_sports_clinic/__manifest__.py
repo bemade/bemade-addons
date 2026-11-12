@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.139.0",
+    'version': "19.0.1.140.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -364,8 +364,9 @@ nothing; PDF reports never carry it.
             # Task 1655: create a player inline (existence check as you type).
             "bemade_sports_clinic/static/src/js/sc_form_guard.js",
             "bemade_sports_clinic/static/src/js/sc_player_add.js",
-            # Task 1611: read fragments (in-place refresh after a save) and
-            # the « back shows current data » check.
+            # Task 1611: read fragments — task 5199 (kit P4a): moved to the kit
+            # (pk_fragments.js); this is the one-release alias of the old
+            # module path, removed in the next phase.
             "bemade_sports_clinic/static/src/js/sc_fragments.js",
             # Task 1603: follow-up proposals (the sheet after a save).
             "bemade_sports_clinic/static/src/js/sc_proposal.js",

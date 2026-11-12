@@ -192,7 +192,7 @@ class TestCardStatusPills1634(CardPills1634Common):
         self._login_tp()
         with self._presence():
             tree = self._page(self.team_url)
-        keys = tree.xpath('//*[@data-sc-fragment]/@data-sc-fragment')
+        keys = tree.xpath('//*[@data-pk-fragment]/@data-pk-fragment')
         self.assertEqual(len(keys), len(set(keys)), 'duplicate fragment keys')
         for scope in ('dash', 'roster'):
             row = self._row(tree, scope)
@@ -200,7 +200,7 @@ class TestCardStatusPills1634(CardPills1634Common):
             self.assertIsNotNone(node, scope)
             self.assertTrue(node.xpath('ancestor::*[@data-sc-player-id="%s"]' % self.player.id))
             self.assertIn('o_pk_link_row', node.get('class'))
-            self.assertEqual(node.get('data-sc-fragment-keep'), '1')
+            self.assertEqual(node.get('data-pk-fragment-keep'), '1')
             # Pills, dot and lines inside; the lazy detail outside.
             self.assertEqual(len(self._toggles(node)), 2)
             self.assertTrue(node.xpath('.//*[contains(@class, "o_pk_dot")]'))
@@ -237,7 +237,7 @@ class TestCardStatusPills1634(CardPills1634Common):
         locked = tree.xpath('//*[@data-sc-row-locked][@data-sc-player-id="%s"]' % self.player_b.id)
         self.assertTrue(locked)
         self.assertFalse(locked[0].xpath('.//*[contains(@class, "o_pk_pill_select")]'))
-        self.assertFalse(locked[0].xpath('.//*[@data-sc-fragment]'))
+        self.assertFalse(locked[0].xpath('.//*[@data-pk-fragment]'))
         self.assertEqual(len(locked[0].xpath('.//span[contains(@class, "o_pk_status_pill")]')), 2)
 
     # -- AC-7 ------------------------------------------------------------

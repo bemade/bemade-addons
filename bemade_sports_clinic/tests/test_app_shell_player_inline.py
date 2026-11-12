@@ -198,8 +198,8 @@ class TestPlayerInline(PlayerInlineCommon):
         self._login_tp()
         _text, tree = self._get(self._url())
         key = 'sports.patient:%s' % self.player.id
-        self.assertTrue(tree.xpath('//h1[@data-sc-fragment="%s:appbar"]' % key))
-        self.assertTrue(tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-sc-fragment="%s:hero-head"]' % key))
+        self.assertTrue(tree.xpath('//h1[@data-pk-fragment="%s:appbar"]' % key))
+        self.assertTrue(tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-pk-fragment="%s:hero-head"]' % key))
         resp = self._save(self.player, 'jersey_number', '7')
         self.assertEqual(resp.status_code, 200, resp.text)
         self.assertNotIn('heading', resp.json())

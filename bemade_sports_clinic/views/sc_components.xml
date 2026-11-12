@@ -203,7 +203,7 @@
     <template id="sc_list_header" name="App shell: list header">
         <div t-if="add_label or sorts or count or header_fragment" class="o_pk_list_header"
              t-att-data-pk-section="header_section or None"
-             t-att-data-sc-fragment="header_fragment or None">
+             t-att-data-pk-fragment="header_fragment or None">
             <!-- Task 1718: « Ajouter » is a green-text link (the
                  « Historique » style). Review round 1 (owner 2026-10-27): no
                  « + » icon, and the FIRST item — just above the top-left edge
@@ -619,7 +619,7 @@
     <template id="sc_document_row" name="App shell: document row">
         <div class="o_pk_entity_row o_pk_entity_row_static o_sc_doc_row" t-att-data-sc-document-id="doc.id">
             <span class="o_pk_row_lead"><t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'documents'"/></t></span>
-            <span class="o_pk_row_text" t-att-data-sc-fragment="fragment_key or None">
+            <span class="o_pk_row_text" t-att-data-pk-fragment="fragment_key or None">
                 <span class="o_pk_row_title" t-out="doc.name"/>
                 <span class="o_pk_row_subtitle" t-out="meta"/>
                 <span t-if="doc.description" class="o_pk_row_subtitle" t-out="doc.description"/>
@@ -662,7 +662,7 @@
                  right of the card, on the meta line (the standard edit-card
                  head) — it no longer drops to the left when editing. -->
             <div class="o_sc_note_head">
-                <div class="o_pk_meta o_sc_note_meta" t-att-data-sc-fragment="sc_fragment_key(note, 'meta')">
+                <div class="o_pk_meta o_sc_note_meta" t-att-data-pk-fragment="pk_fragment_key(note, 'meta')">
                     <span t-out="note.portal_when_label"/>
                     <span>·</span>
                     <span class="o_sc_note_author" t-out="note.sudo().user_id.name"/>
@@ -697,7 +697,7 @@
                 </div>
             </t>
             <p t-else="" class="o_pk_pre o_sc_note_text" t-out="note.note"/>
-            <div class="o_sc_note_stamp" t-att-data-sc-fragment="sc_fragment_key(note, 'stamp')">
+            <div class="o_sc_note_stamp" t-att-data-pk-fragment="pk_fragment_key(note, 'stamp')">
                 <p t-if="note.modified_label" class="o_pk_meta o_sc_note_modified" t-att-title="note.modified_by_name"
                    t-out="note.modified_label"/>
             </div>
@@ -875,7 +875,7 @@
                  player in another section never empties the card (it moves
                  on the next visit). -->
             <t t-call="bemade_sports_clinic.sc_link_row">
-                <t t-set="row_attrs" t-value="{'data-sc-fragment': 'sports.patient:%s:row-%s' % (row['id'], row_scope or 'row'), 'data-sc-fragment-keep': '1'}"/>
+                <t t-set="row_attrs" t-value="{'data-pk-fragment': 'sports.patient:%s:row-%s' % (row['id'], row_scope or 'row'), 'data-pk-fragment-keep': '1'}"/>
                 <t t-set="href" t-value="row['url']"/>
                 <t t-set="dot" t-value="row['dot']"/>
                 <t t-set="title" t-value="row['title']"/>
@@ -974,7 +974,7 @@
         <div t-attf-class="o_pk_card o_sc_activity #{'o_pk_edit_card' if sc_act_can_act else ''}"
              t-att-data-sc-activity-row="activity.id" t-att-data-sc-activity-state="act_state"
              t-att-data-pk-edit-card="('activity-%s' % sc_act_uid) if sc_act_can_act else None">
-            <div class="o_sc_activity_head" t-att-data-sc-fragment="sc_fragment_key(activity, 'row')">
+            <div class="o_sc_activity_head" t-att-data-pk-fragment="pk_fragment_key(activity, 'row')">
                 <t t-call="bemade_sports_clinic.sc_link_row">
                     <t t-set="href" t-value="'/my/activity/%s' % activity.id"/>
                     <!-- Task 1736 r1: a tap opens the details popout (the
@@ -1052,7 +1052,7 @@
     -->
     <template id="sc_medical_pills" name="App shell: medical pills">
         <div class="o_sc_med_pills" t-att-data-pk-section="section or 'medical.pills'"
-             t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-pills')">
+             t-att-data-pk-fragment="pk_fragment_key(patient, 'medical-pills')">
             <t t-foreach="patient._sc_medical_pills(tp=tp)" t-as="pill">
                 <button type="button" t-attf-class="o_sc_med_pill o_sc_med_#{pill['tone']}"
                         t-att-data-sc-sheet-open="'sc_med_%s_%s_%s' % (scope, pill['key'], patient.id)"
@@ -1087,7 +1087,7 @@
           the player is flagged « to validate ».
 
         Plain inputs, no island: the read parts are read fragments
-        (sc_fragments.js), the inputs are saved by sc_medical_lists.js
+        (pk_fragments.js), the inputs are saved by sc_medical_lists.js
         (controllers/app_critical_items.py). A coach (``editable`` false)
         reads the same popup without any control. Variables: patient, scope,
         tp, editable.
@@ -1105,7 +1105,7 @@
                      2 (owner 2026-10-27): in the popup's header, next to its
                      title (no row of its own). -->
                 <t t-set="head_extra">
-                    <div class="o_sc_med_head" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-head' % sc_med_key)">
+                    <div class="o_sc_med_head" t-att-data-pk-fragment="pk_fragment_key(patient, 'medical-%s-head' % sc_med_key)">
                         <span t-attf-class="o_sc_med_pill o_sc_med_pill_static o_sc_med_#{pill['tone']}"
                               data-sc-med-head="1" t-att-data-sc-med-level="pill['level'] or 'unset'"
                               t-out="pill['level_label']"/>
@@ -1122,7 +1122,7 @@
                              t-att-data-sc-edit-open-on-load="'1' if editable and pill['epipen_unset'] else None">
                         <div class="o_sc_med_card_row">
                             <div class="o_sc_med_card_read" data-sc-edit-view="read"
-                                 t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-epipen')">
+                                 t-att-data-pk-fragment="pk_fragment_key(patient, 'medical-epipen')">
                                 <p class="o_sc_med_epipen_line" t-att-data-sc-med-epipen="'1' if pill['epipen'] else None"
                                    t-att-data-sc-med-epipen-state="pill['epipen_state'] or 'unset'">
                                     <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'epipen'"/></t>
@@ -1187,7 +1187,7 @@
 
                     <!-- Task 1717: the allergies wait for the EpiPen answer
                          (a read fragment: answering shows the Add control). -->
-                    <div class="o_sc_med_add_area" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-add' % sc_med_key)">
+                    <div class="o_sc_med_add_area" t-att-data-pk-fragment="pk_fragment_key(patient, 'medical-%s-add' % sc_med_key)">
                     <p t-if="sc_med_is_allergy and pill['epipen_unset']" class="o_pk_hint o_sc_med_epipen_first"
                        data-sc-med-epipen-first="1">Answer « EpiPen? » first: then add the allergies or turn on « No known allergy ».</p>
                     <!-- The list: « + Ajouter » and its add panel. -->
@@ -1236,8 +1236,8 @@
 
                     <!-- The items (a read fragment: read + edit views, plain inputs). -->
                     <ul class="o_sc_med_items" t-att-data-pk-section="'medical.%s.items' % sc_med_key"
-                        t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-items' % sc_med_key)"
-                        data-sc-fragment-mode="list" t-att-hidden="None if pill['items'] else 'hidden'">
+                        t-att-data-pk-fragment="pk_fragment_key(patient, 'medical-%s-items' % sc_med_key)"
+                        data-pk-fragment-mode="list" t-att-hidden="None if pill['items'] else 'hidden'">
                         <li t-foreach="pill['items']" t-as="item" t-att-data-pk-fragment-item="'item-%s' % item['id']"
                             t-attf-class="o_pk_card o_sc_med_card o_sc_med_item #{'o_pk_edit_card' if editable else ''}"
                             t-att-data-sc-med-item="item['id']"
@@ -1245,7 +1245,7 @@
                             t-att-data-pk-edit-card="('med-item-%s-%s' % (scope, item['id'])) if editable else None">
                             <div class="o_sc_med_card_row">
                                 <div class="o_sc_med_card_read" data-sc-edit-view="read"
-                                     t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-item-%s' % item['id'])">
+                                     t-att-data-pk-fragment="pk_fragment_key(patient, 'medical-item-%s' % item['id'])">
                                     <p class="o_sc_med_item_line">
                                         <span t-attf-class="o_sc_med_dot o_sc_med_#{'urgent' if item['life_threatening'] else 'minor'}" aria-hidden="true"/>
                                         <span class="o_sc_med_item_name" t-out="item['name']"/>
@@ -1292,7 +1292,7 @@
                     </ul>
 
                     <!-- An empty list: « none known » (therapists tick it). -->
-                    <div class="o_sc_med_none_box" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-none' % sc_med_key)">
+                    <div class="o_sc_med_none_box" t-att-data-pk-fragment="pk_fragment_key(patient, 'medical-%s-none' % sc_med_key)">
                         <t t-if="not pill['items']">
                             <t t-if="editable" t-call="bemade_sports_clinic.sc_switch">
                                 <t t-set="sw_checked" t-value="pill['none_confirmed']"/>
@@ -1313,7 +1313,7 @@
                     <!-- The former free text, read-only, until MC validates.
                          Therapists only (owner 2026-10-25): the legacy
                          allergies text was never shown to coaches. -->
-                    <div t-if="tp" class="o_sc_med_legacy" t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-legacy' % sc_med_key)">
+                    <div t-if="tp" class="o_sc_med_legacy" t-att-data-pk-fragment="pk_fragment_key(patient, 'medical-%s-legacy' % sc_med_key)">
                         <t t-if="pill['legacy_text']">
                             <p class="o_pk_field_label">Old text (to validate)</p>
                             <p class="o_pk_pre o_pk_muted" data-sc-med-legacy="1" t-out="pill['legacy_text']"/>
@@ -1321,7 +1321,7 @@
                     </div>
 
                     <!-- Task 1654: who changed this family last. -->
-                    <div t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-%s-stamp' % sc_med_key)">
+                    <div t-att-data-pk-fragment="pk_fragment_key(patient, 'medical-%s-stamp' % sc_med_key)">
                         <p t-if="pill.get('stamp')" class="o_pk_meta" data-sc-med-stamp="1" t-out="pill['stamp']"/>
                     </div>
                 </div>

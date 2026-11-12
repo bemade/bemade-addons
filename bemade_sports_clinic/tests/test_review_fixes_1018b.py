@@ -279,7 +279,7 @@ class TestAccountCards1018b(AccountCards1018bCommon):
             self.assertTrue(card.xpath('.//button[@data-sc-edit-toggle]'), key)
             read = card.xpath('.//*[@data-sc-edit-view="read"]')
             self.assertEqual(len(read), 1, key)
-            self.assertEqual(read[0].get('data-sc-fragment'), 'res.partner:%s:%s' % (partner.id, key))
+            self.assertEqual(read[0].get('data-pk-fragment'), 'res.partner:%s:%s' % (partner.id, key))
             text = ' '.join(read[0].itertext())
             for value in shown:
                 self.assertIn(value, text, key)
@@ -301,7 +301,7 @@ class TestAccountCards1018b(AccountCards1018bCommon):
         result = self._address_post(partner, phone='+1 514-555-0177', company_name=None, vat=None)
         self.assertEqual(result, {'redirectUrl': SAVED_URL})
         resp = self.url_open('/my/account', headers={
-            'X-Sc-Fragments': 'res.partner:%s:account-contact' % partner.id})
+            'X-Pk-Fragments': 'res.partner:%s:account-contact' % partner.id})
         self.assertEqual(resp.status_code, 200)
         html = resp.json()['fragments']['res.partner:%s:account-contact' % partner.id]
         self.assertIn('555-0177', html)

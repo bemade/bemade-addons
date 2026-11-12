@@ -69,16 +69,16 @@
          the scope line, then the widget's own body (section['template']). -->
     <template id="sc_dw_section" name="App dashboard: section">
         <!-- Review round 2 (owner 2026-10-29): « Joueurs que je suis » is a
-             LIST read fragment (sc_fragments.js): a follow / unfollow
+             LIST read fragment (pk_fragments.js): a follow / unfollow
              anywhere on the page refreshes it in place — its cards kept,
              added, dropped; the count and the empty state follow. -->
         <t t-set="sc_dw_live" t-value="section.get('fragment_key')"/>
         <section t-attf-class="o_pk_section o_sc_dw o_sc_dw_#{section['widget']}"
                  t-att-data-sc-widget="section['widget']" t-att-data-sc-instance="section['id']"
                  t-att-data-pk-section="'dashboard.%s' % section['widget']"
-                 t-att-data-sc-fragment="sc_dw_live or None"
-                 t-att-data-sc-fragment-mode="'list' if sc_dw_live else None"
-                 t-att-data-sc-fragment-keep-empty="'1' if sc_dw_live else None">
+                 t-att-data-pk-fragment="sc_dw_live or None"
+                 t-att-data-pk-fragment-mode="'list' if sc_dw_live else None"
+                 t-att-data-pk-fragment-keep-empty="'1' if sc_dw_live else None">
             <h2 class="o_pk_section_header o_sc_dw_header">
                 <span class="o_sc_dw_title">
                     <span class="o_sc_dw_title_text" t-out="section['title']"/>
@@ -149,15 +149,15 @@
                      the line hides. -->
                 <t t-set="sc_todo_list_key" t-value="('sc.dashboard:todo:%s:list' % line['row_scope']) if line['card'] == 'injury' else None"/>
                 <details class="o_pk_disclosure o_sc_dw_todo_line" t-att-data-sc-todo="line['kind']"
-                         t-att-data-sc-fragment="sc_todo_list_key"
-                         t-att-data-sc-fragment-mode="'list' if sc_todo_list_key else None">
+                         t-att-data-pk-fragment="sc_todo_list_key"
+                         t-att-data-pk-fragment-mode="'list' if sc_todo_list_key else None">
                     <summary class="o_pk_entity_row o_sc_dw_todo_head">
                         <span class="o_pk_row_text"><span class="o_pk_row_title" t-out="line['label']"/></span>
                         <span class="o_pk_row_trailing">
                             <!-- Review round 2: a read fragment — a quick « Retour prévu »
                                  edit refreshes the count in place. -->
                             <span t-attf-class="o_pk_chip o_pk_chip_#{line['tone']}" data-sc-todo-count="1"
-                                  t-att-data-sc-fragment="'sc.dashboard:todo:%s' % line['row_scope']"
+                                  t-att-data-pk-fragment="'sc.dashboard:todo:%s' % line['row_scope']"
                                   t-out="line['count']"/>
                             <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'down'"/></t>
                         </span>
@@ -223,7 +223,7 @@
             </t>
         </div>
         <details t-if="len(section['rows']) &gt; section['rows_shown']" class="o_pk_disclosure o_sc_dw_more" data-sc-dw-more="1"
-                 t-att-data-sc-keep-open="'%s-more' % section['id']">
+                 t-att-data-pk-keep-open="'%s-more' % section['id']">
             <summary class="o_pk_disclosure_summary" t-out="section['more_rows_label']"/>
             <div class="o_pk_list">
                 <t t-foreach="section['rows'][section['rows_shown']:]" t-as="row">

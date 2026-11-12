@@ -223,16 +223,16 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         self.assertEqual(card.get('data-pk-fragment-item'), key + 'card')
         # Task 1736 (deliberate update): the summary fragment is the top bar's
         # left part (its icons stay outside: a refresh keeps the pencil's ✓).
-        summary = card.xpath('./summary/*[@data-sc-fragment]')[0]
-        self.assertEqual(summary.get('data-sc-fragment'), key + 'summary')
+        summary = card.xpath('./summary/*[@data-pk-fragment]')[0]
+        self.assertEqual(summary.get('data-pk-fragment'), key + 'summary')
         self.assertTrue(summary.xpath('.//span[contains(@class, "o_pk_row_trailing")]/button[@data-sc-injury-quick]'))
         read = card.xpath('.//section[@data-pk-edit-card="injury-details"]/dl[@data-sc-edit-view="read"]')[0]
-        self.assertEqual(read.get('data-sc-fragment'), key + 'read')
+        self.assertEqual(read.get('data-pk-fragment'), key + 'read')
         # Task 1675: one read fragment per note.
         notes = card.xpath('.//*[@data-pk-edit-card="injury-notes-external"]/*[@data-sc-edit-view="read"]')[0]
-        self.assertEqual(notes.get('data-sc-fragment'), key + 'notes-external')
+        self.assertEqual(notes.get('data-pk-fragment'), key + 'notes-external')
         internal = card.xpath('.//*[@data-pk-edit-card="injury-notes-internal"]/*[@data-sc-edit-view="read"]')[0]
-        self.assertEqual(internal.get('data-sc-fragment'), key + 'notes-internal')
+        self.assertEqual(internal.get('data-pk-fragment'), key + 'notes-internal')
         # A notes save refreshes the Notes read view (the injury's '*').
         payload = self._saved(self.injury, 'external_notes', 'Synthetic external 1616')
         self.assertRefreshes(payload, key + 'notes-external')

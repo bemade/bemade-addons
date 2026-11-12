@@ -50,7 +50,7 @@ tours.add("sc_1656_lose_access", {
             trigger: REMOVE,
             run() {
                 window.__sc1656Saves = 0;
-                document.addEventListener("sc:saved", () => (window.__sc1656Saves += 1));
+                document.addEventListener("pk:saved", () => (window.__sc1656Saves += 1));
                 this.anchor.click();
             },
         },

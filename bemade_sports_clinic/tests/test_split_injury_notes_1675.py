@@ -66,7 +66,7 @@ class TestSplitInjuryNotes1675(Split1675Common):
             card = cards[0]
             self.assertEqual(len(card.xpath('.//button[@data-sc-edit-toggle]')), 1, scope)
             read = card.xpath('./*[@data-sc-edit-view="read"]')[0]
-            self.assertEqual(read.get('data-sc-fragment'), key + 'notes-%s' % scope)
+            self.assertEqual(read.get('data-pk-fragment'), key + 'notes-%s' % scope)
             self.assertIn('Synthetic %s 1675' % scope[:3], read.text_content())
             edit = card.xpath('./*[@data-sc-edit-view="edit"]')[0]
             self.assertEqual(edit.get('hidden'), 'hidden')

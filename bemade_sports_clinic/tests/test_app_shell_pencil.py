@@ -311,7 +311,7 @@ class TestAppShellPencil(AppShellCommon):
                     home = homes.get(target)
                     self.assertTrue(home, '%s: %s' % (url, pill.get('data-sc-field')))
                     base = '%s:%s:' % (pill.get('data-sc-model'), pill.get('data-sc-record-id'))
-                    keys = pill.xpath('ancestor::*[@data-sc-fragment]/@data-sc-fragment')
+                    keys = pill.xpath('ancestor::*[@data-pk-fragment]/@data-pk-fragment')
                     self.assertTrue(base + home in keys or (
                         target in card_homes and any(k.startswith(base + 'row-') for k in keys)),
                         '%s: %s' % (url, keys))

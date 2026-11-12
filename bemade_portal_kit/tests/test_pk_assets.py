@@ -11,7 +11,10 @@
   bundles: there the modules are only defined, and run per test file;
 * task 5198 (P3a): the consumers' one-release aliases of the moved modules
   (« kit shims ») are gone: no bundled file is one any more, and the clinic's
-  10 old paths no longer exist.
+  10 old paths no longer exist;
+* task 5199 (P4a): ``pk_fragments`` joins the kit; the clinic keeps ONE
+  alias for one release, ``sc_fragments.js`` (re-exports the kit module,
+  removed in the next phase). No other shim.
 """
 import fnmatch
 import glob
@@ -26,6 +29,8 @@ KIT_JS = (
     'app_nav', 'confirm', 'contact_href', 'date_bounds', 'draft_store',
     'edit_anchor', 'fetch', 'focus', 'forms', 'list_header', 'live_count',
     'switch', 'user_menu',
+    # Task 5199 (P4a).
+    'fragments',
 )
 SHIM_MARKER = 'bemade_portal_kit shim'
 # The clinic's aliases removed by task 5198 (P3a).
@@ -33,6 +38,8 @@ CLINIC_SHIMS = (
     'fetch', 'draft_store', 'confirm', 'focus', 'date_bounds', 'contact_href',
     'user_menu', 'edit_anchor', 'list_header', 'app_nav',
 )
+# Task 5199 (P4a): the one-release alias of the moved pk_fragments.
+ALLOWED_SHIMS = ('bemade_sports_clinic/static/src/js/sc_fragments.js',)
 
 
 def _asset_paths(entries):
@@ -57,7 +64,7 @@ def _runtime_bundles(manifest):
 @tagged('post_install', '-at_install')
 class TestPkAssets(TransactionCase):
 
-    def test_kit_js_files_are_the_thirteen(self):
+    def test_kit_js_files_are_the_fourteen(self):
         root = os.path.join(get_module_path(KIT), 'static', 'src', 'js')
         found = sorted(os.path.basename(p)[3:-3] for p in glob.glob(os.path.join(root, 'pk_*.js')))
         self.assertEqual(found, sorted(KIT_JS))
@@ -96,7 +103,7 @@ class TestPkAssets(TransactionCase):
                             source = f.read()
                     except (FileNotFoundError, ValueError):
                         continue
-                    if SHIM_MARKER in source:
+                    if SHIM_MARKER in source and path not in ALLOWED_SHIMS:
                         shims.append(path)
         self.assertEqual(shims, [])
         clinic = get_module_path('bemade_sports_clinic', display_warning=False)
