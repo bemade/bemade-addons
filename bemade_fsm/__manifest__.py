@@ -12,7 +12,7 @@
 ########################################################################################
 {
     "name": "Improved Field Service Management",
-    "version": "19.0.0.4.15",
+    "version": "19.0.0.5.0",
     "summary": (
         "Adds functionality necessary for managing field service operations at Durpro."
     ),
@@ -47,11 +47,13 @@
         "reports/worksheet_custom_report_templates.xml",
         "reports/worksheet_custom_reports.xml",
         "wizard/new_task_from_template.xml",
+        "wizard/fsm_site_note_wizard.xml",
         "wizard/res_config_settings.xml",
     ],
     "assets": {
         "web.report_assets_common": ["bemade_fsm/static/src/scss/bemade_fsm.scss"],
         "web.assets_backend": [
+            "bemade_fsm/static/src/scss/fsm_site_note.scss",
             # OWL list view extension for Project Tasks
             "bemade_fsm/static/src/views/project_task_list_view.js",
             # Ensure buttons template is available in the backend bundle

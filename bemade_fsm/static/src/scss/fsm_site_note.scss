@@ -1,0 +1,6 @@
+// Keep the line breaks typed in the site note (banner and partner form).
+.o_fsm_site_note_text,
+.o_fsm_site_note_text span,
+.o_fsm_site_note_text textarea {
+  white-space: pre-line;
+}

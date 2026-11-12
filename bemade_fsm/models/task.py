@@ -41,6 +41,12 @@ class Task(models.Model):
 
     work_order_number = fields.Char(readonly=True)
 
+    fsm_site_note = fields.Text(
+        related="partner_id.fsm_site_note",
+        string="Site note",
+        readonly=True,
+    )
+
     propagate_assignment = fields.Boolean(
         help="Propagate assignment of this task to all subtasks.",
         default=False,
@@ -285,9 +291,39 @@ class Task(models.Model):
             super()._fsm_create_sale_order_line()
 
     def action_fsm_validate(self, stop_running_timers=False):
+        # The task-form "Mark as done" buttons set ``fsm_site_note_prompt``: on a
+        # single top-level FSM task at a site, ask for the site note first. The
+        # wizard calls back here without the key.
+        if (
+            self.env.context.get("fsm_site_note_prompt")
+            and not stop_running_timers
+            and len(self) == 1
+            and self.is_fsm
+            and not self.parent_id
+            and self.partner_id
+        ):
+            return self._action_open_fsm_site_note_wizard()
         # Override to close out subtasks as well
-        all_tasks = self | self._get_all_subtasks()
+        all_tasks = (self | self._get_all_subtasks()).with_context(
+            fsm_site_note_prompt=False
+        )
         return super(Task, all_tasks).action_fsm_validate(stop_running_timers)
+
+    def _action_open_fsm_site_note_wizard(self):
+        self.ensure_one()
+        wizard = self.env["fsm.site.note.wizard"].create(
+            {"task_id": self.id, "note": self.partner_id.fsm_site_note}
+        )
+        return {
+            "name": self.env._("Anything to remember next time at this site?"),
+            "type": "ir.actions.act_window",
+            "res_model": "fsm.site.note.wizard",
+            "res_id": wizard.id,
+            "view_mode": "form",
+            "views": [[self.env.ref("bemade_fsm.fsm_site_note_wizard_view_form").id, "form"]],
+            "target": "new",
+            "context": {"fsm_site_note_prompt": False},
+        }
 
     def _get_full_hierarchy(self):
         if self.child_ids:

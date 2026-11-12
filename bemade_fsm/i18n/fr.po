@@ -1132,3 +1132,81 @@ msgstr "Non fait"
 #: code:addons/bemade_fsm/models/task.py:0
 msgid "Waiting"
 msgstr "En attente"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.bemade_fsm_project_task_form_inherit
+msgid "<i class=\"fa fa-thumb-tack fa-lg mt-1\" role=\"img\" title=\"Site note\"/>"
+msgstr "<i class=\"fa fa-thumb-tack fa-lg mt-1\" role=\"img\" title=\"Note du site\"/>"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.project_task_view_kanban_fsm_site_note
+msgid "<i class=\"fa fa-thumb-tack me-1\" role=\"img\" aria-label=\"Site note\"/>Site note"
+msgstr "<i class=\"fa fa-thumb-tack me-1\" role=\"img\" aria-label=\"Note du site\"/>Note du site"
+
+#. module: bemade_fsm
+#. odoo-python
+#: code:addons/bemade_fsm/models/task.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
+msgid "Anything to remember next time at this site?"
+msgstr "Quelque chose à retenir pour la prochaine visite à ce site ?"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.partner_equipment_location_view_form
+msgid "E.g.: gate code changed, bring the tall ladder"
+msgstr "Ex. : code de la barrière changé, apporter la grande échelle"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.bemade_fsm_project_task_form_inherit
+msgid "Note du site / Site note"
+msgstr "Note du site / Site note"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
+msgid "Save & close"
+msgstr "Enregistrer et terminer"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,help:bemade_fsm.field_project_task__fsm_site_note
+#: model:ir.model.fields,help:bemade_fsm.field_res_partner__fsm_site_note
+#: model:ir.model.fields,help:bemade_fsm.field_res_users__fsm_site_note
+msgid "Shown as a banner at the top of every field service task at this site (the task's customer / delivery address) until someone clears it. A note on the parent company does not show on its delivery addresses."
+msgstr "Affichée en bannière en haut de chaque intervention de service à ce site (le client / l'adresse de livraison de la tâche) jusqu'à ce que quelqu'un l'efface. Une note sur la société mère ne s'affiche pas sur ses adresses de livraison."
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.partner_equipment_location_view_form
+msgid "Shown as a banner on every service task at this address until cleared."
+msgstr "Affichée en bannière sur chaque intervention de service à cette adresse jusqu'à ce qu'on l'efface."
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard__partner_id
+msgid "Site"
+msgstr "Site"
+
+#. module: bemade_fsm
+#: model:ir.model.fields,field_description:bemade_fsm.field_fsm_site_note_wizard__note
+#: model:ir.model.fields,field_description:bemade_fsm.field_project_task__fsm_site_note
+#: model:ir.model.fields,field_description:bemade_fsm.field_res_partner__fsm_site_note
+#: model:ir.model.fields,field_description:bemade_fsm.field_res_users__fsm_site_note
+msgid "Site note"
+msgstr "Note du site"
+
+#. module: bemade_fsm
+#: model:ir.model,name:bemade_fsm.model_fsm_site_note_wizard
+msgid "Site note close-out prompt"
+msgstr "Invite de note du site à la clôture"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
+msgid "Skip"
+msgstr "Passer"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
+msgid "This note shows as a banner on every service task at"
+msgstr "Cette note s'affiche en bannière sur chaque intervention de service à"
+
+#. module: bemade_fsm
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
+msgid "until someone clears it."
+msgstr "jusqu'à ce que quelqu'un l'efface."
