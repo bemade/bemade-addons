@@ -301,6 +301,7 @@ msgid "Add"
 msgstr "Ajouter"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_list_add_cancel
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Cancel"
 msgstr "Annuler"
@@ -335,6 +336,11 @@ msgstr "Supprimer"
 #: model:ir.model.fields,field_description:bemade_portal_kit.field_res_users__display_name
 msgid "Display Name"
 msgstr "Nom affiché"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_edit_card_done
+msgid "Done"
+msgstr "Terminé"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide

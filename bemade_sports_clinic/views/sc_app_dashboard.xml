@@ -19,7 +19,7 @@
             <div class="o_sc_dash_head" data-pk-section="dashboard.head">
                 <a t-att-href="sc_dash_configure_url" class="o_pk_btn o_pk_btn_ghost o_sc_dash_configure"
                    data-sc-action="dashboard.configure">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'settings'"/></t>
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'settings'"/></t>
                     <span>Configure</span>
                 </a>
             </div>
@@ -37,7 +37,7 @@
                         </t>
                     </div>
                 </t>
-                <t t-if="not sc_dash_sections" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-if="not sc_dash_sections" t-call="bemade_portal_kit.pk_empty_state">
                     <t t-set="message">Every section is switched off. Use « Configure » to show some.</t>
                 </t>
             </div>
@@ -99,7 +99,7 @@
                  above it (the « Cliniques aujourd'hui » row touched the
                  first event card). -->
             <div class="o_sc_dw_body">
-                <t t-if="section['no_scope']" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-if="section['no_scope']" t-call="bemade_portal_kit.pk_empty_state">
                     <t t-set="message">No team in this section's scope. Choose teams in « Configure ».</t>
                 </t>
                 <t t-else="" t-call="{{ section['template'] }}"/>
@@ -129,7 +129,7 @@
         <t t-if="section['rows']" t-call="bemade_sports_clinic.sc_dw_event_list">
             <t t-set="sc_dw_sub" t-value="'venue'"/>
         </t>
-        <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+        <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
             <t t-set="message">Nothing on your schedule today.</t>
         </t>
     </template>
@@ -159,7 +159,7 @@
                             <span t-attf-class="o_pk_chip o_pk_chip_#{line['tone']}" data-sc-todo-count="1"
                                   t-att-data-sc-fragment="'sc.dashboard:todo:%s' % line['row_scope']"
                                   t-out="line['count']"/>
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
+                            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'down'"/></t>
                         </span>
                     </summary>
                     <div class="o_sc_dw_todo_body">
@@ -176,7 +176,7 @@
                 </details>
             </t>
         </div>
-        <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+        <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
             <t t-set="message">Nothing to do right now.</t>
         </t>
     </template>
@@ -240,7 +240,7 @@
          the scope (task 1626 rows: « Details » = the change detail). -->
     <template id="sc_dw_recent_changes" name="App dashboard: recent changes">
         <t t-if="section['rows']" t-call="bemade_sports_clinic.sc_dw_player_list"/>
-        <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+        <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
             <t t-set="message">No recent player changes.</t>
         </t>
     </template>
@@ -249,7 +249,7 @@
          recent changes. -->
     <template id="sc_dw_watch" name="App dashboard: players to watch">
         <t t-if="section['rows']" t-call="bemade_sports_clinic.sc_dw_player_list"/>
-        <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+        <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
             <t t-set="message">No player to watch.</t>
         </t>
     </template>
@@ -262,7 +262,7 @@
                 <div class="o_sc_announcement o_sc_dw_announcement" t-att-data-sc-team-id="ann['team_id']">
                     <a t-att-href="ann['url']" class="o_sc_dw_announcement_team" t-out="ann['team']"/>
                     <div class="o_sc_announcement_content">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'megaphone'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'megaphone'"/></t>
                         <div class="o_sc_announcement_text">
                             <p class="o_pk_pre o_sc_announcement_body" data-sc-clamp="3" t-out="ann['text']"/>
                             <p class="o_pk_meta o_sc_announcement_meta" data-sc-clamp-meta="1"
@@ -279,7 +279,7 @@
                 </div>
             </t>
         </div>
-        <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+        <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
             <t t-set="message">No current announcement.</t>
         </t>
     </template>
@@ -287,17 +287,17 @@
     <!-- « Indicateurs »: the three tiles over the scope's players. -->
     <template id="sc_dw_indicators" name="App dashboard: indicators">
         <div class="o_pk_stats" data-pk-section="home.team_status">
-            <t t-call="bemade_sports_clinic.sc_stat_tile">
+            <t t-call="bemade_portal_kit.pk_stat_tile">
                 <t t-set="tone" t-value="'red'"/>
                 <t t-set="value" t-value="section['injured']"/>
                 <t t-set="label">Injured players</t>
             </t>
-            <t t-call="bemade_sports_clinic.sc_stat_tile">
+            <t t-call="bemade_portal_kit.pk_stat_tile">
                 <t t-set="tone" t-value="'yellow'"/>
                 <t t-set="value" t-value="section['returning']"/>
                 <t t-set="label">Returning</t>
             </t>
-            <t t-call="bemade_sports_clinic.sc_stat_tile">
+            <t t-call="bemade_portal_kit.pk_stat_tile">
                 <t t-set="tone" t-value="'green'"/>
                 <t t-set="value" t-value="section['available']"/>
                 <t t-set="label">Available</t>
@@ -310,7 +310,7 @@
         <t t-if="section['rows']" t-call="bemade_sports_clinic.sc_dw_event_list">
             <t t-set="sc_dw_sub" t-value="'teams'"/>
         </t>
-        <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+        <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
             <t t-set="message" t-value="section['empty_label']"/>
         </t>
     </template>
@@ -356,14 +356,14 @@
                             </span>
                             <a t-if="ev.get('add_url')" t-att-href="ev['add_url']" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm o_sc_dw_ts_add"
                                data-sc-action="dashboard.timesheet.add">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'plus'"/></t>
                                 <span>Add My Timesheet</span>
                             </a>
                             <button type="button" class="o_pk_row_expand"
                                     t-att-data-sc-row-expand="sc_ev_detail_id" t-att-aria-controls="sc_ev_detail_id"
                                     aria-expanded="false">
                                 <span>Details</span>
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'down'"/></t>
                             </button>
                         </t>
                     </t>
@@ -389,7 +389,7 @@
          full expandable cards. -->
     <template id="sc_dw_followed" name="App dashboard: players I follow">
         <t t-if="section['rows']" t-call="bemade_sports_clinic.sc_dw_player_list"/>
-        <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+        <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
             <t t-set="message">You do not follow any player yet. Use « Follow » on a player's card or page.</t>
         </t>
     </template>
@@ -400,7 +400,7 @@
         <t t-if="section['rows']" t-call="bemade_sports_clinic.sc_dw_event_list">
             <t t-set="sc_dw_sub" t-value="'teams'"/>
         </t>
-        <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+        <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
             <t t-set="message">No missing timesheet. Well done!</t>
         </t>
     </template>
@@ -456,7 +456,7 @@
                                             <button type="submit" name="step" value="up" class="o_pk_icon_btn"
                                                     data-sc-dash-move="up" t-att-disabled="'disabled' if row['first'] else None"
                                                     t-att-aria-label="sc_up_label" t-att-title="sc_up_label">
-                                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'up'"/></t>
+                                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'up'"/></t>
                                             </button>
                                         </form>
                                         <form action="/my/app/dashboard/configure/move" method="post" class="o_pk_inline_form">
@@ -465,7 +465,7 @@
                                             <button type="submit" name="step" value="down" class="o_pk_icon_btn"
                                                     data-sc-dash-move="down" t-att-disabled="'disabled' if row['last'] else None"
                                                     t-att-aria-label="sc_down_label" t-att-title="sc_down_label">
-                                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
+                                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'down'"/></t>
                                             </button>
                                         </form>
                                     </div>
@@ -493,7 +493,7 @@
                                     </t>
                                     <details class="o_pk_disclosure o_sc_dash_cfg_settings">
                                         <summary class="o_pk_disclosure_summary" data-sc-dash-settings="1">
-                                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
+                                            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'filter'"/></t>
                                             <span>Section settings</span>
                                         </summary>
                                         <div class="o_sc_dash_cfg_fields">
@@ -602,7 +602,7 @@
                                 t-out="choice[1]"/>
                     </select>
                     <button type="submit" class="o_pk_btn o_pk_btn_primary" data-sc-dash-add="1">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'plus'"/></t>
                         <span>Add a section</span>
                     </button>
                 </div>

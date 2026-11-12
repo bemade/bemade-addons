@@ -29,7 +29,7 @@
                      remembered state — collapsing lasts for that visit). -->
                 <details class="o_pk_disclosure" open="open">
                     <summary class="o_pk_disclosure_summary">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'filter'"/></t>
                         <span>Filters</span>
                     </summary>
                     <div class="o_pk_filter_grid">
@@ -236,7 +236,7 @@
                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'injury_id', lbl, 'select', options=sc_qn_options['injury_id'], picker=True, pickerKey='injury', optionMeta=sc_qn_meta['injury_id'])"/></t>
                 <t t-set="lbl">Event</t>
                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'event_id', lbl, 'select', options=sc_qn_options['event_id'], picker=True, pickerKey='event', optionMeta=sc_qn_meta['event_id'])"/></t>
-                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                <t t-call="bemade_portal_kit.pk_edit_card_done"/>
             </div>
             <!-- « Restore » of an archived note stays a text button (owner
                  2026-11-01: unchanged). -->
@@ -298,13 +298,13 @@
                     </t>
                 </t>
             </div>
-            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+            <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                 <t t-set="message">No note yet.</t>
             </t>
 
             <section class="o_pk_section" data-pk-section="notepad.archived">
                 <t t-if="show_archived">
-                    <t t-call="bemade_sports_clinic.sc_section_header">
+                    <t t-call="bemade_portal_kit.pk_section_header">
                         <t t-set="title">Archived notes</t>
                         <t t-set="more_url" t-value="'/my/notepad'"/>
                         <t t-set="more_label">Hide</t>
@@ -316,7 +316,7 @@
                             </t>
                         </t>
                     </div>
-                    <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                    <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                         <t t-set="message">No archived note.</t>
                     </t>
                 </t>
@@ -345,7 +345,7 @@
                 </t>
             </div>
             <a t-attf-href="/my/team/#{team.id}/digest-history" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm" data-sc-action="digest.history">
-                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'history'"/></t>
+                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'history'"/></t>
                 <span>Digest history</span>
             </a>
         </t>
@@ -378,13 +378,13 @@
                     <details class="o_pk_expand o_sc_digest_row" t-att-data-sc-digest-row="row['id']"
                              t-att-data-sc-lazy-url="row['body_url']">
                         <summary class="o_pk_entity_row">
-                            <span class="o_pk_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'summary'"/></t></span>
+                            <span class="o_pk_row_lead"><t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'summary'"/></t></span>
                             <span class="o_pk_row_text">
                                 <span class="o_pk_row_title" t-out="row['label']"/>
                                 <span class="o_pk_row_subtitle" t-out="row['subtitle']"/>
                             </span>
                             <span class="o_pk_row_trailing">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'down'"/></t>
                             </span>
                         </summary>
                         <div class="o_pk_expand_body">
@@ -397,7 +397,7 @@
                     </details>
                 </t>
             </div>
-            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+            <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                 <t t-set="message">No digest recorded yet.</t>
             </t>
             <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_pk_pager">

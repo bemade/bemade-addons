@@ -46,14 +46,14 @@
                 <input t-if="followed_only" type="hidden" name="followed" value="1"/>
                 <div class="o_pk_form_actions o_sc_players_search_actions">
                     <button type="submit" class="o_pk_btn o_pk_btn_primary">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'search'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'search'"/></t>
                         <span>Search</span>
                     </button>
                 </div>
                 <details class="o_pk_disclosure o_sc_players_filters" data-pk-section="players.filters"
                          t-att-open="'open' if sc_filters_open else None">
                     <summary class="o_pk_disclosure_summary">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'filter'"/></t>
                         <span>Filters</span>
                         <span t-if="sc_filters_count" class="o_pk_filter_count" data-sc-filter-count="1"
                               t-out="'(%s)' % sc_filters_count"/>
@@ -63,7 +63,7 @@
                            t-attf-class="o_pk_chip o_sc_chip_follow #{'o_pk_chip_secondary' if followed_only else 'o_pk_chip_ghost'}"
                            t-att-aria-pressed="'true' if followed_only else 'false'" data-sc-action="players.followed">
                             <span>Followed</span>
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'star'"/></t>
+                            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'star'"/></t>
                         </a>
                     </div>
                     <div class="o_pk_filter_grid">
@@ -166,7 +166,7 @@
                             </span>
                             <span class="o_pk_row_trailing">
                                 <t t-call="bemade_sports_clinic.sc_players_row_followed"/>
-                                <t t-call="bemade_sports_clinic.sc_status_chip">
+                                <t t-call="bemade_portal_kit.pk_status_chip">
                                     <t t-set="tone" t-value="'ghost'"/>
                                     <t t-set="label">Not on your teams</t>
                                 </t>
@@ -189,14 +189,14 @@
             </div>
             <!-- Task 1738: « Suivis ★ » on while following nobody. -->
             <p t-elif="sc_players_followed_none" class="o_pk_empty" data-sc-empty="players.followed-none">You do not follow any player. Use ★ on a player's page.</p>
-            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+            <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                 <t t-set="message">No players match these filters.</t>
             </t>
             <!-- Task 1674: a name search also lists the near matches
                  (accents, typos, inversions) after the exact / prefix ones,
                  with the same scope / lock rules. -->
             <section t-if="sc_near_rows" class="o_pk_section" data-pk-section="players.near">
-                <t t-call="bemade_sports_clinic.sc_section_header">
+                <t t-call="bemade_portal_kit.pk_section_header">
                     <t t-set="title">Close results</t>
                 </t>
                 <ul class="o_pk_search_list">
@@ -223,7 +223,7 @@
         <span t-if="row.get('followed')" class="o_sc_row_followed" data-sc-row-followed="1"
               title="You follow this player">
             <span class="visually-hidden">You follow this player</span>
-            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'star'"/></t>
+            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'star'"/></t>
         </span>
     </template>
 
@@ -433,7 +433,7 @@
                         <button type="button" class="o_pk_btn o_pk_btn_danger o_pk_btn_sm" data-sc-sheet-open="sc_remove_player_sheet"
                                 data-sc-action="player.remove">Remove Player</button>
                     </div>
-                    <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                    <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                 </div>
                 <t t-call="bemade_sports_clinic.sc_sheet">
                     <t t-set="sheet_id" t-value="'sc_training_history_sheet'"/>
@@ -490,7 +490,7 @@
                         <t t-call="bemade_sports_clinic.sc_injury_card"/>
                     </t>
                 </div>
-                <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                     <t t-set="message">No injuries recorded</t>
                 </t>
             </section>
@@ -540,7 +540,7 @@
                                     <t t-set="lbl">Date of birth</t>
                                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'date_of_birth', lbl, 'date')"/></t>
                                 </t>
-                                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                                <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
                         </section>
 
@@ -564,7 +564,7 @@
                                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'last_consultation_date', lbl, 'date')"/></t>
                                 <t t-set="lbl">Actual return date</t>
                                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'return_date', lbl, 'date', clearable=True)"/></t>
-                                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                                <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
                         </section>
 
@@ -586,7 +586,7 @@
                             <div class="o_pk_fields" data-sc-edit-view="edit" hidden="hidden">
                                 <t t-set="lbl">Other medical history</t>
                                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'medical_history_other', lbl, 'textarea', clearable=True, labelHidden=True)"/></t>
-                                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                                <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
                         </section>
 
@@ -624,7 +624,7 @@
                                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'state_id', lbl, 'select', options=sc_state_options, hideEmpty=True)"/></t>
                                 <t t-set="lbl">Postal code</t>
                                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'zip', lbl)"/></t>
-                                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                                <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
                         </section>
                     </div>
@@ -650,7 +650,7 @@
                                             <t t-set="subtitle" t-value="membership['org']"/>
                                         </t>
                                         <div t-else="" class="o_pk_entity_row o_pk_entity_row_static">
-                                            <span class="o_pk_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'teams'"/></t></span>
+                                            <span class="o_pk_row_lead"><t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'teams'"/></t></span>
                                             <span class="o_pk_row_text">
                                                 <span class="o_pk_row_title" t-out="membership['name']"/>
                                                 <span class="o_pk_row_subtitle" t-out="membership['org']"/>
@@ -659,7 +659,7 @@
                                         </div>
                                     </t>
                                 </div>
-                                <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                                <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                                     <t t-set="message">No team memberships found</t>
                                 </t>
                             </div>
@@ -668,13 +668,13 @@
                                 <t t-set="sc_teams_undo">Teams changed</t>
                                 <t t-set="sc_teams_add">Add a team…</t>
                                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'sc_team_ids', lbl, 'tags', options=sc_team_options, instant=True, undoMessage=sc_teams_undo, placeholder=sc_teams_add, confirmRemove=sc_team_confirm)"/></t>
-                                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                                <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
                         </section>
                         <!-- Owner review 2026-10-11: emergency contacts on the Info
                              tab (was a « Contacts » tab), one pencil per contact. -->
                         <section t-if="sc_can('patient.contacts.tab')" class="o_pk_section" data-pk-section="player.info.emergency_contacts">
-                            <t t-call="bemade_sports_clinic.sc_section_header">
+                            <t t-call="bemade_portal_kit.pk_section_header">
                                 <t t-set="title">Emergency Contacts</t>
                             </t>
                         <!-- Task 1607: opened by the list header's « + Ajouter ». -->
@@ -687,7 +687,7 @@
                         <details class="o_pk_card o_pk_disclosure o_pk_list_add_panel" id="sc_contact_add" data-pk-section="contact.add"
                                  t-att-open="'open' if sc_contact_add_error else None">
                             <summary class="o_pk_disclosure_summary">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'plus'"/></t>
                                 <span>Add Emergency Contact</span>
                             </summary>
                             <form action="/my/player/contact/save" method="post" class="o_pk_form" data-sc-form="contact.add" data-sc-guard="1" data-sc-guard-mode="fetch">
@@ -702,7 +702,7 @@
                                     <t t-set="c_email" t-value="sc_contact_add_data.get('email') or ''"/>
                                 </t>
                                 <div class="o_pk_form_actions">
-                                    <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
+                                    <t t-call="bemade_portal_kit.pk_list_add_cancel"/>
                                     <button type="submit" class="o_pk_btn o_pk_btn_primary" data-sc-action="contact.add">Add Emergency Contact</button>
                                 </div>
                                 <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_contact_add'"/></t>
@@ -739,7 +739,7 @@
                                         <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(contact, 'mobile', lbl, 'tel')"/></t>
                                         <t t-set="lbl">Email</t>
                                         <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(contact, 'email', lbl, 'email')"/></t>
-                                        <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                                        <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                                     </div>
                                 </section>
                                 <t t-if="is_treatment_prof" t-call="bemade_sports_clinic.sc_confirm_sheet">
@@ -753,7 +753,7 @@
                                 </t>
                             </t>
                         </div>
-                        <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                        <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                             <t t-set="message">No emergency contacts found</t>
                         </t>
                         </section>
@@ -827,12 +827,12 @@
                                 <t t-call="bemade_sports_clinic.sc_field_autosave">
                                     <t t-set="props" t-value="sc_field_props(doc, 'injury_id', lbl, 'select', options=[('', sc_doc_no_injury)] + list(sc_injury_choices or []))"/>
                                 </t>
-                                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                                <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
                         </div>
                     </t>
                 </div>
-                <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                     <t t-set="message">No documents uploaded</t>
                 </t>
             </section>
@@ -855,7 +855,7 @@
                         </t>
                     </t>
                 </div>
-                <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                     <t t-set="message">No treatment notes recorded</t>
                 </t>
             </section>
@@ -960,7 +960,7 @@
         </t>
         <details class="o_pk_card o_pk_disclosure o_sc_injury_add o_pk_list_add_panel" t-att-id="card_add_id or 'sc_new_injury'" data-pk-section="injury.new">
             <summary class="o_pk_disclosure_summary">
-                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'plus'"/></t>
                 <span t-if="is_treatment_prof">Add Injury</span>
                 <span t-else="">Report Injury</span>
             </summary>
@@ -991,7 +991,7 @@
                                t-att-id="'sc_new_injury_diag_%s' % card_patient.id" autocomplete="off"/>
                     </div>
                     <div class="o_pk_form_actions">
-                        <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
+                        <t t-call="bemade_portal_kit.pk_list_add_cancel"/>
                         <button type="submit" class="o_pk_btn o_pk_btn_primary" data-sc-action="injury.create">
                             <span t-if="is_treatment_prof">Create</span>
                             <span t-else="">Report</span>
@@ -1051,7 +1051,7 @@
             <div class="o_pk_field o_sc_doc_upload_head">
                 <label t-att-for="'%s_files' % upload_prefix" class="o_pk_field_label">Files</label>
                 <label class="o_pk_dropzone" data-sc-dropzone="1">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'upload'"/></t>
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'upload'"/></t>
                     <span class="o_pk_dropzone_text">Choose files or drop them here</span>
                     <span class="o_pk_dropzone_text_touch">Add files</span>
                     <input type="file" t-att-id="'%s_files' % upload_prefix" name="attachment"
@@ -1215,7 +1215,7 @@
                     <button type="button" class="o_pk_icon_btn o_sc_injury_toggle" data-sc-injury-toggle="1"
                             t-att-aria-expanded="'true' if row['open'] else 'false'" t-att-aria-controls="sc_card_body_id"
                             t-att-aria-label="sc_injury_fold_label" t-att-title="sc_injury_fold_label">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'down'"/></t>
                     </button>
                 </span>
             </summary>
@@ -1287,7 +1287,7 @@
                                     </t>
                                 </div>
                             </t>
-                            <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                            <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                         </div>
                     </section>
 
@@ -1322,7 +1322,7 @@
                                 <span t-if="sc_card_internal" class="o_pk_card_icons">
                                     <button type="button" class="o_pk_icon_btn" data-sc-edit-toggle="1" aria-expanded="false"
                                             t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label">
-                                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'edit'"/></t>
                                     </button>
                                 </span>
                             </div>
@@ -1336,7 +1336,7 @@
                                 <t t-call="bemade_sports_clinic.sc_field_autosave">
                                     <t t-set="props" t-value="sc_field_props(injury, 'external_notes', lbl, 'textarea', clearable=True, hint=injury.last_external_note_info or None, replace=True, placeholder=sc_note_placeholder)"/>
                                 </t>
-                                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                                <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
                         </div>
                         <div t-if="sc_card_internal" class="o_pk_edit_card o_sc_injury_note_card" data-pk-edit-card="injury-notes-internal"
@@ -1346,7 +1346,7 @@
                                 <span class="o_pk_card_icons">
                                     <button type="button" class="o_pk_icon_btn" data-sc-edit-toggle="1" aria-expanded="false"
                                             t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label">
-                                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'edit'"/></t>
                                     </button>
                                 </span>
                             </div>
@@ -1360,7 +1360,7 @@
                                 <t t-call="bemade_sports_clinic.sc_field_autosave">
                                     <t t-set="props" t-value="sc_field_props(injury, 'internal_notes', lbl, 'textarea', clearable=True, hint=injury.last_internal_note_info or None, replace=True, placeholder=sc_note_placeholder)"/>
                                 </t>
-                                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                                <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
                         </div>
                         <t t-call="bemade_sports_clinic.sc_sheet">
@@ -1413,7 +1413,7 @@
                                         <t t-call="bemade_sports_clinic.sc_field_autosave">
                                             <t t-set="props" t-value="sc_field_props(doc, 'description', lbl, 'textarea', clearable=True)"/>
                                         </t>
-                                        <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                                        <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                                     </div>
                                 </div>
                             </t>
@@ -1487,7 +1487,7 @@
         <details class="o_pk_card o_pk_disclosure o_pk_list_add_panel" id="sc_note_add" data-pk-section="notes.add"
                  t-if="sc_can('notes.add')" t-att-open="'open' if note_open else None">
             <summary class="o_pk_disclosure_summary">
-                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'plus'"/></t>
                 <span>Add Treatment Note</span>
             </summary>
             <form action="/my/injury/note/add" method="post" class="o_pk_form" data-sc-form="notes.add" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"note"}]'>
@@ -1513,7 +1513,7 @@
                     <t t-set="props" t-value="sc_draft_props(note_draft_prefix + 'note', 'note', sc_note_label, 'textarea', placeholder=sc_note_placeholder, required=True)"/>
                 </t>
                 <div class="o_pk_form_actions">
-                    <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
+                    <t t-call="bemade_portal_kit.pk_list_add_cancel"/>
                     <button type="submit" class="o_pk_btn o_pk_btn_primary" data-sc-action="notes.submit">Add Note</button>
                 </div>
                 <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_note_add'"/></t>
@@ -1579,7 +1579,7 @@
             <t t-if="searched">
                 <t t-set="sc_matches" t-value="(active_results or []) + (archived_results or [])"/>
                 <section t-if="sc_matches" class="o_pk_section" data-pk-section="player.create.matches">
-                    <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Matching players</t></t>
+                    <t t-call="bemade_portal_kit.pk_section_header"><t t-set="title">Matching players</t></t>
                     <div class="o_pk_list">
                         <t t-foreach="sc_matches" t-as="match">
                             <t t-call="bemade_sports_clinic.sc_entity_row">
@@ -1598,7 +1598,7 @@
                     <t t-call="bemade_sports_clinic.sc_banner">No matching players found. You can create a new one below.</t>
                     <form action="/my/player/create/save" method="post" class="o_pk_card o_pk_form" data-sc-form="player.create">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                        <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">New Player Details</t></t>
+                        <t t-call="bemade_portal_kit.pk_section_header"><t t-set="title">New Player Details</t></t>
                         <div class="o_pk_filter_grid">
                             <div class="o_pk_field">
                                 <label for="sc_new_first" class="o_pk_field_label">First name</label>
@@ -1664,7 +1664,7 @@
                                  player exists (an empty file goes to the #1628
                                  « Complete the player's file » To-Do). -->
                         </t>
-                        <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Primary Emergency Contact</t></t>
+                        <t t-call="bemade_portal_kit.pk_section_header"><t t-set="title">Primary Emergency Contact</t></t>
                         <div class="o_pk_filter_grid">
                             <div class="o_pk_field">
                                 <label for="sc_new_ec_name" class="o_pk_field_label">Name</label>

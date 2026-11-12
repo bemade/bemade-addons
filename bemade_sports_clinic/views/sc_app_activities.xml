@@ -27,7 +27,7 @@
                 <t t-call="bemade_sports_clinic.sc_activity_row"/>
             </t>
         </div>
-        <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+        <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
             <t t-set="message" t-value="empty_message"/>
         </t>
     </template>
@@ -103,7 +103,7 @@
         </t>
         <details class="o_pk_card o_pk_disclosure o_pk_list_add_panel" id="sc_activity_add" data-pk-section="activity.add">
             <summary class="o_pk_disclosure_summary">
-                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'plus'"/></t>
                 <span>Add Activity</span>
             </summary>
             <form action="/my/activity/save" method="post" class="o_pk_form" data-sc-form="activity.add" data-sc-guard="1" data-sc-guard-mode="fetch">
@@ -134,7 +134,7 @@
                     </select>
                 </div>
                 <div class="o_pk_form_actions">
-                    <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
+                    <t t-call="bemade_portal_kit.pk_list_add_cancel"/>
                     <button type="submit" class="o_pk_btn o_pk_btn_primary">Add Activity</button>
                 </div>
                 <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_add'"/></t>
@@ -309,12 +309,12 @@
          Variables: activity, attachments. -->
     <template id="sc_activity_attachments" name="App shell: activity attachments">
         <section t-if="attachments" class="o_pk_section" data-pk-section="activity.attachments">
-            <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Attachments</t></t>
+            <t t-call="bemade_portal_kit.pk_section_header"><t t-set="title">Attachments</t></t>
             <div class="o_pk_list">
                 <t t-foreach="attachments" t-as="attachment">
                     <a t-attf-href="/my/activity/#{activity.id}/attachment/#{attachment.id}" download=""
                        class="o_pk_entity_row" t-att-data-sc-attachment="attachment.id">
-                        <span class="o_pk_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'documents'"/></t></span>
+                        <span class="o_pk_row_lead"><t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'documents'"/></t></span>
                         <span class="o_pk_row_text">
                             <span class="o_pk_row_title" t-field="attachment.name"/>
                             <span class="o_pk_row_subtitle" t-out="sc_file_size(attachment.file_size)"/>
@@ -387,7 +387,7 @@
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'user_id', lbl, 'select', options=sc_activity_user_options, picker=True, pickerKey='user')"/></t>
                     <t t-set="lbl">Note</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'note', lbl, 'textarea', clearable=True)"/></t>
-                    <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                    <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                 </div>
             </section>
             <t t-call="bemade_sports_clinic.sc_activity_attachments"/>

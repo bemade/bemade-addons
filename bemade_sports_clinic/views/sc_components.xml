@@ -12,53 +12,24 @@
 -->
 <odoo>
 
-    <!-- Inline SVG icons (stroke = currentColor). ``icon``: a registry key. -->
-    <template id="sc_icon" name="App shell: icon">
-        <svg viewBox="0 0 24 24" class="o_pk_icon" aria-hidden="true" focusable="false">
-            <t t-if="icon == 'teams'"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></t>
-            <t t-elif="icon == 'star'"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></t>
-            <t t-elif="icon == 'players'"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></t>
-            <t t-elif="icon == 'clinic'"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></t>
-            <t t-elif="icon == 'activities'"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></t>
-            <t t-elif="icon in ('bookings', 'calendar')"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></t>
-            <t t-elif="icon == 'note'"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></t>
-            <t t-elif="icon in ('timesheet', 'clock')"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></t>
-            <t t-elif="icon == 'summary'"><path d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6"/></t>
-            <t t-elif="icon == 'account'"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></t>
-            <t t-elif="icon == 'security'"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></t>
-            <t t-elif="icon == 'settings'"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></t>
-            <t t-elif="icon == 'documents'"><path d="M3 7h18v13H3zM8 7V4h8v3"/></t>
-            <t t-elif="icon == 'backend'"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></t>
-            <t t-elif="icon == 'logout'"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></t>
-            <t t-elif="icon == 'back'"><path d="M15 18l-6-6 6-6"/></t>
-            <t t-elif="icon == 'chevron'"><path d="M9 18l6-6-6-6"/></t>
-            <t t-elif="icon == 'search'"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></t>
-            <t t-elif="icon == 'help'"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></t>
-            <t t-elif="icon == 'moon'"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></t>
-            <t t-elif="icon == 'sun'"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></t>
-            <t t-elif="icon == 'up'"><path d="M18 15l-6-6-6 6"/></t>
-            <t t-elif="icon == 'down'"><path d="M6 9l6 6 6-6"/></t>
-            <t t-elif="icon == 'install'"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M12 7v7M9 11l3 3 3-3M10 18h4"/></t>
-            <t t-elif="icon == 'history'"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></t>
-            <t t-elif="icon == 'megaphone'"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1zM15 9a3 3 0 0 1 0 6M18 6a7 7 0 0 1 0 12"/></t>
-            <t t-elif="icon == 'plus'"><path d="M12 5v14M5 12h14"/></t>
-            <t t-elif="icon == 'close'"><path d="M18 6L6 18M6 6l12 12"/></t>
-            <t t-elif="icon == 'share'"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></t>
-            <t t-elif="icon == 'user'"><circle cx="12" cy="8" r="4"/><path d="M6 21v-1a6 6 0 0 1 12 0v1"/></t>
-            <t t-elif="icon == 'archive'"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></t>
-            <t t-elif="icon == 'edit'"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></t>
-            <t t-elif="icon == 'trash'"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></t>
-            <t t-elif="icon == 'download'"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></t>
-            <t t-elif="icon == 'upload'"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></t>
-            <t t-elif="icon == 'injury'"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V4h8v3M12 11v6M9 14h6"/></t>
-            <t t-elif="icon == 'phone'"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.9 2z"/></t>
-            <t t-elif="icon == 'mail'"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></t>
-            <t t-elif="icon == 'check'"><path d="M20 6L9 17l-5-5"/></t>
-            <t t-elif="icon == 'filter'"><path d="M22 3H2l8 9.5V19l4 2v-8.5z"/></t>
-            <t t-elif="icon == 'epipen'"><rect x="9" y="2" width="6" height="14" rx="2"/><path d="M12 16v6M9 6h6M10 19h4"/></t>
-            <t t-elif="icon == 'sort'"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></t>
-            <t t-else=""><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></t>
-        </svg>
+    <!-- Task 5369 (kit P3c1): the icon moved to the kit
+         (bemade_portal_kit.pk_icon, t-call it with ``icon``). The clinic's own
+         vocabulary stays here, added to the kit's extension point: a sports
+         clinic concept (teams, players, the clinic, bookings, timesheets,
+         injuries, EpiPen) is the clinic's; a generic UI action or object is
+         the kit's. Glyphs from or drawn after Feather Icons 4.29
+         (https://feathericons.com), MIT License, (c) 2013-2017 Cole Bemis:
+         static/src/icons/LICENSE-feather.txt; injury and epipen: Bemade. -->
+    <template id="sc_icon_extra" name="App shell: clinic icons" inherit_id="bemade_portal_kit.pk_icon_extra">
+        <xpath expr="//t[@t-else]" position="before">
+                <t t-elif="icon == 'teams'"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></t>
+                <t t-elif="icon == 'players'"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></t>
+                <t t-elif="icon == 'clinic'"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></t>
+                <t t-elif="icon == 'bookings'"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></t>
+                <t t-elif="icon == 'timesheet'"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></t>
+                <t t-elif="icon == 'injury'"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V4h8v3M12 11v6M9 14h6"/></t>
+                <t t-elif="icon == 'epipen'"><rect x="9" y="2" width="6" height="14" rx="2"/><path d="M12 16v6M9 6h6M10 19h4"/></t>
+        </xpath>
     </template>
 
     <!-- The Fit Crew « F » mark: the silver chrome icon (brand « Effet Chrome / Argent »). -->
@@ -76,7 +47,7 @@
     <template id="sc_entity_row" name="App shell: entity row">
         <a t-att-href="href" class="o_pk_entity_row" t-att="row_attrs or {}">
             <span t-if="dot" t-attf-class="o_pk_dot o_pk_tone_#{dot}" aria-hidden="true"/>
-            <span t-elif="lead_icon" class="o_pk_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="lead_icon"/></t></span>
+            <span t-elif="lead_icon" class="o_pk_row_lead"><t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="lead_icon"/></t></span>
             <span t-else="" class="o_pk_row_lead o_pk_row_lead_empty" aria-hidden="true"/>
             <span class="o_pk_row_text">
                 <span class="o_pk_row_title" t-out="title"/>
@@ -85,7 +56,7 @@
             </span>
             <span class="o_pk_row_trailing">
                 <t t-out="0"/>
-                <t t-if="chevron is not False" t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'chevron'"/></t>
+                <t t-if="chevron is not False" t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'chevron'"/></t>
             </span>
         </a>
     </template>
@@ -173,7 +144,7 @@
                     t-att-data-sc-pill-value="pill['value']">
                 <i t-if="pill['icon']" t-attf-class="fa #{pill['icon']}" aria-hidden="true"/>
                 <span class="o_pk_pill_text" t-out="pill['label'] if compact else pill['text']"/>
-                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
+                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'down'"/></t>
             </button>
             <span t-att-id="sc_pill_menu_id" class="o_pk_menu_popup o_pk_pill_popup" role="menu" data-pk-menu-popup="1" data-pk-keep-in-view="1"
                   t-att-aria-label="pill['menu_label']" hidden="hidden">
@@ -185,7 +156,7 @@
                         t-att-data-sc-pill-from="option.get('from') or None"
                         t-att-aria-checked="'true' if option['checked'] else 'false'"
                         t-att-aria-disabled="'true' if option['disabled'] else None">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'check'"/></t>
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'check'"/></t>
                     <span t-attf-class="o_pk_pill_swatch o_pk_chip_#{option['tone']}" aria-hidden="true"/>
                     <span class="o_pk_pill_option_text">
                         <span t-out="option['label']"/>
@@ -204,34 +175,6 @@
     <!-- The legacy card's ⚡ « Changements récents » flag. -->
     <template id="sc_recent_pill" name="App shell: recent changes pill">
         <span class="o_sc_recent_pill"><i class="fa fa-bolt" aria-hidden="true"/> Recent changes</span>
-    </template>
-
-    <!-- Status chip. Variables: tone (red|yellow|green|secondary|ghost), label. -->
-    <template id="sc_status_chip" name="App shell: status chip">
-        <span t-attf-class="o_pk_chip o_pk_chip_#{tone or 'ghost'}" t-out="label"/>
-    </template>
-
-    <!-- Stat tile. Variables: tone (red|yellow|green), value, label. -->
-    <template id="sc_stat_tile" name="App shell: stat tile">
-        <div t-attf-class="o_pk_stat o_pk_tone_#{tone or 'neutral'}">
-            <span class="o_pk_stat_value" t-out="value"/>
-            <span class="o_pk_stat_label" t-out="label"/>
-        </div>
-    </template>
-
-    <!-- Card. Body (0) = content. Variable: card_class (extra classes). -->
-    <template id="sc_card" name="App shell: card">
-        <div t-attf-class="o_pk_card #{card_class or ''}">
-            <t t-out="0"/>
-        </div>
-    </template>
-
-    <!-- Section header. Variables: title, more_url, more_label. -->
-    <template id="sc_section_header" name="App shell: section header">
-        <h2 class="o_pk_section_header">
-            <span t-out="title"/>
-            <a t-if="more_url" t-att-href="more_url" class="o_pk_section_more" t-out="more_label"/>
-        </h2>
     </template>
 
     <!--
@@ -257,14 +200,6 @@
           header_fragment its read-fragment key (task 1611), when a save
                          can change what it offers
     -->
-    <!-- Task 1724: « Annuler » next to the submit of an inline add panel
-         (details.o_pk_list_add_panel): closes the panel, clears its fields
-         and its device drafts, focus back on the header's « + Ajouter »
-         (pk_list_header.js). -->
-    <template id="sc_list_add_cancel" name="App shell: add panel cancel">
-        <button type="button" class="o_pk_btn o_pk_btn_ghost o_pk_list_add_cancel" data-pk-list-add-cancel="1">Cancel</button>
-    </template>
-
     <template id="sc_list_header" name="App shell: list header">
         <div t-if="add_label or sorts or count or header_fragment" class="o_pk_list_header"
              t-att-data-pk-section="header_section or None"
@@ -296,7 +231,7 @@
                 <t t-set="sc_sort_current" t-value="([s for s in sorts if s['active']] or sorts)[0]"/>
                 <button type="button" class="o_pk_sort_toggle" data-pk-menu-toggle="1" aria-haspopup="menu"
                         aria-expanded="false" t-att-aria-controls="sort_id">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'sort'"/></t>
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'sort'"/></t>
                     <span class="visually-hidden" t-out="sort_label"/>
                     <span class="o_pk_sort_current" t-out="sc_sort_current['label']"/>
                 </button>
@@ -305,7 +240,7 @@
                     <a t-foreach="sorts" t-as="sort" t-att-href="sort['url']" role="menuitemradio"
                        class="o_pk_menu_item" t-att-data-sc-sort="sort['key']"
                        t-att-aria-checked="'true' if sort['active'] else 'false'">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'check'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'check'"/></t>
                         <span t-out="sort['label']"/>
                     </a>
                 </div>
@@ -326,7 +261,7 @@
             <h3 class="o_pk_edit_card_title" t-out="title"/>
             <button t-if="editable" type="button" class="o_pk_icon_btn" data-sc-edit-toggle="1"
                     aria-expanded="false" aria-label="Edit" title="Edit">
-                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'edit'"/></t>
             </button>
         </div>
     </template>
@@ -375,7 +310,7 @@
                    t-att-data-sc-activity-overdue="str(ci_clock.get('overdue') or 0)"
                    t-att-data-sc-action="ci_clock.get('key') or None"
                    t-att-aria-label="ci_clock.get('label') or sc_ci_clock_label" t-att-title="ci_clock.get('label') or sc_ci_clock_label">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'clock'"/></t>
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'clock'"/></t>
                     <span t-if="ci_clock.get('count')" class="o_pk_card_badge" aria-hidden="true" t-out="ci_clock['count']"/>
                 </a>
             </t>
@@ -391,7 +326,7 @@
                     <button type="submit" class="o_pk_icon_btn o_pk_card_archive" data-sc-card-archive="1"
                             t-att-data-sc-action="ci_archive.get('key') or None"
                             t-att-aria-label="sc_ci_archive_label" t-att-title="sc_ci_archive_label">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'archive'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'archive'"/></t>
                     </button>
                 </form>
                 <button t-else="" t-att-type="'submit' if ci_archive.get('form') else 'button'"
@@ -399,7 +334,7 @@
                         t-att-form="ci_archive.get('form') or None" t-att-data-sc-sheet-open="ci_archive.get('sheet') or None"
                         t-att-data-sc-action="ci_archive.get('key') or None"
                         t-att-aria-label="sc_ci_archive_label" t-att-title="sc_ci_archive_label">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'archive'"/></t>
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'archive'"/></t>
                 </button>
             </t>
             <t t-if="ci_trash">
@@ -414,7 +349,7 @@
                         t-att-data-sc-edit-for="sc_ci_edit_for if sc_ci_trash_gated else None"
                         t-att-hidden="'hidden' if sc_ci_trash_gated and not ci_edit_open else None"
                         t-att-aria-label="sc_ci_trash_label" t-att-title="sc_ci_trash_label">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'trash'"/></t>
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'trash'"/></t>
                 </button>
             </t>
             <t t-if="ci_editable">
@@ -424,19 +359,10 @@
                         t-att-data-sc-action="ci_edit_key or None"
                         t-att-aria-expanded="'true' if ci_edit_open else 'false'"
                         t-att-aria-label="sc_ci_edit_label" t-att-title="sc_ci_edit_label">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'edit'"/></t>
                 </button>
             </t>
         </span>
-    </template>
-
-    <!-- « Done » of an edit card's edit view. -->
-    <template id="sc_edit_card_done" name="App shell: edit card done">
-        <!-- Task 1676: hidden unless the user shows the « Done » buttons
-             (Paramètres); the head pencil's ✓ closes the card either way. -->
-        <div class="o_pk_form_actions o_pk_edit_done_actions">
-            <button type="button" class="o_pk_btn o_pk_btn_primary o_pk_btn_sm o_pk_edit_done" data-pk-edit-done="1">Done</button>
-        </div>
     </template>
 
     <!-- A read-view row. Variables: label, record, field; optional
@@ -454,11 +380,6 @@
             </t>
             <span t-else="" t-att-data-sc-display="sc_display_key(record, field)" t-out="sc_display(record, field) or '—'"/>
         </dd>
-    </template>
-
-    <!-- Empty state. Variable: message. -->
-    <template id="sc_empty_state" name="App shell: empty state">
-        <p class="o_pk_empty" t-out="message"/>
     </template>
 
     <!-- Task 1581: ONE history entry for every history of the shell (team
@@ -534,7 +455,7 @@
                 <h2 class="o_pk_sheet_title" t-att-id="'%s_title' % sheet_id" t-out="title"/>
                 <t t-if="head_extra" t-out="head_extra"/>
                 <button type="button" class="o_pk_icon_btn o_pk_sheet_close" data-sc-sheet-close="1" aria-label="Close" title="Close">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'close'"/></t>
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'close'"/></t>
                 </button>
             </div>
             <div t-attf-class="o_pk_sheet_body #{'o_pk_legacy' if lazy_url else ''}">
@@ -697,7 +618,7 @@
     -->
     <template id="sc_document_row" name="App shell: document row">
         <div class="o_pk_entity_row o_pk_entity_row_static o_sc_doc_row" t-att-data-sc-document-id="doc.id">
-            <span class="o_pk_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'documents'"/></t></span>
+            <span class="o_pk_row_lead"><t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'documents'"/></t></span>
             <span class="o_pk_row_text" t-att-data-sc-fragment="fragment_key or None">
                 <span class="o_pk_row_title" t-out="doc.name"/>
                 <span class="o_pk_row_subtitle" t-out="meta"/>
@@ -716,7 +637,7 @@
                     <t t-set="ci_edit_key" t-value="'documents.edit'"/>
                     <a t-att-href="download_url" class="o_pk_icon_btn" data-sc-action="documents.download"
                        aria-label="Download" title="Download">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'download'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'download'"/></t>
                     </a>
                 </t>
             </span>
@@ -759,7 +680,7 @@
                     <t t-set="sc_edit_label">Edit</t>
                     <button type="button" class="o_pk_icon_btn o_sc_note_edit_toggle" data-sc-edit-toggle="1" aria-expanded="false"
                             t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'edit'"/></t>
                     </button>
                 </t>
             </div>
@@ -772,7 +693,7 @@
                             <t t-set="props" t-value="field_props"/>
                         </t>
                     </t>
-                    <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                    <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                 </div>
             </t>
             <p t-else="" class="o_pk_pre o_sc_note_text" t-out="note.note"/>
@@ -811,11 +732,11 @@
                         an <a> inside an <a>)
           subtitle      text or markup (a t-set body) under the title — never
                         put a link here, use ``links`` or ``meta``
-          dot / lead_icon   leading dot tone (red|yellow|green) or sc_icon key, as sc_entity_row
+          dot / lead_icon   leading dot tone (red|yellow|green) or pk_icon key, as sc_entity_row
           meta          optional markup under the subtitle (t-set body): chips,
                         status lines, extra links (layered above automatically)
           links         list of secondary links on their own line under the text:
-                        dicts {label|name, url (False → plain text), icon (sc_icon
+                        dicts {label|name, url (False → plain text), icon (pk_icon
                         key, optional), title (tooltip, optional), model (data
                         attribute, optional)} — see sc_row_links
           row_class     extra classes of the row container
@@ -827,7 +748,7 @@
     <template id="sc_link_row" name="App shell: link row">
         <div t-attf-class="o_pk_entity_row o_pk_link_row #{row_class or ''}" t-att="row_attrs or {}">
             <span t-if="dot" t-attf-class="o_pk_dot o_pk_tone_#{dot}" aria-hidden="true"/>
-            <span t-elif="lead_icon" class="o_pk_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="lead_icon"/></t></span>
+            <span t-elif="lead_icon" class="o_pk_row_lead"><t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="lead_icon"/></t></span>
             <span t-else="" class="o_pk_row_lead o_pk_row_lead_empty" aria-hidden="true"/>
             <span class="o_pk_row_text">
                 <span t-if="title_parts and any(part.get('url') for part in title_parts)"
@@ -848,7 +769,7 @@
             </span>
             <span class="o_pk_row_trailing">
                 <t t-out="0"/>
-                <t t-if="chevron is not False" t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'chevron'"/></t>
+                <t t-if="chevron is not False" t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'chevron'"/></t>
             </span>
         </div>
     </template>
@@ -861,12 +782,12 @@
             <t t-set="row_link_label" t-value="row_link.get('label') or row_link.get('name')"/>
             <a t-if="row_link.get('url')" t-att-href="row_link['url']" class="o_pk_row_link"
                t-att-title="row_link.get('title')" t-att-data-sc-row-link="row_link.get('model') or '1'">
-                <t t-if="row_link.get('icon')" t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="row_link['icon']"/></t>
+                <t t-if="row_link.get('icon')" t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="row_link['icon']"/></t>
                 <span t-out="row_link_label"/>
             </a>
             <span t-else="" class="o_pk_row_link o_pk_row_link_plain" t-att-title="row_link.get('title')"
                   t-att-data-sc-row-link-plain="row_link.get('model') or '1'">
-                <t t-if="row_link.get('icon')" t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="row_link['icon']"/></t>
+                <t t-if="row_link.get('icon')" t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="row_link['icon']"/></t>
                 <span t-out="row_link_label"/>
             </span>
         </t>
@@ -900,7 +821,7 @@
                         t-att-title="med['title']">
                     <span class="o_sc_med_pill_label" t-out="med['label']"/>
                     <span t-if="med['epipen']" class="o_sc_med_epipen" data-sc-med-epipen="1">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'epipen'"/></t>
                     </span>
                 </button>
             </t>
@@ -974,14 +895,14 @@
                             t-att-data-sc-row-expand="sc_row_detail_id" t-att-aria-controls="sc_row_detail_id"
                             aria-expanded="false">
                         <span>Details</span>
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'down'"/></t>
                     </button>
                 </t>
                 <t t-call="bemade_sports_clinic.sc_activity_clock">
                     <t t-set="clock" t-value="row.get('clock')"/>
                 </t>
                 <t t-out="0"/>
-                <t t-if="row.get('pending_removal')" t-call="bemade_sports_clinic.sc_status_chip">
+                <t t-if="row.get('pending_removal')" t-call="bemade_portal_kit.pk_status_chip">
                     <t t-set="tone" t-value="'ghost'"/>
                     <t t-set="label">Removal pending</t>
                 </t>
@@ -1019,7 +940,7 @@
            t-att-data-sc-activity-clock="clock['count']"
            t-att-data-sc-activity-overdue="str(clock.get('overdue') or 0)"
            t-att-aria-label="clock['label']" t-att-title="clock['label']">
-            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'clock'"/></t>
+            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'clock'"/></t>
             <span t-out="clock['count']"/>
         </a>
     </template>
@@ -1102,7 +1023,7 @@
                         <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'note', lbl, 'textarea', clearable=True, inputId='sc_act_%s_note' % sc_act_uid)"/></t>
                     </div>
                 </template>
-                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                <t t-call="bemade_portal_kit.pk_edit_card_done"/>
             </div>
             <!-- Task 1589: actions only for who may act on the activity.
                  Task 1736 r1: « Reschedule » / « Reassign » are the inline
@@ -1110,7 +1031,7 @@
             <div t-if="sc_act_can_act" class="o_pk_card_actions o_sc_activity_actions">
                 <button type="button" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm" data-sc-sheet-open="sc_activity_complete_sheet"
                         t-att-data-sc-activity-id="activity.id" data-sc-action="activity.complete">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'check'"/></t>
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'check'"/></t>
                     <span>Done</span>
                 </button>
             </div>
@@ -1140,7 +1061,7 @@
                         t-att-aria-label="('%s · EpiPen' % pill['text']) if pill['epipen'] else pill['text']">
                     <span class="o_sc_med_pill_label" t-out="pill['label']"/>
                     <span t-if="pill['epipen']" class="o_sc_med_epipen" data-sc-med-epipen="1">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'epipen'"/></t>
                     </span>
                 </button>
             </t>
@@ -1204,7 +1125,7 @@
                                  t-att-data-sc-fragment="sc_fragment_key(patient, 'medical-epipen')">
                                 <p class="o_sc_med_epipen_line" t-att-data-sc-med-epipen="'1' if pill['epipen'] else None"
                                    t-att-data-sc-med-epipen-state="pill['epipen_state'] or 'unset'">
-                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'epipen'"/></t>
+                                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'epipen'"/></t>
                                     <strong>EpiPen</strong>
                                     <span class="o_sc_med_epipen_value">
                                         <t t-if="pill['epipen_state'] == 'yes'">Yes</t>
@@ -1217,7 +1138,7 @@
                             </div>
                             <button t-if="editable" type="button" class="o_pk_icon_btn" data-sc-edit-toggle="1"
                                     data-sc-action="medical.epipen.edit" aria-expanded="false" aria-label="Edit" title="Edit">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'edit'"/></t>
                             </button>
                         </div>
                         <!-- Task 1717: EpiPen is answered Yes / No (empty =
@@ -1260,7 +1181,7 @@
                                        t-att-value="pill['epipen_note']"/>
                             </div>
                             <p class="o_pk_field_message o_pk_field_error" role="alert" data-sc-med-error="1" hidden="hidden"/>
-                            <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                            <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                         </div>
                     </section>
 
@@ -1281,7 +1202,7 @@
                         <details class="o_pk_card o_pk_disclosure o_pk_list_add_panel o_sc_med_add_panel"
                                  t-att-id="sc_med_panel" t-att-data-pk-section="'medical.%s.add' % sc_med_key">
                             <summary class="o_pk_disclosure_summary">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'plus'"/></t>
                                 <span t-if="sc_med_is_allergy">Add an allergy</span>
                                 <span t-else="">Add a condition</span>
                             </summary>
@@ -1304,7 +1225,7 @@
                                 </div>
                                 <p class="o_pk_field_message o_pk_field_error" role="alert" data-sc-med-error="1" hidden="hidden"/>
                                 <div class="o_pk_form_actions">
-                                    <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
+                                    <t t-call="bemade_portal_kit.pk_list_add_cancel"/>
                                     <button type="submit" class="o_pk_btn o_pk_btn_primary o_pk_btn_sm"
                                             t-att-data-sc-action="'medical.%s.add.submit' % sc_med_key">Add</button>
                                 </div>
@@ -1365,7 +1286,7 @@
                                               rows="2" data-sc-med-item-field="first_aid_note" t-out="item['first_aid_note']"/>
                                 </div>
                                 <p class="o_pk_field_message o_pk_field_error" role="alert" data-sc-med-error="1" hidden="hidden"/>
-                                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                                <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
                         </li>
                     </ul>
@@ -1432,13 +1353,13 @@
                         t-att-aria-pressed="'true' if sc_follow_state else 'false'" data-sc-action="player.follow"
                         t-att-aria-label="sc_follow_off_label"
                         t-att-title="sc_follow_on_label if sc_follow_state else sc_follow_off_label">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'star'"/></t>
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'star'"/></t>
                 </button>
             </t>
             <button t-else="" type="submit" t-attf-class="o_pk_btn o_pk_btn_sm o_sc_follow #{'o_pk_btn_primary' if sc_follow_state else 'o_pk_btn_ghost'}"
                     t-att-data-sc-follow="player.id" t-att-data-sc-followed="'1' if sc_follow_state else '0'"
                     t-att-aria-pressed="'true' if sc_follow_state else 'false'" data-sc-action="player.follow">
-                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'star'"/></t>
+                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'star'"/></t>
                 <span data-sc-follow-label="on" t-att-hidden="None if sc_follow_state else 'hidden'">Unfollow</span>
                 <span data-sc-follow-label="off" t-att-hidden="'hidden' if sc_follow_state else None">Follow</span>
             </button>

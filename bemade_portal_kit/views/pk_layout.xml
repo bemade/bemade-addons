@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 5369 (kit P3c1): the kit's frontend layout, adopted from the first
+    consumer (same ir.ui.view record, see tools/adopt.py).
+-->
+<odoo>
+
+    <!-- web.frontend_layout with ONE viewport meta, the app's
+         (viewport-fit=cover, as in an installed app): web.frontend_layout
+         emits its own and the app's used to come second. -->
+    <template id="pk_frontend_layout" name="Portal kit: frontend layout"
+              inherit_id="web.frontend_layout" primary="True">
+        <xpath expr="//head/meta[@name='viewport']" position="attributes">
+            <attribute name="content">width=device-width, initial-scale=1, viewport-fit=cover</attribute>
+        </xpath>
+    </template>
+
+</odoo>

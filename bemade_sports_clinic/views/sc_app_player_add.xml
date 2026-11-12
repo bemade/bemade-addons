@@ -11,7 +11,7 @@
         <details t-att-id="panel['id']" class="o_pk_card o_pk_disclosure o_pk_list_add_panel o_sc_player_add"
                  t-att-data-pk-section="panel['section']" t-att-open="'open' if panel['open'] else None">
             <summary class="o_pk_disclosure_summary">
-                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'plus'"/></t>
                 <span>Create a player</span>
             </summary>
             <!-- Task 1658: the shared form guard (sc_form_guard.js) shows the
@@ -122,7 +122,7 @@
                    t-att-hidden="None if panel['error'] and not panel['error_field'] else 'hidden'"
                    t-out="panel['error'] if not panel['error_field'] else ''"/>
                 <div class="o_pk_form_actions">
-                    <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
+                    <t t-call="bemade_portal_kit.pk_list_add_cancel"/>
                     <button type="submit" class="o_pk_btn o_pk_btn_primary" data-sc-action="player.add"
                             data-sc-player-add-submit="1" data-sc-guard-submit="1" aria-disabled="true"
                             t-att-aria-describedby="'%s_reason' % panel['id']">Create</button>
@@ -143,7 +143,7 @@
          re-applied when the check re-renders for the same values). -->
     <template id="sc_player_check_accepted" name="App shell: create a player — override accepted">
         <span class="o_pk_meta o_sc_check_accepted" t-att-data-sc-check-accepted="accepted_key" hidden="hidden">
-            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'check'"/></t>
+            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'check'"/></t>
             <span>Accepted by the user</span>
         </span>
     </template>

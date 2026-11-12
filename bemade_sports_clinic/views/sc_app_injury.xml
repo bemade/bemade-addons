@@ -141,7 +141,7 @@
                     </t>
                 </t>
             </div>
-            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+            <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                 <t t-set="message">No treatment notes recorded</t>
             </t>
         </t>

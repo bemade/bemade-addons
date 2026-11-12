@@ -79,7 +79,7 @@
                                 <input type="hidden" name="search" t-att-value="search or ''"/>
                                 <input type="hidden" name="page" t-att-value="page or 1"/>
                                 <button type="submit" class="o_pk_icon_btn" aria-label="Move up" title="Move up">
-                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'up'"/></t>
+                                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'up'"/></t>
                                 </button>
                             </form>
                             <form action="/my/teams/reorder" method="post">
@@ -89,14 +89,14 @@
                                 <input type="hidden" name="search" t-att-value="search or ''"/>
                                 <input type="hidden" name="page" t-att-value="page or 1"/>
                                 <button type="submit" class="o_pk_icon_btn" aria-label="Move down" title="Move down">
-                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'down'"/></t>
+                                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'down'"/></t>
                                 </button>
                             </form>
                         </div>
                     </div>
                 </t>
             </div>
-            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+            <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                 <t t-set="message">No team matches.</t>
             </t>
 
@@ -153,7 +153,7 @@
             <!-- Task 1588: the profile language (res.users.lang), a plain
                  POST (full reload: the whole page changes language). -->
             <section t-if="sc_langs" class="o_pk_section" id="sc_language">
-                <t t-call="bemade_sports_clinic.sc_section_header">
+                <t t-call="bemade_portal_kit.pk_section_header">
                     <t t-set="title">Language</t>
                 </t>
                 <form method="post" action="/my/app/pref" class="o_pk_segmented o_pk_segmented_full">
@@ -171,7 +171,7 @@
 
             <!-- Task 1602: hidden while the app is forced dark. -->
             <section t-if="sc_theme_choice" class="o_pk_section" id="sc_appearance">
-                <t t-call="bemade_sports_clinic.sc_section_header">
+                <t t-call="bemade_portal_kit.pk_section_header">
                     <t t-set="title">Appearance</t>
                 </t>
                 <!-- Task 1726: a switch (on = dark); sc_switch.js posts on change. -->
@@ -225,7 +225,7 @@
             </section>
 
             <section class="o_pk_section" id="sc_account">
-                <t t-call="bemade_sports_clinic.sc_section_header">
+                <t t-call="bemade_portal_kit.pk_section_header">
                     <t t-set="title">Account</t>
                 </t>
                 <div class="o_pk_list">
