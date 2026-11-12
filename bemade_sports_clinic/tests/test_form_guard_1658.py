@@ -7,11 +7,11 @@ redirect away. Never a button that silently does nothing.
 
 Acceptance criteria covered here:
 
-* AC-1 Every submit form of the app shell is guarded (data-sc-guard) and
+* AC-1 Every submit form of the app shell is guarded (data-pk-guard) and
   keeps its POST contract (same action, same field names); the shared texts
   (« Complete: », the generic error) are rendered once by the layout; the
   #1655 panel uses the shared guard (its own data attributes kept).
-* AC-2 A guarded form's fetch (X-Sc-Guard) never consumes the pending
+* AC-2 A guarded form's fetch (X-Pk-Guard) never consumes the pending
   session toast: the real navigation that follows still shows it.
 * AC-3 (tours, phone) contact, timesheet, injury, event create,
   announcement (task 1736 r1: the activity reassign sheet is gone — its
@@ -90,23 +90,23 @@ class TestFormGuard1658(Guard1658Common):
         }
         for page, forms in expectations.items():
             tree = self._tree(page)
-            self.assertTrue(tree.xpath('//*[@data-sc-guard-texts][@data-missing][@data-generic]'), page)
+            self.assertTrue(tree.xpath('//*[@data-pk-guard-texts][@data-missing][@data-generic]'), page)
             for action, (mode, names) in forms.items():
-                found = [f for f in tree.xpath('//form[@data-sc-guard]') if (f.get('action') or '').split('?')[0] == action]
+                found = [f for f in tree.xpath('//form[@data-pk-guard]') if (f.get('action') or '').split('?')[0] == action]
                 self.assertTrue(found, (page, action))
                 form = found[0]
-                self.assertEqual(form.get('data-sc-guard-mode') or 'native', mode, (page, action))
+                self.assertEqual(form.get('data-pk-guard-mode') or 'native', mode, (page, action))
                 self.assertEqual(form.get('method'), 'post', action)
                 present = set(form.xpath('.//*[@name]/@name'))
                 self.assertTrue(names <= present, (action, names - present))
-                self.assertTrue(form.xpath('.//*[@data-sc-guard-reason][@id]'), action)
-                self.assertTrue(form.xpath('.//*[@data-sc-guard-error]'), action)
+                self.assertTrue(form.xpath('.//*[@data-pk-guard-reason][@id]'), action)
+                self.assertTrue(form.xpath('.//*[@data-pk-guard-error]'), action)
         # The #1655 panel: on the shared guard, its own attributes kept.
         tree = self._tree('/my/players?add=1')
-        panel = tree.xpath('//form[@data-sc-player-add][@data-sc-guard]')
+        panel = tree.xpath('//form[@data-sc-player-add][@data-pk-guard]')
         self.assertTrue(panel)
-        self.assertTrue(panel[0].xpath('.//button[@data-sc-player-add-submit][@data-sc-guard-submit]'))
-        self.assertTrue(panel[0].xpath('.//*[@data-sc-player-add-reason][@data-sc-guard-reason]'))
+        self.assertTrue(panel[0].xpath('.//button[@data-sc-player-add-submit][@data-pk-guard-submit]'))
+        self.assertTrue(panel[0].xpath('.//*[@data-sc-player-add-reason][@data-pk-guard-reason]'))
 
     # -- AC-2 -------------------------------------------------------------
     def test_guard_probe_keeps_the_session_toast(self):
@@ -117,7 +117,7 @@ class TestFormGuard1658(Guard1658Common):
         self.url_open('/my/team/%s/announcement/restore' % self.team_a.id,
                       data={'csrf_token': self._csrf()}, allow_redirects=False)
         url = '/my/team?team_id=%s' % self.team_a.id
-        probe = self.url_open(url, headers={'X-Sc-Guard': '1'})
+        probe = self.url_open(url, headers={'X-Pk-Guard': '1'})
         tree = lxml_html.fromstring(probe.text)
         self.assertTrue(tree.xpath('//*[contains(@class, "o_pk_toast")][@data-sc-notify]'), 'the probe sees it')
         tree = self._tree(url)

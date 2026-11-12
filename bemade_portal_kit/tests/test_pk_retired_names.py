@@ -53,6 +53,31 @@ clinic names, moved to the kit under ``pk`` names:
   / ``_MAX``, and the module path ``@bemade_sports_clinic/js/sc_fragments``
   (its one-release alias file names none of them).
 
+Task 5370 (P4b) retires the form guard's, the status pills' and the lazy
+edit's clinic names, moved to the kit under ``pk`` names:
+
+* the attributes ``data-sc-guard`` and ``-guard-*`` (mode, rules, msg,
+  texts, submit, reason, error, block, field-error, invalid, missing,
+  generic, offline), ``-required``, ``-flash-error``, ``-error-for``,
+  ``-field-error``; the pill's ``-pill-*`` and its target ``-model``,
+  ``-record-id``, ``-write-date``, ``-old-value``, ``-undo-message``;
+  ``-lazy-edit``, ``-lazy-edit-host``, ``-lazy-mounted``. The pill's
+  ``data-sc-field`` is retired in its dataset form only (``scField``): the
+  attribute stays the autosave field's, so a ``data-sc-field`` is a hit
+  only on a line that names a pill too;
+* the events ``sc:pill-action`` and ``sc:edit-view-open``;
+* the classes ``o_sc_guard_reason`` and ``o_sc_reason_flash`` (and the
+  keyframes of that name);
+* the header ``X-Sc-Guard``, ``_sc_guard_probe``, the template variables
+  ``sc_pill_target`` / ``sc_pill_menu_id`` and the menu id prefix
+  ``sc-pill-``; the module paths ``@bemade_sports_clinic/js/sc_form_guard``,
+  ``sc_status_pills``, ``sc_lazy_edit`` (their one-release alias files name
+  none of them) and the interaction key
+  ``bemade_sports_clinic.sc_lazy_edit``.
+
+Dataset destructuring (``const { scModel, scField } = el.dataset``) is
+matched too.
+
 The one exception is the documented draft fallback of the kit
 (``pk_draft_store.js`` still reads ``sc_draft:`` once, and its hoot test
 checks that), and the dirty-stamp fallback of ``pk_fragments.js`` (it reads
@@ -83,18 +108,33 @@ ATTRIBUTES = (
     # Task 5199 (P4a): the screen refresh.
     'fragment', 'fragment-mode', 'fragment-keep', 'fragment-keep-empty',
     'keep-open', 'rendered-at',
+    # Task 5370 (P4b): the form guard, the status pills, the lazy edit.
+    'guard', 'guard-mode', 'guard-rules', 'guard-msg', 'guard-texts',
+    'guard-submit', 'guard-reason', 'guard-error', 'guard-block',
+    'guard-field-error', 'guard-invalid', 'guard-missing', 'guard-generic',
+    'guard-offline', 'required', 'flash-error', 'error-for', 'field-error',
+    'pill-select', 'pill-key', 'pill-value', 'pill-post', 'pill-action',
+    'pill-from', 'pill-readonly', 'pill-field', 'model', 'record-id',
+    'write-date', 'old-value', 'undo-message', 'lazy-edit', 'lazy-edit-host',
+    'lazy-mounted',
 )
 EVENTS = (
     'fragments', 'form-reset', 'create-success', 'lazy-loaded',
     'live-count-refresh', 'fetch-error', 'nav-sync',
     # Task 5199 (P4a).
     'saved', 'refresh', 'refresh-now',
+    # Task 5370 (P4b).
+    'pill-action', 'edit-view-open',
 )
 STORAGE_KEYS = (
     'sc_draft:', 'sc_pending_toast:v1', 'sc_nav_stack:v1', 'sc_nav_post:v1',
     'sc_nav_up:v1', 'sc_nav_bf_reload:v1', 'sc_filters_open:',
     # Task 5199 (P4a).
     'sc_dirty_at:v1', 'X-Sc-Fragments', '@bemade_sports_clinic/js/sc_fragments',
+    # Task 5370 (P4b).
+    'X-Sc-Guard', '@bemade_sports_clinic/js/sc_form_guard',
+    '@bemade_sports_clinic/js/sc_status_pills', '@bemade_sports_clinic/js/sc_lazy_edit',
+    'bemade_sports_clinic.sc_lazy_edit',
 )
 # Task 5199 (P4a): the save engine's and the refresh's Python / QWeb names,
 # as whole words.
@@ -104,6 +144,8 @@ SAVE_NAMES = (
     '_sc_field_unchanged', '_sc_save_allowed', 'sc_refresh_patterns',
     'sc_extract_fragments', '_sc_fragment_keys', 'SC_FRAGMENTS_HEADER',
     'SC_FRAGMENTS_MAX',
+    # Task 5370 (P4b).
+    '_sc_guard_probe', 'sc_pill_target', 'sc_pill_menu_id',
 )
 
 # Task 5344 (P3b1): the generic classes, as the name after ``o_sc_``. A name
@@ -177,7 +219,9 @@ GENERIC_CLASSES = (
     'toggle_pill_opt', 'tone_', 'tone_green', 'tone_red', 'tone_yellow',
     'user_menu', 'user_menu_bar', 'user_menu_head', 'user_menu_item',
     'user_menu_items', 'user_menu_name', 'user_menu_popup',
-    'user_menu_role', 'user_menu_who'
+    'user_menu_role', 'user_menu_who',
+    # Task 5370 (P4b): the guard's reason line and its cue (and keyframes).
+    'guard_reason', 'reason_flash',
 )
 # Semantic and scale slots of the style tokens (the palette stays ``--sc-``).
 TOKEN_SLOTS = (
@@ -204,6 +248,14 @@ ALLOWED = {
     (KIT, 'static/src/js/pk_fragments.js'): {'sc_dirty_at:v1'},
     # (and it checks that the old markers are not read any more).
     (KIT, 'static/tests/pk_fragments.test.js'): {'sc_dirty_at:v1', 'data-sc-fragment', 'data-sc-rendered-at'},
+    (KIT, 'tests/test_pk_guard.py'): {'X-Sc-Guard'},  # the old header is not read
+    # Task 5370: the clinic's migration that removes the old attributes from
+    # the translations names them.
+    ('bemade_sports_clinic', 'migrations/19.0.1.141.0/post-migrate.py'): None,
+    # Task 5370: these hoot tests check that the old names are not read.
+    (KIT, 'static/tests/pk_form_guard.test.js'): {'data-sc-required', 'data-sc-flash-error', 'data-sc-error-for'},
+    (KIT, 'static/tests/pk_status_pills.test.js'): {'sc:pill-action'},
+    (KIT, 'static/tests/pk_lazy_edit.test.js'): {'bemade_sports_clinic.sc_lazy_edit', 'sc:edit-view-open'},
 }
 
 
@@ -233,6 +285,15 @@ THEME_RE = re.compile(r'(?<![\w])data-sc-theme(?![\w-])')
 ADOPTED_OLD_NAMES = tuple('%s.%s' % (module, old) for module, old, _new in ADOPTED_VIEWS)
 TEMPLATE_RE = re.compile(r'(?<![\w.])(%s)(?![\w])' % _alternation(ADOPTED_OLD_NAMES))
 SAVE_RE = re.compile(r'(?<![\w])(%s)(?![\w])' % _alternation(SAVE_NAMES))
+# Task 5370 (P4b): dataset destructuring, ``{ scModel, scField: f } = x.dataset``.
+DESTRUCTURE_RE = re.compile(r'\{([^{}]*)\}\s*=\s*[\w.$]*\.dataset\b')
+DESTRUCTURED = frozenset([_camel(a) for a in ATTRIBUTES] + ['scField'])
+# The pill's data-sc-field (dataset form, or the attribute on a pill line).
+PILL_FIELD_RE = re.compile(r'''dataset(?:\.|\[\s*["'])scField(?![\w])''')
+PILL_FIELD_ATTR_RE = re.compile(r'(?<![\w])data-sc-field(?![\w-])')
+PILL_LINE_RE = re.compile(r'pill', re.IGNORECASE)
+# The pill menu's old id prefix (not the tail of ``data-sc-pill-``).
+PILL_ID_RE = re.compile(r'(?<![\w-])sc-pill-')
 
 
 def retired_names(line):
@@ -247,6 +308,15 @@ def retired_names(line):
     found += [m.group(0) for m in THEME_RE.finditer(line)]
     found += [m.group(0) for m in TEMPLATE_RE.finditer(line)]
     found += [m.group(0) for m in SAVE_RE.finditer(line)]
+    for m in DESTRUCTURE_RE.finditer(line):
+        for part in m.group(1).split(','):
+            name = part.split(':')[0].strip()
+            if name in DESTRUCTURED:
+                found.append(name)
+    found += [m.group(0) for m in PILL_FIELD_RE.finditer(line)]
+    found += [m.group(0) for m in PILL_ID_RE.finditer(line)]
+    if PILL_LINE_RE.search(line):
+        found += [m.group(0) for m in PILL_FIELD_ATTR_RE.finditer(line)]
     return found
 
 
@@ -349,6 +419,39 @@ class TestPkRetiredNames(TransactionCase):
                          ['_sc_save_json', 'sc_now_ms', 'SAVE_REGISTRY'])
         self.assertEqual(retired_names('_pk_save_json pk_now_ms pk_fragment_key data-pk-fragment pk:saved'), [])
         self.assertEqual(retired_names('_sc_save_proposal sc_fragments_1611 data-sc-edit-open'), [])
+
+    def test_matcher_guard_pills_lazy(self):
+        """Task 5370 (P4b): the guard, pills and lazy edit names."""
+        self.assertEqual(retired_names('<form data-sc-guard="1" data-sc-guard-mode="fetch">'),
+                         ['data-sc-guard', 'data-sc-guard-mode'])
+        self.assertEqual(retired_names('<p data-sc-flash-error="1"/><p data-sc-error-for="x"/>'),
+                         ['data-sc-flash-error', 'data-sc-error-for'])
+        self.assertEqual(retired_names('el.dataset.scGuardBlock; form.dataset.scGuardMode'),
+                         ['dataset.scGuardBlock', 'dataset.scGuardMode'])
+        self.assertEqual(retired_names('const { scModel, scRecordId: id, scField } = pill.dataset;'),
+                         ['scModel', 'scRecordId', 'scField'])
+        self.assertEqual(retired_names('const { scState } = el.dataset;'), [])
+        self.assertEqual(retired_names('el.dataset.scField === f'), ['dataset.scField'])
+        self.assertEqual(retired_names("tree.xpath('//*[@data-sc-pill-select][@data-sc-field=\"x\"]')"),
+                         ['data-sc-pill-select', 'data-sc-field'])
+        # The autosave field's data-sc-field stays.
+        self.assertEqual(retired_names('.o_pk_autosave[data-sc-field="name"]'), [])
+        self.assertEqual(retired_names('"sc:pill-action" "sc:edit-view-open" sc:toast'),
+                         ['sc:pill-action', 'sc:edit-view-open'])
+        self.assertEqual(retired_names('class="o_sc_guard_reason o_sc_reason_flash"'),
+                         ['o_sc_guard_reason', 'o_sc_reason_flash'])
+        self.assertEqual(retired_names("headers={'X-Sc-Guard': '1'} _sc_guard_probe()"),
+                         ['X-Sc-Guard', '_sc_guard_probe'])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_form_guard_slots"'),
+                         ['bemade_sports_clinic.sc_form_guard_slots'])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_status_pill_select"'),
+                         ['bemade_sports_clinic.sc_status_pill_select'])
+        self.assertEqual(retired_names('from "@bemade_sports_clinic/js/sc_form_guard";'),
+                         ['@bemade_sports_clinic/js/sc_form_guard'])
+        self.assertEqual(retired_names('<template data-sc-lazy-edit="1"/> data-sc-lazy-url data-sc-form'),
+                         ['data-sc-lazy-edit'])
+        self.assertEqual(retired_names("'sc-pill-%s' % key"), ['sc-pill-'])
+        self.assertEqual(retired_names('data-pk-guard data-pk-pill-select pk:pill-action o_pk_guard_reason'), [])
 
     def test_no_retired_name_left(self):
         hits = []

@@ -162,7 +162,7 @@ class TestPlayerInline(PlayerInlineCommon):
         # pencil), no autosave field. Task 1753: outside the read view too.
         self.assertNotIn('"sc_status"', live)
         self.assertEqual(len(panel.xpath('.//*[@data-pk-section="player.hero"]/*[@data-pk-section="player.status"]'
-                                         '//*[@data-sc-pill-select][@data-sc-field="sc_status"]')), 2)
+                                         '//*[@data-pk-pill-select][@data-pk-field="sc_status"]')), 2)
         # Review fixes 2026-10-18: the training recommendation behind the
         # HEADER's one pencil (its edit view), still an autosaving field.
         for node in panel.xpath('.//owl-component[contains(@props, \'"training_recommendation"\')]'):

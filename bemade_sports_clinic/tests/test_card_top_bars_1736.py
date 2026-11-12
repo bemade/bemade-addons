@@ -147,7 +147,7 @@ class TestCardTopBars1736(TopBars1736Common):
         self.assertTrue(card.xpath('.//*[@id="injury-%s-body"]' % self.injury.id))
         # The status pill stays in the summary; the Details group has no
         # pencil of its own; no bottom « Delete injury ».
-        self.assertTrue(summary.xpath('.//*[@data-sc-pill-key="stage"]'))
+        self.assertTrue(summary.xpath('.//*[@data-pk-pill-key="stage"]'))
         details = self._one(card, './/*[@data-pk-edit-card="injury-details"]')
         self.assertFalse(details.xpath('.//button[@data-sc-edit-toggle]'))
         self.assertFalse(card.xpath('.//*[contains(@class, "o_sc_injury_card_actions")]'))

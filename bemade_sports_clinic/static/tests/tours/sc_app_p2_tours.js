@@ -92,12 +92,12 @@ tours.add("sc_1539_injury_autosave", {
         // « Active » saves at once and offers to undo the dates.
         {
             content: "Open the status pill",
-            trigger: '.o_sc_injury_item [data-sc-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_red',
+            trigger: '.o_sc_injury_item [data-pk-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_red',
             run: "click",
         },
         {
             content: "« Resolved »: the resolve sheet",
-            trigger: '.o_sc_injury_item [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="resolved"]',
+            trigger: '.o_sc_injury_item [data-pk-pill-key="stage"] [role="menuitemradio"][data-pk-pill-value="resolved"]',
             run: "click",
         },
         {
@@ -112,12 +112,12 @@ tours.add("sc_1539_injury_autosave", {
         },
         {
             content: "Resolved: the pill is green; back to « Active »",
-            trigger: '.o_sc_injury_item [data-sc-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_green',
+            trigger: '.o_sc_injury_item [data-pk-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_green',
             run: "click",
         },
         {
             content: "Pick « Active »",
-            trigger: '.o_sc_injury_item [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="active"]',
+            trigger: '.o_sc_injury_item [data-pk-pill-key="stage"] [role="menuitemradio"][data-pk-pill-value="active"]',
             run: "click",
         },
         {
@@ -127,7 +127,7 @@ tours.add("sc_1539_injury_autosave", {
         },
         {
             content: "Back to « Active » (red), in place",
-            trigger: '.o_sc_injury_item [data-sc-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_red',
+            trigger: '.o_sc_injury_item [data-pk-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_red',
         },
     ],
 });
@@ -236,7 +236,7 @@ tours.add("sc_status_pill_refresh", {
     steps: () => [
         {
             content: "Header: the Match pill (green; task 1753: outside the read view); mark the page to detect a reload, open it",
-            trigger: '[data-pk-section="player.hero"] [data-pk-section="player.status"] [data-sc-pill-key="match"] button.o_pk_pill_select.o_pk_chip_green',
+            trigger: '[data-pk-section="player.hero"] [data-pk-section="player.status"] [data-pk-pill-key="match"] button.o_pk_pill_select.o_pk_chip_green',
             run() {
                 window.__scPillNoReload = true;
                 this.anchor.click();
@@ -244,14 +244,14 @@ tours.add("sc_status_pill_refresh", {
         },
         {
             content: "Match: No",
-            trigger: '[data-pk-section="player.hero"] [data-sc-pill-key="match"] [role="menuitemradio"][data-sc-pill-value="no"]',
+            trigger: '[data-pk-section="player.hero"] [data-pk-pill-key="match"] [role="menuitemradio"][data-pk-pill-value="no"]',
             run: "click",
         },
         {
             content: "Saved in place: Match red; open Practice",
-            trigger: '[data-pk-section="player.hero"] [data-sc-pill-key="practice"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_green',
+            trigger: '[data-pk-section="player.hero"] [data-pk-pill-key="practice"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_green',
             run() {
-                if (!document.querySelector('[data-pk-section="player.hero"] [data-sc-pill-key="match"]:not([aria-busy]) button.o_pk_chip_red')) {
+                if (!document.querySelector('[data-pk-section="player.hero"] [data-pk-pill-key="match"]:not([aria-busy]) button.o_pk_chip_red')) {
                     throw new Error("the match pill did not turn red");
                 }
                 this.anchor.click();
@@ -259,12 +259,12 @@ tours.add("sc_status_pill_refresh", {
         },
         {
             content: "Practice: No",
-            trigger: '[data-pk-section="player.hero"] [data-sc-pill-key="practice"] [role="menuitemradio"][data-sc-pill-value="no"]:not([aria-disabled])',
+            trigger: '[data-pk-section="player.hero"] [data-pk-pill-key="practice"] [role="menuitemradio"][data-pk-pill-value="no"]:not([aria-disabled])',
             run: "click",
         },
         {
             content: "The read view shows the new status (read fragment, no reload)",
-            trigger: '[data-pk-section="player.hero"] [data-pk-section="player.status"] [data-sc-pill-key="practice"]:not([aria-busy]) button.o_pk_chip_red',
+            trigger: '[data-pk-section="player.hero"] [data-pk-section="player.status"] [data-pk-pill-key="practice"]:not([aria-busy]) button.o_pk_chip_red',
             run() {
                 if (!window.__scPillNoReload) {
                     throw new Error("the page reloaded");
@@ -360,12 +360,12 @@ tours.add("sc_injury_resolve_date", {
         },
         {
             content: "Resolve from the status pill (task 1631)",
-            trigger: '.o_sc_injury_item[open] [data-sc-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select',
+            trigger: '.o_sc_injury_item[open] [data-pk-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select',
             run: "click",
         },
         {
             content: "« Resolved »",
-            trigger: '.o_sc_injury_item[open] [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="resolved"]',
+            trigger: '.o_sc_injury_item[open] [data-pk-pill-key="stage"] [role="menuitemradio"][data-pk-pill-value="resolved"]',
             run: "click",
         },
         {

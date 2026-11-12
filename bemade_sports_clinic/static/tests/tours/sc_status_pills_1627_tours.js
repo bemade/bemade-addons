@@ -30,13 +30,13 @@ function noReload() {
 
 /** The pill toggle of ``key`` (match / practice), fresh (not busy). */
 function toggle(scope, key, tone = "") {
-    return `${scope} [data-sc-pill-select][data-sc-pill-key="${key}"]:not([aria-busy]) button.o_pk_pill_select${
+    return `${scope} [data-pk-pill-select][data-pk-pill-key="${key}"]:not([aria-busy]) button.o_pk_pill_select${
         tone ? `.o_pk_chip_${tone}` : ""
     }`;
 }
 
 function item(scope, key, value) {
-    return `${scope} [data-sc-pill-key="${key}"] [role="menuitemradio"][data-sc-pill-value="${value}"]`;
+    return `${scope} [data-pk-pill-key="${key}"] [role="menuitemradio"][data-pk-pill-value="${value}"]`;
 }
 
 /** Open the ``key`` pill and pick ``value`` (two clicks). */
@@ -81,7 +81,7 @@ tours.add("sc_1627_status_pills", {
         },
         {
             content: "A greyed pick saved nothing; the menu is still open — close it",
-            trigger: `${STATUS} [data-sc-pill-key="practice"] button.o_pk_pill_select.o_pk_chip_green[aria-expanded="true"]`,
+            trigger: `${STATUS} [data-pk-pill-key="practice"] button.o_pk_pill_select.o_pk_chip_green[aria-expanded="true"]`,
             run: "click",
         },
         ...pickSteps(STATUS, "match", "no", "green"),
@@ -173,11 +173,11 @@ tours.add("sc_1627_status_pills_coach", {
     steps: () => [
         {
             content: "Coach: coloured read-only pills, no button, no menu",
-            trigger: `${STATUS} [data-sc-pill-readonly][data-sc-pill-key="match"].o_pk_status_pill`,
+            trigger: `${STATUS} [data-pk-pill-readonly][data-pk-pill-key="match"].o_pk_status_pill`,
             run() {
-                assert(document.querySelector(`${STATUS} [data-sc-pill-readonly][data-sc-pill-key="practice"]`), "no practice pill");
+                assert(document.querySelector(`${STATUS} [data-pk-pill-readonly][data-pk-pill-key="practice"]`), "no practice pill");
                 assert(!document.querySelector(`${STATUS} button`), "a button on a coach's pills");
-                assert(!document.querySelector("[data-sc-pill-select]"), "a dropdown for a coach");
+                assert(!document.querySelector("[data-pk-pill-select]"), "a dropdown for a coach");
             },
         },
     ],

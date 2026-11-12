@@ -17067,29 +17067,29 @@ msgstr ""
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event
 msgid ""
-"<span hidden=\"hidden\" data-sc-guard-msg=\"coverage\">The coverage end must be after its start.</span>\n"
-"                    <span hidden=\"hidden\" data-sc-guard-msg=\"travel\">The travel end must be after its start.</span>"
+"<span hidden=\"hidden\" data-pk-guard-msg=\"coverage\">The coverage end must be after its start.</span>\n"
+"                    <span hidden=\"hidden\" data-pk-guard-msg=\"travel\">The travel end must be after its start.</span>"
 msgstr ""
-"<span hidden=\"hidden\" data-sc-guard-msg=\"coverage\">La fin de la couverture doit être après son début.</span>\n"
-"                    <span hidden=\"hidden\" data-sc-guard-msg=\"travel\">La fin du déplacement doit être après son début.</span>"
+"<span hidden=\"hidden\" data-pk-guard-msg=\"coverage\">La fin de la couverture doit être après son début.</span>\n"
+"                    <span hidden=\"hidden\" data-pk-guard-msg=\"travel\">La fin du déplacement doit être après son début.</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_event_form
 msgid ""
-"<span hidden=\"hidden\" data-sc-guard-msg=\"dates\">The end must be after the start.</span>\n"
-"                <span hidden=\"hidden\" data-sc-guard-msg=\"coverage\">The coverage end must be after its start.</span>\n"
-"                <span hidden=\"hidden\" data-sc-guard-msg=\"assign\">Only the clinic administration can assign staff to an event of a team you're not part of.</span>"
+"<span hidden=\"hidden\" data-pk-guard-msg=\"dates\">The end must be after the start.</span>\n"
+"                <span hidden=\"hidden\" data-pk-guard-msg=\"coverage\">The coverage end must be after its start.</span>\n"
+"                <span hidden=\"hidden\" data-pk-guard-msg=\"assign\">Only the clinic administration can assign staff to an event of a team you're not part of.</span>"
 msgstr ""
-"<span hidden=\"hidden\" data-sc-guard-msg=\"dates\">La fin doit être après le début.</span>\n"
-"                <span hidden=\"hidden\" data-sc-guard-msg=\"coverage\">La fin de la couverture doit être après son début.</span>\n"
-"                <span hidden=\"hidden\" data-sc-guard-msg=\"assign\">Seule l'administration de la clinique peut assigner du personnel à un événement d'une équipe dont vous ne faites pas partie.</span>"
+"<span hidden=\"hidden\" data-pk-guard-msg=\"dates\">La fin doit être après le début.</span>\n"
+"                <span hidden=\"hidden\" data-pk-guard-msg=\"coverage\">La fin de la couverture doit être après son début.</span>\n"
+"                <span hidden=\"hidden\" data-pk-guard-msg=\"assign\">Seule l'administration de la clinique peut assigner du personnel à un événement d'une équipe dont vous ne faites pas partie.</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
 msgid ""
-"<span hidden=\"hidden\" data-sc-guard-msg=\"future\">The resolution date cannot be in the future.</span>"
+"<span hidden=\"hidden\" data-pk-guard-msg=\"future\">The resolution date cannot be in the future.</span>"
 msgstr ""
-"<span hidden=\"hidden\" data-sc-guard-msg=\"future\">La date de résolution ne peut pas être dans le futur.</span>"
+"<span hidden=\"hidden\" data-pk-guard-msg=\"future\">La date de résolution ne peut pas être dans le futur.</span>"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout

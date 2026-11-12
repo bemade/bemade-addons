@@ -106,7 +106,7 @@ class TestAppShellPencil(AppShellCommon):
         # Task 1631: status, consent and visibility are pill dropdowns.
         for name in ('stage', 'parental_consent', 'hidden_from_coaches'):
             self.assertNotIn(name, names)
-            self.assertTrue(tree.xpath('//*[@data-sc-pill-select][@data-sc-field="%s"]' % name), name)
+            self.assertTrue(tree.xpath('//*[@data-pk-pill-select][@data-pk-field="%s"]' % name), name)
         # Task 1675: one edit card per note.
         for scope, text_ in (('external', 'Synthetic ext'), ('internal', 'Synthetic int')):
             card, edit = self._card(tree, 'injury-notes-%s' % scope)
@@ -306,11 +306,11 @@ class TestAppShellPencil(AppShellCommon):
                 # Task 1634: and the player cards' pills, in each card's
                 # « row-<scope> » read fragment.
                 card_homes = {('sports.patient', 'sc_status')}
-                for pill in tree.xpath('//*[@data-sc-pill-select]'):
-                    target = (pill.get('data-sc-model'), pill.get('data-sc-field'))
+                for pill in tree.xpath('//*[@data-pk-pill-select]'):
+                    target = (pill.get('data-pk-model'), pill.get('data-pk-field'))
                     home = homes.get(target)
-                    self.assertTrue(home, '%s: %s' % (url, pill.get('data-sc-field')))
-                    base = '%s:%s:' % (pill.get('data-sc-model'), pill.get('data-sc-record-id'))
+                    self.assertTrue(home, '%s: %s' % (url, pill.get('data-pk-field')))
+                    base = '%s:%s:' % (pill.get('data-pk-model'), pill.get('data-pk-record-id'))
                     keys = pill.xpath('ancestor::*[@data-pk-fragment]/@data-pk-fragment')
                     self.assertTrue(base + home in keys or (
                         target in card_homes and any(k.startswith(base + 'row-') for k in keys)),

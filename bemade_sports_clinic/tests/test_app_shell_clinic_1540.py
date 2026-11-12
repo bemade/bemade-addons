@@ -161,7 +161,7 @@ class TestAppShellClinic1540(Clinic1540Common):
         # Task 1627: the instant status pair is the Match / Practice pill
         # dropdowns (no autosave field).
         self.assertNotIn('sc_status', fields_)
-        self.assertEqual(len(dossier.xpath('.//*[@data-sc-pill-select][@data-sc-field="sc_status"]')), 2)
+        self.assertEqual(len(dossier.xpath('.//*[@data-pk-pill-select][@data-pk-field="sc_status"]')), 2)
         form = tree.xpath('//form[@data-sc-form="notes.add"]')[0]
         self.assertEqual(form.get('action'), '/my/injury/note/add')
         self.assertEqual(form.xpath('.//input[@name="event_id"]/@value'), [str(self.clinic.id)])

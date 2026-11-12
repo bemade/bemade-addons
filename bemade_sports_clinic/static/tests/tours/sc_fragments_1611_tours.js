@@ -193,12 +193,12 @@ tours.add("sc_1611_injury_stage", {
         // resolve sheet), no longer in the Details edit view.
         {
             content: "Open the status pill",
-            trigger: `${CARD} > summary [data-sc-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select`,
+            trigger: `${CARD} > summary [data-pk-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select`,
             run: "click",
         },
         {
             content: "« Resolved »",
-            trigger: `${CARD} > summary [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="resolved"]`,
+            trigger: `${CARD} > summary [data-pk-pill-key="stage"] [role="menuitemradio"][data-pk-pill-value="resolved"]`,
             run: "click",
         },
         {
@@ -334,19 +334,19 @@ tours.add("sc_1611_back_roster", {
         // then Practice no) — no pencil.
         {
             content: "Player page: open the Match pill",
-            trigger: '[data-sc-pill-key="match"]:not([aria-busy]) button.o_pk_pill_select',
+            trigger: '[data-pk-pill-key="match"]:not([aria-busy]) button.o_pk_pill_select',
             run: "click",
         },
         {
             content: "Match: No",
-            trigger: '[data-sc-pill-key="match"] [role="menuitemradio"][data-sc-pill-value="no"]',
+            trigger: '[data-pk-pill-key="match"] [role="menuitemradio"][data-pk-pill-value="no"]',
             run: "click",
         },
         {
             content: "Saved in place; open the Practice pill",
-            trigger: '[data-sc-pill-key="practice"]:not([aria-busy]) button.o_pk_pill_select',
+            trigger: '[data-pk-pill-key="practice"]:not([aria-busy]) button.o_pk_pill_select',
             run() {
-                if (!document.querySelector('[data-sc-pill-key="match"]:not([aria-busy]) button.o_pk_chip_red')) {
+                if (!document.querySelector('[data-pk-pill-key="match"]:not([aria-busy]) button.o_pk_chip_red')) {
                     throw new Error("match not saved yet");
                 }
                 this.anchor.click();
@@ -354,12 +354,12 @@ tours.add("sc_1611_back_roster", {
         },
         {
             content: "Practice: No",
-            trigger: '[data-sc-pill-key="practice"] [role="menuitemradio"][data-sc-pill-value="no"]:not([aria-disabled])',
+            trigger: '[data-pk-pill-key="practice"] [role="menuitemradio"][data-pk-pill-value="no"]:not([aria-disabled])',
             run: "click",
         },
         {
             content: "Saved; back",
-            trigger: '[data-sc-pill-key="practice"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_red',
+            trigger: '[data-pk-pill-key="practice"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_red',
             run() {
                 window.history.back();
             },

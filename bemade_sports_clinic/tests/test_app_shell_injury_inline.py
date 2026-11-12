@@ -278,7 +278,7 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
                      '"external_notes"', '"internal_notes"'):
             self.assertIn(name, fields_)
         # Task 1631: status / consent / visibility are pill dropdowns.
-        self.assertEqual(sorted(item.xpath('.//*[@data-sc-pill-select]/@data-sc-field')),
+        self.assertEqual(sorted(item.xpath('.//*[@data-pk-pill-select]/@data-pk-field')),
                          ['hidden_from_coaches', 'parental_consent', 'stage'])
         self.assertFalse(item.xpath('.//a[contains(@href, "/my/injury/edit")]'))
         self.assertTrue(item.xpath('.//summary//*[contains(@class, "o_sc_consent_todo")]'))

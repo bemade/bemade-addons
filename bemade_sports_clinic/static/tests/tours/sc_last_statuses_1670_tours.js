@@ -56,10 +56,10 @@ tours.add("sc_1670_last_statuses", {
         },
         {
             content: "The header pills read Match: Yes / Practice: Yes, no reload",
-            trigger: `${HERO} [data-sc-pill-key="match"] [data-sc-pill-value="yes"].o_pk_pill_select`,
+            trigger: `${HERO} [data-pk-pill-key="match"] [data-pk-pill-value="yes"].o_pk_pill_select`,
             run() {
                 assert(document.querySelector(
-                    `${HERO} [data-sc-pill-key="practice"] [data-sc-pill-value="yes"].o_pk_pill_select`
+                    `${HERO} [data-pk-pill-key="practice"] [data-pk-pill-value="yes"].o_pk_pill_select`
                 ), "practice pill");
                 assert(!document.querySelector(`${PROPOSAL}[open]`), "the proposal stayed open");
                 assert(window.__sc1670NoReload === "1", "the page reloaded");

@@ -407,18 +407,18 @@ class TestAssigneeRoutes1024(AssignHttpCommon):
         self._login_rf()
         tree = self._tree('/my/event/create')
         form = tree.xpath('//form[@data-sc-event-form]')[0]
-        rules = json.loads(form.get('data-sc-guard-rules'))
+        rules = json.loads(form.get('data-pk-guard-rules'))
         assign = [r for r in rules if r['type'] == 'assign']
         self.assertEqual(len(assign), 1)
         self.assertEqual(assign[0]['allowed'], [self.team_own.id])
         self.assertEqual((assign[0]['staff'], assign[0]['teams']), ('assigned_staff_ids', 'team_ids'))
-        self.assertEqual(form.xpath('.//*[@data-sc-guard-msg="assign"]')[0].text_content(), POLICY_EN)
+        self.assertEqual(form.xpath('.//*[@data-pk-guard-msg="assign"]')[0].text_content(), POLICY_EN)
         self.assertEqual({r['type'] for r in rules} - {'assign'}, {'after'})
         # A clinic admin: no rule, the picker.
         self._login_admin()
         tree = self._tree('/my/event/create')
         form = tree.xpath('//form[@data-sc-event-form]')[0]
-        self.assertFalse([r for r in json.loads(form.get('data-sc-guard-rules')) if r['type'] == 'assign'])
+        self.assertFalse([r for r in json.loads(form.get('data-pk-guard-rules')) if r['type'] == 'assign'])
         self.assertTrue(form.xpath('.//*[@data-sc-event-pick="staff"]'))
 
 
@@ -446,7 +446,7 @@ class TestAssigneeI18n1024(AssignHttpCommon):
         self._login_rf()
         self.assertIn(POLICY_FR, self._fr('/my/event/%s' % self.ev_other.id))
         text = self._fr('/my/event/create')
-        self.assertIn('data-sc-guard-msg="assign">%s</span>' % POLICY_FR, text)
+        self.assertIn('data-pk-guard-msg="assign">%s</span>' % POLICY_FR, text)
         Event = self.env['sports.event'].with_context(lang='fr_CA')
         with self._refused("Seule l'administration de la clinique"):
             Event._sc_check_assignment(self.rf_tp, (), self.rf_tp2.ids, (), self.team_other.ids)

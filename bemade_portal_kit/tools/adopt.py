@@ -36,7 +36,7 @@ Why a migration, and why from BOTH modules:
 
 So there are three entry points, each needed for one upgrade path: the
 kit's install hook (kit newly installed), the kit's pre-migration
-(19.0.1.5.0, kit upgraded) and the consumer's pre-migration (consumer
+(19.0.1.5.0 and each later adoption's, kit upgraded) and the consumer's pre-migration (consumer
 upgraded alone). A later adoption (``ADOPTED_VIEWS`` grows) must be reachable
 from all three.
 
@@ -48,6 +48,7 @@ created its own view instead of adopting the old one, and the consumer's
 upgrade is about to delete the old view (no automatic repair).
 """
 import logging
+import re
 
 from odoo.tools.convert import convert_file
 
@@ -69,6 +70,9 @@ ADOPTED_VIEWS = (
     (CLINIC, 'sc_list_add_cancel', 'pk_list_add_cancel'),
     (CLINIC, 'sc_edit_card_done', 'pk_edit_card_done'),
     (CLINIC, 'sc_empty_state', 'pk_empty_state'),
+    # Task 5370 (kit P4b): the status pill select and the form guard's slots.
+    (CLINIC, 'sc_status_pill_select', 'pk_status_pill_select'),
+    (CLINIC, 'sc_form_guard_slots', 'pk_form_guard_slots'),
 )
 
 # The kit's data files that hold adopted views (loaded by load_kit_views).
@@ -138,3 +142,33 @@ def load_kit_views(env):
         convert_file(env, KIT, filename, {}, mode='update', noupdate=False)
     _logger.info("portal kit: view files loaded from the consumer's migration (%s)", ', '.join(KIT_VIEW_FILES))
     return True
+
+
+def strip_translated_attributes(cr, attributes):
+    """Remove ``attributes`` (renamed, so dead) from the TRANSLATIONS of every
+    view's ``arch_db``; returns the number of views changed.
+
+    Task 5370 (P4b). A translated term may hold markup (``<span
+    data-x-msg="k">…</span>``). When the source renames such an attribute,
+    Odoo merges the source's attributes into the existing translation but
+    never drops the translation's own: the old attribute stays, dead, next to
+    the new one in every non-English value. The source (``en_US``) is never
+    touched. Plain SQL, for a migration. Idempotent.
+    """
+    if not attributes:
+        return 0
+    pattern = r'\s(?:%s)="[^"]*"' % '|'.join(re.escape(name) for name in attributes)
+    cr.execute(
+        """UPDATE ir_ui_view v
+              SET arch_db = (
+                  SELECT jsonb_object_agg(e.key, CASE WHEN e.key = 'en_US' THEN e.value
+                                                      ELSE regexp_replace(e.value, %(re)s, '', 'g') END)
+                    FROM jsonb_each_text(v.arch_db) e)
+            WHERE EXISTS (SELECT 1 FROM jsonb_each_text(v.arch_db) e
+                           WHERE e.key != 'en_US' AND e.value ~ %(re)s)""",
+        {'re': pattern},
+    )
+    if cr.rowcount:
+        _logger.info("portal kit: renamed attributes %s removed from the translations of %s views",
+                     ', '.join(attributes), cr.rowcount)
+    return cr.rowcount

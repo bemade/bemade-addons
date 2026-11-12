@@ -130,14 +130,14 @@ tours.add("sc_1723_server_refusal_kept", {
             trigger: `${FORM} button[data-sc-action="event.save"]`,
             run() {
                 const form = document.querySelector(FORM);
-                form.removeAttribute("data-sc-guard-rules");
+                form.removeAttribute("data-pk-guard-rules");
                 this.anchor.removeAttribute("aria-disabled");
                 this.anchor.click();
             },
         },
         {
             content: "The refusal shows under the end time; the values stay",
-            trigger: `${FORM} .o_pk_field_error[data-sc-guard-field-error="date_end"]`,
+            trigger: `${FORM} .o_pk_field_error[data-pk-guard-field-error="date_end"]`,
             run() {
                 assert(document.querySelector(`${FORM} input[name="name"]`).value === "SC 1723 Refused", "name lost");
                 assert(document.querySelector(`${FORM} input[name="team_ids"]`).value, "team lost");

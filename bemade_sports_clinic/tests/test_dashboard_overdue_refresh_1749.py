@@ -117,7 +117,7 @@ class TestOverdueRefresh1749(_Overdue1749, FragmentsMixin, Dashboard1624Common):
 
     def _match_value(self, html):
         node = lxml_html.fragment_fromstring(html)
-        return node.xpath('.//*[@data-sc-pill-key="match"]/button/@data-sc-pill-value')[0]
+        return node.xpath('.//*[@data-pk-pill-key="match"]/button/@data-pk-pill-value')[0]
 
     def _fresh(self, keys):
         answer = self._fragments('/my/home', keys)
@@ -177,7 +177,7 @@ class TestOverdueRefresh1749(_Overdue1749, FragmentsMixin, Dashboard1624Common):
         answer = self._fresh([row_key(self.red, WATCH), row_key(self.red, RETURNS)])
         for key in (row_key(self.red, WATCH), row_key(self.red, RETURNS)):
             node = lxml_html.fragment_fromstring(answer['fragments'][key])
-            self.assertEqual(node.xpath('.//*[@data-sc-pill-key="practice"]/button/@data-sc-pill-value'),
+            self.assertEqual(node.xpath('.//*[@data-pk-pill-key="practice"]/button/@data-pk-pill-value'),
                              ['yes'], key)
 
     # -- UC-5 ---------------------------------------------------------------

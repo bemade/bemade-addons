@@ -144,7 +144,7 @@ class TestInternalParity1639(Parity1639Common):
             self.player.sudo().write({'date_of_birth': '2009-04-05'})
             # #1634 card status pills, #1635 Activities tab.
             _text, tree = self._get('/my/players')
-            self.assertTrue(tree.xpath('//*[@data-sc-pill-select]'), who)
+            self.assertTrue(tree.xpath('//*[@data-pk-pill-select]'), who)
             _text, tree = self._get('/my/player?player_id=%s' % self.player.id)
             self.assertTrue(tree.xpath('//nav[@data-sc-tabs]/a[@data-sc-tab="activities"]'), who)
             # #1604 quick verify / resolve (#1603 proposal path).

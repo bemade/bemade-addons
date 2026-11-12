@@ -528,3 +528,46 @@ msgstr "Vous n'avez pas accès à cette activité."
 #: code:addons/bemade_portal_kit/static/src/js/pk_fragments.js:0
 msgid "You no longer have access to this page."
 msgstr "Vous n'avez plus accès à cette page."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_form_guard.js:0
+msgid "Complete:"
+msgstr "Complétez :"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_form_guard.js:0
+msgid "This could not be saved. Please check the form and try again."
+msgstr "Impossible d'enregistrer. Vérifiez le formulaire et réessayez."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_form_guard.js:0
+msgid "No connection. Nothing was sent; try again when you are back online."
+msgstr ""
+"Aucune connexion. Rien n'a été envoyé ; réessayez une fois de retour en ligne."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_status_pills.js:0
+msgid "Changed elsewhere"
+msgstr "Modifié ailleurs"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_status_pills.js:0
+msgid "Error — not saved"
+msgstr "Erreur — non enregistré"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_status_pills.js:0
+msgid "Change saved"
+msgstr "Modification enregistrée"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_status_pills.js:0
+msgid "Undo"
+msgstr "Annuler"

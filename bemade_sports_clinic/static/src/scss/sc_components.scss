@@ -180,38 +180,12 @@
         .o_sc_player_add_reason {
             margin-top: var(--pk-space-2);
         }
-
-        .o_sc_reason_flash {
-            animation: o_sc_reason_flash 0.6s ease-out;
-        }
     }
 
     // Task 1658: the same rule app-wide — every guarded form's primary
-    // action (sc_form_guard.js).
-    form[data-sc-guard] {
-        [data-sc-guard-submit][aria-disabled="true"],
-        .o_pk_form_actions .o_pk_btn[type="submit"][aria-disabled="true"] {
-            opacity: 0.45;
-            cursor: not-allowed;
-        }
-
-        .o_sc_guard_reason {
-            margin-top: var(--pk-space-2);
-        }
-
-        .o_sc_reason_flash {
-            animation: o_sc_reason_flash 0.6s ease-out;
-        }
-    }
-
-    @keyframes o_sc_reason_flash {
-        0% {
-            color: var(--pk-accent);
-        }
-        100% {
-            color: inherit;
-        }
-    }
+    // action, the reason line and its cue — moved to the kit
+    // (pk_components.scss, task 5370); the player-add panel's form is a
+    // guarded form too (data-pk-guard, manual mode).
 }
 
 // Owner review 2026-10-14 (#1590): the patient typeahead (portal_patient_combo,

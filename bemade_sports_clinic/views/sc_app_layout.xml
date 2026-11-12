@@ -218,17 +218,23 @@
                     <!-- Task 1542: status toast (sc_fetch errors, offline).
                          Task 1583: it also shows the pending session
                          notification of a POST round-trip on load. -->
-                    <!-- Task 1658: the form guard's shared texts (sc_form_guard.js). -->
+                    <!-- Task 1658: the form guard's shared texts (the kit's
+                         pk_form_guard.js since task 5370); the clinic's refusals
+                         also come back in ?ts_error= (the timesheet routes). -->
                     <t t-set="sc_guard_missing">Complete:</t>
                     <t t-set="sc_guard_generic">This could not be saved. Please check the form and try again.</t>
                     <t t-set="sc_guard_offline">No connection. Nothing was sent; try again when you are back online.</t>
-                    <span hidden="hidden" data-sc-guard-texts="1" t-att-data-missing="sc_guard_missing"
+                    <span hidden="hidden" data-pk-guard-texts="1" data-pk-guard-error-params="error ts_error" t-att-data-missing="sc_guard_missing"
                           t-att-data-generic="sc_guard_generic" t-att-data-offline="sc_guard_offline"/>
+                    <!-- Task 5370: an error notification also carries the kit's
+                         refusal marker (data-pk-flash-error = its message): a
+                         guarded form's fetch that lands here shows it in-form. -->
                     <div class="o_pk_toast" role="status" aria-live="polite" hidden="hidden"
                          t-att-data-sc-notify="sc_notification and (sc_notification['message'] or sc_notification['title']) or None"
                          t-att-data-sc-notify-title="sc_notification and sc_notification['message'] and sc_notification['title'] or None"
                          t-att-data-sc-notify-tone="sc_notification and sc_notification['tone'] or None"
-                         t-att-data-sc-notify-id="sc_notification and sc_notification.get('id') or None"/>
+                         t-att-data-sc-notify-id="sc_notification and sc_notification.get('id') or None"
+                         t-att-data-pk-flash-error="sc_notification and sc_notification['tone'] == 'error' and (sc_notification['message'] or sc_notification['title']) or None"/>
                     <!-- Task 1736: an archive's « Annuler » (the card archive
                          icons: a timesheet, a document, a quick note) — the
                          toast's action posts this form (sc_app_ui.js). -->
@@ -251,7 +257,7 @@
                             </button>
                         </div>
                         <div class="o_pk_sheet_body">
-                            <form class="o_pk_form" data-sc-injury-resolve-form="1" data-sc-guard="1" data-sc-guard-rules='[{"type":"not_future","field":"resolution_date","key":"future"}]'>
+                            <form class="o_pk_form" data-sc-injury-resolve-form="1" data-pk-guard="1" data-pk-guard-rules='[{"type":"not_future","field":"resolution_date","key":"future"}]'>
                                 <p class="o_pk_confirm_message" data-sc-injury-resolve-name="1"/>
                                 <div class="o_pk_field">
                                     <label class="o_pk_field_label" for="sc_injury_resolve_date">Resolution Date</label>
@@ -263,8 +269,8 @@
                                     <button type="button" class="o_pk_btn o_pk_btn_ghost" data-sc-sheet-close="1">Cancel</button>
                                     <button type="submit" class="o_pk_btn o_pk_btn_primary" data-sc-injury-resolve-confirm="1">Resolve</button>
                                 </div>
-                                <span hidden="hidden" data-sc-guard-msg="future">The resolution date cannot be in the future.</span>
-                                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_injury_resolve'"/></t>
+                                <span hidden="hidden" data-pk-guard-msg="future">The resolution date cannot be in the future.</span>
+                                <t t-call="bemade_portal_kit.pk_form_guard_slots"><t t-set="guard_id" t-value="'sc_injury_resolve'"/></t>
                             </form>
                         </div>
                     </dialog>

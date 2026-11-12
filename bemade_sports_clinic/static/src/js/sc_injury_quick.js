@@ -18,7 +18,7 @@
  * resolved -> clear Retour prévu + actual return).
  *
  * Task 1631: the card header's status pill (#1627's component) hands two of
- * its picks over here (« sc:pill-action »): « Actif » from « Non vérifié »
+ * its picks over here (« pk:pill-action »): « Actif » from « Non vérifié »
  * = the verify above, « Résolu » = the resolve sheet above (from
  * « Non vérifié » too: the sheet then posts ``from_unverified=1``).
  *
@@ -192,7 +192,7 @@ document.addEventListener("submit", (ev) => {
 });
 
 // Task 1631: the status pill's verify / resolve picks.
-document.addEventListener("sc:pill-action", (ev) => {
+document.addEventListener("pk:pill-action", (ev) => {
     const detail = ev.detail || {};
     if (detail.model !== MODEL || !detail.pill || !inShell(detail.pill)) {
         return;

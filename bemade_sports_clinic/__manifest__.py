@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.140.0",
+    'version': "19.0.1.141.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -362,17 +362,20 @@ nothing; PDF reports never carry it.
             # of the medical popups.
             "bemade_sports_clinic/static/src/js/sc_medical_lists.js",
             # Task 1655: create a player inline (existence check as you type).
+            # Task 5370 (kit P4b): the form guard moved to the kit
+            # (pk_form_guard.js); sc_form_guard.js is the one-release alias of
+            # the old module path (re-exports only), sc_guard_rules.js the
+            # clinic's own « assign » rule of the kit's guard.
             "bemade_sports_clinic/static/src/js/sc_form_guard.js",
+            "bemade_sports_clinic/static/src/js/sc_guard_rules.js",
             "bemade_sports_clinic/static/src/js/sc_player_add.js",
-            # Task 1611: read fragments — task 5199 (kit P4a): moved to the kit
-            # (pk_fragments.js); this is the one-release alias of the old
-            # module path, removed in the next phase.
-            "bemade_sports_clinic/static/src/js/sc_fragments.js",
             # Task 1603: follow-up proposals (the sheet after a save).
             "bemade_sports_clinic/static/src/js/sc_proposal.js",
             # Task 1604: quick « Vérifier » / « Résoudre » of an injury.
             "bemade_sports_clinic/static/src/js/sc_injury_quick.js",
-            # Task 1627: status pill dropdowns (Match / Practice).
+            # Task 1627: status pill dropdowns (Match / Practice) — task 5370
+            # (kit P4b): moved to the kit (pk_status_pills.js); one-release
+            # alias of the old module path.
             "bemade_sports_clinic/static/src/js/sc_status_pills.js",
             "bemade_sports_clinic/static/src/js/sc_injury_card.js",
             "bemade_sports_clinic/static/src/js/sc_account.js",
@@ -387,7 +390,8 @@ nothing; PDF reports never carry it.
             "bemade_sports_clinic/static/src/js/sc_autosave_field.js",
             "bemade_sports_clinic/static/src/js/sc_autosave_field.xml",
             # Task 1736 r1: an activity card's edit fields, mounted on its
-            # first pencil tap.
+            # first pencil tap — task 5370 (kit P4b): moved to the kit
+            # (pk_lazy_edit.js); one-release alias of the old module path.
             "bemade_sports_clinic/static/src/js/sc_lazy_edit.js",
             # Task 1539: the shell's activity sheets (replaces, in the shell
             # only, the legacy activity partials' inline scripts).

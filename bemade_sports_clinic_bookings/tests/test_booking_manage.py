@@ -237,7 +237,7 @@ class TestBookingEdit(_ManageCommon):
         before = self._times(self.booking_soon)
         resp = self._edit(self.booking_soon, length=7)
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('data-sc-flash-error', resp.text)
+        self.assertIn('data-pk-flash-error', resp.text)
         self.assertEqual(self._times(self.booking_soon), before)
         resp = self._edit(self.booking_soon, length=90)
         self.assertEqual(resp.status_code, 200)
@@ -256,7 +256,7 @@ class TestBookingEdit(_ManageCommon):
         before = self._times(self.booking_soon)
         resp = self._edit(self.booking_soon, day=self.day - timedelta(days=10))
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('data-sc-flash-error', resp.text)
+        self.assertIn('data-pk-flash-error', resp.text)
         self.assertEqual(self._times(self.booking_soon), before)
 
     def test_overlap_warns_then_saves(self):

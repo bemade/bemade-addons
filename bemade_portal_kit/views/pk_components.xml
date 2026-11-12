@@ -4,7 +4,9 @@
     from the first consumer (bemade_sports_clinic). The records kept their
     ir.ui.view ids: tools/adopt.py renamed their external ids from the
     consumer's sc_* names before this file was loaded (pre-migrations of the
-    kit 19.0.1.5.0 and of the clinic 19.0.1.139.0).
+    kit 19.0.1.5.0 and of the clinic 19.0.1.139.0). Task 5370 (P4b) adopted
+    two more the same way: pk_status_pill_select and pk_form_guard_slots
+    (kit 19.0.1.7.0, clinic 19.0.1.141.0).
 
     Styled by static/src/scss/pk_components.scss, scoped under .o_pk_app.
     Calling convention: set the documented variables in the t-call body;
@@ -121,6 +123,90 @@
     <!-- Empty state. Variable: message. -->
     <template id="pk_empty_state" name="Portal kit: empty state">
         <p class="o_pk_empty" t-out="message"/>
+    </template>
+
+    <!--
+        Task 5370 (P4b) — a coloured status pill that is its own dropdown
+        (static/src/js/pk_status_pills.js). Variables:
+
+        - pill: {key, text, label, title, tone, icon, menu_label, options,
+          target}; options [{value, label, tone, checked, disabled, hint,
+          post, action, from}]
+          — ``post`` is the value a pick saves (default: ``value``; an empty
+          string is a value too: a blank choice); a disabled option is
+          greyed, says why (``hint``) and posts nothing; an ``action``
+          option posts nothing either — the pick is announced as a
+          « pk:pill-action » DOM event ({action, value, from, model,
+          recordId, pill}) for the module that owns that action;
+          target {model, id, field, write_date, old_value}: the pick posts
+          ``POST /my/app/save/<model>/<id>`` {field, value: post, write_date,
+          old_value} — render the pill INSIDE a read fragment so the next
+          pick posts fresh values;
+        - editable: False -> the same coloured pill, read-only (a span, no
+          menu, data-pk-pill-readonly);
+        - undo_message: the « Undo » toast's message after a pick;
+        - compact -> the small pill of a list row (``label`` shown, the full
+          ``text`` as its title / accessible name, a small chevron);
+        - scope -> a key making the menu id unique when one record's pills
+          show several times on a page.
+
+        The menu is the shell's generic menu popup (pk_user_menu: keyboard,
+        Escape, outside tap, one open at a time).
+    -->
+    <template id="pk_status_pill_select" name="Portal kit: status pill select">
+        <t t-set="pk_pill_target" t-value="pill['target']"/>
+        <t t-set="pk_pill_menu_id" t-value="'pk-pill-%s-%s-%s%s' % (pk_pill_target['model'].replace('.', '-'), pk_pill_target['id'], pill['key'], ('-%s' % scope) if scope else '')"/>
+        <span t-if="editable" t-attf-class="o_pk_pill_select_wrap#{' o_pk_pill_select_compact' if compact else ''}" data-pk-pill-select="1"
+              t-att-data-pk-pill-key="pill['key']"
+              t-att-data-pk-model="pk_pill_target['model']"
+              t-att-data-pk-record-id="pk_pill_target['id']"
+              t-att-data-pk-field="pk_pill_target['field']"
+              t-att-data-pk-write-date="pk_pill_target['write_date']"
+              t-att-data-pk-old-value="pk_pill_target['old_value']"
+              t-att-data-pk-undo-message="undo_message or None">
+            <button type="button" t-attf-class="o_pk_status_pill o_pk_pill_select o_pk_chip_#{pill['tone']}"
+                    data-pk-menu-toggle="1" aria-haspopup="menu" aria-expanded="false"
+                    t-att-aria-controls="pk_pill_menu_id" t-att-title="pill['title']"
+                    t-att-aria-label="pill['text'] if compact else None"
+                    t-att-data-pk-pill-value="pill['value']">
+                <i t-if="pill['icon']" t-attf-class="fa #{pill['icon']}" aria-hidden="true"/>
+                <span class="o_pk_pill_text" t-out="pill['label'] if compact else pill['text']"/>
+                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'down'"/></t>
+            </button>
+            <span t-att-id="pk_pill_menu_id" class="o_pk_menu_popup o_pk_pill_popup" role="menu" data-pk-menu-popup="1" data-pk-keep-in-view="1"
+                  t-att-aria-label="pill['menu_label']" hidden="hidden">
+                <button t-foreach="pill['options']" t-as="option" type="button" role="menuitemradio"
+                        class="o_pk_menu_item o_pk_pill_option"
+                        t-att-data-pk-pill-value="option['value']"
+                        t-att-data-pk-pill-post="None if option['disabled'] else option.get('post', option['value'])"
+                        t-att-data-pk-pill-action="option.get('action') or None"
+                        t-att-data-pk-pill-from="option.get('from') or None"
+                        t-att-aria-checked="'true' if option['checked'] else 'false'"
+                        t-att-aria-disabled="'true' if option['disabled'] else None">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'check'"/></t>
+                    <span t-attf-class="o_pk_pill_swatch o_pk_chip_#{option['tone']}" aria-hidden="true"/>
+                    <span class="o_pk_pill_option_text">
+                        <span t-out="option['label']"/>
+                        <small t-if="option['disabled'] and option['hint']" class="o_pk_pill_hint" t-out="option['hint']"/>
+                    </span>
+                </button>
+            </span>
+        </span>
+        <span t-else="" t-attf-class="o_pk_status_pill o_pk_chip_#{pill['tone']}" t-att-title="pill['title']"
+              t-att-data-pk-pill-key="pill['key']" data-pk-pill-readonly="1">
+            <i t-if="pill['icon']" t-attf-class="fa #{pill['icon']}" aria-hidden="true"/>
+            <span class="o_pk_pill_text" t-out="pill['text']"/>
+        </span>
+    </template>
+
+    <!-- Task 5370 (P4b) — the form guard's slots (pk_form_guard.js): the
+         server-error slot and the reason line under the primary action
+         (aria-describedby). Call it right after the form's actions.
+         Variables: guard_id (unique on the page). -->
+    <template id="pk_form_guard_slots" name="Portal kit: form guard slots">
+        <p class="o_pk_field_message o_pk_field_error" role="alert" data-pk-guard-error="1" hidden="hidden"/>
+        <p class="o_pk_hint o_pk_guard_reason" t-att-id="'%s_reason' % guard_id" data-pk-guard-reason="1"
+           aria-live="polite" hidden="hidden"/>
     </template>
 
 </odoo>

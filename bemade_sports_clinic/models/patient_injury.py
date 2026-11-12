@@ -401,7 +401,7 @@ class PatientInjury(models.Model):
     _SC_CONSENT_TONES = {'yes': 'green', 'no': 'red', 'na': 'ghost', '': 'yellow'}
     _SC_VISIBILITY_TONES = {'0': 'ghost', '1': 'yellow'}
 
-    def _sc_pill_target(self, field, old_value):
+    def _pk_pill_target(self, field, old_value):
         self.ensure_one()
         return {
             'model': self._name,
@@ -420,7 +420,7 @@ class PatientInjury(models.Model):
         }
 
     def _sc_stage_pill(self):
-        """Task 1631: the card header's status pill (``sc_status_pill_select``).
+        """Task 1631: the card header's status pill (``bemade_portal_kit.pk_status_pill_select``).
         Every transition is offered (fixing a mistake is the point):
         « Actif » from « Non vérifié » is the verify action and « Résolu »
         from an unresolved status the resolve sheet (``action``, handled by
@@ -446,7 +446,7 @@ class PatientInjury(models.Model):
         return self._sc_pill(
             'stage', labels.get(stage, ''), env._("Injury status"), stage,
             self._SC_STAGE_TONES.get(stage, 'ghost'), options,
-            self._sc_pill_target('stage', stage))
+            self._pk_pill_target('stage', stage))
 
     def _sc_flag_pills(self):
         """Task 1631: the Details row's « Consentement parental » and
@@ -474,12 +474,12 @@ class PatientInjury(models.Model):
                 'consent',
                 env._("Parental consent: %(value)s", value=consent_labels[consent]),
                 env._("Parental consent"), consent, self._SC_CONSENT_TONES[consent],
-                consent_options, self._sc_pill_target('parental_consent', consent)),
+                consent_options, self._pk_pill_target('parental_consent', consent)),
             self._sc_pill(
                 'visibility',
                 env._("Visibility: %(value)s", value=visibility_labels[hidden]),
                 env._("Visibility"), hidden, self._SC_VISIBILITY_TONES[hidden],
-                visibility_options, self._sc_pill_target('hidden_from_coaches', hidden)),
+                visibility_options, self._pk_pill_target('hidden_from_coaches', hidden)),
         ]
 
     def _sc_predicted_before_resolve(self):

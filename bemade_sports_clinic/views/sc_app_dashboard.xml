@@ -556,7 +556,7 @@
                                         <span class="o_pk_hint o_sc_dash_cfg_status" data-sc-dash-status="1" aria-live="polite"/>
                                         <button type="submit" class="o_pk_btn o_pk_btn_ghost o_sc_dash_cfg_save" data-sc-dash-save="1">Save</button>
                                     </div>
-                                    <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_dash_%s' % row['id']"/></t>
+                                    <t t-call="bemade_portal_kit.pk_form_guard_slots"><t t-set="guard_id" t-value="'sc_dash_%s' % row['id']"/></t>
                                 </form>
                                 <form action="/my/app/dashboard/configure/move" method="post"
                                       class="o_pk_inline_form o_sc_dash_cfg_zone_form" data-sc-dash-zone-form="1">

@@ -69,7 +69,7 @@ tours.add("sc_1624_dashboard_configure", {
             content: "Saved in place, the row greyed (no reload)",
             trigger: `${ITEM("today")}.o_sc_dash_cfg_off ${FORM("today")}:not([data-sc-dash-saving]) [data-sc-dash-status]:not(:empty)`,
             async run() {
-                await waitFor(() => !document.querySelector(`${FORM("today")} [data-sc-guard-error]:not([hidden])`), "no error");
+                await waitFor(() => !document.querySelector(`${FORM("today")} [data-pk-guard-error]:not([hidden])`), "no error");
             },
         },
         {
@@ -135,7 +135,7 @@ tours.add("sc_1624_dashboard_configure", {
                 await waitFor(() => hidden.value !== "", "scope filled");
                 await waitFor(
                     () => document.querySelector(`${FORM("watch-2")}:not([data-sc-dash-saving])`) &&
-                        !document.querySelector(`${FORM("watch-2")} [data-sc-guard-error]:not([hidden])`),
+                        !document.querySelector(`${FORM("watch-2")} [data-pk-guard-error]:not([hidden])`),
                     "saved"
                 );
                 noHorizontalScroll();

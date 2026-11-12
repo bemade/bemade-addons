@@ -272,8 +272,8 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
             _text, tree = self._get(self._url())
             hero = tree.xpath('//*[@data-pk-section="player.hero"]')[0]
             self.assertFalse(hero.xpath('.//*[@data-sc-stage-chip]'))
-            pills = hero.xpath('.//*[@data-sc-pill-readonly]')
-            self.assertEqual([p.get('data-sc-pill-key') for p in pills], ['match', 'practice'], vals)
+            pills = hero.xpath('.//*[@data-pk-pill-readonly]')
+            self.assertEqual([p.get('data-pk-pill-key') for p in pills], ['match', 'practice'], vals)
             for pill, tone, label in zip(pills, tones, labels):
                 self.assertIn('o_pk_chip_%s' % tone, pill.get('class'), vals)
                 self.assertEqual(' '.join(pill.text_content().split()), label)
@@ -360,7 +360,7 @@ class TestPlayerCountryI18n1594(TestAppShellI18n1538):
         tree = lxml_html.fromstring(self._fr(self._url()))
         self.assertFalse(tree.xpath('//*[@data-sc-stage-chip]'))
         pills = [' '.join(p.text_content().split()) for p in tree.xpath(
-            '//*[@data-sc-pill-readonly][@data-sc-pill-key="match" or @data-sc-pill-key="practice"]')]
+            '//*[@data-pk-pill-readonly][@data-pk-pill-key="match" or @data-pk-pill-key="practice"]')]
         self.assertEqual(pills, ['Match : Oui', 'Pratique : Oui'])
 
     @mute_logger('odoo.http')

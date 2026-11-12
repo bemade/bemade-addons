@@ -247,7 +247,7 @@
                 </button>
             </div>
             <p t-if="error" t-att-id="'%s_error' % fid" class="o_pk_field_message o_pk_field_error"
-               t-att-data-sc-error-for="fname" t-out="error"/>
+               t-att-data-pk-error-for="fname" t-out="error"/>
         </div>
     </template>
 
@@ -272,10 +272,10 @@
                     <t t-if="sc_password_error">
                         <t t-call="bemade_sports_clinic.sc_banner">
                             <t t-set="tone" t-value="'warn'"/>
-                            <span data-sc-error-for="password" t-out="sc_password_error"/>
+                            <span data-pk-error-for="password" t-out="sc_password_error"/>
                         </t>
                     </t>
-                    <form action="/my/security" method="post" class="o_pk_card o_pk_form oe_reset_password_form" data-sc-guard="1">
+                    <form action="/my/security" method="post" class="o_pk_card o_pk_form oe_reset_password_form" data-pk-guard="1">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <input type="hidden" name="op" value="password"/>
                         <t t-call="bemade_sports_clinic.sc_security_password">
@@ -302,7 +302,7 @@
                         <div class="o_pk_form_actions">
                             <button type="submit" class="o_pk_btn o_pk_btn_primary">Change password</button>
                         </div>
-                        <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_security_password'"/></t>
+                        <t t-call="bemade_portal_kit.pk_form_guard_slots"><t t-set="guard_id" t-value="'sc_security_password'"/></t>
                     </form>
                 </section>
 
@@ -418,7 +418,7 @@
                             <t t-set="deactivate_other" t-value="get_error(errors, 'deactivate.other')"/>
                             <t t-if="deactivate_other" t-call="bemade_sports_clinic.sc_banner">
                                 <t t-set="tone" t-value="'warn'"/>
-                                <span data-sc-error-for="other" t-out="deactivate_other"/>
+                                <span data-pk-error-for="other" t-out="deactivate_other"/>
                             </t>
                             <t t-call="bemade_sports_clinic.sc_banner">
                                 <t t-set="tone" t-value="'warn'"/>
@@ -430,7 +430,7 @@
                                        required="required" autocomplete="current-password"
                                        t-att-aria-invalid="'true' if deactivate_error == 'password' else None"/>
                                 <p t-if="deactivate_error == 'password'" class="o_pk_field_message o_pk_field_error"
-                                   data-sc-error-for="password">Wrong password.</p>
+                                   data-pk-error-for="password">Wrong password.</p>
                             </div>
                             <div class="o_pk_field">
                                 <label class="o_pk_field_label" for="sc_deactivate_validation">2. Type your login to confirm: <strong t-out="env.user.login"/></label>
@@ -438,7 +438,7 @@
                                        required="required" autocomplete="off" autocapitalize="none"
                                        t-att-aria-invalid="'true' if deactivate_error == 'validation' else None"/>
                                 <p t-if="deactivate_error == 'validation'" class="o_pk_field_message o_pk_field_error"
-                                   data-sc-error-for="validation">Type your login exactly as shown above.</p>
+                                   data-pk-error-for="validation">Type your login exactly as shown above.</p>
                             </div>
                             <t t-call="bemade_sports_clinic.sc_switch">
                                 <t t-set="sw_name" t-value="'request_blacklist'"/>

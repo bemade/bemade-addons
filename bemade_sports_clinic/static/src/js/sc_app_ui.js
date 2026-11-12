@@ -14,7 +14,8 @@
  * - the device draft store: foreign drafts purged on load, every draft
  *   cleared on « Déconnexion »;
  * - task 1539: the toast may carry ONE action (« Annuler » after an instant
- *   status save: ``sc:toast`` event, detail {message, actionLabel, action});
+ *   status save: ``sc:toast`` event — ``pk:toast`` from the kit's scripts —
+ *   detail {message, actionLabel, action});
  *   [data-sc-draft-clear="<key prefix>"] drops those drafts on load (the
  *   landing page of a created injury / added note); a legacy #fragment
  *   (#notes, #contacts… from the POST round-trips) opens the matching tab
@@ -166,11 +167,15 @@ function keepClearOfToast(el, { fitOnly = false } = {}) {
     window.scrollBy({ top: overlap, behavior: "instant" });
 }
 
-document.addEventListener("sc:toast", (ev) => {
+function onToast(ev) {
     const detail = ev.detail || {};
     showToast(detail.message || "", detail.actionLabel, detail.action, detail.duration,
         { title: detail.title, tone: detail.tone });
-});
+}
+document.addEventListener("sc:toast", onToast);
+// Task 5370 (kit P4b): the kit's scripts (the status pills) ask for their
+// toasts with « pk:toast » (same detail); both until the toast moves (P4c).
+document.addEventListener("pk:toast", onToast);
 
 // Task 1741: the ids of the session notifications already shown in this tab
 // (a page replayed from the browser's cache must not show its one again).
@@ -487,8 +492,8 @@ function setCardEditing(card, editing) {
     syncCardControls(card, editing);
     if (editing) {
         // Task 1736 r1: a lazy edit view (an activity card) mounts its
-        // fields now (sc_lazy_edit.js).
-        edit.dispatchEvent(new CustomEvent("sc:edit-view-open", { bubbles: true }));
+        // fields now (pk_lazy_edit.js).
+        edit.dispatchEvent(new CustomEvent("pk:edit-view-open", { bubbles: true }));
         // Task 1646: a text field only (never a picker), nothing on a phone.
         focusFirstField(edit);
     }

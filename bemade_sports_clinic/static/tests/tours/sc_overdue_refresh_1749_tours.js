@@ -25,31 +25,31 @@ function promote(name) {
     return [
         {
             content: `${name}: open the Practice pill`,
-            trigger: `${sel} [data-sc-pill-key="practice"] > button`,
+            trigger: `${sel} [data-pk-pill-key="practice"] > button`,
             run: "click",
         },
         {
             content: `${name}: Practice « Oui »`,
-            trigger: `${sel} [data-sc-pill-key="practice"] [role="menuitemradio"][data-sc-pill-value="yes"]`,
+            trigger: `${sel} [data-pk-pill-key="practice"] [role="menuitemradio"][data-pk-pill-value="yes"]`,
             run: "click",
         },
         {
             content: `${name}: the card shows Practice « Oui » (still overdue: match « Non »)`,
-            trigger: `${sel} [data-sc-pill-key="practice"] > button[data-sc-pill-value="yes"]`,
+            trigger: `${sel} [data-pk-pill-key="practice"] > button[data-pk-pill-value="yes"]`,
         },
         {
             content: `${name}: open the Match pill`,
-            trigger: `${sel} [data-sc-pill-key="match"] > button[data-sc-pill-value="no"]`,
+            trigger: `${sel} [data-pk-pill-key="match"] > button[data-pk-pill-value="no"]`,
             run: "click",
         },
         {
             content: `${name}: Match « Oui »`,
-            trigger: `${sel} [data-sc-pill-key="match"] [role="menuitemradio"][data-sc-pill-value="yes"]:not([aria-disabled="true"])`,
+            trigger: `${sel} [data-pk-pill-key="match"] [role="menuitemradio"][data-pk-pill-value="yes"]:not([aria-disabled="true"])`,
             run: "click",
         },
         {
             content: `${name}: the card follows at once — Match « Oui », green dot, no reload`,
-            trigger: `${sel} [data-sc-pill-key="match"] > button[data-sc-pill-value="yes"]`,
+            trigger: `${sel} [data-pk-pill-key="match"] > button[data-pk-pill-value="yes"]`,
             run() {
                 const node = this.anchor.closest("[data-sc-player-id]");
                 assert(node.querySelector(".o_pk_dot.o_pk_tone_green"), `${name}: green dot`);
@@ -82,7 +82,7 @@ tours.add("sc_1749_overdue_refresh", {
         ...promote("Synth, Shared"),
         {
             content: "« Recent changes » shows the same, fresh",
-            trigger: 'section[data-sc-instance="recent_changes"] [data-sc-player-id]:has(.o_pk_row_title:contains("Synth, Shared")) [data-sc-pill-key="match"] > button[data-sc-pill-value="yes"]',
+            trigger: 'section[data-sc-instance="recent_changes"] [data-sc-player-id]:has(.o_pk_row_title:contains("Synth, Shared")) [data-pk-pill-key="match"] > button[data-pk-pill-value="yes"]',
         },
     ],
 });

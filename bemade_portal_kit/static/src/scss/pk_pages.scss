@@ -629,7 +629,7 @@
     }
 
     // ------------------------------------------- inline-edit cards (2026-10-10)
-    // One pencil per card; read view by default (sc_app_ui.js toggles).
+    // One pencil per card; read view by default (the consumer's script toggles).
     .o_pk_edit_card {
         display: flex;
         flex-direction: column;
@@ -990,7 +990,7 @@
     }
 
     // Task 1684: in a filter panel a field keeps its own height — an open
-    // picker list (in flow, sc_picker.js) grows its row, and a stretched
+    // picker list (in flow, the consumer's picker) grows its row, and a stretched
     // neighbour's input (.o_pk_input is flex: 1) grew with it.
     .o_pk_filters .o_pk_filter_grid {
         align-items: start;
@@ -1491,7 +1491,7 @@
     }
 }
 
-// Task 1648: the type-to-filter picker of the link fields (sc_picker.js) —
+// Task 1648: the type-to-filter picker of the link fields —
 // the select stays (hidden) as the form value; the list sits in the flow
 // under the box (a phone keyboard does not hide it).
 .o_pk_app {

@@ -83,7 +83,7 @@ tours.add("sc_1736r1_activity_card", {
                 assert(el.dataset.scEditOpen === "1", "another card opened");
                 assert(shown(el.querySelector("button.o_pk_card_trash")), "no trash while editing");
                 assert(el.querySelector("button[data-sc-edit-toggle]").dataset.scEditToggleDone === "1", "no ✓");
-                assert(!el.querySelector("template[data-sc-lazy-edit]"), "the template is still there");
+                assert(!el.querySelector("template[data-pk-lazy-edit]"), "the template is still there");
                 for (const field of ["summary", "date_deadline", "user_id", "note"]) {
                     assert(el.querySelector(`.o_pk_autosave[data-sc-field="${field}"]`), `no ${field} field`);
                 }
