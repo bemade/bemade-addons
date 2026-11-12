@@ -1,0 +1,43 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_deck_manager,deck manager,model_homeschool_practice_deck,homeschool.group_homeschool_manager,1,1,1,1
+access_unit_manager,unit manager,model_homeschool_practice_unit,homeschool.group_homeschool_manager,1,1,1,1
+access_item_manager,item manager,model_homeschool_practice_item,homeschool.group_homeschool_manager,1,1,1,1
+access_choice_manager,choice manager,model_homeschool_practice_choice,homeschool.group_homeschool_manager,1,1,1,1
+access_unit_access_manager,unit access manager,model_homeschool_practice_unit_access,homeschool.group_homeschool_manager,1,1,1,1
+access_mastery_manager,mastery manager,model_homeschool_practice_mastery,homeschool.group_homeschool_manager,1,1,0,0
+access_mastery_history_manager,mastery history manager,model_homeschool_practice_mastery_history,homeschool.group_homeschool_manager,1,0,0,0
+access_session_manager,session manager,model_homeschool_practice_session,homeschool.group_homeschool_manager,1,1,0,1
+access_attempt_manager,attempt manager,model_homeschool_practice_attempt,homeschool.group_homeschool_manager,1,0,0,0
+access_xp_manager,xp manager,model_homeschool_practice_xp,homeschool.group_homeschool_manager,1,0,1,0
+access_quest_template_manager,quest template manager,model_homeschool_practice_quest_template,homeschool.group_homeschool_manager,1,1,1,1
+access_quest_manager,quest manager,model_homeschool_practice_quest,homeschool.group_homeschool_manager,1,1,0,1
+access_goal_manager,goal manager,model_homeschool_practice_goal,homeschool.group_homeschool_manager,1,1,1,1
+access_goal_achievement_manager,goal achievement manager,model_homeschool_practice_goal_achievement,homeschool.group_homeschool_manager,1,0,0,0
+access_reward_type_manager,reward type manager,model_homeschool_reward_type,homeschool.group_homeschool_manager,1,1,1,1
+access_reward_rule_manager,reward rule manager,model_homeschool_reward_rule,homeschool.group_homeschool_manager,1,1,1,1
+access_reward_ledger_manager,reward ledger manager,model_homeschool_reward_ledger,homeschool.group_homeschool_manager,1,0,1,0
+access_reward_balance_manager,reward balance manager,model_homeschool_reward_balance,homeschool.group_homeschool_manager,1,0,0,0
+access_badge_template_manager,badge template manager,model_homeschool_practice_badge_template,homeschool.group_homeschool_manager,1,1,1,1
+access_badge_manager,badge manager,model_homeschool_practice_badge,homeschool.group_homeschool_manager,1,0,0,1
+access_unlock_wizard_manager,unlock wizard,model_homeschool_practice_unlock_wizard,homeschool.group_homeschool_manager,1,1,1,1
+access_redeem_wizard_manager,redeem wizard,model_homeschool_reward_redeem_wizard,homeschool.group_homeschool_manager,1,1,1,1
+access_deck_portal,deck portal,model_homeschool_practice_deck,base.group_portal,1,0,0,0
+access_unit_portal,unit portal,model_homeschool_practice_unit,base.group_portal,1,0,0,0
+access_item_portal,item portal,model_homeschool_practice_item,base.group_portal,1,0,0,0
+access_choice_portal,choice portal,model_homeschool_practice_choice,base.group_portal,1,0,0,0
+access_unit_access_portal,unit access portal,model_homeschool_practice_unit_access,base.group_portal,1,0,0,0
+access_mastery_portal,mastery portal,model_homeschool_practice_mastery,base.group_portal,1,0,0,0
+access_mastery_history_portal,mastery history portal,model_homeschool_practice_mastery_history,base.group_portal,1,0,0,0
+access_session_portal,session portal,model_homeschool_practice_session,base.group_portal,1,0,0,0
+access_attempt_portal,attempt portal,model_homeschool_practice_attempt,base.group_portal,1,0,0,0
+access_xp_portal,xp portal,model_homeschool_practice_xp,base.group_portal,1,0,0,0
+access_quest_template_portal,quest template portal,model_homeschool_practice_quest_template,base.group_portal,1,0,0,0
+access_quest_portal,quest portal,model_homeschool_practice_quest,base.group_portal,1,0,0,0
+access_goal_portal,goal portal,model_homeschool_practice_goal,base.group_portal,1,0,0,0
+access_goal_achievement_portal,goal achievement portal,model_homeschool_practice_goal_achievement,base.group_portal,1,0,0,0
+access_badge_template_portal,badge template portal,model_homeschool_practice_badge_template,base.group_portal,1,0,0,0
+access_badge_portal,badge portal,model_homeschool_practice_badge,base.group_portal,1,0,0,0
+access_reward_type_portal,reward type portal,model_homeschool_reward_type,base.group_portal,1,0,0,0
+access_reward_rule_portal,reward rule portal,model_homeschool_reward_rule,base.group_portal,1,0,0,0
+access_reward_ledger_portal,reward ledger portal,model_homeschool_reward_ledger,base.group_portal,1,0,0,0
+access_reward_balance_portal,reward balance portal,model_homeschool_reward_balance,base.group_portal,1,0,0,0

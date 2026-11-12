@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Managers: the records of their companies (families). Portal: the learner reaches his
+         progress, quests, goals, badges, XP and reward balances; the educators (resource users
+         attached to the learner) read everything practice-related EXCEPT rewards, and the
+         learner never reads sessions, attempts or mastery (timings and the mastery verdict are
+         for educators). The learner writes nothing: the portal API does it for him after
+         checking that the student is his. Not noupdate: the rules refresh on every upgrade. -->
+    <record id="rule_deck_company" model="ir.rule">
+        <field name="name">Practice deck: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_practice_deck"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_unit_company" model="ir.rule">
+        <field name="name">Practice unit: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_practice_unit"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_item_company" model="ir.rule">
+        <field name="name">Practice item: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_practice_item"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_unit_access_company" model="ir.rule">
+        <field name="name">Practice unit_access: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_practice_unit_access"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_mastery_company" model="ir.rule">
+        <field name="name">Practice mastery: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_practice_mastery"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_mastery_history_company" model="ir.rule">
+        <field name="name">Practice mastery_history: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_practice_mastery_history"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_session_company" model="ir.rule">
+        <field name="name">Practice session: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_practice_session"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_attempt_company" model="ir.rule">
+        <field name="name">Practice attempt: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_practice_attempt"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_xp_company" model="ir.rule">
+        <field name="name">Practice xp: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_practice_xp"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_quest_company" model="ir.rule">
+        <field name="name">Practice quest: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_practice_quest"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_goal_company" model="ir.rule">
+        <field name="name">Practice goal: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_practice_goal"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_goal_achievement_company" model="ir.rule">
+        <field name="name">Practice goal_achievement: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_practice_goal_achievement"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_badge_company" model="ir.rule">
+        <field name="name">Practice badge: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_practice_badge"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_reward_type_company" model="ir.rule">
+        <field name="name">Practice reward_type: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_reward_type"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_reward_rule_company" model="ir.rule">
+        <field name="name">Practice reward_rule: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_reward_rule"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_reward_ledger_company" model="ir.rule">
+        <field name="name">Practice reward_ledger: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_reward_ledger"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_reward_balance_company" model="ir.rule">
+        <field name="name">Practice reward_balance: manager sees his companies</field>
+        <field name="model_id" ref="model_homeschool_reward_balance"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('homeschool.group_homeschool_manager'))]"/>
+    </record>
+    <record id="rule_deck_portal" model="ir.rule">
+        <field name="name">Practice deck: portal sees his family's</field>
+        <field name="model_id" ref="model_homeschool_practice_deck"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_unit_portal" model="ir.rule">
+        <field name="name">Practice unit: portal sees his family's</field>
+        <field name="model_id" ref="model_homeschool_practice_unit"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_item_portal" model="ir.rule">
+        <field name="name">Practice item: portal sees his family's</field>
+        <field name="model_id" ref="model_homeschool_practice_item"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_reward_type_portal" model="ir.rule">
+        <field name="name">Practice reward_type: portal sees his family's</field>
+        <field name="model_id" ref="model_homeschool_reward_type"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_choice_portal" model="ir.rule">
+        <field name="name">Practice choices: portal sees his family's</field>
+        <field name="model_id" ref="model_homeschool_practice_choice"/>
+        <field name="domain_force">[('item_id.company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_quest_template_portal" model="ir.rule">
+        <field name="name">Practice quest_template: shared or his family's</field>
+        <field name="model_id" ref="model_homeschool_practice_quest_template"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_badge_template_portal" model="ir.rule">
+        <field name="name">Practice badge_template: shared or his family's</field>
+        <field name="model_id" ref="model_homeschool_practice_badge_template"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_quest_portal" model="ir.rule">
+        <field name="name">Practice quest: learner or his educators</field>
+        <field name="model_id" ref="model_homeschool_practice_quest"/>
+        <field name="domain_force">['|', ('student_id.user_id', '=', user.id), ('student_id.resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_goal_portal" model="ir.rule">
+        <field name="name">Practice goal: learner or his educators</field>
+        <field name="model_id" ref="model_homeschool_practice_goal"/>
+        <field name="domain_force">['|', ('student_id.user_id', '=', user.id), ('student_id.resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_goal_achievement_portal" model="ir.rule">
+        <field name="name">Practice goal_achievement: learner or his educators</field>
+        <field name="model_id" ref="model_homeschool_practice_goal_achievement"/>
+        <field name="domain_force">['|', ('student_id.user_id', '=', user.id), ('student_id.resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_badge_portal" model="ir.rule">
+        <field name="name">Practice badge: learner or his educators</field>
+        <field name="model_id" ref="model_homeschool_practice_badge"/>
+        <field name="domain_force">['|', ('student_id.user_id', '=', user.id), ('student_id.resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_xp_portal" model="ir.rule">
+        <field name="name">Practice xp: learner or his educators</field>
+        <field name="model_id" ref="model_homeschool_practice_xp"/>
+        <field name="domain_force">['|', ('student_id.user_id', '=', user.id), ('student_id.resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_reward_rule_portal" model="ir.rule">
+        <field name="name">Rewards reward_rule: the learner only</field>
+        <field name="model_id" ref="model_homeschool_reward_rule"/>
+        <field name="domain_force">[('student_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_reward_ledger_portal" model="ir.rule">
+        <field name="name">Rewards reward_ledger: the learner only</field>
+        <field name="model_id" ref="model_homeschool_reward_ledger"/>
+        <field name="domain_force">[('student_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_reward_balance_portal" model="ir.rule">
+        <field name="name">Rewards reward_balance: the learner only</field>
+        <field name="model_id" ref="model_homeschool_reward_balance"/>
+        <field name="domain_force">[('student_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_unit_access_portal" model="ir.rule">
+        <field name="name">Practice unit_access: educators only (resource users)</field>
+        <field name="model_id" ref="model_homeschool_practice_unit_access"/>
+        <field name="domain_force">[('student_id.resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_mastery_portal" model="ir.rule">
+        <field name="name">Practice mastery: educators only (resource users)</field>
+        <field name="model_id" ref="model_homeschool_practice_mastery"/>
+        <field name="domain_force">[('student_id.resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_mastery_history_portal" model="ir.rule">
+        <field name="name">Practice mastery_history: educators only (resource users)</field>
+        <field name="model_id" ref="model_homeschool_practice_mastery_history"/>
+        <field name="domain_force">[('student_id.resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_session_portal" model="ir.rule">
+        <field name="name">Practice session: educators only (resource users)</field>
+        <field name="model_id" ref="model_homeschool_practice_session"/>
+        <field name="domain_force">[('student_id.resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+    <record id="rule_attempt_portal" model="ir.rule">
+        <field name="name">Practice attempt: educators only (resource users)</field>
+        <field name="model_id" ref="model_homeschool_practice_attempt"/>
+        <field name="domain_force">[('student_id.resource_user_ids', 'in', [user.id])]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_portal'))]"/>
+    </record>
+</odoo>

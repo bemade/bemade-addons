@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Decks -->
+    <record id="view_deck_list" model="ir.ui.view">
+        <field name="name">homeschool.practice.deck.list</field>
+        <field name="model">homeschool.practice.deck</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button name="action_load_grammar_fr" type="object" string="Load French grammar decks" display="always"
+                            groups="homeschool.group_homeschool_manager"/>
+                </header>
+                <field name="sequence" widget="handle"/><field name="name"/><field name="session_size"/><field name="company_id" groups="base.group_multi_company"/></list>
+        </field>
+    </record>
+    <record id="view_deck_form" model="ir.ui.view">
+        <field name="name">homeschool.practice.deck.form</field>
+        <field name="model">homeschool.practice.deck</field>
+        <field name="arch" type="xml">
+            <form string="Practice deck">
+                <sheet>
+                    <group>
+                        <group><field name="name"/><field name="curriculum_item_ids" widget="many2many_tags"/><field name="company_id" groups="base.group_multi_company"/></group>
+                        <group><field name="session_size"/><field name="max_new_per_session"/><field name="intro_size"/><field name="secure_ratio"/><field name="box_intervals"/></group>
+                    </group>
+                    <field name="description" placeholder="What this deck practices"/>
+                    <notebook>
+                        <page string="Units">
+                            <field name="unit_ids"><list><field name="sequence" widget="handle"/><field name="name"/><field name="item_ids" string="Items" widget="many2many_tags" optional="hide"/></list></field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_deck" model="ir.actions.act_window">
+        <field name="name">Practice decks</field>
+        <field name="res_model">homeschool.practice.deck</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_unit_form" model="ir.ui.view">
+        <field name="name">homeschool.practice.unit.form</field>
+        <field name="model">homeschool.practice.unit</field>
+        <field name="arch" type="xml">
+            <form string="Practice unit">
+                <sheet>
+                    <group><field name="name"/><field name="deck_id"/><field name="curriculum_item_ids" widget="many2many_tags"/></group>
+                    <field name="intro" placeholder="The worked example shown the first time"/>
+                    <field name="item_ids">
+                        <list editable="bottom"><field name="step"/><field name="key"/><field name="prompt"/><field name="answer"/><field name="answer_mode"/><field name="hint"/><field name="calibration"/></list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_item_form" model="ir.ui.view">
+        <field name="name">homeschool.practice.item.form</field>
+        <field name="model">homeschool.practice.item</field>
+        <field name="arch" type="xml">
+            <form string="Practice item">
+                <sheet>
+                    <group>
+                        <group><field name="unit_id"/><field name="key"/><field name="step"/><field name="calibration"/></group>
+                        <group><field name="prompt"/><field name="answer_mode"/><field name="answer"/><field name="hint"/></group>
+                    </group>
+                    <field name="choice_ids" invisible="answer_mode != 'choices'"><list editable="bottom"><field name="sequence" widget="handle"/><field name="label"/><field name="correct"/></list></field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Educators' view: sessions, attempts, mastery -->
+    <record id="view_session_list" model="ir.ui.view">
+        <field name="name">homeschool.practice.session.list</field>
+        <field name="model">homeschool.practice.session</field>
+        <field name="arch" type="xml">
+            <list create="0"><field name="started_at"/><field name="student_id"/><field name="deck_id"/><field name="kind"/><field name="unit_id"/><field name="unit_ids" widget="many2many_tags" optional="hide"/><field name="item_count"/><field name="correct_count"/><field name="perfect"/><field name="input_type"/><field name="device" optional="hide"/><field name="state"/></list>
+        </field>
+    </record>
+    <record id="view_session_form" model="ir.ui.view">
+        <field name="name">homeschool.practice.session.form</field>
+        <field name="model">homeschool.practice.session</field>
+        <field name="arch" type="xml">
+            <form string="Session" create="0" edit="0">
+                <sheet>
+                    <group>
+                        <group><field name="student_id"/><field name="deck_id"/><field name="kind"/><field name="unit_id" invisible="kind == 'free'"/><field name="unit_ids" widget="many2many_tags" invisible="kind != 'free'"/><field name="quest_id"/></group>
+                        <group><field name="started_at"/><field name="ended_at"/><field name="state"/><field name="input_type"/><field name="device"/><field name="frontend"/></group>
+                    </group>
+                    <field name="attempt_ids"><list><field name="client_ts"/><field name="item_id"/><field name="given"/><field name="correct"/><field name="hint_used"/><field name="first_touch_ms"/><field name="submit_ms"/><field name="outlier"/></list></field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_session" model="ir.actions.act_window">
+        <field name="name">Practice sessions</field>
+        <field name="res_model">homeschool.practice.session</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="view_attempt_list" model="ir.ui.view">
+        <field name="name">homeschool.practice.attempt.list</field>
+        <field name="model">homeschool.practice.attempt</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0"><field name="client_ts"/><field name="student_id"/><field name="item_id"/><field name="given"/><field name="correct"/><field name="hint_used"/><field name="first_touch_ms"/><field name="submit_ms"/><field name="input_type"/><field name="outlier"/></list>
+        </field>
+    </record>
+    <record id="view_attempt_pivot" model="ir.ui.view">
+        <field name="name">homeschool.practice.attempt.pivot</field>
+        <field name="model">homeschool.practice.attempt</field>
+        <field name="arch" type="xml">
+            <pivot><field name="item_id" type="row"/><field name="first_touch_ms" type="measure"/></pivot>
+        </field>
+    </record>
+    <record id="action_attempt" model="ir.actions.act_window">
+        <field name="name">Practice attempts</field>
+        <field name="res_model">homeschool.practice.attempt</field>
+        <field name="view_mode">list,pivot</field>
+    </record>
+    <record id="view_mastery_list" model="ir.ui.view">
+        <field name="name">homeschool.practice.mastery.list</field>
+        <field name="model">homeschool.practice.mastery</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" decoration-success="state == 'automatic'" decoration-muted="state == 'new'"><field name="student_id"/><field name="unit_id"/><field name="item_id"/><field name="state"/><field name="box"/><field name="due_on"/><field name="correct_count"/><field name="miss_count"/><field name="automatic_since"/><field name="last_seen"/></list>
+        </field>
+    </record>
+    <record id="view_mastery_search" model="ir.ui.view">
+        <field name="name">homeschool.practice.mastery.search</field>
+        <field name="model">homeschool.practice.mastery</field>
+        <field name="arch" type="xml">
+            <search><field name="student_id"/><field name="unit_id"/><filter name="automatic" string="Automatic" domain="[('state', '=', 'automatic')]"/><filter name="derived" string="Derived" domain="[('state', '=', 'derived')]"/><group><filter name="by_unit" string="Unit" context="{'group_by': 'unit_id'}"/><filter name="by_state" string="State" context="{'group_by': 'state'}"/></group></search>
+        </field>
+    </record>
+    <record id="action_mastery" model="ir.actions.act_window">
+        <field name="name">Mastery (educators)</field>
+        <field name="res_model">homeschool.practice.mastery</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_by_unit': 1}</field>
+    </record>
+
+    <!-- Rewards -->
+    <record id="view_reward_type_list" model="ir.ui.view">
+        <field name="name">homeschool.reward.type.list</field>
+        <field name="model">homeschool.reward.type</field>
+        <field name="arch" type="xml"><list editable="bottom"><field name="sequence" widget="handle"/><field name="name"/><field name="unit"/><field name="company_id" groups="base.group_multi_company"/></list></field>
+    </record>
+    <record id="action_reward_type" model="ir.actions.act_window">
+        <field name="name">Reward types</field>
+        <field name="res_model">homeschool.reward.type</field>
+        <field name="view_mode">list</field>
+    </record>
+    <record id="view_reward_ledger_list" model="ir.ui.view">
+        <field name="name">homeschool.reward.ledger.list</field>
+        <field name="model">homeschool.reward.ledger</field>
+        <field name="arch" type="xml"><list create="0" edit="0"><field name="date"/><field name="student_id"/><field name="reward_type_id"/><field name="kind"/><field name="amount" sum="Total"/><field name="note"/><field name="recorded_by"/></list></field>
+    </record>
+    <record id="action_reward_ledger" model="ir.actions.act_window">
+        <field name="name">Rewards ledger</field>
+        <field name="res_model">homeschool.reward.ledger</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Templates -->
+    <record id="view_quest_template_list" model="ir.ui.view">
+        <field name="name">homeschool.practice.quest.template.list</field>
+        <field name="model">homeschool.practice.quest.template</field>
+        <field name="arch" type="xml"><list editable="bottom"><field name="sequence" widget="handle"/><field name="name"/><field name="kind"/><field name="target"/><field name="xp"/><field name="weight"/><field name="company_id" groups="base.group_multi_company"/><field name="active" widget="boolean_toggle"/></list></field>
+    </record>
+    <record id="action_quest_template" model="ir.actions.act_window">
+        <field name="name">Quests</field>
+        <field name="res_model">homeschool.practice.quest.template</field>
+        <field name="view_mode">list</field>
+    </record>
+    <record id="view_badge_template_list" model="ir.ui.view">
+        <field name="name">homeschool.practice.badge.template.list</field>
+        <field name="model">homeschool.practice.badge.template</field>
+        <field name="arch" type="xml"><list editable="bottom"><field name="icon"/><field name="name"/><field name="description"/><field name="kind"/><field name="threshold"/><field name="unit_id"/><field name="repeatable"/><field name="active" widget="boolean_toggle"/></list></field>
+    </record>
+    <record id="action_badge_template" model="ir.actions.act_window">
+        <field name="name">Badges</field>
+        <field name="res_model">homeschool.practice.badge.template</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Wizards -->
+    <record id="view_unlock_wizard_form" model="ir.ui.view">
+        <field name="name">homeschool.practice.unlock.wizard.form</field>
+        <field name="model">homeschool.practice.unlock.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Unlock units taught">
+                <group><field name="student_id" readonly="1"/><field name="unit_ids" widget="many2many_tags"/></group>
+                <footer><button name="action_unlock" type="object" string="Unlock" class="btn-primary"/><button special="cancel" string="Cancel"/></footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_unlock_wizard" model="ir.actions.act_window">
+        <field name="name">Unlock units taught</field>
+        <field name="res_model">homeschool.practice.unlock.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_student_id': active_id}</field>
+    </record>
+    <record id="view_redeem_wizard_form" model="ir.ui.view">
+        <field name="name">homeschool.reward.redeem.wizard.form</field>
+        <field name="model">homeschool.reward.redeem.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Record a reward used">
+                <group><field name="student_id" readonly="1"/><field name="reward_type_id"/><field name="balance"/><field name="amount"/><field name="note"/></group>
+                <footer><button name="action_redeem" type="object" string="Record" class="btn-primary"/><button special="cancel" string="Cancel"/></footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_redeem_wizard" model="ir.actions.act_window">
+        <field name="name">Record a reward used</field>
+        <field name="res_model">homeschool.reward.redeem.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_student_id': active_id}</field>
+    </record>
+
+    <!-- Student form: a Practice page -->
+    <record id="view_student_form_practice" model="ir.ui.view">
+        <field name="name">homeschool.student.form.practice</field>
+        <field name="model">homeschool.student</field>
+        <field name="inherit_id" ref="homeschool.view_student_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Practice" name="practice">
+                    <group>
+                        <group string="Settings">
+                            <field name="practice_handedness"/>
+                            <field name="practice_weekdays"/>
+                            <field name="practice_quests_per_day"/>
+                            <field name="practice_threshold_override_ms"/>
+                        </group>
+                        <group string="Progress">
+                            <field name="practice_level"/>
+                            <field name="practice_xp"/>
+                        </group>
+                    </group>
+                    <button name="%(action_unlock_wizard)d" type="action" string="Unlock units taught" class="btn-primary"/>
+                    <field name="practice_unit_access_ids">
+                        <list create="0" decoration-muted="state == 'locked'">
+                            <field name="deck_id"/><field name="unit_id"/><field name="state"/><field name="unlocked_on"/><field name="unlocked_by"/>
+                            <button name="action_unlock_row" type="object" string="Unlock" invisible="state == 'unlocked'"/>
+                            <button name="action_lock_row" type="object" string="Lock" invisible="state == 'locked'"/>
+                        </list>
+                    </field>
+                    <group string="Rewards in the bank">
+                        <field name="reward_balance_ids" nolabel="1" colspan="2"><list><field name="reward_type_id"/><field name="balance"/></list></field>
+                    </group>
+                    <button name="%(action_redeem_wizard)d" type="action" string="Record a reward used"/>
+                    <group string="What goals pay">
+                        <field name="reward_rule_ids" nolabel="1" colspan="2" context="{'default_student_id': id}"><list editable="bottom"><field name="goal_period"/><field name="reward_type_id"/><field name="amount"/><field name="date_from"/></list></field>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <menuitem id="menu_practice" name="Practice" parent="homeschool.menu_root" sequence="25"/>
+    <menuitem id="menu_practice_sessions" name="Sessions" parent="menu_practice" action="action_session" sequence="10"/>
+    <menuitem id="menu_practice_attempts" name="Attempts" parent="menu_practice" action="action_attempt" sequence="20"/>
+    <menuitem id="menu_practice_mastery" name="Mastery" parent="menu_practice" action="action_mastery" sequence="30"/>
+    <menuitem id="menu_practice_ledger" name="Rewards ledger" parent="menu_practice" action="action_reward_ledger" sequence="40"/>
+    <menuitem id="menu_practice_decks" name="Decks" parent="menu_practice" action="action_deck" sequence="50"/>
+    <menuitem id="menu_practice_config" name="Practice" parent="homeschool.menu_config" sequence="50"/>
+    <menuitem id="menu_practice_reward_types" name="Reward types" parent="menu_practice_config" action="action_reward_type" sequence="10"/>
+    <menuitem id="menu_practice_quests" name="Quests" parent="menu_practice_config" action="action_quest_template" sequence="20"/>
+    <menuitem id="menu_practice_badges" name="Badges" parent="menu_practice_config" action="action_badge_template" sequence="30"/>
+</odoo>
