@@ -5,7 +5,12 @@
         <field name="name">homeschool.practice.deck.list</field>
         <field name="model">homeschool.practice.deck</field>
         <field name="arch" type="xml">
-            <list><field name="sequence" widget="handle"/><field name="name"/><field name="session_size"/><field name="company_id" groups="base.group_multi_company"/></list>
+            <list>
+                <header>
+                    <button name="action_load_grammar_fr" type="object" string="Load French grammar decks" display="always"
+                            groups="homeschool.group_homeschool_manager"/>
+                </header>
+                <field name="sequence" widget="handle"/><field name="name"/><field name="session_size"/><field name="company_id" groups="base.group_multi_company"/></list>
         </field>
     </record>
     <record id="view_deck_form" model="ir.ui.view">

@@ -1987,3 +1987,14 @@ msgstr "Unités choisies"
 #: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_session__unit_ids
 msgid "Free practice: the units the learner picked."
 msgstr "Pratique libre : les unités choisies par l’élève."
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_list
+msgid "Load French grammar decks"
+msgstr "Charger les paquets de grammaire"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/deck.py:0
+msgid "Only a parent (homeschool manager) loads practice decks."
+msgstr "Seul un parent (gestionnaire) charge des paquets de pratique."

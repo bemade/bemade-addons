@@ -13,3 +13,4 @@ from . import test_uc11_portal_api
 from . import test_uc12_portal_screen
 from . import test_uc13_badges
 from . import test_uc14_free_practice
+from . import test_uc15_grammar_decks

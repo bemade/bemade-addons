@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
+import csv
+import io
 import re
 
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
+from odoo.tools.misc import file_open
 
 
 class PracticeDeck(models.Model):
@@ -106,6 +109,48 @@ class PracticeDeck(models.Model):
                 "choice_ids": [fields.Command.create({"label": label, "correct": ok, "sequence": i})
                                for i, (label, ok) in enumerate(options)],
             })
+        return True
+
+    @api.model
+    def action_load_grammar_fr(self):
+        """Load the French grammar starter decks (choice cards) in the current company.
+        Idempotent: decks and units are matched by name, cards by key; what exists is kept."""
+        if not self.env.su and not self.env.user.has_group("homeschool.group_homeschool_manager"):
+            raise AccessError(self.env._("Only a parent (homeschool manager) loads practice decks."))
+        self._load_choice_csv("homeschool_practice/data/grammar_fr_units.csv",
+                              "homeschool_practice/data/grammar_fr_cards.csv")
+        return True
+
+    @api.model
+    def _load_choice_csv(self, units_path, cards_path):
+        """``units_path``: deck;deck_sequence;new_per_session;unit;unit_sequence;hint;intro —
+        ``new_per_session`` sets both the items introduced at unlock and the new items per
+        session (cards of an already-taught concept: variety beats repeats). ``cards_path``:
+        unit;key;prompt;options;hint, options separated by « | », the right one starred
+        (``*à``). An empty card hint takes the unit's."""
+        Unit = self.env["homeschool.practice.unit"]
+        units, hints = {}, {}
+        with io.TextIOWrapper(file_open(units_path, "rb"), encoding="utf-8") as f:
+            for row in csv.DictReader(f, delimiter=";"):
+                deck = self.search([("name", "=", row["deck"]), ("company_id", "=", self.env.company.id)], limit=1)
+                if not deck:
+                    new = int(row["new_per_session"])
+                    deck = self.create({"name": row["deck"], "sequence": int(row["deck_sequence"]),
+                                        "intro_size": new, "max_new_per_session": new,
+                                        "company_id": self.env.company.id})
+                unit = deck.unit_ids.filtered(lambda u, n=row["unit"]: u.name == n)[:1]
+                if not unit:
+                    unit = Unit.create({"deck_id": deck.id, "name": row["unit"],
+                                        "sequence": int(row["unit_sequence"]), "intro": row["intro"]})
+                units[row["unit"]], hints[row["unit"]] = unit, row["hint"]
+        cards = {}
+        with io.TextIOWrapper(file_open(cards_path, "rb"), encoding="utf-8") as f:
+            for row in csv.DictReader(f, delimiter=";"):
+                options = [(o.lstrip("*"), o.startswith("*")) for o in row["options"].split("|")]
+                cards.setdefault(row["unit"], []).append(
+                    (row["key"], row["prompt"], options, row["hint"] or hints[row["unit"]]))
+        for name, unit_cards in cards.items():
+            units[name].deck_id._generate_choice_cards(units[name], unit_cards)
         return True
 
 
