@@ -28,7 +28,10 @@
             # (@tagged('-standard', 'caldav_integration')) because the kwargs
             # path is what those tests exercise.
             "caldav>=1.3.9,<=2.0.1",
-            "icalendar<6.0",
+            # icalendar 6.1+ made component_factory subscriptable again, so
+            # only 6.0 is excluded (caldav 1.3.9 + icalendar 6.3.2 pass the
+            # test suite).
+            "icalendar!=6.0.*",
             "markdownify",
             "markdown2",
         ],
@@ -36,6 +39,7 @@
     "images": ["static/description/images/main_screenshot.png"],
     "data": [
         "views/res_users_views.xml",
+        "views/calendar_event_views.xml",
         "data/ir_cron_data.xml",
     ],
     "installable": True,

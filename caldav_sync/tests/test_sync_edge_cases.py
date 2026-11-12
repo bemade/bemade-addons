@@ -788,6 +788,38 @@ class TestMatchesCaldavStart(TransactionCase, CaldavTestCommon):
         result = event._matches_caldav_start(mock_caldav_event)
         self.assertTrue(result)
 
+    def test_matches_caldav_start_allday_date(self):
+        """An all-day event has a DATE DTSTART: compare the days."""
+        from datetime import date
+
+        with patch("caldav.DAVClient"):
+            self.user_1._compute_is_caldav_enabled()
+            event = (
+                self.env["calendar.event"]
+                .with_context(caldav_no_sync=True)
+                .with_user(self.user_1)
+                .create(
+                    {
+                        "name": "All-day Event",
+                        "allday": True,
+                        "start_date": date(2025, 2, 1),
+                        "stop_date": date(2025, 2, 1),
+                        "partner_ids": [Command.set([self.user_1.partner_id.id])],
+                    }
+                )
+            )
+
+        mock_dtstart = MagicMock()
+        mock_component = MagicMock()
+        mock_component.get.return_value = mock_dtstart
+        mock_caldav_event = MagicMock()
+        mock_caldav_event.icalendar_component = mock_component
+
+        mock_dtstart.dt = date(2025, 2, 1)
+        self.assertTrue(event._matches_caldav_start(mock_caldav_event))
+        mock_dtstart.dt = date(2025, 2, 2)
+        self.assertFalse(event._matches_caldav_start(mock_caldav_event))
+
 
 @tagged("post_install", "-at_install")
 class TestWriteArchivesEvent(TransactionCase, CaldavTestCommon):

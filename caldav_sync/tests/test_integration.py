@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import caldav
 
+from odoo.exceptions import UserError
 from odoo.fields import Command
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
@@ -1033,13 +1034,15 @@ class TestCalDAVIntegration(TransactionCase, CaldavTestCommon):
         base_event = odoo_events.filtered(lambda e: e.is_base_event)
         if base_event:
             base_event = base_event[0]
-            # Change from daily to weekly - this triggers _rewrite_recurrence
-            base_event.with_context(caldav_no_sync=False).write(
-                {
-                    "rrule_type": "weekly",
-                    "recurrence_update": "all_events",
-                }
-            )
+            # The series was created on the server, which is the master of its
+            # schedule: changing its rule from Odoo is refused.
+            with self.assertRaises(UserError):
+                base_event.with_context(caldav_no_sync=False).write(
+                    {
+                        "rrule_type": "weekly",
+                        "recurrence_update": "all_events",
+                    }
+                )
 
     def test_get_ical_recurrence_id_with_timezone(self):
         """Test _get_ical_recurrence_id returns correct timezone-aware datetime."""

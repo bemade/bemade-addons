@@ -1,7 +1,7 @@
 import logging
 import re
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING, Any
 
 import caldav
@@ -9,11 +9,12 @@ import icalendar.cal
 import markdown2 as md2
 from caldav.lib.error import NotFoundError
 from dateutil.rrule import rrulestr
-from icalendar import Event, vCalAddress, vDate, vDatetime, vRecur, vText
+from icalendar import Event, vCalAddress, vDate, vDatetime, vRecur, vText, vUri
 from markdownify import markdownify as md
 from pytz import timezone, utc
 
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 
 from odoo.addons.calendar.models.calendar_recurrence import MAX_RECURRENT_EVENT
 
@@ -100,6 +101,39 @@ def _parse_rrule_string(rrule_str: str) -> dict[str, Any]:
     return result
 
 
+# Properties that carry a video call link by definition: whatever URL they hold
+# is the meeting link. CONFERENCE is RFC 7986; the X- ones are what Google
+# Calendar and Outlook/Exchange put in the events they serve.
+VIDEOCALL_PROPERTIES = (
+    "CONFERENCE",
+    "X-GOOGLE-CONFERENCE",
+    "X-MICROSOFT-SKYPETEAMSMEETINGURL",
+    "X-MICROSOFT-ONLINEMEETINGEXTERNALLINK",
+    "X-INFOMANIAK-MEET-ROOM-URL",
+)
+# Links that are video calls wherever they appear (URL, LOCATION, DESCRIPTION,
+# X-ALT-DESC...): kMeet, Google Meet, Teams, Zoom, Jitsi, Webex and Odoo's own
+# Discuss meeting route.
+VIDEOCALL_URL_RE = re.compile(
+    r"https?://(?:"
+    r"(?:[\w-]+\.)*(?:kmeet\.infomaniak\.com|meet\.google\.com"
+    r"|teams\.microsoft\.com|teams\.live\.com|zoom\.us|meet\.jit\.si|webex\.com)"
+    r"|[^\s<>\"'\[\]]+/calendar/join_videocall"
+    r")[^\s<>\"'\[\]]*",
+    re.IGNORECASE,
+)
+ANY_URL_RE = re.compile(r"https?://[^\s<>\"'\[\]]+", re.IGNORECASE)
+# Label of the line Odoo appends to DESCRIPTION when it exports a video call
+# link, for clients that only show the description. The line is stripped again
+# on import so the description does not grow by one line per round trip.
+VIDEOCALL_DESCRIPTION_LABEL = "Video call"
+
+
+def _clean_url(url: str) -> str:
+    """Drop the punctuation a URL picks up from the prose around it."""
+    return url.rstrip(".,;:!?)")
+
+
 def _extract_vcal_email(vcal_address):
     email_regex = re.compile(r"[a-z0-9.\-+_]+@[a-z0-9.\-+_]+\.[a-z]+")
     res = email_regex.search(str(vcal_address))
@@ -124,6 +158,18 @@ class CalendarEvent(models.Model):
     caldav_user_ids = fields.Many2many(
         comodel_name="res.users",
         compute="_compute_caldav_users",
+    )
+    # Created from the CalDAV server (not in Odoo). The server is the master of
+    # its date and time: they cannot be changed from Odoo.
+    caldav_imported = fields.Boolean(
+        string="Imported from CalDAV",
+        copy=False,
+        readonly=True,
+    )
+    caldav_date_locked = fields.Boolean(
+        compute="_compute_caldav_date_locked",
+        help="Date and time can only be changed in the external calendar "
+        "this meeting was created in.",
     )
     is_base_event = fields.Boolean(compute="_compute_is_base_event")
     differs_from_base_event = fields.Boolean(compute="_compute_differs_from_base_event")
@@ -186,6 +232,16 @@ class CalendarEvent(models.Model):
                 or not event.follow_recurrence
             )
 
+    @api.depends("caldav_imported", "recurrence_id.base_event_id.caldav_imported")
+    def _compute_caldav_date_locked(self):
+        # Occurrences of an imported series are created by copy_data() and do
+        # not carry the flag themselves: take it from the series.
+        for event in self:
+            event.caldav_date_locked = (
+                event.caldav_imported
+                or event.recurrence_id.base_event_id.caldav_imported
+            )
+
     @api.depends("recurrency", "recurrence_id", "recurrence_id.base_event_id")
     def _compute_is_base_event(self):
         for rec in self:
@@ -244,7 +300,66 @@ class CalendarEvent(models.Model):
                         f"Failed to sync event to CalDAV server: {e}", exc_info=True
                     )
 
+    # The date and time fields of calendar.event, as the form, the calendar
+    # view (drag and drop, resize) and the API write them.
+    # The recurrence fields too: changing the rule moves the occurrences.
+    CALDAV_LOCKED_DATE_FIELDS = (
+        "start",
+        "stop",
+        "start_date",
+        "stop_date",
+        "allday",
+        "duration",
+        "recurrency",
+        "rrule_type",
+        "rrule_type_ui",
+        "interval",
+        "count",
+        "end_type",
+        "until",
+        "month_by",
+        "day",
+        "weekday",
+        "byday",
+        "mon",
+        "tue",
+        "wed",
+        "thu",
+        "fri",
+        "sat",
+        "sun",
+    )
+
+    def _check_caldav_date_lock(self, vals):
+        """Refuse a date/time change on a meeting that was created in the
+        external calendar: that calendar is the master of its schedule, and a
+        change made in Odoo would be overwritten or diverge from it.
+
+        The import itself (caldav_no_sync in the context) is not affected.
+        """
+        if self.env.context.get("caldav_no_sync"):
+            return
+        names = [name for name in self.CALDAV_LOCKED_DATE_FIELDS if name in vals]
+        if not names:
+            return
+        for event in self.filtered("caldav_date_locked"):
+            for name in names:
+                field = self._fields[name]
+                new = field.convert_to_record(
+                    field.convert_to_cache(vals[name], event), event
+                )
+                if new != event[name]:
+                    raise UserError(
+                        self.env._(
+                            "The date and time of “%(name)s” cannot be changed in "
+                            "Odoo: this meeting was created in the external "
+                            "calendar.",
+                            name=event.name,
+                        )
+                    )
+
     def write(self, vals):
+        self._check_caldav_date_lock(vals)
         # Capture state before write for future_events sync handling
         is_future_events_update = vals.get("recurrence_update") == "future_events"
         old_base_events = {}
@@ -311,18 +426,19 @@ class CalendarEvent(models.Model):
                 ):
                     # Event differs from base, update or create its subcomponent
                     # identified by its recurrence-id
-                    if not base_event:
-                        _logger.debug(
-                            f"Failed to find base event for {self} on CalDAV server."
-                        )
-                        return
                     index = self._get_subcomponent_index_for_recurrence(base_event)
                     if index:
                         ical_event = base_event.icalendar_instance.subcomponents[index]
                         self._update_ical_event_values(ical_event, ical_event_data)
                     else:
                         base_event.icalendar_instance.add_component(
-                            Event(**ical_event_data)
+                            Event(
+                                **{
+                                    key: value
+                                    for key, value in ical_event_data.items()
+                                    if value is not None
+                                }
+                            )
                         )
                     base_event.save()
             else:
@@ -346,7 +462,12 @@ class CalendarEvent(models.Model):
         sequence = (ical_event.get("sequence") or 0) + 1
         event_data.update(sequence=sequence)
         for key, value in event_data.items():
-            ical_event[key] = value
+            if value is None:
+                # The property no longer applies (e.g. the video call was removed
+                # in Odoo): drop it, or the next poll would bring it back.
+                ical_event.pop(key, None)
+            else:
+                ical_event[key] = value
 
     def _get_caldav_base_event_by_uid(
         self, calendar: caldav.Calendar, uid: str
@@ -408,6 +529,9 @@ class CalendarEvent(models.Model):
 
     def _matches_caldav_start(self, caldav_event: caldav.Event) -> bool:
         event_start = caldav_event.icalendar_component.get("dtstart").dt  # pyright: ignore[reportAttributeAccessIssue]
+        if not isinstance(event_start, datetime):
+            # All-day event (DTSTART;VALUE=DATE): a date has no time nor tzinfo.
+            return self.start.date() == event_start
         tz = event_start.tzinfo
         if tz:
             self_start = utc.localize(self.start).astimezone(tz)
@@ -514,12 +638,34 @@ class CalendarEvent(models.Model):
         if self.name:
             event_data["summary"] = vText(self.name)
         # TODO: Consider using X-ALT-DESC to stick HTML into the iCal event desc.
-        if self.description and self._html_to_text(self.description):
-            event_data["description"] = vText(self._html_to_text(self.description))
+        description = (
+            self._html_to_text(self.description) if self.description else ""
+        ).strip()
+        videocall_url = (self.videocall_location or "").strip()
+        if videocall_url and videocall_url not in description:
+            # Most clients (Infomaniak/kMeet, Google, Outlook) ignore CONFERENCE
+            # and URL but always show the description.
+            line = f"{VIDEOCALL_DESCRIPTION_LABEL}: {videocall_url}"
+            description = f"{description}\n\n{line}" if description else line
+        # None removes a property the server still has (see
+        # _update_ical_event_values); create_ical() skips it.
+        event_data["description"] = vText(description) if description else None
         if self.location:
             event_data["location"] = vText(self.location)
-        if self.videocall_location:
-            event_data["conference"] = self.videocall_location
+        if videocall_url:
+            # vUri, not vText: vText escapes "," and ";", which breaks Teams links.
+            # (params set afterwards: icalendar 5's vUri() takes no params=)
+            conference = vUri(videocall_url)
+            conference.params.update({"VALUE": "URI", "FEATURE": "VIDEO"})
+            event_data["conference"] = conference
+            event_data["url"] = vUri(videocall_url)
+        else:
+            event_data["conference"] = None
+            event_data["url"] = None
+        # Free/busy: Odoo show_as <-> iCalendar TRANSP (RFC 5545 3.8.2.7).
+        event_data["transp"] = vText(
+            "TRANSPARENT" if self.show_as == "free" else "OPAQUE"
+        )
         event_data["sequence"] = 0
 
     def _add_event_dates(self, event_data: dict) -> None:
@@ -539,6 +685,12 @@ class CalendarEvent(models.Model):
         event_data["created"] = vDatetime(
             utc.localize(self.create_date).astimezone(event_tz)
         )
+        if self.allday:
+            # All-day start/stop are not UTC in Odoo, they only carry the dates.
+            # iCalendar wants DATE values with an exclusive DTEND.
+            event_data["dtstart"] = vDate(self.start.date())
+            event_data["dtend"] = vDate(self.stop.date() + timedelta(days=1))
+            return
         event_data["dtstart"] = vDatetime(utc.localize(self.start).astimezone(event_tz))
         event_data["dtend"] = vDatetime(utc.localize(self.stop).astimezone(event_tz))
 
@@ -719,7 +871,7 @@ class CalendarEvent(models.Model):
 
                 new_event = self.with_context(
                     caldav_no_sync=True, caldav_keep_ids=True
-                ).create(values | recurrency_vals)
+                ).create(values | recurrency_vals | {"caldav_imported": True})
                 self.env["calendar.event"].flush_model()
                 if new_event.recurrency:
                     synced_events |= new_event.recurrence_id.calendar_event_ids
@@ -979,7 +1131,11 @@ class CalendarEvent(models.Model):
         :return: True if the iCalendar component is outdated, False otherwise.
         """
         outdated = False
-        last_modified = component.get("dtstamp") and component.get("dtstamp").dt
+        # LAST-MODIFIED is bumped on every change to the event. DTSTAMP is not:
+        # servers such as Infomaniak keep the creation time there, so an event
+        # moved on the server would always look older than its Odoo copy.
+        stamp = component.get("last-modified") or component.get("dtstamp")
+        last_modified = stamp and stamp.dt
         if (
             existing_instance
             and last_modified
@@ -1006,27 +1162,45 @@ class CalendarEvent(models.Model):
                             or updating an existing one (False).
         :return: The dictionary of values to construct a calendar.event."""
         start = component.get("dtstart") and component.decoded("dtstart")
-        if isinstance(start, datetime):
-            start = start.astimezone(utc).replace(tzinfo=None)
         end = component.get("dtend") and component.decoded("dtend")
-        if isinstance(end, datetime):
-            end = end.astimezone(utc).replace(tzinfo=None)
+        # A DATE (not DATE-TIME) DTSTART is an all-day event. Odoo stores those as
+        # allday with start at 08:00 and stop at 18:00 on the last day, not as UTC
+        # midnights, which the calendar would shift into the next day.
+        allday = isinstance(start, date) and not isinstance(start, datetime)
+        if allday:
+            # DTEND is exclusive for all-day events and may be omitted (one day).
+            last_day = (end - timedelta(days=1)) if end else start
+            start = datetime.combine(start, time(8))
+            end = datetime.combine(max(last_day, start.date()), time(18))
+        else:
+            if isinstance(start, datetime):
+                start = start.astimezone(utc).replace(tzinfo=None)
+            if isinstance(end, datetime):
+                end = end.astimezone(utc).replace(tzinfo=None)
 
         # Get attendees regardless of creation/update
         attendee_ids = self._get_attendee_partners(component, user.partner_id.email)
 
+        videocall_url = self._get_ical_videocall_url(component)
+        description = self._strip_videocall_line(
+            self._extract_component_text(component, "description"), videocall_url
+        )
+
         # Basic values that apply to both creation and updates
         values = {
             "name": str(component.get("summary")),
+            "allday": allday,
             "start": start,
             "stop": end,
-            "description": self._text_to_html(
-                self._extract_component_text(component, "description")
-            ),
+            "description": self._text_to_html(description),
             "location": self._extract_component_text(component, "location"),
-            "videocall_location": self._extract_component_text(component, "conference"),
+            "videocall_location": videocall_url or False,
             "caldav_uid": str(component.get("uid")),
             "partner_ids": [(6, 0, attendee_ids.ids)],
+            # TRANSP defaults to OPAQUE (busy) when absent, per RFC 5545.
+            "show_as": "free"
+            if str(component.get("transp") or "OPAQUE").upper() == "TRANSPARENT"
+            else "busy",
         }
 
         # Only set user_id and partner_id during creation
@@ -1188,6 +1362,49 @@ class CalendarEvent(models.Model):
         val = component.get(subcomponent_name)
         text = str(val) if val else ""
         return text
+
+    @api.model
+    def _get_ical_videocall_url(self, component: icalendar.cal.Component) -> str:
+        """Find the video call link of an iCalendar event, wherever the
+        source put it.
+
+        In order: the properties made for it (CONFERENCE, Google's and
+        Microsoft's X- properties); then a kMeet / Meet / Teams / Zoom /
+        Jitsi / Webex / Odoo Discuss link in any other property (URL,
+        LOCATION, DESCRIPTION, X-ALT-DESC...); then the line Odoo itself
+        appends to DESCRIPTION on export, which may hold any URL.
+
+        :return: The link, or an empty string if the event has none.
+        """
+        props = [
+            (name.upper(), str(value))
+            for name, value in component.property_items(recursive=False)
+            if name.upper() not in ("BEGIN", "END")
+        ]
+        for name, value in props:
+            if name in VIDEOCALL_PROPERTIES and (match := ANY_URL_RE.search(value)):
+                return _clean_url(match.group(0))
+        for _name, value in props:
+            if match := VIDEOCALL_URL_RE.search(value):
+                return _clean_url(match.group(0))
+        description = self._extract_component_text(component, "description")
+        label = re.escape(VIDEOCALL_DESCRIPTION_LABEL)
+        if match := re.search(
+            rf"^\s*{label}\s*:\s*(https?://\S+)\s*$", description, re.MULTILINE
+        ):
+            return _clean_url(match.group(1))
+        return ""
+
+    @api.model
+    def _strip_videocall_line(self, description: str, videocall_url: str) -> str:
+        """Remove the video call line Odoo appends to DESCRIPTION on export,
+        so it is not imported into the Odoo description (where it would be
+        appended again on the next export)."""
+        if not description or not videocall_url:
+            return description
+        label = re.escape(VIDEOCALL_DESCRIPTION_LABEL)
+        pattern = rf"^\s*{label}\s*:\s*{re.escape(videocall_url)}\s*$"
+        return re.sub(pattern, "", description, flags=re.MULTILINE).strip()
 
     @api.model
     def _text_to_html(self, text):
