@@ -3,7 +3,7 @@
  *
  * GET / POST, JSON or HTML, the CSRF token added to every POST, a timeout,
  * and an error toast hook: every failure dispatches « pk:fetch-error » on the
- * document (sc_app_ui.js shows the toast) unless called with toast: false.
+ * document (the page's toast shows it) unless called with toast: false.
  * POST bodies are form-encoded so Odoo's standard http CSRF check applies.
  *
  * Used by the shell only (lazy sheets, lazy rows, the autosave component).

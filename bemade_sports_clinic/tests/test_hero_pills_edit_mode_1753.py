@@ -80,7 +80,7 @@ class TestHeroPillsEditMode1753(StatusPillsMixin, FragmentsCommon):
         hero = self._hero(tree)
         self.assertFalse(hero.xpath('.//*[@data-sc-edit-view="edit"] | .//*[@data-sc-edit-toggle]'))
         status = self._status_block(tree)
-        self.assertEqual(len(status.xpath('.//*[@data-sc-pill-readonly]')), 2)
+        self.assertEqual(len(status.xpath('.//*[@data-pk-pill-readonly]')), 2)
         self.assertFalse(status.xpath('.//*[@data-pk-section="player.status.readonly"]//button'))
 
     # -- AC-3 --------------------------------------------------------------

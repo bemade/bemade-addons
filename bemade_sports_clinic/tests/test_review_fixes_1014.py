@@ -262,7 +262,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
         self.assertEqual(resp.status_code, 303)
         self.assertFalse(self.env['sports.event'].search([('name', '=', 'Synthetic bad times')]))
         _text_, tree = self._get('/my/event/create')
-        error = tree.xpath('//*[@data-sc-field-error="date_end"]')
+        error = tree.xpath('//*[@data-pk-field-error="date_end"]')
         self.assertEqual(len(error), 1)
         self.assertEqual(_text(error[0]), 'Event end time must be after start time.')
         self.assertEqual(tree.xpath('//input[@name="date_end"]/@aria-invalid'), ['true'])
@@ -364,7 +364,7 @@ class TestReviewFixes1014I18n(TestAppShellI18n1538):
         }, allow_redirects=False)
         self.assertEqual(resp.status_code, 303)
         tree = lxml_html.fromstring(self._fr('/my/event/create'))
-        error = tree.xpath('//*[@data-sc-field-error="date_end"]')
+        error = tree.xpath('//*[@data-pk-field-error="date_end"]')
         self.assertEqual([_text(e) for e in error], ["La fin de l'événement doit être après le début."])
         self.event.invalidate_recordset()
         resp = self.url_open('/my/app/save/sports.event/%s' % self.event.id, data={

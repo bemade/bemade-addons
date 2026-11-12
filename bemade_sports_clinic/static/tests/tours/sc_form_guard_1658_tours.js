@@ -29,18 +29,18 @@ function q(selector) {
 }
 
 function submitOf(form) {
-    return form.querySelector("[data-sc-guard-submit]") || form.querySelector('button[type="submit"]:not([formaction])');
+    return form.querySelector("[data-pk-guard-submit]") || form.querySelector('button[type="submit"]:not([formaction])');
 }
 
 function reasonOf(form) {
-    const line = form.querySelector("[data-sc-guard-reason]");
+    const line = form.querySelector("[data-pk-guard-reason]");
     return line && !line.hidden ? line.textContent.trim() : "";
 }
 
 function assertBlocked(form, includes) {
     const submit = submitOf(form);
     assert(submit.getAttribute("aria-disabled") === "true", "the primary action is not greyed");
-    const line = form.querySelector("[data-sc-guard-reason]");
+    const line = form.querySelector("[data-pk-guard-reason]");
     assert(line && submit.getAttribute("aria-describedby") === line.id, "aria-describedby → reason line");
     const reason = reasonOf(form);
     assert(reason && (!includes || reason.includes(includes)), `reason « ${reason} » lacks « ${includes} »`);
@@ -56,8 +56,8 @@ function assertReady(form) {
 }
 
 function errorShown(form, includes) {
-    const box = form.querySelector("[data-sc-guard-error]");
-    const fieldError = form.querySelector("[data-sc-guard-field-error]");
+    const box = form.querySelector("[data-pk-guard-error]");
+    const fieldError = form.querySelector("[data-pk-guard-field-error]");
     const text = ((box && !box.hidden && box.textContent) || (fieldError && fieldError.textContent) || "").trim();
     return Boolean(text) && (!includes || text.includes(includes));
 }
@@ -96,7 +96,7 @@ tours.add("sc_1658_contact", {
         },
         {
             content: "The refusal is in the form, values kept, same page",
-            trigger: `${CONTACT} [data-sc-guard-error]:not([hidden])`,
+            trigger: `${CONTACT} [data-pk-guard-error]:not([hidden])`,
             run() {
                 const form = q(CONTACT);
                 assert(errorShown(form), "no error text");
@@ -157,7 +157,7 @@ tours.add("sc_1658_timesheet", {
         },
         {
             content: "The refusal is in the sheet, values kept, same page",
-            trigger: `${TS} [data-sc-guard-error]:not([hidden])`,
+            trigger: `${TS} [data-pk-guard-error]:not([hidden])`,
             run() {
                 const form = q(TS);
                 assert(errorShown(form), "no error text");
@@ -202,7 +202,7 @@ tours.add("sc_1658_injury", {
         },
         {
             content: "The refusal is in the form, the diagnosis kept, same page",
-            trigger: `${INJ} [data-sc-guard-error]:not([hidden])`,
+            trigger: `${INJ} [data-pk-guard-error]:not([hidden])`,
             run() {
                 const form = q(INJ);
                 assert(form.querySelector('[name="diagnosis"]').value === "Synthetic sprain 1658", "value lost");
@@ -250,7 +250,7 @@ tours.add("sc_1658_event", {
         },
         {
             content: "The refusal is in the form, the name kept, same page",
-            trigger: `${EV} [data-sc-guard-error]:not([hidden])`,
+            trigger: `${EV} [data-pk-guard-error]:not([hidden])`,
             run() {
                 const form = q(EV);
                 assert(form.querySelector('[name="name"]').value === "Synthetic game 1658", "value lost");
@@ -261,7 +261,7 @@ tours.add("sc_1658_event", {
 });
 
 // -------------------------------------------------------- announcement
-const ANN = 'form[data-sc-guard][action$="/announcement"]';
+const ANN = 'form[data-pk-guard][action$="/announcement"]';
 tours.add("sc_1658_announcement", {
     steps: () => [
         {

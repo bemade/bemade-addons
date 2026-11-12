@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.6.1',
+    'version': '19.0.1.7.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -17,7 +17,8 @@ pages. The kit installs on Odoo Community and depends on ``portal`` only.
 
 Version 1.0 provides the four registries of the shell; version 1.1 adds the
 shell's generic scripts (below), later versions its styles and first
-templates; version 1.6 its save engine and screen refresh.
+templates; version 1.6 its save engine and screen refresh; version 1.7 its
+form guard, status pills and lazy edit views.
 
 Registries
 ----------
@@ -223,6 +224,42 @@ Markers: ``data-pk-fragment``, ``-fragment-mode="list"``,
 that changes no data). Events: ``pk:saved`` (a save's ``result``),
 ``pk:refresh`` and ``pk:refresh-now``; storage key ``pk_dirty_at:v1``.
 
+Form guard
+----------
+Version 1.7 (``pk_form_guard``): a form marked ``data-pk-guard`` keeps its
+primary action greyed, with a reason line, until it can succeed. Required
+fields (``required`` / ``data-pk-required``) and the JSON rules of
+``data-pk-guard-rules``, each evaluated by the rule of its ``type`` in the
+JS registry ``pk_guard_rules`` (the kit registers ``required``,
+``together``, ``after`` and ``not_future``; a consumer adds its own:
+``{missing(rule, ctx)}`` or ``{check(rule, ctx)}``). A field may hold the
+form with ``data-pk-guard-block``. ``data-pk-guard-mode``: ``native``
+(default), ``fetch`` (posted with fetch and the header ``X-Pk-Guard``, a
+refusal shown in the form: ``data-pk-flash-error``, ``data-pk-error-for``,
+``data-pk-field-error`` or an error param) or ``manual`` (the form's own
+script drives it with the exported helpers). Texts and error params:
+``[data-pk-guard-texts]`` (``data-missing``, ``-generic``, ``-offline``,
+``data-pk-guard-error-params``); the kit has its own texts. Slots:
+``bemade_portal_kit.pk_form_guard_slots`` (``guard_id``). Server:
+``PortalKitApp._pk_guard_probe()`` and ``tools.PK_GUARD_HEADER``. Classes
+``o_pk_guard_reason``, ``o_pk_reason_flash``.
+
+Status pills and lazy edit
+--------------------------
+``bemade_portal_kit.pk_status_pill_select`` (``pill``, ``editable``,
+``compact``, ``scope``, ``undo_message``) and ``pk_status_pills``: a pick
+saves through the save engine; markers ``data-pk-pill-*``, ``data-pk-model``,
+``-record-id``, ``-field``, ``-write-date``, ``-old-value``,
+``-undo-message``; events ``pk:pill-action`` (a pick handed to its owner)
+and ``pk:toast`` (``{message, actionLabel, action}``, the page shows it).
+``pk_lazy_edit`` (public interaction ``bemade_portal_kit.pk_lazy_edit``):
+an edit view's fields kept in ``<template data-pk-lazy-edit>`` inside
+``[data-pk-lazy-edit-host]`` are mounted on ``pk:edit-view-open``, once
+(``data-pk-lazy-mounted``).
+
+Both templates were the first consumer's (adopted like the 1.5 templates,
+``ADOPTED_VIEWS``).
+
 Style guide
 -----------
 ``/pk/styleguide`` (internal users) shows every generic component with the
@@ -265,6 +302,10 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/src/js/pk_live_count.js',
             # Task 5199 (P4a): the screen refresh.
             'bemade_portal_kit/static/src/js/pk_fragments.js',
+            # Task 5370 (P4b): the form guard, status pills and lazy edit.
+            'bemade_portal_kit/static/src/js/pk_form_guard.js',
+            'bemade_portal_kit/static/src/js/pk_status_pills.js',
+            'bemade_portal_kit/static/src/js/pk_lazy_edit.js',
         ],
         # The hoot unit tests (tests/test_pk_hoot.py runs them headless).
         # The modules they test are only DEFINED in the test page and run
@@ -279,6 +320,9 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/src/js/pk_user_menu.js',
             'bemade_portal_kit/static/src/js/pk_live_count.js',
             'bemade_portal_kit/static/src/js/pk_fragments.js',
+            'bemade_portal_kit/static/src/js/pk_form_guard.js',
+            'bemade_portal_kit/static/src/js/pk_status_pills.js',
+            'bemade_portal_kit/static/src/js/pk_lazy_edit.js',
         ],
         'web.assets_unit_tests': [
             'bemade_portal_kit/static/tests/**/*',

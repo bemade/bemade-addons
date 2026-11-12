@@ -24,7 +24,7 @@ from odoo.tools import format_date, format_datetime
 from odoo.addons.portal.controllers.portal import CustomerPortal
 
 from ..tools import (
-    PK_FRAGMENTS_HEADER, pk_extract_fragments, pk_now_ms, pk_parse_fragment_keys,
+    PK_FRAGMENTS_HEADER, PK_GUARD_HEADER, pk_extract_fragments, pk_now_ms, pk_parse_fragment_keys,
     pk_validate_save_spec,
 )
 from ..tools.registry import pk_freeze
@@ -80,6 +80,19 @@ class PortalKitApp(CustomerPortal):
         if keys is None:
             return response
         return cls._pk_fragments_response(response, keys, values['pk_rendered_at'])
+
+    # ------------------------------------------------------------------
+    # Form guard (task 5370, P4b)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _pk_guard_probe():
+        """Is this request a guarded form's fetch? (``pk_form_guard`` sends
+        ``X-Pk-Guard: 1`` on its POST, kept across the redirect.) A page then
+        peeks at its one-time session state instead of popping it."""
+        try:
+            return request.httprequest.headers.get(PK_GUARD_HEADER) == '1'
+        except RuntimeError:  # no request
+            return False
 
     # ------------------------------------------------------------------
     # Save engine

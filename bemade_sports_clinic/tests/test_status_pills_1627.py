@@ -51,15 +51,15 @@ TONES = {'yes': 'green', 'no_contact': 'yellow', 'no': 'red'}
 
 def _pills(node):
     """{key: pill node} of the status pills under ``node``."""
-    return {pill.get('data-sc-pill-key'): pill
-            for pill in node.xpath('.//*[@data-sc-pill-key]')}
+    return {pill.get('data-pk-pill-key'): pill
+            for pill in node.xpath('.//*[@data-pk-pill-key]')}
 
 
 def _items(tree, pill):
     """{value: item} of a dropdown pill's menu."""
     toggle = pill.xpath('.//button[contains(@class, "o_pk_pill_select")]')[0]
     popup = tree.xpath('//*[@id="%s"]' % toggle.get('aria-controls'))[0]
-    return popup, {item.get('data-sc-pill-value'): item
+    return popup, {item.get('data-pk-pill-value'): item
                    for item in popup.xpath('.//*[@role="menuitemradio"]')}
 
 
@@ -111,11 +111,11 @@ class StatusPillsMixin(FragmentsMixin):
                 hint = ' '.join(item.xpath('.//*[contains(@class, "o_pk_pill_hint")]//text()')).strip()
                 if disabled:
                     self.assertTrue(hint, 'a greyed choice says why (%s %s)' % (key, value))
-                    self.assertFalse(item.get('data-sc-pill-post'))
+                    self.assertFalse(item.get('data-pk-pill-post'))
                     state[key][value] = None
                 else:
                     self.assertFalse(hint, (key, value))
-                    state[key][value] = item.get('data-sc-pill-post')
+                    state[key][value] = item.get('data-pk-pill-post')
         return state
 
 
@@ -225,16 +225,16 @@ class TestStatusPills1627(StatusPillsMixin, FragmentsCommon):
         self._set('no:yes')
         tree = self._page(self._url())
         node = self._status_node(tree)
-        wraps = node.xpath('.//*[@data-sc-pill-select]')
+        wraps = node.xpath('.//*[@data-pk-pill-select]')
         self.assertEqual(len(wraps), 2)
         write_date = fields.Datetime.to_string(self.player.sudo().write_date)
         for wrap in wraps:
-            self.assertEqual(wrap.get('data-sc-model'), 'sports.patient')
-            self.assertEqual(wrap.get('data-sc-record-id'), str(self.player.id))
-            self.assertEqual(wrap.get('data-sc-field'), 'sc_status')
-            self.assertEqual(wrap.get('data-sc-write-date'), write_date)
-            self.assertEqual(wrap.get('data-sc-old-value'), 'no:yes')
-            self.assertTrue(wrap.get('data-sc-undo-message'))
+            self.assertEqual(wrap.get('data-pk-model'), 'sports.patient')
+            self.assertEqual(wrap.get('data-pk-record-id'), str(self.player.id))
+            self.assertEqual(wrap.get('data-pk-field'), 'sc_status')
+            self.assertEqual(wrap.get('data-pk-write-date'), write_date)
+            self.assertEqual(wrap.get('data-pk-old-value'), 'no:yes')
+            self.assertTrue(wrap.get('data-pk-undo-message'))
         self.assertFragmentMatchesPage(self._url(), self._key('status'))
 
     def test_save_refreshes_pills_and_return_line(self):
@@ -248,9 +248,9 @@ class TestStatusPills1627(StatusPillsMixin, FragmentsCommon):
             self.assertIn('o_pk_chip_red', button.get('class'), key)
         # The fresh fragment carries the write_date the NEXT change posts.
         self.player.invalidate_recordset()
-        self.assertEqual(status.xpath('.//*[@data-sc-pill-select]/@data-sc-write-date')[0],
+        self.assertEqual(status.xpath('.//*[@data-pk-pill-select]/@data-pk-write-date')[0],
                          payload['write_date'])
-        self.assertEqual(status.xpath('.//*[@data-sc-pill-select]/@data-sc-old-value')[0], 'no:no')
+        self.assertEqual(status.xpath('.//*[@data-pk-pill-select]/@data-pk-old-value')[0], 'no:no')
         ret = self._fragment(self._url(), self._key('predicted-return'))
         self.assertEqual(ret.get('data-sc-return-kind'), 'predicted')
         # A second change right after, from the fresh values: no 409.

@@ -307,7 +307,7 @@ tours.add("sc_1620_security", {
         ...passwordSteps("not-the-password", "pc-coach-tour-1620"),
         {
             content: "The core error, in the shell",
-            trigger: '.o_pk_app [data-sc-error-for="old"]',
+            trigger: '.o_pk_app [data-pk-error-for="old"]',
         },
         ...passwordSteps("pc-coach", "pc-coach-tour-1620"),
         {

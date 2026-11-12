@@ -4,7 +4,7 @@ Synthetic fixtures only. Reproduction notes: see the dev-review artifact.
 Acceptance criteria:
 
 * AC-1 (silent failure) A server-side refusal rendered as
-  ``[data-sc-field-error]`` (event / therapist times) is read by the form
+  ``[data-pk-field-error]`` (event / therapist times) is read by the form
   guard: the message shows under its field and nothing typed is lost (was:
   the form reloaded empty with no message).
 * AC-2 (forgiving team picker) A team name typed exactly (accents, case,

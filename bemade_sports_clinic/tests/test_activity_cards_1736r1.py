@@ -18,7 +18,7 @@ Acceptance criteria:
   view holds the autosave fields summary, due date, assignee (only where
   the user may reassign — ``activities.reassign`` — with the same choices
   as the detail page: the per-actor assignable users + the current
-  assignee) and note, inside an inert ``<template data-sc-lazy-edit>``
+  assignee) and note, inside an inert ``<template data-pk-lazy-edit>``
   (mounted on the first pencil tap). No activity type field (read-only, as
   on the detail page).
 * AC-2 No « Reschedule » / « Reassign » buttons or sheets anywhere in the
@@ -114,8 +114,8 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         # The edit view: hidden, its fields inside the inert lazy template.
         edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
         self.assertEqual(edit.get('hidden'), 'hidden')
-        self.assertEqual(edit.get('data-sc-lazy-edit-host'), '1')
-        template = edit.xpath('./template[@data-sc-lazy-edit]')
+        self.assertEqual(edit.get('data-pk-lazy-edit-host'), '1')
+        template = edit.xpath('./template[@data-pk-lazy-edit]')
         self.assertEqual(len(template), 1)
         props = self._props(template[0])
         self.assertEqual([p['field'] for p in props], list(FIELDS))
@@ -154,7 +154,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
             _text, tree = self._get(url)
             card = self._card(tree, activity)
             self.assertEqual(self._icons(card), ['o_pk_card_trash', 'o_pk_card_edit'], url)
-            self.assertTrue(card.xpath('.//template[@data-sc-lazy-edit]'), url)
+            self.assertTrue(card.xpath('.//template[@data-pk-lazy-edit]'), url)
             self.assertTrue(tree.xpath('//dialog[@id="sc_activity_detail_sheet"]'), url)
         # The dashboard's « Overdue activities » cards.
         self.act_player.date_deadline = fields.Date.today().replace(year=2020)

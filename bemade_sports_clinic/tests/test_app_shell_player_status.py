@@ -71,10 +71,10 @@ class TestAppShellPlayerStatus(PlayerStatusCommon):
         props = [json.loads(p) for p in hero.xpath('.//owl-component/@props')]
         self.assertFalse([p for p in props if p.get('field') == 'sc_status'])
         checked = {}
-        for pill in hero.xpath('./*[@data-pk-section="player.status"]//*[@data-sc-pill-select]'):
+        for pill in hero.xpath('./*[@data-pk-section="player.status"]//*[@data-pk-pill-select]'):
             popup = tree.xpath('//*[@id="%s"]' % pill.xpath('./button/@aria-controls')[0])[0]
-            checked[pill.get('data-sc-pill-key')] = popup.xpath(
-                './/*[@aria-checked="true"]/@data-sc-pill-value')[0]
+            checked[pill.get('data-pk-pill-key')] = popup.xpath(
+                './/*[@aria-checked="true"]/@data-pk-pill-value')[0]
         return '%(match)s:%(practice)s' % checked
 
     # -- UC-PS1 ----------------------------------------------------------

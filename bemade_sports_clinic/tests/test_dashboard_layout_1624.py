@@ -196,6 +196,6 @@ class TestDashboardLayout1624(Dashboard1624Common):
         resp = self._post('/remove', {'instance_id': 'watch'}, fetch=False)
         self.assertEqual(resp.status_code, 303)
         _text, tree = self._get(URL)
-        banner = tree.xpath('//*[@data-sc-flash-error]')
+        banner = tree.xpath('//*[@data-pk-flash-error]')
         self.assertTrue(banner)
         self.assertIn('switched off', banner[0].text_content())

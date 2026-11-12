@@ -164,9 +164,9 @@ class TestAppShellInjury1539(AppShellCommon):
         # Task 1631: status, consent and visibility are pill dropdowns.
         for name in ('stage', 'parental_consent', 'hidden_from_coaches'):
             self.assertNotIn(name, owl)
-        pills = {p.get('data-sc-field'): p for p in tree.xpath('.//*[@data-sc-pill-select]')}
+        pills = {p.get('data-pk-field'): p for p in tree.xpath('.//*[@data-pk-pill-select]')}
         self.assertEqual(set(pills), {'stage', 'parental_consent', 'hidden_from_coaches'})
-        self.assertEqual(pills['hidden_from_coaches'].get('data-sc-old-value'), '0')
+        self.assertEqual(pills['hidden_from_coaches'].get('data-pk-old-value'), '0')
         self.assertEqual(owl['sc_injury_date']['inputType'], 'date_na')
         for name in ('diagnosis', 'external_notes', 'internal_notes', 'predicted_resolution_date',
                      'resolution_date'):

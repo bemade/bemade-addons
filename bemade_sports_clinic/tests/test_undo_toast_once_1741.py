@@ -13,12 +13,12 @@ Acceptance criteria:
 * UC-1 A shell page that carries a session notification answers
   ``Cache-Control: no-store`` and gives the notification an id
   (``data-sc-notify-id``, a new one per notification); a page without one
-  carries neither. The form guard's probe (X-Sc-Guard) peeks — no id
+  carries neither. The form guard's probe (X-Pk-Guard) peeks — no id
   consumed, the real page still shows it (task 1658 unchanged).
 * UC-2 sc_app_ui.js shows a notification only on a « navigate » / « reload »
   load and once per id (sessionStorage); « Annuler » marks the session
   dirty before it posts (form.submit() fires no « submit » event).
-* UC-3 sc_form_guard.js: a success target that differs from the page by its
+* UC-3 pk_form_guard.js: a success target that differs from the page by its
   #fragment only reloads the page (was: a same-document navigation — the
   pending notification popped on a LATER page).
 * UC-4 In a browser, phone 390 px: archive a quick note → « Undo » →
@@ -71,7 +71,7 @@ class TestUndoToastOnce1741(TopBars1736Common):
     def test_guard_probe_peeks(self):
         self._login_tp()
         self._post('/my/notepad/%s/archive' % self.qnote.id, sc_undo='1')
-        resp = self.url_open('/my/notepad', headers={'X-Sc-Guard': '1'})
+        resp = self.url_open('/my/notepad', headers={'X-Pk-Guard': '1'})
         self.assertTrue(_toast(self._tree(resp.text)).get('data-sc-notify'))
         resp = self.url_open('/my/notepad')
         self.assertTrue(_toast(self._tree(resp.text)).get('data-sc-notify'), 'the real page still shows it')
@@ -81,7 +81,7 @@ class TestUndoToastOnce1741(TopBars1736Common):
             ui = f.read()
         self.assertIn('notifyNavigationType() === "back_forward" || notificationSeen(id)', ui)
         self.assertIn('markDirty();\n            undo.submit();', ui)
-        with file_open('bemade_sports_clinic/static/src/js/sc_form_guard.js') as f:
+        with file_open('bemade_portal_kit/static/src/js/pk_form_guard.js') as f:
             guard = f.read()
         self.assertIn('window.location.reload();', guard)
 

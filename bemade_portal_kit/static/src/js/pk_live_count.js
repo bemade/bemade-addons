@@ -4,8 +4,7 @@
  * A server-rendered chip marked
  *   data-pk-live-count-url="/my/clinics/today/count"   (JSON: {count: N})
  *   data-pk-live-poll="20"                              (seconds, optional)
- * is refreshed in place — the same mechanism as the live clinic worklist
- * (sc_clinic_worklist.js): a poll every 20 s while the tab is visible,
+ * is refreshed in place — the same mechanism as a live work list: a poll every 20 s while the tab is visible,
  * through pkFetch (toast: false); an error backs off (x2, up to 5 min), a
  * success resets the interval; a hidden tab stops polling and the poll
  * resumes at once when the tab is shown again. Inert outside .o_pk_app.

@@ -38,7 +38,7 @@ body.o_pk_app_body > #wrapwrap {
 // (#oe_neutralize_banner, web.neutralize_banner — absent on prod) sat over
 // the bottom tabs on a phone. Phone width: the banner is pinned at the very
 // bottom and the tabs (and what floats above them) rise by its height,
-// --pk-ribbon-h, measured by sc_app_ui.js. The banner stays fully visible.
+// --pk-ribbon-h, measured by the consumer's script. The banner stays fully visible.
 @media (max-width: 991.98px) {
     body.o_pk_app_body #oe_neutralize_banner {
         position: fixed !important;
@@ -1494,7 +1494,7 @@ body.o_pk_app_body > #wrapwrap {
     }
 
     // Task 1627 — a status pill that is its own dropdown
-    // (sc_status_pill_select): the row pills' tones (.o_pk_status_pill +
+    // (pk_status_pill_select): the row pills' tones (.o_pk_status_pill +
     // .o_pk_chip_<tone>), a chevron, a tap-sized hit area; its menu is the
     // shared .o_pk_menu_popup, opened under the pill's left edge.
     .o_pk_pill_select_wrap {
@@ -1706,5 +1706,35 @@ body.o_pk_app_body > #wrapwrap {
     .o_pk_field,
     .o_pk_filter_grid > * {
         min-width: 0;
+    }
+}
+
+// Task 5370 (P4b): the form guard (pk_form_guard.js). Every guarded form's
+// primary action is greyed until it can succeed (never a dead click); the
+// reason line sits under it and flashes when a submit is held.
+.o_pk_app {
+    form[data-pk-guard] {
+        [data-pk-guard-submit][aria-disabled="true"],
+        .o_pk_form_actions .o_pk_btn[type="submit"][aria-disabled="true"] {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .o_pk_guard_reason {
+            margin-top: var(--pk-space-2);
+        }
+
+        .o_pk_reason_flash {
+            animation: o_pk_reason_flash 0.6s ease-out;
+        }
+    }
+}
+
+@keyframes o_pk_reason_flash {
+    0% {
+        color: var(--pk-accent);
+    }
+    100% {
+        color: inherit;
     }
 }

@@ -30,7 +30,7 @@ function ids() {
 
 function state(form) {
     const submit = form.querySelector('button[type="submit"]:not([formaction])');
-    const line = form.querySelector("[data-sc-guard-reason]");
+    const line = form.querySelector("[data-pk-guard-reason]");
     return {
         blocked: submit.getAttribute("aria-disabled") === "true",
         reason: line && !line.hidden ? line.textContent.trim() : "",

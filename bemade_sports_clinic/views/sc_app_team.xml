@@ -136,7 +136,7 @@
                             Visible to all team staff (coaches included) and sent by email — do not include any confidential medical information about a player.
                         </t>
                         <form t-attf-action="/my/team/#{team.id}/announcement" method="post" class="o_pk_form"
-                              data-sc-draft-form="1" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"announcement"}]'>
+                              data-sc-draft-form="1" data-pk-guard="1" data-pk-guard-mode="fetch" data-pk-guard-rules='[{"type":"required","field":"announcement"}]'>
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <t t-set="sc_ann_label">Announcement</t>
                             <t t-set="sc_ann_placeholder">Write an announcement for all team staff…</t>
@@ -149,7 +149,7 @@
                                 <button type="submit" class="o_pk_btn o_pk_btn_primary" data-sc-action="team.announcement.publish">Publish</button>
                                 <button type="button" class="o_pk_btn o_pk_btn_ghost" data-pk-edit-done="1">Cancel</button>
                             </div>
-                            <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_announcement'"/></t>
+                            <t t-call="bemade_portal_kit.pk_form_guard_slots"><t t-set="guard_id" t-value="'sc_announcement'"/></t>
                         </form>
                     </div>
                     <!-- Task 1581: the shared history sheet, fetched on every
@@ -318,7 +318,7 @@
                         <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'plus'"/></t>
                         <span>Request a player addition</span>
                     </summary>
-                    <form t-attf-action="/my/team/#{team.id}/player/request_add" method="post" class="o_pk_form" data-sc-guard="1" data-sc-guard-mode="fetch">
+                    <form t-attf-action="/my/team/#{team.id}/player/request_add" method="post" class="o_pk_form" data-pk-guard="1" data-pk-guard-mode="fetch">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <div class="o_pk_field">
                             <label class="o_pk_field_label" for="sc_req_first_name">First name</label>
@@ -341,7 +341,7 @@
                             <t t-call="bemade_portal_kit.pk_list_add_cancel"/>
                             <button type="submit" class="o_pk_btn o_pk_btn_primary">Send the request</button>
                         </div>
-                        <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_request_add'"/></t>
+                        <t t-call="bemade_portal_kit.pk_form_guard_slots"><t t-set="guard_id" t-value="'sc_request_add'"/></t>
                     </form>
                 </details>
                 <div t-if="sc_roster_rows" class="o_pk_list" data-pk-section="team.roster">

@@ -267,7 +267,7 @@ class TestSecurityShell1620(AccountShellCommon):
         _text, tree = self._security_post('not-the-password', 'pc-coach-new-1620',
                                           'pc-coach-new-1620')
         self.assertIsNotNone(self._shell(tree))
-        error = tree.xpath('normalize-space(//*[@data-sc-error-for="old"])')
+        error = tree.xpath('normalize-space(//*[@data-pk-error-for="old"])')
         self.assertIn('incorrect', error)
         self.assertEqual(tree.xpath('//input[@name="old"]/@aria-invalid'), ['true'])
         self.assertFalse(tree.xpath('//*[@data-pk-section="security.password.done"]'))
@@ -278,7 +278,7 @@ class TestSecurityShell1620(AccountShellCommon):
         self._login_coach()
         _text, tree = self._security_post('pc-coach', 'pc-coach-new-1620', 'something-else')
         self.assertIsNotNone(self._shell(tree))
-        error = tree.xpath('normalize-space(//*[@data-sc-error-for="new2"])')
+        error = tree.xpath('normalize-space(//*[@data-pk-error-for="new2"])')
         self.assertIn('identical', error)
         self.authenticate('pc.coach@example.com', 'pc-coach')
 
@@ -286,7 +286,7 @@ class TestSecurityShell1620(AccountShellCommon):
         self._switch(True)
         self._login_coach()
         _text, tree = self._security_post('pc-coach', '', '')
-        error = tree.xpath('normalize-space(//*[@data-sc-error-for="new1"])')
+        error = tree.xpath('normalize-space(//*[@data-pk-error-for="new1"])')
         self.assertIn('empty', error)
 
     # -- UC-S3 -----------------------------------------------------------
@@ -296,7 +296,7 @@ class TestSecurityShell1620(AccountShellCommon):
         _text, tree = self._security_post('pc-coach', 'pc-coach-new-1620', 'pc-coach-new-1620')
         self.assertIsNotNone(self._shell(tree))
         self.assertTrue(tree.xpath('//*[@data-pk-section="security.password.done"]'))
-        self.assertFalse(tree.xpath('//*[@data-sc-error-for]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-error-for]'))
         # The session survives the change (core updates its token).
         _text, tree = self._get('/my/security')
         self.assertIsNotNone(self._shell(tree))
@@ -318,7 +318,7 @@ class TestSecurityShell1620(AccountShellCommon):
         self.assertEqual(len(sheet), 1)
         self.assertEqual(sheet[0].get('data-sc-sheet-open-on-load'), '1')
         self.assertIn('Wrong password',
-                      sheet[0].xpath('normalize-space(.//*[@data-sc-error-for="password"])'))
+                      sheet[0].xpath('normalize-space(.//*[@data-pk-error-for="password"])'))
         self.assertTrue(self.coach.active)
 
     def test_delete_account_wrong_login(self):
@@ -331,7 +331,7 @@ class TestSecurityShell1620(AccountShellCommon):
         tree = lxml_html.fromstring(resp.text)
         sheet = tree.xpath('//dialog[@id="sc_deactivate_account_sheet"]')[0]
         self.assertEqual(sheet.get('data-sc-sheet-open-on-load'), '1')
-        self.assertIn('exactly', sheet.xpath('normalize-space(.//*[@data-sc-error-for="validation"])'))
+        self.assertIn('exactly', sheet.xpath('normalize-space(.//*[@data-pk-error-for="validation"])'))
         self.assertIn('pc.coach@example.com', sheet.xpath('normalize-space(.//label[@for="sc_deactivate_validation"])'))
         self.assertTrue(self.coach.active)
 

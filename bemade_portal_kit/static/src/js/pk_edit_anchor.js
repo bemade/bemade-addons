@@ -12,7 +12,7 @@
  * - the block is remembered when the user LEAVES one of its fields for
  *   something that is not another field (a tap elsewhere, the keyboard's
  *   « done »), when its « Done » ([data-pk-edit-done]) is pressed, or — the
- *   whole card — on the injury card's « Terminé » (sc_injury_card.js calls
+ *   whole card — on a card's own « Done » (the consumer's script calls
  *   anchorEdited(card));
  * - once things settle — after a fragment swap (« pk:fragments »), a
  *   visualViewport resize (the keyboard closing), or a short timeout — the

@@ -108,7 +108,7 @@ class TestInternalTpParity1577(Parity1577Common):
             self.assertIn('"%s"' % name, props, name)
         # Task 1631: the status and visibility are pill dropdowns (editable).
         for name in ('stage', 'hidden_from_coaches'):
-            self.assertTrue(tree.xpath('//*[@data-sc-pill-select][@data-sc-field="%s"]' % name), name)
+            self.assertTrue(tree.xpath('//*[@data-pk-pill-select][@data-pk-field="%s"]' % name), name)
 
     def test_injury_save_writes_tp_fields(self):
         self._login_itp()

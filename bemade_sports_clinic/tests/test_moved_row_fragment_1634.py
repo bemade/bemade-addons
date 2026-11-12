@@ -12,15 +12,15 @@ class TestMovedRowFragment1634(TransactionCase):
 
     def test_missing_scope_filled_from_other_scope(self):
         html = ('<div data-pk-fragment="sports.patient:7:row-dash">'
-                '<button aria-controls="sc-pill-sports-patient-7-practice-dash">P</button>'
-                '<span id="sc-pill-sports-patient-7-practice-dash"></span>'
+                '<button aria-controls="pk-pill-sports-patient-7-practice-dash">P</button>'
+                '<span id="pk-pill-sports-patient-7-practice-dash"></span>'
                 '<button aria-controls="sc-row-detail-dash-7">D</button></div>')
         found = {'sports.patient:7:row-dash': html}
         keys = ['sports.patient:7:row-dash', 'sports.patient:7:row-watch']
         sc_fill_moved_row_fragments(found, keys)
         filled = found['sports.patient:7:row-watch']
         self.assertIn('data-pk-fragment="sports.patient:7:row-watch"', filled)
-        self.assertIn('sc-pill-sports-patient-7-practice-watch', filled)
+        self.assertIn('pk-pill-sports-patient-7-practice-watch', filled)
         self.assertIn('sc-row-detail-watch-7', filled)
         self.assertNotIn('-dash', filled)
         # the original is untouched

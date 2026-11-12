@@ -43,8 +43,8 @@ function card(diagnosis) {
 
 function pillValue(diagnosis) {
     const node = card(diagnosis);
-    const pill = node && node.querySelector("summary [data-sc-pill-value]");
-    return pill ? pill.dataset.scPillValue : null;
+    const pill = node && node.querySelector("summary [data-pk-pill-value]");
+    return pill ? pill.dataset.pkPillValue : null;
 }
 
 function resolveSteps(diagnosis, { open, focus }) {

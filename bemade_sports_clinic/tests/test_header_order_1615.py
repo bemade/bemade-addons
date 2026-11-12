@@ -113,7 +113,7 @@ class TestHeaderOrder1615(PlayerInlineCommon):
         self.assertFalse(hero.xpath('.//*[@data-sc-edit-toggle] | .//*[@data-sc-edit-view="edit"]'))
         self.assertFalse(hero.xpath('.//owl-component'))
         self.assertTrue(read['player.status'].xpath('.//*[@data-pk-section="player.status.readonly"]'))
-        self.assertEqual(len(read['player.status'].xpath('.//*[@data-sc-pill-readonly]')), 2)
+        self.assertEqual(len(read['player.status'].xpath('.//*[@data-pk-pill-readonly]')), 2)
         self.assertIn('Synthetic rowing', read['player.training'].text_content())
         self.assertIn('2030', read['player.return'].text_content())
 
@@ -170,7 +170,7 @@ class TestDossierOrder1615(Clinic1540Common):
         # (its Match / Pratique quick-change pills, then its lines); the
         # card comes before the injuries and the notes.
         card = tree.xpath('//*[@data-pk-section="clinic.dossier.player"]')[0]
-        self.assertEqual(len(card.xpath('.//*[@data-sc-pill-select]')), 2)
+        self.assertEqual(len(card.xpath('.//*[@data-pk-pill-select]')), 2)
         self.assertFalse(card.xpath('.//owl-component'))
         order = [el.get('data-pk-section') for el in tree.xpath(
             '//*[@data-pk-section="clinic.dossier.player" or @data-pk-section="clinic.dossier.injuries"'

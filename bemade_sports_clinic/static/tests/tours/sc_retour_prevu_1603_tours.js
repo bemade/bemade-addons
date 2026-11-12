@@ -192,12 +192,12 @@ tours.add("sc_1603_last_resolved", {
         // Task 1631: « Resolved » from the header pill (the resolve sheet).
         {
             content: "Open the status pill",
-            trigger: `${CARD} [data-sc-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select`,
+            trigger: `${CARD} [data-pk-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select`,
             run: "click",
         },
         {
             content: "« Resolved »",
-            trigger: `${CARD} [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="resolved"]`,
+            trigger: `${CARD} [data-pk-pill-key="stage"] [role="menuitemradio"][data-pk-pill-value="resolved"]`,
             run: "click",
         },
         {

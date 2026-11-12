@@ -55,7 +55,7 @@ class TestActivityDates1744(AppShellCommon):
         self.assertIn('error=past_deadline', resp.headers['Location'])
         self.assertFalse(self._found('SC1744 past'))
         _text, tree = self._get(resp.headers['Location'])
-        self.assertIn(MSG, ' '.join(tree.xpath('//*[@data-sc-flash-error]//text()')))
+        self.assertIn(MSG, ' '.join(tree.xpath('//*[@data-pk-flash-error]//text()')))
         self._new('SC1744 today', self.today)
         self.assertTrue(self._found('SC1744 today'))
 
@@ -133,7 +133,7 @@ class TestActivityDates1744(AppShellCommon):
         self.opener.cookies.set('frontend_lang', 'fr_CA')
         resp = self._new('SC1744 past fr', self.yesterday)
         _text, tree = self._get(resp.headers['Location'])
-        self.assertIn(MSG_FR, ' '.join(tree.xpath('//*[@data-sc-flash-error]//text()')))
+        self.assertIn(MSG_FR, ' '.join(tree.xpath('//*[@data-pk-flash-error]//text()')))
         self.assertEqual(self.act_player.with_context(lang='fr_CA').sc_created_by_label, 'Créé automatiquement')
 
 

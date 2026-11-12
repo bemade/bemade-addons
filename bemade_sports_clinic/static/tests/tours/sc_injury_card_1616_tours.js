@@ -96,7 +96,7 @@ tours.add("sc_1616_card_sections", {
                 // as pills in Details (outside the pencil).
                 assert(el(`${DETAILS} .o_pk_autosave[data-sc-field="predicted_resolution_date"]`), "dates in Details");
                 assert(!el(`${DETAILS} .o_pk_autosave[data-sc-field="stage"]`), "status still in Details");
-                assert(el(`${DETAILS} .o_sc_injury_flags [data-sc-pill-key="consent"]`), "no consent pill");
+                assert(el(`${DETAILS} .o_sc_injury_flags [data-pk-pill-key="consent"]`), "no consent pill");
                 assert(!el(`${DETAILS} .o_pk_autosave[data-sc-field="external_notes"]`), "notes in Details");
             },
         },

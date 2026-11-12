@@ -44,13 +44,13 @@ async function waitFor(check, what, timeout = 5000) {
 }
 
 function toggle(scope, key, tone = "") {
-    return `${scope} [data-sc-pill-select][data-sc-pill-key="${key}"]:not([aria-busy]) button.o_pk_pill_select${
+    return `${scope} [data-pk-pill-select][data-pk-pill-key="${key}"]:not([aria-busy]) button.o_pk_pill_select${
         tone ? `.o_pk_chip_${tone}` : ""
     }`;
 }
 
 function item(scope, key, value) {
-    return `${scope} [data-sc-pill-key="${key}"] [role="menuitemradio"][data-sc-pill-value="${value}"]`;
+    return `${scope} [data-pk-pill-key="${key}"] [role="menuitemradio"][data-pk-pill-value="${value}"]`;
 }
 
 function pick(scope, key, value, fromTone) {
@@ -133,7 +133,7 @@ tours.add("sc_1631_injury_card", {
             content: "Consent and visibility pills share one row",
             trigger: `${DETAILS} .o_sc_injury_flags`,
             run() {
-                const pills = this.anchor.querySelectorAll("[data-sc-pill-key]");
+                const pills = this.anchor.querySelectorAll("[data-pk-pill-key]");
                 assert(pills.length === 2, `${pills.length} pills`);
             },
         },

@@ -270,7 +270,7 @@
                  header toggle, no collapsible wrapper (it replaced #1607's
                  docked-open panel). « Link this note » stays a disclosure. -->
             <section class="o_pk_card o_sc_notepad_add" id="sc_notepad_add" data-pk-section="notepad.add" data-pk-list-reset="1">
-            <form action="/my/notepad/add" method="post" class="o_pk_form" id="quick-add" data-sc-form="note.add" data-sc-guard="1" data-sc-guard-mode="fetch" data-sc-guard-rules='[{"type":"required","field":"note"}]'>
+            <form action="/my/notepad/add" method="post" class="o_pk_form" id="quick-add" data-sc-form="note.add" data-pk-guard="1" data-pk-guard-mode="fetch" data-pk-guard-rules='[{"type":"required","field":"note"}]'>
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <t t-set="sc_qn_label">Quick note</t>
                 <t t-set="sc_qn_placeholder">Type a note to self…</t>
@@ -287,7 +287,7 @@
                 <div class="o_pk_form_actions">
                     <button type="submit" class="o_pk_btn o_pk_btn_primary" data-sc-action="note.add">Add</button>
                 </div>
-                <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_quick_note_add'"/></t>
+                <t t-call="bemade_portal_kit.pk_form_guard_slots"><t t-set="guard_id" t-value="'sc_quick_note_add'"/></t>
             </form>
             </section>
 

@@ -166,7 +166,7 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         # header / the Details flags row), no longer behind the pencil.
         self.assertEqual(self._fields(details.xpath('.//*[@data-sc-edit-view="edit"]')[0]), [
             'diagnosis', 'sc_injury_date', 'predicted_resolution_date', 'resolution_date'])
-        self.assertEqual(details.xpath('.//*[contains(@class, "o_sc_injury_flags")]//@data-sc-pill-key'),
+        self.assertEqual(details.xpath('.//*[contains(@class, "o_sc_injury_flags")]//@data-pk-pill-key'),
                          ['consent', 'visibility'])
         self.assertEqual(self._fields(notes), ['external_notes', 'internal_notes'])
         import json

@@ -42,7 +42,7 @@ tours.add("sc_1018_header_pencil", {
     steps: () => [
         {
             content: "Read view: status pills (task 1627; task 1753: outside the read view), no « Remove player »; open the pencil",
-            trigger: `${HERO} [data-pk-section="player.status"] [data-sc-pill-key="match"] button.o_pk_pill_select`,
+            trigger: `${HERO} [data-pk-section="player.status"] [data-pk-pill-key="match"] button.o_pk_pill_select`,
             run() {
                 window.__sc1018NoReload = true;
                 assert(!document.querySelector(`${HERO} .o_pk_autosave[data-sc-field="sc_status"]`), "a 4-way selector");
@@ -123,12 +123,12 @@ tours.add("sc_1018_injury_dates", {
         // Task 1631: resolved from the header pill (the resolve sheet).
         {
             content: "Open the status pill",
-            trigger: `${CARD} > summary [data-sc-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select`,
+            trigger: `${CARD} > summary [data-pk-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select`,
             run: "click",
         },
         {
             content: "Mark it resolved",
-            trigger: `${CARD} > summary [data-sc-pill-key="stage"] [role="menuitemradio"][data-sc-pill-value="resolved"]`,
+            trigger: `${CARD} > summary [data-pk-pill-key="stage"] [role="menuitemradio"][data-pk-pill-value="resolved"]`,
             run: "click",
         },
         {
@@ -138,7 +138,7 @@ tours.add("sc_1018_injury_dates", {
         },
         {
             content: "Resolved: the resolution date shows, the predicted one goes (in place)",
-            trigger: `${CARD} > summary [data-sc-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_green`,
+            trigger: `${CARD} > summary [data-pk-pill-key="stage"]:not([aria-busy]) button.o_pk_pill_select.o_pk_chip_green`,
             async run() {
                 await waitFor(
                     () => visible(`${DETAILS} .o_pk_autosave[data-sc-field="resolution_date"]`)

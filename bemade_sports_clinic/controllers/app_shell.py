@@ -1056,7 +1056,7 @@ def sc_fill_moved_row_fragments(found, keys):
         pid, scope = match.groups()
         other, html = by_player[pid]
         html = html.replace('sports.patient:%s:row-%s' % (pid, other), key)
-        html = re.sub(r'(sc-pill-sports-patient-%s-\w+)-%s\b' % (pid, re.escape(other)),
+        html = re.sub(r'(pk-pill-sports-patient-%s-\w+)-%s\b' % (pid, re.escape(other)),
                       r'\1-%s' % scope, html)
         html = html.replace('sc-row-detail-%s-%s' % (other, pid), 'sc-row-detail-%s-%s' % (scope, pid))
         found[key] = html
@@ -1125,15 +1125,6 @@ class AppShellMixin:
             items.append(item)
         return items
 
-    @staticmethod
-    def _sc_guard_probe():
-        """Task 1658: this request is a guarded form's fetch (sc_form_guard.js
-        sends X-Sc-Guard on the POST, kept across its redirect)."""
-        try:
-            return request.httprequest.headers.get('X-Sc-Guard') == '1'
-        except RuntimeError:  # no request
-            return False
-
     def _sc_activity_user_options_for(self, user):
         """Task 1736 r1: ``activity -> [(id, name)]``, the assignee choices of
         an activity card's inline edit — the same list as the detail page's
@@ -1157,10 +1148,11 @@ class AppShellMixin:
         request (task 1611) leaves it for the next real page."""
         if PortalKitApp._pk_fragment_keys() is not None:
             return False
-        # Task 1658: a guarded form's fetch (X-Sc-Guard) reads the page it
+        # Task 1658: a guarded form's fetch (X-Pk-Guard, the kit's
+        # PortalKitApp._pk_guard_probe since task 5370) reads the page it
         # landed on to find a refusal — peek, so the real navigation that
         # follows a success still shows the toast.
-        if AppShellMixin._sc_guard_probe():
+        if PortalKitApp._pk_guard_probe():
             notif = request.session.get('notification')
         else:
             notif = request.session.pop('notification', None)
@@ -1174,7 +1166,7 @@ class AppShellMixin:
         # Task 1741: the page carrying a notification is never stored by the
         # browser (« back » to it fetches it again — the notification is
         # gone by then), and the notification has an id the page shows once.
-        if not AppShellMixin._sc_guard_probe():
+        if not PortalKitApp._pk_guard_probe():
             request.future_response.headers['Cache-Control'] = 'no-store'
         return {
             'id': uuid.uuid4().hex[:16],
@@ -1207,7 +1199,7 @@ class AppShellMixin:
     def _sc_pop_proposal():
         """Task 1603: the pending proposal as JSON (popped: shown once), or
         False. A fragment request (task 1611) leaves it for the next page."""
-        if PortalKitApp._pk_fragment_keys() is not None or AppShellMixin._sc_guard_probe():
+        if PortalKitApp._pk_fragment_keys() is not None or PortalKitApp._pk_guard_probe():
             return False
         proposal = request.session.pop(SC_PROPOSAL_SESSION_KEY, None)
         return json.dumps(proposal) if isinstance(proposal, dict) else False

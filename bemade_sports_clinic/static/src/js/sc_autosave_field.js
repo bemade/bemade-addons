@@ -719,7 +719,7 @@ export class ScAutosaveField extends Component {
      * focus leaves it (a tap on « Créer » included). An option whose label
      * is exactly that text (accents, case and spaces ignored) is picked —
      * never a silent drop; anything else is an inline error that also keeps
-     * the form from submitting (``data-sc-guard-block``, read by the form
+     * the form from submitting (``data-pk-guard-block``, read by the form
      * guard) until the text is picked, fixed or cleared.
      */
     commitTyped() {
@@ -757,7 +757,7 @@ export class ScAutosaveField extends Component {
     }
 
     /**
-     * The form guard's block of this field (``data-sc-guard-block``): typed
+     * The form guard's block of this field (``data-pk-guard-block``): typed
      * text matching nothing, or an organisation change awaiting its answer.
      */
     syncGuardBlock() {
@@ -767,13 +767,13 @@ export class ScAutosaveField extends Component {
             return;
         }
         const message = this.state.typedError || (this.state.groupConfirm ? this.groupConfirmText : "");
-        if ((root.dataset.scGuardBlock || "") === message) {
+        if ((root.dataset.pkGuardBlock || "") === message) {
             return;
         }
         if (message) {
-            root.dataset.scGuardBlock = message;
+            root.dataset.pkGuardBlock = message;
         } else {
-            delete root.dataset.scGuardBlock;
+            delete root.dataset.pkGuardBlock;
         }
         if (this.state.typedError) {
             input.setAttribute("aria-invalid", "true");

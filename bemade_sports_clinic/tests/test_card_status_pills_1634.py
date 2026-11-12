@@ -92,7 +92,7 @@ class CardPills1634Common(FragmentsCommon):
 
     @staticmethod
     def _toggles(node):
-        return {b.getparent().get('data-sc-pill-key'): b
+        return {b.getparent().get('data-pk-pill-key'): b
                 for b in node.xpath('.//button[contains(@class, "o_pk_pill_select")]')}
 
     @staticmethod
@@ -143,7 +143,7 @@ class TestCardStatusPills1634(CardPills1634Common):
         for scope in ('dash', 'roster'):
             row = self._row(tree, scope)
             self.assertFalse(row.xpath('.//*[contains(@class, "o_pk_pill_select")]'), scope)
-            self.assertFalse(row.xpath('.//*[@data-sc-pill-select]'), scope)
+            self.assertFalse(row.xpath('.//*[@data-pk-pill-select]'), scope)
             pills = row.xpath('.//*[contains(@class, "o_sc_row_status")]/span[contains(@class, "o_pk_status_pill")]')
             self.assertEqual(len(pills), 2, scope)
             for pill in pills:
@@ -181,10 +181,10 @@ class TestCardStatusPills1634(CardPills1634Common):
             hint = ' '.join(item.xpath('.//*[contains(@class, "o_pk_pill_hint")]//text()')).strip()
             if item.get('aria-disabled') == 'true':
                 self.assertTrue(hint)
-                self.assertFalse(item.get('data-sc-pill-post'))
-                state[item.get('data-sc-pill-value')] = None
+                self.assertFalse(item.get('data-pk-pill-post'))
+                state[item.get('data-pk-pill-value')] = None
             else:
-                state[item.get('data-sc-pill-value')] = item.get('data-sc-pill-post')
+                state[item.get('data-pk-pill-value')] = item.get('data-pk-pill-post')
         self.assertEqual(state, {'yes': 'yes:yes', 'no_contact': None, 'no': None})
 
     # -- AC-5 ------------------------------------------------------------
@@ -226,9 +226,9 @@ class TestCardStatusPills1634(CardPills1634Common):
                 self.assertIn('o_pk_chip_red', button.get('class'), (scope, key))
             self.assertTrue(node.xpath('.//*[contains(@class, "o_pk_dot") and contains(@class, "o_pk_tone_red")]'))
             self.assertTrue(node.xpath('.//*[@data-sc-row-return]'), 'no « Retour prévu » line')
-            wrap = node.xpath('.//*[@data-sc-pill-select]')[0]
-            self.assertEqual(wrap.get('data-sc-write-date'), payload['write_date'])
-            self.assertEqual(wrap.get('data-sc-old-value'), 'no:no')
+            wrap = node.xpath('.//*[@data-pk-pill-select]')[0]
+            self.assertEqual(wrap.get('data-pk-write-date'), payload['write_date'])
+            self.assertEqual(wrap.get('data-pk-old-value'), 'no:no')
 
     # -- AC-6 ------------------------------------------------------------
     def test_locked_players_row_stays_static(self):

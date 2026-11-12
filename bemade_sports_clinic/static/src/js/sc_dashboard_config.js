@@ -8,7 +8,7 @@
  * their hidden input and fire « change » —, a filter) is posted at once with
  * fetch; the title after a pause in typing. The server answers JSON
  * {ok} / {ok: false, error}: a refusal shows INSIDE the form
- * ([data-sc-guard-error], #1658), nothing else moves; a success shows
+ * ([data-pk-guard-error], #1658), nothing else moves; a success shows
  * « Enregistré » in the row's status line. The « Save » button is the no-JS
  * fallback (hidden here).
  *
@@ -65,7 +65,7 @@ function setStatus(form, text) {
 }
 
 function setError(form, message) {
-    const slot = form.querySelector("[data-sc-guard-error]");
+    const slot = form.querySelector("[data-pk-guard-error]");
     if (slot) {
         slot.textContent = message || "";
         slot.hidden = !message;

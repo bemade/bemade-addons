@@ -18,6 +18,13 @@
   ``pre_init_hook`` that adopts the views of ``ADOPTED_VIEWS`` (a database
   with the consumer but not the kit installs the kit as a new dependency,
   and an installed module runs no migration script).
+* UC-A7 (task 5370, P4b) The kit adopts two more templates: the form
+  guard's slots and the status pill select (11 in all).
+* UC-A8 (task 5370) ``strip_translated_attributes`` removes renamed
+  attributes that a translation kept: Odoo merges the source's attributes
+  into a translated term but never drops the term's own, so after a rename
+  the old attribute stays, dead, in every non-English ``arch_db`` value.
+  The source (``en_US``) is left alone and other attributes are kept.
 * UC-A6 (task 5372) When both the kit's external id and the old consumer
   external id exist, ``adopt_views`` changes nothing but logs a WARNING
   naming both, so a broken upgrade path shows in the log. An already
@@ -28,12 +35,16 @@ import os
 import re
 from unittest.mock import patch
 
+from psycopg2.extras import Json
+
 from odoo.modules.module import get_manifest, get_module_path
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons import bemade_portal_kit
 from odoo.addons.bemade_portal_kit.tools import adopt
-from odoo.addons.bemade_portal_kit.tools.adopt import ADOPTED_VIEWS, KIT, adopt_views
+from odoo.addons.bemade_portal_kit.tools.adopt import (
+    ADOPTED_VIEWS, KIT, adopt_views, strip_translated_attributes,
+)
 
 CONSUMER = 'pk_test_consumer'
 
@@ -129,8 +140,25 @@ class TestPkAdopt(TransactionCase):
         self.assertEqual(adopt_views(self.env.cr, ((CONSUMER, 'pk_test_absent', 'pk_test_absent_new'),)), [])
         self.assertFalse(self._imd(KIT, 'pk_test_absent_new'))
 
+    def test_strip_translated_attributes(self):
+        self.env.cr.execute("UPDATE ir_ui_view SET arch_db = %s WHERE id = %s", (Json({
+            'en_US': '<t t-name="pk_test_old"><span data-pk-old-msg="en" data-pk-test-msg="a">Text</span></t>',
+            'fr_FR': '<t t-name="pk_test_old"><span data-pk-old-msg="a" data-pk-test-msg="a" class="x">Texte</span></t>',
+            'fr_CA': '<t t-name="pk_test_old"><span data-pk-test-msg="a">Texte</span></t>',
+        }), self.view.id))
+        count = strip_translated_attributes(self.env.cr, ('data-pk-old-msg',))
+        self.assertEqual(count, 1)
+        self.env.cr.execute("SELECT arch_db FROM ir_ui_view WHERE id = %s", (self.view.id,))
+        arch = self.env.cr.fetchone()[0]
+        self.assertIn('data-pk-old-msg="en"', arch['en_US'], 'the source is left alone')
+        self.assertEqual(arch['fr_FR'], '<t t-name="pk_test_old"><span data-pk-test-msg="a" class="x">Texte</span></t>')
+        self.assertEqual(arch['fr_CA'], '<t t-name="pk_test_old"><span data-pk-test-msg="a">Texte</span></t>')
+        self.assertEqual(strip_translated_attributes(self.env.cr, ('data-pk-old-msg',)), 0)
+
     def test_mapping_adopted_after_upgrade(self):
-        self.assertEqual(len(ADOPTED_VIEWS), 9)
+        self.assertEqual(len(ADOPTED_VIEWS), 11)
+        self.assertIn(('bemade_sports_clinic', 'sc_form_guard_slots', 'pk_form_guard_slots'), ADOPTED_VIEWS)
+        self.assertIn(('bemade_sports_clinic', 'sc_status_pill_select', 'pk_status_pill_select'), ADOPTED_VIEWS)
         for old_module, old_name, new_name in ADOPTED_VIEWS:
             with self.subTest(view=new_name):
                 self.assertFalse(self._imd(old_module, old_name), '%s.%s left behind' % (old_module, old_name))

@@ -193,7 +193,7 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         self.assertNotIn('training_recommendation', self._owl_fields(tree))
         self.assertIn('Bike 15 min (synthetic)', text)
         self.assertTrue(tree.xpath('//*[@data-pk-section="player.status.readonly"]'))
-        self.assertFalse(tree.xpath('//*[@data-sc-pill-select]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-pill-select]'))
         # « Report Injury » for coaches too, with the team context kept —
         # inline on the Injuries tab since the owner review of 2026-10-10.
         _text, tree = self._get(self.url + '&team_id=%s' % self.team_a.id)
@@ -210,8 +210,8 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         # Task 1627: the status is the header's Match / Practice pill
         # dropdowns (posting ``sc_status``), not an autosave field.
         self.assertNotIn('sc_status', owl)
-        pills = tree.xpath('//*[@data-sc-pill-select][@data-sc-field="sc_status"]')
-        self.assertEqual([p.get('data-sc-old-value') for p in pills], ['yes:yes', 'yes:yes'])
+        pills = tree.xpath('//*[@data-pk-pill-select][@data-pk-field="sc_status"]')
+        self.assertEqual([p.get('data-pk-old-value') for p in pills], ['yes:yes', 'yes:yes'])
         self.assertEqual(owl['training_recommendation']['mode'], 'server')
         for visible in ('Hidden synthetic injury', 'Synthetic allergy', 'Synthetic team note',
                         'Synthetic history'):
@@ -366,7 +366,7 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
             self.assertIn('sports.patient.%s' % field, keys, field)
         # Task 1627: the status posts from the header's pills (no island).
         self.assertNotIn('sports.patient.sc_status', keys)
-        self.assertEqual(len(tree.xpath('//*[@data-sc-pill-select][@data-sc-field="sc_status"]')), 2)
+        self.assertEqual(len(tree.xpath('//*[@data-pk-pill-select][@data-pk-field="sc_status"]')), 2)
         teams = [json.loads(p) for p in tree.xpath(
             '//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')
             if json.loads(p).get('field') == 'sc_team_ids'][0]

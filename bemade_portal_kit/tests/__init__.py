@@ -14,3 +14,4 @@ from . import test_pk_icon
 from . import test_pk_save
 from . import test_pk_save_activity
 from . import test_pk_fragments
+from . import test_pk_guard
