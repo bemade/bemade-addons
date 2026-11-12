@@ -19,8 +19,10 @@ class PracticeSession(models.Model):
     student_id = fields.Many2one("homeschool.student", required=True, ondelete="cascade", index=True, check_company=True)
     deck_id = fields.Many2one("homeschool.practice.deck", required=True, ondelete="cascade", index=True)
     quest_id = fields.Many2one("homeschool.practice.quest", ondelete="set null")
-    kind = fields.Selection([("unit", "Unit"), ("review", "Review")], required=True, default="review")
+    kind = fields.Selection([("unit", "Unit"), ("review", "Review"), ("free", "Free practice")], required=True, default="review")
     unit_id = fields.Many2one("homeschool.practice.unit", ondelete="set null")
+    unit_ids = fields.Many2many("homeschool.practice.unit", "homeschool_practice_session_unit_rel", "session_id", "unit_id",
+                                string="Chosen units", help="Free practice: the units the learner picked.")
     started_at = fields.Datetime(default=fields.Datetime.now, required=True)
     ended_at = fields.Datetime()
     state = fields.Selection([("open", "Open"), ("done", "Done"), ("abandoned", "Abandoned")], default="open", required=True)
@@ -44,21 +46,25 @@ class PracticeSession(models.Model):
             s.miss_count = s.item_count - s.correct_count
             s.perfect = s.state == "done" and s.item_count > 0 and s.miss_count == 0
 
-    @api.constrains("kind", "unit_id")
+    @api.constrains("kind", "unit_id", "unit_ids")
     def _check_unit(self):
         for s in self:
             if s.kind == "unit" and not s.unit_id:
                 raise ValidationError(self.env._("A unit session needs a unit."))
+            if s.kind == "free" and not s.unit_ids:
+                raise ValidationError(self.env._("A free practice session needs at least one unit."))
 
     # ------------------------------------------------------------------
     # start and plan
     # ------------------------------------------------------------------
     @api.model
-    def _start(self, student, deck, kind="review", unit=None, quest=None, device=None, input_type="touch", frontend="portal_lesson"):
+    def _start(self, student, deck, kind="review", unit=None, units=None, quest=None, device=None, input_type="touch",
+               frontend="portal_lesson"):
         self.sudo().search([("student_id", "=", student.id), ("state", "=", "open")]).write(
             {"state": "abandoned", "ended_at": fields.Datetime.now()})
         session = self.sudo().create({
             "student_id": student.id, "deck_id": deck.id, "kind": kind, "unit_id": unit and unit.id,
+            "unit_ids": [fields.Command.set(units.ids if units else [])],
             "quest_id": quest and quest.id, "device": device, "input_type": input_type or "touch", "frontend": frontend,
         })
         session.queue = json.dumps([i.id for i in session._plan()])
@@ -70,7 +76,8 @@ class PracticeSession(models.Model):
 
     def _plan(self):
         """Due items first (most overdue), then newly introduced (at most ``max_new``), then
-        about 1 in 5 review items from the deck's other unlocked units. Locked units never."""
+        about 1 in 5 review items from the deck's other unlocked units. Locked units never.
+        Free practice draws from the chosen units only, with no review from the others."""
         self.ensure_one()
         deck, size = self.deck_id, self.deck_id.session_size
         today = fields.Date.context_today(self)
@@ -85,6 +92,15 @@ class PracticeSession(models.Model):
             due = seen_order(rows.filtered(lambda r: r.due_on <= today))
             rest = (rows - due).sorted(lambda r: (r.last_seen, r.id))
             return self._cycle(list((due + rest)[:size].item_id), size)
+
+        if self.kind == "free":
+            rows = self._rows(self.unit_ids & unlocked)
+            seen = rows.filtered("last_seen")
+            due = seen_order(seen.filtered(lambda r: r.due_on <= today))
+            new = rows.filtered(lambda r: not r.last_seen).sorted(lambda r: (r.item_id.step, r.id))[:deck.max_new_per_session]
+            core = (due + new)[:size]
+            core += seen_order(seen - core)[:size - len(core)]
+            return self._cycle(list(core.item_id), size)
 
         if self.unit_id not in unlocked:
             return []

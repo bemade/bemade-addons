@@ -120,12 +120,53 @@
             b.addEventListener("click", function () { start({ quest_id: +b.dataset.quest }); });
         });
         app.querySelectorAll("[data-deck]").forEach(function (b) {
-            b.addEventListener("click", function () { start({ deck_id: +b.dataset.deck }); });
+            b.addEventListener("click", function () {
+                var deck = d.decks.filter(function (k) { return k.id === +b.dataset.deck; })[0];
+                picker(deck);
+            });
         });
         var fresh = d.badges.filter(function (b) { return b.new; });
         if (fresh.length) { celebrate([{ icon: fresh[0].icon, title: L.new_badge, text: fresh[0].name }]); }
     }
     function fmt(n) { return (Math.round(n * 100) / 100).toString(); }
+
+    // ------------------------------------------------------------------ free practice: pick the units
+    function picker(deck) {
+        if (!deck.units || deck.units.length < 2) { start({ deck_id: deck.id }); return; }
+        var key = "hp-pick-" + deck.id, ids = deck.units.map(function (u) { return u.id; }), chosen = ids.slice();
+        try {
+            var saved = JSON.parse(localStorage.getItem(key) || "null");
+            if (saved) {
+                saved = saved.filter(function (id) { return ids.indexOf(id) >= 0; });
+                if (saved.length) { chosen = saved; }
+            }
+        } catch (e) { /* the remembered choice is a convenience only */ }
+        var draw = function () {
+            var all = chosen.length === ids.length;
+            h('<div class="hp-pick"><header class="hp-pick-head"><button class="hp-free" id="hp-back">← ' + esc(L.home) + "</button>" +
+                "<h2>" + esc(deck.name) + "</h2></header><p>" + esc(L.pick) + "</p>" +
+                '<div class="hp-units"><button class="hp-unit hp-unit-all' + (all ? " is-on" : "") + '" data-all="1">' + esc(L.all) + "</button>" +
+                deck.units.map(function (u) {
+                    return '<button class="hp-unit' + (chosen.indexOf(u.id) >= 0 ? " is-on" : "") + '" data-unit="' + u.id + '">' + esc(u.name.charAt(0).toUpperCase() + u.name.slice(1)) + "</button>";
+                }).join("") + "</div>" +
+                '<button class="hp-big" id="hp-go"' + (chosen.length ? "" : " disabled") + ">" + esc(L.start) + "</button></div>");
+            app.querySelectorAll("[data-unit]").forEach(function (b) {
+                b.addEventListener("click", function () {
+                    var id = +b.dataset.unit, at = chosen.indexOf(id);
+                    if (at >= 0) { chosen.splice(at, 1); } else { chosen.push(id); }
+                    draw();
+                });
+            });
+            app.querySelector("[data-all]").addEventListener("click", function () { chosen = all ? [] : ids.slice(); draw(); });
+            document.getElementById("hp-back").addEventListener("click", renderHome);
+            document.getElementById("hp-go").addEventListener("click", function () {
+                if (!chosen.length) { return; }
+                try { localStorage.setItem(key, JSON.stringify(chosen)); } catch (e) { /* ignore */ }
+                start({ deck_id: deck.id, unit_ids: chosen.slice() });
+            });
+        };
+        draw();
+    }
 
     // ------------------------------------------------------------------ lesson
     function start(params) {

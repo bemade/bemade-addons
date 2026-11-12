@@ -698,6 +698,7 @@ msgstr "Premier toucher (ms)"
 #. module: homeschool_practice
 #. odoo-python
 #: code:addons/homeschool_practice/controllers/api.py:0
+#: model:ir.model.fields.selection,name:homeschool_practice.selection__homeschool_practice_session__kind__free
 msgid "Free practice"
 msgstr "Pratique libre"
 
@@ -1958,3 +1959,31 @@ msgstr "p. ex. min, $"
 #: model:homeschool.practice.quest.template,name:homeschool_practice.quest_no_hint
 msgid "{target} correct answers without a hint"
 msgstr "{target} bonnes réponses sans indice"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "Choose what to practice"
+msgstr "Choisis ce que tu veux pratiquer"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "All"
+msgstr "Tout"
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/models/session.py:0
+msgid "A free practice session needs at least one unit."
+msgstr "Une séance de pratique libre demande au moins une unité."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_session__unit_ids
+msgid "Chosen units"
+msgstr "Unités choisies"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_session__unit_ids
+msgid "Free practice: the units the learner picked."
+msgstr "Pratique libre : les unités choisies par l’élève."

@@ -41,6 +41,17 @@ h2 { font-size: 26px; } h3 { font-size: 20px; color: var(--muted); font-weight: 
 .hp-quest.is-done .hp-bar-fill { background: var(--good); }
 .hp-rest { background: var(--panel); border-radius: var(--r); padding: 22px; font-size: 22px; }
 .hp-decks { display: flex; flex-wrap: wrap; gap: 10px; }
+.hp-pick { max-width: 900px; margin: 0 auto; padding: 24px 16px; display: flex; flex-direction: column; gap: 20px; }
+.hp-pick-head { display: flex; align-items: center; gap: 16px; }
+.hp-pick-head h2 { margin: 0; }
+.hp-pick p { margin: 0; font-size: 22px; }
+.hp-units { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.hp-unit { min-height: var(--tap); border-radius: var(--r); background: var(--panel); border: 3px solid var(--line); font-size: 22px; font-weight: 700; }
+.hp-unit { color: var(--muted); }
+.hp-unit.is-on { background: var(--panel2); border-color: var(--accent); color: var(--ink); }
+.hp-unit.is-on::before { content: "✓ "; color: var(--accent); }
+.hp-unit-all { grid-column: 1 / -1; }
+.hp-big:disabled { opacity: .4; }
 .hp-free { min-height: var(--tap); padding: 0 24px; border-radius: var(--r); background: var(--panel); border: 2px solid var(--line); font-weight: 700; }
 .hp-card { background: var(--panel); border-radius: var(--r); padding: 16px 18px; }
 .hp-bank { background: linear-gradient(135deg, #2b3f6b, #1d2d50); border: 2px solid var(--accent); }

@@ -159,6 +159,8 @@ class PracticeSession(models.Model):
             done |= quests.filtered(lambda q: q.kind == "unit_session" and q.unit_id == self.unit_id)._bump()
         if self.kind == "review":
             done |= quests.filtered(lambda q: q.kind == "review_session")._bump()
+        if self.kind == "free" and len(self.unit_ids) == 1:
+            done |= quests.filtered(lambda q: q.kind == "unit_session" and q.unit_id == self.unit_ids)._bump()
         if self.perfect:
             done |= quests.filtered(lambda q: q.kind == "perfect")._bump()
         self._quests_done(events, done)

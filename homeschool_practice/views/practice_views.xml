@@ -70,7 +70,7 @@
         <field name="name">homeschool.practice.session.list</field>
         <field name="model">homeschool.practice.session</field>
         <field name="arch" type="xml">
-            <list create="0"><field name="started_at"/><field name="student_id"/><field name="deck_id"/><field name="kind"/><field name="unit_id"/><field name="item_count"/><field name="correct_count"/><field name="perfect"/><field name="input_type"/><field name="device" optional="hide"/><field name="state"/></list>
+            <list create="0"><field name="started_at"/><field name="student_id"/><field name="deck_id"/><field name="kind"/><field name="unit_id"/><field name="unit_ids" widget="many2many_tags" optional="hide"/><field name="item_count"/><field name="correct_count"/><field name="perfect"/><field name="input_type"/><field name="device" optional="hide"/><field name="state"/></list>
         </field>
     </record>
     <record id="view_session_form" model="ir.ui.view">
@@ -80,7 +80,7 @@
             <form string="Session" create="0" edit="0">
                 <sheet>
                     <group>
-                        <group><field name="student_id"/><field name="deck_id"/><field name="kind"/><field name="unit_id"/><field name="quest_id"/></group>
+                        <group><field name="student_id"/><field name="deck_id"/><field name="kind"/><field name="unit_id" invisible="kind == 'free'"/><field name="unit_ids" widget="many2many_tags" invisible="kind != 'free'"/><field name="quest_id"/></group>
                         <group><field name="started_at"/><field name="ended_at"/><field name="state"/><field name="input_type"/><field name="device"/><field name="frontend"/></group>
                     </group>
                     <field name="attempt_ids"><list><field name="client_ts"/><field name="item_id"/><field name="given"/><field name="correct"/><field name="hint_used"/><field name="first_touch_ms"/><field name="submit_ms"/><field name="outlier"/></list></field>

@@ -30,7 +30,7 @@ def learner_labels(env):
         "level_up": _("New level!"), "new_badge": _("New badge!"), "reward": _("Reward"),
         "home": _("Back"), "offline": _("Connection lost: your answer is saved, retrying…"),
         "nothing": _("Nothing to practice here yet."), "new_unit": _("Something new!"), "got_it": _("Got it!"),
-        "well_done": _("Well done for practicing!"),
+        "well_done": _("Well done for practicing!"), "pick": _("Choose what to practice"), "all": _("All"),
     }
 
 
@@ -108,7 +108,8 @@ class PracticeApi(http.Controller):
             "badges": [{"name": b.template_id.name, "icon": b.template_id.icon, "unit": b.unit_id.name or "",
                         "new": not b.seen} for b in badges[:12]],
             "badge_count": len(badges),
-            "decks": [{"id": d.id, "name": d.name} for d in self._decks(student)],
+            "decks": [{"id": d.id, "name": d.name, "units": [{"id": u.id, "name": u.name} for u in self._units(student, d)]}
+                      for d in self._decks(student)],
         }
         badges.filtered(lambda b: not b.seen).write({"seen": True})
         return payload
@@ -117,8 +118,12 @@ class PracticeApi(http.Controller):
         return request.env["homeschool.practice.unit.access"].sudo().search(
             [("student_id", "=", student.id), ("state", "=", "unlocked")]).deck_id.sorted(lambda d: (d.sequence, d.id))
 
+    def _units(self, student, deck):
+        return deck.unit_ids._unlocked_for(student).sorted(lambda u: (u.sequence, u.id))
+
     @http.route(API + "/session/start", type="jsonrpc", auth="user")
-    def session_start(self, quest_id=None, deck_id=None, device=None, input_type="touch", frontend="portal_lesson"):
+    def session_start(self, quest_id=None, deck_id=None, unit_ids=None, device=None, input_type="touch",
+                      frontend="portal_lesson"):
         student = self._student()
         Session = request.env["homeschool.practice.session"].sudo()
         quest = request.env["homeschool.practice.quest"].sudo().browse(int(quest_id)) if quest_id else None
@@ -128,8 +133,14 @@ class PracticeApi(http.Controller):
         deck = quest.deck_id if quest else request.env["homeschool.practice.deck"].sudo().browse(int(deck_id or 0))
         if deck not in decks:
             raise NotFound()
+        units = None
         needs = [n for n in student._practice_needs(self._today(student)) if n[0].deck_id == deck]
-        if quest and quest.kind == "review_session":
+        if not quest and unit_ids:
+            units = request.env["homeschool.practice.unit"].sudo().browse([int(u) for u in unit_ids]).exists()
+            if len(units) != len(set(unit_ids)) or units - self._units(student, deck):
+                raise NotFound()
+            kind, unit = "free", None
+        elif quest and quest.kind == "review_session":
             kind, unit = "review", None
         elif quest:
             kind, unit = "unit", quest.unit_id or (needs[0][0] if needs else None)
@@ -143,7 +154,7 @@ class PracticeApi(http.Controller):
             kind = "review"
         if input_type not in ("touch", "mouse", "keyboard"):
             input_type = "touch"
-        session = Session._start(student, deck, kind=kind, unit=unit, quest=quest, device=(device or "")[:120],
+        session = Session._start(student, deck, kind=kind, unit=unit, units=units, quest=quest, device=(device or "")[:120],
                                  input_type=input_type, frontend=(frontend or "portal_lesson")[:60])
         return {"session_id": session.id, "item": self._item_payload(session)}
 
