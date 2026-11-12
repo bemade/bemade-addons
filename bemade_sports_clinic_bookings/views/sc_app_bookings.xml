@@ -22,7 +22,7 @@
                 <input t-if="sc_booking_sortby" type="hidden" name="sortby" t-att-value="sc_booking_sortby"/>
                 <details class="o_pk_disclosure" t-att-open="'open' if (selected_type_id or date_from or date_to) else None">
                     <summary class="o_pk_disclosure_summary">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'filter'"/></t>
                         <span>Filters</span>
                     </summary>
                     <div class="o_pk_filter_grid">
@@ -63,7 +63,7 @@
             <div t-if="sc_booking_rows" class="o_pk_list" data-pk-section="bookings.list">
                 <t t-foreach="sc_booking_rows" t-as="row">
                     <div class="o_pk_entity_row o_pk_entity_row_static" t-att-data-sc-booking-id="row['id']">
-                        <span class="o_pk_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'bookings'"/></t></span>
+                        <span class="o_pk_row_lead"><t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'bookings'"/></t></span>
                         <span class="o_pk_row_text">
                             <span class="o_pk_row_title" t-out="row['title']"/>
                             <span class="o_pk_row_subtitle" t-out="row['subtitle']"/>
@@ -90,18 +90,18 @@
                             <t t-if="row['manage']">
                                 <a t-att-href="row['manage']['cancel']" class="o_pk_icon_btn o_sc_booking_action"
                                    data-sc-action="booking.cancel" aria-label="Cancel booking" title="Cancel booking">
-                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'archive'"/></t>
+                                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'archive'"/></t>
                                 </a>
                                 <a t-att-href="row['manage']['edit']" class="o_pk_icon_btn o_sc_booking_action"
                                    data-sc-action="booking.edit" aria-label="Edit" title="Edit">
-                                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'edit'"/></t>
+                                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'edit'"/></t>
                                 </a>
                             </t>
                         </span>
                     </div>
                 </t>
             </div>
-            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+            <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                 <t t-set="message">No bookings.</t>
             </t>
             <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_pk_pager">

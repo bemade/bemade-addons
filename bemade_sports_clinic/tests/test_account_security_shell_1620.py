@@ -364,8 +364,9 @@ class TestAccountSecurityFrench1620(AppShellCommon):
         from odoo import Command
         env = cls.env
         fr = env['res.lang']._activate_lang('fr_CA')
+        # Task 5369: « Annuler » / « Terminé » are the kit's (pk_list_add_cancel, pk_edit_card_done).
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             for website in env['website'].sudo().search([]):
                 website.language_ids = [Command.link(fr.id)]

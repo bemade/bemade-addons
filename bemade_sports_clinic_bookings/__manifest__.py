@@ -1,6 +1,6 @@
 {
     'name': 'Sports Clinic Bookings on the App Shell',
-    'version': '19.0.1.7.2',
+    'version': '19.0.1.7.3',
     'summary': "Glue: the portal bookings pages (appointment_portal_staff) on the Sports Clinic app shell.",
     'description': """
 Sports Clinic Bookings on the App Shell

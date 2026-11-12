@@ -45,7 +45,7 @@
                 <input t-else="" type="hidden" name="mine" value="0"/>
                 <details class="o_pk_disclosure" t-att-open="'open' if team_id or organization_id else None">
                     <summary class="o_pk_disclosure_summary">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'filter'"/></t>
                         <span>Filters</span>
                     </summary>
                     <div class="o_pk_filter_grid">
@@ -85,14 +85,14 @@
                         <t t-set="title" t-value="row['title']"/>
                         <t t-set="subtitle" t-value="row['subtitle']"/>
                         <t t-set="row_attrs" t-value="{'data-sc-clinic-id': row['id']}"/>
-                        <t t-call="bemade_sports_clinic.sc_status_chip">
+                        <t t-call="bemade_portal_kit.pk_status_chip">
                             <t t-set="tone" t-value="row['tone']"/>
                             <t t-set="label" t-value="row['chip']"/>
                         </t>
                     </t>
                 </t>
             </div>
-            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+            <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                 <t t-set="message">No clinic matches these filters.</t>
             </t>
             <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_pk_pager">
@@ -185,7 +185,7 @@
                 <section class="o_pk_tab_panel o_sc_clinic_pane" data-sc-tab-panel="dossier" role="tabpanel"
                          id="clinic-dossier" data-pk-section="clinic.dossier"
                          t-att-hidden="None if sc_clinic_active_tab == 'dossier' else 'hidden'">
-                    <t t-if="not selected_patient" t-call="bemade_sports_clinic.sc_empty_state">
+                    <t t-if="not selected_patient" t-call="bemade_portal_kit.pk_empty_state">
                         <t t-set="message">Pick a patient on the worklist to open their file here.</t>
                     </t>
                     <t t-else="">
@@ -207,7 +207,7 @@
                         </div>
 
                         <section class="o_pk_section" data-pk-section="clinic.dossier.injuries" id="clinic-injuries">
-                            <t t-call="bemade_sports_clinic.sc_section_header">
+                            <t t-call="bemade_portal_kit.pk_section_header">
                                 <t t-set="title">Injuries</t>
                             </t>
                             <!-- Task 1590: the player page's inline cards — add
@@ -256,7 +256,7 @@
                         </section>
 
                         <section class="o_pk_section" data-pk-section="clinic.dossier.notes" id="clinic-notes">
-                            <t t-call="bemade_sports_clinic.sc_section_header">
+                            <t t-call="bemade_portal_kit.pk_section_header">
                                 <t t-set="title">Treatment notes</t>
                             </t>
                             <t t-call="bemade_sports_clinic.sc_note_add_form">
@@ -276,7 +276,7 @@
                                     </t>
                                 </t>
                             </div>
-                            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                            <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                                 <t t-set="message">No treatment notes available</t>
                             </t>
                         </section>

@@ -41,18 +41,11 @@
 -->
 <odoo>
 
-    <!-- Task 1643: the frontend layout with ONE viewport meta, the shell's
-         (viewport-fit=cover, as in the installed app): web.frontend_layout
-         emits its own and the shell's used to come second. -->
-    <template id="sc_frontend_layout" name="Sports Clinic App: frontend layout"
-              inherit_id="web.frontend_layout" primary="True">
-        <xpath expr="//head/meta[@name='viewport']" position="attributes">
-            <attribute name="content">width=device-width, initial-scale=1, viewport-fit=cover</attribute>
-        </xpath>
-    </template>
+    <!-- Task 1643: the frontend layout with ONE viewport meta moved to the
+         kit (task 5369): bemade_portal_kit.pk_frontend_layout. -->
 
     <template id="sc_app_layout" name="Sports Clinic App Layout">
-        <t t-call="bemade_sports_clinic.sc_frontend_layout">
+        <t t-call="bemade_portal_kit.pk_frontend_layout">
             <t t-set="no_header" t-value="True"/>
             <t t-set="no_footer" t-value="True"/>
             <t t-set="no_livechat" t-value="True"/>
@@ -95,7 +88,7 @@
                         <t t-foreach="sc_rail" t-as="entry">
                             <a t-att-href="entry['url']" t-att-data-sc-nav-key="entry['key']"
                                t-att-aria-current="'page' if entry['key'] == sc_active_nav else None">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="entry['icon']"/></t>
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="entry['icon']"/></t>
                                 <span t-out="entry['label']"/>
                             </a>
                         </t>
@@ -107,7 +100,7 @@
                     <header class="o_pk_appbar">
                         <a t-if="sc_parent_url" t-att-href="sc_parent_url" data-pk-back="1"
                            class="o_pk_icon_btn o_pk_back" aria-label="Back" title="Back">
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'back'"/></t>
+                            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'back'"/></t>
                         </a>
                         <!-- Task 1746: phone sub-pages keep the back chevron AND
                              show the Fit Crew picto right after it — one tap
@@ -131,7 +124,7 @@
                             <input type="hidden" name="redirect" t-att-value="sc_current_url"/>
                             <button type="submit" name="sc_theme" t-att-value="'light' if sc_theme != 'light' else 'dark'"
                                     class="o_pk_icon_btn" aria-label="Toggle theme" title="Toggle theme">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'moon'"/></t>
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'moon'"/></t>
                             </button>
                         </form>
                         <!-- Task 1592: the activity clock (the slot the theme toggle
@@ -149,7 +142,7 @@
                             <a t-att-href="sc_clock_url"
                                class="o_pk_icon_btn o_sc_appbar_clock" data-sc-activity-clock-bar="1"
                                t-att-title="sc_clock_label">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'clock'"/></t>
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'clock'"/></t>
                                 <span class="visually-hidden" t-out="sc_clock_label"/>
                                 <span class="o_sc_appbar_badge" hidden="hidden"
                                       data-pk-live-count-url="/my/activities/overdue/count"
@@ -166,7 +159,7 @@
                                t-att-data-sc-help-key="sc_help['key']" t-att-data-sc-help-base="sc_help['base']"
                                t-att-data-sc-help-home="sc_help['home'] or ''" t-att-data-sc-help-map="sc_help['map_json']"
                                t-att-aria-label="sc_help_label" t-att-title="sc_help_label">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'help'"/></t>
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'help'"/></t>
                             </a>
                         </t>
                         <!-- Task 1650: the magnifier opens the search sheet
@@ -174,7 +167,7 @@
                         <a t-if="sc_search_url" t-att-href="sc_search_url" class="o_pk_icon_btn o_pk_appbar_search"
                            data-sc-search-open="1" aria-haspopup="dialog" aria-controls="sc_search_sheet"
                            aria-label="Search" title="Search">
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'search'"/></t>
+                            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'search'"/></t>
                         </a>
                         <!-- Task 1606: the initials open the user menu. Task 1638:
                              the ONLY user menu, at every width — the top right
@@ -254,7 +247,7 @@
                         <div class="o_pk_sheet_head">
                             <h2 class="o_pk_sheet_title" id="sc_injury_resolve_sheet_title">Resolve this injury?</h2>
                             <button type="button" class="o_pk_icon_btn" data-sc-sheet-close="1" aria-label="Close" title="Close">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'close'"/></t>
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'close'"/></t>
                             </button>
                         </div>
                         <div class="o_pk_sheet_body">
@@ -284,7 +277,7 @@
                         <div class="o_pk_sheet_head">
                             <h2 class="o_pk_sheet_title" id="sc_proposal_sheet_title" data-sc-proposal-title="1"/>
                             <button type="button" class="o_pk_icon_btn" data-sc-sheet-close="1" aria-label="Close" title="Close">
-                                <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'close'"/></t>
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'close'"/></t>
                             </button>
                         </div>
                         <div class="o_pk_sheet_body">
@@ -304,7 +297,7 @@
                     <t t-foreach="sc_tabs" t-as="entry">
                         <a t-att-href="entry['url']" class="o_pk_tab" t-att-data-sc-nav-key="entry['key']"
                            t-att-aria-current="'page' if entry['key'] == sc_active_nav else None">
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="entry['icon']"/></t>
+                            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="entry['icon']"/></t>
                             <span t-out="entry['label']"/>
                         </a>
                     </t>
@@ -329,17 +322,17 @@
             <div role="menu" class="o_pk_user_menu_items" t-att-aria-label="sc_user_name">
                 <a role="menuitem" href="/my/app/settings" class="o_pk_user_menu_item" tabindex="-1"
                    t-att-aria-current="'page' if page_name == 'sc_app_settings' else None">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'settings'"/></t>
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'settings'"/></t>
                     <span>Settings</span>
                 </a>
                 <!-- Task 1660: the user guide (new tab). -->
                 <a t-if="sc_help and sc_help['home']" role="menuitem" t-att-href="sc_help['home']" target="_blank" rel="noopener"
                    class="o_pk_user_menu_item" tabindex="-1" data-sc-help-home-link="1">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'help'"/></t>
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'help'"/></t>
                     <span>Help</span>
                 </a>
                 <a role="menuitem" href="/web/session/logout?redirect=/" class="o_pk_user_menu_item" tabindex="-1">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'logout'"/></t>
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'logout'"/></t>
                     <span>Sign out</span>
                 </a>
             </div>

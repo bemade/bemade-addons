@@ -31,6 +31,11 @@ fails on any retired name, with its file:line. A retired name in an addon
 would be a dead hook: the kit no longer reads it. A consumer absent from
 the path is skipped, so on a kit-only install only the kit is scanned.
 
+Task 5369 (P3c1) retires the ``t-call`` names of the templates the kit
+adopted: ``bemade_sports_clinic.sc_<moved>`` -> ``bemade_portal_kit.pk_<moved>``
+(``tools/adopt.py``, ``ADOPTED_VIEWS``), as exact names
+(``bemade_sports_clinic.sc_card_icons`` stays a clinic template).
+
 The one exception is the documented draft fallback of the kit
 (``pk_draft_store.js`` still reads ``sc_draft:`` once, and its hoot test
 checks that).
@@ -40,6 +45,8 @@ import re
 
 from odoo.modules.module import get_module_path
 from odoo.tests import TransactionCase, tagged
+
+from odoo.addons.bemade_portal_kit.tools.adopt import ADOPTED_VIEWS
 
 KIT = 'bemade_portal_kit'
 SCANNED_ADDONS = (KIT, 'bemade_sports_clinic', 'bemade_sports_clinic_bookings')
@@ -184,6 +191,9 @@ KEY_RE = re.compile(_alternation(STORAGE_KEYS))
 CLASS_RE = re.compile(r'(?<![\w-])o_sc_(%s)(?![\w-])' % _alternation(GENERIC_CLASSES))
 TOKEN_RE = re.compile(r'(?<![\w-])--sc-(%s)(?![\w-])' % _alternation(TOKEN_SLOTS))
 THEME_RE = re.compile(r'(?<![\w])data-sc-theme(?![\w-])')
+# Task 5369 (P3c1): the adopted templates' old full names.
+ADOPTED_OLD_NAMES = tuple('%s.%s' % (module, old) for module, old, _new in ADOPTED_VIEWS)
+TEMPLATE_RE = re.compile(r'(?<![\w.])(%s)(?![\w])' % _alternation(ADOPTED_OLD_NAMES))
 
 
 def retired_names(line):
@@ -196,6 +206,7 @@ def retired_names(line):
     found += [m.group(0) for m in CLASS_RE.finditer(line)]
     found += [m.group(0) for m in TOKEN_RE.finditer(line)]
     found += [m.group(0) for m in THEME_RE.finditer(line)]
+    found += [m.group(0) for m in TEMPLATE_RE.finditer(line)]
     return found
 
 
@@ -267,6 +278,18 @@ class TestPkRetiredNames(TransactionCase):
         self.assertEqual(
             retired_names('<div class="o_pk_app o_pk_chip_secondary" data-pk-theme="light" '
                           'style="color: var(--pk-accent)">'), [])
+
+    def test_matcher_adopted_templates(self):
+        """Task 5369 (P3c1): the adopted templates' old names, exact."""
+        self.assertEqual(retired_names('<t t-call="bemade_sports_clinic.sc_icon">'), ['bemade_sports_clinic.sc_icon'])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_card"'), ['bemade_sports_clinic.sc_card'])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_card_icons"'), [])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_empty_state_x"'), [])
+        self.assertEqual(retired_names("env.ref('bemade_sports_clinic.sc_frontend_layout')"),
+                         ['bemade_sports_clinic.sc_frontend_layout'])
+        self.assertEqual(retired_names('arch_db:bemade_sports_clinic.sc_list_add_cancel'),
+                         ['bemade_sports_clinic.sc_list_add_cancel'])
+        self.assertEqual(retired_names('t-call="bemade_portal_kit.pk_icon" sc_card'), [])
 
     def test_no_retired_name_left(self):
         hits = []

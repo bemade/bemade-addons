@@ -9,9 +9,13 @@
 * UC-S2 A portal user gets a 404, a visitor is sent to the login page.
 * UC-S3 The page uses kit names only: no consumer class (``o_sc_``) and no
   consumer attribute (``data-sc-``).
+* UC-S4 (task 5369) Its icons are the kit's ``pk_icon``: the style guide has
+  no icon template of its own any more.
 Synthetic users only.
 """
 from odoo.tests import HttpCase, new_test_user, tagged
+
+from .test_pk_icon import GOLDEN
 
 URL = '/pk/styleguide'
 
@@ -43,6 +47,13 @@ class TestPkStyleguide(HttpCase):
         self.assertIn('o_pk_app_body_dark', html)
         html = self.url_open(URL + '?theme=purple').text
         self.assertIn('data-pk-theme="light"', html)
+
+    def test_icons_are_pk_icon(self):
+        self.assertFalse(self.env.ref('bemade_portal_kit.pk_styleguide_icon', raise_if_not_found=False))
+        self.authenticate('pk_sg_internal', 'pk_sg_internal')
+        html = self.url_open(URL).text
+        for name in ('chevron', 'plus', 'close', 'edit', 'trash', 'moon'):
+            self.assertIn(GOLDEN[name], html, name)
 
     def test_portal_user_not_found(self):
         self.authenticate('pk_sg_portal', 'pk_sg_portal')

@@ -48,7 +48,8 @@ def _french(case, user):
     """fr_CA with this module's terms, on the website too (render tests)."""
     env = case.env
     lang = env['res.lang']._activate_lang('fr_CA')
-    env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+    # Task 5369: « Annuler » / « Terminé » are the kit's (pk_list_add_cancel, pk_edit_card_done).
+    env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
     if 'website' in env:
         env['website'].sudo().search([]).write({'language_ids': [Command.link(lang.id)]})
     user.sudo().lang = 'fr_CA'

@@ -63,7 +63,7 @@
             <input t-if="sc_event_filter_list and sortby" type="hidden" name="sortby" t-att-value="sortby"/>
             <details class="o_pk_disclosure" t-att-open="'open' if sc_event_filters_open else None">
                 <summary class="o_pk_disclosure_summary">
-                    <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'filter'"/></t>
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'filter'"/></t>
                     <span>Filters</span>
                 </summary>
                 <div class="o_pk_filter_grid">
@@ -184,7 +184,7 @@
             <!-- Task 1730: « My events » (a therapist's default view) empty
                  points at « All ». -->
             <p t-elif="sc_event_view == 'my'" class="o_pk_empty" data-pk-section="events.empty_mine">No events assigned to you. <a t-att-href="sc_event_all_url" class="o_pk_link o_pk_hint_link" data-sc-view-link="all">See all events</a></p>
-            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+            <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                 <t t-set="message">No events found.</t>
             </t>
             <div t-if="pager and pager.get('page_count', 0) &gt; 1" class="o_pk_pager">
@@ -305,7 +305,7 @@
                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'coverage_end', lbl, 'datetime-local', savedLabel=sent_lbl)"/></t>
                 <t t-set="lbl">Travel End</t>
                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'travel_end', lbl, 'datetime-local', savedLabel=sent_lbl)"/></t>
-                <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                <t t-call="bemade_portal_kit.pk_edit_card_done"/>
             </div>
         </article>
     </template>
@@ -480,7 +480,7 @@
                     </div>
                     <t t-set="lbl">Description</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(event, 'description', lbl, 'textarea', clearable=True)"/></t>
-                    <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+                    <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                 </div>
                 <!-- Task 1736 r1 (owner 2026-11-01): « Cancel Event » (red, its
                      reason sheet) and its counterpart « Restore event », as
@@ -506,7 +506,7 @@
                 <!-- Task 1584: admins see every therapist's rows — a neutral
                      title; a therapist sees their own. -->
                 <div t-att-data-sc-fragment="sc_fragment_key(event, 'ts-title')"><t t-if="can_view_timesheets">
-                    <t t-call="bemade_sports_clinic.sc_section_header">
+                    <t t-call="bemade_portal_kit.pk_section_header">
                         <t t-if="show_all_timesheets" t-set="title">Timesheets</t>
                         <t t-else="" t-set="title">My Timesheets</t>
                     </t>
@@ -531,7 +531,7 @@
                             <t t-set="add_key" t-value="'timesheet.add'"/>
                         </t>
                     </t>
-                    <t t-if="not sc_timesheet_rows" t-call="bemade_sports_clinic.sc_empty_state">
+                    <t t-if="not sc_timesheet_rows" t-call="bemade_portal_kit.pk_empty_state">
                         <t t-set="message">No timesheets yet.</t>
                     </t>
                 </t></div>

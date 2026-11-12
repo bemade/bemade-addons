@@ -9,3 +9,5 @@ from . import test_pk_hoot
 from . import test_pk_retired_names
 from . import test_pk_styleguide
 from . import test_pk_styles
+from . import test_pk_adopt
+from . import test_pk_icon

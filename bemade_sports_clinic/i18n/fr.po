@@ -3910,7 +3910,6 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.view_team_role_mass_assign_wizard_form
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_security
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_list_add_cancel
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_dashboard_configure
 #: code:addons/bemade_sports_clinic/static/src/js/sc_medical_lists.js:0
 msgid "Cancel"
@@ -5361,7 +5360,6 @@ msgstr "Rôle dominant"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_quick_note_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_edit_card_done
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
 msgid "Done"
 msgstr "Terminé"

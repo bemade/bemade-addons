@@ -327,3 +327,4 @@ from . import test_dashboard_overdue_refresh_1749
 from . import test_portal_kit_hooks_5196
 from . import test_hero_pills_edit_mode_1753
 from . import test_instance_banner_1752
+from . import test_icon_extra_5369

@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.4.0',
+    'version': '19.0.1.5.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -165,6 +165,29 @@ the same roots with at least the kit's specificity (``.o_pk_app``,
 and the body's), and keeps its own rules for its own classes. The brand
 palette (``--sc-*`` colours) and fonts stay with the first consumer.
 
+Templates
+---------
+Version 1.5 adopts the first generic templates of the shell (QWeb, called
+with ``t-call="bemade_portal_kit.<name>"``):
+
+* ``pk_frontend_layout``: ``web.frontend_layout`` with one viewport meta
+  (``viewport-fit=cover``);
+* ``pk_icon``: an inline SVG icon (24 x 24, stroke ``currentColor``),
+  variable ``icon`` (e.g. ``plus``, ``edit``, ``trash``, ``search``,
+  ``calendar``); an unknown name renders three dots. A consumer adds its own
+  glyphs by inheriting ``pk_icon_extra`` (an xpath before its ``t-else``,
+  each glyph a ``t-elif``);
+* ``pk_card``, ``pk_section_header``, ``pk_stat_tile``, ``pk_status_chip``,
+  ``pk_empty_state``, ``pk_list_add_cancel`` and ``pk_edit_card_done``.
+
+They were the first consumer's templates: their records keep their ids
+(inheriting views and translations stay) and only their external ids
+change, in a pre-migration of the kit and of the consumer
+(``tools/adopt.py``, ``ADOPTED_VIEWS``).
+
+The glyphs are taken from, or drawn after, Feather Icons 4.29 (MIT License,
+copyright Cole Bemis): ``static/src/icons/LICENSE-feather.txt``.
+
 Style guide
 -----------
 ``/pk/styleguide`` (internal users) shows every generic component with the
@@ -176,6 +199,8 @@ neutral slots; ``?theme=dark`` shows the dark theme.
     'license': 'LGPL-3',
     'depends': ['portal'],
     'data': [
+        'views/pk_layout.xml',
+        'views/pk_components.xml',
         'views/pk_styleguide.xml',
     ],
     'assets': {

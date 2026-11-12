@@ -53,7 +53,7 @@
          field saves itself). -->
     <template id="sc_account_card_actions" name="Sports Clinic App: account card actions">
         <div class="o_sc_account_errors" data-sc-account-errors="1" role="alert" aria-live="polite"/>
-        <t t-call="bemade_sports_clinic.sc_edit_card_done"/>
+        <t t-call="bemade_portal_kit.pk_edit_card_done"/>
     </template>
 
     <!-- Review fixes 2026-10-18 b: two edit cards (read view + pencil, like
@@ -260,7 +260,7 @@
 
                 <!-- Change password (core POST /my/security). -->
                 <section class="o_pk_section" id="sc_security_password" data-pk-section="security.password">
-                    <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Change password</t></t>
+                    <t t-call="bemade_portal_kit.pk_section_header"><t t-set="title">Change password</t></t>
                     <div t-if="success and success.get('password')" data-pk-section="security.password.done">
                         <t t-call="bemade_sports_clinic.sc_banner">
                             <t t-set="tone" t-value="'ok'"/>
@@ -314,7 +314,7 @@
                         <t t-esc="env.ref('auth_totp.view_totp_wizard').sudo().get_combined_arch()"/>
                     </div>
                     <section class="o_pk_section" id="sc_security_totp" data-pk-section="security.totp">
-                        <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Two-factor authentication</t></t>
+                        <t t-call="bemade_portal_kit.pk_section_header"><t t-set="title">Two-factor authentication</t></t>
                         <div class="o_pk_card o_pk_form">
                             <t t-if="not env.user.totp_enabled">
                                 <p class="o_pk_meta">Two-factor authentication is not enabled. With it, signing in also asks for a code from an app on your phone.</p>
@@ -353,7 +353,7 @@
 
                 <!-- Sessions (core PortalSecurity interaction). -->
                 <section class="o_pk_section" id="sc_security_sessions" data-pk-section="security.sessions">
-                    <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Sessions</t></t>
+                    <t t-call="bemade_portal_kit.pk_section_header"><t t-set="title">Sessions</t></t>
                     <div class="o_pk_card o_pk_form">
                         <p class="o_pk_meta">Signs you out everywhere you are signed in, this device included.</p>
                         <div class="o_pk_form_actions o_pk_form_actions_start">
@@ -367,7 +367,7 @@
                 <!-- Developer API keys: debug mode + portal.allow_api_keys
                      only (the core rule). -->
                 <section t-if="debug and allow_api_keys" class="o_pk_section" data-pk-section="security.api_keys">
-                    <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Developer API keys</t></t>
+                    <t t-call="bemade_portal_kit.pk_section_header"><t t-set="title">Developer API keys</t></t>
                     <div class="o_pk_card o_pk_legacy">
                         <table class="table">
                             <thead>
@@ -390,7 +390,7 @@
                 <!-- Delete account: portal users only (the core block's
                      groups); the core POST /my/deactivate_account. -->
                 <section t-if="sc_can_deactivate" class="o_pk_section" id="sc_security_delete" data-pk-section="security.delete">
-                    <t t-call="bemade_sports_clinic.sc_section_header"><t t-set="title">Delete account</t></t>
+                    <t t-call="bemade_portal_kit.pk_section_header"><t t-set="title">Delete account</t></t>
                     <div class="o_pk_card o_pk_form">
                         <p class="o_pk_meta">Disables your account: you can no longer sign in. This cannot be undone.</p>
                         <div class="o_pk_form_actions o_pk_form_actions_start">
@@ -409,7 +409,7 @@
                     <div class="o_pk_sheet_head">
                         <h2 class="o_pk_sheet_title" id="sc_deactivate_account_sheet_title">Delete your account?</h2>
                         <button type="button" class="o_pk_icon_btn" data-sc-sheet-close="1" aria-label="Close" title="Close">
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'close'"/></t>
+                            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'close'"/></t>
                         </button>
                     </div>
                     <div class="o_pk_sheet_body">

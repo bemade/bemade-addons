@@ -12,7 +12,7 @@
         <xpath expr="//section[@id='sc_morning_summary']" position="after">
             <section t-if="request.env.user._sc_booking_prefs_apply()" class="o_pk_section" id="sc_booking_emails"
                      data-pk-section="settings.booking_emails">
-                <t t-call="bemade_sports_clinic.sc_section_header">
+                <t t-call="bemade_portal_kit.pk_section_header">
                     <t t-set="title">Booking emails</t>
                 </t>
                 <t t-set="sc_bk_pref" t-value="request.env.user.sc_booking_email_pref"/>

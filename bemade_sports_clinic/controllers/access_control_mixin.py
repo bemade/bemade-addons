@@ -360,7 +360,7 @@ class AccessControlMixin:
         return attached | activity.sudo().attachment_ids
 
     # Task 1595: the record(s) an activity row / detail links to. Kind →
-    # (portal URL pattern, sc_icon key).
+    # (portal URL pattern, pk_icon key).
     _SC_ACTIVITY_RELATED_KINDS = {
         'sports.patient': ('/my/player?player_id=%s', 'players'),
         'sports.team': ('/my/team?team_id=%s', 'teams'),

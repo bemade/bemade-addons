@@ -108,12 +108,12 @@
                     </div>
                     <div data-sc-edit-view="read" data-pk-section="team.announcement">
                         <div t-if="team.announcement" class="o_sc_announcement_content">
-                            <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'megaphone'"/></t>
+                            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'megaphone'"/></t>
                             <div class="o_sc_announcement_text">
                                 <p class="o_pk_pre o_sc_announcement_body" data-sc-clamp="3" t-out="team.announcement"/>
                                 <p class="o_pk_meta o_sc_announcement_meta" data-sc-clamp-meta="1"
                                    t-att-hidden="None if (sc_announcement_until or team.announcement_is_expired) else 'hidden'">
-                                    <t t-if="team.announcement_is_expired" t-call="bemade_sports_clinic.sc_status_chip">
+                                    <t t-if="team.announcement_is_expired" t-call="bemade_portal_kit.pk_status_chip">
                                         <t t-set="tone" t-value="'ghost'"/>
                                         <t t-set="label">Expired</t>
                                     </t>
@@ -163,17 +163,17 @@
                 </section>
 
                 <div class="o_pk_stats" data-pk-section="team.stats">
-                    <t t-call="bemade_sports_clinic.sc_stat_tile">
+                    <t t-call="bemade_portal_kit.pk_stat_tile">
                         <t t-set="tone" t-value="'red'"/>
                         <t t-set="value" t-value="team.stage_no_play_count"/>
                         <t t-set="label">Injured players</t>
                     </t>
-                    <t t-call="bemade_sports_clinic.sc_stat_tile">
+                    <t t-call="bemade_portal_kit.pk_stat_tile">
                         <t t-set="tone" t-value="'yellow'"/>
                         <t t-set="value" t-value="team.stage_practice_ok_count"/>
                         <t t-set="label">Returning</t>
                     </t>
-                    <t t-call="bemade_sports_clinic.sc_stat_tile">
+                    <t t-call="bemade_portal_kit.pk_stat_tile">
                         <t t-set="tone" t-value="'green'"/>
                         <t t-set="value" t-value="team.stage_healthy_count"/>
                         <t t-set="label">Available</t>
@@ -202,14 +202,14 @@
                                 </t>
                             </t>
                         </div>
-                        <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                        <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                             <t t-set="message">No recent player changes.</t>
                         </t>
                     </section>
 
                     <div class="o_pk_section">
                         <section t-if="sc_watch_rows" class="o_pk_section" data-pk-section="team.watchlist">
-                            <t t-call="bemade_sports_clinic.sc_section_header">
+                            <t t-call="bemade_portal_kit.pk_section_header">
                                 <t t-set="title">Other players to watch</t>
                             </t>
                             <div class="o_pk_list">
@@ -226,7 +226,7 @@
                                 <span>Upcoming events <small class="o_pk_section_sub" t-out="upcoming_events_window_label"/></span>
                                 <a href="/my/events" class="o_pk_section_more">Calendar</a>
                             </h2>
-                            <t t-if="sc_upcoming_rows" t-call="bemade_sports_clinic.sc_card">
+                            <t t-if="sc_upcoming_rows" t-call="bemade_portal_kit.pk_card">
                                 <dl class="o_pk_kv">
                                     <t t-foreach="sc_upcoming_rows" t-as="ev">
                                         <dt t-out="ev['when']"/>
@@ -234,20 +234,20 @@
                                     </t>
                                 </dl>
                             </t>
-                            <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                            <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                                 <t t-set="message" t-value="upcoming_events_empty_label"/>
                             </t>
                         </section>
 
                         <!-- Task 1416: read-only temporary staff. -->
                         <section t-if="temp_staff_rows" class="o_pk_section" data-pk-section="team.temp_staff" id="temporary-staff">
-                            <t t-call="bemade_sports_clinic.sc_section_header">
+                            <t t-call="bemade_portal_kit.pk_section_header">
                                 <t t-set="title">Temporary staff</t>
                             </t>
                             <div class="o_pk_list">
                                 <t t-foreach="temp_staff_rows" t-as="staff_row">
                                     <div class="o_pk_entity_row o_pk_entity_row_static">
-                                        <span class="o_pk_row_lead"><t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'user'"/></t></span>
+                                        <span class="o_pk_row_lead"><t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'user'"/></t></span>
                                         <span class="o_pk_row_text">
                                             <span class="o_pk_row_title" t-out="staff_row.partner_id.name"/>
                                             <span class="o_pk_row_subtitle" t-field="staff_row.role"/>
@@ -255,7 +255,7 @@
                                                  (event, players, end date) and squeezed the name to
                                                  0 px in the trailing slot. -->
                                             <span class="o_pk_row_chip_line">
-                                                <t t-call="bemade_sports_clinic.sc_status_chip">
+                                                <t t-call="bemade_portal_kit.pk_status_chip">
                                                     <t t-set="tone" t-value="'secondary' if staff_row.source == 'temp' else 'yellow'"/>
                                                     <t t-set="label" t-value="staff_row.temp_access_label"/>
                                                 </t>
@@ -315,7 +315,7 @@
                 <details t-if="sc_show_request" class="o_pk_card o_pk_disclosure o_pk_list_add_panel" id="sc_request_add"
                          data-pk-section="team.request_add">
                     <summary class="o_pk_disclosure_summary">
-                        <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'plus'"/></t>
+                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'plus'"/></t>
                         <span>Request a player addition</span>
                     </summary>
                     <form t-attf-action="/my/team/#{team.id}/player/request_add" method="post" class="o_pk_form" data-sc-guard="1" data-sc-guard-mode="fetch">
@@ -338,7 +338,7 @@
                                       placeholder="Explain why this player should be added"/>
                         </div>
                         <div class="o_pk_form_actions">
-                            <t t-call="bemade_sports_clinic.sc_list_add_cancel"/>
+                            <t t-call="bemade_portal_kit.pk_list_add_cancel"/>
                             <button type="submit" class="o_pk_btn o_pk_btn_primary">Send the request</button>
                         </div>
                         <t t-call="bemade_sports_clinic.sc_form_guard_slots"><t t-set="guard_id" t-value="'sc_request_add'"/></t>
@@ -353,7 +353,7 @@
                         </t>
                     </t>
                 </div>
-                <t t-else="" t-call="bemade_sports_clinic.sc_empty_state">
+                <t t-else="" t-call="bemade_portal_kit.pk_empty_state">
                     <t t-set="message">No players on this team yet.</t>
                 </t>
             </section>
@@ -414,18 +414,18 @@
             </section>
 
             <section class="o_pk_section" data-sc-install-steps="ios">
-                <t t-call="bemade_sports_clinic.sc_section_header">
+                <t t-call="bemade_portal_kit.pk_section_header">
                     <t t-set="title">iPhone and iPad (Safari or Chrome)</t>
                 </t>
                 <ol class="o_pk_steps">
                     <li>Open this page in Safari or Chrome.</li>
-                    <li>Tap the Share button <t t-call="bemade_sports_clinic.sc_icon"><t t-set="icon" t-value="'share'"/></t> at the bottom of the screen (Safari) or in the address bar (Chrome).</li>
+                    <li>Tap the Share button <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'share'"/></t> at the bottom of the screen (Safari) or in the address bar (Chrome).</li>
                     <li>Choose « Add to Home Screen », then « Add ».</li>
                 </ol>
             </section>
 
             <section class="o_pk_section" data-sc-install-steps="android">
-                <t t-call="bemade_sports_clinic.sc_section_header">
+                <t t-call="bemade_portal_kit.pk_section_header">
                     <t t-set="title">Android (Chrome)</t>
                 </t>
                 <ol class="o_pk_steps">
@@ -436,7 +436,7 @@
             </section>
 
             <section class="o_pk_section" data-sc-install-steps="desktop">
-                <t t-call="bemade_sports_clinic.sc_section_header">
+                <t t-call="bemade_portal_kit.pk_section_header">
                     <t t-set="title">Computer (Chrome or Edge)</t>
                 </t>
                 <ol class="o_pk_steps">
