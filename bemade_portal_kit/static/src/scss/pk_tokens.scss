@@ -1,0 +1,132 @@
+// Bemade Portal Kit (task 5357, kit P3b2) — the style slots (--pk-*) of the
+// app shell, with NEUTRAL defaults: slate greys, one blue accent, the system
+// font stack (no web font), LIGHT by default and dark through
+// data-pk-theme="dark" on the shell root (.o_pk_app). The shell's body
+// (body.o_pk_app_body) carries them too, for the page behind the shell; its
+// dark class is o_pk_app_body_dark.
+//
+// A consumer brands the shell by setting the slots in its own stylesheet,
+// loaded after the kit, on the same roots and with at least the same
+// specificity: .o_pk_app / body.o_pk_app_body (and the dark and light
+// variants). The kit's components read the slots only: no colour, font or
+// letter case is hard-coded in them.
+//
+// The mixins are public: a consumer's own root (e.g. a kiosk page outside the
+// shell) can include the scales and a theme.
+
+// Type and scale: theme-independent.
+@mixin pk-scale-tokens {
+    --pk-font-title: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --pk-font-text: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --pk-text-xs: 11px;
+    --pk-text-sm: 12px;
+    --pk-text-md: 14px;
+    --pk-text-lg: 16px;
+    --pk-title-md: 20px;
+    --pk-title-lg: 24px;
+    --pk-title-xl: 30px;
+
+    // Letter case and tracking of the titles (app bar, rail, section and
+    // sheet titles, edit cards) and of the small group labels. The kit: normal
+    // case. A brand may set uppercase and a letter spacing.
+    --pk-title-transform: none;
+    --pk-title-spacing: normal;
+    --pk-appbar-title-spacing: normal;
+    --pk-label-transform: none;
+    --pk-label-spacing: normal;
+    --pk-stat-label-spacing: normal;
+
+    // Spacing / radius / elevation scale
+    --pk-space-1: 4px;
+    --pk-space-2: 8px;
+    --pk-space-3: 12px;
+    --pk-space-4: 16px;
+    --pk-space-5: 22px;
+    --pk-space-6: 32px;
+    --pk-radius-sm: 10px;
+    --pk-radius-md: 12px;
+    --pk-radius-lg: 14px;
+    --pk-radius-pill: 999px;
+    --pk-tap: 44px;
+    --pk-rail-width: 232px;
+    --pk-appbar-height: 56px;
+    --pk-tabs-height: 64px;
+}
+
+@mixin pk-theme-light {
+    --pk-bg: #f8fafc;
+    --pk-surface: #ffffff;
+    --pk-surface-2: #f1f5f9;
+    --pk-line: #e2e8f0;
+    --pk-fg: #0f172a;
+    --pk-fg-2: #475569;
+    --pk-fg-3: #64748b;
+    --pk-accent: #2563eb;
+    --pk-accent-fg: #ffffff;
+    --pk-secondary: #475569;
+    --pk-secondary-fg: #ffffff;
+    --pk-ok: #15803d;
+    --pk-warn: #b45309;
+    --pk-bad: #dc2626;
+    --pk-overdue: #c2410c;
+    --pk-tone-fg: #ffffff;
+    --pk-bar: #ffffff;
+    --pk-bar-fg: #0f172a;
+    --pk-bar-fg-2: #475569;
+    --pk-bar-active: #2563eb;
+    --pk-bar-active-bg: rgba(37, 99, 235, 0.1);
+    --pk-hover: rgba(15, 23, 42, 0.05);
+    --pk-focus: #2563eb;
+    --pk-shadow: 0 6px 20px rgba(15, 23, 42, 0.1);
+    --pk-brand-mark: #2563eb;
+    --pk-avatar-bg: #475569;
+    --pk-avatar-fg: #ffffff;
+    --pk-install-icon-bg: #0f172a;
+    --pk-close-filter: none;
+    --pk-color-scheme: light;
+}
+
+@mixin pk-theme-dark {
+    --pk-bg: #0f172a;
+    --pk-surface: #1e293b;
+    --pk-surface-2: #334155;
+    --pk-line: #334155;
+    --pk-fg: #e2e8f0;
+    --pk-fg-2: #94a3b8;
+    --pk-fg-3: #8391a7;
+    --pk-accent: #60a5fa;
+    --pk-accent-fg: #0f172a;
+    --pk-secondary: #94a3b8;
+    --pk-secondary-fg: #0f172a;
+    --pk-ok: #22c55e;
+    --pk-warn: #f59e0b;
+    --pk-bad: #f87171;
+    --pk-overdue: #fb923c;
+    --pk-tone-fg: #0f172a;
+    --pk-bar: #020617;
+    --pk-bar-fg: #e2e8f0;
+    --pk-bar-fg-2: #94a3b8;
+    --pk-bar-active: #60a5fa;
+    --pk-bar-active-bg: rgba(96, 165, 250, 0.14);
+    --pk-hover: rgba(255, 255, 255, 0.06);
+    --pk-focus: #60a5fa;
+    --pk-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    --pk-brand-mark: #60a5fa;
+    --pk-avatar-bg: #475569;
+    --pk-avatar-fg: #ffffff;
+    --pk-install-icon-bg: #020617;
+    --pk-close-filter: invert(0.8);
+    --pk-color-scheme: dark;
+}
+
+.o_pk_app,
+body.o_pk_app_body {
+    @include pk-scale-tokens;
+    @include pk-theme-light;
+}
+
+.o_pk_app[data-pk-theme="dark"],
+body.o_pk_app_body.o_pk_app_body_dark,
+body.o_pk_app_body[data-pk-theme="dark"] {
+    @include pk-theme-dark;
+}

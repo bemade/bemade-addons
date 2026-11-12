@@ -99,6 +99,14 @@ class ResConfigSettings(models.TransientModel):
              "the new Fit Crew app shell. Leave off in production until the "
              "launch; a staging refresh from production turns it off again.")
 
+    # Task 1752: generic instance banner (« DÉMO » on the demo instance).
+    sc_instance_banner = fields.Char(
+        string="Instance banner",
+        config_parameter="bemade_sports_clinic.instance_banner",
+        help="Text of a red strip shown at the top of every page (backend, "
+             "portal, app shell, login) to mark a non-production instance, "
+             "e.g. « DÉMO ». Leave empty in production.")
+
     # Task 1244: staleness threshold for the quick-note escalation cron.
     quick_note_stale_days = fields.Integer(
         string="Quick Note Staleness (days)",

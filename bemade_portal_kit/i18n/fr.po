@@ -16,10 +16,330 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "2 days ago"
+msgstr "il y a 2 jours"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"<select id=\"pk_sg_kind\" class=\"o_pk_input o_pk_select\">\n"
+"                                        <option>First option</option>\n"
+"                                        <option>Second option</option>\n"
+"                                    </select>"
+msgstr ""
+"<select id=\"pk_sg_kind\" class=\"o_pk_input o_pk_select\">\n"
+"                                        <option>Premier choix</option>\n"
+"                                        <option>Deuxième choix</option>\n"
+"                                    </select>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<small class=\"o_pk_hint\">A hint under the field.</small>"
+msgstr "<small class=\"o_pk_hint\">Une indication sous le champ.</small>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"<span class=\"o_pk_appbar_title_text\">Style guide</span>\n"
+"                            <small class=\"o_pk_appbar_context\">Bemade Portal Kit</small>"
+msgstr ""
+"<span class=\"o_pk_appbar_title_text\">Guide de style</span>\n"
+"                            <small class=\"o_pk_appbar_context\">Bemade Portal Kit</small>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span class=\"o_pk_chip o_pk_chip_ghost\">Draft</span>"
+msgstr "<span class=\"o_pk_chip o_pk_chip_ghost\">Brouillon</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span class=\"o_pk_chip o_pk_chip_green\">Open</span>"
+msgstr "<span class=\"o_pk_chip o_pk_chip_green\">Ouvert</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"<span class=\"o_pk_chip o_pk_chip_red\">Red</span>\n"
+"                                <span class=\"o_pk_chip o_pk_chip_orange\">Orange</span>\n"
+"                                <span class=\"o_pk_chip o_pk_chip_yellow\">Yellow</span>\n"
+"                                <span class=\"o_pk_chip o_pk_chip_green\">Green</span>\n"
+"                                <span class=\"o_pk_chip o_pk_chip_secondary\">Secondary</span>\n"
+"                                <span class=\"o_pk_chip o_pk_chip_ghost\">Ghost</span>"
+msgstr ""
+"<span class=\"o_pk_chip o_pk_chip_red\">Rouge</span>\n"
+"                                <span class=\"o_pk_chip o_pk_chip_orange\">Orange</span>\n"
+"                                <span class=\"o_pk_chip o_pk_chip_yellow\">Jaune</span>\n"
+"                                <span class=\"o_pk_chip o_pk_chip_green\">Vert</span>\n"
+"                                <span class=\"o_pk_chip o_pk_chip_secondary\">Secondaire</span>\n"
+"                                <span class=\"o_pk_chip o_pk_chip_ghost\">Discret</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"<span class=\"o_pk_dot o_pk_tone_green\" aria-hidden=\"true\"/>\n"
+"                                    <span class=\"o_pk_row_text\">\n"
+"                                        <span class=\"o_pk_row_title\">First sample row</span>\n"
+"                                        <span class=\"o_pk_row_subtitle\">A subtitle under the title</span>\n"
+"                                    </span>"
+msgstr ""
+"<span class=\"o_pk_dot o_pk_tone_green\" aria-hidden=\"true\"/>\n"
+"                                    <span class=\"o_pk_row_text\">\n"
+"                                        <span class=\"o_pk_row_title\">Première ligne d’exemple</span>\n"
+"                                        <span class=\"o_pk_row_subtitle\">Un sous-titre sous le titre</span>\n"
+"                                    </span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"<span class=\"o_pk_dot o_pk_tone_red\" aria-hidden=\"true\"/>\n"
+"                                    <span class=\"o_pk_row_text\">\n"
+"                                        <span class=\"o_pk_row_title\">Third sample row</span>\n"
+"                                    </span>"
+msgstr ""
+"<span class=\"o_pk_dot o_pk_tone_red\" aria-hidden=\"true\"/>\n"
+"                                    <span class=\"o_pk_row_text\">\n"
+"                                        <span class=\"o_pk_row_title\">Troisième ligne d’exemple</span>\n"
+"                                    </span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"<span class=\"o_pk_dot o_pk_tone_yellow\" aria-hidden=\"true\"/>\n"
+"                                    <span class=\"o_pk_row_text\">\n"
+"                                        <span class=\"o_pk_row_title\">Second sample row</span>\n"
+"                                        <span class=\"o_pk_row_subtitle\">Waiting for an answer</span>\n"
+"                                    </span>"
+msgstr ""
+"<span class=\"o_pk_dot o_pk_tone_yellow\" aria-hidden=\"true\"/>\n"
+"                                    <span class=\"o_pk_row_text\">\n"
+"                                        <span class=\"o_pk_row_title\">Deuxième ligne d’exemple</span>\n"
+"                                        <span class=\"o_pk_row_subtitle\">En attente d’une réponse</span>\n"
+"                                    </span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span class=\"o_pk_field_label\">Read-only value</span>"
+msgstr "<span class=\"o_pk_field_label\">Valeur en lecture seule</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span class=\"o_pk_row_title\">Sample card</span>"
+msgstr "<span class=\"o_pk_row_title\">Carte d’exemple</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"<span class=\"o_pk_stat_value\">12</span><span "
+"class=\"o_pk_stat_label\">Ready</span>"
+msgstr "<span class=\"o_pk_stat_value\">12</span><span class=\"o_pk_stat_label\">Prêts</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"<span class=\"o_pk_stat_value\">1</span><span "
+"class=\"o_pk_stat_label\">Blocked</span>"
+msgstr "<span class=\"o_pk_stat_value\">1</span><span class=\"o_pk_stat_label\">Bloqués</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"<span class=\"o_pk_stat_value\">3</span><span class=\"o_pk_stat_label\">To "
+"check</span>"
+msgstr "<span class=\"o_pk_stat_value\">3</span><span class=\"o_pk_stat_label\">À vérifier</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"<span class=\"o_pk_status_pill o_pk_chip_green\"><span class=\"o_pk_pill_text\">Available</span></span>\n"
+"                                <span class=\"o_pk_status_pill o_pk_chip_yellow\"><span class=\"o_pk_pill_text\">Limited</span></span>\n"
+"                                <span class=\"o_pk_status_pill o_pk_chip_red\"><span class=\"o_pk_pill_text\">Unavailable</span></span>"
+msgstr ""
+"<span class=\"o_pk_status_pill o_pk_chip_green\"><span class=\"o_pk_pill_text\">Disponible</span></span>\n"
+"                                <span class=\"o_pk_status_pill o_pk_chip_yellow\"><span class=\"o_pk_pill_text\">Limité</span></span>\n"
+"                                <span class=\"o_pk_status_pill o_pk_chip_red\"><span class=\"o_pk_pill_text\">Indisponible</span></span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"<span class=\"o_pk_switch_text\">\n"
+"                                        <span class=\"o_pk_switch_label\">Notifications</span>\n"
+"                                        <small class=\"o_pk_switch_hint\">A line under the label.</small>\n"
+"                                    </span>"
+msgstr ""
+"<span class=\"o_pk_switch_text\">\n"
+"                                        <span class=\"o_pk_switch_label\">Notifications</span>\n"
+"                                        <small class=\"o_pk_switch_hint\">Une ligne sous le libellé.</small>\n"
+"                                    </span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"<span class=\"o_pk_switch_text\">\n"
+"                                        <span class=\"o_pk_switch_label\">Weekly summary</span>\n"
+"                                    </span>"
+msgstr ""
+"<span class=\"o_pk_switch_text\">\n"
+"                                        <span class=\"o_pk_switch_label\">Résumé hebdomadaire</span>\n"
+"                                    </span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"<span class=\"o_pk_tab_badge o_pk_tab_badge_red\">2</span><span "
+"class=\"o_pk_tab_label\">Tasks</span>"
+msgstr "<span class=\"o_pk_tab_badge o_pk_tab_badge_red\">2</span><span class=\"o_pk_tab_label\">Tâches</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span class=\"o_pk_tab_label\">Files</span>"
+msgstr "<span class=\"o_pk_tab_label\">Fichiers</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span class=\"o_pk_tab_label\">Overview</span>"
+msgstr "<span class=\"o_pk_tab_label\">Aperçu</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>About this page</span>"
+msgstr "<span>À propos de cette page</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>Banners</span>"
+msgstr "<span>Bandeaux</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>Buttons</span>"
+msgstr "<span>Boutons</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>Cards</span>"
+msgstr "<span>Cartes</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>Chips and status pills</span>"
+msgstr "<span>Pastilles et statuts</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>Details</span>"
+msgstr "<span>Détails</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>Empty state</span>"
+msgstr "<span>État vide</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>Fields</span>"
+msgstr "<span>Champs</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>Rows</span>"
+msgstr "<span>Lignes</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>Segmented control and page tabs</span>"
+msgstr "<span>Choix segmenté et onglets de page</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>Sheet</span>"
+msgstr "<span>Feuille</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>Stats</span>"
+msgstr "<span>Indicateurs</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<span>Switches</span>"
+msgstr "<span>Interrupteurs</span>"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"<strong class=\"o_pk_banner_title\">Check this</strong> Something needs a "
+"look."
+msgstr "<strong class=\"o_pk_banner_title\">À vérifier</strong> Un élément demande votre attention."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"<strong class=\"o_pk_banner_title\">Information</strong> A neutral message."
+msgstr "<strong class=\"o_pk_banner_title\">Information</strong> Un message neutre."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "<strong class=\"o_pk_banner_title\">Saved</strong> The change is recorded."
+msgstr "<strong class=\"o_pk_banner_title\">Enregistré</strong> La modification est enregistrée."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "A bottom sheet on a phone, a centred dialog on a laptop."
+msgstr "Une feuille en bas de l’écran sur un téléphone, une fenêtre centrée sur un ordinateur."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"A card holds one record or one group of fields. Its head carries the title, "
+"a status chip and the action icons."
+msgstr "Une carte présente un enregistrement ou un groupe de champs. Son en-tête porte le titre, une pastille de statut et les icônes d’action."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Add"
+msgstr "Ajouter"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Cancel"
+msgstr "Annuler"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Close"
+msgstr "Fermer"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Confirm"
+msgstr "Confirmer"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Date"
+msgstr "Date"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Day"
+msgstr "Jour"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Delete"
+msgstr "Supprimer"
+
+#. module: bemade_portal_kit
 #: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit__display_name
 #: model:ir.model.fields,field_description:bemade_portal_kit.field_res_users__display_name
 msgid "Display Name"
 msgstr "Nom affiché"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Edit"
+msgstr "Modifier"
 
 #. module: bemade_portal_kit
 #: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit__id
@@ -28,11 +348,129 @@ msgid "ID"
 msgstr "Identifiant"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Kind"
+msgstr "Type"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Link button"
+msgstr "Bouton lien"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Monday · Room B · 45 min"
+msgstr "Lundi · Salle B · 45 min"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Month"
+msgstr "Mois"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Name"
+msgstr "Nom"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Note"
+msgstr "Note"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Nothing here yet."
+msgstr "Rien ici pour l’instant."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Owner"
+msgstr "Responsable"
+
+#. module: bemade_portal_kit
 #: model:ir.model,name:bemade_portal_kit.model_portal_kit
 msgid "Portal Kit Registries"
 msgstr "Registres de la trousse portail"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Portal kit style guide"
+msgstr "Guide de style de la trousse portail"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Reference"
+msgstr "Référence"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "SAMPLE-0001"
+msgstr "EXEMPLE-0001"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Sample owner"
+msgstr "Responsable d’exemple"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Sample sheet"
+msgstr "Feuille d’exemple"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Save"
+msgstr "Enregistrer"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Secondary"
+msgstr "Secondaire"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "See all"
+msgstr "Tout voir"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Shown, not editable"
+msgstr "Affichée, non modifiable"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Small"
+msgstr "Petit"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid ""
+"The generic components of the portal app shell, drawn with the kit's neutral"
+" style slots (--pk-*). An addon brands them by setting the slots on "
+".o_pk_app."
+msgstr "Les composants génériques de l’application portail, dessinés avec les jetons de style neutres de la trousse (--pk-*). Un module leur donne sa marque en définissant ces jetons sur .o_pk_app."
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Toggle theme"
+msgstr "Changer de thème"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Type a name"
+msgstr "Saisissez un nom"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Updated"
+msgstr "Mis à jour"
+
+#. module: bemade_portal_kit
 #: model:ir.model,name:bemade_portal_kit.model_res_users
 msgid "User"
 msgstr "Utilisateur"
+
+#. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
+msgid "Week"
+msgstr "Semaine"
