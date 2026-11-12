@@ -18,6 +18,14 @@ Why a migration, and why from BOTH modules:
   upgrade would then delete the old one (``_process_end``: a record of an
   updated module that its data no longer declares), with its translations
   and inheriting views. Hence a PRE-migration;
+* a database that has the consumer but not the kit (the consumer at a
+  version older than the kit) installs the kit as a NEW dependency during
+  the consumer's upgrade. A module being installed runs no migration
+  script, so the kit's pre-migration does not run; its ``pre_init_hook``
+  (``hooks.py``, task 5372) adopts the views instead, before the kit's data
+  load. Without it the kit created new views and the consumer's
+  pre-migration found the kit's external ids, took the views for adopted,
+  and ``_process_end`` deleted the old ones;
 * ``-u <consumer>`` alone does not upgrade the kit (an upgrade adds the
   dependents of a module, not its dependencies), so the consumer's own
   pre-migration must adopt the views too, or ``_process_end`` deletes them.
@@ -26,9 +34,18 @@ Why a migration, and why from BOTH modules:
   that the kit's new views (``pk_icon_extra``, which the consumer inherits)
   exist before the consumer's data refers to them.
 
+So there are three entry points, each needed for one upgrade path: the
+kit's install hook (kit newly installed), the kit's pre-migration
+(19.0.1.5.0, kit upgraded) and the consumer's pre-migration (consumer
+upgraded alone). A later adoption (``ADOPTED_VIEWS`` grows) must be reachable
+from all three.
+
 ``adopt_views`` is idempotent: a view already adopted (the kit's external id
-exists) is left alone, so whichever module runs first does the work and the
-other finds nothing to do.
+exists) is left alone, so whichever entry point runs first does the work and
+the others find nothing to do. When the kit's external id AND the old one
+both exist, nothing is changed either, but a WARNING names both: the kit
+created its own view instead of adopting the old one, and the consumer's
+upgrade is about to delete the old view (no automatic repair).
 """
 import logging
 
@@ -72,11 +89,25 @@ def adopt_views(cr, mapping=ADOPTED_VIEWS):
         old_xmlid = '%s.%s' % (old_module, old_name)
         new_xmlid = '%s.%s' % (KIT, new_name)
         cr.execute(
-            "SELECT 1 FROM ir_model_data WHERE module = %s AND name = %s",
+            "SELECT res_id FROM ir_model_data WHERE module = %s AND name = %s",
             (KIT, new_name),
         )
-        if cr.fetchone():
-            continue  # already adopted (or created by the kit)
+        kit_row = cr.fetchone()
+        if kit_row:
+            # Already adopted (or created by the kit). If the old external id
+            # is still there too, the kit did not adopt it: say so.
+            cr.execute(
+                "SELECT res_id FROM ir_model_data WHERE module = %s AND name = %s AND model = 'ir.ui.view'",
+                (old_module, old_name),
+            )
+            old_row = cr.fetchone()
+            if old_row:
+                _logger.warning(
+                    "portal kit: view %s (id %s) not adopted: %s exists already (id %s);"
+                    " the old view will be deleted with its translations and inheriting views",
+                    old_xmlid, old_row[0], new_xmlid, kit_row[0],
+                )
+            continue
         cr.execute(
             """UPDATE ir_model_data SET module = %s, name = %s
                 WHERE module = %s AND name = %s AND model = 'ir.ui.view'
