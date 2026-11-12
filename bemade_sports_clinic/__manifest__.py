@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.137.1",
+    'version': "19.0.1.138.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -107,6 +107,13 @@ bundle), timesheets, the notepad and the daily digests; the portal bookings
 pages join through the ``bemade_sports_clinic_bookings`` glue addon. The
 sign-in kiosk uses the brand tokens and self-hosted Teko / DM Sans fonts
 (SIL OFL 1.1) from its own CSS-only bundle — no off-domain request.
+
+Since the kit's P3b2 (task 5357), the shell's generic styles and the
+``--pk-*`` slots live in ``bemade_portal_kit`` with neutral defaults;
+``sc_tokens.scss`` is Fit Crew's brand file (palette, Teko / DM Sans,
+uppercase titles, dark by default) and the clinic stylesheets keep the
+clinic's own rules (``o_sc_*`` classes, ``data-sc-*`` hooks, the 1024 px
+layouts).
 
 The app dashboard (/my/home) is made of widget sections each user may show,
 hide, reorder, duplicate and limit to some organisations / teams from its
@@ -322,7 +329,8 @@ nothing; PDF reports never carry it.
             # Progressive enhancement — the plain select posts without it.
             "bemade_sports_clinic/static/src/scss/portal_widgets.scss",
             "bemade_sports_clinic/static/src/js/portal_patient_combo.js",
-            # Task 1538: portal app shell (tokens + components are scoped
+            # Task 1538: portal app shell (since task 5357 the brand file +
+            # the clinic's own rules; the generic ones are the kit's), scoped
             # under .o_pk_app — inert outside the shell; the JS only acts on
             # data-sc-pref forms inside it). Not duplicated in the lazy list.
             "bemade_sports_clinic/static/src/scss/sc_tokens.scss",
@@ -411,6 +419,10 @@ nothing; PDF reports never carry it.
             "web/static/lib/bootstrap/scss/_maps.scss",
             ("include", "web._assets_bootstrap_frontend"),
             "web/static/src/libs/fontawesome/css/font-awesome.css",
+            # Task 5357 (kit P3b2): the kit's variables and slot mixins
+            # (pk-scale-tokens) before the brand file.
+            "bemade_portal_kit/static/src/scss/pk_variables.scss",
+            "bemade_portal_kit/static/src/scss/pk_tokens.scss",
             "bemade_sports_clinic/static/src/scss/sc_tokens.scss",
             "bemade_sports_clinic/static/src/scss/sc_kiosk.scss",
         ],

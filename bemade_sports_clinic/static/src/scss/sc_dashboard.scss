@@ -1,5 +1,9 @@
 // Task 1624 — the app dashboard (configurable widget sections) and its
 // « Configurer » page. Everything scoped under .o_pk_app.
+//
+// Task 5357 (kit P3b2): the generic rules (only o_pk_* classes, data-pk-*
+// attributes, generic elements) moved to bemade_portal_kit (pk_components /
+// pk_pages.scss, loaded first); this file keeps the clinic's own.
 
 $sc-dash-laptop: 1024px;
 
@@ -171,11 +175,6 @@ $sc-dash-laptop: 1024px;
 
     .o_sc_event_row .o_sc_dw_ts_add {
         align-self: flex-start;
-    }
-
-    .o_pk_chip_orange {
-        background: var(--pk-overdue);
-        color: var(--pk-tone-fg);
     }
 
     // Review round 1: « À faire » lines fold out into their cards.

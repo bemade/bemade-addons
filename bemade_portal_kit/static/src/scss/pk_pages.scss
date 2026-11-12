@@ -1,0 +1,1605 @@
+// Bemade Portal Kit (task 5357, kit P3b2) — the generic parts of the app
+// shell's pages: sheets, autosave fields, edit cards, lists, pickers, the
+// .o_pk_legacy wrapper (Bootstrap partials restyled with the tokens), search.
+// Moved from the first consumer's page stylesheets (bemade_sports_clinic:
+// sc_pages, sc_p2, sc_p3, sc_dashboard, sc_account), in their order.
+// Scoped under .o_pk_app.
+
+// ------------------------------------------------------------------------
+// From sc_pages.scss (P1b: team page, sheets, autosave field, install page, toast, .o_pk_legacy)
+// ------------------------------------------------------------------------
+
+.o_pk_app {
+    [hidden] {
+        display: none !important;
+    }
+
+    .o_pk_grid2 {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-4);
+        min-width: 0;
+    }
+
+    @media (min-width: $pk-laptop) {
+        .o_pk_grid2 {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            align-items: start;
+        }
+    }
+
+    .o_pk_tab_panel {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-4);
+        min-width: 0;
+    }
+
+    .o_pk_page_tabs {
+        position: sticky;
+        top: calc(var(--pk-appbar-height) + env(safe-area-inset-top, 0px));
+        z-index: 10;
+
+        // Owner review 2026-10-11: the active page tab takes the secondary
+        // colour, not the accent of the other toggles.
+        > a[aria-pressed="true"] {
+            background: var(--pk-secondary);
+            color: var(--pk-secondary-fg);
+        }
+    }
+
+    .o_pk_section_sub {
+        font-family: var(--pk-font-text);
+        font-size: var(--pk-text-xs);
+        font-weight: 500;
+        letter-spacing: 0;
+        text-transform: none;
+        color: var(--pk-fg-3);
+        margin-left: 4px;
+    }
+
+    .o_pk_link_btn {
+        appearance: none;
+        border: 0;
+        background: transparent;
+        padding: 0 2px;
+        font: inherit;
+        font-weight: 600;
+        color: var(--pk-accent);
+        cursor: pointer;
+        min-height: 32px;
+    }
+
+    .o_pk_section_more.o_pk_link_btn {
+        font-family: var(--pk-font-text);
+        font-size: var(--pk-text-sm);
+        letter-spacing: 0;
+        text-transform: none;
+        padding: 0;
+    }
+
+    .o_pk_btn_sm {
+        min-height: 36px;
+        padding: 0 12px;
+        font-size: 13px;
+
+        .o_pk_icon {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    .o_pk_pre {
+        margin: 0;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .o_pk_meta {
+        margin: 0;
+        font-size: var(--pk-text-sm);
+        color: var(--pk-fg-2);
+    }
+
+    // Task 1736 (owner 2026-11-01): THE card top bar's icon group
+    // (sc_card_icons) — ★ · clock + count · archive · trash · pencil → ✓,
+    // the pencil always rightmost. Neutral icons (the button's colour, also
+    // inside an entity row whose trailing icons are greyed), except: the
+    // red trash, the green ✓, the filled ★ (following), the red clock (an
+    // overdue activity).
+    .o_pk_card_icons {
+        display: inline-flex;
+        flex: none;
+        align-items: center;
+        gap: 2px;
+        margin-left: auto;
+
+        .o_pk_inline_form {
+            display: inline-flex;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+    }
+
+    .o_pk_icon_btn.o_pk_icon_btn_danger,
+    .o_pk_icon_btn.o_pk_icon_btn_danger .o_pk_icon {
+        color: var(--pk-bad);
+    }
+
+    // The app bar's badge look (the first consumer's app bar badge), neutral unless
+    // an activity is overdue.
+    .o_pk_card_badge {
+        position: absolute;
+        top: 3px;
+        right: 1px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: var(--pk-radius-pill);
+        background: var(--pk-fg-2);
+        color: var(--pk-surface);
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 18px;
+        text-align: center;
+        pointer-events: none;
+    }
+
+    .o_pk_card_actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--pk-space-2);
+    }
+
+    .o_pk_inline_form {
+        margin: 0;
+    }
+
+    // Disclosure (compose)
+    .o_pk_disclosure {
+        > .o_pk_disclosure_summary {
+            display: flex;
+            align-items: center;
+            gap: var(--pk-space-2);
+            min-height: var(--pk-tap);
+            font-weight: 600;
+            color: var(--pk-accent);
+            cursor: pointer;
+            list-style: none;
+
+            &::-webkit-details-marker {
+                display: none;
+            }
+
+            .o_pk_icon {
+                width: 18px;
+                height: 18px;
+            }
+        }
+    }
+
+    .o_pk_form {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-3);
+        margin: 0;
+    }
+
+    .o_pk_field {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 0;
+
+        .o_pk_field_label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--pk-space-2);
+            margin: 0;
+        }
+
+        .o_pk_input {
+            width: 100%;
+        }
+    }
+
+    .o_pk_textarea {
+        min-height: 96px;
+        resize: vertical;
+    }
+
+    .o_pk_form_actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--pk-space-2);
+        flex-wrap: wrap;
+    }
+
+    .o_pk_save_state {
+        font-size: var(--pk-text-xs);
+        font-weight: 500;
+        color: var(--pk-fg-3);
+    }
+
+    .o_pk_save_state_saving { color: var(--pk-fg-2); }
+    .o_pk_save_state_saved,
+    .o_pk_save_state_draft { color: var(--pk-ok); }
+    .o_pk_save_state_queued { color: var(--pk-warn); }
+    .o_pk_save_state_error,
+    .o_pk_save_state_conflict { color: var(--pk-bad); }
+
+    .o_pk_banner {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .o_pk_banner_actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--pk-space-2);
+        margin-top: 4px;
+    }
+
+    // Expandable row (recent changes)
+    .o_pk_expand {
+        min-width: 0;
+
+        > summary {
+            list-style: none;
+            cursor: pointer;
+
+            &::-webkit-details-marker {
+                display: none;
+            }
+        }
+
+        &[open] > summary {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+
+            .o_pk_row_trailing > .o_pk_icon {
+                transform: rotate(180deg);
+            }
+        }
+    }
+
+    .o_pk_expand_body {
+        background: var(--pk-surface);
+        border: 1px solid var(--pk-line);
+        border-top: 0;
+        border-radius: 0 0 var(--pk-radius-md) var(--pk-radius-md);
+        padding: var(--pk-space-2) var(--pk-space-3) var(--pk-space-3);
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-2);
+    }
+
+    .o_pk_entity_row_static {
+        cursor: default;
+
+        &:hover {
+            border-color: var(--pk-line);
+        }
+    }
+
+    // Sheets: bottom sheet on phone, centred dialog on laptop.
+    .o_pk_sheet {
+        border: 1px solid var(--pk-line);
+        background: var(--pk-surface);
+        color: var(--pk-fg);
+        padding: 0;
+        width: 100%;
+        max-width: 100%;
+        max-height: 85vh;
+        margin: auto 0 0;
+        border-radius: var(--pk-radius-lg) var(--pk-radius-lg) 0 0;
+        box-shadow: var(--pk-shadow);
+
+        &::backdrop {
+            background: rgba(0, 0, 0, 0.55);
+        }
+
+        // Task 1644: with ``website`` installed, its ``section > *
+        // { position: relative }`` beat the browser's own « fixed » of an
+        // open modal sheet placed right under a <section> (the injury card's
+        // « Add documents »): the sheet scrolled away with the page.
+        &:modal {
+            position: fixed;
+        }
+    }
+
+    @media (min-width: $pk-laptop) {
+        .o_pk_sheet {
+            margin: auto;
+            max-width: 560px;
+            border-radius: var(--pk-radius-lg);
+        }
+    }
+
+    .o_pk_sheet_head {
+        position: sticky;
+        top: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--pk-space-2);
+        padding: var(--pk-space-2) var(--pk-space-2) var(--pk-space-2) var(--pk-space-4);
+        background: var(--pk-surface);
+        border-bottom: 1px solid var(--pk-line);
+    }
+
+    .o_pk_sheet_title {
+        margin: 0;
+        font-family: var(--pk-font-title);
+        font-weight: 500;
+        font-size: var(--pk-title-md);
+        letter-spacing: var(--pk-title-spacing);
+        text-transform: var(--pk-title-transform);
+    }
+
+    .o_pk_sheet_body {
+        padding: var(--pk-space-3) var(--pk-space-4) calc(var(--pk-space-4) + env(safe-area-inset-bottom, 0px));
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-3);
+    }
+
+    .o_pk_history {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-3);
+
+        li {
+            border-left: 3px solid var(--pk-line);
+            padding: 2px 10px;
+        }
+    }
+
+    // Task 1581: the shared history entry / sheet body (sc_history_entry).
+    .o_pk_history_fragment {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-3);
+    }
+
+    .o_pk_history_meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .o_pk_history_body {
+        margin: 4px 0 0;
+    }
+
+    .o_pk_history_cleared {
+        margin: 4px 0 0;
+        font-style: italic;
+    }
+
+    // Toast
+    .o_pk_toast {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: calc(var(--pk-tabs-height) + 16px + env(safe-area-inset-bottom, 0px) + var(--pk-ribbon-h, 0px));
+        z-index: 40;
+        // Review round 1 (2026-10-26, #1678): as wide as its content up to
+        // the screen minus the margins. Shrink-to-fit alone measured it
+        // against the half screen right of `left: 50%`, and the text column
+        // (min-width: 0) collapsed to one word per line.
+        width: max-content;
+        box-sizing: border-box;
+        max-width: calc(100% - 32px);
+        background: var(--pk-surface-2);
+        color: var(--pk-fg);
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-md);
+        padding: 10px 14px;
+        font-size: 13px;
+        box-shadow: var(--pk-shadow);
+    }
+
+    @media (min-width: $pk-laptop) {
+        .o_pk_toast {
+            bottom: 24px;
+            left: calc(50% + var(--pk-rail-width) / 2);
+            max-width: calc(100% - var(--pk-rail-width) - 48px);
+        }
+    }
+
+    // Install page
+    .o_pk_install_hero {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--pk-space-3);
+    }
+
+    .o_pk_install_icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 13px;
+        background: var(--pk-install-icon-bg);
+        flex: none;
+    }
+
+    .o_pk_steps {
+        margin: 0;
+        padding-left: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        .o_pk_icon {
+            width: 16px;
+            height: 16px;
+            vertical-align: -3px;
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // .o_pk_legacy — today's Bootstrap partials rendered inside the shell
+    // (activities tab, recent-changes fragment, digest-history list):
+    // minimal token restyling only; their rework is P2.
+    // ------------------------------------------------------------------
+    .o_pk_legacy {
+        --bs-body-color: var(--pk-fg);
+        --bs-body-bg: var(--pk-surface);
+        --bs-secondary-color: var(--pk-fg-2);
+        --bs-border-color: var(--pk-line);
+        --bs-emphasis-color: var(--pk-fg);
+        --bs-link-color: var(--pk-accent);
+        --bs-link-color-rgb: 164, 199, 84;
+        --bs-link-hover-color: var(--pk-accent);
+        color: var(--pk-fg);
+        min-width: 0;
+        overflow-x: auto;
+
+        a {
+            color: var(--pk-accent);
+        }
+
+        .text-muted {
+            color: var(--pk-fg-2) !important;
+        }
+
+        // Task 1728: inside a .card-body, Odoo's frontend gives .text-muted
+        // the LIGHT theme's grey (bootstrap_review_frontend's card-body rule,
+        // `.card-body:not(.card[data-vxml] .card-body) .text-muted`, !important
+        // and more specific than the rule above): the digest's training
+        // recommendation, « Retour prévu » and injury lines were dark grey on
+        // the dark card (~1.2:1). Same selector, scoped to the shell, so the
+        // muted token wins in both themes.
+        .card-body:not(.card[data-vxml] .card-body) .text-muted,
+        .card-body .text-muted {
+            color: var(--pk-fg-2) !important;
+        }
+
+        // Task 1614: the digest's « Show details » link and its team
+        // announcement (alert-info / alert-secondary) on the shell surface.
+        .text-primary {
+            color: var(--pk-accent) !important;
+        }
+
+        .alert {
+            --bs-alert-bg: var(--pk-surface-2);
+            --bs-alert-color: var(--pk-fg);
+            --bs-alert-border-color: var(--pk-line);
+        }
+
+        .card,
+        .list-group-item,
+        .modal-content,
+        .dropdown-menu {
+            background: var(--pk-surface);
+            color: var(--pk-fg);
+            border-color: var(--pk-line);
+        }
+
+        // Task 1614: Odoo's frontend paints every .card-body with a 90 %
+        // white (bootstrap_review_frontend) — light shell text on near-white.
+        // !important: that rule's :not(.card[data-vxml] .card-body) outweighs
+        // any selector of ours.
+        .card-body {
+            background-color: transparent !important;
+            color: var(--pk-fg) !important;
+        }
+
+        .card-header,
+        .card-footer {
+            background: var(--pk-surface-2);
+            border-color: var(--pk-line);
+        }
+
+        .table {
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--pk-fg);
+            --bs-table-striped-bg: var(--pk-hover);
+            --bs-table-hover-bg: var(--pk-hover);
+            --bs-table-border-color: var(--pk-line);
+            color: var(--pk-fg);
+        }
+
+        .form-control,
+        .form-select {
+            background-color: var(--pk-surface);
+            color: var(--pk-fg);
+            border-color: var(--pk-line);
+            min-height: var(--pk-tap);
+        }
+
+        .btn {
+            min-height: 36px;
+        }
+
+        .list-group-item-action:hover,
+        .list-group-item-action:focus {
+            background: var(--pk-hover);
+            color: var(--pk-fg);
+        }
+
+        .btn-close {
+            filter: var(--pk-close-filter);
+        }
+    }
+}
+// ------------------------------------------------------------------------
+// From sc_p2.scss (P2: fields, edit cards, lists, chips, pickers, filters)
+// ------------------------------------------------------------------------
+
+.o_pk_app {
+    // ---------------------------------------------------------- fields
+    .o_pk_hint {
+        font-size: var(--pk-text-xs);
+        color: var(--pk-fg-3);
+    }
+
+    .o_pk_muted {
+        color: var(--pk-fg-3);
+    }
+
+    .o_pk_field_static .o_pk_field_value {
+        margin: 0;
+        min-height: 20px;
+    }
+
+    .o_pk_field_message {
+        font-size: var(--pk-text-sm);
+        color: var(--pk-warn);
+    }
+
+    .o_pk_field_error {
+        color: var(--pk-bad);
+    }
+
+    .o_pk_clear_btn {
+        margin-left: auto;
+        min-height: 24px;
+        font-size: var(--pk-text-xs);
+    }
+
+    .o_pk_select {
+        appearance: auto;
+    }
+
+    .o_pk_date_na {
+        display: flex;
+        align-items: center;
+        gap: var(--pk-space-3);
+
+        .o_pk_input {
+            flex: 1;
+        }
+    }
+
+    .o_pk_check {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: var(--pk-tap);
+        font-weight: 600;
+        color: var(--pk-fg-2);
+        cursor: pointer;
+
+        input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--pk-accent);
+        }
+    }
+
+    .o_pk_seg_input > button:disabled {
+        cursor: default;
+        opacity: 0.6;
+    }
+
+    .o_pk_fields {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-3);
+    }
+
+    // ------------------------------------------- inline-edit cards (2026-10-10)
+    // One pencil per card; read view by default (sc_app_ui.js toggles).
+    .o_pk_edit_card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-3);
+    }
+
+    .o_pk_edit_card_head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--pk-space-2);
+        min-height: var(--pk-tap);
+    }
+
+    .o_pk_edit_card_title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--pk-space-2);
+        margin: 0;
+        font-family: var(--pk-font-title);
+        font-weight: 500;
+        font-size: var(--pk-title-md);
+        letter-spacing: var(--pk-title-spacing);
+        text-transform: var(--pk-title-transform);
+        color: var(--pk-fg);
+        min-width: 0;
+
+        .o_pk_chip {
+            font-family: var(--pk-font-text);
+            text-transform: none;
+            letter-spacing: 0;
+        }
+    }
+
+    // tags field: chips + a search box with a few suggestions.
+    .o_pk_tags_field {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-2);
+    }
+
+    .o_pk_tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--pk-space-2);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+
+        &:not(:has(button)) {
+            display: none;
+        }
+    }
+
+    .o_pk_tag {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--pk-space-1);
+        max-width: 100%;
+        padding: 2px 2px 2px 12px;
+        border-radius: var(--pk-radius-pill);
+        background: var(--pk-surface-2);
+        border: 1px solid var(--pk-line);
+        font-size: var(--pk-text-md);
+
+        > span {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    .o_pk_tag_remove {
+        appearance: none;
+        flex: none;
+        width: 32px;
+        height: 32px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--pk-fg-2);
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            background: var(--pk-hover);
+            color: var(--pk-bad);
+        }
+    }
+
+    // Task 1608: the full list (browse) — scrollable, grouped.
+    .o_pk_tags_options {
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-sm);
+        max-height: unquote("min(50vh, 22rem)");
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+
+        &:focus {
+            outline: none;
+        }
+    }
+
+    .o_pk_tags_search {
+        scroll-margin-top: 72px;
+    }
+
+    .o_pk_tags_group {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding: var(--pk-space-1) var(--pk-space-3);
+        background: var(--pk-surface-2);
+        border-top: 1px solid var(--pk-line);
+        color: var(--pk-fg-2);
+        font-size: var(--pk-text-sm);
+        font-weight: 600;
+        text-transform: var(--pk-label-transform);
+        letter-spacing: var(--pk-label-spacing);
+
+        &:first-child {
+            border-top: 0;
+        }
+    }
+
+    .o_pk_tags_option_active {
+        background: var(--pk-hover);
+        box-shadow: inset 3px 0 0 var(--pk-accent);
+    }
+
+    .o_pk_tags_option {
+        appearance: none;
+        width: 100%;
+        min-height: var(--pk-tap);
+        padding: 0 var(--pk-space-3);
+        border: 0;
+        border-top: 1px solid var(--pk-line);
+        background: var(--pk-surface);
+        color: var(--pk-fg);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            background: var(--pk-hover);
+        }
+    }
+
+    .o_pk_tags_options > li:first-child .o_pk_tags_option {
+        border-top: 0;
+    }
+
+    .o_pk_tags_group + li .o_pk_tags_option {
+        border-top: 0;
+    }
+
+    // ---------------------------------------------------------- buttons
+    .o_pk_btn_danger {
+        background: transparent;
+        border-color: var(--pk-bad);
+        color: var(--pk-bad);
+    }
+
+    .o_pk_icon_btn_danger {
+        color: var(--pk-bad);
+    }
+
+    .o_pk_actionbar {
+        position: sticky;
+        // Above the phone's fixed bottom tabs; 0 on a laptop (no tabs).
+        bottom: calc(var(--pk-tabs-height) + env(safe-area-inset-bottom, 0px) + var(--pk-ribbon-h, 0px));
+        z-index: 5;
+        display: flex;
+        gap: var(--pk-space-2);
+        padding: var(--pk-space-3) 0 calc(var(--pk-space-2) + env(safe-area-inset-bottom, 0px));
+        background: linear-gradient(to top, var(--pk-bg) 70%, transparent);
+
+        > .o_pk_btn,
+        > form {
+            flex: 1;
+        }
+
+        form .o_pk_btn {
+            width: 100%;
+        }
+    }
+
+    @media (min-width: $pk-laptop) {
+        .o_pk_actionbar {
+            bottom: 0;
+        }
+    }
+
+    // Task 1678: title above the text, the action button beside them.
+    // Review round 1 (2026-10-26): the action wraps under the text, right-
+    // aligned, when it does not fit beside it — always on a phone.
+    .o_pk_toast {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px var(--pk-space-3);
+    }
+
+    .o_pk_toast_body {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .o_pk_toast_text {
+        overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 480px) {
+        .o_pk_toast_body {
+            flex-basis: 100%;
+        }
+    }
+
+    // Task 1583: the session notification (title + message; errors marked).
+    .o_pk_toast_title {
+        font-weight: 600;
+    }
+
+    .o_pk_toast_action {
+        flex: none;
+        margin-left: auto;
+        appearance: none;
+        border: 0;
+        background: transparent;
+        color: var(--pk-accent);
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        min-height: 32px;
+        padding: 0 4px;
+    }
+
+    .o_pk_confirm_message {
+        margin: 0;
+    }
+
+    // Many tabs (the player page's seven): scroll sideways on a phone
+    // instead of squeezing the labels.
+    .o_pk_page_tabs_scroll {
+        overflow-x: auto;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        > a {
+            flex: 0 0 auto;
+            padding: 0 16px;
+            white-space: nowrap;
+        }
+    }
+
+    @media (min-width: $pk-laptop) {
+        .o_pk_page_tabs_scroll > a {
+            flex: 1 0 auto;
+        }
+    }
+
+    .o_pk_toggle_pill {
+        display: inline-flex;
+        flex: none;
+        padding: 2px;
+        gap: 2px;
+        border: 1px solid var(--pk-line);
+        border-radius: 999px;
+        background: var(--pk-surface-2);
+    }
+
+    .o_pk_toggle_pill_opt {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 64px;
+        min-height: 40px;
+        margin: 0;
+        padding: 0 16px;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--pk-fg-2);
+        cursor: pointer;
+
+        > input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        // Review round 2 (owner 2026-10-27): a chosen « Oui » is green (the
+        // accent), a chosen « Non » a neutral grey; unchosen, both neutral.
+        &:has(> input:checked) {
+            background: var(--pk-line);
+            color: var(--pk-fg);
+        }
+
+        &:has(> input:focus-visible) {
+            outline: 2px solid var(--pk-focus);
+            outline-offset: 1px;
+        }
+    }
+
+    .o_pk_chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .o_pk_actions_row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--pk-space-2);
+
+        form {
+            margin: 0;
+        }
+    }
+
+    .o_pk_filters {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-3);
+    }
+
+    .o_pk_filter_grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: var(--pk-space-2);
+    }
+
+    @media (min-width: $pk-laptop) {
+        .o_pk_filter_grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    // Task 1684: in a filter panel a field keeps its own height — an open
+    // picker list (in flow, sc_picker.js) grows its row, and a stretched
+    // neighbour's input (.o_pk_input is flex: 1) grew with it.
+    .o_pk_filters .o_pk_filter_grid {
+        align-items: start;
+    }
+
+    // Owner review 2026-10-14: sort / group by are not filters — their own
+    // labelled group under the filters.
+    .o_pk_filter_group {
+        margin: var(--pk-space-3) 0 0;
+        padding: var(--pk-space-3) 0 0;
+        border: 0;
+        border-top: 1px solid var(--pk-line);
+        min-width: 0;
+    }
+
+    .o_pk_filter_group_title {
+        float: left; // keeps the legend inside the fieldset's flow
+        width: 100%;
+        margin: 0 0 var(--pk-space-2);
+        padding: 0;
+        font-size: var(--pk-text-sm);
+        font-weight: 600;
+        text-transform: var(--pk-label-transform);
+        letter-spacing: var(--pk-label-spacing);
+        color: var(--pk-fg-2);
+
+        + * {
+            clear: both;
+        }
+    }
+
+    // Task 1617: the timesheets filters are open on every visit — on a phone
+    // the « Group by » group takes one row (legend left, select right; the
+    // select's own label stays for screen readers) so the list header still
+    // shows on the first screen.
+    @media (max-width: $pk-laptop - 0.02px) {
+        .o_pk_filters_compact .o_pk_filter_group {
+            margin-top: var(--pk-space-2);
+            padding-top: var(--pk-space-2);
+        }
+
+        // Still floated (a rendered legend is no flow content): half the
+        // row, the grid (its own formatting context) beside it.
+        .o_pk_filters_compact .o_pk_filter_group_title {
+            width: calc(50% - var(--pk-space-2) / 2);
+            margin: 0 var(--pk-space-2) 0 0;
+            line-height: var(--pk-tap);
+
+            + * {
+                clear: none;
+            }
+        }
+
+        .o_pk_filters_compact .o_pk_filter_group .o_pk_filter_grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .o_pk_filters_compact .o_pk_filter_group .o_pk_field_label {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    }
+
+    .o_pk_row_group {
+        background: var(--pk-surface);
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-md);
+
+        > .o_pk_entity_row {
+            border: 0;
+        }
+    }
+}
+
+// Player Injuries tab (owner decision 2026-10-11): the inline « Add
+// Injury » card and the expandable injury cards.
+.o_pk_app {
+    // The « Add documents » sheet: a drop zone (a tap opens the picker),
+    // the chosen files with their size, an oversized one flagged.
+    .o_pk_dropzone {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--pk-space-2);
+        min-height: calc(var(--pk-tap) * 2);
+        padding: var(--pk-space-3);
+        border: 2px dashed var(--pk-line);
+        border-radius: var(--pk-radius-md);
+        color: var(--pk-fg-2);
+        text-align: center;
+        cursor: pointer;
+
+        &.o_pk_dropzone_over,
+        &:hover {
+            border-color: var(--pk-accent);
+            color: var(--pk-fg);
+        }
+
+        &:has(input:focus-visible) {
+            outline: 2px solid var(--pk-focus);
+            outline-offset: 2px;
+        }
+    }
+
+    .o_pk_dropzone_input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    // The touch label shows on phones / touch screens only.
+    .o_pk_dropzone_text_touch {
+        display: none;
+    }
+
+    @media (max-width: #{$pk-laptop - 0.02px}), (pointer: coarse) {
+        .o_pk_dropzone {
+            min-height: var(--pk-tap);
+            padding: 0 var(--pk-space-3);
+            border: 1px solid var(--pk-line);
+            background: var(--pk-surface-2, var(--pk-surface));
+            color: var(--pk-fg);
+            font-weight: 600;
+        }
+
+        .o_pk_dropzone_text {
+            display: none;
+        }
+
+        .o_pk_dropzone_text_touch {
+            display: inline;
+        }
+    }
+
+    // Task 1644: « Uploading… » (the busy submit).
+    .o_pk_btn_busy {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--pk-space-2);
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    .o_pk_spinner {
+        width: 1em;
+        height: 1em;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: o_pk_spin 0.8s linear infinite;
+    }
+
+    .o_pk_file_list {
+        list-style: none;
+        margin: var(--pk-space-2) 0 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: var(--pk-text-sm);
+    }
+
+    .o_pk_file {
+        display: flex;
+        justify-content: space-between;
+        gap: var(--pk-space-2);
+        min-width: 0;
+    }
+
+    .o_pk_file_name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_pk_file_size {
+        flex: none;
+        color: var(--pk-fg-2);
+    }
+
+    // Review fixes 2026-10-18 (#1616): one « × » per chosen file.
+    .o_pk_file {
+        align-items: center;
+    }
+
+    .o_pk_file_name {
+        flex: 1 1 auto;
+    }
+
+    .o_pk_file_remove {
+        appearance: none;
+        flex: none;
+        width: 32px;
+        height: 32px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--pk-fg-2);
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            background: var(--pk-hover);
+            color: var(--pk-bad);
+        }
+    }
+
+    .o_pk_file_too_large .o_pk_file_size {
+        color: var(--pk-bad);
+        font-weight: 600;
+    }
+
+    .o_pk_file_head {
+        display: flex;
+        align-items: center;
+        gap: var(--pk-space-2);
+        min-width: 0;
+    }
+
+    .o_pk_file_fields {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--pk-space-2);
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    .o_pk_file_field {
+        margin: 0;
+
+        .o_pk_field_label {
+            font-size: var(--pk-text-xs);
+        }
+    }
+
+    .o_pk_file_field_wide {
+        grid-column: 1 / -1;
+
+        .o_pk_textarea {
+            min-height: var(--pk-tap);
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .o_pk_file_fields {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+}
+
+// Grouped lists (events, timesheets: « Group by », owner review 2026-10-11).
+.o_pk_app {
+    .o_pk_group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-2);
+
+        + .o_pk_group {
+            margin-top: var(--pk-space-3);
+        }
+    }
+
+    .o_pk_group_title {
+        margin: 0;
+        font-size: var(--pk-text-xs);
+        font-weight: 700;
+        letter-spacing: var(--pk-label-spacing);
+        text-transform: var(--pk-label-transform);
+        color: var(--pk-fg-2);
+    }
+}
+
+// Pencil edit paradigm (owner review 2026-10-11): note cards and stacked
+// read views (long notes under their label).
+.o_pk_app {
+    .o_pk_kv_stacked {
+        grid-template-columns: minmax(0, 1fr);
+
+        dd {
+            margin-bottom: var(--pk-space-2);
+        }
+    }
+}
+
+@keyframes o_pk_spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+// ------------------------------------------------------------------------
+// From sc_p3.scss (P3: lists and pages, search sheet)
+// ------------------------------------------------------------------------
+
+.o_pk_app {
+    // ----------------------------------------------------- shared cards
+    .o_pk_card_head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--pk-space-3);
+    }
+}
+
+// Task 1635 — the open-activity count on a page tab (the player and team
+// pages' « Activities »): a tiny pill after the label. Neutral = the tab's
+// own text colour (readable on the Mauve active tab and in dark mode); red
+// = the app bar clock badge's colour (one of them is overdue). The player
+// page's five tabs already scroll sideways on a phone (sc_p2); the pill
+// never shrinks.
+.o_pk_app {
+    .o_pk_page_tabs > a {
+        gap: 6px;
+    }
+
+    .o_pk_tab_badge {
+        flex: 0 0 auto;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: var(--pk-radius-pill);
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 16px;
+        text-align: center;
+        border: 1px solid currentColor;
+    }
+
+    .o_pk_tab_badge_neutral {
+        background: transparent;
+        color: inherit;
+    }
+
+    .o_pk_tab_badge_red {
+        background: var(--pk-bad);
+        border-color: var(--pk-bad);
+        color: var(--pk-tone-fg);
+    }
+}
+
+// Task 1647: the tab bars fit a phone's width — compact tabs sharing the
+// width (up to five), the count pill before the label, a short label where
+// one is given (« Docs »). Six or more tabs, or a screen under 340 px,
+// still scroll sideways (.o_pk_page_tabs_scroll / below).
+.o_pk_app {
+    .o_pk_tab_label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_pk_tab_label_short {
+        display: none;
+    }
+
+    @media (max-width: 991.98px) {
+        // Shared by content: a short label (Info) gives room to a long
+        // one with its pill (Activités 3).
+        .o_pk_page_tabs:not(.o_pk_page_tabs_scroll) > a {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding: 0 6px;
+            gap: 4px;
+            font-size: 12px;
+        }
+
+        .o_pk_tab_label_long {
+            display: none;
+        }
+
+        .o_pk_tab_label_short {
+            display: inline;
+        }
+    }
+
+    @media (max-width: 339.98px) {
+        .o_pk_page_tabs {
+            overflow-x: auto;
+            scrollbar-width: none;
+
+            > a,
+            &:not(.o_pk_page_tabs_scroll) > a {
+                flex: 0 0 auto;
+                padding: 0 12px;
+            }
+        }
+    }
+}
+
+// Task 1650: the header search sheet — full screen on a phone, the centred
+// sheet on a laptop; results grouped, archived / locked players greyed.
+.o_pk_app {
+    .o_pk_search_sheet[open] {
+        display: flex;
+        flex-direction: column;
+        max-height: 85vh;
+        max-height: 85dvh;
+
+        > .o_pk_sheet_head,
+        > .o_pk_search_box {
+            flex: none;
+        }
+
+        > .o_pk_search_body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .o_pk_search_sheet[open] {
+            height: 100vh;
+            height: 100dvh;
+            max-height: 100dvh;
+            margin: 0;
+            border-radius: 0;
+            padding-top: env(safe-area-inset-top, 0px);
+        }
+    }
+
+    .o_pk_search_box {
+        padding: var(--pk-space-3) var(--pk-space-4) 0;
+    }
+
+    .o_pk_search_group + .o_pk_search_group {
+        margin-top: var(--pk-space-3);
+    }
+
+    .o_pk_search_group_title {
+        margin: 0 0 var(--pk-space-1);
+        font-size: var(--pk-text-xs);
+        font-weight: 700;
+        text-transform: var(--pk-label-transform);
+        letter-spacing: var(--pk-label-spacing);
+        color: var(--pk-fg-2);
+    }
+
+    .o_pk_search_list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .o_pk_search_row {
+        display: flex;
+        align-items: center;
+        gap: var(--pk-space-2);
+        border-bottom: 1px solid var(--pk-line);
+    }
+
+    .o_pk_search_link {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        column-gap: var(--pk-space-2);
+        min-height: var(--pk-tap);
+        padding: var(--pk-space-2) var(--pk-space-1);
+        color: var(--pk-fg);
+        text-decoration: none;
+        border-radius: var(--pk-radius-sm);
+    }
+
+    a.o_pk_search_link:hover,
+    .o_pk_search_active {
+        background: var(--pk-hover);
+        outline: 2px solid var(--pk-focus);
+        outline-offset: -2px;
+    }
+
+    .o_pk_search_locked .o_pk_search_link,
+    .o_pk_search_archived .o_pk_search_link {
+        color: var(--pk-fg-3);
+    }
+
+    .o_pk_search_add {
+        flex: none;
+    }
+}
+
+// Task 1648: the type-to-filter picker of the link fields (sc_picker.js) —
+// the select stays (hidden) as the form value; the list sits in the flow
+// under the box (a phone keyboard does not hide it).
+.o_pk_app {
+    select.o_pk_picker_native {
+        display: none;
+    }
+
+    .o_pk_picker {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-1);
+        min-width: 0;
+    }
+
+    // Task 1722: the event form's venue picker beside « New venue ».
+    .o_pk_inline_form:has(> .o_pk_picker) {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--pk-space-2);
+
+        > .o_pk_picker {
+            flex: 1 1 auto;
+        }
+
+        > .o_pk_btn {
+            flex: none;
+            min-height: var(--pk-tap);
+        }
+    }
+
+    .o_pk_picker_box {
+        position: relative;
+        display: flex;
+        align-items: center;
+
+        .o_pk_picker_input {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding-right: var(--pk-tap);
+        }
+
+        .o_pk_picker_clear {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+    }
+
+    .o_pk_picker_list {
+        list-style: none;
+        margin: 0;
+        padding: 4px;
+        max-height: 40vh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        background: var(--pk-surface);
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-sm);
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    .o_pk_picker_option {
+        min-height: var(--pk-tap);
+        display: flex;
+        align-items: center;
+        padding: 0 var(--pk-space-2);
+        border-radius: var(--pk-radius-sm);
+        cursor: pointer;
+
+        &:hover,
+        &.o_pk_picker_option_active {
+            background: var(--pk-hover);
+        }
+
+        &[aria-selected="true"] {
+            font-weight: 600;
+        }
+    }
+}
+// ------------------------------------------------------------------------
+// From sc_dashboard.scss (the dashboard)
+// ------------------------------------------------------------------------
+
+.o_pk_app {
+    .o_pk_chip_orange {
+        background: var(--pk-overdue);
+        color: var(--pk-tone-fg);
+    }
+}
+// ------------------------------------------------------------------------
+// From sc_account.scss (the account pages)
+// ------------------------------------------------------------------------
+
+.o_pk_app {
+    // The core validation flags fields and fills #errors.
+    .o_pk_sheet .o_pk_input[aria-invalid="true"] {
+        border-color: var(--pk-bad);
+    }
+
+    .o_pk_banner_ok {
+        border-left-color: var(--pk-ok);
+    }
+
+    .o_pk_form_actions_start {
+        justify-content: flex-start;
+    }
+}
