@@ -1,0 +1,63 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_attachment_heic
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: bemade_attachment_heic
+#: model:ir.actions.server,name:bemade_attachment_heic.ir_cron_convert_heic_attachments_ir_actions_server
+msgid "Attachments: convert stored HEIC images to JPEG"
+msgstr "Pièces jointes : convertir en JPEG les images HEIC enregistrées"
+
+#. module: bemade_attachment_heic
+#. odoo-python
+#: code:addons/bemade_attachment_heic/models/ir_attachment.py:0
+msgid ""
+"Ce fichier HEIC n'a pas pu être converti : fichier corrompu ou format non pris en charge. Téléchargez-le et convertissez-le sur votre appareil.\n"
+"\n"
+"This HEIC file could not be converted: the file is corrupt or its format is not supported. Download it and convert it on your device."
+msgstr ""
+
+#. module: bemade_attachment_heic
+#. odoo-python
+#: code:addons/bemade_attachment_heic/models/ir_attachment.py:0
+msgid ""
+"Ce fichier n'est pas une image HEIC : il n'y a rien à convertir.\n"
+"\n"
+"This file is not a HEIC image: there is nothing to convert."
+msgstr ""
+
+#. module: bemade_attachment_heic
+#. odoo-javascript
+#: code:addons/bemade_attachment_heic/static/src/attachment_list_patch.js:0
+#: code:addons/bemade_attachment_heic/static/src/attachment_list_patch.xml:0
+msgid "Convert to JPEG"
+msgstr "Convertir en JPEG"
+
+#. module: bemade_attachment_heic
+#: model:ir.model.fields,field_description:bemade_attachment_heic.field_ir_attachment__heic_convert_failed
+msgid "HEIC Conversion Failed"
+msgstr "Échec de la conversion HEIC"
+
+#. module: bemade_attachment_heic
+#. odoo-javascript
+#: code:addons/bemade_attachment_heic/static/src/attachment_list_patch.js:0
+msgid "The photo was converted to JPEG."
+msgstr "La photo a été convertie en JPEG."
+
+#. module: bemade_attachment_heic
+#: model:ir.model.fields,help:bemade_attachment_heic.field_ir_attachment__heic_convert_failed
+msgid "This HEIC image could not be converted to JPEG; the backfill skips it."
+msgstr ""
+"Cette image HEIC n'a pas pu être convertie en JPEG ; la conversion des "
+"anciennes pièces jointes l'ignore."
