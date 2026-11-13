@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-13 13:48+0000\n"
-"PO-Revision-Date: 2026-11-13 13:48+0000\n"
+"POT-Creation-Date: 2026-11-13 14:38+0000\n"
+"PO-Revision-Date: 2026-11-13 14:38+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -108,8 +108,8 @@ msgstr "(ouvert)"
 
 #. module: stock_package_format
 #: model_terms:ir.ui.view,arch_db:stock_package_format.product_template_form_view_package_format_button
-msgid "<span class=\"o_stat_text\">Package formats</span>"
-msgstr "<span class=\"o_stat_text\">Formats de colis</span>"
+msgid "<span class=\"o_stat_text\">Packages</span>"
+msgstr "<span class=\"o_stat_text\">Colis</span>"
 
 #. module: stock_package_format
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package__message_needaction
@@ -713,6 +713,8 @@ msgstr "Colis ouvert par %(user)s. Raison : %(reason)s"
 #. module: stock_package_format
 #. odoo-javascript
 #: code:addons/stock_package_format/static/src/breakdown_popover/breakdown_popover.xml:0
+#: model:ir.model.fields,field_description:stock_package_format.field_product_product__package_format_package_count
+#: model:ir.model.fields,field_description:stock_package_format.field_product_template__package_format_package_count
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_golive_wizard__line_ids
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_golive_wizard_line__package_count
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_open_wizard__package_ids
@@ -729,6 +731,12 @@ msgstr "Colis"
 #: model:ir.model.fields,field_description:stock_package_format.field_product_template__package_format_summary
 msgid "Packages in stock"
 msgstr "Colis en stock"
+
+#. module: stock_package_format
+#: model:ir.model.fields,help:stock_package_format.field_product_product__package_format_package_count
+#: model:ir.model.fields,help:stock_package_format.field_product_template__package_format_package_count
+msgid "Packages of the product in stock (unopened and opened)."
+msgstr "Colis du produit en stock (fermés et ouverts)."
 
 #. module: stock_package_format
 #: model:ir.model.fields,field_description:stock_package_format.field_product_product__package_format_breakdown
@@ -827,6 +835,11 @@ msgid "Quants"
 msgstr "Quantités"
 
 #. module: stock_package_format
+#: model:ir.model.fields,field_description:stock_package_format.field_stock_package__rating_ids
+msgid "Ratings"
+msgstr ""
+
+#. module: stock_package_format
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_open_wizard__reason
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_repack_wizard__reason
 msgid "Reason"
@@ -877,6 +890,7 @@ msgstr "Erreur d'envoi SMS"
 
 #. module: stock_package_format
 #: model:ir.model,name:stock_package_format.model_sale_order
+#: model:ir.model,website_form_label:stock_package_format.model_sale_order
 msgid "Sales Order"
 msgstr "Commande client"
 
