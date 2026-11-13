@@ -90,6 +90,28 @@ class PracticeUnit(models.Model):
             return self._introduce(student, 1)
         return self.env["homeschool.practice.item"]
 
+    def _auto_unlock_next(self, student):
+        """Units of auto-unlock decks that reached the deck's threshold open the next unit after
+        them (skipping units a parent locked again; nothing when the next one is already open).
+        Returns the units unlocked."""
+        Access = self.env["homeschool.practice.unit.access"].sudo()
+        opened = self.browse()
+        for unit in self.filtered(lambda u: u.deck_id.auto_unlock_at > 0):
+            if unit._proficiency(student) < unit.deck_id.auto_unlock_at:
+                continue
+            rows = Access.search([("student_id", "=", student.id), ("unit_id", "in", unit.deck_id.unit_ids.ids)])
+            later = unit.deck_id.unit_ids.filtered(lambda u: u.sequence > unit.sequence)
+            for nxt in later.sorted(lambda u: (u.sequence, u.id)):
+                row = rows.filtered(lambda r: r.unit_id == nxt)
+                if row.state == "unlocked":
+                    break  # already open: the chain goes on from there
+                if row.unlocked_on:
+                    continue  # a parent locked it again: never reopened on its own
+                nxt.sudo().action_unlock(student)
+                opened |= nxt
+                break
+        return opened
+
     def _proficiency(self, student):
         """Share of the unit's items that are secure (box ≥ 3), 0–100."""
         self.ensure_one()
@@ -213,3 +235,4 @@ class Student(models.Model):
         if len(cal) < 10:
             return company.practice_timing_fallback_ms
         return int(statistics.median(cal.mapped("first_touch_ms"))) + company.practice_timing_margin_ms
+

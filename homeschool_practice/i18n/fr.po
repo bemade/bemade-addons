@@ -121,8 +121,10 @@ msgstr "Une réponse au pavé numérique ne contient que des chiffres (%(key)s).
 
 #. module: homeschool_practice
 #: model:ir.model.constraint,message:homeschool_practice.constraint_homeschool_practice_quest_one_per_template_day
-msgid "A quest template is drawn at most once a day."
-msgstr "Un modèle de quête est tiré au plus une fois par jour."
+msgid "A quest template is drawn at most once a day (per unit for session quests)."
+msgstr ""
+"Un modèle de quête est tiré au plus une fois par jour (par unité pour les "
+"quêtes de séance)."
 
 #. module: homeschool_practice
 #: model:homeschool.practice.quest.template,name:homeschool_practice.quest_review_session
@@ -142,7 +144,7 @@ msgstr "Une séance compte au moins une question."
 #. module: homeschool_practice
 #: model:homeschool.practice.quest.template,name:homeschool_practice.quest_unit_session
 msgid "A session on {unit}"
-msgstr "Une séance sur la {unit}"
+msgstr "Une séance : {unit}"
 
 #. module: homeschool_practice
 #: model:homeschool.practice.quest.template,name:homeschool_practice.quest_perfect
@@ -1998,3 +2000,39 @@ msgstr "Charger les paquets de grammaire"
 #: code:addons/homeschool_practice/models/deck.py:0
 msgid "Only a parent (homeschool manager) loads practice decks."
 msgstr "Seul un parent (gestionnaire) charge des paquets de pratique."
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__subject_id
+msgid "Subject"
+msgstr "Matière"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__subject_id
+msgid ""
+"Each subject with unlocked units gets its own session quest every practice "
+"day."
+msgstr ""
+"Chaque matière dont des unités sont déverrouillées reçoit sa propre quête de "
+"séance chaque jour de pratique."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "New unit!"
+msgstr "Nouvelle unité !"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__auto_unlock_at
+msgid "Auto-unlock at (%)"
+msgstr "Déverrouillage automatique à (%)"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__auto_unlock_at
+msgid ""
+"When a unit reaches this proficiency, the next unit unlocks on its own (0 = "
+"a parent unlocks every unit). For units that need no new teaching, e.g. "
+"times tables."
+msgstr ""
+"Quand une unité atteint cette maîtrise, l'unité suivante se déverrouille "
+"d'elle-même (0 = un parent déverrouille chaque unité). Pour les unités qui "
+"ne demandent pas de nouvel enseignement, p. ex. les tables de multiplication."

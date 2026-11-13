@@ -4,7 +4,7 @@
 Acceptance criteria
 -------------------
 1. ``homeschool.practice.quest.template``: ``name`` (translatable; may name the unit,
-   e.g. « Une séance sur la table de 7 »), ``kind`` (``unit_session`` — finish a session
+   e.g. « Une séance : table de 7 »), ``kind`` (``unit_session`` — finish a session
    on the unit that most needs practice; ``review_session`` — finish a review session;
    ``no_hint`` — N correct answers without a hint; ``perfect`` — a session without a
    miss; ``answers`` — N answers in a deck), ``target``, ``xp``, ``weight``,

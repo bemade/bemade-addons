@@ -48,7 +48,8 @@ class PracticeQuest(models.Model):
     label = fields.Char(compute="_compute_label")
 
     _one_per_template_day = models.Constraint(
-        "unique(student_id, template_id, day)", "A quest template is drawn at most once a day.")
+        "unique NULLS NOT DISTINCT (student_id, template_id, day, unit_id)",
+        "A quest template is drawn at most once a day (per unit for session quests).")
 
     @api.depends("template_id.name", "unit_id.name", "target")
     def _compute_label(self):
@@ -82,14 +83,18 @@ class PracticeQuest(models.Model):
             vals.append(dict(student_id=student.id, template_id=template.id, day=day, target=template.target,
                              sequence=len(vals), **extra))
 
-        # 1. need first: the unit with the most due or new items, then a review if other units are due
+        # 1. need first: in each subject, the unit with the most due or new items (decks without a
+        #    subject form one group), then a review if other units are due
         need = student._practice_needs(day)
         unit_t = pool.filtered(lambda t: t.kind == "unit_session")[:1]
-        if need and unit_t and len(vals) < count:
-            unit = need[0][0]
-            add(unit_t, deck_id=unit.deck_id.id, unit_id=unit.id)
+        subjects = []
+        for unit, _count, _due in need:
+            if unit_t and len(vals) < count and unit.deck_id.subject_id not in subjects:
+                subjects.append(unit.deck_id.subject_id)
+                add(unit_t, deck_id=unit.deck_id.id, unit_id=unit.id)
         review_t = pool.filtered(lambda t: t.kind == "review_session")[:1]
-        due_elsewhere = [n for n in need[1:] if n[2]]
+        quest_units = [v["unit_id"] for v in vals]
+        due_elsewhere = [n for n in need if n[2] and n[0].id not in quest_units]
         if review_t and len(vals) < count and due_elsewhere:
             add(review_t, deck_id=due_elsewhere[0][0].deck_id.id)
         # 2. the rest from the pool, weighted, never twice a day, not yesterday's set when possible

@@ -10,7 +10,7 @@
                     <button name="action_load_grammar_fr" type="object" string="Load French grammar decks" display="always"
                             groups="homeschool.group_homeschool_manager"/>
                 </header>
-                <field name="sequence" widget="handle"/><field name="name"/><field name="session_size"/><field name="company_id" groups="base.group_multi_company"/></list>
+                <field name="sequence" widget="handle"/><field name="name"/><field name="subject_id"/><field name="session_size"/><field name="company_id" groups="base.group_multi_company"/></list>
         </field>
     </record>
     <record id="view_deck_form" model="ir.ui.view">
@@ -20,8 +20,8 @@
             <form string="Practice deck">
                 <sheet>
                     <group>
-                        <group><field name="name"/><field name="curriculum_item_ids" widget="many2many_tags"/><field name="company_id" groups="base.group_multi_company"/></group>
-                        <group><field name="session_size"/><field name="max_new_per_session"/><field name="intro_size"/><field name="secure_ratio"/><field name="box_intervals"/></group>
+                        <group><field name="name"/><field name="subject_id"/><field name="curriculum_item_ids" widget="many2many_tags"/><field name="company_id" groups="base.group_multi_company"/></group>
+                        <group><field name="session_size"/><field name="max_new_per_session"/><field name="intro_size"/><field name="auto_unlock_at"/><field name="secure_ratio"/><field name="box_intervals"/></group>
                     </group>
                     <field name="description" placeholder="What this deck practices"/>
                     <notebook>

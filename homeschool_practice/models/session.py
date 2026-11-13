@@ -260,3 +260,15 @@ class PracticeAttempt(models.Model):
         for a in self:
             bound = a.session_id.company_id.practice_outlier_ms or 120000
             a.outlier = a.first_touch_ms > bound or a.submit_ms > bound
+
+
+class PracticeSessionAutoUnlock(models.Model):
+    _inherit = "homeschool.practice.session"
+
+    def _after_finish(self, events):
+        res = super()._after_finish(events)
+        units = self.sudo().attempt_ids.item_id.unit_id
+        opened = units._unlocked_for(self.student_id)._auto_unlock_next(self.student_id)
+        if opened:
+            events.setdefault("units_unlocked", []).extend(opened.ids)
+        return res
