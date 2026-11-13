@@ -126,3 +126,38 @@ class TestSaleQtyRaise(PackageFormatCase):
         loose = self._confirmed_order(3, self.uom_ft3)
         loose.order_line.product_uom_qty = 8
         self.assertFalse(self._purchase_lines())
+
+    def test_new_format_line_on_confirmed_order_buys_shortfall(self):
+        """A drum line ADDED to a confirmed order buys its shortfall too."""
+        self._put_packages(self.uom_drum, 1, lot_name="L1")
+        order = self._confirmed_order(1, self.uom_drum)
+        self.assertFalse(self._rfq_lines(order.order_line))
+        order.write(
+            {
+                "order_line": [
+                    Command.create(
+                        {
+                            "product_id": self.product.id,
+                            "product_uom_qty": 3,
+                            "product_uom_id": self.uom_drum.id,
+                        }
+                    )
+                ]
+            }
+        )
+        new_line = order.order_line[1:]
+        rfq_line = self._rfq_lines(new_line)
+        self.assertEqual(len(rfq_line), 1)
+        self.assertEqual(rfq_line.product_qty, 3)
+        self.assertEqual(rfq_line.product_uom_id, self.uom_drum)
+        self.assertEqual(self._purchase_lines(), rfq_line)
+
+    def test_confirmed_loose_line_shows_open_proposal(self):
+        """A confirmed line in the base unit that nothing loose covers shows
+        the delivery's « open » proposal on the sale line."""
+        self._put_packages(self.uom_bag, 5, lot_name="L1")
+        order = self._confirmed_order(3, self.uom_ft3)
+        line = order.order_line
+        self.assertTrue(line.package_format_proposal)
+        self.assertIn("3 ×", line.package_format_proposal)
+        self.assertIn(self.type_bag.name, line.package_format_proposal)

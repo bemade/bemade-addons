@@ -95,6 +95,15 @@ class SaleOrderLine(models.Model):
                     line.package_format_availability = self.env._(
                         "%(available)s available", available=available
                     )
+            elif line.state == "sale":
+                proposal = line.move_ids.filtered(
+                    lambda m: m.state not in ("done", "cancel")
+                ).package_format_proposal_ids
+                if proposal:
+                    line.package_format_proposal = self.env._(
+                        "Open %(packages)s to cover this line",
+                        packages=product._package_format_describe_packages(proposal),
+                    )
             elif line.state in ("draft", "sent"):
                 need = line.product_uom_id._compute_quantity(
                     line.product_uom_qty, product.uom_id, round=False
@@ -122,6 +131,24 @@ class SaleOrderLine(models.Model):
             if line.package_format_to_buy > 0:
                 plan[line] = (fmt, line.package_format_to_buy)
         return plan
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        # A line in a format added to a confirmed order buys its shortfall,
+        # like a raise of an existing line.
+        lines = super().create(vals_list)
+        added = lines.filtered(
+            lambda l: l.state == "sale"
+            and not l.display_type
+            and l.product_id.uses_package_rule
+            and l._package_format_uom()
+            and l.product_uom_id == l._package_format_uom()
+            and not l.order_id.locked
+            and not l.is_mto
+        )
+        if added:
+            added._package_format_buy_raise()
+        return lines
 
     def write(self, vals):
         # A confirmed line in a format whose quantity is raised buys the new
