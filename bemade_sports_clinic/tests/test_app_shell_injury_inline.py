@@ -120,7 +120,7 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         self.assertEqual(item.get('data-sc-created-injury'), str(injury.id))
         edit = item.xpath('.//*[@data-sc-edit-view="edit"]')[0]
         self.assertIsNone(edit.get('hidden'))
-        self.assertTrue(item.xpath('.//form[@data-sc-form="injury.undo"]'))
+        self.assertTrue(item.xpath('.//form[@data-pk-undo-offer="injury"]'))
         self._create(diagnosis='Synthetic wrist', coach_visibility='visible')
         self.assertFalse(self._new_injury('Synthetic wrist').hidden_from_coaches)
 
@@ -173,7 +173,7 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         item = item[0]
         self.assertIsNotNone(item.get('open'))
         self.assertEqual(item.get('data-sc-created-injury'), str(report.id))
-        self.assertTrue(item.xpath('.//form[@data-sc-form="injury.undo"]'))
+        self.assertTrue(item.xpath('.//form[@data-pk-undo-offer="injury"]'))
         # « Unverified » status chip, diagnosis editable, no therapist action.
         stages = dict(report._fields['stage']._description_selection(self.env))
         self.assertIn(stages['unverified'], item.xpath('.//summary')[0].text_content())

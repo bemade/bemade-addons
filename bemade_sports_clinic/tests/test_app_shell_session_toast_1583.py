@@ -30,11 +30,11 @@ class SessionToastCommon1583(AppShellCommon):
     def _notify(tree):
         """(message, title, tone) carried by the toast host, or None."""
         hosts = tree.xpath('//div[contains(concat(" ", @class, " "), " o_pk_toast ")]')
-        if not hosts or not hosts[0].get('data-sc-notify'):
+        if not hosts or not hosts[0].get('data-pk-notify'):
             return None
         host = hosts[0]
-        return (host.get('data-sc-notify'), host.get('data-sc-notify-title'),
-                host.get('data-sc-notify-tone'))
+        return (host.get('data-pk-notify'), host.get('data-pk-notify-title'),
+                host.get('data-pk-notify-tone'))
 
     def _add_to_team(self, player, team, return_url):
         resp = self.url_open('/my/player/%s/add_to_team' % player.id, data={
@@ -92,7 +92,7 @@ class TestAppShellSessionToast1583(SessionToastCommon1583):
         self._login_tp()
         text, tree = self._add_to_team(self.player_b, self.team_a, '/my/players')
         self.assertIsNone(self._shell(tree))
-        self.assertNotIn('data-sc-notify', text)
+        self.assertNotIn('data-pk-notify', text)
 
 
 @tagged('post_install', '-at_install')

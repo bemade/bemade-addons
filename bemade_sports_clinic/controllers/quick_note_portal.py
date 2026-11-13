@@ -269,7 +269,7 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Task 1736 (owner 2026-11-01): the card's archive icon — « Note
         # archived · Undo » (the toast) instead of the banner.
         if post.get('sc_undo'):
-            self._sc_offer_undo(request.env._("Note archived."),
+            self._pk_offer_undo(request.env._("Note archived."),
                                 '/my/notepad/%s/restore?undo=1' % note.id)
             return request.redirect('/my/notepad#quick-add')
         return request.redirect('/my/notepad?success=note_archived#quick-add')

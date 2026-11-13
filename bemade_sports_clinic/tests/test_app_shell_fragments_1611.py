@@ -103,7 +103,7 @@ class TestFragments1611(FragmentsCommon):
         self._fragments('/my/players', ['page:none:none'])
         tree = self._page('/my/players')
         toast = tree.xpath('//div[contains(concat(" ", @class, " "), " o_pk_toast ")]')[0]
-        self.assertIn('PC Team A', toast.get('data-sc-notify') or '')
+        self.assertIn('PC Team A', toast.get('data-pk-notify') or '')
 
     # -- AC-F5 / AC-F6 -----------------------------------------------------
     def _check_page(self, url):

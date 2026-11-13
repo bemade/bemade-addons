@@ -157,7 +157,7 @@ class TestClinicDossierInline1590(ClinicDossier1590Common):
         self.assertIsNotNone(card.get('open'))
         self.assertEqual(card.get('data-sc-created-injury'), str(injury.id))
         self.assertIsNone(card.xpath('.//*[@data-sc-edit-view="edit"]')[0].get('hidden'))
-        undo = card.xpath('.//form[@data-sc-form="injury.undo"]')[0]
+        undo = card.xpath('.//form[@data-pk-undo-offer="injury"]')[0]
         self.assertEqual(undo.get('action'), '/my/injury/%s/undo-create' % injury.id)
         self.assertEqual(undo.xpath('.//input[@name="sc_origin"]/@value'), ['clinic'])
         self.assertEqual(undo.xpath('.//input[@name="clinic_id"]/@value'), [str(self.clinic.id)])
@@ -166,7 +166,7 @@ class TestClinicDossierInline1590(ClinicDossier1590Common):
         card = tree.xpath('//details[@id="clinic-injury-%s"]' % injury.id)[0]
         self.assertIsNotNone(card.get('open'))
         self.assertIsNone(card.get('data-sc-created-injury'))
-        self.assertFalse(card.xpath('.//form[@data-sc-form="injury.undo"]'))
+        self.assertFalse(card.xpath('.//form[@data-pk-undo-offer="injury"]'))
 
     def test_create_errors_land_on_dossier(self):
         self._login_tp()

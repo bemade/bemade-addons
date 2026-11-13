@@ -48,7 +48,7 @@ tours.add("sc_1679_toast_clear", {
         },
         {
             content: "The toast is up",
-            trigger: ".o_pk_toast:not([hidden]) button[data-sc-toast-action]",
+            trigger: ".o_pk_toast:not([hidden]) button[data-pk-toast-action]",
         },
         {
             content: "The open card's buttons are above the toast",

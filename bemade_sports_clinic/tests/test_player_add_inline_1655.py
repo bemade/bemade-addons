@@ -117,7 +117,7 @@ class TestPlayerAddInline1655(PlayerAdd1655Common):
         self.assertIn('created_player=%s' % player.id, location)
         tree = lxml_html.fromstring(self.url_open(location).text)
         self.assertEqual(tree.xpath('//*[@data-pk-edit-card="identity"]/@data-sc-edit-open-on-load'), ['1'])
-        undo = tree.xpath('//form[@data-sc-form="player.undo"]/@action')
+        undo = tree.xpath('//form[@data-pk-undo-offer="player"]/@action')
         self.assertEqual(undo, ['/my/player/%s/undo-create' % player.id])
         resp = self.url_open(undo[0], data={'csrf_token': self._csrf(), 'return_url': '/my/players'},
                              allow_redirects=False)

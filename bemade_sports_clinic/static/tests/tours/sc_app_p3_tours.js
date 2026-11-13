@@ -107,7 +107,7 @@ tours.add("sc_1540_event_timesheet", {
             // Task 1665: with my timesheet already on the event, the button
             // opens it in edit and the toast offers « Add another timesheet ».
             content: "The add sheet (or the toast's « Add another timesheet »)",
-            trigger: 'dialog#sc_ts_add_sheet[open], .o_pk_toast:not([hidden]) button[data-sc-toast-action]',
+            trigger: 'dialog#sc_ts_add_sheet[open], .o_pk_toast:not([hidden]) button[data-pk-toast-action]',
             run() {
                 if (!document.querySelector("dialog#sc_ts_add_sheet[open]")) {
                     this.anchor.click();

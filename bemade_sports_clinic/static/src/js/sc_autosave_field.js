@@ -1027,7 +1027,7 @@ export class ScAutosaveField extends Component {
 
     offerUndo(previous) {
         document.dispatchEvent(
-            new CustomEvent("sc:toast", {
+            new CustomEvent("pk:toast", {
                 detail: {
                     message: this.props.undoMessage || _t("Change saved"),
                     actionLabel: _t("Undo"),
@@ -1049,7 +1049,7 @@ export class ScAutosaveField extends Component {
     offerServerUndo(undo) {
         const { model, recordId, field } = this.props;
         document.dispatchEvent(
-            new CustomEvent("sc:toast", {
+            new CustomEvent("pk:toast", {
                 detail: {
                     message: undo.message || _t("Change saved"),
                     actionLabel: undo.action || _t("Undo"),
@@ -1068,7 +1068,7 @@ export class ScAutosaveField extends Component {
                             );
                         } catch (error) {
                             document.dispatchEvent(
-                                new CustomEvent("sc:toast", {
+                                new CustomEvent("pk:toast", {
                                     detail: {
                                         message:
                                             (error && error.payload && error.payload.message) ||

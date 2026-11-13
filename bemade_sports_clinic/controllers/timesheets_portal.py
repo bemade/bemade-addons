@@ -266,7 +266,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # an archive) — no banner, « Timesheet archived · Undo » instead.
         if post.get('sc_undo'):
             undo = '/my/sc/timesheet/%s/restore?return_url=%s' % (ts.id, url_quote(target, safe=''))
-            self._sc_offer_undo(http.request.env._("Timesheet archived."), undo)
+            self._pk_offer_undo(http.request.env._("Timesheet archived."), undo)
             return http.request.redirect(target)
         separator = '&' if '?' in target else '?'
         return http.request.redirect(f'{target}{separator}deleted=1')

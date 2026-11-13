@@ -569,5 +569,30 @@ msgstr "Modification enregistrée"
 #. module: bemade_portal_kit
 #. odoo-javascript
 #: code:addons/bemade_portal_kit/static/src/js/pk_status_pills.js:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_toast_host
 msgid "Undo"
 msgstr "Annuler"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_toast.js:0
+msgid "Back online."
+msgstr "De retour en ligne."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_toast.js:0
+msgid "You are offline."
+msgstr "Vous êtes hors ligne."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_toast.js:0
+msgid "Something went wrong. Please try again."
+msgstr "Une erreur est survenue. Veuillez réessayer."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_toast.js:0
+msgid "No connection. Try again when you are back online."
+msgstr "Pas de connexion. Réessayez une fois de retour en ligne."

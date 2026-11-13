@@ -14538,12 +14538,6 @@ msgid "Android (Chrome)"
 msgstr "Android (Chrome)"
 
 #. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_app_ui.js:0
-msgid "Back online."
-msgstr "De retour en ligne."
-
-#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 msgid "By number"
 msgstr "Par numéro"
@@ -14666,7 +14660,6 @@ msgstr "Nouveau"
 
 #. module: bemade_sports_clinic
 #. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_app_ui.js:0
 #: code:addons/bemade_sports_clinic/static/src/js/sc_clinic_worklist.js:0
 msgid "No connection. Try again when you are back online."
 msgstr "Pas de connexion. Réessayez une fois de retour en ligne."
@@ -14782,12 +14775,6 @@ msgstr "Envoyer la demande"
 
 #. module: bemade_sports_clinic
 #. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_app_ui.js:0
-msgid "Something went wrong. Please try again."
-msgstr "Une erreur est survenue. Veuillez réessayer."
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
 #: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
 msgid "Take theirs"
 msgstr "Prendre le leur"
@@ -14822,12 +14809,6 @@ msgstr "Sans connexion, l'application n'affiche qu'une page hors ligne : aucune 
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_offline
 msgid "You are offline"
 msgstr "Vous êtes hors ligne"
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_app_ui.js:0
-msgid "You are offline."
-msgstr "Vous êtes hors ligne."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_install
@@ -15392,7 +15373,6 @@ msgstr "Aujourd'hui (%(count)s)"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
 msgid "Undo"
 msgstr "Annuler"
 
@@ -16055,7 +16035,6 @@ msgstr "Personnel assigné"
 #: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
 msgid "No organization"
 msgstr "Aucune organisation"
-
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_document_upload_form
@@ -18092,7 +18071,6 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 msgid "-- None --"
 msgstr "-- Aucune --"
-
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card

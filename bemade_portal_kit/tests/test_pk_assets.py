@@ -18,6 +18,8 @@
 * task 5370 (P4b): ``pk_form_guard``, ``pk_status_pills`` and
   ``pk_lazy_edit`` join the kit; their clinic files stay one release as
   aliases (re-exports only), and P4a's ``sc_fragments.js`` alias is gone.
+* task 5371 (P4c1): ``pk_toast`` joins the kit (no clinic module path
+  moved: ``sc_app_ui.js`` stays, without its toast code).
 """
 import fnmatch
 import glob
@@ -36,6 +38,8 @@ KIT_JS = (
     'fragments',
     # Task 5370 (P4b).
     'form_guard', 'status_pills', 'lazy_edit',
+    # Task 5371 (P4c1).
+    'toast',
 )
 SHIM_MARKER = 'bemade_portal_kit shim'
 # The clinic's aliases removed by task 5198 (P3a).
@@ -44,14 +48,12 @@ CLINIC_SHIMS = (
     'user_menu', 'edit_anchor', 'list_header', 'app_nav',
     # Task 5370 (P4b): P4a's alias is past its release.
     'fragments',
+    # Task 5371 (P4c1): P4b's aliases are past their release.
+    'form_guard', 'status_pills', 'lazy_edit',
 )
-# Task 5370 (P4b): the one-release aliases of the moved guard, pills and
-# lazy edit.
-ALLOWED_SHIMS = (
-    'bemade_sports_clinic/static/src/js/sc_form_guard.js',
-    'bemade_sports_clinic/static/src/js/sc_status_pills.js',
-    'bemade_sports_clinic/static/src/js/sc_lazy_edit.js',
-)
+# One-release aliases of moved modules still allowed (task 5371, P4c1: P4b's
+# three are past their release; none left).
+ALLOWED_SHIMS = ()
 
 
 def _asset_paths(entries):
@@ -76,7 +78,7 @@ def _runtime_bundles(manifest):
 @tagged('post_install', '-at_install')
 class TestPkAssets(TransactionCase):
 
-    def test_kit_js_files_are_the_seventeen(self):
+    def test_kit_js_files_are_the_eighteen(self):
         root = os.path.join(get_module_path(KIT), 'static', 'src', 'js')
         found = sorted(os.path.basename(p)[3:-3] for p in glob.glob(os.path.join(root, 'pk_*.js')))
         self.assertEqual(found, sorted(KIT_JS))

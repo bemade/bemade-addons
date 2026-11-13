@@ -140,7 +140,7 @@ tours.add("sc_1590_clinic_injury_undo", {
         ...addSteps(DIAG_UNDO),
         {
             content: "Undo",
-            trigger: ".o_pk_toast:not([hidden]) [data-sc-toast-action]",
+            trigger: ".o_pk_toast:not([hidden]) [data-pk-toast-action]",
             run: "click",
             expectUnloadPage: true,
         },

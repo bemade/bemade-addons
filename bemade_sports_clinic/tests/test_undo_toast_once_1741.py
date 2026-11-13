@@ -6,16 +6,16 @@ only (this repository is public).
 Cause (reproduced 2026-11-02 at 390 px on a prod-shaped copy: archive a
 timesheet → « Annuler » → « Activités » tab → back): the page that carried
 the session notification was replayed from the browser's cache with its
-``data-sc-notify`` and showed it again.
+``data-pk-notify`` and showed it again.
 
 Acceptance criteria:
 
 * UC-1 A shell page that carries a session notification answers
   ``Cache-Control: no-store`` and gives the notification an id
-  (``data-sc-notify-id``, a new one per notification); a page without one
+  (``data-pk-notify-id``, a new one per notification); a page without one
   carries neither. The form guard's probe (X-Pk-Guard) peeks — no id
   consumed, the real page still shows it (task 1658 unchanged).
-* UC-2 sc_app_ui.js shows a notification only on a « navigate » / « reload »
+* UC-2 the kit's pk_toast.js (task 5371; was sc_app_ui.js) shows a notification only on a « navigate » / « reload »
   load and once per id (sessionStorage); « Annuler » marks the session
   dirty before it posts (form.submit() fires no « submit » event).
 * UC-3 pk_form_guard.js: a success target that differs from the page by its
@@ -49,13 +49,13 @@ class TestUndoToastOnce1741(TopBars1736Common):
         resp = self.url_open('/my/notepad')
         self.assertEqual(resp.headers.get('Cache-Control'), 'no-store')
         tree = self._tree(resp.text)
-        first = _toast(tree).get('data-sc-notify-id')
+        first = _toast(tree).get('data-pk-notify-id')
         self.assertTrue(first)
-        self.assertTrue(tree.xpath('//form[@data-sc-form="sc.undo"]'))
+        self.assertTrue(tree.xpath('//form[@data-pk-undo]'))
         # Shown once: the next page has none, and is not « no-store ».
         resp = self.url_open('/my/notepad')
         self.assertNotEqual(resp.headers.get('Cache-Control'), 'no-store')
-        self.assertIsNone(_toast(self._tree(resp.text)).get('data-sc-notify-id'))
+        self.assertIsNone(_toast(self._tree(resp.text)).get('data-pk-notify-id'))
         # « Undo »: « Note restored. » is a session toast too (was a
         # ?success= banner), with a NEW id.
         undo = '/my/notepad/%s/restore?undo=1' % self.qnote.id
@@ -63,8 +63,8 @@ class TestUndoToastOnce1741(TopBars1736Common):
         self.assertNotIn('success=', location)
         resp = self.url_open('/my/notepad')
         self.assertEqual(resp.headers.get('Cache-Control'), 'no-store')
-        second = _toast(self._tree(resp.text)).get('data-sc-notify-id')
-        self.assertEqual(_toast(self._tree(resp.text)).get('data-sc-notify'), 'Note restored.')
+        second = _toast(self._tree(resp.text)).get('data-pk-notify-id')
+        self.assertEqual(_toast(self._tree(resp.text)).get('data-pk-notify'), 'Note restored.')
         self.assertTrue(second)
         self.assertNotEqual(first, second)
 
@@ -72,15 +72,17 @@ class TestUndoToastOnce1741(TopBars1736Common):
         self._login_tp()
         self._post('/my/notepad/%s/archive' % self.qnote.id, sc_undo='1')
         resp = self.url_open('/my/notepad', headers={'X-Pk-Guard': '1'})
-        self.assertTrue(_toast(self._tree(resp.text)).get('data-sc-notify'))
+        self.assertTrue(_toast(self._tree(resp.text)).get('data-pk-notify'))
         resp = self.url_open('/my/notepad')
-        self.assertTrue(_toast(self._tree(resp.text)).get('data-sc-notify'), 'the real page still shows it')
+        self.assertTrue(_toast(self._tree(resp.text)).get('data-pk-notify'), 'the real page still shows it')
 
     def test_client_guards_present(self):
-        with file_open('bemade_sports_clinic/static/src/js/sc_app_ui.js') as f:
+        # Task 5371 (P4c1): the toast is the kit's.
+        with file_open('bemade_portal_kit/static/src/js/pk_toast.js') as f:
             ui = f.read()
-        self.assertIn('notifyNavigationType() === "back_forward" || notificationSeen(id)', ui)
-        self.assertIn('markDirty();\n            undo.submit();', ui)
+        self.assertIn('navigationType() === "back_forward" || notificationSeen(id)', ui)
+        self.assertIn('markDirty();\n        form.submit();', ui)
+        self.assertIn('submitUndo(undo)', ui)
         with file_open('bemade_portal_kit/static/src/js/pk_form_guard.js') as f:
             guard = f.read()
         self.assertIn('window.location.reload();', guard)

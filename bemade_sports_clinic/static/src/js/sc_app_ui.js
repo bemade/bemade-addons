@@ -9,26 +9,25 @@
  *   data-sc-lazy-fresh (the histories, task 1581); a [data-sc-sheet-refetch]
  *   link inside a sheet reloads its body from its href (filter chips);
  * - lazy rows: <details data-sc-lazy-url> fetch their body on first open;
- * - the status toast (pk_fetch errors, offline / back online; task 1583:
- *   the pending session notification of a POST round-trip, on load);
  * - the device draft store: foreign drafts purged on load, every draft
  *   cleared on « Déconnexion »;
- * - task 1539: the toast may carry ONE action (« Annuler » after an instant
- *   status save: ``sc:toast`` event — ``pk:toast`` from the kit's scripts —
- *   detail {message, actionLabel, action});
- *   [data-sc-draft-clear="<key prefix>"] drops those drafts on load (the
+ * - task 5371 (P4c1): the toast, the session notification and the undo
+ *   offers are the kit's (pk_toast.js, « pk:toast »); this file registers
+ *   the injury's undo hooks and shows its own toasts with showToast;
+ * - [data-sc-draft-clear="<key prefix>"] drops those drafts on load (the
  *   landing page of a created injury / added note); a legacy #fragment
  *   (#notes, #contacts… from the POST round-trips) opens the matching tab
  *   (data-sc-tab or one of data-sc-tab-aliases);
  * - task 1620: a sheet marked data-sc-sheet-open-on-load opens on load.
  */
 import { _t } from "@web/core/l10n/translation";
+import { registry } from "@web/core/registry";
 import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 import { focusFirstField } from "@bemade_portal_kit/js/pk_focus";
 import { pkSetDisplay } from "@bemade_portal_kit/js/pk_contact_href";
 import { anchorEdited } from "@bemade_portal_kit/js/pk_edit_anchor";
-import { PENDING_TOAST_KEY } from "@bemade_portal_kit/js/pk_confirm";
-import { markDirty, registerRefreshMarkers } from "@bemade_portal_kit/js/pk_fragments";
+import { registerRefreshMarkers } from "@bemade_portal_kit/js/pk_fragments";
+import { keepClearOfToast, showToast, UNDO_OFFERS } from "@bemade_portal_kit/js/pk_toast";
 import {
     clearAllDrafts,
     purgeForeignDrafts,
@@ -44,211 +43,12 @@ registerRefreshMarkers({
 });
 
 // Task 1676: the pencil ↔ ✓ swap (setToggleDone). Declared up here: the
-// load-time handlers below (e.g. offerUndoCreatePlayer) already open cards.
+// load-time handlers below (e.g. openCardsOnLoad) already open cards.
 const SC_CHECK_PATH = "M20 6L9 17l-5-5";
 const scPencils = new WeakMap();
 
 function app() {
     return document.querySelector(".o_pk_app[data-pk-app-shell]");
-}
-
-// ---------------------------------------------------------------- toast
-let toastTimer = null;
-// Owner review 2026-10-22: a toast shown while a modal popup is open (the
-// medical popup's « Details cleared · Undo ») goes INTO that popup — the
-// page behind a modal <dialog> is inert, its « Undo » could not be tapped.
-// It goes back to its place when the popup closes (and stays visible).
-let toastHome = null;
-function placeToast(root, toast) {
-    if (!toastHome && !toast.closest("dialog")) {
-        toastHome = toast.parentElement;
-    }
-    const modal = [...root.querySelectorAll("dialog[open]")].pop();
-    if (modal && toast.parentElement !== modal) {
-        modal.appendChild(toast);
-    } else if (!modal && toastHome && toast.parentElement !== toastHome) {
-        toastHome.appendChild(toast);
-    }
-}
-document.addEventListener(
-    "close",
-    (ev) => {
-        const toast = ev.target instanceof HTMLDialogElement && ev.target.querySelector(":scope > .o_pk_toast");
-        if (toast && toastHome) {
-            toastHome.appendChild(toast);
-        }
-    },
-    true
-);
-
-function showToast(message, actionLabel, action, duration, options) {
-    const root = app();
-    const toast = root && root.querySelector(".o_pk_toast");
-    if (!toast) {
-        return;
-    }
-    placeToast(root, toast);
-    const { title, tone } = options || {};
-    // Task 1678: the title sits above the text (one column), the action
-    // button beside that column — under it, right-aligned, on a phone or
-    // when it does not fit (sc_p2.scss, review round 1).
-    const body = document.createElement("span");
-    body.className = "o_pk_toast_body";
-    if (title) {
-        const strong = document.createElement("strong");
-        strong.className = "o_pk_toast_title";
-        strong.textContent = title;
-        body.appendChild(strong);
-    }
-    const text = document.createElement("span");
-    text.className = "o_pk_toast_text";
-    text.textContent = message;
-    body.appendChild(text);
-    const parts = [body];
-    if (tone) {
-        toast.dataset.scToastTone = tone;
-    } else {
-        delete toast.dataset.scToastTone;
-    }
-    if (actionLabel && action) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "o_pk_toast_action";
-        button.dataset.scToastAction = "1";
-        button.textContent = actionLabel;
-        button.addEventListener("click", () => {
-            toast.hidden = true;
-            action();
-        });
-        parts.push(button);
-    }
-    toast.replaceChildren(...parts);
-    toast.hidden = false;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-        toast.hidden = true;
-    }, duration || (actionLabel ? 8000 : 4000));
-}
-
-// Task 1679: a card the toast is about keeps its bottom (its buttons) above
-// the toast (fixed over the page): the page scrolls up by the overlap, with
-// room made under the page when it is already at its end (removed with the
-// toast). Call it once the card's own scroll is done (an instant one: a
-// smooth scroll still running would end where it was heading). ``fitOnly``:
-// only when the whole card fits above the toast (a tall card being edited
-// keeps its top in view).
-function keepClearOfToast(el, { fitOnly = false } = {}) {
-    const root = app();
-    const toast = root && root.querySelector(".o_pk_toast");
-    if (!el || !toast || toast.hidden) {
-        return;
-    }
-    const gap = 8;
-    const toastTop = toast.getBoundingClientRect().top;
-    const rect = el.getBoundingClientRect();
-    const overlap = rect.bottom - (toastTop - gap);
-    if (overlap <= 0 || (fitOnly && rect.height > toastTop - gap)) {
-        return;
-    }
-    const scroller = document.scrollingElement || document.documentElement;
-    const room = window.scrollY + overlap - (scroller.scrollHeight - window.innerHeight);
-    if (room > 0 && !document.body.dataset.scToastRoom) {
-        document.body.dataset.scToastRoom = "1";
-        document.body.style.paddingBottom = `${Math.ceil(room)}px`;
-        const observer = new MutationObserver(() => {
-            if (toast.hidden) {
-                observer.disconnect();
-                delete document.body.dataset.scToastRoom;
-                document.body.style.paddingBottom = "";
-            }
-        });
-        observer.observe(toast, { attributes: true, attributeFilter: ["hidden"] });
-    }
-    window.scrollBy({ top: overlap, behavior: "instant" });
-}
-
-function onToast(ev) {
-    const detail = ev.detail || {};
-    showToast(detail.message || "", detail.actionLabel, detail.action, detail.duration,
-        { title: detail.title, tone: detail.tone });
-}
-document.addEventListener("sc:toast", onToast);
-// Task 5370 (kit P4b): the kit's scripts (the status pills) ask for their
-// toasts with « pk:toast » (same detail); both until the toast moves (P4c).
-document.addEventListener("pk:toast", onToast);
-
-// Task 1741: the ids of the session notifications already shown in this tab
-// (a page replayed from the browser's cache must not show its one again).
-const NOTIFY_SHOWN_KEY = "sc_notify_shown:v1";
-
-function notifyNavigationType() {
-    try {
-        const entry = performance.getEntriesByType("navigation")[0];
-        return (entry && entry.type) || "navigate";
-    } catch {
-        return "navigate";
-    }
-}
-
-/** True when ``id`` was shown already; else remembers it (last 20). */
-function notificationSeen(id) {
-    if (!id) {
-        return false;
-    }
-    try {
-        const shown = JSON.parse(window.sessionStorage.getItem(NOTIFY_SHOWN_KEY) || "[]");
-        if (shown.includes(id)) {
-            return true;
-        }
-        shown.push(id);
-        window.sessionStorage.setItem(NOTIFY_SHOWN_KEY, JSON.stringify(shown.slice(-20)));
-    } catch {
-        // private mode / storage off: the navigation-type check still applies
-    }
-    return false;
-}
-
-// Task 1583: the pending session notification of a POST round-trip
-// (« Add to Team »…), rendered on the toast host by sc_app_layout — shown
-// once on load, whatever the page. Errors stay longer.
-// Task 1741: never on a page shown again by back / forward (a cached copy
-// of the page that showed it), never twice for the same notification.
-function showSessionNotification() {
-    const root = app();
-    const toast = root && root.querySelector(".o_pk_toast[data-sc-notify]");
-    if (!toast) {
-        return;
-    }
-    const message = toast.dataset.scNotify;
-    const tone = toast.dataset.scNotifyTone || "success";
-    const title = toast.dataset.scNotifyTitle || "";
-    const id = toast.dataset.scNotifyId || "";
-    delete toast.dataset.scNotify;
-    delete toast.dataset.scNotifyTitle;
-    delete toast.dataset.scNotifyTone;
-    delete toast.dataset.scNotifyId;
-    if (notifyNavigationType() === "back_forward" || notificationSeen(id)) {
-        return;
-    }
-    // Task 1736: an archive just done from a card's archive icon — its
-    // « Annuler » posts the restore form for the toast's time.
-    const undo = root.querySelector('form[data-sc-form="sc.undo"]');
-    if (undo) {
-        // Task 1741: form.submit() fires no « submit » event — mark the
-        // session dirty here, so pages shown again by « back » reload.
-        const restore = () => {
-            markDirty();
-            undo.submit();
-        };
-        showToast(message, undo.dataset.scToastAction, restore, 8000, { title, tone });
-        return;
-    }
-    showToast(message, null, null, tone === "error" ? 10000 : 6000, { title, tone });
-}
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", showSessionNotification);
-} else {
-    showSessionNotification();
 }
 
 // A save updates the page in place (owner review 2026-10-10): the read views
@@ -285,94 +85,39 @@ document.addEventListener("pk:saved", (ev) => {
 
 // A just-created injury (inline « Add Injury », owner decision 2026-10-11):
 // « Injury created · Undo » for the undo window (the server enforces it
-// too), and the address loses ?created= so a reload opens the injury
-// without offering the undo again.
-const SC_UNDO_CREATE_MS = 2 * 60 * 1000;
-function offerUndoCreate() {
-    const card = document.querySelector(".o_pk_app [data-sc-created-injury]");
-    const form = card && card.querySelector('form[data-sc-form="injury.undo"]');
-    if (!form) {
-        return;
-    }
-    showToast(form.dataset.scToastMessage, form.dataset.scToastAction, () => form.submit(), SC_UNDO_CREATE_MS);
-    const url = new URL(window.location.href);
-    if (url.searchParams.has("created")) {
-        url.searchParams.set("injury", url.searchParams.get("created"));
-        url.searchParams.delete("created");
-        window.history.replaceState(window.history.state, "", url.toString());
-    }
-    // Task 1679: instant, then lifted above the toast when it fits.
-    card.scrollIntoView({ block: "start", behavior: "instant" });
-    keepClearOfToast(card, { fitOnly: true });
-}
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", offerUndoCreate);
-} else {
-    offerUndoCreate();
-}
-
-// Task 1663: a team announcement just archived — « Announcement archived ·
-// Undo » for the pills' undo time (~8 s; the server re-checks its window);
-// the address loses ?announcement_archived= so a reload does not offer it.
-function offerUndoAnnouncement() {
-    const form = document.querySelector('.o_pk_app form[data-sc-form="announcement.undo"]');
-    if (form) {
-        showToast(form.dataset.scToastMessage, form.dataset.scToastAction, () => form.submit(), 8000);
-    }
-    const url = new URL(window.location.href);
-    if (url.searchParams.has("announcement_archived")) {
-        url.searchParams.delete("announcement_archived");
-        window.history.replaceState(window.history.state, "", url.toString());
-    }
-}
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", offerUndoAnnouncement);
-} else {
-    offerUndoAnnouncement();
-}
-
-// Task 1656: a toast kept for this page by the previous one (it was left
-// after its viewer lost access to it: pk_confirm.js pkLeavePage).
-function showPendingToast() {
-    let message = null;
-    try {
-        message = window.sessionStorage.getItem(PENDING_TOAST_KEY);
-        window.sessionStorage.removeItem(PENDING_TOAST_KEY);
-    } catch {
-        return;
-    }
-    if (message && app()) {
-        showToast(message);
-    }
-}
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", showPendingToast);
-} else {
-    showPendingToast();
-}
+// too; task 5371: the kit's undo offer, form[data-pk-undo-offer="injury"]),
+// and the address loses ?created= for ?injury= so a reload opens the injury
+// without offering the undo again. Task 1679: the card, scrolled to at
+// once, is lifted above the toast when it fits.
+registry.category(UNDO_OFFERS).add("injury", {
+    rewriteUrl(url) {
+        if (url.searchParams.has("created")) {
+            url.searchParams.set("injury", url.searchParams.get("created"));
+        }
+    },
+    after({ form }) {
+        const card = form.closest("[data-sc-created-injury]");
+        if (card) {
+            card.scrollIntoView({ block: "start", behavior: "instant" });
+            keepClearOfToast(card, { fitOnly: true });
+        }
+    },
+});
 
 // Task 1655: a player just created inline — the identity card opens in edit
-// and « Player created · Undo » is offered for the undo window; the address
-// loses ?created_player= so a reload offers neither again.
-function offerUndoCreatePlayer() {
-    const form = document.querySelector('.o_pk_app form[data-sc-form="player.undo"]');
-    if (form) {
-        showToast(form.dataset.scToastMessage, form.dataset.scToastAction, () => form.submit(), SC_UNDO_CREATE_MS);
-    }
+// (its « Player created · Undo » is the kit's undo offer,
+// form[data-pk-undo-offer="player"], which drops ?created_player=). Task
+// 1717: a card marked to open on load (the EpiPen gate) opens the same way.
+function openCardsOnLoad() {
     for (const card of document.querySelectorAll(".o_pk_app [data-pk-edit-card][data-sc-edit-open-on-load]")) {
         setCardEditing(card, true);
         card.scrollIntoView({ block: "start" });
     }
-    const url = new URL(window.location.href);
-    if (url.searchParams.has("created_player")) {
-        url.searchParams.delete("created_player");
-        window.history.replaceState(window.history.state, "", url.toString());
-    }
 }
 if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", offerUndoCreatePlayer);
+    document.addEventListener("DOMContentLoaded", openCardsOnLoad);
 } else {
-    offerUndoCreatePlayer();
+    openCardsOnLoad();
 }
 
 // A link to « …#<details id> » opens that inline card (e.g. Overview's
@@ -567,16 +312,6 @@ document.addEventListener("click", (ev) => {
     }
     document.dispatchEvent(new CustomEvent("pk:refresh-now"));
 });
-document.addEventListener("pk:fetch-error", (ev) => {
-    const error = ev.detail || {};
-    if (error.status === 0) {
-        showToast(_t("No connection. Try again when you are back online."));
-    } else {
-        showToast(_t("Something went wrong. Please try again."));
-    }
-});
-window.addEventListener("offline", () => app() && showToast(_t("You are offline.")));
-window.addEventListener("online", () => app() && showToast(_t("Back online.")));
 
 // Task 1643 addendum: a neutralized test DB's banner (#oe_neutralize_banner)
 // is pinned at the bottom on a phone (sc_tokens.scss); the tabs rise by its

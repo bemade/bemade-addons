@@ -259,7 +259,7 @@ export async function applyProposal() {
         close();
         announce(result);
         if (result.message) {
-            document.dispatchEvent(new CustomEvent("sc:toast", { detail: { message: result.message } }));
+            document.dispatchEvent(new CustomEvent("pk:toast", { detail: { message: result.message } }));
         }
         return true;
     } catch (err) {

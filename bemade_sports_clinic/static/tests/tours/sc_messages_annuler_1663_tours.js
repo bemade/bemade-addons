@@ -26,7 +26,7 @@ tours.add("sc_1663_announcement_undo", {
         },
         {
             content: "Archived at once; the toast offers « Undo »",
-            trigger: '.o_pk_toast:not([hidden]) button[data-sc-toast-action]',
+            trigger: '.o_pk_toast:not([hidden]) button[data-pk-toast-action]',
             expectUnloadPage: true,
             run() {
                 assert(!document.querySelector(".o_sc_announcement_body"), "the announcement is still shown");
