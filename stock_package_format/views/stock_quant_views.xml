@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_stock_quant_package_format_list" model="ir.ui.view">
+        <field name="name">stock.quant.list.package.format</field>
+        <field name="model">stock.quant</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0" export_xlsx="1">
+                <field name="product_id" />
+                <field name="location_id" />
+                <field name="package_type_id" />
+                <field name="package_id" />
+                <field name="package_is_opened" />
+                <field name="lot_id" />
+                <field name="quantity" sum="Total" />
+                <field name="reserved_quantity" sum="Total" optional="show" />
+                <field name="product_uom_id" />
+            </list>
+        </field>
+    </record>
+
+    <record id="action_stock_by_package_format" model="ir.actions.act_window">
+        <field name="name">Stock by Package Format</field>
+        <field name="res_model">stock.quant</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="view_id" ref="view_stock_quant_package_format_list" />
+        <field
+      name="domain"
+    >[('product_id.uses_package_rule', '=', True), ('location_id.usage', '=', 'internal'), ('quantity', '>', 0)]</field>
+        <field
+      name="context"
+    >{'group_by': ['product_id', 'package_type_id', 'lot_id']}</field>
+    </record>
+
+    <menuitem
+    id="menu_stock_by_package_format"
+    action="action_stock_by_package_format"
+    parent="stock.menu_warehouse_report"
+    sequence="160"
+  />
+</odoo>

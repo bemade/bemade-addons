@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="view_picking_form_package_format" model="ir.ui.view">
+        <field name="name">stock.picking.form.package.format</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='do_print_picking']" position="before">
+                <field name="package_format_to_pack" invisible="1" />
+                <button
+          name="action_package_format_pack"
+          type="object"
+          string="Pack by format"
+          invisible="not package_format_to_pack or state in ('draft', 'done', 'cancel')"
+          groups="stock.group_stock_user"
+        />
+            </xpath>
+            <xpath
+        expr="//field[@name='move_ids']/list/field[@name='product_uom_qty']"
+        position="after"
+      >
+                <field name="package_format_proposal_ids" column_invisible="True" />
+                <field
+          name="package_format_proposal"
+          optional="show"
+          string="Open to cover"
+          invisible="not package_format_proposal"
+        />
+                <button
+          name="action_package_format_open_proposal"
+          type="object"
+          icon="fa-box-open"
+          title="Open the proposed package(s)"
+          invisible="not package_format_proposal"
+          groups="stock_package_format.group_package_open"
+        />
+            </xpath>
+        </field>
+    </record>
+</odoo>

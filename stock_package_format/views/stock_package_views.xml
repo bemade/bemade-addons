@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="stock_package_view_form_package_format" model="ir.ui.view">
+        <field name="name">stock.package.form.package.format</field>
+        <field name="model">stock.package</field>
+        <field name="inherit_id" ref="stock.stock_package_view_form" />
+        <field name="arch" type="xml">
+            <button name="unpack" position="after">
+                <button
+          name="action_package_format_open"
+          string="Open"
+          type="object"
+          invisible="is_opened"
+          groups="stock_package_format.group_package_open"
+        />
+                <button
+          name="action_package_format_repack"
+          string="Repack"
+          type="object"
+          groups="stock_package_format.group_package_open"
+        />
+            </button>
+            <field name="pack_date" position="after">
+                <field name="is_opened" />
+                <field name="opened_by_id" invisible="not is_opened" />
+                <field name="opened_date" invisible="not is_opened" />
+                <field name="open_reason" invisible="not is_opened" />
+            </field>
+            <sheet position="after">
+                <chatter />
+            </sheet>
+        </field>
+    </record>
+
+    <record id="stock_package_view_list_package_format" model="ir.ui.view">
+        <field name="name">stock.package.list.package.format</field>
+        <field name="model">stock.package</field>
+        <field name="inherit_id" ref="stock.stock_package_view_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="is_opened" optional="show" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="stock_package_view_search_package_format" model="ir.ui.view">
+        <field name="name">stock.package.search.package.format</field>
+        <field name="model">stock.package</field>
+        <field name="inherit_id" ref="stock.stock_package_view_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <filter
+          name="opened"
+          string="Opened"
+          domain="[('is_opened', '=', True)]"
+        />
+                <filter
+          name="unopened"
+          string="Unopened"
+          domain="[('is_opened', '=', False)]"
+        />
+            </xpath>
+        </field>
+    </record>
+</odoo>

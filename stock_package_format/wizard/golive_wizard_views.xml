@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="golive_wizard_view_form" model="ir.ui.view">
+        <field name="name">stock.package.format.golive.wizard.form</field>
+        <field name="model">stock.package.format.golive.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Pack existing stock">
+                <p class="text-muted">
+                    Count the product, then enter its packages: N × format with the lot
+                    written on them. The loose stock is replaced by these packages through
+                    an inventory adjustment. Loose stock you do not pack stays usable as loose.
+                </p>
+                <group>
+                    <group>
+                        <field name="product_id" options="{'no_create': True}" />
+                        <field name="location_id" options="{'no_create': True}" />
+                    </group>
+                    <group>
+                        <field name="loose_quantity" />
+                        <field name="packed_quantity" />
+                        <field name="product_uom_id" />
+                    </group>
+                </group>
+                <field name="line_ids">
+                    <list editable="bottom">
+                        <field name="allowed_format_ids" column_invisible="True" />
+                        <field
+              name="format_uom_id"
+              options="{'no_create': True, 'no_open': True}"
+            />
+                        <field name="package_count" />
+                        <field name="lot_name" />
+                        <field name="quantity" />
+                    </list>
+                </field>
+                <footer>
+                    <button
+            name="action_confirm"
+            type="object"
+            class="btn-primary"
+            string="Pack"
+          />
+                    <button special="cancel" string="Cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+        <record id="group_package_open" model="res.groups">
+            <field name="name">Can open packages</field>
+            <field
+      name="comment"
+    >Open a package (take part of it) and repack stock into other package formats.</field>
+        </record>
+        <record id="stock.group_stock_manager" model="res.groups">
+            <field
+      name="implied_ids"
+      eval="[Command.link(ref('group_package_open'))]"
+    />
+        </record>
+</odoo>
