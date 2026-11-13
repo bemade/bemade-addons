@@ -12,7 +12,7 @@
                 data-sc-search-sheet="1">
             <div class="o_pk_sheet_head">
                 <h2 class="o_pk_sheet_title" id="sc_search_sheet_title" t-out="sc_search_label"/>
-                <button type="button" class="o_pk_icon_btn" data-sc-sheet-close="1" aria-label="Close" title="Close">
+                <button type="button" class="o_pk_icon_btn" data-pk-sheet-close="1" aria-label="Close" title="Close">
                     <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'close'"/></t>
                 </button>
             </div>

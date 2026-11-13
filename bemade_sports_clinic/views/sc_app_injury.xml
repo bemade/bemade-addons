@@ -126,7 +126,7 @@
             <t t-set="sc_title">Treatment Notes</t>
             <t t-set="sc_active_nav" t-value="'players'"/>
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
-            <div t-if="success == 'note_added'" t-att-data-sc-draft-clear="sc_note_draft_prefix" hidden="hidden"/>
+            <div t-if="success == 'note_added'" t-att-data-pk-draft-clear="sc_note_draft_prefix" hidden="hidden"/>
             <t t-if="is_treatment_prof" t-call="bemade_sports_clinic.sc_note_add_form">
                 <t t-set="note_patient" t-value="patient"/>
                 <t t-set="note_return_url" t-value="notes_return_url"/>
@@ -150,18 +150,18 @@
 
     <!-- Task 1581: /my/injury/<id>/notes/history/fragment — the injury notes
          history sheet's body: the scope chips (therapists only) re-fetch it
-         inside the sheet (data-sc-sheet-refetch, sc_app_ui.js). -->
+         inside the sheet (data-pk-sheet-refetch, the kit's pk_sheets.js). -->
     <template id="sc_note_history_fragment" name="App shell: injury note history">
         <t t-set="empty_message">No note history yet.</t>
         <t t-call="bemade_sports_clinic.sc_history_list">
             <t t-set="section" t-value="'injury.notes.history'"/>
             <nav t-if="is_treatment_prof" class="o_pk_segmented o_pk_segmented_full" role="group"
                  aria-label="Scope filter" data-pk-section="history.scope">
-                <a t-att-href="sc_scope_urls['all']" data-sc-sheet-refetch="1"
+                <a t-att-href="sc_scope_urls['all']" data-pk-sheet-refetch="1"
                    t-att-aria-pressed="'true' if scope == 'all' else 'false'">All notes</a>
-                <a t-att-href="sc_scope_urls['internal']" data-sc-sheet-refetch="1"
+                <a t-att-href="sc_scope_urls['internal']" data-pk-sheet-refetch="1"
                    t-att-aria-pressed="'true' if scope == 'internal' else 'false'">Internal notes</a>
-                <a t-att-href="sc_scope_urls['external']" data-sc-sheet-refetch="1"
+                <a t-att-href="sc_scope_urls['external']" data-pk-sheet-refetch="1"
                    t-att-aria-pressed="'true' if scope == 'external' else 'false'">External notes</a>
             </nav>
         </t>

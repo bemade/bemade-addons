@@ -97,7 +97,7 @@ class TestMyEventsDefault1730(Calendar1591Common):
                          [str(self.tp.id)])
         # The segments carry the view, so « Past » / « Calendar » stay on it.
         for key in ('upcoming', 'past', 'calendar'):
-            href = tree.xpath('//nav[@data-sc-tabs]//a[@data-sc-tab="%s"]/@href' % key)[0]
+            href = tree.xpath('//nav[@data-pk-tabs]//a[@data-pk-tab="%s"]/@href' % key)[0]
             self.assertEqual(self._query(href).get('view_type'), 'my', key)
             self.assertEqual(self._query(href).get('assigned_user_id'), str(self.tp.id), key)
 
@@ -119,7 +119,7 @@ class TestMyEventsDefault1730(Calendar1591Common):
         form = tree.xpath('//form[@data-pk-section="events.filters"]')[0]
         self.assertEqual(form.xpath('.//input[@name="view_type"]/@value'), ['all'])
         for key in ('upcoming', 'past', 'calendar'):
-            href = tree.xpath('//nav[@data-sc-tabs]//a[@data-sc-tab="%s"]/@href' % key)[0]
+            href = tree.xpath('//nav[@data-pk-tabs]//a[@data-pk-tab="%s"]/@href' % key)[0]
             self.assertEqual(self._query(href).get('view_type'), 'all', key)
         # A filter that names only a professional (no view) is explicit too.
         _text, tree = self._get('/my/events?assigned_user_id=')
@@ -159,7 +159,7 @@ class TestMyEventsDefault1730(Calendar1591Common):
                          {'view_type': 'my', 'assigned_user_id': str(self.tp.id)})
         # The view chip is not a filter of the panel's: it stays closed.
         self.assertFalse(tree.xpath('//form[@data-pk-section="events.filters"]//details[@open]'))
-        upcoming = tree.xpath('//nav[@data-sc-tabs]//a[@data-sc-tab="upcoming"]/@href')[0]
+        upcoming = tree.xpath('//nav[@data-pk-tabs]//a[@data-pk-tab="upcoming"]/@href')[0]
         self.assertEqual(self._query(upcoming).get('view_type'), 'my')
         # « All » sticks on the calendar too.
         _text, tree = self._get(self._view_href(tree, 'all'))

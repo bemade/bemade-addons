@@ -29,14 +29,9 @@
     }
 
     // ------------------------------------------- inline-edit cards (2026-10-10)
-    // One pencil per card; read view by default (sc_app_ui.js toggles).
-    .o_pk_edit_card {
-        [data-sc-edit-view][hidden] {
-            display: none !important;
-        }
-    }
-
-    .o_pk_edit_card[data-sc-edit-open] [data-sc-edit-toggle] {
+    // One pencil per card; read view by default (the kit's pk_edit_cards.js
+    // toggles; the hidden view's rule is the kit's, task 5381).
+    .o_pk_edit_card[data-pk-edit-open] [data-pk-edit-toggle] {
         color: var(--pk-accent);
     }
 
@@ -263,7 +258,7 @@
 
     // Review round 1 (owner 2026-10-27): an item's trash sits next to its ✓
     // (top right), shown while the card is being edited — task 1736: the
-    // shared top bar (sc_card_icons: red, data-sc-edit-only).
+    // shared top bar (sc_card_icons: red, data-pk-edit-only).
     .o_sc_med_card_row > .o_pk_card_icons {
         margin-right: calc(var(--pk-space-2) * -1);
         margin-top: calc((26px - var(--pk-tap)) / 2);
@@ -286,7 +281,7 @@
     // Review round 2 (owner 2026-10-27): while editing, the EpiPen question
     // sits on the card's top row, next to the ✓ (the read view is hidden:
     // no empty header row above it).
-    .o_sc_med_epipen_card[data-sc-edit-open] {
+    .o_sc_med_epipen_card[data-pk-edit-open] {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;

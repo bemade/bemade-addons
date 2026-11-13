@@ -72,7 +72,7 @@ tours.add("sc_1672_team_add_player", {
         },
         {
             content: "The new player's page; back to the team page",
-            trigger: '[data-pk-edit-card="identity"][data-sc-edit-open] [data-sc-edit-view="edit"]:not([hidden])',
+            trigger: '[data-pk-edit-card="identity"][data-pk-edit-open] [data-pk-edit-view="edit"]:not([hidden])',
             run() {
                 window.history.back();
             },

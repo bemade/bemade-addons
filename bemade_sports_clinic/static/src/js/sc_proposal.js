@@ -16,7 +16,7 @@
  *   ({patient_id, changes: JSON [{model, id, field, value}]}), which
  *   re-validates and writes them through the normal save paths; on success
  *   the sheet closes, each written field is announced as an « pk:saved »
- *   (the autosave islands and data-sc-display read views follow, the read
+ *   (the autosave islands and data-pk-display read views follow, the read
  *   fragments refresh — task 1611) and the toast confirms;
  * - « Dismiss », the close button, Escape or the backdrop: nothing written.
  * - Task 1727: a « Retour prévu » row's date input starts at ``item.min``

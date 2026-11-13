@@ -293,7 +293,7 @@ class TestMedicalLists1677(MedicalLists1677Common):
         self.assertEqual((self.player.sudo().allergy_epipen, self.player.sudo().allergy_epipen_note),
                          (True, 'Synthetic front pocket'))
         card = self._sheet(self._tree(), 'allergy').xpath('.//*[@data-pk-section="medical.allergy.epipen"]')[0]
-        read = card.xpath('.//*[@data-sc-edit-view="read"]')[0]
+        read = card.xpath('.//*[@data-pk-edit-view="read"]')[0]
         self.assertEqual(read.get('data-pk-fragment'), 'sports.patient:%s:medical-epipen' % self.player.id)
         self.assertIn('Synthetic front pocket', read.text_content())
         self.assertIsNone(card.xpath('.//*[@data-sc-med-epipen-note-field]')[0].get('hidden'))
@@ -411,8 +411,8 @@ class TestMedicalLists1677(MedicalLists1677Common):
             self.assertEqual(len(cards), 2 if key == 'allergy' else 1)
             for card in cards:
                 self.assertTrue(card.get('data-pk-fragment-item'))
-                self.assertTrue(card.xpath('.//button[@data-sc-edit-toggle]'))
-                edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
+                self.assertTrue(card.xpath('.//button[@data-pk-edit-toggle]'))
+                edit = card.xpath('.//*[@data-pk-edit-view="edit"]')[0]
                 self.assertEqual(edit.get('hidden'), 'hidden')
                 self.assertTrue(edit.xpath('.//input[@data-sc-med-item-field="name"]'))
                 self.assertTrue(edit.xpath('.//input[@data-sc-med-item-field="life_threatening"]'))
@@ -426,9 +426,9 @@ class TestMedicalLists1677(MedicalLists1677Common):
                 # (sc_card_icons) — the trash (edit-only), then the pencil.
                 buttons = row.xpath('./span[@data-sc-card-icons]/button')
                 self.assertEqual([bool(b.get('data-sc-med-item-delete')) for b in buttons], [True, False])
-                self.assertTrue(buttons[1].get('data-sc-edit-toggle'))
-                self.assertEqual(buttons[0].get('data-sc-edit-only'), '1')
-                read = card.xpath('.//*[@data-sc-edit-view="read"]')[0]
+                self.assertTrue(buttons[1].get('data-pk-edit-toggle'))
+                self.assertEqual(buttons[0].get('data-pk-edit-only'), '1')
+                read = card.xpath('.//*[@data-pk-edit-view="read"]')[0]
                 self.assertEqual(read.get('data-pk-fragment'),
                                  'sports.patient:%s:medical-item-%s' % (pid, card.get('data-sc-med-item')))
         allergy = self._sheet(tree, 'allergy')
@@ -453,8 +453,8 @@ class TestMedicalLists1677(MedicalLists1677Common):
         for key in ('allergy', 'medical_alert'):
             sheet = self._sheet(tree, key)
             self.assertFalse(sheet.xpath(
-                './/button[@data-sc-edit-toggle] | .//input | .//textarea | .//form | .//details'
-                ' | .//*[@data-sc-edit-view="edit"] | .//*[@data-pk-list-add-toggle]'), key)
+                './/button[@data-pk-edit-toggle] | .//input | .//textarea | .//form | .//details'
+                ' | .//*[@data-pk-edit-view="edit"] | .//*[@data-pk-list-add-toggle]'), key)
         self.assertIn('Synthetic bag', self._sheet(tree, 'allergy').text_content())
         self.assertIn('Synthetic inhaler', self._sheet(tree, 'medical_alert').text_content())
         # Grey families: no pill for a coach.

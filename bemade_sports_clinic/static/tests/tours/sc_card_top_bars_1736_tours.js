@@ -53,7 +53,7 @@ async function waitFor(check, message, timeout = 8000) {
 const CARD = "details.o_sc_injury_item";
 const HEAD = `${CARD} > summary`;
 const TRASH = `${HEAD} button.o_pk_card_trash`;
-const PENCIL = `${HEAD} button[data-sc-edit-toggle]`;
+const PENCIL = `${HEAD} button[data-pk-edit-toggle]`;
 const CHEVRON = `${HEAD} button[data-sc-injury-toggle]`;
 
 tours.add("sc_1736_injury", {
@@ -110,26 +110,26 @@ tours.add("sc_1736_injury", {
         },
         {
             content: "Details in edit mode, the pencil a ✓, the red trash next to it",
-            trigger: `${CARD} [data-pk-edit-card="injury-details"][data-sc-edit-open] [data-sc-edit-view="edit"]:not([hidden])`,
+            trigger: `${CARD} [data-pk-edit-card="injury-details"][data-pk-edit-open] [data-pk-edit-view="edit"]:not([hidden])`,
             run() {
                 const trash = q(TRASH);
                 assert(shown(trash), "no trash while editing");
                 assert(trash.classList.contains("o_pk_icon_btn_danger")
                     && getComputedStyle(trash).color !== getComputedStyle(q(`${HEAD} [data-sc-card-icons] .o_sc_card_clock`) || q(PENCIL)).color,
                     "the trash is not red");
-                assert(q(PENCIL).dataset.scEditToggleDone === "1", "the pencil is not a ✓");
+                assert(q(PENCIL).dataset.pkEditToggleDone === "1", "the pencil is not a ✓");
                 assert(trash.getBoundingClientRect().right <= q(PENCIL).getBoundingClientRect().left + 1,
                     "the trash is not left of the ✓");
             },
         },
         {
             content: "The ✓ closes the Details",
-            trigger: `${PENCIL}[data-sc-edit-toggle-done]`,
+            trigger: `${PENCIL}[data-pk-edit-toggle-done]`,
             run: "click",
         },
         {
             content: "Read mode: the trash is hidden again",
-            trigger: `${CARD} [data-pk-edit-card="injury-details"]:not([data-sc-edit-open]) [data-sc-edit-view="read"]:not([hidden])`,
+            trigger: `${CARD} [data-pk-edit-card="injury-details"]:not([data-pk-edit-open]) [data-pk-edit-view="read"]:not([hidden])`,
             run() {
                 assert(!shown(q(TRASH)), "the trash still shows");
             },
@@ -150,7 +150,7 @@ tours.add("sc_1736_injury", {
         },
         {
             content: "Unfolded, Details editing; the trash opens « Delete injury »",
-            trigger: `${CARD}[open] [data-pk-edit-card="injury-details"][data-sc-edit-open]`,
+            trigger: `${CARD}[open] [data-pk-edit-card="injury-details"][data-pk-edit-open]`,
             run() {
                 q(TRASH).click();
             },
@@ -168,7 +168,7 @@ tours.add("sc_1736_star", {
             content: "The ★ (not followed), left of the pencil",
             trigger: '[data-pk-section="player.hero"] button[data-sc-follow][aria-pressed="false"]',
             run(helpers) {
-                const pencil = q('[data-pk-section="player.hero"] [data-sc-card-icons] button[data-sc-edit-toggle]');
+                const pencil = q('[data-pk-section="player.hero"] [data-sc-card-icons] button[data-pk-edit-toggle]');
                 assert(pencil, "no pencil in the hero's icon group");
                 assert(this.anchor.getBoundingClientRect().right <= pencil.getBoundingClientRect().left + 1,
                     "the ★ is not left of the pencil");
@@ -197,7 +197,7 @@ tours.add("sc_1736_contact", {
     steps: () => [
         {
             content: "Read mode: no trash; the pencil",
-            trigger: `${CONTACT}:not([data-sc-edit-open]) button[data-sc-edit-toggle]`,
+            trigger: `${CONTACT}:not([data-pk-edit-open]) button[data-pk-edit-toggle]`,
             run(helpers) {
                 assert(!shown(q(`${CONTACT} button.o_pk_card_trash`)), "the trash shows in read mode");
                 return helpers.click();
@@ -205,9 +205,9 @@ tours.add("sc_1736_contact", {
         },
         {
             content: "Editing: the red trash left of the ✓",
-            trigger: `${CONTACT}[data-sc-edit-open] button.o_pk_card_trash:visible`,
+            trigger: `${CONTACT}[data-pk-edit-open] button.o_pk_card_trash:visible`,
             run(helpers) {
-                const done = q(`${CONTACT} button[data-sc-edit-toggle-done]`);
+                const done = q(`${CONTACT} button[data-pk-edit-toggle-done]`);
                 assert(this.anchor.getBoundingClientRect().right <= done.getBoundingClientRect().left + 1, "order");
                 return helpers.click();
             },
@@ -231,7 +231,7 @@ tours.add("sc_1736_med_delete", {
         },
         {
             content: "An item's pencil",
-            trigger: `${ITEM} button[data-sc-edit-toggle]`,
+            trigger: `${ITEM} button[data-pk-edit-toggle]`,
             run(helpers) {
                 assert(!shown(q(`${ITEM} button[data-sc-med-item-delete]`)), "the trash shows in read mode");
                 return helpers.click();
@@ -239,7 +239,7 @@ tours.add("sc_1736_med_delete", {
         },
         {
             content: "Its trash, while editing",
-            trigger: `${ITEM}[data-sc-edit-open] button[data-sc-med-item-delete]:visible`,
+            trigger: `${ITEM}[data-pk-edit-open] button[data-sc-med-item-delete]:visible`,
             run: "click",
         },
         {
@@ -249,7 +249,7 @@ tours.add("sc_1736_med_delete", {
         },
         {
             content: "Still there; the trash again",
-            trigger: `${ITEM}[data-sc-edit-open] button[data-sc-med-item-delete]:visible`,
+            trigger: `${ITEM}[data-pk-edit-open] button[data-sc-med-item-delete]:visible`,
             async run(helpers) {
                 await pause();
                 assert(document.querySelectorAll(ITEM).length === 1, "the item went without a confirmation");
@@ -280,7 +280,7 @@ tours.add("sc_1736_note_undo", {
             run(helpers) {
                 const card = this.anchor.closest("article");
                 assert(!shown(card.querySelector("button.o_pk_card_trash")), "the trash shows in read mode");
-                const pencil = card.querySelector("button[data-sc-edit-toggle]");
+                const pencil = card.querySelector("button[data-pk-edit-toggle]");
                 assert(this.anchor.getBoundingClientRect().right <= pencil.getBoundingClientRect().left + 1, "order");
                 return helpers.click();
             },

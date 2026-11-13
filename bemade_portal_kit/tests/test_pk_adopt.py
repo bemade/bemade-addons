@@ -20,6 +20,8 @@
   and an installed module runs no migration script).
 * UC-A7 (task 5370, P4b) The kit adopts two more templates: the form
   guard's slots and the status pill select (11 in all).
+* UC-A9 (task 5381, P4c2) The kit adopts four more templates: the edit
+  card head, the display row, the sheet and the page tabs (15 in all).
 * UC-A8 (task 5370) ``strip_translated_attributes`` removes renamed
   attributes that a translation kept: Odoo merges the source's attributes
   into a translated term but never drops the term's own, so after a rename
@@ -156,7 +158,10 @@ class TestPkAdopt(TransactionCase):
         self.assertEqual(strip_translated_attributes(self.env.cr, ('data-pk-old-msg',)), 0)
 
     def test_mapping_adopted_after_upgrade(self):
-        self.assertEqual(len(ADOPTED_VIEWS), 11)
+        self.assertEqual(len(ADOPTED_VIEWS), 15)
+        for old, new in (('sc_edit_card_head', 'pk_edit_card_head'), ('sc_display_row', 'pk_display_row'),
+                         ('sc_sheet', 'pk_sheet'), ('sc_page_tabs', 'pk_page_tabs')):
+            self.assertIn(('bemade_sports_clinic', old, new), ADOPTED_VIEWS)
         self.assertIn(('bemade_sports_clinic', 'sc_form_guard_slots', 'pk_form_guard_slots'), ADOPTED_VIEWS)
         self.assertIn(('bemade_sports_clinic', 'sc_status_pill_select', 'pk_status_pill_select'), ADOPTED_VIEWS)
         for old_module, old_name, new_name in ADOPTED_VIEWS:

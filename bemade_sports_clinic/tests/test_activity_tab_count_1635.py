@@ -41,7 +41,7 @@ class TabCount1635Mixin(Clock1592Mixin):
 
     @staticmethod
     def _tab(tree, key):
-        tabs = tree.xpath('//nav[@data-sc-tabs]/a[@data-sc-tab="%s"]' % key)
+        tabs = tree.xpath('//nav[@data-pk-tabs]/a[@data-pk-tab="%s"]' % key)
         return tabs[0] if tabs else None
 
     @staticmethod
@@ -70,7 +70,7 @@ class TabCount1635Mixin(Clock1592Mixin):
         return badge
 
     def _panel_rows(self, tree):
-        panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="activities"]')[0]
         return panel.xpath('.//*[@data-sc-activity-row]')
 
     def _player_activities(self):
@@ -156,7 +156,7 @@ class TestActivityTabCount1635(TabCount1635Mixin, AppShellCommon):
             self.assertIsNone(self._badge(self._tab(tree, key)), key)
         for url in ('/my/activities', '/my/events?no_default_dates=1'):
             _t, tree = self._get(url)
-            self.assertTrue(tree.xpath('//nav[@data-sc-tabs]/a'), url)
+            self.assertTrue(tree.xpath('//nav[@data-pk-tabs]/a'), url)
             self.assertFalse(tree.xpath('//*[contains(@class, "o_pk_tab_badge")]'), url)
 
     # -- UC-5 ------------------------------------------------------------

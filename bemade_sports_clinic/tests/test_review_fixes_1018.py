@@ -203,8 +203,8 @@ class TestReviewFixes1018(PlayerInlineCommon):
         hero = tree.xpath('//*[@data-pk-section="player.hero"]')[0]
         removes = hero.xpath('.//*[@data-sc-action="player.remove"]')
         for node in removes:
-            self.assertTrue(node.xpath('ancestor::*[@data-sc-edit-view="edit"]'))
-        self.assertFalse(hero.xpath('./*[@data-sc-edit-view="read"]//*[@data-sc-action="player.remove"]'))
+            self.assertTrue(node.xpath('ancestor::*[@data-pk-edit-view="edit"]'))
+        self.assertFalse(hero.xpath('./*[@data-pk-edit-view="read"]//*[@data-sc-action="player.remove"]'))
         self.assertFalse(hero.xpath('./*[contains(@class, "o_pk_actions_row")]//*[@data-sc-action="player.remove"]'))
 
 
@@ -238,5 +238,5 @@ class TestReviewFixes1018I18n(TestAppShellI18n1538):
         ret = tree.xpath('//*[@data-pk-section="player.return"]')[0]
         self.assertIn('Retour réel', _text(ret))
         # Task 1736 (deliberate update): in the hero's top-bar icon group.
-        toggle = tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-sc-card-icons]/button[@data-sc-edit-toggle]')[0]
+        toggle = tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-sc-card-icons]/button[@data-pk-edit-toggle]')[0]
         self.assertEqual(toggle.get('aria-label'), 'Modifier')

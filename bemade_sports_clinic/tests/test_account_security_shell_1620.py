@@ -251,13 +251,13 @@ class TestSecurityShell1620(AccountShellCommon):
             self.assertEqual(bool(sheet), portal, user.name)
             if portal:
                 self.assertTrue(tree.xpath(
-                    '//button[@data-sc-sheet-open="sc_deactivate_account_sheet"]'))
+                    '//button[@data-pk-sheet-open="sc_deactivate_account_sheet"]'))
                 dform = sheet[0].xpath('.//form[@action="/my/deactivate_account"]')
                 self.assertEqual(len(dform), 1)
                 self.assertLessEqual(
                     {'csrf_token', 'password', 'validation', 'request_blacklist'},
                     set(dform[0].xpath('.//input/@name')))
-                self.assertIsNone(sheet[0].get('data-sc-sheet-open-on-load'))
+                self.assertIsNone(sheet[0].get('data-pk-sheet-open-on-load'))
 
     # -- UC-S2 -----------------------------------------------------------
     @mute_logger('odoo.addons.base.models.res_users', 'odoo.http')
@@ -316,7 +316,7 @@ class TestSecurityShell1620(AccountShellCommon):
         self.assertIsNotNone(self._shell(tree))
         sheet = tree.xpath('//dialog[@id="sc_deactivate_account_sheet"]')
         self.assertEqual(len(sheet), 1)
-        self.assertEqual(sheet[0].get('data-sc-sheet-open-on-load'), '1')
+        self.assertEqual(sheet[0].get('data-pk-sheet-open-on-load'), '1')
         self.assertIn('Wrong password',
                       sheet[0].xpath('normalize-space(.//*[@data-pk-error-for="password"])'))
         self.assertTrue(self.coach.active)
@@ -330,7 +330,7 @@ class TestSecurityShell1620(AccountShellCommon):
         })
         tree = lxml_html.fromstring(resp.text)
         sheet = tree.xpath('//dialog[@id="sc_deactivate_account_sheet"]')[0]
-        self.assertEqual(sheet.get('data-sc-sheet-open-on-load'), '1')
+        self.assertEqual(sheet.get('data-pk-sheet-open-on-load'), '1')
         self.assertIn('exactly', sheet.xpath('normalize-space(.//*[@data-pk-error-for="validation"])'))
         self.assertIn('pc.coach@example.com', sheet.xpath('normalize-space(.//label[@for="sc_deactivate_validation"])'))
         self.assertTrue(self.coach.active)

@@ -125,7 +125,7 @@ class TestAppShellTools1540(Tools1540Common):
         resp = self._post('/my/notepad/add', {'note': 'SC 1540 added through the shell'})
         self.assertEqual(resp.status_code, 303)
         _text, tree = self._get(resp.headers['Location'])
-        self.assertEqual(tree.xpath('//*[@data-sc-draft-clear]/@data-sc-draft-clear'),
+        self.assertEqual(tree.xpath('//*[@data-pk-draft-clear]/@data-pk-draft-clear'),
                          ['sports.quick.note.new.'])
         _text, tree = self._get('/my/notepad?show_archived=1')
         restore = tree.xpath('//form[@action="/my/notepad/%s/restore"]' % self.archived_note.id)

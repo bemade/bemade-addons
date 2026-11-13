@@ -19,7 +19,7 @@ registry.category("web_tour.tours").add("sc_1593_row_expand", {
         },
         {
             content: "Expand the injured player's row",
-            trigger: `${ROW}:has([data-sc-row-return]) button[data-sc-row-expand][aria-expanded="false"]`,
+            trigger: `${ROW}:has([data-sc-row-return]) button[data-pk-row-expand][aria-expanded="false"]`,
             run: "click",
         },
         {
@@ -37,12 +37,12 @@ registry.category("web_tour.tours").add("sc_1593_row_expand", {
         },
         {
             content: "Collapse it",
-            trigger: `${ROW} button[data-sc-row-expand][aria-expanded="true"]`,
+            trigger: `${ROW} button[data-pk-row-expand][aria-expanded="true"]`,
             run: "click",
         },
         {
             content: "The detail is hidden again",
-            trigger: `${ROW}:has(button[data-sc-row-expand][aria-expanded="false"]) [data-sc-row-detail][hidden]:not(:visible)`,
+            trigger: `${ROW}:has(button[data-pk-row-expand][aria-expanded="false"]) [data-sc-row-detail][hidden]:not(:visible)`,
         },
     ],
 });

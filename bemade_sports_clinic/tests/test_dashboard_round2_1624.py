@@ -11,7 +11,7 @@ Acceptance criteria:
   the other widgets' first cards sit in the same box.
 * UC-A1 Header stays on screen: the dashboard fold-outs (« À faire » lines,
   « Voir les N autres », the player / event « Détails ») are plain
-  summaries / [data-sc-row-expand] toggles with NO autofocus inside; the
+  summaries / [data-pk-row-expand] toggles with NO autofocus inside; the
   layout script that anchors them is in the bundle. (Measured in the tour:
   8+ cards at 390 and 1440 px, the header moves < 2 px.)
 * UC-Q1 Quick « Retour prévu »: each « Retours dépassés » card carries the
@@ -24,7 +24,7 @@ Acceptance criteria:
   à venir and Feuilles de temps manquantes render each event as a row
   group (``o_pk_row_group``) with a link row (``sc_link_row``) whose main
   link (« › » chevron) opens the event, and the shared « Détails »
-  expander ([data-sc-row-expand], aria-expanded) controlling a details
+  expander ([data-pk-row-expand], aria-expanded) controlling a details
   region under the row; ids are unique on the page.
 * UC-F1 Live follow: each « Joueurs que je suis » instance is a LIST read
   fragment (``sc.dashboard:followed:<instance>``, items = the player cards)
@@ -107,7 +107,7 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         dash = tree.xpath('//*[@data-sc-dashboard]')[0]
         self.assertFalse(dash.xpath('.//*[@autofocus]'))
         self.assertTrue(dash.xpath('.//details[@data-sc-todo]/summary'))
-        self.assertTrue(dash.xpath('.//button[@data-sc-row-expand]'))
+        self.assertTrue(dash.xpath('.//button[@data-pk-row-expand]'))
         manifest = file_open('bemade_sports_clinic/__manifest__.py').read()
         self.assertIn('static/src/js/sc_dashboard_live.js', manifest)
 
@@ -194,9 +194,9 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
                 # The « › » chevron on the right.
                 self.assertTrue(row[0].xpath('./span[@class="o_pk_row_trailing"]//*[local-name()="svg"]'))
                 # The shared expander, controlling the region under the row.
-                toggle = row[0].xpath('.//button[@data-sc-row-expand]')[0]
+                toggle = row[0].xpath('.//button[@data-pk-row-expand]')[0]
                 self.assertEqual(toggle.get('aria-expanded'), 'false')
-                region = group.xpath('./div[@id="%s"]' % toggle.get('data-sc-row-expand'))[0]
+                region = group.xpath('./div[@id="%s"]' % toggle.get('data-pk-row-expand'))[0]
                 self.assertEqual(region.get('data-sc-event-details'), event_id)
                 self.assertEqual(region.get('hidden'), 'hidden')
                 self.assertIn('o_pk_row_detail', region.get('class'))

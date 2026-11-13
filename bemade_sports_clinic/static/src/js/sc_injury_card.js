@@ -63,7 +63,7 @@ document.addEventListener("click", (ev) => {
 document.addEventListener(
     "click",
     (ev) => {
-        const opener = ev.target.closest && ev.target.closest("details.o_sc_injury_item > summary [data-sc-sheet-open]");
+        const opener = ev.target.closest && ev.target.closest("details.o_sc_injury_item > summary [data-pk-sheet-open]");
         const details = opener && opener.closest("details.o_sc_injury_item");
         if (details && !details.open && inShell(details)) {
             details.open = true;
@@ -347,7 +347,7 @@ document.addEventListener(
 // shown again from the back / forward cache starts idle again.
 export function setUploadBusy(form, busy) {
     const submit = form.querySelector("[data-sc-doc-submit]");
-    const cancel = form.querySelector("[data-sc-sheet-close]");
+    const cancel = form.querySelector("[data-pk-sheet-close]");
     if (busy) {
         form.dataset.scBusy = "1";
         form.setAttribute("aria-busy", "true");
@@ -404,7 +404,7 @@ document.addEventListener(
 document.addEventListener(
     "click",
     (ev) => {
-        const close = ev.target.closest && ev.target.closest("dialog [data-sc-sheet-close]");
+        const close = ev.target.closest && ev.target.closest("dialog [data-pk-sheet-close]");
         const form = close && close.closest("dialog").querySelector("form[data-sc-doc-upload][data-sc-busy]");
         if (form) {
             ev.preventDefault();

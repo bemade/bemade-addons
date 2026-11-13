@@ -95,7 +95,7 @@ class TestClockBack1622(Clock1622Common):
     # -- UC-C3 -----------------------------------------------------------
     def test_arrow_kept_across_tabs(self):
         _text, tree = self._get(CLOCK + '&sc_from=' + _q(self.player_url))
-        hrefs = tree.xpath('//a[@data-sc-tab]/@href')
+        hrefs = tree.xpath('//a[@data-pk-tab]/@href')
         self.assertTrue(hrefs)
         for href in hrefs:
             self.assertIn('sc_from=' + _q(self.player_url), href)

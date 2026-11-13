@@ -84,7 +84,7 @@ tours.add("sc_1579_deep_link_fallback", {
         },
         {
             content: "Landed on the team page, players tab",
-            trigger: '.o_pk_app section[data-sc-tab-panel="players"]:not([hidden])',
+            trigger: '.o_pk_app section[data-pk-tab-panel="players"]:not([hidden])',
             run() {
                 assert(window.location.pathname === "/my/team", window.location.href);
                 assert(window.location.search.includes("tab=players"), window.location.href);

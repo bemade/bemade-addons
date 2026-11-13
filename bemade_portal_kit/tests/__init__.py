@@ -16,3 +16,4 @@ from . import test_pk_save_activity
 from . import test_pk_fragments
 from . import test_pk_guard
 from . import test_pk_toast
+from . import test_pk_display

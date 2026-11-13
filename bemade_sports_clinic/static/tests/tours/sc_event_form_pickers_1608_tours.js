@@ -199,7 +199,7 @@ tours.add("sc_1608_event_page_snap", {
     steps: () => [
         {
             content: "Open the event card",
-            trigger: `${CARD} button[data-sc-edit-toggle]`,
+            trigger: `${CARD} button[data-pk-edit-toggle]`,
             run: "click",
         },
         {

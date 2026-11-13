@@ -41,7 +41,7 @@ registry.category("web_tour.tours").add("sc_1626_card_details", {
         },
         {
             content: "Open its Details",
-            trigger: `${DASH} button[data-sc-row-expand][aria-expanded="false"]`,
+            trigger: `${DASH} button[data-pk-row-expand][aria-expanded="false"]`,
             run: "click",
         },
         {
@@ -60,24 +60,24 @@ registry.category("web_tour.tours").add("sc_1626_card_details", {
         },
         {
             content: "Collapse it",
-            trigger: `${DASH} button[data-sc-row-expand][aria-expanded="true"]`,
+            trigger: `${DASH} button[data-pk-row-expand][aria-expanded="true"]`,
             run: "click",
         },
         {
             content: "Face lines are back",
-            trigger: `${DASH}:has(button[data-sc-row-expand][aria-expanded="false"]) [data-sc-row-detail][hidden]:not(:visible)`,
+            trigger: `${DASH}:has(button[data-pk-row-expand][aria-expanded="false"]) [data-sc-row-detail][hidden]:not(:visible)`,
             run() {
                 assertFace(DASH, true);
             },
         },
         {
             content: "Players tab",
-            trigger: '[data-sc-tabs] a[data-sc-tab="players"]',
+            trigger: '[data-pk-tabs] a[data-pk-tab="players"]',
             run: "click",
         },
         {
             content: "Open a roster card's Details",
-            trigger: `${ROSTER}:has([data-sc-row-return]) button[data-sc-row-expand][aria-expanded="false"]`,
+            trigger: `${ROSTER}:has([data-sc-row-return]) button[data-pk-row-expand][aria-expanded="false"]`,
             run: "click",
         },
         {
@@ -89,7 +89,7 @@ registry.category("web_tour.tours").add("sc_1626_card_details", {
         },
         {
             content: "Collapse the roster card",
-            trigger: `${ROSTER} button[data-sc-row-expand][aria-expanded="true"]`,
+            trigger: `${ROSTER} button[data-pk-row-expand][aria-expanded="true"]`,
             run: "click",
         },
         {

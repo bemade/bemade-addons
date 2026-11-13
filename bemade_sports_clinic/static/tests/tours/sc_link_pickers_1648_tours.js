@@ -142,12 +142,12 @@ tours.add("sc_1648_card", {
     steps: () => [
         {
             content: "The note card's pencil",
-            trigger: 'article.o_sc_quick_note:contains("Synthetic card 1648") button[data-sc-edit-toggle]',
+            trigger: 'article.o_sc_quick_note:contains("Synthetic card 1648") button[data-pk-edit-toggle]',
             run: "click",
         },
         {
             content: "Player picker: type, pick Zoé",
-            trigger: 'article.o_sc_quick_note [data-sc-edit-view="edit"] select[data-sc-picker-key="player"] + .o_pk_picker .o_pk_picker_input',
+            trigger: 'article.o_sc_quick_note [data-pk-edit-view="edit"] select[data-sc-picker-key="player"] + .o_pk_picker .o_pk_picker_input',
             run() {
                 const input = this.anchor;
                 input.focus();

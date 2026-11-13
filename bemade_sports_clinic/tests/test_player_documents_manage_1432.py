@@ -115,7 +115,7 @@ class PlayerDocuments1432Common(Parity1577Common):
         return '/my/player?player_id=%s&tab=documents' % self.player.id
 
     def _tab(self, tree):
-        nodes = tree.xpath('//*[@data-sc-tab-panel="documents"]')
+        nodes = tree.xpath('//*[@data-pk-tab-panel="documents"]')
         return nodes[0] if nodes else None
 
     def _tab_item(self, tree, doc):

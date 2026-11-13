@@ -67,7 +67,7 @@ class TestHeaderOrder1615(PlayerInlineCommon):
         self.assertIn('o_sc_hero_top', children[0].get('class'))
         self.assertIn('o_sc_hero_head', children[0][0].get('class'))
         self.assertIn('o_pk_actions_row', children[-1].get('class'))
-        read = hero.xpath('./*[@data-sc-edit-view="read"]')[0]
+        read = hero.xpath('./*[@data-pk-edit-view="read"]')[0]
         # Task 1753 (deliberate update): the play status sits right after
         # the top row, OUTSIDE the read view (the pencil no longer hides
         # it), immediately followed by the read view (training, return).
@@ -84,12 +84,12 @@ class TestHeaderOrder1615(PlayerInlineCommon):
         _text, tree = self._get(self._url(tab='injuries'))
         hero, read = self._assert_order(tree)
         self.assertEqual(hero.get('data-pk-edit-card'), 'player-header')
-        self.assertEqual(len(hero.xpath('.//button[@data-sc-edit-toggle]')), 1)
+        self.assertEqual(len(hero.xpath('.//button[@data-pk-edit-toggle]')), 1)
         self.assertFalse(read['player.status'].xpath('.//*[@data-sc-stage-chip]'))
         self.assertEqual(len(read['player.status'].xpath('.//button[contains(@class, "o_pk_pill_select")]')), 2)
         self.assertIn('Synthetic rowing', read['player.training'].text_content())
-        self.assertNotIn('Synthetic pollen', hero.xpath('./*[@data-sc-edit-view="read"]')[0].text_content())
-        edit = hero.xpath('./*[@data-sc-edit-view="edit"]')[0]
+        self.assertNotIn('Synthetic pollen', hero.xpath('./*[@data-pk-edit-view="read"]')[0].text_content())
+        edit = hero.xpath('./*[@data-pk-edit-view="edit"]')[0]
         self.assertEqual(edit.get('hidden'), 'hidden')
         sections = [c.get('data-pk-section') for c in self._children(edit) if c.get('data-pk-section')]
         self.assertEqual([s for s in sections if s in EDIT_ORDER], EDIT_ORDER, sections)
@@ -101,7 +101,7 @@ class TestHeaderOrder1615(PlayerInlineCommon):
             self.assertTrue(fields[section].xpath('.//owl-component[contains(@props, \'"%s"\')]' % field),
                             section)
         # « Remove player » only in the edit view; « Done » closes it.
-        self.assertFalse(hero.xpath('./*[@data-sc-edit-view="read"]//*[@data-sc-action="player.remove"]'))
+        self.assertFalse(hero.xpath('./*[@data-pk-edit-view="read"]//*[@data-sc-action="player.remove"]'))
         self.assertFalse(read['player.status'].xpath('.//*[@data-sc-action="player.remove"]'))
         self.assertTrue(edit.xpath('.//button[@data-pk-edit-done]'))
 
@@ -110,7 +110,7 @@ class TestHeaderOrder1615(PlayerInlineCommon):
         _text, tree = self._get(self._url(tab='injuries'))
         hero, read = self._assert_order(tree)
         self.assertIsNone(hero.get('data-pk-edit-card'))
-        self.assertFalse(hero.xpath('.//*[@data-sc-edit-toggle] | .//*[@data-sc-edit-view="edit"]'))
+        self.assertFalse(hero.xpath('.//*[@data-pk-edit-toggle] | .//*[@data-pk-edit-view="edit"]'))
         self.assertFalse(hero.xpath('.//owl-component'))
         self.assertTrue(read['player.status'].xpath('.//*[@data-pk-section="player.status.readonly"]'))
         self.assertEqual(len(read['player.status'].xpath('.//*[@data-pk-pill-readonly]')), 2)

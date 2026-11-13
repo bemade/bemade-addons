@@ -65,7 +65,7 @@ class TestCoachDob1633(PlayerInlineCommon):
         self.assertTrue(values['age'])
         self._login_coach()
         _text, tree = self._get(self._url(tab='info'))
-        read = self._identity(tree).xpath('.//*[@data-sc-edit-view="read"]')[0]
+        read = self._identity(tree).xpath('.//*[@data-pk-edit-view="read"]')[0]
         text = ' '.join(read.text_content().split())
         self.assertIn('Date of birth', text)
         self.assertIn('Age', text)
@@ -134,7 +134,7 @@ class TestCoachDob1633(PlayerInlineCommon):
     def test_coach_pencil_has_dob_field(self):
         self._login_coach()
         _text, tree = self._get(self._url(tab='info'))
-        edit = self._identity(tree).xpath('.//*[@data-sc-edit-view="edit"]')[0]
+        edit = self._identity(tree).xpath('.//*[@data-pk-edit-view="edit"]')[0]
         self.assertTrue(any('"date_of_birth"' in props for props in self._fields_in(edit)))
 
     def test_coach_create_form_has_dob(self):

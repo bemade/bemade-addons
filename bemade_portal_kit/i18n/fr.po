@@ -307,6 +307,7 @@ msgid "Cancel"
 msgstr "Annuler"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_sheet
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Close"
 msgstr "Fermer"
@@ -343,6 +344,7 @@ msgid "Done"
 msgstr "Terminé"
 
 #. module: bemade_portal_kit
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_edit_card_head
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Edit"
 msgstr "Modifier"
@@ -596,3 +598,28 @@ msgstr "Une erreur est survenue. Veuillez réessayer."
 #: code:addons/bemade_portal_kit/static/src/js/pk_toast.js:0
 msgid "No connection. Try again when you are back online."
 msgstr "Pas de connexion. Réessayez une fois de retour en ligne."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_sheets.js:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_sheet
+msgid "Loading…"
+msgstr "Chargement…"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_sheets.js:0
+msgid "Nothing to show."
+msgstr "Rien à afficher."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_sheets.js:0
+msgid "Could not load. Close and open again to retry."
+msgstr "Chargement impossible. Fermez et rouvrez pour réessayer."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_edit_cards.js:0
+msgid "Finish editing"
+msgstr "Terminer la modification"

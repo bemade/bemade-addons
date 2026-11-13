@@ -16,7 +16,7 @@ in test_app_shell_tours_1581.py):
 * UC-H2 Empty states: each history fragment says so when there is nothing.
 * UC-H3 Triggers: the team announcement, the training recommendation and the
   injury notes each have a green link (``o_pk_link_btn``) opening a sheet
-  with ``data-sc-lazy-url`` + ``data-sc-lazy-fresh``; the announcement history
+  with ``data-pk-lazy-url`` + ``data-pk-lazy-fresh``; the announcement history
   is no longer rendered with the page; the injury page's « Note History »
   button is gone.
 * UC-H4 Role gating: the announcement fragment answers the team's staff only
@@ -201,12 +201,12 @@ class TestAppShellHistory1581(History1581Common):
         _text, tree = self._get(self.team_url)
         link = tree.xpath('//*[@data-pk-section="team.announcement.area"]'
                           '//*[contains(@class, "o_pk_section_header")]'
-                          '//*[@data-sc-sheet-open="sc_announcement_history_sheet"]')
+                          '//*[@data-pk-sheet-open="sc_announcement_history_sheet"]')
         self.assertEqual(len(link), 1)
         self.assertIn('o_pk_link_btn', link[0].get('class'))
         sheet = self._sheet(tree, 'sc_announcement_history_sheet')
-        self.assertEqual(sheet.get('data-sc-lazy-url'), self.ann_url)
-        self.assertEqual(sheet.get('data-sc-lazy-fresh'), '1')
+        self.assertEqual(sheet.get('data-pk-lazy-url'), self.ann_url)
+        self.assertEqual(sheet.get('data-pk-lazy-fresh'), '1')
         self.assertNotIn('Synthetic announcement one', sheet.text_content())
 
     def test_injury_notes_trigger_and_lazy_fresh_sheet(self):
@@ -215,13 +215,13 @@ class TestAppShellHistory1581(History1581Common):
         self.assertFalse(tree.xpath('//*[@data-sc-action="injury.history"]'))
         # Task 1616: the injury page is the open card (its own sheet ids).
         sheet = self._sheet(tree, 'sc_note_history_sheet_%s' % self.injury.id)
-        self.assertEqual(sheet.get('data-sc-lazy-url'), self.notes_url)
-        self.assertEqual(sheet.get('data-sc-lazy-fresh'), '1')
+        self.assertEqual(sheet.get('data-pk-lazy-url'), self.notes_url)
+        self.assertEqual(sheet.get('data-pk-lazy-fresh'), '1')
         # Pencil paradigm (owner review 2026-10-11): ONE « History » link in
         # the notes card's head, reachable while reading.
         links = tree.xpath('//details[@id="injury-%s"]//section[@data-pk-section="injury.notes"]'
                            '/*[contains(@class, "o_pk_edit_card_head")]'
-                           '//*[@data-sc-sheet-open="sc_note_history_sheet_%s"][contains(@class, "o_pk_link_btn")]'
+                           '//*[@data-pk-sheet-open="sc_note_history_sheet_%s"][contains(@class, "o_pk_link_btn")]'
                            % (self.injury.id, self.injury.id))
         self.assertEqual(len(links), 1)
 
@@ -229,7 +229,7 @@ class TestAppShellHistory1581(History1581Common):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&tab=info' % self.player.id)
         sheet = self._sheet(tree, 'sc_training_history_sheet')
-        self.assertEqual(sheet.get('data-sc-lazy-fresh'), '1')
+        self.assertEqual(sheet.get('data-pk-lazy-fresh'), '1')
 
     # -- UC-H4 -----------------------------------------------------------
     @mute_logger('odoo.http', 'odoo.addons.bemade_sports_clinic.controllers.team_management_portal')
@@ -262,7 +262,7 @@ class TestAppShellHistory1581(History1581Common):
     def test_scope_chips_inside_the_sheet(self):
         self._login_tp()
         tree = self._fragment(self.notes_url)
-        chips = tree.xpath('//nav[@data-pk-section="history.scope"]//a[@data-sc-sheet-refetch]')
+        chips = tree.xpath('//nav[@data-pk-section="history.scope"]//a[@data-pk-sheet-refetch]')
         self.assertEqual([c.get('href') for c in chips],
                          [self.notes_url + '?scope=%s' % s for s in ('all', 'internal', 'external')])
         self.assertEqual([c.get('aria-pressed') for c in chips], ['true', 'false', 'false'])

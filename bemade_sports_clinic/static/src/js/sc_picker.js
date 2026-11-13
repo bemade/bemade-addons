@@ -49,7 +49,7 @@ export function scNameMatches(queryWords, label) {
 function scopeOf(select) {
     return (
         select.closest("[data-sc-picker-scope]") ||
-        select.closest('[data-sc-edit-view="edit"]') ||
+        select.closest('[data-pk-edit-view="edit"]') ||
         select.closest("form") ||
         select.parentElement
     );

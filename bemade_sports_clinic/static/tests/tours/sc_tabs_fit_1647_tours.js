@@ -24,7 +24,7 @@ function visible(el) {
 }
 
 function checkPill() {
-    const pill = document.querySelector('nav[data-sc-tabs] a[data-sc-tab="activities"] .o_pk_tab_badge');
+    const pill = document.querySelector('nav[data-pk-tabs] a[data-pk-tab="activities"] .o_pk_tab_badge');
     assert(pill, "no count pill on Activities");
     assert(pill.nextElementSibling && pill.nextElementSibling.classList.contains("o_pk_tab_label"),
         "the pill does not come before the label");
@@ -35,21 +35,21 @@ tours.add("sc_1647_player_phone", {
     steps: () => [
         {
             content: "Five tabs + the pill fit the width; « Docs »",
-            trigger: 'nav[data-sc-tabs] a[data-sc-tab="activities"]',
+            trigger: 'nav[data-pk-tabs] a[data-pk-tab="activities"]',
             run() {
-                const nav = document.querySelector("nav[data-sc-tabs]");
-                const tabs = [...nav.querySelectorAll("a[data-sc-tab]")];
+                const nav = document.querySelector("nav[data-pk-tabs]");
+                const tabs = [...nav.querySelectorAll("a[data-pk-tab]")];
                 assert(tabs.length === 5, `expected 5 tabs, got ${tabs.length}`);
                 assert(nav.scrollWidth <= nav.clientWidth + 0.5,
                     `the tab bar scrolls sideways: ${nav.scrollWidth} > ${nav.clientWidth}`);
                 for (const tab of tabs) {
                     const rect = tab.getBoundingClientRect();
                     assert(rect.left >= -0.5 && rect.right <= window.innerWidth + 0.5,
-                        `${tab.dataset.scTab} out of view: ${rect.left}-${rect.right} / ${window.innerWidth}`);
+                        `${tab.dataset.pkTab} out of view: ${rect.left}-${rect.right} / ${window.innerWidth}`);
                 }
                 const pill = checkPill().getBoundingClientRect();
                 assert(pill.right <= window.innerWidth && pill.width > 0, "the pill is out of view");
-                const docs = nav.querySelector('a[data-sc-tab="documents"]');
+                const docs = nav.querySelector('a[data-pk-tab="documents"]');
                 assert(visible(docs.querySelector(".o_pk_tab_label_short")), "« Docs » not shown");
                 assert(!visible(docs.querySelector(".o_pk_tab_label_long")), "« Documents » shown on a phone");
                 assert(docs.getAttribute("title") === docs.querySelector(".o_pk_tab_label_long").textContent,
@@ -68,9 +68,9 @@ tours.add("sc_1647_player_laptop", {
     steps: () => [
         {
             content: "Laptop: « Documents » in full, the pill before « Activities »",
-            trigger: 'nav[data-sc-tabs] a[data-sc-tab="activities"]',
+            trigger: 'nav[data-pk-tabs] a[data-pk-tab="activities"]',
             run() {
-                const docs = document.querySelector('nav[data-sc-tabs] a[data-sc-tab="documents"]');
+                const docs = document.querySelector('nav[data-pk-tabs] a[data-pk-tab="documents"]');
                 assert(visible(docs.querySelector(".o_pk_tab_label_long")), "« Documents » hidden on a laptop");
                 assert(!visible(docs.querySelector(".o_pk_tab_label_short")), "« Docs » shown on a laptop");
                 checkPill();

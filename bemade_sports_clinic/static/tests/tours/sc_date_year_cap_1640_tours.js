@@ -56,7 +56,7 @@ tours.add("sc_1640_team", {
         },
         {
             content: "Open the compose form (the announcement card's pencil)",
-            trigger: '[data-pk-edit-card="announcement"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="announcement"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {

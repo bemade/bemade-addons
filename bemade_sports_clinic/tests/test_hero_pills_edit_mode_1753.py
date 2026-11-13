@@ -6,7 +6,7 @@ Acceptance criteria:
 * AC-1 Therapist: the play status block (``player.status``: the Match /
   Practice pills and the « Allergies » / « Medical alert » pills) is a
   direct child of the header card, right after its top row and right
-  before the read view — outside BOTH ``data-sc-edit-view`` blocks, so the
+  before the read view — outside BOTH ``data-pk-edit-view`` blocks, so the
   header pencil (which hides the read view) no longer hides it.
 * AC-2 Coach: the same place (no pencil, no edit view), read-only pills.
 * AC-3 Nothing duplicated or lost: the page carries ONE ``status`` and ONE
@@ -52,12 +52,12 @@ class TestHeroPillsEditMode1753(StatusPillsMixin, FragmentsCommon):
         self.assertEqual(len(blocks), 1)
         status = blocks[0]
         self.assertIs(status.getparent(), hero)
-        self.assertFalse(status.xpath('ancestor::*[@data-sc-edit-view]'))
-        self.assertFalse(status.xpath('.//*[@data-sc-edit-view]'))
+        self.assertFalse(status.xpath('ancestor::*[@data-pk-edit-view]'))
+        self.assertFalse(status.xpath('.//*[@data-pk-edit-view]'))
         self.assertIn('o_sc_hero_top', status.getprevious().get('class'))
-        self.assertEqual(status.getnext().get('data-sc-edit-view'), 'read')
-        self.assertFalse(hero.xpath('./*[@data-sc-edit-view]//*[@data-pk-section="player.status"]'
-                                    ' | ./*[@data-sc-edit-view]//*[@data-pk-section="player.medical"]'))
+        self.assertEqual(status.getnext().get('data-pk-edit-view'), 'read')
+        self.assertFalse(hero.xpath('./*[@data-pk-edit-view]//*[@data-pk-section="player.status"]'
+                                    ' | ./*[@data-pk-edit-view]//*[@data-pk-section="player.medical"]'))
         return status
 
     # -- AC-1 --------------------------------------------------------------
@@ -66,7 +66,7 @@ class TestHeroPillsEditMode1753(StatusPillsMixin, FragmentsCommon):
         tree = self._page(self._url())
         hero = self._hero(tree)
         self.assertEqual(hero.get('data-pk-edit-card'), 'player-header')
-        self.assertEqual(len(hero.xpath('./*[@data-sc-edit-view="edit"]')), 1)
+        self.assertEqual(len(hero.xpath('./*[@data-pk-edit-view="edit"]')), 1)
         status = self._status_block(tree)
         self.assertEqual(len(status.xpath('./*[@data-pk-section="player.status.readonly"]'
                                           '//button[contains(@class, "o_pk_pill_select")]')), 2)
@@ -78,7 +78,7 @@ class TestHeroPillsEditMode1753(StatusPillsMixin, FragmentsCommon):
         self._login_coach()
         tree = self._page(self._url())
         hero = self._hero(tree)
-        self.assertFalse(hero.xpath('.//*[@data-sc-edit-view="edit"] | .//*[@data-sc-edit-toggle]'))
+        self.assertFalse(hero.xpath('.//*[@data-pk-edit-view="edit"] | .//*[@data-pk-edit-toggle]'))
         status = self._status_block(tree)
         self.assertEqual(len(status.xpath('.//*[@data-pk-pill-readonly]')), 2)
         self.assertFalse(status.xpath('.//*[@data-pk-section="player.status.readonly"]//button'))

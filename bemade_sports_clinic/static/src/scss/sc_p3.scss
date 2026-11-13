@@ -324,12 +324,7 @@ $sc-p3-laptop: 1024px;
 // contact phones / emails, bookings, the event page's staff and
 // organization). An empty value (no href) reads as plain text.
 .o_pk_app {
-    a.o_sc_contact_link[href] {
-        color: var(--pk-accent);
-        font-weight: 600;
-        text-decoration: underline;
-        text-underline-offset: 2px;
-    }
+    // a.o_pk_contact_link[href] is the kit's (task 5381).
 
     .o_sc_contact_sub {
         margin-left: 6px;

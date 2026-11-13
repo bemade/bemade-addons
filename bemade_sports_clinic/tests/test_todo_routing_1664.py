@@ -164,7 +164,7 @@ class TestTodoRouting1664(Routing1664Common):
         self.assertFalse(tree.xpath('//button[@data-sc-action="activity.reassign"]'))
         tree = lxml_html.fromstring(self.url_open(
             '/my/player?player_id=%s&tab=activities' % self.player.id).text)
-        panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="activities"]')[0]
         props = panel.xpath(user_field)
         self.assertTrue(props)
         self.assertTrue(json.loads(props[0])['options'])

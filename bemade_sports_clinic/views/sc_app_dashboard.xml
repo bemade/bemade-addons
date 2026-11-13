@@ -264,14 +264,14 @@
                     <div class="o_sc_announcement_content">
                         <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'megaphone'"/></t>
                         <div class="o_sc_announcement_text">
-                            <p class="o_pk_pre o_sc_announcement_body" data-sc-clamp="3" t-out="ann['text']"/>
-                            <p class="o_pk_meta o_sc_announcement_meta" data-sc-clamp-meta="1"
+                            <p class="o_pk_pre o_sc_announcement_body" data-pk-clamp="3" t-out="ann['text']"/>
+                            <p class="o_pk_meta o_sc_announcement_meta" data-pk-clamp-meta="1"
                                t-att-hidden="None if ann['until'] else 'hidden'">
                                 <span t-if="ann['until']" class="o_sc_announcement_until" t-out="ann['until']"/>
-                                <span class="o_sc_announcement_more_sep" data-sc-clamp-sep="1" hidden="hidden"> · </span>
-                                <button type="button" class="o_pk_link_btn o_sc_announcement_more" data-sc-clamp-more="1"
+                                <span class="o_sc_announcement_more_sep" data-pk-clamp-sep="1" hidden="hidden"> · </span>
+                                <button type="button" class="o_pk_link_btn o_sc_announcement_more" data-pk-clamp-more="1"
                                         aria-expanded="false" hidden="hidden">See more</button>
-                                <button type="button" class="o_pk_link_btn o_sc_announcement_more" data-sc-clamp-less="1"
+                                <button type="button" class="o_pk_link_btn o_sc_announcement_more" data-pk-clamp-less="1"
                                         aria-expanded="true" hidden="hidden">See less</button>
                             </p>
                         </div>
@@ -332,7 +332,7 @@
          pattern exactly (sc_player_row) — a link row (sc_link_row) whose
          « › » opens the event, the time / kind / venue (or teams) under the
          name, and the shared « Details ⌄ / ⌃ » expander
-         ([data-sc-row-expand], sc_app_ui.js) unfolding the time span,
+         ([data-pk-row-expand], the kit's pk_sheets.js) unfolding the time span,
          coverage time (therapists), venue, teams, assigned staff and
          description UNDER the row (server-rendered: no lazy fetch); on
          « Feuilles de temps manquantes », « Add my timesheet ». Variables:
@@ -360,7 +360,7 @@
                                 <span>Add My Timesheet</span>
                             </a>
                             <button type="button" class="o_pk_row_expand"
-                                    t-att-data-sc-row-expand="sc_ev_detail_id" t-att-aria-controls="sc_ev_detail_id"
+                                    t-att-data-pk-row-expand="sc_ev_detail_id" t-att-aria-controls="sc_ev_detail_id"
                                     aria-expanded="false">
                                 <span>Details</span>
                                 <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'down'"/></t>

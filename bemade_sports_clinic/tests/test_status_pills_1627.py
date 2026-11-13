@@ -156,7 +156,7 @@ class TestStatusPills1627(StatusPillsMixin, FragmentsCommon):
             # pencil (which hides the read view) no longer hides them.
             for pill in pills.values():
                 self.assertTrue(pill.xpath('ancestor::*[@data-pk-section="player.hero"]'))
-                self.assertFalse(pill.xpath('ancestor::*[@data-sc-edit-view]'))
+                self.assertFalse(pill.xpath('ancestor::*[@data-pk-edit-view]'))
 
     # -- AC-3 --------------------------------------------------------------
     def test_coach_reads_coloured_pills(self):
@@ -217,7 +217,7 @@ class TestStatusPills1627(StatusPillsMixin, FragmentsCommon):
         self.assertFalse(tree.xpath('//*[@data-pk-section="player.status.edit"]'))
         # The pencil stays for the header's other fields (training, dates; task 1630: the allergies are the pills' popups).
         hero = self._hero(tree)
-        self.assertEqual(len(hero.xpath('.//button[@data-sc-edit-toggle]')), 1)
+        self.assertEqual(len(hero.xpath('.//button[@data-pk-edit-toggle]')), 1)
 
     # -- AC-7 --------------------------------------------------------------
     def test_pill_target_inside_the_status_fragment(self):

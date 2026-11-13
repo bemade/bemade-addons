@@ -7,7 +7,7 @@ Acceptance criteria:
 * AC-1 The shared player-card detail head (recent-changes detail, row
   detail) has no « Last consultation » line; the player file's Infos still
   shows it.
-* AC-2 The injury card's Notes read view (``data-sc-edit-view="read"``)
+* AC-2 The injury card's Notes read view (``data-pk-edit-view="read"``)
   carries, under each note, its stamp as an ``o_pk_meta`` line
   (``data-sc-note-stamp="external" / "internal"``): a therapist sees both,
   a coach only the external one, nobody sees one when the note has no

@@ -139,39 +139,39 @@ tours.add("sc_1542_team_tabs", {
     steps: () => [
         {
             content: "Dashboard panel shown first; mark the page",
-            trigger: 'section[data-sc-tab-panel="dashboard"]',
+            trigger: 'section[data-pk-tab-panel="dashboard"]',
             run() {
                 window.__sc1542NoReload = true;
             },
         },
         {
             content: "Open the players tab",
-            trigger: '[data-sc-tabs] a[data-sc-tab="players"]',
+            trigger: '[data-pk-tabs] a[data-pk-tab="players"]',
             run: "click",
         },
         {
             content: "Players panel shown in place, ?tab= kept in the address bar",
-            trigger: 'section[data-sc-tab-panel="players"] [data-pk-section="team.roster"]',
+            trigger: 'section[data-pk-tab-panel="players"] [data-pk-section="team.roster"]',
             run() {
                 assert(window.__sc1542NoReload, "tab switch reloaded the page");
                 assert(window.location.search.includes("tab=players"), "tab not in URL");
                 assert(
-                    document.querySelector('section[data-sc-tab-panel="dashboard"]').hidden,
+                    document.querySelector('section[data-pk-tab-panel="dashboard"]').hidden,
                     "dashboard still visible"
                 );
             },
         },
         {
             content: "Open the activities tab",
-            trigger: '[data-sc-tabs] a[data-sc-tab="activities"]',
+            trigger: '[data-pk-tabs] a[data-pk-tab="activities"]',
             run: "click",
         },
         {
-            trigger: 'section[data-sc-tab-panel="activities"] [data-pk-section="activities.list"]',
+            trigger: 'section[data-pk-tab-panel="activities"] [data-pk-section="activities.list"]',
         },
         {
             content: "Back to the dashboard",
-            trigger: '[data-sc-tabs] a[data-sc-tab="dashboard"]',
+            trigger: '[data-pk-tabs] a[data-pk-tab="dashboard"]',
             run: "click",
         },
         {
@@ -192,7 +192,7 @@ tours.add("sc_1542_announcement_draft", {
     steps: () => [
         {
             content: "Open the compose form (the announcement card's pencil)",
-            trigger: '[data-pk-edit-card="announcement"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="announcement"] button[data-pk-edit-toggle]',
             run(helpers) {
                 window.sessionStorage.setItem("sc1542TeamUrl", window.location.href);
                 return helpers.click();
@@ -253,7 +253,7 @@ tours.add("sc_1542_announcement_draft", {
 tours.add("sc_1542_logout_clears_drafts", {
     steps: () => [
         {
-            trigger: '[data-pk-edit-card="announcement"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="announcement"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {
@@ -358,7 +358,7 @@ tours.add("sc_1542_sw_kill_switch", {
 tours.add("sc_1542_fr_draft", {
     steps: () => [
         {
-            trigger: '[data-pk-edit-card="announcement"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="announcement"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {

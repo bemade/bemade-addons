@@ -154,13 +154,7 @@
         line-height: 1.4;
     }
 
-    .o_sc_announcement_body[data-sc-clamp]:not([data-sc-clamp-open]) {
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
+    // Task 5381 (P4c2): the 3-line clamp is the kit's ([data-pk-clamp="3"]).
 
     .o_sc_announcement_meta {
         font-size: var(--pk-text-xs);
@@ -197,6 +191,6 @@
 }
 
 // Task 1676: the head pencil while its card is in edit mode (a ✓).
-.o_pk_app [data-sc-edit-toggle].o_pk_edit_toggle_done {
+.o_pk_app [data-pk-edit-toggle].o_pk_edit_toggle_done {
     color: var(--pk-accent, currentColor);
 }

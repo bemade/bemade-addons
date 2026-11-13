@@ -83,13 +83,13 @@ tours.add("sc_1600_pencil_confirm", {
     steps: () => [
         {
             content: "Pencil of the identity card",
-            trigger: '[data-pk-edit-card="identity"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="identity"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {
             content: "Correct the last name",
             trigger:
-                '[data-pk-edit-card="identity"] [data-sc-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="last_name"] input',
+                '[data-pk-edit-card="identity"] [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="last_name"] input',
             run: "edit Onesynth",
         },
         {

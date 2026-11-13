@@ -4,7 +4,7 @@
  *
  * - form[data-sc-med-add] (the list header's « + Ajouter » panel) adds an
  *   item; the panel is reset and closed after a successful add (#1672);
- * - an item card's edit view (its pencil, sc_app_ui.js; the pencil turns
+ * - an item card's edit view (its pencil, the kit's pk_edit_cards.js; the pencil turns
  *   into the ✓ that closes it, #1676): each [data-sc-med-item-field] input
  *   is saved on change; [data-sc-med-item-delete] (the trash can) removes
  *   the item — task 1736: once confirmed (pkConfirm: it cannot be undone);

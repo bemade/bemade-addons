@@ -54,8 +54,8 @@ class TestTrainingTitleI18n1629(TestAppShellI18n1538):
         label, link = title.xpath('./*')
         self.assertEqual(label.text_content().strip(), "Recommandation d'entraînement")
         self.assertEqual(link.text_content().strip(), 'Historique')
-        self.assertEqual(link.get('data-sc-sheet-open'), 'sc_training_history_sheet')
-        self.assertEqual(section.xpath('.//*[@data-sc-sheet-open="sc_training_history_sheet"]'), [link])
+        self.assertEqual(link.get('data-pk-sheet-open'), 'sc_training_history_sheet')
+        self.assertEqual(section.xpath('.//*[@data-pk-sheet-open="sc_training_history_sheet"]'), [link])
 
     def test_therapist_read_and_edit_in_french(self):
         _tree, read, edit = self._sections(self._login_tp)

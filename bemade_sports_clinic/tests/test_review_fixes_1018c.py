@@ -104,7 +104,7 @@ class TestReturnPlaceholder1018c(AppShellCommon):
         self.assertFalse(ret.xpath('.//*[@data-sc-return-empty]'))
         self.assertIn('2030', _text(ret))
         # Coaches: no pencil on the header.
-        self.assertFalse(tree.xpath('//*[@data-pk-section="player.hero"]//button[@data-sc-edit-toggle]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-section="player.hero"]//button[@data-pk-edit-toggle]'))
 
     def test_placeholder_in_french(self):
         self._login_tp()
@@ -176,7 +176,7 @@ class TestAccountAutosave1018c(Account1018cCommon):
         for key, names in (('account-contact', {'name', 'email', 'phone'}),
                            ('account-address', {'street', 'street2', 'zip', 'city', 'country_id', 'state_id'})):
             card = self._card(tree, key)
-            edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
+            edit = card.xpath('.//*[@data-pk-edit-view="edit"]')[0]
             self.assertEqual(len(edit.xpath('.//button[@data-pk-edit-done]')), 1, key)
             self.assertFalse(edit.xpath('.//button[@type="submit"]'), key)
             self.assertTrue(edit.xpath('.//*[@data-sc-account-errors]'), key)

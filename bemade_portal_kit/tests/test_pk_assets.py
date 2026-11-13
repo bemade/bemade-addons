@@ -20,6 +20,9 @@
   aliases (re-exports only), and P4a's ``sc_fragments.js`` alias is gone.
 * task 5371 (P4c1): ``pk_toast`` joins the kit (no clinic module path
   moved: ``sc_app_ui.js`` stays, without its toast code).
+* task 5381 (P4c2): ``pk_edit_cards``, ``pk_sheets``, ``pk_tabs``,
+  ``pk_clamp`` and ``pk_shell`` join the kit (no clinic module path moved:
+  ``sc_app_ui.js`` stays, with the clinic's own hooks only).
 """
 import fnmatch
 import glob
@@ -40,6 +43,8 @@ KIT_JS = (
     'form_guard', 'status_pills', 'lazy_edit',
     # Task 5371 (P4c1).
     'toast',
+    # Task 5381 (P4c2).
+    'edit_cards', 'sheets', 'tabs', 'clamp', 'shell',
 )
 SHIM_MARKER = 'bemade_portal_kit shim'
 # The clinic's aliases removed by task 5198 (P3a).
@@ -78,7 +83,7 @@ def _runtime_bundles(manifest):
 @tagged('post_install', '-at_install')
 class TestPkAssets(TransactionCase):
 
-    def test_kit_js_files_are_the_eighteen(self):
+    def test_kit_js_files_are_the_twenty_three(self):
         root = os.path.join(get_module_path(KIT), 'static', 'src', 'js')
         found = sorted(os.path.basename(p)[3:-3] for p in glob.glob(os.path.join(root, 'pk_*.js')))
         self.assertEqual(found, sorted(KIT_JS))

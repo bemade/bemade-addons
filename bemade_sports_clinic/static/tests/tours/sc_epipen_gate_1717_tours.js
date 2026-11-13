@@ -32,7 +32,7 @@ tours.add("sc_1717_epipen_first", {
             content: "Not provided; the question shows; no Add control",
             // Review round 1: the slider pill's « Non » (its radio is drawn
             // invisible under the label).
-            trigger: `${CARD} [data-sc-edit-view="edit"]:not([hidden]) .o_pk_toggle_pill label:has(input[type="radio"][value="no"])`,
+            trigger: `${CARD} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_toggle_pill label:has(input[type="radio"][value="no"])`,
             run() {
                 assert(document.querySelector(`${CARD} [data-sc-med-epipen-state="unset"]`), "state not unset");
                 assert(document.querySelector(`${ALLERGY} [data-sc-med-epipen-first]`), "no « answer first » hint");
@@ -45,7 +45,7 @@ tours.add("sc_1717_epipen_first", {
                 assert(getComputedStyle(no).backgroundColor === getComputedStyle(yes).backgroundColor,
                     "an option is lit while unanswered");
                 const ask = document.querySelector(`${CARD} [data-sc-med-epipen-ask]`).getBoundingClientRect();
-                const done = document.querySelector(`${CARD} [data-sc-edit-toggle]`).getBoundingClientRect();
+                const done = document.querySelector(`${CARD} [data-pk-edit-toggle]`).getBoundingClientRect();
                 assert(Math.abs(ask.top - done.top) < 12 && done.left >= ask.right - 1,
                     `the question is not on the ✓'s line (${ask.top} vs ${done.top})`);
                 // The level pill sits in the popup's header.

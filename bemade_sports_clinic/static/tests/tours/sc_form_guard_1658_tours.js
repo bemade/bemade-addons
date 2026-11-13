@@ -129,7 +129,7 @@ tours.add("sc_1658_timesheet", {
     steps: () => [
         {
             content: "Open the add sheet",
-            trigger: 'button[data-sc-action="timesheet.add"][data-sc-sheet-open]',
+            trigger: 'button[data-sc-action="timesheet.add"][data-pk-sheet-open]',
             run: "click",
         },
         {
@@ -266,7 +266,7 @@ tours.add("sc_1658_announcement", {
     steps: () => [
         {
             content: "Edit the announcement: empty → greyed",
-            trigger: '[data-pk-edit-card="announcement"] [data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="announcement"] [data-pk-edit-toggle]',
             run: "click",
         },
         {

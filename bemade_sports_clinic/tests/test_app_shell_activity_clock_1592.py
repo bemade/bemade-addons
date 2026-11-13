@@ -177,7 +177,7 @@ class TestActivityClockAppBar1592(Clock1592Common):
 
     # -- UC-3 ------------------------------------------------------------
     def _active_tab(self, tree):
-        return tree.xpath('//section[@data-sc-tab-panel][not(@hidden)]/@data-sc-tab-panel')
+        return tree.xpath('//section[@data-pk-tab-panel][not(@hidden)]/@data-pk-tab-panel')
 
     def test_activities_page_from_clock(self):
         self._switch(True)
@@ -187,10 +187,10 @@ class TestActivityClockAppBar1592(Clock1592Common):
         late = self._activity(self.player, self.tp, days=-2, summary='Synthetic late task')
         _text_, tree = self._get('/my/activities?sc_clock=1')
         self.assertEqual(self._active_tab(tree), ['overdue'])
-        panel = tree.xpath('//section[@data-sc-tab-panel="overdue"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="overdue"]')[0]
         self.assertEqual([int(x) for x in panel.xpath('.//@data-sc-activity-row')], [late.id])
         # The tab links do not carry the clock marker; an explicit tab wins.
-        hrefs = tree.xpath('//a[@data-sc-tab]/@href')
+        hrefs = tree.xpath('//a[@data-pk-tab]/@href')
         self.assertTrue(hrefs)
         self.assertFalse([h for h in hrefs if 'sc_clock' in h])
         _text_, tree = self._get('/my/activities?sc_clock=1&tab=planned')
@@ -318,7 +318,7 @@ class TestActivityClockRows1592(Clock1592Common):
         self.assertFalse(quiet.xpath('.//a[contains(@class, "o_sc_card_clock")]'))
         # The target tab lists the injury's activity.
         _text_, tree = self._get(url + '&tab=activities')
-        panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="activities"]')[0]
         self.assertIsNone(panel.get('hidden'))
         self.assertIn('Injury task', _text(panel))
 

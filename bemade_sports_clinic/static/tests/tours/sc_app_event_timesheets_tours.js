@@ -31,7 +31,7 @@ registry.category("web_tour.tours").add("sc_1584_event_timesheets_admin", {
                 if (cards.length !== 2) {
                     throw new Error(`expected 2 timesheet cards, got ${cards.length}`);
                 }
-                if (document.querySelector(`${SECTION} [data-sc-edit-toggle]`)) {
+                if (document.querySelector(`${SECTION} [data-pk-edit-toggle]`)) {
                     throw new Error("a pencil is offered on another therapist's timesheet");
                 }
             },

@@ -49,7 +49,7 @@ tours.add("sc_1014_date_complete", {
     steps: () => [
         {
             content: "Open the Medical Information card",
-            trigger: '[data-pk-edit-card="medical"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="medical"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {
@@ -92,7 +92,7 @@ tours.add("sc_1014_serialized_saves", {
     steps: () => [
         {
             content: "Open the header's pencil",
-            trigger: '[data-pk-section="player.hero"] [data-sc-card-icons] > button[data-sc-edit-toggle]',
+            trigger: '[data-pk-section="player.hero"] [data-sc-card-icons] > button[data-pk-edit-toggle]',
             run: "click",
         },
         {

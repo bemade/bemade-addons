@@ -188,7 +188,7 @@ class TestDashboardRound1_1624(Dashboard1624Common):
         self.assertEqual([int(i) for i in returns.xpath('.//*[@data-sc-player-id]/@data-sc-player-id')],
                          [self.shared.id])
         # The player cards keep their lazy « Details ».
-        self.assertTrue(returns.xpath('.//*[@data-sc-row-expand]'))
+        self.assertTrue(returns.xpath('.//*[@data-pk-row-expand]'))
         # Unique ids on the page.
         ids = tree.xpath('//@id')
         self.assertEqual(len(ids), len(set(ids)), [i for i in ids if ids.count(i) > 1])
@@ -258,10 +258,10 @@ class TestDashboardRound1_1624(Dashboard1624Common):
     def test_add_timesheet_deep_link_opens_sheet(self):
         self._login_tp()
         _text, tree = self._get('/my/event/%s?add_timesheet=1' % self.ev_missing.id)
-        self.assertTrue(tree.xpath('//dialog[@id="sc_ts_add_sheet"][@data-sc-sheet-open-on-load="1"]'))
+        self.assertTrue(tree.xpath('//dialog[@id="sc_ts_add_sheet"][@data-pk-sheet-open-on-load="1"]'))
         _text, tree = self._get('/my/event/%s' % self.ev_missing.id)
         self.assertTrue(tree.xpath('//dialog[@id="sc_ts_add_sheet"]'))
-        self.assertFalse(tree.xpath('//dialog[@id="sc_ts_add_sheet"][@data-sc-sheet-open-on-load]'))
+        self.assertFalse(tree.xpath('//dialog[@id="sc_ts_add_sheet"][@data-pk-sheet-open-on-load]'))
 
     # -- UC-R7 ---------------------------------------------------------------
     def test_follow_and_unfollow(self):
@@ -323,7 +323,7 @@ class TestDashboardRound1_1624(Dashboard1624Common):
         ids = [int(i) for i in section.xpath('.//*[@data-sc-player-id]/@data-sc-player-id')]
         self.assertEqual(sorted(ids), sorted((self.red | self.yellow).ids))
         # Full cards: the lazy « Details ».
-        self.assertTrue(section.xpath('.//*[@data-sc-row-expand]'))
+        self.assertTrue(section.xpath('.//*[@data-pk-row-expand]'))
         # Portée.
         self._dash(self.tp)._sc_layout_update('followed', settings={'scope_team_ids': [self.team_c.id]})
         _text, tree = self._get('/my/home')

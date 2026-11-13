@@ -82,11 +82,11 @@
 
                     <section class="o_pk_card o_pk_edit_card" data-pk-edit-card="account-contact"
                              data-pk-section="account.contact">
-                        <t t-call="bemade_sports_clinic.sc_edit_card_head">
+                        <t t-call="bemade_portal_kit.pk_edit_card_head">
                             <t t-set="title">Contact details</t>
                             <t t-set="editable" t-value="True"/>
                         </t>
-                        <dl class="o_pk_kv" data-sc-edit-view="read"
+                        <dl class="o_pk_kv" data-pk-edit-view="read"
                             t-att-data-pk-fragment="pk_fragment_key(partner_sudo, 'account-contact')">
                             <dt>Name</dt>
                             <dd t-out="partner_sudo.name or '—'"/>
@@ -95,7 +95,7 @@
                             <dt>Phone</dt>
                             <dd t-out="partner_sudo.phone or '—'"/>
                         </dl>
-                        <div class="o_pk_fields" data-sc-edit-view="edit" hidden="hidden">
+                        <div class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                             <t t-call="bemade_sports_clinic.sc_account_input">
                                 <t t-set="fid" t-value="'o_name'"/>
                                 <t t-set="fname" t-value="'name'"/>
@@ -125,11 +125,11 @@
 
                     <section class="o_pk_card o_pk_edit_card" data-pk-edit-card="account-address"
                              data-pk-section="account.address">
-                        <t t-call="bemade_sports_clinic.sc_edit_card_head">
+                        <t t-call="bemade_portal_kit.pk_edit_card_head">
                             <t t-set="title">Address</t>
                             <t t-set="editable" t-value="True"/>
                         </t>
-                        <div class="o_sc_account_address" data-sc-edit-view="read"
+                        <div class="o_sc_account_address" data-pk-edit-view="read"
                              t-att-data-pk-fragment="pk_fragment_key(partner_sudo, 'account-address')">
                             <t t-set="sc_zip_city" t-value="' '.join(p for p in ((partner_sudo.zip, partner_sudo.city) if zip_before_city else (partner_sudo.city, partner_sudo.zip)) if p)"/>
                             <t t-set="sc_region" t-value="', '.join(p for p in (partner_sudo.state_id.name, partner_sudo.country_id.name) if p)"/>
@@ -141,7 +141,7 @@
                             </address>
                             <p t-else="" class="o_pk_meta">No address yet.</p>
                         </div>
-                        <div class="o_pk_fields" data-sc-edit-view="edit" hidden="hidden">
+                        <div class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                             <t t-call="bemade_sports_clinic.sc_account_input">
                                 <t t-set="fid" t-value="'o_street'"/>
                                 <t t-set="fname" t-value="'street'"/>
@@ -395,7 +395,7 @@
                         <p class="o_pk_meta">Disables your account: you can no longer sign in. This cannot be undone.</p>
                         <div class="o_pk_form_actions o_pk_form_actions_start">
                             <button type="button" class="o_pk_btn o_pk_btn_ghost o_pk_btn_danger"
-                                    data-sc-sheet-open="sc_deactivate_account_sheet">Delete account</button>
+                                    data-pk-sheet-open="sc_deactivate_account_sheet">Delete account</button>
                         </div>
                     </div>
                 </section>
@@ -405,10 +405,10 @@
                 <t t-set="deactivate_error" t-value="get_error(errors, 'deactivate')"/>
                 <dialog id="sc_deactivate_account_sheet" class="o_pk_sheet"
                         aria-labelledby="sc_deactivate_account_sheet_title"
-                        t-att-data-sc-sheet-open-on-load="'1' if open_deactivate_modal else None">
+                        t-att-data-pk-sheet-open-on-load="'1' if open_deactivate_modal else None">
                     <div class="o_pk_sheet_head">
                         <h2 class="o_pk_sheet_title" id="sc_deactivate_account_sheet_title">Delete your account?</h2>
-                        <button type="button" class="o_pk_icon_btn" data-sc-sheet-close="1" aria-label="Close" title="Close">
+                        <button type="button" class="o_pk_icon_btn" data-pk-sheet-close="1" aria-label="Close" title="Close">
                             <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'close'"/></t>
                         </button>
                     </div>
@@ -447,7 +447,7 @@
                                 <t t-set="sw_label">Put my email and phone on a block list so I am never contacted again</t>
                             </t>
                             <div class="o_pk_form_actions">
-                                <button type="button" class="o_pk_btn o_pk_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                                <button type="button" class="o_pk_btn o_pk_btn_ghost" data-pk-sheet-close="1">Cancel</button>
                                 <button type="submit" class="o_pk_btn o_pk_btn_primary o_pk_btn_danger">Delete account</button>
                             </div>
                         </form>

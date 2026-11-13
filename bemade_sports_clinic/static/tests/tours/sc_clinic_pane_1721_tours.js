@@ -99,12 +99,12 @@ tours.add("sc_1721_note_check_top_right", {
     steps: () => [
         {
             content: "A note's pencil",
-            trigger: `${PANE} .o_sc_note_card[data-pk-edit-card] .o_sc_note_head button[data-sc-edit-toggle]`,
+            trigger: `${PANE} .o_sc_note_card[data-pk-edit-card] .o_sc_note_head button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
             content: "The ✓ at the top right of the card",
-            trigger: `${PANE} .o_sc_note_card[data-sc-edit-open] .o_sc_note_head button[data-sc-edit-toggle-done]`,
+            trigger: `${PANE} .o_sc_note_card[data-pk-edit-open] .o_sc_note_head button[data-pk-edit-toggle-done]`,
             run() {
                 const card = this.anchor.closest(".o_sc_note_card").getBoundingClientRect();
                 const check = this.anchor.getBoundingClientRect();

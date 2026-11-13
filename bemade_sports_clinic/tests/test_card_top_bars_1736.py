@@ -13,7 +13,7 @@ Acceptance criteria:
   ★ follow · clock + count · archive · trash · pencil (always rightmost).
 * AC-2 The red trash (a permanent delete — notes, contacts, injuries,
   activities, medical items, dashboard sections) shows while the card is
-  edited only (rendered hidden, ``data-sc-edit-only``) on a card with a
+  edited only (rendered hidden, ``data-pk-edit-only``) on a card with a
   pencil; it always asks first (a confirmation sheet / dialog). A card
   without a pencil (an activity row, a dashboard section, an archived quick
   note) shows it at once.
@@ -28,7 +28,7 @@ Acceptance criteria:
   its counterpart; no archive icon on the hero.
 * AC-5 Injury card: the summary is the top bar — status pill, clock + count,
   the trash (« Delete injury », edit-only, for the Details group), the
-  pencil (the Details group's, ``data-sc-edit-for``), then the chevron
+  pencil (the Details group's, ``data-pk-edit-for``), then the chevron
   (``data-sc-injury-toggle``, the only fold control; the summary leaves the
   tab order). No bottom « Delete injury », no pencil in the Details head.
 * AC-6 Player header: « Follow » is the ★ icon (aria-pressed = following)
@@ -134,13 +134,13 @@ class TestCardTopBars1736(TopBars1736Common):
         self.assertEqual(clock.get('data-sc-activity-clock'), '1')
         trash = self._one(summary, './/button[contains(@class, "o_pk_card_trash")]')
         self.assertEqual(trash.get('hidden'), 'hidden')
-        self.assertEqual(trash.get('data-sc-edit-only'), '1')
-        self.assertEqual(trash.get('data-sc-edit-for'), 'injury-details')
-        self.assertEqual(trash.get('data-sc-sheet-open'), 'sc_delete_injury_sheet_%s' % self.injury.id)
+        self.assertEqual(trash.get('data-pk-edit-only'), '1')
+        self.assertEqual(trash.get('data-pk-edit-for'), 'injury-details')
+        self.assertEqual(trash.get('data-pk-sheet-open'), 'sc_delete_injury_sheet_%s' % self.injury.id)
         self.assertIn('o_pk_icon_btn_danger', trash.get('class'))
         self.assertTrue(tree.xpath('//dialog[@id="sc_delete_injury_sheet_%s"]' % self.injury.id))
-        pencil = self._one(summary, './/button[@data-sc-edit-toggle]')
-        self.assertEqual(pencil.get('data-sc-edit-for'), 'injury-details')
+        pencil = self._one(summary, './/button[@data-pk-edit-toggle]')
+        self.assertEqual(pencil.get('data-pk-edit-for'), 'injury-details')
         # The chevron after the icon group, the only fold control.
         chevron = self._one(summary, './/button[@data-sc-injury-toggle]')
         self.assertEqual(chevron.get('aria-controls'), 'injury-%s-body' % self.injury.id)
@@ -149,7 +149,7 @@ class TestCardTopBars1736(TopBars1736Common):
         # pencil of its own; no bottom « Delete injury ».
         self.assertTrue(summary.xpath('.//*[@data-pk-pill-key="stage"]'))
         details = self._one(card, './/*[@data-pk-edit-card="injury-details"]')
-        self.assertFalse(details.xpath('.//button[@data-sc-edit-toggle]'))
+        self.assertFalse(details.xpath('.//button[@data-pk-edit-toggle]'))
         self.assertFalse(card.xpath('.//*[contains(@class, "o_sc_injury_card_actions")]'))
         self.assertEqual(len(card.xpath('.//*[@data-sc-action="injury.delete"]')), 1)
 
@@ -167,9 +167,9 @@ class TestCardTopBars1736(TopBars1736Common):
         self._assert_order(card, ('o_pk_card_trash', 'o_pk_card_edit'))
         trash = self._one(card, './/button[contains(@class, "o_pk_card_trash")]')
         self.assertEqual(trash.get('hidden'), 'hidden')
-        self.assertEqual(trash.get('data-sc-sheet-open'), 'sc_delete_contact_%s' % self.contact.id)
+        self.assertEqual(trash.get('data-pk-sheet-open'), 'sc_delete_contact_%s' % self.contact.id)
         # No « Delete » text button left in the edit view.
-        edit = self._one(card, './/*[@data-sc-edit-view="edit"]')
+        edit = self._one(card, './/*[@data-pk-edit-view="edit"]')
         self.assertFalse(edit.xpath('.//button[@data-sc-action="contact.delete"]'))
         self.assertTrue(edit.xpath('.//button[@data-pk-edit-done]'))
         # A coach edits but never deletes.
@@ -187,7 +187,7 @@ class TestCardTopBars1736(TopBars1736Common):
         self._assert_order(card, ('o_pk_card_trash', 'o_pk_card_edit'))
         trash = self._one(card, './/button[@data-sc-med-item-delete]')
         self.assertEqual(trash.get('hidden'), 'hidden')
-        self.assertEqual(trash.get('data-sc-edit-only'), '1')
+        self.assertEqual(trash.get('data-pk-edit-only'), '1')
 
     # -- AC-3: documents ------------------------------------------------------
     def test_document_archive_icon_and_undo(self):
@@ -286,7 +286,7 @@ class TestCardTopBars1736(TopBars1736Common):
         self._assert_order(card, ('o_pk_card_archive', 'o_pk_card_trash', 'o_pk_card_edit'))
         trash = self._one(card, './/button[contains(@class, "o_pk_card_trash")]')
         self.assertEqual(trash.get('hidden'), 'hidden')
-        self.assertEqual(trash.get('data-sc-sheet-open'), 'sc_qn_delete_%s' % self.qnote.id)
+        self.assertEqual(trash.get('data-pk-sheet-open'), 'sc_qn_delete_%s' % self.qnote.id)
         self.assertTrue(tree.xpath('//dialog[@id="sc_qn_delete_%s"]' % self.qnote.id))
         self.assertFalse(card.xpath('.//*[contains(@class, "o_pk_card_actions")]'))
         form = self._one(card, './/form[.//button[contains(@class, "o_pk_card_archive")]]')
@@ -326,7 +326,7 @@ class TestCardTopBars1736(TopBars1736Common):
         self.assertEqual(clock.xpath('./span[contains(@class, "o_pk_card_badge")]/text()'), ['1'])
         self.assertFalse(hero.xpath('.//*[contains(@class, "o_pk_card_archive")]'))
         cancel = self._one(hero, './/*[contains(@class, "o_pk_actions_row")]/button[@data-sc-action="event.cancel"]')
-        self.assertEqual(cancel.get('data-sc-sheet-open'), 'sc_event_cancel_sheet')
+        self.assertEqual(cancel.get('data-pk-sheet-open'), 'sc_event_cancel_sheet')
         self.assertIn('o_pk_btn_danger', cancel.get('class'))
         self.assertEqual(cancel.text_content().strip(), 'Cancel Event')
         self.assertTrue(tree.xpath('//dialog[@id="sc_event_cancel_sheet"]'))
@@ -361,9 +361,9 @@ class TestCardTopBars1736(TopBars1736Common):
         self._assert_order(row, ('o_pk_card_trash', 'o_pk_card_edit'))
         trash = self._one(row, './/button[contains(@class, "o_pk_card_trash")]')
         self.assertEqual(trash.get('hidden'), 'hidden')
-        self.assertEqual(trash.get('data-sc-edit-only'), '1')
+        self.assertEqual(trash.get('data-pk-edit-only'), '1')
         self.assertEqual(trash.get('data-sc-activity-id'), str(self.act_team.id))
-        self.assertEqual(trash.get('data-sc-sheet-open'), 'sc_activity_cancel_sheet')
+        self.assertEqual(trash.get('data-pk-sheet-open'), 'sc_activity_cancel_sheet')
         actions = row.xpath('.//*[contains(@class, "o_sc_activity_actions")]/button/@data-sc-action')
         self.assertEqual(actions[-1], 'activity.complete')
         self.assertNotIn('activity.cancel', actions)

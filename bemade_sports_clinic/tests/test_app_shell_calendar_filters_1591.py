@@ -89,7 +89,7 @@ class TestCalendarFilters1591(Calendar1591Common):
 
     @staticmethod
     def _segment(tree, key):
-        return tree.xpath('//nav[@data-sc-tabs]//a[@data-sc-tab="%s"]/@href' % key)[0]
+        return tree.xpath('//nav[@data-pk-tabs]//a[@data-pk-tab="%s"]/@href' % key)[0]
 
     # -- UC-1 ------------------------------------------------------------
     def test_feed_honours_each_filter(self):

@@ -137,7 +137,7 @@
                     <span class="o_pk_list_add_label" t-out="sc_add_text"/>
                 </a>
                 <button t-elif="add_sheet" type="button" class="o_pk_section_more o_pk_link_btn o_pk_list_add"
-                        t-att-data-sc-sheet-open="add_sheet" t-att-data-sc-action="add_key or None"
+                        t-att-data-pk-sheet-open="add_sheet" t-att-data-sc-action="add_key or None"
                         t-att-aria-label="add_label" t-att-title="add_label">
                     <span class="o_pk_list_add_label" t-out="sc_add_text"/>
                 </button>
@@ -170,30 +170,13 @@
         </div>
     </template>
 
-    <!--
-        Owner review 2026-10-10 — an inline-editable card: read view by
-        default, ONE pencil (data-sc-edit-toggle) reveals the card's autosave
-        fields (data-sc-edit-view="edit"), « Done » (data-pk-edit-done) hides
-        them again (sc_app_ui.js). Read values carry data-sc-display hooks
-        that a save updates in place. This is the card head. Variables:
-        title, editable.
-    -->
-    <template id="sc_edit_card_head" name="App shell: edit card head">
-        <div class="o_pk_edit_card_head">
-            <h3 class="o_pk_edit_card_title" t-out="title"/>
-            <button t-if="editable" type="button" class="o_pk_icon_btn" data-sc-edit-toggle="1"
-                    aria-expanded="false" aria-label="Edit" title="Edit">
-                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'edit'"/></t>
-            </button>
-        </div>
-    </template>
 
     <!--
         Task 1736 (owner 2026-11-01) — a card top bar's icon group: ONE order
         and ONE colour scheme on every card, left to right:
           ★ follow · clock + count · archive · trash · pencil → ✓
         (the pencil / ✓ always rightmost). Neutral icons, except the red
-        trash, the green ✓ (sc_app_ui.js), the filled ★ while following and
+        trash, the green ✓ (the kit's pk_edit_cards.js), the filled ★ while following and
         the red clock when an activity is overdue. Every variable optional:
           ci_follow    truthy: the ★ toggle of ``player`` (sc_follow_toggle)
           ci_clock     {count, overdue, url, label[, always]}: a link to the
@@ -207,12 +190,12 @@
           ci_trash     a permanent delete (it always asks first), red:
                      {sheet}, {form} (submits that form, which asks first)
                      or {attrs} (extra attributes, a JS-handled button;
-                     cls = extra classes); shown while the card is edited (sc_app_ui.js
-                     data-sc-edit-only) unless ``always`` (a card without a
+                     cls = extra classes); shown while the card is edited (the kit's pk_edit_cards.js
+                     data-pk-edit-only) unless ``always`` (a card without a
                      pencil); optional label, key
-          ci_editable  the pencil (data-sc-edit-toggle); ci_edit_key = its
+          ci_editable  the pencil (data-pk-edit-toggle); ci_edit_key = its
                      data-sc-action, ci_edit_for = the edit card it opens
-                     when it sits outside it (data-sc-edit-for),
+                     when it sits outside it (data-pk-edit-for),
                      ci_edit_open = the card renders in edit mode
         (ci_ prefixed: a caller's own ``editable`` / ``clock`` never leak in.)
         Body (0): status chips / pills, before the icons.
@@ -253,7 +236,7 @@
                 </form>
                 <button t-else="" t-att-type="'submit' if ci_archive.get('form') else 'button'"
                         class="o_pk_icon_btn o_pk_card_archive" data-sc-card-archive="1"
-                        t-att-form="ci_archive.get('form') or None" t-att-data-sc-sheet-open="ci_archive.get('sheet') or None"
+                        t-att-form="ci_archive.get('form') or None" t-att-data-pk-sheet-open="ci_archive.get('sheet') or None"
                         t-att-data-sc-action="ci_archive.get('key') or None"
                         t-att-aria-label="sc_ci_archive_label" t-att-title="sc_ci_archive_label">
                     <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'archive'"/></t>
@@ -265,10 +248,10 @@
                 <t t-set="sc_ci_trash_gated" t-value="not ci_trash.get('always')"/>
                 <button t-att-type="'submit' if ci_trash.get('form') else 'button'" t-attf-class="o_pk_icon_btn o_pk_icon_btn_danger o_pk_card_trash #{ci_trash.get('cls') or ''}" data-sc-card-trash="1"
                         t-att="ci_trash.get('attrs') or {}" t-att-form="ci_trash.get('form') or None"
-                        t-att-data-sc-sheet-open="ci_trash.get('sheet') or None"
+                        t-att-data-pk-sheet-open="ci_trash.get('sheet') or None"
                         t-att-data-sc-action="ci_trash.get('key') or None"
-                        t-att-data-sc-edit-only="'1' if sc_ci_trash_gated else None"
-                        t-att-data-sc-edit-for="sc_ci_edit_for if sc_ci_trash_gated else None"
+                        t-att-data-pk-edit-only="'1' if sc_ci_trash_gated else None"
+                        t-att-data-pk-edit-for="sc_ci_edit_for if sc_ci_trash_gated else None"
                         t-att-hidden="'hidden' if sc_ci_trash_gated and not ci_edit_open else None"
                         t-att-aria-label="sc_ci_trash_label" t-att-title="sc_ci_trash_label">
                     <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'trash'"/></t>
@@ -276,8 +259,8 @@
             </t>
             <t t-if="ci_editable">
                 <t t-set="sc_ci_edit_label">Edit</t>
-                <button type="button" class="o_pk_icon_btn o_pk_card_edit" data-sc-edit-toggle="1"
-                        t-att-data-sc-edit-for="sc_ci_edit_for"
+                <button type="button" class="o_pk_icon_btn o_pk_card_edit" data-pk-edit-toggle="1"
+                        t-att-data-pk-edit-for="sc_ci_edit_for"
                         t-att-data-sc-action="ci_edit_key or None"
                         t-att-aria-expanded="'true' if ci_edit_open else 'false'"
                         t-att-aria-label="sc_ci_edit_label" t-att-title="sc_ci_edit_label">
@@ -287,22 +270,6 @@
         </span>
     </template>
 
-    <!-- A read-view row. Variables: label, record, field; optional
-         href_kind ('tel' / 'mailto', task 1585): the value is a tap-to-call /
-         tap-to-email link (no href while empty — « — » is not a link);
-         data-pk-display-href lets a save move the href (sc_app_ui.js). -->
-    <template id="sc_display_row" name="App shell: display row">
-        <dt t-out="label"/>
-        <dd>
-            <t t-if="href_kind">
-                <t t-set="sc_shown" t-value="sc_display(record, field)"/>
-                <a class="o_sc_contact_link" t-att-href="sc_contact_href(href_kind, sc_shown)"
-                   t-att-data-pk-display-href="href_kind"
-                   t-att-data-sc-display="sc_display_key(record, field)" t-out="sc_shown or '—'"/>
-            </t>
-            <span t-else="" t-att-data-sc-display="sc_display_key(record, field)" t-out="sc_display(record, field) or '—'"/>
-        </dd>
-    </template>
 
     <!-- Task 1581: ONE history entry for every history of the shell (team
          announcement, training recommendation, injury notes):
@@ -347,68 +314,6 @@
         </div>
     </template>
 
-    <!--
-        Task 1542 — bottom sheet (phone) / centred dialog (laptop), a native
-        <dialog> opened by any [data-sc-sheet-open="<sheet_id>"] control
-        (static/src/js/sc_app_ui.js). Variables: sheet_id, title,
-        lazy_url (optional: body fetched once, on first open, through
-        sc_fetch), lazy_fresh (optional: fetched again on every open, for a
-        history the page itself can change), head_extra (optional markup
-        next to the title: the medical popups' level pill, review round 2).
-        Body (0) = content (ignored when lazy_url is set; a
-        loading line is shown until the fetch answers).
-    -->
-    <template id="sc_sheet" name="App shell: sheet">
-        <dialog t-att-id="sheet_id" class="o_pk_sheet" t-att-aria-labelledby="'%s_title' % sheet_id"
-                t-att-data-sc-lazy-url="lazy_url or None"
-                t-att-data-sc-lazy-fresh="'1' if lazy_url and lazy_fresh else None"
-                t-att-data-sc-sheet-open-on-load="'1' if open_on_load else None">
-            <div class="o_pk_sheet_head">
-                <h2 class="o_pk_sheet_title" t-att-id="'%s_title' % sheet_id" t-out="title"/>
-                <t t-if="head_extra" t-out="head_extra"/>
-                <button type="button" class="o_pk_icon_btn o_pk_sheet_close" data-sc-sheet-close="1" aria-label="Close" title="Close">
-                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'close'"/></t>
-                </button>
-            </div>
-            <div t-attf-class="o_pk_sheet_body #{'o_pk_legacy' if lazy_url else ''}">
-                <p t-if="lazy_url" class="o_pk_empty o_pk_lazy_loading">Loading…</p>
-                <t t-else="" t-out="0"/>
-            </div>
-        </dialog>
-    </template>
-
-    <!--
-        Task 1542 — segmented page tabs (deep-linkable). Variables: tabs =
-        [(key, label, url[, aliases[, badge]])], active (key). Task 1635: the
-        optional 5th item is a count pill after the label, {'count', 'tone'
-        ('neutral' | 'red'), 'label' (its aria-label)}; None = no pill. Task 1539: the optional
-        4th item lists legacy #fragment names that open this tab (e.g. the
-        player page's « #patient-info » after a POST round-trip). Every tab is a real link (the
-        server renders the active panel); sc_app_ui.js switches panels in
-        place and keeps ?tab= in the address bar. Panels:
-        <section data-sc-tab-panel="key">.
-    -->
-    <template id="sc_page_tabs" name="App shell: page tabs">
-        <!-- Task 1647: the count pill comes BEFORE the label (every width);
-             an optional 6th item is a short label shown on a phone (« Docs »),
-             the full one staying the tab's title / accessible name. Up to 5
-             tabs fit the phone's width; more scroll sideways. -->
-        <nav t-attf-class="o_pk_segmented o_pk_segmented_full o_pk_page_tabs #{'o_pk_page_tabs_scroll' if len(tabs) &gt; 5 else ''}" role="tablist" data-sc-tabs="1">
-            <t t-foreach="tabs" t-as="tab">
-                <t t-set="sc_tab_badge" t-value="tab[4] if len(tab) &gt; 4 else None"/>
-                <t t-set="sc_tab_short" t-value="tab[5] if len(tab) &gt; 5 else None"/>
-                <a t-att-href="tab[2]" role="tab" t-att-data-sc-tab="tab[0]"
-                   t-att-data-sc-tab-aliases="tab[3] if len(tab) &gt; 3 and tab[3] else None"
-                   t-att-title="tab[1] if sc_tab_short else None"
-                   t-att-aria-selected="'true' if tab[0] == active else 'false'"
-                   t-att-aria-pressed="'true' if tab[0] == active else 'false'"><span t-if="sc_tab_badge"
-                        t-attf-class="o_pk_tab_badge o_pk_tab_badge_#{sc_tab_badge['tone']}" role="img"
-                        t-att-aria-label="sc_tab_badge['label']" t-att-title="sc_tab_badge['label']"
-                        t-out="sc_tab_badge['count']"/><span t-attf-class="o_pk_tab_label #{'o_pk_tab_label_long' if sc_tab_short else ''}" t-out="tab[1]"/><span
-                        t-if="sc_tab_short" class="o_pk_tab_label o_pk_tab_label_short" aria-hidden="true" t-out="sc_tab_short"/></a>
-            </t>
-        </nav>
-    </template>
 
 
     <!--
@@ -431,7 +336,7 @@
             <!-- Task 1629: no_label = the value only (its title sits above). -->
             <span t-if="not no_label" class="o_pk_field_label"><span t-out="label"/>
                 <button t-if="history_sheet" type="button" class="o_pk_link_btn o_pk_field_history"
-                        t-att-data-sc-sheet-open="history_sheet" t-out="history_label"/>
+                        t-att-data-pk-sheet-open="history_sheet" t-out="history_label"/>
             </span>
             <!-- Task 1727: overdue = the date has passed (« · Dépassé »). -->
             <p t-if="value and overdue" t-attf-class="o_pk_field_value o_sc_overdue #{'o_pk_pre' if pre else ''}"><t t-out="value"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></p>
@@ -496,12 +401,12 @@
 
     <!--
         Task 1539 — confirm sheet (delete an injury, a document, cancel an
-        activity…): a sc_sheet holding ONE POST form. Variables: sheet_id,
+        activity…): a pk_sheet holding ONE POST form. Variables: sheet_id,
         title, message, action, hidden (dict name -> value), confirm_label,
         danger (bool). Body (0) = extra fields inside the form.
     -->
     <template id="sc_confirm_sheet" name="App shell: confirm sheet">
-        <t t-call="bemade_sports_clinic.sc_sheet">
+        <t t-call="bemade_portal_kit.pk_sheet">
             <t t-set="lazy_url" t-value="False"/>
             <form t-att-action="action" method="post" class="o_pk_form" data-pk-guard="1" data-pk-guard-mode="fetch">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
@@ -511,7 +416,7 @@
                 <p t-if="message" class="o_pk_confirm_message" t-out="message"/>
                 <t t-out="0"/>
                 <div class="o_pk_form_actions">
-                    <button type="button" class="o_pk_btn o_pk_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                    <button type="button" class="o_pk_btn o_pk_btn_ghost" data-pk-sheet-close="1">Cancel</button>
                     <button type="submit" t-attf-class="o_pk_btn #{'o_pk_btn_danger' if danger else 'o_pk_btn_primary'}"
                             data-sc-confirm-submit="1" t-out="confirm_label"/>
                 </div>
@@ -590,16 +495,16 @@
                 </div>
                 <t t-if="edit_props">
                     <t t-set="sc_edit_label">Edit</t>
-                    <button type="button" class="o_pk_icon_btn o_sc_note_edit_toggle" data-sc-edit-toggle="1" aria-expanded="false"
+                    <button type="button" class="o_pk_icon_btn o_sc_note_edit_toggle" data-pk-edit-toggle="1" aria-expanded="false"
                             t-att-aria-label="sc_edit_label" t-att-title="sc_edit_label">
                         <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'edit'"/></t>
                     </button>
                 </t>
             </div>
             <t t-if="edit_props">
-                <p class="o_pk_pre o_sc_note_text" data-sc-edit-view="read"
-                   t-att-data-sc-display="sc_display_key(note, 'note')" t-out="note.note"/>
-                <div class="o_pk_fields" data-sc-edit-view="edit" hidden="hidden">
+                <p class="o_pk_pre o_sc_note_text" data-pk-edit-view="read"
+                   t-att-data-pk-display="pk_display_key(note, 'note')" t-out="note.note"/>
+                <div class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                     <t t-foreach="edit_props" t-as="field_props">
                         <t t-call="bemade_sports_clinic.sc_field_autosave">
                             <t t-set="props" t-value="field_props"/>
@@ -764,7 +669,7 @@
         team's own page), the Match / Practice / injuries status line, the
         training recommendation and « Retour prévu » lines, and a « Details »
         control that expands the active-injury detail UNDER the row,
-        lazy-loaded from ``row['detail_url']`` (sc_app_ui.js) — never
+        lazy-loaded from ``row['detail_url']`` (the kit's pk_sheets.js) — never
         rendered for every row.
 
         Variables: row (from _sc_player_row / _sc_players_values: id, url,
@@ -804,7 +709,7 @@
                     </t>
                     <t t-call="bemade_sports_clinic.sc_player_row_lines"/>
                     <button t-if="row.get('detail_url')" type="button" class="o_pk_row_expand"
-                            t-att-data-sc-row-expand="sc_row_detail_id" t-att-aria-controls="sc_row_detail_id"
+                            t-att-data-pk-row-expand="sc_row_detail_id" t-att-aria-controls="sc_row_detail_id"
                             aria-expanded="false">
                         <span>Details</span>
                         <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'down'"/></t>
@@ -828,7 +733,7 @@
                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="row['return_edit_props']"/></t>
             </div>
             <div t-if="row.get('detail_url')" t-att-id="sc_row_detail_id" class="o_pk_row_detail"
-                 t-att-data-sc-lazy-url="row['detail_url']" data-sc-row-detail="1" hidden="hidden">
+                 t-att-data-pk-lazy-url="row['detail_url']" data-sc-row-detail="1" hidden="hidden">
                 <div class="o_pk_lazy_body">
                     <p class="o_pk_empty o_pk_lazy_loading">Loading…</p>
                 </div>
@@ -891,7 +796,7 @@
                     <t t-set="href" t-value="'/my/activity/%s' % activity.id"/>
                     <!-- Task 1736 r1: a tap opens the details popout (the
                          page itself on a new-tab click / without the sheet). -->
-                    <t t-set="main_attrs" t-value="{'data-sc-sheet-open': 'sc_activity_detail_sheet', 'data-sc-sheet-url': '/my/activity/%s/popout' % activity.id, 'data-sc-activity-popout': activity.id, 'aria-haspopup': 'dialog'}"/>
+                    <t t-set="main_attrs" t-value="{'data-pk-sheet-open': 'sc_activity_detail_sheet', 'data-pk-sheet-url': '/my/activity/%s/popout' % activity.id, 'data-sc-activity-popout': activity.id, 'aria-haspopup': 'dialog'}"/>
                     <t t-set="title" t-value="activity.summary or activity.activity_type_id.name"/>
                     <!-- Owner review 2026-10-14: the related record's name in the
                          title is a link to it too (same access-gated URL). -->
@@ -919,7 +824,7 @@
             </div>
             <!-- Task 1736 r1: the inline edit (the detail page's fields; the
                  type stays read-only, as there). -->
-            <div t-if="sc_act_can_act" class="o_pk_fields o_sc_activity_edit" data-sc-edit-view="edit"
+            <div t-if="sc_act_can_act" class="o_pk_fields o_sc_activity_edit" data-pk-edit-view="edit"
                  data-pk-lazy-edit-host="1" hidden="hidden">
                 <template data-pk-lazy-edit="1">
                     <div class="o_pk_fields_lazy">
@@ -941,7 +846,7 @@
                  Task 1736 r1: « Reschedule » / « Reassign » are the inline
                  edit now; « Done » stays, last (rightmost). -->
             <div t-if="sc_act_can_act" class="o_pk_card_actions o_sc_activity_actions">
-                <button type="button" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm" data-sc-sheet-open="sc_activity_complete_sheet"
+                <button type="button" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm" data-pk-sheet-open="sc_activity_complete_sheet"
                         t-att-data-sc-activity-id="activity.id" data-sc-action="activity.complete">
                     <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'check'"/></t>
                     <span>Done</span>
@@ -967,7 +872,7 @@
              t-att-data-pk-fragment="pk_fragment_key(patient, 'medical-pills')">
             <t t-foreach="patient._sc_medical_pills(tp=tp)" t-as="pill">
                 <button type="button" t-attf-class="o_sc_med_pill o_sc_med_#{pill['tone']}"
-                        t-att-data-sc-sheet-open="'sc_med_%s_%s_%s' % (scope, pill['key'], patient.id)"
+                        t-att-data-pk-sheet-open="'sc_med_%s_%s_%s' % (scope, pill['key'], patient.id)"
                         t-att-data-sc-med-pill="pill['key']" t-att-data-sc-med-level="pill['level'] or 'unset'"
                         aria-haspopup="dialog" t-att-title="pill['text']"
                         t-att-aria-label="('%s · EpiPen' % pill['text']) if pill['epipen'] else pill['text']">
@@ -981,7 +886,7 @@
     </template>
 
     <!--
-        Task 1630 / 1677 — the popups of sc_medical_pills (sc_sheet: a bottom
+        Task 1630 / 1677 — the popups of sc_medical_pills (pk_sheet: a bottom
         sheet on a phone, a dialog on a laptop). Task 1677 (owner 2026-10-24):
         tight structured lists —
 
@@ -1009,7 +914,7 @@
             <t t-set="sc_med_key" t-value="pill['key']"/>
             <t t-set="sc_med_uid" t-value="'%s_%s_%s' % (scope, sc_med_key, patient.id)"/>
             <t t-set="sc_med_is_allergy" t-value="sc_med_key == 'allergy'"/>
-            <t t-call="bemade_sports_clinic.sc_sheet">
+            <t t-call="bemade_portal_kit.pk_sheet">
                 <t t-set="sheet_id" t-value="'sc_med_%s' % sc_med_uid"/>
                 <t t-set="lazy_url" t-value="False"/>
                 <t t-set="title" t-value="pill['family_label']"/>
@@ -1031,9 +936,9 @@
                     <section t-if="sc_med_is_allergy" class="o_pk_card o_pk_edit_card o_sc_med_card o_sc_med_epipen_card"
                              data-pk-section="medical.allergy.epipen"
                              t-att-data-pk-edit-card="('med-epipen-%s' % sc_med_uid) if editable else None"
-                             t-att-data-sc-edit-open-on-load="'1' if editable and pill['epipen_unset'] else None">
+                             t-att-data-pk-edit-open-on-load="'1' if editable and pill['epipen_unset'] else None">
                         <div class="o_sc_med_card_row">
-                            <div class="o_sc_med_card_read" data-sc-edit-view="read"
+                            <div class="o_sc_med_card_read" data-pk-edit-view="read"
                                  t-att-data-pk-fragment="pk_fragment_key(patient, 'medical-epipen')">
                                 <p class="o_sc_med_epipen_line" t-att-data-sc-med-epipen="'1' if pill['epipen'] else None"
                                    t-att-data-sc-med-epipen-state="pill['epipen_state'] or 'unset'">
@@ -1048,7 +953,7 @@
                                 <p t-if="pill['epipen_note']" class="o_pk_meta o_pk_pre o_sc_med_epipen_note"
                                    data-sc-med-epipen-note="1" t-out="pill['epipen_note']"/>
                             </div>
-                            <button t-if="editable" type="button" class="o_pk_icon_btn" data-sc-edit-toggle="1"
+                            <button t-if="editable" type="button" class="o_pk_icon_btn" data-pk-edit-toggle="1"
                                     data-sc-action="medical.epipen.edit" aria-expanded="false" aria-label="Edit" title="Edit">
                                 <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'edit'"/></t>
                             </button>
@@ -1056,7 +961,7 @@
                         <!-- Task 1717: EpiPen is answered Yes / No (empty =
                              not provided, the allergies wait for it): the
                              card asks first, open on load while unanswered. -->
-                        <div t-if="editable" class="o_pk_fields o_sc_med_card_edit" data-sc-edit-view="edit" hidden="hidden">
+                        <div t-if="editable" class="o_pk_fields o_sc_med_card_edit" data-pk-edit-view="edit" hidden="hidden">
                             <!-- Review round 1 (owner 2026-10-27): ONE line, a
                                  slider pill — the label on the left, a
                                  segmented pill on the right; nothing
@@ -1156,7 +1061,7 @@
                             t-att-data-sc-med-vital="'1' if item['life_threatening'] else '0'"
                             t-att-data-pk-edit-card="('med-item-%s-%s' % (scope, item['id'])) if editable else None">
                             <div class="o_sc_med_card_row">
-                                <div class="o_sc_med_card_read" data-sc-edit-view="read"
+                                <div class="o_sc_med_card_read" data-pk-edit-view="read"
                                      t-att-data-pk-fragment="pk_fragment_key(patient, 'medical-item-%s' % item['id'])">
                                     <p class="o_sc_med_item_line">
                                         <span t-attf-class="o_sc_med_dot o_sc_med_#{'urgent' if item['life_threatening'] else 'minor'}" aria-hidden="true"/>
@@ -1180,7 +1085,7 @@
                                     <t t-set="ci_edit_key" t-value="'medical.item.edit'"/>
                                 </t>
                             </div>
-                            <div t-if="editable" class="o_pk_fields o_sc_med_card_edit" data-sc-edit-view="edit" hidden="hidden">
+                            <div t-if="editable" class="o_pk_fields o_sc_med_card_edit" data-pk-edit-view="edit" hidden="hidden">
                                 <div class="o_pk_field">
                                     <label class="o_pk_field_label" t-att-for="'sc_med_item_name_%s_%s' % (scope, item['id'])">Name</label>
                                     <input type="text" t-att-id="'sc_med_item_name_%s_%s' % (scope, item['id'])" class="o_pk_input"

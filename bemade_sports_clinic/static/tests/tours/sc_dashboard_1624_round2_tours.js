@@ -108,12 +108,12 @@ tours.add("sc_1624_dashboard_round2", {
         },
         {
             content: "An event card's « Details »: the card stays put",
-            trigger: 'section[data-sc-instance="coverage"] .o_sc_event_row button[data-sc-row-expand][aria-expanded="false"]',
+            trigger: 'section[data-sc-instance="coverage"] .o_sc_event_row button[data-pk-row-expand][aria-expanded="false"]',
             async run() {
                 const toggle = this.anchor;
                 await clickKeepsTop(toggle, "event details");
                 assert(toggle.getAttribute("aria-expanded") === "true", "expanded (⌃)");
-                const region = document.getElementById(toggle.dataset.scRowExpand);
+                const region = document.getElementById(toggle.dataset.pkRowExpand);
                 assert(region && !region.hidden && region.querySelector('[data-sc-ev-field="staff"]'), "details shown");
                 await clickKeepsTop(toggle, "event details (fold)");
                 assert(region.hidden && toggle.getAttribute("aria-expanded") === "false", "folded (⌄)");
@@ -148,7 +148,7 @@ tours.add("sc_1624_dashboard_round2", {
         },
         {
             content: "Follow from « Players to watch »: the card joins « Players I follow »",
-            trigger: `${WATCH} .o_sc_player_row button[data-sc-row-expand]`,
+            trigger: `${WATCH} .o_sc_player_row button[data-pk-row-expand]`,
             async run() {
                 const followed = document.querySelector(FOLLOWED);
                 assert(followed.querySelector(":scope > .o_sc_dw_body > .o_pk_empty"), "empty at first");

@@ -46,7 +46,9 @@ from odoo.modules.module import get_manifest
 from odoo.tools import file_open, format_date, format_datetime, html2plaintext, plaintext2html
 
 from odoo.addons.bemade_portal_kit.controllers.pk_app import PortalKitApp
-from odoo.addons.bemade_portal_kit.tools import pk_fragment_key, pk_now_ms
+from odoo.addons.bemade_portal_kit.tools import (
+    pk_contact_href, pk_display, pk_display_key, pk_fragment_key, pk_now_ms,
+)
 
 from ..models import sc_app_nav, sc_app_roles
 from ..models.patient import IDENTITY_CONFIRM_KEY, IDENTITY_FIELDS
@@ -122,23 +124,6 @@ def sc_country_options(env):
     countries = env['res.country'].search([], order='name')
     canada = countries.filtered(lambda country: country.code == 'CA')
     return [('', '')] + [(country.id, country.name) for country in canada + (countries - canada)]
-
-
-def sc_contact_href(kind, value):
-    """Task 1585: the tap-to-call / tap-to-email href of a shown phone or
-    email (``kind`` = ``'tel'`` / ``'mailto'``), or None when there is
-    nothing to dial or write to. A phone keeps only ``+`` and its digits
-    (« +1 (555) 010-0123 » -> ``tel:+15550100123``). Same rule in the
-    browser: bemade_portal_kit/static/src/js/pk_contact_href.js."""
-    value = (value or '').strip() if isinstance(value, str) else ''
-    if not value:
-        return None
-    if kind == 'tel':
-        digits = re.sub(r'[^0-9+]', '', value)
-        return 'tel:%s' % digits if re.search(r'[0-9]', digits) else None
-    if kind == 'mailto':
-        return 'mailto:%s' % value
-    return None
 
 
 def sc_file_size(size, env=None):
@@ -1223,8 +1208,9 @@ class AppShellMixin:
             'sc_today': fields.Date.to_string(fields.Date.context_today(user)),
             # Owner review 2026-10-10: a card's read view (same strings the
             # save route answers, so an in-place update matches a reload).
-            'sc_display': lambda record, field: AppShellPortal._pk_save_display(record, field),
-            'sc_display_key': lambda record, field: '%s:%s:%s' % (record._name, record.id, field),
+            # Task 5381 (P4c2): the kit's helpers (bemade_portal_kit.pk_display_row).
+            'pk_display': pk_display,
+            'pk_display_key': pk_display_key,
             # Task 1611: read fragments (keys of the regions a save refreshes)
             # and the render stamp the « back » check compares against (task
             # 5199: the kit's names).
@@ -1233,9 +1219,9 @@ class AppShellMixin:
             'sc_sort_options': lambda param, options, current, drop=(): sc_sort_options(
                 path, request.httprequest.args, param, options, current, drop),
             'pk_rendered_at': pk_now_ms(),
-            # Task 1585: tap-to-call / tap-to-email hrefs (sc_display_row
+            # Task 1585: tap-to-call / tap-to-email hrefs (pk_display_row
             # with ``href_kind``, the event page's staff / organization).
-            'sc_contact_href': sc_contact_href,
+            'pk_contact_href': pk_contact_href,
             # Task 1586: an attachment row's file size.
             'sc_file_size': lambda size: sc_file_size(size, request.env),
             # Task 1589: an activity row's Done / Reschedule / Reassign /

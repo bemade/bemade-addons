@@ -90,7 +90,7 @@ class TestAppShellInjury1539(AppShellCommon):
             'diagnosis': 'Synthetic legacy report', 'injury_date': '2026-03-03'})
         self.assertEqual(resp.status_code, 200)
         self.assertNotIn('data-pk-app-shell', resp.text)
-        self.assertNotIn('data-sc-draft-clear', resp.text)
+        self.assertNotIn('data-pk-draft-clear', resp.text)
 
     def test_clinic_fragments_stay_legacy_with_switch_on(self):
         self._switch(True)
@@ -144,7 +144,7 @@ class TestAppShellInjury1539(AppShellCommon):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(self.env['sports.patient.injury'].search_count(
             [('patient_id', '=', self.player.id)]), count + 1)
-        self.assertIn('data-sc-draft-clear="sports.patient.%s.new_injury."' % self.player.id,
+        self.assertIn('data-pk-draft-clear="sports.patient.%s.new_injury."' % self.player.id,
                       resp.text)
 
     # -- UC-I3 -----------------------------------------------------------
@@ -249,7 +249,7 @@ class TestAppShellNotes1539(AppShellCommon):
         self.assertEqual(form.get('action'), '/my/injury/note/add')
         self.assertEqual(form.xpath('.//input[@name="return_url"]/@value'), [self.notes_url])
         text, tree = self._get(self.notes_url + '&success=note_added')
-        self.assertEqual(tree.xpath('//*[@data-sc-draft-clear]/@data-sc-draft-clear'),
+        self.assertEqual(tree.xpath('//*[@data-pk-draft-clear]/@data-pk-draft-clear'),
                          ['sports.patient.%s.new_note.' % self.player.id])
         # A coach reads the notes (as today) but adds / edits none.
         self._login_coach()

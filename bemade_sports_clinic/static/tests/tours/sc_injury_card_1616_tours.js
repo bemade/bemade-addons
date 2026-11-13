@@ -46,7 +46,7 @@ function el(selector) {
 }
 
 function editShown(section) {
-    return !el(`${section} [data-sc-edit-view="edit"]`).hidden;
+    return !el(`${section} [data-pk-edit-view="edit"]`).hidden;
 }
 
 function setFiles(input, files) {
@@ -84,12 +84,12 @@ tours.add("sc_1616_card_sections", {
         },
         {
             content: "The Details pencil edits Details only",
-            trigger: `${CARD} > summary button[data-sc-edit-toggle][data-sc-edit-for="injury-details"]`, // task 1736: the top-bar pencil
+            trigger: `${CARD} > summary button[data-pk-edit-toggle][data-pk-edit-for="injury-details"]`, // task 1736: the top-bar pencil
             run: "click",
         },
         {
             content: "Details in edit mode, Notes still reading",
-            trigger: `${DETAILS}[data-sc-edit-open] [data-sc-edit-view="edit"]:not([hidden])`,
+            trigger: `${DETAILS}[data-pk-edit-open] [data-pk-edit-view="edit"]:not([hidden])`,
             run() {
                 assert(!editShown(NOTES), "Notes opened too");
                 // Task 1631: status in the header pill, consent + visibility
@@ -107,33 +107,33 @@ tours.add("sc_1616_card_sections", {
         },
         {
             content: "The external-note pencil edits that note only",
-            trigger: `${DETAILS}:not([data-sc-edit-open]) [data-sc-edit-view="read"]:not([hidden])`,
+            trigger: `${DETAILS}:not([data-pk-edit-open]) [data-pk-edit-view="read"]:not([hidden])`,
             run() {
-                el(`${NOTES_EXT} button[data-sc-edit-toggle]`).click();
+                el(`${NOTES_EXT} button[data-pk-edit-toggle]`).click();
             },
         },
         {
             content: "External note in edit mode; internal note and Details reading",
-            trigger: `${NOTES_EXT}[data-sc-edit-open] .o_pk_autosave[data-sc-field="external_notes"]`,
+            trigger: `${NOTES_EXT}[data-pk-edit-open] .o_pk_autosave[data-sc-field="external_notes"]`,
             run() {
                 assert(!editShown(DETAILS), "Details opened too");
                 assert(!editShown(NOTES_INT), "the internal note opened too");
-                el(`${NOTES_INT} button[data-sc-edit-toggle]`).click();
+                el(`${NOTES_INT} button[data-pk-edit-toggle]`).click();
             },
         },
         {
             content: "The internal-note pencil opens the internal note too",
-            trigger: `${NOTES_INT}[data-sc-edit-open] .o_pk_autosave[data-sc-field="internal_notes"]`,
+            trigger: `${NOTES_INT}[data-pk-edit-open] .o_pk_autosave[data-sc-field="internal_notes"]`,
         },
         {
             // Task 1676: no bottom « Done » — each group closes with its ✓,
             // the card with its summary.
             content: "The ✓ of each open note closes it, the summary closes the card",
-            trigger: `${NOTES_INT}[data-sc-edit-open] button[data-sc-edit-toggle][data-sc-edit-toggle-done]`,
+            trigger: `${NOTES_INT}[data-pk-edit-open] button[data-pk-edit-toggle][data-pk-edit-toggle-done]`,
             run() {
                 assert(!el(`${CARD} [data-sc-injury-done]`), "the bottom « Done » is back");
-                el(`${NOTES_INT} button[data-sc-edit-toggle]`).click();
-                el(`${NOTES_EXT} button[data-sc-edit-toggle]`).click();
+                el(`${NOTES_INT} button[data-pk-edit-toggle]`).click();
+                el(`${NOTES_EXT} button[data-pk-edit-toggle]`).click();
                 // Task 1736 (deliberate update): only the chevron folds the card.
                 el(`${CARD} > summary button[data-sc-injury-toggle]`).click();
             },
@@ -143,7 +143,7 @@ tours.add("sc_1616_card_sections", {
             trigger: "details.o_sc_injury_item:not([open])",
             run() {
                 assert(!document.querySelector(`${CARD}`), "a card is still open");
-                assert(!document.querySelector('[data-pk-edit-card^="injury-notes-"][data-sc-edit-open]'),
+                assert(!document.querySelector('[data-pk-edit-card^="injury-notes-"][data-pk-edit-open]'),
                     "the Notes group stayed in edit mode");
             },
         },
@@ -250,7 +250,7 @@ tours.add("sc_1616_documents_upload", {
         },
         {
             content: "Rename it and leave the field",
-            trigger: `${DOCS} .o_sc_injury_doc[data-sc-edit-open] .o_pk_autosave[data-sc-field="name"] input`,
+            trigger: `${DOCS} .o_sc_injury_doc[data-pk-edit-open] .o_pk_autosave[data-sc-field="name"] input`,
             run() {
                 window.__sc1616NoReload = "1";
                 typeAndLeave(this.anchor, "Synthetic X-ray report");

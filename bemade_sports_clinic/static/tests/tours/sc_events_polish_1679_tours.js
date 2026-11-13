@@ -43,7 +43,7 @@ tours.add("sc_1679_toast_clear", {
     steps: () => [
         {
             content: "« Add My Timesheet »",
-            trigger: 'button[data-sc-action="timesheet.add"][data-sc-sheet-open]',
+            trigger: 'button[data-sc-action="timesheet.add"][data-pk-sheet-open]',
             run: "click",
         },
         {
@@ -52,9 +52,9 @@ tours.add("sc_1679_toast_clear", {
         },
         {
             content: "The open card's buttons are above the toast",
-            trigger: "[data-sc-timesheet-id][data-pk-edit-card][data-sc-edit-open]",
+            trigger: "[data-sc-timesheet-id][data-pk-edit-card][data-pk-edit-open]",
             run() {
-                const card = document.querySelector("[data-sc-timesheet-id][data-pk-edit-card][data-sc-edit-open]");
+                const card = document.querySelector("[data-sc-timesheet-id][data-pk-edit-card][data-pk-edit-open]");
                 const toast = document.querySelector(".o_pk_toast:not([hidden])");
                 const bottom = card.getBoundingClientRect().bottom;
                 const top = toast.getBoundingClientRect().top;

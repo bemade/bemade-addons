@@ -370,7 +370,7 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         self.assertIn('o_pk_chip_yellow',
                       vitems['1'].xpath('.//span[contains(@class, "o_pk_pill_swatch")]')[0].get('class'))
         # The Details edit view holds the dates only now.
-        self.assertEqual(self._fields(details.xpath('.//*[@data-sc-edit-view="edit"]')[0]), [
+        self.assertEqual(self._fields(details.xpath('.//*[@data-pk-edit-view="edit"]')[0]), [
             'diagnosis', 'sc_injury_date', 'predicted_resolution_date', 'resolution_date'])
 
     def test_pill_saves_refresh_the_flags(self):
@@ -398,9 +398,9 @@ class TestInjuryCard1631(InjuryCard1631Mixin, FragmentsCommon):
         self._login_tp()
         _text, tree = self._get(self._url())
         notes = self._card(tree).xpath('.//section[@data-pk-section="injury.notes"]')[0]
-        opens = notes.xpath('.//*[starts-with(@data-sc-sheet-open, "sc_note_history_sheet_")]')
+        opens = notes.xpath('.//*[starts-with(@data-pk-sheet-open, "sc_note_history_sheet_")]')
         self.assertEqual(len(opens), 1)
-        self.assertEqual(opens[0].get('data-sc-sheet-open'), 'sc_note_history_sheet_%s' % self.injury.id)
+        self.assertEqual(opens[0].get('data-pk-sheet-open'), 'sc_note_history_sheet_%s' % self.injury.id)
         self.assertTrue(opens[0].xpath('ancestor::div[contains(@class, "o_pk_edit_card_head")]'))
         for props in notes.xpath('.//owl-component/@props'):
             self.assertNotIn('historySheet', json.loads(props))

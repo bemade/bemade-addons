@@ -100,7 +100,7 @@ class TestMedicalHeader1630(MedicalCommon):
         self.assertIn('o_sc_med_none', pills['medical_alert'].get('class'))
         self.assertTrue(pills['allergy'].xpath('.//*[@data-sc-med-epipen]'))
         self.assertFalse(pills['medical_alert'].xpath('.//*[@data-sc-med-epipen]'))
-        self.assertEqual(pills['allergy'].get('data-sc-sheet-open'), 'sc_med_player_allergy_%s' % self.player.id)
+        self.assertEqual(pills['allergy'].get('data-pk-sheet-open'), 'sc_med_player_allergy_%s' % self.player.id)
         # Tones of the other levels; EpiPen gone when unticked. Task 1677:
         # « Not specified » is grey too.
         for items, tone in (([('Synthetic kiwi', False)], 'o_sc_med_minor'), ([], 'o_sc_med_none')):
@@ -140,7 +140,7 @@ class TestMedicalHeader1630(MedicalCommon):
         for node in tree.xpath('//*[@data-pk-fragment]'):
             self.assertFalse(node.xpath('.//dialog[starts-with(@id, "sc_med_")]'), node.get('data-pk-fragment'))
         hero = tree.xpath(HERO)[0]
-        self.assertFalse(hero.xpath('.//*[@data-sc-edit-view="edit"]//owl-component[contains(@props, \'"allergies"\')]'))
+        self.assertFalse(hero.xpath('.//*[@data-pk-edit-view="edit"]//owl-component[contains(@props, \'"allergies"\')]'))
         self.assertFalse(hero.xpath('.//*[@data-pk-section="player.allergies.edit"]'))
 
     # -- COACH-1 ------------------------------------------------------------
@@ -151,7 +151,7 @@ class TestMedicalHeader1630(MedicalCommon):
         self.assertEqual(list(pills), ['allergy'], 'no pill for « None »')
         sheet = self._sheet(tree, 'allergy')
         self.assertIn('Synthetic kiwi', sheet.text_content())
-        self.assertFalse(sheet.xpath('.//*[@data-sc-edit-toggle] | .//owl-component | .//*[@data-sc-edit-view="edit"]'))
+        self.assertFalse(sheet.xpath('.//*[@data-pk-edit-toggle] | .//owl-component | .//*[@data-pk-edit-view="edit"]'))
         self.assertIsNone(self._sheet(tree, 'medical_alert'))
         set_medical(self.player, allergies=[], conditions=[('Synthetic asthma', False)])
         tree = self._tree()
@@ -173,9 +173,9 @@ class TestMedicalHeader1630(MedicalCommon):
         self._login_tp()
         tree = self._tree('info')
         card = tree.xpath('//*[@data-pk-edit-card="medical-history"]')[0]
-        read = card.xpath('.//*[@data-sc-edit-view="read"]')[0]
+        read = card.xpath('.//*[@data-pk-edit-view="read"]')[0]
         self.assertIn('Synthetic fracture 2020', read.text_content())
-        self.assertTrue(card.xpath('.//button[@data-sc-edit-toggle]'))
+        self.assertTrue(card.xpath('.//button[@data-pk-edit-toggle]'))
         props = [json.loads(p) for p in card.xpath('.//owl-component/@props')]
         self.assertEqual([(p['field'], p['inputType']) for p in props], [('medical_history_other', 'textarea')])
         payload = self._saved(self.player, 'medical_history_other', 'Synthetic surgery 2021')
@@ -330,7 +330,7 @@ class TestMedicalDossier1630(Clinic1540Common):
         sheet = tree.xpath('//dialog[@id="%s"]' % pills[0].get('data-sc-med-card-sheet'))[0]
         self.assertEqual(sheet.get('id'), 'sc_med_card_allergy_%s' % self.player.id)
         self.assertIn('Synthetic pollen', sheet.text_content())
-        self.assertTrue(sheet.xpath('.//button[@data-sc-edit-toggle]'))
+        self.assertTrue(sheet.xpath('.//button[@data-pk-edit-toggle]'))
         self.assertFalse(hero.xpath('.//*[contains(@class, "o_pk_banner")]'), 'no allergies banner')
 
 

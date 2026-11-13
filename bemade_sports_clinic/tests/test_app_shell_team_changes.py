@@ -100,7 +100,7 @@ class TestAppShellTeamChanges(AppShellCommon):
         with self._presence(injuries), self._injury_presence(injuries):
             _text, tree = self._get(self.url)
             # Task 1626: the lazy URL is on the row's « Details » region.
-            url = self._changed_row(tree).xpath('.//*[@data-sc-row-detail]/@data-sc-lazy-url')[0]
+            url = self._changed_row(tree).xpath('.//*[@data-sc-row-detail]/@data-pk-lazy-url')[0]
             text, tree = self._get(url)
         return url, text, tree
 
@@ -272,11 +272,11 @@ class TestAppShellTeamChanges(AppShellCommon):
         self.assertEqual(len(area), 1)
         header = area[0].xpath('.//h2[contains(@class, "o_pk_section_header")]')[0]
         self.assertIn('Team announcement', header.text_content())
-        links = header.xpath('.//button[@data-sc-sheet-open="sc_announcement_history_sheet"]'
+        links = header.xpath('.//button[@data-pk-sheet-open="sc_announcement_history_sheet"]'
                              '[contains(@class, "o_pk_link_btn")]')
         self.assertEqual(len(links), 1)
         self.assertEqual(len(tree.xpath(
-            '//*[@data-sc-sheet-open="sc_announcement_history_sheet"]')), 1)
+            '//*[@data-pk-sheet-open="sc_announcement_history_sheet"]')), 1)
         self.assertTrue(tree.xpath('//dialog[@id="sc_announcement_history_sheet"]'))
         # Task 1719: the section itself is the edit card.
         return area[0].xpath('descendant-or-self::*[@data-pk-edit-card="announcement"]')[0]
@@ -299,9 +299,9 @@ class TestAppShellTeamChanges(AppShellCommon):
         self._login_tp()
         _text, tree = self._get(self.url)
         card = self._announcement(tree)
-        self.assertEqual(len(card.xpath('.//button[@data-sc-edit-toggle]')), 1)
+        self.assertEqual(len(card.xpath('.//button[@data-pk-edit-toggle]')), 1)
         self.assertFalse(card.xpath('.//*[@data-pk-section="team.announcement.archive"]'))
-        edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
+        edit = card.xpath('.//*[@data-pk-edit-view="edit"]')[0]
         self.assertEqual(edit.get('hidden'), 'hidden')
         self.assertEqual(edit.get('data-pk-section'), 'team.announcement.edit')
         # With an announcement: pencil + archive icon side by side.
@@ -309,7 +309,7 @@ class TestAppShellTeamChanges(AppShellCommon):
         _text, tree = self._get(self.url)
         card = self._announcement(tree)
         icons = card.xpath('.//*[contains(@class, "o_pk_card_icons")]')[0]
-        self.assertEqual(len(icons.xpath('.//button[@data-sc-edit-toggle]')), 1)
+        self.assertEqual(len(icons.xpath('.//button[@data-pk-edit-toggle]')), 1)
         archive = icons.xpath('.//form[@data-pk-section="team.announcement.archive"]'
                               '//button[contains(@class, "o_pk_icon_btn")]')
         self.assertEqual(len(archive), 1)
@@ -320,7 +320,7 @@ class TestAppShellTeamChanges(AppShellCommon):
         _text, tree = self._get(self.url)
         card = self._announcement(tree)
         self.assertIn('Synthetic standing note', card.text_content())
-        self.assertFalse(card.xpath('.//button[@data-sc-edit-toggle]'))
+        self.assertFalse(card.xpath('.//button[@data-pk-edit-toggle]'))
         self.assertFalse(card.xpath('.//*[@data-pk-section="team.announcement.archive"]'))
 
 

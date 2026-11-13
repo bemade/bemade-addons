@@ -75,7 +75,7 @@ class TestAllergiesHeaderOnly1018b(AppShellCommon):
         _text, tree = self._get('/my/player?player_id=%s&tab=overview' % self.player.id)
         medical = tree.xpath('//section[@data-pk-edit-card="medical"]')
         self.assertEqual(len(medical), 1)
-        read = medical[0].xpath('.//*[@data-sc-edit-view="read"]')[0]
+        read = medical[0].xpath('.//*[@data-pk-edit-view="read"]')[0]
         self.assertNotIn('Allergies', [' '.join(dt.itertext()).strip() for dt in read.xpath('.//dt')])
         for field in ('allergies', 'allergy_level', 'allergy_details'):
             self.assertNotIn(field, _island_fields(medical[0]))
@@ -276,14 +276,14 @@ class TestAccountCards1018b(AccountCards1018bCommon):
         }
         for key, (field_names, shown) in expected.items():
             card = self._card(tree, key)
-            self.assertTrue(card.xpath('.//button[@data-sc-edit-toggle]'), key)
-            read = card.xpath('.//*[@data-sc-edit-view="read"]')
+            self.assertTrue(card.xpath('.//button[@data-pk-edit-toggle]'), key)
+            read = card.xpath('.//*[@data-pk-edit-view="read"]')
             self.assertEqual(len(read), 1, key)
             self.assertEqual(read[0].get('data-pk-fragment'), 'res.partner:%s:%s' % (partner.id, key))
             text = ' '.join(read[0].itertext())
             for value in shown:
                 self.assertIn(value, text, key)
-            edit = card.xpath('.//*[@data-sc-edit-view="edit"]')[0]
+            edit = card.xpath('.//*[@data-pk-edit-view="edit"]')[0]
             self.assertEqual(edit.get('hidden'), 'hidden')
             self.assertEqual(set(edit.xpath('.//input/@name | .//select/@name')), field_names, key)
             # Round 2 (1018c): no « Save » / « Cancel », a « Done ».
@@ -291,7 +291,7 @@ class TestAccountCards1018b(AccountCards1018bCommon):
             self.assertTrue(edit.xpath('.//*[@data-sc-account-errors]'), key)
         # The read views show the state and country names.
         address = ' '.join(self._card(tree, 'account-address').xpath(
-            './/*[@data-sc-edit-view="read"]')[0].itertext())
+            './/*[@data-pk-edit-view="read"]')[0].itertext())
         self.assertIn(self.qc.name, address)
         self.assertIn(self.ca.name, address)
 

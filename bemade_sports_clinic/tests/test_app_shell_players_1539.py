@@ -65,7 +65,7 @@ class PlayersCommon1539(AppShellCommon):
 
     @staticmethod
     def _panel(tree, key):
-        nodes = tree.xpath('//section[@data-sc-tab-panel="%s"]' % key)
+        nodes = tree.xpath('//section[@data-pk-tab-panel="%s"]' % key)
         return nodes[0] if nodes else None
 
     @staticmethod
@@ -181,7 +181,7 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         text, tree = self._get(self.url)
         self.assertIsNotNone(self._shell(tree))
         self.assertNotIn('id="playerTabs"', text)
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]/a/@data-sc-tab'),
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]/a/@data-pk-tab'),
                          ['injuries', 'info', 'documents', 'activities'])
         for secret in ('Hidden synthetic injury', 'Internal synthetic text',
                        'TP-only synthetic remark', 'Synthetic allergy',
@@ -204,7 +204,7 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         self._switch(True)
         self._login_tp()
         text, tree = self._get(self.url)
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]/a/@data-sc-tab'),
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]/a/@data-pk-tab'),
                          ['injuries', 'info', 'documents', 'notes', 'activities'])
         owl = self._owl_fields(tree)
         # Task 1627: the status is the header's Match / Practice pill
@@ -217,7 +217,7 @@ class TestAppShellPlayer1539(PlayersCommon1539):
                         'Synthetic history'):
             self.assertIn(visible, text, visible)
         # Legacy #patient-info / #team-info open the Info tab.
-        aliases = tree.xpath('//nav[@data-sc-tabs]/a[@data-sc-tab="info"]/@data-sc-tab-aliases')
+        aliases = tree.xpath('//nav[@data-pk-tabs]/a[@data-pk-tab="info"]/@data-pk-tab-aliases')
         self.assertEqual(aliases, ['patient-info team-info contacts'])
 
     def test_tab_deep_link(self):
@@ -296,7 +296,7 @@ class TestAppShellPlayer1539(PlayersCommon1539):
         self.assertEqual(props['note']['mode'], 'draft')
         self.assertEqual(props['note']['draftKey'], 'sports.patient.%s.new_note.note' % self.player.id)
         _text, tree = self._get(self.url + '&success=note_added#notes')
-        self.assertEqual(tree.xpath('//*[@data-sc-draft-clear]/@data-sc-draft-clear'),
+        self.assertEqual(tree.xpath('//*[@data-pk-draft-clear]/@data-pk-draft-clear'),
                          ['sports.patient.%s.new_note.' % self.player.id])
 
 

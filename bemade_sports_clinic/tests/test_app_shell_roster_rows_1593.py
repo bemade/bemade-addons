@@ -97,7 +97,7 @@ class Rows1593Common(AppShellCommon):
     def _detail(self, row):
         region = row.xpath('.//*[@data-sc-row-detail]')
         self.assertTrue(region, 'no expandable detail region')
-        url = region[0].get('data-sc-lazy-url')
+        url = region[0].get('data-pk-lazy-url')
         resp = self.url_open(url)
         return resp, url
 
@@ -126,11 +126,11 @@ class TestAppShellRosterRows1593(Rows1593Common):
         self.assertIn('03/15/2030', _text(ret[0]))
         # The detail is NOT rendered with the page: a lazy region + control.
         self.assertNotIn('Synthetic external note', _text(row))
-        button = row.xpath('.//button[@data-sc-row-expand]')
+        button = row.xpath('.//button[@data-pk-row-expand]')
         region = row.xpath('.//*[@data-sc-row-detail]')
         self.assertEqual(button[0].get('aria-controls'), region[0].get('id'))
         self.assertEqual(region[0].get('hidden'), 'hidden')
-        self.assertEqual(region[0].get('data-sc-lazy-url'),
+        self.assertEqual(region[0].get('data-pk-lazy-url'),
                          '/my/player/%s/row-detail?team_id=%s' % (self.player.id, self.team_a.id))
         # A healthy player: no « Retour prévu », no training line.
         healthy = self._row(tree, 'team.roster', self.healthy)
@@ -167,7 +167,7 @@ class TestAppShellRosterRows1593(Rows1593Common):
         self.assertEqual(self._team_links(row),
                          [('/my/team?team_id=%s' % self.team_a.id, 'PC Team A')])
         self.assertEqual(self._plain_teams(row), ['PC Team C'])
-        self.assertEqual(row.xpath('.//*[@data-sc-row-detail]/@data-sc-lazy-url'),
+        self.assertEqual(row.xpath('.//*[@data-sc-row-detail]/@data-pk-lazy-url'),
                          ['/my/player/%s/row-detail' % self.player.id])
 
     def test_team_page_rows_have_no_team_links(self):
@@ -330,7 +330,7 @@ class TestAppShellRosterRowsI18n1593(TestAppShellI18n1538):
         row = tree.xpath('//*[contains(@class, "o_sc_player_row")][@data-sc-player-id="%s"]'
                          % self.player.id)[0]
         self.assertTrue(_text(row.xpath('.//*[@data-sc-row-return]')[0]).startswith('Retour prévu :'))
-        self.assertEqual(_text(row.xpath('.//button[@data-sc-row-expand]')[0]), 'Détails')
+        self.assertEqual(_text(row.xpath('.//button[@data-pk-row-expand]')[0]), 'Détails')
         text = self._fr('/my/player/%s/row-detail' % healthy.id)
         self.assertIn('Aucune blessure active.', text)
         self.assertNotIn('Dernière consultation', text)  # task 1669

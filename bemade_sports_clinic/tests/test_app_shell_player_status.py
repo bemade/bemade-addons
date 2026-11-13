@@ -137,11 +137,11 @@ class TestAppShellPlayerStatus(PlayerStatusCommon):
         self.assertEqual([p.tag for p in parts], ['span', 'button'])
         self.assertEqual(parts[0].text_content().strip(), 'Training Recommendation')
         link = parts[1]
-        self.assertEqual(link.get('data-sc-sheet-open'), 'sc_training_history_sheet')
+        self.assertEqual(link.get('data-pk-sheet-open'), 'sc_training_history_sheet')
         self.assertTrue({'o_pk_section_more', 'o_pk_link_btn'} <= set(link.get('class').split()))
         self.assertEqual(link.text_content().strip(), 'History')
         # Exactly one History link in this mode.
-        self.assertEqual(section.xpath('.//*[@data-sc-sheet-open="sc_training_history_sheet"]'), [link])
+        self.assertEqual(section.xpath('.//*[@data-pk-sheet-open="sc_training_history_sheet"]'), [link])
         return link
 
     def _history_link(self, tree, edit=False):
@@ -165,9 +165,9 @@ class TestAppShellPlayerStatus(PlayerStatusCommon):
             self.assertEqual(owl[0]['label'], 'Training Recommendation')
             self.assertIs(owl[0]['labelHidden'], True)
         sheet = tree.xpath('//dialog[@id="sc_training_history_sheet"]')[0]
-        self.assertEqual(sheet.get('data-sc-lazy-url'),
+        self.assertEqual(sheet.get('data-pk-lazy-url'),
                          '/my/player/%s/training-history' % self.player.id)
-        self.assertEqual(sheet.get('data-sc-lazy-fresh'), '1')
+        self.assertEqual(sheet.get('data-pk-lazy-fresh'), '1')
         return sheet
 
     def test_training_recommendation_history(self):
@@ -214,7 +214,7 @@ class TestAppShellPlayerStatus(PlayerStatusCommon):
                          ['resolved', 'unverified'])
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&tab=injuries' % self.player.id)
-        panel = tree.xpath('//*[@data-sc-tab-panel="injuries"]')[0]
+        panel = tree.xpath('//*[@data-pk-tab-panel="injuries"]')[0]
         ids = []
         for value in panel.xpath('.//*[@data-sc-injury-id]/@data-sc-injury-id'):
             if int(value) not in ids:

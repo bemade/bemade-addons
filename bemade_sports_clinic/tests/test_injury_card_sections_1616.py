@@ -152,19 +152,19 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         details = card.xpath('.//section[@data-pk-edit-card="injury-details"]')[0]
         notes = card.xpath('.//section[@data-pk-section="injury.notes"]')[0]
         # Task 1736 (deliberate update): the Details group's pencil is the
-        # card's top-bar pencil (summary), pointing at it (data-sc-edit-for).
-        self.assertEqual(len(details.xpath('.//button[@data-sc-edit-toggle]')), 0)
-        self.assertEqual(len(card.xpath('./summary//button[@data-sc-edit-toggle]'
-                                        '[@data-sc-edit-for="injury-details"]')), 1)
+        # card's top-bar pencil (summary), pointing at it (data-pk-edit-for).
+        self.assertEqual(len(details.xpath('.//button[@data-pk-edit-toggle]')), 0)
+        self.assertEqual(len(card.xpath('./summary//button[@data-pk-edit-toggle]'
+                                        '[@data-pk-edit-for="injury-details"]')), 1)
         # Task 1675: one pencil per note (external, internal).
-        self.assertEqual(len(notes.xpath('.//button[@data-sc-edit-toggle]')), 2)
+        self.assertEqual(len(notes.xpath('.//button[@data-pk-edit-toggle]')), 2)
         for scope in ('external', 'internal'):
             sub = notes.xpath('.//*[@data-pk-edit-card="injury-notes-%s"]' % scope)[0]
-            self.assertEqual(len(sub.xpath('.//button[@data-sc-edit-toggle]')), 1, scope)
-            self.assertEqual(self._fields(sub.xpath('.//*[@data-sc-edit-view="edit"]')[0]), ['%s_notes' % scope])
+            self.assertEqual(len(sub.xpath('.//button[@data-pk-edit-toggle]')), 1, scope)
+            self.assertEqual(self._fields(sub.xpath('.//*[@data-pk-edit-view="edit"]')[0]), ['%s_notes' % scope])
         # Task 1631: status, consent and visibility are pill dropdowns (the
         # header / the Details flags row), no longer behind the pencil.
-        self.assertEqual(self._fields(details.xpath('.//*[@data-sc-edit-view="edit"]')[0]), [
+        self.assertEqual(self._fields(details.xpath('.//*[@data-pk-edit-view="edit"]')[0]), [
             'diagnosis', 'sc_injury_date', 'predicted_resolution_date', 'resolution_date'])
         self.assertEqual(details.xpath('.//*[contains(@class, "o_sc_injury_flags")]//@data-pk-pill-key'),
                          ['consent', 'visibility'])
@@ -175,8 +175,8 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         self.assertNotIn('historySheet', ext)  # task 1631: the head's one only
         # The combined « History » sheet from the Notes head.
         self.assertTrue(notes.xpath('.//div[contains(@class, "o_pk_edit_card_head")]'
-                                    '//button[@data-sc-sheet-open="sc_note_history_sheet_%s"]' % self.injury.id))
-        lazy = notes.xpath('.//dialog[@id="sc_note_history_sheet_%s"]/@data-sc-lazy-url' % self.injury.id)
+                                    '//button[@data-pk-sheet-open="sc_note_history_sheet_%s"]' % self.injury.id))
+        lazy = notes.xpath('.//dialog[@id="sc_note_history_sheet_%s"]/@data-pk-lazy-url' % self.injury.id)
         self.assertEqual(lazy, ['/my/injury/%s/notes/history/fragment' % self.injury.id])
 
     def test_stamp_under_the_notes_on_the_player_page(self):
@@ -200,7 +200,7 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         notes = card.xpath('.//section[@data-pk-section="injury.notes"]')[0]
         # Owner review 2026-10-25 (#1675): the coach reads the external note.
         self.assertEqual(self._fields(notes), [])
-        self.assertFalse(notes.xpath('.//button[@data-sc-edit-toggle]'))
+        self.assertFalse(notes.xpath('.//button[@data-pk-edit-toggle]'))
         self.assertFalse(notes.xpath('.//dialog[contains(@id, "_internal")]'))
         docs = card.xpath('.//section[@data-pk-section="injury.documents"]')[0]
         self.assertEqual(len(docs.xpath('.//*[contains(@class, "o_sc_doc_row")]')), 1)
@@ -226,12 +226,12 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         summary = card.xpath('./summary/*[@data-pk-fragment]')[0]
         self.assertEqual(summary.get('data-pk-fragment'), key + 'summary')
         self.assertTrue(summary.xpath('.//span[contains(@class, "o_pk_row_trailing")]/button[@data-sc-injury-quick]'))
-        read = card.xpath('.//section[@data-pk-edit-card="injury-details"]/dl[@data-sc-edit-view="read"]')[0]
+        read = card.xpath('.//section[@data-pk-edit-card="injury-details"]/dl[@data-pk-edit-view="read"]')[0]
         self.assertEqual(read.get('data-pk-fragment'), key + 'read')
         # Task 1675: one read fragment per note.
-        notes = card.xpath('.//*[@data-pk-edit-card="injury-notes-external"]/*[@data-sc-edit-view="read"]')[0]
+        notes = card.xpath('.//*[@data-pk-edit-card="injury-notes-external"]/*[@data-pk-edit-view="read"]')[0]
         self.assertEqual(notes.get('data-pk-fragment'), key + 'notes-external')
-        internal = card.xpath('.//*[@data-pk-edit-card="injury-notes-internal"]/*[@data-sc-edit-view="read"]')[0]
+        internal = card.xpath('.//*[@data-pk-edit-card="injury-notes-internal"]/*[@data-pk-edit-view="read"]')[0]
         self.assertEqual(internal.get('data-pk-fragment'), key + 'notes-internal')
         # A notes save refreshes the Notes read view (the injury's '*').
         payload = self._saved(self.injury, 'external_notes', 'Synthetic external 1616')
@@ -266,7 +266,7 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         self.assertEqual(delete.xpath('.//input[@name="return_url"]/@value'), [card_url])
         # « Add »: a sheet with ONE multi-file form coming back to the card.
         self.assertTrue(docs.xpath('.//button[@data-sc-action="injury.documents.add"]'
-                                   '[@data-sc-sheet-open="sc_injury_%s_documents_add"]' % self.injury.id))
+                                   '[@data-pk-sheet-open="sc_injury_%s_documents_add"]' % self.injury.id))
         form = docs.xpath('.//dialog[@id="sc_injury_%s_documents_add"]//form' % self.injury.id)[0]
         self.assertEqual(form.get('action'), '/my/patient/document/upload')
         self.assertEqual(form.get('enctype'), 'multipart/form-data')
@@ -454,7 +454,7 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         })
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&tab=notes' % self.player.id)
-        hrefs = tree.xpath('//section[@data-sc-tab-panel="notes"]//a[contains(@href, "injury=%s")]/@href'
+        hrefs = tree.xpath('//section[@data-pk-tab-panel="notes"]//a[contains(@href, "injury=%s")]/@href'
                            % self.injury.id)
         self.assertTrue(hrefs)
         self.assertTrue(all(href.endswith('#injury-%s' % self.injury.id) for href in hrefs))

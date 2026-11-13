@@ -24,7 +24,7 @@ tours.add("sc_1582_note_replace", {
         {
             content: "Edit the notes card (pencil)",
             // Task 1616: the open injury card's Notes group.
-            trigger: 'details.o_sc_injury_item[open] [data-pk-edit-card="injury-notes-external"] button[data-sc-edit-toggle]',
+            trigger: 'details.o_sc_injury_item[open] [data-pk-edit-card="injury-notes-external"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {
@@ -90,7 +90,7 @@ tours.add("sc_1582_note_replace", {
             run() {
                 const area = document.querySelector(`${FIELD} textarea[data-sc-replace="new"]`);
                 assert(area.value === "", `editor not emptied: ${area.value}`);
-                const read = document.querySelector('[data-sc-display$=":external_notes"]');
+                const read = document.querySelector('[data-pk-display$=":external_notes"]');
                 assert(read && read.textContent.includes(NEW), "read view not refreshed");
             },
         },
@@ -98,10 +98,10 @@ tours.add("sc_1582_note_replace", {
         // scopes, each entry labelled), in edit mode too.
         {
             content: "No « History » next to the replace hint; the head's one opens the history",
-            trigger: `section[data-pk-section="injury.notes"] > .o_pk_edit_card_head [data-sc-sheet-open^="sc_note_history_sheet_"]`,
+            trigger: `section[data-pk-section="injury.notes"] > .o_pk_edit_card_head [data-pk-sheet-open^="sc_note_history_sheet_"]`,
             run(helpers) {
                 assert(
-                    !document.querySelector(`${FIELD} [data-sc-sheet-open^="sc_note_history_sheet_"]`),
+                    !document.querySelector(`${FIELD} [data-pk-sheet-open^="sc_note_history_sheet_"]`),
                     "a per-field History link"
                 );
                 return helpers.click();
