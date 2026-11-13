@@ -20,7 +20,7 @@ export function scHelpUrlFor(link, tab) {
 }
 
 document.addEventListener("click", (ev) => {
-    const tab = ev.target.closest && ev.target.closest("[data-sc-tabs] a[data-sc-tab]");
+    const tab = ev.target.closest && ev.target.closest("[data-pk-tabs] a[data-pk-tab]");
     if (!tab) {
         return;
     }
@@ -28,9 +28,9 @@ document.addEventListener("click", (ev) => {
     if (!link || !["player", "team"].includes(link.dataset.scHelpBase)) {
         return;
     }
-    const url = scHelpUrlFor(link, tab.dataset.scTab);
+    const url = scHelpUrlFor(link, tab.dataset.pkTab);
     if (url) {
         link.setAttribute("href", url);
-        link.dataset.scHelpKey = `${link.dataset.scHelpBase}.${tab.dataset.scTab}`;
+        link.dataset.scHelpKey = `${link.dataset.scHelpBase}.${tab.dataset.pkTab}`;
     }
 });

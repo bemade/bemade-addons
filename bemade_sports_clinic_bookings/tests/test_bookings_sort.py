@@ -65,7 +65,7 @@ class TestBookingsSort(BookingsShellCommon):
 
     @staticmethod
     def _segment_hrefs(tree):
-        return {a.get('data-sc-tab'): a.get('href') for a in tree.xpath('//nav[@data-sc-tabs]//a')}
+        return {a.get('data-pk-tab'): a.get('href') for a in tree.xpath('//nav[@data-pk-tabs]//a')}
 
     @staticmethod
     def _query(href):

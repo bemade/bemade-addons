@@ -17,11 +17,11 @@ registry.category("web_tour.tours").add("sc_1675_coach_external_readonly", {
     steps: () => [
         {
             content: "The coach reads the external note on the open injury card",
-            trigger: `${CARD} [data-sc-display$=":external_notes"]:contains(T1582 tour current text)`,
+            trigger: `${CARD} [data-pk-display$=":external_notes"]:contains(T1582 tour current text)`,
             run() {
                 const card = document.querySelector(CARD);
-                assert(!card.querySelector("button[data-sc-edit-toggle]"), "a pencil on the external note");
-                assert(!card.querySelector('[data-sc-edit-view="edit"]'), "an external-note editor");
+                assert(!card.querySelector("button[data-pk-edit-toggle]"), "a pencil on the external note");
+                assert(!card.querySelector('[data-pk-edit-view="edit"]'), "an external-note editor");
                 assert(
                     !document.querySelector('.o_pk_autosave[data-sc-field="external_notes"]'),
                     "an external-note autosave field"

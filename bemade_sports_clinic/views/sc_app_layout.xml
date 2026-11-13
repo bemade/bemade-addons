@@ -67,12 +67,12 @@
                 <meta name="apple-mobile-web-app-title" content="Fit Crew"/>
                 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
             </t>
-            <!-- Task 1676: the head pencil's label while it is a ✓ (sc_app_ui.js). -->
+            <!-- Task 1676: the head pencil's label while it is a ✓ (the kit's pk_edit_cards.js). -->
             <t t-set="sc_edit_done_label">Finish editing</t>
             <div class="o_pk_app" data-pk-app-shell="1"
                  t-att-data-pk-theme="sc_theme or 'dark'"
                  t-att-data-sc-hide-done="None if sc_show_done else '1'"
-                 t-att-data-sc-edit-done-label="sc_edit_done_label"
+                 t-att-data-pk-edit-done-label="sc_edit_done_label"
                  t-att-data-sc-top="'0' if sc_parent_url else '1'"
                  t-att-data-pk-db="sc_db" t-att-data-pk-uid="sc_uid"
                  t-att-data-pk-rendered-at="pk_rendered_at"
@@ -234,7 +234,7 @@
                             aria-labelledby="sc_injury_resolve_sheet_title">
                         <div class="o_pk_sheet_head">
                             <h2 class="o_pk_sheet_title" id="sc_injury_resolve_sheet_title">Resolve this injury?</h2>
-                            <button type="button" class="o_pk_icon_btn" data-sc-sheet-close="1" aria-label="Close" title="Close">
+                            <button type="button" class="o_pk_icon_btn" data-pk-sheet-close="1" aria-label="Close" title="Close">
                                 <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'close'"/></t>
                             </button>
                         </div>
@@ -248,7 +248,7 @@
                                 </div>
                                 <p class="o_pk_field_message o_pk_field_error" role="alert" data-sc-injury-resolve-error="1" hidden="hidden">The injury could not be resolved.</p>
                                 <div class="o_pk_form_actions">
-                                    <button type="button" class="o_pk_btn o_pk_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                                    <button type="button" class="o_pk_btn o_pk_btn_ghost" data-pk-sheet-close="1">Cancel</button>
                                     <button type="submit" class="o_pk_btn o_pk_btn_primary" data-sc-injury-resolve-confirm="1">Resolve</button>
                                 </div>
                                 <span hidden="hidden" data-pk-guard-msg="future">The resolution date cannot be in the future.</span>
@@ -264,7 +264,7 @@
                             t-att-data-sc-proposal="sc_proposal_json or None">
                         <div class="o_pk_sheet_head">
                             <h2 class="o_pk_sheet_title" id="sc_proposal_sheet_title" data-sc-proposal-title="1"/>
-                            <button type="button" class="o_pk_icon_btn" data-sc-sheet-close="1" aria-label="Close" title="Close">
+                            <button type="button" class="o_pk_icon_btn" data-pk-sheet-close="1" aria-label="Close" title="Close">
                                 <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'close'"/></t>
                             </button>
                         </div>

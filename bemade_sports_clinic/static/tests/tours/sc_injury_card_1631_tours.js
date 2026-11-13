@@ -121,7 +121,7 @@ tours.add("sc_1631_injury_card", {
                 await waitFor(() => !document.querySelector(`${PROPOSAL}[open]`), "popup closed");
                 await waitFor(() => {
                     const read = document.querySelector(
-                        `${DETAILS} [data-sc-edit-view="read"] [data-sc-display$=":predicted_resolution_date"]`
+                        `${DETAILS} [data-pk-edit-view="read"] [data-pk-display$=":predicted_resolution_date"]`
                     );
                     return read && read.textContent.trim() && read.textContent.trim() !== "—";
                 }, "the predicted date in the read view");
@@ -152,22 +152,22 @@ tours.add("sc_1631_injury_card", {
         // -- one Historique
         {
             content: "One notes « History », in the head",
-            trigger: `${NOTES} .o_pk_edit_card_head [data-sc-sheet-open^="sc_note_history_sheet_"]`,
+            trigger: `${NOTES} .o_pk_edit_card_head [data-pk-sheet-open^="sc_note_history_sheet_"]`,
             run() {
-                const links = document.querySelectorAll(`${NOTES} [data-sc-sheet-open^="sc_note_history_sheet_"]`);
+                const links = document.querySelectorAll(`${NOTES} [data-pk-sheet-open^="sc_note_history_sheet_"]`);
                 assert(links.length === 1, `${links.length} History links`);
             },
         },
         {
             content: "Edit the external note (pencil)",
-            trigger: `${NOTES} [data-pk-edit-card="injury-notes-external"] button[data-sc-edit-toggle]`,
+            trigger: `${NOTES} [data-pk-edit-card="injury-notes-external"] button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
             content: "Still one « History » in edit mode",
             trigger: `${FIELD} textarea[data-sc-replace="new"]`,
             run() {
-                const links = [...document.querySelectorAll(`${NOTES} [data-sc-sheet-open^="sc_note_history_sheet_"]`)].filter(
+                const links = [...document.querySelectorAll(`${NOTES} [data-pk-sheet-open^="sc_note_history_sheet_"]`)].filter(
                     (el) => el.offsetParent
                 );
                 assert(links.length === 1, `${links.length} visible History links`);

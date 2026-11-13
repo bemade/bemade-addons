@@ -56,13 +56,13 @@
             <t t-set="sc_tab_activities">Activities</t>
             <t t-set="sc_team_tabs" t-value="[('dashboard', sc_tab_dashboard, sc_team_url + '&amp;tab=dashboard'), ('players', sc_tab_players, sc_team_url + '&amp;tab=players')] + ([('activities', sc_tab_activities, sc_team_url + '&amp;tab=activities', '', sc_team_activities_badge)] if sc_show_activities else [])"/>
             <t t-set="sc_active_tab" t-value="active_tab if (active_tab != 'activities' or sc_show_activities) else 'dashboard'"/>
-            <t t-call="bemade_sports_clinic.sc_page_tabs">
+            <t t-call="bemade_portal_kit.pk_page_tabs">
                 <t t-set="tabs" t-value="sc_team_tabs"/>
                 <t t-set="active" t-value="sc_active_tab"/>
             </t>
 
             <!-- ============================ Dashboard ============================ -->
-            <section class="o_pk_tab_panel" data-sc-tab-panel="dashboard" role="tabpanel"
+            <section class="o_pk_tab_panel" data-pk-tab-panel="dashboard" role="tabpanel"
                      t-att-hidden="None if sc_active_tab == 'dashboard' else 'hidden'">
 
                 <!-- Team announcement (task 1270): all-staff, TP-authored.
@@ -70,7 +70,7 @@
                      row. ONE title line « Team announcement » · « History » ·
                      the pencil and archive icons (editors); under it the
                      megaphone beside the text, clamped to 3 lines with « See
-                     more » (sc_app_ui.js), and one muted « Until <date> »
+                     more » (the kit's pk_clamp.js), and one muted « Until <date> »
                      line; a thin divider before the counters. Empty: a muted
                      « No current announcement. » for editors (the pencil adds
                      one); for everyone else the section is not rendered. The
@@ -84,7 +84,7 @@
                         <h2 class="o_pk_section_header">
                             <span class="o_sc_announcement_heading">Team announcement</span>
                             <button type="button" class="o_pk_section_more o_pk_link_btn"
-                                    data-sc-sheet-open="sc_announcement_history_sheet">History</button>
+                                    data-pk-sheet-open="sc_announcement_history_sheet">History</button>
                         </h2>
                         <!-- Task 1736 (owner 2026-11-01): the shared top bar —
                              archive (visible in read mode, the undo toast below),
@@ -107,30 +107,30 @@
                             </t>
                         </t>
                     </div>
-                    <div data-sc-edit-view="read" data-pk-section="team.announcement">
+                    <div data-pk-edit-view="read" data-pk-section="team.announcement">
                         <div t-if="team.announcement" class="o_sc_announcement_content">
                             <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'megaphone'"/></t>
                             <div class="o_sc_announcement_text">
-                                <p class="o_pk_pre o_sc_announcement_body" data-sc-clamp="3" t-out="team.announcement"/>
-                                <p class="o_pk_meta o_sc_announcement_meta" data-sc-clamp-meta="1"
+                                <p class="o_pk_pre o_sc_announcement_body" data-pk-clamp="3" t-out="team.announcement"/>
+                                <p class="o_pk_meta o_sc_announcement_meta" data-pk-clamp-meta="1"
                                    t-att-hidden="None if (sc_announcement_until or team.announcement_is_expired) else 'hidden'">
                                     <t t-if="team.announcement_is_expired" t-call="bemade_portal_kit.pk_status_chip">
                                         <t t-set="tone" t-value="'ghost'"/>
                                         <t t-set="label">Expired</t>
                                     </t>
                                     <span t-if="sc_announcement_until" class="o_sc_announcement_until" t-out="sc_announcement_until"/>
-                                    <span class="o_sc_announcement_more_sep" data-sc-clamp-sep="1" hidden="hidden"> · </span>
-                                    <button type="button" class="o_pk_link_btn o_sc_announcement_more" data-sc-clamp-more="1"
+                                    <span class="o_sc_announcement_more_sep" data-pk-clamp-sep="1" hidden="hidden"> · </span>
+                                    <button type="button" class="o_pk_link_btn o_sc_announcement_more" data-pk-clamp-more="1"
                                             aria-expanded="false" hidden="hidden">See more</button>
                                     <!-- Review round 1 (owner 2026-10-27): « See less » folds it back. -->
-                                    <button type="button" class="o_pk_link_btn o_sc_announcement_more" data-sc-clamp-less="1"
+                                    <button type="button" class="o_pk_link_btn o_sc_announcement_more" data-pk-clamp-less="1"
                                             aria-expanded="true" hidden="hidden">See less</button>
                                 </p>
                             </div>
                         </div>
                         <p t-else="" class="o_pk_muted o_sc_announcement_empty">No current announcement.</p>
                     </div>
-                    <div t-if="sc_show_compose" data-sc-edit-view="edit" hidden="hidden"
+                    <div t-if="sc_show_compose" data-pk-edit-view="edit" hidden="hidden"
                          data-pk-section="team.announcement.edit">
                         <t t-call="bemade_sports_clinic.sc_banner">
                             <t t-set="tone" t-value="'warn'"/>
@@ -155,7 +155,7 @@
                     </div>
                     <!-- Task 1581: the shared history sheet, fetched on every
                          open (/my/team/<id>/announcement/history). -->
-                    <t t-call="bemade_sports_clinic.sc_sheet">
+                    <t t-call="bemade_portal_kit.pk_sheet">
                         <t t-set="sheet_id" t-value="'sc_announcement_history_sheet'"/>
                         <t t-set="title">Announcement history</t>
                         <t t-set="lazy_url" t-value="'/my/team/%s/announcement/history' % team.id"/>
@@ -272,7 +272,7 @@
             </section>
 
             <!-- ============================= Players ============================= -->
-            <section class="o_pk_tab_panel" data-sc-tab-panel="players" role="tabpanel"
+            <section class="o_pk_tab_panel" data-pk-tab-panel="players" role="tabpanel"
                      t-att-hidden="None if sc_active_tab == 'players' else 'hidden'">
                 <t t-if="sc_pending_count and can_remove_on_team and sc_can('team.pending_removals')"
                    t-call="bemade_sports_clinic.sc_banner">
@@ -362,7 +362,7 @@
             <!-- ============================ Activities =========================== -->
             <!-- Task 1539: the shell's activity list + sheets (the legacy
                  partials stay for the legacy page). -->
-            <section t-if="sc_show_activities" class="o_pk_tab_panel" data-sc-tab-panel="activities" role="tabpanel"
+            <section t-if="sc_show_activities" class="o_pk_tab_panel" data-pk-tab-panel="activities" role="tabpanel"
                      t-att-hidden="None if sc_active_tab == 'activities' else 'hidden'">
                 <t t-set="sc_team_activities_return" t-value="'/my/team?team_id=%s&amp;tab=activities' % team.id"/>
                 <t t-call="bemade_sports_clinic.sc_activity_add_sheet">

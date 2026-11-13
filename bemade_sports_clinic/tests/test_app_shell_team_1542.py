@@ -80,7 +80,7 @@ class TestAppShellTeam1542(AppShellCommon):
 
     @staticmethod
     def _panel(tree, key):
-        nodes = tree.xpath('//section[@data-sc-tab-panel="%s"]' % key)
+        nodes = tree.xpath('//section[@data-pk-tab-panel="%s"]' % key)
         return nodes[0] if nodes else None
 
     def _row_ids(self, tree, section):
@@ -97,7 +97,7 @@ class TestAppShellTeam1542(AppShellCommon):
             self.assertIn('id="dashboard-tab"', text)
             self.assertIn('o_sc_roster_sort', text)
             self.assertIsNone(self._shell(tree))
-            self.assertNotIn('data-sc-tab-panel', text)
+            self.assertNotIn('data-pk-tab-panel', text)
             self.assertNotIn('rel="manifest"', text)
 
     # -- UC-T2 -----------------------------------------------------------
@@ -107,7 +107,7 @@ class TestAppShellTeam1542(AppShellCommon):
         text, tree = self._get(self.url)
         self.assertIsNotNone(self._shell(tree))
         self.assertNotIn('id="dashboard-tab"', text)
-        tabs = tree.xpath('//nav[@data-sc-tabs]/a/@data-sc-tab')
+        tabs = tree.xpath('//nav[@data-pk-tabs]/a/@data-pk-tab')
         self.assertEqual(tabs, ['dashboard', 'players', 'activities'])
         self.assertIsNone(self._panel(tree, 'dashboard').get('hidden'))
         self.assertEqual(self._panel(tree, 'players').get('hidden'), 'hidden')
@@ -204,7 +204,7 @@ class TestAppShellTeam1542(AppShellCommon):
         # Task 1626: the card is a player row; its « Details » region holds
         # the lazy URL.
         urls = tree.xpath('//*[@data-pk-section="team.recent_changes"]'
-                          '//*[@data-sc-player-id="%s"]//*[@data-sc-row-detail]/@data-sc-lazy-url'
+                          '//*[@data-sc-player-id="%s"]//*[@data-sc-row-detail]/@data-pk-lazy-url'
                           % self.player.id)
         self.assertEqual(urls, ['/my/player/%s/recent-changes?detail=1&team_id=%s'
                                 % (self.player.id, self.team_a.id)])
@@ -227,7 +227,7 @@ class TestAppShellTeam1542(AppShellCommon):
 
         with patch.object(TeamManagementPortal, '_sc_team_values', no_activities):
             _text, tree = self._get(self.url + '&tab=activities')
-        self.assertNotIn('activities', tree.xpath('//nav[@data-sc-tabs]/a/@data-sc-tab'))
+        self.assertNotIn('activities', tree.xpath('//nav[@data-pk-tabs]/a/@data-pk-tab'))
         self.assertIsNone(self._panel(tree, 'activities'))
         # Falls back to the dashboard panel.
         self.assertIsNone(self._panel(tree, 'dashboard').get('hidden'))

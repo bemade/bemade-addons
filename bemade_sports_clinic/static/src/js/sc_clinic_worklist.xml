@@ -48,7 +48,7 @@
                             <button t-if="row.toConfirm" type="button" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm"
                                     data-sc-wl-action="confirm" t-on-click="() => this.confirm(row)">Confirm</button>
                             <button t-if="row.unregistered" type="button" class="o_pk_btn o_pk_btn_primary o_pk_btn_sm"
-                                    data-sc-wl-action="resolve" data-sc-sheet-open="sc_clinic_resolve_sheet"
+                                    data-sc-wl-action="resolve" data-pk-sheet-open="sc_clinic_resolve_sheet"
                                     t-att-data-sc-resolve-id="row.id" t-att-data-sc-resolve-name="row.name">Resolve</button>
                             <span class="o_sc_wl_tools">
                                 <button type="button" class="o_pk_icon_btn" data-sc-wl-action="up" title="Move up" aria-label="Move up"

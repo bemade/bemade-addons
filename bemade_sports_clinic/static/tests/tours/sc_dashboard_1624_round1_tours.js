@@ -40,7 +40,7 @@ tours.add("sc_1624_dashboard_round1", {
         },
         {
             content: "Open a player card's « Details »",
-            trigger: `${WATCH} .o_sc_player_row button[data-sc-row-expand]`,
+            trigger: `${WATCH} .o_sc_player_row button[data-pk-row-expand]`,
             run: "click",
         },
         {
@@ -71,20 +71,20 @@ tours.add("sc_1624_dashboard_round1", {
         },
         {
             content: "The card is edited in place on the dashboard (its due date)",
-            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row][data-sc-edit-open] [data-sc-edit-view="edit"]:not([hidden]) input[type="date"]`,
+            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row][data-pk-edit-open] [data-pk-edit-view="edit"]:not([hidden]) input[type="date"]`,
             run() {
                 const card = this.anchor.closest("[data-sc-activity-row]");
                 assert(card.querySelector('[data-sc-action="activity.complete"]'), "« Done » stays");
-                card.querySelector("button[data-sc-edit-toggle]").click();
+                card.querySelector("button[data-pk-edit-toggle]").click();
             },
         },
         {
             content: "Closed again",
-            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row]:not([data-sc-edit-open]) button[data-sc-action="activity.edit"]`,
+            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row]:not([data-pk-edit-open]) button[data-sc-action="activity.edit"]`,
         },
         {
             content: "Fold out an upcoming event's « Details »",
-            trigger: 'section[data-sc-instance="coverage"] [data-sc-event-row] button[data-sc-row-expand]',
+            trigger: 'section[data-sc-instance="coverage"] [data-sc-event-row] button[data-pk-row-expand]',
             run: "click",
         },
         {

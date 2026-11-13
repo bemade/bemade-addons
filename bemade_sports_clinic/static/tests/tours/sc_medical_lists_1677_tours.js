@@ -80,13 +80,13 @@ tours.add("sc_1677_allergies_tp", {
         },
         {
             content: "The EpiPen card's pencil",
-            trigger: `${ALLERGY} [data-pk-section="medical.allergy.epipen"] [data-sc-edit-toggle]`,
+            trigger: `${ALLERGY} [data-pk-section="medical.allergy.epipen"] [data-pk-edit-toggle]`,
             run: "click",
         },
         {
             // Task 1717: « EpiPen? » Yes (radios; was a checkbox).
             content: "EpiPen: Yes — its note appears",
-            trigger: `${ALLERGY} [data-pk-section="medical.allergy.epipen"] [data-sc-edit-view="edit"]:not([hidden]) .o_pk_toggle_pill label:has(input[data-sc-med-set="allergy_epipen_state"][value="yes"])`,
+            trigger: `${ALLERGY} [data-pk-section="medical.allergy.epipen"] [data-pk-edit-view="edit"]:not([hidden]) .o_pk_toggle_pill label:has(input[data-sc-med-set="allergy_epipen_state"][value="yes"])`,
             async run() {
                 const note = q(`${ALLERGY} [data-sc-med-epipen-note-field]`);
                 assert(note.hidden, "the note shows while EpiPen is unticked");
@@ -104,7 +104,7 @@ tours.add("sc_1677_allergies_tp", {
         },
         {
             content: "The ✓ closes the EpiPen card",
-            trigger: `${ALLERGY} [data-pk-section="medical.allergy.epipen"] [data-sc-edit-toggle][aria-expanded="true"]`,
+            trigger: `${ALLERGY} [data-pk-section="medical.allergy.epipen"] [data-pk-edit-toggle][aria-expanded="true"]`,
             run: "click",
         },
         {
@@ -143,12 +143,12 @@ tours.add("sc_1677_allergies_tp", {
         },
         {
             content: "Its pencil",
-            trigger: `${ALLERGY} [data-sc-med-item]:not(:first-child) [data-sc-edit-toggle]`,
+            trigger: `${ALLERGY} [data-sc-med-item]:not(:first-child) [data-pk-edit-toggle]`,
             run: "click",
         },
         {
             content: "Turn on « Risque vital » (task 1726: a switch — tap its row)",
-            trigger: `${ALLERGY} [data-sc-med-item]:not(:first-child) [data-sc-edit-view="edit"]:not([hidden]) label.o_pk_switch:has(input[data-sc-med-item-field="life_threatening"])`,
+            trigger: `${ALLERGY} [data-sc-med-item]:not(:first-child) [data-pk-edit-view="edit"]:not([hidden]) label.o_pk_switch:has(input[data-sc-med-item-field="life_threatening"])`,
             run: "click",
         },
         {
@@ -165,7 +165,7 @@ tours.add("sc_1677_allergies_tp", {
         },
         {
             content: "The trash can",
-            trigger: `${ALLERGY} [data-sc-med-item]:not(:first-child)[data-sc-edit-open] .o_sc_med_card_row button[data-sc-med-item-delete]:visible`,
+            trigger: `${ALLERGY} [data-sc-med-item]:not(:first-child)[data-pk-edit-open] .o_sc_med_card_row button[data-sc-med-item-delete]:visible`,
             run: "click",
         },
         {

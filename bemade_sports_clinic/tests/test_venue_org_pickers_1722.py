@@ -50,7 +50,7 @@ class TestVenueOrgPickers1722(Org1597Common):
         self.assertEqual(venue.get('data-sc-picker-empty'), '1')
         first = venue.xpath('./option')[0]
         self.assertEqual((first.get('value'), first.text_content().strip()), ('', 'To be determined'))
-        self.assertTrue(form.xpath('.//button[@data-sc-sheet-open="sc_venue_sheet"]'))
+        self.assertTrue(form.xpath('.//button[@data-pk-sheet-open="sc_venue_sheet"]'))
         org = form.xpath('.//select[@name="organization_id"]')[0]
         self.assertEqual((org.get('data-sc-picker'), org.get('data-sc-picker-key'), org.get('data-sc-picker-empty')),
                          ('1', 'org', '1'))

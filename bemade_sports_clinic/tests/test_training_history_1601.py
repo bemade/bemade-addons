@@ -307,7 +307,7 @@ class TestTrainingHistoryPortal1601(History1581Common):
         # Task 1629: the stamp stays under the value, below the title + link.
         section = tree.xpath('//*[@data-pk-section="player.training"]')[0]
         self.assertEqual(section.xpath('./*')[0].tag, 'h3')
-        self.assertEqual(len(section.xpath('.//*[@data-sc-sheet-open="sc_training_history_sheet"]')), 1)
+        self.assertEqual(len(section.xpath('.//*[@data-pk-sheet-open="sc_training_history_sheet"]')), 1)
         entries = self._entries(self._fragment('/my/player/%s/training-history' % self.player.id))
         self.assertEqual([e['body'] for e in entries], ['Synthetic pool'])
         with mute_logger('odoo.http'):

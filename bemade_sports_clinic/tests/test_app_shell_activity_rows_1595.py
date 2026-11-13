@@ -40,7 +40,7 @@ class _ActivityRowsMixin:
 
     @staticmethod
     def _row(tree, activity):
-        rows = tree.xpath('//section[@data-sc-tab-panel="all"]//*[@data-sc-activity-row="%s"]'
+        rows = tree.xpath('//section[@data-pk-tab-panel="all"]//*[@data-sc-activity-row="%s"]'
                           % activity.id) or tree.xpath('//*[@data-sc-activity-row="%s"]' % activity.id)
         return rows[0] if rows else None
 

@@ -73,6 +73,12 @@ ADOPTED_VIEWS = (
     # Task 5370 (kit P4b): the status pill select and the form guard's slots.
     (CLINIC, 'sc_status_pill_select', 'pk_status_pill_select'),
     (CLINIC, 'sc_form_guard_slots', 'pk_form_guard_slots'),
+    # Task 5381 (kit P4c2): the edit card head, the display row, the sheet
+    # and the page tabs.
+    (CLINIC, 'sc_edit_card_head', 'pk_edit_card_head'),
+    (CLINIC, 'sc_display_row', 'pk_display_row'),
+    (CLINIC, 'sc_sheet', 'pk_sheet'),
+    (CLINIC, 'sc_page_tabs', 'pk_page_tabs'),
 )
 
 # The kit's data files that hold adopted views (loaded by load_kit_views).

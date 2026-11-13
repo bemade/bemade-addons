@@ -52,7 +52,7 @@ tours.add("sc_1727_header_past", {
         },
         {
             content: "Open the header's pencil",
-            trigger: '[data-pk-section="player.hero"] [data-sc-card-icons] > button[data-sc-edit-toggle][aria-expanded="false"]',
+            trigger: '[data-pk-section="player.hero"] [data-sc-card-icons] > button[data-pk-edit-toggle][aria-expanded="false"]',
             run: "click",
         },
         {
@@ -96,7 +96,7 @@ tours.add("sc_1727_proposal_past", {
     steps: () => [
         {
             content: "Open card: pencil",
-            trigger: `${CARD} button[data-sc-edit-toggle]`,
+            trigger: `${CARD} button[data-pk-edit-toggle]`,
             run: "click",
         },
         {

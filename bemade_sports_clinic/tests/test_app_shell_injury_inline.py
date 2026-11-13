@@ -59,7 +59,7 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         return self._url(tab='injuries', team_id=self.team_a.id, **extra)
 
     def _add_card(self, tree):
-        panel = tree.xpath('//section[@data-sc-tab-panel="injuries"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="injuries"]')[0]
         cards = panel.xpath('.//details[@id="sc_new_injury"][@data-pk-section="injury.new"]')
         self.assertEqual(len(cards), 1)
         return cards[0]
@@ -118,7 +118,7 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         item = tree.xpath('//details[@id="injury-%s"]' % injury.id)[0]
         self.assertIsNotNone(item.get('open'))
         self.assertEqual(item.get('data-sc-created-injury'), str(injury.id))
-        edit = item.xpath('.//*[@data-sc-edit-view="edit"]')[0]
+        edit = item.xpath('.//*[@data-pk-edit-view="edit"]')[0]
         self.assertIsNone(edit.get('hidden'))
         self.assertTrue(item.xpath('.//form[@data-pk-undo-offer="injury"]'))
         self._create(diagnosis='Synthetic wrist', coach_visibility='visible')
@@ -266,12 +266,12 @@ class TestAppShellInjuryInline(PlayerInlineCommon):
         self.assertIsNone(item.get('open'))
         # Task 1616: the read views (Details, then Notes), one pencil per
         # group; together they edit what the card's single pencil did.
-        reads = ' '.join(r.text_content() for r in item.xpath('.//*[@data-sc-edit-view="read"]'))
+        reads = ' '.join(r.text_content() for r in item.xpath('.//*[@data-pk-edit-view="read"]'))
         self.assertIn('Synthetic ext', reads)
         self.assertIn('Synthetic int', reads)
         # Task 1675: Details + one pencil per note (external, internal).
-        self.assertEqual(len(item.xpath('.//button[@data-sc-edit-toggle]')), 3)
-        edits = item.xpath('.//*[@data-sc-edit-view="edit"]')
+        self.assertEqual(len(item.xpath('.//button[@data-pk-edit-toggle]')), 3)
+        edits = item.xpath('.//*[@data-pk-edit-view="edit"]')
         self.assertTrue(all(edit.get('hidden') == 'hidden' for edit in edits))
         fields_ = ' '.join(f for edit in edits for f in self._fields_in(edit))
         for name in ('"sc_injury_date"', '"predicted_resolution_date"',

@@ -28,7 +28,7 @@ function onClinicDossier() {
     const url = new URL(window.location.href);
     assert(/^\/my\/clinic\/\d+$/.test(url.pathname), `left the clinic: ${url.pathname}`);
     assert(url.searchParams.get("patient"), "no patient selected");
-    const pane = document.querySelector('section[data-sc-tab-panel="dossier"]');
+    const pane = document.querySelector('section[data-pk-tab-panel="dossier"]');
     assert(pane && !pane.hidden, "the patient file is not shown");
 }
 
@@ -57,7 +57,7 @@ function addSteps(diagnosis) {
         },
         {
             content: "Back on the clinic: the new injury is open in edit mode",
-            trigger: `${NEW_CARD}[open] [data-sc-edit-view="edit"]:not([hidden])`,
+            trigger: `${NEW_CARD}[open] [data-pk-edit-view="edit"]:not([hidden])`,
             run() {
                 onClinicDossier();
                 assert(this.anchor.closest(".o_sc_injury_item").textContent.includes(diagnosis), "another card");
@@ -74,7 +74,7 @@ tours.add("sc_1590_clinic_injury_edit", {
             // Task 1616: one pencil per group — the new injury opens its
             // Details; the notes are the Notes group's.
             content: "The Notes pencil",
-            trigger: `${NEW_CARD} [data-pk-edit-card="injury-notes-external"] button[data-sc-edit-toggle]`,
+            trigger: `${NEW_CARD} [data-pk-edit-card="injury-notes-external"] button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
@@ -106,7 +106,7 @@ tours.add("sc_1590_clinic_injury_edit", {
         },
         {
             content: "Same clinic, same patient, file tab; the card reads the note",
-            trigger: `[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-pk-edit-card="injury-notes-external"] [data-sc-edit-view="read"]:not([hidden])`,
+            trigger: `[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-pk-edit-card="injury-notes-external"] [data-pk-edit-view="read"]:not([hidden])`,
             run() {
                 onClinicDossier();
                 assert(this.anchor.textContent.includes(QUICK_NOTE), "the read view misses the note");
@@ -115,18 +115,18 @@ tours.add("sc_1590_clinic_injury_edit", {
         },
         {
             content: "« Done » of the Details (opened by the create)",
-            trigger: `${NEW_CARD} [data-pk-edit-card="injury-details"][data-sc-edit-open] [data-pk-edit-done]`,
+            trigger: `${NEW_CARD} [data-pk-edit-card="injury-details"][data-pk-edit-open] [data-pk-edit-done]`,
             run: "click",
         },
         {
             content: "The Details pencil opens its edit view again",
             // Task 1736 (deliberate update): the Details pencil is the card's top-bar pencil.
-            trigger: '[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[open]:has([data-pk-edit-card="injury-details"]:not([data-sc-edit-open])) > summary button[data-sc-edit-toggle][data-sc-edit-for="injury-details"]',
+            trigger: '[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[open]:has([data-pk-edit-card="injury-details"]:not([data-pk-edit-open])) > summary button[data-pk-edit-toggle][data-pk-edit-for="injury-details"]',
             run: "click",
         },
         {
             content: "Edit view shown, no legacy form anywhere",
-            trigger: '[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-pk-edit-card="injury-details"] [data-sc-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="sc_injury_date"]',
+            trigger: '[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-pk-edit-card="injury-details"] [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="sc_injury_date"]',
             run() {
                 assert(!document.querySelector('form[action*="/my/injury/save"]'), "a legacy injury form");
             },

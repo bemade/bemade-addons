@@ -146,7 +146,7 @@ class TestTimesheetSent1731(TimesheetSent1731Common):
         self._login_tp()
         card = self._card(self._tree('/my/event/%s' % self.event.id), self.timesheet)
         self.assertEqual(card.get('data-pk-edit-card'), 'timesheet-%s' % self.timesheet.id)
-        hint = card.xpath('.//*[@data-sc-edit-view="edit"]//*[@data-sc-ts-sent-hint]')
+        hint = card.xpath('.//*[@data-pk-edit-view="edit"]//*[@data-sc-ts-sent-hint]')
         self.assertTrue(hint, 'the hint sits in the edit view')
         self.assertEqual(self._hint(card), HINT_EN)
         props = {p['field']: p for p in self._props(card)}

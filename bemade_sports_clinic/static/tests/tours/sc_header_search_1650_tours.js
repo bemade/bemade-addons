@@ -90,7 +90,7 @@ tours.add("sc_1650_search_keys", {
         },
         {
             content: "A player page",
-            trigger: ".o_pk_app nav[data-sc-tabs]",
+            trigger: ".o_pk_app nav[data-pk-tabs]",
         },
     ],
 });

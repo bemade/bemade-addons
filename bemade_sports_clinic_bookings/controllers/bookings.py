@@ -18,8 +18,8 @@ from odoo.http import request
 from odoo.tools import format_datetime
 
 from odoo.addons.appointment_portal_staff.controllers.portal import BookingPortal
-from odoo.addons.bemade_portal_kit.tools import pk_safe_return_url
-from odoo.addons.bemade_sports_clinic.controllers.app_shell import AppShellMixin, sc_contact_href
+from odoo.addons.bemade_portal_kit.tools import pk_contact_href, pk_safe_return_url
+from odoo.addons.bemade_sports_clinic.controllers.app_shell import AppShellMixin
 
 from ..models.calendar_event import SC_BOOKING_LENGTHS
 
@@ -224,9 +224,9 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
                     when, details['appointment_type']) if part),
                 # Task 1585: the client's phone / email as tap links.
                 'phone': details['phone'],
-                'phone_href': sc_contact_href('tel', details['phone']),
+                'phone_href': pk_contact_href('tel', details['phone']),
                 'email': details['email'],
-                'email_href': sc_contact_href('mailto', details['email']),
+                'email_href': pk_contact_href('mailto', details['email']),
                 'status': details['status'],
                 'cancelled': details['cancelled'],
                 # Task 1732: the booking form's answers.

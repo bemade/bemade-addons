@@ -33,7 +33,7 @@ tours.add("sc_1618_laptop_drill_down", {
     steps: () => [
         {
             content: "Team page (players tab): open a player of the roster",
-            trigger: '.o_pk_app section[data-sc-tab-panel="players"] a.o_pk_link_row_main[href*="/my/player?player_id="]',
+            trigger: '.o_pk_app section[data-pk-tab-panel="players"] a.o_pk_link_row_main[href*="/my/player?player_id="]',
             run(helpers) {
                 reloadIfRestored();
                 return helpers.click();
@@ -53,7 +53,7 @@ tours.add("sc_1618_laptop_drill_down", {
         },
         {
             content: "Back on the team's players tab",
-            trigger: '.o_pk_app section[data-sc-tab-panel="players"]',
+            trigger: '.o_pk_app section[data-pk-tab-panel="players"]',
             run() {
                 assert(window.location.pathname === "/my/team", window.location.href);
             },
@@ -133,7 +133,7 @@ tours.add("sc_1618_phone_unchanged", {
     steps: () => [
         {
             content: "Team page: open a player of the roster",
-            trigger: '.o_pk_app section[data-sc-tab-panel="players"] a.o_pk_link_row_main[href*="/my/player?player_id="]',
+            trigger: '.o_pk_app section[data-pk-tab-panel="players"] a.o_pk_link_row_main[href*="/my/player?player_id="]',
             run: "click",
             expectUnloadPage: true,
         },

@@ -16,9 +16,9 @@ const tours = registry.category("web_tour.tours");
 const HERO = '[data-pk-section="player.hero"]';
 const STATUS = `${HERO} > [data-pk-section="player.status"]`;
 const MEDICAL = `${STATUS} [data-pk-section="player.medical"]`;
-const EDIT = `${HERO} > [data-sc-edit-view="edit"]`;
-const READ = `${HERO} > [data-sc-edit-view="read"]`;
-const PENCIL = `${HERO} button[data-sc-edit-toggle]`;
+const EDIT = `${HERO} > [data-pk-edit-view="edit"]`;
+const READ = `${HERO} > [data-pk-edit-view="read"]`;
+const PENCIL = `${HERO} button[data-pk-edit-toggle]`;
 
 function assert(condition, message) {
     if (!condition) {

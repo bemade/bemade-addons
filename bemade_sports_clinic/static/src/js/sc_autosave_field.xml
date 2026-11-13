@@ -31,7 +31,7 @@
                 <button t-if="canClear" type="button"
                         class="o_pk_link_btn o_pk_clear_btn" t-on-click="clear">Clear</button>
                 <button t-if="props.historySheet and !isReplace" type="button" class="o_pk_link_btn o_pk_field_history"
-                        t-att-data-sc-sheet-open="props.historySheet" t-esc="props.historyLabel"/>
+                        t-att-data-pk-sheet-open="props.historySheet" t-esc="props.historyLabel"/>
             </label>
             <div t-if="state.restored" class="o_pk_banner o_pk_draft_banner" role="status">
                 <strong class="o_pk_banner_title">Draft restored</strong>
@@ -76,7 +76,7 @@
                 <small class="o_pk_hint o_sc_replace_hint">
                     <span>Replaces the previous text; the old one is kept in the history.</span>
                     <button t-if="props.historySheet" type="button" class="o_pk_link_btn o_pk_field_history"
-                            t-att-data-sc-sheet-open="props.historySheet" t-esc="props.historyLabel"/>
+                            t-att-data-pk-sheet-open="props.historySheet" t-esc="props.historyLabel"/>
                 </small>
             </t>
             <textarea t-elif="type === 'textarea'" t-ref="input" class="o_pk_input o_pk_textarea" rows="4"

@@ -56,7 +56,7 @@ tours.add("sc_1611_player_fragments", {
     steps: () => [
         {
             content: "Player page; open the identity card",
-            trigger: `${IDENTITY} button[data-sc-edit-toggle]`,
+            trigger: `${IDENTITY} button[data-pk-edit-toggle]`,
             run(helpers) {
                 markNoReload();
                 return helpers.click();
@@ -64,7 +64,7 @@ tours.add("sc_1611_player_fragments", {
         },
         {
             content: "Rename the player and leave the field",
-            trigger: `${IDENTITY} [data-sc-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="last_name"] input`,
+            trigger: `${IDENTITY} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="last_name"] input`,
             run() {
                 typeAndLeave(this.anchor, "Zedsynth");
             },
@@ -87,7 +87,7 @@ tours.add("sc_1611_player_fragments", {
                 const hero = frag("hero-head");
                 assert(hero.textContent.includes("Zedsynth"), "hero name");
                 assert(hero.querySelector(".o_pk_avatar").textContent.trim() === "PZ", "hero initials");
-                assert(document.querySelector(`${IDENTITY}[data-sc-edit-open]`), "the card closed");
+                assert(document.querySelector(`${IDENTITY}[data-pk-edit-open]`), "the card closed");
                 assertNoReload();
             },
         },
@@ -148,12 +148,12 @@ tours.add("sc_1611_player_fragments", {
         },
         {
             content: "Its pencil",
-            trigger: `dialog[open] [data-pk-section="medical.allergy"] [data-sc-med-item] button[data-sc-edit-toggle]`,
+            trigger: `dialog[open] [data-pk-section="medical.allergy"] [data-sc-med-item] button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
             content: "The trash can",
-            trigger: `dialog[open] [data-pk-section="medical.allergy"] [data-sc-med-item][data-sc-edit-open] .o_sc_med_card_row button[data-sc-med-item-delete]:visible`,
+            trigger: `dialog[open] [data-pk-section="medical.allergy"] [data-sc-med-item][data-pk-edit-open] .o_sc_med_card_row button[data-sc-med-item-delete]:visible`,
             run: "click",
         },
         {
@@ -183,7 +183,7 @@ tours.add("sc_1611_injury_stage", {
         {
             content: "Open card: the Details pencil (task 1616: one per group)",
             // Task 1736 (deliberate update): the Details pencil is the card's top-bar pencil.
-            trigger: `${CARD} > summary button[data-sc-edit-toggle][data-sc-edit-for="injury-details"]`,
+            trigger: `${CARD} > summary button[data-pk-edit-toggle][data-pk-edit-for="injury-details"]`,
             run(helpers) {
                 markNoReload();
                 return helpers.click();
@@ -210,7 +210,7 @@ tours.add("sc_1611_injury_stage", {
             content: "The summary turns green at once, the card stays open in edit mode",
             trigger: `${CARD} > summary .o_pk_dot.o_pk_tone_green`,
             run() {
-                assert(document.querySelector(`${CARD_DETAILS}[data-sc-edit-open]`), "the card closed");
+                assert(document.querySelector(`${CARD_DETAILS}[data-pk-edit-open]`), "the card closed");
                 assertNoReload();
                 const proposal = document.querySelector("#sc_proposal_sheet[open] [data-sc-proposal-dismiss]");
                 if (proposal) {
@@ -225,14 +225,14 @@ tours.add("sc_1611_injury_stage", {
         },
         {
             content: "The read view shows the resolution date; resolved card moved last",
-            trigger: `${CARD_DETAILS} [data-sc-edit-view="read"]:not([hidden])`,
+            trigger: `${CARD_DETAILS} [data-pk-edit-view="read"]:not([hidden])`,
             async run() {
                 const card = document.querySelector(CARD);
                 await waitFor(() => {
                     const items = [...document.querySelectorAll('[data-pk-section="player.injuries"] [data-pk-fragment-item]')];
                     return items[items.length - 1] === card;
                 }, "resolved card last");
-                assert(card.querySelectorAll('[data-pk-edit-card="injury-details"] [data-sc-edit-view="read"] dt').length >= 2, "read rows");
+                assert(card.querySelectorAll('[data-pk-edit-card="injury-details"] [data-pk-edit-view="read"] dt').length >= 2, "read rows");
                 assertNoReload();
             },
         },
@@ -246,7 +246,7 @@ tours.add("sc_1611_event_when", {
     steps: () => [
         {
             content: "Event card: pencil",
-            trigger: `${EVENT} button[data-sc-edit-toggle]`,
+            trigger: `${EVENT} button[data-pk-edit-toggle]`,
             run(helpers) {
                 markNoReload();
                 return helpers.click();
@@ -278,7 +278,7 @@ tours.add("sc_1611_event_when", {
         },
         {
             content: "Timesheet card: pencil",
-            trigger: '[data-pk-edit-card^="timesheet-"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card^="timesheet-"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {
@@ -299,7 +299,7 @@ tours.add("sc_1611_event_when", {
         },
         {
             content: "Coverage hours 2:00",
-            trigger: '[data-pk-edit-card^="timesheet-"] [data-sc-edit-view="read"]:not([hidden]) dd:contains("2:00")',
+            trigger: '[data-pk-edit-card^="timesheet-"] [data-pk-edit-view="read"]:not([hidden]) dd:contains("2:00")',
             run: assertNoReload,
         },
     ],

@@ -11,7 +11,7 @@
  *   leaving the page or losing signal (« Brouillon restauré »), and is
  *   dropped once the server holds the same value (the enclosing form was
  *   published), on « Jeter le brouillon », on logout, and — task 1539 — when
- *   a page carrying data-sc-draft-clear for its key prefix loads (the
+ *   a page carrying data-pk-draft-clear for its key prefix loads (the
  *   « created » / « added » landing of a NEW injury or note). The field is a
  *   real form field (props.name): the enclosing form posts as before.
  *
@@ -125,7 +125,7 @@ export class ScAutosaveField extends Component {
         instant: { type: Boolean, optional: true },
         clearable: { type: Boolean, optional: true },
         undoMessage: { type: String, optional: true },
-        // A history sheet opened from a link next to the label (sc_app_ui).
+        // A history sheet opened from a link next to the label (the kit's pk_sheets.js).
         historySheet: { type: String, optional: true },
         historyLabel: { type: String, optional: true },
         // Task 1582: the « replace » editor (server-mode textarea only).
@@ -512,10 +512,10 @@ export class ScAutosaveField extends Component {
         if (details) {
             details.open = true;
         }
-        // Inside an edit card's hidden edit view: ask sc_app_ui to open it.
+        // Inside an edit card's hidden edit view: ask the kit (pk_edit_cards.js) to open it.
         const card = this.inputRef.el && this.inputRef.el.closest("[data-pk-edit-card]");
         if (card) {
-            card.dispatchEvent(new CustomEvent("sc:edit-open", { bubbles: true }));
+            card.dispatchEvent(new CustomEvent("pk:edit-open", { bubbles: true }));
         }
     }
 

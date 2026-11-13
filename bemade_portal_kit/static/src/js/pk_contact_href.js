@@ -2,7 +2,7 @@
  * Task 1585 — the tap-to-call / tap-to-email href of a shown phone or email
  * (kind "tel" / "mailto"), or null when there is nothing to dial or write
  * to. A phone keeps only "+" and its digits. Same rule on the server:
- * controllers/app_shell.py sc_contact_href.
+ * tools/display.py pk_contact_href.
  */
 export function pkContactHref(kind, value) {
     const text = typeof value === "string" ? value.trim() : "";

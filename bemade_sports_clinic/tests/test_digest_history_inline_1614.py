@@ -95,7 +95,7 @@ class TestDigestHistoryInline1614(Digest1614Common):
         rows = self._rows(tree)
         self.assertEqual(len(rows), 2)
         row = self._row(tree, self.digest)
-        self.assertEqual(row.get('data-sc-lazy-url'), self._body_url(self.digest))
+        self.assertEqual(row.get('data-pk-lazy-url'), self._body_url(self.digest))
         self.assertIn('o_pk_expand', row.get('class'))
         self.assertTrue(row.xpath('.//*[contains(@class, "o_pk_legacy")]'
                                   '[contains(@class, "o_pk_lazy_body")]'))

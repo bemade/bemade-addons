@@ -217,7 +217,7 @@
                 </t>
             </div>
             <!-- Task 1611: the text and the link chips, a read fragment. -->
-            <div data-sc-edit-view="read" t-att-data-pk-fragment="pk_fragment_key(row['record'], 'read')">
+            <div data-pk-edit-view="read" t-att-data-pk-fragment="pk_fragment_key(row['record'], 'read')">
                 <p class="o_sc_note_text o_pk_pre" t-out="row['note']"/>
                 <div t-if="row['chips']" class="o_pk_chips">
                     <t t-foreach="row['chips']" t-as="chip">
@@ -225,7 +225,7 @@
                     </t>
                 </div>
             </div>
-            <div t-if="not archived" class="o_pk_fields" data-sc-edit-view="edit" hidden="hidden">
+            <div t-if="not archived" class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                 <t t-set="lbl">Note</t>
                 <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(row['record'], 'note', lbl, 'textarea')"/></t>
                 <t t-set="lbl">Team</t>
@@ -264,7 +264,7 @@
             <t t-set="sc_title" t-value="sc_nav_labels['notepad']"/>
             <t t-set="sc_active_nav" t-value="'notepad'"/>
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
-            <div t-if="success == 'note_added'" t-att-data-sc-draft-clear="sc_quick_note_prefix" hidden="hidden"/>
+            <div t-if="success == 'note_added'" t-att-data-pk-draft-clear="sc_quick_note_prefix" hidden="hidden"/>
 
             <!-- Task 1667: the quick-note form is always there — no « + Ajouter »
                  header toggle, no collapsible wrapper (it replaced #1607's
@@ -352,11 +352,11 @@
     </template>
 
     <!-- /my/team/<t>/digest/<d>/body (task 1614): one day's body alone, the
-         lazy body of its row in the digest history. data-sc-lazy-filled keeps
+         lazy body of its row in the digest history. data-pk-lazy-filled keeps
          the shell's loader from swapping a day without links for « Nothing to
          show. »; an empty day carries .o_pk_empty (team_digest_render). -->
     <template id="sc_digest_body" name="Sports Clinic App: digest body fragment">
-        <div class="o_sc_digest_fragment" data-sc-lazy-filled="1">
+        <div class="o_sc_digest_fragment" data-pk-lazy-filled="1">
             <p class="o_pk_meta" data-pk-section="digest.snapshot" t-out="digest._sc_snapshot_line()"/>
             <t t-call="bemade_sports_clinic.team_digest_render">
                 <t t-set="players" t-value="players"/>
@@ -376,7 +376,7 @@
             <div t-if="sc_digest_rows" class="o_pk_list" data-pk-section="digest.history">
                 <t t-foreach="sc_digest_rows" t-as="row">
                     <details class="o_pk_expand o_sc_digest_row" t-att-data-sc-digest-row="row['id']"
-                             t-att-data-sc-lazy-url="row['body_url']">
+                             t-att-data-pk-lazy-url="row['body_url']">
                         <summary class="o_pk_entity_row">
                             <span class="o_pk_row_lead"><t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'summary'"/></t></span>
                             <span class="o_pk_row_text">

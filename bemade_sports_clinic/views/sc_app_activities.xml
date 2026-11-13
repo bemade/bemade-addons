@@ -39,7 +39,7 @@
         edited in place); the details popout.
     -->
     <template id="sc_activity_sheets" name="App shell: activity sheets">
-        <t t-call="bemade_sports_clinic.sc_sheet">
+        <t t-call="bemade_portal_kit.pk_sheet">
             <t t-set="sheet_id" t-value="'sc_activity_complete_sheet'"/>
             <t t-set="title">Complete Activity</t>
             <t t-set="lazy_url" t-value="False"/>
@@ -52,13 +52,13 @@
                     <textarea id="sc_activity_feedback" name="feedback" class="o_pk_input o_pk_textarea" rows="3"/>
                 </div>
                 <div class="o_pk_form_actions">
-                    <button type="button" class="o_pk_btn o_pk_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                    <button type="button" class="o_pk_btn o_pk_btn_ghost" data-pk-sheet-close="1">Cancel</button>
                     <button type="submit" class="o_pk_btn o_pk_btn_primary">Complete Activity</button>
                 </div>
                 <t t-call="bemade_portal_kit.pk_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_complete'"/></t>
             </form>
         </t>
-        <t t-call="bemade_sports_clinic.sc_sheet">
+        <t t-call="bemade_portal_kit.pk_sheet">
             <t t-set="sheet_id" t-value="'sc_activity_cancel_sheet'"/>
             <!-- Task 1663: « Supprimer » (it deletes the activity) — never
                  « Annuler », which is the undo everywhere else. -->
@@ -70,7 +70,7 @@
                 <input type="hidden" name="return_url" t-att-value="return_url"/>
                 <p class="o_pk_confirm_message">Delete this activity?</p>
                 <div class="o_pk_form_actions">
-                    <button type="button" class="o_pk_btn o_pk_btn_ghost" data-sc-sheet-close="1">No</button>
+                    <button type="button" class="o_pk_btn o_pk_btn_ghost" data-pk-sheet-close="1">No</button>
                     <button type="submit" class="o_pk_btn o_pk_btn_danger" data-sc-action="activity.cancel.confirm">Yes, delete</button>
                 </div>
                 <t t-call="bemade_portal_kit.pk_form_guard_slots"><t t-set="guard_id" t-value="'sc_activity_cancel'"/></t>
@@ -78,8 +78,8 @@
         </t>
         <!-- Task 1736 r1 (owner 2026-11-01): the details popout of a card
              (read-only; its body is fetched on every open from
-             /my/activity/<id>/popout — the card's data-sc-sheet-url). -->
-        <t t-call="bemade_sports_clinic.sc_sheet">
+             /my/activity/<id>/popout — the card's data-pk-sheet-url). -->
+        <t t-call="bemade_portal_kit.pk_sheet">
             <t t-set="sheet_id" t-value="'sc_activity_detail_sheet'"/>
             <t t-set="title">Activity</t>
             <t t-set="lazy_url" t-value="False"/>
@@ -174,13 +174,13 @@
                 </t>
             </t>
             <t t-else="">
-                <t t-call="bemade_sports_clinic.sc_page_tabs">
+                <t t-call="bemade_portal_kit.pk_page_tabs">
                     <t t-set="tabs" t-value="sc_activity_tabs"/>
                     <t t-set="active" t-value="sc_activity_active_tab"/>
                 </t>
                 <t t-call="bemade_sports_clinic.sc_activities_header"/>
                 <t t-foreach="sc_activity_tabs" t-as="atab">
-                    <section class="o_pk_tab_panel" t-att-data-sc-tab-panel="atab[0]" role="tabpanel"
+                    <section class="o_pk_tab_panel" t-att-data-pk-tab-panel="atab[0]" role="tabpanel"
                              t-att-hidden="None if sc_activity_active_tab == atab[0] else 'hidden'">
                         <t t-call="bemade_sports_clinic.sc_activity_list">
                             <t t-set="activities" t-value="sc_activity_groups[atab[0]]"/>
@@ -280,11 +280,11 @@
     -->
     <template id="sc_activity_detail_read" name="App shell: activity details">
         <dl class="o_pk_kv">
-            <dt>Summary</dt><dd><span t-att-data-sc-display="None if act_popout else sc_display_key(activity, 'summary')" t-out="activity.summary or '—'"/></dd>
+            <dt>Summary</dt><dd><span t-att-data-pk-display="None if act_popout else pk_display_key(activity, 'summary')" t-out="activity.summary or '—'"/></dd>
             <!-- Task 1739 review (owner 2026-11-02): no « Activity Type »
                  line — every activity is a To-Do « À faire » now. -->
-            <dt>Due Date</dt><dd><span t-att-data-sc-display="None if act_popout else sc_display_key(activity, 'date_deadline')" t-field="activity.date_deadline" t-options="{'widget': 'date'}"/></dd>
-            <dt>Assigned To</dt><dd><span t-att-data-sc-display="None if act_popout else sc_display_key(activity, 'user_id')" t-out="activity.sudo().user_id.name"/></dd>
+            <dt>Due Date</dt><dd><span t-att-data-pk-display="None if act_popout else pk_display_key(activity, 'date_deadline')" t-field="activity.date_deadline" t-options="{'widget': 'date'}"/></dd>
+            <dt>Assigned To</dt><dd><span t-att-data-pk-display="None if act_popout else pk_display_key(activity, 'user_id')" t-out="activity.sudo().user_id.name"/></dd>
             <!-- Task 1595: the same access-gated links as the row. -->
             <t t-if="act_links">
                 <dt>Related Record</dt>
@@ -330,7 +330,7 @@
          attachments, act_state, sc_file_size. -->
     <template id="sc_activity_popout" name="App shell: activity details popout">
         <div class="o_sc_activity_popout" data-pk-section="activity.popout" t-att-data-sc-activity-popout-body="activity.id"
-             data-sc-lazy-filled="1">
+             data-pk-lazy-filled="1">
             <h3 class="o_sc_activity_popout_title">
                 <span t-out="activity.summary or activity.activity_type_id.name"/>
                 <span t-if="act_state == 'overdue'" class="o_pk_chip o_pk_chip_red">Overdue</span>
@@ -373,12 +373,12 @@
                         <t t-set="ci_editable" t-value="sc_activity_editable"/>
                     </t>
                 </div>
-                <div data-sc-edit-view="read" t-att-data-pk-fragment="pk_fragment_key(activity, 'read')">
+                <div data-pk-edit-view="read" t-att-data-pk-fragment="pk_fragment_key(activity, 'read')">
                     <t t-call="bemade_sports_clinic.sc_activity_detail_read">
                         <t t-set="act_links" t-value="sc_related_links"/>
                     </t>
                 </div>
-                <div t-if="sc_activity_editable" class="o_pk_fields" data-sc-edit-view="edit" hidden="hidden">
+                <div t-if="sc_activity_editable" class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                     <t t-set="lbl">Summary</t>
                     <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'summary', lbl)"/></t>
                     <t t-set="lbl">Due Date</t>
@@ -396,7 +396,7 @@
                  r1 (owner 2026-11-01): « Reschedule » / « Reassign » are the
                  pencil's in-place edit (due date, assignee). -->
             <div t-if="sc_activity_editable" class="o_pk_actionbar">
-                <button type="button" class="o_pk_btn o_pk_btn_primary" data-sc-sheet-open="sc_activity_complete_sheet"
+                <button type="button" class="o_pk_btn o_pk_btn_primary" data-pk-sheet-open="sc_activity_complete_sheet"
                         t-att-data-sc-activity-id="activity.id" data-sc-action="activity.complete">Done</button>
             </div>
             <t t-call="bemade_sports_clinic.sc_activity_sheets">

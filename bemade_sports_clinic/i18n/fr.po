@@ -4205,7 +4205,6 @@ msgstr "Les cliniques sont réservées aux thérapeutes."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_player_injuries
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_my_team_players
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_layout
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_sheet
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_security
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_search_sheet
 msgid "Close"
@@ -5401,7 +5400,6 @@ msgstr "Chaque partenaire ne peut être lié qu'à une seule équipe."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_injury_edit
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_edit_card_head
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_note_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_quick_note_card
@@ -14584,12 +14582,6 @@ msgstr "Confirmez « Installer »."
 
 #. module: bemade_sports_clinic
 #. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_app_ui.js:0
-msgid "Could not load. Close and open again to retry."
-msgstr "Chargement impossible. Fermez et rouvrez pour réessayer."
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
 #: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
 msgid "Discard the draft"
 msgstr "Jeter le brouillon"
@@ -14643,13 +14635,10 @@ msgid "Le Fit Crew needs a connection to show teams and players. Your drafts sta
 msgstr "Le Fit Crew a besoin d'une connexion pour afficher les équipes et les joueurs. Vos brouillons restent sur cet appareil et reviennent quand vous retournez à la page."
 
 #. module: bemade_sports_clinic
-#. odoo-javascript
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_team_digest_history
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_calendar
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_row
-#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_sheet
-#: code:addons/bemade_sports_clinic/static/src/js/sc_app_ui.js:0
 msgid "Loading…"
 msgstr "Chargement…"
 
@@ -14681,12 +14670,6 @@ msgstr "Aucun joueur dans cette équipe pour l'instant."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_dw_recent_changes
 msgid "No recent player changes."
 msgstr "Aucun changement récent."
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_app_ui.js:0
-msgid "Nothing to show."
-msgstr "Rien à afficher."
 
 #. module: bemade_sports_clinic
 #. odoo-javascript

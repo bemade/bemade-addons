@@ -106,17 +106,17 @@ class TestCoachExternalNoteReadOnly1675(AppShellCommon):
     def test_coach_card_reads_without_pencil(self):
         self._login_coach()
         card = self._external_card()
-        self.assertFalse(card.xpath('.//button[@data-sc-edit-toggle]'))
-        self.assertFalse(card.xpath('.//*[@data-sc-edit-view="edit"]'))
+        self.assertFalse(card.xpath('.//button[@data-pk-edit-toggle]'))
+        self.assertFalse(card.xpath('.//*[@data-pk-edit-view="edit"]'))
         self.assertEqual(self._fields(card), [])
-        read = card.xpath('./*[@data-sc-edit-view="read"]')[0]
+        read = card.xpath('./*[@data-pk-edit-view="read"]')[0]
         self.assertIn(EXT, read.text_content())
         self.assertTrue(read.xpath('.//*[@data-sc-note-stamp="external"]'))
 
     def test_therapist_card_keeps_pencil(self):
         self._login_tp()
         card = self._external_card()
-        self.assertEqual(len(card.xpath('.//button[@data-sc-edit-toggle]')), 1)
+        self.assertEqual(len(card.xpath('.//button[@data-pk-edit-toggle]')), 1)
         self.assertEqual(self._fields(card), ['external_notes'])
 
     # -- AC-3 ------------------------------------------------------------

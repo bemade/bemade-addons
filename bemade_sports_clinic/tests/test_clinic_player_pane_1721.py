@@ -76,7 +76,7 @@ class TestClinicPlayerPane1721(Pane1721Common):
         self.assertEqual(len(card), 1)
         self.assertEqual(card[0].get('data-sc-player-id'), str(self.player.id))
         self.assertTrue(card[0].xpath('.//*[@data-pk-fragment="sports.patient:%s:row-clinic"]' % self.player.id))
-        self.assertTrue(card[0].xpath('.//button[@data-sc-row-expand]'))
+        self.assertTrue(card[0].xpath('.//button[@data-pk-row-expand]'))
         self.assertFalse(pane.xpath('.//*[@data-pk-section="clinic.dossier.status"]'))
         self.assertFalse(pane.xpath('.//*[@data-sc-action="clinic.full_file"]'))
         # The card comes first, the injuries after it, the notes last.
@@ -171,7 +171,7 @@ class TestClinicPlayerPane1721(Pane1721Common):
         self.assertIn('o_pk_content_wide', tree.xpath('//main[@id="sc_content"]')[0].get('class'))
         card = tree.xpath('//*[@data-pk-section="clinic.dossier"]//*[@data-sc-note-id][@data-pk-edit-card]')[0]
         head = card.xpath('./div[contains(@class, "o_sc_note_head")]')[0]
-        self.assertTrue(head.xpath('./button[@data-sc-edit-toggle]'))
+        self.assertTrue(head.xpath('./button[@data-pk-edit-toggle]'))
         self.assertTrue(head.xpath('./*[contains(@class, "o_sc_note_meta")]'))
         self.assertFalse(card.xpath('.//*[contains(@class, "o_sc_note_body")]'))
         player = tree.xpath('//*[@data-pk-section="clinic.dossier.player"]')[0]

@@ -103,8 +103,8 @@ class TestAppShellHomeNav(Parity1577Common):
         self.assertEqual(self._return_url(more[0]), HOME)
         _text, tree = self._get(more[0])
         self.assertEqual(self._back(tree), [HOME])
-        segments = dict(zip(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'),
-                            tree.xpath('//nav[@data-sc-tabs]//a/@href')))
+        segments = dict(zip(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'),
+                            tree.xpath('//nav[@data-pk-tabs]//a/@href')))
         for key in ('upcoming', 'past', 'calendar'):
             self.assertEqual(self._return_url(segments[key]), HOME, key)
         for chip in tree.xpath('//a[@data-sc-event-type]/@href'):
@@ -113,8 +113,8 @@ class TestAppShellHomeNav(Parity1577Common):
         self.assertEqual(self._back(tree), [HOME])
         node = tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_calendar"]')[0]
         self.assertNotIn('return_url', json.loads(node.get('props'))['params'])
-        segments = dict(zip(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'),
-                            tree.xpath('//nav[@data-sc-tabs]//a/@href')))
+        segments = dict(zip(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'),
+                            tree.xpath('//nav[@data-pk-tabs]//a/@href')))
         for key in ('upcoming', 'past'):
             self.assertEqual(self._return_url(segments[key]), HOME, key)
 

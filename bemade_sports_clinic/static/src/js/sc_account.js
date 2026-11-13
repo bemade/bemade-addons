@@ -1,7 +1,7 @@
 /*
  * « Mon compte » (views/sc_app_account.xml, inert outside .o_pk_app):
  * « Contact details » and « Address » are edit cards (pencil → edit view,
- * « Done » closes it — sc_app_ui.js) inside ONE core address form.
+ * « Done » closes it — the kit's pk_edit_cards.js) inside ONE core address form.
  *
  * Review fixes 2026-10-18, round 2 (1018c) — like the rest of the app, each
  * field saves ON ITS OWN (no « Save » / « Cancel »):
@@ -46,7 +46,7 @@ function accountField(node) {
     if (!node || !node.matches || !node.matches("input[name], select[name], textarea[name]")) {
         return null;
     }
-    if (node.type === "hidden" || !node.closest('[data-sc-edit-view="edit"]')) {
+    if (node.type === "hidden" || !node.closest('[data-pk-edit-view="edit"]')) {
         return null;
     }
     return accountForm(node) && cardOf(node) ? node : null;
@@ -54,7 +54,7 @@ function accountField(node) {
 
 function remember(form) {
     for (const card of cards(form)) {
-        for (const field of card.querySelectorAll('[data-sc-edit-view="edit"] [name]')) {
+        for (const field of card.querySelectorAll('[data-pk-edit-view="edit"] [name]')) {
             if (!lastSaved.has(field)) {
                 lastSaved.set(field, field.value);
             }

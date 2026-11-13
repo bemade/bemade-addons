@@ -21,14 +21,14 @@ tours.add("sc_1669_note_stamp", {
     steps: () => [
         {
             content: "No stamp yet (no note history)",
-            trigger: `${CARD} [data-sc-edit-view="read"]`,
+            trigger: `${CARD} [data-pk-edit-view="read"]`,
             run() {
                 assert(!document.querySelector(`${CARD} [data-sc-note-stamp="external"]`), "a stamp before any note");
             },
         },
         {
             content: "Edit the notes (pencil)",
-            trigger: `${CARD} button[data-sc-edit-toggle]`,
+            trigger: `${CARD} button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
@@ -45,18 +45,18 @@ tours.add("sc_1669_note_stamp", {
         },
         {
             content: "Saved: the (hidden) read view already holds the stamp",
-            trigger: `${CARD} [data-sc-edit-view="read"] [data-sc-note-stamp="external"]:not(:visible)`,
+            trigger: `${CARD} [data-pk-edit-view="read"] [data-sc-note-stamp="external"]:not(:visible)`,
         },
         {
             content: "Close the card (pencil)",
-            trigger: `${CARD} button[data-sc-edit-toggle]`,
+            trigger: `${CARD} button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
             content: "The read view shows the new text and its stamp, no reload",
-            trigger: `${CARD} [data-sc-edit-view="read"] [data-sc-note-stamp="external"]`,
+            trigger: `${CARD} [data-pk-edit-view="read"] [data-sc-note-stamp="external"]`,
             run() {
-                const read = document.querySelector(`${CARD} [data-sc-edit-view="read"]`);
+                const read = document.querySelector(`${CARD} [data-pk-edit-view="read"]`);
                 assert(read.textContent.includes(NEW), "read text not refreshed");
                 const stamp = read.querySelector('[data-sc-note-stamp="external"]');
                 assert(stamp.classList.contains("o_pk_meta"), "stamp not an o_pk_meta line");

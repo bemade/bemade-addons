@@ -49,13 +49,13 @@ class TestCardMedPills1652(MedicalCards1630Common):
         self._login_tp()
         with self._presence():
             tree = self._page(self.team_url)
-        self.assertTrue(tree.xpath(sheet + '//button[@data-sc-edit-toggle]'))
+        self.assertTrue(tree.xpath(sheet + '//button[@data-pk-edit-toggle]'))
         self.assertTrue(tree.xpath(sheet + '//form[@data-sc-med-add]'))
         self._login_coach()
         with self._presence():
             tree = self._page(self.team_url)
         self.assertTrue(tree.xpath(sheet))
-        self.assertFalse(tree.xpath(sheet + '//button[@data-sc-edit-toggle] | ' + sheet + '//form'))
+        self.assertFalse(tree.xpath(sheet + '//button[@data-pk-edit-toggle] | ' + sheet + '//form'))
 
     def test_non_urgent_player_has_pills_and_sheets(self):
         # Review round 2 (owner 2026-10-27): a therapist sees the pills of

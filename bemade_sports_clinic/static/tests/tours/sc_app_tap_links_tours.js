@@ -7,7 +7,7 @@
 import { registry } from "@web/core/registry";
 
 const CARD = '[data-pk-edit-card^="contact-"]';
-const MOBILE = `${CARD} [data-sc-edit-view="read"] a[data-pk-display-href="tel"][data-sc-display$=":mobile"]`;
+const MOBILE = `${CARD} [data-pk-edit-view="read"] a[data-pk-display-href="tel"][data-pk-display$=":mobile"]`;
 
 registry.category("web_tour.tours").add("sc_1585_tap_links", {
     steps: () => [
@@ -16,7 +16,7 @@ registry.category("web_tour.tours").add("sc_1585_tap_links", {
             trigger: `${MOBILE}[href="tel:5550100456"]`,
             run() {
                 const email = document.querySelector(
-                    `${CARD} [data-sc-edit-view="read"] a[data-pk-display-href="mailto"][data-sc-display$=":email"]`
+                    `${CARD} [data-pk-edit-view="read"] a[data-pk-display-href="mailto"][data-pk-display$=":email"]`
                 );
                 if (!email || email.getAttribute("href") !== "mailto:parent.one@example.com") {
                     throw new Error(`email link is « ${email && email.getAttribute("href")} »`);
@@ -26,12 +26,12 @@ registry.category("web_tour.tours").add("sc_1585_tap_links", {
         },
         {
             content: "Pencil: the contact's fields appear",
-            trigger: `${CARD} button[data-sc-edit-toggle]`,
+            trigger: `${CARD} button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
             content: "Edit the mobile",
-            trigger: `${CARD} [data-sc-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="mobile"] input`,
+            trigger: `${CARD} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="mobile"] input`,
             run: "edit 514 555 0177", // task 1645: a valid number, saved formatted
         },
         {

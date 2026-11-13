@@ -17,7 +17,7 @@ registry.category("web_tour.tours").add("sc_1540_bookings", {
         },
         {
             content: "Open the calendar segment",
-            trigger: '[data-sc-tabs] a[data-sc-tab="calendar"]',
+            trigger: '[data-pk-tabs] a[data-pk-tab="calendar"]',
             run: "click",
             expectUnloadPage: true,
         },
@@ -56,7 +56,7 @@ registry.category("web_tour.tours").add("sc_1732_booking_answers", {
         },
         {
             content: "Open the calendar segment",
-            trigger: '[data-sc-tabs] a[data-sc-tab="calendar"]',
+            trigger: '[data-pk-tabs] a[data-pk-tab="calendar"]',
             run: "click",
             expectUnloadPage: true,
         },

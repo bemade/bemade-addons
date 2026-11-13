@@ -71,7 +71,7 @@ function setValue(el, value) {
 }
 
 function readText(card) {
-    return document.querySelector(`${card} [data-sc-edit-view="read"]`).textContent;
+    return document.querySelector(`${card} [data-pk-edit-view="read"]`).textContent;
 }
 
 // Review fixes 2026-10-18 b: two pencil cards; round 2 (1018c): each field
@@ -102,7 +102,7 @@ tours.add("sc_1620_account", {
         },
         {
             content: "The shell page: two read cards, no company, no save / cancel",
-            trigger: `.o_pk_app ${CONTACT} [data-sc-edit-view="read"]`,
+            trigger: `.o_pk_app ${CONTACT} [data-pk-edit-view="read"]`,
             run() {
                 window.__sc1018bNoReload = "1";
                 assert(document.querySelector("a[data-pk-back]"), "no back arrow");
@@ -113,17 +113,17 @@ tours.add("sc_1620_account", {
                     "company fields or a page-level save");
                 assert(!document.querySelector("[data-sc-account-save], [data-sc-account-cancel]"),
                     "a card save / cancel is left");
-                assert(document.querySelector(`${CONTACT} [data-sc-edit-view="edit"]`).hidden, "edit open");
+                assert(document.querySelector(`${CONTACT} [data-pk-edit-view="edit"]`).hidden, "edit open");
                 noOverflow();
             },
         },
         {
             content: "Address pencil: the province select is as tall as the inputs",
-            trigger: `${ADDRESS} button[data-sc-edit-toggle]`,
+            trigger: `${ADDRESS} button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
-            trigger: `${ADDRESS}[data-sc-edit-open] select[name="state_id"]`,
+            trigger: `${ADDRESS}[data-pk-edit-open] select[name="state_id"]`,
             run() {
                 const h = (sel) => document.querySelector(`${ADDRESS} ${sel}`).getBoundingClientRect().height;
                 const city = h('input[name="city"]');
@@ -162,7 +162,7 @@ tours.add("sc_1620_account", {
             run: "click",
         },
         {
-            trigger: `${ADDRESS}:not([data-sc-edit-open]) [data-sc-edit-view="read"]:not([hidden])`,
+            trigger: `${ADDRESS}:not([data-pk-edit-open]) [data-pk-edit-view="read"]:not([hidden])`,
             async run() {
                 // Task 1625: wait for BOTH — the city can already show from
                 // the city's own (earlier) refresh while the street-clear
@@ -176,12 +176,12 @@ tours.add("sc_1620_account", {
         },
         {
             content: "Contact pencil",
-            trigger: `${CONTACT} button[data-sc-edit-toggle]`,
+            trigger: `${CONTACT} button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
             content: "An email the server refuses (the browser accepts it): error on the field and in the card",
-            trigger: `${CONTACT}[data-sc-edit-open] input[name="email"]`,
+            trigger: `${CONTACT}[data-pk-edit-open] input[name="email"]`,
             async run() {
                 setValue(this.anchor, "coach@localhost");
                 await waitState(CONTACT, "email", "error");
@@ -194,7 +194,7 @@ tours.add("sc_1620_account", {
                 assert(document.querySelector(`${FORM} input[name="email"]`).classList.contains("is-invalid"),
                     "email not flagged");
                 assert(!document.querySelector(`${ADDRESS} [data-sc-account-errors] h5`), "error in the other card");
-                assert(document.querySelector(`${CONTACT}[data-sc-edit-open]`), "card closed on error");
+                assert(document.querySelector(`${CONTACT}[data-pk-edit-open]`), "card closed on error");
             },
         },
         {
@@ -225,7 +225,7 @@ tours.add("sc_1620_account", {
             run: "click",
         },
         {
-            trigger: `${CONTACT}:not([data-sc-edit-open]) [data-sc-edit-view="read"]:not([hidden])`,
+            trigger: `${CONTACT}:not([data-pk-edit-open]) [data-pk-edit-view="read"]:not([hidden])`,
             async run() {
                 await waitFor(() => readText(CONTACT).replace(/\D/g, "").includes("5145550177"),
                     "read view refreshed");
@@ -316,7 +316,7 @@ tours.add("sc_1620_security", {
         },
         {
             content: "Open « Delete account »",
-            trigger: 'button[data-sc-sheet-open="sc_deactivate_account_sheet"]',
+            trigger: 'button[data-pk-sheet-open="sc_deactivate_account_sheet"]',
             run: "click",
         },
         {
@@ -329,7 +329,7 @@ tours.add("sc_1620_security", {
         },
         {
             content: "Cancel",
-            trigger: "dialog#sc_deactivate_account_sheet[open] .o_pk_form_actions [data-sc-sheet-close]",
+            trigger: "dialog#sc_deactivate_account_sheet[open] .o_pk_form_actions [data-pk-sheet-close]",
             run: "click",
         },
         {

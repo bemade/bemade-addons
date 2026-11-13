@@ -27,7 +27,7 @@
             <t t-set="sc_active_nav" t-value="'clinic'"/>
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
 
-            <t t-call="bemade_sports_clinic.sc_page_tabs">
+            <t t-call="bemade_portal_kit.pk_page_tabs">
                 <t t-set="tabs" t-value="sc_clinic_segments"/>
                 <t t-set="active" t-value="time_filter"/>
             </t>
@@ -140,7 +140,7 @@
 
             <t t-call="bemade_sports_clinic.sc_flash_banners"/>
             <div t-if="success == 'note_added' and sc_note_draft_prefix"
-                 t-att-data-sc-draft-clear="sc_note_draft_prefix" hidden="hidden"/>
+                 t-att-data-pk-draft-clear="sc_note_draft_prefix" hidden="hidden"/>
 
             <div class="o_pk_card o_sc_clinic_head" data-pk-section="clinic.head">
                 <div class="o_sc_clinic_head_text">
@@ -149,7 +149,7 @@
                     <span t-if="sc_clinic_staff" class="o_pk_meta" t-out="sc_clinic_staff"/>
                 </div>
                 <button t-if="kiosk_can_manage" type="button" class="o_pk_btn o_pk_btn_ghost o_pk_btn_sm"
-                        data-sc-sheet-open="sc_clinic_kiosk_sheet" data-sc-action="clinic.kiosk">
+                        data-pk-sheet-open="sc_clinic_kiosk_sheet" data-sc-action="clinic.kiosk">
                     <span>Sign-in kiosk</span>
                     <span t-if="kiosk_devices" class="o_pk_chip o_pk_chip_green">Paired</span>
                     <span t-else="" class="o_pk_chip o_pk_chip_ghost">Not paired</span>
@@ -157,7 +157,7 @@
             </div>
 
             <div class="o_sc_clinic_tabs">
-                <t t-call="bemade_sports_clinic.sc_page_tabs">
+                <t t-call="bemade_portal_kit.pk_page_tabs">
                     <t t-set="tabs" t-value="sc_clinic_tabs"/>
                     <t t-set="active" t-value="sc_clinic_active_tab"/>
                 </t>
@@ -165,7 +165,7 @@
 
             <div class="o_sc_clinic_panes">
                 <!-- ======================= waiting list ======================= -->
-                <section class="o_pk_tab_panel o_sc_clinic_pane" data-sc-tab-panel="worklist" role="tabpanel"
+                <section class="o_pk_tab_panel o_sc_clinic_pane" data-pk-tab-panel="worklist" role="tabpanel"
                          id="clinic-worklist" data-pk-section="clinic.worklist"
                          t-att-hidden="None if sc_clinic_active_tab == 'worklist' else 'hidden'">
                     <!-- Task 1607: « + Ajouter » (the add-patient sheet, was in
@@ -182,7 +182,7 @@
                 </section>
 
                 <!-- ========================== file ========================== -->
-                <section class="o_pk_tab_panel o_sc_clinic_pane" data-sc-tab-panel="dossier" role="tabpanel"
+                <section class="o_pk_tab_panel o_sc_clinic_pane" data-pk-tab-panel="dossier" role="tabpanel"
                          id="clinic-dossier" data-pk-section="clinic.dossier"
                          t-att-hidden="None if sc_clinic_active_tab == 'dossier' else 'hidden'">
                     <t t-if="not selected_patient" t-call="bemade_portal_kit.pk_empty_state">
@@ -286,7 +286,7 @@
             </div>
 
             <!-- ========================= sheets ========================= -->
-            <t t-call="bemade_sports_clinic.sc_sheet">
+            <t t-call="bemade_portal_kit.pk_sheet">
                 <t t-set="sheet_id" t-value="'sc_clinic_add_sheet'"/>
                 <t t-set="title">Add a patient</t>
                 <t t-set="lazy_url" t-value="False"/>
@@ -306,7 +306,7 @@
                         </t>
                     </div>
                     <div class="o_pk_form_actions">
-                        <button type="button" class="o_pk_btn o_pk_btn_ghost" data-sc-sheet-close="1">Cancel</button>
+                        <button type="button" class="o_pk_btn o_pk_btn_ghost" data-pk-sheet-close="1">Cancel</button>
                         <button type="submit" class="o_pk_btn o_pk_btn_primary">Add</button>
                     </div>
                     <t t-call="bemade_portal_kit.pk_form_guard_slots"><t t-set="guard_id" t-value="'sc_clinic_add'"/></t>
@@ -316,7 +316,7 @@
             <!-- #1418: resolve an unregistered kiosk sign-in. The live
                  component fills the three forms' actions from the row's
                  data-sc-resolve-id (sc_clinic_worklist.js). -->
-            <t t-call="bemade_sports_clinic.sc_sheet">
+            <t t-call="bemade_portal_kit.pk_sheet">
                 <t t-set="sheet_id" t-value="'sc_clinic_resolve_sheet'"/>
                 <t t-set="title">Resolve the sign-in</t>
                 <t t-set="lazy_url" t-value="False"/>
@@ -368,7 +368,7 @@
             </t>
 
             <!-- #1397/#1433: the sign-in kiosk (assigned therapist / admin). -->
-            <t t-if="kiosk_can_manage" t-call="bemade_sports_clinic.sc_sheet">
+            <t t-if="kiosk_can_manage" t-call="bemade_portal_kit.pk_sheet">
                 <t t-set="sheet_id" t-value="'sc_clinic_kiosk_sheet'"/>
                 <t t-set="title">Sign-in kiosk</t>
                 <t t-set="lazy_url" t-value="False"/>

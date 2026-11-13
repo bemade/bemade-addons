@@ -114,7 +114,7 @@ class TestClinicDossierInline1590(ClinicDossier1590Common):
         # list item (its summary and read view refresh in place).
         self.assertIsNone(card.get('data-sc-edit-reload'))
         self.assertEqual(card.get('data-pk-fragment-item'), 'sports.patient.injury:%s:card' % self.injury.id)
-        self.assertTrue(card.xpath('.//button[@data-sc-edit-toggle]'))
+        self.assertTrue(card.xpath('.//button[@data-pk-edit-toggle]'))
         props = self._props(card)
         for fname in ('external_notes', 'internal_notes'):
             self.assertIs(props[fname].get('replace'), True)
@@ -151,12 +151,12 @@ class TestClinicDossierInline1590(ClinicDossier1590Common):
         self.assertEqual(query['created'], [str(injury.id)])
         self.assertEqual(parts.fragment, 'clinic-injury-%s' % injury.id)
         _text, tree = self._follow(location)
-        dossier = tree.xpath('//section[@data-sc-tab-panel="dossier"]')[0]
+        dossier = tree.xpath('//section[@data-pk-tab-panel="dossier"]')[0]
         self.assertIsNone(dossier.get('hidden'))
         card = tree.xpath('//details[@id="clinic-injury-%s"]' % injury.id)[0]
         self.assertIsNotNone(card.get('open'))
         self.assertEqual(card.get('data-sc-created-injury'), str(injury.id))
-        self.assertIsNone(card.xpath('.//*[@data-sc-edit-view="edit"]')[0].get('hidden'))
+        self.assertIsNone(card.xpath('.//*[@data-pk-edit-view="edit"]')[0].get('hidden'))
         undo = card.xpath('.//form[@data-pk-undo-offer="injury"]')[0]
         self.assertEqual(undo.get('action'), '/my/injury/%s/undo-create' % injury.id)
         self.assertEqual(undo.xpath('.//input[@name="sc_origin"]/@value'), ['clinic'])

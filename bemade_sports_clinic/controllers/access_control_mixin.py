@@ -677,7 +677,7 @@ class AccessControlMixin:
 
     @staticmethod
     def _sc_activity_tab_badge(activities):
-        """Task 1635 — the Activities tab's count pill (``sc_page_tabs``'
+        """Task 1635 — the Activities tab's count pill (``pk_page_tabs``'
         optional 5th tuple item): ``{'count', 'tone', 'label'}``, or None at
         0. ``activities`` is the recordset the tab itself lists — searched
         as the viewer, so the record rules make the count per viewer (no

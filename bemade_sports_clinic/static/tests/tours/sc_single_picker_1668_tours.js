@@ -90,7 +90,7 @@ tours.add("sc_1668_activity_detail", {
     steps: () => [
         {
             content: "Edit the activity (pencil)",
-            trigger: '[data-pk-edit-card="activity"] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-edit-card="activity"] button[data-pk-edit-toggle]',
             run: "click",
         },
         {

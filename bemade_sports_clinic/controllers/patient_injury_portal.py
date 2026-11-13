@@ -333,7 +333,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # lands on a POST result page — it redirects to the player's
         # Injuries tab (same context) with the new injury open and its
         # « Undo »; that page drops the device draft of the new injury
-        # (data-sc-draft-clear, task 1539) once it exists.
+        # (data-pk-draft-clear, task 1539) once it exists.
         if self._sc_app_shell_active():
             injuries_url = self._sc_inline_injuries_url(patient, post, clinic_event)
             return request.redirect(self._url_with_query(

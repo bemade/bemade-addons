@@ -280,7 +280,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
 
     # -- RF9 -------------------------------------------------------------
     def _add_card(self, tree):
-        return tree.xpath('//section[@data-sc-tab-panel="players"]'
+        return tree.xpath('//section[@data-pk-tab-panel="players"]'
                           '/details[@data-pk-section="team.add_player"]')[0]
 
     def test_add_player_one_set_of_fields(self):

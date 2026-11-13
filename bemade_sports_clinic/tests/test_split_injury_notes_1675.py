@@ -64,11 +64,11 @@ class TestSplitInjuryNotes1675(Split1675Common):
             cards = section.xpath('.//*[@data-pk-edit-card="injury-notes-%s"]' % scope)
             self.assertEqual(len(cards), 1, scope)
             card = cards[0]
-            self.assertEqual(len(card.xpath('.//button[@data-sc-edit-toggle]')), 1, scope)
-            read = card.xpath('./*[@data-sc-edit-view="read"]')[0]
+            self.assertEqual(len(card.xpath('.//button[@data-pk-edit-toggle]')), 1, scope)
+            read = card.xpath('./*[@data-pk-edit-view="read"]')[0]
             self.assertEqual(read.get('data-pk-fragment'), key + 'notes-%s' % scope)
             self.assertIn('Synthetic %s 1675' % scope[:3], read.text_content())
-            edit = card.xpath('./*[@data-sc-edit-view="edit"]')[0]
+            edit = card.xpath('./*[@data-pk-edit-view="edit"]')[0]
             self.assertEqual(edit.get('hidden'), 'hidden')
             self.assertEqual(self._fields(edit), ['%s_notes' % scope])
 
@@ -76,7 +76,7 @@ class TestSplitInjuryNotes1675(Split1675Common):
         self._login_tp()
         _text, tree = self._get(self._url())
         section = self._section(tree)
-        links = section.xpath('.//*[starts-with(@data-sc-sheet-open, "sc_note_history_sheet_")]')
+        links = section.xpath('.//*[starts-with(@data-pk-sheet-open, "sc_note_history_sheet_")]')
         self.assertEqual(len(links), 1)
         self.assertTrue(links[0].xpath('parent::*/parent::div[contains(@class, "o_pk_edit_card_head")]'
                                        '/parent::section[@data-pk-section="injury.notes"]'))
@@ -90,7 +90,7 @@ class TestSplitInjuryNotes1675(Split1675Common):
         self.assertFalse(section.xpath('.//*[@data-pk-edit-card="injury-notes-internal"]'))
         # Owner review 2026-10-25: the coach reads it — no pencil, no editor.
         external = section.xpath('.//*[@data-pk-edit-card="injury-notes-external"]')[0]
-        self.assertFalse(external.xpath('.//button[@data-sc-edit-toggle]'))
+        self.assertFalse(external.xpath('.//button[@data-pk-edit-toggle]'))
         self.assertEqual(self._fields(section), [])
         self.assertIn('Synthetic ext 1675', external.text_content())
         self.assertNotIn('Synthetic int 1675', text)

@@ -109,9 +109,9 @@ class TestAppShellClinic1540(Clinic1540Common):
         self._login_tp()
         text, tree = self._get('/my/clinics')
         self.assertIsNotNone(self._shell(tree))
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'),
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'),
                          ['today', 'upcoming', 'past', 'all'])
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a[@aria-selected="true"]/@data-sc-tab'),
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]//a[@aria-selected="true"]/@data-pk-tab'),
                          ['today'])
         ids = [int(x) for x in tree.xpath('//*[@data-sc-clinic-id]/@data-sc-clinic-id')]
         self.assertIn(self.clinic.id, ids)       # mine + today
@@ -130,7 +130,7 @@ class TestAppShellClinic1540(Clinic1540Common):
         self._login_tp()
         _text, tree = self._get('/my/clinic/%s' % self.clinic.id)
         self.assertIsNotNone(self._shell(tree))
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'), ['worklist', 'dossier'])
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'), ['worklist', 'dossier'])
         props = self._props(tree)
         self.assertEqual(props['clinicId'], self.clinic.id)
         self.assertEqual(props['dataUrl'], '/my/clinic/%s/worklist/data' % self.clinic.id)
@@ -155,7 +155,7 @@ class TestAppShellClinic1540(Clinic1540Common):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/clinic/%s?patient=%s' % (self.clinic.id, self.player.id))
-        dossier = tree.xpath('//section[@data-sc-tab-panel="dossier"]')[0]
+        dossier = tree.xpath('//section[@data-pk-tab-panel="dossier"]')[0]
         self.assertIsNone(dossier.get('hidden'))
         fields_ = self._owl_fields(tree)
         # Task 1627: the instant status pair is the Match / Practice pill

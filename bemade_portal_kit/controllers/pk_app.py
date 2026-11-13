@@ -20,12 +20,11 @@ import uuid
 from odoo import _, fields, http
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
-from odoo.tools import format_date, format_datetime
 
 from odoo.addons.portal.controllers.portal import CustomerPortal
 
 from ..tools import (
-    PK_FRAGMENTS_HEADER, PK_GUARD_HEADER, pk_extract_fragments, pk_now_ms, pk_parse_fragment_keys,
+    PK_FRAGMENTS_HEADER, PK_GUARD_HEADER, pk_display, pk_extract_fragments, pk_now_ms, pk_parse_fragment_keys,
     pk_validate_save_spec,
 )
 from ..tools.registry import pk_freeze
@@ -177,30 +176,9 @@ class PortalKitApp(CustomerPortal):
     @staticmethod
     def _pk_save_display(record, name):
         """The saved value as a reader sees it (a card's read view updates in
-        place after a save): a name for a many2one, a label for a selection,
-        a formatted date; '' when empty. The spec's ``display`` first."""
-        spec = record.env['portal.kit'].pk_save_spec(record._name) or pk_freeze({})
-        if spec.get('display'):
-            shown = spec['display'](record, name)
-            if shown is not None:
-                return shown
-        field = record._fields.get(name)
-        if field is None:
-            return ''
-        value = record[name]
-        if not value:
-            return ''
-        if field.type == 'many2one':
-            # The plain name, as the select options show it.
-            value = value.sudo()
-            return (value.name if 'name' in value._fields else value.display_name) or ''
-        if field.type == 'selection':
-            return dict(field._description_selection(record.env)).get(value, '')
-        if field.type == 'date':
-            return format_date(record.env, value)
-        if field.type == 'datetime':
-            return format_datetime(record.env, value)
-        return str(value)
+        place after a save): ``tools.display.pk_display``, the helper the
+        read views render with."""
+        return pk_display(record, name)
 
     @classmethod
     def _pk_field_unchanged(cls, record, field, old_value):

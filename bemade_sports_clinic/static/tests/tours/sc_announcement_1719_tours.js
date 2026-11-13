@@ -15,8 +15,8 @@ function assert(condition, message) {
 
 const AREA = '[data-pk-section="team.announcement.area"]';
 const BODY = `${AREA} .o_sc_announcement_body`;
-const MORE = `${AREA} button[data-sc-clamp-more]`;
-const LESS = `${AREA} button[data-sc-clamp-less]`;
+const MORE = `${AREA} button[data-pk-clamp-more]`;
+const LESS = `${AREA} button[data-pk-clamp-less]`;
 
 tours.add("sc_1719_see_more", {
     steps: () => [
@@ -28,9 +28,9 @@ tours.add("sc_1719_see_more", {
                 assert(body.scrollHeight > body.clientHeight + 1, "the text is not clamped");
                 const lines = Math.round(body.clientHeight / parseFloat(getComputedStyle(body).lineHeight));
                 assert(lines <= 3, `${lines} lines shown`);
-                const meta = document.querySelector(`${AREA} [data-sc-clamp-meta]`);
+                const meta = document.querySelector(`${AREA} [data-pk-clamp-meta]`);
                 assert(!meta.hidden && meta.textContent.includes("2030"), "the « Until » line");
-                assert(!document.querySelector(`${AREA} [data-sc-clamp-sep]`).hidden, "no separator");
+                assert(!document.querySelector(`${AREA} [data-pk-clamp-sep]`).hidden, "no separator");
                 const t = document.querySelector(`${AREA} .o_sc_announcement_titleline`).getBoundingClientRect();
                 for (const btn of document.querySelectorAll(`${AREA} .o_sc_announcement_titleline .o_pk_icon_btn`)) {
                     const r = btn.getBoundingClientRect();
@@ -46,7 +46,7 @@ tours.add("sc_1719_see_more", {
         },
         {
             content: "Expanded in place; the link is gone",
-            trigger: `${BODY}[data-sc-clamp-open]`,
+            trigger: `${BODY}[data-pk-clamp-open]`,
             run() {
                 const body = document.querySelector(BODY);
                 assert(body.scrollHeight <= body.clientHeight + 1, "still clamped");
@@ -63,7 +63,7 @@ tours.add("sc_1719_see_more", {
         },
         {
             content: "Clamped again; « See more » back, « See less » gone",
-            trigger: `${BODY}:not([data-sc-clamp-open])`,
+            trigger: `${BODY}:not([data-pk-clamp-open])`,
             run() {
                 const body = document.querySelector(BODY);
                 assert(body.scrollHeight > body.clientHeight + 1, "not clamped again");
@@ -78,10 +78,10 @@ tours.add("sc_1719_short", {
     steps: () => [
         {
             content: "A short text: no « See more », no meta line",
-            trigger: `${BODY}[data-sc-clamp-ready]`,
+            trigger: `${BODY}[data-pk-clamp-ready]`,
             run() {
                 assert(document.querySelector(MORE).hidden, "« See more » shown on a short text");
-                assert(document.querySelector(`${AREA} [data-sc-clamp-meta]`).hidden, "an empty meta line shows");
+                assert(document.querySelector(`${AREA} [data-pk-clamp-meta]`).hidden, "an empty meta line shows");
             },
         },
     ],
@@ -93,7 +93,7 @@ tours.add("sc_1719_empty_pencil", {
             content: "Empty: the muted line; the pencil adds one",
             trigger: `${AREA} .o_sc_announcement_empty`,
             run() {
-                document.querySelector(`${AREA} button[data-sc-edit-toggle]`).click();
+                document.querySelector(`${AREA} button[data-pk-edit-toggle]`).click();
             },
         },
         {

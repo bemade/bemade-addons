@@ -103,7 +103,7 @@ class TestDoneButtonsPref1676(Done1676Common):
         self.assertTrue(buttons[0].xpath('ancestor::summary'))
         self.assertEqual(buttons[0].get('aria-label'), 'Delete injury')
         self.assertIn('o_pk_icon_btn_danger', buttons[0].get('class'))
-        self.assertEqual(buttons[0].get('data-sc-sheet-open'), 'sc_delete_injury_sheet_%s' % self.injury.id)
+        self.assertEqual(buttons[0].get('data-pk-sheet-open'), 'sc_delete_injury_sheet_%s' % self.injury.id)
 
     def test_coach_has_no_foot(self):
         self._login_coach()
@@ -158,7 +158,7 @@ class TestDoneButtonsPrefI18n1676(Done1676Common):
         # before the JS translations are loaded).
         self._login_tp()
         _text, tree = self._fr('/my/app/settings')
-        self.assertEqual(self._app(tree).get('data-sc-edit-done-label'), 'Terminer la modification')
+        self.assertEqual(self._app(tree).get('data-pk-edit-done-label'), 'Terminer la modification')
 
 
 class _DoneTours1676:

@@ -24,27 +24,27 @@ const EXT = `${NOTES} [data-pk-edit-card="injury-notes-external"]`;
 const INT = `${NOTES} [data-pk-edit-card="injury-notes-internal"]`;
 
 function editing(card) {
-    return !document.querySelector(`${card} [data-sc-edit-view="edit"]`).hidden;
+    return !document.querySelector(`${card} [data-pk-edit-view="edit"]`).hidden;
 }
 
 function noteSteps(card, scope, text, other) {
     return [
         {
             content: `The ${scope} pencil`,
-            trigger: `${card} button[data-sc-edit-toggle]`,
+            trigger: `${card} button[data-pk-edit-toggle]`,
             run(helpers) {
                 // CI 2026-10-25: compare the other note's TEXT only (its « last note »
                 // stamp may legitimately be redrawn by the save's refresh).
-                window[`__sc1675Other_${scope}`] = readText(document.querySelector(`${other} [data-sc-edit-view="read"] .o_pk_pre`));
+                window[`__sc1675Other_${scope}`] = readText(document.querySelector(`${other} [data-pk-edit-view="read"] .o_pk_pre`));
                 return helpers.click();
             },
         },
         {
             content: `Only the ${scope} editor opens`,
-            trigger: `${card}[data-sc-edit-open] .o_pk_autosave[data-sc-field="${scope}_notes"] textarea[data-sc-replace="new"]`,
+            trigger: `${card}[data-pk-edit-open] .o_pk_autosave[data-sc-field="${scope}_notes"] textarea[data-sc-replace="new"]`,
             run() {
                 assert(!editing(other), "the other note opened too");
-                assert(!document.querySelector(`${other}[data-sc-edit-open]`), "the other card is in edit mode");
+                assert(!document.querySelector(`${other}[data-pk-edit-open]`), "the other card is in edit mode");
             },
         },
         {
@@ -61,22 +61,22 @@ function noteSteps(card, scope, text, other) {
         },
         {
             content: "Saved: the card's read view holds the new text and its stamp",
-            trigger: `${card} [data-sc-edit-view="read"]:not(:visible):contains(${text})`,
+            trigger: `${card} [data-pk-edit-view="read"]:not(:visible):contains(${text})`,
             run() {
                 assert(this.anchor.querySelector(`[data-sc-note-stamp="${scope}"]`), "no stamp");
             },
         },
         {
             content: `Close the ${scope} note (pencil)`,
-            trigger: `${card} button[data-sc-edit-toggle]`,
+            trigger: `${card} button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
             content: "Closed; the other note's read view is unchanged",
-            trigger: `${card}:not([data-sc-edit-open]) [data-sc-edit-view="read"] [data-sc-note-stamp="${scope}"]`,
+            trigger: `${card}:not([data-pk-edit-open]) [data-pk-edit-view="read"] [data-sc-note-stamp="${scope}"]`,
             run() {
                 const before = window[`__sc1675Other_${scope}`];
-                const after = readText(document.querySelector(`${other} [data-sc-edit-view="read"] .o_pk_pre`));
+                const after = readText(document.querySelector(`${other} [data-pk-edit-view="read"] .o_pk_pre`));
                 assert(before === after, `the other note's text changed: «${before}» → «${after}»`);
                 assert(!editing(other), "the other note is in edit mode");
             },

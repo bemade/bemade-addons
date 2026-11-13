@@ -91,6 +91,26 @@ undo's clinic names, moved to the kit under ``pk`` names:
   ``sc_notification`` (``PortalKitApp._pk_pop_notification``,
   ``_pk_offer_undo``, ``pk_notification``).
 
+Task 5381 (P4c2) retires the edit cards', sheets', tabs', lazy load's and
+clamps' clinic names, moved to the kit under ``pk`` names:
+
+* the attributes ``data-sc-edit-toggle``, ``-edit-toggle-done``,
+  ``-edit-view``, ``-edit-open``, ``-edit-open-on-load``, ``-edit-for``,
+  ``-edit-only``, ``-edit-done-label``; ``-tabs``, ``-tab``,
+  ``-tab-panel``, ``-tab-aliases``; ``-sheet-open``, ``-sheet-close``,
+  ``-sheet-url``, ``-sheet-refetch``, ``-sheet-open-on-load``;
+  ``-lazy-url``, ``-lazy-fresh``, ``-lazy-filled``, ``-loaded`` (dataset
+  only), ``-row-expand``; ``-clamp`` and ``-clamp-*`` (more, less, sep,
+  meta, open, ready); ``-draft-clear``; ``-display`` and
+  ``-display-hide-empty`` (``dataset.scX`` too).
+  ``data-sc-edit-card-body`` and the clinic's other names stay;
+* the event ``sc:edit-open`` (``pk:edit-open``);
+* the templates ``sc_edit_card_head``, ``sc_display_row``, ``sc_sheet``
+  and ``sc_page_tabs`` (``ADOPTED_VIEWS``), the render helpers
+  ``sc_display``, ``sc_display_key`` and ``sc_contact_href`` (the kit's
+  ``tools/display.py``: ``pk_display``, ``pk_display_key``,
+  ``pk_contact_href``) and the class ``o_sc_contact_link``.
+
 Dataset destructuring (``const { scModel, scField } = el.dataset``) is
 matched too.
 
@@ -136,6 +156,14 @@ ATTRIBUTES = (
     # Task 5371 (P4c1): the toast, the session notification, the undo.
     'notify', 'notify-title', 'notify-tone', 'notify-id', 'toast-action',
     'toast-message', 'toast-tone', 'toast-room',
+    # Task 5381 (P4c2): the edit cards, sheets, tabs, lazy load, clamps.
+    'edit-toggle', 'edit-toggle-done', 'edit-view', 'edit-open',
+    'edit-open-on-load', 'edit-for', 'edit-only', 'edit-done-label', 'tabs',
+    'tab', 'tab-panel', 'tab-aliases', 'sheet-open', 'sheet-close',
+    'sheet-url', 'sheet-refetch', 'sheet-open-on-load', 'lazy-url',
+    'lazy-fresh', 'lazy-filled', 'loaded', 'row-expand', 'clamp',
+    'clamp-more', 'clamp-less', 'clamp-sep', 'clamp-meta', 'clamp-open',
+    'clamp-ready', 'draft-clear', 'display', 'display-hide-empty',
 )
 EVENTS = (
     'fragments', 'form-reset', 'create-success', 'lazy-loaded',
@@ -146,6 +174,8 @@ EVENTS = (
     'pill-action', 'edit-view-open',
     # Task 5371 (P4c1).
     'toast',
+    # Task 5381 (P4c2).
+    'edit-open',
 )
 STORAGE_KEYS = (
     'sc_draft:', 'sc_pending_toast:v1', 'sc_nav_stack:v1', 'sc_nav_post:v1',
@@ -171,6 +201,8 @@ SAVE_NAMES = (
     '_sc_guard_probe', 'sc_pill_target', 'sc_pill_menu_id',
     # Task 5371 (P4c1).
     '_sc_pop_notification', '_sc_offer_undo', 'sc_notification',
+    # Task 5381 (P4c2): the render helpers.
+    'sc_display', 'sc_display_key', 'sc_contact_href',
 )
 
 # Task 5344 (P3b1): the generic classes, as the name after ``o_sc_``. A name
@@ -247,6 +279,8 @@ GENERIC_CLASSES = (
     'user_menu_role', 'user_menu_who',
     # Task 5370 (P4b): the guard's reason line and its cue (and keyframes).
     'guard_reason', 'reason_flash',
+    # Task 5381 (P4c2): the contact link of a display row.
+    'contact_link',
 )
 # Semantic and scale slots of the style tokens (the palette stays ``--sc-``).
 TOKEN_SLOTS = (
@@ -288,6 +322,15 @@ ALLOWED = {
         'sc_notify_shown:v1', 'sc:toast', 'data-sc-notify', 'data-sc-notify-id', 'data-sc-toast-action',
         'data-sc-toast-message', 'data-sc-form="sc.undo"', 'data-sc-form="injury.undo"'},
     (KIT, 'static/tests/pk_lazy_edit.test.js'): {'bemade_sports_clinic.sc_lazy_edit', 'sc:edit-view-open'},
+    # Task 5381: the clinic's migration that removes the old attributes from
+    # the translations names them; the hoot tests check the old names are
+    # not read.
+    ('bemade_sports_clinic', 'migrations/19.0.1.143.0/post-migrate.py'): None,
+    (KIT, 'static/tests/pk_edit_cards.test.js'): {'data-sc-edit-toggle', 'data-sc-edit-view', 'sc:edit-open',
+                                                  'data-sc-display'},
+    (KIT, 'static/tests/pk_sheets.test.js'): {'data-sc-sheet-open'},
+    (KIT, 'static/tests/pk_tabs.test.js'): {'data-sc-tabs', 'data-sc-tab', 'data-sc-tab-panel'},
+    (KIT, 'static/tests/pk_shell.test.js'): {'data-sc-draft-clear'},
 }
 
 
@@ -453,7 +496,7 @@ class TestPkRetiredNames(TransactionCase):
         self.assertEqual(retired_names('self._sc_save_json(p) or sc_now_ms() or SAVE_REGISTRY'),
                          ['_sc_save_json', 'sc_now_ms', 'SAVE_REGISTRY'])
         self.assertEqual(retired_names('_pk_save_json pk_now_ms pk_fragment_key data-pk-fragment pk:saved'), [])
-        self.assertEqual(retired_names('_sc_save_proposal sc_fragments_1611 data-sc-edit-open'), [])
+        self.assertEqual(retired_names('_sc_save_proposal sc_fragments_1611 data-sc-edit-card-body'), [])
 
     def test_matcher_guard_pills_lazy(self):
         """Task 5370 (P4b): the guard, pills and lazy edit names."""
@@ -483,7 +526,7 @@ class TestPkRetiredNames(TransactionCase):
                          ['bemade_sports_clinic.sc_status_pill_select'])
         self.assertEqual(retired_names('from "@bemade_sports_clinic/js/sc_form_guard";'),
                          ['@bemade_sports_clinic/js/sc_form_guard'])
-        self.assertEqual(retired_names('<template data-sc-lazy-edit="1"/> data-sc-lazy-url data-sc-form'),
+        self.assertEqual(retired_names('<template data-sc-lazy-edit="1"/> data-sc-lazy-urls data-sc-form'),
                          ['data-sc-lazy-edit'])
         self.assertEqual(retired_names("'sc-pill-%s' % key"), ['sc-pill-'])
         self.assertEqual(retired_names('data-pk-guard data-pk-pill-select pk:pill-action o_pk_guard_reason'), [])
@@ -509,6 +552,37 @@ class TestPkRetiredNames(TransactionCase):
         self.assertEqual(retired_names('sc_notification_x _sc_offer_undo_x'), [])
         self.assertEqual(retired_names('pk_notification data-pk-notify data-pk-undo-offer="injury" pk_notify_shown:v1'),
                          [])
+
+    def test_matcher_cards_sheets_tabs(self):
+        """Task 5381 (P4c2): longest names first, every form."""
+        self.assertEqual(retired_names('<button data-sc-edit-toggle="1" data-sc-edit-toggle-done="1">'),
+                         ['data-sc-edit-toggle', 'data-sc-edit-toggle-done'])
+        self.assertEqual(retired_names('<div data-sc-edit-card-body="1" data-sc-card-icons="1">'), [])
+        self.assertEqual(retired_names('[data-sc-edit-open]:not([data-sc-edit-open=""]) [data-sc-edit-open-on-load]'),
+                         ['data-sc-edit-open', 'data-sc-edit-open', 'data-sc-edit-open-on-load'])
+        self.assertEqual(retired_names('<nav data-sc-tabs="1"><a data-sc-tab="x" data-sc-tab-aliases="y">'),
+                         ['data-sc-tabs', 'data-sc-tab', 'data-sc-tab-aliases'])
+        self.assertEqual(retired_names('<section data-sc-tab-panel="x">'), ['data-sc-tab-panel'])
+        self.assertEqual(retired_names('card.dataset.scEditOpen; t.dataset.scTab; d.dataset.scLoaded'),
+                         ['dataset.scEditOpen', 'dataset.scTab', 'dataset.scLoaded'])
+        self.assertEqual(retired_names('o.dataset.scSheetOpen; o.dataset.scSheetUrl; d.dataset.scLazyFresh'),
+                         ['dataset.scSheetOpen', 'dataset.scSheetUrl', 'dataset.scLazyFresh'])
+        self.assertEqual(retired_names('t.dataset.scClampOpen; m.dataset.scDraftClear; r.dataset.scEditDoneLabel'),
+                         ['dataset.scClampOpen', 'dataset.scDraftClear', 'dataset.scEditDoneLabel'])
+        self.assertEqual(retired_names('<p data-sc-clamp="3"/><a data-sc-clamp-more="1"/>'),
+                         ['data-sc-clamp', 'data-sc-clamp-more'])
+        self.assertEqual(retired_names('<span t-att-data-sc-display="sc_display_key(r, f)" t-out="sc_display(r, f)"/>'),
+                         ['data-sc-display', 'sc_display_key', 'sc_display'])
+        self.assertEqual(retired_names('t-att-href="sc_contact_href(k, v)" class="o_sc_contact_link"'),
+                         ['o_sc_contact_link', 'sc_contact_href'])
+        self.assertEqual(retired_names('new CustomEvent("sc:edit-open")'), ['sc:edit-open'])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_sheet"'), ['bemade_sports_clinic.sc_sheet'])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_page_tabs" sc_sheet_id'),
+                         ['bemade_sports_clinic.sc_page_tabs'])
+        self.assertEqual(retired_names('data-sc-row-expand data-sc-lazy-url data-sc-draft-clear'),
+                         ['data-sc-row-expand', 'data-sc-lazy-url', 'data-sc-draft-clear'])
+        self.assertEqual(retired_names('data-sc-timesheet-id data-sc-ts-edit data-sc-created-injury data-sc-action'), [])
+        self.assertEqual(retired_names('data-pk-edit-toggle data-pk-tab pk:edit-open pk_display o_pk_contact_link'), [])
 
     def test_no_retired_name_left(self):
         hits = []

@@ -63,7 +63,7 @@ tours.add("sc_1652_card_pill", {
         },
         {
             content: "The popup is open, the card did not toggle, no navigation",
-            trigger: 'dialog[id^="sc_med_card_allergy_"][open] [data-sc-med-item] button[data-sc-edit-toggle]',
+            trigger: 'dialog[id^="sc_med_card_allergy_"][open] [data-sc-med-item] button[data-pk-edit-toggle]',
             run(helpers) {
                 assert(window.__sc1652NoReload === "1", "the tap navigated");
                 const pill = document.querySelector(PILL);
@@ -74,7 +74,7 @@ tours.add("sc_1652_card_pill", {
         },
         {
             content: "Turn off « Risque vital » (task 1726: a switch — tap its row)",
-            trigger: 'dialog[id^="sc_med_card_allergy_"][open] [data-sc-med-item] [data-sc-edit-view="edit"]:not([hidden]) label.o_pk_switch:has(input[data-sc-med-item-field="life_threatening"])',
+            trigger: 'dialog[id^="sc_med_card_allergy_"][open] [data-sc-med-item] [data-pk-edit-view="edit"]:not([hidden]) label.o_pk_switch:has(input[data-sc-med-item-field="life_threatening"])',
             run: "click",
         },
         {

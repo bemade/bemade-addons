@@ -81,7 +81,7 @@ function checkBusy(form) {
     assert(form.getAttribute("aria-busy") === "true", "no aria-busy");
     assert(visible(submit.querySelector(".o_pk_btn_busy")), "no « Uploading… » label");
     assert(!visible(submit.querySelector(".o_pk_btn_idle")), "the idle label still shows");
-    const cancel = form.querySelector("button[data-sc-sheet-close]");
+    const cancel = form.querySelector("button[data-pk-sheet-close]");
     assert(!cancel || cancel.disabled, "Cancel stays enabled while sending");
 }
 
@@ -89,7 +89,7 @@ tours.add("sc_1644_player_tab", {
     steps: () => [
         {
             content: "« + Ajouter » of the Documents list opens the sheet",
-            trigger: '.o_pk_list_header button.o_pk_list_add[data-sc-sheet-open="sc_documents_upload"]',
+            trigger: '.o_pk_list_header button.o_pk_list_add[data-pk-sheet-open="sc_documents_upload"]',
             run: "click",
         },
         {
@@ -111,7 +111,7 @@ tours.add("sc_1644_player_tab", {
         },
         {
             content: "The documents are listed",
-            trigger: '.o_pk_app section[data-sc-tab-panel="documents"]:contains("Synthetic 1644 6.pdf")',
+            trigger: '.o_pk_app section[data-pk-tab-panel="documents"]:contains("Synthetic 1644 6.pdf")',
         },
     ],
 });

@@ -41,7 +41,7 @@
                 <dl t-if="state.selected.lines.length" class="o_pk_kv">
                     <t t-foreach="state.selected.lines" t-as="line" t-key="line.key">
                         <dt t-esc="line.label"/>
-                        <dd t-if="line.href"><a class="o_sc_contact_link" t-att-href="line.href" t-att-data-sc-detail-link="line.key" t-esc="line.value"/></dd>
+                        <dd t-if="line.href"><a class="o_pk_contact_link" t-att-href="line.href" t-att-data-sc-detail-link="line.key" t-esc="line.value"/></dd>
                         <dd t-else="" t-esc="line.value"/>
                     </t>
                 </dl>

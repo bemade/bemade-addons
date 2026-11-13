@@ -41,7 +41,7 @@ class TestBookingsShell(BookingsShellCommon):
         self.authenticate('bk.tp@example.com', 'bk-tp-pass')
         _text, tree = self._get('/my/bookings')
         self.assertIsNotNone(self._shell(tree))
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'),
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'),
                          ['upcoming', 'past', 'all', 'calendar'])
         ids = [int(x) for x in tree.xpath('//*[@data-sc-booking-id]/@data-sc-booking-id')]
         self.assertEqual(ids, [self.booking_soon.id])

@@ -68,7 +68,7 @@ class TestAppShellEvents1540(Events1540Common):
         self._login_tp()
         _text, tree = self._get('/my/events?no_default_dates=1')
         self.assertIsNotNone(self._shell(tree))
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]//a/@data-sc-tab'), ['upcoming', 'past', 'calendar'])
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'), ['upcoming', 'past', 'calendar'])
         ids = [int(x) for x in tree.xpath('//*[@data-sc-event-id]/@data-sc-event-id')]
         self.assertIn(self.event.id, ids)
         # Task 1607 (deliberate update): « + Ajouter » is in the list header.
@@ -113,9 +113,9 @@ class TestAppShellEvents1540(Events1540Common):
         self.assertTrue(form.xpath('.//input[@name="csrf_token"]'))
         # Task 1607 (deliberate update): « + Ajouter » in the timesheets list
         # header (was in the app bar).
-        self.assertEqual(tree.xpath('//div[contains(@class, "o_pk_list_header")]//button/@data-sc-sheet-open'),
+        self.assertEqual(tree.xpath('//div[contains(@class, "o_pk_list_header")]//button/@data-pk-sheet-open'),
                          ['sc_ts_add_sheet'])
-        self.assertFalse(tree.xpath('//header//button/@data-sc-sheet-open'))
+        self.assertFalse(tree.xpath('//header//button/@data-pk-sheet-open'))
         # The own timesheet is edited in place (pencil card, owner review 2026-10-11).
         self.assertTrue(tree.xpath('//*[@data-pk-edit-card="timesheet-%s"]' % self.timesheet.id))
 

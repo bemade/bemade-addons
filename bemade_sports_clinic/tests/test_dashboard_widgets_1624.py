@@ -178,7 +178,7 @@ class TestDashboardWidgets1624(Dashboard1624Common):
             _text, tree = self._get('/my/home')
         section = self._section(tree, 'recent_changes')
         self.assertEqual(set(self._player_ids(section)), set(changed.ids))
-        detail = section.xpath('.//*[@data-sc-player-id="%s"]//*[@data-sc-row-detail]/@data-sc-lazy-url'
+        detail = section.xpath('.//*[@data-sc-player-id="%s"]//*[@data-sc-row-detail]/@data-pk-lazy-url'
                                % self.yellow.id)[0]
         self.assertIn('/my/player/%s/recent-changes?detail=1' % self.yellow.id, detail)
         self.assertTrue(section.xpath('.//*[@data-sc-player-id="%s"]//a[@data-sc-row-link]' % self.yellow.id))

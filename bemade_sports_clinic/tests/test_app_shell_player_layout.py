@@ -46,11 +46,11 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
 
     @staticmethod
     def _tabs(tree):
-        return tree.xpath('//nav[@data-sc-tabs]/a/@data-sc-tab')
+        return tree.xpath('//nav[@data-pk-tabs]/a/@data-pk-tab')
 
     @staticmethod
     def _active(tree):
-        return tree.xpath('//nav[@data-sc-tabs]/a[@aria-selected="true"]/@data-sc-tab')
+        return tree.xpath('//nav[@data-pk-tabs]/a[@aria-selected="true"]/@data-pk-tab')
 
     @staticmethod
     def _owl(node):
@@ -67,14 +67,14 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         self.assertNotIn('contacts', tabs)
         self.assertEqual(tabs[:2], ['injuries', 'info'])
         self.assertEqual(self._active(tree), ['injuries'])
-        self.assertFalse(tree.xpath('//section[@data-sc-tab-panel="overview"]'))
-        self.assertFalse(tree.xpath('//section[@data-sc-tab-panel="contacts"]'))
+        self.assertFalse(tree.xpath('//section[@data-pk-tab-panel="overview"]'))
+        self.assertFalse(tree.xpath('//section[@data-pk-tab-panel="contacts"]'))
         _text, tree = self._get(self._url(tab='overview'))
         self.assertEqual(self._active(tree), ['injuries'])
         _text, tree = self._get(self._url(tab='contacts'))
         self.assertEqual(self._active(tree), ['info'])
-        info = tree.xpath('//nav[@data-sc-tabs]/a[@data-sc-tab="info"]')[0]
-        self.assertIn('contacts', (info.get('data-sc-tab-aliases') or '').split())
+        info = tree.xpath('//nav[@data-pk-tabs]/a[@data-pk-tab="info"]')[0]
+        self.assertIn('contacts', (info.get('data-pk-tab-aliases') or '').split())
 
     # -- UC-PL2 ----------------------------------------------------------
     def test_header_status_selector(self):
@@ -84,10 +84,10 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         self.assertEqual(hero.get('data-pk-edit-card'), 'player-header')
         # Task 1736 (deliberate update): the pencil sits in the hero's top-bar
         # icon group (with the ★), no longer a direct child of the card.
-        self.assertEqual(len(hero.xpath('.//*[@data-sc-card-icons]/button[@data-sc-edit-toggle]')), 1)
-        self.assertEqual(len(hero.xpath('.//button[@data-sc-edit-toggle]')), 1)
-        read = hero.xpath('./*[@data-sc-edit-view="read"]')[0]
-        edit = hero.xpath('./*[@data-sc-edit-view="edit"]')[0]
+        self.assertEqual(len(hero.xpath('.//*[@data-sc-card-icons]/button[@data-pk-edit-toggle]')), 1)
+        self.assertEqual(len(hero.xpath('.//button[@data-pk-edit-toggle]')), 1)
+        read = hero.xpath('./*[@data-pk-edit-view="read"]')[0]
+        edit = hero.xpath('./*[@data-pk-edit-view="edit"]')[0]
         self.assertEqual(edit.get('hidden'), 'hidden')
         # Task 1627: the status pills are live dropdowns (no stage chip, no
         # selector behind the pencil). Task 1753 (deliberate update): they
@@ -106,8 +106,8 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         hero = tree.xpath('//*[@data-pk-section="player.hero"]')[0]
         self.assertNotIn('sc_status', self._owl(hero))
         self.assertIsNone(hero.get('data-pk-edit-card'))
-        self.assertFalse(hero.xpath('.//*[@data-sc-edit-toggle]'))
-        self.assertFalse(hero.xpath('.//*[@data-sc-edit-view="edit"]'))
+        self.assertFalse(hero.xpath('.//*[@data-pk-edit-toggle]'))
+        self.assertFalse(hero.xpath('.//*[@data-pk-edit-view="edit"]'))
         self.assertTrue(hero.xpath('.//*[@data-pk-section="player.status.readonly"]'))
         self.assertFalse(hero.xpath('.//*[@data-pk-section="player.status.readonly"]//button'))
 
@@ -121,15 +121,15 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         label, link = title.xpath('./*')
         self.assertEqual(label.text_content().strip(), 'Training Recommendation')
         self.assertTrue({'o_pk_section_more', 'o_pk_link_btn'} <= set(link.get('class').split()))
-        self.assertEqual(section.xpath('.//*[@data-sc-sheet-open="sc_training_history_sheet"]'), [link])
+        self.assertEqual(section.xpath('.//*[@data-pk-sheet-open="sc_training_history_sheet"]'), [link])
 
     # -- UC-PL3 / UC-PL4 -------------------------------------------------
     def test_info_cards(self):
         self._login_tp()
         _text, tree = self._get(self._url(tab='info'))
-        panel = tree.xpath('//section[@data-sc-tab-panel="info"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="info"]')[0]
         identity = panel.xpath('.//*[@data-pk-edit-card="identity"]')[0]
-        read = ' '.join(identity.xpath('.//*[@data-sc-edit-view="read"]')[0].text_content().split())
+        read = ' '.join(identity.xpath('.//*[@data-pk-edit-view="read"]')[0].text_content().split())
         self.assertIn('Date of birth', read)
         self.assertIn('Age', read)
         self.assertIn('date_of_birth', self._owl(identity))
@@ -143,7 +143,7 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         training = tree.xpath('//*[@data-pk-section="player.training"]')
         self.assertEqual(len(training), 1)
         hero = tree.xpath('//*[@data-pk-section="player.hero"]')[0]
-        read = hero.xpath('./*[@data-sc-edit-view="read"]')[0]
+        read = hero.xpath('./*[@data-pk-edit-view="read"]')[0]
         self.assertIs(training[0].getparent(), read)
         # Task 1611: the banner sits in its always-rendered read-fragment
         # holder (filled / cleared in place).
@@ -164,7 +164,7 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         # Review fixes 2026-10-18: the therapist edits it in the header's
         # edit view (live, with its History). Task 1629: the same title +
         # link heads it; the island draws no second link.
-        edit = hero.xpath('./*[@data-sc-edit-view="edit"]')[0]
+        edit = hero.xpath('./*[@data-pk-edit-view="edit"]')[0]
         training_edit = edit.xpath('./*[@data-pk-section="player.training.edit"]')[0]
         self.assertIn('training_recommendation', self._owl(training_edit))
         self._assert_training_title(training_edit)
@@ -172,8 +172,8 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         self._login_coach()
         _text, tree = self._get(self._url(tab='info'))
         self.assertFalse(tree.xpath(
-            '//section[@data-sc-tab-panel="info"]//*[@data-pk-section="player.training"]'))
-        training = tree.xpath('//*[@data-pk-section="player.hero"]/*[@data-sc-edit-view="read"]'
+            '//section[@data-pk-tab-panel="info"]//*[@data-pk-section="player.training"]'))
+        training = tree.xpath('//*[@data-pk-section="player.hero"]/*[@data-pk-edit-view="read"]'
                               '/*[@data-pk-section="player.training"]')[0]
         self.assertIn('Synthetic bike', training.text_content())
         self.assertNotIn('training_recommendation', self._owl(training))
@@ -184,7 +184,7 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         for login in (self._login_tp, self._login_coach):
             login()
             _text, tree = self._get(self._url(tab='info'))
-            panel = tree.xpath('//section[@data-sc-tab-panel="info"]')[0]
+            panel = tree.xpath('//section[@data-pk-tab-panel="info"]')[0]
             self.assertTrue(panel.xpath('.//*[@data-pk-section="player.contacts"]'))
             form = panel.xpath('.//form[@data-sc-form="contact.add"]')[0]
             back = form.xpath('.//input[@name="return_url"]/@value')[0]

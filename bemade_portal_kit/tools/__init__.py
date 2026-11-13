@@ -29,3 +29,5 @@ from .save import (
 from .activity import pk_activity_save_spec
 # Task 5370 (P4b): the form guard.
 from .guard import PK_GUARD_HEADER
+# Task 5381 (P4c2): the read view's render helpers.
+from .display import pk_contact_href, pk_display, pk_display_key

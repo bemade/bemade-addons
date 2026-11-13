@@ -106,7 +106,7 @@ function anchorOf(target) {
     if (summary && summary.parentElement && summary.parentElement.tagName === "DETAILS") {
         return summary;
     }
-    return target.closest("[data-sc-row-expand]");
+    return target.closest("[data-pk-row-expand]");
 }
 
 // Capture phase: measured BEFORE the toggle changes anything.

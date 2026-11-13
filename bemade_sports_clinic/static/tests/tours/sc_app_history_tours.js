@@ -37,7 +37,7 @@ tours.add("sc_1581_announcement_fresh", {
         {
             content: "« History » in the announcement header; mark the page to detect a reload",
             trigger:
-                '[data-pk-section="team.announcement.area"] .o_pk_section_header .o_pk_link_btn[data-sc-sheet-open="sc_announcement_history_sheet"]',
+                '[data-pk-section="team.announcement.area"] .o_pk_section_header .o_pk_link_btn[data-pk-sheet-open="sc_announcement_history_sheet"]',
             run(helpers) {
                 window.__sc1581NoReload = true;
                 return helpers.click();
@@ -53,7 +53,7 @@ tours.add("sc_1581_announcement_fresh", {
         },
         {
             content: "Close the sheet",
-            trigger: "dialog#sc_announcement_history_sheet[open] [data-sc-sheet-close]",
+            trigger: "dialog#sc_announcement_history_sheet[open] [data-pk-sheet-close]",
             run: "click",
         },
         {
@@ -74,7 +74,7 @@ tours.add("sc_1581_announcement_fresh", {
         },
         {
             content: "Open the history again",
-            trigger: '.o_pk_link_btn[data-sc-sheet-open="sc_announcement_history_sheet"]',
+            trigger: '.o_pk_link_btn[data-pk-sheet-open="sc_announcement_history_sheet"]',
             run: "click",
         },
         {
@@ -95,7 +95,7 @@ tours.add("sc_1581_notes_fresh", {
         {
             content: "« History » next to the External Notes label",
             trigger:
-                `${NOTES_CARD} .o_pk_edit_card_head .o_pk_link_btn[data-sc-sheet-open^="sc_note_history_sheet_"]`,
+                `${NOTES_CARD} .o_pk_edit_card_head .o_pk_link_btn[data-pk-sheet-open^="sc_note_history_sheet_"]`,
             run(helpers) {
                 window.__sc1581NoReload = true;
                 return helpers.click();
@@ -124,12 +124,12 @@ tours.add("sc_1581_notes_fresh", {
         },
         {
             content: "Close the sheet",
-            trigger: `${NOTES_SHEET}[open] [data-sc-sheet-close]`,
+            trigger: `${NOTES_SHEET}[open] [data-pk-sheet-close]`,
             run: "click",
         },
         {
             content: "Edit the notes card (pencil)",
-            trigger: `${NOTES_CARD} [data-pk-edit-card="injury-notes-external"] button[data-sc-edit-toggle]`,
+            trigger: `${NOTES_CARD} [data-pk-edit-card="injury-notes-external"] button[data-pk-edit-toggle]`,
             run: "click",
         },
         {
@@ -151,7 +151,7 @@ tours.add("sc_1581_notes_fresh", {
         {
             content: "Open the history again",
             trigger:
-                `${NOTES_CARD} .o_pk_edit_card_head .o_pk_link_btn[data-sc-sheet-open^="sc_note_history_sheet_"]`,
+                `${NOTES_CARD} .o_pk_edit_card_head .o_pk_link_btn[data-pk-sheet-open^="sc_note_history_sheet_"]`,
             run: "click",
         },
         {

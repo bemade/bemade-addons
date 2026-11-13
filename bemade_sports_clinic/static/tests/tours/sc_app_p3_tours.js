@@ -56,7 +56,7 @@ tours.add("sc_1540_clinic", {
         },
         {
             content: "File shown, note form docked open",
-            trigger: 'section[data-sc-tab-panel="dossier"]:not([hidden]) details[data-pk-section="notes.add"][open] textarea',
+            trigger: 'section[data-pk-tab-panel="dossier"]:not([hidden]) details[data-pk-section="notes.add"][open] textarea',
             run: `edit ${NOTE}`,
         },
         {
@@ -84,7 +84,7 @@ tours.add("sc_1540_clinic", {
         },
         {
             content: "The card's read view is shown, with its pencil",
-            trigger: '[data-pk-section="clinic.dossier.injuries"] details[data-pk-edit-card="injury"][open] button[data-sc-edit-toggle]',
+            trigger: '[data-pk-section="clinic.dossier.injuries"] details[data-pk-edit-card="injury"][open] button[data-pk-edit-toggle]',
         },
     ],
 });
@@ -100,7 +100,7 @@ tours.add("sc_1540_event_timesheet", {
         },
         {
             content: "« + Ajouter » (Add My Timesheet) in the timesheets list header",
-            trigger: '[data-pk-section="event.timesheets"] .o_pk_list_header button.o_pk_list_add[data-sc-sheet-open="sc_ts_add_sheet"]',
+            trigger: '[data-pk-section="event.timesheets"] .o_pk_list_header button.o_pk_list_add[data-pk-sheet-open="sc_ts_add_sheet"]',
             run: "click",
         },
         {
@@ -193,7 +193,7 @@ tours.add("sc_1587_note_date_injury", {
     steps: () => [
         {
             content: "Open the note's pencil",
-            trigger: `${NOTE_CARD} button[data-sc-edit-toggle]`,
+            trigger: `${NOTE_CARD} button[data-pk-edit-toggle]`,
             run: "click",
         },
         {

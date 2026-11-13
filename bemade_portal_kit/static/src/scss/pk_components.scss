@@ -1738,3 +1738,33 @@ body.o_pk_app_body > #wrapwrap {
         color: inherit;
     }
 }
+
+// Task 5381 (P4c2): the edit cards (pk_edit_cards.js), the contact link of a
+// display row (pk_display_row) and the clamped texts (pk_clamp.js).
+.o_pk_app {
+    // Read view by default; the hidden view stays hidden whatever its own
+    // display.
+    .o_pk_edit_card [data-pk-edit-view][hidden] {
+        display: none !important;
+    }
+
+    // A tap-to-call / tap-to-email link; an empty value (no href) reads as
+    // plain text.
+    a.o_pk_contact_link[href] {
+        color: var(--pk-accent);
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    // A text clamped to N lines (1 to 6) until « See more ».
+    @for $lines from 1 through 6 {
+        [data-pk-clamp="#{$lines}"]:not([data-pk-clamp-open]) {
+            display: -webkit-box;
+            -webkit-line-clamp: $lines;
+            line-clamp: $lines;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    }
+}

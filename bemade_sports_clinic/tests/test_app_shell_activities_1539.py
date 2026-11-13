@@ -60,12 +60,12 @@ class TestAppShellActivities1539(AppShellCommon):
         self._login_tp()
         text, tree = self._get('/my/activities')
         self.assertIsNotNone(self._shell(tree))
-        self.assertEqual(tree.xpath('//nav[@data-sc-tabs]/a/@data-sc-tab'),
+        self.assertEqual(tree.xpath('//nav[@data-pk-tabs]/a/@data-pk-tab'),
                          ['all', 'overdue', 'today', 'planned'])
-        overdue = tree.xpath('//section[@data-sc-tab-panel="overdue"]//*[@data-sc-activity-row]'
+        overdue = tree.xpath('//section[@data-pk-tab-panel="overdue"]//*[@data-sc-activity-row]'
                              '/@data-sc-activity-row')
         self.assertEqual(overdue, [str(self.act_player.id)])
-        states = tree.xpath('//section[@data-sc-tab-panel="all"]//*[@data-sc-activity-row="%s"]'
+        states = tree.xpath('//section[@data-pk-tab-panel="all"]//*[@data-sc-activity-row="%s"]'
                             '/@data-sc-activity-state' % self.act_team.id)
         self.assertEqual(states, ['today'])
         # Task 1736 r1 (deliberate update): no « Reschedule » sheet — the
@@ -84,7 +84,7 @@ class TestAppShellActivities1539(AppShellCommon):
                                    % self.act_team.id))
         # ?tab= deep link.
         _text, tree = self._get('/my/activities?tab=planned')
-        self.assertIsNone(tree.xpath('//section[@data-sc-tab-panel="planned"]')[0].get('hidden'))
+        self.assertIsNone(tree.xpath('//section[@data-pk-tab-panel="planned"]')[0].get('hidden'))
 
     def test_cancel_from_sheet_returns(self):
         self._switch(True)
@@ -147,11 +147,11 @@ class TestAppShellActivities1539(AppShellCommon):
         # assigned to the coach.
         self._login_coach()
         _text, tree = self._get('/my/team?team_id=%s&tab=activities' % self.team_a.id)
-        panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="activities"]')[0]
         self.assertFalse(panel.xpath('.//*[@data-sc-activity-row="%s"]' % self.act_team.id))
         self.act_team.user_id = self.coach
         _text, tree = self._get('/my/team?team_id=%s&tab=activities' % self.team_a.id)
-        panel = tree.xpath('//section[@data-sc-tab-panel="activities"]')[0]
+        panel = tree.xpath('//section[@data-pk-tab-panel="activities"]')[0]
         self.assertFalse(panel.xpath('.//*[contains(@class, "o_pk_legacy")]'))
         self.assertTrue(panel.xpath('.//*[@data-sc-activity-row="%s"]' % self.act_team.id))
         form = panel.xpath('.//details[@data-pk-section="activity.add"]//form')[0]

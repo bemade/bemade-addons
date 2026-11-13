@@ -36,7 +36,7 @@ tours.add("sc_1591_calendar_filters", {
     steps: () => [
         {
             content: "The list is filtered on « game » and PC Team A; open the calendar",
-            trigger: 'nav[data-sc-tabs] a[data-sc-tab="calendar"]',
+            trigger: 'nav[data-pk-tabs] a[data-pk-tab="calendar"]',
             run() {
                 assert(selectedTeam() === "PC Team A", `list team: ${selectedTeam()}`);
                 assert(activeType() === "game", `list type: ${activeType()}`);
@@ -84,7 +84,7 @@ tours.add("sc_1591_calendar_filters", {
         },
         {
             content: "Back to the list",
-            trigger: 'nav[data-sc-tabs] a[data-sc-tab="upcoming"]',
+            trigger: 'nav[data-pk-tabs] a[data-pk-tab="upcoming"]',
             run: "click",
             expectUnloadPage: true,
         },

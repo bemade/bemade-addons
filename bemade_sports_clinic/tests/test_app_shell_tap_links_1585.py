@@ -5,7 +5,7 @@ Acceptance criteria:
 
 * UC-T1 Player Contact Information card: the email reads as a ``mailto:``
   link and the phone as a ``tel:`` link (the href keeps only ``+`` and the
-  digits); each link carries the ``data-sc-display`` hook (a pencil save
+  digits); each link carries the ``data-pk-display`` hook (a pencil save
   updates its text) and ``data-pk-display-href`` (the kind, so the save
   updates the href too — browser half: the ``sc_1585_tap_links`` tour).
 * UC-T2 Emergency contact cards: the mobile is a ``tel:`` link, the email a
@@ -23,7 +23,7 @@ Acceptance criteria:
 from odoo import Command, fields
 from odoo.tests import tagged
 
-from odoo.addons.bemade_sports_clinic.controllers.app_shell import sc_contact_href
+from odoo.addons.bemade_portal_kit.tools import pk_contact_href
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
 
@@ -45,7 +45,7 @@ class TapLinksCommon(AppShellCommon):
 
     @staticmethod
     def _display(tree, record, field):
-        return tree.xpath('//*[@data-sc-display="%s:%s:%s"]' % (record._name, record.id, field))
+        return tree.xpath('//*[@data-pk-display="%s:%s:%s"]' % (record._name, record.id, field))
 
 
 @tagged('post_install', '-at_install')
@@ -57,11 +57,11 @@ class TestTapLinks(TapLinksCommon):
 
     # -- UC-T5 -----------------------------------------------------------
     def test_href_helper(self):
-        self.assertEqual(sc_contact_href('tel', '+1 (555) 010-0123'), 'tel:+15550100123')
-        self.assertEqual(sc_contact_href('tel', '555.010.0456'), 'tel:5550100456')
-        self.assertEqual(sc_contact_href('mailto', ' a.b@example.com '), 'mailto:a.b@example.com')
+        self.assertEqual(pk_contact_href('tel', '+1 (555) 010-0123'), 'tel:+15550100123')
+        self.assertEqual(pk_contact_href('tel', '555.010.0456'), 'tel:5550100456')
+        self.assertEqual(pk_contact_href('mailto', ' a.b@example.com '), 'mailto:a.b@example.com')
         for kind, value in (('tel', ''), ('tel', 'n/a'), ('mailto', ''), ('mailto', None), ('tel', False)):
-            self.assertIsNone(sc_contact_href(kind, value), (kind, value))
+            self.assertIsNone(pk_contact_href(kind, value), (kind, value))
 
     # -- UC-T1 -----------------------------------------------------------
     def test_player_contact_links(self):
@@ -109,7 +109,7 @@ class TestTapLinks(TapLinksCommon):
 
     def test_save_answers_display_for_links(self):
         """The pencil save's ``display`` is the raw value the browser turns
-        into the new href (sc_app_ui.js)."""
+        into the new href (the kit's pk_edit_cards.js)."""
         self._login_tp()
         self.contact.invalidate_recordset()
         resp = self.url_open('/my/app/save/%s/%s' % (self.contact._name, self.contact.id), data={

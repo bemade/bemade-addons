@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.8.0',
+    'version': '19.0.1.9.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -19,7 +19,8 @@ Version 1.0 provides the four registries of the shell; version 1.1 adds the
 shell's generic scripts (below), later versions its styles and first
 templates; version 1.6 its save engine and screen refresh; version 1.7 its
 form guard, status pills and lazy edit views; version 1.8 its toast, session
-notification and undo.
+notification and undo; version 1.9 its edit cards, sheets, tabs, lazy load
+and clamps.
 
 Registries
 ----------
@@ -291,8 +292,54 @@ The pk_fetch errors and offline / back online are toasts too.
   action submits it. Optional hooks per kind in the JS registry
   ``pk_undo_offers``: ``{rewriteUrl(url, form), after({form, root})}``.
 
+Edit cards, sheets, tabs, lazy load and clamps
+----------------------------------------------
+Version 1.9 (scripts ``pk_edit_cards``, ``pk_sheets``, ``pk_tabs``,
+``pk_clamp`` and ``pk_shell``; templates ``pk_edit_card_head``,
+``pk_display_row``, ``pk_sheet`` and ``pk_page_tabs``, adopted from the
+first consumer like the 1.5 templates):
+
+* Edit cards: ``[data-pk-edit-card]`` with a read view
+  (``data-pk-edit-view="read"``) and an edit view (``="edit"``). ONE pencil
+  (``data-pk-edit-toggle``) opens it; while open (``data-pk-edit-open``)
+  the pencil is a ✓ (``o_pk_edit_toggle_done``,
+  ``data-pk-edit-toggle-done``; its label is ``data-pk-edit-done-label`` on
+  the shell root, else the kit's) that closes it like « Done »
+  (``data-pk-edit-done``). Edit-only controls: ``data-pk-edit-only``; a
+  control outside its card names it with ``data-pk-edit-for``.
+  ``data-pk-edit-open-on-load`` opens a card on load; the event
+  ``pk:edit-open`` from inside a card opens it. Export:
+  ``setCardEditing(card, editing)``. A link to ``#<details id>`` opens that
+  ``<details>``.
+* Read views: ``[data-pk-display="model:id:field"]`` takes a save's display
+  in place (``pk:saved``); ``data-pk-display-hide-empty`` hides its holder
+  while empty. Render helpers (``tools/display.py``, pure):
+  ``pk_display(record, field)``, ``pk_display_key(record, field)``,
+  ``pk_contact_href(kind, value)``; a consumer passes them to its templates
+  under these names (``pk_display_row`` needs them).
+* Sheets (``pk_sheet``: ``sheet_id``, ``title``, ``lazy_url``,
+  ``lazy_fresh``, ``open_on_load``, ``head_extra``): openers
+  ``data-pk-sheet-open="<id>"`` (``data-pk-sheet-url``: that body, fresh),
+  ``data-pk-sheet-close``, ``data-pk-sheet-refetch`` (a link inside that
+  reloads the body), ``data-pk-sheet-open-on-load``, a click on the
+  backdrop closes. Export: ``openSheet(id)``.
+* Lazy load: ``data-pk-lazy-url`` (a sheet, a ``<details>`` or a row's
+  region), ``data-pk-lazy-fresh``, ``data-pk-lazy-filled`` (content without
+  a link), ``data-pk-loaded``; a row's « Details »:
+  ``data-pk-row-expand="<region id>"`` (``o_pk_row_open`` on its
+  ``.o_pk_row_group``).
+* Tabs (``pk_page_tabs``: ``tabs``, ``active``): ``data-pk-tabs``,
+  ``data-pk-tab``, ``data-pk-tab-aliases``, ``data-pk-tab-panel``; ``?tab=``
+  kept in the address, a ``#hash`` (or alias) opens its tab on load.
+* Clamps: ``data-pk-clamp="N"`` (1 to 6 lines, the kit's CSS),
+  ``data-pk-clamp-more``, ``-clamp-less``, ``-clamp-sep``, ``-clamp-meta``,
+  ``-clamp-open``, ``-clamp-ready``.
+* Shell boot (``pk_shell``): foreign drafts purged, ``data-pk-draft-clear``
+  drops a prefix's drafts on load, the logout link clears every draft, the
+  test database ribbon's height (``--pk-ribbon-h``).
+
 Style guide
------------
+------------
 ``/pk/styleguide`` (internal users) shows every generic component with the
 neutral slots; ``?theme=dark`` shows the dark theme.
 """,
@@ -339,6 +386,12 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/src/js/pk_lazy_edit.js',
             # Task 5371 (P4c1): the toast, the notification and the undo.
             'bemade_portal_kit/static/src/js/pk_toast.js',
+            # Task 5381 (P4c2): edit cards, sheets, tabs, clamps, boot.
+            'bemade_portal_kit/static/src/js/pk_edit_cards.js',
+            'bemade_portal_kit/static/src/js/pk_sheets.js',
+            'bemade_portal_kit/static/src/js/pk_tabs.js',
+            'bemade_portal_kit/static/src/js/pk_clamp.js',
+            'bemade_portal_kit/static/src/js/pk_shell.js',
         ],
         # The hoot unit tests (tests/test_pk_hoot.py runs them headless).
         # The modules they test are only DEFINED in the test page and run
@@ -357,6 +410,13 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/src/js/pk_status_pills.js',
             'bemade_portal_kit/static/src/js/pk_lazy_edit.js',
             'bemade_portal_kit/static/src/js/pk_toast.js',
+            'bemade_portal_kit/static/src/js/pk_contact_href.js',
+            'bemade_portal_kit/static/src/js/pk_edit_anchor.js',
+            'bemade_portal_kit/static/src/js/pk_edit_cards.js',
+            'bemade_portal_kit/static/src/js/pk_sheets.js',
+            'bemade_portal_kit/static/src/js/pk_tabs.js',
+            'bemade_portal_kit/static/src/js/pk_clamp.js',
+            'bemade_portal_kit/static/src/js/pk_shell.js',
         ],
         'web.assets_unit_tests': [
             'bemade_portal_kit/static/tests/**/*',

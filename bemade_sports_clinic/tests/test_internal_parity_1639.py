@@ -146,7 +146,7 @@ class TestInternalParity1639(Parity1639Common):
             _text, tree = self._get('/my/players')
             self.assertTrue(tree.xpath('//*[@data-pk-pill-select]'), who)
             _text, tree = self._get('/my/player?player_id=%s' % self.player.id)
-            self.assertTrue(tree.xpath('//nav[@data-sc-tabs]/a[@data-sc-tab="activities"]'), who)
+            self.assertTrue(tree.xpath('//nav[@data-pk-tabs]/a[@data-pk-tab="activities"]'), who)
             # #1604 quick verify / resolve (#1603 proposal path).
             injury = self.env['sports.patient.injury'].create({
                 'patient_id': self.player.id, 'diagnosis': 'P39 %s' % who})

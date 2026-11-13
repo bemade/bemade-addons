@@ -197,7 +197,7 @@ class TestRetourPrevuApp1603(RetourPrevuFixtures, FragmentsCommon):
         self._login_tp()
         _text, tree = self._get(self._url())
         # Review fixes 2026-10-18: in the header's edit view (its pencil).
-        section = tree.xpath('//*[@data-pk-section="player.hero"]/*[@data-sc-edit-view="edit"]'
+        section = tree.xpath('//*[@data-pk-section="player.hero"]/*[@data-pk-edit-view="edit"]'
                              '/*[@data-pk-section="player.predicted_return"]')
         self.assertEqual(len(section), 1)
         props = [json.loads(node.get('props')) for node in section[0].xpath('.//owl-component')]

@@ -12,7 +12,7 @@
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-set="sc_title" t-value="sc_nav_labels['bookings']"/>
             <t t-set="sc_active_nav" t-value="'bookings'"/>
-            <t t-call="bemade_sports_clinic.sc_page_tabs">
+            <t t-call="bemade_portal_kit.pk_page_tabs">
                 <t t-set="tabs" t-value="sc_booking_segments"/>
                 <t t-set="active" t-value="filterby"/>
             </t>
@@ -69,8 +69,8 @@
                             <span class="o_pk_row_subtitle" t-out="row['subtitle']"/>
                             <!-- Task 1585: the client's phone / email, tap to call / write. -->
                             <span t-if="row['phone'] or row['email']" class="o_sc_row_contacts">
-                                <a t-if="row['phone']" class="o_sc_contact_link" t-att-href="row['phone_href']" data-sc-booking-link="phone" t-out="row['phone']"/>
-                                <a t-if="row['email']" class="o_sc_contact_link" t-att-href="row['email_href']" data-sc-booking-link="email" t-out="row['email']"/>
+                                <a t-if="row['phone']" class="o_pk_contact_link" t-att-href="row['phone_href']" data-sc-booking-link="phone" t-out="row['phone']"/>
+                                <a t-if="row['email']" class="o_pk_contact_link" t-att-href="row['email_href']" data-sc-booking-link="email" t-out="row['email']"/>
                             </span>
                             <!-- Task 1732: the booking form's answers (question → answer). -->
                             <dl t-if="row['answers']" class="o_pk_kv o_sc_booking_answers" data-sc-booking-answers="1"
@@ -114,7 +114,7 @@
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-set="sc_title" t-value="sc_nav_labels['bookings']"/>
             <t t-set="sc_active_nav" t-value="'bookings'"/>
-            <t t-call="bemade_sports_clinic.sc_page_tabs">
+            <t t-call="bemade_portal_kit.pk_page_tabs">
                 <t t-set="tabs" t-value="sc_booking_segments"/>
                 <t t-set="active" t-value="'calendar'"/>
             </t>

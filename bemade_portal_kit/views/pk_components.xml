@@ -233,4 +233,100 @@
         </t>
     </template>
 
+
+    <!--
+        Task 5381 (P4c2) — an inline-editable card's head (pk_edit_cards.js):
+        the title and ONE pencil (data-pk-edit-toggle) that opens the card's
+        edit view (data-pk-edit-view="edit"); while the card is open the
+        pencil is a ✓ that closes it. Variables: title, editable.
+    -->
+    <template id="pk_edit_card_head" name="Portal kit: edit card head">
+        <div class="o_pk_edit_card_head">
+            <h3 class="o_pk_edit_card_title" t-out="title"/>
+            <button t-if="editable" type="button" class="o_pk_icon_btn" data-pk-edit-toggle="1"
+                    aria-expanded="false" aria-label="Edit" title="Edit">
+                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'edit'"/></t>
+            </button>
+        </div>
+    </template>
+
+    <!-- Task 5381 (P4c2) — a read-view row (<dt> + <dd>, in a <dl>).
+         Variables: label, record, field; optional href_kind ('tel' /
+         'mailto'): the value is a tap-to-call / tap-to-email link (no href
+         while empty: « — » is not a link). data-pk-display (a save updates
+         the value in place, pk_edit_cards.js) and data-pk-display-href (the
+         href follows). The caller passes the helpers pk_display,
+         pk_display_key and pk_contact_href (tools/display.py). -->
+    <template id="pk_display_row" name="Portal kit: display row">
+        <dt t-out="label"/>
+        <dd>
+            <t t-if="href_kind">
+                <t t-set="pk_shown" t-value="pk_display(record, field)"/>
+                <a class="o_pk_contact_link" t-att-href="pk_contact_href(href_kind, pk_shown)"
+                   t-att-data-pk-display-href="href_kind"
+                   t-att-data-pk-display="pk_display_key(record, field)" t-out="pk_shown or '—'"/>
+            </t>
+            <span t-else="" t-att-data-pk-display="pk_display_key(record, field)" t-out="pk_display(record, field) or '—'"/>
+        </dd>
+    </template>
+
+    <!--
+        Task 5381 (P4c2) — a bottom sheet (phone) / centred dialog (laptop):
+        a native <dialog> opened by any [data-pk-sheet-open="<sheet_id>"]
+        control (pk_sheets.js). Variables: sheet_id, title; optional lazy_url
+        (the body is fetched on first open, a loading line until then),
+        lazy_fresh (fetched again on every open: a history the page can
+        change), open_on_load (opens on load), head_extra (markup next to the
+        title). Body (0) = the content (ignored with lazy_url).
+    -->
+    <template id="pk_sheet" name="Portal kit: sheet">
+        <dialog t-att-id="sheet_id" class="o_pk_sheet" t-att-aria-labelledby="'%s_title' % sheet_id"
+                t-att-data-pk-lazy-url="lazy_url or None"
+                t-att-data-pk-lazy-fresh="'1' if lazy_url and lazy_fresh else None"
+                t-att-data-pk-sheet-open-on-load="'1' if open_on_load else None">
+            <div class="o_pk_sheet_head">
+                <h2 class="o_pk_sheet_title" t-att-id="'%s_title' % sheet_id" t-out="title"/>
+                <t t-if="head_extra" t-out="head_extra"/>
+                <button type="button" class="o_pk_icon_btn o_pk_sheet_close" data-pk-sheet-close="1" aria-label="Close" title="Close">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'close'"/></t>
+                </button>
+            </div>
+            <div t-attf-class="o_pk_sheet_body #{'o_pk_legacy' if lazy_url else ''}">
+                <p t-if="lazy_url" class="o_pk_empty o_pk_lazy_loading">Loading…</p>
+                <t t-else="" t-out="0"/>
+            </div>
+        </dialog>
+    </template>
+
+    <!--
+        Task 5381 (P4c2) — segmented page tabs, deep-linkable (pk_tabs.js).
+        Variables: tabs = [(key, label, url[, aliases[, badge[, short]]])],
+        active (key). Every tab is a real link (the server renders the
+        active panel); the script switches the panels
+        (<section data-pk-tab-panel="key">) in place and keeps ?tab= in the
+        address. Optional items: aliases, the #fragment names that also open
+        the tab (space separated); badge, a count pill BEFORE the label
+        ({'count', 'tone' ('neutral' | 'red'), 'label' (its aria-label)},
+        None = no pill); short, a short label shown on a phone (the full one
+        stays the tab's title). Up to 5 tabs fit a phone's width; more scroll
+        sideways.
+    -->
+    <template id="pk_page_tabs" name="Portal kit: page tabs">
+        <nav t-attf-class="o_pk_segmented o_pk_segmented_full o_pk_page_tabs #{'o_pk_page_tabs_scroll' if len(tabs) &gt; 5 else ''}" role="tablist" data-pk-tabs="1">
+            <t t-foreach="tabs" t-as="tab">
+                <t t-set="pk_tab_badge" t-value="tab[4] if len(tab) &gt; 4 else None"/>
+                <t t-set="pk_tab_short" t-value="tab[5] if len(tab) &gt; 5 else None"/>
+                <a t-att-href="tab[2]" role="tab" t-att-data-pk-tab="tab[0]"
+                   t-att-data-pk-tab-aliases="tab[3] if len(tab) &gt; 3 and tab[3] else None"
+                   t-att-title="tab[1] if pk_tab_short else None"
+                   t-att-aria-selected="'true' if tab[0] == active else 'false'"
+                   t-att-aria-pressed="'true' if tab[0] == active else 'false'"><span t-if="pk_tab_badge"
+                        t-attf-class="o_pk_tab_badge o_pk_tab_badge_#{pk_tab_badge['tone']}" role="img"
+                        t-att-aria-label="pk_tab_badge['label']" t-att-title="pk_tab_badge['label']"
+                        t-out="pk_tab_badge['count']"/><span t-attf-class="o_pk_tab_label #{'o_pk_tab_label_long' if pk_tab_short else ''}" t-out="tab[1]"/><span
+                        t-if="pk_tab_short" class="o_pk_tab_label o_pk_tab_label_short" aria-hidden="true" t-out="pk_tab_short"/></a>
+            </t>
+        </nav>
+    </template>
+
 </odoo>
