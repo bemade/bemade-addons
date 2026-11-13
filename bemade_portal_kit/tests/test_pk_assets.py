@@ -23,6 +23,9 @@
 * task 5381 (P4c2): ``pk_edit_cards``, ``pk_sheets``, ``pk_tabs``,
   ``pk_clamp`` and ``pk_shell`` join the kit (no clinic module path moved:
   ``sc_app_ui.js`` stays, with the clinic's own hooks only).
+* task 5382 (P4c3): ``pk_autosave_field`` (an OWL component, with its
+  template) joins the kit. The consumer's old component key stays one
+  release as an alias the consumer registers (the kit's class).
 """
 import fnmatch
 import glob
@@ -45,6 +48,8 @@ KIT_JS = (
     'toast',
     # Task 5381 (P4c2).
     'edit_cards', 'sheets', 'tabs', 'clamp', 'shell',
+    # Task 5382 (P4c3).
+    'autosave_field',
 )
 SHIM_MARKER = 'bemade_portal_kit shim'
 # The clinic's aliases removed by task 5198 (P3a).
@@ -83,7 +88,7 @@ def _runtime_bundles(manifest):
 @tagged('post_install', '-at_install')
 class TestPkAssets(TransactionCase):
 
-    def test_kit_js_files_are_the_twenty_three(self):
+    def test_kit_js_files_are_the_twenty_four(self):
         root = os.path.join(get_module_path(KIT), 'static', 'src', 'js')
         found = sorted(os.path.basename(p)[3:-3] for p in glob.glob(os.path.join(root, 'pk_*.js')))
         self.assertEqual(found, sorted(KIT_JS))

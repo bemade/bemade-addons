@@ -1768,3 +1768,86 @@ body.o_pk_app_body > #wrapwrap {
         }
     }
 }
+
+// Task 5382 (P4c3): the autosave field's « replace » editor (the current
+// text read-only above an empty editor) and its group confirm (a group change
+// that would drop chosen options: an inline warning with its two answers).
+.o_pk_app {
+    .o_pk_replace_current {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: var(--pk-space-2);
+        padding: var(--pk-space-2);
+        border: 1px solid var(--pk-line);
+        border-radius: var(--pk-radius-sm);
+        background: var(--pk-surface-2);
+    }
+
+    .o_pk_replace_current_text {
+        max-height: 9.5em;
+        overflow-y: auto;
+        color: var(--pk-fg-2);
+        overflow-wrap: anywhere;
+    }
+
+    .o_pk_replace_caption {
+        font-size: var(--pk-text-xs);
+        font-weight: 600;
+        color: var(--pk-fg-3);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .o_pk_replace_new_head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--pk-space-2);
+        margin-bottom: 4px;
+
+        // Inside its head: beats pk_pages.scss's .o_pk_link_btn (font:
+        // inherit), loaded after this file.
+        .o_pk_replace_reuse {
+            font-size: var(--pk-text-xs);
+        }
+    }
+
+    .o_pk_replace_hint {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px var(--pk-space-2);
+        margin-top: 4px;
+
+        .o_pk_link_btn {
+            font-size: var(--pk-text-xs);
+        }
+    }
+
+    .o_pk_group_confirm {
+        display: flex;
+        flex-direction: column;
+        gap: var(--pk-space-2);
+        padding: var(--pk-space-2) var(--pk-space-3);
+        border: 1px solid var(--pk-line);
+        border-left: 3px solid var(--pk-warn);
+        border-radius: var(--pk-radius-sm);
+
+        .o_pk_group_confirm_text {
+            margin: 0;
+        }
+
+        .o_pk_group_confirm_actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: var(--pk-space-2);
+
+            .o_pk_btn {
+                min-height: var(--pk-tap);
+            }
+        }
+    }
+}

@@ -79,6 +79,8 @@ ADOPTED_VIEWS = (
     (CLINIC, 'sc_display_row', 'pk_display_row'),
     (CLINIC, 'sc_sheet', 'pk_sheet'),
     (CLINIC, 'sc_page_tabs', 'pk_page_tabs'),
+    # Task 5382 (kit P4c3): the autosave field.
+    (CLINIC, 'sc_field_autosave', 'pk_field_autosave'),
 )
 
 # The kit's data files that hold adopted views (loaded by load_kit_views).

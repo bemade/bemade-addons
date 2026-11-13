@@ -74,7 +74,7 @@
                         </div>
                         <div class="o_pk_field">
                             <label for="sc_players_team" class="o_pk_field_label">Team</label>
-                            <select id="sc_players_team" data-sc-picker="1" data-sc-picker-key="team-filter" name="team_id" class="o_pk_input o_pk_select">
+                            <select id="sc_players_team" data-pk-picker="1" data-pk-picker-key="team-filter" name="team_id" class="o_pk_input o_pk_select">
                                 <option value="">All Teams</option>
                                 <t t-foreach="teams" t-as="team_opt">
                                     <option t-att-value="team_opt.id" t-att-selected="'selected' if team_id == team_opt.id else None"
@@ -84,7 +84,7 @@
                         </div>
                         <div class="o_pk_field">
                             <label for="sc_players_org" class="o_pk_field_label">Organization</label>
-                            <select id="sc_players_org" data-sc-picker="1" data-sc-picker-key="org" name="organization_id" class="o_pk_input o_pk_select">
+                            <select id="sc_players_org" data-pk-picker="1" data-pk-picker-key="org" name="organization_id" class="o_pk_input o_pk_select">
                                 <option value="">All Organizations</option>
                                 <t t-foreach="organizations" t-as="org">
                                     <option t-att-value="org.id" t-att-selected="'selected' if organization_id == org.id else None"
@@ -177,7 +177,7 @@
                               class="o_sc_add_to_team" data-sc-action="players.add_to_team">
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <input type="hidden" name="return_url" t-att-value="sc_current_url"/>
-                            <select name="team_id" class="o_pk_input o_pk_select" aria-label="Team" data-sc-picker="1" data-sc-picker-key="team-filter">
+                            <select name="team_id" class="o_pk_input o_pk_select" aria-label="Team" data-pk-picker="1" data-pk-picker-key="team-filter">
                                 <t t-foreach="add_to_team_teams" t-as="att_team">
                                     <option t-att-value="att_team.id" t-out="att_team.name"/>
                                 </t>
@@ -409,8 +409,8 @@
                          textarea's accessible name (no second History). -->
                     <div t-if="sc_hero_training_edit" class="o_pk_fields" data-pk-section="player.training.edit">
                         <t t-call="bemade_sports_clinic.sc_training_title"/>
-                        <t t-call="bemade_sports_clinic.sc_field_autosave">
-                            <t t-set="props" t-value="sc_field_props(player, 'training_recommendation', sc_training_label, 'textarea', clearable=True, labelHidden=True, hint=player.last_training_recommendation_info or None)"/>
+                        <t t-call="bemade_portal_kit.pk_field_autosave">
+                            <t t-set="props" t-value="pk_field_props(player, 'training_recommendation', sc_training_label, 'textarea', clearable=True, labelHidden=True, hint=player.last_training_recommendation_info or None)"/>
                         </t>
                     </div>
                     <!-- Task 1603: « Retour prévu » (a change may propose aligning
@@ -418,14 +418,14 @@
                          actual return date. -->
                     <div t-if="sc_hero_return_edit" class="o_pk_fields o_sc_hero_return" data-pk-section="player.predicted_return">
                         <t t-set="sc_predicted_label">Predicted return</t>
-                        <t t-call="bemade_sports_clinic.sc_field_autosave">
-                            <t t-set="props" t-value="sc_field_props(player, 'predicted_return_date', sc_predicted_label, 'date', clearable=True, min=sc_today)"/>
+                        <t t-call="bemade_portal_kit.pk_field_autosave">
+                            <t t-set="props" t-value="pk_field_props(player, 'predicted_return_date', sc_predicted_label, 'date', clearable=True, min=sc_today)"/>
                         </t>
                     </div>
                     <div t-if="sc_hero_return_edit" class="o_pk_fields o_sc_hero_return" data-pk-section="player.return_date.edit">
                         <t t-set="sc_actual_label">Actual return date</t>
-                        <t t-call="bemade_sports_clinic.sc_field_autosave">
-                            <t t-set="props" t-value="sc_field_props(player, 'return_date', sc_actual_label, 'date', clearable=True)"/>
+                        <t t-call="bemade_portal_kit.pk_field_autosave">
+                            <t t-set="props" t-value="pk_field_props(player, 'return_date', sc_actual_label, 'date', clearable=True)"/>
                         </t>
                     </div>
                     <!-- « Remove player »: in the edit view only. -->
@@ -531,16 +531,16 @@
                             </dl>
                             <div class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                                 <t t-set="lbl">First name</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'first_name', lbl)"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'first_name', lbl)"/></t>
                                 <t t-set="lbl">Last name</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'last_name', lbl)"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'last_name', lbl)"/></t>
                                 <t t-set="lbl">Jersey no.</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'jersey_number', lbl)"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'jersey_number', lbl)"/></t>
                                 <t t-set="lbl">Position</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'position', lbl)"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'position', lbl)"/></t>
                                 <t t-if="sc_can('patient.dob')">
                                     <t t-set="lbl">Date of birth</t>
-                                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'date_of_birth', lbl, 'date')"/></t>
+                                    <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'date_of_birth', lbl, 'date')"/></t>
                                 </t>
                                 <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
@@ -560,12 +560,12 @@
                             <div class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                                 <t t-if="sc_can('patient.internal_notes')">
                                     <t t-set="lbl">Team Notes</t>
-                                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'team_info_notes', lbl, 'textarea', clearable=True)"/></t>
+                                    <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'team_info_notes', lbl, 'textarea', clearable=True)"/></t>
                                 </t>
                                 <t t-set="lbl">Last consultation</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'last_consultation_date', lbl, 'date')"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'last_consultation_date', lbl, 'date')"/></t>
                                 <t t-set="lbl">Actual return date</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'return_date', lbl, 'date', clearable=True)"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'return_date', lbl, 'date', clearable=True)"/></t>
                                 <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
                         </section>
@@ -587,7 +587,7 @@
                             </div>
                             <div class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                                 <t t-set="lbl">Other medical history</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'medical_history_other', lbl, 'textarea', clearable=True, labelHidden=True)"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'medical_history_other', lbl, 'textarea', clearable=True, labelHidden=True)"/></t>
                                 <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
                         </section>
@@ -609,23 +609,23 @@
                             </dl>
                             <div class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                                 <t t-set="lbl">Email</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'email', lbl, 'email')"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'email', lbl, 'email')"/></t>
                                 <t t-set="lbl">Phone</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'phone', lbl, 'tel')"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'phone', lbl, 'tel')"/></t>
                                 <t t-set="lbl">Street</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'street', lbl)"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'street', lbl)"/></t>
                                 <t t-set="lbl">Street 2</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'street2', lbl)"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'street2', lbl)"/></t>
                                 <t t-set="lbl">City</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'city', lbl)"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'city', lbl)"/></t>
                                 <!-- Task 1594: the country first — the province choices
                                      follow it (none: the field hides). -->
                                 <t t-set="lbl">Country</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'country_id', lbl, 'select', options=sc_country_options)"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'country_id', lbl, 'select', options=sc_country_options)"/></t>
                                 <t t-set="lbl">Province</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'state_id', lbl, 'select', options=sc_state_options, hideEmpty=True)"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'state_id', lbl, 'select', options=sc_state_options, hideEmpty=True)"/></t>
                                 <t t-set="lbl">Postal code</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'zip', lbl)"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'zip', lbl)"/></t>
                                 <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
                         </section>
@@ -669,7 +669,7 @@
                                 <t t-set="lbl">Teams</t>
                                 <t t-set="sc_teams_undo">Teams changed</t>
                                 <t t-set="sc_teams_add">Add a team…</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(player, 'sc_team_ids', lbl, 'tags', options=sc_team_options, instant=True, undoMessage=sc_teams_undo, placeholder=sc_teams_add, confirmRemove=sc_team_confirm)"/></t>
+                                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(player, 'sc_team_ids', lbl, 'tags', options=sc_team_options, instant=True, undoMessage=sc_teams_undo, placeholder=sc_teams_add, confirmRemove=sc_team_confirm)"/></t>
                                 <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
                         </section>
@@ -734,13 +734,13 @@
                                     </dl>
                                     <div class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                                         <t t-set="lbl">Name</t>
-                                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(contact, 'name', lbl)"/></t>
+                                        <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(contact, 'name', lbl)"/></t>
                                         <t t-set="lbl">Relationship</t>
-                                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(contact, 'contact_type', lbl, 'select', options=sc_contact_type_options)"/></t>
+                                        <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(contact, 'contact_type', lbl, 'select', options=sc_contact_type_options)"/></t>
                                         <t t-set="lbl">Mobile</t>
-                                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(contact, 'mobile', lbl, 'tel')"/></t>
+                                        <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(contact, 'mobile', lbl, 'tel')"/></t>
                                         <t t-set="lbl">Email</t>
-                                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(contact, 'email', lbl, 'email')"/></t>
+                                        <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(contact, 'email', lbl, 'email')"/></t>
                                         <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                                     </div>
                                 </section>
@@ -813,21 +813,21 @@
                             </t>
                             <div t-if="sc_doc_edit" class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                                 <t t-set="lbl">Name</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                    <t t-set="props" t-value="sc_field_props(doc, 'name', lbl)"/>
+                                <t t-call="bemade_portal_kit.pk_field_autosave">
+                                    <t t-set="props" t-value="pk_field_props(doc, 'name', lbl)"/>
                                 </t>
                                 <t t-set="lbl">Category</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                    <t t-set="props" t-value="sc_field_props(doc, 'category', lbl, 'select', options=sc_document_category_options)"/>
+                                <t t-call="bemade_portal_kit.pk_field_autosave">
+                                    <t t-set="props" t-value="pk_field_props(doc, 'category', lbl, 'select', options=sc_document_category_options)"/>
                                 </t>
                                 <t t-set="lbl">Description</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                    <t t-set="props" t-value="sc_field_props(doc, 'description', lbl, 'textarea', clearable=True)"/>
+                                <t t-call="bemade_portal_kit.pk_field_autosave">
+                                    <t t-set="props" t-value="pk_field_props(doc, 'description', lbl, 'textarea', clearable=True)"/>
                                 </t>
                                 <t t-set="lbl">Link to Injury (optional)</t>
                                 <t t-set="sc_doc_no_injury">-- None --</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                    <t t-set="props" t-value="sc_field_props(doc, 'injury_id', lbl, 'select', options=[('', sc_doc_no_injury)] + list(sc_injury_choices or []))"/>
+                                <t t-call="bemade_portal_kit.pk_field_autosave">
+                                    <t t-set="props" t-value="pk_field_props(doc, 'injury_id', lbl, 'select', options=[('', sc_doc_no_injury)] + list(sc_injury_choices or []))"/>
                                 </t>
                                 <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
@@ -1069,7 +1069,7 @@
             <div t-if="not upload_injury" class="o_pk_field">
                 <label t-att-for="'%s_injury' % upload_prefix" class="o_pk_field_label">Link to Injury (optional)</label>
                 <select t-att-id="'%s_injury' % upload_prefix" name="injury_id" class="o_pk_input o_pk_select"
-                        data-sc-picker="1" data-sc-picker-key="injury"
+                        data-pk-picker="1" data-pk-picker-key="injury"
                         t-att-data-pk-fragment="upload_injury_fragment or None">
                     <option value="">-- None --</option>
                     <t t-foreach="upload_injury_choices or []" t-as="choice">
@@ -1262,12 +1262,12 @@
                         </dl>
                         <div class="o_pk_fields" data-pk-edit-view="edit" t-att-hidden="None if row['created'] else 'hidden'">
                             <t t-set="lbl">Diagnosis/Description</t>
-                            <t t-if="row['diagnosis_editable']" t-call="bemade_sports_clinic.sc_field_autosave">
-                                <t t-set="props" t-value="sc_field_props(injury, 'diagnosis', lbl)"/>
+                            <t t-if="row['diagnosis_editable']" t-call="bemade_portal_kit.pk_field_autosave">
+                                <t t-set="props" t-value="pk_field_props(injury, 'diagnosis', lbl)"/>
                             </t>
                             <t t-set="lbl">Date of Injury</t>
-                            <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                <t t-set="props" t-value="sc_field_props(injury, 'sc_injury_date', lbl, 'date_na')"/>
+                            <t t-call="bemade_portal_kit.pk_field_autosave">
+                                <t t-set="props" t-value="pk_field_props(injury, 'sc_injury_date', lbl, 'date_na')"/>
                             </t>
                             <t t-if="sc_card_tp_fields">
                                 <!-- Review fixes 2026-10-18: « Date prévue de résolution »
@@ -1277,15 +1277,15 @@
                                 <div class="o_sc_stage_only" t-att-data-sc-stage-of="injury.id" data-sc-stage-hide="resolved"
                                      t-att-hidden="'hidden' if injury.stage == 'resolved' else None">
                                     <t t-set="lbl">Predicted Resolution Date</t>
-                                    <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                        <t t-set="props" t-value="sc_field_props(injury, 'predicted_resolution_date', lbl, 'date')"/>
+                                    <t t-call="bemade_portal_kit.pk_field_autosave">
+                                        <t t-set="props" t-value="pk_field_props(injury, 'predicted_resolution_date', lbl, 'date')"/>
                                     </t>
                                 </div>
                                 <div class="o_sc_stage_only" t-att-data-sc-stage-of="injury.id" data-sc-stage-show="resolved"
                                      t-att-hidden="None if injury.stage == 'resolved' else 'hidden'">
                                     <t t-set="lbl">Resolution Date</t>
-                                    <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                        <t t-set="props" t-value="sc_field_props(injury, 'resolution_date', lbl, 'date')"/>
+                                    <t t-call="bemade_portal_kit.pk_field_autosave">
+                                        <t t-set="props" t-value="pk_field_props(injury, 'resolution_date', lbl, 'date')"/>
                                     </t>
                                 </div>
                             </t>
@@ -1310,6 +1310,8 @@
                             </span>
                         </div>
                         <t t-set="sc_note_placeholder">Write the injury's current state — replaces the previous text</t>
+                        <!-- Task 5382: the kit's replace editor, with the clinic's « New note » caption. -->
+                        <t t-set="sc_note_new_label">New note</t>
                         <t t-set="sc_edit_label">Edit</t>
                         <!-- Task 1582: each note uses the « replace » editor
                              (the current text above an empty « New note »)
@@ -1335,8 +1337,8 @@
                             </div>
                             <div t-if="sc_card_internal" class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                                 <t t-set="lbl">External Notes</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                    <t t-set="props" t-value="sc_field_props(injury, 'external_notes', lbl, 'textarea', clearable=True, hint=injury.last_external_note_info or None, replace=True, placeholder=sc_note_placeholder)"/>
+                                <t t-call="bemade_portal_kit.pk_field_autosave">
+                                    <t t-set="props" t-value="pk_field_props(injury, 'external_notes', lbl, 'textarea', clearable=True, hint=injury.last_external_note_info or None, replace=True, replaceNewLabel=sc_note_new_label, placeholder=sc_note_placeholder)"/>
                                 </t>
                                 <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
@@ -1359,8 +1361,8 @@
                             </div>
                             <div class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                                 <t t-set="lbl">Internal Notes (Medical Staff Only)</t>
-                                <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                    <t t-set="props" t-value="sc_field_props(injury, 'internal_notes', lbl, 'textarea', clearable=True, hint=injury.last_internal_note_info or None, replace=True, placeholder=sc_note_placeholder)"/>
+                                <t t-call="bemade_portal_kit.pk_field_autosave">
+                                    <t t-set="props" t-value="pk_field_props(injury, 'internal_notes', lbl, 'textarea', clearable=True, hint=injury.last_internal_note_info or None, replace=True, replaceNewLabel=sc_note_new_label, placeholder=sc_note_placeholder)"/>
                                 </t>
                                 <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                             </div>
@@ -1404,16 +1406,16 @@
                                     </t>
                                     <div t-if="sc_doc_edit" class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                                         <t t-set="lbl">Name</t>
-                                        <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                            <t t-set="props" t-value="sc_field_props(doc, 'name', lbl)"/>
+                                        <t t-call="bemade_portal_kit.pk_field_autosave">
+                                            <t t-set="props" t-value="pk_field_props(doc, 'name', lbl)"/>
                                         </t>
                                         <t t-set="lbl">Category</t>
-                                        <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                            <t t-set="props" t-value="sc_field_props(doc, 'category', lbl, 'select', options=sc_document_category_options)"/>
+                                        <t t-call="bemade_portal_kit.pk_field_autosave">
+                                            <t t-set="props" t-value="pk_field_props(doc, 'category', lbl, 'select', options=sc_document_category_options)"/>
                                         </t>
                                         <t t-set="lbl">Description</t>
-                                        <t t-call="bemade_sports_clinic.sc_field_autosave">
-                                            <t t-set="props" t-value="sc_field_props(doc, 'description', lbl, 'textarea', clearable=True)"/>
+                                        <t t-call="bemade_portal_kit.pk_field_autosave">
+                                            <t t-set="props" t-value="pk_field_props(doc, 'description', lbl, 'textarea', clearable=True)"/>
                                         </t>
                                         <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                                     </div>
@@ -1501,7 +1503,7 @@
                 <div t-if="note_injury_choices" class="o_pk_field">
                     <label for="sc_note_injury" class="o_pk_field_label">Link to Injury (optional)</label>
                     <select id="sc_note_injury" name="injury_id" class="o_pk_input o_pk_select"
-                            data-sc-picker="1" data-sc-picker-key="injury"
+                            data-pk-picker="1" data-pk-picker-key="injury"
                             t-att-data-pk-fragment="pk_fragment_key(note_patient, 'note-injury-choices')">
                         <option value="">-- General note --</option>
                         <t t-foreach="note_injury_choices" t-as="choice">
@@ -1512,8 +1514,8 @@
                 </div>
                 <t t-set="sc_note_label">Treatment Note</t>
                 <t t-set="sc_note_placeholder">Enter treatment note</t>
-                <t t-call="bemade_sports_clinic.sc_field_autosave">
-                    <t t-set="props" t-value="sc_draft_props(note_draft_prefix + 'note', 'note', sc_note_label, 'textarea', placeholder=sc_note_placeholder, required=True)"/>
+                <t t-call="bemade_portal_kit.pk_field_autosave">
+                    <t t-set="props" t-value="pk_draft_props(note_draft_prefix + 'note', 'note', sc_note_label, 'textarea', placeholder=sc_note_placeholder, required=True)"/>
                 </t>
                 <div class="o_pk_form_actions">
                     <t t-call="bemade_portal_kit.pk_list_add_cancel"/>
@@ -1642,7 +1644,7 @@
                              chosen ids, comma separated). -->
                         <t t-if="all_teams">
                             <input type="hidden" id="sc_new_team_ids" name="team_ids" t-att-value="sc_team_csv"/>
-                            <t t-call="bemade_sports_clinic.sc_field_autosave">
+                            <t t-call="bemade_portal_kit.pk_field_autosave">
                                 <t t-set="props" t-value="sc_team_props"/>
                             </t>
                         </t>

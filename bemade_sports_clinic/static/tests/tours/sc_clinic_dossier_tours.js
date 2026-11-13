@@ -19,7 +19,7 @@ function assert(condition, message) {
 
 const ADD = "details#sc_clinic_injury_add";
 const NEW_CARD = '[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[data-sc-created-injury]';
-const NOTE = '.o_pk_autosave[data-sc-field="external_notes"]';
+const NOTE = '.o_pk_autosave[data-pk-autosave-field="external_notes"]';
 const DIAG_EDIT = "Tour 1590 synthetic shoulder";
 const DIAG_UNDO = "Tour 1590 synthetic undo";
 const QUICK_NOTE = "Tour 1590 synthetic current state";
@@ -79,22 +79,22 @@ tours.add("sc_1590_clinic_injury_edit", {
         },
         {
             content: "Write the quick note",
-            trigger: `${NEW_CARD} ${NOTE} textarea[data-sc-replace="new"]`,
+            trigger: `${NEW_CARD} ${NOTE} textarea[data-pk-replace="new"]`,
             run: `edit ${QUICK_NOTE}`,
         },
         {
             content: "Leave the field so it saves",
-            trigger: `${NEW_CARD} ${NOTE} textarea[data-sc-replace="new"]`,
+            trigger: `${NEW_CARD} ${NOTE} textarea[data-pk-replace="new"]`,
             run() {
                 this.anchor.blur(); this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI: blur() fires no event without window focus
             },
         },
         {
             content: "Saved in place, with the « last note » stamp",
-            trigger: `${NEW_CARD} ${NOTE}[data-sc-state="saved"] .o_sc_replace_current .o_pk_hint`,
+            trigger: `${NEW_CARD} ${NOTE}[data-pk-autosave-state="saved"] .o_pk_replace_current .o_pk_hint`,
             run() {
                 assert(this.anchor.textContent.trim(), "empty stamp");
-                const current = document.querySelector(`${NEW_CARD} ${NOTE} .o_sc_replace_current_text`);
+                const current = document.querySelector(`${NEW_CARD} ${NOTE} .o_pk_replace_current_text`);
                 assert(current.textContent.includes(QUICK_NOTE), "the note is not the current text");
                 onClinicDossier();
             },
@@ -126,7 +126,7 @@ tours.add("sc_1590_clinic_injury_edit", {
         },
         {
             content: "Edit view shown, no legacy form anywhere",
-            trigger: '[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-pk-edit-card="injury-details"] [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="sc_injury_date"]',
+            trigger: '[data-pk-section="clinic.dossier.injuries"] .o_sc_injury_item[open] [data-pk-edit-card="injury-details"] [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-pk-autosave-field="sc_injury_date"]',
             run() {
                 assert(!document.querySelector('form[action*="/my/injury/save"]'), "a legacy injury form");
             },

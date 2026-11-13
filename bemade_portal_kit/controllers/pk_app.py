@@ -25,9 +25,8 @@ from odoo.addons.portal.controllers.portal import CustomerPortal
 
 from ..tools import (
     PK_FRAGMENTS_HEADER, PK_GUARD_HEADER, pk_display, pk_extract_fragments, pk_now_ms, pk_parse_fragment_keys,
-    pk_validate_save_spec,
+    pk_save_value, pk_validate_save_spec,
 )
-from ..tools.registry import pk_freeze
 
 _logger = logging.getLogger(__name__)
 
@@ -161,17 +160,9 @@ class PortalKitApp(CustomerPortal):
     @staticmethod
     def _pk_save_value(record, name, raw=False):
         """The value an input shows for ``record.name`` (the spec's ``read``
-        unless ``raw``): a many2one's id, a date as a string."""
-        spec = record.env['portal.kit'].pk_save_spec(record._name) or pk_freeze({})
-        if not raw and spec.get('read'):
-            return spec['read'](record, name)
-        value = record[name]
-        field = record._fields[name]
-        if field.type == 'many2one':
-            return value.id or False
-        if field.type in ('date', 'datetime'):
-            return field.to_string(value) if value else False
-        return value
+        unless ``raw``): a many2one's id, a date as a string
+        (``tools.save.pk_save_value``)."""
+        return pk_save_value(record, name, raw=raw)
 
     @staticmethod
     def _pk_save_display(record, name):

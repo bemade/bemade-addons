@@ -48,7 +48,7 @@ class Split1675Common(AppShellCommon):
     @staticmethod
     def _fields(node):
         return [json.loads(p)['field'] for p in node.xpath(
-            './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
+            './/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')]
 
 
 @tagged('post_install', '-at_install')

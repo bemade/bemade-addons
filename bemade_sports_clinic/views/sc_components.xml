@@ -346,15 +346,9 @@
         </div>
     </template>
 
-    <!--
-        Task 1539 — autosave field: the server-mode sc_autosave_field (label,
-        « Effacer », save state, conflict banner). Variable: props (the JSON
-        from sc_field_props(record, field, label, input_type, …) or
-        sc_draft_props(key, name, label, …)).
-    -->
-    <template id="sc_field_autosave" name="App shell: autosave field">
-        <owl-component name="bemade_sports_clinic.sc_autosave_field" t-att-props="props"/>
-    </template>
+    <!-- Task 5382 (kit P4c3): the autosave field is the kit's
+         (bemade_portal_kit.pk_field_autosave, props from pk_field_props /
+         pk_draft_props / pk_form_props). -->
 
     <!--
         Task 1726 — THE switch (on / off): the label on the left, a pill
@@ -506,7 +500,7 @@
                    t-att-data-pk-display="pk_display_key(note, 'note')" t-out="note.note"/>
                 <div class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                     <t t-foreach="edit_props" t-as="field_props">
-                        <t t-call="bemade_sports_clinic.sc_field_autosave">
+                        <t t-call="bemade_portal_kit.pk_field_autosave">
                             <t t-set="props" t-value="field_props"/>
                         </t>
                     </t>
@@ -730,7 +724,7 @@
                  rules (#1727: not in the past). Outside the face fragment —
                  an island never sits in a fragment. -->
             <div t-if="row.get('return_edit_props')" class="o_sc_row_quick" data-sc-row-quick="predicted_return_date">
-                <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="row['return_edit_props']"/></t>
+                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="row['return_edit_props']"/></t>
             </div>
             <div t-if="row.get('detail_url')" t-att-id="sc_row_detail_id" class="o_pk_row_detail"
                  t-att-data-pk-lazy-url="row['detail_url']" data-sc-row-detail="1" hidden="hidden">
@@ -829,15 +823,15 @@
                 <template data-pk-lazy-edit="1">
                     <div class="o_pk_fields_lazy">
                         <t t-set="lbl">Summary</t>
-                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'summary', lbl, inputId='sc_act_%s_summary' % sc_act_uid)"/></t>
+                        <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(activity, 'summary', lbl, inputId='sc_act_%s_summary' % sc_act_uid)"/></t>
                         <t t-set="lbl">Due Date</t>
-                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'date_deadline', lbl, 'date', inputId='sc_act_%s_date_deadline' % sc_act_uid, min=sc_today)"/></t>
+                        <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(activity, 'date_deadline', lbl, 'date', inputId='sc_act_%s_date_deadline' % sc_act_uid, min=sc_today)"/></t>
                         <t t-if="can_reassign">
                             <t t-set="lbl">Assigned To</t>
-                            <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'user_id', lbl, 'select', options=sc_activity_assignee_options(activity), picker=True, pickerKey='user', inputId='sc_act_%s_user_id' % sc_act_uid)"/></t>
+                            <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(activity, 'user_id', lbl, 'select', options=sc_activity_assignee_options(activity), picker=True, pickerKey='user', inputId='sc_act_%s_user_id' % sc_act_uid)"/></t>
                         </t>
                         <t t-set="lbl">Note</t>
-                        <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="sc_field_props(activity, 'note', lbl, 'textarea', clearable=True, inputId='sc_act_%s_note' % sc_act_uid)"/></t>
+                        <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(activity, 'note', lbl, 'textarea', clearable=True, inputId='sc_act_%s_note' % sc_act_uid)"/></t>
                     </div>
                 </template>
                 <t t-call="bemade_portal_kit.pk_edit_card_done"/>

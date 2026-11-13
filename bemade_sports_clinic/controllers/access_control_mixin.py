@@ -14,7 +14,7 @@ from odoo.exceptions import UserError, AccessError, MissingError, ValidationErro
 from odoo.http import request
 from odoo.tools import format_date
 
-from odoo.addons.bemade_portal_kit.tools import pk_safe_return_url
+from odoo.addons.bemade_portal_kit.tools import pk_form_props, pk_safe_return_url
 from datetime import datetime, time
 import time as systime
 import logging
@@ -859,7 +859,7 @@ class AccessControlMixin:
             'data': data,
             'team_target': target_id,
             'team_csv': chosen,
-            'team_props': self._sc_form_props(
+            'team_props': pk_form_props(
                 target_id, env._("Teams"), value=chosen,
                 options=[(t.id, t.name) for t in targets],
                 placeholder=env._("Add a team…")),

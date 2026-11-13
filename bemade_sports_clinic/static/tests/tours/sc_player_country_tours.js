@@ -40,18 +40,18 @@ tours.add("sc_1594_country_province", {
         },
         {
             content: "Choose another country",
-            trigger: `${CONTACT} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="country_id"] select`,
+            trigger: `${CONTACT} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-pk-autosave-field="country_id"] select`,
             run() {
                 pick(this.anchor, "United States");
             },
         },
         {
             content: "The country is saved",
-            trigger: `${CONTACT} .o_pk_autosave[data-sc-field="country_id"][data-sc-state="saved"]`,
+            trigger: `${CONTACT} .o_pk_autosave[data-pk-autosave-field="country_id"][data-pk-autosave-state="saved"]`,
         },
         {
             content: "The province choices are the new country's; the old province is gone",
-            trigger: `${CONTACT} .o_pk_autosave[data-sc-field="state_id"] select`,
+            trigger: `${CONTACT} .o_pk_autosave[data-pk-autosave-field="state_id"] select`,
             run() {
                 const labels = [...this.anchor.options].map((opt) => opt.text);
                 assert(labels.includes("New York"), "the new country's provinces are offered");
@@ -62,7 +62,7 @@ tours.add("sc_1594_country_province", {
         },
         {
             content: "The province is saved",
-            trigger: `${CONTACT} .o_pk_autosave[data-sc-field="state_id"][data-sc-state="saved"]`,
+            trigger: `${CONTACT} .o_pk_autosave[data-pk-autosave-field="state_id"][data-pk-autosave-state="saved"]`,
         },
         {
             content: "Done: back to read mode",
@@ -104,7 +104,7 @@ tours.add("sc_1594_return_date", {
         },
         {
             content: "Set the actual return date",
-            trigger: '[data-pk-edit-card="medical"] .o_pk_autosave[data-sc-field="return_date"] input[type="date"]',
+            trigger: '[data-pk-edit-card="medical"] .o_pk_autosave[data-pk-autosave-field="return_date"] input[type="date"]',
             run() {
                 this.anchor.value = "2026-11-02";
                 this.anchor.dispatchEvent(new Event("input", { bubbles: true }));
@@ -113,7 +113,7 @@ tours.add("sc_1594_return_date", {
         },
         {
             content: "Saved",
-            trigger: '[data-pk-edit-card="medical"] .o_pk_autosave[data-sc-field="return_date"][data-sc-state="saved"]',
+            trigger: '[data-pk-edit-card="medical"] .o_pk_autosave[data-pk-autosave-field="return_date"][data-pk-autosave-state="saved"]',
         },
         {
             content: "The header's read view shows it (read fragment, no reload)",

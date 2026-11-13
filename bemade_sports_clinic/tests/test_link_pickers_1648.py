@@ -4,7 +4,7 @@ Notepad note's « Archiver ». Synthetic fixtures only.
 Acceptance criteria covered here:
 
 * UC-1 The Notepad's new-note links (team, player, injury, event) and the
-  note card's link fields are picker selects (data-sc-picker + a key), the
+  note card's link fields are picker selects (data-pk-picker + a key), the
   options carrying the narrowing data (player / event -> teams, injury ->
   player); the player is a plain select now (no legacy combo).
 * UC-2 No-JS fallback: the select posts the value as before (the note is
@@ -55,14 +55,14 @@ class TestLinkPickers1648(Pickers1648Common):
         self._login_tp()
         tree = self._notepad()
         form = tree.xpath('//form[@id="quick-add"]')[0]
-        keys = {s.get('name'): s.get('data-sc-picker-key')
-                for s in form.xpath('.//select[@data-sc-picker="1"]')}
+        keys = {s.get('name'): s.get('data-pk-picker-key')
+                for s in form.xpath('.//select[@data-pk-picker="1"]')}
         self.assertEqual(keys, {'team_id': 'team', 'patient_id': 'player',
                                 'injury_id': 'injury', 'event_id': 'event'})
         zoe = form.xpath('.//select[@name="patient_id"]/option[@value="%s"]' % self.zoe.id)[0]
-        self.assertEqual(zoe.get('data-sc-teams'), str(self.team_b.id))
+        self.assertEqual(zoe.get('data-pk-meta-teams'), str(self.team_b.id))
         inj = form.xpath('.//select[@name="injury_id"]/option[@value="%s"]' % self.zoe_injury.id)[0]
-        self.assertEqual(inj.get('data-sc-player'), str(self.zoe.id))
+        self.assertEqual(inj.get('data-pk-meta-player'), str(self.zoe.id))
         self.assertFalse(form.xpath('.//*[contains(@class, "o_patient_combo")]'))
 
     def test_card_links_and_archive_label(self):
@@ -89,8 +89,8 @@ class TestLinkPickers1648(Pickers1648Common):
         self._login_tp()
         resp = self.url_open('/my/player?player_id=%s&tab=notes' % self.player.id)
         tree = lxml_html.fromstring(resp.text)
-        self.assertEqual(tree.xpath('//select[@id="sc_note_injury"]/@data-sc-picker'), ['1'])
-        self.assertTrue(tree.xpath('//form[@data-sc-doc-upload]//select[@name="injury_id"][@data-sc-picker="1"]'))
+        self.assertEqual(tree.xpath('//select[@id="sc_note_injury"]/@data-pk-picker'), ['1'])
+        self.assertTrue(tree.xpath('//form[@data-sc-doc-upload]//select[@name="injury_id"][@data-pk-picker="1"]'))
 
 
 @tagged('post_install', '-at_install')

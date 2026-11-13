@@ -44,7 +44,7 @@ function typeAndLeave(input, value) {
 
 const CARD = ".o_sc_injury_item[open]";
 const SHEET = "dialog#sc_proposal_sheet";
-const HEADER_FIELD = '[data-pk-section="player.predicted_return"] .o_pk_autosave[data-sc-field="predicted_return_date"]';
+const HEADER_FIELD = '[data-pk-section="player.predicted_return"] .o_pk_autosave[data-pk-autosave-field="predicted_return_date"]';
 
 // Review fixes 2026-10-18: the header's fields are behind its one pencil.
 const HEADER_PENCIL = {
@@ -70,7 +70,7 @@ tours.add("sc_1603_injury_to_player", {
         },
         {
             content: "Change the predicted resolution date and leave it",
-            trigger: `${CARD} .o_pk_autosave[data-sc-field="predicted_resolution_date"] input`,
+            trigger: `${CARD} .o_pk_autosave[data-pk-autosave-field="predicted_resolution_date"] input`,
             run() {
                 typeAndLeave(this.anchor, "2030-05-01");
             },
@@ -230,7 +230,7 @@ tours.add("sc_1603_last_resolved", {
                 // actual return date (its read view shows ONE date).
                 await waitFor(
                     () => document.querySelector(
-                        '[data-pk-section="player.return_date.edit"] .o_pk_autosave[data-sc-field="return_date"] input'
+                        '[data-pk-section="player.return_date.edit"] .o_pk_autosave[data-pk-autosave-field="return_date"] input'
                     ).value === "2030-01-31",
                     "actual return date in the header"
                 );
@@ -261,7 +261,7 @@ tours.add("sc_1603_dismiss", {
             trigger: ".o_pk_app",
             async run() {
                 await waitFor(() => !document.querySelector(`${SHEET}[open]`), "sheet closed");
-                await waitFor(() => document.querySelector(`${HEADER_FIELD}[data-sc-state="saved"]`), "saved");
+                await waitFor(() => document.querySelector(`${HEADER_FIELD}[data-pk-autosave-state="saved"]`), "saved");
             },
         },
     ],

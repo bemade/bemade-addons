@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.9.0',
+    'version': '19.0.1.10.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -20,7 +20,7 @@ shell's generic scripts (below), later versions its styles and first
 templates; version 1.6 its save engine and screen refresh; version 1.7 its
 form guard, status pills and lazy edit views; version 1.8 its toast, session
 notification and undo; version 1.9 its edit cards, sheets, tabs, lazy load
-and clamps.
+and clamps; version 1.10 its autosave field.
 
 Registries
 ----------
@@ -338,6 +338,56 @@ first consumer like the 1.5 templates):
   drops a prefix's drafts on load, the logout link clears every draft, the
   test database ribbon's height (``--pk-ribbon-h``).
 
+Autosave field
+--------------
+Version 1.10: the shell's field (an OWL public component,
+``bemade_portal_kit.pk_autosave_field``; template ``pk_field_autosave``,
+adopted from the first consumer like the 1.5 templates), called with::
+
+    <t t-call="bemade_portal_kit.pk_field_autosave">
+        <t t-set="props" t-value="pk_field_props(record, 'name', label)"/>
+    </t>
+
+* Props builders (``tools/field_props.py``, pure; a consumer passes them to
+  its templates under these names): ``pk_field_props(record, field, label,
+  input_type='text', **extra)`` (server mode: saved through
+  ``/my/app/save`` when the user leaves the field; input id
+  ``pk_<model>_<id>_<field>``), ``pk_draft_props(draft_key, name, label,
+  ...)`` (draft mode: a form field kept on the device under the caller's
+  key, verbatim; input id ``pk_draft_<name>``), ``pk_form_props(target,
+  label, ...)`` (form mode: written to the form's hidden input ``target``)
+  and ``pk_options(pairs)``.
+* Input types: ``text``, ``email``, ``tel``, ``textarea``, ``date`` (and
+  the other date-like types: saved only once complete), ``date_na``,
+  ``select``, ``segmented``, ``tags`` (option groups, ``groupSelect``).
+* Behaviour: serialized saves, the 409 conflict banner (« Keep mine » /
+  « Take theirs »; a 409 echoing this field's own value is not one), the
+  offline queue replayed when back online, drafts restored / discarded,
+  ``instant`` fields with « Undo » (``pk:toast``), sibling answers
+  (``also``), the 428 confirm (the save spec's ``confirm`` hook answers
+  ``{confirm: true, message, old, new[, detail]}``; « Confirm » re-posts with
+  ``confirm=1``), ``lost_access`` (the page is left), ``pk:saved`` after a
+  save, ``pk:form-reset`` honoured.
+* Texts a consumer may pass (kit defaults in brackets): ``replace`` editor
+  ``replaceCurrentLabel`` [Current text], ``replaceNewLabel`` [New text],
+  ``replaceReuseLabel`` [Reuse current text]; group confirm
+  ``groupConfirmMessage`` (« %s » = the dropped choices) [Changing this
+  removes the other group's choices: %s.], ``groupConfirmLabel`` [Change],
+  ``groupNotice`` [The choices of another group were removed.];
+  ``savedLabel``, ``undoMessage``, ``historyLabel``, ``placeholder``,
+  ``hint``.
+* Markers: ``data-pk-autosave`` (mode), ``data-pk-autosave-field``,
+  ``data-pk-autosave-state``, ``data-pk-autosave-restored`` on the root;
+  ``data-pk-value``, ``data-pk-tags-open``, ``-tags-index``,
+  ``-tags-typed-error``, ``-tags-group-notice``, ``data-pk-replace``,
+  ``data-pk-group-confirm-box``, ``-group-cancel``, ``-group-confirm``
+  inside; classes ``o_pk_replace_*``, ``o_pk_group_confirm*``,
+  ``o_pk_confirm_banner``, ``-change``, ``-detail``, ``-ok``, ``-cancel``.
+* Picker hook (a consumer's type-to-filter picker enhances the select):
+  ``picker`` / ``pickerKey`` -> ``data-pk-picker`` / ``data-pk-picker-key``;
+  ``optionMeta`` ``{value: {key: text}}`` -> ``data-pk-meta-<key>`` on each
+  option.
+
 Style guide
 ------------
 ``/pk/styleguide`` (internal users) shows every generic component with the
@@ -392,6 +442,9 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/src/js/pk_tabs.js',
             'bemade_portal_kit/static/src/js/pk_clamp.js',
             'bemade_portal_kit/static/src/js/pk_shell.js',
+            # Task 5382 (P4c3): the autosave field (OWL component + template).
+            'bemade_portal_kit/static/src/js/pk_autosave_field.js',
+            'bemade_portal_kit/static/src/js/pk_autosave_field.xml',
         ],
         # The hoot unit tests (tests/test_pk_hoot.py runs them headless).
         # The modules they test are only DEFINED in the test page and run
@@ -417,6 +470,9 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/src/js/pk_tabs.js',
             'bemade_portal_kit/static/src/js/pk_clamp.js',
             'bemade_portal_kit/static/src/js/pk_shell.js',
+            'bemade_portal_kit/static/src/js/pk_date_bounds.js',
+            'bemade_portal_kit/static/src/js/pk_autosave_field.js',
+            'bemade_portal_kit/static/src/js/pk_autosave_field.xml',
         ],
         'web.assets_unit_tests': [
             'bemade_portal_kit/static/tests/**/*',

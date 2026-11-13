@@ -56,7 +56,7 @@ tours.add("sc_1608_event_form_pickers", {
         },
         {
             content: "Every team is listed, grouped by organization",
-            trigger: `${TEAMS} [data-sc-tags-open="1"] ul.o_pk_tags_options .o_pk_tags_option`,
+            trigger: `${TEAMS} [data-pk-tags-open="1"] ul.o_pk_tags_options .o_pk_tags_option`,
             run() {
                 const labels = optionLabels(TEAMS);
                 for (const name of ["AA Unstaffed 1577", "PC Team A", "PC Team B", "ZZ Team C 1597", "ZZ Free Team 1597"]) {
@@ -80,7 +80,7 @@ tours.add("sc_1608_event_form_pickers", {
             async run() {
                 await waitFor(() => value('input[name="team_ids"]') !== "", "team_ids filled");
                 assert(value('input[name="team_ids"]').split(",").length === 1, "one team");
-                await waitFor(() => document.querySelector(`${TEAMS} [data-sc-tags-open="0"]`), "the list closes");
+                await waitFor(() => document.querySelector(`${TEAMS} [data-pk-tags-open="0"]`), "the list closes");
                 assert(!document.querySelector(`${TEAMS} ul.o_pk_tags_options`), "no option list after a pick");
             },
         },
@@ -91,7 +91,7 @@ tours.add("sc_1608_event_form_pickers", {
         },
         {
             content: "Reopened: the picked team left the list",
-            trigger: `${TEAMS} [data-sc-tags-open="1"] ul.o_pk_tags_options .o_pk_tags_option`,
+            trigger: `${TEAMS} [data-pk-tags-open="1"] ul.o_pk_tags_options .o_pk_tags_option`,
             run() {
                 assert(!optionLabels(TEAMS).includes("PC Team A"), "a picked team leaves the list");
                 assert(optionLabels(TEAMS).includes("PC Team B"), "the others are still offered");
@@ -128,14 +128,14 @@ tours.add("sc_1608_event_form_pickers", {
             trigger: `${TEAMS} .o_pk_tag:contains("PC Team B")`,
             async run() {
                 await waitFor(() => value('input[name="team_ids"]').split(",").length === 2, "two teams");
-                await waitFor(() => document.querySelector(`${TEAMS} [data-sc-tags-open="0"]`), "Enter closes the list");
+                await waitFor(() => document.querySelector(`${TEAMS} [data-pk-tags-open="0"]`), "Enter closes the list");
                 const input = document.querySelector(`${TEAMS} input.o_pk_tags_search`);
                 assert(document.activeElement === input, "the keyboard keeps the focus in the box");
                 // ArrowDown reopens it, Escape closes it again.
                 input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
-                await waitFor(() => document.querySelector(`${TEAMS} [data-sc-tags-open="1"]`), "ArrowDown reopens");
+                await waitFor(() => document.querySelector(`${TEAMS} [data-pk-tags-open="1"]`), "ArrowDown reopens");
                 input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
-                await waitFor(() => document.querySelector(`${TEAMS} [data-sc-tags-open="0"]`), "Escape closes");
+                await waitFor(() => document.querySelector(`${TEAMS} [data-pk-tags-open="0"]`), "Escape closes");
             },
         },
         {
@@ -153,7 +153,7 @@ tours.add("sc_1608_event_form_pickers", {
             trigger: `${STAFF} .o_pk_tag:contains("PC TP")`,
             async run() {
                 await waitFor(() => value('input[name="assigned_staff_ids"]') !== "", "staff filled");
-                await waitFor(() => document.querySelector(`${STAFF} [data-sc-tags-open="0"]`), "the staff list closes");
+                await waitFor(() => document.querySelector(`${STAFF} [data-pk-tags-open="0"]`), "the staff list closes");
             },
         },
         {
@@ -204,16 +204,16 @@ tours.add("sc_1608_event_page_snap", {
         },
         {
             content: "Pick a new start and leave it",
-            trigger: `${CARD} .o_pk_autosave[data-sc-field="date_start"] input`,
+            trigger: `${CARD} .o_pk_autosave[data-pk-autosave-field="date_start"] input`,
             run() {
-                pick(`${CARD} .o_pk_autosave[data-sc-field="date_start"] input`, "2026-03-05T17:30");
+                pick(`${CARD} .o_pk_autosave[data-pk-autosave-field="date_start"] input`, "2026-03-05T17:30");
             },
         },
         {
             content: "The end and both coverage times follow in the card",
-            trigger: `${CARD} .o_pk_autosave[data-sc-field="date_start"][data-sc-state="saved"]`,
+            trigger: `${CARD} .o_pk_autosave[data-pk-autosave-field="date_start"][data-pk-autosave-state="saved"]`,
             async run() {
-                const field = (name) => document.querySelector(`${CARD} .o_pk_autosave[data-sc-field="${name}"] input`);
+                const field = (name) => document.querySelector(`${CARD} .o_pk_autosave[data-pk-autosave-field="${name}"] input`);
                 await waitFor(() => field("date_end").value === "2026-03-05T19:30", "end follows");
                 await waitFor(() => field("therapist_start").value === "2026-03-05T17:30", "coverage start follows");
                 await waitFor(() => field("therapist_end").value === "2026-03-05T19:30", "coverage end follows");

@@ -78,7 +78,7 @@ class TestAppShellPencil(AppShellCommon):
     @staticmethod
     def _fields(node):
         return [json.loads(p) for p in node.xpath(
-            './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
+            './/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')]
 
     def _card(self, tree, key):
         cards = tree.xpath('//*[@data-pk-edit-card="%s"]' % key)
@@ -287,7 +287,7 @@ class TestAppShellPencil(AppShellCommon):
             login()
             for url in pages + extra:
                 _text, tree = self._get(url)
-                for node in tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+                for node in tree.xpath('//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'):
                     props = json.loads(node.get('props'))
                     if props.get('mode') != 'server' or props.get('field') in ALWAYS_LIVE:
                         continue

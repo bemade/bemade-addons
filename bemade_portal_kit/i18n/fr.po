@@ -10,6 +10,7 @@ msgstr ""
 "PO-Revision-Date: 2026-11-08 01:18+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
@@ -301,10 +302,18 @@ msgid "Add"
 msgstr "Ajouter"
 
 #. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_list_add_cancel
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Cancel"
 msgstr "Annuler"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Change"
+msgstr "Changer"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_sheet
@@ -313,6 +322,8 @@ msgid "Close"
 msgstr "Fermer"
 
 #. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Confirm"
 msgstr "Confirmer"
@@ -333,6 +344,12 @@ msgid "Delete"
 msgstr "Supprimer"
 
 #. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+msgid "Discard the draft"
+msgstr "Jeter le brouillon"
+
+#. module: bemade_portal_kit
 #: model:ir.model.fields,field_description:bemade_portal_kit.field_portal_kit__display_name
 #: model:ir.model.fields,field_description:bemade_portal_kit.field_res_users__display_name
 msgid "Display Name"
@@ -342,6 +359,18 @@ msgstr "Nom affiché"
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_edit_card_done
 msgid "Done"
 msgstr "Terminé"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Draft kept on this device"
+msgstr "Brouillon gardé sur cet appareil"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+msgid "Draft restored"
+msgstr "Brouillon restauré"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_edit_card_head
@@ -354,6 +383,12 @@ msgstr "Modifier"
 #: model:ir.model.fields,field_description:bemade_portal_kit.field_res_users__id
 msgid "ID"
 msgstr "Identifiant"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+msgid "Keep mine"
+msgstr "Garder le mien"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -376,9 +411,21 @@ msgid "Month"
 msgstr "Mois"
 
 #. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "N/A"
+msgstr "S/O"
+
+#. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Name"
 msgstr "Nom"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "New text"
+msgstr "Nouveau texte"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -389,6 +436,12 @@ msgstr "Note"
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Nothing here yet."
 msgstr "Rien ici pour l’instant."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Nothing matches « %s »: pick it from the list."
+msgstr "Aucun choix ne correspond à « %s » : choisissez dans la liste."
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -429,6 +482,25 @@ msgid "Reference"
 msgstr "Référence"
 
 #. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Remove %s"
+msgstr "Retirer %s"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+msgid "Replaces the previous text; the old one is kept in the history."
+msgstr ""
+"Remplace le texte précédent ; l'ancien est conservé dans l'historique."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Reuse current text"
+msgstr "Reprendre le texte actuel"
+
+#. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "SAMPLE-0001"
 msgstr "EXEMPLE-0001"
@@ -447,6 +519,24 @@ msgstr "Feuille d’exemple"
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
 msgid "Save"
 msgstr "Enregistrer"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Saved"
+msgstr "Enregistré"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Saved · %s"
+msgstr "Enregistré · %s"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Saving…"
+msgstr "Enregistrement…"
 
 #. module: bemade_portal_kit
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_styleguide
@@ -475,6 +565,12 @@ msgid ""
 " style slots (--pk-*). An addon brands them by setting the slots on "
 ".o_pk_app."
 msgstr "Les composants génériques de l’application portail, dessinés avec les jetons de style neutres de la trousse (--pk-*). Un module leur donne sa marque en définissant ces jetons sur .o_pk_app."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "This change can no longer be undone."
+msgstr "Ce changement ne peut plus être annulé."
 
 #. module: bemade_portal_kit
 #. odoo-python
@@ -533,6 +629,12 @@ msgstr "Vous n'avez plus accès à cette page."
 
 #. module: bemade_portal_kit
 #. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+msgid "Your unpublished text was kept on this device."
+msgstr "Votre texte non publié a été gardé sur cet appareil."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
 #: code:addons/bemade_portal_kit/static/src/js/pk_form_guard.js:0
 msgid "Complete:"
 msgstr "Complétez :"
@@ -545,6 +647,18 @@ msgstr "Impossible d'enregistrer. Vérifiez le formulaire et réessayez."
 
 #. module: bemade_portal_kit
 #. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "This field was changed elsewhere while you were typing."
+msgstr "Ce champ a été modifié ailleurs pendant votre saisie."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "To confirm"
+msgstr "À confirmer"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
 #: code:addons/bemade_portal_kit/static/src/js/pk_form_guard.js:0
 msgid "No connection. Nothing was sent; try again when you are back online."
 msgstr ""
@@ -552,24 +666,41 @@ msgstr ""
 
 #. module: bemade_portal_kit
 #. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
 #: code:addons/bemade_portal_kit/static/src/js/pk_status_pills.js:0
 msgid "Changed elsewhere"
 msgstr "Modifié ailleurs"
 
 #. module: bemade_portal_kit
 #. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Changing this removes the other group's choices: %s."
+msgstr "Ce changement retire les choix de l'autre groupe : %s."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+msgid "Clear"
+msgstr "Effacer"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
 #: code:addons/bemade_portal_kit/static/src/js/pk_status_pills.js:0
 msgid "Error — not saved"
 msgstr "Erreur — non enregistré"
 
 #. module: bemade_portal_kit
 #. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
 #: code:addons/bemade_portal_kit/static/src/js/pk_status_pills.js:0
 msgid "Change saved"
 msgstr "Modification enregistrée"
 
 #. module: bemade_portal_kit
 #. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
 #: code:addons/bemade_portal_kit/static/src/js/pk_status_pills.js:0
 #: model_terms:ir.ui.view,arch_db:bemade_portal_kit.pk_toast_host
 msgid "Undo"
@@ -595,9 +726,27 @@ msgstr "Une erreur est survenue. Veuillez réessayer."
 
 #. module: bemade_portal_kit
 #. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.xml:0
+msgid "Take theirs"
+msgstr "Prendre le leur"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "The choices of another group were removed."
+msgstr "Les choix d'un autre groupe ont été retirés."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
 #: code:addons/bemade_portal_kit/static/src/js/pk_toast.js:0
 msgid "No connection. Try again when you are back online."
 msgstr "Pas de connexion. Réessayez une fois de retour en ligne."
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "No match"
+msgstr "Aucun résultat"
 
 #. module: bemade_portal_kit
 #. odoo-javascript
@@ -614,12 +763,30 @@ msgstr "Rien à afficher."
 
 #. module: bemade_portal_kit
 #. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Offline — pending"
+msgstr "Hors ligne — en attente"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
 #: code:addons/bemade_portal_kit/static/src/js/pk_sheets.js:0
 msgid "Could not load. Close and open again to retry."
 msgstr "Chargement impossible. Fermez et rouvrez pour réessayer."
 
 #. module: bemade_portal_kit
 #. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "Current text"
+msgstr "Texte actuel"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
 #: code:addons/bemade_portal_kit/static/src/js/pk_edit_cards.js:0
 msgid "Finish editing"
 msgstr "Terminer la modification"
+
+#. module: bemade_portal_kit
+#. odoo-javascript
+#: code:addons/bemade_portal_kit/static/src/js/pk_autosave_field.js:0
+msgid "%s changed this field while you were typing."
+msgstr "%s a modifié ce champ pendant votre saisie."

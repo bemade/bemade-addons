@@ -188,9 +188,14 @@ class TestAppShellPwa1542(AppShellCommon):
                 if isinstance(path, str)]
         self.assertFalse([path for path in lazy if '/sc_' in path])
         frontend = assets['web.assets_frontend']
-        for name in ('sc_app_ui.js', 'sc_sw_register.js',
-                     'sc_autosave_field.js', 'sc_autosave_field.xml'):
+        for name in ('sc_app_ui.js', 'sc_sw_register.js', 'sc_autosave_field.js'):
             self.assertTrue(any(path.endswith(name) for path in frontend), name)
+        # Task 5382 (kit P4c3): the autosave field's template is the kit's;
+        # the clinic's script only registers the one-release alias key.
+        self.assertFalse([path for path in frontend if path.endswith('sc_autosave_field.xml')])
+        kit_assets = get_manifest('bemade_portal_kit')['assets']['web.assets_frontend']
+        for name in ('pk_autosave_field.js', 'pk_autosave_field.xml'):
+            self.assertTrue(any(path.endswith(name) for path in kit_assets), name)
         # Task 5198 (P3a): the fetch helper is the kit's (no clinic alias).
         kit_frontend = get_manifest('bemade_portal_kit')['assets']['web.assets_frontend']
         self.assertIn('bemade_portal_kit/static/src/js/pk_fetch.js', kit_frontend)

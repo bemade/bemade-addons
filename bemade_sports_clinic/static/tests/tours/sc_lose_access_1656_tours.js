@@ -19,11 +19,11 @@ function assert(condition, message) {
 }
 
 const TEAMS = 'section[data-pk-edit-card="teams"]';
-const REMOVE = `${TEAMS} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="sc_team_ids"] .o_pk_tag:contains("PC Team A") button.o_pk_tag_remove`;
+const REMOVE = `${TEAMS} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-pk-autosave-field="sc_team_ids"] .o_pk_tag:contains("PC Team A") button.o_pk_tag_remove`;
 
 function removeButton() {
     const tag = [...document.querySelectorAll(
-        `${TEAMS} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="sc_team_ids"] .o_pk_tag`
+        `${TEAMS} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-pk-autosave-field="sc_team_ids"] .o_pk_tag`
     )].find((li) => li.textContent.includes("PC Team A"));
     return tag ? tag.querySelector("button.o_pk_tag_remove") : null;
 }

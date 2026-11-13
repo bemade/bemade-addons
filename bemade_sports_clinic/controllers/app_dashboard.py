@@ -27,6 +27,7 @@ from odoo.http import request
 from odoo.tools import format_date, format_datetime, html2plaintext
 
 from odoo.addons.bemade_portal_kit.controllers.pk_app import PortalKitApp
+from odoo.addons.bemade_portal_kit.tools import pk_field_props, pk_form_props
 
 from ..models import sc_dashboard
 from .task_management_portal import TaskManagementPortal
@@ -389,7 +390,7 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
             player = writable.get(card['id'])
             if not player:
                 continue
-            card['return_edit_props'] = self._sc_field_props(
+            card['return_edit_props'] = pk_field_props(
                 player, 'predicted_return_date', label, 'date', clearable=True, min=today,
                 inputId='sc_%s_return_%s' % (row_scope.replace('-', '_'), player.id))
 
@@ -536,10 +537,10 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
                 row['org_target'] = 'sc_dash_%s_orgs' % instance['id']
                 row['team_csv'] = ','.join(str(i) for i in settings.get('scope_team_ids') or [])
                 row['org_csv'] = ','.join(str(i) for i in settings.get('scope_org_ids') or [])
-                row['team_props'] = self._sc_form_props(
+                row['team_props'] = pk_form_props(
                     row['team_target'], env._("Teams"), 'tags', row['team_csv'],
                     options=team_options, placeholder=env._("All my teams"))
-                row['org_props'] = self._sc_form_props(
+                row['org_props'] = pk_form_props(
                     row['org_target'], env._("Teams of these organizations"), 'tags', row['org_csv'],
                     options=org_options, placeholder=env._("Add an organization…"))
             if 'kinds' in spec['filters']:

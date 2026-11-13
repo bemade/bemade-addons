@@ -74,7 +74,7 @@ class PlayersCommon1539(AppShellCommon):
         Task 1736 r1 (deliberate update): scoped to the node passed (was the
         whole page) — the activity cards now carry their own « note » field."""
         out = {}
-        for node in tree.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+        for node in tree.xpath('.//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'):
             props = json.loads(node.get('props'))
             out[props.get('field') or props.get('name')] = props
         return out
@@ -311,7 +311,7 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
     @staticmethod
     def _owl_keys(tree):
         keys = set()
-        for node in tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+        for node in tree.xpath('//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'):
             props = json.loads(node.get('props'))
             keys.add('%s.%s' % (props.get('model'), props.get('field') or props.get('name')))
         return keys
@@ -368,7 +368,7 @@ class TestAppShellPlayerForms1539(PlayersCommon1539):
         self.assertNotIn('sports.patient.sc_status', keys)
         self.assertEqual(len(tree.xpath('//*[@data-pk-pill-select][@data-pk-field="sc_status"]')), 2)
         teams = [json.loads(p) for p in tree.xpath(
-            '//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')
+            '//owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')
             if json.loads(p).get('field') == 'sc_team_ids'][0]
         self.assertEqual(teams['value'], str(self.team_a.id))
 

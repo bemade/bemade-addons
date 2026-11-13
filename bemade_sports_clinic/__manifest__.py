@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.143.0",
+    'version': "19.0.1.144.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -381,8 +381,9 @@ nothing; PDF reports never carry it.
             # Task 1624 review round 2: the dashboard's two fixed columns,
             # scroll anchoring of its fold-outs, the quick « Retour prévu ».
             "bemade_sports_clinic/static/src/js/sc_dashboard_live.js",
+            # Task 5382 (kit P4c3): the autosave field is the kit's; this
+            # file only registers its one-release alias key.
             "bemade_sports_clinic/static/src/js/sc_autosave_field.js",
-            "bemade_sports_clinic/static/src/js/sc_autosave_field.xml",
             # Task 1539: the shell's activity sheets (replaces, in the shell
             # only, the legacy activity partials' inline scripts).
             "bemade_sports_clinic/static/src/js/sc_activities.js",

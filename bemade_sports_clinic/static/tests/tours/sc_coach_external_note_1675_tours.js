@@ -23,7 +23,7 @@ registry.category("web_tour.tours").add("sc_1675_coach_external_readonly", {
                 assert(!card.querySelector("button[data-pk-edit-toggle]"), "a pencil on the external note");
                 assert(!card.querySelector('[data-pk-edit-view="edit"]'), "an external-note editor");
                 assert(
-                    !document.querySelector('.o_pk_autosave[data-sc-field="external_notes"]'),
+                    !document.querySelector('.o_pk_autosave[data-pk-autosave-field="external_notes"]'),
                     "an external-note autosave field"
                 );
             },

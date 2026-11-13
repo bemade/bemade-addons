@@ -4,7 +4,7 @@
  * shell only, the legacy create / edit pages' inline scripts:
  *
  * - task 1608: teams and assigned staff are form-mode tags fields
- *   (sc_autosave_field) writing the CSV hidden inputs the routes accept
+ *   (the kit's autosave field) writing the CSV hidden inputs the routes accept
  *   (team_ids, assigned_staff_ids) — the organization select narrows the
  *   teams through the field's ``groupSelect`` (task 1597);
  * - « Nouveau lieu »: the venue sheet's form posts through pkFetch to the

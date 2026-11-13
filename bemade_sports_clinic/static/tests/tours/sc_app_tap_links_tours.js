@@ -31,7 +31,7 @@ registry.category("web_tour.tours").add("sc_1585_tap_links", {
         },
         {
             content: "Edit the mobile",
-            trigger: `${CARD} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="mobile"] input`,
+            trigger: `${CARD} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-pk-autosave-field="mobile"] input`,
             run: "edit 514 555 0177", // task 1645: a valid number, saved formatted
         },
         {
@@ -41,7 +41,7 @@ registry.category("web_tour.tours").add("sc_1585_tap_links", {
         },
         {
             content: "Saved",
-            trigger: `${CARD} .o_pk_autosave[data-sc-field="mobile"][data-sc-state="saved"]`,
+            trigger: `${CARD} .o_pk_autosave[data-pk-autosave-field="mobile"][data-pk-autosave-state="saved"]`,
         },
         {
             content: "Done: back to read mode",

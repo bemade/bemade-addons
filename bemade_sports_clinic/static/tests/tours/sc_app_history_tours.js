@@ -134,19 +134,19 @@ tours.add("sc_1581_notes_fresh", {
         },
         {
             content: "Type an external note",
-            trigger: '.o_sc_injury_item[open] .o_pk_autosave[data-sc-field="external_notes"] textarea',
+            trigger: '.o_sc_injury_item[open] .o_pk_autosave[data-pk-autosave-field="external_notes"] textarea',
             run: `edit ${NOTE}`,
         },
         {
             content: "Leave the field so it saves",
-            trigger: '.o_sc_injury_item[open] .o_pk_autosave[data-sc-field="external_notes"] textarea',
+            trigger: '.o_sc_injury_item[open] .o_pk_autosave[data-pk-autosave-field="external_notes"] textarea',
             run() {
                 this.anchor.blur(); this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI: blur() fires no event without window focus
             },
         },
         {
             content: "Saved",
-            trigger: '.o_sc_injury_item[open] .o_pk_autosave[data-sc-field="external_notes"][data-sc-state="saved"]',
+            trigger: '.o_sc_injury_item[open] .o_pk_autosave[data-pk-autosave-field="external_notes"][data-pk-autosave-state="saved"]',
         },
         {
             content: "Open the history again",

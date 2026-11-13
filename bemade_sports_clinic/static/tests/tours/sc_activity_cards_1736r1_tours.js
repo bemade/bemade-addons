@@ -77,7 +77,7 @@ tours.add("sc_1736r1_activity_card", {
         },
         {
             content: "Edit view: the fields are mounted, the trash shows left of the ✓",
-            trigger: `${CARD}[data-pk-edit-open] .o_pk_autosave[data-sc-field="date_deadline"] input[type="date"]`,
+            trigger: `${CARD}[data-pk-edit-open] .o_pk_autosave[data-pk-autosave-field="date_deadline"] input[type="date"]`,
             run() {
                 const el = card();
                 assert(el.dataset.pkEditOpen === "1", "another card opened");
@@ -85,17 +85,17 @@ tours.add("sc_1736r1_activity_card", {
                 assert(el.querySelector("button[data-pk-edit-toggle]").dataset.pkEditToggleDone === "1", "no ✓");
                 assert(!el.querySelector("template[data-pk-lazy-edit]"), "the template is still there");
                 for (const field of ["summary", "date_deadline", "user_id", "note"]) {
-                    assert(el.querySelector(`.o_pk_autosave[data-sc-field="${field}"]`), `no ${field} field`);
+                    assert(el.querySelector(`.o_pk_autosave[data-pk-autosave-field="${field}"]`), `no ${field} field`);
                 }
                 noHorizontalScroll();
-                setValue(el.querySelector('.o_pk_autosave[data-sc-field="date_deadline"] input[type="date"]'), "2031-05-06");
+                setValue(el.querySelector('.o_pk_autosave[data-pk-autosave-field="date_deadline"] input[type="date"]'), "2031-05-06");
             },
         },
         {
             content: "The due date is saved",
-            trigger: `${CARD}[data-pk-edit-open] .o_pk_autosave[data-sc-field="date_deadline"][data-sc-state="saved"]`,
+            trigger: `${CARD}[data-pk-edit-open] .o_pk_autosave[data-pk-autosave-field="date_deadline"][data-pk-autosave-state="saved"]`,
             run() {
-                const select = card().querySelector('.o_pk_autosave[data-sc-field="user_id"] select');
+                const select = card().querySelector('.o_pk_autosave[data-pk-autosave-field="user_id"] select');
                 assert(select, "no assignee select");
                 assert([...select.options].some((o) => o.value === param("xuser")), "the new assignee is offered");
                 setValue(select, param("xuser"));
@@ -103,14 +103,14 @@ tours.add("sc_1736r1_activity_card", {
         },
         {
             content: "The assignee is saved",
-            trigger: `${CARD}[data-pk-edit-open] .o_pk_autosave[data-sc-field="user_id"][data-sc-state="saved"]`,
+            trigger: `${CARD}[data-pk-edit-open] .o_pk_autosave[data-pk-autosave-field="user_id"][data-pk-autosave-state="saved"]`,
             run() {
-                setValue(card().querySelector('.o_pk_autosave[data-sc-field="note"] textarea'), "SC1736r1 tour note");
+                setValue(card().querySelector('.o_pk_autosave[data-pk-autosave-field="note"] textarea'), "SC1736r1 tour note");
             },
         },
         {
             content: "The note is saved; close with the ✓",
-            trigger: `${CARD}[data-pk-edit-open] .o_pk_autosave[data-sc-field="note"][data-sc-state="saved"]`,
+            trigger: `${CARD}[data-pk-edit-open] .o_pk_autosave[data-pk-autosave-field="note"][data-pk-autosave-state="saved"]`,
             run() {
                 card().querySelector("button[data-pk-edit-toggle]").click();
             },

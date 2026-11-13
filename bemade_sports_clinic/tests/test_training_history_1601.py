@@ -353,7 +353,7 @@ class TestTrainingStampClinic1601(Clinic1540Common):
     @staticmethod
     def _owl_fields(tree):
         out = {}
-        for node in tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+        for node in tree.xpath('//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'):
             props = json.loads(node.get('props'))
             out[props.get('field') or props.get('name')] = props
         return out

@@ -506,9 +506,9 @@
                                                     <legend class="o_pk_field_label">Scope</legend>
                                                     <small class="o_pk_hint">Nothing chosen: all your teams.</small>
                                                     <input type="hidden" name="scope_org_ids" t-att-id="row['org_target']" t-att-value="row['org_csv']"/>
-                                                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="row['org_props']"/></t>
+                                                    <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="row['org_props']"/></t>
                                                     <input type="hidden" name="scope_team_ids" t-att-id="row['team_target']" t-att-value="row['team_csv']"/>
-                                                    <t t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="row['team_props']"/></t>
+                                                    <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="row['team_props']"/></t>
                                                 </fieldset>
                                             </t>
                                             <t t-if="row.get('kind_choices')">

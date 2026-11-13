@@ -78,7 +78,7 @@ class ClinicDossier1590Common(Clinic1540Common):
     @staticmethod
     def _props(scope):
         out = {}
-        for node in scope.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+        for node in scope.xpath('.//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'):
             props = json.loads(node.get('props'))
             out[props.get('field') or props.get('name')] = props
         return out

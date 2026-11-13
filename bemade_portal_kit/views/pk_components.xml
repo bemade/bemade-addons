@@ -329,4 +329,14 @@
         </nav>
     </template>
 
+    <!--
+        Task 5382 (P4c3) — the autosave field (the kit's OWL component
+        bemade_portal_kit.pk_autosave_field, static/src/js/pk_autosave_field.js).
+        Variable: props = the JSON of a props builder (tools/field_props.py:
+        pk_field_props, pk_draft_props or pk_form_props).
+    -->
+    <template id="pk_field_autosave" name="Portal kit: autosave field">
+        <owl-component name="bemade_portal_kit.pk_autosave_field" t-att-props="props"/>
+    </template>
+
 </odoo>

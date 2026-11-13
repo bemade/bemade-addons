@@ -111,6 +111,33 @@ clamps' clinic names, moved to the kit under ``pk`` names:
   ``tools/display.py``: ``pk_display``, ``pk_display_key``,
   ``pk_contact_href``) and the class ``o_sc_contact_link``.
 
+Task 5382 (P4c3) retires the autosave field's clinic names, moved to the
+kit under ``pk`` names:
+
+* the attributes ``data-sc-autosave``, ``-restored``, ``-value``,
+  ``-tags-open``, ``-tags-index``, ``-tags-typed-error``,
+  ``-tags-group-notice``, ``-replace``, ``-org-confirm-box``,
+  ``-org-cancel``, ``-org-confirm``; the picker hook's ``-picker`` and
+  ``-picker-key`` (``data-pk-picker``, ``-picker-key``; the picker's other
+  ``data-sc-picker-*`` names stay the consumer's) and the option metadata
+  ``-teams`` and ``-player`` (``data-pk-meta-<key>``). The field's
+  ``data-sc-field`` and ``data-sc-state`` (``data-pk-autosave-field``,
+  ``-autosave-state``) are retired on a line that names the autosave field
+  (``data-sc-state`` keeps its other meanings: a worklist row, a timesheet
+  row, an account field);
+* the classes ``o_sc_group_confirm`` (``_text``, ``_actions``),
+  ``o_sc_identity_banner`` / ``_change`` / ``_confirm`` / ``_cancel``
+  (``o_pk_confirm_banner``, ``_change``, ``_ok``, ``_cancel``) and
+  ``o_sc_replace_*`` (``current``, ``current_text``, ``caption``,
+  ``new_head``, ``reuse``, ``hint``);
+* the template ``sc_field_autosave`` (``ADOPTED_VIEWS``), the component's
+  key ``bemade_sports_clinic.sc_autosave_field`` (allowed in the
+  consumer's one-release alias only), its class and template names, the
+  props builders ``sc_field_props``, ``sc_draft_props``, ``sc_form_props``
+  (and their ``_sc_`` methods), ``_sc_options`` (the kit's
+  ``tools/field_props.py``) and the 428 payload key ``confirm_identity``
+  (``confirm``).
+
 Dataset destructuring (``const { scModel, scField } = el.dataset``) is
 matched too.
 
@@ -164,6 +191,10 @@ ATTRIBUTES = (
     'lazy-fresh', 'lazy-filled', 'loaded', 'row-expand', 'clamp',
     'clamp-more', 'clamp-less', 'clamp-sep', 'clamp-meta', 'clamp-open',
     'clamp-ready', 'draft-clear', 'display', 'display-hide-empty',
+    # Task 5382 (P4c3): the autosave field and its picker hook.
+    'autosave', 'restored', 'value', 'tags-open', 'tags-index',
+    'tags-typed-error', 'tags-group-notice', 'replace', 'org-confirm-box',
+    'org-cancel', 'org-confirm', 'picker', 'picker-key', 'teams', 'player',
 )
 EVENTS = (
     'fragments', 'form-reset', 'create-success', 'lazy-loaded',
@@ -188,6 +219,8 @@ STORAGE_KEYS = (
     'bemade_sports_clinic.sc_lazy_edit',
     # Task 5371 (P4c1).
     'sc_notify_shown:v1',
+    # Task 5382 (P4c3): the component's key and template.
+    'bemade_sports_clinic.sc_autosave_field', 'bemade_sports_clinic.ScAutosaveField',
 )
 # Task 5199 (P4a): the save engine's and the refresh's Python / QWeb names,
 # as whole words.
@@ -203,6 +236,10 @@ SAVE_NAMES = (
     '_sc_pop_notification', '_sc_offer_undo', 'sc_notification',
     # Task 5381 (P4c2): the render helpers.
     'sc_display', 'sc_display_key', 'sc_contact_href',
+    # Task 5382 (P4c3): the props builders, the class, the 428 key.
+    'sc_field_props', 'sc_draft_props', 'sc_form_props', '_sc_field_props',
+    '_sc_draft_props', '_sc_form_props', '_sc_options', 'ScAutosaveField',
+    'confirm_identity',
 )
 
 # Task 5344 (P3b1): the generic classes, as the name after ``o_sc_``. A name
@@ -281,6 +318,12 @@ GENERIC_CLASSES = (
     'guard_reason', 'reason_flash',
     # Task 5381 (P4c2): the contact link of a display row.
     'contact_link',
+    # Task 5382 (P4c3): the group confirm, the confirm banner, the replace
+    # editor.
+    'group_confirm', 'group_confirm_text', 'group_confirm_actions',
+    'identity_banner', 'identity_change', 'identity_confirm',
+    'identity_cancel', 'replace_current', 'replace_current_text',
+    'replace_caption', 'replace_new_head', 'replace_reuse', 'replace_hint',
 )
 # Semantic and scale slots of the style tokens (the palette stays ``--sc-``).
 TOKEN_SLOTS = (
@@ -331,6 +374,11 @@ ALLOWED = {
     (KIT, 'static/tests/pk_sheets.test.js'): {'data-sc-sheet-open'},
     (KIT, 'static/tests/pk_tabs.test.js'): {'data-sc-tabs', 'data-sc-tab', 'data-sc-tab-panel'},
     (KIT, 'static/tests/pk_shell.test.js'): {'data-sc-draft-clear'},
+    # Task 5382: the consumer's one-release alias of the component's key;
+    # the clinic's migration that removes the old attributes from the
+    # translations names them.
+    ('bemade_sports_clinic', 'static/src/js/sc_autosave_field.js'): {'bemade_sports_clinic.sc_autosave_field'},
+    ('bemade_sports_clinic', 'migrations/19.0.1.144.0/post-migrate.py'): None,
 }
 
 
@@ -371,6 +419,10 @@ PILL_LINE_RE = re.compile(r'pill', re.IGNORECASE)
 PILL_ID_RE = re.compile(r'(?<![\w-])sc-pill-')
 # Task 5371 (P4c1): an undo form's old marker, ``data-sc-form="<kind>.undo"``.
 UNDO_FORM_RE = re.compile(r'''(?<![\w])data-sc-form=["'][\w]+\.undo["']''')
+# Task 5382 (P4c3): the autosave field's data-sc-field / data-sc-state, on a
+# line that names the autosave field.
+AUTOSAVE_ATTR_RE = re.compile(r'(?<![\w])data-sc-(?:field|state)(?![\w-])')
+AUTOSAVE_LINE_RE = re.compile(r'autosave', re.IGNORECASE)
 
 
 def retired_names(line):
@@ -395,6 +447,8 @@ def retired_names(line):
     found += [m.group(0) for m in UNDO_FORM_RE.finditer(line)]
     if PILL_LINE_RE.search(line):
         found += [m.group(0) for m in PILL_FIELD_ATTR_RE.finditer(line)]
+    elif AUTOSAVE_LINE_RE.search(line):
+        found += [m.group(0) for m in AUTOSAVE_ATTR_RE.finditer(line)]
     return found
 
 
@@ -512,8 +566,8 @@ class TestPkRetiredNames(TransactionCase):
         self.assertEqual(retired_names('el.dataset.scField === f'), ['dataset.scField'])
         self.assertEqual(retired_names("tree.xpath('//*[@data-sc-pill-select][@data-sc-field=\"x\"]')"),
                          ['data-sc-pill-select', 'data-sc-field'])
-        # The autosave field's data-sc-field stays.
-        self.assertEqual(retired_names('.o_pk_autosave[data-sc-field="name"]'), [])
+        # Task 5382 (P4c3): the autosave field's data-sc-field is retired too.
+        self.assertEqual(retired_names('.o_pk_autosave[data-sc-field="name"]'), ['data-sc-field'])
         self.assertEqual(retired_names('"sc:pill-action" "sc:edit-view-open" sc:toast'),
                          ['sc:pill-action', 'sc:edit-view-open', 'sc:toast'])
         self.assertEqual(retired_names('class="o_sc_guard_reason o_sc_reason_flash"'),
@@ -583,6 +637,43 @@ class TestPkRetiredNames(TransactionCase):
                          ['data-sc-row-expand', 'data-sc-lazy-url', 'data-sc-draft-clear'])
         self.assertEqual(retired_names('data-sc-timesheet-id data-sc-ts-edit data-sc-created-injury data-sc-action'), [])
         self.assertEqual(retired_names('data-pk-edit-toggle data-pk-tab pk:edit-open pk_display o_pk_contact_link'), [])
+
+    def test_matcher_autosave(self):
+        """Task 5382 (P4c3): the autosave field's names, its meanings only."""
+        self.assertEqual(
+            retired_names('.o_pk_autosave[data-sc-field="name"][data-sc-state="saved"] [data-sc-replace="new"]'),
+            ['data-sc-replace', 'data-sc-field', 'data-sc-state'])
+        # Another meaning of data-sc-state (a worklist row) stays.
+        self.assertEqual(retired_names('li[data-sc-state="arrived"][data-sc-patient-id]'), [])
+        self.assertEqual(retired_names('box.dataset.scState = status;'), [])
+        self.assertEqual(retired_names('t-att-data-sc-autosave="m" t-att-data-sc-restored="r"'),
+                         ['data-sc-autosave', 'data-sc-restored'])
+        self.assertEqual(retired_names('<li t-att-data-sc-tags-index="i"/><p data-sc-tags-typed-error="1"/>'),
+                         ['data-sc-tags-index', 'data-sc-tags-typed-error'])
+        self.assertEqual(retired_names('[data-sc-org-confirm-box] [data-sc-org-cancel] [data-sc-org-confirm]'),
+                         ['data-sc-org-confirm-box', 'data-sc-org-cancel', 'data-sc-org-confirm'])
+        self.assertEqual(retired_names('<select data-sc-picker="1" data-sc-picker-key="team">'),
+                         ['data-sc-picker', 'data-sc-picker-key'])
+        self.assertEqual(retired_names('<select data-sc-picker-empty="1"><div data-sc-picker-scope="1">'), [])
+        self.assertEqual(retired_names('select.dataset.scPickerKey; o.dataset.scTeams; o.dataset.scPlayer'),
+                         ['dataset.scPickerKey', 'dataset.scTeams', 'dataset.scPlayer'])
+        self.assertEqual(retired_names('select.dataset.scPickerReady; li.dataset.scPlayerId'), [])
+        self.assertEqual(retired_names('<option t-att-data-sc-player="p"/> data-sc-player-id="1"'),
+                         ['data-sc-player'])
+        self.assertEqual(retired_names('class="o_sc_identity_banner o_sc_group_confirm o_sc_replace_current_text"'),
+                         ['o_sc_identity_banner', 'o_sc_group_confirm', 'o_sc_replace_current_text'])
+        self.assertEqual(retired_names('<button data-sc-value="no:yes"/>'), ['data-sc-value'])
+        self.assertEqual(retired_names('<owl-component name="bemade_sports_clinic.sc_autosave_field"/>'),
+                         ['bemade_sports_clinic.sc_autosave_field'])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_field_autosave"'),
+                         ['bemade_sports_clinic.sc_field_autosave'])
+        self.assertEqual(retired_names("self._sc_field_props(r, 'f', l) sc_draft_props(k) _sc_options(o)"),
+                         ['_sc_field_props', 'sc_draft_props', '_sc_options'])
+        self.assertEqual(retired_names("{'confirm_identity': True} class ScAutosaveField"),
+                         ['confirm_identity', 'ScAutosaveField'])
+        self.assertEqual(
+            retired_names('data-pk-autosave-field data-pk-autosave-state pk_field_props o_pk_confirm_banner '
+                          'bemade_portal_kit.pk_autosave_field data-pk-picker data-pk-meta-group'), [])
 
     def test_no_retired_name_left(self):
         hits = []

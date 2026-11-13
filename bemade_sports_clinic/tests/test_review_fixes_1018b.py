@@ -59,7 +59,7 @@ def _props(node):
 
 def _island_fields(scope):
     return [_props(node).get('field')
-            for node in scope.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]')]
+            for node in scope.xpath('.//owl-component[@name="bemade_portal_kit.pk_autosave_field"]')]
 
 
 @tagged('post_install', '-at_install')

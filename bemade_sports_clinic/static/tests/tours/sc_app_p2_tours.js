@@ -75,7 +75,7 @@ tours.add("sc_1539_injury_autosave", {
         },
         {
             content: "Type an external note",
-            trigger: '.o_pk_autosave[data-sc-field="external_notes"] textarea',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="external_notes"] textarea',
             run: "edit Tour 1539 synthetic external note",
         },
         {
@@ -85,7 +85,7 @@ tours.add("sc_1539_injury_autosave", {
         },
         {
             content: "Saved on blur",
-            trigger: '.o_pk_autosave[data-sc-field="external_notes"][data-sc-state="saved"]',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="external_notes"][data-pk-autosave-state="saved"]',
         },
         // Task 1631: the status is the card header's pill dropdown —
         // « Resolved » asks the date (the « Résoudre » sheet), going back to
@@ -139,7 +139,7 @@ tours.add("sc_1539_new_injury_draft", {
     steps: () => [
         {
             content: "Type the diagnosis",
-            trigger: '.o_pk_autosave[data-sc-field="diagnosis"] input',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="diagnosis"] input',
             run(helpers) {
                 window.sessionStorage.setItem("sc1539NewUrl", window.location.href);
                 return helpers.edit(DIAGNOSIS);
@@ -147,7 +147,7 @@ tours.add("sc_1539_new_injury_draft", {
         },
         {
             content: "Kept as a device draft",
-            trigger: '.o_pk_autosave[data-sc-field="diagnosis"][data-sc-state="draft"]',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="diagnosis"][data-pk-autosave-state="draft"]',
             run() {
                 assert(draftKeys("new_injury.").length === 1, "expected one new-injury draft");
             },
@@ -169,9 +169,9 @@ tours.add("sc_1539_new_injury_draft", {
         },
         {
             content: "« Brouillon restauré » with the text",
-            trigger: '.o_pk_autosave[data-sc-field="diagnosis"][data-sc-restored="1"]',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="diagnosis"][data-pk-autosave-restored="1"]',
             run() {
-                const value = document.querySelector('.o_pk_autosave[data-sc-field="diagnosis"] input').value;
+                const value = document.querySelector('.o_pk_autosave[data-pk-autosave-field="diagnosis"] input').value;
                 assert(value === DIAGNOSIS, `restored value: ${value}`);
             },
         },
@@ -345,10 +345,10 @@ tours.add("sc_injury_resolve_date", {
             // Review fixes 2026-10-18: the resolution date field is hidden
             // until the injury is resolved.
             content: "No resolution date yet (its field hidden while active)",
-            trigger: '.o_sc_injury_item[open] .o_pk_autosave[data-sc-field="predicted_resolution_date"] input',
+            trigger: '.o_sc_injury_item[open] .o_pk_autosave[data-pk-autosave-field="predicted_resolution_date"] input',
             run() {
                 const input = document.querySelector(
-                    '.o_sc_injury_item[open] .o_pk_autosave[data-sc-field="resolution_date"] input'
+                    '.o_sc_injury_item[open] .o_pk_autosave[data-pk-autosave-field="resolution_date"] input'
                 );
                 if (input.value) {
                     throw new Error(`resolution date already set: ${input.value}`);
@@ -375,7 +375,7 @@ tours.add("sc_injury_resolve_date", {
         },
         {
             content: "The resolution date shows at once (no reload)",
-            trigger: `.o_sc_injury_item[open] .o_pk_autosave[data-sc-field="resolution_date"] input:value(${new Date().getFullYear()})`,
+            trigger: `.o_sc_injury_item[open] .o_pk_autosave[data-pk-autosave-field="resolution_date"] input:value(${new Date().getFullYear()})`,
             run() {
                 if (!window.__scResolveNoReload) {
                     throw new Error("the page reloaded");
@@ -395,19 +395,19 @@ tours.add("sc_event_pencil", {
         },
         {
             content: "Rename the event",
-            trigger: '[data-pk-edit-card="event"] .o_pk_autosave[data-sc-field="name"] input',
+            trigger: '[data-pk-edit-card="event"] .o_pk_autosave[data-pk-autosave-field="name"] input',
             run: "edit Synthetic pencil event",
         },
         {
             content: "Leave the field so it saves",
-            trigger: '[data-pk-edit-card="event"] .o_pk_autosave[data-sc-field="name"] input',
+            trigger: '[data-pk-edit-card="event"] .o_pk_autosave[data-pk-autosave-field="name"] input',
             run() {
                 this.anchor.blur(); this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI: blur() fires no event without window focus
             },
         },
         {
             content: "Saved",
-            trigger: '[data-pk-edit-card="event"] .o_pk_autosave[data-sc-field="name"][data-sc-state="saved"]',
+            trigger: '[data-pk-edit-card="event"] .o_pk_autosave[data-pk-autosave-field="name"][data-pk-autosave-state="saved"]',
         },
         {
             content: "Done: the card closes (task 1611: no reload, the title is a read fragment)",
@@ -449,24 +449,24 @@ tours.add("sc_training_history_refresh", {
         },
         {
             content: "Type a recommendation",
-            trigger: '.o_pk_autosave[data-sc-field="training_recommendation"] textarea',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="training_recommendation"] textarea',
             run: "edit Synthetic bike only",
         },
         {
             content: "Leave the field so it saves",
-            trigger: '.o_pk_autosave[data-sc-field="training_recommendation"] textarea',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="training_recommendation"] textarea',
             run() {
                 this.anchor.blur(); this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI: blur() fires no event without window focus
             },
         },
         {
             content: "Saved",
-            trigger: '.o_pk_autosave[data-sc-field="training_recommendation"][data-sc-state="saved"]',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="training_recommendation"][data-pk-autosave-state="saved"]',
         },
         {
             // Task 1601: the « Updated on … by … » stamp appears in place.
             content: "The authorship stamp is updated without a reload",
-            trigger: '.o_pk_autosave[data-sc-field="training_recommendation"] .o_pk_hint:contains(Updated on):contains(PC TP)',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="training_recommendation"] .o_pk_hint:contains(Updated on):contains(PC TP)',
         },
         {
             // Task 1629: one title + one History link in the edit view; the
@@ -524,7 +524,7 @@ tours.add("sc_player_inline_edit", {
         },
         {
             content: "Edit the position",
-            trigger: '[data-pk-edit-card="identity"] [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="position"] input',
+            trigger: '[data-pk-edit-card="identity"] [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-pk-autosave-field="position"] input',
             run: "edit Safety",
         },
         {
@@ -534,7 +534,7 @@ tours.add("sc_player_inline_edit", {
         },
         {
             content: "Saved",
-            trigger: '[data-pk-edit-card="identity"] .o_pk_autosave[data-sc-field="position"][data-sc-state="saved"]',
+            trigger: '[data-pk-edit-card="identity"] .o_pk_autosave[data-pk-autosave-field="position"][data-pk-autosave-state="saved"]',
         },
         {
             content: "Done: back to read mode",
@@ -602,7 +602,7 @@ tours.add("sc_player_teams_tags", {
         {
             content: "Added and saved",
             trigger:
-                '[data-pk-edit-card="teams"] .o_pk_autosave[data-sc-state="saved"] .o_pk_tag:contains("PC Team C")',
+                '[data-pk-edit-card="teams"] .o_pk_autosave[data-pk-autosave-state="saved"] .o_pk_tag:contains("PC Team C")',
         },
         {
             content: "Remove Team A",
@@ -612,7 +612,7 @@ tours.add("sc_player_teams_tags", {
         {
             content: "Only Team C left, saved",
             trigger:
-                '[data-pk-edit-card="teams"] .o_pk_autosave[data-sc-state="saved"] .o_pk_tags:not(:has(.o_pk_tag:contains("PC Team A")))',
+                '[data-pk-edit-card="teams"] .o_pk_autosave[data-pk-autosave-state="saved"] .o_pk_tags:not(:has(.o_pk_tag:contains("PC Team A")))',
         },
     ],
 });
