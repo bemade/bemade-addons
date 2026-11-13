@@ -123,6 +123,81 @@ class SaleOrderLine(models.Model):
                 plan[line] = (fmt, line.package_format_to_buy)
         return plan
 
+    def write(self, vals):
+        # A confirmed line in a format whose quantity is raised buys the new
+        # shortfall in that format too (decreases are left to core: nothing
+        # bought is reduced or cancelled automatically).
+        raised = self.env["sale.order.line"]
+        if "product_uom_qty" in vals:
+            raised = self.filtered(
+                lambda l: l.state == "sale"
+                and not l.display_type
+                and l.product_id.uses_package_rule
+                and l._package_format_uom()
+            )
+            previous = {line: line.product_uom_qty for line in raised}
+        res = super().write(vals)
+        if raised:
+            raised = raised.filtered(
+                lambda l: l.product_uom_id.compare(l.product_uom_qty, previous[l]) > 0
+                and l.product_uom_id == l._package_format_uom()
+                and not l.order_id.locked
+                and not l.is_mto
+            )
+            raised._package_format_buy_raise()
+        return res
+
+    def _package_format_on_order(self, fmt):
+        """Packages of format ``fmt`` still to receive on purchase lines
+        bought to order for this line."""
+        self.ensure_one()
+        on_order = 0.0
+        for pol in self.env["purchase.order.line"].search(
+            [("sale_line_id", "=", self.id), ("state", "!=", "cancel")]
+        ):
+            if pol.product_id != self.product_id:
+                continue
+            remaining = max(pol.product_qty - pol.qty_received, 0.0)
+            on_order += pol.product_uom_id._compute_quantity(remaining, fmt, round=False)
+        return on_order
+
+    def _package_format_buy_raise(self):
+        """Buy the shortfall of confirmed lines whose quantity was raised:
+        wanted packages minus the packages reserved for the line, the free
+        packages of the format and what is already on order for the line."""
+        plan = {}
+        for line in self:
+            fmt = line._package_format_uom()
+            location = line._package_format_location()
+            reserved = sum(
+                m.product_uom._compute_quantity(m.quantity, fmt, round=False)
+                for m in line.move_ids
+                if m.state not in ("done", "cancel") and m.location_id == location
+            )
+            delivered = line.product_uom_id._compute_quantity(
+                line.qty_delivered, fmt, round=False
+            )
+            free = len(line.product_id._package_format_free_packages(fmt, location))
+            wanted = int(round(line.product_uom_qty)) - int(round(delivered))
+            count = wanted - int(round(reserved)) - free - int(round(line._package_format_on_order(fmt)))
+            if count <= 0:
+                continue
+            pol = self.env["purchase.order.line"].search(
+                [
+                    ("sale_line_id", "=", line.id),
+                    ("product_id", "=", line.product_id.id),
+                    ("product_uom_id", "=", fmt.id),
+                    ("order_id.state", "in", ("draft", "sent")),
+                ],
+                limit=1,
+            )
+            if pol:
+                pol.product_qty += count
+            else:
+                plan[line] = (fmt, count)
+        if plan:
+            self._package_format_buy(plan)
+
     def _package_format_buy(self, plan):
         """Buy to order: one RFQ line per sale line, in the format unit."""
         Procurement = self.env["stock.rule"].Procurement
