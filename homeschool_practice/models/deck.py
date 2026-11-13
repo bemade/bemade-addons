@@ -126,14 +126,18 @@ class PracticeDeck(models.Model):
             raise AccessError(self.env._("Only a parent (homeschool manager) loads practice decks."))
         self._load_choice_csv("homeschool_practice/data/grammar_fr_units.csv",
                               "homeschool_practice/data/grammar_fr_cards.csv")
+        self._load_choice_csv("homeschool_practice/data/grammar_fr_56_units.csv",
+                              "homeschool_practice/data/grammar_fr_56_cards.csv")
         return True
 
     @api.model
     def _load_choice_csv(self, units_path, cards_path):
-        """``units_path``: deck;deck_sequence;subject;new_per_session;unit;unit_sequence;hint;intro —
+        """``units_path``: deck;deck_sequence;subject;new_per_session;unit;unit_sequence;hint;intro;refs —
         ``new_per_session`` sets both the items introduced at unlock and the new items per
         session (cards of an already-taught concept: variety beats repeats); ``subject`` is the
-        xml id of the deck's ``homeschool.subject`` (ignored when absent). ``cards_path``:
+        xml id of the deck's ``homeschool.subject`` (ignored when absent); ``refs`` (optional) are
+        the curriculum codes the unit practises, space-separated, linked to the matching
+        ``homeschool.item`` records (codes not found are skipped). ``cards_path``:
         unit;key;prompt;options;hint, options separated by « | », the right one starred
         (``*à``). An empty card hint takes the unit's."""
         Unit = self.env["homeschool.practice.unit"]
@@ -152,16 +156,28 @@ class PracticeDeck(models.Model):
                 if not unit:
                     unit = Unit.create({"deck_id": deck.id, "name": row["unit"],
                                         "sequence": int(row["unit_sequence"]), "intro": row["intro"]})
+                codes = (row.get("refs") or "").split()
+                if codes:
+                    found = self.env["homeschool.item"].with_context(active_test=False).search([("code", "in", codes)])
+                    if found - unit.curriculum_item_ids:
+                        unit.curriculum_item_ids = [fields.Command.link(i.id) for i in found - unit.curriculum_item_ids]
                 units[row["unit"]], hints[row["unit"]] = unit, row["hint"]
         cards = {}
         with io.TextIOWrapper(file_open(cards_path, "rb"), encoding="utf-8") as f:
             for row in csv.DictReader(f, delimiter=";"):
-                options = [(o.lstrip("*"), o.startswith("*")) for o in row["options"].split("|")]
+                options = [(_nbsp(o.lstrip("*")), o.startswith("*")) for o in row["options"].split("|")]
                 cards.setdefault(row["unit"], []).append(
-                    (row["key"], row["prompt"], options, row["hint"] or hints[row["unit"]]))
+                    (row["key"], _nbsp(row["prompt"]), options, row["hint"] or hints[row["unit"]]))
         for name, unit_cards in cards.items():
             units[name].deck_id._generate_choice_cards(units[name], unit_cards)
         return True
+
+
+
+def _nbsp(text):
+    """French typography: no line break inside « » nor before ? ! : (a lone « at the end of a
+    line on the iPad)."""
+    return re.sub(r"« ", "«\u00a0", re.sub(r" ([»?!:])", "\u00a0\\1", text))
 
 
 class PracticeUnit(models.Model):
