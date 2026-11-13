@@ -220,7 +220,15 @@
             if (state.firstTouch === null && state.shownAt) { state.firstTouch = Math.round(performance.now() - state.shownAt); }
         }, { capture: true });
         app.querySelectorAll("[data-key]").forEach(function (b) {
-            b.addEventListener("click", function () { key(b.dataset.key); });
+            // A key acts as the finger lands: iOS drops the click when the finger slides a
+            // little or the next finger lands before the previous one lifts (fast typing).
+            b.addEventListener("pointerdown", function (e) {
+                if (e.button > 0) { return; }
+                e.preventDefault();
+                b.classList.add("is-down");
+                setTimeout(function () { b.classList.remove("is-down"); }, 120);
+                key(b.dataset.key);
+            });
         });
         app.querySelectorAll("[data-choice]").forEach(function (b) {
             b.addEventListener("click", function () { submit(b.dataset.choice, b); });
