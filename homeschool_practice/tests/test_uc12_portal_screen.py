@@ -25,6 +25,10 @@ Acceptance criteria
    reaches an iPad running it from the home screen without a version bump.
 8. Rendering is checked by HttpCase tests; real touch behaviour is checked by hand on
    the iPad before release (noted in the review artifact).
+9. Every tap on the number pad counts: a key acts as the finger lands (``pointerdown``),
+   not on the browser's ``click``, which iOS drops when the finger slides a little or
+   the next finger lands before the previous one lifts (fast typing). The answer area
+   never starts a scroll or a pan (``touch-action: none``).
 """
 import json
 
@@ -61,6 +65,16 @@ class TestPortalScreen(PracticeHttpCase):
         self.assertIn("hold(eventsToCelebrations(res))", feedback)
         self.assertIn("release()", js[js.index("function summary("):js.index("function finish(")])
         self.assertIn("release()", js[js.index("function quit("):])
+
+    def test_keypad_acts_on_touch_down(self):
+        js = self.url_open("/homeschool_practice/static/src/js/practice.js").text
+        show = js[js.index("function showItem("):js.index("function key(")]
+        self.assertIn('querySelectorAll("[data-key]")', show)
+        keys = show[show.index('querySelectorAll("[data-key]")'):show.index('querySelectorAll("[data-choice]")')]
+        self.assertIn('"pointerdown"', keys)
+        self.assertNotIn('"click"', keys)
+        css = self.url_open("/homeschool_practice/static/src/css/practice.css").text
+        self.assertRegex(css, r"\.hp-input\s*\{[^}]*touch-action:\s*none")
 
     def test_asset_version_follows_content(self):
         from odoo.addons.homeschool_practice.controllers.portal import asset_version
