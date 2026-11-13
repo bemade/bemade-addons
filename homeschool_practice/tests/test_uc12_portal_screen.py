@@ -28,7 +28,15 @@ Acceptance criteria
 9. Every tap on the number pad counts: a key acts as the finger lands (``pointerdown``),
    not on the browser's ``click``, which iOS drops when the finger slides a little or
    the next finger lands before the previous one lifts (fast typing). The answer area
-   never starts a scroll or a pan (``touch-action: none``).
+   never starts a scroll or a pan (``touch-action: none``). Answer buttons act the same way.
+10. Right or wrong shows the instant he answers, judged on the device with the server's
+    rule (the item carries its answer): the picked button turns green or red and, on a
+    miss, the right one lights up. The next item comes with the server's reply, while the
+    feedback is on screen.
+11. On a choices unit (grammar), after 2 misses in a row in the same unit during a
+    lesson, the next card of that unit shows its trick on the card before he answers,
+    and the answer buttons come in a moment later; the answer is recorded as hint used.
+    It stops once he gets one right in that unit.
 """
 import json
 
@@ -102,3 +110,14 @@ class TestPortalScreen(PracticeHttpCase):
     def test_link_on_portal_home(self):
         self.authenticate("hs_learner", "hs_learner")
         self.assertIn("/my/homeschool/practice", self.url_open("/my/homeschool").text)
+
+    def test_instant_feedback_and_trick(self):
+        js = self.url_open("/homeschool_practice/static/src/js/practice.js").text
+        self.assertIn("function judge(item, given)", js)
+        self.assertRegex(js, r'\[data-choice\]"\)\.forEach\(function \(b\) \{\s*b\.addEventListener\("pointerdown"')
+        self.assertIn("var TRICK_AFTER = 2;", js)
+        self.assertIn('class="hp-trick"', js)
+        self.assertIn("state.hintUsed = true; }", js)
+        css = self.url_open("/homeschool_practice/static/src/css/practice.css").text
+        for cls in (".hp-choice.is-right", ".hp-choice.is-wrong", ".hp-trick", ".hp-choices.is-waiting"):
+            self.assertIn(cls, css)

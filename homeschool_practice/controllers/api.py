@@ -3,7 +3,8 @@
 
 Only the learner himself (``student.user_id``) may call it. Every payload is built by hand
 from an allowlist: no latency, threshold, timer, time limit or mastery verdict ever leaves
-the server (UC-11 §5)."""
+the server (UC-11 §5). The item carries its answer so the screen shows right or wrong
+without waiting for the network (UC-11 §6); the server still judges and records it."""
 from werkzeug.exceptions import Forbidden, NotFound
 
 from odoo import fields, http
@@ -59,7 +60,7 @@ class PracticeApi(http.Controller):
         if first_time:
             access.first_served = True
         return {
-            "item_id": item.id, "prompt": item.prompt, "answer_mode": item.answer_mode,
+            "item_id": item.id, "prompt": item.prompt, "answer_mode": item.answer_mode, "answer": item.answer,
             "choices": item.choice_ids.sorted(lambda c: (c.sequence, c.id)).mapped("label") if item.answer_mode == "choices" else [],
             "hint": item.hint or "", "unit": item.unit_id.name,
             "intro": (item.unit_id.intro or "") if first_time else "", "first_time": first_time,

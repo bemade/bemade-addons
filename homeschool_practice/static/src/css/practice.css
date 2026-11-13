@@ -86,7 +86,13 @@ body[data-handedness="left"] .hp-stage { direction: rtl; } body[data-handedness=
 .hp-key.is-erase { color: var(--muted); } .hp-key.is-ok { background: var(--accent); color: #14213d; font-size: 26px; }
 .hp-choices { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 460px; justify-self: center; }
 .hp-choice { min-height: 110px; border-radius: var(--r); background: var(--panel2); font-size: 40px; font-weight: 800; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
-.hp-choice:active, .hp-choice.is-picked { background: #2f4776; transform: translateY(3px); }
+.hp-choice:active { background: #2f4776; transform: translateY(3px); }
+.hp-choice.is-right { background: #1b4a3a; color: var(--good); box-shadow: 0 0 0 4px var(--good); }
+.hp-choice.is-wrong { background: #4a3030; color: var(--miss); transform: translateY(3px); }
+.hp-choice.is-off { opacity: .45; }
+.hp-choices.is-waiting { opacity: .3; pointer-events: none; }
+.hp-choices { transition: opacity .3s ease; }
+.hp-trick { padding: 14px 20px; border-radius: var(--r); background: var(--panel); border: 3px solid var(--accent); color: var(--accent); font-size: 26px; font-weight: 700; animation: rise .25s ease; }
 .hp-feedback { position: fixed; left: 20px; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 5; border-radius: var(--r); display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 26px; }
 .hp-feedback.is-good, .hp-feedback.is-miss { padding: 18px 22px; animation: rise .25s ease; }
 .hp-feedback.is-good { background: #1b4a3a; color: var(--good); }

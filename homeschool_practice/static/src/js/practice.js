@@ -1,9 +1,11 @@
 /* Homeschool practice — the portal lesson screen (touch first, iPad).
  *
- * The server decides everything (what comes next, right or wrong, XP, quests, rewards);
+ * The server decides what comes next, XP, quests and rewards, and records the answer;
  * this screen shows an item and sends back the answer with two silent timings measured
- * from the moment the item is on screen: the first touch and the submit. No clock, no
- * countdown, no speed is ever shown. Plain script (no build step), Safari on iPadOS 17+. */
+ * from the moment the item is on screen: the first touch and the submit. Right or wrong
+ * shows the instant he answers (the item carries its answer); the next item arrives with
+ * the server's reply while the feedback is on screen. No clock, no countdown, no speed is
+ * ever shown. Plain script (no build step), Safari on iPadOS 17+. */
 (function () {
     "use strict";
     var API = "/my/homeschool/practice/api";
@@ -11,6 +13,8 @@
     var app = document.getElementById("app");
     var INPUT = window.matchMedia && window.matchMedia("(pointer: coarse)").matches ? "touch" : "mouse";
     var L = {};
+    // Misses in a row inside one choices unit before its trick shows on the card by itself.
+    var TRICK_AFTER = 2;
     var state = { home: null, session: null, item: null, typed: "", shownAt: 0, firstTouch: null, hintUsed: false, busy: false };
 
     // ------------------------------------------------------------------ utils
@@ -179,6 +183,7 @@
             state.busy = false;
             state.session = res.session_id;
             state.held = [];
+            state.misses = {};
             if (!res.item) { finish(); return; }
             showItem(res.item);
         }, function () { state.busy = false; });
@@ -193,9 +198,13 @@
         }
         var dots = "";
         for (var i = 1; i <= item.total; i++) { dots += '<i class="' + (i < item.index ? "is-past" : i === item.index ? "is-now" : "") + '"></i>'; }
+        // He will not go and ask for the hint while he is struggling: after a few misses in a
+        // row in this unit, the trick is on the card before he answers (recorded as hint used).
+        var trick = item.answer_mode === "choices" && item.hint && (state.misses[item.unit] || 0) >= TRICK_AFTER;
+        if (trick) { state.hintUsed = true; }
         var pad;
         if (item.answer_mode === "choices") {
-            pad = '<div class="hp-choices">' + item.choices.map(function (c) {
+            pad = '<div class="hp-choices' + (trick ? " is-waiting" : "") + '">' + item.choices.map(function (c) {
                 return '<button class="hp-choice" data-choice="' + esc(c) + '">' + esc(c) + "</button>";
             }).join("") + "</div>";
         } else {
@@ -211,7 +220,8 @@
             '<div class="hp-stage">' +
                 '<div class="hp-question"><div class="hp-prompt">' + esc(item.prompt) + "</div>" +
                     (item.answer_mode === "keypad" ? '<div class="hp-typed" id="hp-typed">&nbsp;</div>' : "") +
-                    (item.hint ? '<button class="hp-hint" id="hp-hint">💡 ' + esc(L.hint) + "</button>" : "") +
+                    (trick ? '<div class="hp-trick">💡 ' + esc(item.hint) + "</div>" :
+                        item.hint ? '<button class="hp-hint" id="hp-hint">💡 ' + esc(L.hint) + "</button>" : "") +
                     '<div class="hp-hint-text" id="hp-hint-text"></div>' +
                 "</div>" + '<div class="hp-input">' + pad + "</div>" +
             "</div>" + '<div class="hp-feedback" id="hp-feedback"></div></div>');
@@ -231,8 +241,19 @@
             });
         });
         app.querySelectorAll("[data-choice]").forEach(function (b) {
-            b.addEventListener("click", function () { submit(b.dataset.choice, b); });
+            b.addEventListener("pointerdown", function (e) {
+                if (e.button > 0) { return; }
+                e.preventDefault();
+                submit(b.dataset.choice, b);
+            });
         });
+        if (trick) {
+            // the answers come in a moment after the trick, so his eyes land on it first
+            setTimeout(function () {
+                var c = app.querySelector(".hp-choices.is-waiting");
+                if (c && state.item === item) { c.classList.remove("is-waiting"); }
+            }, 1200);
+        }
         var hb = document.getElementById("hp-hint");
         if (hb) {
             hb.addEventListener("click", function () {
@@ -251,6 +272,14 @@
         else if (state.typed.length < 6) { state.typed += k; }
         document.getElementById("hp-typed").innerHTML = state.typed ? esc(state.typed) : "&nbsp;";
     }
+    /** Same rule as the server (``homeschool.practice.item._is_correct``). */
+    function judge(item, given) {
+        if (item.answer_mode === "keypad") {
+            var g = String(given).trim();
+            return /^[0-9]+$/.test(g) && g.replace(/^0+/, "") === String(item.answer).replace(/^0+/, "");
+        }
+        return given === item.answer;
+    }
     function submit(given, btn) {
         if (state.busy) { return; }
         state.busy = true;
@@ -258,12 +287,14 @@
         var item = state.item;
         var submitMs = state.shownAt ? Math.round(now - state.shownAt) : 0;
         if (state.firstTouch === null) { state.firstTouch = submitMs; }
-        if (btn) { btn.classList.add("is-picked"); }
-        sendAnswer({
+        var correct = judge(item, given);
+        state.misses[item.unit] = correct ? 0 : (state.misses[item.unit] || 0) + 1;
+        var reply = sendAnswer({
             session_id: state.session, item_id: item.item_id, given: given, hint_used: state.hintUsed,
             first_touch_ms: state.firstTouch, submit_ms: submitMs,
             client_ts: new Date().toISOString(), client_uuid: uuid(),
-        }).then(function (res) { feedback(res); }, function () { state.busy = false; });
+        });
+        feedback(item, correct, btn, reply);
     }
     function eventsToCelebrations(res) {
         var out = [];
@@ -275,26 +306,45 @@
         (res.badges || []).forEach(function (b) { out.push({ icon: b.icon, title: L.new_badge, text: b.name + (b.unit ? " · " + b.unit : "") }); });
         return out;
     }
-    function feedback(res) {
-        if (res.error === "stale") {
-            if (res.done || !res.item) { finish(); } else { showItem(res.item); }
-            return;
-        }
+    /** Show right or wrong at once; move on when the server's reply (next item, XP,
+     *  celebrations) is in. */
+    function feedback(item, correct, btn, reply) {
         var fb = document.getElementById("hp-feedback");
-        var xp = res.xp ? '<span class="hp-xp">+' + res.xp + " " + esc(L.xp) + "</span>" : "";
-        // Celebrations earned mid-lesson are held for the end of the lesson: nothing interrupts the practice.
-        hold(eventsToCelebrations(res));
+        app.querySelectorAll("[data-choice]").forEach(function (b) {
+            if (b === btn) { b.classList.add(correct ? "is-right" : "is-wrong"); }
+            else if (!correct && b.dataset.choice === item.answer) { b.classList.add("is-right"); }
+            else { b.classList.add("is-off"); }
+        });
+                var ready = reply.then(function (res) {
+            if (res.error !== "stale") {
+                // Celebrations earned mid-lesson are held for the end of the lesson: nothing interrupts the practice.
+                hold(eventsToCelebrations(res));
+                if (res.xp && fb.isConnected) {
+                    fb.insertAdjacentHTML("beforeend", '<span class="hp-xp">+' + res.xp + " " + esc(L.xp) + "</span>");
+                    var go = document.getElementById("hp-next");
+                    if (go) { fb.appendChild(go); }
+                }
+            }
+            return res;
+        }, function () { showItem(item); throw new Error("answer refused"); });
+        var moved = false;
         var next = function () {
-            if (res.done) { summary(res.summary); } else { showItem(res.next); }
+            if (moved) { return; }
+            moved = true;
+            ready.then(function (res) {
+                if (res.error === "stale") {
+                    if (res.done || !res.item) { finish(); } else { showItem(res.item); }
+                } else if (res.done) { summary(res.summary); } else { showItem(res.next); }
+            }, function () { /* the card is shown again */ });
         };
-        if (res.correct) {
+        if (correct) {
             fb.className = "hp-feedback is-good";
-            fb.innerHTML = "<b>" + esc(L.great) + "</b>" + xp;
+            fb.innerHTML = "<b>" + esc(L.great) + "</b>";
             setTimeout(next, 650);
         } else {
             fb.className = "hp-feedback is-miss";
-            fb.innerHTML = "<div><b>" + esc(L.almost) + "</b> " + esc(L.answer_is) + " <strong>" + esc(res.expected) + "</strong>" +
-                (res.hint ? '<div class="hp-fb-hint">💡 ' + esc(res.hint) + "</div>" : "") + "</div>" + xp +
+            fb.innerHTML = "<div><b>" + esc(L.almost) + "</b> " + esc(L.answer_is) + " <strong>" + esc(item.answer) + "</strong>" +
+                (item.hint ? '<div class="hp-fb-hint">💡 ' + esc(item.hint) + "</div>" : "") + "</div>" +
                 '<button class="hp-big" id="hp-next">' + esc(L.continue) + "</button>";
             document.getElementById("hp-next").addEventListener("click", next);
         }
