@@ -5,10 +5,13 @@ const CARD = ".o-mail-Message .o-mail-AttachmentContainer";
 registry.category("web_tour.tours").add("bemade_attachment_heic_convert_tour", {
   steps: () => [
     {
-      // The buttons of a card show on hover (opacity), which headless Chrome does not do.
+      // The card buttons only show on hover (opacity 0), and whether headless Chrome counts
+      // them as visible differs between environments, so click the button from its card.
       content: "The HEIC card offers Convert to JPEG",
-      trigger: `${CARD}[title='IMG_TOUR.heic'] .o-bemade-ConvertHeic:not(:visible)`,
-      run: "click",
+      trigger: `${CARD}[title='IMG_TOUR.heic']:has(.o-bemade-ConvertHeic)`,
+      run() {
+        this.anchor.querySelector(".o-bemade-ConvertHeic").click();
+      },
     },
     {
       content: "The card now previews the JPEG",
@@ -16,8 +19,10 @@ registry.category("web_tour.tours").add("bemade_attachment_heic_convert_tour", {
     },
     {
       content: "The corrupt HEIC card offers Convert to JPEG",
-      trigger: `${CARD}[title='BROKEN_TOUR.heic'] .o-bemade-ConvertHeic:not(:visible)`,
-      run: "click",
+      trigger: `${CARD}[title='BROKEN_TOUR.heic']:has(.o-bemade-ConvertHeic)`,
+      run() {
+        this.anchor.querySelector(".o-bemade-ConvertHeic").click();
+      },
     },
     {
       content: "A bilingual error notification is shown",
