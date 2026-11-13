@@ -23,6 +23,9 @@ class PracticeDeck(models.Model):
     curriculum_item_ids = fields.Many2many(
         "homeschool.item", "homeschool_practice_deck_item_rel", "deck_id", "item_id",
         string="Curriculum items", help="The competencies this deck practices.")
+    subject_id = fields.Many2one(
+        "homeschool.subject", ondelete="set null",
+        help="Each subject with unlocked units gets its own session quest every practice day.")
     session_size = fields.Integer(default=10, help="Items per session (a number of items, never a duration).")
     box_intervals = fields.Char(
         default="0,1,3,7,14",
@@ -123,9 +126,10 @@ class PracticeDeck(models.Model):
 
     @api.model
     def _load_choice_csv(self, units_path, cards_path):
-        """``units_path``: deck;deck_sequence;new_per_session;unit;unit_sequence;hint;intro —
+        """``units_path``: deck;deck_sequence;subject;new_per_session;unit;unit_sequence;hint;intro —
         ``new_per_session`` sets both the items introduced at unlock and the new items per
-        session (cards of an already-taught concept: variety beats repeats). ``cards_path``:
+        session (cards of an already-taught concept: variety beats repeats); ``subject`` is the
+        xml id of the deck's ``homeschool.subject`` (ignored when absent). ``cards_path``:
         unit;key;prompt;options;hint, options separated by « | », the right one starred
         (``*à``). An empty card hint takes the unit's."""
         Unit = self.env["homeschool.practice.unit"]
@@ -135,8 +139,10 @@ class PracticeDeck(models.Model):
                 deck = self.search([("name", "=", row["deck"]), ("company_id", "=", self.env.company.id)], limit=1)
                 if not deck:
                     new = int(row["new_per_session"])
+                    subject = self.env.ref(row["subject"], raise_if_not_found=False) if row["subject"] else None
                     deck = self.create({"name": row["deck"], "sequence": int(row["deck_sequence"]),
                                         "intro_size": new, "max_new_per_session": new,
+                                        "subject_id": subject.id if subject else False,
                                         "company_id": self.env.company.id})
                 unit = deck.unit_ids.filtered(lambda u, n=row["unit"]: u.name == n)[:1]
                 if not unit:
