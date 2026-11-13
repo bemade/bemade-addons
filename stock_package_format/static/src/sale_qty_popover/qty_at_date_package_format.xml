@@ -24,4 +24,13 @@
             </div>
         </xpath>
     </t>
+    <t
+    t-name="stock_package_format.QtyAtDate"
+    t-inherit="sale_stock.QtyAtDate"
+    t-inherit-mode="extension"
+  >
+        <xpath expr="//a" position="attributes">
+            <attribute name="t-attf-class" add="{{ props.record.data.package_format_to_buy ? 'text-danger' : '' }}" separator=" " />
+        </xpath>
+    </t>
 </templates>

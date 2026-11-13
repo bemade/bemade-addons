@@ -15,6 +15,7 @@
           string="Packages"
         />
                 <field name="package_format_proposal" column_invisible="True" />
+                <field name="package_format_to_buy" column_invisible="True" />
                 <field name="package_format_free_stock" column_invisible="True" />
             </xpath>
             <xpath
