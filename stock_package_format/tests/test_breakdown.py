@@ -6,8 +6,9 @@ Acceptance criteria
 -------------------
 B1   A flagged product (template and variant) carries the per-format
      breakdown of its stock: whole unopened packages per format, opened
-     packages with their content, loose stock. It feeds the compact summary
-     of the smart button and the popover on the On Hand quantity.
+     packages with their content, loose stock. The smart button shows only
+     the package count (2 + 67 + 1 + 1 opened = 71); the full breakdown is in
+     the popover on the On Hand quantity and the Inventory tab.
 B2   The smart button opens « Stock by Package Format » filtered on the
      product, grouped by package type then lot.
 B3   « On Hand » (action_open_quants) opens grouped by package type then lot
@@ -45,6 +46,7 @@ class TestBreakdown(PackageFormatCase):
             self.assertIn("1 × %s" % self.type_bulk.name, summary)
             self.assertIn("3.2", summary)
             self.assertIn("2 %s" % self.uom_ft3.name, summary)
+            self.assertEqual(record.package_format_package_count, 71)
             data = json.loads(record.package_format_breakdown)
             self.assertEqual(data["icon"], "fa-cubes")
             self.assertEqual(
@@ -59,6 +61,7 @@ class TestBreakdown(PackageFormatCase):
             self.assertEqual(data["loose"], "2 %s" % self.uom_ft3.name)
         self.assertFalse(self.plain_product.package_format_breakdown)
         self.assertFalse(self.plain_product.package_format_summary)
+        self.assertEqual(self.plain_product.package_format_package_count, 0)
 
     def test_b2_smart_button_opens_the_report(self):
         self._mixed_stock()

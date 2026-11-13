@@ -73,6 +73,10 @@ class ProductTemplate(models.Model):
     package_format_summary = fields.Char(
         "Packages in stock", compute="_compute_package_format_summary"
     )
+    package_format_package_count = fields.Integer(
+        "Packages", compute="_compute_package_format_summary",
+        help="Packages of the product in stock (unopened and opened).",
+    )
     package_format_breakdown = fields.Char(
         "Packages per format",
         compute="_compute_package_format_summary",
@@ -116,6 +120,7 @@ class ProductTemplate(models.Model):
             if not template.uses_package_rule or not template.product_variant_ids:
                 template.package_format_summary = False
                 template.package_format_breakdown = False
+                template.package_format_package_count = 0
                 continue
             breakdown = template.product_variant_ids._package_format_breakdown()
             template.package_format_summary = (
@@ -124,6 +129,9 @@ class ProductTemplate(models.Model):
             template.package_format_breakdown = (
                 template.product_variant_ids._package_format_breakdown_json(breakdown)
             )
+            template.package_format_package_count = self.env[
+                "product.product"
+            ]._package_format_count(breakdown)
 
     def action_package_format_golive(self):
         self.ensure_one()
@@ -140,6 +148,10 @@ class ProductProduct(models.Model):
     package_format_summary = fields.Char(
         "Packages in stock", compute="_compute_package_format_summary"
     )
+    package_format_package_count = fields.Integer(
+        "Packages", compute="_compute_package_format_summary",
+        help="Packages of the product in stock (unopened and opened).",
+    )
     package_format_breakdown = fields.Char(
         "Packages per format",
         compute="_compute_package_format_summary",
@@ -151,12 +163,14 @@ class ProductProduct(models.Model):
             if not product.uses_package_rule:
                 product.package_format_summary = False
                 product.package_format_breakdown = False
+                product.package_format_package_count = 0
                 continue
             breakdown = product._package_format_breakdown()
             product.package_format_summary = product._package_format_summary(breakdown)
             product.package_format_breakdown = product._package_format_breakdown_json(
                 breakdown
             )
+            product.package_format_package_count = product._package_format_count(breakdown)
 
     def _package_format_uoms(self):
         """Format units of the product: packaging units carrying a package
@@ -231,9 +245,13 @@ class ProductProduct(models.Model):
         )
 
     def _package_format_propose_open(self, need, location):
-        """Unopened free packages to open to cover ``need`` (product unit):
-        the smallest single package that covers it, else the fewest packages,
-        largest first."""
+        """Unopened free packages to open to cover ``need`` (product unit).
+
+        Smallest format first: the fewest packages of the smallest format
+        whose free packages can cover the need on their own (3 ft³ -> 3 bags
+        of 1 ft³); a larger format only when the smaller ones are short.
+        When no single format covers it, packages are taken smallest first.
+        """
         self.ensure_one()
         candidates = []
         by_package = self._package_format_package_quants(location, opened=False)
@@ -245,16 +263,27 @@ class ProductProduct(models.Model):
                 candidates.append((content, package))
         if not candidates or self.uom_id.compare(need, 0) <= 0:
             return self.env["stock.package"]
-        covering = [c for c in candidates if self.uom_id.compare(c[0], need) >= 0]
-        if covering:
-            return min(covering, key=lambda c: (c[0], c[1].id))[1]
-        packages = self.env["stock.package"]
-        for content, package in sorted(candidates, key=lambda c: (-c[0], c[1].id)):
-            packages |= package
+        candidates.sort(key=lambda c: (c[0], c[1].id))
+        by_size = {}
+        for content, package in candidates:
+            by_size.setdefault(content, []).append((content, package))
+        for _size, items in sorted(by_size.items()):
+            picked = self._package_format_take(items, need)
+            if picked is not None:
+                return picked
+        return self._package_format_take(candidates, need, partial=True)
+
+    def _package_format_take(self, items, need, partial=False):
+        """Packages of ``items`` ((content, package) pairs) taken in order
+        until ``need`` is covered; None when they cannot cover it (all of
+        them when ``partial``)."""
+        taken = self.env["stock.package"]
+        for content, package in items:
+            taken |= package
             need -= content
             if self.uom_id.compare(need, 0) <= 0:
-                break
-        return packages
+                return taken
+        return taken if partial else None
 
     def _package_format_describe_packages(self, packages):
         """« 1 × Drum 5 ft³ (5 ft³) » for a proposal."""
@@ -370,6 +399,13 @@ class ProductProduct(models.Model):
                 )
             )
         return " · ".join(lines) or self.env._("No packages in stock")
+
+    @api.model
+    def _package_format_count(self, breakdown):
+        """Number of packages (unopened and opened) in a breakdown."""
+        return sum(
+            count for _t, count, _q in breakdown["unopened"] + breakdown["opened"]
+        )
 
     def _package_format_breakdown_json(self, breakdown=None):
         """The breakdown for stock's ``popover_widget`` (popover template

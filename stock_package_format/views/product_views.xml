@@ -86,9 +86,9 @@
         >
                     <div class="o_field_widget o_stat_info">
                         <span class="o_stat_value">
-                            <field name="package_format_summary" nolabel="1" />
+                            <field name="package_format_package_count" nolabel="1" />
                         </span>
-                        <span class="o_stat_text">Package formats</span>
+                        <span class="o_stat_text">Packages</span>
                     </div>
                     <field
             name="package_format_breakdown"

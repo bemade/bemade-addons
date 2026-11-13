@@ -5,10 +5,10 @@
 Acceptance criteria
 -------------------
 UC7  A loose move of 3 ft³ with no opened package and no loose stock reserves
-     nothing and proposes the smallest unopened package that covers the need
-     (a drum when only bags and drums are in stock; a bag for 0.5 ft³). When no
-     single package covers it, the proposal lists the fewest packages,
-     largest first. After an authorized user opens the proposed package from
+     nothing and proposes opening packages of the SMALLEST format that can
+     cover the need (3 bags for 3 ft³ when bags and drums are in stock; a bag
+     for 0.5 ft³); a larger format only when the smaller ones are short (only
+     a drum in stock -> the drum; 2 bags + drums for 3 ft³ -> 1 drum). After an authorized user opens the proposed package from
      the move, the move reserves from it.
 UC8  Open: a user without « Can open packages » is refused. An authorized
      user's Open flags the package opened with who / when / reason, logs it
@@ -28,12 +28,21 @@ from .common import PackageFormatCase
 
 
 class TestOpenRepack(PackageFormatCase):
-    def test_uc7_loose_move_proposes_smallest_covering_package(self):
-        self._put_packages(self.uom_bag, 10, lot_name="L1")
-        drum = self._put_packages(self.uom_drum, 1, lot_name="L2")
+    def test_uc7_loose_move_proposes_fewest_bags(self):
+        bags = self._put_packages(self.uom_bag, 10, lot_name="L1")
+        self._put_packages(self.uom_drum, 1, lot_name="L2")
         delivery = self._delivery(3, self.uom_ft3)
         move = delivery.move_ids
         self.assertEqual(move.quantity, 0)
+        self.assertEqual(len(move.package_format_proposal_ids), 3)
+        self.assertTrue(move.package_format_proposal_ids <= bags)
+        self.assertIn("3 ×", move.package_format_proposal)
+
+    def test_uc7_bags_short_proposes_a_drum(self):
+        self._put_packages(self.uom_bag, 2, lot_name="L1")
+        drum = self._put_packages(self.uom_drum, 1, lot_name="L2")
+        delivery = self._delivery(3, self.uom_ft3)
+        move = delivery.move_ids
         self.assertEqual(move.package_format_proposal_ids, drum)
         self.assertIn("1 ×", move.package_format_proposal)
         action = move.with_user(self.opener).action_package_format_open_proposal()

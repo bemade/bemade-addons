@@ -15,7 +15,7 @@ UC5  A quotation line of 5 × drum with 2 drums + 40 bags shows « 2 available �
 *    Two lines of the same format on one order share the free packages.
 *    Lines of unflagged products, and lines in the base unit, buy nothing.
 UC7  A quotation line of 3 ft³ (base unit) on a flagged product with no
-     opened package proposes opening the smallest covering package.
+     opened package proposes opening the fewest packages of the smallest format.
 """
 
 from odoo.fields import Command
@@ -166,4 +166,5 @@ class TestSaleFormatAvailability(PackageFormatCase):
         order = self._order([(3, self.uom_ft3, None)])
         line = order.order_line
         self.assertTrue(line.package_format_proposal)
-        self.assertIn(self.type_drum.name, line.package_format_proposal)
+        self.assertIn(self.type_bag.name, line.package_format_proposal)
+        self.assertIn("3 ×", line.package_format_proposal)
