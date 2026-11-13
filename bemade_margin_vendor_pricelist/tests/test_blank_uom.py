@@ -52,17 +52,17 @@ class TestBlankUom(TransactionCase):
             }
         )
 
-    def _patch_qty_available(self, qty):
+    def _patch_free_qty(self, qty):
         return patch.object(
             self.product.__class__,
-            "qty_available",
+            "free_qty",
             new_callable=PropertyMock,
             return_value=qty,
         )
 
     def test_blank_uom_compute_no_error(self):
         """Computing margins on a line with no UoM gives the vendor-price values."""
-        with self._patch_qty_available(0):
+        with self._patch_free_qty(0):
             expected_actual = self.line.purchase_price_actual
             self.assertEqual(expected_actual, self.line.purchase_price_vendor)
             self.line.product_uom_id = False
@@ -76,7 +76,7 @@ class TestBlankUom(TransactionCase):
 
     def test_blank_uom_onchange_no_error(self):
         """Clearing the UoM in the form (onchange) raises no error."""
-        with self._patch_qty_available(0):
+        with self._patch_free_qty(0):
             order_form = Form(self.sale_order)
             with order_form.order_line.edit(0) as line_form:
                 expected_actual = line_form.purchase_price_actual
