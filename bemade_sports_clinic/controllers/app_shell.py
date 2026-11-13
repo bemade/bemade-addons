@@ -31,7 +31,6 @@ routes themselves stay ``multilang=False`` (stable, unprefixed URLs).
 import json
 import logging
 import re
-import uuid
 from datetime import timedelta
 from urllib.parse import urlencode
 
@@ -1140,54 +1139,6 @@ class AppShellMixin:
         return options
 
     @staticmethod
-    def _sc_pop_notification():
-        """Task 1583: pop ``request.session['notification']`` (the
-        ``{type, title, message}`` dict the POST routes store) into the
-        toast payload ``{message, title, tone}`` — tone ``error`` for the
-        danger / warning types, ``success`` otherwise — or False. A fragment
-        request (task 1611) leaves it for the next real page."""
-        if PortalKitApp._pk_fragment_keys() is not None:
-            return False
-        # Task 1658: a guarded form's fetch (X-Pk-Guard, the kit's
-        # PortalKitApp._pk_guard_probe since task 5370) reads the page it
-        # landed on to find a refusal — peek, so the real navigation that
-        # follows a success still shows the toast.
-        if PortalKitApp._pk_guard_probe():
-            notif = request.session.get('notification')
-        else:
-            notif = request.session.pop('notification', None)
-        if not isinstance(notif, dict) or not (notif.get('message') or notif.get('title')):
-            return False
-        # Task 1736: an archive's « Annuler » (_sc_offer_undo) — a same-site
-        # POST route only.
-        undo_url = notif.get('undo_url')
-        if not (isinstance(undo_url, str) and undo_url.startswith('/') and not undo_url.startswith('//')):
-            undo_url = False
-        # Task 1741: the page carrying a notification is never stored by the
-        # browser (« back » to it fetches it again — the notification is
-        # gone by then), and the notification has an id the page shows once.
-        if not PortalKitApp._pk_guard_probe():
-            request.future_response.headers['Cache-Control'] = 'no-store'
-        return {
-            'id': uuid.uuid4().hex[:16],
-            'message': str(notif.get('message') or ''),
-            'title': str(notif.get('title') or ''),
-            'tone': 'error' if notif.get('type') in ('danger', 'warning', 'error') else 'success',
-            'undo_url': undo_url,
-        }
-
-    @staticmethod
-    def _sc_offer_undo(message, undo_url):
-        """Task 1736 (owner 2026-11-01): a recoverable action of a card's
-        archive icon (a timesheet, a document, a quick note) — the next
-        shell page shows « <message> · Annuler » as its toast; « Annuler »
-        posts to ``undo_url`` (a same-site restore route that re-checks
-        the rights)."""
-        request.session['notification'] = {
-            'type': 'success', 'title': '', 'message': message, 'undo_url': undo_url,
-        }
-
-    @staticmethod
     def _sc_stash_proposal(proposal):
         """Task 1603: a follow-up proposal made by a POST round-trip (an
         injury created with a predicted resolution date) — shown by the
@@ -1303,8 +1254,9 @@ class AppShellMixin:
             'sc_draft_props': self._sc_draft_props,
             # Task 1583: the pending session notification (set by a POST
             # round-trip, e.g. « Add to Team ») pops on whichever shell page
-            # comes next, as the status toast.
-            'sc_notification': self._sc_pop_notification(),
+            # comes next, as the status toast (task 5371: the kit's,
+            # bemade_portal_kit.pk_toast_host).
+            'pk_notification': self._pk_pop_notification(),
             # Task 1603: a follow-up proposal left by a POST round-trip.
             'sc_proposal_json': self._sc_pop_proposal(),
         }

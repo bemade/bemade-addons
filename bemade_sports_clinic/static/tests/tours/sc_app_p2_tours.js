@@ -314,7 +314,7 @@ tours.add("sc_injury_inline_create", {
         },
         {
             content: "Undo",
-            trigger: '.o_pk_toast:not([hidden]) [data-sc-toast-action]',
+            trigger: '.o_pk_toast:not([hidden]) [data-pk-toast-action]',
             run: "click",
             expectUnloadPage: true,
         },

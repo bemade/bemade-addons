@@ -209,4 +209,28 @@
            aria-live="polite" hidden="hidden"/>
     </template>
 
+    <!-- Task 5371 (P4c1) — the toast host (pk_toast.js): the page's one toast
+         and the session notification it shows on load. Variables:
+         pk_notification -> PortalKitApp._pk_pop_notification() ({id, message,
+         title, tone, undo_url}) or False. An error also carries the form
+         guard's refusal marker (data-pk-flash-error = its message): a guarded
+         form's fetch that lands here shows it in the form. With an undo URL
+         (PortalKitApp._pk_offer_undo), the toast's « Undo » posts the hidden
+         form[data-pk-undo]. -->
+    <template id="pk_toast_host" name="Portal kit: toast host">
+        <div class="o_pk_toast" role="status" aria-live="polite" hidden="hidden"
+             t-att-data-pk-notify="pk_notification and (pk_notification['message'] or pk_notification['title']) or None"
+             t-att-data-pk-notify-title="pk_notification and pk_notification['message'] and pk_notification['title'] or None"
+             t-att-data-pk-notify-tone="pk_notification and pk_notification['tone'] or None"
+             t-att-data-pk-notify-id="pk_notification and pk_notification.get('id') or None"
+             t-att-data-pk-flash-error="pk_notification and pk_notification['tone'] == 'error' and (pk_notification['message'] or pk_notification['title']) or None"/>
+        <t t-if="pk_notification and pk_notification.get('undo_url')">
+            <t t-set="pk_undo_label">Undo</t>
+            <form t-att-action="pk_notification['undo_url']" method="post" hidden="hidden"
+                  data-pk-undo="1" t-att-data-pk-toast-action="pk_undo_label">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+            </form>
+        </t>
+    </template>
+
 </odoo>

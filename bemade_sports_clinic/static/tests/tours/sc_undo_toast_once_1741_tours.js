@@ -29,7 +29,7 @@ tours.add("sc_1741_undo_toast_once", {
         },
         {
             content: "« Undo » in the toast",
-            trigger: ".o_pk_toast:not([hidden]) button[data-sc-toast-action]",
+            trigger: ".o_pk_toast:not([hidden]) button[data-pk-toast-action]",
             expectUnloadPage: true,
             run: "click",
         },
@@ -37,7 +37,7 @@ tours.add("sc_1741_undo_toast_once", {
             content: "« restored » shows once, remembered by its id",
             trigger: ".o_pk_toast:not([hidden]) .o_pk_toast_text",
             run() {
-                const shown = JSON.parse(window.sessionStorage.getItem("sc_notify_shown:v1") || "[]");
+                const shown = JSON.parse(window.sessionStorage.getItem("pk_notify_shown:v1") || "[]");
                 assert(shown.length >= 1, "the notification id is not remembered");
             },
         },

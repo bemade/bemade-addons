@@ -40,14 +40,6 @@
         color: var(--pk-accent);
     }
 
-    .o_pk_toast[data-sc-toast-tone="error"] {
-        border-left: 4px solid var(--pk-bad);
-    }
-
-    .o_pk_toast[data-sc-toast-tone="success"] {
-        border-left: 4px solid var(--pk-ok);
-    }
-
     // ---------------------------------------------------------- player
     .o_sc_hero {
         display: flex;

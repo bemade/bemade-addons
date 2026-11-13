@@ -15,6 +15,7 @@ Specs: ``portal.kit._pk_save_specs()`` (``tools/save.py`` documents them).
 Fragments: ``tools/fragments.py``.
 """
 import logging
+import uuid
 
 from odoo import _, fields, http
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
@@ -93,6 +94,55 @@ class PortalKitApp(CustomerPortal):
             return request.httprequest.headers.get(PK_GUARD_HEADER) == '1'
         except RuntimeError:  # no request
             return False
+
+    # ------------------------------------------------------------------
+    # Toast: the session notification and the undo (task 5371, P4c1)
+    # ------------------------------------------------------------------
+    @classmethod
+    def _pk_pop_notification(cls):
+        """Pop ``request.session['notification']`` (the ``{type, title,
+        message[, undo_url]}`` dict a POST route stores) into the toast
+        payload ``{id, message, title, tone, undo_url}`` — tone ``error``
+        for the danger / warning / error types, ``success`` otherwise — or
+        False. The page template passes it to
+        ``bemade_portal_kit.pk_toast_host`` as ``pk_notification``.
+
+        A fragment request leaves it for the next real page; a guarded
+        form's fetch (``_pk_guard_probe``) peeks, so the navigation that
+        follows a success still shows it. Only a same-site ``undo_url`` is
+        kept. The page carrying it is never stored by the browser (« back »
+        to it fetches it again, the notification gone by then), and the
+        notification has a one-time id the page shows once."""
+        if cls._pk_fragment_keys() is not None:
+            return False
+        probe = cls._pk_guard_probe()
+        if probe:
+            notif = request.session.get('notification')
+        else:
+            notif = request.session.pop('notification', None)
+        if not isinstance(notif, dict) or not (notif.get('message') or notif.get('title')):
+            return False
+        undo_url = notif.get('undo_url')
+        if not (isinstance(undo_url, str) and undo_url.startswith('/') and not undo_url.startswith('//')):
+            undo_url = False
+        if not probe:
+            request.future_response.headers['Cache-Control'] = 'no-store'
+        return {
+            'id': uuid.uuid4().hex[:16],
+            'message': str(notif.get('message') or ''),
+            'title': str(notif.get('title') or ''),
+            'tone': 'error' if notif.get('type') in ('danger', 'warning', 'error') else 'success',
+            'undo_url': undo_url,
+        }
+
+    @staticmethod
+    def _pk_offer_undo(message, undo_url):
+        """A recoverable action (e.g. an archive): the next shell page shows
+        « <message> · Undo » as its toast; « Undo » posts to ``undo_url``
+        (a same-site POST route that re-checks the rights)."""
+        request.session['notification'] = {
+            'type': 'success', 'title': '', 'message': message, 'undo_url': undo_url,
+        }
 
     # ------------------------------------------------------------------
     # Save engine

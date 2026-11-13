@@ -109,7 +109,7 @@ tours.add("sc_1627_status_pills", {
         },
         {
             content: "« Annuler » on the toast",
-            trigger: ".o_pk_toast:not([hidden]) button[data-sc-toast-action]",
+            trigger: ".o_pk_toast:not([hidden]) button[data-pk-toast-action]",
             run: "click",
         },
         {

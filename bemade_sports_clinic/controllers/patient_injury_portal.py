@@ -1490,7 +1490,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             undo = '/my/injury/document/restore/%s' % document.id
             if return_url:
                 undo += '?return_url=%s' % url_quote(return_url, safe='')
-            self._sc_offer_undo(request.env._("Document archived."), undo)
+            self._pk_offer_undo(request.env._("Document archived."), undo)
             return request.redirect(return_url or fallback)
         return _back('success=document_deleted')
 

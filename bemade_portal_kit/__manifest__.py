@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.7.0',
+    'version': '19.0.1.8.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -18,7 +18,8 @@ pages. The kit installs on Odoo Community and depends on ``portal`` only.
 Version 1.0 provides the four registries of the shell; version 1.1 adds the
 shell's generic scripts (below), later versions its styles and first
 templates; version 1.6 its save engine and screen refresh; version 1.7 its
-form guard, status pills and lazy edit views.
+form guard, status pills and lazy edit views; version 1.8 its toast, session
+notification and undo.
 
 Registries
 ----------
@@ -260,6 +261,36 @@ an edit view's fields kept in ``<template data-pk-lazy-edit>`` inside
 Both templates were the first consumer's (adopted like the 1.5 templates,
 ``ADOPTED_VIEWS``).
 
+Toast, notification and undo
+----------------------------
+Version 1.8 (``pk_toast``): the page's one toast, hosted by
+``bemade_portal_kit.pk_toast_host`` (variable ``pk_notification``). Exports
+``showToast(message, actionLabel, action, duration, {title, tone})``,
+``keepClearOfToast(el, {fitOnly})``, ``offerUndos()``, ``bootToasts()``,
+``UNDO_MS`` (8 s), ``NOTIFY_SHOWN_KEY`` and ``UNDO_OFFERS``. Other scripts
+ask for a toast with the event ``pk:toast`` (``{message, actionLabel,
+action, duration, title, tone}``). Markers: ``data-pk-toast-tone``,
+``data-pk-toast-action`` (the action button), ``body[data-pk-toast-room]``.
+The pk_fetch errors and offline / back online are toasts too.
+
+* Session notification: a POST route stores ``session['notification']``
+  (``{type, title, message}``); the next page's controller passes
+  ``PortalKitApp._pk_pop_notification()`` as ``pk_notification`` (popped,
+  a one-time id, the page not stored by the browser; a fragment request
+  leaves it, a guard probe peeks). On load it shows once (never on back /
+  forward, never twice for one id: storage key ``pk_notify_shown:v1``; a
+  list under the former ``sc_notify_shown:v1`` key is moved once). Markers
+  ``data-pk-notify``, ``-notify-title``, ``-notify-tone``, ``-notify-id``.
+* Archive undo: ``PortalKitApp._pk_offer_undo(message, undo_url)`` (a
+  same-site POST route that restores): the toast's « Undo » posts the
+  hidden ``form[data-pk-undo]`` of the host.
+* Undo offers: a hidden ``form[data-pk-undo-offer="<kind>"]`` with
+  ``data-pk-toast-message``, ``data-pk-toast-action``, optional
+  ``data-pk-undo-ms`` and ``data-pk-undo-param`` (a URL parameter dropped
+  so a reload does not offer it again) is offered once on load; its toast's
+  action submits it. Optional hooks per kind in the JS registry
+  ``pk_undo_offers``: ``{rewriteUrl(url, form), after({form, root})}``.
+
 Style guide
 -----------
 ``/pk/styleguide`` (internal users) shows every generic component with the
@@ -306,6 +337,8 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/src/js/pk_form_guard.js',
             'bemade_portal_kit/static/src/js/pk_status_pills.js',
             'bemade_portal_kit/static/src/js/pk_lazy_edit.js',
+            # Task 5371 (P4c1): the toast, the notification and the undo.
+            'bemade_portal_kit/static/src/js/pk_toast.js',
         ],
         # The hoot unit tests (tests/test_pk_hoot.py runs them headless).
         # The modules they test are only DEFINED in the test page and run
@@ -323,6 +356,7 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/src/js/pk_form_guard.js',
             'bemade_portal_kit/static/src/js/pk_status_pills.js',
             'bemade_portal_kit/static/src/js/pk_lazy_edit.js',
+            'bemade_portal_kit/static/src/js/pk_toast.js',
         ],
         'web.assets_unit_tests': [
             'bemade_portal_kit/static/tests/**/*',

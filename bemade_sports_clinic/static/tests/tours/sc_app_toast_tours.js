@@ -16,11 +16,11 @@ registry.category("web_tour.tours").add("sc_1583_add_to_team_toast", {
         },
         {
             content: "Back on the list: the confirmation toast shows at once",
-            trigger: '.o_pk_app .o_pk_toast[data-sc-toast-tone="success"]:not([hidden]):contains("Two")',
+            trigger: '.o_pk_app .o_pk_toast[data-pk-toast-tone="success"]:not([hidden]):contains("Two")',
         },
         {
             content: "The toast payload was consumed (shown once)",
-            trigger: ".o_pk_app .o_pk_toast:not([data-sc-notify])",
+            trigger: ".o_pk_app .o_pk_toast:not([data-pk-notify])",
         },
         {
             content: "The player's row is now a link, no « Add to Team » left",

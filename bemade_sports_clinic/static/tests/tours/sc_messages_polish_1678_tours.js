@@ -16,7 +16,7 @@ function toast(detail) {
         content: `Show a toast (${detail.title ? "title" : "no title"}, ${detail.actionLabel ? "action" : "no action"})`,
         trigger: ".o_pk_app",
         run() {
-            document.dispatchEvent(new CustomEvent("sc:toast", { detail }));
+            document.dispatchEvent(new CustomEvent("pk:toast", { detail }));
         },
     };
 }

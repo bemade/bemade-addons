@@ -173,11 +173,11 @@ class TestAccountShell1620(AccountShellCommon):
         _text, tree = self._get(SAVED_URL)
         toast = tree.xpath('//*[contains(@class, "o_pk_toast")]')
         self.assertEqual(len(toast), 1)
-        self.assertEqual(toast[0].get('data-sc-notify'), 'Your details have been saved.')
-        self.assertEqual(toast[0].get('data-sc-notify-tone'), 'success')
+        self.assertEqual(toast[0].get('data-pk-notify'), 'Your details have been saved.')
+        self.assertEqual(toast[0].get('data-pk-notify-tone'), 'success')
         # A plain visit: no toast.
         _text, tree = self._get('/my/account')
-        self.assertIsNone(tree.xpath('//*[contains(@class, "o_pk_toast")]')[0].get('data-sc-notify'))
+        self.assertIsNone(tree.xpath('//*[contains(@class, "o_pk_toast")]')[0].get('data-pk-notify'))
 
     def test_explicit_redirect_is_kept(self):
         self._switch(True)

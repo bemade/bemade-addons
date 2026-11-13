@@ -866,6 +866,15 @@
         font-weight: 600;
     }
 
+    // Task 5371 (P4c1, from the first consumer): the toast's tone.
+    .o_pk_toast[data-pk-toast-tone="error"] {
+        border-left: 4px solid var(--pk-bad);
+    }
+
+    .o_pk_toast[data-pk-toast-tone="success"] {
+        border-left: 4px solid var(--pk-ok);
+    }
+
     .o_pk_toast_action {
         flex: none;
         margin-left: auto;

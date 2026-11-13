@@ -42,7 +42,7 @@ function inShell(node) {
 
 function toast(message) {
     if (message) {
-        document.dispatchEvent(new CustomEvent("sc:toast", { detail: { message } }));
+        document.dispatchEvent(new CustomEvent("pk:toast", { detail: { message } }));
     }
 }
 

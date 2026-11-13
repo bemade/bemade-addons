@@ -93,14 +93,15 @@
                             <t t-set="ci_archive" t-value="team.announcement and {'action': '/my/team/%s/announcement/dismiss' % team.id, 'section': 'team.announcement.archive'}"/>
                             <t t-set="ci_editable" t-value="True"/>
                             <!-- Task 1663: archived a moment ago — « Annonce archivée
-                                 — Annuler » (sc_app_ui.js shows the toast; the
+                                 — Annuler » (the kit's undo offer, pk_toast.js; the
                                  server re-checks the window). -->
                             <t t-if="sc_announcement_undo">
                                 <t t-set="sc_archived_label">Announcement archived</t>
                                 <t t-set="sc_restore_label">Undo</t>
                                 <form t-attf-action="/my/team/#{team.id}/announcement/restore" method="post" hidden="hidden"
-                                      data-sc-form="announcement.undo" t-att-data-sc-toast-message="sc_archived_label"
-                                      t-att-data-sc-toast-action="sc_restore_label">
+                                      data-pk-undo-offer="announcement" data-pk-undo-param="announcement_archived"
+                                      t-att-data-pk-toast-message="sc_archived_label"
+                                      t-att-data-pk-toast-action="sc_restore_label">
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 </form>
                             </t>

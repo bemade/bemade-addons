@@ -287,7 +287,7 @@ tours.add("sc_1736_note_undo", {
         },
         {
             content: "Archived: the toast offers « Undo »",
-            trigger: ".o_pk_toast:not([hidden]) button[data-sc-toast-action]",
+            trigger: ".o_pk_toast:not([hidden]) button[data-pk-toast-action]",
             expectUnloadPage: true,
             run(helpers) {
                 assert(!q("article.o_sc_quick_note"), "the note is still listed");

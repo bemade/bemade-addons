@@ -75,6 +75,22 @@ edit's clinic names, moved to the kit under ``pk`` names:
   none of them) and the interaction key
   ``bemade_sports_clinic.sc_lazy_edit``.
 
+Task 5371 (P4c1) retires the toast's, the session notification's and the
+undo's clinic names, moved to the kit under ``pk`` names:
+
+* the attributes ``data-sc-notify``, ``-notify-title``, ``-notify-tone``,
+  ``-notify-id``, ``-toast-action``, ``-toast-message``, ``-toast-tone`` and
+  ``-toast-room`` (``dataset.scToast*`` too);
+* the event ``sc:toast`` (``pk:toast`` only), the storage key
+  ``sc_notify_shown:v1`` (read once by ``pk_toast.js`` as a fallback);
+* the undo forms' old marker ``data-sc-form="<kind>.undo"`` (``sc.undo``,
+  ``injury.undo``…): an undo form is ``form[data-pk-undo]`` (the session
+  undo) or ``form[data-pk-undo-offer="<kind>"]``; ``data-sc-form`` itself
+  stays a clinic name;
+* ``_sc_pop_notification``, ``_sc_offer_undo`` and the layout value
+  ``sc_notification`` (``PortalKitApp._pk_pop_notification``,
+  ``_pk_offer_undo``, ``pk_notification``).
+
 Dataset destructuring (``const { scModel, scField } = el.dataset``) is
 matched too.
 
@@ -117,6 +133,9 @@ ATTRIBUTES = (
     'pill-from', 'pill-readonly', 'pill-field', 'model', 'record-id',
     'write-date', 'old-value', 'undo-message', 'lazy-edit', 'lazy-edit-host',
     'lazy-mounted',
+    # Task 5371 (P4c1): the toast, the session notification, the undo.
+    'notify', 'notify-title', 'notify-tone', 'notify-id', 'toast-action',
+    'toast-message', 'toast-tone', 'toast-room',
 )
 EVENTS = (
     'fragments', 'form-reset', 'create-success', 'lazy-loaded',
@@ -125,6 +144,8 @@ EVENTS = (
     'saved', 'refresh', 'refresh-now',
     # Task 5370 (P4b).
     'pill-action', 'edit-view-open',
+    # Task 5371 (P4c1).
+    'toast',
 )
 STORAGE_KEYS = (
     'sc_draft:', 'sc_pending_toast:v1', 'sc_nav_stack:v1', 'sc_nav_post:v1',
@@ -135,6 +156,8 @@ STORAGE_KEYS = (
     'X-Sc-Guard', '@bemade_sports_clinic/js/sc_form_guard',
     '@bemade_sports_clinic/js/sc_status_pills', '@bemade_sports_clinic/js/sc_lazy_edit',
     'bemade_sports_clinic.sc_lazy_edit',
+    # Task 5371 (P4c1).
+    'sc_notify_shown:v1',
 )
 # Task 5199 (P4a): the save engine's and the refresh's Python / QWeb names,
 # as whole words.
@@ -146,6 +169,8 @@ SAVE_NAMES = (
     'SC_FRAGMENTS_MAX',
     # Task 5370 (P4b).
     '_sc_guard_probe', 'sc_pill_target', 'sc_pill_menu_id',
+    # Task 5371 (P4c1).
+    '_sc_pop_notification', '_sc_offer_undo', 'sc_notification',
 )
 
 # Task 5344 (P3b1): the generic classes, as the name after ``o_sc_``. A name
@@ -238,7 +263,7 @@ TOKEN_SLOTS = (
 
 # The draft fallback: (path relative to the addon, retired names allowed).
 ALLOWED = {
-    (KIT, '__manifest__.py'): {'sc_draft:'},  # documents the fallback
+    (KIT, '__manifest__.py'): {'sc_draft:', 'sc_notify_shown:v1'},  # documents the fallbacks
     (KIT, 'static/src/js/pk_draft_store.js'): {'sc_draft:'},
     (KIT, 'static/tests/pk_draft_store.test.js'): {'sc_draft:', 'data-sc-db', 'data-sc-uid', 'o_sc_app'},
     # Task 5344: these hoot tests check that an old o_sc_app root is not read.
@@ -253,8 +278,15 @@ ALLOWED = {
     # the translations names them.
     ('bemade_sports_clinic', 'migrations/19.0.1.141.0/post-migrate.py'): None,
     # Task 5370: these hoot tests check that the old names are not read.
-    (KIT, 'static/tests/pk_form_guard.test.js'): {'data-sc-required', 'data-sc-flash-error', 'data-sc-error-for'},
-    (KIT, 'static/tests/pk_status_pills.test.js'): {'sc:pill-action'},
+    (KIT, 'static/tests/pk_form_guard.test.js'): {'data-sc-required', 'data-sc-flash-error', 'data-sc-error-for',
+                                                  'data-sc-notify', 'data-sc-notify-tone'},
+    (KIT, 'static/tests/pk_status_pills.test.js'): {'sc:pill-action', 'sc:toast'},
+    # Task 5371: the notification fallback (read once) and the hoot tests
+    # that check the old names are not read.
+    (KIT, 'static/src/js/pk_toast.js'): {'sc_notify_shown:v1'},
+    (KIT, 'static/tests/pk_toast.test.js'): {
+        'sc_notify_shown:v1', 'sc:toast', 'data-sc-notify', 'data-sc-notify-id', 'data-sc-toast-action',
+        'data-sc-toast-message', 'data-sc-form="sc.undo"', 'data-sc-form="injury.undo"'},
     (KIT, 'static/tests/pk_lazy_edit.test.js'): {'bemade_sports_clinic.sc_lazy_edit', 'sc:edit-view-open'},
 }
 
@@ -294,6 +326,8 @@ PILL_FIELD_ATTR_RE = re.compile(r'(?<![\w])data-sc-field(?![\w-])')
 PILL_LINE_RE = re.compile(r'pill', re.IGNORECASE)
 # The pill menu's old id prefix (not the tail of ``data-sc-pill-``).
 PILL_ID_RE = re.compile(r'(?<![\w-])sc-pill-')
+# Task 5371 (P4c1): an undo form's old marker, ``data-sc-form="<kind>.undo"``.
+UNDO_FORM_RE = re.compile(r'''(?<![\w])data-sc-form=["'][\w]+\.undo["']''')
 
 
 def retired_names(line):
@@ -315,6 +349,7 @@ def retired_names(line):
                 found.append(name)
     found += [m.group(0) for m in PILL_FIELD_RE.finditer(line)]
     found += [m.group(0) for m in PILL_ID_RE.finditer(line)]
+    found += [m.group(0) for m in UNDO_FORM_RE.finditer(line)]
     if PILL_LINE_RE.search(line):
         found += [m.group(0) for m in PILL_FIELD_ATTR_RE.finditer(line)]
     return found
@@ -437,7 +472,7 @@ class TestPkRetiredNames(TransactionCase):
         # The autosave field's data-sc-field stays.
         self.assertEqual(retired_names('.o_pk_autosave[data-sc-field="name"]'), [])
         self.assertEqual(retired_names('"sc:pill-action" "sc:edit-view-open" sc:toast'),
-                         ['sc:pill-action', 'sc:edit-view-open'])
+                         ['sc:pill-action', 'sc:edit-view-open', 'sc:toast'])
         self.assertEqual(retired_names('class="o_sc_guard_reason o_sc_reason_flash"'),
                          ['o_sc_guard_reason', 'o_sc_reason_flash'])
         self.assertEqual(retired_names("headers={'X-Sc-Guard': '1'} _sc_guard_probe()"),
@@ -452,6 +487,28 @@ class TestPkRetiredNames(TransactionCase):
                          ['data-sc-lazy-edit'])
         self.assertEqual(retired_names("'sc-pill-%s' % key"), ['sc-pill-'])
         self.assertEqual(retired_names('data-pk-guard data-pk-pill-select pk:pill-action o_pk_guard_reason'), [])
+
+    def test_matcher_toast_undo(self):
+        """Task 5371 (P4c1): the toast, notification and undo names."""
+        self.assertEqual(retired_names('<div t-att-data-sc-notify="m" t-att-data-sc-notify-id="i">'),
+                         ['data-sc-notify', 'data-sc-notify-id'])
+        self.assertEqual(retired_names('toast.dataset.scNotifyTone; button.dataset.scToastAction = "1"'),
+                         ['dataset.scNotifyTone', 'dataset.scToastAction'])
+        self.assertEqual(retired_names('document.body.dataset.scToastRoom; t.dataset.scToastTone'),
+                         ['dataset.scToastRoom', 'dataset.scToastTone'])
+        self.assertEqual(retired_names('new CustomEvent("sc:toast", { detail })'), ['sc:toast'])
+        self.assertEqual(retired_names('"sc:toaster" pk:toast'), [])
+        self.assertEqual(retired_names('getItem("sc_notify_shown:v1")'), ['sc_notify_shown:v1'])
+        self.assertEqual(retired_names('<form data-sc-form="sc.undo" t-att-data-sc-toast-action="l">'),
+                         ['data-sc-toast-action', 'data-sc-form="sc.undo"'])
+        self.assertEqual(retired_names("xpath('//form[@data-sc-form=\"injury.undo\"]')"),
+                         ['data-sc-form="injury.undo"'])
+        self.assertEqual(retired_names('<form data-sc-form="team.player.add" data-sc-form="note">'), [])
+        self.assertEqual(retired_names("'sc_notification': self._sc_pop_notification(); self._sc_offer_undo(m, u)"),
+                         ['sc_notification', '_sc_pop_notification', '_sc_offer_undo'])
+        self.assertEqual(retired_names('sc_notification_x _sc_offer_undo_x'), [])
+        self.assertEqual(retired_names('pk_notification data-pk-notify data-pk-undo-offer="injury" pk_notify_shown:v1'),
+                         [])
 
     def test_no_retired_name_left(self):
         hits = []

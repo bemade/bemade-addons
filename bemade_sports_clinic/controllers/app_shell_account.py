@@ -72,7 +72,7 @@ class AppShellAccountPortal(AppShellPortal):
             kwargs['redirect'] = SC_ACCOUNT_SAVED_URL
         extra = {}
         if saved:
-            extra['sc_notification'] = {
+            extra['pk_notification'] = {
                 'message': _("Your details have been saved."),
                 'title': '',
                 'tone': 'success',

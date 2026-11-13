@@ -214,13 +214,13 @@ class TestCardTopBars1736(TopBars1736Common):
         text, tree = self._get(resp.headers['Location'])
         self.assertNotIn('Document deleted.', text)
         toast = self._one(tree, '//*[contains(@class, "o_pk_toast")]')
-        self.assertEqual(toast.get('data-sc-notify'), 'Document archived.')
-        undo = self._one(tree, '//form[@data-sc-form="sc.undo"]')
+        self.assertEqual(toast.get('data-pk-notify'), 'Document archived.')
+        undo = self._one(tree, '//form[@data-pk-undo]')
         self.assertTrue(undo.get('action').startswith('/my/injury/document/restore/%s' % self.doc_player.id))
-        self.assertEqual(undo.get('data-sc-toast-action'), 'Undo')
+        self.assertEqual(undo.get('data-pk-toast-action'), 'Undo')
         # Shown once.
         _text, tree = self._get(self._tab_url())
-        self.assertFalse(tree.xpath('//form[@data-sc-form="sc.undo"]'))
+        self.assertFalse(tree.xpath('//form[@data-pk-undo]'))
         # Undo: back in the list, with a chatter note.
         Message = self.env['mail.message']
         before = Message.search([('model', '=', 'sports.patient'), ('res_id', '=', self.player.id)])
@@ -261,9 +261,9 @@ class TestCardTopBars1736(TopBars1736Common):
         self.timesheet.invalidate_recordset()
         self.assertFalse(self.timesheet.active)
         _text, tree = self._get(url)
-        self.assertEqual(self._one(tree, '//*[contains(@class, "o_pk_toast")]').get('data-sc-notify'),
+        self.assertEqual(self._one(tree, '//*[contains(@class, "o_pk_toast")]').get('data-pk-notify'),
                          'Timesheet archived.')
-        undo = self._one(tree, '//form[@data-sc-form="sc.undo"]')
+        undo = self._one(tree, '//form[@data-pk-undo]')
         resp = self._post(undo.get('action'))
         self.assertTrue(resp.headers['Location'].endswith(url))
         self.timesheet.invalidate_recordset()
@@ -296,7 +296,7 @@ class TestCardTopBars1736(TopBars1736Common):
         self.qnote.invalidate_recordset()
         self.assertFalse(self.qnote.active)
         _text, tree = self._get('/my/notepad')
-        undo = self._one(tree, '//form[@data-sc-form="sc.undo"]')
+        undo = self._one(tree, '//form[@data-pk-undo]')
         self.assertEqual(undo.get('action'), '/my/notepad/%s/restore?undo=1' % self.qnote.id)
         resp = self._post(undo.get('action'))
         # Task 1741: the session toast, not a ?success= banner.
@@ -421,8 +421,9 @@ class TestCardTopBarsI18n1736(TopBars1736Common):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
+        # Task 5371: the toast host (« Annuler ») is the kit's.
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):
@@ -467,7 +468,7 @@ class TestCardTopBarsI18n1736(TopBars1736Common):
         self.opener.cookies.set('frontend_lang', 'fr_CA')
         self._post('/my/notepad/%s/archive' % self.qnote.id, sc_undo='1')
         _text, tree = self._get('/my/notepad')
-        self.assertEqual(self._one(tree, '//*[contains(@class, "o_pk_toast")]').get('data-sc-notify'),
+        self.assertEqual(self._one(tree, '//*[contains(@class, "o_pk_toast")]').get('data-pk-notify'),
                          'Note archivée.')
-        self.assertEqual(self._one(tree, '//form[@data-sc-form="sc.undo"]').get('data-sc-toast-action'),
+        self.assertEqual(self._one(tree, '//form[@data-pk-undo]').get('data-pk-toast-action'),
                          'Annuler')

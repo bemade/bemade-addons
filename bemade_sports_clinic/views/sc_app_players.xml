@@ -504,13 +504,15 @@
                     <div class="o_pk_section" data-pk-section="player.info.personal">
                         <section class="o_pk_card o_pk_edit_card" data-pk-edit-card="identity"
                                  t-att-data-sc-edit-open-on-load="'1' if sc_created_player else None">
-                            <!-- Task 1655: a player just created inline — « Undo » toast. -->
+                            <!-- Task 1655: a player just created inline — « Undo » toast
+                                 (task 5371: the kit's undo offer). -->
                             <t t-if="sc_created_player">
                                 <t t-set="sc_player_created_label">Player created</t>
                                 <t t-set="sc_player_undo_label">Undo</t>
                                 <form t-attf-action="/my/player/#{player.id}/undo-create" method="post" hidden="hidden"
-                                      data-sc-form="player.undo" t-att-data-sc-toast-message="sc_player_created_label"
-                                      t-att-data-sc-toast-action="sc_player_undo_label">
+                                      data-pk-undo-offer="player" data-pk-undo-ms="120000" data-pk-undo-param="created_player"
+                                      t-att-data-pk-toast-message="sc_player_created_label"
+                                      t-att-data-pk-toast-action="sc_player_undo_label">
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                     <input type="hidden" name="return_url" t-att-value="sc_created_player_back"/>
                                 </form>
@@ -1453,8 +1455,9 @@
                     <t t-set="sc_created_label">Injury created</t>
                     <t t-set="sc_undo_label">Undo</t>
                     <form t-attf-action="/my/injury/#{row['id']}/undo-create" method="post" hidden="hidden"
-                          data-sc-form="injury.undo" t-att-data-sc-toast-message="sc_created_label"
-                          t-att-data-sc-toast-action="sc_undo_label">
+                          data-pk-undo-offer="injury" data-pk-undo-ms="120000" data-pk-undo-param="created"
+                          t-att-data-pk-toast-message="sc_created_label"
+                          t-att-data-pk-toast-action="sc_undo_label">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <input t-if="team_context_id" type="hidden" name="team_id" t-att-value="team_context_id"/>
                         <input t-if="clinic_event" type="hidden" name="clinic_id" t-att-value="clinic_event.id"/>
