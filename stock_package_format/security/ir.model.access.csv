@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_pack_wizard_user,pack wizard user,model_stock_package_format_pack_wizard,stock.group_stock_user,1,1,1,1
+access_pack_wizard_line_user,pack wizard line user,model_stock_package_format_pack_wizard_line,stock.group_stock_user,1,1,1,1
+access_open_wizard_user,open wizard user,model_stock_package_format_open_wizard,stock.group_stock_user,1,1,1,1
+access_repack_wizard_user,repack wizard user,model_stock_package_format_repack_wizard,stock.group_stock_user,1,1,1,1
+access_golive_wizard_manager,golive wizard manager,model_stock_package_format_golive_wizard,stock.group_stock_manager,1,1,1,1
+access_golive_wizard_line_manager,golive wizard line manager,model_stock_package_format_golive_wizard_line,stock.group_stock_manager,1,1,1,1

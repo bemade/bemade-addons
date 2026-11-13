@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t
+    t-name="stock_package_format.QtyAtDatePopover"
+    t-inherit="sale_stock.QtyAtDatePopover"
+    t-inherit-mode="extension"
+  >
+        <xpath expr="//table" position="before">
+            <div t-if="props.record.data.package_format_availability" class="mb-2">
+                <strong>Packages: </strong><span
+          t-out="props.record.data.package_format_availability"
+        />
+            </div>
+            <div t-if="props.record.data.package_format_free_stock" class="mb-2">
+                <strong>Free stock: </strong><span
+          t-out="props.record.data.package_format_free_stock"
+        />
+            </div>
+            <div
+        t-if="props.record.data.package_format_proposal"
+        class="mb-2 text-warning"
+      >
+                <span t-out="props.record.data.package_format_proposal" />
+            </div>
+        </xpath>
+    </t>
+    <t
+    t-name="stock_package_format.QtyAtDate"
+    t-inherit="sale_stock.QtyAtDate"
+    t-inherit-mode="extension"
+  >
+        <xpath expr="//a" position="attributes">
+            <attribute name="t-attf-class" add="{{ props.record.data.package_format_to_buy ? 'text-danger' : '' }}" separator=" " />
+        </xpath>
+    </t>
+</templates>
