@@ -80,7 +80,7 @@
             </xpath>
         </field>
     </record>
-    <!-- Site note: small pin on FSM kanban cards, note as tooltip. -->
+    <!-- Site note: warning icon next to the priority stars on FSM kanban cards, note as tooltip. -->
     <record id="project_task_view_kanban_fsm_site_note" model="ir.ui.view">
         <field name="name">bemade_fsm.project.task.kanban.fsm.site.note</field>
         <field name="model">project.task</field>
@@ -90,20 +90,16 @@
                 <field name="fsm_site_note" />
             </xpath>
             <xpath
-        expr="//t[@t-name='card']//field[@name='partner_id']"
+        expr="//t[@t-name='card']//footer//field[@name='priority']"
         position="after"
       >
                 <span
           t-if="record.fsm_site_note.raw_value"
-          class="text-warning o_fsm_site_note_pin"
-          t-att-title="record.fsm_site_note.raw_value"
-        >
-                    <i
-            class="fa fa-thumb-tack me-1"
-            role="img"
-            aria-label="Site note"
-          />Site note
-                </span>
+          class="fa fa-exclamation-triangle text-warning ms-1 o_fsm_site_note_pin"
+          t-att-title="'Note du site / Site note : ' + record.fsm_site_note.raw_value"
+          role="img"
+          aria-label="Site note"
+        />
             </xpath>
         </field>
     </record>

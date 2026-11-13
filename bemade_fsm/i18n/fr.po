@@ -1139,11 +1139,6 @@ msgid "<i class=\"fa fa-thumb-tack fa-lg mt-1\" role=\"img\" title=\"Site note\"
 msgstr "<i class=\"fa fa-thumb-tack fa-lg mt-1\" role=\"img\" title=\"Note du site\"/>"
 
 #. module: bemade_fsm
-#: model_terms:ir.ui.view,arch_db:bemade_fsm.project_task_view_kanban_fsm_site_note
-msgid "<i class=\"fa fa-thumb-tack me-1\" role=\"img\" aria-label=\"Site note\"/>Site note"
-msgstr "<i class=\"fa fa-thumb-tack me-1\" role=\"img\" aria-label=\"Note du site\"/>Note du site"
-
-#. module: bemade_fsm
 #. odoo-python
 #: code:addons/bemade_fsm/models/task.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_fsm.fsm_site_note_wizard_view_form
@@ -1188,6 +1183,7 @@ msgstr "Site"
 #: model:ir.model.fields,field_description:bemade_fsm.field_project_task__fsm_site_note
 #: model:ir.model.fields,field_description:bemade_fsm.field_res_partner__fsm_site_note
 #: model:ir.model.fields,field_description:bemade_fsm.field_res_users__fsm_site_note
+#: model_terms:ir.ui.view,arch_db:bemade_fsm.project_task_view_kanban_fsm_site_note
 msgid "Site note"
 msgstr "Note du site"
 
