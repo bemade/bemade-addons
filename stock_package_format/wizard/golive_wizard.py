@@ -118,7 +118,7 @@ class PackageFormatGoliveWizard(models.TransientModel):
             ) or Lot.create({"name": lot_name, "product_id": product.id, "company_id": company.id})
             size = product._package_format_size(line.format_uom_id)
             packages = self.env["stock.package"].create(
-                [{"package_type_id": line.format_uom_id.package_type_id.id}] * line.package_count
+                [{"package_type_id": line.format_uom_id.package_type_id.id} for _i in range(line.package_count)]
             )
             for package in packages:
                 to_apply |= Quant.create(

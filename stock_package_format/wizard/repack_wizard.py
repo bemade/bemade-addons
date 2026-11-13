@@ -94,7 +94,7 @@ class PackageFormatRepackWizard(models.TransientModel):
         if source and not source.is_opened:
             source._package_format_open(self.reason)
         new_packages = self.env["stock.package"].create(
-            [{"package_type_id": self.format_uom_id.package_type_id.id}] * self.package_count
+            [{"package_type_id": self.format_uom_id.package_type_id.id} for _i in range(self.package_count)]
         )
         move = (
             self.env["stock.move"]

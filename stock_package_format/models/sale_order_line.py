@@ -115,10 +115,10 @@ class SaleOrderLine(models.Model):
         Procurement = self.env["stock.rule"].Procurement
         for line, (fmt, count) in plan.items():
             moves = line.move_ids.filtered(lambda m: m.state != "cancel")
-            if not moves or any(
-                m.procure_method == "make_to_order" or m.location_id.usage == "supplier"
-                for m in moves
-            ):
+            # Multi-step deliveries chain the customer move to a pick move
+            # (make_to_order inside the warehouse): only a real MTO route
+            # (``is_mto``, filtered by the plan) or a dropship skips the buy.
+            if not moves or any(m.location_id.usage == "supplier" for m in moves):
                 continue
             warehouse = line.order_id.warehouse_id
             location = warehouse.lot_stock_id

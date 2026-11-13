@@ -125,6 +125,23 @@ class TestSaleFormatAvailability(PackageFormatCase):
         self.assertEqual(delivery.move_ids.quantity, 25)
         self.assertEqual(len(delivery.move_ids.move_line_ids.package_id), 5)
 
+    def test_uc5_chained_customer_move_still_buys(self):
+        """Multi-step delivery: the sale line's move toward the customer is
+        make_to_order inside the warehouse (chained to the pick). That is not
+        an MTO route: the format shortfall is still bought."""
+        self.warehouse.delivery_steps = "pick_ship"
+        self._put_packages(self.uom_drum, 2, lot_name="L1")
+        order = self._order([(5, self.uom_drum, None)])
+        line = order.order_line
+        plan = line._package_format_buy_plan()
+        order.action_confirm()
+        self._rfq_lines(line).unlink()
+        line.move_ids.procure_method = "make_to_order"
+        line._package_format_buy(plan)
+        rfq_line = self._rfq_lines(line)
+        self.assertEqual(rfq_line.product_qty, 3)
+        self.assertEqual(rfq_line.product_uom_id, self.uom_drum)
+
     def test_two_lines_share_the_free_packages(self):
         self._put_packages(self.uom_drum, 3, lot_name="L1")
         order = self._order([(2, self.uom_drum, None), (2, self.uom_drum, None)])

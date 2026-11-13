@@ -55,6 +55,7 @@ class TestReceiptPacking(PackageFormatCase):
         self.assertEqual(len(quants.package_id), 4)
         self.assertEqual(set(quants.mapped("quantity")), {5.0})
         self.assertEqual(quants.lot_id.name, "L1")
+        self.assertEqual(len(set(quants.package_id.mapped("name"))), 4)
         # Labels: one batch for the four packages.
         self.assertEqual(result["tag"], "do_multi_print")
         reports = result["params"]["reports"]

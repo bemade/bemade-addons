@@ -115,6 +115,7 @@ class TestOpenRepack(PackageFormatCase):
         )
         new_packages = wizard.action_confirm_packages()
         self.assertEqual(len(new_packages), 42)
+        self.assertEqual(len(set(new_packages.mapped("name"))), 42)
         self.assertEqual(set(new_packages.mapped("package_type_id").ids), {self.type_bag.id})
         quants = new_packages.quant_ids
         self.assertEqual(set(quants.mapped("quantity")), {1.0})

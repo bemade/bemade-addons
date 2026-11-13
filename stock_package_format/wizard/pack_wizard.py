@@ -160,8 +160,7 @@ class PackageFormatPackWizard(models.TransientModel):
                 lot = self._find_or_create_lot(product, move.company_id, row.lot_name.strip())
                 size = product._package_format_size(row.format_uom_id)
                 new_packages = self.env["stock.package"].create(
-                    [{"package_type_id": row.format_uom_id.package_type_id.id}]
-                    * row.package_count
+                    [{"package_type_id": row.format_uom_id.package_type_id.id} for _i in range(row.package_count)]
                 )
                 packages |= new_packages
                 for package in new_packages:

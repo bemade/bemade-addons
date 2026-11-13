@@ -46,6 +46,7 @@ class TestGoLive(PackageFormatCase):
         )
         packed = quants.filtered("package_id")
         self.assertEqual(len(packed.package_id), 40)
+        self.assertEqual(len(set(packed.package_id.mapped("name"))), 40)
         self.assertEqual(
             len(packed.filtered(lambda q: q.package_id.package_type_id == self.type_drum)), 20
         )
