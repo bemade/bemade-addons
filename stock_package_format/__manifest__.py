@@ -103,6 +103,7 @@ Reporting and go-live
     "assets": {
         "web.assets_backend": [
             "stock_package_format/static/src/sale_qty_popover/*",
+            "stock_package_format/static/src/breakdown_popover/*",
         ],
     },
     "installable": True,

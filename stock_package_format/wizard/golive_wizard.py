@@ -23,6 +23,34 @@ class PackageFormatGoliveWizard(models.TransientModel):
         "stock.package.format.golive.wizard.line", "wizard_id", string="Packages"
     )
     packed_quantity = fields.Float(compute="_compute_packed_quantity", digits="Product Unit")
+    allowed_format_ids = fields.Many2many(related="product_id.uom_ids", string="Formats")
+    rest_format_uom_id = fields.Many2one(
+        "uom.uom",
+        string="Pack the rest as",
+        compute="_compute_rest_format_uom_id",
+        store=True,
+        readonly=False,
+        domain="[('id', 'in', allowed_format_ids), ('package_type_id', '!=', False)]",
+        help="After the rows above, the loose stock left is packed into as many "
+        "whole packages of this format as fit; what is left over stays loose. "
+        "Leave empty to pack only the rows.",
+    )
+    rest_lot_name = fields.Char(
+        "Lot of the rest",
+        compute="_compute_rest_lot_name",
+        store=True,
+        readonly=False,
+        help="Lot of the rest packages; the lot of the last row by default.",
+    )
+    rest_package_count = fields.Integer(
+        "Rest packages", compute="_compute_rest", help="Packages the rest will fill."
+    )
+    rest_leftover = fields.Float(
+        "Left loose",
+        compute="_compute_rest",
+        digits="Product Unit",
+        help="Loose stock left after the rows and the rest packages.",
+    )
 
     @api.model
     def default_get(self, fields_list):
@@ -33,6 +61,43 @@ class PackageFormatGoliveWizard(models.TransientModel):
             )
             res["location_id"] = warehouse.lot_stock_id.id
         return res
+
+    @api.depends("product_id")
+    def _compute_rest_format_uom_id(self):
+        for wizard in self:
+            product = wizard.product_id
+            wizard.rest_format_uom_id = (
+                product._package_format_uoms()[:1] if product.uses_package_rule else False
+            )
+
+    @api.depends("line_ids.lot_name")
+    def _compute_rest_lot_name(self):
+        for wizard in self:
+            last = wizard.line_ids.filtered(lambda line: (line.lot_name or "").strip())[-1:]
+            if last:
+                wizard.rest_lot_name = last.lot_name.strip()
+            # no row with a lot: keep what the user typed
+
+    @api.depends("loose_quantity", "packed_quantity", "rest_format_uom_id")
+    def _compute_rest(self):
+        for wizard in self:
+            product = wizard.product_id
+            remaining = wizard.loose_quantity - wizard.packed_quantity
+            count = 0
+            if (
+                product
+                and wizard.rest_format_uom_id
+                and product.uom_id.compare(remaining, 0) > 0
+            ):
+                size = product._package_format_size(wizard.rest_format_uom_id)
+                if size > 0:
+                    count = int(remaining // size)
+                    # float noise: 9.9999999 / 1.0 is still 10 packages
+                    if product.uom_id.compare(remaining - (count + 1) * size, 0) >= 0:
+                        count += 1
+                    remaining -= count * size
+            wizard.rest_package_count = count
+            wizard.rest_leftover = max(remaining, 0.0) if product else 0.0
 
     def _loose_quants(self):
         return self.env["stock.quant"].sudo().search(
@@ -74,6 +139,24 @@ class PackageFormatGoliveWizard(models.TransientModel):
                 raise UserError(
                     self.env._("Every row needs a positive number of packages and a lot.")
                 )
+        rows = [
+            (line.format_uom_id, line.package_count, line.lot_name.strip())
+            for line in self.line_ids
+        ]
+        if self.rest_format_uom_id and self.rest_package_count > 0:
+            if self.rest_format_uom_id not in product._package_format_uoms():
+                raise UserError(self.env._("Choose one of the product's formats."))
+            if not (self.rest_lot_name or "").strip():
+                raise UserError(
+                    self.env._(
+                        "Enter the lot of the %(count)s × %(format)s packed as the rest.",
+                        count=self.rest_package_count,
+                        format=self.rest_format_uom_id.name,
+                    )
+                )
+            rows.append(
+                (self.rest_format_uom_id, self.rest_package_count, self.rest_lot_name.strip())
+            )
         total = self.packed_quantity
         if product.uom_id.compare(total, self.loose_quantity) > 0:
             raise UserError(
@@ -94,9 +177,9 @@ class PackageFormatGoliveWizard(models.TransientModel):
         # Take from loose quants of the same lot first, then lot-less, then others.
         loose = self._loose_quants()
         taken = {}
-        for line in self.line_ids:
-            lot_name = line.lot_name.strip()
-            need = line.quantity
+        for format_uom, package_count, lot_name in rows:
+            size = product._package_format_size(format_uom)
+            need = package_count * size
             ordered = (
                 loose.filtered(lambda q, n=lot_name: q.lot_id.name == n)
                 | loose.filtered(lambda q: not q.lot_id)
@@ -116,9 +199,8 @@ class PackageFormatGoliveWizard(models.TransientModel):
                  "|", ("company_id", "=", False), ("company_id", "=", company.id)],
                 limit=1,
             ) or Lot.create({"name": lot_name, "product_id": product.id, "company_id": company.id})
-            size = product._package_format_size(line.format_uom_id)
             packages = self.env["stock.package"].create(
-                [{"package_type_id": line.format_uom_id.package_type_id.id} for _i in range(line.package_count)]
+                [{"package_type_id": format_uom.package_type_id.id} for _i in range(package_count)]
             )
             for package in packages:
                 to_apply |= Quant.create(

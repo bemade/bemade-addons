@@ -16,33 +16,129 @@
         <field name="model">product.template</field>
         <field name="inherit_id" ref="stock.view_template_property_form" />
         <field name="arch" type="xml">
+            <data>
             <page name="inventory" position="inside">
                 <group
-          name="package_formats"
-          string="Package formats"
-          invisible="not is_storable"
-        >
+            name="package_formats"
+            string="Package formats"
+            invisible="not is_storable"
+          >
                     <group>
                         <field
-              name="package_rule_override"
-              widget="radio"
-              options="{'horizontal': true}"
-            />
+                name="package_rule_override"
+                widget="radio"
+                options="{'horizontal': true}"
+              />
                         <field name="uses_package_rule" />
                     </group>
                     <group invisible="not uses_package_rule">
-                        <field name="package_format_summary" />
+                        <label for="package_format_summary" />
+                        <div class="o_row">
+                            <field name="package_format_summary" />
+                            <field
+                  name="package_format_breakdown"
+                  widget="popover_widget"
+                  nolabel="1"
+                />
+                        </div>
                         <button
-              name="action_package_format_golive"
-              type="object"
-              string="Pack existing stock"
-              class="btn-link ps-0"
-              groups="stock.group_stock_manager"
-              colspan="2"
-            />
+                name="action_package_format_golive"
+                type="object"
+                string="Pack existing stock"
+                class="btn-link ps-0"
+                groups="stock.group_stock_manager"
+                colspan="2"
+              />
                     </group>
                 </group>
             </page>
+            <!-- Popover with the per-format breakdown next to On Hand -->
+            <span name="uom_span" position="after">
+                <field
+            name="package_format_breakdown"
+            widget="popover_widget"
+            nolabel="1"
+            invisible="not uses_package_rule"
+            groups="stock.group_stock_user"
+          />
+            </span>
+            </data>
+        </field>
+    </record>
+
+    <!-- Smart button: the compact per-format summary; click opens the
+         « Stock by Package Format » report of the product. Shared by the
+         template and the variant forms. -->
+    <record id="product_template_form_view_package_format_button" model="ir.ui.view">
+        <field name="name">product.template.form.package.format.button</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view" />
+        <field name="arch" type="xml">
+            <span id="button_website" position="after">
+                <field name="uses_package_rule" invisible="1" />
+                <button
+          name="action_package_format_stock"
+          type="object"
+          class="oe_stat_button"
+          icon="fa-cubes"
+          invisible="not uses_package_rule"
+          groups="stock.group_stock_user"
+        >
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value">
+                            <field name="package_format_summary" nolabel="1" />
+                        </span>
+                        <span class="o_stat_text">Package formats</span>
+                    </div>
+                    <field
+            name="package_format_breakdown"
+            widget="popover_widget"
+            nolabel="1"
+          />
+                </button>
+            </span>
+        </field>
+    </record>
+
+    <!-- Popover on the On Hand / Forecasted stat button -->
+    <record id="product_template_form_view_package_format_onhand" model="ir.ui.view">
+        <field name="name">product.template.form.package.format.onhand</field>
+        <field name="model">product.template</field>
+        <field
+      name="inherit_id"
+      ref="stock.product_template_form_view_procurement_button"
+    />
+        <field name="arch" type="xml">
+            <xpath
+        expr="//button[@name='action_product_tmpl_forecast_report']//field[@name='qty_available']"
+        position="after"
+      >
+                <field
+          name="package_format_breakdown"
+          widget="popover_widget"
+          nolabel="1"
+          invisible="not uses_package_rule"
+        />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="product_product_form_view_package_format_onhand" model="ir.ui.view">
+        <field name="name">product.product.form.package.format.onhand</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="stock.product_form_view_procurement_button" />
+        <field name="arch" type="xml">
+            <xpath
+        expr="//button[@name='action_product_forecast_report']//field[@name='qty_available']"
+        position="after"
+      >
+                <field
+          name="package_format_breakdown"
+          widget="popover_widget"
+          nolabel="1"
+          invisible="not uses_package_rule"
+        />
+            </xpath>
         </field>
     </record>
 </odoo>

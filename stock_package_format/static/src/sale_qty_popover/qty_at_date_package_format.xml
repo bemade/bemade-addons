@@ -11,6 +11,11 @@
           t-out="props.record.data.package_format_availability"
         />
             </div>
+            <div t-if="props.record.data.package_format_free_stock" class="mb-2">
+                <strong>Free stock: </strong><span
+          t-out="props.record.data.package_format_free_stock"
+        />
+            </div>
             <div
         t-if="props.record.data.package_format_proposal"
         class="mb-2 text-warning"

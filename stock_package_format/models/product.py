@@ -1,5 +1,6 @@
 # Copyright 2026 Bemade Inc.
 # License LGPL-3 - See https://www.gnu.org/licenses/lgpl-3.0.html
+import json
 from collections import defaultdict
 
 from markupsafe import Markup, escape
@@ -72,6 +73,11 @@ class ProductTemplate(models.Model):
     package_format_summary = fields.Char(
         "Packages in stock", compute="_compute_package_format_summary"
     )
+    package_format_breakdown = fields.Char(
+        "Packages per format",
+        compute="_compute_package_format_summary",
+        help="Per-format breakdown of the stock, for the popover.",
+    )
 
     @api.depends("package_rule_override", "categ_id.package_rule")
     def _compute_uses_package_rule(self):
@@ -109,18 +115,48 @@ class ProductTemplate(models.Model):
         for template in self:
             if not template.uses_package_rule or not template.product_variant_ids:
                 template.package_format_summary = False
+                template.package_format_breakdown = False
                 continue
+            breakdown = template.product_variant_ids._package_format_breakdown()
             template.package_format_summary = (
-                template.product_variant_ids._package_format_summary()
+                template.product_variant_ids._package_format_summary(breakdown)
+            )
+            template.package_format_breakdown = (
+                template.product_variant_ids._package_format_breakdown_json(breakdown)
             )
 
     def action_package_format_golive(self):
         self.ensure_one()
         return self.product_variant_ids[:1].action_package_format_golive()
 
+    def action_package_format_stock(self):
+        self.ensure_one()
+        return self.product_variant_ids.action_package_format_stock()
+
 
 class ProductProduct(models.Model):
     _inherit = "product.product"
+
+    package_format_summary = fields.Char(
+        "Packages in stock", compute="_compute_package_format_summary"
+    )
+    package_format_breakdown = fields.Char(
+        "Packages per format",
+        compute="_compute_package_format_summary",
+        help="Per-format breakdown of the stock, for the popover.",
+    )
+
+    def _compute_package_format_summary(self):
+        for product in self:
+            if not product.uses_package_rule:
+                product.package_format_summary = False
+                product.package_format_breakdown = False
+                continue
+            breakdown = product._package_format_breakdown()
+            product.package_format_summary = product._package_format_summary(breakdown)
+            product.package_format_breakdown = product._package_format_breakdown_json(
+                breakdown
+            )
 
     def _package_format_uoms(self):
         """Format units of the product: packaging units carrying a package
@@ -242,58 +278,160 @@ class ProductProduct(models.Model):
     def _package_format_qty_str(self, qty):
         return ("%.4f" % qty).rstrip("0").rstrip(".")
 
-    def _package_format_summary(self):
-        """« 12 × Bag · 3 × Drum · opened: 1 × Drum (1.8 ft³) » over the
-        internal locations of the current company."""
-        lines = []
-        locations = self.env["stock.location"].search(
-            [("usage", "=", "internal"), ("company_id", "in", self.env.companies.ids)]
-        )
+    def _package_format_breakdown(self, location=None, free=False):
+        """Stock of these products per format.
+
+        Over ``location`` (and its children), else the internal locations of
+        the current companies. With ``free``, only what is not reserved:
+        unopened packages with nothing reserved, the unreserved content of
+        opened packages and of loose stock.
+
+        :return: {"unopened": [(package_type, count, qty)],
+                  "opened": [(package_type, count, qty)], "loose": qty},
+                 package types sorted by name.
+        """
+        if location:
+            domain = [("location_id", "child_of", location.id)]
+        else:
+            domain = [
+                ("location_id.usage", "=", "internal"),
+                ("location_id.company_id", "in", self.env.companies.ids),
+            ]
         quants = (
             self.env["stock.quant"]
             .sudo()
-            .search(
-                [
-                    ("product_id", "in", self.ids),
-                    ("location_id", "in", locations.ids),
-                    ("quantity", ">", 0),
-                ]
-            )
+            .search(domain + [("product_id", "in", self.ids), ("quantity", ">", 0)])
         )
-        unopened = defaultdict(set)
-        opened = defaultdict(lambda: [set(), 0.0])
+        rounding = self[:1].uom_id or self.env.ref("uom.product_uom_unit")
+        packages = defaultdict(lambda: self.env["stock.quant"].sudo())
         loose = 0.0
         for quant in quants:
-            package = quant.package_id
-            if not package:
-                loose += quant.quantity
-            elif package.is_opened:
-                opened[package.package_type_id][0].add(package.id)
-                opened[package.package_type_id][1] += quant.quantity
+            if quant.package_id:
+                packages[quant.package_id] |= quant
             else:
-                unopened[package.package_type_id].add(package.id)
+                loose += quant.quantity - (quant.reserved_quantity if free else 0.0)
+        unopened = defaultdict(lambda: [0, 0.0])
+        opened = defaultdict(lambda: [0, 0.0])
+        for package, pquants in packages.items():
+            qty = sum(pquants.mapped("quantity"))
+            reserved = sum(pquants.mapped("reserved_quantity"))
+            if package.is_opened:
+                if free:
+                    qty -= reserved
+                if rounding.compare(qty, 0) <= 0:
+                    continue
+                bucket = opened[package.package_type_id]
+            else:
+                if free and rounding.compare(reserved, 0) != 0:
+                    continue
+                bucket = unopened[package.package_type_id]
+            bucket[0] += 1
+            bucket[1] += qty
+
+        def rows(groups):
+            return [
+                (package_type, count, qty)
+                for package_type, (count, qty) in sorted(
+                    groups.items(), key=lambda i: (i[0].name or "", i[0].id)
+                )
+            ]
+
+        return {
+            "unopened": rows(unopened),
+            "opened": rows(opened),
+            "loose": loose if rounding.compare(loose, 0) > 0 else 0.0,
+        }
+
+    def _package_format_summary(self, breakdown=None):
+        """« 12 × Bag · 3 × Drum · opened: 1 × Drum (1.8 ft³) · loose: 2 ft³ »
+        (by default over the internal locations of the current companies)."""
+        if breakdown is None:
+            breakdown = self._package_format_breakdown()
+        lines = []
         uom_name = self[:1].uom_id.name or ""
-        for package_type, ids in sorted(unopened.items(), key=lambda i: i[0].name or ""):
-            lines.append("%s × %s" % (len(ids), package_type.name or "?"))
-        for package_type, (ids, qty) in sorted(opened.items(), key=lambda i: i[0].name or ""):
+        for package_type, count, _qty in breakdown["unopened"]:
+            lines.append("%s × %s" % (count, package_type.name or "?"))
+        for package_type, count, qty in breakdown["opened"]:
             lines.append(
                 self.env._(
                     "opened: %(count)s × %(type)s (%(qty)s %(uom)s)",
-                    count=len(ids),
+                    count=count,
                     type=package_type.name or "?",
                     qty=self[:1]._package_format_qty_str(qty),
                     uom=uom_name,
                 )
             )
-        if loose:
+        if breakdown["loose"]:
             lines.append(
                 self.env._(
                     "loose: %(qty)s %(uom)s",
-                    qty=self[:1]._package_format_qty_str(loose),
+                    qty=self[:1]._package_format_qty_str(breakdown["loose"]),
                     uom=uom_name,
                 )
             )
         return " · ".join(lines) or self.env._("No packages in stock")
+
+    def _package_format_breakdown_json(self, breakdown=None):
+        """The breakdown for stock's ``popover_widget`` (popover template
+        ``stock_package_format.BreakdownPopover``)."""
+        if breakdown is None:
+            breakdown = self._package_format_breakdown()
+        uom_name = self[:1].uom_id.name or ""
+
+        def qty_str(qty):
+            return "%s %s" % (self[:1]._package_format_qty_str(qty), uom_name)
+
+        rows = [
+            {
+                "label": package_type.name or "?",
+                "count": count,
+                "qty": qty_str(qty),
+                "opened": is_opened,
+            }
+            for key, is_opened in (("unopened", False), ("opened", True))
+            for package_type, count, qty in breakdown[key]
+        ]
+        return json.dumps(
+            {
+                "title": self.env._("Packages in stock"),
+                "icon": "fa-cubes",
+                "color": "text-primary",
+                "position": "bottom",
+                "popoverTemplate": "stock_package_format.BreakdownPopover",
+                "rows": rows,
+                "loose": qty_str(breakdown["loose"]) if breakdown["loose"] else "",
+                "empty": self.env._("No packages in stock"),
+            }
+        )
+
+    def action_package_format_stock(self):
+        """« Stock by Package Format » for these products, grouped by package
+        type then lot."""
+        action = self.env["ir.actions.actions"]._for_xml_id(
+            "stock_package_format.action_stock_by_package_format"
+        )
+        action["domain"] = [
+            ("product_id", "in", self.ids),
+            ("location_id.usage", "=", "internal"),
+            ("quantity", ">", 0),
+        ]
+        action["context"] = {
+            "group_by": ["package_type_id", "lot_id"],
+            "default_product_id": self[:1].id,
+        }
+        if len(self) == 1:
+            action["name"] = self.env._(
+                "%(product)s by package format", product=self.display_name
+            )
+        return action
+
+    def action_open_quants(self):
+        action = super().action_open_quants()
+        if self and all(self.mapped("uses_package_rule")):
+            context = dict(action.get("context") or {})
+            context["group_by"] = ["package_type_id", "lot_id"]
+            action["context"] = context
+        return action
 
     def action_package_format_golive(self):
         self.ensure_one()

@@ -15,6 +15,7 @@
           string="Packages"
         />
                 <field name="package_format_proposal" column_invisible="True" />
+                <field name="package_format_free_stock" column_invisible="True" />
             </xpath>
             <xpath
         expr="//field[@name='order_line']//form//field[@name='product_uom_id']"
@@ -27,6 +28,10 @@
                 <field
           name="package_format_proposal"
           invisible="not package_format_proposal"
+        />
+                <field
+          name="package_format_free_stock"
+          invisible="not package_format_free_stock"
         />
             </xpath>
         </field>

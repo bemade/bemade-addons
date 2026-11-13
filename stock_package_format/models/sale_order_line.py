@@ -25,6 +25,12 @@ class SaleOrderLine(models.Model):
     package_format_proposal = fields.Char(
         "Open to cover", compute="_compute_package_format_availability"
     )
+    package_format_free_stock = fields.Char(
+        "Free stock per format",
+        compute="_compute_package_format_availability",
+        help="Free stock of the product in the warehouse: unreserved whole "
+        "packages per format, opened packages and loose stock.",
+    )
 
     def _package_format_uom(self):
         self.ensure_one()
@@ -41,15 +47,22 @@ class SaleOrderLine(models.Model):
     )
     def _compute_package_format_availability(self):
         pools = {}
+        free_stock = {}
         for line in self:
             line.package_format_free_count = 0
             line.package_format_to_buy = 0
             line.package_format_availability = False
             line.package_format_proposal = False
+            line.package_format_free_stock = False
             product = line.product_id
             location = line.order_id.warehouse_id.lot_stock_id
             if not product.uses_package_rule or not location or line.display_type:
                 continue
+            if (product, location) not in free_stock:
+                free_stock[product, location] = product._package_format_summary(
+                    product._package_format_breakdown(location=location, free=True)
+                )
+            line.package_format_free_stock = free_stock[product, location]
             fmt = line._package_format_uom()
             if fmt:
                 key = (product, fmt, location)

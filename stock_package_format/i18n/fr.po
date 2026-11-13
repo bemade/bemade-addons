@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-13 02:56+0000\n"
-"PO-Revision-Date: 2026-11-13 02:56+0000\n"
+"POT-Creation-Date: 2026-11-13 13:48+0000\n"
+"PO-Revision-Date: 2026-11-13 13:48+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -34,6 +34,12 @@ msgstr "%(available)s disponible(s) · %(to_buy)s à acheter"
 msgid "%(count)s × %(type)s repacked from this package by %(user)s."
 msgstr ""
 "%(count)s × %(type)s reconditionné(s) à partir de ce colis par %(user)s."
+
+#. module: stock_package_format
+#. odoo-python
+#: code:addons/stock_package_format/models/product.py:0
+msgid "%(product)s by package format"
+msgstr "%(product)s par format de colis"
 
 #. module: stock_package_format
 #. odoo-python
@@ -95,14 +101,42 @@ msgid "%(reserved)s %(format)s reserved"
 msgstr "%(reserved)s %(format)s réservé(s)"
 
 #. module: stock_package_format
+#. odoo-javascript
+#: code:addons/stock_package_format/static/src/breakdown_popover/breakdown_popover.xml:0
+msgid "(opened)"
+msgstr "(ouvert)"
+
+#. module: stock_package_format
+#: model_terms:ir.ui.view,arch_db:stock_package_format.product_template_form_view_package_format_button
+msgid "<span class=\"o_stat_text\">Package formats</span>"
+msgstr "<span class=\"o_stat_text\">Formats de colis</span>"
+
+#. module: stock_package_format
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package__message_needaction
 msgid "Action Needed"
 msgstr "Action requise"
 
 #. module: stock_package_format
+#: model:ir.model.fields,help:stock_package_format.field_stock_package_format_golive_wizard__allowed_format_ids
 #: model:ir.model.fields,help:stock_package_format.field_stock_package_format_golive_wizard_line__allowed_format_ids
 msgid "Additional packagings for this product which can be used for sales"
 msgstr "Emballages supplémentaires de ce produit utilisables à la vente"
+
+#. module: stock_package_format
+#: model:ir.model.fields,help:stock_package_format.field_stock_package_format_golive_wizard__rest_format_uom_id
+msgid ""
+"After the rows above, the loose stock left is packed into as many whole "
+"packages of this format as fit; what is left over stays loose. Leave empty "
+"to pack only the rows."
+msgstr ""
+"Après les lignes ci-dessus, le vrac restant est mis dans autant de colis "
+"entiers de ce format qu'il en remplit ; le surplus reste en vrac. Laissez "
+"vide pour ne mettre en colis que les lignes."
+
+#. module: stock_package_format
+#: model_terms:ir.ui.view,arch_db:stock_package_format.golive_wizard_view_form
+msgid "After the rows, the loose stock left is packed into"
+msgstr "Après les lignes, le vrac restant est mis dans"
 
 #. module: stock_package_format
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_repack_wizard__allowed_format_ids
@@ -226,6 +260,13 @@ msgstr "Nom d'affichage"
 #. module: stock_package_format
 #. odoo-python
 #: code:addons/stock_package_format/wizard/golive_wizard.py:0
+msgid "Enter the lot of the %(count)s × %(format)s packed as the rest."
+msgstr ""
+"Saisissez le lot des %(count)s × %(format)s mis en colis avec le reste."
+
+#. module: stock_package_format
+#. odoo-python
+#: code:addons/stock_package_format/wizard/golive_wizard.py:0
 msgid "Every row needs a positive number of packages and a lot."
 msgstr "Chaque ligne doit avoir un nombre de colis positif et un lot."
 
@@ -240,12 +281,15 @@ msgid "Followers (Partners)"
 msgstr "Abonnés (partenaires)"
 
 #. module: stock_package_format
+#. odoo-javascript
+#: code:addons/stock_package_format/static/src/breakdown_popover/breakdown_popover.xml:0
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_golive_wizard_line__format_uom_id
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_pack_wizard_line__format_uom_id
 msgid "Format"
 msgstr ""
 
 #. module: stock_package_format
+#: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_golive_wizard__allowed_format_ids
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_golive_wizard_line__allowed_format_ids
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_pack_wizard_line__allowed_format_ids
 msgid "Formats"
@@ -257,10 +301,30 @@ msgid "Free packages"
 msgstr "Colis libres"
 
 #. module: stock_package_format
+#: model:ir.model.fields,help:stock_package_format.field_sale_order_line__package_format_free_stock
+msgid ""
+"Free stock of the product in the warehouse: unreserved whole packages per "
+"format, opened packages and loose stock."
+msgstr ""
+"Stock libre du produit dans l'entrepôt : colis entiers non réservés par "
+"format, colis ouverts et vrac."
+
+#. module: stock_package_format
 #: model:ir.model.fields,help:stock_package_format.field_stock_package_format_golive_wizard__loose_quantity
 msgid ""
 "Free stock of the product in this exact location that is not in a package."
 msgstr "Stock libre du produit à cet emplacement précis, hors colis."
+
+#. module: stock_package_format
+#: model:ir.model.fields,field_description:stock_package_format.field_sale_order_line__package_format_free_stock
+msgid "Free stock per format"
+msgstr "Stock libre par format"
+
+#. module: stock_package_format
+#. odoo-javascript
+#: code:addons/stock_package_format/static/src/sale_qty_popover/qty_at_date_package_format.xml:0
+msgid "Free stock:"
+msgstr "Stock libre :"
 
 #. module: stock_package_format
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_repack_wizard__source_package_id
@@ -344,6 +408,11 @@ msgstr ""
 " journalisé) par le reconditionnement."
 
 #. module: stock_package_format
+#: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_golive_wizard__rest_leftover
+msgid "Left loose"
+msgstr "Reste en vrac"
+
+#. module: stock_package_format
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_pack_wizard_line__move_id
 msgid "Line"
 msgstr "Ligne"
@@ -355,9 +424,20 @@ msgid "Location"
 msgstr "Emplacement"
 
 #. module: stock_package_format
+#. odoo-javascript
+#: code:addons/stock_package_format/static/src/breakdown_popover/breakdown_popover.xml:0
+msgid "Loose"
+msgstr "Vrac"
+
+#. module: stock_package_format
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_golive_wizard__loose_quantity
 msgid "Loose stock"
 msgstr "Stock en vrac"
+
+#. module: stock_package_format
+#: model:ir.model.fields,help:stock_package_format.field_stock_package_format_golive_wizard__rest_leftover
+msgid "Loose stock left after the rows and the rest packages."
+msgstr "Vrac restant après les lignes et les colis du reste."
 
 #. module: stock_package_format
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_golive_wizard_line__lot_name
@@ -365,6 +445,16 @@ msgstr "Stock en vrac"
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_repack_wizard__lot_id
 msgid "Lot"
 msgstr ""
+
+#. module: stock_package_format
+#: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_golive_wizard__rest_lot_name
+msgid "Lot of the rest"
+msgstr "Lot du reste"
+
+#. module: stock_package_format
+#: model:ir.model.fields,help:stock_package_format.field_stock_package_format_golive_wizard__rest_lot_name
+msgid "Lot of the rest packages; the lot of the last row by default."
+msgstr "Lot des colis du reste ; par défaut, le lot de la dernière ligne."
 
 #. module: stock_package_format
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package__message_has_error
@@ -560,6 +650,11 @@ msgid "Pack received stock by format"
 msgstr "Mettre le stock reçu en colis par format"
 
 #. module: stock_package_format
+#: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_golive_wizard__rest_format_uom_id
+msgid "Pack the rest as"
+msgstr "Mettre le reste en"
+
+#. module: stock_package_format
 #: model:ir.model,name:stock_package_format.model_stock_package
 msgid "Package"
 msgstr "Colis"
@@ -616,6 +711,8 @@ msgid "Package opened by %(user)s. Reason: %(reason)s"
 msgstr "Colis ouvert par %(user)s. Raison : %(reason)s"
 
 #. module: stock_package_format
+#. odoo-javascript
+#: code:addons/stock_package_format/static/src/breakdown_popover/breakdown_popover.xml:0
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_golive_wizard__line_ids
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_golive_wizard_line__package_count
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_open_wizard__package_ids
@@ -626,10 +723,23 @@ msgid "Packages"
 msgstr "Colis"
 
 #. module: stock_package_format
+#. odoo-python
+#: code:addons/stock_package_format/models/product.py:0
 #: model:ir.model.fields,field_description:stock_package_format.field_product_product__package_format_summary
 #: model:ir.model.fields,field_description:stock_package_format.field_product_template__package_format_summary
 msgid "Packages in stock"
 msgstr "Colis en stock"
+
+#. module: stock_package_format
+#: model:ir.model.fields,field_description:stock_package_format.field_product_product__package_format_breakdown
+#: model:ir.model.fields,field_description:stock_package_format.field_product_template__package_format_breakdown
+msgid "Packages per format"
+msgstr "Colis par format"
+
+#. module: stock_package_format
+#: model:ir.model.fields,help:stock_package_format.field_stock_package_format_golive_wizard__rest_package_count
+msgid "Packages the rest will fill."
+msgstr "Colis que le reste remplira."
 
 #. module: stock_package_format
 #: model:ir.model.fields,field_description:stock_package_format.field_sale_order_line__package_format_to_buy
@@ -651,6 +761,12 @@ msgstr "Colis :"
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_golive_wizard__packed_quantity
 msgid "Packed Quantity"
 msgstr "Quantité mise en colis"
+
+#. module: stock_package_format
+#: model:ir.model.fields,help:stock_package_format.field_product_product__package_format_breakdown
+#: model:ir.model.fields,help:stock_package_format.field_product_template__package_format_breakdown
+msgid "Per-format breakdown of the stock, for the popover."
+msgstr "Répartition du stock par format, pour la fenêtre contextuelle."
 
 #. module: stock_package_format
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_pack_wizard__print_labels
@@ -697,6 +813,8 @@ msgid "Purchase Order Line"
 msgstr "Ligne de bon de commande"
 
 #. module: stock_package_format
+#. odoo-javascript
+#: code:addons/stock_package_format/static/src/breakdown_popover/breakdown_popover.xml:0
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_golive_wizard_line__quantity
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_pack_wizard_line__quantity
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_repack_wizard__quantity
@@ -746,6 +864,11 @@ msgstr "Reconditionnement : %(reason)s"
 msgid "Repacked from %(origin)s by %(user)s. Reason: %(reason)s"
 msgstr ""
 "Reconditionné à partir de %(origin)s par %(user)s. Raison : %(reason)s"
+
+#. module: stock_package_format
+#: model:ir.model.fields,field_description:stock_package_format.field_stock_package_format_golive_wizard__rest_package_count
+msgid "Rest packages"
+msgstr "Colis du reste"
 
 #. module: stock_package_format
 #: model:ir.model.fields,field_description:stock_package_format.field_stock_package__message_has_sms_error
@@ -891,3 +1014,13 @@ msgstr "ouverts : %(count)s × %(type)s (%(qty)s %(uom)s)"
 #: code:addons/stock_package_format/models/product.py:0
 msgid "package"
 msgstr "colis"
+
+#. module: stock_package_format
+#: model_terms:ir.ui.view,arch_db:stock_package_format.golive_wizard_view_form
+msgid "stay(s) loose."
+msgstr "reste(nt) en vrac."
+
+#. module: stock_package_format
+#: model_terms:ir.ui.view,arch_db:stock_package_format.golive_wizard_view_form
+msgid "whole package(s) of the rest format;"
+msgstr "colis entier(s) du format du reste ;"
