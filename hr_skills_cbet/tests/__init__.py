@@ -38,3 +38,4 @@ from . import test_rpt_07_print_wizard
 from . import test_cat_18_import_guard
 from . import test_val_02_manual_certification
 from . import test_std_06_job_standards
+from . import test_val_01_bilingual_todo
