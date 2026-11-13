@@ -8,13 +8,28 @@
       ref="fsm_equipment.partner_equipment_location_view_form"
     />
         <field name="arch" type="xml">
+            <xpath expr="//sheet/notebook" position="before">
+                <div
+          name="fsm_site_note_block"
+          class="mb-3"
+          groups="industry_fsm.group_fsm_user"
+        >
+                    <label for="fsm_site_note" class="fw-bold" />
+                    <field
+            name="fsm_site_note"
+            class="o_fsm_site_note_text"
+            placeholder="E.g.: gate code changed, bring the tall ladder"
+          />
+                    <div class="text-muted small">
+                        Shown as a banner on every service task at this address until cleared.
+                    </div>
+                </div>
+            </xpath>
             <page name="equipment" position="attributes">
                 <attribute name="invisible">site_ids</attribute>
             </page>
             <page name="equipment" position="after">
-                <page
-                        name="Service Contacts"
-                        invisible="site_ids">
+                <page name="Service Contacts" invisible="site_ids">
                     <field
             name="site_contacts"
             context="{'list_view_ref': 'bemade_fsm.fsm_contacts_view_list'}"
@@ -24,7 +39,7 @@
             context="{'list_view_ref': 'bemade_fsm.fsm_contacts_view_list'}"
           />
                 </page>
-                <field name="is_service_site" invisible="True"/>
+                <field name="is_service_site" invisible="True" />
                 <page name="Service Sites" invisible="is_service_site">
                     <group>
                         <field name="site_ids">

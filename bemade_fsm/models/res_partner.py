@@ -44,6 +44,14 @@ class Partner(models.Model):
         tracking=True,
     )
 
+    fsm_site_note = fields.Text(
+        string="Site note",
+        tracking=True,
+        help="Shown as a banner at the top of every field service task at this "
+        "site (the task's customer / delivery address) until someone clears it. "
+        "A note on the parent company does not show on its delivery addresses.",
+    )
+
     @api.depends("site_ids")
     def _compute_is_site_contact(self):
         for rec in self:
