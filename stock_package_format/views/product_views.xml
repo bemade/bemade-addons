@@ -99,46 +99,4 @@
             </span>
         </field>
     </record>
-
-    <!-- Popover on the On Hand / Forecasted stat button -->
-    <record id="product_template_form_view_package_format_onhand" model="ir.ui.view">
-        <field name="name">product.template.form.package.format.onhand</field>
-        <field name="model">product.template</field>
-        <field
-      name="inherit_id"
-      ref="stock.product_template_form_view_procurement_button"
-    />
-        <field name="arch" type="xml">
-            <xpath
-        expr="//button[@name='action_product_tmpl_forecast_report']//field[@name='qty_available']"
-        position="after"
-      >
-                <field
-          name="package_format_breakdown"
-          widget="popover_widget"
-          nolabel="1"
-          invisible="not uses_package_rule"
-        />
-            </xpath>
-        </field>
-    </record>
-
-    <record id="product_product_form_view_package_format_onhand" model="ir.ui.view">
-        <field name="name">product.product.form.package.format.onhand</field>
-        <field name="model">product.product</field>
-        <field name="inherit_id" ref="stock.product_form_view_procurement_button" />
-        <field name="arch" type="xml">
-            <xpath
-        expr="//button[@name='action_product_forecast_report']//field[@name='qty_available']"
-        position="after"
-      >
-                <field
-          name="package_format_breakdown"
-          widget="popover_widget"
-          nolabel="1"
-          invisible="not uses_package_rule"
-        />
-            </xpath>
-        </field>
-    </record>
 </odoo>
