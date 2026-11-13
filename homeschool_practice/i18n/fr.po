@@ -2014,3 +2014,25 @@ msgid ""
 msgstr ""
 "Chaque matière dont des unités sont déverrouillées reçoit sa propre quête de "
 "séance chaque jour de pratique."
+
+#. module: homeschool_practice
+#. odoo-python
+#: code:addons/homeschool_practice/controllers/api.py:0
+msgid "New unit!"
+msgstr "Nouvelle unité !"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__auto_unlock_at
+msgid "Auto-unlock at (%)"
+msgstr "Déverrouillage automatique à (%)"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__auto_unlock_at
+msgid ""
+"When a unit reaches this proficiency, the next unit unlocks on its own (0 = "
+"a parent unlocks every unit). For units that need no new teaching, e.g. "
+"times tables."
+msgstr ""
+"Quand une unité atteint cette maîtrise, l'unité suivante se déverrouille "
+"d'elle-même (0 = un parent déverrouille chaque unité). Pour les unités qui "
+"ne demandent pas de nouvel enseignement, p. ex. les tables de multiplication."

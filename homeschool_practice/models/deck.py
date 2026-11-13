@@ -36,6 +36,10 @@ class PracticeDeck(models.Model):
     secure_ratio = fields.Float(
         default=0.8, help="The next item of a unit is introduced when this share of the introduced items is in box 3 or more.")
     max_new_per_session = fields.Integer(default=3)
+    auto_unlock_at = fields.Integer(
+        "Auto-unlock at (%)", default=0,
+        help="When a unit reaches this proficiency, the next unit unlocks on its own (0 = a parent "
+             "unlocks every unit). For units that need no new teaching, e.g. times tables.")
     active = fields.Boolean(default=True)
 
     _session_size_positive = models.Constraint("check(session_size > 0)", "A session needs at least one item.")

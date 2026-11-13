@@ -263,6 +263,7 @@
         (res.goals_reached || []).forEach(function (p) { out.push({ icon: "🏁", title: L["goal_" + p], text: "" }); });
         (res.rewards || []).forEach(function (r) { out.push({ icon: "💰", title: L.reward, text: "+" + fmt(r.amount) + " " + r.unit + " · " + r.name }); });
         if (res.level_up) { out.push({ icon: "⬆️", title: L.level_up, text: L.level + " " + res.level_up.to }); }
+        (res.units_unlocked || []).forEach(function (u) { out.push({ icon: "🔓", title: L.unit_unlocked, text: u }); });
         (res.badges || []).forEach(function (b) { out.push({ icon: b.icon, title: L.new_badge, text: b.name + (b.unit ? " · " + b.unit : "") }); });
         return out;
     }
