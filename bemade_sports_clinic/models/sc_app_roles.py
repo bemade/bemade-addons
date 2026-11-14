@@ -158,6 +158,9 @@ class SportsClinicPortalKit(models.AbstractModel):
             pk_nav('backend', _lt('Back-end'), 'backend', '/odoo', {'internal'}, 150,
                    PLUS_ONLY, subtitle=_lt('The full Odoo application')),
             # Task 1542: per-device install steps (no banner anywhere — owner).
+            # Task 5201 (kit P6): the entry is bemade_portal_kit_pwa's; Fit
+            # Crew re-declares it for its own subtitle (same key: replaced
+            # in place).
             pk_nav('install', _lt('Install the app'), 'install', '/my/app/install', EVERYONE, 160,
                    PLUS_ONLY, subtitle=_lt('Add Le Fit Crew to your home screen')),
         ]

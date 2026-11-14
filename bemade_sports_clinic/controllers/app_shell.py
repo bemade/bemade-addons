@@ -17,17 +17,11 @@ P1b (task 1542) adds:
   declarative save specs (task 5199: the route and the spec format moved to
   bemade_portal_kit; the clinic's specs are ``sc_save_specs()``, registered
   through ``portal.kit._pk_save_specs()``);
-* the installable app — ``/my/app.webmanifest``, ``/my/service-worker.js``,
-  the data-free ``/my/app/offline`` page and « Plus › Installer
-  l'application » (``/my/app/install``). The manifest, the service worker
-  and the offline page answer 404 while the switch is off: the page script
-  (``sc_sw_register.js``) then unregisters every registration of the worker
-  a device still holds (the kill switch).
-
-Task 1543: the worker and the manifest cover the WHOLE origin (scope ``/``).
-A session in a non-default website language is served under ``/<lang>/my/``
-(e.g. ``/en/my/team``), which a ``/my/`` scope never saw offline. The PWA
-routes themselves stay ``multilang=False`` (stable, unprefixed URLs).
+* the installable app (manifest, service worker, offline and install
+  pages; tasks 1542 / 1543). Task 5201 (kit P6): it is the kit addon
+  ``bemade_portal_kit_pwa``'s now, same URLs; the clinic brings its
+  branding (company fields filled by ``models/sc_app_pwa.py``) and its
+  hooks (start URL, shortcuts, offline style).
 """
 import json
 import logging
@@ -38,13 +32,10 @@ from urllib.parse import urlencode
 from dateutil.relativedelta import relativedelta
 import werkzeug.exceptions
 
-from markupsafe import Markup
-
 from odoo import Command, _, fields, http
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
-from odoo.modules.module import get_manifest
-from odoo.tools import file_open, format_date, format_datetime, html2plaintext, plaintext2html
+from odoo.tools import format_date, format_datetime, html2plaintext, plaintext2html
 
 from odoo.addons.bemade_portal_kit.controllers.pk_app import PortalKitApp
 from odoo.addons.bemade_portal_kit.controllers.pk_shell import PortalKitShell
@@ -1032,15 +1023,6 @@ def sc_fill_moved_row_fragments(found, keys):
         found[key] = html
 
 
-# PWA (task 1542): static files the service worker precaches, besides the
-# offline page. Never a /my/ page or any data.
-SW_PRECACHE_STATIC = (
-    '/bemade_sports_clinic/static/src/css/sc_offline.css',
-    '/bemade_sports_clinic/static/src/img/sc_logo_chrome.png',
-    '/bemade_sports_clinic/static/src/img/sc_icon_192.png',
-)
-SW_SOURCE = 'bemade_sports_clinic/static/src/sw/sc_service_worker.js'
-SC_MIDNIGHT = '#120e12'
 
 
 
@@ -1883,93 +1865,4 @@ class AppShellPortal(PortalKitShell, AccessControlMixin, AppShellMixin):
             injury.action_resolve_injury(resolution_date=day)
         return self._sc_injury_quick(injury_id, run, _("Injury resolved."))
 
-    # ------------------------------------------------------------------
-    # PWA — manifest, service worker, offline page, install page (1542)
-    # ------------------------------------------------------------------
-    @http.route(['/my/app.webmanifest'], type='http', auth='public', methods=['GET'],
-                multilang=False, sitemap=False)
-    def sc_app_webmanifest(self, **kw):
-        if not request.env['portal.kit']._pk_shell_enabled():
-            return request.not_found()
-        img = '/bemade_sports_clinic/static/src/img/'
-        labels = request.env['portal.kit'].pk_nav_labels()
-        manifest = {
-            'name': 'Le Fit Crew',
-            'short_name': 'Fit Crew',
-            'id': '/my/home',
-            'start_url': '/my/home',
-            # Whole origin (1543): /en/my/... pages belong to the app too.
-            'scope': '/',
-            'display': 'standalone',
-            'background_color': SC_MIDNIGHT,
-            'theme_color': SC_MIDNIGHT,
-            'icons': [
-                {'src': img + 'sc_icon_192.png', 'sizes': '192x192', 'type': 'image/png',
-                 'purpose': 'any'},
-                {'src': img + 'sc_icon_512.png', 'sizes': '512x512', 'type': 'image/png',
-                 'purpose': 'any'},
-                {'src': img + 'sc_icon_maskable_512.png', 'sizes': '512x512',
-                 'type': 'image/png', 'purpose': 'maskable'},
-            ],
-            'shortcuts': [
-                {'name': labels['teams'], 'url': '/my/teams'},
-                {'name': labels['players'], 'url': '/my/players'},
-            ],
-        }
-        return request.make_response(json.dumps(manifest), headers=[
-            ('Content-Type', 'application/manifest+json'),
-            ('Cache-Control', 'no-cache'),
-        ])
-
-    @staticmethod
-    def _sc_sw_version():
-        return get_manifest('bemade_sports_clinic').get('version') or '0'
-
-    @http.route(['/my/service-worker.js'], type='http', auth='public', methods=['GET'],
-                multilang=False, sitemap=False)
-    def sc_app_service_worker(self, **kw):
-        """The service worker, allowed the whole origin (scope ``/``, task
-        1543). ``no-cache`` so a device picks up a new version (or this route's 404, which the page script turns into an
-        unregister) on its next visit."""
-        if not request.env['portal.kit']._pk_shell_enabled():
-            return request.not_found()
-        with file_open(SW_SOURCE) as source:
-            body = source.read()
-        body = (body
-                .replace('__SC_SW_VERSION__', self._sc_sw_version())
-                .replace('"__SC_SW_PRECACHE__"', json.dumps(list(SW_PRECACHE_STATIC))))
-        return request.make_response(body, headers=[
-            ('Content-Type', 'text/javascript; charset=utf-8'),
-            ('Cache-Control', 'no-cache'),
-            ('Service-Worker-Allowed', '/'),
-        ])
-
-    @http.route(['/my/app/offline'], type='http', auth='public', methods=['GET'],
-                multilang=False, sitemap=False)
-    def sc_app_offline(self, **kw):
-        """Branded, DATA-FREE page the service worker shows when a navigation
-        fails offline. Rendered without any layout: no user, no session info,
-        no CSRF token — it is cached on the device."""
-        if not request.env['portal.kit']._pk_shell_enabled():
-            return request.not_found()
-        # The doctype is prepended here, not written in the template: a raw
-        # text node at the template root changes how the view's terms are
-        # extracted, and the page then rendered untranslated.
-        html = request.env['ir.ui.view']._render_template(
-            'bemade_sports_clinic.sc_app_offline', {})
-        return request.make_response(
-            Markup('<!DOCTYPE html>\n') + html,
-            headers=[('Content-Type', 'text/html; charset=utf-8')])
-
-    @http.route(['/my/app/install'], type='http', auth='user', website=True,
-                multilang=False)
-    def sc_app_install(self, **kw):
-        """« Plus › Installer l'application »: per-device steps. No banner
-        anywhere else (owner decision 2026-09-27)."""
-        if not self._pk_shell_active():
-            return request.redirect('/my/home')
-        values = self._prepare_portal_layout_values()
-        values['page_name'] = 'sc_app_install'
-        return self._sc_shell_response('bemade_sports_clinic.sc_app_install',
-                                       self._sc_app_values(values, 'sc_app_install'))
 

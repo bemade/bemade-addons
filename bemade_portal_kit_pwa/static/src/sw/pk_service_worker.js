@@ -1,31 +1,29 @@
 /*
- * Task 1542 (epic #1535) — Le Fit Crew service worker.
- * Served by /my/service-worker.js (controllers/app_shell.py), which fills in
- * the version and the precache list; 404 while the system switch is off.
+ * Task 5201 (kit P6) — the portal app's service worker (moved from the
+ * first consumer, task 1542 / 1543). Served by /my/service-worker.js
+ * (controllers/pk_pwa.py), which fills in the version and the precache
+ * list; 404 while the kit's switch is off.
  *
- * Scope (task 1543): the WHOLE origin, "/" (header Service-Worker-Allowed: /).
- * A session in a non-default website language lives under /<lang>/my/...
- * (e.g. /en/my/team), which the P1b /my/ scope never saw offline. Devices
- * installed under P1b keep their old /my/ registration next to the new "/"
- * one: both run THIS script, so they behave the same (the more specific /my/
- * one simply answers the unprefixed /my/ pages), and the page script's kill
- * switch unregisters both. Public website pages are in scope too: harmless,
- * they only get the offline page when the network is down.
+ * Scope: the WHOLE origin, "/" (header Service-Worker-Allowed: /), so the
+ * language-prefixed pages (/en/my/...) are in the app too. Public website
+ * pages are in scope as well: harmless, they only get the offline page when
+ * the network is down.
  *
- * Rules (owner decisions, epic #1535):
- * - NEVER cache health data: no page or JSON answer is ever written to a
- *   cache at run time. The only cached page is the data-free offline page,
- *   precached at install.
- * - Navigations (any path in scope, language-prefixed or not): network
- *   first; offline -> the offline page.
+ * Rules:
+ * - NEVER cache a page or a data answer at run time. The only cached page
+ *   is the data-free offline page, precached at install.
+ * - Navigations (any path in scope): network first; offline -> the offline
+ *   page.
  * - Precached static files (offline page styles, logo, icon): cache first.
  * - Everything else: not intercepted (plain network).
- * - Versioned cache; older caches are deleted on activate.
+ * - Versioned cache. On activate, the older "pk-app-shell-*" caches and the
+ *   first consumer's former "sc-app-shell-*" ones are deleted.
  */
-const VERSION = "__SC_SW_VERSION__";
-const CACHE = "sc-app-shell-" + VERSION;
+const VERSION = "__PK_SW_VERSION__";
+const CACHE = "pk-app-shell-" + VERSION;
+const OLD_PREFIXES = ["pk-app-shell-", "sc-app-shell-"];
 const OFFLINE_URL = "/my/app/offline";
-const PRECACHE_STATIC = "__SC_SW_PRECACHE__";
+const PRECACHE_STATIC = "__PK_SW_PRECACHE__";
 
 self.addEventListener("install", (event) => {
     event.waitUntil(
@@ -35,8 +33,7 @@ self.addEventListener("install", (event) => {
                 cache.addAll(
                     [OFFLINE_URL, ...PRECACHE_STATIC].map(
                         // The offline page renders no user data even when
-                        // fetched with the session (tested logged in), so the
-                        // default same-origin credentials are fine.
+                        // fetched with the session (tested logged in).
                         (url) => new Request(url, { cache: "reload" })
                     )
                 )
@@ -52,7 +49,10 @@ self.addEventListener("activate", (event) => {
             .then((keys) =>
                 Promise.all(
                     keys
-                        .filter((key) => key.startsWith("sc-app-shell-") && key !== CACHE)
+                        .filter(
+                            (key) =>
+                                key !== CACHE && OLD_PREFIXES.some((prefix) => key.startsWith(prefix))
+                        )
                         .map((key) => caches.delete(key))
                 )
             )

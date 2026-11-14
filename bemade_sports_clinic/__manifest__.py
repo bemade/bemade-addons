@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.146.0",
+    'version': "19.0.1.147.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -96,7 +96,11 @@ installable app: a ``/my/``-scoped web manifest and service worker (network
 first; no team or player page is ever cached — offline shows a data-free
 page), with « Plus › Installer l'application ». With the switch off, the
 manifest and the service worker answer 404 and any installed worker
-unregisters itself.
+unregisters itself. Task 5201 (kit P6): the installable app is the kit
+addon ``bemade_portal_kit_pwa`` (same URLs, scope and manifest id); the
+clinic fills the company's app fields with the Fit Crew name, colours and
+icons where they are empty (install and upgrade) and brings its start URL,
+shortcuts, offline colours and wording.
 
 P3 puts the therapist surfaces on the shell: the clinic list and clinic
 page, whose waiting list is a LIVE component (20 s poll of
@@ -139,6 +143,7 @@ nothing; PDF reports never carry it.
         "mail",  # Required for mail.activity functionality
         "portal",
         "bemade_portal_kit",  # Task 5196: the app shell registries (roles, nav, pages)
+        "bemade_portal_kit_pwa",  # Task 5201: the installable app (manifest, worker, offline / install pages)
         "contacts",
         "base_setup",  # For res.config.settings base view inheritance
         "phone_validation",  # For phone number formatting in patient contacts
@@ -259,8 +264,10 @@ nothing; PDF reports never carry it.
         "views/sc_app_pages.xml",
         # Task 1624: the dashboard (/my/home) widgets + « Configurer ».
         "views/sc_app_dashboard.xml",
-        # Task 1542: team page, install page, offline page.
+        # Task 1542: team page (task 5201: the install and offline pages are
+        # bemade_portal_kit_pwa's; sc_app_pwa.xml words them for Fit Crew).
         "views/sc_app_team.xml",
+        "views/sc_app_pwa.xml",
         # Task 1539: P2 — players, injuries, notes, documents, activities.
         "views/sc_app_activities.xml",
         "views/sc_app_players.xml",
@@ -367,7 +374,6 @@ nothing; PDF reports never carry it.
             # Task 1604: quick « Vérifier » / « Résoudre » of an injury.
             "bemade_sports_clinic/static/src/js/sc_injury_quick.js",
             "bemade_sports_clinic/static/src/js/sc_injury_card.js",
-            "bemade_sports_clinic/static/src/js/sc_sw_register.js",
             # Task 1624: « Configurer » the dashboard (saves as you go).
             "bemade_sports_clinic/static/src/js/sc_dashboard_config.js",
             # Task 1624 review round 1: « Suivre » a player (fetch toggle).

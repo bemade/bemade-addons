@@ -126,8 +126,10 @@ KIT_VIEW_FILES = (
 )
 
 
-def adopt_views(cr, mapping=ADOPTED_VIEWS):
-    """Give each old view of ``mapping`` its kit external id and key.
+def adopt_views(cr, mapping=ADOPTED_VIEWS, target=KIT):
+    """Give each old view of ``mapping`` its external id and key in module
+    ``target`` (the kit by default; task 5201: a kit addon such as
+    ``bemade_portal_kit_pwa`` adopts its own views with the same helper).
 
     ``mapping``: ``(old_module, old_name, new_name)`` triples. Returns the
     ``(old xmlid, new xmlid, view id)`` triples adopted by this call.
@@ -135,10 +137,10 @@ def adopt_views(cr, mapping=ADOPTED_VIEWS):
     adopted = []
     for old_module, old_name, new_name in mapping:
         old_xmlid = '%s.%s' % (old_module, old_name)
-        new_xmlid = '%s.%s' % (KIT, new_name)
+        new_xmlid = '%s.%s' % (target, new_name)
         cr.execute(
             "SELECT res_id FROM ir_model_data WHERE module = %s AND name = %s",
-            (KIT, new_name),
+            (target, new_name),
         )
         kit_row = cr.fetchone()
         if kit_row:
@@ -160,7 +162,7 @@ def adopt_views(cr, mapping=ADOPTED_VIEWS):
             """UPDATE ir_model_data SET module = %s, name = %s
                 WHERE module = %s AND name = %s AND model = 'ir.ui.view'
             RETURNING res_id""",
-            (KIT, new_name, old_module, old_name),
+            (target, new_name, old_module, old_name),
         )
         row = cr.fetchone()
         if not row:

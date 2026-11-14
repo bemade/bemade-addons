@@ -120,7 +120,6 @@ class TestAppShellNav1579(Nav1579Common):
             if name.endswith('.py'):
                 with open(os.path.join(root, name), encoding='utf-8') as handle:
                     rendered |= set(re.findall(r"'bemade_sports_clinic\.(sc_app_\w+)'", handle.read()))
-        rendered -= {'sc_app_offline'}  # standalone page, no app layout
         rendered -= {'sc_app_search_results'}  # task 1650: a fragment, not a page
         self.assertIn('sc_app_team', rendered)
         self.assertFalse(rendered - registered, 'rendered pages without an entry')
