@@ -4,7 +4,7 @@ from odoo.tools import format_datetime, html2plaintext, plaintext2html
 from odoo.exceptions import UserError, AccessError
 from datetime import datetime, timedelta
 from .access_control_mixin import AccessControlMixin
-from odoo.addons.bemade_portal_kit.tools import pk_now_ms
+from odoo.addons.bemade_portal_kit.tools import pk_form_props, pk_now_ms, pk_options
 
 from .app_shell import AppShellMixin, sc_event_team_choices, sc_event_team_ids_check
 import json
@@ -1367,7 +1367,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         return {
             'success': True, 'id': venue.id, 'name': venue.name,
             'event_write_date': fields.Datetime.to_string(event.sudo().write_date),
-            'venue_options': self._sc_options(self._sc_event_venue_options(event.sudo())),
+            'venue_options': pk_options(self._sc_event_venue_options(event.sudo())),
             'refresh': http.request.env['portal.kit'].pk_refresh_patterns(event, 'venue_id'),
             'saved_at': pk_now_ms(),
         }
@@ -1839,11 +1839,19 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         offered_staff = {option[0] for option in staff_options}
         form['team_csv'] = ','.join(str(i) for i in form['team_ids'] if i in offered_teams)
         form['staff_csv'] = ','.join(str(i) for i in form['staff_ids'] if i in offered_staff)
-        form['team_props'] = self._sc_form_props(
+        # Task 5382 (kit P4c3): the organization select narrows the teams; the
+        # kit's field asks before dropping the teams of another organization,
+        # in the clinic's words.
+        grouped = bool(values.get('organizations'))
+        form['team_props'] = pk_form_props(
             'sc_event_team_ids', env._("Teams"), value=form['team_csv'], options=team_options,
             placeholder=env._("Add a team…"),
-            groupSelect='sc_event_org' if values.get('organizations') else None)
-        form['staff_props'] = self._sc_form_props(
+            groupSelect='sc_event_org' if grouped else None,
+            groupConfirmMessage=env._(
+                "Changing the organization removes the teams of the other organization: %s.") if grouped else None,
+            groupConfirmLabel=env._("Change organization") if grouped else None,
+            groupNotice=env._("The teams of another organization were removed.") if grouped else None)
+        form['staff_props'] = pk_form_props(
             'sc_event_staff_ids', env._("Assigned staff"), value=form['staff_csv'], options=staff_options,
             placeholder=env._("Add a therapist…"))
         # Review fixes 2026-10-24 (owner policy): on an event of a team the

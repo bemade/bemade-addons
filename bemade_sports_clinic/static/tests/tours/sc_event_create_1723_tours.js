@@ -83,7 +83,7 @@ tours.add("sc_1723_typed_exact", {
             trigger: `${TEAMS} .o_pk_tag:contains("PC Team A")`,
             run() {
                 assert(document.querySelector(`${FORM} input[name="team_ids"]`).value, "team_ids empty");
-                assert(!document.querySelector(`${TEAMS} [data-sc-tags-typed-error]`), "an error shows");
+                assert(!document.querySelector(`${TEAMS} [data-pk-tags-typed-error]`), "an error shows");
             },
         },
         create,
@@ -99,7 +99,7 @@ tours.add("sc_1723_typed_nothing", {
         leaveBox,
         {
             content: "The inline error; « Créer » says why",
-            trigger: `${TEAMS} [data-sc-tags-typed-error]`,
+            trigger: `${TEAMS} [data-pk-tags-typed-error]`,
             run() {
                 assert(this.anchor.textContent.includes("No Such Synthetic Team"), this.anchor.textContent);
                 const submit = document.querySelector(`${FORM} button[data-sc-action="event.save"]`);
@@ -113,7 +113,7 @@ tours.add("sc_1723_typed_nothing", {
         },
         {
             content: "No error any more",
-            trigger: `${TEAMS}:not(:has([data-sc-tags-typed-error]))`,
+            trigger: `${TEAMS}:not(:has([data-pk-tags-typed-error]))`,
         },
     ],
 });
@@ -170,15 +170,15 @@ tours.add("sc_1723_org_drop_notice", {
         chooseOrg("ZZ Org 1597"),
         {
             content: "A warning first: the team is still there, the submit waits",
-            trigger: `${TEAMS} [data-sc-org-confirm-box] [data-sc-org-cancel]`,
+            trigger: `${TEAMS} [data-pk-group-confirm-box] [data-pk-group-cancel]`,
             run() {
                 assert(document.querySelector(`${FORM} input[name="team_ids"]`).value, "team dropped before confirming");
-                assert(document.querySelector(`${TEAMS} [data-sc-org-confirm-box]`).textContent.includes("PC Team A"),
+                assert(document.querySelector(`${TEAMS} [data-pk-group-confirm-box]`).textContent.includes("PC Team A"),
                     "the warning does not name the team");
-                assert(!document.querySelector(`${TEAMS} [data-sc-tags-group-notice]`), "an after-the-fact notice");
+                assert(!document.querySelector(`${TEAMS} [data-pk-tags-group-notice]`), "an after-the-fact notice");
                 // Review round 2: right under the Organisation field, above
                 // the teams picker — which waits, disabled.
-                const box = document.querySelector(`${TEAMS} [data-sc-org-confirm-box]`).getBoundingClientRect();
+                const box = document.querySelector(`${TEAMS} [data-pk-group-confirm-box]`).getBoundingClientRect();
                 const org = document.querySelector(`${FORM} select[name="organization_id"]`).closest(".o_pk_field");
                 const search = document.querySelector(SEARCH);
                 assert(box.top >= org.getBoundingClientRect().bottom - 1, "the warning is not under the organisation");
@@ -186,10 +186,10 @@ tours.add("sc_1723_org_drop_notice", {
                 assert(search.disabled, "the teams picker is not disabled while the warning waits");
             },
         },
-        { content: "« Cancel »", trigger: `${TEAMS} [data-sc-org-cancel]`, run: "click" },
+        { content: "« Cancel »", trigger: `${TEAMS} [data-pk-group-cancel]`, run: "click" },
         {
             content: "The former organisation and the team are kept",
-            trigger: `${TEAMS}:not(:has([data-sc-org-confirm-box]))`,
+            trigger: `${TEAMS}:not(:has([data-pk-group-confirm-box]))`,
             run() {
                 const select = document.querySelector(`${FORM} select[name="organization_id"]`);
                 assert(select.value === select.dataset.scTourBefore, "the organisation was not restored");
@@ -199,10 +199,10 @@ tours.add("sc_1723_org_drop_notice", {
             },
         },
         chooseOrg("ZZ Org 1597"),
-        { content: "« Change organization »", trigger: `${TEAMS} [data-sc-org-confirm]`, run: "click" },
+        { content: "« Change organization »", trigger: `${TEAMS} [data-pk-group-confirm]`, run: "click" },
         {
             content: "The team is dropped once confirmed",
-            trigger: `${TEAMS}:not(:has([data-sc-org-confirm-box]))`,
+            trigger: `${TEAMS}:not(:has([data-pk-group-confirm-box]))`,
             run() {
                 assert(!document.querySelector(`${FORM} input[name="team_ids"]`).value, "team kept");
                 const select = document.querySelector(`${FORM} select[name="organization_id"]`);

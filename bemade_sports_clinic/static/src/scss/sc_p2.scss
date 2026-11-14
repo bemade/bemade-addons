@@ -1,5 +1,6 @@
 // Task 1539 (epic #1535) — app shell P2: player, injury, notes, documents,
-// activities. Components added in sc_components.xml / sc_autosave_field.
+// activities. Components added in sc_components.xml (the autosave field is
+// the kit's since task 5382).
 // Everything scoped under .o_pk_app (see sc_tokens.scss).
 //
 // Task 5357 (kit P3b2): the generic rules (only o_pk_* classes, data-pk-*
@@ -10,13 +11,13 @@
     // Play status (owner review 2026-10-10): the pressed choice wears the
     // tone of the status pill it produces.
     .o_pk_seg_input > button[aria-pressed="true"] {
-        &[data-sc-value="no:yes"],
-        &[data-sc-value="no:no_contact"] {
+        &[data-pk-value="no:yes"],
+        &[data-pk-value="no:no_contact"] {
             background: var(--pk-warn);
             color: var(--pk-tone-fg);
         }
 
-        &[data-sc-value="no:no"] {
+        &[data-pk-value="no:no"] {
             background: var(--pk-bad);
             color: var(--pk-tone-fg);
         }
@@ -826,60 +827,8 @@
     }
 }
 
-// Task 1582 — the injury notes' « replace » editor (sc_autosave_field
-// replace=True): the current text read-only above an empty « New note ».
-.o_pk_app {
-    .o_sc_replace_current {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        margin-bottom: var(--pk-space-2);
-        padding: var(--pk-space-2);
-        border: 1px solid var(--pk-line);
-        border-radius: var(--pk-radius-sm);
-        background: var(--pk-surface-2);
-    }
-
-    .o_sc_replace_current_text {
-        max-height: 9.5em;
-        overflow-y: auto;
-        color: var(--pk-fg-2);
-        overflow-wrap: anywhere;
-    }
-
-    .o_sc_replace_caption {
-        font-size: var(--pk-text-xs);
-        font-weight: 600;
-        color: var(--pk-fg-3);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .o_sc_replace_new_head {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--pk-space-2);
-        margin-bottom: 4px;
-    }
-
-    .o_sc_replace_reuse {
-        font-size: var(--pk-text-xs);
-    }
-
-    .o_sc_replace_hint {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 4px var(--pk-space-2);
-        margin-top: 4px;
-
-        .o_pk_link_btn {
-            font-size: var(--pk-text-xs);
-        }
-    }
-}
+// Task 5382 (kit P4c3): the « replace » editor's rules (the injury notes)
+// moved to the kit (pk_components.scss, o_pk_replace_*).
 
 // Task 1603: the player header's « Retour prévu » and the follow-up
 // proposal sheet (sc_proposal.js).

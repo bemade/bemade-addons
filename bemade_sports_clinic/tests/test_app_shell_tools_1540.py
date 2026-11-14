@@ -111,7 +111,7 @@ class TestAppShellTools1540(Tools1540Common):
         self.assertNotIn('SC 1540 foreign synthetic note', text)
         add = tree.xpath('//form[@data-sc-form="note.add"]')[0]
         self.assertEqual(add.get('action'), '/my/notepad/add')
-        self.assertTrue(add.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'))
+        self.assertTrue(add.xpath('.//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'))
         for sheet, action in (('sc_qn_delete_%s' % self.my_note.id, '/my/notepad/%s/delete' % self.my_note.id),):
             form = tree.xpath('//dialog[@id="%s"]//form' % sheet)[0]
             self.assertEqual(form.get('action'), action)

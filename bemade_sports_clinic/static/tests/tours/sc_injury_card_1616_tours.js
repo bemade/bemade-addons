@@ -94,10 +94,10 @@ tours.add("sc_1616_card_sections", {
                 assert(!editShown(NOTES), "Notes opened too");
                 // Task 1631: status in the header pill, consent + visibility
                 // as pills in Details (outside the pencil).
-                assert(el(`${DETAILS} .o_pk_autosave[data-sc-field="predicted_resolution_date"]`), "dates in Details");
-                assert(!el(`${DETAILS} .o_pk_autosave[data-sc-field="stage"]`), "status still in Details");
+                assert(el(`${DETAILS} .o_pk_autosave[data-pk-autosave-field="predicted_resolution_date"]`), "dates in Details");
+                assert(!el(`${DETAILS} .o_pk_autosave[data-pk-autosave-field="stage"]`), "status still in Details");
                 assert(el(`${DETAILS} .o_sc_injury_flags [data-pk-pill-key="consent"]`), "no consent pill");
-                assert(!el(`${DETAILS} .o_pk_autosave[data-sc-field="external_notes"]`), "notes in Details");
+                assert(!el(`${DETAILS} .o_pk_autosave[data-pk-autosave-field="external_notes"]`), "notes in Details");
             },
         },
         {
@@ -114,7 +114,7 @@ tours.add("sc_1616_card_sections", {
         },
         {
             content: "External note in edit mode; internal note and Details reading",
-            trigger: `${NOTES_EXT}[data-pk-edit-open] .o_pk_autosave[data-sc-field="external_notes"]`,
+            trigger: `${NOTES_EXT}[data-pk-edit-open] .o_pk_autosave[data-pk-autosave-field="external_notes"]`,
             run() {
                 assert(!editShown(DETAILS), "Details opened too");
                 assert(!editShown(NOTES_INT), "the internal note opened too");
@@ -123,7 +123,7 @@ tours.add("sc_1616_card_sections", {
         },
         {
             content: "The internal-note pencil opens the internal note too",
-            trigger: `${NOTES_INT}[data-pk-edit-open] .o_pk_autosave[data-sc-field="internal_notes"]`,
+            trigger: `${NOTES_INT}[data-pk-edit-open] .o_pk_autosave[data-pk-autosave-field="internal_notes"]`,
         },
         {
             // Task 1676: no bottom « Done » — each group closes with its ✓,
@@ -250,7 +250,7 @@ tours.add("sc_1616_documents_upload", {
         },
         {
             content: "Rename it and leave the field",
-            trigger: `${DOCS} .o_sc_injury_doc[data-pk-edit-open] .o_pk_autosave[data-sc-field="name"] input`,
+            trigger: `${DOCS} .o_sc_injury_doc[data-pk-edit-open] .o_pk_autosave[data-pk-autosave-field="name"] input`,
             run() {
                 window.__sc1616NoReload = "1";
                 typeAndLeave(this.anchor, "Synthetic X-ray report");

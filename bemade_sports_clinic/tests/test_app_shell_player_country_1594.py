@@ -60,7 +60,7 @@ class TestPlayerCountryReturnStatus1594(PlayerInlineCommon):
 
     def _props(self, tree, field, scope='//'):
         found = [json.loads(p) for p in tree.xpath(
-            '%s/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props' % scope)]
+            '%s/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props' % scope)]
         return [p for p in found if p.get('field') == field and p.get('model') == 'sports.patient']
 
     def _display(self, tree, field):

@@ -83,7 +83,7 @@ class InjuryCard1616Mixin:
     def _fields(scope):
         import json
         return [json.loads(node.get('props')).get('field')
-                for node in scope.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]')]
+                for node in scope.xpath('.//owl-component[@name="bemade_portal_kit.pk_autosave_field"]')]
 
     def _doc(self, name='Synthetic scan.pdf', injury=None, **extra):
         return self.env['sports.injury.document'].create(dict({

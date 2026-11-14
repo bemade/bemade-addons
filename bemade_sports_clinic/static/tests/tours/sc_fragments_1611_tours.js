@@ -64,19 +64,19 @@ tours.add("sc_1611_player_fragments", {
         },
         {
             content: "Rename the player and leave the field",
-            trigger: `${IDENTITY} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-sc-field="last_name"] input`,
+            trigger: `${IDENTITY} [data-pk-edit-view="edit"]:not([hidden]) .o_pk_autosave[data-pk-autosave-field="last_name"] input`,
             run() {
                 typeAndLeave(this.anchor, "Zedsynth");
             },
         },
         {
             content: "Confirm the identity correction",
-            trigger: '.o_pk_autosave[data-sc-field="last_name"] .o_sc_identity_banner .o_sc_identity_confirm',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="last_name"] .o_pk_confirm_banner .o_pk_confirm_ok',
             run: "click",
         },
         {
             content: "Saved",
-            trigger: '.o_pk_autosave[data-sc-field="last_name"][data-sc-state="saved"]',
+            trigger: '.o_pk_autosave[data-pk-autosave-field="last_name"][data-pk-autosave-state="saved"]',
         },
         {
             content: "Title, document title, hero name + initials follow — no « Done », no reload",
@@ -93,7 +93,7 @@ tours.add("sc_1611_player_fragments", {
         },
         {
             content: "Set the date of birth and leave it",
-            trigger: `${IDENTITY} .o_pk_autosave[data-sc-field="date_of_birth"] input`,
+            trigger: `${IDENTITY} .o_pk_autosave[data-pk-autosave-field="date_of_birth"] input`,
             run() {
                 const year = new Date().getFullYear() - 16;
                 typeAndLeave(this.anchor, `${year}-01-02`);
@@ -101,7 +101,7 @@ tours.add("sc_1611_player_fragments", {
         },
         {
             content: "Saved",
-            trigger: `${IDENTITY} .o_pk_autosave[data-sc-field="date_of_birth"][data-sc-state="saved"]`,
+            trigger: `${IDENTITY} .o_pk_autosave[data-pk-autosave-field="date_of_birth"][data-pk-autosave-state="saved"]`,
         },
         {
             content: "The identity read view (behind the open card) shows the age",
@@ -254,14 +254,14 @@ tours.add("sc_1611_event_when", {
         },
         {
             content: "New start time",
-            trigger: `${EVENT} .o_pk_autosave[data-sc-field="date_start"] input`,
+            trigger: `${EVENT} .o_pk_autosave[data-pk-autosave-field="date_start"] input`,
             run() {
                 typeAndLeave(this.anchor, "2026-02-02T08:15");
             },
         },
         {
             content: "Saved",
-            trigger: `${EVENT} .o_pk_autosave[data-sc-field="date_start"][data-sc-state="saved"]`,
+            trigger: `${EVENT} .o_pk_autosave[data-pk-autosave-field="date_start"][data-pk-autosave-state="saved"]`,
         },
         {
             content: "« When » follows (read view behind the open card)",
@@ -283,14 +283,14 @@ tours.add("sc_1611_event_when", {
         },
         {
             content: "Coverage end two hours after the start",
-            trigger: '[data-pk-edit-card^="timesheet-"] .o_pk_autosave[data-sc-field="coverage_end"] input',
+            trigger: '[data-pk-edit-card^="timesheet-"] .o_pk_autosave[data-pk-autosave-field="coverage_end"] input',
             run() {
                 typeAndLeave(this.anchor, "2026-02-02T12:00");
             },
         },
         {
             content: "Saved",
-            trigger: '[data-pk-edit-card^="timesheet-"] .o_pk_autosave[data-sc-field="coverage_end"][data-sc-state="saved"]',
+            trigger: '[data-pk-edit-card^="timesheet-"] .o_pk_autosave[data-pk-autosave-field="coverage_end"][data-pk-autosave-state="saved"]',
         },
         {
             content: "Done: the read lines show the new total",

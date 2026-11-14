@@ -198,7 +198,7 @@ tours.add("sc_1587_note_date_injury", {
         },
         {
             content: "Change the note's date",
-            trigger: `${NOTE_CARD} .o_pk_autosave[data-sc-field="date"] input[type="date"]`,
+            trigger: `${NOTE_CARD} .o_pk_autosave[data-pk-autosave-field="date"] input[type="date"]`,
             run() {
                 this.anchor.value = "2026-02-14";
                 this.anchor.dispatchEvent(new Event("input", { bubbles: true }));
@@ -207,11 +207,11 @@ tours.add("sc_1587_note_date_injury", {
         },
         {
             content: "The date is saved",
-            trigger: `${NOTE_CARD} .o_pk_autosave[data-sc-field="date"][data-sc-state="saved"]`,
+            trigger: `${NOTE_CARD} .o_pk_autosave[data-pk-autosave-field="date"][data-pk-autosave-state="saved"]`,
         },
         {
             content: "Link the note to another injury of the player",
-            trigger: `${NOTE_CARD} .o_pk_autosave[data-sc-field="injury_id"] select`,
+            trigger: `${NOTE_CARD} .o_pk_autosave[data-pk-autosave-field="injury_id"] select`,
             run() {
                 const option = [...this.anchor.options].find((opt) => opt.text === "Synthetic strain");
                 assert(option, "the player's open injury is offered");
@@ -222,7 +222,7 @@ tours.add("sc_1587_note_date_injury", {
         },
         {
             content: "The injury is saved",
-            trigger: `${NOTE_CARD} .o_pk_autosave[data-sc-field="injury_id"][data-sc-state="saved"]`,
+            trigger: `${NOTE_CARD} .o_pk_autosave[data-pk-autosave-field="injury_id"][data-pk-autosave-state="saved"]`,
         },
         {
             content: "Done: the card closes (task 1611: no reload, the meta line is a read fragment)",

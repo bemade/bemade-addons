@@ -390,7 +390,7 @@ class TestAssigneeRoutes1024(AssignHttpCommon):
         tree = self._tree('/my/event/%s' % self.ev_other.id)
         edit = tree.xpath('//*[@data-pk-edit-card="event"]//*[@data-pk-edit-view="edit"]')[0]
         props = [json.loads(p) for p in edit.xpath(
-            './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
+            './/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')]
         self.assertNotIn('assigned_staff_ids', {p['field'] for p in props})
         self.assertIn('team_ids', {p['field'] for p in props})
         reason = edit.xpath('.//*[@data-sc-event-staff-locked]//*[@data-sc-assign-reason]')
@@ -399,7 +399,7 @@ class TestAssigneeRoutes1024(AssignHttpCommon):
         tree = self._tree('/my/event/%s' % self.ev_own.id)
         edit = tree.xpath('//*[@data-pk-edit-card="event"]//*[@data-pk-edit-view="edit"]')[0]
         props = [json.loads(p) for p in edit.xpath(
-            './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
+            './/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')]
         self.assertIn('assigned_staff_ids', {p['field'] for p in props})
         self.assertFalse(edit.xpath('.//*[@data-sc-event-staff-locked]'))
 

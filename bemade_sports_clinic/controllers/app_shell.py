@@ -47,7 +47,8 @@ from odoo.tools import file_open, format_date, format_datetime, html2plaintext, 
 
 from odoo.addons.bemade_portal_kit.controllers.pk_app import PortalKitApp
 from odoo.addons.bemade_portal_kit.tools import (
-    pk_contact_href, pk_display, pk_display_key, pk_fragment_key, pk_now_ms,
+    pk_contact_href, pk_display, pk_display_key, pk_draft_props, pk_field_props, pk_form_props, pk_fragment_key,
+    pk_now_ms,
 )
 
 from ..models import sc_app_nav, sc_app_roles
@@ -508,8 +509,9 @@ def _patient_context(ctrl, patient, field, kw):
 
 def _patient_confirm(ctrl, patient, field, value, kw):
     """Task 1600: changing an existing name / date of birth is an explicit,
-    confirmed step — the 428 payload (``confirm_identity``, message, old,
-    new) until the field's confirm banner re-posts with ``confirm=1``."""
+    confirmed step — the 428 payload (``confirm``, message, old, new,
+    detail; the kit's autosave field shows it) until the field's confirm
+    banner re-posts with ``confirm=1``."""
     if field not in IDENTITY_FIELDS:
         return None
     return ctrl._sc_identity_confirm_needed(patient, field, value)
@@ -1201,8 +1203,11 @@ class AppShellMixin:
             # Row builder for list templates (computed in the shell only, so
             # the legacy pages pay nothing for it).
             'sc_team_row': self._sc_team_row,
-            # Task 1539: props builders for the sc_autosave_field component.
-            'sc_field_props': self._sc_field_props,
+            # Task 1539: props builders of the autosave field (task 5382: the
+            # kit's component and builders, tools/field_props.py).
+            'pk_field_props': pk_field_props,
+            'pk_draft_props': pk_draft_props,
+            'pk_form_props': pk_form_props,
             # Task 1727: today in the user's timezone (a date input's
             # « not in the past » min, e.g. « Retour prévu »).
             'sc_today': fields.Date.to_string(fields.Date.context_today(user)),
@@ -1237,7 +1242,6 @@ class AppShellMixin:
             # Owner review 2026-10-14: the related record's name in an
             # activity title is a link too.
             'sc_activity_title_parts': self._sc_activity_title_parts,
-            'sc_draft_props': self._sc_draft_props,
             # Task 1583: the pending session notification (set by a POST
             # round-trip, e.g. « Add to Team ») pops on whichever shell page
             # comes next, as the status toast (task 5371: the kit's,
@@ -1370,36 +1374,6 @@ class AppShellMixin:
 
 
     @staticmethod
-    def _sc_options(pairs):
-        """[(key, label)] -> JSON-safe [[str(key), str(label)]]. Task 1608: a
-        tags option may carry its group, (key, label, group_label, group_key)
-        — kept, as strings."""
-        return [[str(part) for part in option] for option in pairs]
-
-    @staticmethod
-    def _sc_field_props(record, field, label, input_type='text', **extra):
-        """JSON props of a SERVER-mode sc_autosave_field for ``record.field``
-        (the value and write_date the save route will compare against)."""
-        props = {
-            'mode': 'server',
-            'model': record._name,
-            'recordId': record.id,
-            'field': field,
-            'writeDate': fields.Datetime.to_string(record.write_date),
-            'label': str(label),
-            'inputType': input_type,
-            'inputId': 'sc_%s_%s_%s' % (record._name.replace('.', '_'), record.id, field),
-            'value': AppShellPortal._pk_save_value(record, field),
-        }
-        if extra.get('options') is not None:
-            extra['options'] = AppShellMixin._sc_options(extra['options'])
-        for key, value in extra.items():
-            if value is not None:
-                props[key] = str(value) if key in ('hint', 'placeholder', 'undoMessage', 'historyLabel',
-                                                   'savedLabel') else value
-        return json.dumps(props, default=str)
-
-    @staticmethod
     def _sc_note_injury_options(patient, active_only=False, keep=None):
         """Task 1665: the ONE injury list of the treatment-note forms (add
         AND edit, player page and clinic dossier): every injury of the player,
@@ -1436,9 +1410,9 @@ class AppShellMixin:
         options = [('', env._("General note"))] + self._sc_note_injury_options(
             note_sudo.patient_id, active_only=active_only, keep=note_sudo.injury_id)
         return [
-            self._sc_field_props(note, 'note', env._("Note"), 'textarea'),
-            self._sc_field_props(note, 'date', env._("Date"), 'date'),
-            self._sc_field_props(note, 'injury_id', env._("Injury"), 'select', options=options),
+            pk_field_props(note, 'note', env._("Note"), 'textarea'),
+            pk_field_props(note, 'date', env._("Date"), 'date'),
+            pk_field_props(note, 'injury_id', env._("Injury"), 'select', options=options),
         ]
 
     # ------------------------------------------------------------------
@@ -1582,46 +1556,6 @@ class AppShellMixin:
             'diagnosis_editable': bool(is_tp or injury.stage == 'unverified'),
             'clock': (clocks or {}).get(injury.id),
         }
-
-    @staticmethod
-    def _sc_draft_props(draft_key, name, label, input_type='text', value='', **extra):
-        """JSON props of a DRAFT-mode sc_autosave_field: a real form field
-        (``name``) whose typing is kept on the device under ``draft_key``."""
-        props = {
-            'mode': 'draft',
-            'name': name,
-            'draftKey': draft_key,
-            'label': str(label),
-            'inputType': input_type,
-            'inputId': 'sc_draft_%s' % name,
-            'value': value or '',
-        }
-        if extra.get('options') is not None:
-            extra['options'] = AppShellMixin._sc_options(extra['options'])
-        for key, val in extra.items():
-            if val is not None:
-                props[key] = str(val) if key in ('hint', 'placeholder') else val
-        return json.dumps(props, default=str)
-
-    @staticmethod
-    def _sc_form_props(target, label, input_type='tags', value='', **extra):
-        """Task 1608 — JSON props of a FORM-mode sc_autosave_field: no
-        autosave, no draft; the value goes to the enclosing form's hidden
-        input ``target`` (its id), which the form posts as before."""
-        props = {
-            'mode': 'form',
-            'target': target,
-            'label': str(label),
-            'inputType': input_type,
-            'inputId': '%s_field' % target,
-            'value': value or '',
-        }
-        if extra.get('options') is not None:
-            extra['options'] = AppShellMixin._sc_options(extra['options'])
-        for key, val in extra.items():
-            if val is not None:
-                props[key] = str(val) if key in ('hint', 'placeholder') else val
-        return json.dumps(props, default=str)
 
     def _sc_render(self, legacy_template, app_template, values):
         """THE per-page switch: the app template in the shell, else today's."""
@@ -1927,10 +1861,13 @@ class AppShellPortal(PortalKitApp, AccessControlMixin, AppShellMixin):
             old = format_date(patient.env, old) if old else ''
             new_text = format_date(patient.env, new_text) if new_text else ''
         return {
-            'confirm_identity': True,
+            'confirm': True,
             'message': _("Correct this player's identity?"),
             'old': old,
             'new': new_text,
+            # Task 5382: the clinic's line under old → new (it was in the
+            # field's template).
+            'detail': _("The change will be noted in the player's file."),
         }
 
     def _pk_save_proposal(self, spec, record, field):

@@ -147,7 +147,7 @@ tours.add("sc_1627_status_pills_dossier", {
             run() {
                 window.__sc1627NoReload = true;
                 assert(
-                    !document.querySelector('.o_pk_autosave[data-sc-field="sc_status"]'),
+                    !document.querySelector('.o_pk_autosave[data-pk-autosave-field="sc_status"]'),
                     "the 4-way changer is still there"
                 );
                 this.anchor.click();

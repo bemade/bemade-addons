@@ -140,7 +140,7 @@ class TestAppShellNote1587(_Note1587Common):
         self.assertTrue(card.xpath('.//*[@data-pk-fragment="sports.treatment.note:%s:meta"]' % self.note.id), url)
         edit = card.xpath('.//*[@data-pk-edit-view="edit"]')[0]
         props = [json.loads(p) for p in edit.xpath(
-            './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
+            './/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')]
         return {p['field']: p for p in props}, card
 
     def test_note_card_fields(self):
@@ -208,7 +208,7 @@ class TestAppShellNoteFr1587(_Note1587Common):
         card = tree.xpath('//*[@data-pk-edit-card="note-%s"]' % self.note.id)[0]
         self.assertIn('Note générale', card.xpath('.//*[contains(@class, "o_sc_note_meta")]')[0].text_content())
         props = {p['field']: p for p in (json.loads(raw) for raw in card.xpath(
-            './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props'))}
+            './/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props'))}
         self.assertEqual(props['injury_id']['options'][0], ['', 'Note générale'])
         self.assertEqual(props['injury_id']['label'], 'Blessure')
         resp = self._save(self.note, 'injury_id', str(self.foreign.id))

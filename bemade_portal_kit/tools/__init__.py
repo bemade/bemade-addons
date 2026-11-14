@@ -24,6 +24,7 @@ from .fragments import (
 from .save import (
     pk_deadline_in_past,
     pk_parse_date,
+    pk_save_value,
     pk_validate_save_spec,
 )
 from .activity import pk_activity_save_spec
@@ -31,3 +32,5 @@ from .activity import pk_activity_save_spec
 from .guard import PK_GUARD_HEADER
 # Task 5381 (P4c2): the read view's render helpers.
 from .display import pk_contact_href, pk_display, pk_display_key
+# Task 5382 (P4c3): the autosave field's props builders.
+from .field_props import pk_draft_props, pk_field_props, pk_form_props, pk_options

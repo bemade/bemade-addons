@@ -41,7 +41,7 @@ function noteSteps(card, scope, text, other) {
         },
         {
             content: `Only the ${scope} editor opens`,
-            trigger: `${card}[data-pk-edit-open] .o_pk_autosave[data-sc-field="${scope}_notes"] textarea[data-sc-replace="new"]`,
+            trigger: `${card}[data-pk-edit-open] .o_pk_autosave[data-pk-autosave-field="${scope}_notes"] textarea[data-pk-replace="new"]`,
             run() {
                 assert(!editing(other), "the other note opened too");
                 assert(!document.querySelector(`${other}[data-pk-edit-open]`), "the other card is in edit mode");
@@ -49,12 +49,12 @@ function noteSteps(card, scope, text, other) {
         },
         {
             content: `Write a new ${scope} note`,
-            trigger: `${card} .o_pk_autosave[data-sc-field="${scope}_notes"] textarea[data-sc-replace="new"]`,
+            trigger: `${card} .o_pk_autosave[data-pk-autosave-field="${scope}_notes"] textarea[data-pk-replace="new"]`,
             run: `edit ${text}`,
         },
         {
             content: "Leave the field so it saves",
-            trigger: `${card} .o_pk_autosave[data-sc-field="${scope}_notes"] textarea[data-sc-replace="new"]`,
+            trigger: `${card} .o_pk_autosave[data-pk-autosave-field="${scope}_notes"] textarea[data-pk-replace="new"]`,
             run() {
                 this.anchor.blur(); this.anchor.dispatchEvent(new FocusEvent("blur"));
             },

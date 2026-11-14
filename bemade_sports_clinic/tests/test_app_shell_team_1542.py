@@ -155,7 +155,7 @@ class TestAppShellTeam1542(AppShellCommon):
             self.assertTrue(tree.xpath('//*[@data-pk-section="team.announcement.edit"]'))
             self.assertTrue(tree.xpath('//*[@data-pk-section="team.announcement.archive"]'))
             self.assertTrue(tree.xpath(
-                '//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'))
+                '//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'))
         self._login_coach()
         text, tree = self._get(self.url)
         self.assertIn('Synthetic announcement', text)

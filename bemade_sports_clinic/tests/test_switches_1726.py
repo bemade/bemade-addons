@@ -13,7 +13,7 @@ Acceptance criteria (owner-approved plan, 2026-10-27):
   vital » (item add + item edit), « Aucune allergie / condition connue »
   (locked until the EpiPen is answered, #1717), the account deletion's
   block-list opt-out (on by default), and the date field's « N/A »
-  (sc_autosave_field.xml — browser-verified by the tour).
+  (the kit's pk_autosave_field.xml — browser-verified by the tour).
 * UC-3 The boolean segmented choices of « Paramètres » become switches
   (dark mode, daily summary, « Terminé » buttons) posting the same values
   (dark / light, 1 / 0): one value per post (the off twin is disabled
@@ -174,7 +174,7 @@ class TestSwitches1726(Switch1726Common):
         hidden = form.xpath('.//input[@type="hidden"][@name="team_ids"]')
         self.assertEqual(len(hidden), 1)
         self.assertEqual(hidden[0].get('id'), 'sc_new_team_ids')
-        props = form.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')
+        props = form.xpath('.//owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')
         self.assertTrue([p for p in props if '"target": "sc_new_team_ids"' in p and '"inputType": "tags"' in p])
 
     def test_create_save_accepts_comma_separated_teams(self):

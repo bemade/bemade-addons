@@ -147,7 +147,7 @@ tours.add("sc_1648_card", {
         },
         {
             content: "Player picker: type, pick Zoé",
-            trigger: 'article.o_sc_quick_note [data-pk-edit-view="edit"] select[data-sc-picker-key="player"] + .o_pk_picker .o_pk_picker_input',
+            trigger: 'article.o_sc_quick_note [data-pk-edit-view="edit"] select[data-pk-picker-key="player"] + .o_pk_picker .o_pk_picker_input',
             run() {
                 const input = this.anchor;
                 input.focus();
@@ -161,7 +161,7 @@ tours.add("sc_1648_card", {
         },
         {
             content: "Saved by the autosave",
-            trigger: 'article.o_sc_quick_note .o_pk_autosave[data-sc-state="saved"] select[data-sc-picker-key="player"]:not(:visible)',
+            trigger: 'article.o_sc_quick_note .o_pk_autosave[data-pk-autosave-state="saved"] select[data-pk-picker-key="player"]:not(:visible)',
         },
     ],
 });

@@ -68,7 +68,7 @@ class TestAppShellInjury1539(AppShellCommon):
     @staticmethod
     def _owl(tree):
         out = {}
-        for node in tree.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]'):
+        for node in tree.xpath('.//owl-component[@name="bemade_portal_kit.pk_autosave_field"]'):
             props = json.loads(node.get('props'))
             out[props.get('field') or props.get('name')] = props
         return out

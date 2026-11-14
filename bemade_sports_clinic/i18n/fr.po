@@ -10,6 +10,7 @@ msgstr ""
 "PO-Revision-Date: 2026-09-06 12:11+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
@@ -3863,9 +3864,8 @@ msgstr ""
 
 #. module: bemade_sports_clinic
 #. odoo-python
-#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
 #. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
+#: code:addons/bemade_sports_clinic/controllers/team_staff_portal.py:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic._timesheet_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.activity_list_table
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_activity_detail
@@ -4048,8 +4048,8 @@ msgstr "Nettoyer les notes de blessure (retirer le HTML)"
 
 #. module: bemade_sports_clinic
 #. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_field_label_clear
+#: code:addons/bemade_sports_clinic/static/src/js/sc_picker.js:0
 msgid "Clear"
 msgstr "Effacer"
 
@@ -4268,7 +4268,6 @@ msgstr "Paramètres de configuration"
 
 #. module: bemade_sports_clinic
 #. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
 #: code:addons/bemade_sports_clinic/static/src/js/sc_clinic_worklist.xml:0
 msgid "Confirm"
 msgstr "Confirmer"
@@ -7587,8 +7586,6 @@ msgstr "Mon ordre"
 
 #. module: bemade_sports_clinic
 #. odoo-python
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
 #: model:ir.model.fields,field_description:bemade_sports_clinic.field_sports_patient_injury__injury_date_na
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_create_form_body
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_injury_form_body
@@ -8035,8 +8032,8 @@ msgstr "Aucune borne pour l'instant"
 
 #. module: bemade_sports_clinic
 #. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_patient_combo
+#: code:addons/bemade_sports_clinic/static/src/js/sc_picker.js:0
 msgid "No match"
 msgstr "Aucun résultat"
 
@@ -12568,7 +12565,6 @@ msgstr ""
 
 #. module: bemade_sports_clinic
 #. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
 #: code:addons/bemade_sports_clinic/static/src/js/sc_clinic_worklist.xml:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sports_clinic_attendance_view_search
 msgid "To confirm"
@@ -14507,12 +14503,6 @@ msgid "%(count)s player(s) with a pending removal request."
 msgstr "%(count)s joueur(s) avec une demande de retrait en attente."
 
 #. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
-msgid "%s changed this field while you were typing."
-msgstr "%s a modifié ce champ pendant votre saisie."
-
-#. module: bemade_sports_clinic
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/team_management_portal.py:0
 #: code:addons/bemade_sports_clinic/controllers/app_dashboard.py:0
@@ -14549,8 +14539,6 @@ msgstr "Par statut"
 
 #. module: bemade_sports_clinic
 #. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
 #: code:addons/bemade_sports_clinic/static/src/js/sc_status_pills.js:0
 msgid "Changed elsewhere"
 msgstr "Modifié ailleurs"
@@ -14582,26 +14570,7 @@ msgstr "Confirmez « Installer »."
 
 #. module: bemade_sports_clinic
 #. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
-msgid "Discard the draft"
-msgstr "Jeter le brouillon"
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
-msgid "Draft kept on this device"
-msgstr "Brouillon gardé sur cet appareil"
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
-msgid "Draft restored"
-msgstr "Brouillon restauré"
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
 #: code:addons/bemade_sports_clinic/static/src/js/sc_account.js:0
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
 #: code:addons/bemade_sports_clinic/static/src/js/sc_status_pills.js:0
 msgid "Error — not saved"
 msgstr "Erreur — non enregistré"
@@ -14622,12 +14591,6 @@ msgstr "Installer Le Fit Crew"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_install
 msgid "Install the app"
 msgstr "Installer l'application"
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
-msgid "Keep mine"
-msgstr "Garder le mien"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_offline
@@ -14670,12 +14633,6 @@ msgstr "Aucun joueur dans cette équipe pour l'instant."
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_dw_recent_changes
 msgid "No recent player changes."
 msgstr "Aucun changement récent."
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
-msgid "Offline — pending"
-msgstr "Hors ligne — en attente"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_player_change_detail
@@ -14731,7 +14688,6 @@ msgstr "Retrait en attente"
 
 #. module: bemade_sports_clinic
 #. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
 #: code:addons/bemade_sports_clinic/static/src/js/sc_dashboard_config.js:0
 msgid "Saved"
 msgstr "Enregistré"
@@ -14739,14 +14695,12 @@ msgstr "Enregistré"
 #. module: bemade_sports_clinic
 #. odoo-javascript
 #: code:addons/bemade_sports_clinic/static/src/js/sc_account.js:0
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
 msgid "Saved · %s"
 msgstr "Enregistré · %s"
 
 #. module: bemade_sports_clinic
 #. odoo-javascript
 #: code:addons/bemade_sports_clinic/static/src/js/sc_account.js:0
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
 #: code:addons/bemade_sports_clinic/static/src/js/sc_dashboard_config.js:0
 msgid "Saving…"
 msgstr "Enregistrement…"
@@ -14757,12 +14711,6 @@ msgid "Send the request"
 msgstr "Envoyer la demande"
 
 #. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
-msgid "Take theirs"
-msgstr "Prendre le leur"
-
-#. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_install
 msgid "Tap the Share button"
 msgstr "Touchez le bouton Partager"
@@ -14771,12 +14719,6 @@ msgstr "Touchez le bouton Partager"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_install
 msgid "The app is installed"
 msgstr "L'application est installée"
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
-msgid "This field was changed elsewhere while you were typing."
-msgstr "Ce champ a été modifié ailleurs pendant votre saisie."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_offline
@@ -14797,12 +14739,6 @@ msgstr "Vous êtes hors ligne"
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_install
 msgid "You are using Le Fit Crew from your home screen."
 msgstr "Vous utilisez Le Fit Crew depuis votre écran d'accueil."
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
-msgid "Your unpublished text was kept on this device."
-msgstr "Votre texte non publié a été gardé sur cet appareil."
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_install
@@ -15031,7 +14967,6 @@ msgstr "Toutes (%(count)s)"
 
 #. module: bemade_sports_clinic
 #. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
 #: code:addons/bemade_sports_clinic/static/src/js/sc_status_pills.js:0
 msgid "Change saved"
 msgstr "Modification enregistrée"
@@ -15351,7 +15286,6 @@ msgstr "Aujourd'hui (%(count)s)"
 #. odoo-python
 #. odoo-javascript
 #: code:addons/bemade_sports_clinic/models/patient_medical_undo.py:0
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
 #: code:addons/bemade_sports_clinic/static/src/js/sc_status_pills.js:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_player
@@ -15456,12 +15390,6 @@ msgstr "Ajouter une équipe…"
 #: code:addons/bemade_sports_clinic/static/src/js/sc_injury_card.js:0
 msgid "Remove %(file)s"
 msgstr "Retirer %(file)s"
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
-msgid "Remove %s"
-msgstr "Retirer %s"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_recent_pill
@@ -15800,9 +15728,9 @@ msgid "Remove the player from these teams?"
 msgstr "Retirer le joueur de ces équipes ?"
 
 #. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
+#. odoo-python
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.portal_edit_player
+#: code:addons/bemade_sports_clinic/controllers/app_shell.py:0
 msgid "The change will be noted in the player's file."
 msgstr "La modification sera notée au dossier du joueur."
 
@@ -15847,29 +15775,10 @@ msgid ""
 msgstr "État actuel (remplace le texte précédent; l'historique conserve les versions)"
 
 #. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
-msgid "Current text"
-msgstr "Texte actuel"
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.dashboard_change_item
+#: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_injury_card
 msgid "New note"
 msgstr "Nouvelle note"
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
-msgid "Replaces the previous text; the old one is kept in the history."
-msgstr "Remplace le texte précédent ; l'ancien est conservé dans l'historique."
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
-msgid "Reuse current text"
-msgstr "Reprendre le texte actuel"
 
 #. module: bemade_sports_clinic
 #: model_terms:ir.ui.view,arch_db:bemade_sports_clinic.sc_app_injury_edit
@@ -16657,10 +16566,8 @@ msgstr ""
 "Ces détails ont été modifiés depuis ; ils ne peuvent plus être restaurés."
 
 #. module: bemade_sports_clinic
-#. odoo-javascript
 #. odoo-python
 #: code:addons/bemade_sports_clinic/controllers/app_critical_items.py:0
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
 msgid "This change can no longer be undone."
 msgstr "Ce changement ne peut plus être annulé."
 
@@ -17407,14 +17314,8 @@ msgid "Until %(date)s"
 msgstr "Jusqu'au %(date)s"
 
 #. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
-msgid "Nothing matches « %s »: pick it from the list."
-msgstr "Aucun choix ne correspond à « %s » : choisissez dans la liste."
-
-#. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
 msgid "The teams of another organization were removed."
 msgstr "Les équipes d'une autre organisation ont été retirées."
 
@@ -17537,16 +17438,16 @@ msgid "<span>Accepted by the user</span>"
 msgstr "<span>Accepté par l'usager</span>"
 
 #. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.js:0
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
 msgid ""
 "Changing the organization removes the teams of the other organization: %s."
 msgstr ""
 "Changer d'organisation retire les équipes de l'autre organisation : %s."
 
 #. module: bemade_sports_clinic
-#. odoo-javascript
-#: code:addons/bemade_sports_clinic/static/src/js/sc_autosave_field.xml:0
+#. odoo-python
+#: code:addons/bemade_sports_clinic/controllers/events_portal.py:0
 msgid "Change organization"
 msgstr "Changer d'organisation"
 

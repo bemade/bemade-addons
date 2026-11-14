@@ -14,7 +14,7 @@ function assert(condition, message) {
 }
 
 const CARD = 'details.o_sc_injury_item[open] [data-pk-edit-card="injury-notes-external"]';  // task 1675
-const FIELD = `${CARD} .o_pk_autosave[data-sc-field="external_notes"]`;
+const FIELD = `${CARD} .o_pk_autosave[data-pk-autosave-field="external_notes"]`;
 const NEW = "T1669 tour new note";
 
 tours.add("sc_1669_note_stamp", {
@@ -33,12 +33,12 @@ tours.add("sc_1669_note_stamp", {
         },
         {
             content: "Write a new external note",
-            trigger: `${FIELD} textarea[data-sc-replace="new"]`,
+            trigger: `${FIELD} textarea[data-pk-replace="new"]`,
             run: `edit ${NEW}`,
         },
         {
             content: "Leave the field so it saves",
-            trigger: `${FIELD} textarea[data-sc-replace="new"]`,
+            trigger: `${FIELD} textarea[data-pk-replace="new"]`,
             run() {
                 this.anchor.blur(); this.anchor.dispatchEvent(new FocusEvent("blur"));
             },

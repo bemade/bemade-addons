@@ -55,7 +55,7 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
     @staticmethod
     def _owl(node):
         return {json.loads(p)['field']: json.loads(p) for p in node.xpath(
-            './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')
+            './/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')
             if json.loads(p).get('field')}
 
     # -- UC-PL1 ----------------------------------------------------------

@@ -97,6 +97,8 @@ from datetime import date
 from odoo import _, fields
 from odoo.exceptions import ValidationError
 
+from .registry import pk_freeze
+
 PK_MIN_YEAR = 1900
 PK_MAX_YEAR = 9999
 _CALLABLE_KEYS = (
@@ -150,3 +152,20 @@ def pk_deadline_in_past(day, current, user):
     if not day or day == current:
         return False
     return day < fields.Date.context_today(user)
+
+
+def pk_save_value(record, name, raw=False):
+    """The value an input shows for ``record.name`` (the spec's ``read``
+    unless ``raw``): a many2one's id, a date as a string. Task 5382 (P4c3):
+    shared by the save route (``PortalKitApp._pk_save_value``) and the
+    autosave field's props (``tools/field_props.py``)."""
+    spec = record.env['portal.kit'].pk_save_spec(record._name) or pk_freeze({})
+    if not raw and spec.get('read'):
+        return spec['read'](record, name)
+    value = record[name]
+    field = record._fields[name]
+    if field.type == 'many2one':
+        return value.id or False
+    if field.type in ('date', 'datetime'):
+        return field.to_string(value) if value else False
+    return value

@@ -19,7 +19,7 @@ const CARD = "details.o_sc_injury_item[open]";
 const DETAILS = `${CARD} [data-pk-edit-card="injury-details"]`;
 // Task 1675: the Notes section (one « History » in its head), one edit card per note.
 const NOTES = `${CARD} section[data-pk-section="injury.notes"]`;
-const FIELD = `${NOTES} .o_pk_autosave[data-sc-field="external_notes"]`;
+const FIELD = `${NOTES} .o_pk_autosave[data-pk-autosave-field="external_notes"]`;
 const PROPOSAL = "#sc_proposal_sheet";
 const NEW_NOTE = "Synthetic rewritten 1631";
 
@@ -67,7 +67,7 @@ tours.add("sc_1631_injury_card", {
             trigger: toggle(`${CARD} > summary`, "stage", "red"),
             run() {
                 window.__sc1631NoReload = true;
-                assert(!document.querySelector(`${CARD} .o_pk_autosave[data-sc-field="stage"]`), "a status selector in the body");
+                assert(!document.querySelector(`${CARD} .o_pk_autosave[data-pk-autosave-field="stage"]`), "a status selector in the body");
                 assert(document.querySelector(`${CARD} > summary button[data-sc-injury-quick="resolve"]`), "no quick Resolve");
             },
         },
@@ -165,7 +165,7 @@ tours.add("sc_1631_injury_card", {
         },
         {
             content: "Still one « History » in edit mode",
-            trigger: `${FIELD} textarea[data-sc-replace="new"]`,
+            trigger: `${FIELD} textarea[data-pk-replace="new"]`,
             run() {
                 const links = [...document.querySelectorAll(`${NOTES} [data-pk-sheet-open^="sc_note_history_sheet_"]`)].filter(
                     (el) => el.offsetParent
@@ -181,16 +181,16 @@ tours.add("sc_1631_injury_card", {
         },
         {
             content: "Cleared and saved",
-            trigger: `${FIELD}[data-sc-state="saved"]`,
+            trigger: `${FIELD}[data-pk-autosave-state="saved"]`,
         },
         {
             content: "Write a new note",
-            trigger: `${FIELD} textarea[data-sc-replace="new"]`,
+            trigger: `${FIELD} textarea[data-pk-replace="new"]`,
             run: `edit ${NEW_NOTE}`,
         },
         {
             content: "Leave the field so it saves",
-            trigger: `${FIELD}[data-sc-state="dirty"] textarea[data-sc-replace="new"]`,
+            trigger: `${FIELD}[data-pk-autosave-state="dirty"] textarea[data-pk-replace="new"]`,
             run() {
                 this.anchor.blur();
                 this.anchor.dispatchEvent(new FocusEvent("blur")); // headless CI
@@ -198,7 +198,7 @@ tours.add("sc_1631_injury_card", {
         },
         {
             content: "Saved: the new text is the current one",
-            trigger: `${FIELD}[data-sc-state="saved"] .o_sc_replace_current_text:contains(${NEW_NOTE})`,
+            trigger: `${FIELD}[data-pk-autosave-state="saved"] .o_pk_replace_current_text:contains(${NEW_NOTE})`,
             run: () => noReload(),
         },
     ],

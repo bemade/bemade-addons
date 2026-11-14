@@ -18,7 +18,7 @@ Acceptance criteria covered:
 * AC-3 A coach's app save of a BLANK date of birth answers 200 and stores
   it (no confirmation).
 * AC-4 A coach's app save CHANGING an existing date of birth answers 428
-  ``confirm_identity`` and writes nothing; re-posted with ``confirm=1`` it
+  ``confirm`` and writes nothing; re-posted with ``confirm=1`` it
   answers 200 and the correction note (« Identity correction confirmed by
   <coach> ») is posted on the player's file.
 * AC-5 A coach's save giving the player the exact name + date of birth of
@@ -98,7 +98,7 @@ class TestCoachDob1633(PlayerInlineCommon):
         self._login_coach()
         resp = self._save(self.player, 'date_of_birth', '2008-04-04')
         self.assertEqual(resp.status_code, 428, resp.text)
-        self.assertTrue(resp.json()['confirm_identity'])
+        self.assertTrue(resp.json()['confirm'])
         self.player.invalidate_recordset()
         self.assertEqual(self.player.date_of_birth, date(2008, 3, 4))
         resp = self.url_open('/my/app/save/sports.patient/%s' % self.player.id, data={

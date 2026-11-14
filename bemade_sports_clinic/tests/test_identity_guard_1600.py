@@ -17,7 +17,7 @@ Acceptance criteria covered:
   The legacy form passes the confirmation only when ``identity_confirmed=1``
   is posted, and only writes the identity fields that changed.
 * AC-e  The app-shell pencil (POST /my/app/save) answers 428
-  ``confirm_identity`` (old → new, nothing written) without ``confirm=1``,
+  ``confirm`` (old → new, nothing written) without ``confirm=1``,
   and saves + records with it.
 * AC-f  Unticking a team on the legacy edit form is the official removal:
   the pending-removal flag is cleared, the removal note is posted, the open
@@ -291,8 +291,10 @@ class TestIdentityGuardAppShell1600(IdentityCommon):
         resp = self._app_save('last_name', 'Onesynth')
         self.assertEqual(resp.status_code, 428, resp.text)
         body = resp.json()
-        self.assertTrue(body['confirm_identity'])
+        self.assertTrue(body['confirm'])
         self.assertEqual((body['old'], body['new']), ('One', 'Onesynth'))
+        # Task 5382: the clinic's line under old -> new (the kit's banner shows it).
+        self.assertEqual(body['detail'], "The change will be noted in the player's file.")
         self.player.invalidate_recordset()
         self.assertEqual(self.player.last_name, 'One')
         resp = self._app_save('last_name', 'Onesynth', confirm='1')

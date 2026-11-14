@@ -75,7 +75,7 @@
                      « No current announcement. » for editors (the pencil adds
                      one); for everyone else the section is not rendered. The
                      section is the edit card: the pencil reveals the compose
-                     form (a LOCAL draft while typing, sc_autosave_field draft
+                     form (a LOCAL draft while typing, the kit's autosave field, draft
                      mode; « Publier » posts the unchanged PRG form). -->
                 <section t-if="team.announcement or sc_show_compose"
                          t-attf-class="o_pk_section o_sc_announcement #{'o_sc_announcement_expired' if team.announcement_is_expired else ''} #{'' if team.announcement else 'o_sc_announcement_none'}"
@@ -142,9 +142,9 @@
                             <t t-set="sc_ann_label">Announcement</t>
                             <t t-set="sc_ann_placeholder">Write an announcement for all team staff…</t>
                             <t t-set="sc_deadline_label">Valid until (optional)</t>
-                            <owl-component name="bemade_sports_clinic.sc_autosave_field"
+                            <owl-component name="bemade_portal_kit.pk_autosave_field"
                                            t-att-props="json.dumps({'mode': 'draft', 'name': 'announcement', 'inputType': 'textarea', 'inputId': 'sc_team_announcement', 'label': sc_ann_label, 'placeholder': sc_ann_placeholder, 'value': team.announcement or '', 'draftKey': 'sports.team.%s.announcement' % team.id})"/>
-                            <owl-component name="bemade_sports_clinic.sc_autosave_field"
+                            <owl-component name="bemade_portal_kit.pk_autosave_field"
                                            t-att-props="json.dumps({'mode': 'draft', 'name': 'announcement_deadline', 'inputType': 'date', 'inputId': 'sc_team_announcement_deadline', 'label': sc_deadline_label, 'value': team.announcement_deadline and team.announcement_deadline.strftime('%Y-%m-%d') or '', 'draftKey': 'sports.team.%s.announcement_deadline' % team.id})"/>
                             <div class="o_pk_form_actions">
                                 <button type="submit" class="o_pk_btn o_pk_btn_primary" data-sc-action="team.announcement.publish">Publish</button>

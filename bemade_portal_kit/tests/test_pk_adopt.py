@@ -21,7 +21,8 @@
 * UC-A7 (task 5370, P4b) The kit adopts two more templates: the form
   guard's slots and the status pill select (11 in all).
 * UC-A9 (task 5381, P4c2) The kit adopts four more templates: the edit
-  card head, the display row, the sheet and the page tabs (15 in all).
+  card head, the display row, the sheet and the page tabs (15 in all);
+  task 5382 (P4c3) the autosave field's template (16).
 * UC-A8 (task 5370) ``strip_translated_attributes`` removes renamed
   attributes that a translation kept: Odoo merges the source's attributes
   into a translated term but never drops the term's own, so after a rename
@@ -158,7 +159,8 @@ class TestPkAdopt(TransactionCase):
         self.assertEqual(strip_translated_attributes(self.env.cr, ('data-pk-old-msg',)), 0)
 
     def test_mapping_adopted_after_upgrade(self):
-        self.assertEqual(len(ADOPTED_VIEWS), 15)
+        self.assertEqual(len(ADOPTED_VIEWS), 16)
+        self.assertIn(('bemade_sports_clinic', 'sc_field_autosave', 'pk_field_autosave'), ADOPTED_VIEWS)
         for old, new in (('sc_edit_card_head', 'pk_edit_card_head'), ('sc_display_row', 'pk_display_row'),
                          ('sc_sheet', 'pk_sheet'), ('sc_page_tabs', 'pk_page_tabs')):
             self.assertIn(('bemade_sports_clinic', old, new), ADOPTED_VIEWS)

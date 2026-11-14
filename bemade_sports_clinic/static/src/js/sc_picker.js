@@ -2,7 +2,7 @@
  * Task 1648 — the type-to-filter single-select picker for link fields
  * (inert outside .o_pk_app).
  *
- * Progressive enhancement of a <select data-sc-picker>: the select stays the
+ * Progressive enhancement of a <select data-pk-picker>: the select stays the
  * form value (POST routes and the autosave unchanged; without JS it is the
  * plain select). The picker adds, right after it, a text box: typing lists
  * the options whose label matches — accent- and case-insensitive, every
@@ -12,11 +12,14 @@
  * « change » (the autosave saves, the narrowing follows).
  *
  * Narrowing between the link fields of one form ([data-sc-picker-scope], or
- * the closest form / edit view): data-sc-picker-key = team | player |
- * injury | event; player and event options carry data-sc-teams (ids),
- * injury options data-sc-player (id). A team narrows the players and
+ * the closest form / edit view): data-pk-picker-key = team | player |
+ * injury | event; player and event options carry data-pk-meta-teams (ids),
+ * injury options data-pk-meta-player (id). A team narrows the players and
  * events, a player the injuries; clearing the parent widens them again; a
  * child whose value no longer fits is cleared, with a visible hint.
+ * Task 5382 (kit P4c3): the select's and options' markers are the names the
+ * kit's autosave field writes (data-pk-picker, data-pk-picker-key, option
+ * metadata data-pk-meta-<key>); the clinic's own selects use the same names.
  *
  * Never focused on open (#1646); the list sits in the flow under the box so
  * a phone keyboard does not hide it.
@@ -192,14 +195,14 @@ export function enhance(select) {
 }
 
 export function enhanceAll(root = document) {
-    for (const select of root.querySelectorAll(".o_pk_app select[data-sc-picker]")) {
+    for (const select of root.querySelectorAll(".o_pk_app select[data-pk-picker]")) {
         enhance(select);
     }
 }
 
 // ------------------------------------------------------------ narrowing
 function siblingsOf(select, key) {
-    return [...scopeOf(select).querySelectorAll(`select[data-sc-picker-key="${key}"]`)];
+    return [...scopeOf(select).querySelectorAll(`select[data-pk-picker-key="${key}"]`)];
 }
 
 function narrow(child, test, hint) {
@@ -234,15 +237,15 @@ function narrow(child, test, hint) {
 }
 
 function applyNarrowing(select) {
-    const key = select.dataset.scPickerKey;
+    const key = select.dataset.pkPickerKey;
     const value = select.value;
     if (key === "team") {
-        const inTeam = (option) => !value || (option.dataset.scTeams || "").split(",").includes(value);
+        const inTeam = (option) => !value || (option.dataset.pkMetaTeams || "").split(",").includes(value);
         for (const child of [...siblingsOf(select, "player"), ...siblingsOf(select, "event")]) {
             narrow(child, inTeam, _t("Cleared: not in the chosen team."));
         }
     } else if (key === "player") {
-        const ofPlayer = (option) => !value || option.dataset.scPlayer === value;
+        const ofPlayer = (option) => !value || option.dataset.pkMetaPlayer === value;
         for (const child of siblingsOf(select, "injury")) {
             narrow(child, ofPlayer, _t("Cleared: not one of the chosen player's injuries."));
         }
@@ -375,7 +378,7 @@ document.addEventListener("change", (ev) => {
 function boot(root) {
     enhanceAll(root);
     for (const select of (root.querySelectorAll ? root : document).querySelectorAll(
-        '.o_pk_app select[data-sc-picker-key="team"], .o_pk_app select[data-sc-picker-key="player"]'
+        '.o_pk_app select[data-pk-picker-key="team"], .o_pk_app select[data-pk-picker-key="player"]'
     )) {
         if (select.value && !select.dataset.scPickerNarrowed) {
             select.dataset.scPickerNarrowed = "1";

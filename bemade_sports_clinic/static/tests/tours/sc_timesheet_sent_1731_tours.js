@@ -33,11 +33,11 @@ registry.category("web_tour.tours").add("sc_1731_timesheet_sent", {
         },
         {
             content: "Leave 30 min earlier (travel start before the coverage start)",
-            trigger: `${CARD}[data-pk-edit-open] .o_pk_autosave[data-sc-field="travel_start"] input`,
+            trigger: `${CARD}[data-pk-edit-open] .o_pk_autosave[data-pk-autosave-field="travel_start"] input`,
             run() {
                 const input = this.anchor;
                 const card = input.closest("[data-pk-edit-card]");
-                const start = card.querySelector('.o_pk_autosave[data-sc-field="coverage_start"] input').value;
+                const start = card.querySelector('.o_pk_autosave[data-pk-autosave-field="coverage_start"] input').value;
                 assert(start, "the coverage start is filled");
                 const at = new Date(new Date(start).getTime() - 30 * 60 * 1000);
                 const pad = (n) => String(n).padStart(2, "0");
@@ -51,7 +51,7 @@ registry.category("web_tour.tours").add("sc_1731_timesheet_sent", {
         },
         {
             content: "Saved: the field reads « Sent · hh:mm »",
-            trigger: `${CARD} .o_pk_autosave[data-sc-field="travel_start"][data-sc-state="saved"] .o_pk_save_state`,
+            trigger: `${CARD} .o_pk_autosave[data-pk-autosave-field="travel_start"][data-pk-autosave-state="saved"] .o_pk_save_state`,
             run() {
                 const text = this.anchor.textContent.trim();
                 assert(/^Sent · \d{1,2}:\d{2}$/.test(text), `save state reads « ${text} »`);

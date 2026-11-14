@@ -91,7 +91,7 @@ class InjuryCard1631Mixin:
     @staticmethod
     def _fields(scope):
         return [json.loads(node.get('props')).get('field')
-                for node in scope.xpath('.//owl-component[@name="bemade_sports_clinic.sc_autosave_field"]')]
+                for node in scope.xpath('.//owl-component[@name="bemade_portal_kit.pk_autosave_field"]')]
 
     def _apply(self, changes, patient=None):
         return self.url_open('/my/app/apply-proposal', data={

@@ -77,7 +77,7 @@ class TestCoachExternalNoteReadOnly1675(AppShellCommon):
     @staticmethod
     def _fields(node):
         return [(lambda d: d.get('field') or d.get('name'))(json.loads(p)) for p in node.xpath(
-            './/owl-component[@name="bemade_sports_clinic.sc_autosave_field"]/@props')]
+            './/owl-component[@name="bemade_portal_kit.pk_autosave_field"]/@props')]
 
     def _create(self, **data):
         self.url_open('/my/patient/injury/create', data={

@@ -205,14 +205,14 @@ tours.add("sc_1542_announcement_draft", {
         },
         {
             content: "Draft kept on the device",
-            trigger: '.o_pk_autosave[data-sc-state="draft"]',
+            trigger: '.o_pk_autosave[data-pk-autosave-state="draft"]',
             run() {
                 assert(draftKeys().length === 1, "expected one device draft");
             },
         },
         {
             content: "Leave the page",
-            trigger: '.o_pk_autosave[data-sc-state="draft"]',
+            trigger: '.o_pk_autosave[data-pk-autosave-state="draft"]',
             run() {
                 window.location.assign("/my/home");
             },
@@ -227,7 +227,7 @@ tours.add("sc_1542_announcement_draft", {
         },
         {
             content: "« Brouillon restauré », compose re-opened with the text",
-            trigger: '.o_pk_autosave[data-sc-restored="1"] .o_pk_draft_banner',
+            trigger: '.o_pk_autosave[data-pk-autosave-restored="1"] .o_pk_draft_banner',
             run() {
                 const value = document.querySelector("#sc_team_announcement").value;
                 assert(value === DRAFT_TEXT, `restored value: ${value}`);
@@ -261,7 +261,7 @@ tours.add("sc_1542_logout_clears_drafts", {
             run: "edit Tour 1542 draft to forget",
         },
         {
-            trigger: '.o_pk_autosave[data-sc-state="draft"]',
+            trigger: '.o_pk_autosave[data-pk-autosave-state="draft"]',
             run() {
                 assert(draftKeys().length === 1, "expected one device draft");
                 window.location.assign("/my/teams");
@@ -367,7 +367,7 @@ tours.add("sc_1542_fr_draft", {
         },
         {
             content: "Save state in French (OWL template + _t)",
-            trigger: '.o_pk_autosave[data-sc-state="draft"] .o_pk_save_state:contains(Brouillon gardé sur cet appareil)',
+            trigger: '.o_pk_autosave[data-pk-autosave-state="draft"] .o_pk_save_state:contains(Brouillon gardé sur cet appareil)',
             run() {
                 window.location.reload();
             },

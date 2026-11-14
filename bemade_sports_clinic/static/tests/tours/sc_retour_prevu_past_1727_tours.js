@@ -39,7 +39,7 @@ function typeAndLeave(input, value) {
     input.dispatchEvent(new FocusEvent("blur")); // headless CI: blur() fires no event without window focus
 }
 
-const FIELD = '[data-pk-section="player.predicted_return"] .o_pk_autosave[data-sc-field="predicted_return_date"]';
+const FIELD = '[data-pk-section="player.predicted_return"] .o_pk_autosave[data-pk-autosave-field="predicted_return_date"]';
 const READ = '[data-pk-section="player.return"]';
 const SHEET = "dialog#sc_proposal_sheet";
 const CARD = ".o_sc_injury_item[open]";
@@ -83,7 +83,7 @@ tours.add("sc_1727_header_past", {
         },
         {
             content: "Saved; the read view drops the flag",
-            trigger: `${FIELD}[data-sc-state="saved"]`,
+            trigger: `${FIELD}[data-pk-autosave-state="saved"]`,
             async run() {
                 await waitFor(() => !document.querySelector(`${READ} [data-sc-overdue]`), "flag gone");
                 assert(!document.querySelector(`${FIELD} .o_pk_field_error`), "no error left");
@@ -101,7 +101,7 @@ tours.add("sc_1727_proposal_past", {
         },
         {
             content: "A predicted resolution date already past",
-            trigger: `${CARD} .o_pk_autosave[data-sc-field="predicted_resolution_date"] input`,
+            trigger: `${CARD} .o_pk_autosave[data-pk-autosave-field="predicted_resolution_date"] input`,
             run() {
                 // The header's « Retour prévu » input carries today.
                 const min = document.querySelector(`${FIELD} input[type="date"]`).min;

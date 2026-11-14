@@ -3,6 +3,7 @@ from odoo import http, fields, _, Command
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager
+from odoo.addons.bemade_portal_kit.tools import pk_form_props
 from .access_control_mixin import AccessControlMixin
 from .app_shell import AppShellMixin
 from dateutil.relativedelta import relativedelta
@@ -83,7 +84,7 @@ class PlayerManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         team_csv = str(all_teams.id) if len(all_teams) == 1 else ''
         values.update({
             'sc_team_csv': team_csv,
-            'sc_team_props': self._sc_form_props(
+            'sc_team_props': pk_form_props(
                 'sc_new_team_ids', _("Teams"), value=team_csv,
                 options=[(t.id, t.name) for t in all_teams],
                 placeholder=_("Add a team…")),

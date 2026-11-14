@@ -80,7 +80,7 @@
                 <!-- Task 1672 (addendum 2): from a team page the team is
                      implicit (the hidden team_ids above, validated by the
                      server); the Joueurs list keeps the selector. -->
-                <t t-if="not panel.get('team_fixed')" t-call="bemade_sports_clinic.sc_field_autosave"><t t-set="props" t-value="panel['team_props']"/></t>
+                <t t-if="not panel.get('team_fixed')" t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="panel['team_props']"/></t>
                 <!-- The existence check (as you type). -->
                 <div class="o_sc_player_check" data-sc-player-check="1" aria-live="polite">
                     <p class="o_pk_hint">Type a first and a last name to look for existing players.</p>
