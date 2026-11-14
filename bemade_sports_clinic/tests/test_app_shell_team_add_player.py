@@ -67,7 +67,7 @@ class TestAppShellTeamAddPlayer(AppShellCommon):
         for name in ('first_name', 'last_name', 'date_of_birth', 'team_ids', 'context_team_id'):
             self.assertIn(name, names)
         self.assertEqual(form.xpath('.//input[@name="team_ids"]/@value'), [str(self.team_a.id)])
-        self.assertFalse(tree.xpath('//header//*[@data-sc-action="team.add_player"]'))
+        self.assertFalse(tree.xpath('//header//*[@data-pk-action="team.add_player"]'))
 
     # -- UC-AP2 ----------------------------------------------------------
     def test_search_results(self):

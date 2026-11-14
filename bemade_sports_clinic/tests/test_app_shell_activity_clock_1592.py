@@ -81,13 +81,13 @@ class Clock1592Mixin:
     def _assert_card_clock(self, node, count, overdue, href):
         """Task 1736: an injury card's clock is its top bar's clock icon
         with a count badge (red when one is overdue), not a chip."""
-        clocks = node.xpath('.//a[contains(@class, "o_sc_card_clock")]')
+        clocks = node.xpath('.//a[contains(@class, "o_pk_card_clock")]')
         self.assertTrue(clocks, 'no clock')
         clock = clocks[0]
-        self.assertEqual(clock.get('data-sc-activity-clock'), str(count))
-        self.assertEqual(clock.get('data-sc-activity-overdue'), str(overdue))
+        self.assertEqual(clock.get('data-pk-activity-clock'), str(count))
+        self.assertEqual(clock.get('data-pk-activity-overdue'), str(overdue))
         self.assertEqual(_text(clock), str(count))
-        self.assertEqual('o_sc_card_clock_overdue' in clock.get('class'), bool(overdue))
+        self.assertEqual('o_pk_card_clock_overdue' in clock.get('class'), bool(overdue))
         self.assertEqual(clock.get('href'), href)
         self.assertTrue(clock.get('aria-label'))
         return clock
@@ -134,7 +134,7 @@ class TestActivityClockAppBar1592(Clock1592Common):
             self.assertEqual(badge.get('hidden'), 'hidden')
             self.assertEqual(_text(badge), '0')
             # No count badge on the Activities menu item.
-            for item in tree.xpath('//a[@data-sc-nav-key="activities"]'):
+            for item in tree.xpath('//a[@data-pk-nav-key="activities" or @data-sc-nav-key="activities"]'):
                 self.assertFalse(item.xpath('.//*[contains(@class, "o_pk_chip")]'
                                             ' | .//*[@data-pk-live-count-url]'))
                 self.assertFalse(any(ch.isdigit() for ch in _text(item)))
@@ -315,7 +315,7 @@ class TestActivityClockRows1592(Clock1592Common):
         # In the summary row, beside the status chip.
         self.assertTrue(clock.xpath('ancestor::summary'))
         quiet = tree.xpath('//details[@id="injury-%s"]' % other.id)[0]
-        self.assertFalse(quiet.xpath('.//a[contains(@class, "o_sc_card_clock")]'))
+        self.assertFalse(quiet.xpath('.//a[contains(@class, "o_pk_card_clock")]'))
         # The target tab lists the injury's activity.
         _text_, tree = self._get(url + '&tab=activities')
         panel = tree.xpath('//section[@data-pk-tab-panel="activities"]')[0]

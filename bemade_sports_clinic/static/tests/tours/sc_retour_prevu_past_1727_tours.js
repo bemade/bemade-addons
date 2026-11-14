@@ -48,11 +48,11 @@ tours.add("sc_1727_header_past", {
     steps: () => [
         {
             content: "The read view flags the past date « Dépassé »",
-            trigger: `${READ} .o_sc_overdue [data-sc-overdue]`,
+            trigger: `${READ} .o_pk_overdue [data-pk-overdue]`,
         },
         {
             content: "Open the header's pencil",
-            trigger: '[data-pk-section="player.hero"] [data-sc-card-icons] > button[data-pk-edit-toggle][aria-expanded="false"]',
+            trigger: '[data-pk-section="player.hero"] [data-pk-card-icons] > button[data-pk-edit-toggle][aria-expanded="false"]',
             run: "click",
         },
         {
@@ -85,7 +85,7 @@ tours.add("sc_1727_header_past", {
             content: "Saved; the read view drops the flag",
             trigger: `${FIELD}[data-pk-autosave-state="saved"]`,
             async run() {
-                await waitFor(() => !document.querySelector(`${READ} [data-sc-overdue]`), "flag gone");
+                await waitFor(() => !document.querySelector(`${READ} [data-pk-overdue]`), "flag gone");
                 assert(!document.querySelector(`${FIELD} .o_pk_field_error`), "no error left");
             },
         },

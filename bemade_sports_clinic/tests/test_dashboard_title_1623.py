@@ -44,7 +44,7 @@ class TestDashboardTitle1623(AppShellCommon):
         self._login_tp()
         _text, tree = self._get('/my/home')
         labels = [' '.join(a.text_content().split())
-                  for a in tree.xpath('//a[@data-sc-nav-key="teams"]')]
+                  for a in tree.xpath('//a[@data-pk-nav-key="teams"]')]
         self.assertTrue(labels)
         self.assertTrue(all(label == 'Teams' for label in labels), labels)
         _text, tree = self._get('/my/teams')

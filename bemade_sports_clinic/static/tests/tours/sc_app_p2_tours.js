@@ -29,7 +29,7 @@ tours.add("sc_1539_players_to_player", {
     steps: () => [
         {
             content: "Players list: the « Joueurs » tab is active",
-            trigger: '.o_pk_app a[data-sc-nav-key="players"][aria-current="page"]',
+            trigger: '.o_pk_app a[data-pk-nav-key="players"][aria-current="page"]',
         },
         {
             content: "Open the first player",
@@ -161,7 +161,7 @@ tours.add("sc_1539_new_injury_draft", {
             expectUnloadPage: true,
         },
         {
-            trigger: '.o_pk_app a[data-sc-nav-key="players"][aria-current="page"]',
+            trigger: '.o_pk_app a[data-pk-nav-key="players"][aria-current="page"]',
             run() {
                 window.location.assign(window.sessionStorage.getItem("sc1539NewUrl"));
             },
@@ -444,7 +444,7 @@ tours.add("sc_training_history_refresh", {
         },
         {
             content: "Review fixes 2026-10-18: the header's pencil opens its edit view",
-            trigger: '[data-pk-section="player.hero"] [data-sc-card-icons] > button[data-pk-edit-toggle]',
+            trigger: '[data-pk-section="player.hero"] [data-pk-card-icons] > button[data-pk-edit-toggle]',
             run: "click",
         },
         {

@@ -78,7 +78,7 @@ function checkAll(root) {
     const groups = {
         "training recommendation": ".team-digest .card-body > .text-muted .fa-heartbeat + span",
         "Retour prévu": ".team-digest .card-body > .text-muted .fa-clock-o + span",
-        "Dépassé": ".team-digest .o_sc_overdue",
+        "Dépassé": ".team-digest .o_pk_overdue",
         "Show details": ".team-digest .o_sc_card_summary .o_sc_summary_more",
         "injury meta": ".team-digest .o_sc_injury_detail .text-muted",
         "snapshot line": '[data-pk-section="digest.snapshot"]',

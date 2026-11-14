@@ -1176,30 +1176,30 @@ class AppShellMixin:
             # Task 1604: today in the user's timezone (the resolve sheet's
             # default and latest resolution date).
             'sc_today_iso': fields.Date.to_string(fields.Date.context_today(user)),
-            'sc_tabs': tabs,
-            'sc_rail': rail,
+            'pk_tabs': tabs,
+            'pk_rail': rail,
             'sc_plus': plus,
             'sc_nav_labels': labels,
             # Task 1602: forced dark (no toggles) unless the choice is on.
-            'sc_theme': self._sc_effective_theme(user),
-            'sc_theme_choice': self._sc_theme_choice_enabled(),
+            'pk_theme': self._sc_effective_theme(user),
+            'pk_theme_choice': self._sc_theme_choice_enabled(),
             # Task 1676: the edit cards' « Done » buttons, per user.
-            'sc_show_done': bool(user.sudo().sc_show_done_buttons),
+            'pk_show_done': bool(user.sudo().sc_show_done_buttons),
             'sc_langs': self._sc_lang_options(),
-            'sc_current_url': path + ('?' + query if query else ''),
+            'pk_current_url': path + ('?' + query if query else ''),
             'sc_search_url': '/my/players' if any(t['key'] == 'players' for t in rail) else False,
             # Task 1592: the app bar's activity clock (its overdue badge is
             # fetched by sc_live_count.js, not computed here).
             'sc_activity_clock': kit.pk_can('app.activity_clock', roles, is_system=is_system),
             # Task 1622: the clock's href carries the page it is tapped on.
             'sc_clock_url': sc_app_nav.clock_url(path, request.httprequest.args),
-            'sc_user_initials': initials or '?',
+            'pk_user_initials': initials or '?',
             # Task 1606: the head of the user menu (name + role).
-            'sc_user_name': user.name or '',
-            'sc_user_role': sc_app_roles.role_label(roles),
+            'pk_user_name': user.name or '',
+            'pk_user_role': sc_app_roles.role_label(roles),
             # Task 1542: the device draft store is namespaced by db + uid.
-            'sc_db': request.db or '',
-            'sc_uid': user.id,
+            'pk_db': request.db or '',
+            'pk_uid': user.id,
             # Row builder for list templates (computed in the shell only, so
             # the legacy pages pay nothing for it).
             'sc_team_row': self._sc_team_row,
@@ -1253,12 +1253,12 @@ class AppShellMixin:
         shell.update(values)
         nav = kit.pk_resolve(
             (page or '').rpartition('.')[2], shell,
-            request_url=shell['sc_current_url'],
+            request_url=shell['pk_current_url'],
             request_return_url=request.httprequest.args.get('return_url'))
         shell.update({
-            'sc_parent_url': nav['parent_url'],
-            'sc_crumbs': nav['crumbs'],
-            'sc_context': nav['context'],
+            'pk_parent_url': nav['parent_url'],
+            'pk_crumbs': nav['crumbs'],
+            'pk_context': nav['context'],
             # Task 1660: the page's help (the app bar « ? », « Aide »).
             'sc_help': request.env['sc.help.article']._sc_help_for(
                 (page or '').rpartition('.')[2],
@@ -1810,7 +1810,9 @@ class AppShellPortal(PortalKitApp, AccessControlMixin, AppShellMixin):
         accept = request.httprequest.headers.get('Accept', '')
         if 'application/json' in accept:
             response = request.make_json_response(
-                {'sc_theme': self._sc_effective_theme(user), 'lang': user.lang})
+                # Task 5345: the kit's pk_theme_pref.js reads ``pk_theme``.
+                {'sc_theme': self._sc_effective_theme(user), 'pk_theme': self._sc_effective_theme(user),
+                 'lang': user.lang})
         else:
             url = self._safe_return_url(redirect, '/my/app/settings')
             if lang:

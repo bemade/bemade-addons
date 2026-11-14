@@ -120,7 +120,7 @@ tours.add("sc_1644_injury_card", {
     steps: () => [
         {
             content: "The card's « Add documents »",
-            trigger: 'details.o_sc_injury_item[open] .o_pk_list_header button.o_pk_list_add[data-sc-action="injury.documents.add"]',
+            trigger: 'details.o_sc_injury_item[open] .o_pk_list_header button.o_pk_list_add[data-pk-action="injury.documents.add"]',
             run: "click",
         },
         {

@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.144.0",
+    'version': "19.0.1.145.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -331,11 +331,11 @@ nothing; PDF reports never carry it.
             "bemade_sports_clinic/static/src/js/portal_patient_combo.js",
             # Task 1538: portal app shell (since task 5357 the brand file +
             # the clinic's own rules; the generic ones are the kit's), scoped
-            # under .o_pk_app — inert outside the shell; the JS only acts on
-            # data-sc-pref forms inside it). Not duplicated in the lazy list.
+            # under .o_pk_app — inert outside the shell; task 5345: the theme
+            # preference script is the kit's, pk_theme_pref.js). Not
+            # duplicated in the lazy list.
             "bemade_sports_clinic/static/src/scss/sc_tokens.scss",
             "bemade_sports_clinic/static/src/scss/sc_components.scss",
-            "bemade_sports_clinic/static/src/js/sc_app_shell.js",
             # Task 1542: P1b — page styles, the one fetch helper, the device
             # draft store, page behaviours (tabs / sheets / lazy rows /
             # toast), the service worker registration + kill switch, and the
@@ -381,9 +381,6 @@ nothing; PDF reports never carry it.
             # Task 1624 review round 2: the dashboard's two fixed columns,
             # scroll anchoring of its fold-outs, the quick « Retour prévu ».
             "bemade_sports_clinic/static/src/js/sc_dashboard_live.js",
-            # Task 5382 (kit P4c3): the autosave field is the kit's; this
-            # file only registers its one-release alias key.
-            "bemade_sports_clinic/static/src/js/sc_autosave_field.js",
             # Task 1539: the shell's activity sheets (replaces, in the shell
             # only, the legacy activity partials' inline scripts).
             "bemade_sports_clinic/static/src/js/sc_activities.js",

@@ -45,7 +45,7 @@ class TestBookingsShell(BookingsShellCommon):
                          ['upcoming', 'past', 'all', 'calendar'])
         ids = [int(x) for x in tree.xpath('//*[@data-sc-booking-id]/@data-sc-booking-id')]
         self.assertEqual(ids, [self.booking_soon.id])
-        self.assertIn('bookings', tree.xpath('//nav[contains(@class, "o_pk_rail_nav")]//a/@data-sc-nav-key'))
+        self.assertIn('bookings', tree.xpath('//nav[contains(@class, "o_pk_rail_nav")]//a/@data-pk-nav-key'))
         _text, tree = self._get('/my/bookings?filterby=past')
         ids = [int(x) for x in tree.xpath('//*[@data-sc-booking-id]/@data-sc-booking-id')]
         self.assertEqual(ids, [self.booking_past.id])
@@ -98,7 +98,7 @@ class TestBookingsShell(BookingsShellCommon):
         env = self.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic', 'bemade_sports_clinic_bookings', 'appointment_portal_staff'],
+            ['bemade_portal_kit', 'bemade_sports_clinic', 'bemade_sports_clinic_bookings', 'appointment_portal_staff'],
             ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')

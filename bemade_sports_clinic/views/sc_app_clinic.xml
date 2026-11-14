@@ -23,9 +23,9 @@
     <!-- /my/clinics (shell) -->
     <template id="sc_app_clinics" name="Sports Clinic App: clinics">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="sc_nav_labels['clinic']"/>
-            <t t-set="sc_active_nav" t-value="'clinic'"/>
-            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <t t-set="pk_title" t-value="sc_nav_labels['clinic']"/>
+            <t t-set="pk_active_nav" t-value="'clinic'"/>
+            <t t-call="bemade_portal_kit.pk_flash_banners"/>
 
             <t t-call="bemade_portal_kit.pk_page_tabs">
                 <t t-set="tabs" t-value="sc_clinic_segments"/>
@@ -79,7 +79,7 @@
 
             <div t-if="sc_clinic_rows" class="o_pk_list" data-pk-section="clinics.list">
                 <t t-foreach="sc_clinic_rows" t-as="row">
-                    <t t-call="bemade_sports_clinic.sc_entity_row">
+                    <t t-call="bemade_portal_kit.pk_entity_row">
                         <t t-set="href" t-value="row['url']"/>
                         <t t-set="lead_icon" t-value="'clinic'"/>
                         <t t-set="title" t-value="row['title']"/>
@@ -133,12 +133,12 @@
     <!-- /my/clinic/<id> (shell) -->
     <template id="sc_app_clinic" name="Sports Clinic App: clinic">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="event.name"/>
-            <t t-set="sc_active_nav" t-value="'clinic'"/>
+            <t t-set="pk_title" t-value="event.name"/>
+            <t t-set="pk_active_nav" t-value="'clinic'"/>
             <!-- Task 1721 (review round 1): the whole width on a laptop. -->
-            <t t-set="sc_content_class" t-value="'o_pk_content_wide'"/>
+            <t t-set="pk_content_class" t-value="'o_pk_content_wide'"/>
 
-            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <t t-call="bemade_portal_kit.pk_flash_banners"/>
             <div t-if="success == 'note_added' and sc_note_draft_prefix"
                  t-att-data-pk-draft-clear="sc_note_draft_prefix" hidden="hidden"/>
 
@@ -170,7 +170,7 @@
                          t-att-hidden="None if sc_clinic_active_tab == 'worklist' else 'hidden'">
                     <!-- Task 1607: « + Ajouter » (the add-patient sheet, was in
                          the app bar) right above the worklist. -->
-                    <t t-call="bemade_sports_clinic.sc_list_header">
+                    <t t-call="bemade_portal_kit.pk_list_header">
                         <t t-set="header_section" t-value="'clinic.worklist.header'"/>
                         <t t-set="add_label">Add a patient</t>
                         <t t-set="add_sheet" t-value="'sc_clinic_add_sheet'"/>

@@ -127,7 +127,7 @@ class TestDashboardRound2_1624(FragmentsMixin, Dashboard1624Common):
         self.assertTrue(props['clearable'])
         # The face's date: the hook the page updates in place, « Dépassé » on.
         value = card.xpath('.//*[@data-sc-row-return-value="%s"]' % self.shared.id)[0]
-        self.assertIn('o_sc_overdue', value.get('class'))
+        self.assertIn('o_pk_overdue', value.get('class'))
         self.assertTrue(value.xpath('.//*[@data-sc-row-return-date]'))
         # Unique input ids (one per card and line).
         ids = tree.xpath('//@id')

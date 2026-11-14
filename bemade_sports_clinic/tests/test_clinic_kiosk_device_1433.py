@@ -56,7 +56,7 @@ class TestClinicKioskDevice(HttpCase):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'])
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'])
 
         cls.org = env['res.partner'].create({'name': 'KD Org', 'is_company': True})
         cls.team = env['sports.team'].create({'name': 'KD Team', 'parent_id': cls.org.id})

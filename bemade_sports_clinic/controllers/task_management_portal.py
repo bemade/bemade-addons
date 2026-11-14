@@ -311,7 +311,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                     quote(base + ('?' + query if query else ''), safe=''))
                 if values.get('context_model') and values.get('context_res_id') else False),
             'sc_context_title': context_title,
-            'sc_flash': self._sc_activity_flash(),
+            'pk_flash': self._sc_activity_flash(),
             # Task 1622: opened from the app bar clock — the page it was
             # tapped on (kept by the tab links), the way back. Not on the
             # record wrappers: they have their own parent.
@@ -450,7 +450,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             values.setdefault(key, False)
         return {
             'sc_no_access_ids': ' '.join(str(uid) for uid, ok in access.items() if not ok),
-            'sc_flash': TaskManagementPortal._sc_activity_flash(),
+            'pk_flash': TaskManagementPortal._sc_activity_flash(),
         }
 
     @http.route(['/my/player/activities'], type='http', auth='user', website=True)
@@ -978,7 +978,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'sc_related_url': related_url,
                 'sc_related_links': related_links,
                 'today_date': fields.Date.context_today(request.env.user),
-                'sc_flash': self._sc_activity_flash(),
+                'pk_flash': self._sc_activity_flash(),
                 # Owner review 2026-10-11: the pencil card's assignee choices.
                 # Task 1589: pencil + Cancel / Reschedule / Done follow the
                 # one act rule.

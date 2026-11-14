@@ -187,7 +187,7 @@ class TestAppShellInjury1539(AppShellCommon):
         self.assertEqual(set(owl), {'sc_injury_date'})
         self.assertIn('Visible synthetic remark', text)
         self.assertNotIn('TP-only synthetic remark', text)
-        self.assertFalse(tree.xpath('.//*[@data-sc-action="injury.delete"]'))
+        self.assertFalse(tree.xpath('.//*[@data-pk-action="injury.delete"]'))
         # The diagnosis and status read in the card's summary (task 1616).
         summary = tree.xpath('./summary')[0]
         self.assertIn(self.injury.diagnosis or '', summary.text_content())
@@ -266,14 +266,14 @@ class TestAppShellNotes1539(AppShellCommon):
         self._login_tp()
         fragment = self.history_url + '/fragment'
         text, tree = self._get(fragment)
-        scopes = tree.xpath('//*[@data-pk-section="injury.notes.history"]//li/@data-sc-scope')
+        scopes = tree.xpath('//*[@data-pk-section="injury.notes.history"]//li/@data-pk-scope')
         self.assertIn('internal', scopes)
         self.assertIn('external', scopes)
         self.assertTrue(tree.xpath('//*[@data-pk-section="history.scope"]'))
         self._login_coach()
         for url in (fragment, fragment + '?scope=internal'):
             text, tree = self._get(url)
-            scopes = tree.xpath('//*[@data-pk-section="injury.notes.history"]//li/@data-sc-scope')
+            scopes = tree.xpath('//*[@data-pk-section="injury.notes.history"]//li/@data-pk-scope')
             self.assertEqual(set(scopes), {'external'}, url)
             self.assertNotIn('Internal synthetic history', text)
             self.assertFalse(tree.xpath('//*[@data-pk-section="history.scope"]'))
@@ -313,7 +313,7 @@ class TestAppShellDocuments1539(AppShellCommon):
         self.assertTrue(tree.xpath('//a[@href="/my/injury/document/download/%s"]' % self.doc.id))
         # Task 1736 (deliberate update): the document's archive icon posts its
         # own inline form (no confirmation sheet: an undo toast).
-        form = tree.xpath('//form[.//button[@data-sc-action="documents.delete"]]'
+        form = tree.xpath('//form[.//button[@data-pk-action="documents.delete"]]'
                           '[contains(@action, "/delete/%s")]' % self.doc.id)[0]
         self.assertEqual(form.get('action'), '/my/injury/document/delete/%s' % self.doc.id)
         self.assertEqual(form.get('method'), 'post')
@@ -328,6 +328,6 @@ class TestAppShellDocuments1539(AppShellCommon):
         self._switch(True)
         self._login_coach()
         _text, tree = self._get(self.url)
-        self.assertFalse(tree.xpath('//*[@data-sc-action="injury.documents.add"]'))
-        self.assertFalse(tree.xpath('//*[@data-sc-action="documents.delete"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-action="injury.documents.add"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-action="documents.delete"]'))
         self.assertTrue(tree.xpath('//a[@href="/my/injury/document/download/%s"]' % self.doc.id))

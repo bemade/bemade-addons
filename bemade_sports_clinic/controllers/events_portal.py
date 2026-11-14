@@ -1722,7 +1722,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # event's row in « Events » (MY activities on it, task 1592).
             'sc_event_clock': self._sc_activity_clocks(
                 event, lambda e: '/my/event/activities?event_id=%s' % e.id).get(event.id),
-            'sc_flash': {'success': success, 'error': error},
+            'pk_flash': {'success': success, 'error': error},
         }
 
     @staticmethod
@@ -1877,5 +1877,5 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_form_mode': mode,
             'sc_form': form,
             'sc_event_types': types,
-            'sc_flash': {'success': None, 'error': error},
+            'pk_flash': {'success': None, 'error': error},
         }

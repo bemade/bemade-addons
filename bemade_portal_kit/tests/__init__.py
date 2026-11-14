@@ -18,3 +18,5 @@ from . import test_pk_guard
 from . import test_pk_toast
 from . import test_pk_display
 from . import test_pk_autosave
+from . import test_pk_layout
+from . import test_pk_components

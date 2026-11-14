@@ -157,7 +157,7 @@ class TestDashboardRound1_1624(Dashboard1624Common):
         self.assertTrue(overdue[0].xpath('.//button[@data-sc-action="activity.complete"]'))
         # Task 1736 r1 (deliberate update): « Reschedule » is the card's
         # pencil (inline edit); a tap on the card opens the details popout.
-        self.assertTrue(overdue[0].xpath('.//button[@data-sc-action="activity.edit"]'))
+        self.assertTrue(overdue[0].xpath('.//button[@data-pk-action="activity.edit"]'))
         self.assertFalse(overdue[0].xpath('.//button[@data-sc-action="activity.reschedule"]'))
         for sheet in ('sc_activity_complete_sheet', 'sc_activity_detail_sheet'):
             self.assertEqual(len(tree.xpath('//dialog[@id="%s"]' % sheet)), 1, sheet)

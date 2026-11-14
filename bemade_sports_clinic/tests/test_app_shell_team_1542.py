@@ -135,8 +135,8 @@ class TestAppShellTeam1542(AppShellCommon):
             login()
             _text, tree = self._get(self.url)
             self.assertIsNotNone(self._shell(tree))
-            self.assertFalse(tree.xpath('//header//*[@data-sc-action="team.add_player"]'))
-            self.assertFalse(tree.xpath('//header//*[@data-sc-action="team.request_add"]'))
+            self.assertFalse(tree.xpath('//header//*[@data-pk-action="team.add_player"]'))
+            self.assertFalse(tree.xpath('//header//*[@data-pk-action="team.request_add"]'))
             panel = self._panel(tree, 'players')
             self.assertTrue(panel.xpath('.//details[@data-pk-section="%s"]' % card), card)
             other = 'team.request_add' if card == 'team.add_player' else 'team.add_player'

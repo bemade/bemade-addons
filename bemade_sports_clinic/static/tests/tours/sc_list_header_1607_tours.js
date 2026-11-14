@@ -95,7 +95,7 @@ tours.add("sc_1607_players", {
         },
         {
             content: "Choose « Alphabetical »",
-            trigger: `${POPUP}:not([hidden]) a[data-sc-sort="name"]`,
+            trigger: `${POPUP}:not([hidden]) a[data-pk-sort="name"]`,
             run: "click",
             expectUnloadPage: true,
         },
@@ -104,13 +104,13 @@ tours.add("sc_1607_players", {
             trigger: `${TOGGLE}[aria-expanded="false"]`,
             run() {
                 assert(new URL(window.location.href).searchParams.get("sort") === "name", "no sort=name");
-                assert(document.querySelector(`${POPUP} a[data-sc-sort="name"][aria-checked="true"]`),
+                assert(document.querySelector(`${POPUP} a[data-pk-sort="name"][aria-checked="true"]`),
                     "« Alphabetical » is not checked");
             },
         },
         {
             content: "« + Ajouter » opens the inline creation panel (task 1655)",
-            trigger: `${HEADER} button.o_pk_list_add[data-sc-action="players.create"][aria-controls="sc_player_add"]`,
+            trigger: `${HEADER} button.o_pk_list_add[data-pk-action="players.create"][aria-controls="sc_player_add"]`,
             run: "click",
         },
         {

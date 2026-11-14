@@ -208,7 +208,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_timesheet_groups': groups,
             'sc_timesheet_rows': [self._sc_timesheet_row(ts) for ts in values['timesheets']],
             'sc_timesheets_return': current,
-            'sc_flash': {'success': success, 'error': None},
+            'pk_flash': {'success': success, 'error': None},
         }
 
     @http.route(['/my/sc/timesheet/<int:ts_id>/edit'], type='http', auth='user', website=True, methods=['POST'])

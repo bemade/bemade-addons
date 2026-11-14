@@ -565,7 +565,7 @@ class TestTempStaffPortal1416(HttpCase):
         super().setUpClass()
         env = cls.env
         env["res.lang"]._activate_lang("fr_CA")
-        env["ir.module.module"]._load_module_terms(["bemade_sports_clinic"], ["fr_CA"])
+        env["ir.module.module"]._load_module_terms(["bemade_portal_kit", "bemade_sports_clinic"], ["fr_CA"])
         if env["ir.module.module"]._get("website").state == "installed":
             fr_lang = env["res.lang"]._lang_get("fr_CA")
             for website in env["website"].sudo().search([]):
@@ -622,7 +622,7 @@ class TestTempStaffFrCA1416(TransactionCase):
     def test_fr_ca_labels(self):
         env = self.env
         env["res.lang"]._activate_lang("fr_CA")
-        env["ir.module.module"]._load_module_terms(["bemade_sports_clinic"], ["fr_CA"], overwrite=True)
+        env["ir.module.module"]._load_module_terms(["bemade_portal_kit", "bemade_sports_clinic"], ["fr_CA"], overwrite=True)
         fr = env(context=dict(env.context, lang="fr_CA"))
         source = dict(fr["sports.team.staff"]._fields["source"]._description_selection(fr))
         self.assertEqual(source["temp"], "Accès temporaire")

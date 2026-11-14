@@ -15,7 +15,7 @@
          _sc_dashboard_values), sc_dash_configure_url. -->
     <template id="sc_app_home" name="Sports Clinic App: home">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">Dashboard</t>
+            <t t-set="pk_title">Dashboard</t>
             <div class="o_sc_dash_head" data-pk-section="dashboard.head">
                 <a t-att-href="sc_dash_configure_url" class="o_pk_btn o_pk_btn_ghost o_sc_dash_configure"
                    data-sc-action="dashboard.configure">
@@ -111,7 +111,7 @@
          chip (therapists, the former home teaser). -->
     <template id="sc_dw_today" name="App dashboard: today">
         <div t-if="section['show_clinics']" class="o_sc_dw_clinics" data-pk-section="home.clinic_teaser">
-        <t t-call="bemade_sports_clinic.sc_entity_row">
+        <t t-call="bemade_portal_kit.pk_entity_row">
             <t t-set="href" t-value="'/my/clinics'"/>
             <t t-set="lead_icon" t-value="'clinic'"/>
             <t t-set="title">Clinics today</t>
@@ -342,7 +342,7 @@
             <t t-foreach="sc_dw_events" t-as="ev">
                 <t t-set="sc_ev_detail_id" t-value="'sc-row-detail-%s-ev-%s' % (section['row_scope'], ev['id'])"/>
                 <div class="o_pk_row_group o_sc_event_row" t-att-data-sc-event-row="ev['id']">
-                    <t t-call="bemade_sports_clinic.sc_link_row">
+                    <t t-call="bemade_portal_kit.pk_link_row">
                         <t t-set="href" t-value="ev['url']"/>
                         <t t-set="lead_icon" t-value="'calendar'"/>
                         <t t-set="dot" t-value="False"/>
@@ -414,8 +414,8 @@
          #1658; the « Save » button is the no-JS fallback). -->
     <template id="sc_app_dashboard_configure" name="Sports Clinic App: configure the dashboard">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">Configure the dashboard</t>
-            <t t-if="sc_dash_error" t-call="bemade_sports_clinic.sc_banner">
+            <t t-set="pk_title">Configure the dashboard</t>
+            <t t-if="sc_dash_error" t-call="bemade_portal_kit.pk_banner">
                 <t t-set="flash_error" t-value="True"/>
                 <t t-set="tone" t-value="'warn'"/>
                 <t t-out="sc_dash_error"/>
@@ -473,7 +473,7 @@
                                 <!-- Task 1736 (owner 2026-11-01): « Retirer » is the red
                                      trash of the item's top bar (right of its switch),
                                      and asks first (sc_dashboard_config.js). -->
-                                <t t-call="bemade_sports_clinic.sc_card_icons">
+                                <t t-call="bemade_portal_kit.pk_card_icons">
                                     <t t-set="sc_dash_remove_label">Remove</t>
                                     <t t-set="ci_trash" t-value="row['removable'] and {'form': 'sc_dash_remove_%s' % row['id'], 'key': 'dashboard.remove', 'always': True, 'label': sc_dash_remove_label, 'attrs': {'data-sc-dash-remove': '1'}}"/>
                                 </t>
@@ -481,7 +481,7 @@
                                       t-att-data-sc-dash-instance="row['id']">
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                     <input type="hidden" name="instance_id" t-att-value="row['id']"/>
-                                    <t t-call="bemade_sports_clinic.sc_switch">
+                                    <t t-call="bemade_portal_kit.pk_switch">
                                         <t t-set="sw_label" t-value="row['title'] or row['widget_title']"/>
                                         <t t-set="sw_hint" t-value="row['widget_title'] if row['title'] else None"/>
                                         <t t-set="sw_name" t-value="'enabled'"/>
@@ -516,7 +516,7 @@
                                                     <legend class="o_pk_field_label">Show</legend>
                                                     <input type="hidden" name="kinds_present" value="1"/>
                                                     <t t-foreach="row['kind_choices']" t-as="choice">
-                                                        <t t-call="bemade_sports_clinic.sc_switch">
+                                                        <t t-call="bemade_portal_kit.pk_switch">
                                                             <t t-set="sw_label" t-value="choice[1]"/>
                                                             <t t-set="sw_name" t-value="'kinds'"/>
                                                             <t t-set="sw_value" t-value="choice[0]"/>

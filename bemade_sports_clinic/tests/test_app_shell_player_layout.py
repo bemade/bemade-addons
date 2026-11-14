@@ -84,7 +84,7 @@ class TestAppShellPlayerLayout(PlayerInlineCommon):
         self.assertEqual(hero.get('data-pk-edit-card'), 'player-header')
         # Task 1736 (deliberate update): the pencil sits in the hero's top-bar
         # icon group (with the ★), no longer a direct child of the card.
-        self.assertEqual(len(hero.xpath('.//*[@data-sc-card-icons]/button[@data-pk-edit-toggle]')), 1)
+        self.assertEqual(len(hero.xpath('.//*[@data-pk-card-icons]/button[@data-pk-edit-toggle]')), 1)
         self.assertEqual(len(hero.xpath('.//button[@data-pk-edit-toggle]')), 1)
         read = hero.xpath('./*[@data-pk-edit-view="read"]')[0]
         edit = hero.xpath('./*[@data-pk-edit-view="edit"]')[0]

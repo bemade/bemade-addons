@@ -24,6 +24,8 @@ Acceptance criteria covered here:
 """
 from datetime import timedelta
 
+from lxml import html as lxml_html
+
 from odoo import fields
 from odoo.tests import tagged
 
@@ -130,4 +132,6 @@ class TestHomePictoFr1746(TestAppShellI18n1538):
         self._switch(True)
         self._login_tp()
         text = self._fr('/my/team?team_id=%s' % self.team_a.id)
-        self.assertIn('class="o_pk_home_picto" aria-label="Tableau de bord" title="Tableau de bord"', text)
+        # Task 5345: the kit layout writes the href after the class (a value).
+        picto = lxml_html.fromstring(text).xpath('//a[@class="o_pk_home_picto"]')[0]
+        self.assertEqual((picto.get('aria-label'), picto.get('title')), ('Tableau de bord', 'Tableau de bord'))

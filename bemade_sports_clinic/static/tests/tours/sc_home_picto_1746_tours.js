@@ -27,7 +27,7 @@ tours.add("sc_1746_phone_home_picto", {
     steps: () => [
         {
             content: "Player page (sub-page): back chevron, then the home picto, then the title",
-            trigger: '.o_pk_app[data-sc-top="0"] .o_pk_appbar a.o_pk_home_picto[href="/my/home"]',
+            trigger: '.o_pk_app[data-pk-top="0"] .o_pk_appbar a.o_pk_home_picto[href="/my/home"]',
             run() {
                 assert(visible(".o_pk_appbar a.o_pk_back"), "phone: back chevron hidden");
                 assert(visible(".o_pk_appbar a.o_pk_home_picto"), "phone: home picto hidden");
@@ -58,7 +58,7 @@ tours.add("sc_1746_phone_home_picto", {
         },
         {
             content: "The picto opened the dashboard (top level: logo, no back, no picto)",
-            trigger: '.o_pk_app[data-sc-top="1"] .o_pk_appbar a.o_pk_logo',
+            trigger: '.o_pk_app[data-pk-top="1"] .o_pk_appbar a.o_pk_logo',
             run() {
                 assert(window.location.pathname === "/my/home", window.location.href);
                 assert(!document.querySelector(".o_pk_appbar a.o_pk_home_picto"), "top level: picto shows");
@@ -76,7 +76,7 @@ tours.add("sc_1746_laptop_no_picto", {
     steps: () => [
         {
             content: "Laptop sub-page: back chevron + trail, the picto hidden (the rail's brand goes home)",
-            trigger: '.o_pk_app[data-sc-top="0"] .o_pk_appbar a.o_pk_back',
+            trigger: '.o_pk_app[data-pk-top="0"] .o_pk_appbar a.o_pk_back',
             run() {
                 assert(visible(".o_pk_appbar a.o_pk_back"), "laptop: back chevron hidden");
                 assert(visible("nav.o_pk_crumbs"), "laptop: trail hidden");

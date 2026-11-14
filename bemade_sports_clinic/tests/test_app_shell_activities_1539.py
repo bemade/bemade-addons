@@ -110,7 +110,7 @@ class TestAppShellActivities1539(AppShellCommon):
                            % self.act_team.id)[0]
         self.assertIn(str(self.coach.id), [str(o[0]) for o in json.loads(props)['options']])
         # Task 1607 (deliberate update): « + Ajouter » is in the list header.
-        add = tree.xpath('//div[contains(@class, "o_pk_list_header")]//a[@data-sc-action="activity.add"]/@href')
+        add = tree.xpath('//div[contains(@class, "o_pk_list_header")]//a[@data-pk-action="activity.add"]/@href')
         self.assertEqual(add, ['/my/activity/create?model=sports.team&res_id=%s&return_url=%s'
                                % (self.team_a.id, quote(url, safe=''))])
         resp = self.url_open('/my/activity/reassign', data={

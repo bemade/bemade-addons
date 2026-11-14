@@ -51,7 +51,7 @@ class AppShellCommon(PortalCovCommon):
     @staticmethod
     def _nav_keys(tree, container_class):
         return tree.xpath(
-            "//nav[contains(concat(' ', @class, ' '), ' %s ')]//a/@data-sc-nav-key"
+            "//nav[contains(concat(' ', @class, ' '), ' %s ')]//a/@data-pk-nav-key"
             % container_class)
 
     @staticmethod
@@ -126,13 +126,13 @@ class TestAppShellSwitch1538(AppShellCommon):
                 _text, tree = self._get('/my/home')
                 self.assertNotIn('bookings', self._nav_keys(tree, 'o_pk_rail_nav'))
                 _text, tree = self._get('/my/app/more')
-                self.assertFalse(tree.xpath('//a[@data-sc-nav-key="bookings"]'))
+                self.assertFalse(tree.xpath('//a[@data-pk-nav-key="bookings" or @data-sc-nav-key="bookings"]'))
             with patch.object(AppShellMixin, '_sc_booking_enabled', return_value=True):
                 _text, tree = self._get('/my/home')
                 self.assertIn('bookings', self._nav_keys(tree, 'o_pk_rail_nav'))
                 self.assertNotIn('bookings', self._nav_keys(tree, 'o_pk_tabs'))
                 _text, tree = self._get('/my/app/more')
-                self.assertTrue(tree.xpath('//a[@data-sc-nav-key="bookings"]'))
+                self.assertTrue(tree.xpath('//a[@data-pk-nav-key="bookings" or @data-sc-nav-key="bookings"]'))
 
     def test_no_website_or_portal_header_footer(self):
         # Legacy page carries the frontend header/footer ...

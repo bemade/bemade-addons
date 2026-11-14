@@ -8,7 +8,7 @@ Acceptance criteria:
   notes under « All » and « Internal », never under « External »; each one
   carries a « Follow-up note » chip (tone distinct from Internal / External),
   its author and its text, and counts as an internal entry
-  (``data-sc-scope="internal"``).
+  (``data-pk-scope="internal"``).
 * UC-2 A treatment note linked to ANOTHER injury, or to no injury, is absent.
 * UC-3 A coach never sees treatment notes, whatever ``?scope=`` says (the
   coach holds no treatment-note ACL: the controller never queries them).

@@ -68,7 +68,7 @@ document.addEventListener("click", (ev) => {
     if (!root || !root.contains(ev.target)) {
         return;
     }
-    const add = ev.target.closest('[data-sc-action="timesheet.add"][data-pk-sheet-open]');
+    const add = ev.target.closest('[data-pk-action="timesheet.add"][data-pk-sheet-open]');
     const edit = !add && ev.target.closest("[data-sc-ts-edit]");
     if (!add && !edit) {
         return;

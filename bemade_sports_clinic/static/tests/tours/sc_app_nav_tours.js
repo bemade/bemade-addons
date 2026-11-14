@@ -40,7 +40,7 @@ tours.add("sc_1579_back_came_from", {
     steps: () => [
         {
             content: "Filtered players list (top level: logo, no back)",
-            trigger: '.o_pk_app[data-sc-top="1"] [data-pk-section="players.list"] [data-sc-player-id] a.o_pk_link_row_main:contains("One")',
+            trigger: '.o_pk_app[data-pk-top="1"] [data-pk-section="players.list"] [data-sc-player-id] a.o_pk_link_row_main:contains("One")',
             run(helpers) {
                 reloadIfRestored();
                 return helpers.click();
@@ -49,7 +49,7 @@ tours.add("sc_1579_back_came_from", {
         },
         {
             content: "Player page: back's href is the declared parent (the players list)",
-            trigger: '.o_pk_app[data-sc-top="0"] a.o_pk_back[href$="/my/players"]',
+            trigger: '.o_pk_app[data-pk-top="0"] a.o_pk_back[href$="/my/players"]',
             run() {
                 phoneChrome();
                 document.querySelector("a.o_pk_back").click();
@@ -58,7 +58,7 @@ tours.add("sc_1579_back_came_from", {
         },
         {
             content: "Back returned to the FILTERED list we came from (history), not the href",
-            trigger: '.o_pk_app[data-sc-top="1"] [data-pk-section="players.list"]',
+            trigger: '.o_pk_app[data-pk-top="1"] [data-pk-section="players.list"]',
             run() {
                 assert(window.location.pathname === "/my/players", window.location.href);
                 assert(

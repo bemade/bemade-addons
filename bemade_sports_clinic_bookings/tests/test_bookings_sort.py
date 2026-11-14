@@ -57,11 +57,11 @@ class TestBookingsSort(BookingsShellCommon):
 
     @staticmethod
     def _sort_links(tree):
-        return {a.get('data-sc-sort'): a for a in tree.xpath('//*[@data-pk-section="bookings.sort"]//a[@data-sc-sort]')}
+        return {a.get('data-pk-sort'): a for a in tree.xpath('//*[@data-pk-section="bookings.sort"]//a[@data-pk-sort]')}
 
     @staticmethod
     def _active_sort(tree):
-        return tree.xpath('//*[@data-pk-section="bookings.sort"]//a[@aria-checked="true"]/@data-sc-sort')
+        return tree.xpath('//*[@data-pk-section="bookings.sort"]//a[@aria-checked="true"]/@data-pk-sort')
 
     @staticmethod
     def _segment_hrefs(tree):

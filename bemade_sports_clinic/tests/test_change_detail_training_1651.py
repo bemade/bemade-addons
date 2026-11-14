@@ -55,7 +55,7 @@ class TestChangeDetailTraining1651(AppShellCommon):
 
     def test_change_detail_in_french(self):
         self.env['res.lang']._activate_lang('fr_CA')
-        self.env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        self.env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if self.env['ir.module.module']._get('website').state == 'installed':
             fr = self.env['res.lang']._lang_get('fr_CA')
             for website in self.env['website'].sudo().search([]):

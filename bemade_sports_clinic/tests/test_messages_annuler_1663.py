@@ -35,7 +35,7 @@ class Messages1663Common(PlayerAdd1655Common):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):
@@ -196,14 +196,14 @@ class TestMessagesAnnuler1663(Messages1663Common):
         self.assertIn("Supprimer l'activité", sheet_text)
         self.assertIn('Supprimer cette activité ?', sheet_text)
         self.assertEqual(sheet.xpath('.//button[@type="submit"]')[0].text_content().strip(), 'Oui, supprimer')
-        buttons = tree.xpath('//button[@data-sc-action="activity.cancel"]')
+        buttons = tree.xpath('//button[@data-pk-action="activity.cancel"]')
         self.assertTrue(buttons)
         # Task 1736 (deliberate update): the red trash icon — its name.
         for button in buttons:
             self.assertEqual(button.get('aria-label'), 'Supprimer')
         self.assertNotIn("Annuler l'activité", text)
         _text, tree = self._page('/my/activity/%s' % self.act_player.id)
-        detail = tree.xpath('//button[@data-sc-action="activity.cancel"]')
+        detail = tree.xpath('//button[@data-pk-action="activity.cancel"]')
         self.assertEqual([b.get('aria-label') for b in detail], ['Supprimer'])
         resp = self.url_open('/my/activity/cancel', data={
             'csrf_token': self._csrf(), 'activity_id': self.act_team.id,

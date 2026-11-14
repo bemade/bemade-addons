@@ -1209,7 +1209,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         badges = {'activities': self._sc_activity_tab_badge(values['player_activities'])}
         # Task 1647: a short label on a phone (« Docs »).
         shorts = {'documents': env._("Docs")}
-        sc_tabs = [(key, label, '%s&tab=%s' % (base_url, key), aliases.get(key, ''),
+        player_tabs = [(key, label, '%s&tab=%s' % (base_url, key), aliases.get(key, ''),
                     badges.get(key), shorts.get(key))
                    for key, label in tabs]
 
@@ -1251,7 +1251,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # first (the tags widget's confirmRemove).
             'sc_team_confirm': self._sc_team_confirm_remove(player),
             'sc_contact_add_data': contact_data or {},
-            'sc_player_tabs': sc_tabs,
+            'sc_player_tabs': player_tabs,
             'sc_player_active_tab': active_tab,
             'sc_player_url': base_url,
             'sc_contacts_return': '%s&tab=info' % base_url,
@@ -1290,7 +1290,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 values['default_activity_type'].id if values['default_activity_type'] else False),
             'sc_activities_return': '%s&tab=activities' % base_url,
             'today_date': fields.Date.context_today(player),
-            'sc_flash': self._sc_player_flash(kw),
+            'pk_flash': self._sc_player_flash(kw),
         })
 
     @staticmethod

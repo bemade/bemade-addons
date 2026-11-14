@@ -105,11 +105,11 @@ class TestAppShellPlayersList1539(PlayersCommon1539):
         self.assertIn('/my/player?player_id=%s' % self.player.id, hrefs)
         self.assertIn('#12', text)
         # Coach: no « Créer un joueur ».
-        self.assertFalse(tree.xpath('//*[@data-sc-action="players.create"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-action="players.create"]'))
         self._login_tp()
         _text, tree = self._get('/my/players')
         # Task 1607 (deliberate update): « + Ajouter » is in the list header.
-        action = tree.xpath('//div[contains(@class, "o_pk_list_header")]//button[@data-sc-action="players.create"]')
+        action = tree.xpath('//div[contains(@class, "o_pk_list_header")]//button[@data-pk-action="players.create"]')
         # Task 1655: it opens the inline create panel.
         self.assertEqual(action[0].get('aria-controls'), 'sc_player_add')
 

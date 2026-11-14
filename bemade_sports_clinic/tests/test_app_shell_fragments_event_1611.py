@@ -99,7 +99,7 @@ class TestFragmentsEvent1611(FragmentsCommon):
         self.assertNotIn('PC TP', answer['fragments'][self._ekey('read')])
         self._saved(self.event, 'assigned_staff_ids', str(self.tp.id))
         answer = self._fragments(self._url(), [self._ekey('ts-head'), self._ekey('ts-add'), self._ekey('read')])
-        self.assertIn('data-sc-action="timesheet.add"', answer['fragments'][self._ekey('ts-head')])
+        self.assertIn('data-pk-action="timesheet.add"', answer['fragments'][self._ekey('ts-head')])
         self.assertIn('sc_ts_add_sheet', answer['fragments'][self._ekey('ts-add')])
         self.assertIn('PC TP', answer['fragments'][self._ekey('read')])
         self.assertFragmentMatchesPage(self._url(), self._ekey('ts-add'))

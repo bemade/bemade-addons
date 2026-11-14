@@ -981,7 +981,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                                    for key in CLINIC_TIME_FILTERS],
             'sc_clinic_mine_url': _url(mine='0' if mine else '1'),
             'sc_clinic_rows': rows,
-            'sc_flash': {
+            'pk_flash': {
                 'success': {
                     'patient_removed': env._("Patient removed from the clinic."),
                 }.get(values.get('success')),
@@ -1161,7 +1161,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # kiosk sign-in may appear on the NEXT poll.
             'sc_resolve_teams': self._creatable_teams(event),
             'sc_resolve_groups': self._addable_patients(event),
-            'sc_flash': self._sc_clinic_flash(kw),
+            'pk_flash': self._sc_clinic_flash(kw),
             **self._sc_injury_card_options(),
         }
 

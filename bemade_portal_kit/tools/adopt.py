@@ -81,9 +81,26 @@ ADOPTED_VIEWS = (
     (CLINIC, 'sc_page_tabs', 'pk_page_tabs'),
     # Task 5382 (kit P4c3): the autosave field.
     (CLINIC, 'sc_field_autosave', 'pk_field_autosave'),
+    # Task 5345 (kit P3c2): the user menu popup and the shell components.
+    (CLINIC, 'sc_user_menu_popup', 'pk_user_menu_popup'),
+    (CLINIC, 'sc_list_header', 'pk_list_header'),
+    (CLINIC, 'sc_card_icons', 'pk_card_icons'),
+    (CLINIC, 'sc_history_entry', 'pk_history_entry'),
+    (CLINIC, 'sc_history_list', 'pk_history_list'),
+    (CLINIC, 'sc_banner', 'pk_banner'),
+    (CLINIC, 'sc_flash_banners', 'pk_flash_banners'),
+    (CLINIC, 'sc_switch', 'pk_switch'),
+    (CLINIC, 'sc_confirm_sheet', 'pk_confirm_sheet'),
+    (CLINIC, 'sc_link_row', 'pk_link_row'),
+    (CLINIC, 'sc_row_links', 'pk_row_links'),
+    (CLINIC, 'sc_entity_row', 'pk_entity_row'),
+    (CLINIC, 'sc_field_static', 'pk_field_static'),
+    (CLINIC, 'sc_return_overdue_flag', 'pk_overdue_flag'),
 )
 
-# The kit's data files that hold adopted views (loaded by load_kit_views).
+# The kit's data files that hold adopted views and the views a consumer
+# calls (loaded by load_kit_views; task 5345: pk_layout.xml holds the app
+# layout, pk_app_layout, that the consumer's layout calls).
 KIT_VIEW_FILES = (
     'views/pk_layout.xml',
     'views/pk_components.xml',

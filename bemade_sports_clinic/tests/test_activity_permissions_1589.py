@@ -368,8 +368,8 @@ class TestActivityPermissions1589(ActivityPermissionsCommon):
         # Task 1736 r1 (deliberate update): « Reschedule » / « Reassign » are
         # the pencil's in-place edit; « Done » is the bar's only action.
         self.assertEqual(actions, {'activity.complete'})
-        self.assertTrue(tree.xpath('//*[@data-pk-edit-card="activity"]//*[@data-sc-card-icons]'
-                                   '//button[@data-sc-action="activity.cancel"]'))
+        self.assertTrue(tree.xpath('//*[@data-pk-edit-card="activity"]//*[@data-pk-card-icons]'
+                                   '//button[@data-pk-action="activity.cancel"]'))
         self.assertTrue(tree.xpath('//*[@data-pk-edit-card="activity"]'))
         # Someone who may open but not act (forced) gets no bar / pencil / row actions.
         with patch.object(AccessControlMixin, '_activity_act_access', return_value=False), \
@@ -379,7 +379,7 @@ class TestActivityPermissions1589(ActivityPermissionsCommon):
             self.assertFalse(tree.xpath('//*[@data-pk-edit-card="activity"]'))
             _text, tree = self._get('/my/player?player_id=%s&tab=activities' % self.player.id)
             self.assertTrue(self._row_ids(tree))
-            self.assertFalse(tree.xpath('//*[@data-sc-activity-row]//*[@data-sc-action]'))
+            self.assertFalse(tree.xpath('//*[@data-sc-activity-row]//*[@data-sc-action or @data-pk-action]'))
         _text, tree = self._get('/my/player?player_id=%s&tab=activities' % self.player.id)
         self.assertTrue(tree.xpath(
             '//*[@data-sc-activity-row="%s"]//*[@data-sc-action="activity.complete"]'
@@ -439,7 +439,7 @@ class TestActivityPermissions1589Fr(ActivityPermissionsCommon):
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

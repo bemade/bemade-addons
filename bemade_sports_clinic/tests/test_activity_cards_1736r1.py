@@ -82,7 +82,7 @@ class ActivityCards1736r1Common(ActivityPermissionsCommon):
 
     @staticmethod
     def _icons(card):
-        group = card.xpath('.//*[@data-sc-card-icons]')[0]
+        group = card.xpath('.//*[@data-pk-card-icons]')[0]
         kinds = []
         for el in group.iter('button', 'a'):
             classes = (el.get('class') or '').split()
@@ -110,7 +110,7 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         self.assertTrue(tree.xpath('//dialog[@id="sc_activity_cancel_sheet"]'))
         pencil = card.xpath('.//button[contains(@class, "o_pk_card_edit")]')[0]
         self.assertEqual(pencil.get('data-pk-edit-toggle'), '1')
-        self.assertEqual(pencil.get('data-sc-action'), 'activity.edit')
+        self.assertEqual(pencil.get('data-pk-action'), 'activity.edit')
         # The edit view: hidden, its fields inside the inert lazy template.
         edit = card.xpath('.//*[@data-pk-edit-view="edit"]')[0]
         self.assertEqual(edit.get('hidden'), 'hidden')
@@ -297,13 +297,13 @@ class TestActivityCards1736r1(ActivityCards1736r1Common):
         self._login('tp')
         _text, tree = self._get('/my/event/%s' % self.event.id)
         hero = tree.xpath('//section[@data-pk-section="event.hero"]')[0]
-        self.assertFalse(hero.xpath('.//*[@data-sc-card-icons]//*[@data-sc-action="event.cancel"]'))
+        self.assertFalse(hero.xpath('.//*[@data-pk-card-icons]//*[@data-sc-action="event.cancel"]'))
         self.assertFalse(hero.xpath('.//*[contains(@class, "o_pk_card_archive")]'))
         cancel = hero.xpath('.//*[contains(@class, "o_pk_actions_row")]/button[@data-sc-action="event.cancel"]')
         self.assertEqual(len(cancel), 1)
         self.assertIn('o_pk_btn_danger', cancel[0].get('class'))
         self.assertEqual(cancel[0].get('data-pk-sheet-open'), 'sc_event_cancel_sheet')
-        self.assertTrue(hero.xpath('.//*[@data-sc-card-icons]//a[contains(@class, "o_sc_card_clock")]'))
+        self.assertTrue(hero.xpath('.//*[@data-pk-card-icons]//a[contains(@class, "o_pk_card_clock")]'))
 
 
 @tagged('post_install', '-at_install')
@@ -315,7 +315,7 @@ class TestActivityCards1736r1I18n(ActivityCards1736r1Common):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

@@ -138,6 +138,37 @@ kit under ``pk`` names:
   ``tools/field_props.py``) and the 428 payload key ``confirm_identity``
   (``confirm``).
 
+Task 5345 (P3c2) retires the app layout's, the user menu's and the shell
+components' clinic names, moved to the kit under ``pk`` names:
+
+* the attributes ``data-sc-hide-done``, ``-top``, ``-pref``,
+  ``-theme-switch``, ``-user-menu``, ``-user-menu-head``; the components'
+  ``-sort``, ``-card-icons``, ``-card-archive``, ``-card-trash``,
+  ``-history-state``, ``-scope``, ``-overdue``, ``-switch-locked``,
+  ``-switch-reason``, ``-confirm-submit``, ``-title-split``,
+  ``-title-link``, ``-row-links``, ``-row-link``, ``-row-link-plain``.
+  ``data-sc-nav-key``, ``-action``, ``-activity-clock`` and
+  ``-activity-overdue`` keep other meanings in the consumer (its « More »
+  page rows, its own buttons, its row clock chip): only their moved
+  meaning is renamed, they are not retired;
+* the classes ``o_sc_card_clock`` (``_overdue``), ``o_sc_overdue``
+  (``_sep``, ``_flag``) and ``o_sc_switch_reason``;
+* the templates ``sc_user_menu_popup``, ``sc_list_header``,
+  ``sc_card_icons``, ``sc_history_entry``, ``sc_history_list``,
+  ``sc_banner``, ``sc_flash_banners``, ``sc_switch``, ``sc_confirm_sheet``,
+  ``sc_link_row``, ``sc_row_links``, ``sc_entity_row``, ``sc_field_static``
+  and ``sc_return_overdue_flag`` (``ADOPTED_VIEWS``);
+* the layout values the kit reads under ``pk`` names now (``sc_title``,
+  ``sc_active_nav``, ``sc_page_key``, ``sc_content_class``, ``sc_tabs``,
+  ``sc_rail``, ``sc_parent_url``, ``sc_crumbs``, ``sc_context``,
+  ``sc_current_url``, ``sc_theme_choice``, ``sc_show_done``,
+  ``sc_user_initials`` / ``_name`` / ``_role``, ``sc_db``, ``sc_uid``,
+  ``sc_menu_id``, ``sc_edit_done_label``, ``sc_flash``) and the ids
+  ``sc_content`` and ``sc_user_menu_bar`` (``pk_content``,
+  ``pk_user_menu_bar``);
+* the consumer's ``sc_app_shell.js`` (the kit's ``pk_theme_pref.js``) and
+  P4c3's one-release alias of the component key (gone, no exception).
+
 Dataset destructuring (``const { scModel, scField } = el.dataset``) is
 matched too.
 
@@ -195,6 +226,11 @@ ATTRIBUTES = (
     'autosave', 'restored', 'value', 'tags-open', 'tags-index',
     'tags-typed-error', 'tags-group-notice', 'replace', 'org-confirm-box',
     'org-cancel', 'org-confirm', 'picker', 'picker-key', 'teams', 'player',
+    # Task 5345 (P3c2): the layout, the user menu and the shell components.
+    'hide-done', 'top', 'pref', 'theme-switch', 'user-menu', 'user-menu-head',
+    'sort', 'card-icons', 'card-archive', 'card-trash', 'history-state',
+    'scope', 'overdue', 'switch-locked', 'switch-reason', 'confirm-submit',
+    'title-split', 'title-link', 'row-links', 'row-link', 'row-link-plain',
 )
 EVENTS = (
     'fragments', 'form-reset', 'create-success', 'lazy-loaded',
@@ -221,6 +257,8 @@ STORAGE_KEYS = (
     'sc_notify_shown:v1',
     # Task 5382 (P4c3): the component's key and template.
     'bemade_sports_clinic.sc_autosave_field', 'bemade_sports_clinic.ScAutosaveField',
+    # Task 5345 (P3c2): the theme preference script.
+    'bemade_sports_clinic/static/src/js/sc_app_shell.js',
 )
 # Task 5199 (P4a): the save engine's and the refresh's Python / QWeb names,
 # as whole words.
@@ -240,6 +278,13 @@ SAVE_NAMES = (
     'sc_field_props', 'sc_draft_props', 'sc_form_props', '_sc_field_props',
     '_sc_draft_props', '_sc_form_props', '_sc_options', 'ScAutosaveField',
     'confirm_identity',
+    # Task 5345 (P3c2): the layout values the kit reads under pk names, the
+    # layout's ids.
+    'sc_title', 'sc_active_nav', 'sc_page_key', 'sc_content_class', 'sc_tabs',
+    'sc_rail', 'sc_parent_url', 'sc_crumbs', 'sc_context', 'sc_current_url',
+    'sc_theme_choice', 'sc_show_done', 'sc_user_initials', 'sc_user_name',
+    'sc_user_role', 'sc_db', 'sc_uid', 'sc_menu_id', 'sc_edit_done_label',
+    'sc_flash', 'sc_content', 'sc_user_menu_bar',
 )
 
 # Task 5344 (P3b1): the generic classes, as the name after ``o_sc_``. A name
@@ -324,6 +369,9 @@ GENERIC_CLASSES = (
     'identity_banner', 'identity_change', 'identity_confirm',
     'identity_cancel', 'replace_current', 'replace_current_text',
     'replace_caption', 'replace_new_head', 'replace_reuse', 'replace_hint',
+    # Task 5345 (P3c2): the card clock, the overdue flag, the switch reason.
+    'card_clock', 'card_clock_overdue', 'overdue', 'overdue_sep',
+    'overdue_flag', 'switch_reason',
 )
 # Semantic and scale slots of the style tokens (the palette stays ``--sc-``).
 TOKEN_SLOTS = (
@@ -374,11 +422,13 @@ ALLOWED = {
     (KIT, 'static/tests/pk_sheets.test.js'): {'data-sc-sheet-open'},
     (KIT, 'static/tests/pk_tabs.test.js'): {'data-sc-tabs', 'data-sc-tab', 'data-sc-tab-panel'},
     (KIT, 'static/tests/pk_shell.test.js'): {'data-sc-draft-clear'},
-    # Task 5382: the consumer's one-release alias of the component's key;
-    # the clinic's migration that removes the old attributes from the
-    # translations names them.
-    ('bemade_sports_clinic', 'static/src/js/sc_autosave_field.js'): {'bemade_sports_clinic.sc_autosave_field'},
+    # Task 5382: the clinic's migration that removes the old attributes from
+    # the translations names them.
     ('bemade_sports_clinic', 'migrations/19.0.1.144.0/post-migrate.py'): None,
+    # Task 5345: the same for P3c2's renamed attributes; the theme
+    # preference's hoot test checks that the old markers are not read.
+    ('bemade_sports_clinic', 'migrations/19.0.1.145.0/post-migrate.py'): None,
+    (KIT, 'static/tests/pk_theme_pref.test.js'): {'data-sc-pref', 'data-sc-theme-switch'},
 }
 
 
@@ -495,7 +545,7 @@ class TestPkRetiredNames(TransactionCase):
 
     def test_matcher_classes_tokens_theme(self):
         """Task 5344 (P3b1): exact tokens, the clinic names left alone."""
-        self.assertEqual(retired_names('<div class="o_sc_card o_sc_card_clock">'), ['o_sc_card'])
+        self.assertEqual(retired_names('<div class="o_sc_card o_sc_card_med">'), ['o_sc_card'])
         self.assertEqual(retired_names('.o_sc_app .o_sc_appbar_title:hover {'), ['o_sc_app', 'o_sc_appbar_title'])
         self.assertEqual(retired_names('<span class="o_sc_chip o_sc_chip_mauve">'), ['o_sc_chip', 'o_sc_chip_mauve'])
         self.assertEqual(retired_names('<span class="o_sc_chip_follow o_sc_row_contacts">'), [])
@@ -515,7 +565,8 @@ class TestPkRetiredNames(TransactionCase):
                           'var(--sc-charcoal) var(--sc-grey)'), [])
         self.assertEqual(retired_names('<div data-sc-theme="dark">'), ['data-sc-theme'])
         self.assertEqual(retired_names('<div t-att-data-sc-theme="t">'), ['data-sc-theme'])
-        self.assertEqual(retired_names('<input data-sc-theme-switch="1"/>'), [])
+        # Task 5345 (P3c2): the theme switch is the kit's now.
+        self.assertEqual(retired_names('<input data-sc-theme-switch="1"/>'), ['data-sc-theme-switch'])
         self.assertEqual(retired_names('@mixin sc-theme-dark {'), [])
         self.assertEqual(
             retired_names('<div class="o_pk_app o_pk_chip_secondary" data-pk-theme="light" '
@@ -525,7 +576,10 @@ class TestPkRetiredNames(TransactionCase):
         """Task 5369 (P3c1): the adopted templates' old names, exact."""
         self.assertEqual(retired_names('<t t-call="bemade_sports_clinic.sc_icon">'), ['bemade_sports_clinic.sc_icon'])
         self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_card"'), ['bemade_sports_clinic.sc_card'])
-        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_card_icons"'), [])
+        # Task 5345 (P3c2): the card icons are the kit's now.
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_card_icons"'),
+                         ['bemade_sports_clinic.sc_card_icons'])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_activity_clock"'), [])
         self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_empty_state_x"'), [])
         self.assertEqual(retired_names("env.ref('bemade_sports_clinic.sc_frontend_layout')"),
                          ['bemade_sports_clinic.sc_frontend_layout'])
@@ -611,7 +665,8 @@ class TestPkRetiredNames(TransactionCase):
         """Task 5381 (P4c2): longest names first, every form."""
         self.assertEqual(retired_names('<button data-sc-edit-toggle="1" data-sc-edit-toggle-done="1">'),
                          ['data-sc-edit-toggle', 'data-sc-edit-toggle-done'])
-        self.assertEqual(retired_names('<div data-sc-edit-card-body="1" data-sc-card-icons="1">'), [])
+        self.assertEqual(retired_names('<div data-sc-edit-card-body="1" data-sc-card-icons="1">'),
+                         ['data-sc-card-icons'])  # task 5345: the card icons are the kit's
         self.assertEqual(retired_names('[data-sc-edit-open]:not([data-sc-edit-open=""]) [data-sc-edit-open-on-load]'),
                          ['data-sc-edit-open', 'data-sc-edit-open', 'data-sc-edit-open-on-load'])
         self.assertEqual(retired_names('<nav data-sc-tabs="1"><a data-sc-tab="x" data-sc-tab-aliases="y">'),
@@ -674,6 +729,33 @@ class TestPkRetiredNames(TransactionCase):
         self.assertEqual(
             retired_names('data-pk-autosave-field data-pk-autosave-state pk_field_props o_pk_confirm_banner '
                           'bemade_portal_kit.pk_autosave_field data-pk-picker data-pk-meta-group'), [])
+
+    def test_matcher_layout_components(self):
+        """Task 5345 (P3c2): the layout's and the components' names, their
+        moved meanings only."""
+        self.assertEqual(
+            retired_names('<div t-att-data-sc-hide-done="h" t-att-data-sc-top="t" data-sc-user-menu="bar">'),
+            ['data-sc-hide-done', 'data-sc-top', 'data-sc-user-menu'])
+        self.assertEqual(retired_names('<form data-sc-pref="1"><div data-sc-user-menu-head="1">'),
+                         ['data-sc-pref', 'data-sc-user-menu-head'])
+        self.assertEqual(retired_names('<a data-sc-sort="name" data-sc-row-link="m" data-sc-row-link-plain="m">'),
+                         ['data-sc-sort', 'data-sc-row-link', 'data-sc-row-link-plain'])
+        self.assertEqual(retired_names('li.dataset.scScope; label.dataset.scSwitchLocked'),
+                         ['dataset.scScope', 'dataset.scSwitchLocked'])
+        self.assertEqual(retired_names('class="o_sc_card_clock o_sc_card_clock_overdue o_sc_overdue_badge"'),
+                         ['o_sc_card_clock', 'o_sc_card_clock_overdue'])
+        self.assertEqual(retired_names('<span class="o_sc_overdue"><span class="o_sc_overdue_flag" data-sc-overdue="1">'),
+                         ['data-sc-overdue', 'o_sc_overdue', 'o_sc_overdue_flag'])
+        # Other meanings stay: the consumer's own actions, nav rows, row clock.
+        self.assertEqual(retired_names('<a data-sc-action="x" data-sc-nav-key="k" data-sc-activity-clock="1" '
+                                       'data-sc-activity-clock-bar="1" data-sc-sort-key="a">'), [])
+        self.assertEqual(retired_names("t-set=\"sc_title\" sc_active_nav main#sc_content 'sc_flash': f"),
+                         ['sc_title', 'sc_active_nav', 'sc_content', 'sc_flash'])
+        self.assertEqual(retired_names('sc_title_x sc_flash_banners pk_title pk_flash sc_theme'), [])
+        self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_return_overdue_flag"'),
+                         ['bemade_sports_clinic.sc_return_overdue_flag'])
+        self.assertEqual(
+            retired_names('data-pk-hide-done data-pk-top data-pk-sort o_pk_card_clock o_pk_overdue_flag pk_content'), [])
 
     def test_no_retired_name_left(self):
         hits = []

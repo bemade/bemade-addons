@@ -134,7 +134,7 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         # Task 1676: no bottom « Done ». Task 1736 (deliberate update):
         # « Delete injury » is the top bar's trash, the only delete action.
         self.assertFalse(card.xpath('.//div[contains(@class, "o_sc_injury_card_actions")]'))
-        actions = card.xpath('./summary//button[contains(@class, "o_pk_card_trash")]/@data-sc-action')
+        actions = card.xpath('./summary//button[contains(@class, "o_pk_card_trash")]/@data-pk-action')
         self.assertEqual(actions, ['injury.delete'])
         sheet = card.xpath('.//dialog[@id="sc_delete_injury_sheet_%s"]//form' % self.injury.id)[0]
         self.assertEqual(sheet.get('action'), '/my/injury/delete')
@@ -206,9 +206,9 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         self.assertEqual(len(docs.xpath('.//*[contains(@class, "o_sc_doc_row")]')), 1)
         self.assertTrue(docs.xpath('.//a[@data-sc-action="documents.download"]'))
         for action in ('injury.documents.add', 'documents.delete', 'documents.edit'):
-            self.assertFalse(docs.xpath('.//*[@data-sc-action="%s"]' % action), action)
+            self.assertFalse(docs.xpath('.//*[@data-pk-action="%s"]' % action), action)
         self.assertFalse(docs.xpath('.//form'))
-        self.assertFalse(card.xpath('.//*[@data-sc-action="injury.delete"]'))
+        self.assertFalse(card.xpath('.//*[@data-pk-action="injury.delete"]'))
         # Task 1676: no bottom « Done » (and a coach cannot delete): no foot.
         self.assertFalse(card.xpath('.//*[@data-sc-action="injury.done"]'))
         self.assertFalse(card.xpath('.//*[contains(@class, "o_sc_injury_card_actions")]'))
@@ -261,11 +261,11 @@ class TestInjuryCard1616(InjuryCard1616Mixin, FragmentsMixin, AppShellCommon):
         card_url = '%s&injury=%s#injury-%s' % (self._player_url(), self.injury.id, self.injury.id)
         # Task 1736 (deliberate update): the document's archive icon posts its own
         # inline form (no confirmation sheet: an undo toast).
-        delete = docs.xpath('.//form[.//button[@data-sc-action="documents.delete"]][contains(@action, "/delete/%s")]' % doc.id)[0]
+        delete = docs.xpath('.//form[.//button[@data-pk-action="documents.delete"]][contains(@action, "/delete/%s")]' % doc.id)[0]
         self.assertEqual(delete.get('action'), '/my/injury/document/delete/%s' % doc.id)
         self.assertEqual(delete.xpath('.//input[@name="return_url"]/@value'), [card_url])
         # « Add »: a sheet with ONE multi-file form coming back to the card.
-        self.assertTrue(docs.xpath('.//button[@data-sc-action="injury.documents.add"]'
+        self.assertTrue(docs.xpath('.//button[@data-pk-action="injury.documents.add"]'
                                    '[@data-pk-sheet-open="sc_injury_%s_documents_add"]' % self.injury.id))
         form = docs.xpath('.//dialog[@id="sc_injury_%s_documents_add"]//form' % self.injury.id)[0]
         self.assertEqual(form.get('action'), '/my/patient/document/upload')
@@ -475,7 +475,7 @@ class TestInjuryCardDossier1616(InjuryCard1616Mixin, ClinicDossier1590Common):
         self.assertEqual(form.xpath('.//input[@name="return_url"]/@value'), [card_url])
         # Task 1736 (deliberate update): the document's archive icon posts its own
         # inline form (no confirmation sheet: an undo toast).
-        delete = card.xpath('.//form[.//button[@data-sc-action="documents.delete"]][contains(@action, "/delete/%s")]' % doc.id)[0]
+        delete = card.xpath('.//form[.//button[@data-pk-action="documents.delete"]][contains(@action, "/delete/%s")]' % doc.id)[0]
         self.assertEqual(delete.xpath('.//input[@name="return_url"]/@value'), [card_url])
         sheet = card.xpath('.//dialog[@id="sc_delete_injury_sheet_%s"]//form' % self.injury.id)[0]
         self.assertEqual(sheet.xpath('.//input[@name="return_url"]/@value'), [self._dossier_url()])

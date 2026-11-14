@@ -60,19 +60,19 @@ tours.add("sc_1736r1_activity_card", {
     steps: () => [
         {
             content: "The card: trash hidden, the pencil rightmost, no field mounted yet",
-            trigger: `${CARD} button[data-sc-action="activity.edit"]`,
+            trigger: `${CARD} button[data-pk-action="activity.edit"]`,
             run() {
                 const el = card();
                 assert(el, "the activity's card");
                 const trash = el.querySelector("button.o_pk_card_trash");
                 assert(trash && !shown(trash), "the trash shows before editing");
-                const icons = [...el.querySelector("[data-sc-card-icons]").querySelectorAll("button")];
+                const icons = [...el.querySelector("[data-pk-card-icons]").querySelectorAll("button")];
                 assert(icons[icons.length - 1].dataset.pkEditToggle === "1", "the pencil is not rightmost");
                 assert(!el.querySelector("owl-component"), "fields mounted before the pencil");
                 assert(!el.querySelector('[data-sc-action="activity.reschedule"], [data-sc-action="activity.reassign"]'),
                     "Reschedule / Reassign still on the card");
                 noHorizontalScroll();
-                el.querySelector('button[data-sc-action="activity.edit"]').click();
+                el.querySelector('button[data-pk-action="activity.edit"]').click();
             },
         },
         {
@@ -122,7 +122,7 @@ tours.add("sc_1736r1_activity_card", {
                 const el = card();
                 assert(!el.dataset.pkEditOpen, "still editing");
                 assert(!shown(el.querySelector("button.o_pk_card_trash")), "the trash still shows");
-                el.querySelector('button[data-sc-action="activity.edit"]').click();
+                el.querySelector('button[data-pk-action="activity.edit"]').click();
             },
         },
         {

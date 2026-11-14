@@ -106,7 +106,7 @@
                             <input type="date" id="sc_ev_to" name="date_to" class="o_pk_input" t-att-value="date_to or ''"/>
                         </div>
                     </t>
-                    <t t-call="bemade_sports_clinic.sc_switch">
+                    <t t-call="bemade_portal_kit.pk_switch">
                         <t t-set="sw_name" t-value="'show_cancelled'"/>
                         <t t-set="sw_value" t-value="'1'"/>
                         <t t-set="sw_checked" t-value="show_cancelled"/>
@@ -143,15 +143,15 @@
     <!-- /my/events (shell) -->
     <template id="sc_app_events" name="Sports Clinic App: events">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="sc_nav_labels['events']"/>
-            <t t-set="sc_active_nav" t-value="'events'"/>
+            <t t-set="pk_title" t-value="sc_nav_labels['events']"/>
+            <t t-set="pk_active_nav" t-value="'events'"/>
             <t t-call="bemade_sports_clinic.sc_event_segments">
                 <t t-set="active" t-value="sc_event_segment"/>
             </t>
             <t t-call="bemade_sports_clinic.sc_event_filter_bar"/>
             <!-- Task 1607: « + Ajouter » (a new event, on the list's
                  organization filter — task 1597) and the sort, above the list. -->
-            <t t-call="bemade_sports_clinic.sc_list_header">
+            <t t-call="bemade_portal_kit.pk_list_header">
                 <t t-set="header_section" t-value="'events.header'"/>
                 <t t-if="can_edit">
                     <t t-set="add_label">New event</t>
@@ -197,7 +197,7 @@
     <template id="sc_event_list_row" name="App shell: event list row">
         <!-- Task 1592: a link row (sc_link_row) so the activity clock chip
              is its own link; data-sc-event-id on the main link. -->
-        <t t-call="bemade_sports_clinic.sc_link_row">
+        <t t-call="bemade_portal_kit.pk_link_row">
             <t t-set="href" t-value="row['url']"/>
             <t t-set="lead_icon" t-value="'calendar'"/>
             <t t-set="title" t-value="row['title']"/>
@@ -226,15 +226,15 @@
     <!-- /my/events/calendar (shell) -->
     <template id="sc_app_events_calendar" name="Sports Clinic App: events calendar">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="sc_nav_labels['events']"/>
-            <t t-set="sc_active_nav" t-value="'events'"/>
+            <t t-set="pk_title" t-value="sc_nav_labels['events']"/>
+            <t t-set="pk_active_nav" t-value="'events'"/>
             <t t-call="bemade_sports_clinic.sc_event_segments">
                 <t t-set="active" t-value="'calendar'"/>
             </t>
             <t t-call="bemade_sports_clinic.sc_event_filter_bar"/>
             <!-- Task 1607: « + Ajouter » above the calendar (no sort: the
                  calendar orders by time). -->
-            <t t-call="bemade_sports_clinic.sc_list_header">
+            <t t-call="bemade_portal_kit.pk_list_header">
                 <t t-set="header_section" t-value="'events.header'"/>
                 <t t-if="can_edit">
                     <t t-set="add_label">New event</t>
@@ -274,7 +274,7 @@
                      state chip, then archive (« delete » only archives a
                      timesheet: an undo toast, no confirmation; its form is
                      in sc_timesheet_sheets) and the pencil. -->
-                <t t-call="bemade_sports_clinic.sc_card_icons">
+                <t t-call="bemade_portal_kit.pk_card_icons">
                     <t t-set="ci_archive" t-value="row['editable'] and {'form': 'sc_ts_archive_%s' % row['id'], 'key': 'timesheet.delete'}"/>
                     <t t-set="ci_editable" t-value="row['editable']"/>
                     <t t-set="ci_edit_key" t-value="'timesheet.edit'"/>
@@ -387,13 +387,13 @@
     <!-- /my/event/<id> (shell) -->
     <template id="sc_app_event" name="Sports Clinic App: event">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="event.name"/>
+            <t t-set="pk_title" t-value="event.name"/>
             <!-- Task 1611: a save of the event refreshes the title, the crumb
                  and the timesheets section's « + Ajouter » (assigned staff,
                  task 1607: in the section's list header) in place. -->
-            <t t-set="sc_page_key" t-value="'sports.event:%s' % event.id"/>
-            <t t-set="sc_active_nav" t-value="'events'"/>
-            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <t t-set="pk_page_key" t-value="'sports.event:%s' % event.id"/>
+            <t t-set="pk_active_nav" t-value="'events'"/>
+            <t t-call="bemade_portal_kit.pk_flash_banners"/>
 
             <!-- Owner review 2026-10-11: the pencil edit paradigm — a therapist
                  edits the event in place (was a separate edit page). -->
@@ -410,7 +410,7 @@
                          activities), the pencil. Task 1736 r1 (owner
                          2026-11-01): cancelling an event is NOT an archive —
                          « Cancel Event » is its own red action again (below). -->
-                    <t t-call="bemade_sports_clinic.sc_card_icons">
+                    <t t-call="bemade_portal_kit.pk_card_icons">
                         <t t-set="ci_clock" t-value="sc_can_activities and dict(sc_event_clock or {}, always=True, url='/my/event/activities?event_id=%s' % event.id, key='event.activities')"/>
                         <t t-set="ci_editable" t-value="sc_event_editable"/>
                         <t t-set="ci_edit_key" t-value="'event.edit'"/>
@@ -512,13 +512,13 @@
                     </t>
                 </t></div>
                 <div t-att-data-pk-fragment="pk_fragment_key(event, 'missing')"><t t-if="missing_count and show_all_timesheets">
-                    <t t-call="bemade_sports_clinic.sc_banner">
+                    <t t-call="bemade_portal_kit.pk_banner">
                         <t t-set="tone" t-value="'warn'"/>
                         <span data-sc-missing-timesheets="1"><strong>Missing timesheets:</strong> <t t-out="missing_names"/></span>
                     </t>
                 </t></div>
                 <div t-att-data-pk-fragment="pk_fragment_key(event, 'ts-head')"><t t-if="can_view_timesheets">
-                    <t t-call="bemade_sports_clinic.sc_list_header">
+                    <t t-call="bemade_portal_kit.pk_list_header">
                         <t t-set="header_section" t-value="'event.timesheets.header'"/>
                         <t t-if="can_add_timesheet">
                             <t t-set="add_label">Add My Timesheet</t>
@@ -569,7 +569,7 @@
                 <form t-attf-action="/my/event/#{event.id}/timesheet/add" method="post" class="o_pk_form" data-sc-form="timesheet.add" data-pk-guard="1" data-pk-guard-mode="fetch" data-pk-guard-rules='[{"type":"after","field":"coverage_end","than":"coverage_start","key":"coverage"},{"type":"after","field":"travel_end","than":"travel_start","key":"travel"}]'>
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <input type="hidden" name="return_url" t-att-value="return_url or ''"/>
-                    <t t-call="bemade_sports_clinic.sc_banner">
+                    <t t-call="bemade_portal_kit.pk_banner">
                         <span>Did you use personal material for this event? Report it so the client can be re-invoiced.</span>
                         <a t-att-href="material_report_mailto">Report material used</a>
                     </t>
@@ -591,7 +591,7 @@
             </div>
 
             <!-- Task 1665: « Rétablir l'événement » (a cancelled event). -->
-            <t t-if="sc_can_restore" t-call="bemade_sports_clinic.sc_confirm_sheet">
+            <t t-if="sc_can_restore" t-call="bemade_portal_kit.pk_confirm_sheet">
                 <t t-set="sheet_id" t-value="'sc_event_restore_sheet'"/>
                 <t t-set="title">Restore event</t>
                 <t t-set="message">Restore this event? The assigned staff will be notified by email.</t>
@@ -625,13 +625,13 @@
     <template id="sc_app_event_form" name="Sports Clinic App: event form">
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-if="sc_form_mode == 'edit'">
-                <t t-set="sc_title">Edit Event</t>
+                <t t-set="pk_title">Edit Event</t>
             </t>
             <t t-else="">
-                <t t-set="sc_title">New event</t>
+                <t t-set="pk_title">New event</t>
             </t>
-            <t t-set="sc_active_nav" t-value="'events'"/>
-            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <t t-set="pk_active_nav" t-value="'events'"/>
+            <t t-call="bemade_portal_kit.pk_flash_banners"/>
 
             <form t-att-action="sc_form['action']" method="post" class="o_pk_form" data-sc-form="event.form" data-sc-event-form="1"
                   t-att-data-sc-event-form-mode="sc_form_mode" data-pk-guard="1" data-pk-guard-mode="fetch" t-att-data-pk-guard-rules="sc_form['guard_rules']">

@@ -118,7 +118,7 @@ tours.add("sc_1581_notes_fresh", {
             content: "Only internal entries",
             trigger: `${NOTES_SHEET}[open] a[href$="scope=internal"][aria-pressed="true"]`,
             run() {
-                const scopes = entries("sc_note_history_sheet").map((li) => li.dataset.scScope);
+                const scopes = entries("sc_note_history_sheet").map((li) => li.dataset.pkScope);
                 assert(scopes.length === 1 && scopes[0] === "internal", `scopes: ${scopes}`);
             },
         },

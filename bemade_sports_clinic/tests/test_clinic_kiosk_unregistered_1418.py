@@ -645,7 +645,7 @@ class TestClinicKioskUnregisteredFrCA(HttpCase):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'])
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'])
         # With `website` installed the portal language follows the WEBSITE
         # (URL prefix / frontend_lang cookie / website default), not the user's
         # lang — the project CI has it, the addon CI does not. Make fr_CA a

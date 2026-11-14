@@ -112,9 +112,9 @@ class History1581Common(Parity1577Common):
                 'author': ''.join(li.xpath('.//*[contains(@class, "o_pk_history_author")]//text()')).strip(),
                 'chips': [c.text_content().strip() for c in li.xpath('.//*[contains(@class, "o_pk_chip")]')],
                 'body': ''.join(li.xpath('.//*[contains(@class, "o_pk_history_body")]//text()')).strip(),
-                'state': li.get('data-sc-history-state'),
+                'state': li.get('data-pk-history-state'),
                 'text': ' '.join(li.text_content().split()),
-                'scope': li.get('data-sc-scope'),
+                'scope': li.get('data-pk-scope'),
             })
         return out
 

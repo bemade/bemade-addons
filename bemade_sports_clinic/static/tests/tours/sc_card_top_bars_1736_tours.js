@@ -62,11 +62,11 @@ tours.add("sc_1736_injury", {
             content: "A folded card: the top bar's order, the trash hidden",
             trigger: `${CARD}:not([open]) ${"> summary"} button[data-sc-injury-toggle][aria-expanded="false"]`,
             run() {
-                const icons = [...q(`${HEAD} [data-sc-card-icons]`).querySelectorAll("a, button")];
-                const kinds = icons.map((el) => ["o_sc_card_clock", "o_pk_card_trash", "o_pk_card_edit"]
+                const icons = [...q(`${HEAD} [data-pk-card-icons]`).querySelectorAll("a, button")];
+                const kinds = icons.map((el) => ["o_pk_card_clock", "o_pk_card_trash", "o_pk_card_edit"]
                     .find((cls) => el.classList.contains(cls))).filter(Boolean);
                 // (the clock only when the viewer has an activity on it)
-                assert(["o_sc_card_clock,o_pk_card_trash,o_pk_card_edit", "o_pk_card_trash,o_pk_card_edit"]
+                assert(["o_pk_card_clock,o_pk_card_trash,o_pk_card_edit", "o_pk_card_trash,o_pk_card_edit"]
                     .includes(kinds.join()), `order: ${kinds}`);
                 assert(!shown(q(TRASH)), "the trash shows in read mode");
                 const pencil = q(PENCIL).getBoundingClientRect();
@@ -115,7 +115,7 @@ tours.add("sc_1736_injury", {
                 const trash = q(TRASH);
                 assert(shown(trash), "no trash while editing");
                 assert(trash.classList.contains("o_pk_icon_btn_danger")
-                    && getComputedStyle(trash).color !== getComputedStyle(q(`${HEAD} [data-sc-card-icons] .o_sc_card_clock`) || q(PENCIL)).color,
+                    && getComputedStyle(trash).color !== getComputedStyle(q(`${HEAD} [data-pk-card-icons] .o_pk_card_clock`) || q(PENCIL)).color,
                     "the trash is not red");
                 assert(q(PENCIL).dataset.pkEditToggleDone === "1", "the pencil is not a ✓");
                 assert(trash.getBoundingClientRect().right <= q(PENCIL).getBoundingClientRect().left + 1,
@@ -168,7 +168,7 @@ tours.add("sc_1736_star", {
             content: "The ★ (not followed), left of the pencil",
             trigger: '[data-pk-section="player.hero"] button[data-sc-follow][aria-pressed="false"]',
             run(helpers) {
-                const pencil = q('[data-pk-section="player.hero"] [data-sc-card-icons] button[data-pk-edit-toggle]');
+                const pencil = q('[data-pk-section="player.hero"] [data-pk-card-icons] button[data-pk-edit-toggle]');
                 assert(pencil, "no pencil in the hero's icon group");
                 assert(this.anchor.getBoundingClientRect().right <= pencil.getBoundingClientRect().left + 1,
                     "the ★ is not left of the pencil");
