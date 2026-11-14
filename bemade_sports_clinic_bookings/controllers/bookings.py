@@ -47,7 +47,7 @@ def sc_bookings_list_url(params):
 class BookingShellPortal(BookingPortal, AppShellMixin):
 
     def _sc_bookings_shell(self, response, template, extra):
-        if not self._sc_app_shell_active() or not getattr(response, 'qcontext', None):
+        if not self._pk_shell_active() or not getattr(response, 'qcontext', None):
             return response
         values = dict(response.qcontext)
         values.update(extra)
@@ -60,7 +60,7 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
         response = super().portal_my_bookings(
             page=page, sortby=sortby, filterby=filterby, date_from=date_from,
             date_to=date_to, appointment_type_id=appointment_type_id, **kwargs)
-        if not self._sc_app_shell_active():
+        if not self._pk_shell_active():
             return response
         # Task 1596: only an EXPLICIT (valid) sort choice travels with the
         # segment links — without one each segment keeps its own default
@@ -74,7 +74,7 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
     @http.route()
     def portal_my_bookings_calendar(self, **kwargs):
         response = super().portal_my_bookings_calendar(**kwargs)
-        if not self._sc_app_shell_active():
+        if not self._pk_shell_active():
             return response
         env = request.env
         props = {
@@ -131,7 +131,7 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
     @http.route()
     def portal_my_bookings_calendar_data(self, start=None, end=None, **kwargs):
         response = super().portal_my_bookings_calendar_data(start=start, end=end, **kwargs)
-        if not self._sc_app_shell_active():
+        if not self._pk_shell_active():
             return response
         payload = json.loads(response.get_data(as_text=True) or '[]')
         if not payload:
@@ -262,7 +262,7 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
         """The (sudo) booking when the shell is on and the viewer may manage
         it — its staff user or a clinic administrator — else None (404:
         another user's booking is not revealed)."""
-        if not self._sc_app_shell_active():
+        if not self._pk_shell_active():
             return None
         booking = request.env['calendar.event'].sudo().with_context(active_test=False).browse(
             int(booking_id)).exists()

@@ -3,7 +3,7 @@
     Task 1540 (epic #1535, P3) — the portal bookings pages on the Sports
     Clinic app shell (rendered by controllers/bookings.py from the
     appointment_portal_staff context, only when the shell is active). The
-    calendar is the shell's shared sc_calendar component on the unchanged
+    calendar is the shell's shared pk_calendar component on the unchanged
     /my/bookings/calendar/data feed. No inline script / style.
 -->
 <odoo>
@@ -118,7 +118,7 @@
                 <t t-set="tabs" t-value="sc_booking_segments"/>
                 <t t-set="active" t-value="'calendar'"/>
             </t>
-            <t t-call="bemade_sports_clinic.sc_calendar">
+            <t t-call="bemade_portal_kit.pk_calendar">
                 <t t-set="props" t-value="sc_calendar_props"/>
             </t>
         </t>

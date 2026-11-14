@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.145.0",
+    'version': "19.0.1.146.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -75,8 +75,8 @@ Portal app shell (preview)
 --------------------------
 A new Fit Crew app shell for the portal (brand colours and type, phone
 bottom tabs, laptop left rail, dark theme by default, per-user theme)
-behind the system switch Settings > Sports Clinic Portal > New Portal App
-(``bemade_sports_clinic.app_shell_enabled``). Switch off (the default)
+behind the system switch Settings > Portal App > Portal app (the kit's
+``bemade_portal_kit.enabled``, task 5200). Switch off (the default)
 leaves today's portal unchanged. Menus, sections and fields are shown from
 a declarative, multi-role registry (``models/sc_app_roles.py``, on the
 ``portal.kit`` hooks of ``bemade_portal_kit``): a user
@@ -189,9 +189,11 @@ nothing; PDF reports never carry it.
         "views/sports_team_views.xml",
         "views/sports_patient_injury_views.xml",
         "views/sports_clinic_menus.xml",
-        "views/sc_help_article_views.xml",
         "data/sc_guide_video_assets.xml",
         "data/sc_knowledge_public_view.xml",
+        # Task 5200 (kit P5): the in-app help moved to the kit
+        # (portal.kit.help); the clinic's back-end menu entry.
+        "views/sc_app_help_views.xml",
         # Task 1399: attendance report (pivot/graph/list) + the Reports menu.
         # After the menus (parent = sports_clinic_root), before the event views
         # (their smart-button action points at these views' model).
@@ -253,12 +255,10 @@ nothing; PDF reports never carry it.
         "views/sc_components.xml",
         "views/sc_app_layout.xml",
         "views/instance_banner.xml",
-        "views/sc_app_search.xml",
         "views/sc_app_player_add.xml",
         "views/sc_app_pages.xml",
         # Task 1624: the dashboard (/my/home) widgets + « Configurer ».
         "views/sc_app_dashboard.xml",
-        "views/sc_app_account.xml",
         # Task 1542: team page, install page, offline page.
         "views/sc_app_team.xml",
         # Task 1539: P2 — players, injuries, notes, documents, activities.
@@ -349,13 +349,8 @@ nothing; PDF reports never carry it.
             # bemade_portal_kit (pk_*.js, bundled by the kit, a dependency);
             # task 5198 (P3a) removed their one-release aliases.
             "bemade_sports_clinic/static/src/js/sc_app_ui.js",
-            "bemade_sports_clinic/static/src/js/sc_help.js",
             # Task 1660: guide videos on the public Knowledge article pages.
             "bemade_sports_clinic/static/src/js/sc_guide_video.js",
-            # Task 1650: the header search (magnifier, « / », Ctrl/⌘-K).
-            "bemade_sports_clinic/static/src/js/sc_search.js",
-            # Task 1648: the type-to-filter picker of the link fields.
-            "bemade_sports_clinic/static/src/js/sc_picker.js",
             # Task 1652: the red card pills open the medical popups.
             "bemade_sports_clinic/static/src/js/sc_med_card_pills.js",
             # Task 1677: the allergy / condition lists and the EpiPen card
@@ -372,7 +367,6 @@ nothing; PDF reports never carry it.
             # Task 1604: quick « Vérifier » / « Résoudre » of an injury.
             "bemade_sports_clinic/static/src/js/sc_injury_quick.js",
             "bemade_sports_clinic/static/src/js/sc_injury_card.js",
-            "bemade_sports_clinic/static/src/js/sc_account.js",
             "bemade_sports_clinic/static/src/js/sc_sw_register.js",
             # Task 1624: « Configurer » the dashboard (saves as you go).
             "bemade_sports_clinic/static/src/js/sc_dashboard_config.js",
@@ -387,14 +381,13 @@ nothing; PDF reports never carry it.
             # Task 1540: P3 styles, the live clinic waiting list.
             "bemade_sports_clinic/static/src/scss/sc_p3.scss",
             "bemade_sports_clinic/static/src/scss/sc_dashboard.scss",
-            # Task 1620: « Mon compte » / « Sécurité » in the shell.
-            "bemade_sports_clinic/static/src/scss/sc_account.scss",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.js",
             "bemade_sports_clinic/static/src/js/sc_clinic_worklist.xml",
             # Task 1540: the shared calendar (FullCalendar lazy-loaded from
             # web.fullcalendar_lib) and the event form behaviours.
-            "bemade_sports_clinic/static/src/js/sc_calendar.js",
-            "bemade_sports_clinic/static/src/js/sc_calendar.xml",
+            # Task 5200 (kit P5): the calendar is the kit's (pk_calendar);
+            # the old OWL key stays registered for one release.
+            "bemade_sports_clinic/static/src/js/sc_calendar_alias.js",
             "bemade_sports_clinic/static/src/js/sc_events.js",
         ],
         # Task 1540: the sign-in kiosk's OWN stylesheet bundle, included

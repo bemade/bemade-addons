@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Task 5200 (kit P5): the shared calendar (FullCalendar in an OWL
+    component, static/src/js/pk_calendar.js), adopted from the first
+    consumer (same ir.ui.view record, tools/adopt.py).
+-->
+<odoo>
+
+    <!--
+        Variable: props (JSON: feedUrl, params, locale, detailKeys, and
+        optionally staffColors, legendTitle, showAllLabel, unassignedLabel,
+        assigneeParam).
+    -->
+    <template id="pk_calendar" name="Portal kit: calendar">
+        <div class="o_pk_calendar_wrap" data-pk-section="calendar">
+            <owl-component name="bemade_portal_kit.pk_calendar" t-att-props="props">
+                <p class="o_pk_empty">Loading…</p>
+            </owl-component>
+        </div>
+    </template>
+
+</odoo>

@@ -435,7 +435,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # Task 1542: the app shell (switch on) or today's template, byte
             # for byte (switch off). The shell-only values are computed only
             # when the shell renders.
-            if self._sc_app_shell_active():
+            if self._pk_shell_active():
                 values.update(self._sc_team_values(team, values))
             return self._sc_render('bemade_sports_clinic.portal_my_team_players',
                                    'bemade_sports_clinic.sc_app_team', values)
@@ -610,7 +610,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
         # Task 1540: the app shell (switch on) or today's template (off);
         # team_digest_render is rendered unchanged inside the shell card.
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values['sc_digest_date'] = format_date(request.env, digest.snapshot_date)
         return self._sc_render('bemade_sports_clinic.portal_team_digest',
                                'bemade_sports_clinic.sc_app_team_digest', values)
@@ -739,7 +739,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
         # Task 1540: the full history on the app shell (the modal fragment
         # above — also the P1b sheet — is unchanged).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             # Task 1614: each date expands in place (lazy body) with its
             # counts as the subtitle — a coach's re-gated (see _sc_counts).
             role = ('tp' if (self._is_treatment_professional()
@@ -1524,7 +1524,7 @@ class TeamManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # links a chosen result (existing_id) or, with force_new, creates
             # exactly the typed player (no fuzzy re-match), then lands on the
             # Players tab / the new player's page.
-            sc_inline = bool(post.get('sc_inline')) and self._sc_app_shell_active()
+            sc_inline = bool(post.get('sc_inline')) and self._pk_shell_active()
             force_new = sc_inline and bool(post.get('force_new'))
             if force_new and not (first_name and last_name):
                 raise UserError(_('First name and last name are required'))

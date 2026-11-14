@@ -34,7 +34,7 @@ class _TourCommon(AppShellCommon):
     def setUpClass(cls):
         super().setUpClass()
         cls.env['ir.config_parameter'].sudo().set_param(
-            'bemade_sports_clinic.app_shell_enabled', 'True')
+            'bemade_portal_kit.enabled', 'True')
         cls.team_url = '/my/team?team_id=%s' % cls.team_a.id
 
 
@@ -96,7 +96,7 @@ class TestAppShellToursLaptop1542(_TourCommon):
     def test_prefs_theme_and_crumbs(self):
         self._theme_choice(True)  # task 1602: the toggle is hidden otherwise
         self.start_tour('/my/home', 'sc_1542_prefs', login='pc.coach@example.com')
-        self.assertEqual(self.coach.sc_theme, 'light')
+        self.assertEqual(self.coach.pk_theme, 'light')
 
     def test_team_tabs_internal_therapist(self):
         self.start_tour(self.team_url, 'sc_1542_team_tabs', login='t1542.admin@example.com')
@@ -104,4 +104,4 @@ class TestAppShellToursLaptop1542(_TourCommon):
     def test_sw_kill_switch(self):
         self.start_tour('/my/home', 'sc_1542_sw_kill_switch', login='t1542.admin@example.com')
         self.assertFalse(self.env['ir.config_parameter'].sudo().get_param(
-            'bemade_sports_clinic.app_shell_enabled'))
+            'bemade_portal_kit.enabled'))

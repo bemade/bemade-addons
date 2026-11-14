@@ -107,14 +107,14 @@ class TestAppShellLang1588(AppShellCommon):
         self._switch(True)
         self._login_tp()
         tree = lxml_html.fromstring(self._open('/my/app/settings').text)
-        buttons = tree.xpath('//section[@id="sc_language"]//form//button[@name="lang"]')
+        buttons = tree.xpath('//section[@id="pk_language"]//form//button[@name="lang"]')
         self.assertEqual(sorted(b.get('value') for b in buttons), ['en_US', 'fr_CA'])
         labels = {b.get('value'): b.text_content().strip() for b in buttons}
         self.assertEqual(labels, {'fr_CA': 'FR', 'en_US': 'EN'})
         pressed = [b.get('value') for b in buttons if b.get('aria-pressed') == 'true']
         self.assertEqual(pressed, ['fr_CA'])
         # A plain POST form (full reload), not the in-place theme fetch.
-        form = tree.xpath('//section[@id="sc_language"]//form')[0]
+        form = tree.xpath('//section[@id="pk_language"]//form')[0]
         self.assertEqual(form.get('action'), '/my/app/pref')
         self.assertIsNone(form.get('data-pk-pref'))
         self.assertTrue(form.xpath('.//input[@name="csrf_token"]'))
@@ -125,7 +125,7 @@ class TestAppShellLang1588(AppShellCommon):
         text = self._open('/my/app/settings').text
         self.assertEqual(self._html_lang(text), 'fr-CA')
         tree = lxml_html.fromstring(text)
-        header = ' '.join(tree.xpath('//section[@id="sc_language"]//text()'))
+        header = ' '.join(tree.xpath('//section[@id="pk_language"]//text()'))
         self.assertIn('Langue', header)
 
     def test_more_language_switch_hidden_with_one_language(self):
@@ -141,7 +141,7 @@ class TestAppShellLang1588(AppShellCommon):
             single = type(frontend)({'fr_CA': frontend['fr_CA']})
             self.patch(type(self.env['res.lang']), '_get_frontend', lambda _self: single)
         tree = lxml_html.fromstring(self._open('/my/app/settings').text)
-        self.assertFalse(tree.xpath('//section[@id="sc_language"]'))
+        self.assertFalse(tree.xpath('//section[@id="pk_language"]'))
 
     # -- UC-L2 -------------------------------------------------------------
     def test_pref_lang_sets_profile_cookie_and_redirects(self):

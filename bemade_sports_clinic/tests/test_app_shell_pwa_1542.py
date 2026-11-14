@@ -140,7 +140,7 @@ class TestAppShellPwa1542(AppShellCommon):
         for login in (self._login_coach, self._login_tp):
             login()
             _text, tree = self._get('/my/app/more')
-            entry = tree.xpath('//main//a[@data-sc-nav-key="install"]')
+            entry = tree.xpath('//main//a[@data-pk-nav-key="install"]')
             self.assertTrue(entry)
             self.assertEqual(entry[0].get('href'), '/my/app/install')
             text, tree = self._get('/my/app/install')

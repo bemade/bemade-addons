@@ -3,14 +3,14 @@ are hidden. Synthetic fixtures only.
 
 Acceptance criteria covered here:
 
-* UC-T1 Parameter ``bemade_sports_clinic.sc_theme_choice_enabled`` absent /
-  off (the default): a user whose saved ``sc_theme`` is « light » gets the
+* UC-T1 Parameter ``bemade_portal_kit.theme_choice_enabled`` absent /
+  off (the default): a user whose saved ``pk_theme`` is « light » gets the
   dark shell (``data-pk-theme``, body class, ``theme-color`` meta), and NO
   theme toggle markup — neither the app-bar moon nor the « Plus › Apparence »
   block. The saved preference is kept untouched.
 * UC-T2 Parameter on: the same user gets the light shell again and both
   toggles are back.
-* UC-T3 ``/my/app/pref`` still accepts ``sc_theme`` (stored), but while the
+* UC-T3 ``/my/app/pref`` still accepts ``pk_theme`` (stored), but while the
   choice is off its JSON answer reports the effective theme (dark), so the
   shell script never switches the page to light.
 
@@ -28,7 +28,7 @@ class TestAppShellTheme1602(AppShellCommon):
     def setUp(self):
         super().setUp()
         self._switch(True)
-        self.tp.sc_theme = 'light'
+        self.tp.pk_theme = 'light'
         self._login_tp()
 
     def _assert_theme(self, tree, theme):
@@ -40,8 +40,8 @@ class TestAppShellTheme1602(AppShellCommon):
 
     @staticmethod
     def _toggles(tree):
-        return tree.xpath('//*[@name="sc_theme"] | //*[contains(@class, "o_pk_theme_toggle")]'
-                          ' | //*[@id="sc_appearance"]')
+        return tree.xpath('//*[@name="pk_theme"] | //*[contains(@class, "o_pk_theme_toggle")]'
+                          ' | //*[@id="pk_appearance"]')
 
     # -- UC-T1 -----------------------------------------------------------
     def test_forced_dark_without_parameter(self):
@@ -50,11 +50,11 @@ class TestAppShellTheme1602(AppShellCommon):
             self._assert_theme(tree, 'dark')
             self.assertFalse(self._toggles(tree), url)
         # The saved preference is kept for later.
-        self.assertEqual(self.tp.sc_theme, 'light')
+        self.assertEqual(self.tp.pk_theme, 'light')
 
     def test_forced_dark_parameter_falsy(self):
         self.env['ir.config_parameter'].sudo().set_param(
-            'bemade_sports_clinic.sc_theme_choice_enabled', '0')
+            'bemade_portal_kit.theme_choice_enabled', '0')
         _text, tree = self._get('/my/app/settings')
         self._assert_theme(tree, 'dark')
         self.assertFalse(self._toggles(tree))
@@ -65,26 +65,26 @@ class TestAppShellTheme1602(AppShellCommon):
         _text, tree = self._get('/my/home')
         self._assert_theme(tree, 'light')
         self.assertTrue(tree.xpath('//form[contains(@class, "o_pk_theme_toggle")]'
-                                   '//button[@name="sc_theme"]'))
+                                   '//button[@name="pk_theme"]'))
         _text, tree = self._get('/my/app/settings')  # task 1606: out of « Plus »
         self._assert_theme(tree, 'light')
         # Task 1726: « Apparence » is a switch (on = dark), off here.
-        switch = tree.xpath('//*[@id="sc_appearance"]//input[@role="switch"][@name="sc_theme"]')
+        switch = tree.xpath('//*[@id="pk_appearance"]//input[@role="switch"][@name="pk_theme"]')
         self.assertEqual(len(switch), 1)
         self.assertIsNone(switch[0].get('checked'))
-        self.assertEqual(tree.xpath('//*[@id="sc_appearance"]//input[@type="hidden"][@name="sc_theme"]/@value'),
+        self.assertEqual(tree.xpath('//*[@id="pk_appearance"]//input[@type="hidden"][@name="pk_theme"]/@value'),
                          ['light'])
 
     # -- UC-T3 -----------------------------------------------------------
     def test_pref_answer_reports_effective_theme(self):
-        self.tp.sc_theme = 'dark'
-        resp = self.url_open('/my/app/pref', data={'sc_theme': 'light', 'csrf_token': self._csrf()},
+        self.tp.pk_theme = 'dark'
+        resp = self.url_open('/my/app/pref', data={'pk_theme': 'light', 'csrf_token': self._csrf()},
                              headers={'Accept': 'application/json'}, allow_redirects=False)
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json().get('sc_theme'), 'dark')
-        self.tp.invalidate_recordset(['sc_theme'])
-        self.assertEqual(self.tp.sc_theme, 'light')
+        self.assertEqual(resp.json().get('pk_theme'), 'dark')
+        self.tp.invalidate_recordset(['pk_theme'])
+        self.assertEqual(self.tp.pk_theme, 'light')
         self._theme_choice(True)
-        resp = self.url_open('/my/app/pref', data={'sc_theme': 'light', 'csrf_token': self._csrf()},
+        resp = self.url_open('/my/app/pref', data={'pk_theme': 'light', 'csrf_token': self._csrf()},
                              headers={'Accept': 'application/json'}, allow_redirects=False)
-        self.assertEqual(resp.json().get('sc_theme'), 'light')
+        self.assertEqual(resp.json().get('pk_theme'), 'light')

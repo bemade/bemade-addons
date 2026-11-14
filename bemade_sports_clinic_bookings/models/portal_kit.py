@@ -7,7 +7,7 @@ Task 1737: the edit / cancel pages are sub-pages of « Mes rendez-vous » in
 the shell's parent registry (back chevron + crumbs); the list / calendar
 are registered so a ``return_url`` to them is honoured. Like « Events » /
 « Timesheets » (rail + « Plus », ``RAIL_PLUS``), the list is a « Plus »
-page: its parent is sc_app_more (the shell rule: a non-top-level page
+page: its parent is pk_app_more (the shell rule: a non-top-level page
 declares a parent — bemade_sports_clinic test_app_shell_nav_1579).
 """
 from odoo import api, models
@@ -46,7 +46,7 @@ class SportsClinicBookingsPortalKit(models.AbstractModel):
     def _pk_pages(self):
         pages = [Page(
             BOOKINGS_PAGE, url='/my/bookings', label=self.pk_nav_label('bookings'),
-            path=r'/my/bookings(?:/calendar)?', parent=lambda v: ('sc_app_more', {}))]
+            path=r'/my/bookings(?:/calendar)?', parent=lambda v: ('pk_app_more', {}))]
         for (key, suffix), label in zip(_PAGE_KEYS, _PAGE_LABELS):
             pages.append(Page(
                 key, parent=lambda v: (BOOKINGS_PAGE, {}), label=label,

@@ -162,7 +162,13 @@ class TestPkAdopt(TransactionCase):
         self.assertEqual(strip_translated_attributes(self.env.cr, ('data-pk-old-msg',)), 0)
 
     def test_mapping_adopted_after_upgrade(self):
-        self.assertEqual(len(ADOPTED_VIEWS), 30)
+        # Task 5200 (P5): 30 -> 41.
+        self.assertEqual(len(ADOPTED_VIEWS), 41)
+        for old, new in (('sc_app_more', 'pk_app_more'), ('sc_app_settings', 'pk_app_settings'),
+                         ('sc_app_account', 'pk_app_account'), ('sc_app_security', 'pk_app_security'),
+                         ('sc_app_search_sheet', 'pk_search_sheet'), ('sc_app_search_results', 'pk_search_results'),
+                         ('sc_calendar', 'pk_calendar'), ('sc_account_input', 'pk_account_input')):
+            self.assertIn(('bemade_sports_clinic', old, new), ADOPTED_VIEWS)
         for old, new in (('sc_user_menu_popup', 'pk_user_menu_popup'), ('sc_list_header', 'pk_list_header'),
                          ('sc_card_icons', 'pk_card_icons'), ('sc_history_entry', 'pk_history_entry'),
                          ('sc_history_list', 'pk_history_list'), ('sc_banner', 'pk_banner'),

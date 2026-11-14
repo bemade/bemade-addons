@@ -17,6 +17,13 @@ Hooks (extend them with ``super()`` in an ``_inherit = 'portal.kit'``)
   (task 5199: the ``mail.activity`` spec's rules; per user, never cached)
 * ``_pk_brand()``       ``{name, home_url, home_label, theme_colors}`` (task
   5345: the app layout's neutral brand; per company, never cached)
+* Task 5200 (P5), never cached: ``_pk_layout()`` (the layout the kit's own
+  pages are drawn on), ``_pk_pref_fields()`` (what /my/app/pref may write),
+  ``_pk_account_phone(phone, country)`` (« My account »'s phone rule),
+  ``_pk_help_keys()`` / ``_pk_help_tabbed()`` / ``_pk_help_url(url)`` (the
+  in-app help), ``_pk_search_providers()`` / ``_pk_search_placeholder()``
+  (the app bar's search). The switch: ``_pk_shell_enabled()`` /
+  ``_pk_shell_active(user)``.
 
 Each hook is built ONCE per registry (``tools.ormcache``) and frozen: the
 result is shared by every user and request of the database, so a hook holds
@@ -30,11 +37,21 @@ An entry re-declared under an existing key replaces it in place.
 from urllib.parse import parse_qs, urlsplit
 
 from odoo import _, api, models, tools
+from odoo.tools.translate import LazyTranslate
 
 from ..tools import (
-    pk_activity_save_spec, pk_freeze, pk_id_key, pk_is_visible, pk_refresh_patterns,
-    pk_safe_return_url,
+    Page, pk_activity_save_spec, pk_freeze, pk_id_key, pk_is_visible, pk_refresh_patterns,
+    pk_safe_return_url, pk_static_page,
 )
+from ..tools.data_moves import MOVED_PARAMS
+
+_lt = LazyTranslate(__name__)
+
+# Task 5200 (P5): the app's system switch and theme choice.
+PK_SHELL_PARAM = 'bemade_portal_kit.enabled'
+PK_THEME_CHOICE_PARAM = 'bemade_portal_kit.theme_choice_enabled'
+PK_HELP_HOME_PARAM = 'bemade_portal_kit.help_home_url'
+TRUTHY = ('1', 'true', 'yes', 'on')
 
 
 def _by_key(items, key_of):
@@ -66,7 +83,17 @@ class PortalKit(models.AbstractModel):
 
     @api.model
     def _pk_pages(self):
-        return []
+        # Task 5200 (P5): the kit's own pages. « Settings » is a sub-page of
+        # « More » (a consumer re-declares it under its home), « My account » / « Security »
+        # sub-pages of « Settings » (no path: never a return URL), « More »
+        # top level.
+        return [
+            pk_static_page('pk_app_more', '/my/app/more', _lt('More')),
+            pk_static_page('pk_app_settings', '/my/app/settings', _lt('Settings'),
+                           parent=lambda v: ('pk_app_more', {})),
+            Page('pk_app_account', parent=lambda v: ('pk_app_settings', {})),
+            Page('pk_app_security', parent=lambda v: ('pk_app_settings', {})),
+        ]
 
     @api.model
     def _pk_save_specs(self):
@@ -107,6 +134,153 @@ class PortalKit(models.AbstractModel):
             'home_label': _('Home'),
             'theme_colors': {'light': '#ffffff', 'dark': '#020617'},
         }
+
+
+    # ------------------------------------------------------------------
+    # Task 5200 (P5): the switch, the preferences, the account, help, search
+    # ------------------------------------------------------------------
+    @api.model
+    def _pk_param_true(self, key):
+        """Is system parameter ``key`` truthy? An unset key reads the old key
+        it was moved from (``tools/data_moves.MOVED_PARAMS``) for one
+        release (the migration moves and deletes the old keys)."""
+        get = self.env['ir.config_parameter'].sudo().get_param
+        raw = get(key)
+        if raw in (None, False):  # unset
+            for old, new in MOVED_PARAMS:
+                if new == key:
+                    raw = get(old)
+                    break
+        return str(raw or '').strip().lower() in TRUTHY
+
+    @api.model
+    def _pk_shell_enabled(self):
+        """The app's system switch (``bemade_portal_kit.enabled``,
+        Settings › Portal App). Off: every page renders the stock portal."""
+        return self._pk_param_true(PK_SHELL_PARAM)
+
+    @api.model
+    def _pk_shell_active(self, user=None):
+        """The switch is on AND ``user`` (default: the current user) holds a
+        role that puts them in the app."""
+        if not self._pk_shell_enabled():
+            return False
+        user = user or self.env.user
+        if user._is_public():
+            return False
+        return bool(user._pk_roles() & self.pk_app_roles())
+
+    @api.model
+    def _pk_theme_choice_enabled(self):
+        """The users may choose their theme (``bemade_portal_kit.
+        theme_choice_enabled``). Absent / off: everyone gets the default
+        theme and the theme toggles are hidden; each user's saved theme
+        stays and applies again once it is on."""
+        return self._pk_param_true(PK_THEME_CHOICE_PARAM)
+
+    @api.model
+    def _pk_default_theme(self):
+        """The default of ``res.users.pk_theme`` (the kit's: light; a
+        consumer changes the field's default)."""
+        return self.env['res.users'].default_get(['pk_theme']).get('pk_theme') or 'light'
+
+    @api.model
+    def _pk_effective_theme(self, user=None):
+        """The theme the app renders for ``user``."""
+        if not self._pk_theme_choice_enabled():
+            return self._pk_default_theme()
+        user = user or self.env.user
+        return user.sudo().pk_theme or self._pk_default_theme()
+
+    @api.model
+    def _pk_layout(self):
+        """The template the kit's own pages (settings, More, account,
+        security) are drawn on: the kit's app layout, or a consumer's
+        wrapper of it."""
+        return 'bemade_portal_kit.pk_app_layout'
+
+    @api.model
+    def _pk_pref_fields(self):
+        """``{field: allowed values}``: the ONLY ``res.users`` fields
+        /my/app/pref may write on the caller's own record. A boolean field
+        is posted as ``'1'`` / ``'0'``; ``None`` = the frontend languages
+        (``lang``). Extend with ``super()``."""
+        return {
+            'pk_theme': ('light', 'dark'),
+            'pk_show_done_buttons': ('1', '0'),
+            'lang': None,
+        }
+
+    @api.model
+    def _pk_account_phone(self, phone, country=None):
+        """« My account »'s phone as it is saved; raise ``ValidationError``
+        (its message shown on the field) to refuse it. Kit: unchanged."""
+        return phone
+
+    @api.model
+    def _pk_help_keys(self):
+        """``{page key: help key}``: a page's key in the help mapping
+        (``portal.kit.help``). A page not listed uses its own key."""
+        return {
+            'pk_app_settings': 'settings',
+            'pk_app_more': 'home',
+            'pk_app_account': 'account',
+            'pk_app_security': 'account',
+        }
+
+    @api.model
+    def _pk_help_page_key(self, page):
+        """The help key of page ``page``: ``_pk_help_keys()``, else the
+        page key itself (``home`` without a page)."""
+        return self._pk_help_keys().get(page) or page or 'home'
+
+    @api.model
+    def _pk_help_tabbed(self):
+        """The help keys whose page refines the key with its active tab
+        (« <key>.<tab> »): the « ? » follows the tab (``pk_help.js``)."""
+        return ()
+
+    @api.model
+    def _pk_help_url(self, url):
+        """The link a configured help URL opens, or False when it cannot be
+        opened here. Kit: the URL itself."""
+        return url
+
+    @api.model
+    def _pk_search_providers(self):
+        """The app bar's search: ``[{'key', 'title', 'search', 'available',
+        'sequence', 'url'}]``. ``search(words, limit, ctrl)`` (``ctrl``: the
+        portal controller serving the request, as the save specs get it)
+        returns rows ``{'id',
+        'title', 'subtitle', 'url', 'locked', 'archived', 'archived_label',
+        'action_label', 'action_url', 'near', 'template'}`` (all optional but
+        ``title``); ``available()`` (optional) says whether the current user
+        may use the provider; ``url`` (optional) is the magnifier's link
+        without JavaScript. No available provider: no magnifier."""
+        return []
+
+    @api.model
+    def _pk_search_placeholder(self):
+        """The search box's placeholder."""
+        return _("Search…")
+
+    @api.model
+    def pk_search_providers(self):
+        """The providers available to the current user, by sequence."""
+        providers = [p for p in self._pk_search_providers()
+                     if not p.get('available') or p['available']()]
+        return sorted(providers, key=lambda p: p.get('sequence', 10))
+
+    @api.model
+    def pk_help_home(self):
+        """The help home (``bemade_portal_kit.help_home_url``), resolved."""
+        get = self.env['ir.config_parameter'].sudo().get_param
+        home = get(PK_HELP_HOME_PARAM)
+        if home in (None, False):  # unset
+            for old, new in MOVED_PARAMS:
+                if new == PK_HELP_HOME_PARAM:
+                    home = get(old)
+        return (home or '').strip()
 
     # ------------------------------------------------------------------
     # Cached, frozen registries (one per database registry)

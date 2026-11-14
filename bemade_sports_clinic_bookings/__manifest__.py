@@ -1,6 +1,6 @@
 {
     'name': 'Sports Clinic Bookings on the App Shell',
-    'version': '19.0.1.7.6',
+    'version': '19.0.1.7.7',
     'summary': "Glue: the portal bookings pages (appointment_portal_staff) on the Sports Clinic app shell.",
     'description': """
 Sports Clinic Bookings on the App Shell
@@ -12,7 +12,7 @@ Neither addon depends on the other; this one is installed automatically when
 both are.
 
 When the app shell is active (system switch
-``bemade_sports_clinic.app_shell_enabled`` on AND the viewer holds an app
+``bemade_portal_kit.enabled`` on AND the viewer holds an app
 role), ``/my/bookings`` and ``/my/bookings/calendar`` render on the shell:
 
 * the list: upcoming / past / all segments, the appointment-type filter,
@@ -67,7 +67,7 @@ itself is unchanged; the routes, domains and record rules are its own.
     'data': [
         'data/ir_cron.xml',
         'views/sc_app_bookings.xml',
-        'views/sc_app_settings.xml',
+        'views/sc_app_settings_booking_emails.xml',
         'views/sc_booking_mails.xml',
     ],
     'assets': {

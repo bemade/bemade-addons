@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.11.0',
+    'version': '19.0.1.12.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -21,7 +21,9 @@ templates; version 1.6 its save engine and screen refresh; version 1.7 its
 form guard, status pills and lazy edit views; version 1.8 its toast, session
 notification and undo; version 1.9 its edit cards, sheets, tabs, lazy load
 and clamps; version 1.10 its autosave field; version 1.11 its app layout,
-user menu and shell components.
+user menu and shell components; version 1.12 the app's switch, its
+preferences, settings, « More », account and security pages, help,
+search, calendar and picker.
 
 Registries
 ----------
@@ -454,6 +456,53 @@ Components (adopted from the first consumer like the 1.5 templates):
 ``pk_confirm_sheet`` (``data-pk-confirm-submit``), ``pk_field_static`` and
 ``pk_overdue_flag`` (``o_pk_overdue``, ``data-pk-overdue``).
 
+The app's pages and services (version 1.12)
+--------------------------------------------
+* Switch: Settings › Portal App (``bemade_portal_kit.enabled``;
+  ``theme_choice_enabled``; ``help_home_url``), read with
+  ``portal.kit._pk_shell_enabled()`` / ``_pk_shell_active(user)``. Off: the
+  stock portal everywhere.
+* Preferences: ``res.users.pk_theme`` (light / dark, default light; a
+  consumer may change the field's default) and ``pk_show_done_buttons``,
+  self-readable / -writeable; ``POST /my/app/pref`` writes the fields of
+  ``portal.kit._pk_pref_fields()`` (and ``lang``) on the caller's own
+  record (JSON ``{pk_theme, lang}`` or a same-site redirect).
+* The controller ``PortalKitShell`` (``controllers/pk_shell.py``; a
+  consumer's portal controller inherits it): ``_pk_shell_values(values,
+  page, extra)`` (every value of ``pk_app_layout``, after the profile
+  language guard ``_pk_profile_lang_guard``), the hook
+  ``_pk_app_values(values, page)``, the pages ``/my/app/settings``
+  (``pk_app_settings``, slot ``//t[@name='pk_settings_extra']``),
+  ``/my/app/more`` (``pk_app_more``, the ``plus`` nav entries, slot
+  ``//t[@name='pk_more_extra']``), ``/my/account`` and ``/my/security`` in
+  the shell (``pk_app_account`` / ``pk_app_security``; phone rule
+  ``portal.kit._pk_account_phone(phone, country)``), drawn on
+  ``portal.kit._pk_layout()``.
+* Help: the model ``portal.kit.help`` (key, url, sequence, active, note;
+  Settings › Technical › Portal App Help), the hooks ``_pk_help_keys()``,
+  ``_pk_help_page_key(page)``, ``_pk_help_tabbed()``, ``_pk_help_url(url)``;
+  the app bar's « ? » (``data-pk-help``, ``pk_help.js``), the user menu's
+  « Help » and « More »'s « User guide »; guide videos ``a.o_pk_video``
+  (and the older ``a.o_fc_video`` of stored articles) through
+  ``pk_guide_video.js``.
+* Search: ``portal.kit._pk_search_providers()`` (``{key, title, search(words,
+  limit, ctrl), available, sequence, url}``), ``_pk_search_placeholder()``,
+  ``GET /my/app/search``, the sheet ``pk_search_sheet`` (``pk_search.js``:
+  « / », Ctrl/⌘-K, arrows, Enter); the matching helpers ``pk_fold``,
+  ``pk_words``, ``pk_name_matches`` (``tools/match.py``, ``pk_match.js``).
+* Calendar: the OWL component ``bemade_portal_kit.pk_calendar``
+  (``PkCalendar``; props ``feedUrl``, ``params``, ``locale``,
+  ``detailKeys``, ``staffColors``, ``legendTitle``, ``showAllLabel``,
+  ``unassignedLabel``, ``assigneeParam``), template ``pk_calendar``.
+* Picker: ``pk_picker.js`` on ``select[data-pk-picker]``; declarative
+  narrowing ``data-pk-picker-narrow="<parent key>:<meta key>"`` with
+  ``data-pk-picker-hint``; ``data-pk-picker-scope``,
+  ``data-pk-picker-empty`` (autosave field props ``pickerNarrow`` /
+  ``pickerHint``).
+* Data moves (``tools/data_moves.py``): the first consumer's user columns,
+  parameters and help model are renamed in place by the install hook and
+  both pre-migrations.
+
 Style guide
 ------------
 ``/pk/styleguide`` (internal users) shows every generic component with the
@@ -465,9 +514,15 @@ neutral slots; ``?theme=dark`` shows the dark theme.
     'license': 'LGPL-3',
     'depends': ['portal'],
     'data': [
+        'security/ir.model.access.csv',
         'views/pk_layout.xml',
         'views/pk_components.xml',
         'views/pk_styleguide.xml',
+        # Task 5200 (P5): the kit's pages, account pages, calendar, back end.
+        'views/pk_app_pages.xml',
+        'views/pk_app_account.xml',
+        'views/pk_calendar.xml',
+        'views/pk_backend_views.xml',
     ],
     'assets': {
         # Task 5197 (P2): the shell's generic scripts. assets_frontend ONLY:
@@ -481,6 +536,8 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/src/scss/pk_tokens.scss',
             'bemade_portal_kit/static/src/scss/pk_components.scss',
             'bemade_portal_kit/static/src/scss/pk_pages.scss',
+            'bemade_portal_kit/static/src/scss/pk_calendar.scss',
+            'bemade_portal_kit/static/src/scss/pk_account.scss',
             'bemade_portal_kit/static/src/js/pk_fetch.js',
             'bemade_portal_kit/static/src/js/pk_draft_store.js',
             'bemade_portal_kit/static/src/js/pk_confirm.js',
@@ -512,6 +569,16 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/src/js/pk_autosave_field.js',
             'bemade_portal_kit/static/src/js/pk_theme_pref.js',
             'bemade_portal_kit/static/src/js/pk_autosave_field.xml',
+            # Task 5200 (P5): name matching, picker, search, help, guide
+            # videos, calendar (OWL), « My account ».
+            'bemade_portal_kit/static/src/js/pk_match.js',
+            'bemade_portal_kit/static/src/js/pk_picker.js',
+            'bemade_portal_kit/static/src/js/pk_search.js',
+            'bemade_portal_kit/static/src/js/pk_help.js',
+            'bemade_portal_kit/static/src/js/pk_guide_video.js',
+            'bemade_portal_kit/static/src/js/pk_calendar.js',
+            'bemade_portal_kit/static/src/js/pk_calendar.xml',
+            'bemade_portal_kit/static/src/js/pk_account.js',
         ],
         # The hoot unit tests (tests/test_pk_hoot.py runs them headless).
         # The modules they test are only DEFINED in the test page and run
@@ -541,6 +608,16 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/src/js/pk_autosave_field.js',
             'bemade_portal_kit/static/src/js/pk_theme_pref.js',
             'bemade_portal_kit/static/src/js/pk_autosave_field.xml',
+            # Task 5200 (P5): name matching, picker, search, help, guide
+            # videos, calendar (OWL), « My account ».
+            'bemade_portal_kit/static/src/js/pk_match.js',
+            'bemade_portal_kit/static/src/js/pk_picker.js',
+            'bemade_portal_kit/static/src/js/pk_search.js',
+            'bemade_portal_kit/static/src/js/pk_help.js',
+            'bemade_portal_kit/static/src/js/pk_guide_video.js',
+            'bemade_portal_kit/static/src/js/pk_calendar.js',
+            'bemade_portal_kit/static/src/js/pk_calendar.xml',
+            'bemade_portal_kit/static/src/js/pk_account.js',
         ],
         'web.assets_unit_tests': [
             'bemade_portal_kit/static/tests/**/*',

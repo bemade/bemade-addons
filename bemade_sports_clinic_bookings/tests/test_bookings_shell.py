@@ -6,7 +6,7 @@ Acceptance criteria:
   appointment_portal_staff templates unchanged (no shell marker).
 * UC-B2 Switch ON (therapist who is appointment staff): the list renders on
   the shell with the same search (upcoming by default, past / all segments),
-  one row per booking; the calendar is the shared sc_calendar component on
+  one row per booking; the calendar is the shared pk_calendar component on
   the unchanged feed; « Réservations » is in the navigation.
 * UC-B3 The feed keeps its shape; no inline script / style in this addon's
   shell views.

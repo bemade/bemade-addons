@@ -133,7 +133,7 @@ function menuSteps(where) {
         },
         {
             content: "The settings page, in French, its menu item current",
-            trigger: `html[lang="fr-CA"] main #sc_language button[value="fr_CA"][aria-pressed="true"]`,
+            trigger: `html[lang="fr-CA"] main #pk_language button[value="fr_CA"][aria-pressed="true"]`,
             run() {
                 assert(document.querySelector(`${popup} a[href$="/my/app/settings"][aria-current="page"]`),
                     "« Paramètres » not marked current");
@@ -144,13 +144,13 @@ function menuSteps(where) {
         },
         {
             content: "Switch to English",
-            trigger: 'main #sc_language button[name="lang"][value="en_US"]',
+            trigger: 'main #pk_language button[name="lang"][value="en_US"]',
             run: "click",
             expectUnloadPage: true,
         },
         {
             content: "Back on « Paramètres », now in English",
-            trigger: 'html[lang="en-US"] main #sc_language button[value="en_US"][aria-pressed="true"]',
+            trigger: 'html[lang="en-US"] main #pk_language button[value="en_US"][aria-pressed="true"]',
         },
     ];
 }

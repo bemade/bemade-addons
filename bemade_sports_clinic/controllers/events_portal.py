@@ -320,7 +320,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
 
         # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_events_values(values, event_types, event_type))
         return self._sc_render('bemade_sports_clinic.portal_events_list',
                                'bemade_sports_clinic.sc_app_events', values)
@@ -368,7 +368,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'can_edit': is_therapist,
         }
         # Task 1540: the shell calendar (sc_calendar component, same feed).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_events_calendar_values(values))
         return self._sc_render('bemade_sports_clinic.portal_events_calendar',
                                'bemade_sports_clinic.sc_app_events_calendar', values)
@@ -673,7 +673,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
 
         # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_event_values(event, event_sudo, values, kw))
         return self._sc_render('bemade_sports_clinic.portal_event_detail',
                                'bemade_sports_clinic.sc_app_event', values)
@@ -845,7 +845,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         """Edit event form - only accessible to therapists"""
         # Owner review 2026-10-11: in the app shell the event is edited in
         # place (pencil card) on its page.
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             return http.request.redirect('/my/event/%s' % int(event_id))
         
         # Check access - only therapists can edit
@@ -932,7 +932,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
 
         # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_event_form_values('edit', values, kw))
         return self._sc_render('bemade_sports_clinic.portal_event_edit',
                                'bemade_sports_clinic.sc_app_event_form', values)
@@ -1135,7 +1135,7 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 'organization_id_selected': int(flash_data['organization_id']) if flash_data.get('organization_id') else None,
             })
         # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_event_form_values('create', values, kw))
         return self._sc_render('bemade_sports_clinic.portal_event_create',
                                'bemade_sports_clinic.sc_app_event_form', values)
@@ -1644,6 +1644,12 @@ class EventsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                 # Task 1605: therapist colour dots + the legend under the
                 # calendar (bookings does not opt in).
                 'staffColors': True,
+                # Task 5200 (kit P5): the kit's calendar is neutral; the
+                # legend's texts and the filter parameter are the clinic's.
+                'legendTitle': str(_("Therapists")),
+                'showAllLabel': str(_("Show all therapists")),
+                'unassignedLabel': str(_("Unassigned")),
+                'assigneeParam': 'assigned_user_id',
             }),
             sc_event_segments=[(key, labels[key], urls[key]) for key in SC_EVENT_SEGMENTS],
         )

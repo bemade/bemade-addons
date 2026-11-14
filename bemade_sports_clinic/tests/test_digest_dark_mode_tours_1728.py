@@ -58,7 +58,7 @@ class TestDigestDarkModeToursPhone1728(DigestDarkMode1728Common):
 
     def test_digest_page_light(self):
         self._theme_choice(True)
-        self.tp.sc_theme = 'light'
+        self.tp.pk_theme = 'light'
         self.start_tour(self.page_url, 'sc_1728_digest_contrast', login='pc.tp@example.com')
 
     def test_digest_history_dark(self):

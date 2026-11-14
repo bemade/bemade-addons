@@ -61,6 +61,11 @@
           pk_guard_params   the URL params a refusal comes back in
                             (default « error »)
           pk_notification   the session notification (pk_toast_host)
+          pk_help           {key, base, url, home, map_json, tabbed}: the « ? »
+                            of the app bar and the user menu's « Help »
+                            (portal.kit.help.pk_help_for; task 5200)
+          pk_search         {placeholder, href}: the magnifier and the
+                            search sheet (task 5200; none without)
           pk_brand          {name, home_url, home_label, theme_colors:
                             {light, dark}}, merged over
                             portal.kit.pk_brand() (neutral defaults)
@@ -161,6 +166,27 @@
                             </button>
                         </form>
                         <t t-out="pk_appbar_actions"/>
+                        <!-- Task 5200 (P5): « ? » — this page's help article,
+                             in a new tab (pk_help.js follows the page's tab
+                             when data-pk-help-tabbed is set). -->
+                        <t t-if="pk_help and pk_help['url']">
+                            <t t-set="pk_help_label">Help on this page</t>
+                            <a t-att-href="pk_help['url']" target="_blank" rel="noopener"
+                               class="o_pk_icon_btn o_pk_appbar_help" data-pk-help="1"
+                               t-att-data-pk-help-key="pk_help['key']" t-att-data-pk-help-base="pk_help['base']"
+                               t-att-data-pk-help-home="pk_help['home'] or ''" t-att-data-pk-help-map="pk_help['map_json']"
+                               t-att-data-pk-help-tabbed="'1' if pk_help.get('tabbed') else None"
+                               t-att-aria-label="pk_help_label" t-att-title="pk_help_label">
+                                <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'help'"/></t>
+                            </a>
+                        </t>
+                        <!-- Task 5200 (P5): the magnifier opens the search
+                             sheet (pk_search.js); the link is the no-JS way. -->
+                        <a t-if="pk_search" t-att-href="pk_search['href']" class="o_pk_icon_btn o_pk_appbar_search"
+                           data-pk-search-open="1" aria-haspopup="dialog" aria-controls="pk_search_sheet"
+                           aria-label="Search" title="Search">
+                            <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'search'"/></t>
+                        </a>
                         <!-- The initials open the user menu: the only one, at
                              every width, last in the bar (pk_user_menu.js). -->
                         <div class="o_pk_user_menu o_pk_user_menu_bar" data-pk-user-menu="bar">
@@ -190,6 +216,7 @@
                     <main t-attf-class="o_pk_content #{pk_content_class or ''}" id="pk_content">
                         <t t-out="0"/>
                     </main>
+                    <t t-if="pk_search" t-call="bemade_portal_kit.pk_search_sheet"/>
                     <t t-out="pk_layout_sheets"/>
                     <!-- The form guard's shared texts (pk_form_guard.js) and
                          the URL params a refusal comes back in. -->
@@ -237,6 +264,12 @@
                    t-att-aria-current="'page' if pk_settings_active else None">
                     <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'settings'"/></t>
                     <span>Settings</span>
+                </a>
+                <!-- Task 5200 (P5): the help home (new tab), after « Settings ». -->
+                <a t-if="pk_help and pk_help['home']" role="menuitem" t-att-href="pk_help['home']" target="_blank" rel="noopener"
+                   class="o_pk_user_menu_item" tabindex="-1" data-pk-help-home-link="1">
+                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'help'"/></t>
+                    <span>Help</span>
                 </a>
                 <t t-out="pk_user_menu_extra"/>
                 <a role="menuitem" href="/web/session/logout?redirect=/" class="o_pk_user_menu_item" tabindex="-1">

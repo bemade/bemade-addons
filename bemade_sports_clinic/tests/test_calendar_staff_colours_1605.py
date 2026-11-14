@@ -165,7 +165,7 @@ class TestStaffColours1605(Colours1605Common):
         self._switch(True)
         self._login_tp()
         _text, tree = self._get('/my/events/calendar')
-        node = tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_calendar"]')[0]
+        node = tree.xpath('//owl-component[@name="bemade_portal_kit.pk_calendar"]')[0]
         self.assertIs(json.loads(node.get('props')).get('staffColors'), True)
 
     def test_backend_user_form_has_the_colour(self):
@@ -199,11 +199,17 @@ class TestStaffColoursI18n1605(Colours1605Common):
 
     # -- UC-5 ------------------------------------------------------------
     def test_legend_terms_in_french(self):
+        """Task 5200 (kit P5): the component is the kit's (its own texts
+        are the kit's web terms); the clinic passes its legend texts as
+        props, translated server-side (Python terms)."""
         from odoo.tools.translate import code_translations
-        messages = code_translations.get_web_translations('bemade_sports_clinic', 'fr_CA')['messages']
-        french = {row['id']: row['string'] for row in messages}
-        for term, translation in (('Therapists', 'Thérapeutes'),
-                                  ('Unassigned', 'Non assigné'),
-                                  ('Show all therapists', 'Afficher tous les thérapeutes'),
+        kit = code_translations.get_web_translations('bemade_portal_kit', 'fr_CA')['messages']
+        kit_french = {row['id']: row['string'] for row in kit}
+        for term, translation in (('Unassigned', 'Non assigné'),
                                   ('Show only %s', 'Afficher seulement %s')):
-            self.assertEqual(french.get(term), translation, term)
+            self.assertEqual(kit_french.get(term), translation, term)
+        clinic = code_translations.get_python_translations('bemade_sports_clinic', 'fr_CA')
+        for term, translation in (('Therapists', 'Thérapeutes'),
+                                  ('Show all therapists', 'Afficher tous les thérapeutes'),
+                                  ('Unassigned', 'Non assigné')):
+            self.assertEqual(clinic.get(term), translation, term)

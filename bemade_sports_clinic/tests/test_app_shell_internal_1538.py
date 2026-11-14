@@ -80,12 +80,12 @@ class TestAppShellInternal1538(AppShellCommon):
         self._switch(True)
         self._login_itp()
         _text, tree = self._get('/my/app/more')
-        backend = tree.xpath('//main//a[@data-sc-nav-key="backend"]')
+        backend = tree.xpath('//main//a[@data-pk-nav-key="backend"]')
         self.assertTrue(backend)
         self.assertEqual(backend[0].get('href'), '/odoo')
         self._login_tp()
         _text, tree = self._get('/my/app/more')
-        self.assertFalse(tree.xpath('//a[@data-pk-nav-key="backend" or @data-sc-nav-key="backend"]'))
+        self.assertFalse(tree.xpath('//a[@data-pk-nav-key="backend"]'))
 
     # -- UC-N3 -----------------------------------------------------------
     def test_switch_off_internal_keeps_legacy(self):

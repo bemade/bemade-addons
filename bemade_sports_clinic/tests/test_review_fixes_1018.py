@@ -53,7 +53,7 @@ class TestReviewFixes1018(PlayerInlineCommon):
         self.assertIn('/my/account', hrefs)
         self.assertIn('/my/security', hrefs)
         self.assertFalse([h for h in hrefs if 'classic=1' in h])
-        self.assertTrue(main.xpath('.//section[@id="sc_account"]'))
+        self.assertTrue(main.xpath('.//section[@id="pk_account"]'))
 
     # -- RF-1617 ---------------------------------------------------------
     def test_events_list_filters_closed_even_when_filtered(self):

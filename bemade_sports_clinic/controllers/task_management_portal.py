@@ -260,7 +260,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         
         # Task 1539: the app shell (switch on) or today's template (off) —
         # also for the /my/team/activities and /my/event/activities wrappers.
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_activities_values(values))
         return self._sc_render('bemade_sports_clinic.portal_my_activities',
                                'bemade_sports_clinic.sc_app_activities', values)
@@ -432,7 +432,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
         
         # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_activity_form_values(values))
         return self._sc_render('bemade_sports_clinic.portal_create_activity',
                                'bemade_sports_clinic.sc_app_activity_form', values)
@@ -828,7 +828,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             raise request.not_found()
         # Owner review 2026-10-11: in the app shell the activity is edited
         # in place (pencil card) on its page.
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             return request.redirect('/my/activity/%s' % activity.id)
             
         # Task 1589: editing is acting — the one act rule.
@@ -865,7 +865,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
         
         # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_activity_form_values(values))
         return self._sc_render('bemade_sports_clinic.portal_edit_activity',
                                'bemade_sports_clinic.sc_app_activity_form', values)
@@ -967,7 +967,7 @@ class TaskManagementPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
         
         # Task 1539: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             # Task 1595: the related records' links, each gated by the
             # page it leads to (no link to a record the viewer may not open).
             related_links = self._sc_activity_related(activity)

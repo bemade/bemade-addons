@@ -1,5 +1,5 @@
 /*
- * Task 1660 — the guide-video link upgrade (sc_guide_video.js).
+ * Task 1660 — the guide-video link upgrade (the kit's pk_guide_video.js, task 5200; stored articles keep the old o_fc_video class).
  *
  * sc_1660_video_links: exercised on an injected fragment (runs without
  * Knowledge, e.g. on the addon CI); the attachment ids come from the start
@@ -22,7 +22,7 @@ function isPlayer(el) {
     return Boolean(
         el &&
             el.tagName === "VIDEO" &&
-            el.classList.contains("o_fc_video_player") &&
+            el.classList.contains("o_pk_video_player") &&
             el.controls &&
             el.hasAttribute("playsinline")
     );
@@ -34,8 +34,8 @@ tours.add("sc_1660_video_links", {
             content: "Same-origin video attachment → inline player; anything else stays a link",
             trigger: ".o_pk_app",
             async run() {
-                const mod = odoo.loader.modules.get("@bemade_sports_clinic/js/sc_guide_video");
-                assert(mod && mod.scUpgradeVideoLinks, "sc_guide_video module not loaded");
+                const mod = odoo.loader.modules.get("@bemade_portal_kit/js/pk_guide_video");
+                assert(mod && mod.pkUpgradeVideoLinks, "pk_guide_video module not loaded");
                 const params = new URLSearchParams(window.location.search);
                 const video = params.get("video");
                 const text = params.get("text");
@@ -53,7 +53,7 @@ tours.add("sc_1660_video_links", {
                     `<div contenteditable="true"><a class="o_fc_video" id="v_edit" href="/web/content/${video}">Being edited</a></div>`,
                 ].join("");
                 document.body.appendChild(box);
-                const count = await mod.scUpgradeVideoLinks(box);
+                const count = await mod.pkUpgradeVideoLinks(box);
                 assert(count === 2, `expected 2 players, got ${count}`);
                 const okLink = box.querySelector("#v_ok");
                 const ok = okLink.previousElementSibling;
@@ -69,7 +69,7 @@ tours.add("sc_1660_video_links", {
                 }
                 assert(box.querySelectorAll("video").length === 2, "stray video elements");
                 // Idempotent.
-                assert((await mod.scUpgradeVideoLinks(box)) === 0, "upgraded twice");
+                assert((await mod.pkUpgradeVideoLinks(box)) === 0, "upgraded twice");
                 box.remove();
             },
         },
@@ -80,9 +80,9 @@ tours.add("sc_1660_knowledge_video", {
     steps: () => [
         {
             content: "The guide article's video link became an inline player",
-            trigger: "video.o_fc_video_player",
+            trigger: "video.o_pk_video_player",
             run() {
-                const players = document.querySelectorAll("video.o_fc_video_player");
+                const players = document.querySelectorAll("video.o_pk_video_player");
                 assert(players.length === 1, `expected 1 player, got ${players.length}`);
                 const player = players[0];
                 assert(isPlayer(player), "not a <video controls playsinline>");

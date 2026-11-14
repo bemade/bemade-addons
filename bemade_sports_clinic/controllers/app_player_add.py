@@ -33,7 +33,7 @@ from odoo.tools import format_date
 
 from .access_control_mixin import parse_portal_date
 from ..models.sc_name_match import NEAR, NameIndex
-from .app_search import sc_fold, sc_words
+from odoo.addons.bemade_portal_kit.tools import pk_fold, pk_words
 from .team_staff_portal import TeamStaffPortal
 
 _logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class AppPlayerAddPortal(TeamStaffPortal):
         if not self._sc_player_add_allowed():
             raise AccessError(_("You don't have permission to create patients"))
         env = request.env
-        first_words, last_words = sc_words(first), sc_words(last)
+        first_words, last_words = pk_words(first), pk_words(last)
         # Adversarial review 2026-10-22: at least 2 letters per name part
         # before anything is searched.
         ready = all(len(''.join(words)) >= SC_PLAYER_CHECK_MIN for words in (first_words, last_words))
@@ -72,7 +72,7 @@ class AppPlayerAddPortal(TeamStaffPortal):
             own = set(env['sports.patient'].search(own_domain).ids)
             admin = self._is_clinic_admin()
             Patients = env['sports.patient'].sudo().with_context(active_test=False)
-            folded = (sc_fold(first).strip(), sc_fold(last).strip())
+            folded = (pk_fold(first).strip(), pk_fold(last).strip())
             # Task 1716 (owner 2026-10-26): the 2026-10-23 « date-of-birth
             # oracle » concern is waived — every suggestion, other teams'
             # included, shows its date of birth and team(s), and the typed
@@ -91,7 +91,7 @@ class AppPlayerAddPortal(TeamStaffPortal):
                 row = candidates[rid]
                 near = grade == NEAR
                 accessible = admin or row['id'] in own
-                same_name = (sc_fold(row['first_name']).strip(), sc_fold(row['last_name']).strip()) == folded
+                same_name = (pk_fold(row['first_name']).strip(), pk_fold(row['last_name']).strip()) == folded
                 if day and row['date_of_birth'] and row['date_of_birth'] != day:
                     continue
                 exact = bool(day and row['date_of_birth'] == day and same_name)
@@ -114,8 +114,8 @@ class AppPlayerAddPortal(TeamStaffPortal):
                     'url': '/my/player?player_id=%s' % player.id if accessible else False,
                     'on_team': bool(team and team in player.team_ids),
                     'near': near,
-                    'sort': (near, not exact, not player.active, sc_fold(player.last_name),
-                             sc_fold(player.first_name), player.id),
+                    'sort': (near, not exact, not player.active, pk_fold(player.last_name),
+                             pk_fold(player.first_name), player.id),
                 })
             if exact_players:
                 values['sc_exact_teams'] = env['sports.patient']._sc_identity_twin_teams(exact_players)

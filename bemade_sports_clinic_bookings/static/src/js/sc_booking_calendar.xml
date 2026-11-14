@@ -2,8 +2,8 @@
 <!-- Task 1737 — see sc_booking_calendar.js. Cancel, then the pencil, then
      the details' close button. -->
 <templates xml:space="preserve">
-    <t t-inherit="bemade_sports_clinic.ScCalendar" t-inherit-mode="extension">
-        <xpath expr="//div[@data-sc-calendar-detail='1']/div[hasclass('o_pk_card_head')]/button" position="before">
+    <t t-inherit="bemade_portal_kit.PkCalendar" t-inherit-mode="extension">
+        <xpath expr="//div[@data-pk-calendar-detail='1']/div[hasclass('o_pk_card_head')]/button" position="before">
             <span t-if="state.selected.editUrl or state.selected.cancelUrl" class="o_sc_booking_detail_actions">
                 <a t-if="state.selected.cancelUrl" t-att-href="state.selected.cancelUrl" class="o_pk_icon_btn"
                    data-sc-action="booking.cancel" t-att-aria-label="scBookingCancelLabel" t-att-title="scBookingCancelLabel">

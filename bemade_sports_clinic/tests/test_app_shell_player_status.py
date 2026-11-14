@@ -45,7 +45,7 @@ class PlayerStatusCommon(AppShellCommon):
     def setUpClass(cls):
         super().setUpClass()
         cls.env['ir.config_parameter'].sudo().set_param(
-            'bemade_sports_clinic.app_shell_enabled', 'True')
+            'bemade_portal_kit.enabled', 'True')
         cls.player.write({'jersey_number': '12', 'position': 'Linebacker',
                           'match_status': 'yes', 'practice_status': 'yes'})
 

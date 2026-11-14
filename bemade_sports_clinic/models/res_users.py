@@ -147,30 +147,11 @@ class User(models.Model):
         copy=False,
     )
 
-    # Task 1538: portal app shell preference (self-writable; set from
-    # « Plus › Apparence » and the app-bar theme toggle through /my/app/pref,
-    # which accepts this field only). Task 1579 removed the navigation-mode
-    # setting: the screen width decides (back + context on a phone, the
-    # breadcrumb trail on a laptop).
-    sc_theme = fields.Selection(
-        selection=[
-            ("dark", "Dark"),
-            ("light", "Light"),
-        ],
-        string="Portal App Theme",
-        default="dark",
-        required=True,
-        copy=False,
-    )
-
-    # Task 1676: « Afficher les boutons Terminé » (Paramètres). Off by
-    # default: the edit cards' « Done » buttons are hidden and the head
-    # pencil turns into a ✓ that closes the card (it does in both modes).
-    sc_show_done_buttons = fields.Boolean(
-        string="Show « Done » buttons",
-        default=False,
-        copy=False,
-    )
+    # Task 1538 / 5200 (kit P5): the app's theme is the kit's
+    # ``pk_theme`` (« Paramètres › Apparence », the app-bar toggle); Fit
+    # Crew's default stays dark. The « Terminé » buttons preference is the
+    # kit's ``pk_show_done_buttons``.
+    pk_theme = fields.Selection(default="dark")
 
     # Task 1624: the app dashboard's layout (models/sc_dashboard.py) —
     # {"v": 2, "instances": [...]} (round 2: each with its zone). Not
@@ -249,8 +230,6 @@ class User(models.Model):
             "teams_sort_mode",
             "roster_sort_mode",
             "players_sort_mode",
-            "sc_theme",
-            "sc_show_done_buttons",
         ]
 
     @property
@@ -261,8 +240,6 @@ class User(models.Model):
             "teams_sort_mode",
             "roster_sort_mode",
             "players_sort_mode",
-            "sc_theme",
-            "sc_show_done_buttons",
         ]
 
     def _sc_backend_link_recipient(self):

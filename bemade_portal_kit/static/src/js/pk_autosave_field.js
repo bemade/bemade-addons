@@ -166,6 +166,11 @@ export class PkAutosaveField extends Component {
         // data-pk-meta-<key> from optionMeta ({value: {key: text}}).
         picker: { type: Boolean, optional: true },
         pickerKey: { type: String, optional: true },
+        // Task 5200 (P5): the picker's declarative narrowing,
+        // data-pk-picker-narrow ("<parent key>:<meta key>") and the hint
+        // shown when the value no longer fits (data-pk-picker-hint).
+        pickerNarrow: { type: String, optional: true },
+        pickerHint: { type: String, optional: true },
         optionMeta: { type: Object, optional: true },
         // The empty option of a select is shown, never chosen.
         lockEmpty: { type: Boolean, optional: true },

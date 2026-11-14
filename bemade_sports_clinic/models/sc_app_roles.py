@@ -62,7 +62,7 @@ not nothing. ``exclude`` still wins. Plain coaches are unaffected: the
 flag only ever widens for ``is_system``. Only flag ACTION keys whose
 template gate is a server value that is already True for a system admin.
 """
-from odoo import api, models
+from odoo import _, api, models
 from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.bemade_portal_kit.tools import pk_nav
@@ -264,6 +264,50 @@ class SportsClinicPortalKit(models.AbstractModel):
     @api.model
     def _pk_pages(self):
         return list(super()._pk_pages()) + sc_app_nav.sc_pages(self)
+
+    # -----------------------------------------------------------------------
+    # Task 5200 (kit P5): the kit's pages, preferences, account, search
+    # -----------------------------------------------------------------------
+    @api.model
+    def _pk_layout(self):
+        """The kit's pages (settings, More, account, security) are drawn on
+        the Fit Crew layout."""
+        return 'bemade_sports_clinic.sc_app_layout'
+
+    @api.model
+    def _pk_pref_fields(self):
+        """Task 1665: « Recevoir le sommaire quotidien par courriel »."""
+        fields_ = dict(super()._pk_pref_fields())
+        fields_['digest_daily_enabled'] = ('1', '0')
+        return fields_
+
+    @api.model
+    def _pk_account_phone(self, phone, country=None):
+        """Task 1645: « Mon compte »'s phone follows the clinic's phone rule
+        (+1 514-555-0123, or « Invalid phone number. »)."""
+        from .sc_phone import sc_normalize_phone
+        phone = super()._pk_account_phone(phone, country=country)
+        return sc_normalize_phone(self.env, phone, country=country or None)
+
+    @api.model
+    def _pk_search_providers(self):
+        """Task 1650: players, teams and events (controllers/app_search.py),
+        for the users who have the Players page (rail)."""
+        def available():
+            roles = self.env.user._pk_roles()
+            return any(entry['key'] == 'players' for entry in self.pk_visible_nav(roles, 'rail', {}))
+        return list(super()._pk_search_providers()) + [
+            {'key': 'players', 'title': _('Players'), 'sequence': 10, 'available': available,
+             'url': '/my/players', 'search': lambda words, limit, ctrl: ctrl._sc_search_players(words)},
+            {'key': 'teams', 'title': _('Teams'), 'sequence': 20, 'available': available,
+             'search': lambda words, limit, ctrl: ctrl._sc_search_teams(words)},
+            {'key': 'events', 'title': _('Events'), 'sequence': 30, 'available': available,
+             'search': lambda words, limit, ctrl: ctrl._sc_search_events(words)},
+        ]
+
+    @api.model
+    def _pk_search_placeholder(self):
+        return _("Players, teams, events…")
 
     # -----------------------------------------------------------------------
     # Save engine and screen refresh (task 5199: the kit's hooks)

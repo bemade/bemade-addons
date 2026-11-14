@@ -179,7 +179,7 @@ class TimesheetsPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'timesheet_local_dt': local_dt_map,
         }
         # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_timesheets_values(values, kw))
         return self._sc_render('bemade_sports_clinic.portal_timesheets_list',
                                'bemade_sports_clinic.sc_app_timesheets', values)

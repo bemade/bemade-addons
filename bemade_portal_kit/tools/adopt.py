@@ -96,6 +96,19 @@ ADOPTED_VIEWS = (
     (CLINIC, 'sc_entity_row', 'pk_entity_row'),
     (CLINIC, 'sc_field_static', 'pk_field_static'),
     (CLINIC, 'sc_return_overdue_flag', 'pk_overdue_flag'),
+    # Task 5200 (kit P5): « More », « Settings », « My account »,
+    # « Security », the search sheet and the calendar.
+    (CLINIC, 'sc_app_more', 'pk_app_more'),
+    (CLINIC, 'sc_app_settings', 'pk_app_settings'),
+    (CLINIC, 'sc_account_input', 'pk_account_input'),
+    (CLINIC, 'sc_account_state', 'pk_account_state'),
+    (CLINIC, 'sc_account_card_actions', 'pk_account_card_actions'),
+    (CLINIC, 'sc_app_account', 'pk_app_account'),
+    (CLINIC, 'sc_security_password', 'pk_security_password'),
+    (CLINIC, 'sc_app_security', 'pk_app_security'),
+    (CLINIC, 'sc_app_search_sheet', 'pk_search_sheet'),
+    (CLINIC, 'sc_app_search_results', 'pk_search_results'),
+    (CLINIC, 'sc_calendar', 'pk_calendar'),
 )
 
 # The kit's data files that hold adopted views and the views a consumer
@@ -104,6 +117,12 @@ ADOPTED_VIEWS = (
 KIT_VIEW_FILES = (
     'views/pk_layout.xml',
     'views/pk_components.xml',
+    # Task 5200 (P5): the kit's pages, the account pages and the calendar.
+    'views/pk_app_pages.xml',
+    'views/pk_app_account.xml',
+    'views/pk_calendar.xml',
+    # (and the back end: the help action the consumer's menu opens)
+    'views/pk_backend_views.xml',
 )
 
 

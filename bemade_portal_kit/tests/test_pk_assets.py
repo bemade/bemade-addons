@@ -57,6 +57,9 @@ KIT_JS = (
     # Task 5345 (P3c2): the theme preference (was the consumer's
     # sc_app_shell.js; nothing imported it, no alias).
     'theme_pref',
+    # Task 5200 (P5): matching, picker, search, help, guide videos,
+    # calendar, « My account ».
+    'match', 'picker', 'search', 'help', 'guide_video', 'calendar', 'account',
 )
 SHIM_MARKER = 'bemade_portal_kit shim'
 # The clinic's aliases removed by task 5198 (P3a).

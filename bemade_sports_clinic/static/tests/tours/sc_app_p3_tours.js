@@ -135,14 +135,14 @@ tours.add("sc_1540_calendar", {
     steps: () => [
         {
             content: "FullCalendar rendered from the lazy bundle",
-            trigger: '.o_sc_calendar_box[data-sc-calendar-ready="1"] .fc',
+            trigger: '.o_pk_calendar_box[data-pk-calendar-ready="1"] .fc',
             run() {
                 assert(!document.querySelector('script[src*="/web/static/lib/fullcalendar"]'), "raw FullCalendar <script src>");
             },
         },
         {
             content: "The feed's event is shown; open it",
-            trigger: ".o_sc_calendar a.fc-event, .o_sc_calendar .fc-list-event a",
+            trigger: ".o_pk_calendar a.fc-event, .o_pk_calendar .fc-list-event a",
             run: "click",
             expectUnloadPage: true,
         },

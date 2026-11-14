@@ -19,7 +19,7 @@ the public view (sidebar tree, « ← Application » header); anything else
 falls back to the normal ``/knowledge/article/<id>`` route. Editors keep the
 backend Knowledge app from the backend menu. The route only exists while
 website_knowledge is installed (same class), and the links are only
-rewritten then (``sc.help.article._sc_help_links``).
+rewritten then (``portal.kit._pk_help_url``, models/sc_app_help.py).
 
 website_knowledge is a SOFT dependency (enterprise; the addon CI may not
 have it): the class only exists when its code is importable, and Odoo only

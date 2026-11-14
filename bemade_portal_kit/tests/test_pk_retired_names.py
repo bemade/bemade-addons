@@ -169,6 +169,40 @@ components' clinic names, moved to the kit under ``pk`` names:
 * the consumer's ``sc_app_shell.js`` (the kit's ``pk_theme_pref.js``) and
   P4c3's one-release alias of the component key (gone, no exception).
 
+Task 5200 (P5) retires the account, settings, preferences, help, search,
+calendar and picker clinic names, moved to the kit under ``pk`` names:
+
+* the attributes ``data-sc-search-*`` (open, sheet, input, body, result,
+  results, group, player — now ``data-pk-search-row`` —, query),
+  ``data-sc-help`` and ``-help-key`` / ``-base`` / ``-home`` / ``-map`` /
+  ``-home-link``, ``data-sc-picker-scope`` / ``-empty`` and the picker's
+  dataset names (out, value, active, ready, narrowed), the calendar's
+  ``-calendar-ready``, ``-calendar-detail``, ``-staff-legend``,
+  ``-staff-dot``, ``-detail-link``, « My account »'s ``-account-form`` /
+  ``-errors`` / ``-state`` / ``-saved``, the guide video's ``-video-done``
+  and « More »'s ``-in-rail``;
+* the classes of the calendar (``o_sc_calendar*``, ``o_sc_staff_*``) and of
+  « My account » / « Security » (``o_sc_account*``, ``o_sc_security*``,
+  ``o_sc_password_group``);
+* the stored names ``bemade_sports_clinic.app_shell_enabled``,
+  ``.sc_theme_choice_enabled``, ``.help_home_url``, the model
+  ``sc.help.article`` and the fields ``sc_theme`` /
+  ``sc_show_done_buttons`` (allowed in the data moves and the migrations
+  that run them);
+* the Python / QWeb names of the switch, the language guard, the
+  preferences, help and search (``_sc_app_shell_active`` …, ``sc_langs``,
+  ``sc_plus``, ``sc_help``, ``sc_search_url``, ``sc_fold`` …), the page keys
+  ``sc_app_settings`` / ``_more`` / ``_account`` / ``_security``
+  (``pk_app_*``) and the templates of ``ADOPTED_VIEWS``;
+* the module paths ``@bemade_sports_clinic/js/sc_picker``, ``sc_search``,
+  ``sc_help``, ``sc_account``, ``sc_calendar`` (nothing imports them any
+  more: no alias) and the component key
+  ``bemade_sports_clinic.sc_calendar`` (allowed in the consumer's
+  one-release alias, ``sc_calendar_alias.js``).
+
+The guide videos' class ``o_fc_video`` is still read (stored article HTML
+uses it), next to ``o_pk_video``: it is not retired.
+
 Dataset destructuring (``const { scModel, scField } = el.dataset``) is
 matched too.
 
@@ -231,6 +265,14 @@ ATTRIBUTES = (
     'sort', 'card-icons', 'card-archive', 'card-trash', 'history-state',
     'scope', 'overdue', 'switch-locked', 'switch-reason', 'confirm-submit',
     'title-split', 'title-link', 'row-links', 'row-link', 'row-link-plain',
+    # Task 5200 (P5): search, help, picker, calendar, account, More rows,
+    # guide videos.
+    'search-open', 'search-sheet', 'search-input', 'search-body', 'search-result', 'search-results',
+    'search-group', 'search-player', 'search-query', 'help', 'help-key', 'help-base', 'help-home', 'help-map',
+    'help-home-link', 'picker-scope', 'picker-empty', 'picker-out', 'picker-value', 'picker-active',
+    'picker-ready', 'picker-narrowed', 'calendar-ready', 'calendar-detail', 'staff-legend', 'staff-dot',
+    'detail-link', 'account-form', 'account-errors', 'account-state', 'account-saved', 'video-done',
+    'in-rail',
 )
 EVENTS = (
     'fragments', 'form-reset', 'create-success', 'lazy-loaded',
@@ -259,6 +301,15 @@ STORAGE_KEYS = (
     'bemade_sports_clinic.sc_autosave_field', 'bemade_sports_clinic.ScAutosaveField',
     # Task 5345 (P3c2): the theme preference script.
     'bemade_sports_clinic/static/src/js/sc_app_shell.js',
+    # Task 5200 (P5): the switch's and preferences' stored names, the help
+    # model, the moved modules and the calendar's component (its key is
+    # allowed in the consumer's one-release alias only).
+    'bemade_sports_clinic.app_shell_enabled', 'bemade_sports_clinic.sc_theme_choice_enabled',
+    'bemade_sports_clinic.help_home_url', 'sc.help.article', 'model_sc_help_article',
+    'bemade_sports_clinic.sc_calendar', 'bemade_sports_clinic.ScCalendar',
+    '@bemade_sports_clinic/js/sc_picker', '@bemade_sports_clinic/js/sc_search',
+    '@bemade_sports_clinic/js/sc_help', '@bemade_sports_clinic/js/sc_account',
+    '@bemade_sports_clinic/js/sc_calendar"',
 )
 # Task 5199 (P4a): the save engine's and the refresh's Python / QWeb names,
 # as whole words.
@@ -285,6 +336,16 @@ SAVE_NAMES = (
     'sc_theme_choice', 'sc_show_done', 'sc_user_initials', 'sc_user_name',
     'sc_user_role', 'sc_db', 'sc_uid', 'sc_menu_id', 'sc_edit_done_label',
     'sc_flash', 'sc_content', 'sc_user_menu_bar',
+    # Task 5200 (P5): the switch, the preferences, the language guard, help,
+    # search, the matching helpers, the calendar, the moved pages' keys.
+    'sc_theme', 'sc_show_done_buttons', '_sc_app_shell_active', '_sc_app_shell_enabled',
+    '_sc_theme_choice_enabled', '_sc_effective_theme', '_sc_profile_lang', '_sc_lang_url',
+    '_sc_profile_lang_guard', '_sc_lang_options', 'sc_langs', 'sc_plus', 'sc_help', 'sc_search_url',
+    'SC_HELP_HOME_PARAM', '_sc_help_for', '_sc_help_links', 'sc_fold', 'sc_words', 'sc_name_matches',
+    'scFold', 'scWords', 'scNameMatches', 'ScCalendar', 'sc_app_settings', 'sc_app_more',
+    'sc_app_account', 'sc_app_security', 'PREF_FIELDS', 'PREF_BOOLEANS', 'APP_SHELL_PARAM',
+    'THEME_CHOICE_PARAM', 'SC_ACCOUNT_TEMPLATES', '_sc_core_in_shell', '_sc_relaxed_address',
+    'sc_totp_portal', 'sc_can_deactivate', 'sc_saved',
 )
 
 # Task 5344 (P3b1): the generic classes, as the name after ``o_sc_``. A name
@@ -372,6 +433,12 @@ GENERIC_CLASSES = (
     # Task 5345 (P3c2): the card clock, the overdue flag, the switch reason.
     'card_clock', 'card_clock_overdue', 'overdue', 'overdue_sep',
     'overdue_flag', 'switch_reason',
+    # Task 5200 (P5): the calendar, « My account » / « Security ».
+    'calendar', 'calendar_box', 'calendar_detail', 'calendar_staff', 'calendar_wrap', 'staff_dot',
+    'staff_dot_none', 'staff_legend', 'staff_legend_active', 'staff_legend_item', 'staff_legend_static',
+    'staff_legend_title', 'account', 'account_address', 'account_address_lines', 'account_errors',
+    'account_field', 'account_field_', 'account_form', 'account_locked', 'account_pair', 'password_group',
+    'security', 'security_device_name', 'security_device_remove', 'security_devices', 'security_on',
 )
 # Semantic and scale slots of the style tokens (the palette stays ``--sc-``).
 TOKEN_SLOTS = (
@@ -429,6 +496,17 @@ ALLOWED = {
     # preference's hoot test checks that the old markers are not read.
     ('bemade_sports_clinic', 'migrations/19.0.1.145.0/post-migrate.py'): None,
     (KIT, 'static/tests/pk_theme_pref.test.js'): {'data-sc-pref', 'data-sc-theme-switch'},
+    # Task 5200 (P5): the data moves name the old stored names; the
+    # migrations that run them and remove the old markers; the calendar's
+    # one-release alias of its component key.
+    (KIT, 'tools/data_moves.py'): None,
+    (KIT, 'tools/adopt.py'): {'sc_app_more', 'sc_app_settings', 'sc_app_account', 'sc_app_security'},
+    (KIT, 'tests/test_pk_adopt.py'): {'sc_app_more', 'sc_app_settings', 'sc_app_account', 'sc_app_security'},
+    (KIT, 'tests/test_pk_data_moves.py'): None,
+    (KIT, 'migrations/19.0.1.12.0/post-migrate.py'): None,
+    ('bemade_sports_clinic', 'migrations/19.0.1.146.0/pre-migrate.py'): None,
+    ('bemade_sports_clinic', 'migrations/19.0.1.146.0/post-migrate.py'): None,
+    ('bemade_sports_clinic', 'static/src/js/sc_calendar_alias.js'): {'bemade_sports_clinic.sc_calendar'},
 }
 
 
@@ -587,6 +665,23 @@ class TestPkRetiredNames(TransactionCase):
                          ['bemade_sports_clinic.sc_list_add_cancel'])
         self.assertEqual(retired_names('t-call="bemade_portal_kit.pk_icon" sc_card'), [])
 
+    def test_matcher_p5(self):
+        """Task 5200 (P5): the moved names, the consumer's own left alone."""
+        self.assertEqual(retired_names('<a data-sc-search-open="1" data-sc-help="1" data-sc-help-key="k">'),
+                         ['data-sc-search-open', 'data-sc-help', 'data-sc-help-key'])
+        self.assertEqual(retired_names('<a data-sc-help-guide="1" data-sc-search-x="1">'), [])
+        self.assertEqual(retired_names("get_param('bemade_sports_clinic.app_shell_enabled')"),
+                         ['bemade_sports_clinic.app_shell_enabled'])
+        self.assertEqual(retired_names("env['sc.help.article'] user.sc_theme sc_show_done_buttons"),
+                         ['sc.help.article', 'sc_theme', 'sc_show_done_buttons'])
+        self.assertEqual(retired_names("'sc_app_settings' sc_app_settings_morning_summary pk_app_settings"),
+                         ['sc_app_settings'])
+        self.assertEqual(retired_names('<div class="o_sc_calendar_box o_sc_staff_dot o_sc_account_form">'),
+                         ['o_sc_calendar_box', 'o_sc_staff_dot', 'o_sc_account_form'])
+        self.assertEqual(retired_names('<a class="o_fc_video o_pk_video">'), [])
+        self.assertEqual(retired_names('import { ScCalendar } from "@bemade_sports_clinic/js/sc_calendar";'),
+                         ['@bemade_sports_clinic/js/sc_calendar"', 'ScCalendar'])
+
     def test_matcher_save_engine(self):
         """Task 5199 (P4a): the save engine and screen refresh names."""
         self.assertEqual(retired_names('<div t-att-data-sc-fragment="sc_fragment_key(p, \'hero\')">'),
@@ -709,10 +804,14 @@ class TestPkRetiredNames(TransactionCase):
                          ['data-sc-org-confirm-box', 'data-sc-org-cancel', 'data-sc-org-confirm'])
         self.assertEqual(retired_names('<select data-sc-picker="1" data-sc-picker-key="team">'),
                          ['data-sc-picker', 'data-sc-picker-key'])
-        self.assertEqual(retired_names('<select data-sc-picker-empty="1"><div data-sc-picker-scope="1">'), [])
+        # Task 5200 (P5): the picker's empty / scope markers are the kit's now.
+        self.assertEqual(retired_names('<select data-sc-picker-empty="1"><div data-sc-picker-scope="1">'),
+                         ['data-sc-picker-empty', 'data-sc-picker-scope'])
         self.assertEqual(retired_names('select.dataset.scPickerKey; o.dataset.scTeams; o.dataset.scPlayer'),
                          ['dataset.scPickerKey', 'dataset.scTeams', 'dataset.scPlayer'])
-        self.assertEqual(retired_names('select.dataset.scPickerReady; li.dataset.scPlayerId'), [])
+        # Task 5200 (P5): the picker's dataset names are the kit's now.
+        self.assertEqual(retired_names('select.dataset.scPickerReady; li.dataset.scPlayerId'),
+                         ['dataset.scPickerReady'])
         self.assertEqual(retired_names('<option t-att-data-sc-player="p"/> data-sc-player-id="1"'),
                          ['data-sc-player'])
         self.assertEqual(retired_names('class="o_sc_identity_banner o_sc_group_confirm o_sc_replace_current_text"'),
@@ -751,7 +850,7 @@ class TestPkRetiredNames(TransactionCase):
                                        'data-sc-activity-clock-bar="1" data-sc-sort-key="a">'), [])
         self.assertEqual(retired_names("t-set=\"sc_title\" sc_active_nav main#sc_content 'sc_flash': f"),
                          ['sc_title', 'sc_active_nav', 'sc_content', 'sc_flash'])
-        self.assertEqual(retired_names('sc_title_x sc_flash_banners pk_title pk_flash sc_theme'), [])
+        self.assertEqual(retired_names('sc_title_x sc_flash_banners pk_title pk_flash pk_theme'), [])
         self.assertEqual(retired_names('t-call="bemade_sports_clinic.sc_return_overdue_flag"'),
                          ['bemade_sports_clinic.sc_return_overdue_flag'])
         self.assertEqual(

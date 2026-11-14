@@ -58,7 +58,7 @@ from odoo.tools.misc import mute_logger
 
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
-SWITCH = 'bemade_sports_clinic.app_shell_enabled'
+SWITCH = 'bemade_portal_kit.enabled'
 
 
 class PlayerInlineCommon(AppShellCommon):

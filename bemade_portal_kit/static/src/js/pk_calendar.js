@@ -1,25 +1,25 @@
 /*
- * Task 1540 (epic #1535, P3) — sc_calendar, the app shell's ONE calendar
- * component (events, and bookings through bemade_sports_clinic_bookings).
- * Mounted from QWeb (sc_calendar template) with
- *   <owl-component name="bemade_sports_clinic.sc_calendar" props="{...}"/>
+ * Task 1540 / 5200 (kit P5) — pk_calendar, the app shell's calendar
+ * component. Mounted from QWeb (bemade_portal_kit.pk_calendar) with
+ *   <owl-component name="bemade_portal_kit.pk_calendar" props="{...}"/>
  *
  * FullCalendar comes from Odoo's own lazy bundle ``web.fullcalendar_lib``
  * (loaded once, on mount — never a raw <script src>, never on other
  * pages). Events are fetched from props.feedUrl through pkFetch with the
- * visible range (start / end ISO) plus props.params (the page's filters);
- * the feed's JSON shape is unchanged. An event with a ``url`` navigates;
- * otherwise (bookings) a click shows its details under the calendar, from
- * props.detailKeys [[key, label], …] read in extendedProps (an optional
- * third item "tel" / "mailto" renders the value as a tap link, task 1585).
+ * visible range (start / end ISO) plus props.params (the page's filters).
+ * An event with a ``url`` navigates; otherwise a click shows its details
+ * under the calendar, from props.detailKeys [[key, label], …] read in
+ * extendedProps (an optional third item "tel" / "mailto" renders the value
+ * as a tap link).
  *
- * Task 1605 (opt-in prop ``staffColors``, the events calendar only): a dot
- * before each event's title in the colour of its assigned person
- * (extendedProps.staff [{id, name, color}]) — a split circle for several,
- * grey when nobody is assigned — and a legend under the calendar of the
- * people in the visible range; tapping one reloads the page filtered on
- * them (the filter bar's ``assigned_user_id``, task 1591's URL sync), the
- * visible date and view kept in the URL hash.
+ * Opt-in prop ``staffColors``: a dot before each event's title in the colour
+ * of its assigned person (extendedProps.staff [{id, name, color}]) — a split
+ * circle for several, grey when nobody is assigned — and a legend under the
+ * calendar of the people in the visible range; tapping one reloads the page
+ * filtered on them (URL parameter props.assigneeParam, default
+ * « assignee »), the visible date and view kept in the URL hash (pk_date,
+ * pk_view). The legend's texts are props too: legendTitle, showAllLabel,
+ * unassignedLabel (neutral defaults).
  */
 import { Component, onMounted, onWillStart, onWillUnmount, useRef, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
@@ -29,7 +29,7 @@ import { pkFetch } from "@bemade_portal_kit/js/pk_fetch";
 import { pkContactHref } from "@bemade_portal_kit/js/pk_contact_href";
 
 const PHONE = 700;
-const ASSIGNED = "assigned_user_id";
+const ASSIGNEE = "assignee";
 
 /** CSS background of a staff dot: one colour, or equal conic slices. */
 export function staffDotBackground(colors) {
@@ -62,14 +62,18 @@ export function staffLegend(events) {
     return { people, unassigned };
 }
 
-export class ScCalendar extends Component {
-    static template = "bemade_sports_clinic.ScCalendar";
+export class PkCalendar extends Component {
+    static template = "bemade_portal_kit.PkCalendar";
     static props = {
         feedUrl: String,
         params: { type: Object, optional: true },
         locale: { type: String, optional: true },
         detailKeys: { type: Array, optional: true },
         staffColors: { type: Boolean, optional: true },
+        legendTitle: { type: String, optional: true },
+        showAllLabel: { type: String, optional: true },
+        unassignedLabel: { type: String, optional: true },
+        assigneeParam: { type: String, optional: true },
         "*": true,
     };
 
@@ -82,7 +86,7 @@ export class ScCalendar extends Component {
             legend: { people: [], unassigned: false },
             legendReady: false,
         });
-        this.activeStaff = new URLSearchParams(window.location.search).get(ASSIGNED) || "";
+        this.activeStaff = new URLSearchParams(window.location.search).get(this.assigneeParam) || "";
         onWillStart(async () => {
             try {
                 await loadBundle("web.fullcalendar_lib");
@@ -98,16 +102,21 @@ export class ScCalendar extends Component {
         return _t("The calendar could not be loaded.");
     }
 
+    /** The URL parameter the legend filters on (the page's filter). */
+    get assigneeParam() {
+        return this.props.assigneeParam || ASSIGNEE;
+    }
+
     get legendTitle() {
-        return _t("Therapists");
+        return this.props.legendTitle || _t("Assigned");
     }
 
     get unassignedLabel() {
-        return _t("Unassigned");
+        return this.props.unassignedLabel || _t("Unassigned");
     }
 
     get showAllLabel() {
-        return _t("Show all therapists");
+        return this.props.showAllLabel || _t("Show all");
     }
 
     /** Filtered on someone who has no event in the visible range. */
@@ -127,12 +136,12 @@ export class ScCalendar extends Component {
     initialPosition(views) {
         const hash = new URLSearchParams(window.location.hash.slice(1));
         const position = {};
-        const date = hash.get("sc_date");
+        const date = hash.get("pk_date");
         if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
             position.initialDate = date;
         }
-        if (views.includes(hash.get("sc_view"))) {
-            position.initialView = hash.get("sc_view");
+        if (views.includes(hash.get("pk_view"))) {
+            position.initialView = hash.get("pk_view");
         }
         return position;
     }
@@ -140,9 +149,9 @@ export class ScCalendar extends Component {
     mountStaffDot(info) {
         const staff = info.event.extendedProps.staff || [];
         const dot = document.createElement("span");
-        dot.className = "o_sc_staff_dot";
+        dot.className = "o_pk_calendar_dot";
         dot.setAttribute("role", "img");
-        dot.dataset.scStaffDot = staff.map((person) => person.id).join(",") || "none";
+        dot.dataset.pkCalendarDot = staff.map((person) => person.id).join(",") || "none";
         const names = staff.map((person) => person.name).join(", ");
         const label = names || this.unassignedLabel;
         dot.setAttribute("aria-label", label);
@@ -151,7 +160,7 @@ export class ScCalendar extends Component {
         if (colors.length) {
             dot.style.background = staffDotBackground(colors);
         } else {
-            dot.classList.add("o_sc_staff_dot_none");
+            dot.classList.add("o_pk_calendar_dot_none");
         }
         // Replaces FullCalendar's own dot (month / list); else before the title.
         const fcDot = info.el.querySelector(".fc-daygrid-event-dot, .fc-list-event-dot");
@@ -175,18 +184,23 @@ export class ScCalendar extends Component {
         this.state.legend = staffLegend(inRange);
     }
 
-    filterOn(person) {
-        const url = new URL(window.location.href);
+    /** The page filtered on ``person`` (none, or the active one: all). */
+    filterUrl(person, href = window.location.href) {
+        const url = new URL(href);
         if (!person || this.isActive(person)) {
-            url.searchParams.delete(ASSIGNED);
+            url.searchParams.delete(this.assigneeParam);
         } else {
-            url.searchParams.set(ASSIGNED, String(person.id));
+            url.searchParams.set(this.assigneeParam, String(person.id));
         }
         const hash = new URLSearchParams();
-        hash.set("sc_date", this.calendar.formatIso(this.calendar.getDate(), true));
-        hash.set("sc_view", this.calendar.view.type);
+        hash.set("pk_date", this.calendar.formatIso(this.calendar.getDate(), true));
+        hash.set("pk_view", this.calendar.view.type);
         url.hash = hash.toString();
-        window.location.assign(url.toString());
+        return url.toString();
+    }
+
+    filterOn(person) {
+        window.location.assign(this.filterUrl(person));
     }
 
     fetchEvents(info, success, failure) {
@@ -272,4 +286,4 @@ export class ScCalendar extends Component {
     }
 }
 
-registry.category("public_components").add("bemade_sports_clinic.sc_calendar", ScCalendar);
+registry.category("public_components").add("bemade_portal_kit.pk_calendar", PkCalendar);

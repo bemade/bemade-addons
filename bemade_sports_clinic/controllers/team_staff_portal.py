@@ -276,7 +276,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
                                        # Task 1592: the rows' activity clocks
                                        # (one query, the shell only).
                                        'sc_team_clocks': (self._sc_team_clocks(teams)
-                                                          if self._sc_app_shell_active() else {}),
+                                                          if self._pk_shell_active() else {}),
                                        'page': page,
                                        # 1577 review: a refused team lands
                                        # here with a CODE, never raw text.
@@ -502,7 +502,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # 2026-10-10).
         order = 'last_name asc, first_name asc'
         sort_mode = None
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             sort_mode = self._sc_players_resolve_sort(kw.get('sort'))
             order = SC_PLAYERS_SORT_ORDERS[sort_mode]
         players = Patients_search.search(
@@ -580,7 +580,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         }
         # Task 1539: the app shell (switch on) or today's template, byte for
         # byte (switch off). Shell rows are computed only for the shell.
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_players_values(values, is_tp_admin))
             # Task 1674: the near matches of a name search (first page).
             if name_search and int(page or 1) == 1:
@@ -1094,7 +1094,7 @@ class TeamStaffPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
         # Task 1539: the app shell (switch on) or today's template, byte for
         # byte (switch off — including the e-mail deep links). The shell-only
         # values are computed only when the shell renders.
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_player_values(player, values, kw))
         return self._sc_render('bemade_sports_clinic.portal_my_player_injuries',
                                'bemade_sports_clinic.sc_app_player', values)
