@@ -21,7 +21,9 @@ only (a manager, a resource user or another learner gets an access error):
 5. **Forbidden in every payload** (checked recursively): latencies, thresholds,
    timers, time limits, mastery ``state``, ``box``, ``due_on``.
 6. Item payload: ``item_id``, ``prompt``, ``answer_mode``, ``choices`` (ordered),
-   ``intro`` and ``first_time``; never the expected answer before it is answered.
+   ``answer``, ``intro`` and ``first_time``. The answer travels with the item so the screen
+   shows right or wrong the instant he answers, without waiting for the network (owner,
+   2026-11-13); the server still judges and records every answer.
 7. Learner-facing strings come back in the learner's language (fr_CA tested).
 """
 import json
@@ -66,11 +68,10 @@ class TestPortalApi(PracticeHttpCase):
         item = res["item"]
         self.assertTrue(item["first_time"])
         self.assertTrue(item["intro"])
-        self.assertNotIn("answer", item)
-        self.assertNotIn("expected", item)
         sid, n, done = res["session_id"], 0, None
         while item and n < 40:
             answer = self.env["homeschool.practice.item"].browse(item["item_id"]).answer
+            self.assertEqual(item["answer"], answer)
             given = answer if n != 1 else "999"
             out = self.call("/session/answer", session_id=sid, item_id=item["item_id"], given=given,
                             first_touch_ms=900, submit_ms=1400, client_ts="2026-11-16T14:00:00.000Z", client_uuid="u%s" % n)
