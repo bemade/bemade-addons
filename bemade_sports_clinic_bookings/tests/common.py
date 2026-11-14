@@ -7,7 +7,7 @@ from lxml import html as lxml_html
 from odoo import Command, fields
 from odoo.tests import HttpCase
 
-SWITCH = 'bemade_sports_clinic.app_shell_enabled'
+SWITCH = 'bemade_portal_kit.enabled'
 
 
 class BookingsShellCommon(HttpCase):
@@ -64,5 +64,5 @@ class BookingsShellCommon(HttpCase):
 
     @staticmethod
     def _calendar_props(tree):
-        node = tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_calendar"]')[0]
+        node = tree.xpath('//owl-component[@name="bemade_portal_kit.pk_calendar"]')[0]
         return json.loads(node.get('props'))

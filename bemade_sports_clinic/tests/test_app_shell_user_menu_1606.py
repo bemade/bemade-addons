@@ -165,25 +165,25 @@ class TestUserMenu1606(UserMenuCommon):
             self.assertFalse([h for h in hrefs if 'classic=1' in h])
             # Logging out is the menu's job (no duplicate row here).
             self.assertFalse([h for h in hrefs if h.startswith(LOGOUT)])
-            lang = main.xpath('.//section[@id="sc_language"]//form')
+            lang = main.xpath('.//section[@id="pk_language"]//form')
             self.assertEqual(len(lang), 1)
             self.assertEqual(lang[0].xpath('.//input[@name="redirect"]/@value'),
                              ['/my/app/settings'])
             # Task 1602: forced dark -> no Appearance block.
-            self.assertFalse(main.xpath('.//*[@id="sc_appearance"]'))
+            self.assertFalse(main.xpath('.//*[@id="pk_appearance"]'))
             # No app navigation entries on this page.
-            self.assertFalse(main.xpath('.//a[@data-sc-nav-key]'))
+            self.assertFalse(main.xpath('.//a[@data-pk-nav-key]'))
 
     def test_settings_appearance_when_choice_enabled(self):
         self._switch(True)
         self._theme_choice(True)
         self._login_coach()
         _text, tree = self._get('/my/app/settings')
-        form = tree.xpath('//*[@id="sc_appearance"]//form[@data-pk-pref]')
+        form = tree.xpath('//*[@id="pk_appearance"]//form[@data-pk-pref]')
         self.assertEqual(len(form), 1)
         # Task 1726: a switch posting dark (on) / light (its off twin).
-        self.assertTrue(form[0].xpath('.//input[@role="switch"][@name="sc_theme"][@value="dark"]'))
-        self.assertTrue(form[0].xpath('.//input[@type="hidden"][@name="sc_theme"][@value="light"]'))
+        self.assertTrue(form[0].xpath('.//input[@role="switch"][@name="pk_theme"][@value="dark"]'))
+        self.assertTrue(form[0].xpath('.//input[@type="hidden"][@name="pk_theme"][@value="light"]'))
         self.assertEqual(form[0].xpath('.//input[@name="redirect"]/@value'),
                          ['/my/app/settings'])
 
@@ -209,15 +209,15 @@ class TestUserMenu1606(UserMenuCommon):
             login()
             _text, tree = self._get('/my/app/more')
             main = tree.xpath('//main[@id="pk_content"]')[0]
-            for section in ('sc_language', 'sc_appearance', 'sc_account'):
+            for section in ('pk_language', 'pk_appearance', 'pk_account'):
                 self.assertFalse(main.xpath('.//*[@id="%s"]' % section), section)
             hrefs = set(main.xpath('.//a/@href'))
             for href in ('/my/account', '/my/security', '/my/home?classic=1'):
                 self.assertNotIn(href, hrefs)
             self.assertFalse([h for h in hrefs if h.startswith(LOGOUT)])
-            self.assertFalse(main.xpath('.//button[@name="lang"] | .//*[@name="sc_theme"]'))
+            self.assertFalse(main.xpath('.//button[@name="lang"] | .//*[@name="pk_theme"]'))
             # The app entries stay.
-            self.assertIn('install', main.xpath('.//a/@data-sc-nav-key'))
+            self.assertIn('install', main.xpath('.//a/@data-pk-nav-key'))
 
     # -- UC-M4 -----------------------------------------------------------
     def test_pref_without_redirect_lands_on_settings(self):
@@ -225,7 +225,7 @@ class TestUserMenu1606(UserMenuCommon):
         self._theme_choice(True)
         self._login_coach()
         resp = self.url_open('/my/app/pref', data={
-            'csrf_token': self._csrf(), 'sc_theme': 'light'}, allow_redirects=False)
+            'csrf_token': self._csrf(), 'pk_theme': 'light'}, allow_redirects=False)
         self.assertIn(resp.status_code, (302, 303))
         self.assertTrue(resp.headers['Location'].endswith('/my/app/settings'),
                         resp.headers['Location'])

@@ -111,7 +111,7 @@ class TestAppShellHomeNav(Parity1577Common):
             self.assertEqual(self._return_url(chip), HOME, chip)
         _text, tree = self._get(segments['calendar'])
         self.assertEqual(self._back(tree), [HOME])
-        node = tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_calendar"]')[0]
+        node = tree.xpath('//owl-component[@name="bemade_portal_kit.pk_calendar"]')[0]
         self.assertNotIn('return_url', json.loads(node.get('props'))['params'])
         segments = dict(zip(tree.xpath('//nav[@data-pk-tabs]//a/@data-pk-tab'),
                             tree.xpath('//nav[@data-pk-tabs]//a/@href')))
@@ -216,13 +216,13 @@ class TestAppShellHomeNav(Parity1577Common):
                          ['teams', 'players', 'notepad', 'activities',
                           'clinic', 'events', 'timesheets', 'more'])
         _text, tree = self._get('/my/app/more')
-        plus = tree.xpath('//main[@id="pk_content"]//a/@data-sc-nav-key')
+        plus = tree.xpath('//main[@id="pk_content"]//a/@data-pk-nav-key')
         for key in ('clinic', 'events', 'timesheets'):
             self.assertIn(key, plus, key)
         for key in ('teams', 'players', 'notepad', 'activities'):
             self.assertNotIn(key, plus, key)
         # Already on the laptop rail: marked so « More » hides them there.
-        railed = tree.xpath('//main[@id="pk_content"]//a[@data-sc-in-rail]/@data-sc-nav-key')
+        railed = tree.xpath('//main[@id="pk_content"]//a[@data-pk-in-rail]/@data-pk-nav-key')
         self.assertEqual(set(railed), {'clinic', 'events', 'timesheets'})
 
     def test_coach_tabs_and_rail(self):
@@ -233,7 +233,7 @@ class TestAppShellHomeNav(Parity1577Common):
         self.assertEqual(self._nav_keys(tree, 'o_pk_rail_nav'),
                          ['teams', 'players', 'activities', 'events', 'more'])
         _text, tree = self._get('/my/app/more')
-        self.assertIn('events', tree.xpath('//main[@id="pk_content"]//a/@data-sc-nav-key'))
+        self.assertIn('events', tree.xpath('//main[@id="pk_content"]//a/@data-pk-nav-key'))
 
     # -- UC-H8 -----------------------------------------------------------
     def test_digest_history_opens_the_list_page(self):

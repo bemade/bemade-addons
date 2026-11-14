@@ -256,7 +256,7 @@ def _digest_history_from(env, match, args):
 # rest MUST declare a parent — tests/test_app_shell_nav_1579.py).
 TOP_LEVEL = frozenset({
     'sc_app_home', 'sc_app_teams', 'sc_app_players', 'sc_app_clinics',
-    'sc_app_more', 'sc_app_notepad', 'sc_app_activities',
+    'pk_app_more', 'sc_app_notepad', 'sc_app_activities',
 })
 
 
@@ -272,7 +272,7 @@ def sc_pages(kit):
         pk_static_page('sc_app_teams', '/my/teams', label('teams')),
         pk_static_page('sc_app_players', '/my/players', label('players')),
         pk_static_page('sc_app_clinics', '/my/clinics', label('clinic')),
-        pk_static_page('sc_app_more', '/my/app/more', label('more')),
+        pk_static_page('pk_app_more', '/my/app/more', label('more')),  # task 5200: the kit's page
         # Owner review 2026-10-10 made « Notepad » a phone tab: a top-level page.
         pk_static_page('sc_app_notepad', '/my/notepad', label('notepad')),
         Page('sc_app_activities', url='/my/activities', label=label('activities'),
@@ -281,17 +281,17 @@ def sc_pages(kit):
              return_url=lambda v: v.get('sc_clock_from')),
         # -- « Plus » pages ------------------------------------------------
         pk_static_page('sc_app_events', '/my/events', label('events'),
-                       parent=lambda v: ('sc_app_more', {})),
+                       parent=lambda v: ('pk_app_more', {})),
         pk_static_page('sc_app_events_calendar', '/my/events/calendar', label('events'),
-                       parent=lambda v: ('sc_app_more', {})),
+                       parent=lambda v: ('pk_app_more', {})),
         pk_static_page('sc_app_timesheets', '/my/sc/timesheets', label('timesheets'),
-                       parent=lambda v: ('sc_app_more', {})),
+                       parent=lambda v: ('pk_app_more', {})),
         pk_static_page('sc_app_install', '/my/app/install', label('install'),
-                       parent=lambda v: ('sc_app_more', {})),
+                       parent=lambda v: ('pk_app_more', {})),
         # Task 1606: « Paramètres », opened from the user menu (not a page of
         # « Plus »): a sub-page of the home — back = where the user came from
         # (pk_app_nav.js), else the home.
-        pk_static_page('sc_app_settings', '/my/app/settings', _lt('Settings'),
+        pk_static_page('pk_app_settings', '/my/app/settings', _lt('Settings'),
                        parent=lambda v: ('sc_app_home', {})),
         # Task 1624: « Configurer » the dashboard — a sub-page of the home.
         pk_static_page('sc_app_dashboard_configure', '/my/app/dashboard/configure',
@@ -299,8 +299,8 @@ def sc_pages(kit):
         # Task 1620: the core « Mon compte » / « Sécurité » routes rendered in
         # the shell — sub-pages of « Paramètres ». No path on purpose: they are
         # never a return_url / « came from » target (test_app_shell_nav_1579).
-        Page('sc_app_account', parent=lambda v: ('sc_app_settings', {})),
-        Page('sc_app_security', parent=lambda v: ('sc_app_settings', {})),
+        # Task 5200 (kit P5): the kit declares them (pk_app_account /
+        # pk_app_security, sub-pages of pk_app_settings).
         # -- teams ---------------------------------------------------------
         Page('sc_app_team', path=r'/my/team', from_url=_team_from,
              url=lambda v: '/my/team?team_id=%s%s' % (

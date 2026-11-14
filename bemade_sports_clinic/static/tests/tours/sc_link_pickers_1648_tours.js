@@ -61,8 +61,8 @@ tours.add("sc_1648_notepad", {
                 type("team_id", "team b");
                 pick("team_id", "PC Team B");
                 assert(document.querySelector(`${FORM} select[name="team_id"]`).value, "team not set");
-                assert(optionFor("patient_id", "One").dataset.scPickerOut, "Pat One (team A) still offered");
-                assert(!optionFor("patient_id", "Zoé").dataset.scPickerOut, "Zoé (team B) narrowed out");
+                assert(optionFor("patient_id", "One").dataset.pkPickerOut, "Pat One (team A) still offered");
+                assert(!optionFor("patient_id", "Zoé").dataset.pkPickerOut, "Zoé (team B) narrowed out");
                 type("patient_id", "");
                 const listed = [...picker("patient_id").querySelectorAll(".o_pk_picker_option")].map((li) => li.textContent);
                 assert(!listed.some((t) => t.includes("One")), `team A player listed: ${listed}`);
@@ -80,14 +80,14 @@ tours.add("sc_1648_notepad", {
             trigger: `${FORM} select[name="team_id"] + .o_pk_picker .o_pk_picker_input`,
             run() {
                 assert(!document.querySelector(`${FORM} select[name="team_id"]`).value, "team not cleared");
-                assert(!optionFor("patient_id", "One").dataset.scPickerOut, "the players did not widen");
+                assert(!optionFor("patient_id", "One").dataset.pkPickerOut, "the players did not widen");
                 type("patient_id", "zo pick");
                 pick("patient_id", "Zoé");
-                assert(optionFor("injury_id", "wrist") && !optionFor("injury_id", "wrist").dataset.scPickerOut,
+                assert(optionFor("injury_id", "wrist") && !optionFor("injury_id", "wrist").dataset.pkPickerOut,
                     "Zoé's injury narrowed out");
                 const other = [...document.querySelector(`${FORM} select[name="injury_id"]`).options].find(
                     (o) => o.value && !o.textContent.includes("wrist"));
-                assert(!other || other.dataset.scPickerOut, "another player's injury still offered");
+                assert(!other || other.dataset.pkPickerOut, "another player's injury still offered");
                 type("injury_id", "wrist");
                 pick("injury_id", "wrist");
             },

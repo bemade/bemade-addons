@@ -142,11 +142,14 @@
         The notepad's optional link selects. Variables: prefix (id prefix),
         selected (dict: team_id, patient_id, injury_id, event_id).
     -->
-    <!-- Task 1648: each link is a type-to-filter picker (sc_picker.js) on a
-         plain select (the POST is unchanged; without JS, the select); a team
-         narrows the players and events, a player the injuries. -->
+    <!-- Task 1648: each link is a type-to-filter picker (the kit's
+         pk_picker.js) on a plain select (the POST is unchanged; without JS,
+         the select); a team narrows the players and events, a player the
+         injuries (task 5200: declared with data-pk-picker-narrow / -hint). -->
     <template id="sc_notepad_links" name="App shell: notepad links">
-        <div class="o_pk_filter_grid" data-sc-picker-scope="1">
+        <t t-set="sc_hint_team">Cleared: not in the chosen team.</t>
+        <t t-set="sc_hint_player">Cleared: not one of the chosen player's injuries.</t>
+        <div class="o_pk_filter_grid" data-pk-picker-scope="1">
             <div class="o_pk_field">
                 <label class="o_pk_field_label" t-att-for="'%s_team' % prefix">Team</label>
                 <select name="team_id" t-att-id="'%s_team' % prefix" class="o_pk_input o_pk_select"
@@ -160,7 +163,8 @@
             <div class="o_pk_field">
                 <label class="o_pk_field_label" t-att-for="'%s_patient' % prefix">Player</label>
                 <select name="patient_id" t-att-id="'%s_patient' % prefix" class="o_pk_input o_pk_select"
-                        data-pk-picker="1" data-pk-picker-key="player">
+                        data-pk-picker="1" data-pk-picker-key="player"
+                        data-pk-picker-narrow="team:teams" t-att-data-pk-picker-hint="sc_hint_team">
                     <option value="">—</option>
                     <t t-foreach="patients" t-as="patient_opt">
                         <option t-att-value="patient_opt.id"
@@ -173,7 +177,8 @@
             <div class="o_pk_field">
                 <label class="o_pk_field_label" t-att-for="'%s_injury' % prefix">Injury</label>
                 <select name="injury_id" t-att-id="'%s_injury' % prefix" class="o_pk_input o_pk_select"
-                        data-pk-picker="1" data-pk-picker-key="injury">
+                        data-pk-picker="1" data-pk-picker-key="injury"
+                        data-pk-picker-narrow="player:player" t-att-data-pk-picker-hint="sc_hint_player">
                     <option value="">—</option>
                     <t t-foreach="injuries" t-as="injury_opt">
                         <option t-att-value="injury_opt.id" t-att-data-pk-meta-player="injury_opt.sudo().patient_id.id"
@@ -184,7 +189,8 @@
             <div class="o_pk_field">
                 <label class="o_pk_field_label" t-att-for="'%s_event' % prefix">Event</label>
                 <select name="event_id" t-att-id="'%s_event' % prefix" class="o_pk_input o_pk_select"
-                        data-pk-picker="1" data-pk-picker-key="event">
+                        data-pk-picker="1" data-pk-picker-key="event"
+                        data-pk-picker-narrow="team:teams" t-att-data-pk-picker-hint="sc_hint_team">
                     <option value="">—</option>
                     <t t-foreach="events" t-as="event_opt">
                         <option t-att-value="event_opt.id"
@@ -228,14 +234,16 @@
             <div t-if="not archived" class="o_pk_fields" data-pk-edit-view="edit" hidden="hidden">
                 <t t-set="lbl">Note</t>
                 <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(row['record'], 'note', lbl, 'textarea')"/></t>
+                <t t-set="sc_hint_team">Cleared: not in the chosen team.</t>
+                <t t-set="sc_hint_player">Cleared: not one of the chosen player's injuries.</t>
                 <t t-set="lbl">Team</t>
                 <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(row['record'], 'team_id', lbl, 'select', options=sc_qn_options['team_id'], picker=True, pickerKey='team')"/></t>
                 <t t-set="lbl">Player</t>
-                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(row['record'], 'patient_id', lbl, 'select', options=sc_qn_options['patient_id'], picker=True, pickerKey='player', optionMeta=sc_qn_meta['patient_id'])"/></t>
+                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(row['record'], 'patient_id', lbl, 'select', options=sc_qn_options['patient_id'], picker=True, pickerKey='player', pickerNarrow='team:teams', pickerHint=sc_hint_team, optionMeta=sc_qn_meta['patient_id'])"/></t>
                 <t t-set="lbl">Injury</t>
-                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(row['record'], 'injury_id', lbl, 'select', options=sc_qn_options['injury_id'], picker=True, pickerKey='injury', optionMeta=sc_qn_meta['injury_id'])"/></t>
+                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(row['record'], 'injury_id', lbl, 'select', options=sc_qn_options['injury_id'], picker=True, pickerKey='injury', pickerNarrow='player:player', pickerHint=sc_hint_player, optionMeta=sc_qn_meta['injury_id'])"/></t>
                 <t t-set="lbl">Event</t>
-                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(row['record'], 'event_id', lbl, 'select', options=sc_qn_options['event_id'], picker=True, pickerKey='event', optionMeta=sc_qn_meta['event_id'])"/></t>
+                <t t-call="bemade_portal_kit.pk_field_autosave"><t t-set="props" t-value="pk_field_props(row['record'], 'event_id', lbl, 'select', options=sc_qn_options['event_id'], picker=True, pickerKey='event', pickerNarrow='team:teams', pickerHint=sc_hint_team, optionMeta=sc_qn_meta['event_id'])"/></t>
                 <t t-call="bemade_portal_kit.pk_edit_card_done"/>
             </div>
             <!-- « Restore » of an archived note stays a text button (owner

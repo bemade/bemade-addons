@@ -23,19 +23,19 @@ registry.category("web_tour.tours").add("sc_1540_bookings", {
         },
         {
             content: "The booking is on the calendar; open its details",
-            trigger: '.o_sc_calendar_box[data-sc-calendar-ready="1"] :is(.fc-event, .fc-list-event)',
+            trigger: '.o_pk_calendar_box[data-pk-calendar-ready="1"] :is(.fc-event, .fc-list-event)',
             run: "click",
         },
         {
             content: "Details shown under the calendar",
-            trigger: '[data-sc-calendar-detail] .o_pk_kv',
+            trigger: '[data-pk-calendar-detail] .o_pk_kv',
         },
         {
             // Task 1585: tap to call / write from the details.
             content: "The client's phone and email are tap links",
-            trigger: '[data-sc-calendar-detail] a[data-sc-detail-link="email"][href="mailto:quinn@bk.example.com"]',
+            trigger: '[data-pk-calendar-detail] a[data-pk-calendar-detail-link="email"][href="mailto:quinn@bk.example.com"]',
             run() {
-                const phone = document.querySelector('[data-sc-calendar-detail] a[data-sc-detail-link="phone"]');
+                const phone = document.querySelector('[data-pk-calendar-detail] a[data-pk-calendar-detail-link="phone"]');
                 if (!phone || phone.getAttribute("href") !== "tel:+15550100321") {
                     throw new Error(`phone link is « ${phone && phone.getAttribute("href")} »`);
                 }
@@ -62,21 +62,21 @@ registry.category("web_tour.tours").add("sc_1732_booking_answers", {
         },
         {
             content: "Open the booking's details",
-            trigger: '.o_sc_calendar_box[data-sc-calendar-ready="1"] :is(.fc-event, .fc-list-event)',
+            trigger: '.o_pk_calendar_box[data-pk-calendar-ready="1"] :is(.fc-event, .fc-list-event)',
             run: "click",
         },
         {
             content: "The answers are in the details; a multi-line one keeps its breaks",
-            trigger: '[data-sc-calendar-detail] .o_pk_kv dd:contains("Worse on stairs")',
+            trigger: '[data-pk-calendar-detail] .o_pk_kv dd:contains("Worse on stairs")',
             run() {
-                const dd = [...document.querySelectorAll("[data-sc-calendar-detail] .o_pk_kv dd")].find((el) =>
+                const dd = [...document.querySelectorAll("[data-pk-calendar-detail] .o_pk_kv dd")].find((el) =>
                     el.textContent.includes("Worse on stairs")
                 );
                 const ws = getComputedStyle(dd).whiteSpace;
                 if (!["pre-line", "pre-wrap"].includes(ws)) {
                     throw new Error(`white-space is « ${ws} »`);
                 }
-                if (!document.querySelector('[data-sc-calendar-detail] .o_pk_kv dd')) {
+                if (!document.querySelector('[data-pk-calendar-detail] .o_pk_kv dd')) {
                     throw new Error("no details");
                 }
             },

@@ -1,9 +1,35 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
-from odoo import models
+from odoo import fields, models
 
 
 class ResUsers(models.Model):
     _inherit = 'res.users'
+
+    # Task 5200 (P5): the app's per-user preferences (« Settings »), set by
+    # the user through /my/app/pref. A consumer may change the default theme
+    # (``pk_theme = fields.Selection(default=...)`` in its own class).
+    pk_theme = fields.Selection(
+        selection=[('light', 'Light'), ('dark', 'Dark')],
+        string="Portal App Theme",
+        default='light',
+        required=True,
+        copy=False,
+    )
+    # Off by default: the edit cards' « Done » buttons are hidden and the
+    # head pencil closes the card.
+    pk_show_done_buttons = fields.Boolean(
+        string="Show « Done » buttons",
+        default=False,
+        copy=False,
+    )
+
+    @property
+    def SELF_READABLE_FIELDS(self):
+        return super().SELF_READABLE_FIELDS + ['pk_theme', 'pk_show_done_buttons']
+
+    @property
+    def SELF_WRITEABLE_FIELDS(self):
+        return super().SELF_WRITEABLE_FIELDS + ['pk_theme', 'pk_show_done_buttons']
 
     def _pk_roles(self):
         """The user's app role SET: the roles of ``portal.kit._pk_roles()``

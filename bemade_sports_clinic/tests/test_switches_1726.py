@@ -118,20 +118,20 @@ class TestSwitches1726(Switch1726Common):
         self._login_tp()
         _text, tree = self._get('/my/security')
         switch = self._one(tree, name='request_blacklist')
-        self.assertEqual(switch.get('id'), 'sc_deactivate_blacklist')
+        self.assertEqual(switch.get('id'), 'pk_deactivate_blacklist')
         self.assertIsNone(switch.get('value'))  # posts « on », as before
         self._assert_state(switch, True)
 
     # -- UC-3 -------------------------------------------------------------
     def test_settings_preferences_are_switches(self):
         self._theme_choice(True)
-        self.tp.write({'sc_theme': 'dark', 'digest_daily_enabled': True, 'sc_show_done_buttons': False})
+        self.tp.write({'pk_theme': 'dark', 'digest_daily_enabled': True, 'pk_show_done_buttons': False})
         self._login_tp()
         _text, tree = self._get('/my/app/settings')
         for section_id, name, on_value, off_value, on in (
-                ('sc_appearance', 'sc_theme', 'dark', 'light', True),
+                ('pk_appearance', 'pk_theme', 'dark', 'light', True),
                 ('sc_morning_summary', 'digest_daily_enabled', '1', '0', True),
-                ('sc_done_buttons', 'sc_show_done_buttons', '1', '0', False)):
+                ('pk_done_buttons', 'pk_show_done_buttons', '1', '0', False)):
             section = tree.xpath('//section[@id="%s"]' % section_id)[0]
             self.assertFalse(section.xpath('.//*[contains(@class, "o_pk_segmented")]'), section_id)
             switch = self._one(section, name=name)
@@ -143,15 +143,15 @@ class TestSwitches1726(Switch1726Common):
             self.assertEqual(twin[0].get('value'), off_value)
             self.assertEqual(twin[0].get('disabled') is not None, on, section_id)
         # The language is not boolean: never a switch.
-        self.assertFalse(tree.xpath('//section[@id="sc_language"]//input[@role="switch"]'))
+        self.assertFalse(tree.xpath('//section[@id="pk_language"]//input[@role="switch"]'))
 
     def test_settings_switch_posts_the_same_values(self):
         self._theme_choice(True)
         self._login_tp()
-        for name, value, field, expected in (('sc_theme', 'light', 'sc_theme', 'light'),
-                                             ('sc_theme', 'dark', 'sc_theme', 'dark'),
+        for name, value, field, expected in (('pk_theme', 'light', 'pk_theme', 'light'),
+                                             ('pk_theme', 'dark', 'pk_theme', 'dark'),
                                              ('digest_daily_enabled', '0', 'digest_daily_enabled', False),
-                                             ('sc_show_done_buttons', '1', 'sc_show_done_buttons', True)):
+                                             ('pk_show_done_buttons', '1', 'pk_show_done_buttons', True)):
             resp = self.url_open('/my/app/pref', data={'csrf_token': self._csrf(), name: value,
                                                        'redirect': '/my/app/settings'}, allow_redirects=False)
             self.assertIn(resp.status_code, (302, 303))

@@ -9,7 +9,7 @@ Acceptance criteria covered here:
 * UC-E2 (AC2) List: upcoming / past / calendar segments, type chips
   filtering on ``event_type``, one row per event; « Nouvel événement » for
   therapists only.
-* UC-E3 (AC2) Calendar: the shared sc_calendar component on the unchanged
+* UC-E3 (AC2) Calendar: the shared pk_calendar component on the unchanged
   feed, FullCalendar NOT loaded by a raw <script src>.
 * UC-E4 (AC2/AC5) Detail: the assigned therapist sees their OWN timesheet
   cards + the add / edit / delete sheets (CSRF, today's routes); a coach
@@ -86,7 +86,7 @@ class TestAppShellEvents1540(Events1540Common):
         self._switch(True)
         self._login_coach()
         text, tree = self._get('/my/events/calendar?team_id=%s' % self.team_a.id)
-        node = tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_calendar"]')[0]
+        node = tree.xpath('//owl-component[@name="bemade_portal_kit.pk_calendar"]')[0]
         props = json.loads(node.get('props'))
         self.assertEqual(props['feedUrl'], '/my/events/calendar/data')
         self.assertEqual(props['params'], {'team_id': str(self.team_a.id)})

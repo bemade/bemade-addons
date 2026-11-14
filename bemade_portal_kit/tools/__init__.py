@@ -34,3 +34,5 @@ from .guard import PK_GUARD_HEADER
 from .display import pk_contact_href, pk_display, pk_display_key
 # Task 5382 (P4c3): the autosave field's props builders.
 from .field_props import pk_draft_props, pk_field_props, pk_form_props, pk_options
+# Task 5200 (P5): the search's / pickers' name matching and the data moves.
+from .match import pk_fold, pk_name_matches, pk_words

@@ -1,27 +1,26 @@
-// Task 1620 — « Mon compte » / « Sécurité » in the shell
-// (views/sc_app_account.xml). Scoped under .o_pk_app.
+// Copyright 2026 Bemade Inc. (<https://www.bemade.org>)
+// License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 //
-// Task 5357 (kit P3b2): the generic rules (only o_pk_* classes, data-pk-*
-// attributes, generic elements) moved to bemade_portal_kit (pk_components /
-// pk_pages.scss, loaded first); this file keeps the clinic's own.
+// Task 1620 / 5200 (kit P5) — « My account » / « Security » in the shell
+// (views/pk_app_account.xml). Scoped under .o_pk_app.
 
 .o_pk_app {
-    .o_sc_account,
-    .o_sc_security {
+    .o_pk_account,
+    .o_pk_security {
         display: flex;
         flex-direction: column;
         gap: var(--pk-space-4);
         max-width: 720px;
     }
 
-    .o_sc_account_form {
+    .o_pk_account_form {
         gap: var(--pk-space-4);
     }
 
     // Zip + city, country + state: side by side when there is room (the
     // core address JS hides / reorders the boxes; a hidden box frees its
     // column).
-    .o_sc_account_pair {
+    .o_pk_account_pair {
         display: flex;
         flex-wrap: wrap;
         // Review fixes 2026-10-18 b: no stretching — a taller neighbour (the
@@ -38,18 +37,18 @@
 
     // Every input / select of the account page keeps the app's input
     // height (phone and laptop): never grown by its field column.
-    .o_sc_account .o_pk_field > .o_pk_input {
+    .o_pk_account .o_pk_field > .o_pk_input {
         flex: 0 0 auto;
     }
 
-    .o_sc_account select.o_pk_input {
+    .o_pk_account select.o_pk_input {
         height: auto;
         min-height: var(--pk-tap);
         line-height: normal;
     }
 
     // Review fixes 2026-10-18 b: the cards' read views and own actions.
-    .o_sc_account_address_lines {
+    .o_pk_account_address_lines {
         margin: 0;
         font-style: normal;
 
@@ -58,7 +57,7 @@
         }
     }
 
-    .o_sc_account [data-pk-edit-view="edit"] {
+    .o_pk_account [data-pk-edit-view="edit"] {
         display: flex;
         flex-direction: column;
         gap: var(--pk-space-3);
@@ -71,19 +70,19 @@
     // Required marker, as the core form (its address JS toggles
     // .label-optional with the country's rules). 1018c: after the label's
     // text, before the field's save state.
-    .o_sc_account .o_pk_field_label:not(.label-optional) > span:first-child::after {
+    .o_pk_account .o_pk_field_label:not(.label-optional) > span:first-child::after {
         content: " *";
         font-weight: normal;
         color: var(--pk-fg-3);
     }
 
     // The core validation flags fields and fills #errors.
-    .o_sc_account .o_pk_input.is-invalid,
-    .o_sc_security .o_pk_input[aria-invalid="true"] {
+    .o_pk_account .o_pk_input.is-invalid,
+    .o_pk_security .o_pk_input[aria-invalid="true"] {
         border-color: var(--pk-bad);
     }
 
-    .o_sc_account_errors {
+    .o_pk_account_errors {
         &:empty {
             display: none;
         }
@@ -106,17 +105,17 @@
     }
 
     // 1018c: a field's save state (hidden until its first save).
-    .o_sc_account .o_pk_save_state[hidden] {
+    .o_pk_account .o_pk_save_state[hidden] {
         display: none;
     }
 
-    .o_sc_account_locked {
+    .o_pk_account_locked {
         pointer-events: none;
         opacity: 0.6;
     }
 
     // Password + the core « show password » eye.
-    .o_sc_password_group {
+    .o_pk_password_group {
         display: flex;
         flex-wrap: nowrap;
         align-items: stretch;
@@ -135,13 +134,13 @@
         }
     }
 
-    .o_sc_security_on {
+    .o_pk_security_on {
         margin: 0;
         color: var(--pk-ok);
         font-weight: 600;
     }
 
-    .o_sc_security_devices {
+    .o_pk_security_devices {
         list-style: none;
         margin: 0;
         padding: 0;
@@ -159,13 +158,13 @@
         }
     }
 
-    .o_sc_security_device_name {
+    .o_pk_security_device_name {
         flex: 1;
         min-width: 0;
         overflow-wrap: anywhere;
     }
 
-    .o_sc_security_device_remove {
+    .o_pk_security_device_remove {
         cursor: pointer;
         padding: 10px;
         color: var(--pk-bad) !important;

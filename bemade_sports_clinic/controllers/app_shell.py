@@ -1,9 +1,10 @@
 """Portal app shell (task 1538, epic #1535) — P1a.
 
-The new Fit Crew app shell renders ONLY when the system switch
-``bemade_sports_clinic.app_shell_enabled`` is on (staging until the launch)
-AND the user holds at least one app role (see ``models/sc_app_roles.py``).
-With the switch off (prod) every page renders exactly today's template.
+The new Fit Crew app shell renders ONLY when the system switch (task 5200,
+kit P5: the kit's ``bemade_portal_kit.enabled``, ``portal.kit.
+_pk_shell_active``) is on AND the user holds at least one app role (see
+``models/sc_app_roles.py``). With the switch off every page renders exactly
+today's template.
 
 Every migrated page picks its template through ONE helper,
 ``AppShellMixin._sc_render(legacy_template, app_template, values)``, so
@@ -46,6 +47,7 @@ from odoo.modules.module import get_manifest
 from odoo.tools import file_open, format_date, format_datetime, html2plaintext, plaintext2html
 
 from odoo.addons.bemade_portal_kit.controllers.pk_app import PortalKitApp
+from odoo.addons.bemade_portal_kit.controllers.pk_shell import PortalKitShell
 from odoo.addons.bemade_portal_kit.tools import (
     pk_contact_href, pk_display, pk_display_key, pk_draft_props, pk_field_props, pk_form_props, pk_fragment_key,
     pk_now_ms,
@@ -60,27 +62,9 @@ from .access_control_mixin import (
 
 _logger = logging.getLogger(__name__)
 
-APP_SHELL_PARAM = 'bemade_sports_clinic.app_shell_enabled'
-# Task 1602: the dark / light choice. Absent or falsy = forced dark for
-# everyone and both theme toggles hidden; the saved ``sc_theme`` is kept and
-# applies again once this is on.
-THEME_CHOICE_PARAM = 'bemade_sports_clinic.sc_theme_choice_enabled'
+# Task 5200 (kit P5): the switch, the theme choice, /my/app/pref and its
+# preferences are the kit's (controllers/pk_shell.py, portal.kit hooks).
 _TRUTHY = ('1', 'true', 'yes', 'on')
-# The ONLY fields /my/app/pref may write, with their allowed values.
-# Task 1579: no navigation setting any more — the screen width decides.
-PREF_FIELDS = {
-    'sc_theme': ('dark', 'light'),
-    # Task 1665: « Recevoir le sommaire quotidien par courriel » (the same
-    # per-user preference as the backend « Daily Morning Briefing »).
-    'digest_daily_enabled': ('1', '0'),
-    # Task 1676: « Afficher les boutons Terminé » (default off).
-    'sc_show_done_buttons': ('1', '0'),
-}
-# Task 1665: the boolean preferences, posted as '1' / '0'.
-PREF_BOOLEANS = ('digest_daily_enabled', 'sc_show_done_buttons')
-# Task 1588: « Plus › Langue » — the user's profile language (``res.users.lang``),
-# allowed values = the request's frontend languages (checked at post time).
-PREF_LANG = 'lang'
 # ---------------------------------------------------------------------------
 # Server autosave (task 1542, filled by task 1539) — WHAT may be saved field
 # by field, and BY WHOM. Task 5199 (P4a): the route (``POST
@@ -1065,31 +1049,12 @@ class AppShellMixin:
     CustomerPortal controller that serves a migrated page."""
 
     @staticmethod
-    def _sc_app_shell_enabled():
-        raw = request.env['ir.config_parameter'].sudo().get_param(APP_SHELL_PARAM)
-        return str(raw or '').strip().lower() in _TRUTHY
-
-    @staticmethod
-    def _sc_theme_choice_enabled():
-        raw = request.env['ir.config_parameter'].sudo().get_param(THEME_CHOICE_PARAM)
-        return str(raw or '').strip().lower() in _TRUTHY
-
-    @classmethod
-    def _sc_effective_theme(cls, user):
-        """The theme the app renders for ``user``: forced dark unless the
-        theme choice is enabled (task 1602)."""
-        if not cls._sc_theme_choice_enabled():
-            return 'dark'
-        return user.sc_theme or 'dark'
-
-    def _sc_app_shell_active(self):
-        """Switch on AND the viewer holds an app role."""
-        if not self._sc_app_shell_enabled():
-            return False
-        user = request.env.user
-        if user._is_public():
-            return False
-        return bool(user._sc_app_roles() & request.env['portal.kit'].pk_app_roles())
+    def _pk_shell_active():
+        """Task 5200 (kit P5): the kit's switch + role gate
+        (``portal.kit._pk_shell_active``; the same method as
+        ``PortalKitShell._pk_shell_active``, for the controllers that mix
+        this class in)."""
+        return request.env['portal.kit']._pk_shell_active()
 
     def _sc_booking_enabled(self):
         """The bookings addon (appointment_portal_staff) flags its home card
@@ -1098,18 +1063,6 @@ class AppShellMixin:
             return bool(self._prepare_home_portal_values([]).get('booking_card_enable'))
         except AccessError:
             return False
-
-    @staticmethod
-    def _sc_nav_items(entries):
-        """Registry entries -> render dicts with the labels translated in the
-        request language."""
-        items = []
-        for entry in entries:
-            item = dict(entry)
-            item['label'] = str(entry['label'])
-            item['subtitle'] = str(entry['subtitle']) if entry.get('subtitle') else ''
-            items.append(item)
-        return items
 
     def _sc_activity_user_options_for(self, user):
         """Task 1736 r1: ``activity -> [(id, name)]``, the assignee choices of
@@ -1147,22 +1100,26 @@ class AppShellMixin:
         app template (``module.template``): its navigation — back target,
         context line, crumb trail — comes from the parent registry
         (``models/sc_app_nav.py``, task 1579; ``portal.kit.pk_resolve``, task
-        5196); without it the page is top
-        level."""
-        self._sc_profile_lang_guard()
+        5196); without it the page is top level.
+
+        Task 5200 (kit P5): the generic values (theme, preferences,
+        languages, user menu, navigation, help, search, toast) and the
+        profile language guard are the kit's
+        (``PortalKitShell._pk_shell_values``); the clinic's own come as its
+        ``extra``. The guard runs first (a redirect pops nothing)."""
+        PortalKitShell._pk_profile_lang_guard()
         user = request.env.user
         roles = user._sc_app_roles()
         is_system = user.has_group('base.group_system')
         kit = request.env['portal.kit']
         ctx = {'booking_card_enable': self._sc_booking_enabled()}
-        tabs = self._sc_nav_items(kit.pk_visible_nav(roles, 'tab', ctx))
-        rail = self._sc_nav_items(kit.pk_visible_nav(roles, 'rail', ctx))
-        plus = self._sc_nav_items(kit.pk_visible_nav(roles, 'plus', ctx))
+        nav_items = PortalKitShell._pk_nav_items
+        tabs = nav_items(kit.pk_visible_nav(roles, 'tab', ctx))
+        rail = nav_items(kit.pk_visible_nav(roles, 'rail', ctx))
+        plus = nav_items(kit.pk_visible_nav(roles, 'plus', ctx))
         labels = kit.pk_nav_labels()
         path = request.httprequest.path
-        query = request.httprequest.query_string.decode()
-        initials = ''.join(part[:1] for part in (user.name or '').split()[:2]).upper()
-        shell = {
+        extra = {
             'sc_app_shell': True,
             'sc_roles': roles,
             # Task 1598: a system admin also sees the TP actions legacy
@@ -1178,28 +1135,17 @@ class AppShellMixin:
             'sc_today_iso': fields.Date.to_string(fields.Date.context_today(user)),
             'pk_tabs': tabs,
             'pk_rail': rail,
-            'sc_plus': plus,
+            'pk_plus': plus,
             'sc_nav_labels': labels,
-            # Task 1602: forced dark (no toggles) unless the choice is on.
-            'pk_theme': self._sc_effective_theme(user),
-            'pk_theme_choice': self._sc_theme_choice_enabled(),
-            # Task 1676: the edit cards' « Done » buttons, per user.
-            'pk_show_done': bool(user.sudo().sc_show_done_buttons),
-            'sc_langs': self._sc_lang_options(),
-            'pk_current_url': path + ('?' + query if query else ''),
-            'sc_search_url': '/my/players' if any(t['key'] == 'players' for t in rail) else False,
             # Task 1592: the app bar's activity clock (its overdue badge is
             # fetched by sc_live_count.js, not computed here).
             'sc_activity_clock': kit.pk_can('app.activity_clock', roles, is_system=is_system),
             # Task 1622: the clock's href carries the page it is tapped on.
             'sc_clock_url': sc_app_nav.clock_url(path, request.httprequest.args),
-            'pk_user_initials': initials or '?',
-            # Task 1606: the head of the user menu (name + role).
-            'pk_user_name': user.name or '',
+            # Task 1606: the role line of the user menu.
             'pk_user_role': sc_app_roles.role_label(roles),
-            # Task 1542: the device draft store is namespaced by db + uid.
-            'pk_db': request.db or '',
-            'pk_uid': user.id,
+            # Task 1660: the help follows the player page's active tab.
+            'pk_help_tab': values.get('sc_player_active_tab'),
             # Row builder for list templates (computed in the shell only, so
             # the legacy pages pay nothing for it).
             'sc_team_row': self._sc_team_row,
@@ -1223,7 +1169,6 @@ class AppShellMixin:
             # Task 1607: the sort menu of a list header (sc_list_header).
             'sc_sort_options': lambda param, options, current, drop=(): sc_sort_options(
                 path, request.httprequest.args, param, options, current, drop),
-            'pk_rendered_at': pk_now_ms(),
             # Task 1585: tap-to-call / tap-to-email hrefs (pk_display_row
             # with ``href_kind``, the event page's staff / organization).
             'pk_contact_href': pk_contact_href,
@@ -1242,107 +1187,10 @@ class AppShellMixin:
             # Owner review 2026-10-14: the related record's name in an
             # activity title is a link too.
             'sc_activity_title_parts': self._sc_activity_title_parts,
-            # Task 1583: the pending session notification (set by a POST
-            # round-trip, e.g. « Add to Team ») pops on whichever shell page
-            # comes next, as the status toast (task 5371: the kit's,
-            # bemade_portal_kit.pk_toast_host).
-            'pk_notification': self._pk_pop_notification(),
             # Task 1603: a follow-up proposal left by a POST round-trip.
             'sc_proposal_json': self._sc_pop_proposal(),
         }
-        shell.update(values)
-        nav = kit.pk_resolve(
-            (page or '').rpartition('.')[2], shell,
-            request_url=shell['pk_current_url'],
-            request_return_url=request.httprequest.args.get('return_url'))
-        shell.update({
-            'pk_parent_url': nav['parent_url'],
-            'pk_crumbs': nav['crumbs'],
-            'pk_context': nav['context'],
-            # Task 1660: the page's help (the app bar « ? », « Aide »).
-            'sc_help': request.env['sc.help.article']._sc_help_for(
-                (page or '').rpartition('.')[2],
-                tab=request.params.get('tab') or shell.get('sc_player_active_tab')),
-        })
-        return shell
-
-    # ------------------------------------------------------------------
-    # Task 1588: the PROFILE language is the only source of truth
-    # ------------------------------------------------------------------
-    @staticmethod
-    def _sc_profile_lang():
-        """The frontend language serving the user's profile language
-        (``res.users.lang``, or its nearest frontend sibling), or None when
-        the frontend offers nothing close (then the request's language
-        stands: never a redirect that cannot land)."""
-        return request.env['ir.http'].get_nearest_lang(request.env.user.lang)
-
-    @staticmethod
-    def _sc_lang_url(url, lang_code):
-        """``url`` (a local path + query) in ``lang_code``: any language
-        prefix dropped, the frontend prefix of ``lang_code`` added when it is
-        not the default language and the path is a multilang route — the URL
-        the http_routing ``_match`` serves in that language WITHOUT a
-        further language redirect (so no loop with the website's own)."""
-        env = request.env
-        frontend = env['res.lang']._get_frontend()
-        url_codes = [lang.url_code for lang in frontend.values()]
-        path, sep, query = url.partition('?')
-        parts = path.split('/')
-        if len(parts) > 1 and parts[1] in url_codes:
-            parts.pop(1)
-        path = '/'.join(parts) or '/'
-        lang = frontend.get(lang_code)
-        default = env['ir.http']._get_default_lang()
-        if (lang and lang.code != default.code and len(url_codes) > 1
-                and env['ir.http']._is_multilang_url(path, url_codes)):
-            path = '/%s%s' % (lang.url_code, path if path != '/' else '')
-        return path + sep + query
-
-    def _sc_profile_lang_guard(self):
-        """Profile wins (owner decision 2026-10-12): a shell page served in
-        another language than the user's profile one — a stale
-        ``frontend_lang`` cookie, an ``/en/`` URL prefix — is redirected
-        (GET/HEAD) to the same page in the profile language with the cookie
-        reset to it. Other methods are aligned in place."""
-        user = request.env.user
-        if user._is_public():
-            return
-        target = self._sc_profile_lang()
-        current = getattr(request, 'lang', None)
-        if not target or not current or current.code == target:
-            return
-        if request.httprequest.method in ('GET', 'HEAD'):
-            query = request.httprequest.query_string.decode()
-            url = self._sc_lang_url(
-                request.httprequest.path + ('?' + query if query else ''), target)
-            response = request.redirect(url, code=303, local=True)
-            response.set_cookie('frontend_lang', target)
-            werkzeug.exceptions.abort(response)
-        request.lang = request.env['res.lang']._get_data(code=target)
-        request.update_context(lang=target)
-        request.future_response.set_cookie('frontend_lang', target)
-
-    @staticmethod
-    def _sc_lang_options():
-        """« Plus › Langue »: one entry per frontend language (FR / EN),
-        the profile language pressed; empty with a single language."""
-        frontend = request.env['res.lang']._get_frontend()
-        if len(frontend) < 2:
-            return []
-        current = AppShellMixin._sc_profile_lang()
-        shorts = [code.partition('_')[0] for code in frontend]
-        options = []
-        for code, lang in frontend.items():
-            short = code.partition('_')[0]
-            options.append({
-                'code': code,
-                # Two variants of one language (fr_CA + fr_FR): their names.
-                'label': short.upper() if shorts.count(short) == 1 else lang.name,
-                'name': lang.name,
-                'active': code == current,
-            })
-        return options
+        return self._pk_shell_values(values, page, extra)
 
     @staticmethod
     def _sc_history_entry(when, author, body, action=None, tone=None, state=None, **extra):
@@ -1559,7 +1407,7 @@ class AppShellMixin:
 
     def _sc_render(self, legacy_template, app_template, values):
         """THE per-page switch: the app template in the shell, else today's."""
-        if app_template and self._sc_app_shell_active():
+        if app_template and self._pk_shell_active():
             return self._sc_shell_response(app_template, self._sc_app_values(values, app_template))
         return request.render(legacy_template, values)
 
@@ -1695,14 +1543,14 @@ class AppShellMixin:
             teams, lambda t: '/my/team?team_id=%s&tab=activities' % t.id)
 
 
-class AppShellPortal(PortalKitApp, AccessControlMixin, AppShellMixin):
+class AppShellPortal(PortalKitShell, AccessControlMixin, AppShellMixin):
 
     # ------------------------------------------------------------------
     # /my/home — app home (« Équipes ») when the shell is active
     # ------------------------------------------------------------------
     @http.route()
     def home(self, **kw):
-        if kw.get('classic') or not self._sc_app_shell_active():
+        if kw.get('classic') or not self._pk_shell_active():
             return super().home(**kw)
         values = self._prepare_portal_layout_values()
         # Task 1624: the configurable widget sections (controllers/app_dashboard.py).
@@ -1743,84 +1591,13 @@ class AppShellPortal(PortalKitApp, AccessControlMixin, AppShellMixin):
         return request.env['sports.event'].search_count(domain)
 
     # ------------------------------------------------------------------
-    # /my/app/more — « Plus »
+    # Task 5200 (kit P5): /my/app/more, /my/app/settings, /my/app/pref,
+    # /my/app/search, /my/account and /my/security are the kit's
+    # (PortalKitShell). Its pages are drawn on sc_app_layout
+    # (portal.kit._pk_layout) with the clinic's values:
     # ------------------------------------------------------------------
-    @http.route(['/my/app/more'], type='http', auth='user', website=True)
-    def sc_app_more(self, **kw):
-        if not self._sc_app_shell_active():
-            return request.redirect('/my/home')
-        values = self._prepare_portal_layout_values()
-        values['page_name'] = 'sc_app_more'
-        return self._sc_shell_response('bemade_sports_clinic.sc_app_more',
-                                       self._sc_app_values(values, 'sc_app_more'))
-
-    # ------------------------------------------------------------------
-    # /my/app/settings — « Paramètres » (task 1606: language, appearance,
-    # account, security, classic portal — out of « Plus »; reached from the
-    # user menu)
-    # ------------------------------------------------------------------
-    @http.route(['/my/app/settings'], type='http', auth='user', website=True)
-    def sc_app_settings(self, **kw):
-        if not self._sc_app_shell_active():
-            return request.redirect('/my/home')
-        values = self._prepare_portal_layout_values()
-        values['page_name'] = 'sc_app_settings'
-        return self._sc_shell_response('bemade_sports_clinic.sc_app_settings',
-                                       self._sc_app_values(values, 'sc_app_settings'))
-
-    # ------------------------------------------------------------------
-    # /my/app/pref — the two self-service preferences, nothing else
-    # ------------------------------------------------------------------
-    @http.route(['/my/app/pref'], type='http', auth='user', website=True,
-                methods=['POST'], multilang=False)
-    def sc_app_pref(self, **post):
-        """Set ``sc_theme`` on the CALLER's own record (task 1579: the
-        navigation mode setting is gone) and/or ``lang`` (task 1588: one of
-        the frontend languages — the profile language, mirrored in the
-        ``frontend_lang`` cookie and the session; the redirect lands on the
-        target page in that language).
-
-        CSRF is enforced by the http POST route. Any other field, a bad value
-        or another user's id is refused and nothing is written. A caller that
-        accepts JSON (the app-bar toggle) gets JSON; a plain form post (no-JS
-        path) is redirected back to ``redirect`` (same-site paths only)."""
-        user = request.env.user
-        post.pop('csrf_token', None)
-        redirect = post.pop('redirect', None)
-        target = post.pop('user_id', None)
-        if target not in (None, '') and str(target) != str(user.id):
-            return request.make_json_response({'error': 'forbidden'}, status=403)
-        if not post or set(post) - set(PREF_FIELDS) - {PREF_LANG}:
-            return request.make_json_response({'error': 'bad_request'}, status=400)
-        for name, value in post.items():
-            allowed = (request.env['res.lang']._get_frontend() if name == PREF_LANG
-                       else PREF_FIELDS[name])
-            if not value or value not in allowed:
-                return request.make_json_response({'error': 'bad_request'}, status=400)
-        vals = dict(post)
-        for name in PREF_BOOLEANS:
-            if name in vals:
-                vals[name] = vals[name] == '1'
-        user.write(vals)
-        lang = post.get(PREF_LANG)
-        if lang:
-            # Task 1588: the session context too (the backend and the
-            # http_routing fallback read it); the cookie below wins anyway.
-            request.session.context = dict(request.session.context, lang=lang)
-        accept = request.httprequest.headers.get('Accept', '')
-        if 'application/json' in accept:
-            response = request.make_json_response(
-                # Task 5345: the kit's pk_theme_pref.js reads ``pk_theme``.
-                {'sc_theme': self._sc_effective_theme(user), 'pk_theme': self._sc_effective_theme(user),
-                 'lang': user.lang})
-        else:
-            url = self._safe_return_url(redirect, '/my/app/settings')
-            if lang:
-                url = self._sc_lang_url(url, lang)
-            response = request.redirect(url)
-        if lang:
-            response.set_cookie('frontend_lang', lang)
-        return response
+    def _pk_app_values(self, values, page=None):
+        return self._sc_app_values(values, page)
 
     # ------------------------------------------------------------------
     # /my/app/save/<model>/<id> — the server autosave pattern (task 1542).
@@ -2112,7 +1889,7 @@ class AppShellPortal(PortalKitApp, AccessControlMixin, AppShellMixin):
     @http.route(['/my/app.webmanifest'], type='http', auth='public', methods=['GET'],
                 multilang=False, sitemap=False)
     def sc_app_webmanifest(self, **kw):
-        if not self._sc_app_shell_enabled():
+        if not request.env['portal.kit']._pk_shell_enabled():
             return request.not_found()
         img = '/bemade_sports_clinic/static/src/img/'
         labels = request.env['portal.kit'].pk_nav_labels()
@@ -2154,7 +1931,7 @@ class AppShellPortal(PortalKitApp, AccessControlMixin, AppShellMixin):
         """The service worker, allowed the whole origin (scope ``/``, task
         1543). ``no-cache`` so a device picks up a new version (or this route's 404, which the page script turns into an
         unregister) on its next visit."""
-        if not self._sc_app_shell_enabled():
+        if not request.env['portal.kit']._pk_shell_enabled():
             return request.not_found()
         with file_open(SW_SOURCE) as source:
             body = source.read()
@@ -2173,7 +1950,7 @@ class AppShellPortal(PortalKitApp, AccessControlMixin, AppShellMixin):
         """Branded, DATA-FREE page the service worker shows when a navigation
         fails offline. Rendered without any layout: no user, no session info,
         no CSRF token — it is cached on the device."""
-        if not self._sc_app_shell_enabled():
+        if not request.env['portal.kit']._pk_shell_enabled():
             return request.not_found()
         # The doctype is prepended here, not written in the template: a raw
         # text node at the template root changes how the view's terms are
@@ -2189,7 +1966,7 @@ class AppShellPortal(PortalKitApp, AccessControlMixin, AppShellMixin):
     def sc_app_install(self, **kw):
         """« Plus › Installer l'application »: per-device steps. No banner
         anywhere else (owner decision 2026-09-27)."""
-        if not self._sc_app_shell_active():
+        if not self._pk_shell_active():
             return request.redirect('/my/home')
         values = self._prepare_portal_layout_values()
         values['page_name'] = 'sc_app_install'

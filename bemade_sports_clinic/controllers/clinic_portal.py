@@ -458,7 +458,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'success': kw.get('success'),
         }
         # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_clinics_values(values))
         return self._sc_render('bemade_sports_clinic.portal_my_clinics',
                                'bemade_sports_clinic.sc_app_clinics', values)
@@ -543,7 +543,7 @@ class ClinicPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'success': kw.get('success'),
         })
         # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_clinic_values(event, values, dict(kw, patient=patient)))
         return self._sc_render('bemade_sports_clinic.portal_clinic_detail',
                                'bemade_sports_clinic.sc_app_clinic', values)

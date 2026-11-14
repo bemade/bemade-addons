@@ -19,7 +19,7 @@ Acceptance criteria covered here:
   review fixes 2026-10-18 b / 1018c),
   callback back to the page.
 * UC-A2 A valid save through the core route updates the partner and sends
-  the browser back to ``/my/account?sc_saved=1``, which shows the
+  the browser back to ``/my/account?pk_saved=1``, which shows the
   « saved » toast. An explicit ``redirect`` is kept (core behaviour).
 * UC-A3 An invalid email is refused by the core validation (nothing saved,
   ``email`` flagged).
@@ -51,7 +51,7 @@ from odoo.tools import mute_logger
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_user_menu_1606 import UserMenuCommon
 
-SAVED_URL = '/my/account?sc_saved=1'
+SAVED_URL = '/my/account?pk_saved=1'
 
 
 class AccountShellCommon(UserMenuCommon):
@@ -247,11 +247,11 @@ class TestSecurityShell1620(AccountShellCommon):
             # API keys: debug mode + the system parameter only (core rule).
             self.assertFalse(body[0].xpath('.//*[contains(@class, "o_portal_new_api_key")]'))
             # Delete account: portal users only (core rule), in a sheet.
-            sheet = tree.xpath('//dialog[@id="sc_deactivate_account_sheet"]')
+            sheet = tree.xpath('//dialog[@id="pk_deactivate_account_sheet"]')
             self.assertEqual(bool(sheet), portal, user.name)
             if portal:
                 self.assertTrue(tree.xpath(
-                    '//button[@data-pk-sheet-open="sc_deactivate_account_sheet"]'))
+                    '//button[@data-pk-sheet-open="pk_deactivate_account_sheet"]'))
                 dform = sheet[0].xpath('.//form[@action="/my/deactivate_account"]')
                 self.assertEqual(len(dform), 1)
                 self.assertLessEqual(
@@ -314,7 +314,7 @@ class TestSecurityShell1620(AccountShellCommon):
         self.assertEqual(resp.status_code, 200)
         tree = lxml_html.fromstring(resp.text)
         self.assertIsNotNone(self._shell(tree))
-        sheet = tree.xpath('//dialog[@id="sc_deactivate_account_sheet"]')
+        sheet = tree.xpath('//dialog[@id="pk_deactivate_account_sheet"]')
         self.assertEqual(len(sheet), 1)
         self.assertEqual(sheet[0].get('data-pk-sheet-open-on-load'), '1')
         self.assertIn('Wrong password',
@@ -329,10 +329,10 @@ class TestSecurityShell1620(AccountShellCommon):
             'password': 'pc-coach',
         })
         tree = lxml_html.fromstring(resp.text)
-        sheet = tree.xpath('//dialog[@id="sc_deactivate_account_sheet"]')[0]
+        sheet = tree.xpath('//dialog[@id="pk_deactivate_account_sheet"]')[0]
         self.assertEqual(sheet.get('data-pk-sheet-open-on-load'), '1')
         self.assertIn('exactly', sheet.xpath('normalize-space(.//*[@data-pk-error-for="validation"])'))
-        self.assertIn('pc.coach@example.com', sheet.xpath('normalize-space(.//label[@for="sc_deactivate_validation"])'))
+        self.assertIn('pc.coach@example.com', sheet.xpath('normalize-space(.//label[@for="pk_deactivate_validation"])'))
         self.assertTrue(self.coach.active)
 
     # -- UC-O1 -----------------------------------------------------------

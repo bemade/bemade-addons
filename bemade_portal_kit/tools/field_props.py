@@ -31,7 +31,7 @@ names:
 
 ``extra``: any of the component's props (``options``, ``placeholder``,
 ``hint``, ``clearable``, ``instant``, ``undoMessage``, ``replace`` and its
-labels, ``groupSelect`` and its texts, ``picker``, ``pickerKey``,
+labels, ``groupSelect`` and its texts, ``picker``, ``pickerKey``, ``pickerNarrow``, ``pickerHint``,
 ``optionMeta``, ``savedLabel``, ``inputId``…). ``None`` is left out; the
 texts become strings (a lazy translation is rendered now).
 """
@@ -45,7 +45,7 @@ from .save import pk_save_value
 TEXT_PROPS = frozenset((
     'hint', 'placeholder', 'undoMessage', 'historyLabel', 'savedLabel',
     'replaceCurrentLabel', 'replaceNewLabel', 'replaceReuseLabel',
-    'groupConfirmMessage', 'groupConfirmLabel', 'groupNotice',
+    'groupConfirmMessage', 'groupConfirmLabel', 'groupNotice', 'pickerHint',
 ))
 
 

@@ -10,7 +10,7 @@ import { registry } from "@web/core/registry";
 const tours = registry.category("web_tour.tours");
 
 const FORM = 'form[data-pk-section="events.filters"]';
-const CAL = ".o_sc_calendar_box[data-sc-calendar-ready='1']";
+const CAL = ".o_pk_calendar_box[data-pk-calendar-ready='1']";
 
 function assert(condition, message) {
     if (!condition) {
@@ -29,7 +29,7 @@ function activeType() {
 }
 
 function calendarText() {
-    return document.querySelector(".o_sc_calendar").textContent;
+    return document.querySelector(".o_pk_calendar").textContent;
 }
 
 tours.add("sc_1591_calendar_filters", {

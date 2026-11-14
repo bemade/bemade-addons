@@ -12,7 +12,7 @@ Acceptance criteria covered here:
 * UC-S3 (AC3) A sub-page renders the back chevron + context line AND the
   crumb row (task 1579: the screen width decides which one shows — the
   former ``sc_nav_mode`` setting is gone).
-* UC-S4 (AC2) The theme attribute follows ``sc_theme`` (dark by default)
+* UC-S4 (AC2) The theme attribute follows ``pk_theme`` (dark by default)
   when the theme choice is enabled (task 1602: forced dark otherwise).
 * UC-S5 The stock portal home stays reachable from the shell
   (``/my/home?classic=1``).
@@ -26,8 +26,8 @@ from odoo.tests import tagged
 from odoo.addons.bemade_sports_clinic.controllers.app_shell import AppShellMixin
 from odoo.addons.bemade_sports_clinic.tests.portal_cov_common import PortalCovCommon
 
-SWITCH = 'bemade_sports_clinic.app_shell_enabled'
-THEME_CHOICE = 'bemade_sports_clinic.sc_theme_choice_enabled'
+SWITCH = 'bemade_portal_kit.enabled'
+THEME_CHOICE = 'bemade_portal_kit.theme_choice_enabled'
 
 
 class AppShellCommon(PortalCovCommon):
@@ -126,13 +126,13 @@ class TestAppShellSwitch1538(AppShellCommon):
                 _text, tree = self._get('/my/home')
                 self.assertNotIn('bookings', self._nav_keys(tree, 'o_pk_rail_nav'))
                 _text, tree = self._get('/my/app/more')
-                self.assertFalse(tree.xpath('//a[@data-pk-nav-key="bookings" or @data-sc-nav-key="bookings"]'))
+                self.assertFalse(tree.xpath('//a[@data-pk-nav-key="bookings"]'))
             with patch.object(AppShellMixin, '_sc_booking_enabled', return_value=True):
                 _text, tree = self._get('/my/home')
                 self.assertIn('bookings', self._nav_keys(tree, 'o_pk_rail_nav'))
                 self.assertNotIn('bookings', self._nav_keys(tree, 'o_pk_tabs'))
                 _text, tree = self._get('/my/app/more')
-                self.assertTrue(tree.xpath('//a[@data-pk-nav-key="bookings" or @data-sc-nav-key="bookings"]'))
+                self.assertTrue(tree.xpath('//a[@data-pk-nav-key="bookings"]'))
 
     def test_no_website_or_portal_header_footer(self):
         # Legacy page carries the frontend header/footer ...
@@ -187,10 +187,10 @@ class TestAppShellSwitch1538(AppShellCommon):
         self._switch(True)
         self._theme_choice(True)
         self._login_tp()
-        self.assertEqual(self.tp.sc_theme, 'dark')
+        self.assertEqual(self.tp.pk_theme, 'dark')
         _text, tree = self._get('/my/home')
         self.assertEqual(self._shell(tree).get('data-pk-theme'), 'dark')
-        self.tp.sc_theme = 'light'
+        self.tp.pk_theme = 'light'
         _text, tree = self._get('/my/home')
         self.assertEqual(self._shell(tree).get('data-pk-theme'), 'light')
 

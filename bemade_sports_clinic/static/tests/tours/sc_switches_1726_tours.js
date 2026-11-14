@@ -46,8 +46,8 @@ function assertSwitchLayout(label) {
     assert(label.getBoundingClientRect().height >= 43, "the row is under 44 px");
 }
 
-const DONE_SCOPE = "#sc_done_buttons";
-const DONE = 'input[role="switch"][name="sc_show_done_buttons"]';
+const DONE_SCOPE = "#pk_done_buttons";
+const DONE = 'input[role="switch"][name="pk_show_done_buttons"]';
 
 tours.add("sc_1726_switch_pref", {
     steps: () => [

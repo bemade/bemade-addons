@@ -7,7 +7,7 @@
 
     Every form posts to the SAME route and field names as today's pages
     (CSRF token in each, task 1540 made those routes check it). The calendar
-    is the shared sc_calendar component (FullCalendar from the
+    is the kit's shared pk_calendar component (FullCalendar from the
     web.fullcalendar_lib bundle, never a raw <script src>), fed by
     /my/events/calendar/data. Task 1591: the list and the calendar share one
     filter bar (sc_event_filter_bar), the filters carried in the URL. Form behaviours (team / staff CSV,
@@ -211,17 +211,8 @@
         </t>
     </template>
 
-    <!--
-        The shared calendar (FullCalendar in an OWL component). Variable:
-        props (JSON: feedUrl, params, locale, detailKeys).
-    -->
-    <template id="sc_calendar" name="App shell: calendar">
-        <div class="o_sc_calendar_wrap" data-pk-section="calendar">
-            <owl-component name="bemade_sports_clinic.sc_calendar" t-att-props="props">
-                <p class="o_pk_empty">Loading…</p>
-            </owl-component>
-        </div>
-    </template>
+    <!-- Task 5200 (kit P5): the shared calendar is the kit's
+         (bemade_portal_kit.pk_calendar, adopted view). -->
 
     <!-- /my/events/calendar (shell) -->
     <template id="sc_app_events_calendar" name="Sports Clinic App: events calendar">
@@ -242,7 +233,7 @@
                     <t t-set="add_key" t-value="'events.create'"/>
                 </t>
             </t>
-            <t t-call="bemade_sports_clinic.sc_calendar">
+            <t t-call="bemade_portal_kit.pk_calendar">
                 <t t-set="props" t-value="sc_calendar_props"/>
             </t>
         </t>
@@ -659,7 +650,7 @@
                         <label class="o_pk_field_label" for="sc_event_venue">Venue</label>
                         <div class="o_pk_inline_form">
                             <select id="sc_event_venue" name="venue_id" class="o_pk_input o_pk_select" data-sc-venue-select="1"
-                                    data-pk-picker="1" data-pk-picker-key="venue" data-sc-picker-empty="1">
+                                    data-pk-picker="1" data-pk-picker-key="venue" data-pk-picker-empty="1">
                                 <option value="">To be determined</option>
                                 <t t-foreach="venues" t-as="venue">
                                     <option t-att-value="venue.id" t-att-selected="'selected' if venue.id == sc_form['venue_id'] else None" t-out="venue.name"/>
@@ -708,7 +699,7 @@
                     <div t-if="organizations" class="o_pk_field">
                         <label class="o_pk_field_label" for="sc_event_org">Organization</label>
                         <select id="sc_event_org" name="organization_id" class="o_pk_input o_pk_select" data-sc-org-select="1"
-                                data-pk-picker="1" data-pk-picker-key="org" data-sc-picker-empty="1">
+                                data-pk-picker="1" data-pk-picker-key="org" data-pk-picker-empty="1">
                             <option value="">All organizations</option>
                             <t t-foreach="organizations" t-as="org">
                                 <option t-att-value="org.id" t-att-selected="'selected' if org.id == sc_form['organization_id'] else None" t-out="org.name"/>

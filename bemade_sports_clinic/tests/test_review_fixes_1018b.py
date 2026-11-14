@@ -288,7 +288,7 @@ class TestAccountCards1018b(AccountCards1018bCommon):
             self.assertEqual(set(edit.xpath('.//input/@name | .//select/@name')), field_names, key)
             # Round 2 (1018c): no « Save » / « Cancel », a « Done ».
             self.assertTrue(edit.xpath('.//button[@data-pk-edit-done]'), key)
-            self.assertTrue(edit.xpath('.//*[@data-sc-account-errors]'), key)
+            self.assertTrue(edit.xpath('.//*[@data-pk-account-errors]'), key)
         # The read views show the state and country names.
         address = ' '.join(self._card(tree, 'account-address').xpath(
             './/*[@data-pk-edit-view="read"]')[0].itertext())

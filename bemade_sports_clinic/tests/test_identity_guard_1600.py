@@ -39,7 +39,7 @@ from odoo.tools.misc import mute_logger
 
 from .portal_cov_common import PortalCovCommon
 
-SWITCH = 'bemade_sports_clinic.app_shell_enabled'
+SWITCH = 'bemade_portal_kit.enabled'
 
 
 def _load_migration():

@@ -1612,3 +1612,13 @@
         justify-content: flex-start;
     }
 }
+
+// Task 5200 (P5): « More » entries already on the laptop rail (marked by
+// pk_app_more) are hidden there.
+.o_pk_app {
+    @media (min-width: $pk-laptop) {
+        .o_pk_content [data-pk-in-rail] {
+            display: none;
+        }
+    }
+}

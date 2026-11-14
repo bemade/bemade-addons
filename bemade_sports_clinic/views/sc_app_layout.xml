@@ -11,9 +11,11 @@
     (bemade_portal_kit.pk_app_layout: rail, app bar, crumbs, content, user
     menu, theme toggle, form guard texts, toast host). This template keeps
     its xmlid and its callers and only fills the kit's slots with the Fit
-    Crew pieces: the brand and logo, the PWA head, the activity clock, help
-    and search icons, the user guide item of the user menu, the search
-    sheet, the medical sheets and the injury-resolve and proposal dialogs.
+    Crew pieces: the brand and logo, the PWA head, the activity clock, the
+    medical sheets and the injury-resolve and proposal dialogs. Task 5200
+    (kit P5): the help « ? », the search (magnifier and sheet) and the user
+    menu's « Aide » are the kit layout's own; the kit's pages (settings,
+    More, account, security) are drawn on this layout too.
 
     Page values (t-set in the t-call body), read by the kit:
       pk_title          app-bar title (also the <title>)
@@ -41,11 +43,10 @@
                  players list (a referrer on the same player is skipped). -->
             <t t-set="pk_home_url" t-value="'/my/players'"/>
             <t t-set="pk_home_same_params" t-value="'player_id'"/>
-            <!-- The theme toggle posts the user's sc_theme to /my/app/pref. -->
-            <t t-set="pk_pref_url" t-value="'/my/app/pref'"/>
-            <t t-set="pk_theme_field" t-value="'sc_theme'"/>
-            <t t-set="pk_settings_url" t-value="'/my/app/settings'"/>
-            <t t-set="pk_settings_active" t-value="page_name == 'sc_app_settings'"/>
+            <!-- Task 5200 (kit P5): the theme toggle, the settings item, the
+                 « ? » help, the search and the user menu's « Aide » are the
+                 kit's (pk_pref_url, pk_theme_field, pk_settings_url,
+                 pk_help, pk_search from PortalKitShell._pk_shell_values). -->
             <!-- Task 1658: the clinic's refusals also come back in ?ts_error=
                  (the timesheet routes). -->
             <t t-set="pk_guard_params" t-value="'error ts_error'"/>
@@ -83,36 +84,8 @@
                               t-att-title="sc_clock_badge_label">0</span>
                     </a>
                 </t>
-                <!-- Task 1660: « ? » — this page's user-guide article, in a
-                     new tab (sc_help.js follows the page's tab). -->
-                <t t-if="sc_help and sc_help['url']">
-                    <t t-set="sc_help_label">Help on this page</t>
-                    <a t-att-href="sc_help['url']" target="_blank" rel="noopener"
-                       class="o_pk_icon_btn o_pk_appbar_help" data-sc-help="1"
-                       t-att-data-sc-help-key="sc_help['key']" t-att-data-sc-help-base="sc_help['base']"
-                       t-att-data-sc-help-home="sc_help['home'] or ''" t-att-data-sc-help-map="sc_help['map_json']"
-                       t-att-aria-label="sc_help_label" t-att-title="sc_help_label">
-                        <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'help'"/></t>
-                    </a>
-                </t>
-                <!-- Task 1650: the magnifier opens the search sheet
-                     (sc_search.js); the link stays the no-JS way. -->
-                <a t-if="sc_search_url" t-att-href="sc_search_url" class="o_pk_icon_btn o_pk_appbar_search"
-                   data-sc-search-open="1" aria-haspopup="dialog" aria-controls="sc_search_sheet"
-                   aria-label="Search" title="Search">
-                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'search'"/></t>
-                </a>
-            </t>
-            <!-- Task 1660: the user guide (new tab), after « Settings ». -->
-            <t t-set="pk_user_menu_extra">
-                <a t-if="sc_help and sc_help['home']" role="menuitem" t-att-href="sc_help['home']" target="_blank" rel="noopener"
-                   class="o_pk_user_menu_item" tabindex="-1" data-sc-help-home-link="1">
-                    <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'help'"/></t>
-                    <span>Help</span>
-                </a>
             </t>
             <t t-set="pk_layout_sheets">
-                <t t-if="sc_search_url" t-call="bemade_sports_clinic.sc_app_search_sheet"/>
                 <!-- Task 1652: the popups of the red medical pills on this
                      page's player cards — once per player, outside every
                      read fragment (they hold islands). Rendered after the

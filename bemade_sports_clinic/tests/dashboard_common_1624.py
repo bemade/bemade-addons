@@ -36,7 +36,7 @@ class Dashboard1624Common(Parity1577Common):
         super().setUpClass()
         env = cls.env
         cls.env['ir.config_parameter'].sudo().set_param(
-            'bemade_sports_clinic.app_shell_enabled', 'True')
+            'bemade_portal_kit.enabled', 'True')
         cls.org2 = env['res.partner'].create({'name': 'DB Org Two', 'is_company': True})
         cls.team_c = env['sports.team'].create({'name': 'DB Team C', 'parent_id': cls.org2.id})
         env['sports.team.staff'].create([

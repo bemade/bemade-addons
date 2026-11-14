@@ -134,7 +134,7 @@ class TestActivityClockAppBar1592(Clock1592Common):
             self.assertEqual(badge.get('hidden'), 'hidden')
             self.assertEqual(_text(badge), '0')
             # No count badge on the Activities menu item.
-            for item in tree.xpath('//a[@data-pk-nav-key="activities" or @data-sc-nav-key="activities"]'):
+            for item in tree.xpath('//a[@data-pk-nav-key="activities"]'):
                 self.assertFalse(item.xpath('.//*[contains(@class, "o_pk_chip")]'
                                             ' | .//*[@data-pk-live-count-url]'))
                 self.assertFalse(any(ch.isdigit() for ch in _text(item)))

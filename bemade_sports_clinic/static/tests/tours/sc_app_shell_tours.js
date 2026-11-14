@@ -48,7 +48,7 @@ tours.add("sc_1542_nav_phone", {
             trigger: '.o_pk_tabs a[data-pk-nav-key="more"][aria-current="page"]',
         },
         {
-            trigger: 'main a[data-sc-nav-key="install"]',
+            trigger: 'main a[data-pk-nav-key="install"]',
         },
     ],
 });
@@ -108,7 +108,7 @@ tours.add("sc_1542_prefs", {
         },
         {
             content: "Light theme persisted; no navigation setting (task 1579)",
-            trigger: '.o_pk_app[data-pk-theme="light"] #sc_appearance',
+            trigger: '.o_pk_app[data-pk-theme="light"] #pk_appearance',
             run() {
                 assert(!document.querySelector("#sc_navigation"), "« Navigation » setting still there");
                 window.location.assign("/my/teams");
@@ -335,7 +335,7 @@ tours.add("sc_1542_sw_kill_switch", {
                 await rpc("/web/dataset/call_kw/ir.config_parameter/set_param", {
                     model: "ir.config_parameter",
                     method: "set_param",
-                    args: ["bemade_sports_clinic.app_shell_enabled", false],
+                    args: ["bemade_portal_kit.enabled", false],
                     kwargs: {},
                 });
                 window.location.assign("/my/teams");

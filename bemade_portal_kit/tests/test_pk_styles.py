@@ -22,7 +22,7 @@ from odoo.modules.module import get_manifest, get_module_path
 from odoo.tests import TransactionCase, tagged
 
 KIT = 'bemade_portal_kit'
-SCSS = ('pk_variables', 'pk_tokens', 'pk_components', 'pk_pages')
+SCSS = ('pk_variables', 'pk_tokens', 'pk_components', 'pk_pages', 'pk_calendar', 'pk_account')  # + task 5200
 FORBIDDEN = ('o_sc_', 'data-sc-', '--sc-', '$sc-', 'Teko', 'DM Sans', '@import', 'fonts.googleapis')
 
 

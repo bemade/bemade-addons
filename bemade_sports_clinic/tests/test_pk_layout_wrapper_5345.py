@@ -39,7 +39,7 @@ class TestPkLayoutWrapper5345(UserMenuCommon):
 
     def test_slots_filled_for_a_therapist(self):
         self._switch(True)
-        self.tp.sc_show_done_buttons = False  # the default (the common fixture turns it on)
+        self.tp.pk_show_done_buttons = False  # the default (the common fixture turns it on)
         self._login_tp()
         text, tree = self._get('/my/players')
         app = self._shell(tree)
@@ -66,9 +66,9 @@ class TestPkLayoutWrapper5345(UserMenuCommon):
         for el in header:
             if el.get('data-sc-activity-clock-bar'):
                 kinds.append('clock')
-            elif el.get('data-sc-help'):
+            elif el.get('data-pk-help'):
                 kinds.append('help')
-            elif el.get('data-sc-search-open'):
+            elif el.get('data-pk-search-open'):
                 kinds.append('search')
             elif 'o_pk_user_menu_bar' in (el.get('class') or ''):
                 kinds.append('menu')
@@ -79,10 +79,10 @@ class TestPkLayoutWrapper5345(UserMenuCommon):
         for index, el in enumerate(app.xpath('.//div[@class="o_pk_main"]')[0]):
             if el.tag == 'main':
                 main_index = index
-            for sheet_id in ('sc_search_sheet', 'sc_injury_resolve_sheet', 'sc_proposal_sheet'):
+            for sheet_id in ('pk_search_sheet', 'sc_injury_resolve_sheet', 'sc_proposal_sheet'):
                 if el.get('id') == sheet_id:
                     self.assertGreater(index, main_index, sheet_id)
-        for sheet_id in ('sc_search_sheet', 'sc_injury_resolve_sheet', 'sc_proposal_sheet'):
+        for sheet_id in ('pk_search_sheet', 'sc_injury_resolve_sheet', 'sc_proposal_sheet'):
             self.assertEqual(len(tree.xpath('//dialog[@id="%s"]' % sheet_id)), 1, sheet_id)
         self.assertEqual(app.xpath('.//span[@data-pk-guard-texts]/@data-pk-guard-error-params'), ['error ts_error'])
 

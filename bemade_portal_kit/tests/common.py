@@ -55,3 +55,44 @@ def pk_csrf(case, url='/my'):
     match = _CSRF_RE.search(case.url_open(url).text)
     case.assertTrue(match, 'no csrf token on %s' % url)
     return match.group(1)
+
+
+@contextmanager
+def pk_kit_shell(env, roles=None, layout='bemade_portal_kit.pk_app_layout'):
+    """Task 5200 (P5): the kit's own pages as the kit alone draws them,
+    whatever consumer is installed: ``roles`` (``{role: spec}``) replace the
+    registry's, the kit's layout and the kit's ``_pk_app_values`` are used
+    (a consumer's override of ``_pk_app_values`` is set aside), the help
+    and search hooks answer nothing, the switch is on."""
+    from odoo.addons.bemade_portal_kit.controllers.pk_shell import PortalKitShell
+
+    def subclasses(cls):
+        for sub in cls.__subclasses__():
+            yield sub
+            yield from subclasses(sub)
+
+    with ExitStack() as stack:
+        for sub in set(subclasses(PortalKitShell)):
+            if '_pk_app_values' in sub.__dict__:
+                stack.enter_context(patch.object(sub, '_pk_app_values', PortalKitShell._pk_app_values))
+        stack.enter_context(pk_hooks(
+            env,
+            _pk_roles=lambda _orig: roles or {'member': {'groups': ('base.group_portal',)}},
+            _pk_help_keys=lambda _orig: {},
+            _pk_help_tabbed=lambda _orig: (),
+            _pk_search_providers=lambda _orig: [],
+        ))
+        from odoo.addons.bemade_portal_kit.models.portal_kit import PortalKit
+        kit_cls = type(env['portal.kit'])
+        env.registry.clear_cache()
+        stack.enter_context(patch.object(kit_cls, '_pk_pages', lambda self: PortalKit._pk_pages(self)))
+        stack.enter_context(patch.object(kit_cls, '_pk_nav', lambda self: []))
+        stack.callback(env.registry.clear_cache)
+        stack.enter_context(patch.object(kit_cls, '_pk_layout', lambda self: layout))
+        stack.enter_context(patch.object(kit_cls, '_pk_help_url', lambda self, url: url))
+        stack.enter_context(patch.object(kit_cls, '_pk_pref_fields', lambda self: {
+            'pk_theme': ('light', 'dark'), 'pk_show_done_buttons': ('1', '0'), 'lang': None}))
+        stack.enter_context(patch.object(kit_cls, '_pk_account_phone', lambda self, phone, country=None: phone))
+        params = env['ir.config_parameter'].sudo()
+        params.set_param('bemade_portal_kit.enabled', 'True')
+        yield

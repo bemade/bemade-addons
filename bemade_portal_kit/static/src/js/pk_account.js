@@ -1,5 +1,6 @@
 /*
- * « Mon compte » (views/sc_app_account.xml, inert outside .o_pk_app):
+ * « My account » (views/pk_app_account.xml, inert outside .o_pk_app;
+ * task 5200, kit P5):
  * « Contact details » and « Address » are edit cards (pencil → edit view,
  * « Done » closes it — the kit's pk_edit_cards.js) inside ONE core address form.
  *
@@ -8,13 +9,13 @@
  * - a field's change (blur for a text field, pick for a select, Enter)
  *   posts the whole form — ALL current values — to the core
  *   /my/address/submit (its validation; for app-shell users only the name
- *   and the email are required, AppShellAccountPortal);
+ *   and the email are required, the kit's account controller);
  * - the field shows the app's save states next to its label
- *   ([data-sc-account-state]: « Saving… », « Saved · 14:05 », « Error — not
+ *   ([data-pk-account-state]: « Saving… », « Saved · 14:05 », « Error — not
  *   saved »); typing again clears it;
  * - success: the cards' read views refresh (read fragments, task 1611), the
  *   page stays; refusal: the core messages show in the card's error box
- *   ([data-sc-account-errors]) and the core's invalid fields are flagged
+ *   ([data-pk-account-errors]) and the core's invalid fields are flagged
  *   (.is-invalid);
  * - saves never overlap: a change during a save is sent right after it,
  *   with the values of that moment.
@@ -29,7 +30,7 @@ const lastSaved = new WeakMap(); // field → the value the server holds
 const queues = new WeakMap(); // form → { busy, pending: Set<field> }
 
 function accountForm(node) {
-    const form = node && node.closest && node.closest("form[data-sc-account-form]");
+    const form = node && node.closest && node.closest("form[data-pk-account-form]");
     return form && form.closest(".o_pk_app") ? form : null;
 }
 
@@ -64,7 +65,7 @@ function remember(form) {
 
 function stateNode(field) {
     const box = field.closest(".o_pk_field");
-    return box ? box.querySelector("[data-sc-account-state]") : null;
+    return box ? box.querySelector("[data-pk-account-state]") : null;
 }
 
 function setState(field, status) {
@@ -72,9 +73,9 @@ function setState(field, status) {
     const box = field.closest(".o_pk_field");
     if (box) {
         if (status) {
-            box.dataset.scState = status;
+            box.dataset.pkState = status;
         } else {
-            delete box.dataset.scState;
+            delete box.dataset.pkState;
         }
     }
     if (!node) {
@@ -95,7 +96,7 @@ function setState(field, status) {
 }
 
 function showErrors(card, messages) {
-    const box = card.querySelector("[data-sc-account-errors]");
+    const box = card.querySelector("[data-pk-account-errors]");
     if (!box) {
         return;
     }
@@ -192,7 +193,7 @@ async function send(form, fields) {
         if (keys.length) {
             requestRefresh(keys, { immediate: true });
         }
-        form.dataset.scAccountSaved = String(Date.now());
+        form.dataset.pkAccountSaved = String(Date.now());
         return;
     }
     const invalid = (result && result.invalid_fields) || [];
@@ -227,7 +228,7 @@ function changed(field) {
 
 // The values the page was rendered with = the saved ones.
 function init() {
-    for (const form of document.querySelectorAll(".o_pk_app form[data-sc-account-form]")) {
+    for (const form of document.querySelectorAll(".o_pk_app form[data-pk-account-form]")) {
         remember(form);
     }
 }

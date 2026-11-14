@@ -1,57 +1,39 @@
 /*
- * Task 1648 — the type-to-filter single-select picker for link fields
- * (inert outside .o_pk_app).
+ * Task 1648 / 5200 (kit P5) — the type-to-filter single-select picker for
+ * link fields (inert outside .o_pk_app).
  *
  * Progressive enhancement of a <select data-pk-picker>: the select stays the
  * form value (POST routes and the autosave unchanged; without JS it is the
  * plain select). The picker adds, right after it, a text box: typing lists
- * the options whose label matches — accent- and case-insensitive, every
- * typed word the start of a word of the label (the header search's rule,
- * #1650: app_search.sc_name_matches) —, « × » clears, ArrowDown / ArrowUp /
- * Enter / Escape on a laptop. A pick sets the select and fires its
- * « change » (the autosave saves, the narrowing follows).
+ * the options whose label matches (pk_match.js: accent- and
+ * case-insensitive, every typed word the start of a word of the label), « × »
+ * clears, ArrowDown / ArrowUp / Enter / Escape on a laptop. A pick sets the
+ * select and fires its « change » (the autosave saves, the narrowing follows).
  *
- * Narrowing between the link fields of one form ([data-sc-picker-scope], or
- * the closest form / edit view): data-pk-picker-key = team | player |
- * injury | event; player and event options carry data-pk-meta-teams (ids),
- * injury options data-pk-meta-player (id). A team narrows the players and
- * events, a player the injuries; clearing the parent widens them again; a
- * child whose value no longer fits is cleared, with a visible hint.
- * Task 5382 (kit P4c3): the select's and options' markers are the names the
- * kit's autosave field writes (data-pk-picker, data-pk-picker-key, option
- * metadata data-pk-meta-<key>); the clinic's own selects use the same names.
+ * Declarative narrowing between the link fields of one scope
+ * ([data-pk-picker-scope], else the closest edit view / form): a select names
+ * itself with data-pk-picker-key; a child select declares its parent and the
+ * option metadata it matches, data-pk-picker-narrow="<parent key>:<meta key>"
+ * (e.g. "group:groups": an option passes when its data-pk-meta-groups, a
+ * comma list, holds the parent's value; an empty parent lets every option
+ * through), and the hint shown when its value no longer fits and is cleared,
+ * data-pk-picker-hint. The script holds no list of keys.
  *
- * Never focused on open (#1646); the list sits in the flow under the box so
- * a phone keyboard does not hide it.
+ * data-pk-picker-empty on the select keeps its empty option (« To be
+ * determined ») as a real choice: listed first (when it matches the typed
+ * words) and shown in the box when chosen.
  *
- * Task 1722: data-sc-picker-empty on the select keeps its empty option
- * (« À déterminer », « Toutes les organisations ») as a real choice: listed
- * first (when it matches the typed words) and shown in the box when chosen.
+ * Never focused on open; the list sits in the flow under the box so a phone
+ * keyboard does not hide it.
  */
 import { _t, translationIsReady } from "@web/core/l10n/translation";
+import { pkNameMatches, pkWords } from "@bemade_portal_kit/js/pk_match";
 
 const MAX_SHOWN = 50;
 
-export function scFold(text) {
-    return String(text || "")
-        .normalize("NFKD")
-        .replace(/[̀-ͯ]/g, "")
-        .toLowerCase();
-}
-
-export function scWords(text) {
-    return scFold(text).match(/[\p{L}\p{N}_]+/gu) || [];
-}
-
-/** #1650's rule: every typed word starts a word of the label. */
-export function scNameMatches(queryWords, label) {
-    const tokens = scWords(label);
-    return queryWords.every((word) => tokens.some((token) => token.startsWith(word)));
-}
-
 function scopeOf(select) {
     return (
-        select.closest("[data-sc-picker-scope]") ||
+        select.closest("[data-pk-picker-scope]") ||
         select.closest('[data-pk-edit-view="edit"]') ||
         select.closest("form") ||
         select.parentElement
@@ -64,7 +46,7 @@ function pickerOf(select) {
 }
 
 function keepsEmpty(select) {
-    return Boolean(select.dataset.scPickerEmpty);
+    return Boolean(select.dataset.pkPickerEmpty);
 }
 
 function labelOf(select) {
@@ -76,24 +58,24 @@ function labelOf(select) {
 }
 
 function allowed(option) {
-    return !option.dataset.scPickerOut;
+    return !option.dataset.pkPickerOut;
 }
 
 function render(select, picker, query) {
     const list = picker.querySelector(".o_pk_picker_list");
-    const words = scWords(query);
+    const words = pkWords(query);
     const matches = [...select.options].filter(
         (option) =>
             (option.value || (keepsEmpty(select) && option.textContent.trim())) &&
             allowed(option) &&
-            (!words.length || scNameMatches(words, option.textContent))
+            (!words.length || pkNameMatches(words, option.textContent))
     );
     list.replaceChildren();
     for (const [index, option] of matches.slice(0, MAX_SHOWN).entries()) {
         const item = document.createElement("li");
         item.setAttribute("role", "option");
         item.id = `${picker.id}_opt_${index}`;
-        item.dataset.scPickerValue = option.value;
+        item.dataset.pkPickerValue = option.value;
         item.className = "o_pk_picker_option";
         item.textContent = option.textContent.trim();
         if (option.value === select.value) {
@@ -105,7 +87,7 @@ function render(select, picker, query) {
     more.hidden = matches.length <= MAX_SHOWN;
     const none = picker.querySelector(".o_pk_picker_none");
     none.hidden = Boolean(matches.length);
-    picker.dataset.scPickerActive = "-1";
+    picker.dataset.pkPickerActive = "-1";
 }
 
 function openList(select, picker, query = "") {
@@ -147,7 +129,7 @@ function highlight(picker, index) {
     }
     const next = Math.max(0, Math.min(items.length - 1, index));
     items.forEach((item, i) => item.classList.toggle("o_pk_picker_option_active", i === next));
-    picker.dataset.scPickerActive = String(next);
+    picker.dataset.pkPickerActive = String(next);
     picker.querySelector(".o_pk_picker_input").setAttribute("aria-activedescendant", items[next].id);
     items[next].scrollIntoView({ block: "nearest" });
 }
@@ -155,13 +137,13 @@ function highlight(picker, index) {
 let counter = 0;
 
 export function enhance(select) {
-    if (!select || select.dataset.scPickerReady || !select.closest(".o_pk_app")) {
+    if (!select || select.dataset.pkPickerReady || !select.closest(".o_pk_app")) {
         return;
     }
-    select.dataset.scPickerReady = "1";
+    select.dataset.pkPickerReady = "1";
     const picker = document.createElement("div");
     picker.className = "o_pk_picker";
-    picker.id = `sc_picker_${++counter}`;
+    picker.id = `pk_picker_${++counter}`;
     const label = select.id && document.querySelector(`label[for="${select.id}"]`);
     picker.innerHTML = `
         <div class="o_pk_picker_box">
@@ -201,8 +183,47 @@ export function enhanceAll(root = document) {
 }
 
 // ------------------------------------------------------------ narrowing
-function siblingsOf(select, key) {
-    return [...scopeOf(select).querySelectorAll(`select[data-pk-picker-key="${key}"]`)];
+/** The parent key and the option metadata key a child select narrows on. */
+function narrowSpec(child) {
+    const [parent, meta] = (child.dataset.pkPickerNarrow || "").split(":");
+    return parent && meta ? { parent, meta } : null;
+}
+
+/** The selects of ``select``'s scope that declare it as their parent. */
+function childrenOf(select) {
+    const key = select.dataset.pkPickerKey;
+    if (!key) {
+        return [];
+    }
+    return [...scopeOf(select).querySelectorAll("select[data-pk-picker-narrow]")].filter((child) => {
+        const spec = narrowSpec(child);
+        return child !== select && spec && spec.parent === key;
+    });
+}
+
+/** The parent select ``child`` declares, in its scope, or null. */
+function parentOf(child) {
+    const spec = narrowSpec(child);
+    if (!spec) {
+        return null;
+    }
+    return scopeOf(child).querySelector(`select[data-pk-picker-key="${CSS.escape(spec.parent)}"]`);
+}
+
+function metaKey(meta) {
+    return "pkMeta" + meta.replace(/(^|-)([a-z0-9])/g, (_m, _sep, ch) => ch.toUpperCase());
+}
+
+/** Keep the options of ``child`` whose metadata lists ``value`` (all of
+ * them while ``value`` is empty). */
+export function narrowChild(child, value) {
+    const spec = narrowSpec(child);
+    if (!spec) {
+        return;
+    }
+    const key = metaKey(spec.meta);
+    const fits = (option) => !value || (option.dataset[key] || "").split(",").includes(value);
+    narrow(child, fits, child.dataset.pkPickerHint || "");
 }
 
 function narrow(child, test, hint) {
@@ -212,10 +233,10 @@ function narrow(child, test, hint) {
             continue;
         }
         if (test(option)) {
-            delete option.dataset.scPickerOut;
+            delete option.dataset.pkPickerOut;
             option.hidden = false;
         } else {
-            option.dataset.scPickerOut = "1";
+            option.dataset.pkPickerOut = "1";
             option.hidden = true;
             if (option.value === child.value) {
                 cleared = true;
@@ -236,19 +257,9 @@ function narrow(child, test, hint) {
     }
 }
 
-function applyNarrowing(select) {
-    const key = select.dataset.pkPickerKey;
-    const value = select.value;
-    if (key === "team") {
-        const inTeam = (option) => !value || (option.dataset.pkMetaTeams || "").split(",").includes(value);
-        for (const child of [...siblingsOf(select, "player"), ...siblingsOf(select, "event")]) {
-            narrow(child, inTeam, _t("Cleared: not in the chosen team."));
-        }
-    } else if (key === "player") {
-        const ofPlayer = (option) => !value || option.dataset.pkMetaPlayer === value;
-        for (const child of siblingsOf(select, "injury")) {
-            narrow(child, ofPlayer, _t("Cleared: not one of the chosen player's injuries."));
-        }
+export function applyNarrowing(select) {
+    for (const child of childrenOf(select)) {
+        narrowChild(child, select.value);
     }
 }
 
@@ -270,7 +281,7 @@ document.addEventListener("click", (ev) => {
     const option = target.closest(".o_pk_picker_option");
     if (option) {
         const picker = option.closest(".o_pk_picker");
-        choose(picker.previousElementSibling, option.dataset.scPickerValue);
+        choose(picker.previousElementSibling, option.dataset.pkPickerValue);
         return;
     }
     const clear = target.closest(".o_pk_picker_clear");
@@ -303,7 +314,7 @@ document.addEventListener("keydown", (ev) => {
     }
     const picker = input.closest(".o_pk_picker");
     const list = picker.querySelector(".o_pk_picker_list");
-    const current = Number(picker.dataset.scPickerActive || -1);
+    const current = Number(picker.dataset.pkPickerActive || -1);
     if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
         ev.preventDefault();
         if (list.hidden) {
@@ -315,7 +326,7 @@ document.addEventListener("keydown", (ev) => {
         const items = picker.querySelectorAll(".o_pk_picker_option");
         const item = items[current >= 0 ? current : 0];
         if (item) {
-            choose(picker.previousElementSibling, item.dataset.scPickerValue);
+            choose(picker.previousElementSibling, item.dataset.pkPickerValue);
         }
     } else if (ev.key === "Escape" && !list.hidden) {
         ev.preventDefault();
@@ -362,7 +373,7 @@ document.addEventListener("focusout", (ev) => {
 // The select's value changed (a pick, the autosave's answer, a reset).
 document.addEventListener("change", (ev) => {
     const select = ev.target;
-    if (!(select instanceof HTMLSelectElement) || !select.dataset.scPickerReady) {
+    if (!(select instanceof HTMLSelectElement) || !select.dataset.pkPickerReady) {
         return;
     }
     const picker = pickerOf(select);
@@ -377,12 +388,11 @@ document.addEventListener("change", (ev) => {
 // bodies): enhance whatever appears, then apply the narrowing once.
 function boot(root) {
     enhanceAll(root);
-    for (const select of (root.querySelectorAll ? root : document).querySelectorAll(
-        '.o_pk_app select[data-pk-picker-key="team"], .o_pk_app select[data-pk-picker-key="player"]'
-    )) {
-        if (select.value && !select.dataset.scPickerNarrowed) {
-            select.dataset.scPickerNarrowed = "1";
-            applyNarrowing(select);
+    for (const child of document.querySelectorAll(".o_pk_app select[data-pk-picker-narrow]")) {
+        const parent = parentOf(child);
+        if (parent && parent.value && child.dataset.pkPickerNarrowed !== parent.value) {
+            child.dataset.pkPickerNarrowed = parent.value;
+            narrowChild(child, parent.value);
         }
     }
 }

@@ -83,7 +83,7 @@ class TestMyEventsDefault1730(Calendar1591Common):
 
     @staticmethod
     def _props(tree):
-        return json.loads(tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_calendar"]/@props')[0])
+        return json.loads(tree.xpath('//owl-component[@name="bemade_portal_kit.pk_calendar"]/@props')[0])
 
     # -- UC-1 --------------------------------------------------------------
     def test_professional_lands_on_my_events(self):

@@ -1,29 +1,23 @@
-"""Task 1660 — in-app help: the page → user-guide article mapping.
+"""Task 1660 / 5200 (kit P5) — the clinic's in-app help.
 
-Every app-shell page renders a stable help KEY (``SC_HELP_KEYS``: the page
-template → key; the player and team pages add their tab, « player.injuries »).
-The « ? » of the app bar opens the article mapped to that key — the exact key,
-else its base (« player »), else the guide home — in a new tab. The user menu's
-« Aide » and the « Plus » row « Guide d'utilisation » open the guide home.
+The mapping model, the « ? » of the app bar, the user menu's « Aide » and
+« Plus › Guide d'utilisation » are the kit's (``portal.kit.help``,
+bemade_portal_kit; edited in Administration › Aide de l'application). The
+clinic brings, through the kit's hooks on ``portal.kit``:
 
-* The mapping (``sc.help.article``) is edited in the back end by the clinic
-  administrators (Administration › Aide de l'application); nothing is mapped
-  by default — production article ids differ from staging's.
-* The guide home is the system parameter ``bemade_sports_clinic.help_home_url``
-  (empty by default: then, with no mapping either, no help entry shows).
-* URLs are the PUBLIC website_knowledge pages (``/knowledge/article/<id>``) or
-  an absolute https address — never an app URL (``/my…``: the app shell
-  intercepts it). A ``/knowledge/…`` URL is offered only while
-  ``website_knowledge`` is installed (soft dependency: no manifest dependency).
-* No data in the URL beyond the page key's article.
+* ``_pk_help_keys``: its pages' help keys (``SC_HELP_KEYS``);
+* ``_pk_help_tabbed``: the player and team pages refine the key with their
+  tab (« player.injuries »);
+* ``_pk_help_url``: the user guide is website_knowledge's public pages
+  (``/knowledge/article/<id>``, a SOFT dependency, Enterprise): such a link
+  is offered only while website_knowledge is installed, and opens through
+  the app's ``/my/guide/<id>`` (task 1720, controllers/knowledge_public.py).
+  An app URL (``/my…``) is never a help link (the app shell intercepts it).
+* Task 1685: the public guide view's header for a logged-in user.
 """
-import json
 import re
 
-from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
-
-SC_HELP_HOME_PARAM = 'bemade_sports_clinic.help_home_url'
+from odoo import api, models
 
 # App-shell page template -> help key.
 SC_HELP_KEYS = {
@@ -48,12 +42,7 @@ SC_HELP_KEYS = {
     'sc_app_timesheets': 'timesheets',
     'sc_app_clinics': 'clinics',
     'sc_app_clinic': 'clinic',
-    'sc_app_settings': 'settings',
-    'sc_app_account': 'account',
-    'sc_app_security': 'account',
     'sc_app_install': 'install',
-    'sc_app_more': 'home',
-    'sc_app_search_results': 'search',
 }
 # Pages whose help key carries their tab (« player.injuries »).
 SC_HELP_TABBED = ('player', 'team')
@@ -94,90 +83,40 @@ SC_KNOWLEDGE_PUBLIC_ARCH = """<data>
 # /my/guide/<id> (the public guide view for every logged-in user).
 _KNOWLEDGE_ARTICLE_RE = re.compile(r'^/knowledge/article/(\d+)')
 
-_URL_RE = re.compile(r'^(https://[^\s"<>]+|/knowledge/article/\d+[^\s"<>]*)$')
 
-
-def sc_help_url_ok(url):
-    """A help URL: a public Knowledge page or an absolute https address —
-    never an app URL nor a script."""
-    url = (url or '').strip()
-    return bool(url and _URL_RE.match(url) and 'subpath=knowledge' not in url)
-
-
-class ScHelpArticle(models.Model):
-    _name = 'sc.help.article'
-    _description = 'App help: page to guide article'
-    _order = 'sequence, key, id'
-
-    key = fields.Char(
-        required=True,
-        help="The page's help key: home, teams, team, team.players, players, player, "
-             "player.injuries, player.info, player.documents, player.notes, "
-             "player.activities, injury, notepad, activities, events, event, calendar, "
-             "timesheets, clinics, clinic, settings, account, install, search.")
-    url = fields.Char(
-        string='Article URL', required=True,
-        help="The public guide article: /knowledge/article/<id> (or an https address).")
-    sequence = fields.Integer(default=10)
-    active = fields.Boolean(default=True)
-    note = fields.Char(help="Internal note (e.g. the article's title).")
-
-    _key_unique = models.Constraint('UNIQUE(key)', 'One article per page key.')
-
-    @api.constrains('url')
-    def _check_url(self):
-        for rec in self:
-            if not sc_help_url_ok(rec.url):
-                raise ValidationError(_(
-                    "The help link must be a public guide article (/knowledge/article/<id>) "
-                    "or an https address."))
+class SportsClinicHelp(models.AbstractModel):
+    _inherit = 'portal.kit'
 
     @api.model
-    def _sc_url_available(self, url):
-        """A /knowledge/… page needs website_knowledge (soft dependency)."""
-        if not sc_help_url_ok(url):
+    def _pk_help_keys(self):
+        keys = dict(super()._pk_help_keys())
+        keys.update(SC_HELP_KEYS)
+        return keys
+
+    @api.model
+    def _pk_help_page_key(self, page):
+        """A clinic page not listed uses its name without « sc_app_ »."""
+        if page and page.startswith('sc_app_') and page not in SC_HELP_KEYS:
+            return page.removeprefix('sc_app_')
+        return super()._pk_help_page_key(page)
+
+    @api.model
+    def _pk_help_tabbed(self):
+        return tuple(super()._pk_help_tabbed()) + SC_HELP_TABBED
+
+    @api.model
+    def _pk_help_url(self, url):
+        """A /knowledge/… page needs website_knowledge (soft dependency) and
+        opens through /my/guide/<id>; an app URL is never a help link."""
+        url = super()._pk_help_url(url)
+        if not url or url.startswith('/my') or 'subpath=knowledge' in url:
             return False
         if url.startswith('/knowledge/'):
             module = self.env['ir.module.module'].sudo()._get('website_knowledge')
-            return bool(module) and module.state == 'installed'
-        return True
-
-    @api.model
-    def _sc_help_links(self):
-        """``{'home': url|False, 'map': {key: url}}`` — the available links
-        only (sudo: the mapping is configuration, readable by every app
-        user through this helper only)."""
-        home = (self.env['ir.config_parameter'].sudo().get_param(SC_HELP_HOME_PARAM) or '').strip()
-        links = {
-            rec.key: self._sc_guide_url(rec.url.strip())
-            for rec in self.sudo().search([])
-            if self._sc_url_available(rec.url.strip())
-        }
-        return {'home': self._sc_guide_url(home) if self._sc_url_available(home) else False, 'map': links}
-
-    @api.model
-    def _sc_guide_url(self, url):
-        """Task 1720: ``/knowledge/article/<id>…`` -> ``/my/guide/<id>…`` (the
-        public guide view for every logged-in user, internal included). Only
-        called on an available URL, so website_knowledge is installed; an
-        https address is returned unchanged."""
-        return _KNOWLEDGE_ARTICLE_RE.sub(r'/my/guide/\1', url, count=1)
-
-    @api.model
-    def _sc_help_for(self, page, tab=None):
-        """The help of an app page: ``{'key', 'url', 'home', 'map_json'}``;
-        ``url`` False when nothing applies (no entry is shown then)."""
-        links = self._sc_help_links()
-        base = SC_HELP_KEYS.get(page) or (page or '').removeprefix('sc_app_') or 'home'
-        key = '%s.%s' % (base, tab) if tab and base in SC_HELP_TABBED else base
-        url = links['map'].get(key) or links['map'].get(key.split('.')[0]) or links['home']
-        return {
-            'key': key,
-            'base': base,
-            'url': url or False,
-            'home': links['home'],
-            'map_json': json.dumps(links['map']),
-        }
+            if not module or module.state != 'installed':
+                return False
+            return _KNOWLEDGE_ARTICLE_RE.sub(r'/my/guide/\1', url, count=1)
+        return url
 
     # ------------------------------------------------------------------
     # Task 1685: the public guide view's header for a logged-in user

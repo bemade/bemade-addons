@@ -154,7 +154,7 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'success': kw.get('success'),
         })
         # Task 1540: the app shell (switch on) or today's template (off).
-        if self._sc_app_shell_active():
+        if self._pk_shell_active():
             values.update(self._sc_notepad_values(values))
         return self._sc_render('bemade_sports_clinic.portal_my_quick_notes',
                                'bemade_sports_clinic.sc_app_notepad', values)

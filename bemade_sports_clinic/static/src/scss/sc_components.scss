@@ -18,13 +18,6 @@
         }
     }
 
-    @media (min-width: $pk-laptop) {
-        // « More » entries already on the rail (marked by the template).
-        .o_pk_content [data-sc-in-rail] {
-            display: none;
-        }
-    }
-
     // Player row status line (sc_player_status_line): the legacy card's
     // Match / Practice badges, injury count and ⚡ « Changements récents »
     // flag, under the name so they wrap instead of crowding a phone row.

@@ -26,9 +26,9 @@
         }
     }
 
-    // The calendar's booking details (sc_calendar, shared component):
+    // The calendar's booking details (the kit's pk_calendar component):
     // a multi-line answer keeps its line breaks.
-    .o_sc_calendar_detail .o_pk_kv dd {
+    .o_pk_calendar_detail .o_pk_kv dd {
         white-space: pre-line;
     }
 }
@@ -41,7 +41,7 @@
         color: var(--pk-fg-2);
     }
 
-    .o_sc_calendar_detail .o_pk_card_head > strong {
+    .o_pk_calendar_detail .o_pk_card_head > strong {
         flex: 1 1 auto;
     }
 

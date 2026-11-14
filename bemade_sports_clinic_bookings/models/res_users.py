@@ -19,9 +19,6 @@ SC_BOOKING_EMAIL_PREFS = [
 SC_DIGEST_TIME = time(6, 30)
 SC_DEFAULT_TZ = 'America/Toronto'
 MAIL_FROM_PARAM = 'appointment_portal_staff.mail_from'
-# The clinic app's switch (bemade_sports_clinic controllers/app_shell.py).
-APP_SHELL_PARAM = 'bemade_sports_clinic.app_shell_enabled'
-_TRUTHY = ('1', 'true', 'yes', 'on')
 
 
 class ResUsers(models.Model):
@@ -66,10 +63,8 @@ class ResUsers(models.Model):
         self.ensure_one()
         if not self.active or self._is_public():
             return False
-        raw = self.env['ir.config_parameter'].sudo().get_param(APP_SHELL_PARAM)
-        if str(raw or '').strip().lower() not in _TRUTHY:
-            return False
-        if not (self._sc_app_roles() & self.env['portal.kit'].pk_app_roles()):
+        # Task 5200 (kit P5): the kit's switch and role gate.
+        if not self.env['portal.kit']._pk_shell_active(self):
             return False
         return self._sc_booking_is_staff()
 

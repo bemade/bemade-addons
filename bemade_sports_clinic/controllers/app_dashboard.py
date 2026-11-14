@@ -501,7 +501,7 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
     # ------------------------------------------------------------------
     @http.route([CONFIGURE_URL], type='http', auth='user', website=True)
     def sc_dashboard_configure(self, **kw):
-        if not self._sc_app_shell_active():
+        if not self._pk_shell_active():
             return request.redirect('/my/home')
         env = request.env
         Dash = env['sc.dashboard']
@@ -595,7 +595,7 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
         return request.redirect(CONFIGURE_URL + ('#sc-dash-%s' % anchor if anchor else ''))
 
     def _sc_dash_post(self, run, anchor=None):
-        if not self._sc_app_shell_active():
+        if not self._pk_shell_active():
             return request.redirect('/my/home')
         try:
             result = run(request.env['sc.dashboard'])

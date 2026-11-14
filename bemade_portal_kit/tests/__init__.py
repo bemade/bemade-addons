@@ -20,3 +20,7 @@ from . import test_pk_display
 from . import test_pk_autosave
 from . import test_pk_layout
 from . import test_pk_components
+from . import test_pk_switch
+from . import test_pk_shell_pages
+from . import test_pk_help
+from . import test_pk_data_moves

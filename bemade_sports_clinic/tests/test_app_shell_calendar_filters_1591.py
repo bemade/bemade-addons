@@ -132,7 +132,7 @@ class TestCalendarFilters1591(Calendar1591Common):
         self.assertEqual(form.xpath('.//input[@name="show_cancelled"]/@checked'), ['checked'])
         self.assertEqual(form.xpath('.//input[@name="event_type"]/@value'), ['game'])
         self.assertTrue(form.xpath('.//details[@open]'))
-        props = json.loads(tree.xpath('//owl-component[@name="bemade_sports_clinic.sc_calendar"]/@props')[0])
+        props = json.loads(tree.xpath('//owl-component[@name="bemade_portal_kit.pk_calendar"]/@props')[0])
         # Task 1730 (deliberate update): a professional's calendar opens on
         # « My events » unless the URL names a view — « All » here.
         self.assertEqual(props['params'], {

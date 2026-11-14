@@ -1,9 +1,11 @@
 /*
- * Task 1650 — the app header's search (inert outside .o_pk_app).
+ * Task 1650 / 5200 (kit P5) — the app header's search (inert outside
+ * .o_pk_app). The server answers the results (GET /my/app/search, the
+ * providers of portal.kit._pk_search_providers()).
  *
- * The magnifier ([data-sc-search-open], a link to /my/players without JS),
+ * The magnifier ([data-pk-search-open], a plain link without JS),
  * « / » or Ctrl/⌘-K (laptop; never while typing in a field) open
- * #sc_search_sheet: full screen on a phone, the centred sheet on a laptop.
+ * #pk_search_sheet: full screen on a phone, the centred sheet on a laptop.
  * Its input (focused: the user asked to search) fetches
  * /my/app/search?q=… 250 ms after the last key, a newer request aborting the
  * older one; the HTML fragment replaces the results. ArrowDown / ArrowUp
@@ -12,16 +14,18 @@
  */
 const DEBOUNCE_MS = 250;
 
+export const PK_SEARCH_DEBOUNCE_MS = DEBOUNCE_MS;
+
 let timer = null;
 let inflight = null;
 let active = -1;
 
 function sheet() {
-    return document.getElementById("sc_search_sheet");
+    return document.getElementById("pk_search_sheet");
 }
 
 function results(dialog) {
-    return [...dialog.querySelectorAll("[data-sc-search-result]")];
+    return [...dialog.querySelectorAll("[data-pk-search-result]")];
 }
 
 function highlight(dialog, index) {
@@ -52,9 +56,9 @@ async function runSearch(dialog, query) {
         if (inflight !== controller) {
             return; // a newer search answered meanwhile
         }
-        dialog.querySelector("[data-sc-search-body]").innerHTML = html;
+        dialog.querySelector("[data-pk-search-body]").innerHTML = html;
         highlight(dialog, -1);
-        dialog.dataset.scSearchQuery = query;
+        dialog.dataset.pkSearchQuery = query;
     } catch {
         // aborted / offline: the previous results stay
     } finally {
@@ -72,7 +76,7 @@ export function openSearch() {
     if (!dialog.open) {
         dialog.showModal();
     }
-    const input = dialog.querySelector("[data-sc-search-input]");
+    const input = dialog.querySelector("[data-pk-search-input]");
     if (input) {
         input.focus();
         input.select();
@@ -89,7 +93,7 @@ function typing(target) {
 }
 
 document.addEventListener("click", (ev) => {
-    const opener = ev.target.closest && ev.target.closest("[data-sc-search-open]");
+    const opener = ev.target.closest && ev.target.closest("[data-pk-search-open]");
     if (!opener || !opener.closest(".o_pk_app")) {
         return;
     }
@@ -103,7 +107,7 @@ document.addEventListener("click", (ev) => {
 
 document.addEventListener("input", (ev) => {
     const input = ev.target;
-    if (!input.matches || !input.matches("[data-sc-search-input]")) {
+    if (!input.matches || !input.matches("[data-pk-search-input]")) {
         return;
     }
     const dialog = input.closest("dialog");
@@ -121,7 +125,7 @@ document.addEventListener("keydown", (ev) => {
         if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
             ev.preventDefault();
             highlight(dialog, active + (ev.key === "ArrowDown" ? 1 : -1));
-        } else if (ev.key === "Enter" && ev.target.matches("[data-sc-search-input]")) {
+        } else if (ev.key === "Enter" && ev.target.matches("[data-pk-search-input]")) {
             ev.preventDefault();
             clearTimeout(timer);
             const target = items[active >= 0 ? active : 0];
@@ -138,7 +142,7 @@ document.addEventListener("keydown", (ev) => {
     }
     const slash = ev.key === "/" && !ev.ctrlKey && !ev.metaKey;
     const ctrlK = (ev.ctrlKey || ev.metaKey) && (ev.key === "k" || ev.key === "K");
-    if ((slash || ctrlK) && document.querySelector("[data-sc-search-open]")) {
+    if ((slash || ctrlK) && document.querySelector("[data-pk-search-open]")) {
         ev.preventDefault();
         openSearch();
     }

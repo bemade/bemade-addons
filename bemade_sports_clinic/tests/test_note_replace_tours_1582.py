@@ -34,7 +34,7 @@ class _Tour1582Common(AppShellCommon):
     def setUpClass(cls):
         super().setUpClass()
         cls.env['ir.config_parameter'].sudo().set_param(
-            'bemade_sports_clinic.app_shell_enabled', 'True')
+            'bemade_portal_kit.enabled', 'True')
         cls.injury.sudo().write({'external_notes': CURRENT})
 
     def _run(self, login):
