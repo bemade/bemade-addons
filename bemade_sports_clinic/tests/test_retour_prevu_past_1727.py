@@ -22,7 +22,7 @@ Owner decisions (2026-10-27):
 * UC-5 « Dépassé »: wherever « Retour prévu » renders — the player header,
   the player cards (roster, /my/players, the clinic pane) and their
   expanded detail, the digest — a past date reads « … · Dépassé » in
-  orange (``o_sc_overdue``), coaches included; a date today or later has
+  orange (``o_pk_overdue``), coaches included; a date today or later has
   no flag. The digest compares with its snapshot's day.
 * UC-6 French: every new string renders in fr_CA (website-aware).
 """
@@ -230,8 +230,8 @@ class TestRetourPrevuApp1727(FragmentsCommon):
 
     # -- UC-5 ------------------------------------------------------------
     def _flags(self, tree):
-        return tree.xpath('//*[contains(concat(" ", @class, " "), " o_sc_overdue ")]'
-                          '[.//*[@data-sc-overdue]]')
+        return tree.xpath('//*[contains(concat(" ", @class, " "), " o_pk_overdue ")]'
+                          '[.//*[@data-pk-overdue]]')
 
     def test_header_flags_a_past_date_for_coach_and_therapist(self):
         self._set_past()
@@ -247,7 +247,7 @@ class TestRetourPrevuApp1727(FragmentsCommon):
         self.player.write({'predicted_return_date': _today(self.player.with_user(self.tp))})
         self._login_coach()
         _text, tree = self._get(self._url())
-        self.assertFalse(tree.xpath('//*[@data-sc-overdue]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-overdue]'))
 
     def test_player_card_and_detail_flag(self):
         self._set_past()
@@ -276,7 +276,7 @@ class TestRetourPrevuApp1727(FragmentsCommon):
         self.assertTrue(rows['Synthetic A']['predicted_return_overdue'])
         self.assertFalse(rows['Synthetic B']['predicted_return_overdue'])
         tree = lxml_html.fromstring(digest.digest_html)
-        self.assertEqual(len(tree.xpath('//*[@data-sc-overdue]')), 1)
+        self.assertEqual(len(tree.xpath('//*[@data-pk-overdue]')), 1)
 
 
 @tagged('post_install', '-at_install')
@@ -298,7 +298,7 @@ class TestRetourPrevuPastI18n1727(TestAppShellI18n1538):
         self._login_tp()
         text = self._fr('/my/player?player_id=%s&tab=injuries' % self.player.id)
         [flag] = lxml_html.fromstring(text).xpath(
-            '//*[@data-pk-section="player.return"]//*[@data-sc-overdue]')
+            '//*[@data-pk-section="player.return"]//*[@data-pk-overdue]')
         self.assertEqual(flag.text_content().strip(), 'Dépassé')
         # The refusals (save route, apply route) in the user's language.
         self.player.invalidate_recordset()

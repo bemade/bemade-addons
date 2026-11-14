@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.10.0',
+    'version': '19.0.1.11.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -20,7 +20,8 @@ shell's generic scripts (below), later versions its styles and first
 templates; version 1.6 its save engine and screen refresh; version 1.7 its
 form guard, status pills and lazy edit views; version 1.8 its toast, session
 notification and undo; version 1.9 its edit cards, sheets, tabs, lazy load
-and clamps; version 1.10 its autosave field.
+and clamps; version 1.10 its autosave field; version 1.11 its app layout,
+user menu and shell components.
 
 Registries
 ----------
@@ -388,6 +389,71 @@ adopted from the first consumer like the 1.5 templates), called with::
   ``optionMeta`` ``{value: {key: text}}`` -> ``data-pk-meta-<key>`` on each
   option.
 
+App layout, user menu and shell components
+------------------------------------------
+Version 1.11 (task 5345). ``bemade_portal_kit.pk_app_layout`` is the shell
+of every page of a portal app, on ``pk_frontend_layout``: the laptop rail
+and phone tabs, the app bar (back chevron, home picto, logo, title and
+context line, theme toggle, actions, user menu), the crumb trail of a
+sub-page, the content (``main#pk_content``), the form guard's texts and the
+toast host. A page calls it with its content as body::
+
+    <t t-call="bemade_portal_kit.pk_app_layout">
+        <t t-set="pk_title">Items</t>
+        <t t-set="pk_active_nav" t-value="'items'"/>
+        ...
+    </t>
+
+A consumer usually wraps it in its own layout that fills the slots once.
+
+* Values (all optional): ``pk_title``, ``pk_active_nav``, ``pk_page_key``
+  (the title and the crumb become the read fragments ``<key>:appbar`` /
+  ``<key>:crumb``), ``pk_content_class``, ``pk_rail`` / ``pk_tabs`` (nav
+  entries ``{key, url, icon, label}``, ``data-pk-nav-key``),
+  ``pk_parent_url``, ``pk_crumbs`` (``[(label, url)]``), ``pk_context``
+  (``portal.kit.pk_resolve``), ``pk_theme`` (``dark`` / ``light``, default
+  light), ``pk_theme_choice`` + ``pk_pref_url`` (+ ``pk_theme_field``, the
+  posted name, default ``pk_theme``; ``pk_current_url`` the redirect) for
+  the theme toggle, ``pk_show_done`` (False: ``data-pk-hide-done``, the
+  edit cards' « Done » buttons hidden), ``pk_edit_done_label``,
+  ``pk_user_initials`` / ``_name`` / ``_role``, ``pk_settings_url`` (+
+  ``pk_settings_active``), ``pk_home_url`` / ``pk_home_same_params``
+  (``data-pk-home``), ``pk_db`` / ``pk_uid``, ``pk_guard_params`` (default
+  ``error``), ``pk_notification``, ``pk_rendered_at`` and ``pk_brand``.
+* Slots (``t-set`` bodies, empty by default): ``pk_head_extra``,
+  ``pk_brand_mark`` (default: ``pk_brand_mark``, the kit's neutral mark),
+  ``pk_appbar_actions`` (icons before the user menu),
+  ``pk_user_menu_extra`` (items after « Settings ») and
+  ``pk_layout_sheets`` (page-level sheets and dialogs, rendered after the
+  content).
+* Brand: ``portal.kit.pk_brand(overrides)`` = the hook ``_pk_brand()``
+  (neutral defaults: the company name, ``/my``, « Home », the theme colours
+  ``{light, dark}`` of the browser bar) with the page's ``pk_brand``
+  merged over it.
+* Markers: ``data-pk-top`` (``1`` on a top-level page),
+  ``data-pk-hide-done``, ``data-pk-theme-color-light`` / ``-dark``,
+  ``data-pk-user-menu``, ``data-pk-user-menu-head``, ``data-pk-pref`` (a
+  preference form), ``data-pk-theme-toggle``, ``data-pk-theme-switch``,
+  ``data-pk-theme-value``; ids ``pk_content``, ``pk_user_menu_bar``.
+* Script ``pk_theme_pref``: a ``form[data-pk-pref]`` posts with fetch and
+  applies the answer's ``pk_theme`` in place (export ``applyTheme(app,
+  theme)``).
+* ``pk_user_menu_popup`` (``pk_menu_id``): the user menu (adopted).
+
+Components (adopted from the first consumer like the 1.5 templates):
+``pk_entity_row`` (slot ``row_extra``), ``pk_link_row`` and
+``pk_row_links`` (``data-pk-title-split``, ``-title-link``, ``-row-links``,
+``-row-link``, ``-row-link-plain``), ``pk_list_header`` (``add_key`` ->
+``data-pk-action``, ``data-pk-sort``), ``pk_card_icons`` (slot
+``ci_extra``; ``ci_clock``, ``ci_archive``, ``ci_trash``, ``ci_editable``;
+``data-pk-card-icons``, ``-card-archive``, ``-card-trash``,
+``-activity-clock``, ``-activity-overdue``, ``o_pk_card_clock``),
+``pk_history_entry`` / ``pk_history_list`` (``data-pk-history-state``,
+``-scope``), ``pk_banner``, ``pk_flash_banners`` (``pk_flash``),
+``pk_switch`` (``data-pk-switch-locked``, ``-switch-reason``),
+``pk_confirm_sheet`` (``data-pk-confirm-submit``), ``pk_field_static`` and
+``pk_overdue_flag`` (``o_pk_overdue``, ``data-pk-overdue``).
+
 Style guide
 ------------
 ``/pk/styleguide`` (internal users) shows every generic component with the
@@ -444,6 +510,7 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/src/js/pk_shell.js',
             # Task 5382 (P4c3): the autosave field (OWL component + template).
             'bemade_portal_kit/static/src/js/pk_autosave_field.js',
+            'bemade_portal_kit/static/src/js/pk_theme_pref.js',
             'bemade_portal_kit/static/src/js/pk_autosave_field.xml',
         ],
         # The hoot unit tests (tests/test_pk_hoot.py runs them headless).
@@ -472,6 +539,7 @@ neutral slots; ``?theme=dark`` shows the dark theme.
             'bemade_portal_kit/static/src/js/pk_shell.js',
             'bemade_portal_kit/static/src/js/pk_date_bounds.js',
             'bemade_portal_kit/static/src/js/pk_autosave_field.js',
+            'bemade_portal_kit/static/src/js/pk_theme_pref.js',
             'bemade_portal_kit/static/src/js/pk_autosave_field.xml',
         ],
         'web.assets_unit_tests': [

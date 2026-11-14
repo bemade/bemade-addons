@@ -23,6 +23,9 @@
 * UC-A9 (task 5381, P4c2) The kit adopts four more templates: the edit
   card head, the display row, the sheet and the page tabs (15 in all);
   task 5382 (P4c3) the autosave field's template (16).
+* UC-A10 (task 5345, P3c2) The kit adopts the user menu popup and thirteen
+  shell components (30 in all); its new app layout (``pk_app_layout``) is
+  in a view file the consumer's pre-migration loads (``KIT_VIEW_FILES``).
 * UC-A8 (task 5370) ``strip_translated_attributes`` removes renamed
   attributes that a translation kept: Odoo merges the source's attributes
   into a translated term but never drops the term's own, so after a rename
@@ -159,7 +162,15 @@ class TestPkAdopt(TransactionCase):
         self.assertEqual(strip_translated_attributes(self.env.cr, ('data-pk-old-msg',)), 0)
 
     def test_mapping_adopted_after_upgrade(self):
-        self.assertEqual(len(ADOPTED_VIEWS), 16)
+        self.assertEqual(len(ADOPTED_VIEWS), 30)
+        for old, new in (('sc_user_menu_popup', 'pk_user_menu_popup'), ('sc_list_header', 'pk_list_header'),
+                         ('sc_card_icons', 'pk_card_icons'), ('sc_history_entry', 'pk_history_entry'),
+                         ('sc_history_list', 'pk_history_list'), ('sc_banner', 'pk_banner'),
+                         ('sc_flash_banners', 'pk_flash_banners'), ('sc_switch', 'pk_switch'),
+                         ('sc_confirm_sheet', 'pk_confirm_sheet'), ('sc_link_row', 'pk_link_row'),
+                         ('sc_row_links', 'pk_row_links'), ('sc_entity_row', 'pk_entity_row'),
+                         ('sc_field_static', 'pk_field_static'), ('sc_return_overdue_flag', 'pk_overdue_flag')):
+            self.assertIn(('bemade_sports_clinic', old, new), ADOPTED_VIEWS)
         self.assertIn(('bemade_sports_clinic', 'sc_field_autosave', 'pk_field_autosave'), ADOPTED_VIEWS)
         for old, new in (('sc_edit_card_head', 'pk_edit_card_head'), ('sc_display_row', 'pk_display_row'),
                          ('sc_sheet', 'pk_sheet'), ('sc_page_tabs', 'pk_page_tabs')):
@@ -172,6 +183,17 @@ class TestPkAdopt(TransactionCase):
                 new = self._imd(KIT, new_name)
                 self.assertEqual(new.model, 'ir.ui.view')
                 self.assertEqual(self.env['ir.ui.view'].browse(new.res_id).key, '%s.%s' % (KIT, new_name))
+
+    def test_layout_in_kit_view_files(self):
+        """UC-A10: the app layout and the adopted views are in the files a
+        consumer's pre-migration loads when the kit is not upgraded."""
+        self.assertIn('views/pk_layout.xml', adopt.KIT_VIEW_FILES)
+        self.assertIn('views/pk_components.xml', adopt.KIT_VIEW_FILES)
+        root = get_module_path(KIT)
+        with open(os.path.join(root, 'views', 'pk_layout.xml'), encoding='utf-8') as f:
+            layout = f.read()
+        for name in ('pk_app_layout', 'pk_user_menu_popup', 'pk_brand_mark'):
+            self.assertIn('id="%s"' % name, layout)
 
     def test_kit_views_name_no_consumer(self):
         root = get_module_path(KIT)

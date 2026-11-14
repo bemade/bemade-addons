@@ -40,7 +40,7 @@ MIGRATION = os.path.join(
 
 def _load_fr(env):
     env['res.lang']._activate_lang('fr_CA')
-    env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+    env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
 
 
 @tagged('post_install', '-at_install')

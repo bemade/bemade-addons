@@ -3,7 +3,7 @@ segmented choices. Synthetic fixtures only (this repository is public).
 
 Acceptance criteria (owner-approved plan, 2026-10-27):
 
-* UC-1 One shared switch (``bemade_sports_clinic.sc_switch``): the label on
+* UC-1 One shared switch (``bemade_portal_kit.pk_switch``): the label on
   the left, the switch on the right; a real ``<input type="checkbox"
   role="switch">`` with ``aria-checked`` matching its state, and a locked
   state carrying its reason line.
@@ -92,8 +92,8 @@ class TestSwitches1726(Switch1726Common):
         none_allergy = self._one(allergy, data_sc_med_set='allergy_none_confirmed')
         self.assertEqual(none_allergy.get('disabled'), 'disabled')
         row = none_allergy.xpath('ancestor::label[1]')[0]
-        self.assertEqual(row.get('data-sc-switch-locked'), '1')
-        self.assertTrue(row.xpath('.//*[@data-sc-switch-reason]'))
+        self.assertEqual(row.get('data-pk-switch-locked'), '1')
+        self.assertTrue(row.xpath('.//*[@data-pk-switch-reason]'))
         # The EpiPen (tri-state, #1717) is never a switch.
         self.assertFalse(allergy.xpath('.//input[@role="switch"][@data-sc-med-set="allergy_epipen_state"]'))
         condition = tree.xpath('//div[@data-pk-section="medical.medical_alert"]')[0]
@@ -112,7 +112,7 @@ class TestSwitches1726(Switch1726Common):
         switch = self._one(allergy, data_sc_med_set='allergy_none_confirmed')
         self.assertIsNone(switch.get('disabled'))
         self._assert_state(switch, True)
-        self.assertFalse(allergy.xpath('.//*[@data-sc-switch-reason]'))
+        self.assertFalse(allergy.xpath('.//*[@data-pk-switch-reason]'))
 
     def test_account_block_list_switch_on_by_default(self):
         self._login_tp()

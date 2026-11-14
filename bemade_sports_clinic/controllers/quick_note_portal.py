@@ -223,7 +223,7 @@ class QuickNotePortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             'sc_note_rows': [_row(note) for note in values['notes']],
             'sc_archived_rows': [_row(note) for note in values['archived_notes']],
             'sc_quick_note_prefix': self.SC_NOTE_DRAFT_PREFIX,
-            'sc_flash': {'success': success, 'error': error},
+            'pk_flash': {'success': success, 'error': error},
         }
 
     @http.route(['/my/notepad/add'], type='http', auth='user', website=True,

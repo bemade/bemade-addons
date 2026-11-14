@@ -15,9 +15,9 @@
     <!-- /my/sc/timesheets (shell) -->
     <template id="sc_app_timesheets" name="Sports Clinic App: timesheets">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="sc_nav_labels['timesheets']"/>
-            <t t-set="sc_active_nav" t-value="'timesheets'"/>
-            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <t t-set="pk_title" t-value="sc_nav_labels['timesheets']"/>
+            <t t-set="pk_active_nav" t-value="'timesheets'"/>
+            <t t-call="bemade_portal_kit.pk_flash_banners"/>
 
             <!-- Owner review 2026-10-14: applied on change (sc_forms.js); group
                  by in its own labelled group (it is not a filter). Task 1607:
@@ -88,7 +88,7 @@
 
             <!-- Task 1607: the sort, condensed to the right of the list header
                  (was in the filter panel). -->
-            <t t-call="bemade_sports_clinic.sc_list_header">
+            <t t-call="bemade_portal_kit.pk_list_header">
                 <t t-set="header_section" t-value="'timesheets.header'"/>
                 <t t-set="sc_sort_date">Date (asc)</t>
                 <t t-set="sc_sort_date_desc">Date (desc)</t>
@@ -209,7 +209,7 @@
                  which has no pencil), the pencil. -->
             <div class="o_pk_edit_card_head">
                 <p class="o_pk_meta" t-out="row['when']"/>
-                <t t-call="bemade_sports_clinic.sc_card_icons">
+                <t t-call="bemade_portal_kit.pk_card_icons">
                     <t t-set="ci_archive" t-value="not archived and {'action': '/my/notepad/%s/archive' % row['id'], 'hidden': {'sc_undo': '1'}, 'key': 'note.archive'}"/>
                     <t t-set="ci_editable" t-value="not archived"/>
                     <t t-set="ci_edit_key" t-value="'note.edit'"/>
@@ -247,7 +247,7 @@
                 </form>
             </div>
         </article>
-        <t t-call="bemade_sports_clinic.sc_confirm_sheet">
+        <t t-call="bemade_portal_kit.pk_confirm_sheet">
             <t t-set="sheet_id" t-value="'sc_qn_delete_%s' % row['id']"/>
             <t t-set="title">Delete the note</t>
             <t t-set="message">Delete this note for good?</t>
@@ -261,9 +261,9 @@
     <!-- /my/notepad (shell) -->
     <template id="sc_app_notepad" name="Sports Clinic App: notepad">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="sc_nav_labels['notepad']"/>
-            <t t-set="sc_active_nav" t-value="'notepad'"/>
-            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <t t-set="pk_title" t-value="sc_nav_labels['notepad']"/>
+            <t t-set="pk_active_nav" t-value="'notepad'"/>
+            <t t-call="bemade_portal_kit.pk_flash_banners"/>
             <div t-if="success == 'note_added'" t-att-data-pk-draft-clear="sc_quick_note_prefix" hidden="hidden"/>
 
             <!-- Task 1667: the quick-note form is always there — no « + Ajouter »
@@ -332,8 +332,8 @@
     <!-- /my/team/<t>/digest/<d> (shell) -->
     <template id="sc_app_team_digest" name="Sports Clinic App: team digest">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">Daily digest</t>
-            <t t-set="sc_active_nav" t-value="'teams'"/>
+            <t t-set="pk_title">Daily digest</t>
+            <t t-set="pk_active_nav" t-value="'teams'"/>
             <!-- Task 1614: the legacy page's « Snapshot of … » line, and the
                  Bootstrap digest re-themed by o_pk_legacy (player names were
                  white on white in dark mode). -->
@@ -368,8 +368,8 @@
     <!-- /my/team/<t>/digest-history (shell, full page) -->
     <template id="sc_app_team_digest_history" name="Sports Clinic App: team digest history">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">Digest history</t>
-            <t t-set="sc_active_nav" t-value="'teams'"/>
+            <t t-set="pk_title">Digest history</t>
+            <t t-set="pk_active_nav" t-value="'teams'"/>
             <!-- Task 1614: each date expands in place; its body (the same
                  role re-gated team_digest_render as the day's page) is fetched
                  on first open. The subtitle = the day's counts. -->

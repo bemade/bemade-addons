@@ -840,7 +840,7 @@ class PatientInjuryPortal(CustomerPortal, AccessControlMixin, AppShellMixin):
             # Task 1665: the same list as the note edit picker.
             'sc_injury_choices': self._sc_note_injury_options(patient),
             'sc_note_draft_prefix': 'sports.patient.%s.new_note.' % patient.id,
-            'sc_flash': {
+            'pk_flash': {
                 'success': {
                     'note_added': env._("Treatment note added successfully."),
                     'note_updated': env._("Treatment note updated."),

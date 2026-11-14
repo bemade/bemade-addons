@@ -424,7 +424,7 @@ class TestInjuryCardFrench1631(InjuryCard1631Mixin, FragmentsCommon):
         super().setUpClass()
         env = cls.env
         fr = env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             for website in env['website'].sudo().search([]):
                 website.language_ids = [Command.link(fr.id)]

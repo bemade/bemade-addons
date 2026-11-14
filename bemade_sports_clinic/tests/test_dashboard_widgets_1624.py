@@ -181,7 +181,7 @@ class TestDashboardWidgets1624(Dashboard1624Common):
         detail = section.xpath('.//*[@data-sc-player-id="%s"]//*[@data-sc-row-detail]/@data-pk-lazy-url'
                                % self.yellow.id)[0]
         self.assertIn('/my/player/%s/recent-changes?detail=1' % self.yellow.id, detail)
-        self.assertTrue(section.xpath('.//*[@data-sc-player-id="%s"]//a[@data-sc-row-link]' % self.yellow.id))
+        self.assertTrue(section.xpath('.//*[@data-sc-player-id="%s"]//a[@data-pk-row-link]' % self.yellow.id))
         self.assertFalse(section.xpath('.//a[@data-sc-action="dashboard.history"]'))
         # One team in scope: « History » (its digest list).
         self._dash(self.tp)._sc_layout_update(

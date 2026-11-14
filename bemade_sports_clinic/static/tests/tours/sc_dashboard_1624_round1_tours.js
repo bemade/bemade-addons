@@ -66,7 +66,7 @@ tours.add("sc_1624_dashboard_round1", {
             // Task 1736 r1 (deliberate update): « Reschedule » is the card's
             // pencil — the due date is edited in place, on the dashboard.
             content: "Its activity cards, with their actions",
-            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row] button[data-sc-action="activity.edit"]`,
+            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row] button[data-pk-action="activity.edit"]`,
             run: "click",
         },
         {
@@ -80,7 +80,7 @@ tours.add("sc_1624_dashboard_round1", {
         },
         {
             content: "Closed again",
-            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row]:not([data-pk-edit-open]) button[data-sc-action="activity.edit"]`,
+            trigger: `${TODO} details[data-sc-todo="activities_overdue"][open] [data-sc-activity-row]:not([data-pk-edit-open]) button[data-pk-action="activity.edit"]`,
         },
         {
             content: "Fold out an upcoming event's « Details »",

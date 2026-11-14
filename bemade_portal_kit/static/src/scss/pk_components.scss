@@ -174,7 +174,7 @@ body.o_pk_app_body > #wrapwrap {
         }
     }
 
-    // Silver chrome F (brand « Effet Chrome / Argent »), a transparent PNG.
+    // The brand mark: a consumer's image or the kit's neutral SVG.
     .o_pk_logo_mark {
         display: block;
         object-fit: contain;
@@ -1849,5 +1849,61 @@ body.o_pk_app_body > #wrapwrap {
                 min-height: var(--pk-tap);
             }
         }
+    }
+}
+
+// Task 5345 (P3c2): the app layout's « Done » hiding and the components the
+// kit adopted (card clock, switch lock, overdue flag, history state).
+.o_pk_app[data-pk-hide-done="1"] {
+    .o_pk_edit_done_actions,
+    .o_pk_edit_done {
+        display: none !important;
+    }
+}
+
+.o_pk_app {
+    // A card top bar's activity clock: neutral, red while one is overdue.
+    .o_pk_card_clock {
+        position: relative;
+        color: inherit;
+        text-decoration: none;
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: none;
+        }
+    }
+
+    .o_pk_card_clock_overdue {
+        color: var(--pk-bad);
+
+        .o_pk_card_badge {
+            background: var(--pk-bad);
+            color: var(--pk-tone-fg);
+        }
+    }
+
+    // A locked switch (its reason line under the label).
+    .o_pk_switch[data-pk-switch-locked] {
+        cursor: not-allowed;
+
+        .o_pk_switch_label {
+            color: var(--pk-fg-2);
+        }
+    }
+
+    // A date that has passed: the date and « · Passed » in the overdue colour.
+    .o_pk_overdue,
+    .o_pk_row_line_value.o_pk_overdue {
+        color: var(--pk-overdue);
+    }
+
+    .o_pk_overdue_flag {
+        font-weight: 600;
+    }
+
+    // An archived history entry: its body dimmed.
+    .o_pk_history_entry[data-pk-history-state="archived"] .o_pk_history_body {
+        color: var(--pk-fg-2);
     }
 }

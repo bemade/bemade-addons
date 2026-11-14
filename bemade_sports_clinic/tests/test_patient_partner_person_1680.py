@@ -94,7 +94,7 @@ class TestPatientPartnerPerson1680(TransactionCase):
     def test_message_in_french(self):
         self.env['res.lang']._activate_lang('fr_CA')
         self.env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         partner = self.patient.partner_id.with_context(lang='fr_CA')
         with self.assertRaises(ValidationError) as cm:
             partner.write({'is_company': True})

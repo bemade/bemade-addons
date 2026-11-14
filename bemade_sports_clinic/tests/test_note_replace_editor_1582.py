@@ -106,7 +106,7 @@ class TestNoteReplaceEditor1582(PlayerInlineCommon):
         self.injury.sudo().write({'external_notes': 'T1582 synthetic external v2'})
         _text, tree = self._get(
             '/my/injury/%s/notes/history/fragment?scope=external' % self.injury.id)
-        scopes = set(tree.xpath('//li[contains(@class, "o_pk_history_entry")]/@data-sc-scope'))
+        scopes = set(tree.xpath('//li[contains(@class, "o_pk_history_entry")]/@data-pk-scope'))
         self.assertEqual(scopes, {'external'})
 
     # -- UC-R2 -----------------------------------------------------------

@@ -11,6 +11,11 @@
   consumer attribute (``data-sc-``).
 * UC-S4 (task 5369) Its icons are the kit's ``pk_icon``: the style guide has
   no icon template of its own any more.
+* UC-S5 (task 5345) The page is drawn on the kit's app layout
+  (``pk_app_layout``) with the neutral brand: the rail, the app bar with its
+  user menu, ``main#pk_content``; no app-bar markup of its own; it shows the
+  components the kit adopted in P3c2 (list header, card icons, history,
+  switch, link row, entity row, static field with the overdue flag).
 Synthetic users only.
 """
 from odoo.tests import HttpCase, new_test_user, tagged
@@ -64,3 +69,22 @@ class TestPkStyleguide(HttpCase):
         res = self.url_open(URL, allow_redirects=False)
         self.assertIn(res.status_code, (302, 303))
         self.assertIn('/web/login', res.headers.get('Location', ''))
+
+    def test_on_the_kit_layout(self):
+        self.authenticate('pk_sg_internal', 'pk_sg_internal')
+        res = self.url_open(URL)
+        self.assertEqual(res.status_code, 200)
+        html = res.text
+        for marker in ('data-pk-app-shell="1"', 'id="pk_content"', 'class="o_pk_rail"', 'o_pk_rail_brand',
+                       'data-pk-user-menu-toggle', 'id="pk_user_menu_bar"', 'data-pk-guard-texts',
+                       'o_pk_logo_mark', 'data-pk-nav-key="pk_sg_components"'):
+            self.assertIn(marker, html, marker)
+        self.assertEqual(html.count('<header class="o_pk_appbar"'), 1)
+        self.assertIn('<meta name="theme-color" content="#ffffff"', html)
+        view = self.env.ref('bemade_portal_kit.pk_styleguide')
+        self.assertIn('bemade_portal_kit.pk_app_layout', view.arch_db)
+        self.assertNotIn('web.frontend_layout', view.arch_db)
+        self.assertNotIn('o_pk_appbar', view.arch_db)
+        for component in ('data-pk-card-icons', 'o_pk_list_header', 'o_pk_history_entry', 'o_pk_switch_reason',
+                          'data-pk-row-links', 'o_pk_entity_row', 'data-pk-overdue', 'o_pk_banner_warn'):
+            self.assertIn(component, html, component)

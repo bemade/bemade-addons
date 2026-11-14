@@ -23,7 +23,7 @@
          history sheet's body (shared history entries). -->
     <template id="sc_announcement_history_fragment" name="App shell: announcement history">
         <t t-set="empty_message">No announcement history yet.</t>
-        <t t-call="bemade_sports_clinic.sc_history_list">
+        <t t-call="bemade_portal_kit.pk_history_list">
             <t t-set="section" t-value="'team.announcement.history'"/>
         </t>
     </template>
@@ -31,8 +31,8 @@
     <!-- /my/team?team_id=<id> (shell) -->
     <template id="sc_app_team" name="Sports Clinic App: team">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="team.name"/>
-            <t t-set="sc_active_nav" t-value="'teams'"/>
+            <t t-set="pk_title" t-value="team.name"/>
+            <t t-set="pk_active_nav" t-value="'teams'"/>
             <t t-set="sc_show_add" t-value="sc_can_add_directly and sc_can('team.add_player')"/>
             <t t-set="sc_show_request" t-value="not sc_can_add_directly and sc_can('team.request_add')"/>
             <t t-set="sc_show_activities" t-value="can_view_activities and sc_can('team.activities')"/>
@@ -42,12 +42,12 @@
 
             <!-- Flash messages. The session notification is the shell's
                  status toast now (task 1583, sc_app_layout). -->
-            <t t-if="error" t-call="bemade_sports_clinic.sc_banner">
+            <t t-if="error" t-call="bemade_portal_kit.pk_banner">
                 <t t-set="flash_error" t-value="True"/>
                 <t t-set="tone" t-value="'warn'"/>
                 <t t-out="error"/>
             </t>
-            <t t-if="success" t-call="bemade_sports_clinic.sc_banner">
+            <t t-if="success" t-call="bemade_portal_kit.pk_banner">
                 <t t-out="success"/>
             </t>
 
@@ -89,7 +89,7 @@
                         <!-- Task 1736 (owner 2026-11-01): the shared top bar —
                              archive (visible in read mode, the undo toast below),
                              then the pencil, rightmost. -->
-                        <t t-if="sc_show_compose" t-call="bemade_sports_clinic.sc_card_icons">
+                        <t t-if="sc_show_compose" t-call="bemade_portal_kit.pk_card_icons">
                             <t t-set="ci_archive" t-value="team.announcement and {'action': '/my/team/%s/announcement/dismiss' % team.id, 'section': 'team.announcement.archive'}"/>
                             <t t-set="ci_editable" t-value="True"/>
                             <!-- Task 1663: archived a moment ago — « Annonce archivée
@@ -132,7 +132,7 @@
                     </div>
                     <div t-if="sc_show_compose" data-pk-edit-view="edit" hidden="hidden"
                          data-pk-section="team.announcement.edit">
-                        <t t-call="bemade_sports_clinic.sc_banner">
+                        <t t-call="bemade_portal_kit.pk_banner">
                             <t t-set="tone" t-value="'warn'"/>
                             Visible to all team staff (coaches included) and sent by email — do not include any confidential medical information about a player.
                         </t>
@@ -275,7 +275,7 @@
             <section class="o_pk_tab_panel" data-pk-tab-panel="players" role="tabpanel"
                      t-att-hidden="None if sc_active_tab == 'players' else 'hidden'">
                 <t t-if="sc_pending_count and can_remove_on_team and sc_can('team.pending_removals')"
-                   t-call="bemade_sports_clinic.sc_banner">
+                   t-call="bemade_portal_kit.pk_banner">
                     <t t-set="tone" t-value="'warn'"/>
                     <t t-set="title">Pending removals</t>
                     <t t-out="sc_pending_label"/>
@@ -284,7 +284,7 @@
                      player: search the existing ones first, then create; or
                      request an addition) opens the panel below it; the sort
                      (by status / by number) on the right. -->
-                <t t-call="bemade_sports_clinic.sc_list_header">
+                <t t-call="bemade_portal_kit.pk_list_header">
                     <t t-set="header_section" t-value="'team.roster.header'"/>
                     <t t-if="sc_show_add">
                         <t t-set="add_label">Add a player</t>
@@ -390,8 +390,8 @@
     <!-- /my/app/install — « Plus › Installer l'application » (no banner anywhere) -->
     <template id="sc_app_install" name="Sports Clinic App: install">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">Install the app</t>
-            <t t-set="sc_active_nav" t-value="'more'"/>
+            <t t-set="pk_title">Install the app</t>
+            <t t-set="pk_active_nav" t-value="'more'"/>
 
             <div class="o_pk_card o_pk_install_hero" data-sc-install="1">
                 <img src="/bemade_sports_clinic/static/src/img/sc_icon_192.png" alt="" width="56" height="56" class="o_pk_install_icon"/>
@@ -403,7 +403,7 @@
 
             <!-- Shown by sc_sw_register.js when display-mode is standalone. -->
             <div class="o_pk_install_done" hidden="hidden" data-sc-install-state="installed">
-                <t t-call="bemade_sports_clinic.sc_banner">
+                <t t-call="bemade_portal_kit.pk_banner">
                     <t t-set="title">The app is installed</t>
                     You are using Le Fit Crew from your home screen.
                 </t>
@@ -496,7 +496,7 @@
         <div t-if="player.stage != 'healthy'" class="text-muted small d-flex align-items-center mb-2">
             <i class="fa fa-clock-o" title="Estimated Return"/>
             <span class="ms-1">Predicted return:</span>
-            <span t-if="player.predicted_return_date and player.predicted_return_overdue" class="ms-1 o_sc_overdue"><span t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/><t t-call="bemade_sports_clinic.sc_return_overdue_flag"/></span>
+            <span t-if="player.predicted_return_date and player.predicted_return_overdue" class="ms-1 o_pk_overdue"><span t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/><t t-call="bemade_portal_kit.pk_overdue_flag"/></span>
             <span t-elif="player.predicted_return_date" class="ms-1" t-field="player.predicted_return_date" t-options="{'widget': 'date'}"/>
             <span t-else="" class="ms-1">—</span>
         </div>

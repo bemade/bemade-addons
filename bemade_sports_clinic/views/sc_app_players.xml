@@ -22,8 +22,8 @@
     <!-- /my/players (shell) -->
     <template id="sc_app_players" name="Sports Clinic App: players">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="sc_nav_labels['players']"/>
-            <t t-set="sc_active_nav" t-value="'players'"/>
+            <t t-set="pk_title" t-value="sc_nav_labels['players']"/>
+            <t t-set="pk_active_nav" t-value="'players'"/>
 
             <form method="get" action="/my/players" class="o_pk_search o_pk_filters" role="search" data-pk-section="players.search">
                 <div class="o_pk_filter_grid">
@@ -120,7 +120,7 @@
             <!-- Task 1607: « + Ajouter » (create a player) and the sort
                  (« By status » = most injured first, or alphabetical; the
                  server re-sorts and remembers the choice) in the list header. -->
-            <t t-call="bemade_sports_clinic.sc_list_header">
+            <t t-call="bemade_portal_kit.pk_list_header">
                 <t t-set="header_section" t-value="'players.header'"/>
                 <!-- Task 1655: the inline create panel (was the /my/player/create page). -->
                 <t t-if="sc_can_create_player and sc_can('players.create') and sc_player_add">
@@ -176,7 +176,7 @@
                               t-attf-action="/my/player/#{row['id']}/add_to_team" method="post"
                               class="o_sc_add_to_team" data-sc-action="players.add_to_team">
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                            <input type="hidden" name="return_url" t-att-value="sc_current_url"/>
+                            <input type="hidden" name="return_url" t-att-value="pk_current_url"/>
                             <select name="team_id" class="o_pk_input o_pk_select" aria-label="Team" data-pk-picker="1" data-pk-picker-key="team-filter">
                                 <t t-foreach="add_to_team_teams" t-as="att_team">
                                     <option t-att-value="att_team.id" t-out="att_team.name"/>
@@ -227,38 +227,26 @@
         </span>
     </template>
 
-    <!-- Flash messages of a page's POST round-trips (sc_flash: {success, error}). -->
-    <template id="sc_flash_banners" name="App shell: flash banners">
-        <t t-if="sc_flash and sc_flash.get('success')" t-call="bemade_sports_clinic.sc_banner">
-            <t t-out="sc_flash['success']"/>
-        </t>
-        <t t-if="sc_flash and sc_flash.get('error')" t-call="bemade_sports_clinic.sc_banner">
-            <t t-set="tone" t-value="'warn'"/>
-            <t t-set="flash_error" t-value="True"/>
-            <t t-out="sc_flash['error']"/>
-        </t>
-    </template>
-
     <!-- /my/player?player_id=<id>[&team_id=…][&clinic_id=…] (shell) -->
     <template id="sc_app_player" name="Sports Clinic App: player">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="player._portal_heading_name()"/>
+            <t t-set="pk_title" t-value="player._portal_heading_name()"/>
             <!-- « Team · position » under « #12 First Last » (owner review
                  2026-10-10): the context line comes from the parent registry
                  (task 1579). Task 1611: a save of the player refreshes the
                  title, the crumb and the hero as read fragments. -->
-            <t t-set="sc_page_key" t-value="'sports.patient:%s' % player.id"/>
-            <t t-set="sc_active_nav" t-value="'players'"/>
+            <t t-set="pk_page_key" t-value="'sports.patient:%s' % player.id"/>
+            <t t-set="pk_active_nav" t-value="'players'"/>
 
-            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
-            <div t-if="sc_flash and sc_flash.get('success') and note_success == 'note_added'"
+            <t t-call="bemade_portal_kit.pk_flash_banners"/>
+            <div t-if="pk_flash and pk_flash.get('success') and note_success == 'note_added'"
                  t-att-data-pk-draft-clear="sc_note_draft_prefix" hidden="hidden"/>
             <!-- Task 1579: a create from the full « new injury » page lands here
                  (no POST result page): its device draft goes once it exists. -->
             <div t-if="sc_created_draft_clear"
                  t-att-data-pk-draft-clear="sc_new_injury_prefix" hidden="hidden"/>
             <!-- Task 1421: soft duplicate-number warning after a save. -->
-            <t t-if="jersey_warning" t-call="bemade_sports_clinic.sc_banner">
+            <t t-if="jersey_warning" t-call="bemade_portal_kit.pk_banner">
                 <t t-set="tone" t-value="'warn'"/>
                 <t t-out="jersey_warning"/>
             </t>
@@ -299,7 +287,7 @@
                                  team the viewer may not open). An inline Teams save
                                  shows the new names as text at once, then as links
                                  once the hero's read fragment is refreshed (1611). -->
-                            <span t-att-data-pk-display="pk_display_key(player, 'sc_team_ids')" data-sc-hero-teams="1"><t t-foreach="sc_hero_team_links or []" t-as="hero_team"><t t-if="not hero_team_first">, </t><a t-if="hero_team['url']" t-att-href="hero_team['url']" class="o_sc_hero_team_link" data-sc-row-link="sports.team" t-out="hero_team['name']"/><t t-else="" t-out="hero_team['name']"/></t></span>
+                            <span t-att-data-pk-display="pk_display_key(player, 'sc_team_ids')" data-sc-hero-teams="1"><t t-foreach="sc_hero_team_links or []" t-as="hero_team"><t t-if="not hero_team_first">, </t><a t-if="hero_team['url']" t-att-href="hero_team['url']" class="o_sc_hero_team_link" data-pk-row-link="sports.team" t-out="hero_team['name']"/><t t-else="" t-out="hero_team['name']"/></t></span>
                             <span t-out="(' · %s' % player.position) if player.position else ''"/>
                         </p>
                     </div>
@@ -310,8 +298,9 @@
                      following) and the header group's pencil (therapists
                      only), rightmost. -->
                 <div class="o_sc_hero_follow" data-pk-section="player.follow">
-                    <t t-call="bemade_sports_clinic.sc_card_icons">
-                        <t t-set="ci_follow" t-value="True"/>
+                    <t t-call="bemade_portal_kit.pk_card_icons">
+                        <!-- Task 5345: the ★ in the kit's ci_extra slot. -->
+                        <t t-set="ci_extra"><t t-call="bemade_sports_clinic.sc_follow_toggle"><t t-set="follow_icon" t-value="True"/></t></t>
                         <t t-set="ci_editable" t-value="sc_hero_editable"/>
                         <t t-set="ci_edit_key" t-value="'player.header.edit'"/>
                     </t>
@@ -365,7 +354,7 @@
                     <div class="o_sc_hero_training" data-pk-section="player.training"
                          t-att-data-pk-fragment="pk_fragment_key(player, 'training')">
                         <t t-call="bemade_sports_clinic.sc_training_title"/>
-                        <t t-call="bemade_sports_clinic.sc_field_static">
+                        <t t-call="bemade_portal_kit.pk_field_static">
                             <t t-set="no_label" t-value="True"/>
                             <t t-set="value" t-value="player.training_recommendation"/>
                             <t t-set="pre" t-value="True"/>
@@ -383,7 +372,7 @@
                     <div class="o_sc_hero_return" data-pk-section="player.return"
                          t-att-data-sc-return-kind="'predicted' if sc_hero_injured else 'actual'"
                          t-att-data-pk-fragment="pk_fragment_key(player, 'predicted-return')">
-                        <t t-if="player[sc_hero_return_field]" t-call="bemade_sports_clinic.sc_field_static">
+                        <t t-if="player[sc_hero_return_field]" t-call="bemade_portal_kit.pk_field_static">
                             <t t-if="sc_hero_injured"><t t-set="label">Predicted return</t></t>
                             <t t-else=""><t t-set="label">Actual return</t></t>
                             <t t-set="value" t-value="pk_display(player, sc_hero_return_field)"/>
@@ -579,7 +568,7 @@
                                 <t t-set="editable" t-value="True"/>
                             </t>
                             <div data-pk-edit-view="read" t-att-data-pk-fragment="pk_fragment_key(player, 'medical-history')">
-                                <t t-call="bemade_sports_clinic.sc_field_static">
+                                <t t-call="bemade_portal_kit.pk_field_static">
                                     <t t-set="no_label" t-value="True"/>
                                     <t t-set="value" t-value="player.medical_history_other"/>
                                     <t t-set="pre" t-value="True"/>
@@ -644,7 +633,7 @@
                             <div data-pk-edit-view="read" t-att-data-pk-fragment="pk_fragment_key(player, 'memberships')">
                                 <div t-if="sc_memberships" class="o_pk_list">
                                     <t t-foreach="sc_memberships" t-as="membership">
-                                        <t t-if="membership['url']" t-call="bemade_sports_clinic.sc_entity_row">
+                                        <t t-if="membership['url']" t-call="bemade_portal_kit.pk_entity_row">
                                             <t t-set="href" t-value="membership['url']"/>
                                             <t t-set="dot" t-value="False"/>
                                             <t t-set="lead_icon" t-value="'teams'"/>
@@ -680,7 +669,7 @@
                                 <t t-set="title">Emergency Contacts</t>
                             </t>
                         <!-- Task 1607: opened by the list header's « + Ajouter ». -->
-                        <t t-call="bemade_sports_clinic.sc_list_header">
+                        <t t-call="bemade_portal_kit.pk_list_header">
                             <t t-set="header_section" t-value="'contact.add.header'"/>
                             <t t-set="add_label">Add Emergency Contact</t>
                             <t t-set="add_panel" t-value="'sc_contact_add'"/>
@@ -723,7 +712,7 @@
                                         <!-- Task 1736: the shared top bar — the red trash
                                              (therapists; coaches have no unlink ACL) next
                                              to the ✓ while editing, then the pencil. -->
-                                        <t t-call="bemade_sports_clinic.sc_card_icons">
+                                        <t t-call="bemade_portal_kit.pk_card_icons">
                                             <t t-set="ci_trash" t-value="is_treatment_prof and {'sheet': 'sc_delete_contact_%s' % contact.id, 'key': 'contact.delete'}"/>
                                             <t t-set="ci_editable" t-value="True"/>
                                         </t>
@@ -744,7 +733,7 @@
                                         <t t-call="bemade_portal_kit.pk_edit_card_done"/>
                                     </div>
                                 </section>
-                                <t t-if="is_treatment_prof" t-call="bemade_sports_clinic.sc_confirm_sheet">
+                                <t t-if="is_treatment_prof" t-call="bemade_portal_kit.pk_confirm_sheet">
                                     <t t-set="sheet_id" t-value="'sc_delete_contact_%s' % contact.id"/>
                                     <t t-set="title">Delete this contact?</t>
                                     <t t-set="message" t-value="contact.name"/>
@@ -769,7 +758,7 @@
                 <!-- Task 1607: opened by the list header's « + Ajouter ».
                      Task 1644: in a sheet, like the injury card's « Add
                      documents » (pinned head and actions, busy state). -->
-                <t t-if="is_treatment_prof and sc_can('documents.upload')" t-call="bemade_sports_clinic.sc_list_header">
+                <t t-if="is_treatment_prof and sc_can('documents.upload')" t-call="bemade_portal_kit.pk_list_header">
                     <t t-set="header_section" t-value="'documents.upload.header'"/>
                     <t t-set="add_label">Upload a document</t>
                     <t t-set="add_sheet" t-value="'sc_documents_upload'"/>
@@ -890,7 +879,7 @@
             <!-- Removal sheets (same routes as today's modals); a read fragment
                  with the hero's actions (a Teams save changes the team). -->
             <div t-att-data-pk-fragment="pk_fragment_key(player, 'removal-sheets')">
-            <t t-if="can_direct_remove and removal_team_id and sc_can('patient.remove')" t-call="bemade_sports_clinic.sc_confirm_sheet">
+            <t t-if="can_direct_remove and removal_team_id and sc_can('patient.remove')" t-call="bemade_portal_kit.pk_confirm_sheet">
                 <t t-set="sheet_id" t-value="'sc_remove_player_sheet'"/>
                 <t t-set="title">Remove Player from Team</t>
                 <t t-set="message" t-value="player.name"/>
@@ -900,7 +889,7 @@
                 <t t-set="danger" t-value="True"/>
             </t>
             <t t-if="can_request_removal and removal_team_id and sc_can('patient.request_removal') and not player.pending_removal"
-               t-call="bemade_sports_clinic.sc_confirm_sheet">
+               t-call="bemade_portal_kit.pk_confirm_sheet">
                 <t t-set="sheet_id" t-value="'sc_request_removal_sheet'"/>
                 <t t-set="title">Request Player Removal</t>
                 <t t-set="message" t-value="False"/>
@@ -953,7 +942,7 @@
     <template id="sc_injury_add_card" name="App shell: inline add injury card">
         <!-- Task 1607: opened by the list header's « + Ajouter », right above
              the injury list. -->
-        <t t-call="bemade_sports_clinic.sc_list_header">
+        <t t-call="bemade_portal_kit.pk_list_header">
             <t t-set="header_section" t-value="'injury.new.header'"/>
             <t t-if="is_treatment_prof" t-set="add_label">Add Injury</t>
             <t t-else="" t-set="add_label">Report Injury</t>
@@ -1203,7 +1192,7 @@
                 </span>
                 </span>
                 <span class="o_pk_row_trailing o_sc_injury_head_icons">
-                    <t t-call="bemade_sports_clinic.sc_card_icons">
+                    <t t-call="bemade_portal_kit.pk_card_icons">
                         <!-- Task 1592: the activity clock (a link: it opens the
                              player's activities, it never toggles the card). -->
                         <t t-set="ci_clock" t-value="row.get('clock')"/>
@@ -1382,7 +1371,7 @@
                         </div>
                         <!-- Task 1607: the list header pattern (was a small ghost
                              « Add » in the section head). -->
-                        <t t-if="sc_card_upload" t-call="bemade_sports_clinic.sc_list_header">
+                        <t t-if="sc_card_upload" t-call="bemade_portal_kit.pk_list_header">
                             <t t-set="header_section" t-value="'injury.documents.header'"/>
                             <t t-set="add_label">Add documents</t>
                             <t t-set="add_sheet" t-value="'sc_injury_%s_documents_add' % injury.id"/>
@@ -1444,7 +1433,7 @@
                 </div>
                 <!-- Task 1676: no bottom « Done » any more. Task 1736: « Delete
                      injury » is the top bar's red trash (therapists only). -->
-                <t t-if="sc_card_delete" t-call="bemade_sports_clinic.sc_confirm_sheet">
+                <t t-if="sc_card_delete" t-call="bemade_portal_kit.pk_confirm_sheet">
                     <t t-set="sheet_id" t-value="'sc_delete_injury_sheet_%s' % injury.id"/>
                     <t t-set="title">Delete Injury</t>
                     <t t-set="message">This will also delete its treatment notes, documents and activity history. This action cannot be undone.</t>
@@ -1482,7 +1471,7 @@
     <template id="sc_note_add_form" name="App shell: add note form">
         <!-- Task 1607: opened by the list header's « + Ajouter », right above
              the notes. -->
-        <t t-if="sc_can('notes.add')" t-call="bemade_sports_clinic.sc_list_header">
+        <t t-if="sc_can('notes.add')" t-call="bemade_portal_kit.pk_list_header">
             <t t-set="header_section" t-value="'notes.add.header'"/>
             <t t-set="add_label">Add Treatment Note</t>
             <t t-set="add_panel" t-value="'sc_note_add'"/>
@@ -1556,9 +1545,9 @@
          matches — the same GET search and POST /my/player/create/save. -->
     <template id="sc_app_player_create" name="Sports Clinic App: player create">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">Create a player</t>
-            <t t-set="sc_active_nav" t-value="'players'"/>
-            <t t-if="error" t-call="bemade_sports_clinic.sc_banner">
+            <t t-set="pk_title">Create a player</t>
+            <t t-set="pk_active_nav" t-value="'players'"/>
+            <t t-if="error" t-call="bemade_portal_kit.pk_banner">
                 <t t-set="flash_error" t-value="True"/>
                 <t t-set="tone" t-value="'warn'"/>
                 <t t-out="error"/>
@@ -1587,7 +1576,7 @@
                     <t t-call="bemade_portal_kit.pk_section_header"><t t-set="title">Matching players</t></t>
                     <div class="o_pk_list">
                         <t t-foreach="sc_matches" t-as="match">
-                            <t t-call="bemade_sports_clinic.sc_entity_row">
+                            <t t-call="bemade_portal_kit.pk_entity_row">
                                 <t t-set="href" t-value="'/my/player?player_id=%s' % match['id']"/>
                                 <t t-set="dot" t-value="False"/>
                                 <t t-set="lead_icon" t-value="'user'"/>
@@ -1600,7 +1589,7 @@
                     </div>
                 </section>
                 <t t-else="">
-                    <t t-call="bemade_sports_clinic.sc_banner">No matching players found. You can create a new one below.</t>
+                    <t t-call="bemade_portal_kit.pk_banner">No matching players found. You can create a new one below.</t>
                     <form action="/my/player/create/save" method="post" class="o_pk_card o_pk_form" data-sc-form="player.create">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <t t-call="bemade_portal_kit.pk_section_header"><t t-set="title">New Player Details</t></t>
@@ -1707,7 +1696,7 @@
          page's sheet on every open (/my/player/<id>/training-history). -->
     <template id="sc_training_history_list" name="App shell: training history list">
         <t t-set="empty_message">No training recommendation history yet.</t>
-        <t t-call="bemade_sports_clinic.sc_history_list">
+        <t t-call="bemade_portal_kit.pk_history_list">
             <t t-set="section" t-value="'player.training.history'"/>
         </t>
     </template>

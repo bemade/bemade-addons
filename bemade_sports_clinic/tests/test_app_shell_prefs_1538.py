@@ -122,17 +122,17 @@ class TestAppShellPrefs1538(AppShellCommon):
             menu = set(tree.xpath('//*[@data-pk-user-menu-popup]//a/@href'))
             self.assertTrue([h for h in menu if h.startswith('/web/session/logout')])
             # Appearance control; no navigation setting (task 1579).
-            self.assertTrue(tree.xpath('//form[@data-sc-pref]//*[@name="sc_theme"]'))
+            self.assertTrue(tree.xpath('//form[@data-pk-pref]//*[@name="sc_theme"]'))
             self.assertFalse(tree.xpath('//*[@name="sc_nav_mode"]'))
 
     def test_more_role_scoped_entries(self):
         self._switch(True)
         self._login_coach()
-        keys = self._more().xpath('//main//a/@data-sc-nav-key')
+        keys = self._more().xpath('//main//a/@data-sc-nav-key | //main//a/@data-pk-nav-key')
         self.assertNotIn('notepad', keys)
         self.assertNotIn('timesheets', keys)
         self._login_tp()
-        keys = self._more().xpath('//main//a/@data-sc-nav-key')
+        keys = self._more().xpath('//main//a/@data-sc-nav-key | //main//a/@data-pk-nav-key')
         self.assertIn('notepad', keys)
         self.assertIn('timesheets', keys)
 

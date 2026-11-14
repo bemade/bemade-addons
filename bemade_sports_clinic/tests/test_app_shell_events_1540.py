@@ -72,14 +72,14 @@ class TestAppShellEvents1540(Events1540Common):
         ids = [int(x) for x in tree.xpath('//*[@data-sc-event-id]/@data-sc-event-id')]
         self.assertIn(self.event.id, ids)
         # Task 1607 (deliberate update): « + Ajouter » is in the list header.
-        self.assertEqual(tree.xpath('//div[contains(@class, "o_pk_list_header")]//a[@data-sc-action="events.create"]/@href'), ['/my/event/create'])
+        self.assertEqual(tree.xpath('//div[contains(@class, "o_pk_list_header")]//a[@data-pk-action="events.create"]/@href'), ['/my/event/create'])
         game = tree.xpath('//a[@data-sc-event-type="game"]/@href')[0]
         self.assertIn('event_type=game', game)
         _text, tree = self._get('/my/events?no_default_dates=1&event_type=clinic')
         self.assertNotIn(str(self.event.id), tree.xpath('//*[@data-sc-event-id]/@data-sc-event-id'))
         self._login_coach()
         _text, tree = self._get('/my/events?no_default_dates=1')
-        self.assertFalse(tree.xpath('//*[@data-sc-action="events.create"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-action="events.create"]'))
 
     # -- UC-E3 -----------------------------------------------------------
     def test_calendar_in_shell(self):
@@ -125,7 +125,7 @@ class TestAppShellEvents1540(Events1540Common):
         _text, tree = self._get('/my/event/%s' % self.event.id)
         self.assertIsNotNone(self._shell(tree))
         self.assertFalse(tree.xpath('//*[@data-pk-section="event.timesheets"]'))
-        self.assertFalse(tree.xpath('//*[@data-sc-action="event.edit"]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-action="event.edit"]'))
 
     # -- UC-E5 -----------------------------------------------------------
     def test_create_and_edit_through_the_shell_form(self):

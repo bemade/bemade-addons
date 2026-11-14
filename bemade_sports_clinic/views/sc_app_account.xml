@@ -69,8 +69,8 @@
          (task 1611). -->
     <template id="sc_app_account" name="Sports Clinic App: my account">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">My account</t>
-            <t t-set="sc_active_nav" t-value="False"/>
+            <t t-set="pk_title">My account</t>
+            <t t-set="pk_active_nav" t-value="False"/>
             <div class="o_customer_address_fill o_sc_account" data-pk-section="account">
                 <!-- The core address JS looks it up; the cards show the errors. -->
                 <div id="errors" class="o_sc_account_errors" hidden="hidden"/>
@@ -253,8 +253,8 @@
 
     <template id="sc_app_security" name="Sports Clinic App: security">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">Security</t>
-            <t t-set="sc_active_nav" t-value="False"/>
+            <t t-set="pk_title">Security</t>
+            <t t-set="pk_active_nav" t-value="False"/>
             <t t-set="sc_password_error" t-value="get_error(errors, 'password')"/>
             <div class="o_portal_security_body o_sc_security">
 
@@ -262,7 +262,7 @@
                 <section class="o_pk_section" id="sc_security_password" data-pk-section="security.password">
                     <t t-call="bemade_portal_kit.pk_section_header"><t t-set="title">Change password</t></t>
                     <div t-if="success and success.get('password')" data-pk-section="security.password.done">
-                        <t t-call="bemade_sports_clinic.sc_banner">
+                        <t t-call="bemade_portal_kit.pk_banner">
                             <t t-set="tone" t-value="'ok'"/>
                             Your password has been changed.
                         </t>
@@ -270,7 +270,7 @@
                     <!-- A policy refusal (UserError) comes as one message
                          (get_error: a string only, never the per-field dict). -->
                     <t t-if="sc_password_error">
-                        <t t-call="bemade_sports_clinic.sc_banner">
+                        <t t-call="bemade_portal_kit.pk_banner">
                             <t t-set="tone" t-value="'warn'"/>
                             <span data-pk-error-for="password" t-out="sc_password_error"/>
                         </t>
@@ -416,11 +416,11 @@
                         <form action="/my/deactivate_account" method="post" class="o_pk_form" id="sc_deactivate_account_form">
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <t t-set="deactivate_other" t-value="get_error(errors, 'deactivate.other')"/>
-                            <t t-if="deactivate_other" t-call="bemade_sports_clinic.sc_banner">
+                            <t t-if="deactivate_other" t-call="bemade_portal_kit.pk_banner">
                                 <t t-set="tone" t-value="'warn'"/>
                                 <span data-pk-error-for="other" t-out="deactivate_other"/>
                             </t>
-                            <t t-call="bemade_sports_clinic.sc_banner">
+                            <t t-call="bemade_portal_kit.pk_banner">
                                 <t t-set="tone" t-value="'warn'"/>
                                 Your account will be disabled: you will no longer be able to sign in. This cannot be undone.
                             </t>
@@ -440,7 +440,7 @@
                                 <p t-if="deactivate_error == 'validation'" class="o_pk_field_message o_pk_field_error"
                                    data-pk-error-for="validation">Type your login exactly as shown above.</p>
                             </div>
-                            <t t-call="bemade_sports_clinic.sc_switch">
+                            <t t-call="bemade_portal_kit.pk_switch">
                                 <t t-set="sw_name" t-value="'request_blacklist'"/>
                                 <t t-set="sw_id" t-value="'sc_deactivate_blacklist'"/>
                                 <t t-set="sw_checked" t-value="True"/>

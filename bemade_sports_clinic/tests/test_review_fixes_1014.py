@@ -191,7 +191,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
                 (self.act_player, 'Pat One', '/my/player?player_id=%s' % self.player.id),
                 (self.act_team, 'PC Team A', '/my/team?team_id=%s' % self.team_a.id)):
             row = self._activity_row(tree, activity)
-            title = row.xpath('.//*[@data-sc-title-split]')
+            title = row.xpath('.//*[@data-pk-title-split]')
             self.assertEqual(len(title), 1, activity.summary)
             self.assertEqual(_text(title[0]), activity.summary)
             links = title[0].xpath('.//a[contains(@class, "o_pk_row_title_link")]')
@@ -203,7 +203,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
             self.assertFalse(row.xpath('.//a//a'))
         # A title without a record name stays the plain main link.
         row = self._activity_row(tree, self.act_event)
-        self.assertFalse(row.xpath('.//*[@data-sc-title-split]'))
+        self.assertFalse(row.xpath('.//*[@data-pk-title-split]'))
         self.assertEqual(_text(row.xpath('.//a[contains(@class, "o_pk_link_row_main")]')[0]),
                          self.act_event.summary)
 
@@ -214,7 +214,7 @@ class TestReviewFixes1014Pages(AppShellCommon):
                           side_effect=AccessError('refused')):
             _text_, tree = self._get('/my/activities')
         row = self._activity_row(tree, self.act_player)
-        self.assertFalse(row.xpath('.//*[@data-sc-title-split]'))
+        self.assertFalse(row.xpath('.//*[@data-pk-title-split]'))
         self.assertNotIn('/my/player?player_id=', lxml_html.tostring(row).decode())
 
     # -- RF6 -------------------------------------------------------------

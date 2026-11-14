@@ -43,7 +43,7 @@ tours.add("sc_1679_toast_clear", {
     steps: () => [
         {
             content: "« Add My Timesheet »",
-            trigger: 'button[data-sc-action="timesheet.add"][data-pk-sheet-open]',
+            trigger: 'button[data-pk-action="timesheet.add"][data-pk-sheet-open]',
             run: "click",
         },
         {

@@ -48,7 +48,7 @@ class TestReviewFixes1018(PlayerInlineCommon):
     def test_settings_without_classic_portal(self):
         self._login_tp()
         _text_, tree = self._get('/my/app/settings')
-        main = tree.xpath('//main[@id="sc_content"]')[0]
+        main = tree.xpath('//main[@id="pk_content"]')[0]
         hrefs = set(main.xpath('.//a/@href'))
         self.assertIn('/my/account', hrefs)
         self.assertIn('/my/security', hrefs)
@@ -238,5 +238,5 @@ class TestReviewFixes1018I18n(TestAppShellI18n1538):
         ret = tree.xpath('//*[@data-pk-section="player.return"]')[0]
         self.assertIn('Retour réel', _text(ret))
         # Task 1736 (deliberate update): in the hero's top-bar icon group.
-        toggle = tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-sc-card-icons]/button[@data-pk-edit-toggle]')[0]
+        toggle = tree.xpath('//*[@data-pk-section="player.hero"]//*[@data-pk-card-icons]/button[@data-pk-edit-toggle]')[0]
         self.assertEqual(toggle.get('aria-label'), 'Modifier')

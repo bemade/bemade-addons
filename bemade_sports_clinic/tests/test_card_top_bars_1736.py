@@ -51,7 +51,7 @@ from odoo.addons.bemade_sports_clinic.tests.test_player_documents_manage_1432 im
     PlayerDocuments1432Common,
 )
 
-ORDER = ('o_sc_follow', 'o_sc_card_clock', 'o_pk_card_archive', 'o_pk_card_trash', 'o_pk_card_edit')
+ORDER = ('o_sc_follow', 'o_pk_card_clock', 'o_pk_card_archive', 'o_pk_card_trash', 'o_pk_card_edit')
 
 
 class TopBars1736Common(PlayerDocuments1432Common):
@@ -68,7 +68,7 @@ class TopBars1736Common(PlayerDocuments1432Common):
     @staticmethod
     def _icons(node):
         """The icon group's controls, as their ORDER kind (others ignored)."""
-        groups = node.xpath('.//*[@data-sc-card-icons]')
+        groups = node.xpath('.//*[@data-pk-card-icons]')
         if not groups:
             return []
         kinds = []
@@ -129,9 +129,9 @@ class TestCardTopBars1736(TopBars1736Common):
         self.assertTrue(summary.xpath('./*[@data-pk-fragment="sports.patient.injury:%s:summary"]'
                                       % self.injury.id))
         # act_injury is the therapist's: clock with 1.
-        self._assert_order(summary, ('o_sc_card_clock', 'o_pk_card_trash', 'o_pk_card_edit'))
-        clock = self._one(summary, './/a[contains(@class, "o_sc_card_clock")]')
-        self.assertEqual(clock.get('data-sc-activity-clock'), '1')
+        self._assert_order(summary, ('o_pk_card_clock', 'o_pk_card_trash', 'o_pk_card_edit'))
+        clock = self._one(summary, './/a[contains(@class, "o_pk_card_clock")]')
+        self.assertEqual(clock.get('data-pk-activity-clock'), '1')
         trash = self._one(summary, './/button[contains(@class, "o_pk_card_trash")]')
         self.assertEqual(trash.get('hidden'), 'hidden')
         self.assertEqual(trash.get('data-pk-edit-only'), '1')
@@ -151,7 +151,7 @@ class TestCardTopBars1736(TopBars1736Common):
         details = self._one(card, './/*[@data-pk-edit-card="injury-details"]')
         self.assertFalse(details.xpath('.//button[@data-pk-edit-toggle]'))
         self.assertFalse(card.xpath('.//*[contains(@class, "o_sc_injury_card_actions")]'))
-        self.assertEqual(len(card.xpath('.//*[@data-sc-action="injury.delete"]')), 1)
+        self.assertEqual(len(card.xpath('.//*[@data-pk-action="injury.delete"]')), 1)
 
     def test_injury_card_coach_no_trash(self):
         self._login_coach()
@@ -170,7 +170,7 @@ class TestCardTopBars1736(TopBars1736Common):
         self.assertEqual(trash.get('data-pk-sheet-open'), 'sc_delete_contact_%s' % self.contact.id)
         # No « Delete » text button left in the edit view.
         edit = self._one(card, './/*[@data-pk-edit-view="edit"]')
-        self.assertFalse(edit.xpath('.//button[@data-sc-action="contact.delete"]'))
+        self.assertFalse(edit.xpath('.//button[@data-pk-action="contact.delete"]'))
         self.assertTrue(edit.xpath('.//button[@data-pk-edit-done]'))
         # A coach edits but never deletes.
         self._login_coach()
@@ -253,7 +253,7 @@ class TestCardTopBars1736(TopBars1736Common):
         self.assertEqual(form.get('action'), '/my/sc/timesheet/%s/delete' % self.timesheet.id)
         self.assertEqual(form.xpath('./input[@name="sc_undo"]/@value'), ['1'])
         # The state chip sits first in the group; no bottom « Delete ».
-        self.assertTrue(card.xpath('.//*[@data-sc-card-icons]/span[@data-sc-ts-state]'))
+        self.assertTrue(card.xpath('.//*[@data-pk-card-icons]/span[@data-sc-ts-state]'))
         self.assertFalse(card.xpath('.//*[contains(@class, "o_pk_card_actions")]'))
         self.assertFalse(tree.xpath('//dialog[starts-with(@id, "sc_ts_delete_")]'))
         resp = self._post(form.get('action'), return_url=url, sc_undo='1')
@@ -318,11 +318,11 @@ class TestCardTopBars1736(TopBars1736Common):
         hero = self._one(tree, '//section[@data-pk-section="event.hero"]')
         # Task 1736 r1 (deliberate update): no archive icon — « Cancel Event »
         # is its own red action again (below the hero's details).
-        self._assert_order(hero, ('o_sc_card_clock', 'o_pk_card_edit'))
-        clock = self._one(hero, './/a[contains(@class, "o_sc_card_clock")]')
+        self._assert_order(hero, ('o_pk_card_clock', 'o_pk_card_edit'))
+        clock = self._one(hero, './/a[contains(@class, "o_pk_card_clock")]')
         self.assertEqual(clock.get('href'), '/my/event/activities?event_id=%s' % self.event.id)
         # act_event: the therapist's — the same count as the event's row.
-        self.assertEqual(clock.get('data-sc-activity-clock'), '1')
+        self.assertEqual(clock.get('data-pk-activity-clock'), '1')
         self.assertEqual(clock.xpath('./span[contains(@class, "o_pk_card_badge")]/text()'), ['1'])
         self.assertFalse(hero.xpath('.//*[contains(@class, "o_pk_card_archive")]'))
         cancel = self._one(hero, './/*[contains(@class, "o_pk_actions_row")]/button[@data-sc-action="event.cancel"]')
@@ -339,8 +339,8 @@ class TestCardTopBars1736(TopBars1736Common):
         # No activity of mine: the clock still leads to them, without a badge.
         self.act_event.unlink()
         _text, tree = self._get('/my/event/%s' % self.event.id)
-        clock = self._one(tree, '//section[@data-pk-section="event.hero"]//a[contains(@class, "o_sc_card_clock")]')
-        self.assertEqual(clock.get('data-sc-activity-clock'), '0')
+        clock = self._one(tree, '//section[@data-pk-section="event.hero"]//a[contains(@class, "o_pk_card_clock")]')
+        self.assertEqual(clock.get('data-pk-activity-clock'), '0')
         self.assertFalse(clock.xpath('./span[contains(@class, "o_pk_card_badge")]'))
         # Cancelled: « Restore event » (its counterpart), no « Cancel Event ».
         self.event.sudo().write({'state': 'cancelled'})
@@ -438,12 +438,12 @@ class TestCardTopBarsI18n1736(TopBars1736Common):
     def test_icon_names_in_french(self):
         _text, tree = self._fr('/my/notepad')
         card = self._one(tree, '//article[@data-sc-quick-note-id="%s"]' % self.qnote.id)
-        icons = card.xpath('.//*[@data-sc-card-icons]')[0]
+        icons = card.xpath('.//*[@data-pk-card-icons]')[0]
         labels = [b.get('aria-label') for b in icons.xpath('.//button')]
         self.assertEqual(labels, ['Archiver', 'Supprimer', 'Modifier'])
         _text, tree = self._fr('/my/event/%s' % self.event.id)
         hero = self._one(tree, '//section[@data-pk-section="event.hero"]')
-        self.assertEqual(self._one(hero, './/a[contains(@class, "o_sc_card_clock")]').get('aria-label'),
+        self.assertEqual(self._one(hero, './/a[contains(@class, "o_pk_card_clock")]').get('aria-label'),
                          'Mes activités : 1')
         # Task 1736 r1 (deliberate update): its own red button again.
         self.assertEqual(self._one(hero, './/button[@data-sc-action="event.cancel"]').text_content().strip(),

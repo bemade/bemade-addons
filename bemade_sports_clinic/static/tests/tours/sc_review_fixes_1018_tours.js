@@ -47,7 +47,7 @@ tours.add("sc_1018_header_pencil", {
                 window.__sc1018NoReload = true;
                 assert(!document.querySelector(`${HERO} .o_pk_autosave[data-pk-autosave-field="sc_status"]`), "a 4-way selector");
                 assert(!visible(`${HERO} [data-sc-action="player.remove"]`), "« Remove player » shown in read mode");
-                document.querySelector(`${HERO} [data-sc-card-icons] > button[data-pk-edit-toggle]`).click();
+                document.querySelector(`${HERO} [data-pk-card-icons] > button[data-pk-edit-toggle]`).click();
             },
         },
         {

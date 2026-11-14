@@ -429,7 +429,7 @@ class TestAssigneeI18n1024(AssignHttpCommon):
     def setUpClass(cls):
         super().setUpClass()
         cls.env['res.lang']._activate_lang('fr_CA')
-        cls.env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        cls.env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if cls.env['ir.module.module']._get('website').state == 'installed':
             fr_lang = cls.env['res.lang']._lang_get('fr_CA')
             for website in cls.env['website'].sudo().search([]):

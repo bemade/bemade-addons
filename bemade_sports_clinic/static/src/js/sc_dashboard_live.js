@@ -174,8 +174,8 @@ document.addEventListener("pk:saved", (ev) => {
             date.textContent = result.display || "—";
         }
         // Saved = today or later (a past date is refused): no longer passed.
-        holder.classList.remove("o_sc_overdue");
-        for (const flag of holder.querySelectorAll(".o_sc_overdue_sep, .o_sc_overdue_flag")) {
+        holder.classList.remove("o_pk_overdue");
+        for (const flag of holder.querySelectorAll(".o_pk_overdue_sep, .o_pk_overdue_flag")) {
             flag.remove();
         }
     }

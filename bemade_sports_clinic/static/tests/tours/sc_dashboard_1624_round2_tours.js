@@ -133,10 +133,10 @@ tours.add("sc_1624_dashboard_round2", {
                 await waitFor(() => card.querySelector(field), "the quick field");
                 const input = card.querySelector(field);
                 assert(input.min, "min = today");
-                assert(card.querySelector(".o_sc_overdue_flag"), "« Passed » before");
+                assert(card.querySelector(".o_pk_overdue_flag"), "« Passed » before");
                 typeAndLeave(input, shift(input.min, 7));
                 await waitFor(
-                    () => !line.querySelector(`[data-sc-player-id="${id}"] .o_pk_link_row .o_sc_overdue_flag`),
+                    () => !line.querySelector(`[data-sc-player-id="${id}"] .o_pk_link_row .o_pk_overdue_flag`),
                     "« Passed » gone"
                 );
                 await waitFor(

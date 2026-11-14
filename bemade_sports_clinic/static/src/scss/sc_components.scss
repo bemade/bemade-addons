@@ -61,11 +61,8 @@
         white-space: nowrap;
     }
 
-    // Task 1727: a past « Retour prévu » (the date + « · Dépassé »).
-    .o_sc_overdue,
-    .o_pk_row_line_value.o_sc_overdue {
-        color: var(--pk-overdue);
-    }
+    // Task 1727: a past « Retour prévu » (the date + « · Dépassé »): the
+    // kit's o_pk_overdue since task 5345.
 
     // Task 1626: while « Details » is open, the face's training and
     // « Retour prévu » lines hide — the detail shows them whole, so each
@@ -116,19 +113,8 @@
         }
     }
 
-    // Task 1726: THE switch (sc_switch macro + the autosave « N/A »): the
-    // label on the left, a pill switch on the right, one line, 44 px tall.
-    // The checkbox covers the track (opacity 0): taps, Space and the forms
-    // all go through the real input.
-    .o_pk_switch {
-        &[data-sc-switch-locked] {
-            cursor: not-allowed;
-
-            .o_pk_switch_label {
-                color: var(--pk-fg-2);
-            }
-        }
-    }
+    // Task 1726: THE switch: the kit's pk_switch, its locked state too
+    // (task 5345).
 
     // The event page's timesheets section (task 1607): its read-fragment
     // holders take no room while empty, nor does the section when all are.

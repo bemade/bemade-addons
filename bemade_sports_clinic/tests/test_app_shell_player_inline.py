@@ -286,7 +286,7 @@ class TestPlayerInline(PlayerInlineCommon):
         for login in (self._login_tp, self._login_coach):
             login()
             _text, tree = self._get(self._url(tab='injuries', team_id=self.team_a.id))
-            self.assertFalse(tree.xpath('//header//*[@data-sc-action="injury.new"]'))
+            self.assertFalse(tree.xpath('//header//*[@data-pk-action="injury.new"]'))
             panel = tree.xpath('//section[@data-pk-tab-panel="injuries"]')[0]
             card = panel.xpath('.//details[@id="sc_new_injury"][@data-pk-section="injury.new"]')
             self.assertEqual(len(card), 1)
@@ -308,7 +308,7 @@ class TestPlayerInline(PlayerInlineCommon):
             card = tree.xpath('//*[@data-pk-edit-card="contact-%s"]' % contact.id)
             self.assertEqual(len(card), 1, contact.name)
             self.assertIn('"sports.patient.contact"', ' '.join(self._fields_in(card[0])))
-            self.assertFalse(card[0].xpath('.//*[@data-sc-action="contact.delete"]'))
+            self.assertFalse(card[0].xpath('.//*[@data-pk-action="contact.delete"]'))
         self.assertTrue(tree.xpath('//form[@data-sc-form="contact.add"]'))
         resp = self._save(second, 'mobile', '514-555-0199')  # task 1645: a valid number
         self.assertEqual(resp.status_code, 200, resp.text)

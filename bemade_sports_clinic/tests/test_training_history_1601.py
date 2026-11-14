@@ -148,7 +148,7 @@ class TestTrainingHistoryModel1601(TransactionCase):
     def test_stamp_after_clear_and_in_french(self):
         self.env['res.lang']._activate_lang('fr_CA')
         self.env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         self.player.with_user(self.writer).write({'training_recommendation': 'Synthetic x'})
         self.player.with_user(self.writer).write({'training_recommendation': False})
         self.player.invalidate_recordset()

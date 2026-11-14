@@ -293,7 +293,7 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
     def _sc_booking_page(self, template, booking, values):
         env = request.env
         values = dict(values, booking=booking, page_name='booking')
-        values.setdefault('sc_flash', {'success': None, 'error': None})
+        values.setdefault('pk_flash', {'success': None, 'error': None})
         tz = env.user.tz or booking.appointment_type_id.appointment_tz
         details = self._booking_detail_values(booking)
         values.update({
@@ -326,7 +326,7 @@ class BookingShellPortal(BookingPortal, AppShellMixin):
                                         dt_format='HH:mm') + ' – ' + format_datetime(
                     request.env, event.stop, tz=request.env.user.tz, dt_format='HH:mm'),
             } for event in (overlap or [])],
-            'sc_flash': {'success': None, 'error': error},
+            'pk_flash': {'success': None, 'error': error},
         })
 
     @http.route('/my/bookings/<int:booking_id>/edit', type='http', auth='user', website=True,

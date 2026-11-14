@@ -26,6 +26,10 @@
 * task 5382 (P4c3): ``pk_autosave_field`` (an OWL component, with its
   template) joins the kit. The consumer's old component key stays one
   release as an alias the consumer registers (the kit's class).
+* task 5345 (P3c2): ``pk_theme_pref`` joins the kit (the consumer's
+  ``sc_app_shell.js`` is gone: no module imported it); P4c3's component
+  alias is past its release: the consumer's ``sc_autosave_field.js`` is
+  gone.
 """
 import fnmatch
 import glob
@@ -50,6 +54,9 @@ KIT_JS = (
     'edit_cards', 'sheets', 'tabs', 'clamp', 'shell',
     # Task 5382 (P4c3).
     'autosave_field',
+    # Task 5345 (P3c2): the theme preference (was the consumer's
+    # sc_app_shell.js; nothing imported it, no alias).
+    'theme_pref',
 )
 SHIM_MARKER = 'bemade_portal_kit shim'
 # The clinic's aliases removed by task 5198 (P3a).
@@ -88,7 +95,7 @@ def _runtime_bundles(manifest):
 @tagged('post_install', '-at_install')
 class TestPkAssets(TransactionCase):
 
-    def test_kit_js_files_are_the_twenty_four(self):
+    def test_kit_js_files_are_the_twenty_five(self):
         root = os.path.join(get_module_path(KIT), 'static', 'src', 'js')
         found = sorted(os.path.basename(p)[3:-3] for p in glob.glob(os.path.join(root, 'pk_*.js')))
         self.assertEqual(found, sorted(KIT_JS))
@@ -137,6 +144,13 @@ class TestPkAssets(TransactionCase):
                 if os.path.exists(os.path.join(clinic, 'static', 'src', 'js', f'sc_{name}.js'))
             ]
             self.assertEqual(left, [])
+
+    def test_retired_consumer_scripts_gone(self):
+        clinic = get_module_path('bemade_sports_clinic', display_warning=False)
+        if not clinic:
+            return
+        for name in ('sc_app_shell.js', 'sc_autosave_field.js'):
+            self.assertFalse(os.path.exists(os.path.join(clinic, 'static', 'src', 'js', name)), name)
 
     def test_aliases_only_reexport(self):
         """Task 5370 (P4b): an alias re-exports the kit module and does

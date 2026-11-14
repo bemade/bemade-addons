@@ -475,7 +475,7 @@ class TestBookingEmailSettings(BookingsShellCommon):
         env = self.env
         env['res.lang']._activate_lang('fr_CA')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic', 'bemade_sports_clinic_bookings', 'appointment_portal_staff'],
+            ['bemade_portal_kit', 'bemade_sports_clinic', 'bemade_sports_clinic_bookings', 'appointment_portal_staff'],
             ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')

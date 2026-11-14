@@ -155,7 +155,7 @@ tours.add("sc_1616_documents_upload", {
     steps: () => [
         {
             content: "« + Ajouter » in the card's Documents list header",
-            trigger: `${DOCS} .o_pk_list_header button.o_pk_list_add[data-sc-action="injury.documents.add"]`,
+            trigger: `${DOCS} .o_pk_list_header button.o_pk_list_add[data-pk-action="injury.documents.add"]`,
             run: "click",
         },
         {
@@ -245,7 +245,7 @@ tours.add("sc_1616_documents_upload", {
         },
         {
             content: "Re-file one: its pencil",
-            trigger: `${DOCS} .o_sc_injury_doc button[data-sc-action="documents.edit"]`,
+            trigger: `${DOCS} .o_sc_injury_doc button[data-pk-action="documents.edit"]`,
             run: "click",
         },
         {

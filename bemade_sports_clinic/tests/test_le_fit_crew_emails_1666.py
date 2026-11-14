@@ -49,7 +49,7 @@ class TestLeFitCrewEmails1666(TransactionCase):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         internal = env.ref('base.group_user').id
         tp = env.ref('bemade_sports_clinic.group_sports_clinic_treatment_professional').id
         cls.staff_fr = env['res.users'].create({

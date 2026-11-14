@@ -15,6 +15,8 @@ Hooks (extend them with ``super()`` in an ``_inherit = 'portal.kit'``)
   fill the fragments a render missed; never cached)
 * ``_pk_activity_can_act(activity)`` / ``_pk_activity_assignable_users(activity)``
   (task 5199: the ``mail.activity`` spec's rules; per user, never cached)
+* ``_pk_brand()``       ``{name, home_url, home_label, theme_colors}`` (task
+  5345: the app layout's neutral brand; per company, never cached)
 
 Each hook is built ONCE per registry (``tools.ormcache``) and frozen: the
 result is shared by every user and request of the database, so a hook holds
@@ -27,7 +29,7 @@ An entry re-declared under an existing key replaces it in place.
 """
 from urllib.parse import parse_qs, urlsplit
 
-from odoo import api, models, tools
+from odoo import _, api, models, tools
 
 from ..tools import (
     pk_activity_save_spec, pk_freeze, pk_id_key, pk_is_visible, pk_refresh_patterns,
@@ -91,6 +93,20 @@ class PortalKit(models.AbstractModel):
         """Task 5199 (P4a): the users ``activity`` may be assigned to by the
         current user. Default: the internal users and the user themself."""
         return self.env['res.users'].sudo().search([('share', '=', False)]) | self.env.user
+
+    @api.model
+    def _pk_brand(self):
+        """Task 5345 (P3c2): the app layout's brand when a page passes none:
+        the company's name, the portal home and the kit's theme colours
+        (the browser bar of each theme: the neutral app-bar colour). Its
+        mark is the kit's (``pk_brand_mark``) unless the page fills the
+        layout's ``pk_brand_mark`` slot. Not cached (per company, language)."""
+        return {
+            'name': self.env.company.name or '',
+            'home_url': '/my',
+            'home_label': _('Home'),
+            'theme_colors': {'light': '#ffffff', 'dark': '#020617'},
+        }
 
     # ------------------------------------------------------------------
     # Cached, frozen registries (one per database registry)
@@ -157,6 +173,24 @@ class PortalKit(models.AbstractModel):
     def pk_app_roles(self):
         """The roles that put a user in the app (all but ``'app': False``)."""
         return frozenset(role for role, spec in self._pk_get_roles().items() if spec['app'])
+
+    # ------------------------------------------------------------------
+    # Brand (task 5345)
+    # ------------------------------------------------------------------
+    @api.model
+    def pk_brand(self, overrides=None):
+        """The brand the app layout draws: ``_pk_brand()`` with the page's
+        ``overrides`` (a partial dict) merged over it, the theme colours
+        key by key. A new dict on every call."""
+        brand = dict(self._pk_brand())
+        colors = dict(brand.get('theme_colors') or {})
+        for key, value in (overrides or {}).items():
+            if key == 'theme_colors':
+                colors.update(value or {})
+            elif value is not None:
+                brand[key] = value
+        brand['theme_colors'] = colors
+        return brand
 
     # ------------------------------------------------------------------
     # Visibility

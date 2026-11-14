@@ -47,7 +47,7 @@ class TestAppShellLang1588(AppShellCommon):
         cls.fr = env['res.lang']._activate_lang('fr_CA')
         cls.en = env['res.lang']._activate_lang('en_US')
         env['ir.module.module']._load_module_terms(
-            ['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         cls.website_installed = env['ir.module.module']._get('website').state == 'installed'
         if cls.website_installed:
             for website in env['website'].sudo().search([]):
@@ -116,7 +116,7 @@ class TestAppShellLang1588(AppShellCommon):
         # A plain POST form (full reload), not the in-place theme fetch.
         form = tree.xpath('//section[@id="sc_language"]//form')[0]
         self.assertEqual(form.get('action'), '/my/app/pref')
-        self.assertIsNone(form.get('data-sc-pref'))
+        self.assertIsNone(form.get('data-pk-pref'))
         self.assertTrue(form.xpath('.//input[@name="csrf_token"]'))
 
     def test_more_language_section_in_french(self):

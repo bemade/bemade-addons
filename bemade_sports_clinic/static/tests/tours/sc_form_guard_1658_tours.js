@@ -129,7 +129,7 @@ tours.add("sc_1658_timesheet", {
     steps: () => [
         {
             content: "Open the add sheet",
-            trigger: 'button[data-sc-action="timesheet.add"][data-pk-sheet-open]',
+            trigger: 'button[data-pk-action="timesheet.add"][data-pk-sheet-open]',
             run: "click",
         },
         {

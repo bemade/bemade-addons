@@ -95,7 +95,7 @@
     -->
     <template id="sc_activity_add_sheet" name="App shell: add activity (inline)">
         <!-- Task 1607: opened by the list header's « + Ajouter ». -->
-        <t t-call="bemade_sports_clinic.sc_list_header">
+        <t t-call="bemade_portal_kit.pk_list_header">
             <t t-set="header_section" t-value="'activity.add.header'"/>
             <t t-set="add_label">Add Activity</t>
             <t t-set="add_panel" t-value="'sc_activity_add'"/>
@@ -145,7 +145,7 @@
     <!-- Task 1607: the activities page's list header — « + Ajouter » (the
          add-activity page, was the app bar's « Add Activity »). -->
     <template id="sc_activities_header" name="App shell: activities list header">
-        <t t-call="bemade_sports_clinic.sc_list_header">
+        <t t-call="bemade_portal_kit.pk_list_header">
             <t t-set="header_section" t-value="'activities.header'"/>
             <t t-if="sc_add_activity_url">
                 <t t-set="add_label">Add Activity</t>
@@ -159,9 +159,9 @@
          /my/event/activities) in the shell. -->
     <template id="sc_app_activities" name="Sports Clinic App: activities">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="sc_nav_labels['activities']"/>
-            <t t-set="sc_active_nav" t-value="'activities'"/>
-            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <t t-set="pk_title" t-value="sc_nav_labels['activities']"/>
+            <t t-set="pk_active_nav" t-value="'activities'"/>
+            <t t-call="bemade_portal_kit.pk_flash_banners"/>
             <!-- Task 1664: « Réassigner » on every list (Mes activités too),
                  same right as before (the route re-checks). -->
             <t t-set="sc_can_reassign" t-value="sc_can('activities.reassign')"/>
@@ -206,15 +206,15 @@
     <template id="sc_app_activity_form" name="Sports Clinic App: activity form">
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-if="activity">
-                <t t-set="sc_title">Edit Activity</t>
+                <t t-set="pk_title">Edit Activity</t>
                 <t t-set="sc_form_back" t-value="'/my/activity/%s' % activity.id"/>
             </t>
             <t t-else="">
-                <t t-set="sc_title">Add Activity</t>
+                <t t-set="pk_title">Add Activity</t>
                 <t t-set="sc_form_back" t-value="return_url"/>
             </t>
-            <t t-set="sc_active_nav" t-value="'activities'"/>
-            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <t t-set="pk_active_nav" t-value="'activities'"/>
+            <t t-call="bemade_portal_kit.pk_flash_banners"/>
             <form t-att-action="'/my/activity/update' if activity else '/my/activity/save'" method="post"
                   class="o_pk_card o_pk_form" data-sc-form="activity.form">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
@@ -289,7 +289,7 @@
             <t t-if="act_links">
                 <dt>Related Record</dt>
                 <dd class="o_pk_row_links" data-pk-section="activity.related">
-                    <t t-call="bemade_sports_clinic.sc_row_links"><t t-set="links" t-value="act_links"/></t>
+                    <t t-call="bemade_portal_kit.pk_row_links"><t t-set="links" t-value="act_links"/></t>
                 </dd>
             </t>
             <!-- Task 1595: « Créée le ». Task 1736 r1: and by whom. -->
@@ -347,12 +347,12 @@
     <!-- /my/activity/<id> (shell) -->
     <template id="sc_app_activity_detail" name="Sports Clinic App: activity detail">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title" t-value="activity.summary or activity.activity_type_id.name"/>
+            <t t-set="pk_title" t-value="activity.summary or activity.activity_type_id.name"/>
             <!-- Task 1611: a save refreshes the title, the state chip and the
                  read view in place (and the app bar's overdue badge). -->
-            <t t-set="sc_page_key" t-value="'mail.activity:%s' % activity.id"/>
-            <t t-set="sc_active_nav" t-value="'activities'"/>
-            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <t t-set="pk_page_key" t-value="'mail.activity:%s' % activity.id"/>
+            <t t-set="pk_active_nav" t-value="'activities'"/>
+            <t t-call="bemade_portal_kit.pk_flash_banners"/>
             <t t-set="act_state" t-value="'overdue' if activity.date_deadline &lt; today_date else ('today' if activity.date_deadline == today_date else 'planned')"/>
             <!-- Owner review 2026-10-11: the pencil edit paradigm — the
                  activity is edited in place (was a separate edit page); the
@@ -368,7 +368,7 @@
                     <!-- Task 1736 (owner 2026-11-01): the shared top bar — the
                          red trash (it asks first) next to the ✓ while
                          editing, the pencil. -->
-                    <t t-call="bemade_sports_clinic.sc_card_icons">
+                    <t t-call="bemade_portal_kit.pk_card_icons">
                         <t t-set="ci_trash" t-value="sc_activity_editable and {'sheet': 'sc_activity_cancel_sheet', 'key': 'activity.cancel', 'attrs': {'data-sc-activity-id': activity.id}}"/>
                         <t t-set="ci_editable" t-value="sc_activity_editable"/>
                     </t>

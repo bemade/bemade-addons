@@ -53,7 +53,7 @@
                         <t t-call="bemade_portal_kit.pk_field_autosave">
                             <t t-set="props" t-value="pk_draft_props(sc_draft_prefix + 'parental_consent', 'parental_consent', lbl, 'select', options=sc_consent_options, required=True)"/>
                         </t>
-                        <t t-call="bemade_sports_clinic.sc_switch">
+                        <t t-call="bemade_portal_kit.pk_switch">
                             <t t-set="sw_name" t-value="'hidden_from_coaches'"/>
                             <t t-set="sw_value" t-value="'1'"/>
                             <t t-set="sw_label">Hide from coaches</t>
@@ -97,18 +97,18 @@
     <template id="sc_app_injury_new" name="Sports Clinic App: new injury">
         <t t-call="bemade_sports_clinic.sc_app_layout">
             <t t-if="is_treatment_prof">
-                <t t-set="sc_title">Add Injury</t>
+                <t t-set="pk_title">Add Injury</t>
             </t>
             <t t-else="">
-                <t t-set="sc_title">Report Injury</t>
+                <t t-set="pk_title">Report Injury</t>
             </t>
-            <t t-set="sc_active_nav" t-value="'players'"/>
-            <t t-if="error" t-call="bemade_sports_clinic.sc_banner">
+            <t t-set="pk_active_nav" t-value="'players'"/>
+            <t t-if="error" t-call="bemade_portal_kit.pk_banner">
                 <t t-set="flash_error" t-value="True"/>
                 <t t-set="tone" t-value="'warn'"/>
                 <t t-out="error"/>
             </t>
-            <t t-call="bemade_sports_clinic.sc_banner">
+            <t t-call="bemade_portal_kit.pk_banner">
                 <t t-set="title">Kept on this device until you create it</t>
                 What you type stays a draft on this device; nobody is notified before « Create ».
             </t>
@@ -123,9 +123,9 @@
          « Ajouter » device draft posting to today's /my/injury/note/add. -->
     <template id="sc_app_treatment_notes" name="Sports Clinic App: treatment notes">
         <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="sc_title">Treatment Notes</t>
-            <t t-set="sc_active_nav" t-value="'players'"/>
-            <t t-call="bemade_sports_clinic.sc_flash_banners"/>
+            <t t-set="pk_title">Treatment Notes</t>
+            <t t-set="pk_active_nav" t-value="'players'"/>
+            <t t-call="bemade_portal_kit.pk_flash_banners"/>
             <div t-if="success == 'note_added'" t-att-data-pk-draft-clear="sc_note_draft_prefix" hidden="hidden"/>
             <t t-if="is_treatment_prof" t-call="bemade_sports_clinic.sc_note_add_form">
                 <t t-set="note_patient" t-value="patient"/>
@@ -153,7 +153,7 @@
          inside the sheet (data-pk-sheet-refetch, the kit's pk_sheets.js). -->
     <template id="sc_note_history_fragment" name="App shell: injury note history">
         <t t-set="empty_message">No note history yet.</t>
-        <t t-call="bemade_sports_clinic.sc_history_list">
+        <t t-call="bemade_portal_kit.pk_history_list">
             <t t-set="section" t-value="'injury.notes.history'"/>
             <nav t-if="is_treatment_prof" class="o_pk_segmented o_pk_segmented_full" role="group"
                  aria-label="Scope filter" data-pk-section="history.scope">

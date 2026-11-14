@@ -31,7 +31,7 @@ tours.add("sc_1542_nav_phone", {
     steps: () => [
         {
             content: "Phone: bottom tabs shown, « Équipes » active",
-            trigger: '.o_pk_tabs a[data-sc-nav-key="teams"][aria-current="page"]',
+            trigger: '.o_pk_tabs a[data-pk-nav-key="teams"][aria-current="page"]',
         },
         {
             content: "Phone: no left rail",
@@ -39,13 +39,13 @@ tours.add("sc_1542_nav_phone", {
         },
         {
             content: "Open « Plus » from the tabs",
-            trigger: '.o_pk_tabs a[data-sc-nav-key="more"]',
+            trigger: '.o_pk_tabs a[data-pk-nav-key="more"]',
             run: "click",
             expectUnloadPage: true,
         },
         {
             content: "« Plus » is the active tab and lists « Installer l'application »",
-            trigger: '.o_pk_tabs a[data-sc-nav-key="more"][aria-current="page"]',
+            trigger: '.o_pk_tabs a[data-pk-nav-key="more"][aria-current="page"]',
         },
         {
             trigger: 'main a[data-sc-nav-key="install"]',
@@ -57,7 +57,7 @@ tours.add("sc_1542_nav_laptop", {
     steps: () => [
         {
             content: "Laptop: left rail shown, « Équipes » active",
-            trigger: '.o_pk_rail_nav a[data-sc-nav-key="teams"][aria-current="page"]',
+            trigger: '.o_pk_rail_nav a[data-pk-nav-key="teams"][aria-current="page"]',
         },
         {
             content: "Laptop: no bottom tabs",
@@ -65,12 +65,12 @@ tours.add("sc_1542_nav_laptop", {
         },
         {
             content: "Open « Plus » from the rail",
-            trigger: '.o_pk_rail_nav a[data-sc-nav-key="more"]',
+            trigger: '.o_pk_rail_nav a[data-pk-nav-key="more"]',
             run: "click",
             expectUnloadPage: true,
         },
         {
-            trigger: '.o_pk_rail_nav a[data-sc-nav-key="more"][aria-current="page"]',
+            trigger: '.o_pk_rail_nav a[data-pk-nav-key="more"][aria-current="page"]',
         },
     ],
 });

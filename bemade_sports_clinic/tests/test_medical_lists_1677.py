@@ -424,7 +424,7 @@ class TestMedicalLists1677(MedicalLists1677Common):
                 row = card.xpath('./div[contains(@class, "o_sc_med_card_row")]')[0]
                 # Task 1736 (deliberate update): in the shared top bar
                 # (sc_card_icons) — the trash (edit-only), then the pencil.
-                buttons = row.xpath('./span[@data-sc-card-icons]/button')
+                buttons = row.xpath('./span[@data-pk-card-icons]/button')
                 self.assertEqual([bool(b.get('data-sc-med-item-delete')) for b in buttons], [True, False])
                 self.assertTrue(buttons[1].get('data-pk-edit-toggle'))
                 self.assertEqual(buttons[0].get('data-pk-edit-only'), '1')

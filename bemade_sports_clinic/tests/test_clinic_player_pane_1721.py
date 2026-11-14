@@ -168,7 +168,7 @@ class TestClinicPlayerPane1721(Pane1721Common):
         self._note(self.inj_new)
         self._login_tp()
         _text, tree = self._get(self._dossier_url())
-        self.assertIn('o_pk_content_wide', tree.xpath('//main[@id="sc_content"]')[0].get('class'))
+        self.assertIn('o_pk_content_wide', tree.xpath('//main[@id="pk_content"]')[0].get('class'))
         card = tree.xpath('//*[@data-pk-section="clinic.dossier"]//*[@data-sc-note-id][@data-pk-edit-card]')[0]
         head = card.xpath('./div[contains(@class, "o_sc_note_head")]')[0]
         self.assertTrue(head.xpath('./button[@data-pk-edit-toggle]'))
@@ -187,7 +187,7 @@ class TestClinicPlayerPane1721(Pane1721Common):
     def test_french(self):
         env = self.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):

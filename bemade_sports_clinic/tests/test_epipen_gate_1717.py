@@ -196,7 +196,7 @@ class TestEpiPenGate1717(EpiPen1717Common):
     def test_french(self):
         env = self.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         self.tp.write({'lang': 'fr_CA'})
         player = self._new_player(user=self.tp)
         self.assertEqual(self._todos(player).summary, 'Compléter le dossier médical (allergies/EpiPen)')

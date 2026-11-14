@@ -9,7 +9,7 @@ Acceptance criteria:
   shows the « Show « Done » buttons » On / Off switch; /my/app/pref sets it
   on the caller's own record only (another user's id → 403, nothing
   written).
-* AC-2 The app root carries ``data-sc-hide-done="1"`` while the setting is
+* AC-2 The app root carries ``data-pk-hide-done="1"`` while the setting is
   off (CSS hides every « Done »), not when it is on.
 * AC-3 The injury card's foot has no « Done » (``injury.done``); a
   therapist gets « Delete injury » (``injury.delete``) opening the confirm
@@ -68,7 +68,7 @@ class TestDoneButtonsPref1676(Done1676Common):
         # Task 1726: a switch, off by default.
         self.assertEqual(section.xpath('.//input[@role="switch"][@name="sc_show_done_buttons"]/@aria-checked'),
                          ['false'])
-        self.assertEqual(self._app(tree).get('data-sc-hide-done'), '1')
+        self.assertEqual(self._app(tree).get('data-pk-hide-done'), '1')
         resp = self.url_open('/my/app/pref', data={'csrf_token': self._csrf(), 'sc_show_done_buttons': '1',
                                                    'redirect': '/my/app/settings'}, allow_redirects=False)
         self.assertIn(resp.status_code, (302, 303))
@@ -78,7 +78,7 @@ class TestDoneButtonsPref1676(Done1676Common):
         _text, tree = self._get('/my/app/settings')
         section = tree.xpath('//section[@data-pk-section="settings.done_buttons"]')[0]
         self.assertEqual(section.xpath('.//input[@role="switch"]/@aria-checked'), ['true'])
-        self.assertIsNone(self._app(tree).get('data-sc-hide-done'))
+        self.assertIsNone(self._app(tree).get('data-pk-hide-done'))
         with mute_logger('odoo.http'):
             resp = self.url_open('/my/app/pref', data={'csrf_token': self._csrf(), 'sc_show_done_buttons': '1',
                                                        'user_id': self.coach.id}, allow_redirects=False)
@@ -98,7 +98,7 @@ class TestDoneButtonsPref1676(Done1676Common):
         # Task 1736 (deliberate update): no foot any more — « Delete injury »
         # is the top bar's red trash (shown while the Details are edited).
         self.assertFalse(card.xpath('.//div[contains(@class, "o_sc_injury_card_actions")]'))
-        buttons = card.xpath('.//button[@data-sc-action="injury.delete"]')
+        buttons = card.xpath('.//button[@data-pk-action="injury.delete"]')
         self.assertEqual(len(buttons), 1)
         self.assertTrue(buttons[0].xpath('ancestor::summary'))
         self.assertEqual(buttons[0].get('aria-label'), 'Delete injury')
@@ -111,7 +111,7 @@ class TestDoneButtonsPref1676(Done1676Common):
         card = tree.xpath('//details[@id="injury-%s"]' % self.injury.id)[0]
         self.assertFalse(card.xpath('.//div[contains(@class, "o_sc_injury_card_actions")]'))
         # Task 1736: nor the top bar's trash.
-        self.assertFalse(card.xpath('.//*[@data-sc-action="injury.delete"]'))
+        self.assertFalse(card.xpath('.//*[@data-pk-action="injury.delete"]'))
 
     def test_done_buttons_marked(self):
         self._login_tp()
@@ -129,7 +129,7 @@ class TestDoneButtonsPrefI18n1676(Done1676Common):
         super().setUpClass()
         env = cls.env
         env['res.lang']._activate_lang('fr_CA')
-        env['ir.module.module']._load_module_terms(['bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+        env['ir.module.module']._load_module_terms(['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):
@@ -150,7 +150,7 @@ class TestDoneButtonsPrefI18n1676(Done1676Common):
         # Task 1736 (deliberate update): « Delete injury » is the top bar's
         # trash icon — its name says it.
         trash = tree.xpath('//details[contains(@class, "o_sc_injury_item")]/summary'
-                           '//button[@data-sc-action="injury.delete"]')[0]
+                           '//button[@data-pk-action="injury.delete"]')[0]
         self.assertEqual(trash.get('aria-label'), 'Supprimer la blessure')
 
     def test_check_label_in_french(self):
