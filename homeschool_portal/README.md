@@ -18,7 +18,12 @@ record, the subjects, the files of a trace or a material (stamped with their rec
 the core) and the chatter post all come through the core's own portal access; the block
 kinds and the day headers are the core's labels, in the user's language.
 
-Source strings are English; `i18n/fr_CA.po` carries the French. The user's own language
+With the Bemade portal kit's switch on (Settings › Portal App), a learner or a tutor gets
+the same pages in the kit's app shell, with **Today** (`/my/home`, the kit's dashboard of
+the learner's day), a learner switcher for a tutor with several learners, and the
+installable app (`/my/app.webmanifest`). Switch off: the stock portal, same URLs.
+
+Source strings are English; `i18n/fr.po` carries the French (every French locale). The user's own language
 drives the rendering (no `website` module).
 
 ## Tests
