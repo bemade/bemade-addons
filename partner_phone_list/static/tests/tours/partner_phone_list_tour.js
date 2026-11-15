@@ -5,6 +5,26 @@ import { registry } from "@web/core/registry";
 
 const LIST = ".o_form_view div[name=phone_ids]";
 
+// Open a selection menu and pick an option. The new row's onchange can
+// re-render the cell and close a menu opened too early, so re-open it until
+// the option shows up.
+async function pickInMenu(toggler, label) {
+    for (let i = 0; i < 50; i++) {
+        const item = [...document.querySelectorAll(".o_select_menu_menu .o_select_menu_item")].find(
+            (el) => el.textContent.trim() === label
+        );
+        if (item) {
+            item.click();
+            return;
+        }
+        if (i % 10 === 0) {
+            document.querySelector(toggler)?.click();
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error(`Option ${label} not found`);
+}
+
 registry.category("web_tour.tours").add("partner_phone_list_tour", {
     url: "/odoo/action-base.action_partner_form/new",
     steps: () => [
@@ -29,14 +49,9 @@ registry.category("web_tour.tours").add("partner_phone_list_tour", {
             run: "click",
         },
         {
-            content: "Open the type menu",
-            trigger: `${LIST} tr.o_selected_row div[name=type] .o_select_menu_toggler`,
-            run: "click",
-        },
-        {
             content: "Make it a mobile",
-            trigger: ".o_select_menu_menu .o_select_menu_item:contains(Mobile)",
-            run: "click",
+            trigger: `${LIST} tr.o_selected_row div[name=type] .o_select_menu_toggler`,
+            run: () => pickInMenu(`${LIST} tr.o_selected_row div[name=type] .o_select_menu_toggler`, "Mobile"),
         },
         {
             content: "Type the mobile number",
