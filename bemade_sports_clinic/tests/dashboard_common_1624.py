@@ -80,18 +80,18 @@ class Dashboard1624Common(Parity1577Common):
 
     # -- helpers ------------------------------------------------------------
     def _dash(self, user):
-        return self.env['sc.dashboard'].with_user(user)
+        return self.env['portal.kit.dashboard'].with_user(user)
 
     def _sections(self, tree):
-        return tree.xpath('//section[@data-sc-instance]')
+        return tree.xpath('//section[@data-pk-dash-instance]')
 
     def _section(self, tree, instance_id):
-        found = tree.xpath('//section[@data-sc-instance="%s"]' % instance_id)
+        found = tree.xpath('//section[@data-pk-dash-instance="%s"]' % instance_id)
         self.assertEqual(len(found), 1, instance_id)
         return found[0]
 
     def _save(self, user, instances):
-        return self._dash(user)._sc_layout_save(instances)
+        return self._dash(user)._pk_dash_layout_save(instances)
 
     def _instance(self, user, instance_id):
-        return next(i for i in self._dash(user)._sc_layout() if i['id'] == instance_id)
+        return next(i for i in self._dash(user)._pk_dash_layout() if i['id'] == instance_id)

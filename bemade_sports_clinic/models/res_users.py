@@ -153,15 +153,9 @@ class User(models.Model):
     # kit's ``pk_show_done_buttons``.
     pk_theme = fields.Selection(default="dark")
 
-    # Task 1624: the app dashboard's layout (models/sc_dashboard.py) —
-    # {"v": 2, "instances": [...]} (round 2: each with its zone). Not
-    # self-writable: only the validated « Configurer » path
-    # (sc.dashboard._sc_layout_save, sudo) writes it.
-    sc_dashboard_layout = fields.Json(
-        string="App Dashboard Layout",
-        groups="base.group_system",
-        copy=False,
-    )
+    # Task 1624 / 5202 (kit P7): the app dashboard's layout is the kit's
+    # ``pk_dashboard_layout`` (bemade_portal_kit_dashboard; the former column
+    # moved in place by the 19.0.1.148.0 pre-migration).
 
     # Task 1624, review round 1 (owner 2026-10-29): the players this user
     # follows (« Suivre », the dashboard's « Joueurs que je suis »). A

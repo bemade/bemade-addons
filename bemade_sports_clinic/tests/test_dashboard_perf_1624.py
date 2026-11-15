@@ -52,7 +52,7 @@ class TestDashboardPerf1624(Dashboard1624Common):
 
     def _build_all(self, teams):
         dash = self._dash(self.tp)
-        viewer = dash._sc_viewer()
+        viewer = dash._pk_dash_viewer()
         dash.env.invalidate_all()
         changed = dash._sc_data_changes(teams, viewer)
         dash._sc_data_watch(teams, 'red_yellow', changed)
@@ -82,12 +82,12 @@ class TestDashboardPerf1624(Dashboard1624Common):
         self._login_tp()
         dash = self._dash(self.tp)
         for inst_id in ('recent_changes', 'watch', 'announcements', 'indicators', 'coverage', 'todo'):
-            dash._sc_layout_update(inst_id, settings={'scope_team_ids': (self.team_a | self.team_c).ids})
+            dash._pk_dash_layout_update(inst_id, settings={'scope_team_ids': (self.team_a | self.team_c).ids})
         self._get('/my/home')  # warm
         few = self._count(self._get, '/my/home')
         all_ids = (self.team_a | self.team_c | self.bulk).ids
         for inst_id in ('recent_changes', 'watch', 'announcements', 'indicators', 'coverage', 'todo'):
-            dash._sc_layout_update(inst_id, settings={'scope_team_ids': all_ids})
+            dash._pk_dash_layout_update(inst_id, settings={'scope_team_ids': all_ids})
         self._get('/my/home')
         many = self._count(self._get, '/my/home')
         self.assertLessEqual(many, few + PAGE_SLACK, (few, many))

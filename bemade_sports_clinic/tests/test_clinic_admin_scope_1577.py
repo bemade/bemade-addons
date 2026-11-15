@@ -116,7 +116,7 @@ class TestClinicAdminScope1577(Parity1577Common):
         ids = [int(x) for x in re.findall(r'data-sc-team-id="(\d+)"', text)]
         self.assertEqual(ids[0], self.team_a.id, "the staffed team comes first")
         self.assertIn(self.team_b.id, ids)
-        self.assertEqual(self.env['sc.dashboard'].with_user(self.cadmin)._sc_scope_teams({}),
+        self.assertEqual(self.env['portal.kit.dashboard'].with_user(self.cadmin)._sc_scope_teams({}),
                          self.team_a)
 
     def test_internal_tp_home_staffed_only(self):

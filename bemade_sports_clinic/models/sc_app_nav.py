@@ -293,8 +293,10 @@ def sc_pages(kit):
         # (pk_app_nav.js), else the home.
         pk_static_page('pk_app_settings', '/my/app/settings', _lt('Settings'),
                        parent=lambda v: ('sc_app_home', {})),
-        # Task 1624: « Configurer » the dashboard — a sub-page of the home.
-        pk_static_page('sc_app_dashboard_configure', '/my/app/dashboard/configure',
+        # Task 1624: « Configurer » the dashboard — a sub-page of the home
+        # (task 5202, kit P7: bemade_portal_kit_dashboard's page, under the
+        # clinic's home).
+        pk_static_page('pk_dash_configure', '/my/app/dashboard/configure',
                        _lt('Configure the dashboard'), parent=lambda v: ('sc_app_home', {})),
         # Task 1620: the core « Mon compte » / « Sécurité » routes rendered in
         # the shell — sub-pages of « Paramètres ». No path on purpose: they are

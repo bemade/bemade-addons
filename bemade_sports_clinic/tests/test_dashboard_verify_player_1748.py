@@ -26,7 +26,7 @@ from odoo.tests import tagged
 from odoo.addons.bemade_sports_clinic.tests.dashboard_common_1624 import Dashboard1624Common
 from odoo.addons.bemade_sports_clinic.tests.fragments_common_1611 import FragmentsMixin
 
-LIST_KEY = 'sc.dashboard:todo:dash-todo-verify:list'
+LIST_KEY = 'pk.dashboard:todo:dash-todo-verify:list'
 
 
 class _Player1748:

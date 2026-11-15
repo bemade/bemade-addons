@@ -96,7 +96,7 @@ class TestAppShellSwitch1538(AppShellCommon):
         self.assertNotIn('clinic', self._nav_keys(tree, 'o_pk_rail_nav'))
         # Task 1624 (deliberate update): the home is the configurable
         # dashboard — « My teams » left it (still under « Teams »).
-        self.assertTrue(tree.xpath('//section[@data-sc-widget="indicators"]'))
+        self.assertTrue(tree.xpath('//section[@data-pk-dash-widget="indicators"]'))
         self.assertNotIn('PC Team B', text)
 
     def test_switch_on_tp_tabs_with_clinic(self):

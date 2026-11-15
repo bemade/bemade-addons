@@ -15,7 +15,7 @@ function assert(condition, message) {
     }
 }
 
-const LINE = 'section[data-sc-instance="todo"] details[data-sc-todo="returns"]';
+const LINE = 'section[data-pk-dash-instance="todo"] details[data-sc-todo="returns"]';
 const card = (name) => `${LINE} [data-sc-player-id]:has(.o_pk_row_title:contains("${name}"))`;
 
 /** Practice « Oui », then Match « Oui » (Match needs Practice: Oui) on one
@@ -82,7 +82,7 @@ tours.add("sc_1749_overdue_refresh", {
         ...promote("Synth, Shared"),
         {
             content: "« Recent changes » shows the same, fresh",
-            trigger: 'section[data-sc-instance="recent_changes"] [data-sc-player-id]:has(.o_pk_row_title:contains("Synth, Shared")) [data-pk-pill-key="match"] > button[data-pk-pill-value="yes"]',
+            trigger: 'section[data-pk-dash-instance="recent_changes"] [data-sc-player-id]:has(.o_pk_row_title:contains("Synth, Shared")) [data-pk-pill-key="match"] > button[data-pk-pill-value="yes"]',
         },
     ],
 });

@@ -190,7 +190,7 @@ class SportsClinicPortalKit(models.AbstractModel):
             # Therapist working surface: /my/clinics denies everyone else server-side.
             # Task 1624: the live « Clinics today » chip of the « Today » widget.
             'home.clinic_teaser': {'include': TP},
-            # Task 1624 — the dashboard widgets (models/sc_dashboard.py WIDGETS) and
+            # Task 1624 — the dashboard widgets (models/sc_dashboard.py _pk_widgets) and
             # the « To do » lines. Each line is ALSO bound by its data's access
             # (record rules, _may_remove_from_team) — the registry only hides.
             'dashboard.today': {'include': STAFF},
@@ -266,7 +266,10 @@ class SportsClinicPortalKit(models.AbstractModel):
     # -----------------------------------------------------------------------
     @api.model
     def _pk_pages(self):
-        return list(super()._pk_pages()) + sc_app_nav.sc_pages(self)
+        # Task 5202 (kit P7): the clinic's home is sc_app_home (/my/home),
+        # not the dashboard addon's own pk_dash_page.
+        pages = [page for page in super()._pk_pages() if page.key != 'pk_dash_page']
+        return pages + sc_app_nav.sc_pages(self)
 
     # -----------------------------------------------------------------------
     # Task 5200 (kit P5): the kit's pages, preferences, account, search

@@ -55,8 +55,8 @@ class TestPkFragmentHelpers(HttpCase):
         self.assertIsNone(pk_parse_fragment_keys(None))
         self.assertEqual(pk_parse_fragment_keys(''), [])
         self.assertEqual(
-            pk_parse_fragment_keys(' a:1:b , a:1:b,page:x:*,bad key,<x>,a:1:b;drop, sc.dashboard:todo:*:list'),
-            ['a:1:b', 'page:x:*', 'sc.dashboard:todo:*:list'])
+            pk_parse_fragment_keys(' a:1:b , a:1:b,page:x:*,bad key,<x>,a:1:b;drop, pk.dashboard:todo:*:list'),
+            ['a:1:b', 'page:x:*', 'pk.dashboard:todo:*:list'])
         many = ','.join('m:%s:p' % i for i in range(PK_FRAGMENTS_MAX + 50))
         self.assertEqual(len(pk_parse_fragment_keys(many)), PK_FRAGMENTS_MAX)
 

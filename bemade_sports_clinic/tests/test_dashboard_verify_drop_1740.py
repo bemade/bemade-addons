@@ -5,7 +5,7 @@ Synthetic fixtures only (this repository is public).
 Acceptance criteria:
 
 * UC-1 Each injury line of « À faire » is a LIST read fragment
-  (``sc.dashboard:todo:<row_scope>:list``, mode « list ») whose items are the
+  (``pk.dashboard:todo:<row_scope>:list``, mode « list ») whose items are the
   injury cards (``sports.patient.injury:<id>:card``); the activity / player
   lines are not.
 * UC-2 « Vérifier » answers refresh patterns that match the line and its
@@ -26,8 +26,8 @@ from odoo.tests import tagged
 from odoo.addons.bemade_sports_clinic.tests.dashboard_common_1624 import Dashboard1624Common
 from odoo.addons.bemade_sports_clinic.tests.fragments_common_1611 import FragmentsMixin
 
-LIST_KEY = 'sc.dashboard:todo:dash-todo-verify:list'
-COUNT_KEY = 'sc.dashboard:todo:dash-todo-verify'
+LIST_KEY = 'pk.dashboard:todo:dash-todo-verify:list'
+COUNT_KEY = 'pk.dashboard:todo:dash-todo-verify'
 
 
 class _Verify1740:
@@ -91,7 +91,7 @@ class TestVerifyDrop1740(_Verify1740, FragmentsMixin, Dashboard1624Common):
     def test_player_page_has_no_dashboard_key(self):
         self._login_tp()
         _text, tree = self._get('/my/player?player_id=%s&tab=injuries' % self.yellow.id)
-        self.assertFalse([k for k in tree.xpath('//@data-pk-fragment') if k.startswith('sc.dashboard:')])
+        self.assertFalse([k for k in tree.xpath('//@data-pk-fragment') if k.startswith('pk.dashboard:')])
         self.assertTrue(tree.xpath('//*[@data-pk-fragment-item="sports.patient.injury:%s:card"]'
                                    % self.inj_one.id))
 

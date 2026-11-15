@@ -192,7 +192,7 @@ class TestOverdueRefresh1749(_Overdue1749, FragmentsMixin, Dashboard1624Common):
         tree = self._home()
         self.assertFalse(tree.xpath('//*[@data-pk-fragment="%s"]' % row_key(self.red, RETURNS)),
                          'a full render never carries a card its section dropped')
-        self.assertFalse(tree.xpath('//*[@data-sc-dash-kept]'))
+        self.assertFalse(tree.xpath('//*[@data-pk-dash-kept]'))
 
     def test_unreadable_player_stays_missing(self):
         """Pat Two (Team B: nobody of ours) is not readable by the therapist:
