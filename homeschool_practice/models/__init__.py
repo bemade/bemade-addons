@@ -10,3 +10,4 @@ from . import reward
 from . import badge
 from . import student
 from . import wizards
+from . import portal_kit

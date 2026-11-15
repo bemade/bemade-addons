@@ -11,6 +11,11 @@
     var API = "/my/homeschool/practice/api";
     var PENDING = "hp-pending-answer";
     var app = document.getElementById("app");
+    // The way out of the game (✕ on the home screen): the portal app's « Today »
+    // (or the stock portal's homeschool page when the app is off), set by the server.
+    var EXIT_URL = document.body.getAttribute("data-exit-url") || "/my/homeschool";
+    // A quest started from the portal's « Today » card (?quest=<id>): opened once.
+    var startQuest = +(new URLSearchParams(window.location.search).get("quest") || 0);
     var INPUT = window.matchMedia && window.matchMedia("(pointer: coarse)").matches ? "touch" : "mouse";
     var L = {};
     // Misses in a row inside one choices unit before its trick shows on the card by itself.
@@ -80,6 +85,13 @@
         state.busy = false;
         return rpc("/home").then(function (data) {
             state.home = data; L = data.labels; renderHome();
+            if (startQuest) {
+                var wanted = startQuest;
+                startQuest = 0;
+                if (window.history && history.replaceState) { history.replaceState(null, "", window.location.pathname); }
+                var quest = data.quests.filter(function (q) { return q.id === wanted && !q.done; })[0];
+                if (quest) { start({ quest_id: quest.id }); }
+            }
         }, function () { h('<div class="hp-loading">' + esc(L.offline || "…") + "</div>"); setTimeout(loadHome, 4000); });
     }
     function renderHome() {
@@ -110,7 +122,9 @@
         }).join("");
         h('<div class="hp-home">' +
             '<section class="hp-main">' +
-                '<header class="hp-level"><div class="hp-level-num">' + esc(L.level) + " <b>" + d.level + "</b></div>" +
+                '<header class="hp-level"><a class="hp-close hp-exit" id="hp-exit" href="' + esc(EXIT_URL) + '" aria-label="' +
+                esc(L.exit) + '" title="' + esc(L.exit) + '">✕</a>' +
+                '<div class="hp-level-num">' + esc(L.level) + " <b>" + d.level + "</b></div>" +
                 '<div class="hp-level-xp">' + bar(into, span) + "<span>" + d.xp + " " + esc(L.xp) + "</span></div></header>" +
                 "<h2>" + esc(L.quests) + "</h2>" + '<div class="hp-quests">' + quests + "</div>" +
                 (decks ? '<h3>' + esc(L.free) + '</h3><div class="hp-decks">' + decks + "</div>" : "") +

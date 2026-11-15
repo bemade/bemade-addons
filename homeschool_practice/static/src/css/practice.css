@@ -68,6 +68,7 @@ h2 { font-size: 26px; } h3 { font-size: 20px; color: var(--muted); font-weight: 
 .hp-lesson { display: flex; flex-direction: column; min-height: 100vh; padding: 14px 20px 20px; }
 .hp-top { display: flex; align-items: center; gap: 16px; }
 .hp-close { width: var(--tap); height: var(--tap); border-radius: 50%; background: var(--panel); font-size: 28px; }
+.hp-exit { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; color: inherit; text-decoration: none; }
 .hp-dots { flex: 1; display: flex; gap: 6px; } .hp-dots i { flex: 1; height: 12px; border-radius: 6px; background: rgba(255,255,255,.14); }
 .hp-dots i.is-past { background: var(--accent); } .hp-dots i.is-now { background: #fff; }
 .hp-stage { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: center; }
