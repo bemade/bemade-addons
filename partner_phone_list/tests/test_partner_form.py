@@ -3,9 +3,12 @@
 """Use case: editing the list on the contact form and the child-contact popup.
 
 Acceptance criteria:
-- The contact form shows the editable number list (type, number, extension,
-  label, drag handle) instead of the Phone field; Phone stays in the view
-  (invisible) for the views that extend it.
+- The contact form and the child-contact popup show Phone and Mobile as
+  text (phonebook widget ``partner_phone_list`` on the number list); the
+  widget's dialog edits the number list (type, number, extension, label, drag
+  handle). Phone stays in the view (invisible) for the views that extend it;
+  Mobile and the SMS availability are loaded for the widget.
+- The contacts list gives the Phone and Mobile columns a minimum width.
 - Adding numbers on a new contact in the form saves them in order; Phone and
   Mobile follow the list.
 - Typing a number in the form formats it like the standard Phone field
@@ -28,13 +31,20 @@ class TestPartnerForm(PhoneListCase):
     def test_form_arch(self):
         arch = self.Partner.get_views([(False, "form")])["views"]["form"]["arch"]
         tree = etree.fromstring(arch)
-        header_lists = tree.xpath("//field[@name='phone_ids'][not(ancestor::field)]/list")
-        self.assertTrue(header_lists)
-        cols = [f.get("name") for f in header_lists[0].xpath("./field")]
-        for col in ("sequence", "type", "number", "extension", "label"):
-            self.assertIn(col, cols)
-        self.assertTrue(tree.xpath("//field[@name='child_ids']/form//field[@name='phone_ids']"))
-        self.assertTrue(tree.xpath("//field[@name='phone'][not(ancestor::field)]"))
+        for scope in ("[not(ancestor::field)]", "[ancestor::field[@name='child_ids']]"):
+            fields = tree.xpath("//field[@name='phone_ids']%s" % scope)
+            self.assertEqual(len(fields), 1, scope)
+            self.assertEqual(fields[0].get("widget"), "partner_phone_list")
+            cols = [f.get("name") for f in fields[0].xpath("./list/field")]
+            for col in ("sequence", "type", "number", "extension", "label"):
+                self.assertIn(col, cols)
+            for name in ("phone", "mobile", "phone_sms_available"):
+                self.assertTrue(tree.xpath("//field[@name='%s']%s" % (name, scope)), (name, scope))
+        list_arch = self.Partner.get_views([(False, "list")])["views"]["list"]["arch"]
+        list_tree = etree.fromstring(list_arch)
+        for name in ("phone", "mobile"):
+            column = list_tree.xpath("//field[@name='%s']" % name)[0]
+            self.assertEqual(column.get("widget"), "partner_phone_list_char")
 
     def test_form_create_with_lines(self):
         with Form(self.Partner, view="base.view_partner_form") as form:
@@ -85,6 +95,6 @@ class TestPartnerForm(PhoneListCase):
         partner = partner.with_context(tracking_disable=False)
         before = len(partner.message_ids)
         partner.write({"phone_ids": [Command.create({"type": "fax", "number": "514-555-0189", "sequence": 99})]})
-        self.assertEqual(partner.phone, "514-555-0181")
+        self.assertEqual(partner.phone, "+1 514-555-0181")
         self.assertGreater(len(partner.message_ids), before)
         self.assertIn("514-555-0189", partner.message_ids[0].body)

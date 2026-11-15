@@ -9,3 +9,5 @@ from . import test_partner_form
 from . import test_install_seed
 from . import test_access
 from . import test_tour
+from . import test_normalize
+from . import test_sms

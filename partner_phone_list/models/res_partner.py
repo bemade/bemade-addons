@@ -9,7 +9,7 @@ from odoo.fields import Domain
 
 from odoo.addons.phone_validation.models.mail_thread_phone import PHONE_REGEX_PATTERN
 
-from ..tools import digits, same_digits, sanitize, split_extension
+from ..tools import digits, format_number, same_digits, sanitize, split_extension
 
 
 class ResPartner(models.Model):
@@ -33,6 +33,11 @@ class ResPartner(models.Model):
         readonly=False,
         help="The first Mobile number of the contact's phone numbers.",
     )
+    phone_sms_available = fields.Boolean(
+        string="SMS Available",
+        compute="_compute_phone_sms_available",
+        help="Technical: whether text messages can be sent (SMS installed and usable).",
+    )
 
     # ------------------------------------------------------------------
     # Helpers
@@ -42,14 +47,23 @@ class ResPartner(models.Model):
         self.ensure_one()
         return self.phone_ids.sorted(lambda line: (line.sequence, line._origin.id or 0))
 
+    def _phone_list_country(self):
+        country = self.country_id if len(self) == 1 else self.env["res.country"]
+        return country or self.env.company.country_id
+
+    def _phone_list_format(self, number):
+        """How a number is stored: international format with this contact's
+        country (or the company's), the value as typed when it does not
+        parse (see ``tools.format_number``)."""
+        country = self._phone_list_country()
+        return format_number(number, country.code, country.phone_code)
+
     def _phone_list_sanitize(self, number):
         """E.164 form of ``number`` with this contact's country (or the
         company's), False when it does not parse."""
         if not number:
             return False
-        country = self.country_id if len(self) == 1 else self.browse()
-        if not country:
-            country = self.env.company.country_id
+        country = self._phone_list_country()
         return sanitize(number, country.code, country.phone_code)
 
     def _phone_list_key(self, number, extension=False):
@@ -75,6 +89,7 @@ class ResPartner(models.Model):
             target.unlink()
             return
         number, extension = split_extension(value)
+        number = self._phone_list_format(number)
         key = self._phone_list_key(number, extension)
         match = lines.filtered(lambda line: line._phone_matches(key, number))[:1]
         was_top = bool(match) and match == lines[:1]
@@ -111,7 +126,62 @@ class ResPartner(models.Model):
     def _phone_list_display(self, value):
         """Canonical display of a written phone value (extension parsed)."""
         number, extension = split_extension(value)
+        number = self._phone_list_format(number)
         return "%s ext. %s" % (number, extension) if extension else number
+
+    @api.model
+    def _phone_list_sms_available(self):
+        """Whether text messages can be sent: the SMS module is installed and
+        the company has an SMS provider other than Odoo IAP (e.g. Twilio) or
+        an IAP account for the SMS service."""
+        if "sms.composer" not in self.env:
+            return False
+        company = self.env.company
+        provider = company._fields.get("sms_provider") and company.sms_provider
+        if provider and provider != "iap":
+            return True
+        if "iap.account" not in self.env:
+            return False
+        return bool(
+            self.env["iap.account"]
+            .sudo()
+            .search_count(
+                [
+                    ("service_id.technical_name", "=", "sms"),
+                    ("account_token", "!=", False),
+                    ("state", "!=", "banned"),
+                    "|",
+                    ("company_ids", "=", False),
+                    ("company_ids", "in", company.ids),
+                ],
+                limit=1,
+            )
+        )
+
+    @api.model
+    def _phone_list_resync(self, records, fname, partner_fname="partner_id"):
+        """After ``records`` wrote ``fname`` (a phone field computed from their
+        contact's Phone, whose inverse writes it to the contact), recompute it
+        on the records whose value is the contact's Phone in another format,
+        so they show the stored (formatted) number. Records holding another
+        number (not pushed to the contact) are left alone."""
+        to_resync = records.browse()
+        for record in records:
+            partner = record[partner_fname]
+            value = record[fname]
+            if not partner or not value or value == partner.phone or not partner.phone:
+                continue
+            number, extension = split_extension(value)
+            key = partner._phone_list_key(partner._phone_list_format(number), extension)
+            top = partner._phone_list_sorted()[:1]
+            if top and top._phone_matches(key, number):
+                to_resync |= record
+        if to_resync:
+            self.env.add_to_compute(records._fields[fname], to_resync)
+        return to_resync
+
+    def _compute_phone_sms_available(self):
+        self.phone_sms_available = self._phone_list_sms_available()
 
     # ------------------------------------------------------------------
     # Computes / inverses
@@ -163,7 +233,17 @@ class ResPartner(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        return super().create([self._phone_list_prepare_vals(vals) for vals in vals_list])
+        vals_list = [self._phone_list_prepare_vals(vals) for vals in vals_list]
+        partners = super().create(vals_list)
+        # Phone / Mobile were protected while their inverse filled the list:
+        # recompute them so they show the stored (formatted) numbers.
+        for fname in ("phone", "mobile"):
+            written = partners.browse(
+                [p.id for p, vals in zip(partners, vals_list, strict=True) if vals.get(fname)]
+            )
+            if written:
+                self.env.add_to_compute(self._fields[fname], written)
+        return partners
 
     def write(self, vals):
         vals = self._phone_list_prepare_vals(vals)

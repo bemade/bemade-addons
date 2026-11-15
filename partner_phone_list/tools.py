@@ -48,6 +48,26 @@ def sanitize(number, country_code, phone_code):
         return False
 
 
+def format_number(number, country_code, phone_code):
+    """International form of ``number`` (phone_validation, like the standard
+    Phone field), or the value as typed (trimmed) when it does not parse or
+    when parsing would drop or change digits: the parser ignores trailing
+    text, so "514-555-0101, 456" must not become "+1 514-555-0101"."""
+    if not number:
+        return number
+    number = number.strip()
+    try:
+        formatted = phone_validation.phone_format(
+            number, country_code, phone_code, force_format="INTERNATIONAL", raise_exception=True
+        )
+    except UserError:
+        return number
+    # an extension found by the parser (", 456") belongs in its own column
+    if not formatted or " ext. " in formatted or not same_digits(formatted, number):
+        return number
+    return formatted
+
+
 def number_key(number, extension, country_code, phone_code):
     """Matching key of a number: ``(sanitized or digits, extension, parsed)``."""
     sanitized = sanitize(number, country_code, phone_code)

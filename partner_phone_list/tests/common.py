@@ -11,6 +11,9 @@ class PhoneListCase(TransactionCase):
         super().setUpClass()
         cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
         cls.canada = cls.env.ref("base.ca")
+        # numbers of contacts without a country are formatted with the
+        # company's country
+        cls.env.company.country_id = cls.canada
         cls.Partner = cls.env["res.partner"]
         cls.Line = cls.env["res.partner.phone"]
 

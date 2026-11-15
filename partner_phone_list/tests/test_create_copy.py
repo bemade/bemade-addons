@@ -30,9 +30,9 @@ class TestCreateCopy(PhoneListCase):
                 {"name": "Sample C"},
             ]
         )
-        self.assertEqual(a.phone, "514-555-0111")
-        self.assertEqual(self._numbers(b), [("office", "514-555-0121", False)])
-        self.assertEqual(b.phone, "514-555-0121")
+        self.assertEqual(a.phone, "+1 514-555-0111")
+        self.assertEqual(self._numbers(b), [("office", "+1 514-555-0121", False)])
+        self.assertEqual(b.phone, "+1 514-555-0121")
         self.assertFalse(c.phone_ids)
         self.assertFalse(c.phone)
 
@@ -45,8 +45,8 @@ class TestCreateCopy(PhoneListCase):
         )
         copy = partner.copy()
         self.assertEqual(self._numbers(copy), self._numbers(partner))
-        self.assertEqual(copy.phone, "514-555-0101 ext. 7")
-        self.assertEqual(copy.mobile, "514-555-0102")
+        self.assertEqual(copy.phone, "+1 514-555-0101 ext. 7")
+        self.assertEqual(copy.mobile, "+1 514-555-0102")
         self.assertEqual(copy.phone_ids.mapped("label"), [False, "personal"])
         self.assertNotEqual(copy.phone_ids, partner.phone_ids)
 

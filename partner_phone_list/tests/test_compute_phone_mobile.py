@@ -29,8 +29,8 @@ class TestComputePhoneMobile(PhoneListCase):
                 Command.create({"type": "mobile", "number": "514-555-0103", "sequence": 3}),
             ]
         )
-        self.assertEqual(partner.phone, "514-555-0101 ext. 12")
-        self.assertEqual(partner.mobile, "514-555-0102")
+        self.assertEqual(partner.phone, "+1 514-555-0101 ext. 12")
+        self.assertEqual(partner.mobile, "+1 514-555-0102")
 
     def test_reorder_changes_phone(self):
         partner = self._partner(
@@ -41,8 +41,8 @@ class TestComputePhoneMobile(PhoneListCase):
         )
         mobile_line = partner.phone_ids.filtered(lambda l: l.type == "mobile")
         mobile_line.sequence = 0
-        self.assertEqual(partner.phone, "514-555-0102")
-        self.assertEqual(partner.mobile, "514-555-0102")
+        self.assertEqual(partner.phone, "+1 514-555-0102")
+        self.assertEqual(partner.mobile, "+1 514-555-0102")
 
     def test_retype_changes_mobile(self):
         partner = self._partner(
@@ -51,17 +51,17 @@ class TestComputePhoneMobile(PhoneListCase):
                 Command.create({"type": "mobile", "number": "514-555-0102", "sequence": 2}),
             ]
         )
-        self.assertEqual(partner.mobile, "514-555-0102")
+        self.assertEqual(partner.mobile, "+1 514-555-0102")
         partner.phone_ids.filtered(lambda l: l.type == "mobile").type = "home"
         self.assertFalse(partner.mobile)
         partner.phone_ids.filtered(lambda l: l.type == "office").type = "mobile"
-        self.assertEqual(partner.mobile, "514-555-0101")
+        self.assertEqual(partner.mobile, "+1 514-555-0101")
 
     def test_remove_all_lines_clears_phone_and_mobile(self):
         partner = self._partner(
             phone_ids=[Command.create({"type": "mobile", "number": "514-555-0102"})]
         )
-        self.assertEqual(partner.phone, "514-555-0102")
+        self.assertEqual(partner.phone, "+1 514-555-0102")
         partner.write({"phone_ids": [Command.clear()]})
         self.assertFalse(partner.phone)
         self.assertFalse(partner.mobile)

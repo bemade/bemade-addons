@@ -13,15 +13,23 @@ Contact Phone Numbers List
 Odoo 19.0 keeps a single ``phone`` field on contacts (``mobile`` was removed in
 18.2). Real contacts have several numbers: a mobile, an office line with an
 extension, a toll-free number, a fax. This module gives every contact a short,
-**typed and ordered list of phone numbers**, shown in place of the Phone field
-on the contact form and in the child-contact popup.
+**typed and ordered list of phone numbers**.
+
+On the contact form and in the child-contact popup, Phone and Mobile show as
+plain text (click to call). A small phonebook icon next to them opens a
+dialog with the editable list of numbers. The dialog edits the contact being
+shown, so it works on a new contact and inside the child-contact popup too:
+"Save" saves an existing contact; on a new contact or a child contact "Done"
+keeps the changes for the contact's own Save.
 
 Each number has:
 
 - a **type**: Mobile, Office, Direct line, Toll-free, Home, Fax or Other;
-- the **number** as entered (formatted to the international form when typed in
-  the form, like the standard Phone field), plus a sanitized E.164 copy used for
-  matching and search;
+- the **number**, stored in the international format (phone_validation, with
+  the contact's country or the company's: ``5145550101`` becomes
+  ``+1 514-555-0101``) whoever writes it; a value that does not parse, or
+  that would lose digits, is kept as typed. A sanitized E.164 copy is used
+  for matching and search;
 - an optional **extension** and **label** (e.g. "after hours");
 - a **position**: drag the rows to reorder them; the top row is the primary
   number.
@@ -51,6 +59,15 @@ Everything that reads or writes ``phone`` keeps working:
   removed) and recomputes Phone and Mobile on the kept contact. Duplicating a
   contact copies its list.
 - Changing the list is logged in the chatter (Phone keeps its tracking).
+- Text messages: the SMS button shows next to Mobile numbers only (Mobile,
+  Phone when the top number is a mobile, Mobile lines of the list), and only
+  when the SMS module is installed and the company can send SMS (an SMS
+  provider such as Twilio, or an Odoo IAP SMS account).
+- A record that pushes its phone to the contact and keeps a copy (a company,
+  or other modules' tickets, tasks...) can call
+  ``res.partner._phone_list_resync`` after its write so its copy shows the
+  stored, formatted number (done here for companies).
+- The contacts list gives the Phone (and Mobile) column a minimum width.
 
 Installation
 ------------
@@ -71,6 +88,9 @@ project-specific module.
         "views/res_partner_views.xml",
     ],
     "assets": {
+        "web.assets_backend": [
+            "partner_phone_list/static/src/**/*",
+        ],
         "web.assets_tests": [
             "partner_phone_list/static/tests/tours/partner_phone_list_tour.js",
         ],

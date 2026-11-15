@@ -35,7 +35,7 @@ class TestMerge(PhoneListCase):
         self.assertFalse(src.exists())
         self.assertEqual(
             self._numbers(dst),
-            [("office", "514-555-0101", False), ("mobile", "514-555-0102", False)],
+            [("office", "+1 514-555-0101", False), ("mobile", "+1 514-555-0102", False)],
         )
-        self.assertEqual(dst.phone, "514-555-0101")
-        self.assertEqual(dst.mobile, "514-555-0102")
+        self.assertEqual(dst.phone, "+1 514-555-0101")
+        self.assertEqual(dst.mobile, "+1 514-555-0102")

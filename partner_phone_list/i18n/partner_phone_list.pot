@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 02:10+0000\n"
-"PO-Revision-Date: 2026-11-15 02:10+0000\n"
+"POT-Creation-Date: 2026-11-15 12:24+0000\n"
+"PO-Revision-Date: 2026-11-15 12:24+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -16,8 +16,14 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: partner_phone_list
-#: model_terms:ir.ui.view,arch_db:partner_phone_list.view_partner_form_phone_list
-msgid "<i class=\"fa fa-fw me-1 fa-phone text-primary\" title=\"Phone numbers\"/>"
+#. odoo-javascript
+#: code:addons/partner_phone_list/static/src/partner_phone_list_field.js:0
+msgid "Close"
+msgstr ""
+
+#. module: partner_phone_list
+#: model:ir.model,name:partner_phone_list.model_res_company
+msgid "Companies"
 msgstr ""
 
 #. module: partner_phone_list
@@ -47,10 +53,23 @@ msgid "Direct line"
 msgstr ""
 
 #. module: partner_phone_list
+#. odoo-javascript
+#: code:addons/partner_phone_list/static/src/partner_phone_list_field.xml:0
+msgid "Discard"
+msgstr ""
+
+#. module: partner_phone_list
 #: model:ir.model.fields,field_description:partner_phone_list.field_base_partner_merge_automatic_wizard__display_name
+#: model:ir.model.fields,field_description:partner_phone_list.field_res_company__display_name
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_partner__display_name
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_partner_phone__display_name
 msgid "Display Name"
+msgstr ""
+
+#. module: partner_phone_list
+#. odoo-javascript
+#: code:addons/partner_phone_list/static/src/partner_phone_list_field.js:0
+msgid "Done"
 msgstr ""
 
 #. module: partner_phone_list
@@ -80,6 +99,7 @@ msgstr ""
 
 #. module: partner_phone_list
 #: model:ir.model.fields,field_description:partner_phone_list.field_base_partner_merge_automatic_wizard__id
+#: model:ir.model.fields,field_description:partner_phone_list.field_res_company__id
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_partner__id
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_partner_phone__id
 msgid "ID"
@@ -106,6 +126,8 @@ msgid "Merge Partner Wizard"
 msgstr ""
 
 #. module: partner_phone_list
+#. odoo-javascript
+#: code:addons/partner_phone_list/static/src/partner_phone_list_field.xml:0
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_partner__mobile
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_users__mobile
 #: model:ir.model.fields.selection,name:partner_phone_list.selection__res_partner_phone__type__mobile
@@ -128,6 +150,8 @@ msgid "Other"
 msgstr ""
 
 #. module: partner_phone_list
+#. odoo-javascript
+#: code:addons/partner_phone_list/static/src/partner_phone_list_field.xml:0
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_partner__phone
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_users__phone
 msgid "Phone"
@@ -140,9 +164,34 @@ msgid "Phone Numbers"
 msgstr ""
 
 #. module: partner_phone_list
+#. odoo-javascript
+#: code:addons/partner_phone_list/static/src/partner_phone_list_field.js:0
+msgid "Phone numbers"
+msgstr ""
+
+#. module: partner_phone_list
+#. odoo-javascript
+#: code:addons/partner_phone_list/static/src/partner_phone_list_field.js:0
+msgid "Phone numbers (phonebook)"
+msgstr ""
+
+#. module: partner_phone_list
 #. odoo-python
 #: code:addons/partner_phone_list/models/res_partner.py:0
 msgid "Phone numbers updated:"
+msgstr ""
+
+#. module: partner_phone_list
+#. odoo-javascript
+#: code:addons/partner_phone_list/static/src/partner_phone_list_field.xml:0
+msgid "SMS"
+msgstr ""
+
+#. module: partner_phone_list
+#: model:ir.model.fields,field_description:partner_phone_list.field_res_partner__phone_sms_available
+#: model:ir.model.fields,field_description:partner_phone_list.field_res_partner_phone__sms_available
+#: model:ir.model.fields,field_description:partner_phone_list.field_res_users__phone_sms_available
+msgid "SMS Available"
 msgstr ""
 
 #. module: partner_phone_list
@@ -151,8 +200,42 @@ msgid "Sanitized Number"
 msgstr ""
 
 #. module: partner_phone_list
+#. odoo-javascript
+#: code:addons/partner_phone_list/static/src/partner_phone_list_field.js:0
+msgid "Save"
+msgstr ""
+
+#. module: partner_phone_list
+#. odoo-javascript
+#. odoo-python
+#: code:addons/partner_phone_list/models/res_partner_phone.py:0
+#: code:addons/partner_phone_list/static/src/partner_phone_list_field.js:0
+msgid "Send SMS"
+msgstr ""
+
+#. module: partner_phone_list
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_partner_phone__sequence
 msgid "Sequence"
+msgstr ""
+
+#. module: partner_phone_list
+#: model:ir.model.fields,help:partner_phone_list.field_res_partner__phone_sms_available
+#: model:ir.model.fields,help:partner_phone_list.field_res_partner_phone__sms_available
+#: model:ir.model.fields,help:partner_phone_list.field_res_users__phone_sms_available
+msgid ""
+"Technical: whether text messages can be sent (SMS installed and usable)."
+msgstr ""
+
+#. module: partner_phone_list
+#. odoo-python
+#: code:addons/partner_phone_list/models/res_partner_phone.py:0
+msgid "Text messages can only be sent to a Mobile number."
+msgstr ""
+
+#. module: partner_phone_list
+#. odoo-python
+#: code:addons/partner_phone_list/models/res_partner_phone.py:0
+msgid "Text messages cannot be sent from this database."
 msgstr ""
 
 #. module: partner_phone_list

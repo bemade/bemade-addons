@@ -30,10 +30,10 @@ class TestInversePhone(PhoneListCase):
         partner.phone = "514-555-0101"
         self.assertEqual(
             self._numbers(partner),
-            [("office", "514-555-0101", False), ("mobile", "514-555-0102", False)],
+            [("office", "+1 514-555-0101", False), ("mobile", "+1 514-555-0102", False)],
         )
-        self.assertEqual(partner.phone, "514-555-0101")
-        self.assertEqual(partner.mobile, "514-555-0102")
+        self.assertEqual(partner.phone, "+1 514-555-0101")
+        self.assertEqual(partner.mobile, "+1 514-555-0102")
 
     def test_existing_number_other_format_is_promoted_not_duplicated(self):
         partner = self._partner(
@@ -45,7 +45,7 @@ class TestInversePhone(PhoneListCase):
         partner.phone = "+1 514-555-0102"
         self.assertEqual(
             self._numbers(partner),
-            [("mobile", "+1 514-555-0102", False), ("office", "514-555-0101", False)],
+            [("mobile", "+1 514-555-0102", False), ("office", "+1 514-555-0101", False)],
         )
         self.assertEqual(partner.phone, "+1 514-555-0102")
         # idempotent
@@ -62,7 +62,7 @@ class TestInversePhone(PhoneListCase):
         ):
             partner.phone = written
             self.assertEqual(partner.phone_ids.sorted("sequence")[0].extension, ext)
-            self.assertEqual(partner.phone, "514-555-0101 ext. %s" % ext)
+            self.assertEqual(partner.phone, "+1 514-555-0101 ext. %s" % ext)
         # same number, four extensions = four lines
         self.assertEqual(len(partner.phone_ids), 4)
 
@@ -74,8 +74,8 @@ class TestInversePhone(PhoneListCase):
             ]
         )
         partner.phone = False
-        self.assertEqual(self._numbers(partner), [("mobile", "514-555-0102", False)])
-        self.assertEqual(partner.phone, "514-555-0102")
+        self.assertEqual(self._numbers(partner), [("mobile", "+1 514-555-0102", False)])
+        self.assertEqual(partner.phone, "+1 514-555-0102")
 
     def test_list_wins_over_phone_in_same_write(self):
         partner = self._partner(phone="514-555-0101")
@@ -87,6 +87,6 @@ class TestInversePhone(PhoneListCase):
         )
         self.assertEqual(
             self._numbers(partner),
-            [("mobile", "514-555-0102", False), ("office", "514-555-0101", False)],
+            [("mobile", "+1 514-555-0102", False), ("office", "+1 514-555-0101", False)],
         )
-        self.assertEqual(partner.phone, "514-555-0102")
+        self.assertEqual(partner.phone, "+1 514-555-0102")

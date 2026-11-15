@@ -50,7 +50,7 @@ class TestAccess(PhoneListCase):
 
     def test_reader(self):
         line = self.contact.phone_ids.with_user(self.reader)
-        self.assertEqual(line.number, "514-555-0201")
+        self.assertEqual(line.number, "+1 514-555-0201")
         with mute_logger("odoo.models"), self.assertRaises(AccessError):
             self.Line.with_user(self.reader).create({"partner_id": self.contact.id, "number": "514-555-0202"})
         with mute_logger("odoo.models"), self.assertRaises(AccessError):
