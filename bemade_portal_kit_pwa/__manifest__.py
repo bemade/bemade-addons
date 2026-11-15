@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit: Installable App',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Website/Portal',
     'summary': 'The portal app as an installable app: web manifest, service worker, offline page, install page.',
     'description': """

@@ -49,7 +49,7 @@ class TestPkDashboardStatic(TransactionCase):
         manifest = get_manifest(DASH)
         self.assertEqual(manifest['depends'], ['bemade_portal_kit'])
         self.assertEqual(manifest['license'], 'LGPL-3')
-        self.assertEqual(manifest['version'], '19.0.1.0.0')
+        self.assertEqual(manifest['version'], '19.0.1.0.1')
         self.assertEqual(manifest['pre_init_hook'], 'pre_init_hook')
 
     def test_names_no_consumer(self):

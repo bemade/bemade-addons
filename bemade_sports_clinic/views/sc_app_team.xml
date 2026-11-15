@@ -137,7 +137,7 @@
                             Visible to all team staff (coaches included) and sent by email — do not include any confidential medical information about a player.
                         </t>
                         <form t-attf-action="/my/team/#{team.id}/announcement" method="post" class="o_pk_form"
-                              data-sc-draft-form="1" data-pk-guard="1" data-pk-guard-mode="fetch" data-pk-guard-rules='[{"type":"required","field":"announcement"}]'>
+                              data-pk-guard="1" data-pk-guard-mode="fetch" data-pk-guard-rules='[{"type":"required","field":"announcement"}]'>
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <t t-set="sc_ann_label">Announcement</t>
                             <t t-set="sc_ann_placeholder">Write an announcement for all team staff…</t>
