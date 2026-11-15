@@ -240,6 +240,9 @@ the kit addon ``bemade_portal_kit_dashboard`` under ``pk`` names:
   ``count`` / ``scope`` / ``body`` (the clinic's widget bodies keep their
   ``o_sc_dw_*``); the anchors / ids ``sc-dash-*``.
 
+Task 5388 retires the dead marker ``data-sc-draft-form`` (no script reads
+it any more).
+
 The guide videos' class ``o_fc_video`` is still read (stored article HTML
 uses it), next to ``o_pk_video``: it is not retired.
 
@@ -317,6 +320,8 @@ ATTRIBUTES = (
     'in-rail',
     # Task 5201 (P6): the installable app.
     'sw', 'install', 'install-state', 'install-steps', 'install-prompt',
+    # Task 5388: the announcement form's draft marker (nothing read it).
+    'draft-form',
 )
 EVENTS = (
     'fragments', 'form-reset', 'create-success', 'lazy-loaded',

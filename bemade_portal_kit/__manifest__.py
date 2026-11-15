@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.14.0',
+    'version': '19.0.1.14.1',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -511,6 +511,15 @@ templates (e.g. ``bemade_portal_kit_pwa``, the installable app) uses it
 from its own install hook. Version 1.14: ``tools/data_moves.move_columns(cr,
 mapping, target)`` likewise moves a consumer's user column to a kit addon
 (``bemade_portal_kit_dashboard``, the configurable dashboard).
+
+Version guard (version 1.14.1)
+------------------------------
+``tools/version_guard.require_kit(cr, minimum, caller)``: the first statement
+of a kit dependent's install hook or pre-migration. On a database whose kit
+is older than ``PK_MIN_VERSION`` (``-u <consumer>`` alone upgrades
+dependents, not the kit), it stops the run before anything is written and
+says to upgrade the kit in the same run (``-u bemade_portal_kit,<consumer>``).
+A fresh install, or the kit upgraded in the same run, is never blocked.
 
 Style guide
 ------------

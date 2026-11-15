@@ -5,3 +5,4 @@ from . import test_pk_pwa
 from . import test_pk_pwa_static
 from . import test_pk_pwa_tours
 from . import test_pk_pwa_hoot
+from . import test_pk_pwa_version_guard

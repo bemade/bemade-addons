@@ -329,3 +329,4 @@ from . import test_hero_pills_edit_mode_1753
 from . import test_instance_banner_1752
 from . import test_icon_extra_5369
 from . import test_pk_layout_wrapper_5345
+from . import test_kit_version_guard_5388
