@@ -231,9 +231,30 @@ class HomeschoolPortal(PortalKitDashboard):
     # ------------------------------------------------------------------
     # « Today »: the kit's dashboard (bemade_portal_kit_dashboard)
     # ------------------------------------------------------------------
+    @http.route()
+    def home(self, **kw):
+        """« Today » for a homeschool user, drawn here rather than through the kit's
+        ``_pk_dash_render`` alone: a database may hold another kit app whose own
+        ``_pk_dash_render`` does not hand over to the next consumer."""
+        if kw.get("classic") or not self._hs_shell_on():
+            return super().home(**kw)
+        values = self._prepare_portal_layout_values()
+        values.update(self._pk_dash_values())
+        return self._hs_dash_render(values)
+
     def _pk_dash_render(self, values):
         if not hs_user_roles(request.env.user):
             return super()._pk_dash_render(values)
+        return self._hs_dash_render(values)
+
+    def _hs_dash_render(self, values):
+        if not values.get("hs_student"):
+            today = fields.Date.context_today(request.env.user)
+            values.update({
+                "hs_student": self._hs_current_student(),
+                "hs_today": today,
+                "hs_today_label": format_date(request.env, today, date_format="EEEE d MMMM"),
+            })
         student = values.get("hs_student")
         values.update({
             "pk_title": request.env._("Today"),
