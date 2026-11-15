@@ -60,6 +60,15 @@
         </t>
     </template>
 
+    <!-- The « Configure » link only when the page passes its URL (a learner's Today
+         has none: it is set up for him). -->
+    <template id="hs_dash_home_configure" inherit_id="bemade_portal_kit_dashboard.pk_dash_home"
+              name="Homeschool: no « Configure » without its URL">
+        <xpath expr="//a[hasclass('o_pk_dash_configure')]" position="attributes">
+            <attribute name="t-if">pk_dash_configure_url</attribute>
+        </xpath>
+    </template>
+
     <!-- « Today »: the learner's day on the kit's dashboard. -->
     <template id="hs_dash_page" name="Homeschool: today">
         <t t-call="homeschool_portal.hs_app_layout">

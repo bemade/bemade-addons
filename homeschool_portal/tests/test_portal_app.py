@@ -85,6 +85,14 @@ class TestPortalApp(HomeschoolPortalCase):
         self.assertNotIn("Wire the robot arm", body)  # never another family's list
         self.assertIn('%s/deliverable/%d/tick' % (self.base(), self.d_today.id), body)
 
+    def test_learner_cannot_configure_today(self):
+        # Today is set up for the learner: no « Configure » link, and the page sends him back
+        self.login(self.student_user)
+        self.assertNotIn("o_pk_dash_configure", self.text(self.get("/my/home")))
+        res = self.get("/my/app/dashboard/configure", allow_redirects=False)
+        self.assertIn(res.status_code, (302, 303))
+        self.assertTrue(res.headers["Location"].endswith("/my/home"))
+
     def test_tick_from_the_card(self):
         self.login(self.student_user)
         body = self.text(self.get("/my/home"))
