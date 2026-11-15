@@ -29,7 +29,7 @@ def learner_labels(env):
         "quest_done": _("Quest complete!"), "goal_day": _("Daily goal reached!"),
         "goal_week": _("Weekly goal reached!"), "goal_month": _("Monthly goal reached!"),
         "level_up": _("New level!"), "new_badge": _("New badge!"), "unit_unlocked": _("New unit!"), "reward": _("Reward"),
-        "home": _("Back"), "offline": _("Connection lost: your answer is saved, retrying…"),
+        "home": _("Back"), "exit": _("Back to today"), "offline": _("Connection lost: your answer is saved, retrying…"),
         "nothing": _("Nothing to practice here yet."), "new_unit": _("Something new!"), "got_it": _("Got it!"),
         "well_done": _("Well done for practicing!"), "pick": _("Choose what to practice"), "all": _("All"),
     }

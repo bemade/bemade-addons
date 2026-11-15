@@ -16,9 +16,9 @@ Acceptance criteria
 4. Celebration on every finished session, quest, goal, level and badge (praise for the
    work done, not for speed or for « knowing »). Celebrations earned during a lesson are
    held and shown at the end of the lesson (or when he leaves it), never mid-lesson.
-5. Touch targets ≥ 64 px; zoom gestures disabled on the page; a web-app manifest so it
-   can be added to the iPad home screen and open full screen. Target: Safari on
-   iPadOS 17 and later.
+5. Touch targets ≥ 64 px; zoom gestures disabled on the page; it opens full screen.
+   Target: Safari on iPadOS 17 and later. (19.0.1.4.0: the web-app manifest is the
+   portal kit app's, UC-19; this page no longer declares its own.)
 6. Answers not yet sent (no network) are queued on the device and sent in order when
    the connection returns (each with its ``client_uuid``).
 7. The script and stylesheet URLs carry a hash of their content, so a code change
@@ -38,8 +38,6 @@ Acceptance criteria
     and the answer buttons come in a moment later; the answer is recorded as hint used.
     It stops once he gets one right in that unit.
 """
-import json
-
 from odoo.tests import tagged
 
 from .common import PracticeHttpCase
@@ -56,7 +54,7 @@ class TestPortalScreen(PracticeHttpCase):
         self.assertNotIn("&lt;!DOCTYPE", html)
         self.assertIn("practice.js?v=", html)
         self.assertIn('user-scalable=no', html)
-        self.assertIn('rel="manifest"', html)
+        self.assertNotIn('rel="manifest"', html)  # one installed app: the portal kit's (UC-19)
         self.assertIn('data-handedness="right"', html)
         self.assertNotIn("<input", html)
         js = self.url_open("/homeschool_practice/static/src/js/practice.js").text
@@ -97,11 +95,9 @@ class TestPortalScreen(PracticeHttpCase):
         self.authenticate("hs_learner", "hs_learner")
         self.assertIn('data-handedness="left"', self.url_open("/my/homeschool/practice").text)
 
-    def test_manifest(self):
-        r = self.url_open("/my/homeschool/practice/manifest.webmanifest")
-        body = json.loads(r.text)
-        self.assertEqual(body["display"], "standalone")
-        self.assertEqual(body["start_url"], "/my/homeschool/practice")
+    def test_no_manifest_of_its_own(self):
+        """19.0.1.4.0: the installed app is the portal kit's (UC-19 §3)."""
+        self.assertEqual(self.url_open("/my/homeschool/practice/manifest.webmanifest").status_code, 404)
 
     def test_only_the_learner(self):
         self.authenticate("hs_teacher", "hs_teacher")
