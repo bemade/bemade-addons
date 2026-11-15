@@ -1,0 +1,339 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bemade_portal_kit_pwa
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-14 23:28+0000\n"
+"PO-Revision-Date: 2026-11-14 23:28+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: bemade_portal_kit_pwa
+#. odoo-python
+#: code:addons/bemade_portal_kit_pwa/models/res_company.py:0
+msgid ""
+"%(field)s: a colour is written #rrggbb (e.g. #120e12), not « %(value)s »."
+msgstr ""
+"%(field)s : une couleur s'écrit #rrggbb (p. ex. #120e12), pas « %(value)s »."
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,help:bemade_portal_kit_pwa.field_res_company__pk_pwa_icon_maskable_512
+#: model:ir.model.fields,help:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_icon_maskable_512
+msgid ""
+"A full-bleed square icon whose content fits the central circle (Android "
+"adaptive icons)."
+msgstr ""
+"Une icône carrée pleine dont le contenu tient dans le cercle central (icônes"
+" adaptatives d'Android)."
+
+#. module: bemade_portal_kit_pwa
+#. odoo-python
+#: code:addons/bemade_portal_kit_pwa/models/portal_kit.py:0
+msgid "Add the app to your home screen"
+msgstr "Ajouter l'application à l'écran d'accueil"
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "Android (Chrome)"
+msgstr "Android (Chrome)"
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_company__pk_pwa_background_color
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_background_color
+msgid "App background colour"
+msgstr "Couleur de fond de l'application"
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_pwa_res_config_settings_view_form
+msgid "App colours"
+msgstr "Couleurs de l'application"
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_company__pk_pwa_apple_touch_icon
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_apple_touch_icon
+msgid "App iOS icon 180 px"
+msgstr "Icône iOS de l'application 180 px"
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_company__pk_pwa_icon_192
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_icon_192
+msgid "App icon 192 px"
+msgstr "Icône de l'application 192 px"
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_company__pk_pwa_icon_512
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_icon_512
+msgid "App icon 512 px"
+msgstr "Icône de l'application 512 px"
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_pwa_res_config_settings_view_form
+msgid "App icons"
+msgstr "Icônes de l'application"
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_company__pk_pwa_icon_maskable_512
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_icon_maskable_512
+msgid "App maskable icon 512 px"
+msgstr "Icône adaptative de l'application 512 px"
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_company__pk_pwa_name
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_name
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_pwa_res_config_settings_view_form
+msgid "App name"
+msgstr "Nom de l'application"
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_company__pk_pwa_logo
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_logo
+msgid "App offline logo"
+msgstr "Logo hors ligne de l'application"
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_company__pk_pwa_short_name
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_short_name
+msgid "App short name"
+msgstr "Nom court de l'application"
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_company__pk_pwa_theme_color
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_theme_color
+msgid "App theme colour"
+msgstr "Couleur de thème de l'application"
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "Choose « Add to Home Screen », then « Add »."
+msgstr "Choisissez « Sur l'écran d'accueil », puis « Ajouter »."
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "Choose « Install app » (or « Add to Home screen »)."
+msgstr ""
+"Choisissez « Installer l'application » (ou « Ajouter à l'écran d'accueil »)."
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "Click the install icon at the right of the address bar."
+msgstr "Cliquez sur l'icône d'installation à droite de la barre d'adresse."
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model,name:bemade_portal_kit_pwa.model_res_company
+msgid "Companies"
+msgstr "Sociétés"
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "Computer (Chrome or Edge)"
+msgstr "Ordinateur (Chrome ou Edge)"
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model,name:bemade_portal_kit_pwa.model_res_config_settings
+msgid "Config Settings"
+msgstr "Paramètres de configuration"
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "Confirm « Install »."
+msgstr "Confirmez « Installer »."
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_portal_kit__display_name
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_company__display_name
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_config_settings__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid ""
+"Full screen, an icon on your home screen, instant opening. Your data is "
+"never stored on the device."
+msgstr ""
+"Plein écran, une icône sur l'écran d'accueil, ouverture instantanée. Vos "
+"données ne sont jamais gardées sur l'appareil."
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_portal_kit__id
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_company__id
+#: model:ir.model.fields,field_description:bemade_portal_kit_pwa.field_res_config_settings__id
+msgid "ID"
+msgstr "Identifiant"
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "Install %s"
+msgstr "Installer %s"
+
+#. module: bemade_portal_kit_pwa
+#. odoo-python
+#: code:addons/bemade_portal_kit_pwa/models/portal_kit.py:0
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "Install the app"
+msgstr "Installer l'application"
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_pwa_res_config_settings_view_form
+msgid "Installable app"
+msgstr "Application installable"
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "Open the ⋮ menu at the top right."
+msgstr "Ouvrez le menu ⋮ en haut à droite."
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "Open this page in Chrome."
+msgstr "Ouvrez cette page dans Chrome."
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "Open this page in Safari or Chrome."
+msgstr "Ouvrez cette page dans Safari ou Chrome."
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_pwa_res_config_settings_view_form
+msgid ""
+"PNG images, square. Empty: the kit's neutral icons. The maskable icon fills "
+"its square; iOS takes the 180 px one."
+msgstr ""
+"Images PNG, carrées. Vide : les icônes neutres de la trousse. L'icône "
+"adaptative remplit son carré; iOS prend celle de 180 px."
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model,name:bemade_portal_kit_pwa.model_portal_kit
+msgid "Portal Kit Registries"
+msgstr "Registres de la trousse portail"
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "Tap the Share button"
+msgstr "Touchez le bouton Partager"
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "The app is installed"
+msgstr "L'application est installée"
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,help:bemade_portal_kit_pwa.field_res_company__pk_pwa_apple_touch_icon
+#: model:ir.model.fields,help:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_apple_touch_icon
+msgid "The home screen icon of iPhone and iPad (a square, no transparency)."
+msgstr ""
+"L'icône d'écran d'accueil de l'iPhone et de l'iPad (un carré, sans "
+"transparence)."
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,help:bemade_portal_kit_pwa.field_res_company__pk_pwa_logo
+#: model:ir.model.fields,help:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_logo
+msgid "The image of the offline page (96 px)."
+msgstr "L'image de la page hors ligne (96 px)."
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,help:bemade_portal_kit_pwa.field_res_company__pk_pwa_name
+#: model:ir.model.fields,help:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_name
+msgid ""
+"The installed app's name (manifest « name », page titles). Empty: the "
+"company name."
+msgstr ""
+"Le nom de l'application installée (« name » du manifeste, titres des pages)."
+" Vide : le nom de la société."
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_pwa_res_config_settings_view_form
+msgid ""
+"The installed app's name and the name under its icon. Empty: the company "
+"name."
+msgstr ""
+"Le nom de l'application installée et le nom sous son icône. Vide : le nom de"
+" la société."
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,help:bemade_portal_kit_pwa.field_res_company__pk_pwa_theme_color
+#: model:ir.model.fields,help:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_theme_color
+msgid ""
+"The installed app's title bar colour (#rrggbb). Empty: the background "
+"colour."
+msgstr ""
+"La couleur de la barre de titre de l'application installée (#rrggbb). Vide :"
+" la couleur de fond."
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,help:bemade_portal_kit_pwa.field_res_company__pk_pwa_short_name
+#: model:ir.model.fields,help:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_short_name
+msgid "The name under the home screen icon. Empty: the app name."
+msgstr ""
+"Le nom sous l'icône de l'écran d'accueil. Vide : le nom de l'application."
+
+#. module: bemade_portal_kit_pwa
+#: model:ir.model.fields,help:bemade_portal_kit_pwa.field_res_company__pk_pwa_background_color
+#: model:ir.model.fields,help:bemade_portal_kit_pwa.field_res_config_settings__pk_pwa_background_color
+msgid ""
+"The splash screen and offline page background (#rrggbb). Empty: the app's "
+"light theme colour."
+msgstr ""
+"Le fond de l'écran de démarrage et de la page hors ligne (#rrggbb). Vide : "
+"la couleur du thème clair de l'application."
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_pwa_res_config_settings_view_form
+msgid ""
+"The splash screen and offline page background, and the title bar of the "
+"installed app. Empty: the app's light theme colour."
+msgstr ""
+"Le fond de l'écran de démarrage et de la page hors ligne, et la barre de "
+"titre de l'application installée. Vide : la couleur du thème clair de "
+"l'application."
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_offline
+msgid "Try again"
+msgstr "Réessayer"
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid ""
+"Without a connection the app only shows an offline page: no data is kept on "
+"the device."
+msgstr ""
+"Sans connexion, l'application n'affiche qu'une page hors ligne : aucune "
+"donnée n'est gardée sur l'appareil."
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_offline
+msgid "You are offline"
+msgstr "Vous êtes hors ligne"
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "You are using %s from your home screen."
+msgstr "Vous utilisez %s depuis votre écran d'accueil."
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_offline
+msgid ""
+"You need a connection to see this page. Your drafts stay on this device and "
+"come back when you return to the page."
+msgstr ""
+"Il faut une connexion pour afficher cette page. Vos brouillons restent sur "
+"cet appareil et reviennent quand vous retournez à la page."
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "at the bottom of the screen (Safari) or in the address bar (Chrome)."
+msgstr "au bas de l'écran (Safari) ou dans la barre d'adresse (Chrome)."
+
+#. module: bemade_portal_kit_pwa
+#: model_terms:ir.ui.view,arch_db:bemade_portal_kit_pwa.pk_app_install
+msgid "iPhone and iPad (Safari or Chrome)"
+msgstr "iPhone et iPad (Safari ou Chrome)"

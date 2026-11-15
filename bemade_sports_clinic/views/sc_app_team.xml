@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Task 1542 (epic #1535) — P1b pages of the portal app shell: the team page
-    (/my/team, three segmented tabs), « Installer l'application » and the
-    data-free offline page the service worker falls back to.
+    (/my/team, three segmented tabs). Task 5201 (kit P6): « Installer
+    l'application » and the offline page moved to bemade_portal_kit_pwa.
 
     Rendered only with the system switch on (controllers/app_shell.py
     _sc_render). Today's portal_my_team_players and the shared legacy
@@ -385,95 +385,6 @@
             </section>
 
         </t>
-    </template>
-
-    <!-- /my/app/install — « Plus › Installer l'application » (no banner anywhere) -->
-    <template id="sc_app_install" name="Sports Clinic App: install">
-        <t t-call="bemade_sports_clinic.sc_app_layout">
-            <t t-set="pk_title">Install the app</t>
-            <t t-set="pk_active_nav" t-value="'more'"/>
-
-            <div class="o_pk_card o_pk_install_hero" data-sc-install="1">
-                <img src="/bemade_sports_clinic/static/src/img/sc_icon_192.png" alt="" width="56" height="56" class="o_pk_install_icon"/>
-                <div>
-                    <strong>Le Fit Crew</strong>
-                    <p class="o_pk_meta">Full screen, an icon on your home screen, instant opening. Health data is never stored on the device.</p>
-                </div>
-            </div>
-
-            <!-- Shown by sc_sw_register.js when display-mode is standalone. -->
-            <div class="o_pk_install_done" hidden="hidden" data-sc-install-state="installed">
-                <t t-call="bemade_portal_kit.pk_banner">
-                    <t t-set="title">The app is installed</t>
-                    You are using Le Fit Crew from your home screen.
-                </t>
-            </div>
-
-            <!-- Android / Chrome / Edge: the browser's own prompt, when offered. -->
-            <section class="o_pk_section" data-sc-install-state="prompt" hidden="hidden">
-                <button type="button" class="o_pk_btn o_pk_btn_primary" data-sc-install-prompt="1">Install Le Fit Crew</button>
-            </section>
-
-            <section class="o_pk_section" data-sc-install-steps="ios">
-                <t t-call="bemade_portal_kit.pk_section_header">
-                    <t t-set="title">iPhone and iPad (Safari or Chrome)</t>
-                </t>
-                <ol class="o_pk_steps">
-                    <li>Open this page in Safari or Chrome.</li>
-                    <li>Tap the Share button <t t-call="bemade_portal_kit.pk_icon"><t t-set="icon" t-value="'share'"/></t> at the bottom of the screen (Safari) or in the address bar (Chrome).</li>
-                    <li>Choose « Add to Home Screen », then « Add ».</li>
-                </ol>
-            </section>
-
-            <section class="o_pk_section" data-sc-install-steps="android">
-                <t t-call="bemade_portal_kit.pk_section_header">
-                    <t t-set="title">Android (Chrome)</t>
-                </t>
-                <ol class="o_pk_steps">
-                    <li>Open this page in Chrome.</li>
-                    <li>Open the ⋮ menu at the top right.</li>
-                    <li>Choose « Install app » (or « Add to Home screen »).</li>
-                </ol>
-            </section>
-
-            <section class="o_pk_section" data-sc-install-steps="desktop">
-                <t t-call="bemade_portal_kit.pk_section_header">
-                    <t t-set="title">Computer (Chrome or Edge)</t>
-                </t>
-                <ol class="o_pk_steps">
-                    <li>Click the install icon at the right of the address bar.</li>
-                    <li>Confirm « Install ».</li>
-                </ol>
-            </section>
-            <p class="o_pk_footnote">Without a connection the app only shows an offline page: no team or player data is kept on the device.</p>
-        </t>
-    </template>
-
-    <!--
-        /my/app/offline — what the service worker shows when a navigation
-        fails offline. Cached on the device, so it carries NO data at all: no
-        layout, no user, no session info, no CSRF token, no asset bundle (its
-        own static stylesheet, precached with it).
-    -->
-    <template id="sc_app_offline" name="Sports Clinic App: offline">
-        <html t-att-lang="(request.env.lang or 'fr_CA').replace('_', '-')">
-            <head>
-                <meta charset="utf-8"/>
-                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-                <meta name="theme-color" content="#120e12"/>
-                <meta name="robots" content="noindex"/>
-                <title>Le Fit Crew</title>
-                <link rel="stylesheet" href="/bemade_sports_clinic/static/src/css/sc_offline.css"/>
-            </head>
-            <body class="o_pk_offline">
-                <main class="o_pk_offline_main">
-                    <img src="/bemade_sports_clinic/static/src/img/sc_logo_chrome.png" alt="" width="96" height="96"/>
-                    <h1>You are offline</h1>
-                    <p>Le Fit Crew needs a connection to show teams and players. Your drafts stay on this device and come back when you return to the page.</p>
-                    <a href="/my/home" class="o_pk_offline_retry">Try again</a>
-                </main>
-            </body>
-        </html>
     </template>
 
     <!-- Task 1651: the head of a player card's expanded detail, shared by

@@ -42,7 +42,7 @@ SC_HELP_KEYS = {
     'sc_app_timesheets': 'timesheets',
     'sc_app_clinics': 'clinics',
     'sc_app_clinic': 'clinic',
-    'sc_app_install': 'install',
+    # Task 5201 (kit P6): pk_app_install -> 'install' is bemade_portal_kit_pwa's.
 }
 # Pages whose help key carries their tab (« player.injuries »).
 SC_HELP_TABBED = ('player', 'team')

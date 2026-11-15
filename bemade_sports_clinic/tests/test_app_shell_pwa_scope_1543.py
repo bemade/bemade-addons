@@ -13,11 +13,9 @@ Acceptance criteria covered here:
   ``Service-Worker-Allowed: /``; the manifest's ``scope`` is ``/``
   (``start_url`` still ``/my/home``, ``id`` unchanged so installs keep their
   identity).
-* UC-S2 (AC1) The page script registers the worker with scope ``/``.
-* UC-S3 (AC3) The kill switch finds EVERY registration of this worker by its
-  script URL (``/my/service-worker.js``), whatever its scope — the P1b
-  ``/my/`` ones and the new ``/`` one (browser-tested in
-  test_app_shell_tours_1542.test_sw_kill_switch).
+* UC-S2 / UC-S3 (the page script's scope and kill switch): task 5201 (kit
+  P6), bemade_portal_kit_pwa's (tests/test_pk_pwa_static.py and its
+  kill-switch tour).
 * UC-S4 (AC1/AC2) Website-aware: with a second website language active and
   the ``frontend_lang`` cookie set to it, the manifest, the worker and the
   offline page answer 200 WITHOUT a language redirect, while a shell page is
@@ -32,21 +30,14 @@ import json
 import re
 
 from odoo.tests import tagged
-from odoo.tools import file_open
 
 from odoo.addons.bemade_sports_clinic.tests.test_app_shell_switch_1538 import AppShellCommon
 
-REGISTER_JS = 'bemade_sports_clinic/static/src/js/sc_sw_register.js'
 PWA_URLS = ('/my/app.webmanifest', '/my/service-worker.js', '/my/app/offline')
 
 
 @tagged('post_install', '-at_install')
 class TestAppShellPwaScope1543(AppShellCommon):
-
-    @staticmethod
-    def _register_source():
-        with file_open(REGISTER_JS) as source:
-            return source.read()
 
     # -- UC-S1 -----------------------------------------------------------
     def test_worker_allowed_whole_origin(self):
@@ -64,23 +55,6 @@ class TestAppShellPwaScope1543(AppShellCommon):
         self.assertEqual(manifest['start_url'], '/my/home')
         self.assertEqual(manifest['id'], '/my/home')
         self.assertEqual(manifest['display'], 'standalone')
-
-    # -- UC-S2 -----------------------------------------------------------
-    def test_register_script_uses_root_scope(self):
-        source = self._register_source()
-        self.assertRegex(source, r'var SCOPE = "/";')
-        self.assertIn('.register(SW_URL, { scope: SCOPE })', source)
-        self.assertNotIn('"/my/"', source)
-
-    # -- UC-S3 -----------------------------------------------------------
-    def test_kill_switch_matches_every_registration_by_script(self):
-        source = self._register_source()
-        # Registrations are matched on the worker's script URL, not on one
-        # scope: old /my/ registrations (P1b devices) are removed as well.
-        self.assertIn('getRegistrations()', source)
-        self.assertIn('scriptURL', source)
-        self.assertRegex(source, r'\.pathname === SW_URL')
-        self.assertNotRegex(source, r'reg\.scope\)\.pathname === SCOPE')
 
     # -- UC-S4 -----------------------------------------------------------
     def test_prefixed_language_session(self):

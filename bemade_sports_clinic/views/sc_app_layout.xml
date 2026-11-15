@@ -11,7 +11,7 @@
     (bemade_portal_kit.pk_app_layout: rail, app bar, crumbs, content, user
     menu, theme toggle, form guard texts, toast host). This template keeps
     its xmlid and its callers and only fills the kit's slots with the Fit
-    Crew pieces: the brand and logo, the PWA head, the activity clock, the
+    Crew pieces: the brand and logo, the activity clock, the
     medical sheets and the injury-resolve and proposal dialogs. Task 5200
     (kit P5): the help « ? », the search (magnifier and sheet) and the user
     menu's « Aide » are the kit layout's own; the kit's pages (settings,
@@ -50,17 +50,12 @@
             <!-- Task 1658: the clinic's refusals also come back in ?ts_error=
                  (the timesheet routes). -->
             <t t-set="pk_guard_params" t-value="'error ts_error'"/>
-            <!-- Task 1542: installable app (scope /, task 1543). In this layout ONLY.
+            <!-- Task 1542: installable app (scope /, task 1543). Task 5201 (kit
+                 P6): its head (manifest, iOS icon and title) is
+                 bemade_portal_kit_pwa's, added to the kit layout's head;
+                 the Fit Crew name and icons are the company's app fields.
                  Task 1540: Teko / DM Sans are self-hosted (@font-face in
                  sc_tokens.scss) — no Google Fonts request. -->
-            <t t-set="pk_head_extra">
-                <link rel="manifest" href="/my/app.webmanifest"/>
-                <link rel="apple-touch-icon" href="/bemade_sports_clinic/static/src/img/sc_apple_touch_icon.png"/>
-                <meta name="apple-mobile-web-app-capable" content="yes"/>
-                <meta name="mobile-web-app-capable" content="yes"/>
-                <meta name="apple-mobile-web-app-title" content="Fit Crew"/>
-                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-            </t>
             <t t-set="pk_appbar_actions">
                 <!-- Task 1592: the activity clock (the slot the theme toggle
                      left, #1602; both fit when the choice is on). The red

@@ -1,10 +1,16 @@
+from .models.sc_app_pwa import sc_fill_pwa_branding
+
+
 def post_init_hook(env):
     """Migrate legacy team_id to team_ids on sports.event and recompute partner_id.
 
     - For any event having a non-null team_id column (from previous versions),
       set team_ids to that single team.
     - Recompute partner_id based on team_ids.
+    - Task 5201 (kit P6): the company's installable app fields get the Fit
+      Crew name, colours and icons where they are empty.
     """
+    sc_fill_pwa_branding(env)
     cr = env.cr
     Event = env['sports.event']
 

@@ -200,6 +200,22 @@ calendar and picker clinic names, moved to the kit under ``pk`` names:
   ``bemade_sports_clinic.sc_calendar`` (allowed in the consumer's
   one-release alias, ``sc_calendar_alias.js``).
 
+Task 5201 (P6) retires the installable app's clinic names, moved to the
+kit addon ``bemade_portal_kit_pwa`` under ``pk`` names:
+
+* the attributes ``data-sc-sw`` and ``data-sc-install`` / ``-install-state``
+  / ``-install-steps`` / ``-install-prompt`` (``data-pk-*``);
+* the files ``sc_sw_register.js`` (``pk_sw_register.js``, no alias: two
+  register scripts would both run), ``sc_service_worker.js``
+  (``pk_service_worker.js``) and ``sc_offline.css``, the placeholders
+  ``__SC_SW_*`` and the cache prefix ``sc-app-shell-`` (allowed where the
+  new worker deletes the old caches);
+* the templates and page keys ``sc_app_install`` / ``sc_app_offline``
+  (``pk_app_install`` / ``pk_app_offline``, adopted: allowed in the
+  adoption mapping and the migration that runs it) and the controller names
+  ``SW_PRECACHE_STATIC``, ``SW_SOURCE``, ``_sc_sw_version``,
+  ``sc_app_webmanifest``, ``sc_app_service_worker``.
+
 The guide videos' class ``o_fc_video`` is still read (stored article HTML
 uses it), next to ``o_pk_video``: it is not retired.
 
@@ -220,7 +236,8 @@ from odoo.tests import TransactionCase, tagged
 from odoo.addons.bemade_portal_kit.tools.adopt import ADOPTED_VIEWS
 
 KIT = 'bemade_portal_kit'
-SCANNED_ADDONS = (KIT, 'bemade_sports_clinic', 'bemade_sports_clinic_bookings')
+PWA = 'bemade_portal_kit_pwa'
+SCANNED_ADDONS = (KIT, PWA, 'bemade_sports_clinic', 'bemade_sports_clinic_bookings')
 EXTENSIONS = ('.py', '.js', '.xml', '.scss', '.css', '.po')
 SKIP_DIRS = {'__pycache__', 'node_modules', 'lib', 'description'}
 
@@ -273,6 +290,8 @@ ATTRIBUTES = (
     'picker-ready', 'picker-narrowed', 'calendar-ready', 'calendar-detail', 'staff-legend', 'staff-dot',
     'detail-link', 'account-form', 'account-errors', 'account-state', 'account-saved', 'video-done',
     'in-rail',
+    # Task 5201 (P6): the installable app.
+    'sw', 'install', 'install-state', 'install-steps', 'install-prompt',
 )
 EVENTS = (
     'fragments', 'form-reset', 'create-success', 'lazy-loaded',
@@ -310,6 +329,8 @@ STORAGE_KEYS = (
     '@bemade_sports_clinic/js/sc_picker', '@bemade_sports_clinic/js/sc_search',
     '@bemade_sports_clinic/js/sc_help', '@bemade_sports_clinic/js/sc_account',
     '@bemade_sports_clinic/js/sc_calendar"',
+    # Task 5201 (P6): the installable app's files, placeholders, cache.
+    'sc_sw_register.js', 'sc_service_worker.js', 'sc_offline.css', '__SC_SW_', 'sc-app-shell-',
 )
 # Task 5199 (P4a): the save engine's and the refresh's Python / QWeb names,
 # as whole words.
@@ -346,6 +367,9 @@ SAVE_NAMES = (
     'sc_app_account', 'sc_app_security', 'PREF_FIELDS', 'PREF_BOOLEANS', 'APP_SHELL_PARAM',
     'THEME_CHOICE_PARAM', 'SC_ACCOUNT_TEMPLATES', '_sc_core_in_shell', '_sc_relaxed_address',
     'sc_totp_portal', 'sc_can_deactivate', 'sc_saved',
+    # Task 5201 (P6): the installable app's templates, page keys, controller.
+    'sc_app_install', 'sc_app_offline', 'SW_PRECACHE_STATIC', 'SW_SOURCE', '_sc_sw_version',
+    'sc_app_webmanifest', 'sc_app_service_worker',
 )
 
 # Task 5344 (P3b1): the generic classes, as the name after ``o_sc_``. A name
@@ -507,6 +531,13 @@ ALLOWED = {
     ('bemade_sports_clinic', 'migrations/19.0.1.146.0/pre-migrate.py'): None,
     ('bemade_sports_clinic', 'migrations/19.0.1.146.0/post-migrate.py'): None,
     ('bemade_sports_clinic', 'static/src/js/sc_calendar_alias.js'): {'bemade_sports_clinic.sc_calendar'},
+    # Task 5201 (P6): the adoption mapping and the migration that runs it;
+    # the new worker deletes the former caches (and says so).
+    (PWA, 'tools/adopt.py'): {'sc_app_install', 'sc_app_offline'},
+    ('bemade_sports_clinic', 'migrations/19.0.1.147.0/pre-migrate.py'): None,
+    (PWA, 'static/src/sw/pk_service_worker.js'): {'sc-app-shell-'},
+    (PWA, '__manifest__.py'): {'sc-app-shell-'},
+    (PWA, 'tests/test_pk_pwa.py'): {'sc-app-shell-'},
 }
 
 
@@ -681,6 +712,21 @@ class TestPkRetiredNames(TransactionCase):
         self.assertEqual(retired_names('<a class="o_fc_video o_pk_video">'), [])
         self.assertEqual(retired_names('import { ScCalendar } from "@bemade_sports_clinic/js/sc_calendar";'),
                          ['@bemade_sports_clinic/js/sc_calendar"', 'ScCalendar'])
+
+    def test_matcher_p6(self):
+        """Task 5201 (P6): the installable app's names."""
+        self.assertEqual(retired_names('<html data-sc-sw="registered"><div data-sc-install="1" data-sc-install-steps="ios">'),
+                         ['data-sc-sw', 'data-sc-install', 'data-sc-install-steps'])
+        self.assertEqual(retired_names('[data-sc-install-state="prompt"] [data-sc-install-prompt]'),
+                         ['data-sc-install-state', 'data-sc-install-prompt'])
+        self.assertEqual(retired_names("'bemade_sports_clinic/static/src/js/sc_sw_register.js' __SC_SW_VERSION__"),
+                         ['sc_sw_register.js', '__SC_SW_'])
+        self.assertEqual(retired_names('caches "sc-app-shell-" + v sc_service_worker.js sc_offline.css'),
+                         ['sc-app-shell-', 'sc_service_worker.js', 'sc_offline.css'])
+        self.assertEqual(retired_names("t-call='bemade_sports_clinic.sc_app_install' SW_SOURCE _sc_sw_version"),
+                         ['sc_app_install', 'SW_SOURCE', '_sc_sw_version'])
+        self.assertEqual(retired_names('data-pk-sw data-pk-install-steps pk_app_install PK_SW_SOURCE pk-app-shell- '
+                                       'data-sc-switch-x sc_app_install_x'), [])
 
     def test_matcher_save_engine(self):
         """Task 5199 (P4a): the save engine and screen refresh names."""
