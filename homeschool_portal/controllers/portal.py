@@ -68,6 +68,12 @@ def _parse_date(text):
     return value
 
 
+def _default_monday(today):
+    """The week the week page opens on: this week, or next week on a weekend (what's coming up)."""
+    monday = today - timedelta(days=today.weekday())
+    return monday + timedelta(days=7) if today.weekday() >= 5 else monday
+
+
 def _parse_iso_week(label):
     """'2026-W10' -> the Monday of that ISO week."""
     try:
@@ -256,6 +262,8 @@ class HomeschoolPortal(PortalKitDashboard):
                 "hs_today_label": format_date(request.env, today, date_format="EEEE d MMMM"),
             })
         student = values.get("hs_student")
+        if self._hs_learner_only():
+            values["pk_dash_configure_url"] = False  # the learner's Today is set up for him
         values.update({
             "pk_title": request.env._("Today"),
             "pk_active_nav": "hs_today",
@@ -263,6 +271,16 @@ class HomeschoolPortal(PortalKitDashboard):
         })
         return self._pk_render("homeschool_portal.hs_dash_page",
                                self._hs_shell_values(values, "homeschool_portal.hs_dash_page", student=student))
+
+    def _hs_learner_only(self):
+        roles = hs_user_roles(request.env.user)
+        return HS_LEARNER in roles and HS_TUTOR not in roles
+
+    @http.route()
+    def pk_dash_configure(self, **kw):
+        if self._hs_learner_only():
+            return request.redirect(HS_HOME_URL)
+        return super().pk_dash_configure(**kw)
 
     def _pk_dash_context(self, Dash, viewer):
         ctx = super()._pk_dash_context(Dash, viewer)
@@ -465,7 +483,7 @@ class HomeschoolPortal(PortalKitDashboard):
     def portal_homeschool_week(self, student_id, iso_week=None, **kw):
         student = self._portal_student(student_id)
         today = fields.Date.context_today(request.env.user)
-        monday = _parse_iso_week(iso_week) if iso_week else today - timedelta(days=today.weekday())
+        monday = _parse_iso_week(iso_week) if iso_week else _default_monday(today)
         Day = request.env["homeschool.day"]
         Block = request.env["homeschool.block"]
         days = Day.search([

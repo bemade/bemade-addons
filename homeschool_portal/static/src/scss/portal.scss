@@ -116,6 +116,17 @@
     flex: 1 1 12rem;
     min-width: 0;
   }
+  // A list line is one compact row (tick, then the text): the kit's card stacks its
+  // children, and a stacked 12rem text basis became a 260px-tall line.
+  .o_hs_dash_list > li.o_hs_dash_line.o_pk_card {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    text-align: left;
+    .o_hs_dash_line_text {
+      flex: 1 1 auto;
+    }
+  }
   .o_hs_tick_form {
     margin: 0;
   }
