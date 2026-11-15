@@ -23,16 +23,16 @@ function noHorizontalScroll() {
     assert(doc.scrollWidth <= doc.clientWidth + 1, `horizontal scroll (${doc.scrollWidth} > ${doc.clientWidth})`);
 }
 
-const WATCH = 'section[data-sc-instance="watch"]';
-const TODO = 'section[data-sc-instance="todo"]';
+const WATCH = 'section[data-pk-dash-instance="watch"]';
+const TODO = 'section[data-pk-dash-instance="todo"]';
 
 tours.add("sc_1624_dashboard_round1", {
     steps: () => [
         {
             content: "The dashboard, in the default order (round 2: zone by zone)",
-            trigger: 'section[data-sc-instance="indicators"]',
+            trigger: 'section[data-pk-dash-instance="indicators"]',
             run() {
-                const ids = [...document.querySelectorAll("section[data-sc-instance]")].map((el) => el.dataset.scInstance);
+                const ids = [...document.querySelectorAll("section[data-pk-dash-instance]")].map((el) => el.dataset.pkDashInstance);
                 assert(ids[0] === "today" && ids[1] === "todo" && ids[2] === "coverage", `order: ${ids}`);
                 window.__sc1624NoReload = true;
                 noHorizontalScroll();
@@ -84,12 +84,12 @@ tours.add("sc_1624_dashboard_round1", {
         },
         {
             content: "Fold out an upcoming event's « Details »",
-            trigger: 'section[data-sc-instance="coverage"] [data-sc-event-row] button[data-pk-row-expand]',
+            trigger: 'section[data-pk-dash-instance="coverage"] [data-sc-event-row] button[data-pk-row-expand]',
             run: "click",
         },
         {
             content: "The event's details",
-            trigger: 'section[data-sc-instance="coverage"] [data-sc-event-details]:not([hidden]) [data-sc-ev-field="staff"]',
+            trigger: 'section[data-pk-dash-instance="coverage"] [data-sc-event-details]:not([hidden]) [data-sc-ev-field="staff"]',
             run() {
                 assert(this.anchor.textContent.trim() && this.anchor.textContent.trim() !== "—", "assigned staff");
                 noHorizontalScroll();
@@ -97,7 +97,7 @@ tours.add("sc_1624_dashboard_round1", {
         },
         {
             content: "« Add my timesheet » on a missing one",
-            trigger: 'section[data-sc-instance="missing_timesheets"] a[data-sc-action="dashboard.timesheet.add"]',
+            trigger: 'section[data-pk-dash-instance="missing_timesheets"] a[data-sc-action="dashboard.timesheet.add"]',
             run: "click",
             expectUnloadPage: true,
         },

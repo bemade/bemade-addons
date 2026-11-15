@@ -47,7 +47,7 @@ class _Tours1624:
     def test_configure_tour(self):
         self.start_tour('/my/home', 'sc_1624_dashboard_configure', login='pc.tp@example.com')
         # The reset ran last: the stored layout is gone.
-        self.assertFalse(self.tp.sudo().sc_dashboard_layout)
+        self.assertFalse(self.tp.sudo().pk_dashboard_layout)
 
     def test_round1_tour(self):
         env = self.env
@@ -62,7 +62,7 @@ class _Tours1624:
             'team_ids': [Command.set(self.team_a.ids)],
             'assigned_staff_ids': [Command.set(self.tp.ids)], 'state': 'confirmed'})
         # Only Red in « Joueurs à surveiller »: the card the tour opens.
-        self._dash(self.tp)._sc_layout_update(
+        self._dash(self.tp)._pk_dash_layout_update(
             'watch', settings={'level': 'red', 'scope_team_ids': self.team_a.ids})
         self.shared.write({'team_ids': [Command.set(self.team_c.ids)]})
         self.start_tour('/my/home', 'sc_1624_dashboard_round1', login='pc.tp@example.com')
@@ -102,7 +102,7 @@ class _Round2Tour1624:
             'date_start': now + timedelta(days=1, hours=n), 'date_end': now + timedelta(days=1, hours=n + 1),
             'team_ids': [Command.set(self.team_a.ids)],
             'assigned_staff_ids': [Command.set(self.tp.ids)], 'state': 'confirmed'} for n in range(6)])
-        self._dash(self.tp)._sc_layout_update(
+        self._dash(self.tp)._pk_dash_layout_update(
             'watch', settings={'level': 'red', 'scope_team_ids': self.team_a.ids})
         self.start_tour('/my/home', 'sc_1624_dashboard_round2', login='pc.tp@example.com')
         self.assertFalse(self.tp.sudo().sc_followed_patient_ids)
@@ -129,7 +129,7 @@ class TestDashboardZonesTourLaptop1624(Dashboard1624Common):
         self.start_tour('/my/app/dashboard/configure', 'sc_1624_zones_dnd', login='pc.tp@example.com')
         today = self._instance(self.tp, 'today')
         self.assertEqual(today['zone'], 'bottom')
-        self.assertEqual(self.tp.sudo().sc_dashboard_layout['v'], 2)
+        self.assertEqual(self.tp.sudo().pk_dashboard_layout['v'], 2)
 
 
 @tagged('post_install', '-at_install')
@@ -138,8 +138,8 @@ class TestDashboardZonesTourPhone1624(Dashboard1624Common):
 
     def test_zones_move_control(self):
         self.start_tour('/my/app/dashboard/configure', 'sc_1624_zones_move', login='pc.tp@example.com')
-        left = [i['id'] for i in self._dash(self.tp)._sc_layout() if i['zone'] == 'left']
+        left = [i['id'] for i in self._dash(self.tp)._pk_dash_layout() if i['zone'] == 'left']
         self.assertEqual(left, ['today', 'todo', 'coverage', 'indicators', 'missing_timesheets'])
         # « Rétablir par défaut »: the default zones again.
-        self._dash(self.tp)._sc_layout_reset()
+        self._dash(self.tp)._pk_dash_layout_reset()
         self.assertEqual(self._instance(self.tp, 'indicators')['zone'], 'right')

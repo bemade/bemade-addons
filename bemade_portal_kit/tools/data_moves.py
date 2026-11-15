@@ -97,9 +97,12 @@ def _drop_field_rows(cr, model, name):
     cr.execute("DELETE FROM ir_model_fields WHERE id = %s", (row[0],))
 
 
-def move_columns(cr, mapping=MOVED_COLUMNS):
-    """Rename each old column (and its field metadata) to its new name.
-    Returns the ``(table, old, new)`` moved or merged by this call."""
+def move_columns(cr, mapping=MOVED_COLUMNS, target=KIT):
+    """Rename each old column (and its field metadata) to its new name; the
+    field's external ids go to module ``target`` (the kit by default; task
+    5202: a kit addon such as ``bemade_portal_kit_dashboard`` moves its own
+    columns with the same helper). Returns the ``(table, old, new)`` moved
+    or merged by this call."""
     moved = []
     for table, old, new, model, old_module in mapping:
         if not _column_exists(cr, table, old):
@@ -128,7 +131,7 @@ def move_columns(cr, mapping=MOVED_COLUMNS):
             cr.execute(
                 """UPDATE ir_model_data SET module = %s, name = %s
                     WHERE model = 'ir.model.fields' AND res_id = %s AND module = %s AND name = %s""",
-                (KIT, prefix + new, row[0], old_module, prefix + old),
+                (target, prefix + new, row[0], old_module, prefix + old),
             )
             # The selection values' external ids: selection__<table>__<field>__<value>.
             old_sel = 'selection__%s__%s__' % (_table(model), old)
@@ -138,7 +141,7 @@ def move_columns(cr, mapping=MOVED_COLUMNS):
                      FROM ir_model_fields_selection s
                     WHERE d.model = 'ir.model.fields.selection' AND d.res_id = s.id
                       AND s.field_id = %s AND d.module = %s AND d.name LIKE %s""",
-                (KIT, new_sel, len(old_sel) + 1, row[0], old_module, old_sel.replace('_', r'\_') + '%'),
+                (target, new_sel, len(old_sel) + 1, row[0], old_module, old_sel.replace('_', r'\_') + '%'),
             )
         moved.append((table, old, new))
         _logger.info("portal kit: column %s.%s renamed %s", table, old, new)

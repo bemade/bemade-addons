@@ -16,7 +16,7 @@ import { requestRefresh } from "@bemade_portal_kit/js/pk_fragments";
 // section of the page (a LIST read fragment per instance, each with its own
 // scope) follows a toggle in place — the card added or dropped, the count
 // and the empty state — without a reload.
-const FOLLOWED_SECTIONS = "sc.dashboard:followed:*";
+const FOLLOWED_SECTIONS = "pk.dashboard:followed:*";
 
 function setFollowed(playerId, followed) {
     for (const button of document.querySelectorAll(`.o_pk_app [data-sc-follow="${playerId}"]`)) {

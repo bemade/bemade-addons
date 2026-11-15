@@ -68,11 +68,11 @@ async function dragInto(handle, group) {
     await frame();
 }
 
-const ZONE = (zone) => `ol[data-sc-dash-zone="${zone}"]`;
-const ITEM = (id) => `li[data-sc-dash-item="${id}"]`;
+const ZONE = (zone) => `ol[data-pk-dash-zone="${zone}"]`;
+const ITEM = (id) => `li[data-pk-dash-item="${id}"]`;
 const rect = (selector) => document.querySelector(selector).getBoundingClientRect();
 const zoneIds = (zone) =>
-    [...document.querySelectorAll(`${ZONE(zone)} > li[data-sc-dash-item]`)].map((el) => el.dataset.scDashItem);
+    [...document.querySelectorAll(`${ZONE(zone)} > li[data-pk-dash-item]`)].map((el) => el.dataset.pkDashItem);
 
 tours.add("sc_1624_zones_dnd", {
     steps: () => [
@@ -80,9 +80,9 @@ tours.add("sc_1624_zones_dnd", {
             content: "« Configure »: left and right side by side, bottom under both",
             trigger: `${ZONE("bottom")} ${ITEM("watch")}`,
             run() {
-                const left = rect('[data-sc-dash-cfg-zone="left"]');
-                const right = rect('[data-sc-dash-cfg-zone="right"]');
-                const bottom = rect('[data-sc-dash-cfg-zone="bottom"]');
+                const left = rect('[data-pk-dash-cfg-zone="left"]');
+                const right = rect('[data-pk-dash-cfg-zone="right"]');
+                const bottom = rect('[data-pk-dash-cfg-zone="bottom"]');
                 assert(Math.abs(left.top - right.top) < 2 && left.right <= right.left, "left | right");
                 assert(bottom.top >= Math.max(left.bottom, right.bottom) - 1, "bottom under both");
                 assert(bottom.width > left.width * 1.5, "bottom spans the width");
@@ -93,31 +93,31 @@ tours.add("sc_1624_zones_dnd", {
         },
         {
             content: "Drag « Today » into the right zone",
-            trigger: `${ZONE("left")} ${ITEM("today")} [data-sc-dash-drag]`,
+            trigger: `${ZONE("left")} ${ITEM("today")} [data-pk-dash-drag]`,
             async run() {
                 await dragInto(this.anchor, document.querySelector(ZONE("right")));
             },
         },
         {
             content: "Dropped in the right zone and saved (no reload)",
-            trigger: `[data-sc-dash-zones][data-sc-dash-dropped="1"] ${ZONE("right")} ${ITEM("today")}`,
+            trigger: `[data-pk-dash-zones][data-pk-dash-dropped="1"] ${ZONE("right")} ${ITEM("today")}`,
             run() {
                 assert(window.__sc1624ZonesNoReload, "the page reloaded");
                 assert(!zoneIds("left").includes("today"), "gone from the left");
-                const select = document.querySelector(`${ITEM("today")} select[data-sc-dash-zone-select]`);
+                const select = document.querySelector(`${ITEM("today")} select[data-pk-dash-zone-select]`);
                 assert(select.value === "right", "« Move to » follows");
             },
         },
         {
             content: "Drag « Today » into the bottom zone",
-            trigger: `${ZONE("right")} ${ITEM("today")} [data-sc-dash-drag]`,
+            trigger: `${ZONE("right")} ${ITEM("today")} [data-pk-dash-drag]`,
             async run() {
                 await dragInto(this.anchor, document.querySelector(ZONE("bottom")));
             },
         },
         {
             content: "Dropped in the bottom zone and saved",
-            trigger: `[data-sc-dash-zones][data-sc-dash-dropped="2"] ${ZONE("bottom")} ${ITEM("today")}`,
+            trigger: `[data-pk-dash-zones][data-pk-dash-dropped="2"] ${ZONE("bottom")} ${ITEM("today")}`,
             run() {
                 window.location.reload();
             },
@@ -134,10 +134,10 @@ tours.add("sc_1624_zones_dnd", {
         },
         {
             content: "The dashboard: « Today » full width under the two columns",
-            trigger: '[data-sc-zone="bottom"] section[data-sc-instance="today"]',
+            trigger: '[data-pk-dash-zone="bottom"] section[data-pk-dash-instance="today"]',
             run() {
-                const left = rect('[data-sc-zone="left"]');
-                const right = rect('[data-sc-zone="right"]');
+                const left = rect('[data-pk-dash-zone="left"]');
+                const right = rect('[data-pk-dash-zone="right"]');
                 const today = this.anchor.getBoundingClientRect();
                 assert(Math.abs(left.top - right.top) < 2 && left.right <= right.left, "two columns");
                 assert(today.top >= Math.max(left.bottom, right.bottom) - 1, "under both columns");
@@ -152,20 +152,20 @@ tours.add("sc_1624_zones_move", {
     steps: () => [
         {
             content: "« Configure » on a phone: the zones stacked",
-            trigger: `${ZONE("right")} ${ITEM("indicators")} select[data-sc-dash-zone-select]`,
+            trigger: `${ZONE("right")} ${ITEM("indicators")} select[data-pk-dash-zone-select]`,
             run() {
-                const left = rect('[data-sc-dash-cfg-zone="left"]');
-                const right = rect('[data-sc-dash-cfg-zone="right"]');
-                const bottom = rect('[data-sc-dash-cfg-zone="bottom"]');
+                const left = rect('[data-pk-dash-cfg-zone="left"]');
+                const right = rect('[data-pk-dash-cfg-zone="right"]');
+                const bottom = rect('[data-pk-dash-cfg-zone="bottom"]');
                 assert(left.bottom <= right.top + 1 && right.bottom <= bottom.top + 1, "left / right / bottom");
-                assert(!document.querySelector(`${ITEM("indicators")} [data-sc-dash-zone-go]:not([hidden])`), "no-JS OK hidden");
+                assert(!document.querySelector(`${ITEM("indicators")} [data-pk-dash-zone-go]:not([hidden])`), "no-JS OK hidden");
                 window.__sc1624ZonesNoReload = true;
                 noHorizontalScroll();
             },
         },
         {
             content: "« Move to »: Left",
-            trigger: `${ITEM("indicators")} select[data-sc-dash-zone-select]`,
+            trigger: `${ITEM("indicators")} select[data-pk-dash-zone-select]`,
             run: "select left",
         },
         {
@@ -176,14 +176,14 @@ tours.add("sc_1624_zones_move", {
                 const ids = zoneIds("left");
                 assert(ids[ids.length - 1] === "indicators", `left: ${ids}`);
                 await waitFor(
-                    () => document.querySelector(`${ITEM("indicators")} button[data-sc-dash-move="down"]`).disabled,
+                    () => document.querySelector(`${ITEM("indicators")} button[data-pk-dash-move="down"]`).disabled,
                     "▼ disabled at the zone's end"
                 );
             },
         },
         {
             content: "▲ moves it up within the zone",
-            trigger: `${ITEM("indicators")} button[data-sc-dash-move="up"]:not([disabled])`,
+            trigger: `${ITEM("indicators")} button[data-pk-dash-move="up"]:not([disabled])`,
             run: "click",
             expectUnloadPage: true,
         },
@@ -199,11 +199,11 @@ tours.add("sc_1624_zones_move", {
         },
         {
             content: "The dashboard on a phone: one column, left then right then bottom",
-            trigger: '[data-sc-zone="left"] section[data-sc-instance="indicators"]',
+            trigger: '[data-pk-dash-zone="left"] section[data-pk-dash-instance="indicators"]',
             run() {
-                const zones = [...document.querySelectorAll("[data-sc-dashboard] > [data-sc-zone]")];
-                assert(zones.map((z) => z.dataset.scZone).join() === "left,right,bottom", "zone order");
-                const sections = [...document.querySelectorAll("section[data-sc-instance]")];
+                const zones = [...document.querySelectorAll("[data-pk-dashboard] > [data-pk-dash-zone]")];
+                assert(zones.map((z) => z.dataset.pkDashZone).join() === "left,right,bottom", "zone order");
+                const sections = [...document.querySelectorAll("section[data-pk-dash-instance]")];
                 for (let i = 1; i < sections.length; i++) {
                     const a = sections[i - 1].getBoundingClientRect();
                     const b = sections[i].getBoundingClientRect();

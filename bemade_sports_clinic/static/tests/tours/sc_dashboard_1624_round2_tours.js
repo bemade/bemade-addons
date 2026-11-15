@@ -67,10 +67,10 @@ function typeAndLeave(input, value) {
     input.dispatchEvent(new FocusEvent("blur")); // headless: blur() fires no event without window focus
 }
 
-const TODAY = 'section[data-sc-instance="today"]';
-const TODO = 'section[data-sc-instance="todo"]';
-const WATCH = 'section[data-sc-instance="watch"]';
-const FOLLOWED = 'section[data-sc-instance="followed"]';
+const TODAY = 'section[data-pk-dash-instance="today"]';
+const TODO = 'section[data-pk-dash-instance="todo"]';
+const WATCH = 'section[data-pk-dash-instance="watch"]';
+const FOLLOWED = 'section[data-pk-dash-instance="followed"]';
 const OVERDUE = `${TODO} details[data-sc-todo="activities_overdue"]`;
 const RETURNS = `${TODO} details[data-sc-todo="returns"]`;
 
@@ -108,7 +108,7 @@ tours.add("sc_1624_dashboard_round2", {
         },
         {
             content: "An event card's « Details »: the card stays put",
-            trigger: 'section[data-sc-instance="coverage"] .o_sc_event_row button[data-pk-row-expand][aria-expanded="false"]',
+            trigger: 'section[data-pk-dash-instance="coverage"] .o_sc_event_row button[data-pk-row-expand][aria-expanded="false"]',
             async run() {
                 const toggle = this.anchor;
                 await clickKeepsTop(toggle, "event details");
@@ -151,7 +151,7 @@ tours.add("sc_1624_dashboard_round2", {
             trigger: `${WATCH} .o_sc_player_row button[data-pk-row-expand]`,
             async run() {
                 const followed = document.querySelector(FOLLOWED);
-                assert(followed.querySelector(":scope > .o_sc_dw_body > .o_pk_empty"), "empty at first");
+                assert(followed.querySelector(":scope > .o_pk_dash_body > .o_pk_empty"), "empty at first");
                 const row = this.anchor.closest(".o_sc_player_row");
                 const id = row.dataset.scPlayerId;
                 this.anchor.click();
@@ -162,9 +162,9 @@ tours.add("sc_1624_dashboard_round2", {
                     () => document.querySelector(`${FOLLOWED} [data-pk-fragment-item="p${id}"]`),
                     "the card in « Players I follow »"
                 );
-                const count = document.querySelector(`${FOLLOWED} [data-sc-dw-count]`);
+                const count = document.querySelector(`${FOLLOWED} [data-pk-dash-count]`);
                 assert(count && count.textContent.includes("1"), "the count");
-                assert(!document.querySelector(`${FOLLOWED} > .o_sc_dw_body > .o_pk_empty`), "no empty state");
+                assert(!document.querySelector(`${FOLLOWED} > .o_pk_dash_body > .o_pk_empty`), "no empty state");
                 // Unfollow (from the same card).
                 await waitFor(() => row.querySelector(`${toggle}[data-sc-followed="1"]`), "followed");
                 row.querySelector(toggle).click();
@@ -172,8 +172,8 @@ tours.add("sc_1624_dashboard_round2", {
                     () => !document.querySelector(`${FOLLOWED} [data-pk-fragment-item]`),
                     "the card leaves « Players I follow »"
                 );
-                await waitFor(() => document.querySelector(`${FOLLOWED} > .o_sc_dw_body > .o_pk_empty`), "the empty state");
-                assert(!document.querySelector(`${FOLLOWED} [data-sc-dw-count]`), "no count");
+                await waitFor(() => document.querySelector(`${FOLLOWED} > .o_pk_dash_body > .o_pk_empty`), "the empty state");
+                assert(!document.querySelector(`${FOLLOWED} [data-pk-dash-count]`), "no count");
                 assert(window.__sc1624r2NoReload, "the page reloaded");
                 noHorizontalScroll();
             },

@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.13.0',
+    'version': '19.0.1.14.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -508,7 +508,9 @@ Kit addons (version 1.13)
 ``tools/adopt.adopt_views(cr, mapping, target)`` adopts views into another
 module than the kit (``target``): a kit addon that takes over a consumer's
 templates (e.g. ``bemade_portal_kit_pwa``, the installable app) uses it
-from its own install hook.
+from its own install hook. Version 1.14: ``tools/data_moves.move_columns(cr,
+mapping, target)`` likewise moves a consumer's user column to a kit addon
+(``bemade_portal_kit_dashboard``, the configurable dashboard).
 
 Style guide
 ------------

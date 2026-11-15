@@ -389,24 +389,24 @@ class TestCardTopBars1736(TopBars1736Common):
         self._login_tp()
         _text, tree = self._get('/my/app/dashboard/configure')
         # The default sections cannot be removed: no trash.
-        self.assertFalse(tree.xpath('//button[@data-sc-dash-remove]'))
+        self.assertFalse(tree.xpath('//button[@data-pk-dash-remove]'))
         # An added (second) section can.
-        widget = tree.xpath('//select[@id="sc_dash_add_widget"]/option/@value')[0]
+        widget = tree.xpath('//select[@id="pk_dash_add_widget"]/option/@value')[0]
         self._post('/my/app/dashboard/configure/add', widget=widget)
         _text, tree = self._get('/my/app/dashboard/configure')
-        items = tree.xpath('//li[@data-sc-dash-item]')
-        removable = [item for item in items if item.xpath('.//button[@data-sc-dash-remove]')]
+        items = tree.xpath('//li[@data-pk-dash-item]')
+        removable = [item for item in items if item.xpath('.//button[@data-pk-dash-remove]')]
         self.assertEqual(len(removable), 1)
         for item in removable:
             self._assert_order(item, ('o_pk_card_trash',))
-            trash = self._one(item, './/button[@data-sc-dash-remove]')
+            trash = self._one(item, './/button[@data-pk-dash-remove]')
             self.assertIn('o_pk_icon_btn_danger', trash.get('class'))
             self.assertIsNone(trash.get('hidden'))
             self.assertEqual(trash.get('type'), 'submit')
             form = self._one(tree, '//form[@id="%s"]' % trash.get('form'))
             self.assertEqual(form.get('action'), '/my/app/dashboard/configure/remove')
-            self.assertEqual(form.get('data-sc-dash-remove-form'), '1')
-            self.assertEqual(form.get('data-sc-confirm-title'), 'Remove this section?')
+            self.assertEqual(form.get('data-pk-dash-remove-form'), '1')
+            self.assertEqual(form.get('data-pk-confirm-title'), 'Remove this section?')
             self.assertTrue(form.get('data-pk-confirm-ok'))
             # The item's top bar: its own icon group, after the head.
             self.assertEqual(trash.getparent().getparent(), item)
@@ -423,7 +423,7 @@ class TestCardTopBarsI18n1736(TopBars1736Common):
         env['res.lang']._activate_lang('fr_CA')
         # Task 5371: the toast host (« Annuler ») is the kit's.
         env['ir.module.module']._load_module_terms(
-            ['bemade_portal_kit', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
+            ['bemade_portal_kit', 'bemade_portal_kit_dashboard', 'bemade_sports_clinic'], ['fr_CA'], overwrite=True)
         if env['ir.module.module']._get('website').state == 'installed':
             fr_lang = env['res.lang']._lang_get('fr_CA')
             for website in env['website'].sudo().search([]):
@@ -457,11 +457,11 @@ class TestCardTopBarsI18n1736(TopBars1736Common):
         self.assertEqual(self._one(card, './/button[@data-sc-injury-toggle]').get('aria-label'),
                          'Afficher ou masquer la blessure')
         _text, tree = self._fr('/my/app/dashboard/configure')
-        widget = tree.xpath('//select[@id="sc_dash_add_widget"]/option/@value')[0]
+        widget = tree.xpath('//select[@id="pk_dash_add_widget"]/option/@value')[0]
         self._post('/my/app/dashboard/configure/add', widget=widget)
         _text, tree = self._get('/my/app/dashboard/configure')
-        form = tree.xpath('//form[@data-sc-dash-remove-form]')[0]
-        self.assertEqual(form.get('data-sc-confirm-title'), 'Retirer cette section ?')
+        form = tree.xpath('//form[@data-pk-dash-remove-form]')[0]
+        self.assertEqual(form.get('data-pk-confirm-title'), 'Retirer cette section ?')
 
     def test_undo_toast_in_french(self):
         self._login_tp()

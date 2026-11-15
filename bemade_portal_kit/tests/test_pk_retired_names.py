@@ -216,6 +216,30 @@ kit addon ``bemade_portal_kit_pwa`` under ``pk`` names:
   ``SW_PRECACHE_STATIC``, ``SW_SOURCE``, ``_sc_sw_version``,
   ``sc_app_webmanifest``, ``sc_app_service_worker``.
 
+Task 5202 (P7) retires the configurable dashboard's clinic names, moved to
+the kit addon ``bemade_portal_kit_dashboard`` under ``pk`` names:
+
+* the model ``sc.dashboard`` (``portal.kit.dashboard``) and the fragment
+  keys ``sc.dashboard:*`` (``pk.dashboard:*``), the field
+  ``sc_dashboard_layout`` (``pk_dashboard_layout``, moved in place: allowed
+  in the data move mapping, its test and the migration that runs it);
+* the engine's and the controller's names (``_sc_layout*``,
+  ``_sc_normalize``, ``_sc_viewer``, ``_sc_can``, ``_sc_widgets``, …,
+  ``sc_dashboard_configure*``), the templates and page key ``sc_dw_section``
+  / ``sc_app_dashboard_configure`` (``pk_dash_section`` /
+  ``pk_dash_configure``, adopted), their values (``sc_dash_sections``, …)
+  and the script ``sc_dashboard_config.js`` (``pk_dashboard_config.js``, no
+  alias: two scripts would both save);
+* the markers ``data-sc-dash-*`` (any), ``data-sc-dashboard``,
+  ``data-sc-zone``, ``data-sc-instance``, ``data-sc-widget``,
+  ``data-sc-dw-count``, ``data-sc-dw-scope``, ``data-sc-confirm-title`` /
+  ``-message`` and the frame's ``data-sc-action`` keys
+  (``dashboard.configure`` / ``history`` / ``calendar`` / ``list`` /
+  ``back``: ``data-pk-action``); the classes ``o_sc_dash*`` (any) and the
+  frame's ``o_sc_dw``, ``o_sc_dw_header`` / ``title`` / ``title_text`` /
+  ``count`` / ``scope`` / ``body`` (the clinic's widget bodies keep their
+  ``o_sc_dw_*``); the anchors / ids ``sc-dash-*``.
+
 The guide videos' class ``o_fc_video`` is still read (stored article HTML
 uses it), next to ``o_pk_video``: it is not retired.
 
@@ -237,7 +261,8 @@ from odoo.addons.bemade_portal_kit.tools.adopt import ADOPTED_VIEWS
 
 KIT = 'bemade_portal_kit'
 PWA = 'bemade_portal_kit_pwa'
-SCANNED_ADDONS = (KIT, PWA, 'bemade_sports_clinic', 'bemade_sports_clinic_bookings')
+DASH = 'bemade_portal_kit_dashboard'
+SCANNED_ADDONS = (KIT, PWA, DASH, 'bemade_sports_clinic', 'bemade_sports_clinic_bookings')
 EXTENSIONS = ('.py', '.js', '.xml', '.scss', '.css', '.po')
 SKIP_DIRS = {'__pycache__', 'node_modules', 'lib', 'description'}
 
@@ -370,6 +395,17 @@ SAVE_NAMES = (
     # Task 5201 (P6): the installable app's templates, page keys, controller.
     'sc_app_install', 'sc_app_offline', 'SW_PRECACHE_STATIC', 'SW_SOURCE', '_sc_sw_version',
     'sc_app_webmanifest', 'sc_app_service_worker',
+    # Task 5202 (P7): the dashboard's engine, controller, templates, values.
+    'sc_dashboard_layout', 'sc_dw_section', 'sc_app_dashboard_configure', 'sc_dashboard_configure',
+    'sc_dashboard_configure_save', 'sc_dashboard_configure_move', 'sc_dashboard_configure_add',
+    'sc_dashboard_configure_remove', 'sc_dashboard_configure_reset', '_sc_layout', '_sc_layout_save',
+    '_sc_layout_update', '_sc_layout_add', '_sc_layout_add_zone', '_sc_layout_move', '_sc_layout_place',
+    '_sc_layout_remove', '_sc_layout_reset', '_sc_layout_migrate', '_sc_layout_default', '_sc_normalize',
+    '_sc_viewer', '_sc_can', '_sc_widgets', '_sc_default_instance', '_sc_clean_settings', '_sc_zone_sorted',
+    '_sc_dashboard_values', '_sc_dash_zones', '_sc_dash_scope_label', '_sc_dash_post', '_sc_dash_done',
+    '_sc_dash_wants_json', 'WIDGETS_BY_KEY', 'sc_dash_sections', 'sc_dash_zones', 'sc_dash_configure_url',
+    'sc_dash_rows', 'sc_dash_cfg_zones', 'sc_dash_zone_choices', 'sc_dash_add_zone', 'sc_dash_add_choices',
+    'sc_dash_error', 'sc_dash_add_widget', 'sc_dashboard_config.js', 'sc_dashboard_config',
 )
 
 # Task 5344 (P3b1): the generic classes, as the name after ``o_sc_``. A name
@@ -538,6 +574,11 @@ ALLOWED = {
     (PWA, 'static/src/sw/pk_service_worker.js'): {'sc-app-shell-'},
     (PWA, '__manifest__.py'): {'sc-app-shell-'},
     (PWA, 'tests/test_pk_pwa.py'): {'sc-app-shell-'},
+    # Task 5202 (P7): the adoption / data move mapping, its test and the
+    # clinic's migration that runs it.
+    (DASH, 'tools/adopt.py'): {'sc_dw_section', 'sc_app_dashboard_configure', 'sc_dashboard_layout'},
+    (DASH, 'tests/test_pk_dashboard_migration.py'): {'sc_dashboard_layout'},
+    ('bemade_sports_clinic', 'migrations/19.0.1.148.0/pre-migrate.py'): None,
 }
 
 
@@ -567,6 +608,18 @@ THEME_RE = re.compile(r'(?<![\w])data-sc-theme(?![\w-])')
 ADOPTED_OLD_NAMES = tuple('%s.%s' % (module, old) for module, old, _new in ADOPTED_VIEWS)
 TEMPLATE_RE = re.compile(r'(?<![\w.])(%s)(?![\w])' % _alternation(ADOPTED_OLD_NAMES))
 SAVE_RE = re.compile(r'(?<![\w])(%s)(?![\w])' % _alternation(SAVE_NAMES))
+# Task 5202 (P7): the dashboard's model / fragment keys, markers, classes
+# and anchors.
+DASH_RE = re.compile(
+    r'(?<![\w.])sc\.dashboard(?![\w])'
+    r'|(?<![\w])data-sc-(?:dash-[\w-]+|dashboard|zone|instance|widget|dw-count|dw-scope|confirm-title|confirm-message)'
+    r'(?![\w-])'
+    r'|dataset(?:\.|\[\s*["\'])sc(?:Dash\w*|Zone|Instance|Widget|ConfirmTitle|ConfirmMessage)(?![\w])'
+    r'|(?<![\w-])o_sc_dash[\w-]*'
+    r'|(?<![\w-])o_sc_dw(?:_(?:header|title|title_text|count|scope|body))?(?![\w-])'
+    r'|(?<![\w-])sc-dash-'
+    r'|data-sc-action=\\?["\']dashboard\.(?:configure|history|calendar|list|back)["\'\\]'
+)
 # Task 5370 (P4b): dataset destructuring, ``{ scModel, scField: f } = x.dataset``.
 DESTRUCTURE_RE = re.compile(r'\{([^{}]*)\}\s*=\s*[\w.$]*\.dataset\b')
 DESTRUCTURED = frozenset([_camel(a) for a in ATTRIBUTES] + ['scField'])
@@ -596,6 +649,7 @@ def retired_names(line):
     found += [m.group(0) for m in THEME_RE.finditer(line)]
     found += [m.group(0) for m in TEMPLATE_RE.finditer(line)]
     found += [m.group(0) for m in SAVE_RE.finditer(line)]
+    found += [m.group(0) for m in DASH_RE.finditer(line)]
     for m in DESTRUCTURE_RE.finditer(line):
         for part in m.group(1).split(','):
             name = part.split(':')[0].strip()
@@ -664,7 +718,8 @@ class TestPkRetiredNames(TransactionCase):
         self.assertEqual(retired_names("assertIn('o_sc_app_body_%s' % theme"), ['o_sc_app_body_'])
         self.assertEqual(retired_names("cls.split('o_sc_chip_')[1]"), ['o_sc_chip_'])
         self.assertEqual(retired_names('el.classList.toggle(`o_sc_chip_${on}`)'), ['o_sc_chip_'])
-        self.assertEqual(retired_names("'o_sc_med_%s' % tone, 'o_sc_dash_zone_x'"), [])
+        # (Task 5202: o_sc_dash_* is retired since P7; a clinic widget class stays.)
+        self.assertEqual(retired_names("'o_sc_med_%s' % tone, 'o_sc_dw_zone_x'"), [])
         self.assertEqual(retired_names('animation: o_sc_spin 1s linear infinite;'), ['o_sc_spin'])
         self.assertEqual(retired_names('color: var(--sc-accent-fg, var(--sc-fg));'), ['--sc-accent-fg', '--sc-fg'])
         self.assertEqual(retired_names('--sc-bar-fg-2: #fff; --sc-surface-2: #000;'), ['--sc-bar-fg-2', '--sc-surface-2'])
@@ -727,6 +782,26 @@ class TestPkRetiredNames(TransactionCase):
                          ['sc_app_install', 'SW_SOURCE', '_sc_sw_version'])
         self.assertEqual(retired_names('data-pk-sw data-pk-install-steps pk_app_install PK_SW_SOURCE pk-app-shell- '
                                        'data-sc-switch-x sc_app_install_x'), [])
+
+    def test_matcher_p7(self):
+        """Task 5202 (P7): the dashboard's names; the clinic's widget names stay."""
+        self.assertEqual(retired_names("env['sc.dashboard'] 'sc.dashboard:todo:%s' user.sc_dashboard_layout"),
+                         ['sc_dashboard_layout', 'sc.dashboard', 'sc.dashboard'])
+        self.assertEqual(retired_names('<div data-sc-dashboard="1" data-sc-zone="left" data-sc-dash-item="x">'),
+                         ['data-sc-dashboard', 'data-sc-zone', 'data-sc-dash-item'])
+        self.assertEqual(retired_names('<s data-sc-instance="a" data-sc-widget="b" data-sc-dw-count="1">'),
+                         ['data-sc-instance', 'data-sc-widget', 'data-sc-dw-count'])
+        self.assertEqual(retired_names('el.dataset.scDashZone form.dataset.scConfirmTitle'),
+                         ['dataset.scDashZone', 'dataset.scConfirmTitle'])
+        self.assertEqual(retired_names('class="o_sc_dash_cfg o_sc_dw o_sc_dw_body o_sc_dw_title_text"'),
+                         ['o_sc_dash_cfg', 'o_sc_dw', 'o_sc_dw_body', 'o_sc_dw_title_text'])
+        self.assertEqual(retired_names('<a data-sc-action="dashboard.configure" href="#sc-dash-todo">'),
+                         ['data-sc-action="dashboard.configure"', 'sc-dash-'])
+        self.assertEqual(retired_names("Dash._sc_layout_update(x) _sc_viewer() sc_dashboard_config.js"),
+                         ['_sc_layout_update', '_sc_viewer', 'sc_dashboard_config.js'])
+        self.assertEqual(retired_names('o_sc_dw_todo_lines o_sc_dw_more data-sc-dw-more data-sc-todo '
+                                       'data-sc-action="dashboard.timesheet.add" portal.kit.dashboard '
+                                       'pk.dashboard:x sc_dash_kept_rows _sc_dash_player_rows _sc_data_todo'), [])
 
     def test_matcher_save_engine(self):
         """Task 5199 (P4a): the save engine and screen refresh names."""

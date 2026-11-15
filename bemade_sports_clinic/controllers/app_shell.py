@@ -884,7 +884,7 @@ def sc_save_specs():
         # Task 1740: the dashboard's « À faire » counts and its injury lines
         # (a verified injury leaves « Injuries to verify » at once).
         'refresh': {'*': ['*', _injury_patient_fragments, 'sports.treatment.note:*:meta',
-                          'sc.dashboard:todo:*', 'sc.dashboard:todo:*:list']},
+                          'pk.dashboard:todo:*', 'pk.dashboard:todo:*:list']},
     },
     'sports.treatment.note': {
         'fields': {'note': _TP_ROLES, 'date': _TP_ROLES, 'injury_id': _TP_ROLES},
@@ -1528,17 +1528,11 @@ class AppShellMixin:
 class AppShellPortal(PortalKitShell, AccessControlMixin, AppShellMixin):
 
     # ------------------------------------------------------------------
-    # /my/home — app home (« Équipes ») when the shell is active
+    # /my/home — the app home (« Tableau de bord ») when the shell is
+    # active: task 5202 (kit P7), bemade_portal_kit_dashboard's route
+    # (PortalKitDashboard.home) draws the clinic's sc_app_home with the
+    # clinic's widgets (controllers/app_dashboard.py).
     # ------------------------------------------------------------------
-    @http.route()
-    def home(self, **kw):
-        if kw.get('classic') or not self._pk_shell_active():
-            return super().home(**kw)
-        values = self._prepare_portal_layout_values()
-        # Task 1624: the configurable widget sections (controllers/app_dashboard.py).
-        values.update(self._sc_dashboard_values())
-        return self._sc_shell_response('bemade_sports_clinic.sc_app_home',
-                                       self._sc_app_values(values, 'sc_app_home'))
 
     @http.route(['/my/clinics/today/count'], type='http', auth='user', website=True,
                 methods=['GET'], multilang=False, sitemap=False)

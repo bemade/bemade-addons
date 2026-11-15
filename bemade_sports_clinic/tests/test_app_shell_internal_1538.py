@@ -70,7 +70,7 @@ class TestAppShellInternal1538(AppShellCommon):
         self.assertEqual(tabs[-1], 'more')
         self.assertIn('clinic', self._nav_keys(tree, 'o_pk_rail_nav'))
         # Task 1624 (deliberate update): the dashboard's sections, no team list.
-        self.assertTrue(tree.xpath('//section[@data-sc-widget="indicators"]'))
+        self.assertTrue(tree.xpath('//section[@data-pk-dash-widget="indicators"]'))
         self.assertTrue(tree.xpath('//*[@data-pk-section="home.clinic_teaser"]'))
         _text, tree = self._get('/my/teams')
         self.assertIsNotNone(self._shell(tree))

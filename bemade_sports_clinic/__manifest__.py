@@ -10,7 +10,7 @@
 #
 {
     'name': 'Sports Clinic Management',
-    'version': "19.0.1.147.0",
+    'version': "19.0.1.148.0",
     'summary': 'Comprehensive sports medicine clinic management with portal access and activity tracking.',
     'description': """
 Sports Clinic Management System
@@ -121,8 +121,9 @@ layouts).
 
 The app dashboard (/my/home) is made of widget sections each user may show,
 hide, reorder, duplicate and limit to some organisations / teams from its
-« Configurer » page (one registry: ``models/sc_dashboard.py``; the layout is
-stored per user, versioned). A scope only ever narrows what the user may
+« Configurer » page (task 5202: the engine, the page frame and the sheet are
+bemade_portal_kit_dashboard's; ``models/sc_dashboard.py`` registers the
+clinic's widgets; the layout is stored per user, versioned). A scope only ever narrows what the user may
 already access. Round 1: Today, Indicators, To do (each line folds out into
 its activity / injury / player cards), Recent changes, Players to watch,
 Players I follow (a personal « Follow » on the player cards and page),
@@ -144,6 +145,7 @@ nothing; PDF reports never carry it.
         "portal",
         "bemade_portal_kit",  # Task 5196: the app shell registries (roles, nav, pages)
         "bemade_portal_kit_pwa",  # Task 5201: the installable app (manifest, worker, offline / install pages)
+        "bemade_portal_kit_dashboard",  # Task 5202: the configurable dashboard (engine, page frame, configure sheet)
         "contacts",
         "base_setup",  # For res.config.settings base view inheritance
         "phone_validation",  # For phone number formatting in patient contacts
@@ -262,7 +264,8 @@ nothing; PDF reports never carry it.
         "views/instance_banner.xml",
         "views/sc_app_player_add.xml",
         "views/sc_app_pages.xml",
-        # Task 1624: the dashboard (/my/home) widgets + « Configurer ».
+        # Task 1624: the dashboard (/my/home) widgets (task 5202: the frame
+        # and « Configurer » are bemade_portal_kit_dashboard's).
         "views/sc_app_dashboard.xml",
         # Task 1542: team page (task 5201: the install and offline pages are
         # bemade_portal_kit_pwa's; sc_app_pwa.xml words them for Fit Crew).
@@ -374,12 +377,11 @@ nothing; PDF reports never carry it.
             # Task 1604: quick « Vérifier » / « Résoudre » of an injury.
             "bemade_sports_clinic/static/src/js/sc_injury_quick.js",
             "bemade_sports_clinic/static/src/js/sc_injury_card.js",
-            # Task 1624: « Configurer » the dashboard (saves as you go).
-            "bemade_sports_clinic/static/src/js/sc_dashboard_config.js",
             # Task 1624 review round 1: « Suivre » a player (fetch toggle).
             "bemade_sports_clinic/static/src/js/sc_follow.js",
-            # Task 1624 review round 2: the dashboard's two fixed columns,
-            # scroll anchoring of its fold-outs, the quick « Retour prévu ».
+            # Task 1624 review round 2: the quick « Retour prévu » (task 5202:
+            # the configure sheet and the scroll anchoring are
+            # bemade_portal_kit_dashboard's).
             "bemade_sports_clinic/static/src/js/sc_dashboard_live.js",
             # Task 1539: the shell's activity sheets (replaces, in the shell
             # only, the legacy activity partials' inline scripts).

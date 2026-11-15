@@ -14,7 +14,7 @@ function assert(condition, message) {
     }
 }
 
-const LINE = 'section[data-sc-instance="todo"] details[data-sc-todo="verify"]';
+const LINE = 'section[data-pk-dash-instance="todo"] details[data-sc-todo="verify"]';
 const YELLOW = `${LINE} details[data-pk-edit-card="injury"]:has([data-sc-injury-player-link]:contains("Synth, Yellow"))`;
 
 function visible(el) {
