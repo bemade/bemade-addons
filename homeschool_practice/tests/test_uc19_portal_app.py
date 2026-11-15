@@ -127,6 +127,11 @@ class TestPracticePortalApp(PracticeHttpCase):
         self.assertIn('data-hs-deck="%d"' % self.deck.id, body)
         self.assertIn('data-hs-unit="%d"' % self.t7.id, body)
         self.assertIn("%s %%" % self.t7._proficiency(self.student), body)
+        # how often: one session on the 7 table, one answer per item asked
+        answers = self.env["homeschool.practice.attempt"].search_count(
+            [("session_id.student_id", "=", self.student.id), ("item_id.unit_id", "=", self.t7.id)])
+        self.assertRegex(body, r'(?s)data-hs-unit="%d">.*?data-hs-sessions="1">1</td>.*?data-hs-answers="1">%d</td>'
+                         % (self.t7.id, answers), "sessions and answers per unit")
         t3 = self.deck.unit_ids.filtered(lambda u: u.sequence == 3)
         self.assertNotIn('data-hs-unit="%d"' % t3.id, body)  # still locked
 

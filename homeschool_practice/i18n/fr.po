@@ -1652,6 +1652,7 @@ msgstr "Séance terminée !"
 
 #. module: homeschool_practice
 #: model:ir.ui.menu,name:homeschool_practice.menu_practice_sessions
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_practice_progress
 msgid "Sessions"
 msgstr "Séances"
 
@@ -2116,3 +2117,8 @@ msgstr "p. ex. min, $"
 #: model:homeschool.practice.quest.template,name:homeschool_practice.quest_no_hint
 msgid "{target} correct answers without a hint"
 msgstr "{target} bonnes réponses sans indice"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.portal_practice_progress
+msgid "Answers"
+msgstr "Réponses"
