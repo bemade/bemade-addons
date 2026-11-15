@@ -6,10 +6,14 @@ from markupsafe import Markup
 
 from odoo import _, api, fields, models
 from odoo.fields import Domain
+from odoo.tools import str2bool
 
 from odoo.addons.phone_validation.models.mail_thread_phone import PHONE_REGEX_PATTERN
 
 from ..tools import digits, format_number, same_digits, sanitize, split_extension
+
+
+STORE_INTERNATIONAL_PARAM = "partner_phone_list.store_international"
 
 
 class ResPartner(models.Model):
@@ -21,14 +25,15 @@ class ResPartner(models.Model):
     phone = fields.Char(
         compute="_compute_phone",
         inverse="_inverse_phone",
+        compute_sudo=True,
         store=True,
         readonly=False,
         help="The top number of the contact's phone numbers.",
     )
     mobile = fields.Char(
-        string="Mobile",
         compute="_compute_mobile",
         inverse="_inverse_mobile",
+        compute_sudo=True,
         store=True,
         readonly=False,
         help="The first Mobile number of the contact's phone numbers.",
@@ -57,6 +62,24 @@ class ResPartner(models.Model):
         parse (see ``tools.format_number``)."""
         country = self._phone_list_country()
         return format_number(number, country.code, country.phone_code)
+
+    @api.model
+    def _phone_list_store_international(self):
+        """Whether numbers written by code are stored in the international
+        format (setting « Store phone numbers in international format »)."""
+        return str2bool(
+            self.env["ir.config_parameter"].sudo().get_param(STORE_INTERNATIONAL_PARAM, "False"),
+            default=False,
+        )
+
+    def _phone_list_store(self, number):
+        """How a written number is stored: in the international format
+        (``_phone_list_format``) when the setting is on, as written (trimmed)
+        otherwise, like the standard Phone field. Forms format on input
+        either way (onchange)."""
+        if self._phone_list_store_international():
+            return self._phone_list_format(number)
+        return number.strip() if isinstance(number, str) else number
 
     def _phone_list_sanitize(self, number):
         """E.164 form of ``number`` with this contact's country (or the
@@ -89,7 +112,7 @@ class ResPartner(models.Model):
             target.unlink()
             return
         number, extension = split_extension(value)
-        number = self._phone_list_format(number)
+        number = self._phone_list_store(number)
         key = self._phone_list_key(number, extension)
         match = lines.filtered(lambda line: line._phone_matches(key, number))[:1]
         was_top = bool(match) and match == lines[:1]
@@ -126,7 +149,7 @@ class ResPartner(models.Model):
     def _phone_list_display(self, value):
         """Canonical display of a written phone value (extension parsed)."""
         number, extension = split_extension(value)
-        number = self._phone_list_format(number)
+        number = self._phone_list_store(number)
         return "%s ext. %s" % (number, extension) if extension else number
 
     @api.model
@@ -167,7 +190,7 @@ class ResPartner(models.Model):
         number (not pushed to the contact) are left alone."""
         to_resync = records.browse()
         for record in records:
-            partner = record[partner_fname]
+            partner = record[partner_fname].sudo()
             value = record[fname]
             if not partner or not value or value == partner.phone or not partner.phone:
                 continue
@@ -210,13 +233,18 @@ class ResPartner(models.Model):
             else:
                 partner.mobile = partner.mobile
 
+    # The inverses run once the write of the contact itself passed the access
+    # checks: whoever may change a contact's Phone / Mobile (a portal user on
+    # their own address, a website form...) changes its number list, without
+    # needing rights on the number model.
+
     def _inverse_phone(self):
         for partner in self:
-            partner._phone_list_set(partner.phone, "top")
+            partner.sudo()._phone_list_set(partner.phone, "top")
 
     def _inverse_mobile(self):
         for partner in self:
-            partner._phone_list_set(partner.mobile, "mobile")
+            partner.sudo()._phone_list_set(partner.mobile, "mobile")
 
     # ------------------------------------------------------------------
     # CRUD

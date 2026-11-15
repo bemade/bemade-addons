@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 12:24+0000\n"
-"PO-Revision-Date: 2026-11-15 12:24+0000\n"
+"POT-Creation-Date: 2026-11-15 17:14+0000\n"
+"PO-Revision-Date: 2026-11-15 17:14+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -24,6 +24,11 @@ msgstr ""
 #. module: partner_phone_list
 #: model:ir.model,name:partner_phone_list.model_res_company
 msgid "Companies"
+msgstr ""
+
+#. module: partner_phone_list
+#: model:ir.model,name:partner_phone_list.model_res_config_settings
+msgid "Config Settings"
 msgstr ""
 
 #. module: partner_phone_list
@@ -61,6 +66,7 @@ msgstr ""
 #. module: partner_phone_list
 #: model:ir.model.fields,field_description:partner_phone_list.field_base_partner_merge_automatic_wizard__display_name
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_company__display_name
+#: model:ir.model.fields,field_description:partner_phone_list.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_partner__display_name
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_partner_phone__display_name
 msgid "Display Name"
@@ -88,6 +94,13 @@ msgid "Fax"
 msgstr ""
 
 #. module: partner_phone_list
+#: model_terms:ir.ui.view,arch_db:partner_phone_list.res_config_settings_view_form_phone_list
+msgid ""
+"Format every number written to a contact (other apps, imports, scripts), "
+"e.g. 5145550101 becomes +1 514-555-0101. Forms always format on input."
+msgstr ""
+
+#. module: partner_phone_list
 #: model:ir.model.fields,help:partner_phone_list.field_res_partner_phone__label
 msgid "Free note, e.g. after hours, reception."
 msgstr ""
@@ -100,6 +113,7 @@ msgstr ""
 #. module: partner_phone_list
 #: model:ir.model.fields,field_description:partner_phone_list.field_base_partner_merge_automatic_wizard__id
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_company__id
+#: model:ir.model.fields,field_description:partner_phone_list.field_res_config_settings__id
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_partner__id
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_partner_phone__id
 msgid "ID"
@@ -216,6 +230,20 @@ msgstr ""
 #. module: partner_phone_list
 #: model:ir.model.fields,field_description:partner_phone_list.field_res_partner_phone__sequence
 msgid "Sequence"
+msgstr ""
+
+#. module: partner_phone_list
+#: model:ir.model.fields,help:partner_phone_list.field_res_config_settings__partner_phone_list_store_international
+msgid ""
+"Store every number written to a contact (by a form, an import, another app "
+"or a script) in the international format, e.g. 5145550101 becomes +1 "
+"514-555-0101. Off: numbers written by other apps and imports are stored as "
+"written; forms still format them on input."
+msgstr ""
+
+#. module: partner_phone_list
+#: model:ir.model.fields,field_description:partner_phone_list.field_res_config_settings__partner_phone_list_store_international
+msgid "Store phone numbers in international format"
 msgstr ""
 
 #. module: partner_phone_list

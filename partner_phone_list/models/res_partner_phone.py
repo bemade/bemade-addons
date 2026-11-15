@@ -118,15 +118,16 @@ class ResPartnerPhone(models.Model):
 
     @api.model
     def _phone_normalize_vals(self, vals, partner):
-        """Move a typed extension to its column and store the number in the
-        international format (``res.partner._phone_list_format``)."""
+        """Move a typed extension to its column and store the number as
+        ``res.partner._phone_list_store`` says (international format when the
+        setting is on, as written otherwise)."""
         if vals.get("number"):
             number, extension = split_extension(vals["number"])
             if extension and not vals.get("extension"):
                 vals = dict(vals, extension=extension)
             else:
                 number = vals["number"]
-            vals = dict(vals, number=partner._phone_list_format(number))
+            vals = dict(vals, number=partner._phone_list_store(number))
         if isinstance(vals.get("extension"), str):
             vals = dict(vals, extension=vals["extension"].strip() or False)
         return vals

@@ -25,11 +25,15 @@ keeps the changes for the contact's own Save.
 Each number has:
 
 - a **type**: Mobile, Office, Direct line, Toll-free, Home, Fax or Other;
-- the **number**, stored in the international format (phone_validation, with
-  the contact's country or the company's: ``5145550101`` becomes
-  ``+1 514-555-0101``) whoever writes it; a value that does not parse, or
-  that would lose digits, is kept as typed. A sanitized E.164 copy is used
-  for matching and search;
+- the **number**. Forms format it on input in the international format
+  (phone_validation, with the contact's country or the company's:
+  ``5145550101`` becomes ``+1 514-555-0101``). Numbers written by other apps,
+  imports or scripts are stored as written, like the standard Phone field,
+  unless the setting **Store phone numbers in international format**
+  (Settings > General Settings > Contacts, off by default) is on: then every
+  written number is stored formatted, whoever writes it. A value that does
+  not parse, or that would lose digits, is kept as typed. A sanitized E.164
+  copy is used for matching and search;
 - an optional **extension** and **label** (e.g. "after hours");
 - a **position**: drag the rows to reorder them; the top row is the primary
   number.
@@ -52,7 +56,9 @@ Everything that reads or writes ``phone`` keeps working:
   top number, clearing Mobile removes the first mobile number. Other numbers are
   never deleted. This covers leads, tickets, tasks, employees, users,
   companies, portal and website address forms, imports and any other module
-  writing ``phone``.
+  writing ``phone``. Whoever may change a contact's Phone or Mobile (a portal
+  user included) changes its list: no access rights on the number model are
+  needed for that; editing the list itself (the phonebook dialog) needs them.
 - When a form saves the list and Phone together, the list wins.
 - Searching contacts by phone finds a contact by **any** of its numbers.
 - Merging contacts keeps every number of every merged contact (duplicates
@@ -82,10 +88,11 @@ project-specific module.
     "maintainer": "Denis Durepos",
     "website": "https://www.bemade.org",
     "license": "LGPL-3",
-    "depends": ["base", "mail", "phone_validation"],
+    "depends": ["base", "base_setup", "mail", "phone_validation"],
     "data": [
         "security/ir.model.access.csv",
         "views/res_partner_views.xml",
+        "views/res_config_settings_views.xml",
     ],
     "assets": {
         "web.assets_backend": [

@@ -1,6 +1,8 @@
 # Copyright 2026 Bemade Inc. (https://www.bemade.org)
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html).
-"""Use case: every number is stored in the international format.
+"""Use case: every number is stored in the international format (setting
+« Store phone numbers in international format » on; see test_store_setting
+for the default).
 
 Acceptance criteria:
 - A number written from code (create or write of a number line, a write of

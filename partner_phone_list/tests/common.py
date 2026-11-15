@@ -14,6 +14,9 @@ class PhoneListCase(TransactionCase):
         # numbers of contacts without a country are formatted with the
         # company's country
         cls.env.company.country_id = cls.canada
+        # Most use cases are written with numbers stored formatted (setting
+        # on); test_store_setting covers the default (off).
+        cls.env["ir.config_parameter"].sudo().set_param("partner_phone_list.store_international", "True")
         cls.Partner = cls.env["res.partner"]
         cls.Line = cls.env["res.partner.phone"]
 

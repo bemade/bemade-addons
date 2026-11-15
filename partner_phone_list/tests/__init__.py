@@ -11,3 +11,5 @@ from . import test_access
 from . import test_tour
 from . import test_normalize
 from . import test_sms
+from . import test_store_setting
+from . import test_portal_write
