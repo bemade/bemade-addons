@@ -63,6 +63,8 @@
                                 <tr>
                                     <th>Unit</th>
                                     <th class="text-end">Proficiency</th>
+                                    <th class="text-end">Sessions</th>
+                                    <th class="text-end d-none d-md-table-cell">Answers</th>
                                     <th class="d-none d-md-table-cell">Unlocked on</th>
                                     <th>Last practised</th>
                                 </tr>
@@ -71,6 +73,8 @@
                                 <tr t-foreach="row['units']" t-as="u" t-att-data-hs-unit="u['unit'].id">
                                     <td t-out="u['unit'].name"/>
                                     <td class="text-end"><t t-out="u['proficiency']"/> %</td>
+                                    <td class="text-end" data-hs-sessions="1" t-out="u['sessions']"/>
+                                    <td class="text-end d-none d-md-table-cell" data-hs-answers="1" t-out="u['answers']"/>
                                     <td class="d-none d-md-table-cell" t-out="u['unlocked_on']"/>
                                     <td>
                                         <t t-if="u['last_practised']" t-out="u['last_practised']"/>

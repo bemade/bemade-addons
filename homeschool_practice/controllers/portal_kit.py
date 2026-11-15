@@ -65,7 +65,8 @@ class HomeschoolPracticeShell(HomeschoolPortal):
     @http.route(["/my/homeschool/<int:student_id>/practice/progress"], type="http", auth="user", website=True)
     def portal_practice_progress(self, student_id, **kw):
         """Read-only, per learner: the units unlocked by deck, the proficiency of each
-        (share of its items that are secure) and when it was last practised. For a
+        (share of its items that are secure), how often it was practised (sessions that
+        asked it, answers given) and when it was last practised. For a
         resource user of the student only (never the learner himself)."""
         student = self._portal_student(student_id)
         if self._portal_role(student) != "resource":
@@ -73,6 +74,7 @@ class HomeschoolPracticeShell(HomeschoolPortal):
         env = request.env
         Access = env["homeschool.practice.unit.access"].sudo()
         Mastery = env["homeschool.practice.mastery"].sudo()
+        Attempt = env["homeschool.practice.attempt"].sudo()
         rows = Access.search([("student_id", "=", student.id), ("state", "=", "unlocked")])
         decks = []
         for deck in rows.deck_id.sorted(lambda d: (d.sequence, d.id)):
@@ -82,8 +84,11 @@ class HomeschoolPracticeShell(HomeschoolPortal):
                 unit = row.unit_id
                 last = Mastery.search([("student_id", "=", student.id), ("unit_id", "=", unit.id),
                                        ("last_seen", "!=", False)], order="last_seen desc", limit=1).last_seen
+                attempts = Attempt.search([("session_id.student_id", "=", student.id), ("item_id.unit_id", "=", unit.id)])
                 units.append({
                     "unit": unit,
+                    "sessions": len(attempts.session_id),
+                    "answers": len(attempts),
                     "proficiency": unit._proficiency(student),
                     "unlocked_on": format_date(env, row.unlocked_on) if row.unlocked_on else "",
                     "last_practised": format_date(env, last) if last else "",
