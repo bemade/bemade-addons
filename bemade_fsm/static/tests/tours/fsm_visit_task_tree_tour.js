@@ -96,7 +96,7 @@ registry.category("web_tour.tours").add("fsm_visit_task_tree_tour", {
             content:
                 "Assert the child level is collapsed initially (no nested depth-1 row yet)",
             trigger:
-                ".o_list_view tbody:not(:has(.o_recursive_bullet[data-depth='1']))",
+                ".o_list_view tbody:not(:has([data-depth='1']))",
         },
         // ----------------------------------------------------------------
         // Step 8: Lazy-expand the root row. The recursive_list_view fetches and
@@ -110,22 +110,25 @@ registry.category("web_tour.tours").add("fsm_visit_task_tree_tour", {
         },
         // ----------------------------------------------------------------
         // Step 9: Assert depth-1 child rows are now rendered as nested rows
-        // (bullet marker carries data-depth='1') -> the view renders a genuine
-        // multi-level parent/child structure and the lazy-expand is functional.
-        // The seeded root has TWO child tasks (one per SO line); assert both
-        // nested rows appeared.
+        // (their expand cell carries data-depth='1') -> the view renders a
+        // genuine multi-level parent/child structure and the lazy-expand is
+        // functional. The seeded root has TWO child tasks (one per SO line),
+        // each with children of its own, so both show an expand button.
         // ----------------------------------------------------------------
         {
             content:
-                "Assert depth-1 child rows appeared after expansion (multi-level structure rendered)",
+                "Assert BOTH seeded child tasks rendered as expandable depth-1 rows",
             trigger:
-                ".o_list_view .o_data_row td.o_recursive_expand_column .o_recursive_bullet[data-depth='1']",
+                ".o_list_view tbody:has(button.o_expand_button[data-depth='1']:eq(1))",
         },
         {
-            content:
-                "Assert BOTH seeded child tasks rendered as nested depth-1 rows",
-            trigger:
-                ".o_list_view tbody:has(.o_recursive_bullet[data-depth='1']:eq(1))",
+            content: "Expand a child task to reveal its own children (depth 2)",
+            trigger: ".o_list_view button.o_expand_button[data-depth='1']:eq(0)",
+            run: "click",
+        },
+        {
+            content: "Assert depth-2 rows (grandchildren) appeared",
+            trigger: ".o_list_view .o_recursive_expand_column [data-depth='2']",
         },
         // ----------------------------------------------------------------
         // Step 10: Collapse the root again and assert the nested child rows are
@@ -141,7 +144,7 @@ registry.category("web_tour.tours").add("fsm_visit_task_tree_tour", {
             content:
                 "Assert the nested child rows are removed after collapse (toggle is functional)",
             trigger:
-                ".o_list_view tbody:not(:has(.o_recursive_bullet[data-depth='1']))",
+                ".o_list_view tbody:not(:has([data-depth='1']))",
         },
     ],
 });
