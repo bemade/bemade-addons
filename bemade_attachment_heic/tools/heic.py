@@ -148,4 +148,3 @@ __all__ = [
     "relabel_name",
     "sniff_image_mimetype",
 ]
-
