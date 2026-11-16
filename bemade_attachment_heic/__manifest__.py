@@ -2,7 +2,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl).
 {
     "name": "Attachments: Convert HEIC Photos to JPEG",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Productivity/Discuss",
     "summary": "iPhone .heic photos are stored as JPEG so that Odoo and browsers can show them.",
     "description": """
@@ -23,6 +23,10 @@ Features
   helpdesk/field service/quality photos, inbound email attachments.
   HEIC is recognised by its mimetype, its ``.heic``/``.heif`` extension or its
   content (browsers often send ``application/octet-stream``).
+* **Mislabelled images**: a file labelled HEIC (name or mimetype) whose
+  content is really a JPEG, PNG, GIF or WebP (e.g. a JPEG renamed ``.HEIC``)
+  is relabelled with its real mimetype and extension; its bytes are kept.
+  The upload, the button and the backfill all do this.
 * **Never blocks an upload**: a file that cannot be converted (corrupt,
   decoder missing) is kept as uploaded and a warning is logged.
 * **Convert to JPEG** button on the HEIC attachment cards of the chatter, for

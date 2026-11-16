@@ -5,6 +5,8 @@ from .heic import (
     is_heic_bytes,
     is_heic_name,
     jpeg_name,
+    relabel_name,
+    sniff_image_mimetype,
 )
 
 __all__ = [
@@ -14,4 +16,6 @@ __all__ = [
     "is_heic_bytes",
     "is_heic_name",
     "jpeg_name",
+    "relabel_name",
+    "sniff_image_mimetype",
 ]

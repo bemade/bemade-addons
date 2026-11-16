@@ -9,13 +9,16 @@ Acceptance criteria:
     first, and never a traceback; the reason goes to the server log.
 3.  A user who cannot write the attachment's record gets an AccessError.
 4.  A non-HEIC attachment raises a bilingual UserError.
+5.  On a HEIC-labelled attachment whose content is really a JPEG, the action
+    relabels it (``image/jpeg``, ``.jpg``, bytes kept), clears
+    ``heic_convert_failed`` and returns the store data, without error.
 """
 
 from odoo.exceptions import AccessError, UserError
 from odoo.tests import TransactionCase, new_test_user, tagged
 from odoo.tools.misc import mute_logger
 
-from .common import CORRUPT_HEIC, make_heic, make_png
+from .common import CORRUPT_HEIC, make_heic, make_jpeg, make_png
 
 LOGGER = "odoo.addons.bemade_attachment_heic.models.ir_attachment"
 
@@ -82,3 +85,25 @@ class TestConvertAction(TransactionCase):
             self.png_att.with_user(self.user).action_convert_heic_to_jpeg()
         self.assertIn("n'est pas une image HEIC", str(err.exception))
         self.assertIn("is not a HEIC image", str(err.exception))
+
+    def test_relabel_mislabelled_jpeg(self):
+        jpeg = make_jpeg()
+        att = self.env["ir.attachment"].with_context(heic_no_convert=True).create(
+            {
+                "name": "IMG_0012.HEIC",
+                "raw": jpeg,
+                "mimetype": "image/heic",
+                "res_model": "res.partner",
+                "res_id": self.partner.id,
+            }
+        )
+        att.heic_convert_failed = True  # flagged by an earlier backfill run
+        result = att.with_user(self.user).action_convert_heic_to_jpeg()
+        self.assertEqual(att.name, "IMG_0012.jpg")
+        self.assertEqual(att.mimetype, "image/jpeg")
+        self.assertEqual(att.raw, jpeg)
+        self.assertFalse(att.heic_convert_failed)
+        stored = result["ir.attachment"]
+        self.assertEqual(stored[0]["id"], att.id)
+        self.assertEqual(stored[0]["mimetype"], "image/jpeg")
+        self.assertEqual(stored[0]["name"], "IMG_0012.jpg")

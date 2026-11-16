@@ -10,6 +10,9 @@ Acceptance criteria:
     picked again, so the backfill always ends.
 4.  The cron commits after each batch, reports what is left, and deactivates
     itself once nothing is left. Running it again is harmless (idempotent).
+5.  A stored HEIC-labelled attachment whose content is really a JPEG or a PNG
+    is relabelled (real mimetype and extension, bytes kept), counted as done
+    and not flagged; one holding garbage is still flagged as failed.
 """
 
 import io
@@ -20,7 +23,7 @@ from PIL import Image
 from odoo.tests import TransactionCase, tagged
 from odoo.tools.misc import mute_logger
 
-from .common import CORRUPT_HEIC, make_heic, make_png
+from .common import CORRUPT_HEIC, GARBAGE, make_heic, make_jpeg, make_png
 
 LOGGER = "odoo.addons.bemade_attachment_heic.models.ir_attachment"
 
@@ -147,3 +150,51 @@ class TestBackfillCron(TransactionCase):
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0][0], 2)
         self.assertFalse(calls[0][2])
+
+
+@tagged("post_install", "-at_install")
+class TestBackfillRelabel(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        partner = cls.env["res.partner"].create({"name": "HEIC Relabel Partner"})
+        Attachment = cls.env["ir.attachment"].with_context(heic_no_convert=True)
+        vals = {"res_model": "res.partner", "res_id": partner.id}
+        cls.jpeg = make_jpeg()
+        cls.png = make_png()
+        cls.jpeg_att = Attachment.create(
+            dict(vals, name="IMG_0011.HEIC", raw=cls.jpeg, mimetype="image/heic")
+        )
+        cls.png_att = Attachment.create(
+            dict(vals, name="shot.heic", raw=cls.png, mimetype="application/octet-stream")
+        )
+        cls.garbage_att = Attachment.create(
+            dict(vals, name="junk.heic", raw=GARBAGE, mimetype="image/heic")
+        )
+
+    def test_backfill_relabels(self):
+        Attachment = self.env["ir.attachment"]
+        mine = self.jpeg_att | self.png_att | self.garbage_att
+        self.assertEqual(self.jpeg_att.mimetype, "image/heic")
+        candidates = Attachment.sudo().search(Attachment._heic_backfill_domain())
+        self.assertEqual(candidates & mine, mine)
+        with mute_logger(LOGGER):
+            done, failed = Attachment._heic_backfill_batch(batch_size=len(candidates))
+        flagged = candidates.filtered("heic_convert_failed")
+        self.assertEqual(failed, len(flagged))
+        self.assertEqual(done, len(candidates) - len(flagged))
+        self.assertEqual(
+            (self.jpeg_att.name, self.jpeg_att.mimetype, self.jpeg_att.raw),
+            ("IMG_0011.jpg", "image/jpeg", self.jpeg),
+        )
+        self.assertEqual(
+            (self.png_att.name, self.png_att.mimetype, self.png_att.raw),
+            ("shot.png", "image/png", self.png),
+        )
+        self.assertFalse((self.jpeg_att | self.png_att).filtered("heic_convert_failed"))
+        self.assertTrue(self.garbage_att.heic_convert_failed)
+        self.assertEqual(self.garbage_att.raw, GARBAGE)
+        self.assertEqual(self.garbage_att.name, "junk.heic")
+        self.assertFalse(
+            Attachment.sudo().search(Attachment._heic_backfill_domain()) & mine
+        )
