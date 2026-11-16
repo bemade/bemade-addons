@@ -223,6 +223,8 @@ jobs:
           name: timings-${{ matrix.shard }}
           path: timings-${{ matrix.shard }}.json
           retention-days: 1
+          # A re-run of a failed shard replaces the failed attempt's file.
+          overwrite: true
 
   result:
     needs: [install, test]
@@ -242,8 +244,13 @@ jobs:
           import glob, json
           merged = {}
           for path in glob.glob('timings/timings-*.json'):
-              with open(path) as f:
-                  merged.update(json.load(f))
+              try:
+                  with open(path) as f:
+                      merged.update(json.load(f))
+              except (OSError, ValueError) as error:
+                  # Timings only balance the shards: a missing or broken file
+                  # must never fail the required check.
+                  print(f'skipping {path}: {error}')
           print(f'{len(merged)} classes timed')
           if merged:  # an empty file would become the latest timings
               with open('test-timings.json', 'w') as f:
