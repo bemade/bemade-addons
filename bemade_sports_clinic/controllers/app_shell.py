@@ -1096,12 +1096,15 @@ class AppShellMixin:
         kit = request.env['portal.kit']
         ctx = {'booking_card_enable': self._sc_booking_enabled()}
         nav_items = PortalKitShell._pk_nav_items
-        tabs = nav_items(kit.pk_visible_nav(roles, 'tab', ctx))
-        rail = nav_items(kit.pk_visible_nav(roles, 'rail', ctx))
-        plus = nav_items(kit.pk_visible_nav(roles, 'plus', ctx))
-        labels = kit.pk_nav_labels()
+        # Task 5391: a clinic page is the clinic app's (nav, crumbs, help).
+        app = sc_app_nav.SC_APP
+        tabs = nav_items(kit.pk_visible_nav(roles, 'tab', ctx, app=app))
+        rail = nav_items(kit.pk_visible_nav(roles, 'rail', ctx, app=app))
+        plus = nav_items(kit.pk_visible_nav(roles, 'plus', ctx, app=app))
+        labels = kit.pk_nav_labels(app=app)
         path = request.httprequest.path
         extra = {
+            'pk_app_key': app,
             'sc_app_shell': True,
             'sc_roles': roles,
             # Task 1598: a system admin also sees the TP actions legacy
@@ -1573,6 +1576,10 @@ class AppShellPortal(PortalKitShell, AccessControlMixin, AppShellMixin):
     # (portal.kit._pk_layout) with the clinic's values:
     # ------------------------------------------------------------------
     def _pk_app_values(self, values, page=None):
+        # Task 5391: the kit's pages are drawn with the clinic's values in the
+        # clinic's app only.
+        if request.env['portal.kit']._pk_current_app() != sc_app_nav.SC_APP:
+            return super()._pk_app_values(values, page)
         return self._sc_app_values(values, page)
 
     # ------------------------------------------------------------------

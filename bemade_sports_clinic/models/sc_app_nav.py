@@ -62,6 +62,11 @@ from odoo.addons.bemade_portal_kit.tools import (
 
 _lt = LazyTranslate(__name__)
 
+# Task 5391: the clinic's app key on the kit (its roles, nav entries, pages,
+# widgets and search providers). Never change it: the kit resolves every
+# lookup per app.
+SC_APP = 'fitcrew'
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -262,11 +267,14 @@ TOP_LEVEL = frozenset({
 
 def sc_pages(kit):
     """The clinic's shell pages, registered by ``portal.kit._pk_pages``
-    (``models/sc_app_roles.py``). ``kit`` is the ``portal.kit`` model (its
-    nav labels name the top-level pages)."""
-    label = kit.pk_nav_label
+    (``models/sc_app_roles.py``), every one the app ``SC_APP``'s (task 5391;
+    the kit's pages re-declared here replace them for this app only).
+    ``kit`` is the ``portal.kit`` model (its nav labels name the top-level
+    pages)."""
+    def label(key):
+        return kit.pk_nav_label(key, app=SC_APP)
     players_label = label('players')
-    return [
+    pages = [
         # -- top level (logo, no back) -------------------------------------
         pk_static_page('sc_app_home', '/my/home', _lt('Dashboard')),  # owner 2026-10-18 (#1623)
         pk_static_page('sc_app_teams', '/my/teams', label('teams')),
@@ -359,3 +367,6 @@ def sc_pages(kit):
                  v['activity'].sudo().res_name if v.get('activity') else '') or None,
              return_url=lambda v: None if v.get('activity') else v.get('return_url')),
     ]
+    for page in pages:
+        page.app = SC_APP
+    return pages

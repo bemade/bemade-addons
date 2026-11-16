@@ -4,7 +4,11 @@
 """Task 5201 (kit P6): the installable app's routes (moved from the first
 consumer, same URLs). Every public route answers 404 while the kit's switch
 is off: the page script (``pk_sw_register.js``) then unregisters the worker
-on every device (the kill switch). Stable URLs: ``multilang=False``."""
+on every device (the kill switch). Stable URLs: ``multilang=False``.
+
+Task 5391: ``/my/app.webmanifest``, the worker and the offline page are the
+database's default app's (``portal.kit._pk_default_app()``; one worker per
+site); ``/my/app/<app>.webmanifest`` is each app's manifest."""
 import json
 
 from markupsafe import Markup
@@ -32,7 +36,22 @@ class PortalKitPwa(PortalKitShell):
     def pk_pwa_manifest(self, **kw):
         if not self._pk_pwa_on():
             raise request.not_found()
-        manifest = request.env['portal.kit']._pk_pwa_manifest()
+        kit = request.env['portal.kit']
+        return self._pk_pwa_manifest_response(kit._pk_default_app())
+
+    @http.route(['/my/app/<string:app>.webmanifest'], type='http', auth='public', methods=['GET'],
+                multilang=False, sitemap=False)
+    def pk_pwa_app_manifest(self, app, **kw):
+        """Task 5391: the manifest of app ``app`` (404: unknown app)."""
+        kit = request.env['portal.kit']
+        if not self._pk_pwa_on() or app not in kit.pk_apps():
+            raise request.not_found()
+        return self._pk_pwa_manifest_response(app)
+
+    @staticmethod
+    def _pk_pwa_manifest_response(app):
+        kit = request.env['portal.kit']
+        manifest = kit._pk_pwa_manifest(kit._pk_pwa(app))
         return request.make_response(json.dumps(manifest), headers=[
             ('Content-Type', 'application/manifest+json'), _NO_CACHE])
 
@@ -45,7 +64,7 @@ class PortalKitPwa(PortalKitShell):
         if not self._pk_pwa_on():
             raise request.not_found()
         kit = request.env['portal.kit']
-        pwa = kit._pk_pwa()
+        pwa = kit._pk_pwa(kit._pk_default_app())
         with file_open(PK_SW_SOURCE) as source:
             body = source.read()
         body = (body
@@ -64,7 +83,7 @@ class PortalKitPwa(PortalKitShell):
         if not self._pk_pwa_on():
             raise request.not_found()
         kit = request.env['portal.kit']
-        pwa = kit._pk_pwa()
+        pwa = kit._pk_pwa(kit._pk_default_app())
         # The doctype is prepended here: a raw text node at the template
         # root changes how the view's terms are extracted.
         html = request.env['ir.ui.view']._render_template('bemade_portal_kit_pwa.pk_app_offline', {

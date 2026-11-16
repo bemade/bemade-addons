@@ -30,6 +30,10 @@ This file plugs the clinic into its hooks:
   never widens.
 
 The widgets' data stays here (recordsets, as the viewer).
+
+Task 5391: the widgets, filters and scope fields are the clinic app's
+(``SC_APP``); the scope and wording hooks answer for that app only
+(``super()`` for any other app of the database).
 """
 from datetime import datetime, time, timedelta
 from types import MappingProxyType
@@ -40,6 +44,8 @@ from odoo import api, fields, models
 from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.bemade_portal_kit_dashboard.models.portal_kit_dashboard import pk_dash_filter, pk_dash_widget
+
+from .sc_app_nav import SC_APP
 
 
 _lt = LazyTranslate(__name__)
@@ -65,7 +71,7 @@ MISSING_DAYS_BACK = (7, 14, 30, 60, 90)
 def _widget(key, title, zone, scoped=True, filters=(), defaults=None, title_coach=None):
     return pk_dash_widget(
         key, title, zone, 'bemade_sports_clinic.sc_dw_%s' % key, builder='_sc_dw_%s' % key,
-        can='dashboard.%s' % key, scoped=scoped, filters=filters, defaults=defaults,
+        can='dashboard.%s' % key, scoped=scoped, filters=filters, defaults=defaults, app=SC_APP,
         # Review round 1 (owner 2026-10-29): a coach's own wording (the
         # coverage widget lists their teams' events, not coverage).
         title_coach=title_coach)
@@ -104,14 +110,15 @@ class ScDashboard(models.AbstractModel):
         filters = dict(super()._pk_dash_filters())
         filters.update({
             'kinds': pk_dash_filter('multi', _lt('Show'), zip(TODO_KINDS, _TODO_KIND_TERMS),
-                                    default=list(TODO_KINDS)),
+                                    default=list(TODO_KINDS), app=SC_APP),
             'level': pk_dash_filter('choice', _lt('Players'), zip(WATCH_LEVELS, _WATCH_LEVEL_TERMS),
-                                    default='red_yellow'),
+                                    default='red_yellow', app=SC_APP),
             'days': pk_dash_filter('int', _lt('Period'), [
                 (days, env._("Default (%(days)s days)", days=default_days) if not days
-                 else env._("%(days)s days", days=days)) for days in COVERAGE_DAYS], default=0),
+                 else env._("%(days)s days", days=days)) for days in COVERAGE_DAYS], default=0, app=SC_APP),
             'days_back': pk_dash_filter('int', _lt('Days back'), [
-                (days, env._("%(days)s days", days=days)) for days in MISSING_DAYS_BACK], default=30),
+                (days, env._("%(days)s days", days=days)) for days in MISSING_DAYS_BACK], default=30,
+                app=SC_APP),
         })
         return filters
 
@@ -153,7 +160,14 @@ class ScDashboard(models.AbstractModel):
         return [kind for kind in TODO_KINDS if self._pk_dash_can(TODO_KIND_KEYS[kind], viewer)]
 
     @api.model
+    def _sc_dash_ours(self, viewer=None):
+        """Is the dashboard drawn in the clinic's app?"""
+        return self._pk_dash_app(viewer) == SC_APP
+
+    @api.model
     def _pk_dash_intro(self):
+        if not self._sc_dash_ours():
+            return super()._pk_dash_intro()
         return self.env._("Show, hide, reorder and limit each section to some teams. Changes are saved as you go.")
 
     # ------------------------------------------------------------------
@@ -163,25 +177,34 @@ class ScDashboard(models.AbstractModel):
     def _pk_dash_scope_fields(self):
         return super()._pk_dash_scope_fields() + [
             {'name': 'scope_org_ids', 'label': _lt('Teams of these organizations'),
-             'placeholder': _lt('Add an organization…')},
-            {'name': 'scope_team_ids', 'label': _lt('Teams'), 'placeholder': _lt('All my teams')},
+             'placeholder': _lt('Add an organization…'), 'app': SC_APP},
+            {'name': 'scope_team_ids', 'label': _lt('Teams'), 'placeholder': _lt('All my teams'),
+             'app': SC_APP},
         ]
 
     @api.model
     def _pk_dash_scope_universe(self, viewer):
+        if not self._sc_dash_ours(viewer):
+            return super()._pk_dash_scope_universe(viewer)
         return self._sc_scope_universe(viewer)
 
     @api.model
     def _pk_dash_scope_allowed(self, universe):
+        if not self._sc_dash_ours():
+            return super()._pk_dash_scope_allowed(universe)
         return {'scope_team_ids': set(universe.ids), 'scope_org_ids': set(universe.sudo().parent_id.ids)}
 
     @api.model
     def _pk_dash_scope_options(self, universe):
+        if not self._sc_dash_ours():
+            return super()._pk_dash_scope_options(universe)
         teams, orgs = self._sc_scope_options(universe=universe)
         return {'scope_team_ids': teams, 'scope_org_ids': orgs}
 
     @api.model
     def _pk_dash_scope_resolve(self, settings, viewer, universe):
+        if not self._sc_dash_ours(viewer):
+            return super()._pk_dash_scope_resolve(settings, viewer, universe)
         return self._sc_scope_teams(settings, viewer, universe)
 
     @api.model
@@ -189,6 +212,8 @@ class ScDashboard(models.AbstractModel):
         """The section's sub-title: « All my teams », else the chosen
         organisations / teams (two names, then « +N »)."""
         env = self.env
+        if not self._sc_dash_ours():
+            return super()._pk_dash_scope_label(settings, scope)
         if not self._pk_dash_explicit(settings):
             return env._("All my teams")
         org_ids = set(settings.get('scope_org_ids') or [])
@@ -201,14 +226,20 @@ class ScDashboard(models.AbstractModel):
 
     @api.model
     def _pk_dash_scope_hint(self):
+        if not self._sc_dash_ours():
+            return super()._pk_dash_scope_hint()
         return self.env._("Nothing chosen: all your teams.")
 
     @api.model
     def _pk_dash_scope_refused(self):
+        if not self._sc_dash_ours():
+            return super()._pk_dash_scope_refused()
         return self.env._("You cannot limit a section to teams or organisations you do not have access to.")
 
     @api.model
     def _pk_dash_scope_empty_label(self):
+        if not self._sc_dash_ours():
+            return super()._pk_dash_scope_empty_label()
         return self.env._("No team in this section's scope. Choose teams in « Configure ».")
 
     @api.model

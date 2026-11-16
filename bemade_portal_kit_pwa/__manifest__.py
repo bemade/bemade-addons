@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit: Installable App',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.1.0',
     'category': 'Website/Portal',
     'summary': 'The portal app as an installable app: web manifest, service worker, offline page, install page.',
     'description': """
@@ -50,17 +50,30 @@ page). An empty field takes its default: the brand hook
 (``portal.kit._pk_brand()``: the company name, the light theme colour)
 and the kit's neutral icons.
 
-``portal.kit._pk_pwa()`` returns the effective values. Hooks (extend them
-in an ``_inherit = 'portal.kit'``):
+``portal.kit._pk_pwa(app=None)`` returns the effective values of an app
+(default: the viewer's). Version 1.1: an app sets its installable app in its
+registration (``portal.kit._pk_apps()``, ``'pwa': {...}``), read by the
+hooks below (extend them in an ``_inherit = 'portal.kit'``, they take the
+app):
 
-* ``_pk_pwa_start_url()``: the app's start URL (default: the brand home);
-* ``_pk_pwa_manifest_id()``: the manifest ``id`` (default: the start URL).
-  Never change it on a live app: an installed app with another id is a
-  second app;
-* ``_pk_pwa_shortcuts()``: ``[{name, url}]`` (default: none);
+* ``_pk_pwa_start_url(app)``: ``pwa.start_url`` (default: the brand home);
+* ``_pk_pwa_manifest_id(app)``: ``pwa.manifest_id`` (default: the start
+  URL). Never change it on a live app: an installed app with another id is
+  a second app (two apps of one database: give each its own);
+* ``_pk_pwa_shortcuts(app)``: ``pwa.shortcuts``, ``[{name, url}]`` or
+  ``callable(kit)`` (default: none);
 * ``_pk_pwa_offline_style(pwa)``: the offline page's colours and fonts,
   ``{bg, fg, muted, accent, accent-fg, font, title-font, title-transform,
-  title-spacing}`` (CSS custom properties ``--pk-offline-<key>``).
+  title-spacing}`` (CSS custom properties ``--pk-offline-<key>``), with the
+  app's ``pwa.offline_style`` (a dict or ``callable(kit, pwa)``) merged
+  over the kit's.
+
+Apps (version 1.1): ``/my/app.webmanifest`` (public) is the database's
+default app (``portal.kit._pk_default_app()``): an app installed before
+keeps its manifest URL, id and start URL. Each app also has
+``/my/app/<app>.webmanifest``; a shell page links its viewer's app's
+manifest (``_pk_pwa_manifest_url(app)``). The service worker and the offline
+page are the default app's (one worker per site).
 
 Service worker
 --------------

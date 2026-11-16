@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit: Configurable Dashboard',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.1.0',
     'category': 'Website/Portal',
     'summary': 'A dashboard of widget sections each user shows, orders, places and narrows, on the portal app.',
     'description': """
@@ -25,8 +25,12 @@ An abstract model, as the viewer (record rules apply). Hooks (extend them
 in an ``_inherit = 'portal.kit.dashboard'``):
 
 * ``_pk_widgets()``: the widget registry, ``pk_dash_widget(key, title,
-  zone, template, builder, can, scoped, filters, defaults)``. The key is
-  stored in the users' layouts: never rename it;
+  zone, template, builder, can, scoped, filters, defaults, app)``. The key
+  is stored in the users' layouts: never rename it. Version 1.1: ``app``
+  names the consumer's app (none: every app); a viewer gets their app's
+  widgets and the shared ones (``pk_dash_app_widgets(app)``), and likewise
+  the filters (``pk_dash_filter(..., app=)``) and scope fields (``'app'``);
+  ``viewer['app']`` is the app the dashboard is drawn in;
 * ``_pk_dash_filters()``: the widgets' own settings, ``pk_dash_filter(type,
   label, choices, default)`` with type ``multi`` (switches), ``choice`` or
   ``int`` (a select); ``_pk_dash_filter_choices(name, viewer)`` narrows what
@@ -40,7 +44,9 @@ in an ``_inherit = 'portal.kit.dashboard'``):
   ``_pk_dash_scope_label(settings, scope)``, ``_pk_dash_scope_empty(scope)``
   and the wording hooks ``_pk_dash_scope_hint``,
   ``_pk_dash_scope_refused``, ``_pk_dash_scope_empty_label``,
-  ``_pk_dash_intro``.
+  ``_pk_dash_intro``. A consumer's override answers for its own app
+  (``viewer['app']`` / ``_pk_dash_app()``) and calls ``super()`` for any
+  other.
 
 Layout
 ------
@@ -55,11 +61,13 @@ Every widget keeps its base instance (id = its key); added ones are
 
 Pages
 -----
-* ``/my/home``: the dashboard (``pk_dash_page``). A consumer that draws its
-  own home page calls ``pk_dash_home`` from it
-  (``_pk_dash_home_template()``, or ``_pk_dash_render(values)`` to render
-  it with its own values); ``pk_dash_home``'s body slot (the caller's
-  body) and
+* ``/my/home``: the dashboard of the viewer's app (``pk_dash_page``). An
+  app that draws its own home page calls ``pk_dash_home`` from it and
+  names it in its registration (``portal.kit._pk_apps()``: ``'home':
+  'module.template'``, or ``'home_render': '<controller method>'`` to
+  render it with its own values; version 1.1, no ``home()`` or
+  ``_pk_dash_render`` override; such an app does not see ``pk_dash_page``);
+  ``pk_dash_home``'s body slot (the caller's body) and
   ``_pk_dash_page_values(values, ctx)`` are the page parts extension point;
   ``_pk_dash_context(Dash, viewer)`` is what each widget builder
   (``builder(instance, scope, ctx)``) receives;

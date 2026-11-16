@@ -164,11 +164,11 @@ class PortalKitShell(PortalKitApp):
         return items
 
     @staticmethod
-    def _pk_search_values():
+    def _pk_search_values(app=None):
         """The app bar's search (``{'placeholder', 'href'}``), or False when
-        no provider is available to the viewer."""
+        no provider of the viewer's app is available to them."""
         kit = request.env['portal.kit']
-        providers = kit.pk_search_providers()
+        providers = kit.pk_search_providers(app)
         if not providers:
             return False
         return {
@@ -181,13 +181,17 @@ class PortalKitShell(PortalKitApp):
         page's template (``module.template``); its last part is the page
         key of the registry (back target, context line, crumbs) and of the
         help. ``extra``: a consumer's values (they replace the kit's, the
-        page's ``values`` replace both)."""
+        page's ``values`` replace both); its ``pk_app_key`` (task 5391) names
+        the app the page belongs to (default: the viewer's app)."""
         self._pk_profile_lang_guard()
         env = request.env
         kit = env['portal.kit']
         user = env.user
         page_key = (page or '').rpartition('.')[2]
         roles = user._pk_roles()
+        # Task 5391: every lookup in one app: the consumer's (``extra``'s
+        # ``pk_app_key``: its own pages), else the viewer's.
+        app = (extra or {}).get('pk_app_key') or kit._pk_current_app()
         path = request.httprequest.path
         query = request.httprequest.query_string.decode()
         initials = ''.join(part[:1] for part in (user.name or '').split()[:2]).upper()
@@ -209,7 +213,8 @@ class PortalKitShell(PortalKitApp):
             'pk_db': request.db or '',
             'pk_uid': user.id,
             'pk_rendered_at': pk_now_ms(),
-            'pk_search': self._pk_search_values(),
+            'pk_app_key': app or '',
+            'pk_search': self._pk_search_values(app),
             'pk_notification': self._pk_pop_notification(),
             # The kit's render helpers (fragments, autosave field, read view).
             'pk_fragment_key': pk_fragment_key,
@@ -221,15 +226,15 @@ class PortalKitShell(PortalKitApp):
             'pk_contact_href': pk_contact_href,
         }
         if not extra or 'pk_rail' not in extra:
-            shell['pk_tabs'] = self._pk_nav_items(kit.pk_visible_nav(roles, 'tab', {}))
-            shell['pk_rail'] = self._pk_nav_items(kit.pk_visible_nav(roles, 'rail', {}))
-            shell['pk_plus'] = self._pk_nav_items(kit.pk_visible_nav(roles, 'plus', {}))
+            shell['pk_tabs'] = self._pk_nav_items(kit.pk_visible_nav(roles, 'tab', {}, app=app))
+            shell['pk_rail'] = self._pk_nav_items(kit.pk_visible_nav(roles, 'rail', {}, app=app))
+            shell['pk_plus'] = self._pk_nav_items(kit.pk_visible_nav(roles, 'plus', {}, app=app))
         shell.update(extra or {})
         shell.update(values)
         nav = kit.pk_resolve(
             page_key, shell,
             request_url=shell['pk_current_url'],
-            request_return_url=request.httprequest.args.get('return_url'))
+            request_return_url=request.httprequest.args.get('return_url'), app=app)
         shell.update({
             'pk_parent_url': nav['parent_url'],
             'pk_crumbs': nav['crumbs'],

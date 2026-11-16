@@ -7,10 +7,12 @@ bemade_portal_kit_dashboard's (``PortalKitDashboard``); the registry, the
 layout and the scope are ``portal.kit.dashboard`` (``models/sc_dashboard.py``
 plugs the clinic in). This controller brings, through the kit's hooks:
 
-* ``_pk_dash_render``: the clinic's home page (``sc_app_home``, drawn
-  with the clinic's shell values);
+* ``_sc_dash_render``: the clinic's home page (``sc_app_home``, drawn
+  with the clinic's shell values); task 5391: the clinic app's
+  ``home_render`` (``portal.kit._pk_apps``), called by the kit's ``home()``;
 * ``_pk_dash_context``: what the clinic's builders share (labels, the
-  recent-changes sets per scope, the player-card scopes…);
+  recent-changes sets per scope, the player-card scopes…), in the clinic's
+  app only (as ``_pk_dash_page_values``);
 * the builders ``_sc_dw_<key>(instance, teams, ctx)``: the widgets' rows
   with the app's EXISTING row builders — the player rows of the team page
   (``_sc_player_row`` + ``_sc_player_row_extras``: the coach / therapist
@@ -33,6 +35,7 @@ from odoo.addons.bemade_portal_kit.controllers.pk_app import PortalKitApp
 from odoo.addons.bemade_portal_kit.tools import pk_field_props
 from odoo.addons.bemade_portal_kit_dashboard.controllers.pk_dashboard import PK_DASH_ROWS_SHOWN
 
+from ..models.sc_app_nav import SC_APP
 from .task_management_portal import TaskManagementPortal
 from .team_management_portal import TeamManagementPortal
 
@@ -49,7 +52,7 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
     # ------------------------------------------------------------------
     # The dashboard's page (the kit's hooks; /my/home, PortalKitDashboard)
     # ------------------------------------------------------------------
-    def _pk_dash_render(self, values):
+    def _sc_dash_render(self, values):
         """The clinic's home (``sc_app_home``) with the clinic's shell
         values, as before task 5202."""
         return self._sc_shell_response('bemade_sports_clinic.sc_app_home',
@@ -57,6 +60,8 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
 
     def _pk_dash_context(self, Dash, viewer):
         ctx = super()._pk_dash_context(Dash, viewer)
+        if viewer.get('app') != SC_APP:
+            return ctx
         env = request.env
         ctx.update({
             'changes': {},
@@ -77,6 +82,8 @@ class AppDashboardPortal(TeamManagementPortal, TaskManagementPortal):
 
     def _pk_dash_page_values(self, values, ctx):
         values = super()._pk_dash_page_values(values, ctx)
+        if ctx['viewer'].get('app') != SC_APP:
+            return values
         env = request.env
         values.update({
             'page_name': 'home',

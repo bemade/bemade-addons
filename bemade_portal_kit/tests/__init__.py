@@ -25,3 +25,4 @@ from . import test_pk_shell_pages
 from . import test_pk_help
 from . import test_pk_data_moves
 from . import test_pk_version_guard
+from . import test_pk_apps

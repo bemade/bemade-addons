@@ -78,6 +78,8 @@ def pk_kit_shell(env, roles=None, layout='bemade_portal_kit.pk_app_layout'):
         stack.enter_context(pk_hooks(
             env,
             _pk_roles=lambda _orig: roles or {'member': {'groups': ('base.group_portal',)}},
+            # Task 5391: no consumer's app registration (layout, home, PWA…).
+            _pk_apps=lambda _orig: {},
             _pk_help_keys=lambda _orig: {},
             _pk_help_tabbed=lambda _orig: (),
             _pk_search_providers=lambda _orig: [],

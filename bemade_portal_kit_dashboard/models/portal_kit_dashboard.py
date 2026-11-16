@@ -20,7 +20,8 @@ built with ``pk_dash_widget(...)``:
                 viewer);
 * ``scoped``    it takes the scope (see « Scope » below);
 * ``filters``   its own settings, names of ``_pk_dash_filters()``;
-* ``defaults``  a default value per filter (else the filter's default).
+* ``defaults``  a default value per filter (else the filter's default);
+* ``app``       task 5391: the app it belongs to (``None``: every app).
 
 Other keys are kept as they are (a consumer's own wording rules, read by its
 ``_pk_dash_widget_title``).
@@ -33,6 +34,19 @@ Filters
 sequence of ``(value, label)``. The configure sheet draws a switch per
 choice (``multi``) or a select; a save accepts nothing outside the choices.
 ``_pk_dash_filter_choices(name, viewer)`` narrows what the sheet offers.
+A filter (``pk_dash_filter(..., app=)``) and a scope field (``'app'``) may
+belong to one app (task 5391; ``None``: every app): the engine reads the
+viewer's app's only (``_pk_dash_app_filters`` / ``_pk_dash_app_scope_fields``).
+
+Apps (task 5391)
+----------------
+Every lookup is the viewer's app's (``viewer['app']``,
+``portal.kit._pk_current_app()``): ``pk_dash_app_widgets(app)`` is the
+registry of one app (its widgets and the shared ones). A consumer's hook that
+answers for its app only (the scope's universe, its wording…) tests
+``viewer['app']`` / ``self._pk_dash_app()`` and calls ``super()`` for every
+other app. The home (``/my/home``) is the app's (``portal.kit._pk_apps()``:
+``home`` / ``home_render``), drawn by the kit's ``home()``.
 
 Per-user layout
 ---------------
@@ -83,6 +97,8 @@ from odoo import api, models
 from odoo.exceptions import ValidationError
 from odoo.tools.translate import LazyTranslate
 
+from odoo.addons.bemade_portal_kit.tools import pk_app_scoped
+
 _lt = LazyTranslate(__name__)
 
 LAYOUT_VERSION = 2
@@ -99,7 +115,7 @@ FILTER_TYPES = ('multi', 'choice', 'int')
 
 
 def pk_dash_widget(key, title, zone, template, builder=None, can=None, scoped=False, filters=(),
-                   defaults=None, **extra):
+                   defaults=None, app=None, **extra):
     """One entry of ``portal.kit.dashboard._pk_widgets()`` (a new dict)."""
     spec = dict(extra)
     spec.update({
@@ -112,13 +128,19 @@ def pk_dash_widget(key, title, zone, template, builder=None, can=None, scoped=Fa
         'scoped': bool(scoped),
         'filters': tuple(filters),
         'defaults': dict(defaults or {}),
+        'app': app or None,
     })
     return spec
 
 
-def pk_dash_filter(kind, label, choices, default=None):
+def pk_dash_filter(kind, label, choices, default=None, app=None):
     """One entry of ``portal.kit.dashboard._pk_dash_filters()``."""
-    return {'type': kind, 'label': label, 'choices': tuple(choices), 'default': default}
+    return {'type': kind, 'label': label, 'choices': tuple(choices), 'default': default, 'app': app or None}
+
+
+def _of_app(spec, app):
+    """Is a filter / scope field ``spec`` the app ``app``'s (or shared)?"""
+    return (spec.get('app') or None) in (None, app)
 
 
 def _copy(value):
@@ -152,17 +174,27 @@ class PortalKitDashboard(models.AbstractModel):
     def _pk_dash_filter_choices(self, name, viewer):
         """The ``(value, label)`` choices the configure sheet offers for
         filter ``name`` (default: all of them)."""
-        return list(self._pk_dash_filters()[name]['choices'])
+        return list(self._pk_dash_app_filters(viewer and viewer.get('app'))[name]['choices'])
 
     @api.model
     def _pk_dash_viewer(self):
-        """The viewer, computed once per request: ``roles`` (the app roles)
-        and ``is_system``. A consumer adds its own keys."""
+        """The viewer, computed once per request: ``roles`` (the app roles),
+        ``is_system`` and ``app`` (task 5391: the app the dashboard is drawn
+        in). A consumer adds its own keys."""
         user = self.env.user
         return {
             'roles': user._pk_roles(),
             'is_system': user.has_group('base.group_system'),
+            'app': self._pk_dash_app(),
         }
+
+    @api.model
+    def _pk_dash_app(self, viewer=None):
+        """The app the dashboard is drawn in: ``viewer['app']``, else
+        ``portal.kit._pk_current_app()``."""
+        if viewer and 'app' in viewer:
+            return viewer['app']
+        return self.env['portal.kit']._pk_current_app()
 
     @api.model
     def _pk_dash_widget_title(self, spec, viewer=None):
@@ -242,15 +274,40 @@ class PortalKitDashboard(models.AbstractModel):
         return self.env['portal.kit'].pk_can(key, viewer['roles'], is_system=viewer.get('is_system', False))
 
     @api.model
-    def _pk_dash_widgets(self, viewer=None):
-        """The registry entries this viewer may have, in registry order."""
-        viewer = viewer or self._pk_dash_viewer()
-        return [spec for spec in self._pk_widgets() if self._pk_dash_can(spec['can'], viewer)]
+    def pk_dash_app_widgets(self, app=None):
+        """Task 5391: the registry of ``app`` (default: the current app):
+        its widgets and the shared ones, an own widget replacing a shared one
+        of the same key, in registry order."""
+        app = app or self._pk_dash_app()
+        return pk_app_scoped(self._pk_widgets(), app, lambda spec: spec['key'])
 
     @api.model
-    def _pk_dash_widget(self, key):
-        """The registry entry ``key`` (whoever may have it), or None."""
-        return next((spec for spec in self._pk_widgets() if spec['key'] == key), None)
+    def _pk_dash_app_filters(self, app=None):
+        """Task 5391: ``_pk_dash_filters()`` of ``app`` (default: the current
+        app) and the shared ones."""
+        app = app or self._pk_dash_app()
+        return {name: spec for name, spec in self._pk_dash_filters().items() if _of_app(spec, app)}
+
+    @api.model
+    def _pk_dash_app_scope_fields(self, app=None):
+        """Task 5391: ``_pk_dash_scope_fields()`` of ``app`` (default: the
+        current app) and the shared ones."""
+        app = app or self._pk_dash_app()
+        return [field for field in self._pk_dash_scope_fields() if _of_app(field, app)]
+
+    @api.model
+    def _pk_dash_widgets(self, viewer=None):
+        """The registry entries of the viewer's app this viewer may have, in
+        registry order."""
+        viewer = viewer or self._pk_dash_viewer()
+        return [spec for spec in self.pk_dash_app_widgets(self._pk_dash_app(viewer))
+                if self._pk_dash_can(spec['can'], viewer)]
+
+    @api.model
+    def _pk_dash_widget(self, key, app=None):
+        """The registry entry ``key`` of ``app`` (default: the current app;
+        whoever may have it), or None."""
+        return next((spec for spec in self.pk_dash_app_widgets(app) if spec['key'] == key), None)
 
     @api.model
     def _pk_dash_zone_labels(self):
@@ -260,7 +317,7 @@ class PortalKitDashboard(models.AbstractModel):
     def _pk_dash_explicit(self, settings):
         """Does an instance's settings name a scope (any scope field set)?"""
         settings = settings or {}
-        return any(settings.get(field['name']) for field in self._pk_dash_scope_fields())
+        return any(settings.get(field['name']) for field in self._pk_dash_app_scope_fields())
 
     # ------------------------------------------------------------------
     # Layout
@@ -273,10 +330,10 @@ class PortalKitDashboard(models.AbstractModel):
 
     @api.model
     def _pk_dash_default_settings(self, spec, filters=None):
-        filters = self._pk_dash_filters() if filters is None else filters
+        filters = self._pk_dash_app_filters() if filters is None else filters
         settings = {}
         if spec['scoped']:
-            for field in self._pk_dash_scope_fields():
+            for field in self._pk_dash_app_scope_fields():
                 settings[field['name']] = []
         for name in spec['filters']:
             default = spec['defaults'][name] if name in spec['defaults'] else filters[name]['default']
@@ -296,7 +353,7 @@ class PortalKitDashboard(models.AbstractModel):
 
     @api.model
     def _pk_dash_layout_default(self, viewer=None):
-        filters = self._pk_dash_filters()
+        filters = self._pk_dash_app_filters(self._pk_dash_app(viewer))
         return [self._pk_dash_default_instance(spec, filters=filters) for spec in self._pk_dash_widgets(viewer)]
 
     @api.model
@@ -304,12 +361,12 @@ class PortalKitDashboard(models.AbstractModel):
         """``raw`` settings -> the instance's clean settings. ``strict`` (a
         save) raises on any value outside its choices / the viewer's scope;
         otherwise (a load) such values are dropped."""
-        filters = self._pk_dash_filters() if filters is None else filters
+        filters = self._pk_dash_app_filters() if filters is None else filters
         allowed_ids = allowed_ids or {}
         raw = raw if isinstance(raw, dict) else {}
         clean = self._pk_dash_default_settings(spec, filters)
         if spec['scoped']:
-            for field in self._pk_dash_scope_fields():
+            for field in self._pk_dash_app_scope_fields():
                 name = field['name']
                 allowed = allowed_ids.get(name)
                 ids = []
@@ -363,7 +420,7 @@ class PortalKitDashboard(models.AbstractModel):
             if strict:
                 raise ValidationError(self.env._("Invalid dashboard layout."))
             raw = self._pk_dash_layout_migrate(raw)
-        filters = self._pk_dash_filters()
+        filters = self._pk_dash_app_filters(self._pk_dash_app(viewer))
         allowed_ids = self._pk_dash_scope_allowed(self._pk_dash_scope_universe(viewer))
         clean, seen = [], set()
         for item in raw['instances']:
