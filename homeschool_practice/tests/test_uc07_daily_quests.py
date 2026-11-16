@@ -12,11 +12,11 @@ Acceptance criteria
 2. ``homeschool.practice.quest``: one per learner, template and day; ``deck_id`` /
    ``unit_id`` when the quest targets one, ``progress``, ``done``, ``done_at``. Day
    boundary = the family's timezone.
-3. **Drawn from need:** on the learner's first request of a practice day the server
-   draws the day's quests (default 3, per learner): the unit with the most due or
-   newly introduced items gets a ``unit_session`` quest; a ``review_session`` when
-   other unlocked units have due items; the rest from the pool, weighted, never the
-   same template twice in a day. Idempotent for the day.
+3. **Drawn once a day:** on the learner's first request of a practice day the server
+   draws the day's quests (default 3, per learner) — how they are chosen is UC-23 (tables
+   until mastered, rotation of the decks, surprise lessons, 3 to 5 sessions). Idempotent
+   for the day. The older kinds (``unit_session``, ``review_session``, ``answers``) are no
+   longer drawn but still progress for quests that exist.
 4. **The learner chooses the order**: every quest of the day is startable at any time,
    in any order; a session quest starts its session from the quest.
 5. Progress counts only that day's events; an unfinished quest ends with the day — no
@@ -43,23 +43,23 @@ class TestDailyQuests(PracticeCase):
         self.t3.action_unlock(self.student)
         self.student.practice_weekdays = "12345"
 
-    def test_draw_from_need_idempotent(self):
+    def test_draw_idempotent(self):
         quests = self.Quest._draw(self.student, MONDAY)
         self.assertEqual(len(quests), 3)
         self.assertEqual(len(set(quests.template_id.ids)), 3)
-        unit_q = quests.filtered(lambda q: q.kind == "unit_session")
-        self.assertEqual(len(unit_q), 1)
-        self.assertTrue(unit_q.unit_id in (self.t7 | self.t3))
-        self.assertIn(unit_q.unit_id.name, unit_q.label)
+        deck_q = quests.filtered(lambda q: q.kind == "deck_session")
+        self.assertEqual(deck_q.deck_id, self.deck)
+        self.assertIn(self.deck.name, deck_q.label)
         self.assertEqual(self.Quest._draw(self.student, MONDAY), quests)
-        self.assertNotIn("review_session", quests.mapped("kind"))  # nothing seen yet: nothing to review
+        self.assertFalse({"unit_session", "review_session", "answers"} & set(quests.mapped("kind")))
 
-    def test_review_quest_when_other_units_due(self):
+    def test_review_session_counts_for_the_deck_quest(self):
+        self.student.practice_weekdays = "1234567"
         self.run_session(unit=self.t3)
-        self.run_session(unit=self.t7)
-        self.shift_due()
-        quests = self.Quest._draw(self.student, MONDAY)
-        self.assertIn("review_session", quests.mapped("kind"))
+        deck_q = self._today_quests().filtered(lambda q: q.kind == "deck_session")
+        before = deck_q.progress
+        self.run_session(kind="review")
+        self.assertEqual(deck_q.progress, min(before + 1, deck_q.target))
 
     def test_rest_day(self):
         self.assertFalse(self.Quest._draw(self.student, SATURDAY))
@@ -77,8 +77,9 @@ class TestDailyQuests(PracticeCase):
     def test_progress_any_order_and_cap(self):
         self.student.practice_weekdays = "1234567"
         quests = self._today_quests()
-        unit_q = quests.filtered(lambda q: q.kind == "unit_session")
-        s = self.Session._start(self.student, self.deck, kind="unit", unit=unit_q.unit_id, quest=unit_q)
+        unit_q = quests.filtered(lambda q: q.kind == "deck_session")
+        unit_q.target = 1
+        s = self.Session._start(self.student, self.deck, kind="unit", unit=self.t7, quest=unit_q)
         self.answer_all(s)
         ev = s._finish()
         self.assertTrue(unit_q.done)
@@ -97,13 +98,11 @@ class TestDailyQuests(PracticeCase):
     def test_answers_and_no_hint_quests(self):
         self.student.practice_weekdays = "1234567"
         Template = self.env["homeschool.practice.quest.template"]
-        Template.search([]).write({"active": False})
         t_ans = Template.create({"name": "Answer {target}", "kind": "answers", "target": 4})
         t_nh = Template.create({"name": "{target} without hint", "kind": "no_hint", "target": 2})
-        Template.create({"name": "Session on {unit}", "kind": "unit_session"})
-        quests = self._today_quests()
-        q_ans = quests.filtered(lambda q: q.template_id == t_ans)
-        q_nh = quests.filtered(lambda q: q.template_id == t_nh)
+        today = self.Quest._today(self.student)
+        q_ans, q_nh = (self.Quest.create({"student_id": self.student.id, "template_id": t.id, "day": today,
+                                          "target": t.target}) for t in (t_ans, t_nh))
         self.assertEqual(q_ans.label, "Answer 4")
         s = self.Session._start(self.student, self.deck, kind="unit", unit=self.t7)
         item = s._current_item()

@@ -1,20 +1,21 @@
 # -*- coding: utf-8 -*-
-"""UC-21 — A quest every day for some decks (times tables, grammar).
+"""UC-21 — A quest every day until mastered (the times tables).
 
 Acceptance criteria
 -------------------
-1. A deck may be flagged « Une quête chaque jour » (``quest_daily``). The « Grammaire »
-   starter deck is loaded with the flag; on databases that already hold the decks, the
-   upgrade flags « Grammaire » and the times-tables deck (``deck._flag_daily_decks()``).
+1. A deck may be flagged « Une quête chaque jour jusqu'à la maîtrise » (``quest_daily``).
+   No starter deck is loaded with the flag (« Grammaire » joins the rotation); on databases
+   that already hold the decks, the upgrade sets it on the times-tables decks and clears it
+   on « Grammaire » (``deck._flag_daily_decks()``, idempotent).
 2. When the day's quests are drawn, each flagged deck with a unit unlocked for the learner
-   gets a ``unit_session`` quest first, on its unit that needs it most.
-3. The remaining slots are drawn as before among the other units: one session quest per
-   subject on the unit that needs it most, then a review, then the pool. So with times
-   tables and grammar flagged and units unlocked in both, every day's draw holds a tables
-   quest and a grammar quest, and the third is need-first among the rest.
+   and not yet mastered by him gets a deck session quest first (UC-23 for mastery).
+3. The remaining slots rotate among the other decks (UC-23): so with the tables flagged and
+   grammar, homophones and fractions unlocked, every day holds a tables quest, and grammar
+   comes back in turn, not every day.
 4. The learner's number of quests a day still holds: with more flagged decks than slots,
    the flagged decks that need it most take them all.
-5. With only times tables unlocked, the draw still fills its 3 quests (review, pool).
+5. With only the times tables unlocked, the draw still fills its 3 quests (surprise or
+   challenge quests).
 """
 from datetime import date, timedelta
 
@@ -42,49 +43,43 @@ class TestDailyDeckQuests(PracticeCase):
         self.fractions.unit_ids.filtered(lambda u: u.sequence <= 3).action_unlock(self.student)
 
     def sessions(self, quests):
-        return quests.filtered(lambda q: q.kind == "unit_session")
+        return quests.filtered(lambda q: q.kind == "deck_session")
 
-    def test_flag_loaded_on_grammar_only(self):
-        self.assertTrue(self.grammar.quest_daily)
-        self.assertFalse(any((self.homophones | self.fractions).mapped("quest_daily")))
+    def test_no_starter_deck_flagged(self):
+        self.assertFalse(any((self.grammar | self.homophones | self.fractions).mapped("quest_daily")))
 
     def test_flag_daily_decks_on_existing_databases(self):
-        decks = self.deck | self.grammar
-        decks.quest_daily = False
-        self.Deck._flag_daily_decks()
-        self.assertEqual(decks.mapped("quest_daily"), [True, True])
-        self.assertFalse(any((self.homophones | self.fractions).mapped("quest_daily")))
+        self.deck.quest_daily = False
+        self.grammar.quest_daily = True
+        self.assertEqual(self.Deck._flag_daily_decks(), self.deck)
+        self.assertTrue(self.deck.quest_daily)
+        self.assertFalse(any((self.grammar | self.homophones | self.fractions).mapped("quest_daily")))
+        self.Deck._flag_daily_decks()  # idempotent
+        self.assertTrue(self.deck.quest_daily)
+        self.assertFalse(self.grammar.quest_daily)
 
-    def test_tables_and_grammar_every_day(self):
+    def test_tables_every_day_grammar_in_turn(self):
+        grammar_days = 0
         for offset in range(5):
             quests = self.Quest._draw(self.student, MONDAY + timedelta(days=offset))
             self.assertEqual(len(quests), 3)
             decks = self.sessions(quests).deck_id
             self.assertIn(self.deck, decks)
-            self.assertIn(self.grammar, decks)
-
-    def test_third_is_need_first_among_the_rest(self):
-        rest = [n for n in self.student._practice_needs(MONDAY) if not n[0].deck_id.quest_daily]
-        quests = self.Quest._draw(self.student, MONDAY)
-        self.assertEqual(quests.sorted("sequence")[:2].deck_id, self.deck | self.grammar)
-        third = quests.sorted("sequence")[2]
-        self.assertEqual(third.kind, "unit_session")
-        self.assertEqual(third.unit_id, rest[0][0])
-        # one quest per daily deck: the other unlocked tables unit does not get a second one
-        self.assertEqual(len(self.sessions(quests).filtered(lambda q: q.deck_id == self.deck)), 1)
+            grammar_days += self.grammar in decks
+        self.assertTrue(1 <= grammar_days <= 4, grammar_days)
 
     def test_daily_decks_win_the_slots(self):
+        self.grammar.quest_daily = True
         self.student.practice_quests_per_day = 2
         quests = self.Quest._draw(self.student, MONDAY)
         self.assertEqual(self.sessions(quests).deck_id, self.deck | self.grammar)
         self.assertEqual(len(quests), 2)
 
     def test_daily_deck_without_unlocked_unit(self):
-        self.grammar.unit_ids.action_lock(self.student)
+        (self.t7 | self.t3).action_lock(self.student)
         quests = self.Quest._draw(self.student, MONDAY)
         self.assertEqual(len(quests), 3)
-        self.assertNotIn(self.grammar, quests.deck_id)
-        self.assertIn(self.deck, self.sessions(quests).deck_id)
+        self.assertNotIn(self.deck, quests.deck_id)
 
     def test_only_tables_unlocked_still_fills(self):
         ((self.grammar | self.homophones | self.fractions).unit_ids).action_lock(self.student)

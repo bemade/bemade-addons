@@ -2,6 +2,14 @@
 <odoo>
     <data noupdate="1">
         <!-- Quest pool (shared by every family; a family may add its own or archive these) -->
+        <record id="quest_deck_session" model="homeschool.practice.quest.template">
+            <field name="name">{target} session{s}: {deck}</field>
+            <field name="kind">deck_session</field><field name="target">1</field><field name="xp">15</field><field name="sequence">0</field>
+        </record>
+        <record id="quest_surprise" model="homeschool.practice.quest.template">
+            <field name="name">{target} surprise lesson{s}</field>
+            <field name="kind">surprise</field><field name="target">1</field><field name="xp">15</field><field name="sequence">3</field>
+        </record>
         <record id="quest_unit_session" model="homeschool.practice.quest.template">
             <field name="name">A session on {unit}</field>
             <field name="kind">unit_session</field><field name="target">1</field><field name="xp">15</field><field name="sequence">1</field>
@@ -15,7 +23,7 @@
             <field name="kind">no_hint</field><field name="target">10</field><field name="xp">10</field><field name="weight">3</field>
         </record>
         <record id="quest_perfect" model="homeschool.practice.quest.template">
-            <field name="name">A session without a miss</field>
+            <field name="name">{target} perfect session{s}</field>
             <field name="kind">perfect</field><field name="target">1</field><field name="xp">15</field><field name="weight">2</field>
         </record>
         <record id="quest_answers" model="homeschool.practice.quest.template">
