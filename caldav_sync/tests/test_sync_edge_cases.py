@@ -636,6 +636,63 @@ class TestAlldayMixedDtend(TransactionCase):
 
 
 @tagged("post_install", "-at_install")
+class TestLegacyAlldayRepair(TransactionCase):
+    """All-day events imported by the old code (24h from UTC midnight, not
+    allday) are fixed on the next poll, although Odoo's copy looks newer."""
+
+    def _create_event(self, uid, start):
+        user = self.env.user
+        return (
+            self.env["calendar.event"]
+            .with_context(caldav_no_sync=True, caldav_keep_ids=True)
+            .create(
+                {
+                    "name": "Tavannes",
+                    "start": start,
+                    "stop": start + timedelta(days=1),
+                    "caldav_uid": uid,
+                    "user_id": user.id,
+                    "partner_id": user.partner_id.id,
+                    "partner_ids": [Command.set([user.partner_id.id])],
+                }
+            )
+        )
+
+    def _poll(self, uid, dates):
+        from icalendar import Calendar
+
+        ics = (
+            "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//test//test//EN\r\n"
+            f"BEGIN:VEVENT\r\nUID:{uid}\r\nSUMMARY:Tavannes\r\n"
+            "DTSTAMP:20201001T000000Z\r\nLAST-MODIFIED:20201001T000000Z\r\n"
+            f"{dates}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+        )
+        self.env["calendar.event"].with_context(dont_notify=True)._sync_event_from_ical(
+            Calendar.from_ical(ics), self.env.user
+        )
+
+    def test_legacy_allday_is_repaired(self):
+        uid = "legacy-allday-repair"
+        event = self._create_event(uid, datetime(2026, 11, 10))
+        self._poll(uid, "DTSTART;VALUE=DATE:20261110\r\nDTEND;VALUE=DATE:20261111")
+        event.invalidate_recordset()
+        self.assertTrue(event.allday)
+        self.assertEqual(event.start, datetime(2026, 11, 10, 8, 0))
+        self.assertEqual(event.stop, datetime(2026, 11, 10, 18, 0))
+        self.assertEqual(
+            self.env["calendar.event"].search_count([("caldav_uid", "=", uid)]), 1
+        )
+
+    def test_outdated_timed_event_is_left_alone(self):
+        uid = "legacy-timed-untouched"
+        event = self._create_event(uid, datetime(2026, 11, 10))
+        self._poll(uid, "DTSTART:20261110T090000Z\r\nDTEND:20261110T100000Z")
+        event.invalidate_recordset()
+        self.assertFalse(event.allday)
+        self.assertEqual(event.start, datetime(2026, 11, 10))
+
+
+@tagged("post_install", "-at_install")
 class TestSyncWriteToCaldav(TransactionCase, CaldavTestCommon):
     """Tests for _sync_write_to_caldav method."""
 

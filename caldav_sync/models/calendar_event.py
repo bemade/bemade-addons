@@ -847,6 +847,12 @@ class CalendarEvent(models.Model):
 
             existing_instance = self._get_existing_instance(uid, recurrence_id)
             outdated = self._get_outdated(component, existing_instance, synced_events)
+            if outdated and self._is_legacy_allday_import(component, existing_instance):
+                # Imported before all-day events were supported: stored as a 24h
+                # meeting from UTC midnight (shown 01:00 -> 01:00 the next day).
+                # Its Odoo copy looks newer than the server's, so it would never
+                # be fixed; let the server's version through once.
+                outdated = False
             owned = (
                 existing_instance and existing_instance.partner_id == user.partner_id
             )
@@ -895,6 +901,18 @@ class CalendarEvent(models.Model):
             else:
                 synced_events |= existing_instance
         return synced_events
+
+    @api.model
+    def _is_legacy_allday_import(self, component, existing_instance) -> bool:
+        """Whether the server holds an all-day event (DATE DTSTART) whose Odoo
+        copy is not all-day. Odoo exports its own all-day events as DATE and
+        stores them as allday, so this only matches the old import."""
+        dtstart = component.get("dtstart")
+        if not dtstart or len(existing_instance) != 1:
+            return False
+        value = dtstart.dt
+        is_date = isinstance(value, date) and not isinstance(value, datetime)
+        return is_date and not existing_instance.allday
 
     @api.model
     def _get_ical_series_end(self, component, stop):
