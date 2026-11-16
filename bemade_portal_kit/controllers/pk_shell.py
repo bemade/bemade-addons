@@ -108,8 +108,15 @@ class PortalKitShell(PortalKitApp):
         """A shell page served in another language than the user's profile
         one (a stale ``frontend_lang`` cookie, a language URL prefix) is
         redirected (GET / HEAD) to the same page in the profile language,
-        the cookie reset to it. Other methods are aligned in place. A public
-        visitor is left alone."""
+        the cookie reset to it. Other methods, and a page whose URL a
+        language does not change (a ``multilang=False`` route: the redirect
+        would point at itself, task 5389), are aligned in place. A public
+        visitor is left alone.
+
+        The cookie goes through ``request.future_response``: the frontend
+        dispatch may already have queued the request's language there, and
+        those headers are added after the response's own (the last one
+        wins)."""
         user = request.env.user
         if user._is_public():
             return
@@ -117,15 +124,15 @@ class PortalKitShell(PortalKitApp):
         current = getattr(request, 'lang', None)
         if not target or not current or current.code == target:
             return
+        request.future_response.set_cookie('frontend_lang', target)
         if request.httprequest.method in ('GET', 'HEAD'):
             query = request.httprequest.query_string.decode()
-            url = cls._pk_lang_url(request.httprequest.path + ('?' + query if query else ''), target)
-            response = request.redirect(url, code=303, local=True)
-            response.set_cookie('frontend_lang', target)
-            werkzeug.exceptions.abort(response)
+            here = request.httprequest.path + ('?' + query if query else '')
+            url = cls._pk_lang_url(here, target)
+            if url != here:
+                werkzeug.exceptions.abort(request.redirect(url, code=303, local=True))
         request.lang = request.env['res.lang']._get_data(code=target)
         request.update_context(lang=target)
-        request.future_response.set_cookie('frontend_lang', target)
 
     @classmethod
     def _pk_lang_options(cls):
