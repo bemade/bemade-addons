@@ -1,0 +1,90 @@
+unit;key;prompt;options;hint;answer
+m, cm et mm;mcm-01;1 m = ___ cm;;1 m = 100 cm : 1 × 100.;100
+m, cm et mm;mcm-02;3 m = ___ cm;;1 m = 100 cm : 3 × 100.;300
+m, cm et mm;mcm-03;4 cm = ___ mm;;1 cm = 10 mm : 4 × 10.;40
+m, cm et mm;mcm-04;12 cm = ___ mm;;1 cm = 10 mm : 12 × 10.;120
+m, cm et mm;mcm-05;1 m = ___ mm;;1 m = 1 000 mm : 1 × 1 000.;1000
+m, cm et mm;mcm-06;300 cm = ___ m;;1 m = 100 cm : 300 ÷ 100.;3
+m, cm et mm;mcm-07;70 mm = ___ cm;;1 cm = 10 mm : 70 ÷ 10.;7
+m, cm et mm;mcm-08;2 m 50 cm = ___ cm;;2 m = 200 cm, plus 50 cm.;250
+m, cm et mm;mcm-09;1 m 5 cm = ___ cm;;1 m = 100 cm, plus 5 cm.;105
+m, cm et mm;mcm-10;6 cm 3 mm = ___ mm;;6 cm = 60 mm, plus 3 mm.;63
+m, cm et mm;mcm-11;2 m = ___ mm;;1 m = 1 000 mm : 2 × 1 000.;2000
+m, cm et mm;mcm-12;800 cm = ___ m;;1 m = 100 cm : 800 ÷ 100.;8
+m, cm et mm;mcm-13;3 000 mm = ___ m;;1 m = 1 000 mm : 3 000 ÷ 1 000.;3
+m, cm et mm;mcm-14;4 m 75 cm = ___ cm;;4 m = 400 cm, plus 75 cm.;475
+m, cm et mm;mcm-15;500 mm = ___ cm;;1 cm = 10 mm : 500 ÷ 10.;50
+m, cm et mm;mcm-16;15 m = ___ cm;;1 m = 100 cm : 15 × 100.;1500
+km et m;km-01;1 km = ___ m;;1 km = 1 000 m : 1 × 1 000.;1000
+km et m;km-02;3 km = ___ m;;1 km = 1 000 m : 3 × 1 000.;3000
+km et m;km-03;7 km = ___ m;;1 km = 1 000 m : 7 × 1 000.;7000
+km et m;km-04;2 000 m = ___ km;;1 km = 1 000 m : 2 000 ÷ 1 000.;2
+km et m;km-05;5 000 m = ___ km;;1 km = 1 000 m : 5 000 ÷ 1 000.;5
+km et m;km-06;10 km = ___ m;;1 km = 1 000 m : 10 × 1 000.;10000
+km et m;km-07;1 km 500 m = ___ m;;1 km = 1 000 m, plus 500 m.;1500
+km et m;km-08;2 km 300 m = ___ m;;2 km = 2 000 m, plus 300 m.;2300
+km et m;km-09;4 km 50 m = ___ m;;4 km = 4 000 m, plus 50 m.;4050
+km et m;km-10;12 km = ___ m;;1 km = 1 000 m : 12 × 1 000.;12000
+km et m;km-11;9 000 m = ___ km;;1 km = 1 000 m : 9 000 ÷ 1 000.;9
+km et m;km-12;6 km 750 m = ___ m;;6 km = 6 000 m, plus 750 m.;6750
+km et m;km-13;25 km = ___ m;;1 km = 1 000 m : 25 × 1 000.;25000
+km et m;km-14;1/2 km = ___ m;;1 km = 1 000 m : 1 000 ÷ 2.;500
+km et m;km-15;3 km 5 m = ___ m;;3 km = 3 000 m, plus 5 m.;3005
+Le dm, avec le m et le cm;dm-01;1 m = ___ dm;;1 m = 10 dm : 1 × 10.;10
+Le dm, avec le m et le cm;dm-02;1 dm = ___ cm;;1 dm = 10 cm : 1 × 10.;10
+Le dm, avec le m et le cm;dm-03;4 m = ___ dm;;1 m = 10 dm : 4 × 10.;40
+Le dm, avec le m et le cm;dm-04;6 dm = ___ cm;;1 dm = 10 cm : 6 × 10.;60
+Le dm, avec le m et le cm;dm-05;30 dm = ___ m;;1 m = 10 dm : 30 ÷ 10.;3
+Le dm, avec le m et le cm;dm-06;80 cm = ___ dm;;1 dm = 10 cm : 80 ÷ 10.;8
+Le dm, avec le m et le cm;dm-07;1 dm = ___ mm;;1 dm = 100 mm : 1 × 100.;100
+Le dm, avec le m et le cm;dm-08;2 m 4 dm = ___ dm;;2 m = 20 dm, plus 4 dm.;24
+Le dm, avec le m et le cm;dm-09;5 dm 3 cm = ___ cm;;5 dm = 50 cm, plus 3 cm.;53
+Le dm, avec le m et le cm;dm-10;12 m = ___ dm;;1 m = 10 dm : 12 × 10.;120
+Le dm, avec le m et le cm;dm-11;150 cm = ___ dm;;1 dm = 10 cm : 150 ÷ 10.;15
+Le dm, avec le m et le cm;dm-12;70 dm = ___ m;;1 m = 10 dm : 70 ÷ 10.;7
+Le dm, avec le m et le cm;dm-13;3 dm = ___ mm;;1 dm = 100 mm : 3 × 100.;300
+Le dm, avec le m et le cm;dm-14;3 m 7 dm = ___ dm;;3 m = 30 dm, plus 7 dm.;37
+kg et g;kg-01;1 kg = ___ g;;1 kg = 1 000 g : 1 × 1 000.;1000
+kg et g;kg-02;2 kg = ___ g;;1 kg = 1 000 g : 2 × 1 000.;2000
+kg et g;kg-03;5 kg = ___ g;;1 kg = 1 000 g : 5 × 1 000.;5000
+kg et g;kg-04;3 000 g = ___ kg;;1 kg = 1 000 g : 3 000 ÷ 1 000.;3
+kg et g;kg-05;1/2 kg = ___ g;;1 kg = 1 000 g : 1 000 ÷ 2.;500
+kg et g;kg-06;1/4 kg = ___ g;;1 kg = 1 000 g : 1 000 ÷ 4.;250
+kg et g;kg-07;1 kg 200 g = ___ g;;1 kg = 1 000 g, plus 200 g.;1200
+kg et g;kg-08;2 kg 500 g = ___ g;;2 kg = 2 000 g, plus 500 g.;2500
+kg et g;kg-09;3/4 kg = ___ g;;1 kg = 1 000 g : 1 000 ÷ 4, puis × 3.;750
+kg et g;kg-10;8 000 g = ___ kg;;1 kg = 1 000 g : 8 000 ÷ 1 000.;8
+kg et g;kg-11;4 kg 50 g = ___ g;;4 kg = 4 000 g, plus 50 g.;4050
+kg et g;kg-12;10 kg = ___ g;;1 kg = 1 000 g : 10 × 1 000.;10000
+kg et g;kg-13;6 kg 250 g = ___ g;;6 kg = 6 000 g, plus 250 g.;6250
+kg et g;kg-14;7 kg = ___ g;;1 kg = 1 000 g : 7 × 1 000.;7000
+L et mL;l-01;1 L = ___ mL;;1 L = 1 000 mL : 1 × 1 000.;1000
+L et mL;l-02;3 L = ___ mL;;1 L = 1 000 mL : 3 × 1 000.;3000
+L et mL;l-03;2 000 mL = ___ L;;1 L = 1 000 mL : 2 000 ÷ 1 000.;2
+L et mL;l-04;1/2 L = ___ mL;;1 L = 1 000 mL : 1 000 ÷ 2.;500
+L et mL;l-05;1/4 L = ___ mL;;1 L = 1 000 mL : 1 000 ÷ 4.;250
+L et mL;l-06;1 L 500 mL = ___ mL;;1 L = 1 000 mL, plus 500 mL.;1500
+L et mL;l-07;6 L = ___ mL;;1 L = 1 000 mL : 6 × 1 000.;6000
+L et mL;l-08;3/4 L = ___ mL;;1 L = 1 000 mL : 1 000 ÷ 4, puis × 3.;750
+L et mL;l-09;2 L 250 mL = ___ mL;;2 L = 2 000 mL, plus 250 mL.;2250
+L et mL;l-10;5 000 mL = ___ L;;1 L = 1 000 mL : 5 000 ÷ 1 000.;5
+L et mL;l-11;1/10 L = ___ mL;;1 L = 1 000 mL : 1 000 ÷ 10.;100
+L et mL;l-12;4 L 75 mL = ___ mL;;4 L = 4 000 mL, plus 75 mL.;4075
+L et mL;l-13;10 L = ___ mL;;1 L = 1 000 mL : 10 × 1 000.;10000
+L et mL;l-14;7 000 mL = ___ L;;1 L = 1 000 mL : 7 000 ÷ 1 000.;7
+Le temps (h, min, s, jours);t-01;1 h = ___ min;;1 h = 60 min : 1 × 60.;60
+Le temps (h, min, s, jours);t-02;1 min = ___ s;;1 min = 60 s : 1 × 60.;60
+Le temps (h, min, s, jours);t-03;1 jour = ___ h;;1 jour = 24 h : 1 × 24.;24
+Le temps (h, min, s, jours);t-04;2 h = ___ min;;1 h = 60 min : 2 × 60.;120
+Le temps (h, min, s, jours);t-05;3 min = ___ s;;1 min = 60 s : 3 × 60.;180
+Le temps (h, min, s, jours);t-06;2 jours = ___ h;;1 jour = 24 h : 2 × 24.;48
+Le temps (h, min, s, jours);t-07;1 h 30 min = ___ min;;1 h = 60 min, plus 30 min.;90
+Le temps (h, min, s, jours);t-08;1/2 h = ___ min;;1 h = 60 min : 60 ÷ 2.;30
+Le temps (h, min, s, jours);t-09;1/4 h = ___ min;;1 h = 60 min : 60 ÷ 4.;15
+Le temps (h, min, s, jours);t-10;2 h 15 min = ___ min;;2 h = 120 min, plus 15 min.;135
+Le temps (h, min, s, jours);t-11;3/4 h = ___ min;;1 h = 60 min : 60 ÷ 4, puis × 3.;45
+Le temps (h, min, s, jours);t-12;120 min = ___ h;;1 h = 60 min : 120 ÷ 60.;2
+Le temps (h, min, s, jours);t-13;180 s = ___ min;;1 min = 60 s : 180 ÷ 60.;3
+Le temps (h, min, s, jours);t-14;72 h = ___ jours;;1 jour = 24 h : 72 ÷ 24.;3
+Le temps (h, min, s, jours);t-15;1 min 20 s = ___ s;;1 min = 60 s, plus 20 s.;80
+Le temps (h, min, s, jours);t-16;1 semaine = ___ jours;;1 semaine = 7 jours : 1 × 7.;7

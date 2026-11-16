@@ -4,7 +4,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     "name": "Homeschool Practice",
-    "version": "19.0.1.4.0",
+    "version": "19.0.1.5.0",
     "category": "Education",
     "summary": "Short, frequent retrieval practice with game mechanics and family-defined rewards, "
     "touch-first (iPad).",
@@ -33,6 +33,13 @@ celebrated for doing the practice, never told which items he « knows ».
 Front ends (the portal lesson screen now, other games later) only display items
 and return answers, so learner history and progress are shared across them.
 
+Starter decks a parent loads from the deck list: French grammar (homophones,
+grammar, word classes, agreement, conjugation, syntax) and math (« Les
+fractions »: reading, comparing, fraction of a whole number, equivalent and
+reduced fractions, ordering, fraction / decimal / percentage; « Les
+conversions »: length, mass, capacity and time units), linked to the Québec
+PDA curriculum items they practise.
+
 Each item has an answer mode: a **keypad** (the learner produces the answer —
 e.g. multiplication facts) or **choices** (the learner picks — e.g. infinitive
 or past participle).
@@ -46,7 +53,8 @@ Game mechanics
 --------------
 * XP and levels for effort and progress. XP is never earned for speed.
 * Daily quests drawn from what needs practice that day; the learner chooses
-  the order. A daily cap rewards spaced practice over cramming. Practice days
+  the order. A deck may get a quest every day (« Une quête chaque jour »: times
+  tables, grammar); the other slots go to the units that need it most. A daily cap rewards spaced practice over cramming. Practice days
   are configured per learner.
 * Badges for accomplishments (XP reached, XP in a day, perfect sessions, unit
   proficiency levels…), never for speed or time of day.

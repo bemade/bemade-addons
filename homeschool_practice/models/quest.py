@@ -83,12 +83,21 @@ class PracticeQuest(models.Model):
             vals.append(dict(student_id=student.id, template_id=template.id, day=day, target=template.target,
                              sequence=len(vals), **extra))
 
-        # 1. need first: in each subject, the unit with the most due or new items (decks without a
-        #    subject form one group), then a review if other units are due
+        # 0. daily decks first (times tables, grammar…): each gets a session quest on its unit that
+        #    needs it most; with more daily decks than slots, those that need it most win
         need = student._practice_needs(day)
         unit_t = pool.filtered(lambda t: t.kind == "unit_session")[:1]
+        daily = []
+        for unit, _count, _due in need:
+            if unit_t and len(vals) < count and unit.deck_id.quest_daily and unit.deck_id not in daily:
+                daily.append(unit.deck_id)
+                add(unit_t, deck_id=unit.deck_id.id, unit_id=unit.id)
+        # 1. need first among the other decks: in each subject, the unit with the most due or new
+        #    items (decks without a subject form one group), then a review if other units are due
         subjects = []
         for unit, _count, _due in need:
+            if unit.deck_id.quest_daily:
+                continue
             if unit_t and len(vals) < count and unit.deck_id.subject_id not in subjects:
                 subjects.append(unit.deck_id.subject_id)
                 add(unit_t, deck_id=unit.deck_id.id, unit_id=unit.id)

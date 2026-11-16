@@ -674,6 +674,22 @@ msgid "Due On"
 msgstr "À revoir le"
 
 #. module: homeschool_practice
+#: model:ir.model.fields,field_description:homeschool_practice.field_homeschool_practice_deck__quest_daily
+msgid "A quest every day"
+msgstr "Une quête chaque jour"
+
+#. module: homeschool_practice
+#: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__quest_daily
+msgid ""
+"Every practice day, the learner gets a session quest on the unit of this "
+"deck that needs it most (when a unit is unlocked), before the other quests "
+"are drawn."
+msgstr ""
+"Chaque jour de pratique, l'élève reçoit une quête de séance sur l'unité de "
+"ce paquet qui en a le plus besoin (si une unité est débloquée), avant le "
+"tirage des autres quêtes."
+
+#. module: homeschool_practice
 #: model:ir.model.fields,help:homeschool_practice.field_homeschool_practice_deck__subject_id
 msgid ""
 "Each subject with unlocked units gets its own session quest every practice "
@@ -1111,6 +1127,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_list
 msgid "Load French grammar decks"
 msgstr "Charger les paquets de grammaire"
+
+#. module: homeschool_practice
+#: model_terms:ir.ui.view,arch_db:homeschool_practice.view_deck_list
+msgid "Load math practice decks"
+msgstr "Charger les paquets de mathématiques"
 
 #. module: homeschool_practice
 #: model_terms:ir.ui.view,arch_db:homeschool_practice.view_student_form_practice

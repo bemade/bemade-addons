@@ -40,6 +40,10 @@ class PracticeDeck(models.Model):
         "Auto-unlock at (%)", default=0,
         help="When a unit reaches this proficiency, the next unit unlocks on its own (0 = a parent "
              "unlocks every unit). For units that need no new teaching, e.g. times tables.")
+    quest_daily = fields.Boolean(
+        "A quest every day",
+        help="Every practice day, the learner gets a session quest on the unit of this deck that needs it "
+             "most (when a unit is unlocked), before the other quests are drawn.")
     active = fields.Boolean(default=True)
 
     _session_size_positive = models.Constraint("check(session_size > 0)", "A session needs at least one item.")
@@ -102,20 +106,23 @@ class PracticeDeck(models.Model):
         return env._("You know %(a)s × %(c)s = %(p)s… add one more %(a)s.", a=a, c=b - 1, p=a * (b - 1))
 
     def _generate_choice_cards(self, unit, cards):
-        """``cards``: list of ``(key, prompt, [(label, correct), …], hint)``; options keep their order."""
+        """``cards``: list of ``(key, prompt, options, hint)``; ``options`` is a list of
+        ``(label, correct)`` (a choices card; options keep their order) or the answer itself, a
+        string of digits (a keypad card)."""
         self.ensure_one()
         Item = self.env["homeschool.practice.item"]
         existing = set(self.item_ids.with_context(active_test=False).mapped("key"))
         for step, (key, prompt, options, hint) in enumerate(cards):
             if key in existing:
                 continue
-            Item.create({
-                "unit_id": unit.id, "key": key, "step": step, "prompt": prompt, "hint": hint,
-                "answer_mode": "choices",
-                "answer": next(label for label, ok in options if ok),
-                "choice_ids": [fields.Command.create({"label": label, "correct": ok, "sequence": i})
-                               for i, (label, ok) in enumerate(options)],
-            })
+            vals = {"unit_id": unit.id, "key": key, "step": step, "prompt": prompt, "hint": hint}
+            if isinstance(options, str):
+                vals.update(answer_mode="keypad", answer=options)
+            else:
+                vals.update(answer_mode="choices", answer=next(label for label, ok in options if ok),
+                            choice_ids=[fields.Command.create({"label": label, "correct": ok, "sequence": i})
+                                        for i, (label, ok) in enumerate(options)])
+            Item.create(vals)
         return True
 
     @api.model
@@ -131,6 +138,30 @@ class PracticeDeck(models.Model):
         return True
 
     @api.model
+    def action_load_math(self):
+        """Load the math practice decks (« Les fractions », « Les conversions ») in the current
+        company. Idempotent, like the grammar decks: what exists is kept."""
+        if not self.env.su and not self.env.user.has_group("homeschool.group_homeschool_manager"):
+            raise AccessError(self.env._("Only a parent (homeschool manager) loads practice decks."))
+        self._load_choice_csv("homeschool_practice/data/math_fractions_units.csv",
+                              "homeschool_practice/data/math_fractions_cards.csv")
+        self._load_choice_csv("homeschool_practice/data/math_conversions_units.csv",
+                              "homeschool_practice/data/math_conversions_cards.csv")
+        return True
+
+    @api.model
+    def _flag_daily_decks(self):
+        """Flag the decks that get a quest every day on databases loaded before the flag
+        existed: the times-tables decks (items keyed « 7x8 ») and the « Grammaire » starter deck."""
+        decks = self.with_context(active_test=False).search([("quest_daily", "=", False)])
+        tables = decks.filtered(lambda d: any(
+            re.fullmatch(r"\d+x\d+", k or "") for k in d.with_context(active_test=False).item_ids.mapped("key")))
+        langs = [code for code, _name in self.env["res.lang"].get_installed()]
+        grammar = decks.filtered(lambda d: any(d.with_context(lang=lang).name == "Grammaire" for lang in langs))
+        (tables | grammar).quest_daily = True
+        return tables | grammar
+
+    @api.model
     def _load_choice_csv(self, units_path, cards_path):
         """``units_path``: deck;deck_sequence;subject;new_per_session;unit;unit_sequence;hint;intro;refs —
         ``new_per_session`` sets both the items introduced at unlock and the new items per
@@ -139,7 +170,9 @@ class PracticeDeck(models.Model):
         the curriculum codes the unit practises, space-separated, linked to the matching
         ``homeschool.item`` records (codes not found are skipped). ``cards_path``:
         unit;key;prompt;options;hint, options separated by « | », the right one starred
-        (``*à``). An empty card hint takes the unit's."""
+        (``*à``). An empty card hint takes the unit's. Optional columns: ``quest_daily`` on units
+        (« 1 »: the deck, when created, gets a quest every day) and ``answer`` on cards (digits
+        with empty ``options``: a keypad card)."""
         Unit = self.env["homeschool.practice.unit"]
         units, hints = {}, {}
         with io.TextIOWrapper(file_open(units_path, "rb"), encoding="utf-8") as f:
@@ -151,6 +184,7 @@ class PracticeDeck(models.Model):
                     deck = self.create({"name": row["deck"], "sequence": int(row["deck_sequence"]),
                                         "intro_size": new, "max_new_per_session": new,
                                         "subject_id": subject.id if subject else False,
+                                        "quest_daily": (row.get("quest_daily") or "").strip() == "1",
                                         "company_id": self.env.company.id})
                 unit = deck.unit_ids.filtered(lambda u, n=row["unit"]: u.name == n)[:1]
                 if not unit:
@@ -165,7 +199,11 @@ class PracticeDeck(models.Model):
         cards = {}
         with io.TextIOWrapper(file_open(cards_path, "rb"), encoding="utf-8") as f:
             for row in csv.DictReader(f, delimiter=";"):
-                options = [(_nbsp(o.lstrip("*")), o.startswith("*")) for o in row["options"].split("|")]
+                answer = (row.get("answer") or "").strip()
+                if answer and not row["options"]:
+                    options = answer
+                else:
+                    options = [(_nbsp(o.lstrip("*")), o.startswith("*")) for o in row["options"].split("|")]
                 cards.setdefault(row["unit"], []).append(
                     (row["key"], _nbsp(row["prompt"]), options, row["hint"] or hints[row["unit"]]))
         for name, unit_cards in cards.items():
@@ -175,9 +213,10 @@ class PracticeDeck(models.Model):
 
 
 def _nbsp(text):
-    """French typography: no line break inside « » nor before ? ! : (a lone « at the end of a
-    line on the iPad)."""
-    return re.sub(r"« ", "«\u00a0", re.sub(r" ([»?!:])", "\u00a0\\1", text))
+    """French typography: no line break inside « » nor before ? ! : % (a lone « at the end of a
+    line on the iPad), nor inside a number (« 3 000 »)."""
+    text = re.sub(r"(?<=\d) (?=\d{3}(?!\d))", "\u00a0", text)
+    return re.sub(r"« ", "«\u00a0", re.sub(r" ([»?!:%])", "\u00a0\\1", text))
 
 
 class PracticeUnit(models.Model):
