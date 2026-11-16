@@ -29,7 +29,10 @@ async function pickInMenu(toggler, label) {
     throw new Error(`Option ${label} not found`);
 }
 
-function addNumberSteps(number, type) {
+// ``row``: the new line's position. On a slow runner "the selected row" can
+// still be the previous line while the new one is being added.
+function addNumberSteps(number, row, type) {
+    const ROW = `${LIST} tbody tr.o_data_row:nth-child(${row}).o_selected_row`;
     const steps = [
         {
             content: `Add a number (${number})`,
@@ -40,14 +43,13 @@ function addNumberSteps(number, type) {
     if (type) {
         steps.push({
             content: `Make it a ${type} number`,
-            trigger: `${LIST} tr.o_selected_row div[name=type] .o_select_menu_toggler`,
-            run: () =>
-                pickInMenu(`${LIST} tr.o_selected_row div[name=type] .o_select_menu_toggler`, type),
+            trigger: `${ROW} div[name=type] .o_select_menu_toggler`,
+            run: () => pickInMenu(`${ROW} div[name=type] .o_select_menu_toggler`, type),
         });
     }
     steps.push({
         content: `Type ${number}`,
-        trigger: `${LIST} tr.o_selected_row div[name=number] input`,
+        trigger: `${ROW} div[name=number] input`,
         run: `edit ${number}`,
     });
     return steps;
@@ -66,8 +68,8 @@ registry.category("web_tour.tours").add("partner_phone_list_tour", {
             trigger: `${MAIN_PHONE} .o_partner_phone_list_open`,
             run: "click",
         },
-        ...addNumberSteps("514-555-0111"),
-        ...addNumberSteps("514-555-0222", "Mobile"),
+        ...addNumberSteps("514-555-0111", 1),
+        ...addNumberSteps("514-555-0222", 2, "Mobile"),
         {
             content: "Done (new contact: kept in the form)",
             trigger: `${DIALOG} .o_partner_phone_list_save:contains(Done)`,
@@ -130,7 +132,9 @@ registry.category("web_tour.tours").add("partner_phone_list_child_tour", {
         },
         {
             content: "Name the company",
-            trigger: ".o_field_widget[name='name'] textarea, .o_field_widget[name='name'] input",
+            // wait for the company-mode name field: typing into the person one
+            // just before the switch re-renders it loses the name
+            trigger: ".o_field_widget[name='name'] :is(textarea, input)[placeholder*='Lumber']",
             run: "edit Sample Tour Company",
         },
         {
@@ -148,7 +152,7 @@ registry.category("web_tour.tours").add("partner_phone_list_child_tour", {
             trigger: ".modal .o_form_view .o_partner_phone_list_phone .o_partner_phone_list_open",
             run: "click",
         },
-        ...addNumberSteps("438-555-0133", "Mobile"),
+        ...addNumberSteps("438-555-0133", 1, "Mobile"),
         {
             content: "Done (child contact: kept in its popup)",
             trigger: `${DIALOG} .o_partner_phone_list_save:contains(Done)`,
