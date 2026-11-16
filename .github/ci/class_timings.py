@@ -9,6 +9,7 @@ Usage: class_timings.py LOG [LOG ...] > timings.json
 """
 import datetime
 import json
+import os
 import re
 import sys
 
@@ -20,6 +21,10 @@ ANSI = re.compile(r'\x1b\[[0-9;]*m')
 
 def timings(path):
     result, current, since = {}, None, None
+    if not os.path.exists(path):
+        # A shard that failed before its tests ran (e.g. the database restore)
+        # has no log; it still gets a valid, empty timings file.
+        return result
     with open(path, errors='replace') as f:
         for line in f:
             line = ANSI.sub('', line)
