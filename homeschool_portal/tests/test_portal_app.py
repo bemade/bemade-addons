@@ -337,3 +337,14 @@ class TestPortalApp(HomeschoolPortalCase):
         self.assertNotIn("Today's list", body)
         body = self.text(self.get(self.base() + "/week/2026-W10"))
         self.assertIn("Semaine 2026-W10", body)
+        # A tutor's « Configure »: the homeschool app's page, under « Aujourd'hui »
+        self.teacher.lang = "fr_CA"
+        self.login(self.teacher)
+        if env["ir.module.module"]._get("website").state == "installed":
+            self.opener.cookies.set("frontend_lang", "fr_CA")
+        res = self.get("/my/app/dashboard/configure")
+        self.assertEqual(res.status_code, 200)
+        body = self.text(res)
+        self.assertIn("Configurer le tableau de bord", body)
+        self.assertIn("Aujourd'hui", body)
+        self.assertNotIn("Tableau de bord<", body)  # never the kit's own home as the parent
