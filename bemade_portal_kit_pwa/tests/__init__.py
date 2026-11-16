@@ -7,3 +7,4 @@ from . import test_pk_pwa_tours
 from . import test_pk_pwa_hoot
 from . import test_pk_pwa_version_guard
 from . import test_pk_pwa_apps
+from . import test_pk_pwa_lang

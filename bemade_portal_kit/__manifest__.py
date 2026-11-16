@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.15.1',
+    'version': '19.0.1.15.2',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -550,6 +550,11 @@ The app's pages and services (version 1.12)
   the shell (``pk_app_account`` / ``pk_app_security``; phone rule
   ``portal.kit._pk_account_phone(phone, country)``), drawn on
   ``portal.kit._pk_layout()``.
+* Language guard: a GET of a multilang page served in another language
+  than the profile one is redirected once to its URL in the profile
+  language; a ``multilang=False`` page (and any POST) is aligned in place,
+  the ``frontend_lang`` cookie set to the profile language (version
+  1.15.2).
 * Help: the model ``portal.kit.help`` (key, url, sequence, active, note;
   Settings › Technical › Portal App Help), the hooks ``_pk_help_keys()``,
   ``_pk_help_page_key(page)``, ``_pk_help_tabbed()``, ``_pk_help_url(url)``;
