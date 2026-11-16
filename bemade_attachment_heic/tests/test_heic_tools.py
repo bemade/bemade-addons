@@ -9,6 +9,12 @@ Acceptance criteria:
     displayed, with the EXIF orientation reset and other EXIF tags kept.
 4.  Content that cannot be decoded raises ``HeicConversionError``.
 5.  The converted file name swaps the extension for ``.jpg``.
+6.  ``sniff_image_mimetype`` recognises the content of the image formats a
+    browser shows (JPEG, PNG, GIF, WebP) and returns None for anything else
+    (HEIC, PDF, garbage, empty).
+7.  ``relabel_name`` gives a HEIC-labelled name the extension of its real
+    format: the HEIC extension is replaced, a name without extension gets one,
+    a name already carrying the right extension is kept.
 """
 
 import io
@@ -23,8 +29,18 @@ from ..tools import (
     is_heic_bytes,
     is_heic_name,
     jpeg_name,
+    relabel_name,
+    sniff_image_mimetype,
 )
-from .common import CORRUPT_HEIC, make_heic, make_png
+from .common import (
+    CORRUPT_HEIC,
+    GARBAGE,
+    WEBP_HEADER,
+    make_heic,
+    make_image,
+    make_jpeg,
+    make_png,
+)
 
 
 @tagged("post_install", "-at_install")
@@ -81,3 +97,22 @@ class TestHeicTools(TransactionCase):
             heic_to_jpeg(make_png())
         with self.assertRaises(HeicConversionError):
             heic_to_jpeg(b"")
+
+    def test_sniff_image_mimetype(self):
+        self.assertEqual(sniff_image_mimetype(make_jpeg()), "image/jpeg")
+        self.assertEqual(sniff_image_mimetype(make_png()), "image/png")
+        self.assertEqual(sniff_image_mimetype(make_image("GIF")), "image/gif")
+        self.assertEqual(sniff_image_mimetype(WEBP_HEADER), "image/webp")
+        for raw in (make_heic(), CORRUPT_HEIC, GARBAGE, b"%PDF-1.4\n", b"", None):
+            self.assertIsNone(sniff_image_mimetype(raw), raw[:16] if raw else raw)
+
+    def test_relabel_name(self):
+        self.assertEqual(relabel_name("x.HEIC", "image/jpeg"), "x.jpg")
+        self.assertEqual(relabel_name("x.heif", "image/png"), "x.png")
+        self.assertEqual(relabel_name("x.heic", "image/gif"), "x.gif")
+        self.assertEqual(relabel_name("x.HEIC", "image/webp"), "x.webp")
+        self.assertEqual(relabel_name("upload", "image/png"), "upload.png")
+        self.assertEqual(relabel_name("", "image/png"), "image.png")
+        self.assertEqual(relabel_name(None, "image/jpeg"), "image.jpg")
+        self.assertEqual(relabel_name("photo.jpeg", "image/jpeg"), "photo.jpeg")
+        self.assertEqual(relabel_name("photo.PNG", "image/png"), "photo.PNG")

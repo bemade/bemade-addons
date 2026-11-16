@@ -13,6 +13,13 @@ Acceptance criteria:
 5.  A corrupt HEIC upload is kept as is (never blocks the upload) and a
     warning is logged.
 6.  Binary-field attachments (``res_field`` set) are left alone.
+7.  A HEIC-labelled upload (``.heic`` name and/or ``image/heic``) whose
+    content is really a JPEG or a PNG is relabelled: real mimetype, matching
+    extension, bytes unchanged (same checksum), not flagged as failed.
+8.  A HEIC-labelled upload holding garbage keeps today's behaviour: kept as
+    uploaded, warning logged.
+9.  An image upload that is not labelled HEIC is never renamed (no sniffing
+    beyond the HEIC detection).
 """
 
 import base64
@@ -24,7 +31,7 @@ from PIL import Image
 from odoo.tests import TransactionCase, tagged
 from odoo.tools.misc import mute_logger
 
-from .common import CORRUPT_HEIC, make_heic, make_png
+from .common import CORRUPT_HEIC, GARBAGE, make_heic, make_jpeg, make_png
 
 
 @tagged("post_install", "-at_install")
@@ -127,3 +134,60 @@ class TestAttachmentUpload(TransactionCase):
         )
         self.assertEqual(att.raw, self.heic)
         self.assertEqual(att.name, "IMG_0007.heic")
+
+    def assertRelabelled(self, attachment, raw, name, mimetype):
+        self.assertEqual(attachment.name, name)
+        self.assertEqual(attachment.mimetype, mimetype)
+        self.assertEqual(attachment.raw, raw)
+        self.assertEqual(
+            attachment.checksum, self.env["ir.attachment"]._compute_checksum(raw)
+        )
+        self.assertFalse(attachment.heic_convert_failed)
+
+    def test_mislabelled_jpeg_relabelled(self):
+        jpeg = make_jpeg()
+        att = self._create(name="x.HEIC", raw=jpeg, mimetype="image/heic")
+        self.assertRelabelled(att, jpeg, "x.jpg", "image/jpeg")
+
+    def test_mislabelled_png_relabelled(self):
+        png = make_png()
+        att = self._create(
+            name="y.heic", datas=base64.b64encode(png), mimetype="image/heic"
+        )
+        self.assertRelabelled(att, png, "y.png", "image/png")
+
+    def test_mislabelled_by_name_only(self):
+        jpeg = make_jpeg()
+        att = self._create(
+            name="z.heif", raw=jpeg, mimetype="application/octet-stream"
+        )
+        self.assertRelabelled(att, jpeg, "z.jpg", "image/jpeg")
+
+    def test_mislabelled_message_post(self):
+        jpeg = make_jpeg()
+        message = self.partner.message_post(
+            body="Photo", attachments=[("IMG_0010.HEIC", jpeg)]
+        )
+        self.assertRelabelled(message.attachment_ids, jpeg, "IMG_0010.jpg", "image/jpeg")
+
+    def test_mislabelled_write(self):
+        att = self._create(name="scan.pdf", raw=b"%PDF-1.4\n%synthetic\n")
+        jpeg = make_jpeg()
+        att.write({"name": "w.HEIC", "raw": jpeg, "mimetype": "image/heic"})
+        self.assertRelabelled(att, jpeg, "w.jpg", "image/jpeg")
+
+    def test_garbage_heic_kept(self):
+        with self.assertLogs(
+            "odoo.addons.bemade_attachment_heic.models.ir_attachment", "WARNING"
+        ):
+            att = self._create(name="junk.heic", raw=GARBAGE, mimetype="image/heic")
+        self.assertEqual(att.raw, GARBAGE)
+        self.assertEqual(att.name, "junk.heic")
+
+    def test_unlabelled_image_not_renamed(self):
+        jpeg = make_jpeg()
+        att = self._create(name="scan.dat", raw=jpeg)
+        self.assertEqual(att.name, "scan.dat")
+        self.assertEqual(att.raw, jpeg)
+        att = self._create(name="noext", raw=make_png(), mimetype="image/png")
+        self.assertEqual(att.name, "noext")

@@ -4,9 +4,12 @@
 
 import io
 import logging
+import mimetypes
 import os
 
 from PIL import ImageOps
+
+from odoo.tools.mimetypes import guess_mimetype
 
 _logger = logging.getLogger(__name__)
 
@@ -28,6 +31,13 @@ HEIC_BRANDS = {b"heic", b"heix", b"hevc", b"hevx", b"heim", b"heis", b"hevm", b"
 GENERIC_BRANDS = {b"mif1", b"msf1"}
 AVIF_BRANDS = {b"avif", b"avis"}
 JPEG_QUALITY = 90
+# Image formats browsers display, with the extension a relabelled file gets.
+BROWSER_IMAGE_EXTENSIONS = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/gif": ".gif",
+    "image/webp": ".webp",
+}
 
 _missing_logged = False
 
@@ -62,6 +72,34 @@ def jpeg_name(name):
     if is_heic_name(name):
         name = os.path.splitext(name)[0]
     return f"{name}.jpg"
+
+
+def sniff_image_mimetype(raw):
+    """Return the mimetype of ``raw`` if it is an image browsers display, else None.
+
+    Used on files labelled HEIC whose content is not HEIC (e.g. a JPEG renamed
+    ``.HEIC``): those are relabelled rather than decoded.
+    """
+    if not raw:
+        return None
+    mimetype = guess_mimetype(raw)
+    return mimetype if mimetype in BROWSER_IMAGE_EXTENSIONS else None
+
+
+def relabel_name(name, mimetype):
+    """Give ``name`` the extension of ``mimetype`` (a key of BROWSER_IMAGE_EXTENSIONS).
+
+    ``x.HEIC`` -> ``x.jpg``; a name already carrying an extension of that type
+    is kept; any other name gets the extension appended.
+    """
+    extension = BROWSER_IMAGE_EXTENSIONS[mimetype]
+    if not name:
+        return f"image{extension}"
+    if is_heic_name(name):
+        name = os.path.splitext(name)[0]
+    elif mimetypes.guess_type(name)[0] == mimetype:
+        return name
+    return f"{name}{extension}"
 
 
 def decoder_available():
@@ -107,4 +145,7 @@ __all__ = [
     "is_heic_bytes",
     "is_heic_name",
     "jpeg_name",
+    "relabel_name",
+    "sniff_image_mimetype",
 ]
+

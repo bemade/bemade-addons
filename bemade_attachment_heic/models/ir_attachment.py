@@ -15,6 +15,8 @@ from ..tools import (
     is_heic_bytes,
     is_heic_name,
     jpeg_name,
+    relabel_name,
+    sniff_image_mimetype,
 )
 
 _logger = logging.getLogger(__name__)
@@ -55,6 +57,21 @@ class IrAttachment(models.Model):
             )
         )
 
+    @api.model
+    def _heic_relabel_values(self, raw, name):
+        """Return the ``mimetype``/``name`` of HEIC-labelled content that is not HEIC.
+
+        A JPEG renamed ``.HEIC`` (or sent as ``image/heic``) cannot be decoded
+        as HEIC but browsers show it as is: it only needs its real label.
+        :return: a dict of values, or None when ``raw`` is HEIC or no browser image.
+        """
+        if is_heic_bytes(raw):
+            return None
+        mimetype = sniff_image_mimetype(raw)
+        if not mimetype:
+            return None
+        return {"mimetype": mimetype, "name": relabel_name(name, mimetype)}
+
     # ------------------------------------------------------------------
     # Conversion on create / write
     # ------------------------------------------------------------------
@@ -79,6 +96,18 @@ class IrAttachment(models.Model):
             return values
         name = values.get("name") or (len(self) == 1 and self.name) or ""
         if not self._heic_is_heic(raw, values.get("mimetype"), name):
+            return values
+        relabel = self._heic_relabel_values(raw, name)
+        if relabel:
+            _logger.info(
+                "Attachment %r labelled HEIC is really %s: relabelled %r",
+                name,
+                relabel["mimetype"],
+                relabel["name"],
+            )
+            if self:
+                values = dict(values)  # write(): see below
+            values.update(relabel)
             return values
         try:
             jpeg = heic_to_jpeg(raw)
@@ -112,9 +141,22 @@ class IrAttachment(models.Model):
     def _heic_convert_to_jpeg(self):
         """Convert this stored HEIC attachment in place.
 
+        Content labelled HEIC that is really a JPEG/PNG/GIF/WebP is relabelled
+        instead (bytes kept).
         :raises HeicConversionError: the content could not be converted.
         """
         self.ensure_one()
+        relabel = self._heic_relabel_values(self.raw, self.name)
+        if relabel:
+            _logger.info(
+                "Attachment %r (id %s) labelled HEIC is really %s: relabelled %r",
+                self.name,
+                self.id,
+                relabel["mimetype"],
+                relabel["name"],
+            )
+            self.write(dict(relabel, heic_convert_failed=False))
+            return
         jpeg = heic_to_jpeg(self.raw)
         self.write(
             {
