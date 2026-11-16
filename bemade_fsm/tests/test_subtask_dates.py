@@ -17,8 +17,8 @@ Acceptance criteria:
 
 import importlib.util
 import os
-import re
 from datetime import datetime
+from unittest.mock import patch
 
 from odoo.modules.module import get_module_path
 from odoo.tests import tagged
@@ -186,7 +186,9 @@ class TestSubtaskDates(BemadeFSMBaseTest):
         self.env.invalidate_all()
 
         migration = _load_backfill_migration()
-        with self.assertLogs(migration._logger.name, level="INFO") as logs:
+        # Patch the logger rather than assertLogs: the CI log configuration
+        # can filter INFO records before they reach a test handler.
+        with patch.object(migration._logger, "info") as log_info:
             migration.migrate(self.env.cr, "19.0.0.5.0")
         self.env.invalidate_all()
 
@@ -195,7 +197,8 @@ class TestSubtaskDates(BemadeFSMBaseTest):
         self.assertDates(done_child, False, False)
         self.assertDates(cancelled_child, False, False)
         self.assertDates(dated_child, OTHER_BEGIN, OTHER_END)
-        self.assertTrue(
-            any(re.search(r"\d+ open FSM subtask", line) for line in logs.output),
-            logs.output,
-        )
+        log_info.assert_called_once()
+        message, count = log_info.call_args.args
+        self.assertIn("open FSM subtask", message)
+        # The two open dateless subtasks of this test, plus any in the test DB.
+        self.assertGreaterEqual(count, 2)
