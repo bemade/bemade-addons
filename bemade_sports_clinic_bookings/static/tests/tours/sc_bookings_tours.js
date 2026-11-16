@@ -55,10 +55,42 @@ registry.category("web_tour.tours").add("sc_1732_booking_answers", {
             trigger: '[data-sc-booking-id] [data-sc-booking-answers] dd:contains("Soccer")',
         },
         {
-            content: "Open the calendar segment",
+            content: "Open the calendar segment (carrying the booking's date)",
             trigger: '[data-pk-tabs] a[data-pk-tab="calendar"]',
-            run: "click",
+            async run(helpers) {
+                // Task 1760: the test starts the tour on /my/bookings#pk_date=<booking's date>.
+                const url = new URL(this.anchor.href);
+                url.hash = window.location.hash;
+                this.anchor.setAttribute("href", url.toString());
+                await helpers.click();
+            },
             expectUnloadPage: true,
+        },
+        {
+            // Task 1760: the phone calendar opens on the CURRENT week (listWeek,
+            // Monday first) — from Sunday 22:00 UTC « now + 2 h » is next week's
+            // Monday. Go to the booking's week with the calendar's own buttons:
+            // back to today, then one « next » / « prev » per week of offset.
+            content: "Show the booking's week",
+            trigger: '.o_pk_calendar_box[data-pk-calendar-ready="1"] .fc-next-button',
+            run() {
+                const date = new URLSearchParams(window.location.hash.slice(1)).get("pk_date");
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "")) {
+                    throw new Error(`no #pk_date on the calendar page (« ${window.location.hash} »)`);
+                }
+                const monday = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
+                const [y, m, d] = date.split("-").map(Number);
+                const weeks = Math.round((monday(new Date(y, m - 1, d)) - monday(new Date())) / (7 * 864e5));
+                const box = this.anchor.closest(".o_pk_calendar_box");
+                const today = box.querySelector(".fc-today-button");
+                if (!today.disabled) {
+                    today.click(); // (disabled = already on the current week)
+                }
+                const button = box.querySelector(weeks < 0 ? ".fc-prev-button" : ".fc-next-button");
+                for (let i = 0; i < Math.abs(weeks); i++) {
+                    button.click();
+                }
+            },
         },
         {
             content: "Open the booking's details",

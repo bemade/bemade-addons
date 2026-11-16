@@ -13,6 +13,14 @@ SWITCH = 'bemade_portal_kit.enabled'
 class BookingsShellCommon(HttpCase):
 
     @classmethod
+    def _fixture_now(cls):
+        """The « now » the bookings are built around (UTC, naive). Task 1760:
+        a tour class may override it to pin the fixture to a calendar edge
+        (e.g. Sunday 23:00 UTC); the result must stay in the future of the
+        real clock or the upcoming lists hide ``booking_soon``."""
+        return fields.Datetime.now().replace(minute=0, second=0, microsecond=0)
+
+    @classmethod
     def setUpClass(cls):
         super().setUpClass()
         env = cls.env
@@ -33,7 +41,7 @@ class BookingsShellCommon(HttpCase):
             'schedule_based_on': 'users',
             'staff_user_ids': [Command.set(cls.tp.ids)],
         })
-        now = fields.Datetime.now().replace(minute=0, second=0, microsecond=0)
+        now = cls._fixture_now()
         Event = env['calendar.event'].with_context(
             no_mail_to_attendees=True, mail_notrack=True, mail_create_nolog=True)
 
