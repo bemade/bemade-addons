@@ -24,6 +24,11 @@
   hook ``_pk_brand()``; overrides merged, the theme colours too.
 * UC-L5 The user menu popup is the kit's (adopted from the first consumer:
   ``pk_user_menu_popup``).
+* UC-L6 (task 5392) One portal app per instance: the brand an app registers
+  (``_pk_apps()[app]['brand']``) is the whole shell's, for every viewer,
+  a user without an app role included; a page's ``pk_brand`` still wins.
+  UC-L1..L4 check the kit's own look: they set aside whatever app a
+  consumer registered (``pk_no_apps``) and force an English site.
 Synthetic values only.
 """
 import re
@@ -34,12 +39,28 @@ from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.http_routing.tests.common import MockRequest
 
+from .common import pk_frontend_langs, pk_hooks, pk_no_apps
+
 KIT = 'bemade_portal_kit'
 CONSUMER_RE = re.compile(r'data-sc-|o_sc_|\bsc_|bemade_sports_clinic')
 
 
 @tagged('post_install', '-at_install')
 class TestPkLayout(TransactionCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # Task 5392: the English texts and unprefixed URLs asserted below.
+        pk_frontend_langs(cls.env)
+        cls.env = cls.env(context=dict(cls.env.context, lang='en_US'))
+
+    def setUp(self):
+        super().setUp()
+        # Task 5392: the kit's own look, whatever app a consumer registered.
+        no_apps = pk_no_apps(self.env)
+        no_apps.__enter__()
+        self.addCleanup(no_apps.__exit__, None, None, None)
 
     def _render(self, values=None, body='<p class="pk_t_body">Body</p>', slots=None):
         """Render a synthetic page on the kit layout: ``slots`` are t-set
@@ -256,3 +277,34 @@ class TestPkLayout(TransactionCase):
         view = self.env.ref('%s.pk_user_menu_popup' % KIT)
         self.assertEqual(view.key, '%s.pk_user_menu_popup' % KIT)
         self.assertTrue(self.env.ref('%s.pk_app_layout' % KIT))
+
+    # ------------------------------------------------------------- UC-L6
+    def test_app_brand_is_the_whole_shells(self):
+        """The instance's app brand: on the layout for a viewer without an
+        app role (here the test's user), its home in the logo and the home
+        picto, its colours; a page's own ``pk_brand`` is merged over it."""
+        apps = {'pk_t_app': {'brand': {'name': 'Sample App', 'home_url': '/pk/t/home',
+                                       'theme_colors': {'light': '#0b2a4a', 'dark': '#0b2a4a'}}}}
+        roles = {'pk_t_member': {'groups': ('base.group_portal',), 'app': 'pk_t_app'}}
+        with pk_hooks(self.env, _pk_apps=lambda _orig: apps, _pk_roles=lambda _orig: roles):
+            self.assertFalse(self.env['portal.kit']._pk_app(), 'the viewer holds no app role')
+            self.assertEqual(self.env['portal.kit']._pk_current_app(), 'pk_t_app')
+            tree = self._render()
+            app = self._app(tree)
+            brand = app.xpath('.//a[contains(@class, "o_pk_rail_brand")]')[0]
+            self.assertEqual(brand.get('href'), '/pk/t/home')
+            self.assertEqual(brand.xpath('.//span[@class="o_pk_rail_brand_name"]/text()'), ['Sample App'])
+            self.assertEqual(app.xpath('.//header//a[contains(@class, "o_pk_logo")]/@href'), ['/pk/t/home'])
+            self.assertEqual(tree.xpath('//meta[@name="theme-color"]/@content'), ['#0b2a4a'])
+            self.assertEqual((app.get('data-pk-theme-color-light'), app.get('data-pk-theme-color-dark')),
+                             ('#0b2a4a', '#0b2a4a'))
+            picto = self._app(self._render({'pk_parent_url': '/pk/t/items'})).xpath(
+                './/a[contains(@class, "o_pk_home_picto")]/@href')
+            self.assertEqual(picto, ['/pk/t/home'])
+            tree = self._render({'pk_brand': {'home_url': '/pk/t/page', 'theme_colors': {'light': '#123456'}}})
+            self.assertEqual(self._app(tree).xpath('.//a[contains(@class, "o_pk_rail_brand")]/@href'), ['/pk/t/page'])
+            self.assertEqual(tree.xpath('//meta[@name="theme-color"]/@content'), ['#123456'])
+        # No app registered: the neutral look again.
+        tree = self._render()
+        self.assertEqual(self._app(tree).xpath('.//a[contains(@class, "o_pk_rail_brand")]/@href'), ['/my'])
+        self.assertEqual(tree.xpath('//meta[@name="theme-color"]/@content'), ['#ffffff'])

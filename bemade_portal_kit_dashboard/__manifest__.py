@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit: Configurable Dashboard',
-    'version': '19.0.1.1.0',
+    'version': '19.0.1.1.1',
     'category': 'Website/Portal',
     'summary': 'A dashboard of widget sections each user shows, orders, places and narrows, on the portal app.',
     'description': """

@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit: Installable App',
-    'version': '19.0.1.1.1',
+    'version': '19.0.1.1.2',
     'category': 'Website/Portal',
     'summary': 'The portal app as an installable app: web manifest, service worker, offline page, install page.',
     'description': """
@@ -46,9 +46,10 @@ Settings › Portal App › Installable app, per company (``res.company``):
 ``pk_pwa_theme_color`` (``#rrggbb``) and the icons ``pk_pwa_icon_192``,
 ``pk_pwa_icon_512``, ``pk_pwa_icon_maskable_512``,
 ``pk_pwa_apple_touch_icon`` (180 px) and ``pk_pwa_logo`` (the offline
-page). An empty field takes its default: the brand hook
-(``portal.kit._pk_brand()``: the company name, the light theme colour)
-and the kit's neutral icons.
+page). An empty field takes its default: the app's brand
+(``portal.kit.pk_brand(app=app)``: the app's registered ``brand``, kit
+1.16: one app per instance, merged over ``_pk_brand()``: the company name,
+the light theme colour) and the kit's neutral icons.
 
 ``portal.kit._pk_pwa(app=None)`` returns the effective values of an app
 (default: the viewer's). Version 1.1: an app sets its installable app in its

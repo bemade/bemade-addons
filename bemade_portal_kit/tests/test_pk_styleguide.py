@@ -16,10 +16,15 @@
   user menu, ``main#pk_content``; no app-bar markup of its own; it shows the
   components the kit adopted in P3c2 (list header, card icons, history,
   switch, link row, entity row, static field with the overdue flag).
-Synthetic users only.
+  It checks the kit's own look: whatever app a consumer registered is set
+  aside (``pk_no_apps``, task 5392).
+* UC-S6 (task 5392) One portal app per instance: with an app that registers
+  a brand, the style guide (a neutral kit page) takes that brand.
+Synthetic users and apps only.
 """
 from odoo.tests import HttpCase, new_test_user, tagged
 
+from .common import pk_frontend_langs, pk_hooks, pk_no_apps
 from .test_pk_icon import GOLDEN
 
 URL = '/pk/styleguide'
@@ -31,6 +36,7 @@ class TestPkStyleguide(HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        pk_frontend_langs(cls.env)  # task 5392: the English texts asserted below
         cls.internal = new_test_user(cls.env, login='pk_sg_internal', groups='base.group_user')
         cls.portal = new_test_user(cls.env, login='pk_sg_portal', groups='base.group_portal')
 
@@ -72,7 +78,8 @@ class TestPkStyleguide(HttpCase):
 
     def test_on_the_kit_layout(self):
         self.authenticate('pk_sg_internal', 'pk_sg_internal')
-        res = self.url_open(URL)
+        with pk_no_apps(self.env):
+            res = self.url_open(URL)
         self.assertEqual(res.status_code, 200)
         html = res.text
         for marker in ('data-pk-app-shell="1"', 'id="pk_content"', 'class="o_pk_rail"', 'o_pk_rail_brand',
@@ -88,3 +95,14 @@ class TestPkStyleguide(HttpCase):
         for component in ('data-pk-card-icons', 'o_pk_list_header', 'o_pk_history_entry', 'o_pk_switch_reason',
                           'data-pk-row-links', 'o_pk_entity_row', 'data-pk-overdue', 'o_pk_banner_warn'):
             self.assertIn(component, html, component)
+
+    def test_takes_the_instance_brand(self):
+        apps = {'pk_sg_app': {'brand': {'name': 'Sample Guide App', 'home_url': '/my/pk-sg-home',
+                                        'theme_colors': {'light': '#0b2a4a'}}}}
+        roles = {'pk_sg_member': {'groups': ('base.group_portal',), 'app': 'pk_sg_app'}}
+        self.authenticate('pk_sg_internal', 'pk_sg_internal')
+        with pk_no_apps(self.env), pk_hooks(self.env, _pk_apps=lambda _orig: apps, _pk_roles=lambda _orig: roles):
+            html = self.url_open(URL).text
+        self.assertIn('<meta name="theme-color" content="#0b2a4a"', html)
+        self.assertIn('href="/my/pk-sg-home"', html)
+        self.assertIn('Sample Guide App', html)

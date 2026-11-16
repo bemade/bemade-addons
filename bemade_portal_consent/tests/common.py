@@ -5,7 +5,29 @@
 from contextlib import contextmanager
 from unittest.mock import patch
 
+from odoo.fields import Command
 from odoo.tests import new_test_user
+
+
+def consent_frontend_langs(env, default='en_US', others=()):
+    """The frontend languages a test asserts, whatever the database's site
+    is set to (a consumer's site may default to French): ``default`` (and
+    ``others``) activated, ``default`` the frontend default (every website's
+    and the partners' default ``lang``), ``others`` added to every website.
+    Call it before creating the test users. Undone with the rollback."""
+    langs = env['res.lang']
+    for code in (default, *others):
+        langs |= langs._activate_lang(code)
+    if 'website' in env:
+        for website in env['website'].search([]):
+            website.write({
+                'language_ids': [Command.link(lang.id) for lang in langs],
+                'default_lang_id': langs.filtered(lambda lang: lang.code == default).id,
+            })
+    env['ir.default'].set('res.partner', 'lang', default)
+    env.flush_all()
+    env.registry.clear_cache()
+    return langs
 
 
 @contextmanager

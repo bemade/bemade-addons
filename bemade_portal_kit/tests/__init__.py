@@ -27,3 +27,4 @@ from . import test_pk_data_moves
 from . import test_pk_version_guard
 from . import test_pk_apps
 from . import test_pk_lang_guard
+from . import test_pk_home

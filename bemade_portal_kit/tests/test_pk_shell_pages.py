@@ -29,7 +29,7 @@ from lxml import html as lxml_html
 from odoo.fields import Command
 from odoo.tests import HttpCase, new_test_user, tagged
 
-from .common import pk_csrf, pk_hook, pk_kit_shell
+from .common import pk_csrf, pk_frontend_langs, pk_hook, pk_kit_shell
 
 ROLES = {'member': {'groups': ('base.group_portal',)}}
 
@@ -44,6 +44,7 @@ class TestPkShellPages(HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        pk_frontend_langs(cls.env)  # task 5392: the English texts asserted below
         cls.member = new_test_user(cls.env, login='pk_p5_member', groups='base.group_portal', lang='en_US')
         cls.staff = new_test_user(cls.env, login='pk_p5_staff', groups='base.group_user')
         cls.member.partner_id.write({'email': 'pk_p5_member@example.com', 'phone': False})

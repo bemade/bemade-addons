@@ -18,12 +18,13 @@ Acceptance criteria:
   redirect, English, the cookie not changed to another language.
 
 Synthetic users only. The second language is added to every website when
-``website`` is installed (English stays the default).
+``website`` is installed; English is made the default (task 5392).
 """
 from urllib.parse import urlsplit
 
-from odoo.fields import Command
 from odoo.tests import HttpCase, new_test_user, tagged
+
+from odoo.addons.bemade_portal_kit.tests.common import pk_frontend_langs
 
 from .common import pk_pwa_shell
 
@@ -37,6 +38,9 @@ class TestPkPwaLang(HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # Task 5392: an English-default site with French added, whatever the
+        # database's site is set to (no skip).
+        pk_frontend_langs(cls.env, 'en_US', ('fr_FR',))
         cls.member = new_test_user(cls.env, login='pk_5389_member', groups='base.group_portal', lang='en_US',
                                    name='PK 5389 Member')
         cls.member.partner_id.email = 'pk_5389_member@example.com'
@@ -46,20 +50,6 @@ class TestPkPwaLang(HttpCase):
         shell = pk_pwa_shell(self.env, roles=ROLES)
         shell.__enter__()
         self.addCleanup(shell.__exit__, None, None, None)
-        if 'website' in self.env:
-            defaults = set(self.env['website'].search([]).default_lang_id.mapped('code'))
-        else:
-            defaults = {self.env['ir.default'].sudo()._get('res.partner', 'lang') or 'en_US'}
-        if defaults != {'en_US'}:
-            self.skipTest('English is not the default frontend language')
-        lang = self.env['res.lang']._activate_lang('fr_FR')
-        if 'website' in self.env:
-            for website in self.env['website'].search([]):
-                website.language_ids = [Command.link(lang.id)]
-        self.env.flush_all()
-        self.env.registry.clear_cache()
-        if 'fr_FR' not in self.env['res.lang']._get_frontend():
-            self.skipTest('no second frontend language')
 
     def _login(self, lang):
         self.member.lang = lang
