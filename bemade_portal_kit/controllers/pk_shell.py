@@ -16,6 +16,8 @@
   language is the only source of truth;
 * ``POST /my/app/pref``: the self-service preferences
   (``portal.kit._pk_pref_fields()``);
+* ``/my`` and ``/my/home``: a user in an app is sent to the app's home
+  (task 5392, ``portal.kit._pk_home_url()``);
 * ``/my/app/settings`` (« Settings ») and ``/my/app/more`` (« More »);
 * ``/my/account`` and ``/my/security`` rendered in the shell (the core
   routes keep their logic; only the rendering changes), with « My
@@ -260,6 +262,22 @@ class PortalKitShell(PortalKitApp):
         """A kit page in the shell (or its read fragments)."""
         values.setdefault('page_name', template.rpartition('.')[2])
         return self._pk_render(template, self._pk_app_values(values, template))
+
+    # ------------------------------------------------------------------
+    # /my, /my/home — the app's home (task 5392)
+    # ------------------------------------------------------------------
+    @http.route()
+    def home(self, **kw):
+        """A user in an app is sent to the app's home
+        (``portal.kit._pk_home_url()``), in the request's language;
+        ``?classic=1`` and everyone else get the portal home. The dashboard
+        addon draws its own home here instead."""
+        if not kw.get('classic'):
+            url = request.env['portal.kit']._pk_home_url()
+            if url:
+                lang = getattr(request, 'lang', None)
+                return request.redirect(self._pk_lang_url(url, lang.code) if lang else url)
+        return super().home(**kw)
 
     # ------------------------------------------------------------------
     # /my/app/more — « More »; /my/app/settings — « Settings »

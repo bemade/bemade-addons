@@ -32,7 +32,7 @@ from odoo.tests import HttpCase, TransactionCase, new_test_user, tagged
 
 from odoo.addons.bemade_portal_kit.tools import Page, pk_nav, pk_static_page
 
-from .common import pk_extra_roles, pk_hooks, pk_kit_shell
+from .common import pk_extra_roles, pk_frontend_langs, pk_hooks, pk_kit_shell
 
 ROLES = {
     'n_member': {'groups': (), 'app': 'north'},
@@ -119,6 +119,7 @@ class AppsCommon:
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        pk_frontend_langs(cls.env)  # task 5392: the English texts asserted below
         cls.users = {
             login: new_test_user(cls.env, login=login, groups='base.group_portal', lang='en_US')
             for login in HOLDERS}

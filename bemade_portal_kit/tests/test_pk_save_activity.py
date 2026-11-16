@@ -34,7 +34,7 @@ from unittest.mock import patch
 from odoo import fields
 from odoo.tests import HttpCase, new_test_user, tagged
 
-from .common import pk_csrf, pk_hook
+from .common import pk_csrf, pk_frontend_langs, pk_hook
 
 
 @tagged('post_install', '-at_install')
@@ -43,6 +43,7 @@ class TestPkSaveActivity(HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        pk_frontend_langs(cls.env)  # task 5392: the English texts asserted below
         cls.user = new_test_user(cls.env, login='pk_act_user', groups='base.group_user,base.group_partner_manager',
                                  tz='America/Toronto')
         cls.other = new_test_user(cls.env, login='pk_act_other', groups='base.group_user')

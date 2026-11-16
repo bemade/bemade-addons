@@ -23,16 +23,21 @@ Acceptance criteria
 * The ``redirect`` target is a relative path only: an absolute URL, a
   scheme-relative ``//host`` or ``/\\host`` falls back to ``/my``.
 * The gated prefixes come from ``bemade_portal_consent.prefixes``.
+
+Whatever the consumer installed with this addon (19.0.1.0.1): the site is
+made English-default with French added (a French-default site would strip
+the ``/fr`` prefix), and a consumer that sends ``/my`` to its own home is
+allowed: « not gated » means no hop of the redirects goes to the consent
+page and the page finally served answers 200.
 """
 from urllib.parse import parse_qs, urlsplit
 
 from lxml import html as lxml_html
 
-from odoo.fields import Command
 from odoo.tests import HttpCase, tagged
 from odoo.tools.misc import mute_logger
 
-from .common import ConsentFixtures, consent_hook
+from .common import ConsentFixtures, consent_frontend_langs, consent_hook
 
 
 def _split(location):
@@ -46,6 +51,7 @@ class TestConsentGate(ConsentFixtures, HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        consent_frontend_langs(cls.env, 'en_US', ('fr_FR',))
         cls._consent_setup()
         cls.v1._portal_consent_publish(requires_resign=True)
         cls.doc2 = cls.Document.create({'name': 'Sample code of conduct', 'code': 'tc5390_conduct'})
@@ -75,24 +81,22 @@ class TestConsentGate(ConsentFixtures, HttpCase):
         self.assertTrue(query.get('redirect', '').endswith(expected_target), query)
         return response
 
-    def assertNotGated(self, url, login='tc5390_portal_a'):
+    def assertNotGated(self, url, login='tc5390_portal_a', follow=False):
+        """Not sent to the consent page. ``follow``: each redirect hop is
+        followed (a consumer may send ``/my`` to its own home) and none goes
+        to the consent page; the last response is returned."""
         response = self._get(url, login=login)
-        location = response.headers.get('Location', '')
-        self.assertNotIn('/my/consent', urlsplit(location).path, url)
+        for _hop in range(5 if follow else 1):
+            location = response.headers.get('Location', '')
+            self.assertNotIn('/my/consent', urlsplit(location).path, url)
+            if not (follow and response.is_redirect):
+                break
+            response = self.url_open(location, allow_redirects=False)
         return response
 
     def _csrf(self, response):
         tree = lxml_html.document_fromstring(response.text)
         return tree.xpath('//form[@data-portal-consent-form]//input[@name="csrf_token"]/@value')[0]
-
-    def _frontend_fr(self):
-        lang = self.env['res.lang']._activate_lang('fr_FR')
-        if 'website' in self.env:
-            for website in self.env['website'].search([]):
-                website.language_ids = [Command.link(lang.id)]
-        self.env.registry.clear_cache()
-        self.env.flush_all()
-        return lang
 
     # ---------------------------------------------------------------- gate
     def test_pending_user_is_gated(self):
@@ -103,10 +107,12 @@ class TestConsentGate(ConsentFixtures, HttpCase):
             self.assertGated('/my/invoices', '/my/invoices')
 
     def test_language_prefix(self):
-        self._frontend_fr()
-        response = self.assertGated('/fr/my/home', '/my/home')
+        # fr_FR is a frontend language other than the default (setUpClass):
+        # its URL code prefixes the path.
+        code = self.env['res.lang']._get_data(code='fr_FR').url_code
+        response = self.assertGated('/%s/my/home' % code, '/my/home')
         path, _query = _split(response.headers['Location'])
-        self.assertIn(path, ('/my/consent', '/fr/my/consent'))
+        self.assertIn(path, ('/my/consent', '/%s/my/consent' % code))
 
     def test_exempt_routes(self):
         response = self.assertNotGated('/my/consent')
@@ -116,11 +122,11 @@ class TestConsentGate(ConsentFixtures, HttpCase):
 
     def test_not_gated_users(self):
         self.docs_for[self.portal_a.id] = self.Document
-        self.assertEqual(self.assertNotGated('/my/home').status_code, 200, 'no documents')
+        self.assertEqual(self.assertNotGated('/my/home', follow=True).status_code, 200, 'no documents')
         self.assertNotGated('/my/home', login='tc5390_staff')
         self.docs_for[self.portal_a.id] = self.doc
         self.v1._portal_consent_accept(self.portal_a)
-        self.assertEqual(self.assertNotGated('/my/home').status_code, 200, 'compliant')
+        self.assertEqual(self.assertNotGated('/my/home', follow=True).status_code, 200, 'compliant')
 
     def test_prefixes_parameter(self):
         self.env['ir.config_parameter'].sudo().set_param('bemade_portal_consent.prefixes', '/my/account')
@@ -181,6 +187,14 @@ class TestConsentGate(ConsentFixtures, HttpCase):
         page = self._get('/my/consent?redirect=https://evil.example/x')
         data = {'csrf_token': self._csrf(page), 'version_id': self.doc2_v1.id,
                 'redirect': 'https://evil.example/x'}
-        response = self.url_open('/my/consent/accept', data=data)
-        self.assertEqual(urlsplit(response.url).path, '/my')
-        self.assertNotIn('evil', urlsplit(response.url).netloc)
+        # Through the consent page to the target, the first hop that leaves
+        # it checked (a consumer may then send /my further).
+        response = self.url_open('/my/consent/accept', data=data, allow_redirects=False)
+        for _hop in range(3):
+            self.assertEqual(response.status_code, 303)
+            if not urlsplit(response.headers['Location']).path.endswith('/my/consent'):
+                break
+            response = self.url_open(response.headers['Location'], allow_redirects=False)
+        parts = urlsplit(response.headers['Location'])
+        self.assertTrue(parts.path.endswith('/my'), parts.path)
+        self.assertNotIn('evil', parts.netloc)

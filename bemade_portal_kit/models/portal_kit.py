@@ -289,6 +289,21 @@ class PortalKit(models.AbstractModel):
         return self._pk_app() or self._pk_default_app()
 
     @api.model
+    def _pk_home_url(self):
+        """Task 5392: where ``/my`` and ``/my/home`` send the current user
+        (without ``bemade_portal_kit_dashboard``, whose home is drawn there):
+        for a user in an app (``_pk_shell_active``), the app's home, its
+        brand's ``home_url`` (``_pk_apps()[app]['brand']``); False (the
+        portal home) when that is ``/my`` or ``/my/home`` (the neutral
+        brand) or not a same-site path, and for anyone else."""
+        if not self._pk_shell_active():
+            return False
+        url = pk_safe_return_url(self.pk_brand().get('home_url'), False)
+        if not url or urlsplit(url).path.rstrip('/') in ('/my', '/my/home'):
+            return False
+        return url
+
+    @api.model
     def _pk_resolve_app(self, app=None):
         """``app``, else ``_pk_current_app()`` (the accessors' default)."""
         return app or self._pk_current_app()

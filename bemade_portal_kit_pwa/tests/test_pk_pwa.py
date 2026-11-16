@@ -29,6 +29,10 @@ Acceptance criteria:
   the switch is on.
 * UC-W9 Settings: the colours are validated; the settings fields write the
   company's.
+* UC-W11 (task 5392) One portal app per instance: the brand the app
+  registers (``_pk_apps()[app]['brand']``) gives the installed app its
+  name, colours and start URL when the company's fields are empty; the
+  company's fields still win.
 """
 import base64
 import io
@@ -44,6 +48,8 @@ from odoo.tests import HttpCase, new_test_user, tagged
 from odoo.tools import file_open
 
 from odoo.addons.bemade_portal_kit_pwa.models.portal_kit import PK_PWA_ICONS
+
+from odoo.addons.bemade_portal_kit.tests.common import pk_frontend_langs, pk_hooks
 
 from .common import pk_pwa_shell
 
@@ -67,6 +73,7 @@ class TestPkPwa(HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        pk_frontend_langs(cls.env)  # task 5392: the English texts asserted below
         cls.member = new_test_user(cls.env, login='pk_p6_member', groups='base.group_portal', lang='en_US',
                                    name='PK P6 Member')
         cls.member.partner_id.email = 'pk_p6_member@example.com'
@@ -139,6 +146,21 @@ class TestPkPwa(HttpCase):
         self.assertEqual(manifest['shortcuts'], [{'name': 'T One', 'url': '/my/t1'}])
         with patch.object(kit_cls, '_pk_pwa_manifest_id', lambda self, app=None: '/my/t-id'):
             self.assertEqual(self._manifest()['id'], '/my/t-id')
+
+    # ------------------------------------------------------------ UC-W11
+    def test_manifest_takes_the_app_brand(self):
+        apps = {'pk_w_app': {'brand': {'name': 'Sample Brand App', 'home_url': '/my/pk-w-home',
+                                       'theme_colors': {'light': '#0b2a4a', 'dark': '#000000'}}}}
+        with pk_hooks(self.env, _pk_apps=lambda _orig: apps,
+                      _pk_roles=lambda _orig: {'member': {'groups': ('base.group_portal',), 'app': 'pk_w_app'}}):
+            manifest = self._manifest()
+            self.assertEqual((manifest['name'], manifest['short_name']), ('Sample Brand App', 'Sample Brand App'))
+            self.assertEqual((manifest['background_color'], manifest['theme_color']), ('#0b2a4a', '#0b2a4a'))
+            self.assertEqual((manifest['id'], manifest['start_url']), ('/my/pk-w-home', '/my/pk-w-home'))
+            self.env.company.write({'pk_pwa_name': 'PK Company App', 'pk_pwa_theme_color': '#405060'})
+            manifest = self._manifest()
+            self.assertEqual(manifest['name'], 'PK Company App')
+            self.assertEqual((manifest['background_color'], manifest['theme_color']), ('#0b2a4a', '#405060'))
 
     # ------------------------------------------------------------- UC-W3
     def test_icons_defaults_and_fields(self):

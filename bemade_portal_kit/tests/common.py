@@ -13,6 +13,8 @@ import re
 from contextlib import contextmanager, ExitStack
 from unittest.mock import patch
 
+from odoo.fields import Command
+
 
 @contextmanager
 def pk_hook(env, hook, build):
@@ -57,6 +59,42 @@ def pk_csrf(case, url='/my'):
     return match.group(1)
 
 
+def pk_frontend_langs(env, default='en_US', others=()):
+    """Task 5392: the frontend languages a test asserts, whatever the
+    database's site is set to (a consumer's site may default to French):
+    ``default`` (and each of ``others``) activated, ``default`` made the
+    frontend default (every website's default language and, without
+    ``website``, the partners' default ``lang``), ``others`` added to every
+    website. Call it in ``setUpClass`` BEFORE creating the test users (new
+    users take the default language). Undone with the test's rollback."""
+    langs = env['res.lang']
+    for code in (default, *others):
+        langs |= langs._activate_lang(code)
+    default_lang = langs.filtered(lambda lang: lang.code == default)
+    if 'website' in env:
+        for website in env['website'].search([]):
+            website.write({
+                'language_ids': [Command.link(lang.id) for lang in langs],
+                'default_lang_id': default_lang.id,
+            })
+    env['ir.default'].set('res.partner', 'lang', default)
+    env.flush_all()
+    env.registry.clear_cache()
+    return langs
+
+
+@contextmanager
+def pk_no_apps(env):
+    """Task 5392: the kit's own look, whatever app a consumer registered (one
+    app per instance; the CI installs several): no app registration
+    (``_pk_apps``) and the kit's own neutral brand (``_pk_brand``)."""
+    from odoo.addons.bemade_portal_kit.models.portal_kit import PortalKit
+    with ExitStack() as stack:
+        stack.enter_context(pk_hook(env, '_pk_apps', lambda _orig: {}))
+        stack.enter_context(patch.object(type(env['portal.kit']), '_pk_brand', PortalKit._pk_brand))
+        yield
+
+
 @contextmanager
 def pk_kit_shell(env, roles=None, layout='bemade_portal_kit.pk_app_layout'):
     """Task 5200 (P5): the kit's own pages as the kit alone draws them,
@@ -91,6 +129,8 @@ def pk_kit_shell(env, roles=None, layout='bemade_portal_kit.pk_app_layout'):
         stack.enter_context(patch.object(kit_cls, '_pk_nav', lambda self: []))
         stack.callback(env.registry.clear_cache)
         stack.enter_context(patch.object(kit_cls, '_pk_layout', lambda self: layout))
+        # Task 5392: the kit's neutral brand (a consumer's ``_pk_brand`` aside).
+        stack.enter_context(patch.object(kit_cls, '_pk_brand', PortalKit._pk_brand))
         stack.enter_context(patch.object(kit_cls, '_pk_help_url', lambda self, url: url))
         stack.enter_context(patch.object(kit_cls, '_pk_pref_fields', lambda self: {
             'pk_theme': ('light', 'dark'), 'pk_show_done_buttons': ('1', '0'), 'lang': None}))

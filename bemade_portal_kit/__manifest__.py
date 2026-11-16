@@ -3,7 +3,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0.html).
 {
     'name': 'Bemade Portal Kit',
-    'version': '19.0.1.15.2',
+    'version': '19.0.1.16.0',
     'category': 'Website/Portal',
     'summary': 'Reusable portal app shell toolkit: roles, navigation, visibility and page registries.',
     'description': """
@@ -96,6 +96,33 @@ How to declare an app:
    ``_pk_search_placeholder``, ``_pk_help_keys`` / ``_pk_help_tabbed``,
    the ``_pk_pwa_*`` hooks, the dashboard's ``_pk_dash_render`` or the
    portal's ``home()`` (the kit dispatches ``/my/home`` to the app's home).
+
+One portal app per instance (version 1.16): a production database runs ONE
+app; several apps in one database exist for the bemade-addons CI, which
+installs every consumer together. So:
+
+* Register your brand in ``_pk_apps()[app]['brand']``, not page by page. It
+  is the whole shell's: your pages, the kit's neutral pages (settings,
+  « More », account, security, install, style guide) for every viewer,
+  a user without an app role included (the default app), and the installed
+  app's name, colours and start URL when the company's Portal App fields are
+  empty. No app registered: the kit's neutral look. A page's ``pk_brand``
+  still wins for that page.
+* Home: without ``bemade_portal_kit_dashboard``, ``/my`` and ``/my/home``
+  send a user in an app (switch on, an app role) to the app's home, its
+  brand's ``home_url`` (``portal.kit._pk_home_url()``), in the request's
+  language; ``?classic=1``, the users without an app role and a brand home
+  of ``/my`` get the portal home. With the dashboard, ``/my/home`` is the
+  dashboard's home of the app. A consumer no longer redirects ``/my``
+  itself (it may still extend the controller's ``home()`` for users without
+  an app role).
+* Tests (``bemade_portal_kit/tests/common.py``): a test of the kit's own
+  look sets aside whatever app the CI installed (``pk_no_apps(env)``, or
+  ``pk_kit_shell``, which also does it); a test of app behaviour registers
+  its own synthetic app (``pk_hooks(env, _pk_apps=..., _pk_roles=...)``).
+  A test that asserts texts or URLs in one language forces it
+  (``pk_frontend_langs(env, 'en_US', others)`` in ``setUpClass``, before
+  creating its users): a consumer's site may default to French.
 
 The viewer's app is ``_pk_app(user)``: the app of their app roles (several:
 the lowest ``sequence``, then the lowest key). A user without an app role,

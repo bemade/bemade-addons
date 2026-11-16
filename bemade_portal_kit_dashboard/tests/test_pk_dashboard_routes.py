@@ -33,7 +33,7 @@ from lxml import html as lxml_html
 
 from odoo.tests import HttpCase, new_test_user, tagged
 
-from odoo.addons.bemade_portal_kit.tests.common import pk_csrf
+from odoo.addons.bemade_portal_kit.tests.common import pk_csrf, pk_frontend_langs
 
 from .common import pk_dash_controller_hook, pk_dash_shell, pk_dash_templates
 
@@ -47,6 +47,7 @@ class TestPkDashboardRoutes(HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        pk_frontend_langs(cls.env)  # task 5392: the English texts asserted below
         cls.member = new_test_user(cls.env, login='pk_p7_web', groups='base.group_portal', lang='en_US',
                                    name='PK P7 Web')
         cls.member.partner_id.email = 'pk_p7_web@example.com'
