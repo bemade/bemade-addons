@@ -19,13 +19,13 @@ EXTENSION_RE = re.compile(
 
 
 def digits(value):
-    return re.sub(r"\D", "", value or "")
+    return re.sub(r"\D", "", str(value) if value else "")
 
 
 def split_extension(value):
     """Return ``(number, extension)`` for a phone string; ``extension`` is
     False when the value does not end with a recognised extension."""
-    value = (value or "").strip()
+    value = (str(value) if value else "").strip()
     match = EXTENSION_RE.search(value)
     if match:
         number = value[: match.start()].strip(" ,;-")

@@ -255,7 +255,11 @@ class ResPartner(models.Model):
         if "phone_ids" in vals:
             # the list wins over Phone / Mobile sent along with it
             vals = {k: v for k, v in vals.items() if k not in ("phone", "mobile")}
-        elif vals.get("phone"):
+        # Some callers (imports, other modules' tests) send numbers as int.
+        for fname in ("phone", "mobile"):
+            if vals.get(fname) and not isinstance(vals[fname], str):
+                vals = dict(vals, **{fname: str(vals[fname])})
+        if vals.get("phone"):
             vals = dict(vals, phone=self._phone_list_display(vals["phone"]))
         return vals
 

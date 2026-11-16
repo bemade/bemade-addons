@@ -36,6 +36,15 @@ class TestCreateCopy(PhoneListCase):
         self.assertFalse(c.phone_ids)
         self.assertFalse(c.phone)
 
+    def test_create_with_numeric_phone(self):
+        """Callers sometimes pass a number as int (imports, other modules'
+        tests): it is stored as text, not a crash."""
+        partner = self.env["res.partner"].create({"name": "Synthetic Int", "phone": 5145550123})
+        self.assertTrue(partner.phone)
+        self.assertEqual(len(partner.phone_ids), 1)
+        partner.write({"mobile": 5145550124})
+        self.assertTrue(partner.mobile)
+
     def test_copy_keeps_lines(self):
         partner = self._partner(
             phone_ids=[
